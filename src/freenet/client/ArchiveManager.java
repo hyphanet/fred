@@ -137,6 +137,7 @@ public class ArchiveManager {
 		if(asi == null) return null;
 		// Promote to top of LRU
 		storedData.push(k, asi);
+		if(logMINOR) Logger.minor(this, "Found data");
 		return asi.getDataOrThrow();
 	}
 	

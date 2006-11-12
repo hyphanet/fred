@@ -70,7 +70,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			Bucket returnBucket, boolean isFinal) throws FetchException {
 		super(key, maxRetries, ctx, get);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key);
+		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key+" meta="+metaStrings.toString(), new Exception("debug"));
 		this.isFinal = isFinal;
 		this.cancelled = false;
 		this.returnBucket = returnBucket;
@@ -96,11 +96,12 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	}
 
 	/** Copy constructor, modifies a few given fields, don't call schedule().
-	 * Used for things like slave fetchers for MultiLevelMetadata, therefore does not remember returnBucket. */
+	 * Used for things like slave fetchers for MultiLevelMetadata, therefore does not remember returnBucket,
+	 * metaStrings etc. */
 	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetcherContext ctx2) throws FetchException {
 		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key);
+		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key+" meta="+fetcher.metaStrings.toString(), new Exception("debug"));
 		this.token = fetcher.token;
 		this.returnBucket = null;
 		// We expect significant further processing in the parent
@@ -110,8 +111,8 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		this.ah = fetcher.ah;
 		this.clientMetadata = (ClientMetadata) fetcher.clientMetadata.clone();
 		this.metadata = newMeta;
-		this.metaStrings = fetcher.metaStrings;
-		this.addedMetaStrings = fetcher.addedMetaStrings;
+		this.metaStrings = new LinkedList();
+		this.addedMetaStrings = 0;
 		this.rcb = callback;
 		this.recursionLevel = fetcher.recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
@@ -197,7 +198,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			}
 			result = new FetchResult(result, data);
 		}
-		if((!ctx.ignoreTooManyPathComponents) && (!metaStrings.isEmpty())) {
+		if((!ctx.ignoreTooManyPathComponents) && (!metaStrings.isEmpty()) && isFinal) {
 			// Some meta-strings left
 			if(addedMetaStrings > 0) {
 				// Should this be an error?
@@ -208,6 +209,9 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			} else {
 				// TOO_MANY_PATH_COMPONENTS
 				// report to user
+				if(logMINOR) {
+					Logger.minor(this, "Too many path components: for "+uri+" meta="+metaStrings.toString());
+				}
 				FreenetURI tryURI = uri;
 				tryURI = tryURI.dropLastMetaStrings(metaStrings.size());
 				rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, result.size(), (rcb == parent), result.getMimeType(), tryURI), this);
@@ -433,6 +437,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	}
 
 	private void fetchArchive(boolean forData, Metadata meta) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
+		if(logMINOR) Logger.minor(this, "fetchArchive()");
 		// Fetch the archive
 		// How?
 		// Spawn a separate SingleFileFetcher,
@@ -617,16 +622,17 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			// Return the latest known version but at least suggestedEdition.
 			long edition = ctx.uskManager.lookup(usk);
 			if(edition <= usk.suggestedEdition) {
+				// Background fetch - start background fetch first so can pick up updates in the datastore during registration.
+				ctx.uskManager.startTemporaryBackgroundFetcher(usk);
+				edition = ctx.uskManager.lookup(usk);
 				// Transition to SingleFileFetcher
 				GetCompletionCallback myCB =
 					new USKProxyCompletionCallback(usk, ctx.uskManager, cb);
 				// Want to update the latest known good iff the fetch succeeds.
 				SingleFileFetcher sf = 
-					new SingleFileFetcher(parent, myCB, clientMetadata, usk.getSSK(usk.suggestedEdition),
-							metaStrings, usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, maxRetries, recursionLevel, dontTellClientGet,
-							token, false, returnBucket, isFinal);
-				// Background fetch
-				ctx.uskManager.startTemporaryBackgroundFetcher(usk);
+					new SingleFileFetcher(parent, myCB, clientMetadata, usk.getSSK(edition), metaStrings, 
+							usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, maxRetries, recursionLevel, 
+							dontTellClientGet, token, false, returnBucket, isFinal);
 				return sf;
 			} else {
 				cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null);

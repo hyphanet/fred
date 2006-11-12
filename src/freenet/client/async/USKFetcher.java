@@ -436,8 +436,12 @@ public class USKFetcher implements ClientGetState {
 			attempts = (USKAttempt[]) runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
 			started = true;
 		if(!cancelled)
-			for(int i=0;i<attempts.length;i++)
-				attempts[i].schedule();
+			for(int i=0;i<attempts.length;i++) {
+				// Race conditions happen here and waste a lot more time than this simple check.
+				long lastEd = uskManager.lookup(origUSK);
+				if(attempts[i].number > lastEd)
+					attempts[i].schedule();
+			}
 		}
 	}
 
