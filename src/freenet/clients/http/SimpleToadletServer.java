@@ -237,8 +237,11 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyPortCallback());
 		fproxyConfig.register("bindTo", "127.0.0.1", configItemOrder++, true, false, "IP address to bind to", "IP address to bind to",
 				new FProxyBindtoCallback());
-		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, false, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to FProxy. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
-				new FProxyAllowedHostsCallback());
+		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, false, "Allowed hosts", 
+				"Hostnames or IP addresses that are allowed to connect to FProxy. " +
+				"May be a comma-separated list of single IPs and CIDR masked IPs like 192.168.0.0/24. " +
+				"WARNING: Anyone who can access fproxy can shut down the node, upload files from disk, download files to the download directory... " +
+				"Be careful who you give fproxy access to!", new FProxyAllowedHostsCallback());
 		fproxyConfig.register("css", "clean", configItemOrder++, false, false, "CSS Name", "Name of the CSS FProxy should use "+themes.toString(),
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("advancedDarknetEnabled", false, configItemOrder++, false, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
