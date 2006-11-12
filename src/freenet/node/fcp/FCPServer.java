@@ -297,7 +297,11 @@ public class FCPServer implements Runnable {
 		fcpConfig.register("port", FCPServer.DEFAULT_FCP_PORT /* anagram of 1984, and 1000 up from old number */,
 				2, true, true, "FCP port number", "FCP port number", new FCPPortNumberCallback(core));
 		fcpConfig.register("bindTo", "127.0.0.1", 2, false, true, "IP address to bind to", "IP address to bind the FCP server to", new FCPBindtoCallback(core));
-		fcpConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", 2, false, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the FCP server. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24", new FCPAllowedHostsCallback(core));
+		fcpConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", 2, false, true, "Allowed hosts (read the warning!)", 
+				"Hostnames or IP addresses that are allowed to connect to the FCP server. " +
+				"May be a comma-separated list of single IPs and CIDR masked IPs like 192.168.0.0/24. "+
+				"WARNING! Anyone who has access to FCP can upload any file the node has access to, download files to disk (no overwriting), reconfigure the node, shut down the node etc. "+
+				"Do not allow untrusted hosts or users access to FCP!", new FCPAllowedHostsCallback(core));
 		PersistentDownloadsEnabledCallback cb1;
 		PersistentDownloadsFileCallback cb2;
 		PersistentDownloadsIntervalCallback cb3;
