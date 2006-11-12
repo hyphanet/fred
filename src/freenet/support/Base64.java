@@ -12,8 +12,8 @@ import java.util.Random;
  * <P>NOTE!  This class only does the padding that's normal in Base64
  * if the 'true' flag is given to the encode() method.  This is because
  * Base64 requires that the length of the encoded text be a multiple
- * of four characters, padded with '_'.  Without the 'true' flag, we don't
- * add these '_' characters.
+ * of four characters, padded with '='.  Without the 'true' flag, we don't
+ * add these '=' characters.
  *
  * @author Stephen Blackheath
  */
@@ -104,15 +104,15 @@ public class Base64
       case 1: outLen -= 2; break;
       case 2: outLen -= 1; break;
     }
-      // Pad with '~' signs up to a multiple of four if requested.
+      // Pad with '=' signs up to a multiple of four if requested.
     if (equalsPad)
       while (outLen < out.length)
-        out[outLen++] = '_';
+        out[outLen++] = '=';
     return new String(out, 0, outLen);
   }
 
   /**
-   * Handles the standards-compliant (padded with '~' signs) as well as our
+   * Handles the standards-compliant (padded with '=' signs) as well as our
    * shortened form.
    */
   public static byte[] decode(String inStr)
@@ -123,7 +123,7 @@ public class Base64
       int inLength = in.length;
 
         // Strip trailing equals signs.
-      while ((inLength > 0) && (in[inLength-1] == '_'))
+      while ((inLength > 0) && (in[inLength-1] == '='))
         inLength--;
 
       int blocks = inLength/4;

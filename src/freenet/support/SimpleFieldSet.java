@@ -503,7 +503,7 @@ public class SimpleFieldSet {
 		}
 	}
 
-	public long getInt(String key, int def) {
+	public int getInt(String key, int def) {
 		String s = get(key);
 		if(s == null) return def;
 		try {
