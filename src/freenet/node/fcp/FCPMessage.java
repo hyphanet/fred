@@ -52,12 +52,16 @@ public abstract class FCPMessage {
 			return new GetRequestStatusMessage(fs);
 		if(name.equals(ListPeersMessage.name))
 			return new ListPeersMessage(fs);
+		if(name.equals(ListPeerNotesMessage.name))
+			return new ListPeerNotesMessage(fs);
 		if(name.equals(ListPersistentRequestsMessage.name))
 			return new ListPersistentRequestsMessage(fs);
 		if(name.equals(ModifyConfig.name))
 			return new ModifyConfig(fs);
 		if(name.equals(ModifyPeer.name))
 			return new ModifyPeer(fs);
+		if(name.equals(ModifyPeerNote.name))
+			return new ModifyPeerNote(fs);
 		if(name.equals(ModifyPersistentRequest.name))
 			return new ModifyPersistentRequest(fs);
 		if(name.equals(RemovePeer.name))
