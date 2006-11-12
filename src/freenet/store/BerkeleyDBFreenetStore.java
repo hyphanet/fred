@@ -82,6 +82,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final Object lastRecentlyUsedSync = new Object();
 	
 	private boolean closed;
+	private boolean reallyClosed;
 	private final static byte[] dummy = new byte[0];
 	
 	public static BerkeleyDBFreenetStore construct(int lastVersion, File baseStoreDir, boolean isStore, 
@@ -1794,6 +1795,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	}
     }
     
+    private Object closeLock = new Object();
+    
     private void close(boolean sleep) {
     	try{
 			// FIXME: 	we should be sure all access to the database has stopped
@@ -1803,46 +1806,57 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		logMINOR = Logger.shouldLog(Logger.MINOR, this);
     		if(logMINOR) Logger.minor(this, "Closing database.");
 			closed=true;
-			// Give all threads some time to complete
-			if(sleep)
-				Thread.sleep(5000);
-			try {
-				if(chkStore != null)
-					chkStore.close();
-			} catch (Throwable t) {
-				System.err.println("Caught closing database: "+t);
-				t.printStackTrace();
+			if(reallyClosed) {
+				Logger.normal(this, "Already closed");
+				return;
 			}
-			try {
-				if(chkDB_accessTime != null)
-					chkDB_accessTime.close();
-			} catch (Throwable t) {
-				System.err.println("Caught closing database: "+t);
-				t.printStackTrace();
+			synchronized(closeLock) {
+				if(reallyClosed) {
+					Logger.normal(this, "Already closed");
+					return;
+				}
+				// Give all threads some time to complete
+				if(sleep)
+					Thread.sleep(5000);
+				try {
+					if(chkStore != null)
+						chkStore.close();
+				} catch (Throwable t) {
+					System.err.println("Caught closing database: "+t);
+					t.printStackTrace();
+				}
+				try {
+					if(chkDB_accessTime != null)
+						chkDB_accessTime.close();
+				} catch (Throwable t) {
+					System.err.println("Caught closing database: "+t);
+					t.printStackTrace();
+				}
+				try {
+					if(chkDB_blockNum != null)
+						chkDB_blockNum.close();
+				} catch (Throwable t) {
+					System.err.println("Caught closing database: "+t);
+					t.printStackTrace();
+				}
+				try {	
+					if(chkDB != null)
+						chkDB.close();
+				} catch (Throwable t) {
+					System.err.println("Caught closing database: "+t);
+					t.printStackTrace();
+				}
+				try {
+					if(environment != null)
+						environment.close();
+				} catch (Throwable t) {
+					System.err.println("Caught closing database: "+t);
+					t.printStackTrace();
+				}
+				if(logMINOR) Logger.minor(this, "Closing database finished.");
+				System.err.println("Closed database");
+				reallyClosed = true;
 			}
-    		try {
-    			if(chkDB_blockNum != null)
-    				chkDB_blockNum.close();
-    		} catch (Throwable t) {
-				System.err.println("Caught closing database: "+t);
-				t.printStackTrace();
-			}
-    		try {	
-    			if(chkDB != null)
-    				chkDB.close();
-    		} catch (Throwable t) {
-				System.err.println("Caught closing database: "+t);
-				t.printStackTrace();
-			}
-    		try {
-    			if(environment != null)
-    				environment.close();
-    		} catch (Throwable t) {
-				System.err.println("Caught closing database: "+t);
-				t.printStackTrace();
-			}
-    		if(logMINOR) Logger.minor(this, "Closing database finished.");
-    		System.err.println("Closed database");
 		}catch(Exception ex){
 			Logger.error(this,"Error while closing database.",ex);
 			ex.printStackTrace();
