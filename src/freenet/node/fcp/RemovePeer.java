@@ -29,7 +29,7 @@ public class RemovePeer extends FCPMessage {
 		String nodeIdentifier = fs.get("NodeIdentifier");
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
-			ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_NODE_IDENTIFIER, false, null, nodeIdentifier);
+			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier);
 			handler.outputHandler.queue(msg);
 			return;
 		}

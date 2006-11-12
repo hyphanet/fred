@@ -40,7 +40,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int NOT_SUPPORTED = 16;
 	static final int INTERNAL_ERROR = 17;
 	static final int SHUTTING_DOWN = 18;
-	static final int NO_SUCH_NODE_IDENTIFIER = 19;
+	static final int NO_SUCH_NODE_IDENTIFIER = 19;  // Unused
 	static final int URL_PARSE_ERROR = 20;
 	static final int REF_PARSE_ERROR = 21;
 	static final int FILE_PARSE_ERROR = 22;
@@ -81,7 +81,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Could not write file";
 		case COULD_NOT_RENAME_FILE:
 			return "Could not rename file";
-		case NO_SUCH_IDENTIFIER:
+		case NO_SUCH_IDENTIFIER:  // Unused
 			return "No such identifier";
 		case NOT_SUPPORTED:
 			return "Not supported";
