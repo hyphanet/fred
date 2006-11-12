@@ -335,18 +335,17 @@ public class USKFetcher implements ClientGetState {
 				}
 			}
 			cancelBefore(curLatest);
-
-			if(l == null) return;
-			// If we schedule them here, we don't get icky recursion problems.
-			else if(!cancelled) {
-				for(Iterator i=l.iterator();i.hasNext();) {
-					// We may be called recursively through onSuccess().
-					// So don't start obsolete requests.
-					USKAttempt a = (USKAttempt) i.next();
-					lastEd = uskManager.lookup(origUSK);
-					if((lastEd <= a.number) && !a.cancelled)
-						a.schedule();
-				}
+		}
+		if(l == null) return;
+		// If we schedule them here, we don't get icky recursion problems.
+		else if(!cancelled) {
+			for(Iterator i=l.iterator();i.hasNext();) {
+				// We may be called recursively through onSuccess().
+				// So don't start obsolete requests.
+				USKAttempt a = (USKAttempt) i.next();
+				lastEd = uskManager.lookup(origUSK);
+				if((lastEd <= a.number) && !a.cancelled)
+					a.schedule();
 			}
 		}
 	}
@@ -435,7 +434,8 @@ public class USKFetcher implements ClientGetState {
 				add(i);
 			attempts = (USKAttempt[]) runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
 			started = true;
-		if(!cancelled)
+		}
+		if(!cancelled) {
 			for(int i=0;i<attempts.length;i++) {
 				// Race conditions happen here and waste a lot more time than this simple check.
 				long lastEd = uskManager.lookup(origUSK);
