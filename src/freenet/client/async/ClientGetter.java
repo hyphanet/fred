@@ -71,7 +71,7 @@ public class ClientGetter extends BaseClientGetter {
 					currentState = null;
 					cancelled = false;
 				}
-				// Possibility for deadlock?
+				// FIXME Possibility for deadlock?
 				currentState = SingleFileFetcher.create(this, this, new ClientMetadata(),
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, null, true,
 						returnBucket, true);
