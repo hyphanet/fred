@@ -1555,21 +1555,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	
         	writeBlock(header, data, t, routingkeyDBE);
         	
-        	long blockNum;
-        	if((blockNum = grabFreeBlock()) >= 0) {
-        		writeNewBlock(blockNum, header, data, t, routingkeyDBE);
-        	} else if(chkBlocksInStore<maxChkBlocks) {
-        		// Expand the store file
-        		synchronized(chkBlocksInStoreLock) {
-        			blockNum = chkBlocksInStore;
-        			chkBlocksInStore++;
-        		}
-        		// Just in case
-        		freeBlocks.remove(blockNum);
-        		writeNewBlock(blockNum, header, data, t, routingkeyDBE);
-        	}else{
-        		overwriteLRUBlock(header, data, t, routingkeyDBE);
-	        }
     		t.commit();
     		t = null;
         	
