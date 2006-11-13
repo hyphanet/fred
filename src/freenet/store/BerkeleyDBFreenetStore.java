@@ -1748,7 +1748,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
    			
    		}
    		
-		
 	}
 
 	private long grabFreeBlock() {
