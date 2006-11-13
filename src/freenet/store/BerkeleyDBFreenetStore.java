@@ -1648,7 +1648,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(success == OperationStatus.KEYEXIST) {
 				System.err.println("Trying to overwrite block "+blockNum+" but already used");
 				return false;
-			} else throw e;
+			} else {
+				Logger.minor(this, "Key doesn't exist for block num "+blockNum+" but caught "+e, e);
+				throw e;
+			}
 		}
 		synchronized(chkStore) {
 			try {
