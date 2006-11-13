@@ -563,6 +563,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.err.println("Checking for holes in database...");
 		long holes = 0;
 		long maxPresent = 0;
+		freeBlocks.clear();
 		for(long i=0;i<blocksInFile;i++) {
 			Long blockNo = new Long(i);
 			DatabaseEntry blockNumEntry = new DatabaseEntry();
@@ -581,6 +582,20 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			System.err.println("Checked "+i+" blocks, found "+holes+" holes");
 		}
 		System.err.println("Checked database, found "+holes+" holes");
+		long bound = maxPresent+1;
+		if(bound < chkBlocksInStore) {
+			System.err.println("Truncating to "+bound+" as no non-holes after that point");
+			try {
+				chkStore.setLength(bound * (dataBlockSize + headerBlockSize));
+				chkBlocksInStore = bound;
+				for(long l=bound;l<chkBlocksInStore;l++)
+					freeBlocks.remove(l);
+			} catch (IOException e) {
+				Logger.error(this, "Unable to truncate!: "+e, e);
+				System.err.println("Unable to truncate: "+e);
+				e.printStackTrace();
+			}
+		}
 		return maxPresent+1;
 	}
 
@@ -591,7 +606,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		else {
 			if(chkBlocksInStore * 0.9 > maxChkBlocks) {
 				Logger.error(this, "Doing quick and indiscriminate online shrink. Offline shrinks will preserve the LRU, this doesn't.");
-				maybeQuickShrink(dontCheck);
+				maybeQuickShrink(dontCheck, false);
 			} else {
 				Logger.error(this, "Online shrink only supported for small deltas because online shrink does not preserve LRU order. Suggest you restart the node.");
 			}
@@ -602,13 +617,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		Vector wantedKeep = new Vector(); // keep; content is wanted, and is in the right place
 		Vector unwantedIgnore = new Vector(); // ignore; content is not wanted, and is not in the right place
 		Vector wantedMove = new Vector(); // content is wanted, but is in the wrong part of the store
-		Vector unwantedMove = new Vector(); // content is not wanted, but is in the wrong part of the store
+		Vector unwantedMove = new Vector(); // content is not wanted, but is in the part of the store we will keep
 		
     	Cursor c = null;
     	Transaction t = null;
 
     	long newSize = maxChkBlocks;
     	if(chkBlocksInStore < maxChkBlocks) return;
+    	
+    	checkForHoles(maxChkBlocks);
     	
     	WrapperManager.signalStarting(24*60*60*1000);
     	
@@ -639,10 +656,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				long block = storeBlock.offset;
 				if(storeBlock.offset > Integer.MAX_VALUE) {
 					// 2^31 * blockSize; ~ 70TB for CHKs, 2TB for the others
-					System.err.println("Store too big, doing quick shrink");
+					System.err.println("Store too big, doing quick shrink"); // memory usage would be insane
 					c.close();
 					c = null;
-					maybeQuickShrink(false);
+					maybeQuickShrink(false, false);
 					return;
 				}
 				Integer blockNum = new Integer((int)storeBlock.offset);
@@ -692,6 +709,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	Integer[] unwantedIgnoreNums = (Integer[]) unwantedIgnore.toArray(new Integer[unwantedIgnore.size()]);
     	Integer[] wantedMoveNums = (Integer[]) wantedMove.toArray(new Integer[wantedMove.size()]);
     	Integer[] unwantedMoveNums = (Integer[]) unwantedMove.toArray(new Integer[unwantedMove.size()]);
+    	long[] freeEarlySlots = freeBlocks.toArray();
     	Arrays.sort(wantedKeepNums);
     	Arrays.sort(unwantedIgnoreNums);
     	Arrays.sort(wantedMoveNums);
@@ -711,6 +729,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	System.err.println("Keys which will be wiped anyway: "+unwantedIgnoreNums.length);
     	System.err.println("Keys to move:                    "+wantedMoveNums.length);
     	System.err.println("Keys to be moved over:           "+unwantedMoveNums.length);
+    	System.err.println("Free slots to be moved over:     "+freeEarlySlots.length);
     	
     	// Now move all the wantedMove blocks onto the corresponding unwantedMove's.
     	
@@ -720,26 +739,39 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	t = environment.beginTransaction(null,null);
     	for(int i=0;i<wantedMove.size();i++) {
     		Integer wantedBlock = wantedMoveNums[i];
-    		if(unwantedMove.size() < i+1) {
+    		
+    		Integer unwantedBlock;
+    		
+    		// Can we move over an empty slot?
+    		if(i < freeEarlySlots.length) {
+    			// Don't need to delete old block
+    			unwantedBlock = new Integer((int) freeEarlySlots[i]); // will fit in an int
+    		} else if(unwantedMoveNums.length + freeEarlySlots.length > i) {
+        		unwantedBlock = unwantedMoveNums[i-freeEarlySlots.length];
+        		// Delete unwantedBlock from the store
+        		DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
+        		longTupleBinding.objectToEntry(unwantedBlock, unwantedBlockEntry);
+        		// Delete the old block from the database.
+        		chkDB_blockNum.delete(t, unwantedBlockEntry);
+    		} else {
     			System.err.println("Keys to move but no keys to move over! Moved "+i);
     			t.commit();
     			t = null;
     			return;
     		}
-    		Integer unwantedBlock = unwantedMoveNums[i];
-    		// Delete unwantedBlock from the store
+    		// Move old data to new location
+
     		DatabaseEntry wantedBlockEntry = new DatabaseEntry();
     		longTupleBinding.objectToEntry(wantedBlock, wantedBlockEntry);
-    		DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
-    		longTupleBinding.objectToEntry(unwantedBlock, unwantedBlockEntry);
-    		// Delete the old block from the database.
-    		chkDB_blockNum.delete(t, unwantedBlockEntry);
     		long seekTo = wantedBlock.longValue() * (headerBlockSize + dataBlockSize);
     		chkStore.seek(seekTo);
     		chkStore.readFully(buf);
     		seekTo = unwantedBlock.longValue() * (headerBlockSize + dataBlockSize);
     		chkStore.seek(seekTo);
     		chkStore.write(buf);
+    		
+    		// Update the database w.r.t. the old block.
+    		
     		DatabaseEntry routingKeyDBE = new DatabaseEntry();
     		DatabaseEntry blockDBE = new DatabaseEntry();
     		chkDB_blockNum.get(t, wantedBlockEntry, routingKeyDBE, blockDBE, LockMode.RMW);
@@ -747,6 +779,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		block.offset = unwantedBlock.longValue();
     		storeBlockTupleBinding.objectToEntry(block, blockDBE);
     		chkDB.put(t, routingKeyDBE, blockDBE);
+    		
+    		// Think about committing the transaction.
+    		
     		if((i+1) % 2048 == 0) {
     			t.commit();
     			t = environment.beginTransaction(null,null);
@@ -763,16 +798,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		if(t != null)
     			t.abort();
     	}
-		freeBlocks.clear();
-		for(int i=wantedMoveNums.length;i<unwantedMoveNums.length;i++) {
-			long l = unwantedMoveNums[i].longValue();
-			if(l > newSize) break;
-			addFreeBlock(l, false, "found empty while shrinking");
-		}
-    	maybeQuickShrink(false);
+    	
+    	// If there are any slots left over, they must be free.
+    	freeBlocks.clear();
+    	for(long i=wantedMoveNums.length;i<unwantedMoveNums.length;i++) {
+    		freeBlocks.add(i);
+    	}
+    	
+    	maybeQuickShrink(false, true);
 	}
 	
-	private void maybeQuickShrink(boolean dontCheck) throws DatabaseException, IOException {
+	private void maybeQuickShrink(boolean dontCheck, boolean dontCheckForHoles) throws DatabaseException, IOException {
 		Transaction t = null;
 		try {
 			// long's are not atomic.
@@ -832,8 +868,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					synchronized(this) {
 						maxBlocks = maxChkBlocks;
 						curBlocks = chkBlocksInStore;
-						if(maxBlocks >= curBlocks)
-							return;
+						if(maxBlocks >= curBlocks) break;
 					}
 				}
 			}
@@ -842,6 +877,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			chkBlocksInStore = maxChkBlocks;
 			System.err.println("Successfully shrunk store to "+chkBlocksInStore);
+			
+			if(!dontCheckForHoles)
+				checkForHoles(chkBlocksInStore);
 			
 		} finally {
 			if(t != null) t.abort();
@@ -920,12 +958,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		lastRecentlyUsed = getMaxRecentlyUsed();
 		
 		if(!noCheck) {
-			long len = checkForHoles(chkBlocksInStore);
-			if(len < chkBlocksInStore) {
-				System.err.println("Truncating to "+len+" as no non-holes after that point");
-				chkStore.setLength(len * (dataBlockSize + headerBlockSize));
-				chkBlocksInStore = len;
-			}
+			checkForHoles(chkBlocksInStore);
 			maybeShrink(true, true);
 		}
 		
@@ -1520,7 +1553,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	t = environment.beginTransaction(null,null);
         	DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
         	
-        	// FIXME use the free blocks list!
+        	writeBlock(header, data, t, routingkeyDBE);
         	
         	long blockNum;
         	if((blockNum = grabFreeBlock()) >= 0) {
@@ -1531,6 +1564,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         			blockNum = chkBlocksInStore;
         			chkBlocksInStore++;
         		}
+        		// Just in case
+        		freeBlocks.remove(blockNum);
         		writeNewBlock(blockNum, header, data, t, routingkeyDBE);
         	}else{
         		overwriteLRUBlock(header, data, t, routingkeyDBE);
@@ -1578,12 +1613,26 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
-	private void writeNewBlock(long blockNum, byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE) throws DatabaseException, IOException {
+	private boolean writeNewBlock(long blockNum, byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE) throws DatabaseException, IOException {
 		long byteOffset = blockNum*(dataBlockSize+headerBlockSize);
 		StoreBlock storeBlock = new StoreBlock(this, blockNum);
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
-		chkDB.put(t,routingkeyDBE,blockDBE);
+		try {
+			chkDB.put(t,routingkeyDBE,blockDBE);
+		} catch (DatabaseException e) {
+			DatabaseEntry blockNumEntry = new DatabaseEntry();
+			DatabaseEntry found = new DatabaseEntry();
+			longTupleBinding.objectToEntry(new Long(blockNum), blockNumEntry);
+			
+			OperationStatus success = 
+				chkDB_blockNum.get(t, blockNumEntry, found, LockMode.DEFAULT);
+
+			if(success == OperationStatus.KEYEXIST) {
+				System.err.println("Trying to overwrite block "+blockNum+" but already used");
+				return false;
+			} else throw e;
+		}
 		synchronized(chkStore) {
 			try {
 				chkStore.seek(byteOffset);
@@ -1598,6 +1647,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			chkStore.write(header);
 			chkStore.write(data);
 		}
+		return true;
 	}
 
 	private synchronized void checkSecondaryDatabaseError(Throwable ex) {
@@ -1650,21 +1700,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	t = environment.beginTransaction(null,null);
         	DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
         	
-        	synchronized(chkStore) {
-        		long blockNum;
-            	if((blockNum = grabFreeBlock()) >= 0) {
-            		writeNewBlock(blockNum, dummy, data, t, routingkeyDBE);
-            	} else if(chkBlocksInStore<maxChkBlocks) {
-            		// Expand the store file
-            		synchronized(chkBlocksInStoreLock) {
-            			blockNum = chkBlocksInStore;
-            			chkBlocksInStore++;
-            		}
-            		writeNewBlock(blockNum, dummy, data, t, routingkeyDBE);
-	        	}else{
-	        		overwriteLRUBlock(dummy, data, t, routingkeyDBE);
-	        	}
-        	}
+        	writeBlock(dummy, data, t, routingkeyDBE);
+        	
     		t.commit();
     		t = null;
         	
@@ -1686,7 +1723,35 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         }
     }
     
-    private long grabFreeBlock() {
+    private void writeBlock(byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE) throws DatabaseException, IOException {
+    	
+   		long blockNum;
+   		
+   		while(true) {
+   	       	if((blockNum = grabFreeBlock()) >= 0) {
+   	       		if(writeNewBlock(blockNum, header, data, t, routingkeyDBE))
+   	       			return;
+   	       	} else if(chkBlocksInStore<maxChkBlocks) {
+   	       		// Expand the store file
+   	       		synchronized(chkBlocksInStoreLock) {
+   	       			blockNum = chkBlocksInStore;
+   	       			chkBlocksInStore++;
+   	       		}
+   	       		// Just in case
+   	       		freeBlocks.remove(blockNum);
+   	       		if(writeNewBlock(blockNum, header, data, t, routingkeyDBE))
+   	       			return;
+   	       	}else{
+   	       		overwriteLRUBlock(header, data, t, routingkeyDBE);
+   	       		return;
+   	       	}
+   			
+   		}
+   		
+		
+	}
+
+	private long grabFreeBlock() {
     	while(!freeBlocks.isEmpty()) {
     		long blockNum = freeBlocks.removeFirst();
     		if(blockNum < maxChkBlocks) return blockNum;
