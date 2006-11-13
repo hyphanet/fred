@@ -120,4 +120,10 @@ public class SortedLongSet {
 		length = 0;
 	}
 
+	public long[] toArray() {
+		long[] output = new long[length];
+		System.arraycopy(data, 0, output, 0, length);
+		return output;
+	}
+
 }
