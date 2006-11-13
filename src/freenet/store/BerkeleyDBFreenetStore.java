@@ -189,7 +189,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 				oldEnv.close();
 
-				tmp.checkForHoles(tmp.countCHKBlocksFromFile());
+				tmp.checkForHoles(tmp.countCHKBlocksFromFile(), false);
 				tmp.maybeShrink(true, true);
 				
 			} else {
@@ -527,7 +527,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					}
 					throw new DatabaseException("Keys in database: "+chkBlocksInStore+" but keys in file: "+chkBlocksFromFile);
 				} else if(!noCheck) {
-					long len = checkForHoles(chkBlocksFromFile);
+					long len = checkForHoles(chkBlocksFromFile, false);
 					if(len < chkBlocksFromFile) {
 						System.err.println("Truncating to "+len+" as no non-holes after that point");
 						chkStore.setLength(len * (dataBlockSize + headerBlockSize));
@@ -559,7 +559,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
-	private long checkForHoles(long blocksInFile) throws DatabaseException {
+	private long checkForHoles(long blocksInFile, boolean dontTruncate) throws DatabaseException {
 		System.err.println("Checking for holes in database...");
 		long holes = 0;
 		long maxPresent = 0;
@@ -583,20 +583,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 		System.err.println("Checked database, found "+holes+" holes");
 		long bound = maxPresent+1;
-		if(bound < chkBlocksInStore) {
-			System.err.println("Truncating to "+bound+" as no non-holes after that point");
-			try {
-				chkStore.setLength(bound * (dataBlockSize + headerBlockSize));
-				chkBlocksInStore = bound;
-				for(long l=bound;l<chkBlocksInStore;l++)
-					freeBlocks.remove(l);
-			} catch (IOException e) {
-				Logger.error(this, "Unable to truncate!: "+e, e);
-				System.err.println("Unable to truncate: "+e);
-				e.printStackTrace();
+		if(!dontTruncate) {
+			if(bound < chkBlocksInStore) {
+				System.err.println("Truncating to "+bound+" as no non-holes after that point");
+				try {
+					chkStore.setLength(bound * (dataBlockSize + headerBlockSize));
+					chkBlocksInStore = bound;
+					for(long l=bound;l<chkBlocksInStore;l++)
+						freeBlocks.remove(l);
+				} catch (IOException e) {
+					Logger.error(this, "Unable to truncate!: "+e, e);
+					System.err.println("Unable to truncate: "+e);
+					e.printStackTrace();
+				}
 			}
 		}
-		return maxPresent+1;
+		return bound;
 	}
 
 	private void maybeShrink(boolean dontCheck, boolean offline) throws DatabaseException, IOException {
@@ -625,7 +627,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	long newSize = maxChkBlocks;
     	if(chkBlocksInStore < maxChkBlocks) return;
     	
-    	checkForHoles(maxChkBlocks);
+    	chkBlocksInStore = checkForHoles(maxChkBlocks, true);
     	
     	WrapperManager.signalStarting(24*60*60*1000);
     	
@@ -665,6 +667,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				Integer blockNum = new Integer((int)storeBlock.offset);
 				//Long seqNum = new Long(storeBlock.recentlyUsed);
 				//System.out.println("#"+x+" seq "+seqNum+": block "+blockNum);
+				if(blockNum.longValue() > chkBlocksInStore) {
+					// Truncated already?
+					continue;
+				}
 				if(x < newSize) {
 					// Wanted
 					if(block < newSize) {
@@ -764,8 +770,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		DatabaseEntry wantedBlockEntry = new DatabaseEntry();
     		longTupleBinding.objectToEntry(wantedBlock, wantedBlockEntry);
     		long seekTo = wantedBlock.longValue() * (headerBlockSize + dataBlockSize);
-    		chkStore.seek(seekTo);
-    		chkStore.readFully(buf);
+    		try {
+    			chkStore.seek(seekTo);
+    			chkStore.readFully(buf);
+    		} catch (EOFException e) {
+    			System.err.println("Was reading "+wantedBlock+" to write to "+unwantedBlock);
+    			System.err.println(e);
+    			e.printStackTrace();
+    			throw e;
+    		}
     		seekTo = unwantedBlock.longValue() * (headerBlockSize + dataBlockSize);
     		chkStore.seek(seekTo);
     		chkStore.write(buf);
@@ -879,7 +892,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			System.err.println("Successfully shrunk store to "+chkBlocksInStore);
 			
 			if(!dontCheckForHoles)
-				checkForHoles(chkBlocksInStore);
+				checkForHoles(chkBlocksInStore, false);
 			
 		} finally {
 			if(t != null) t.abort();
@@ -958,7 +971,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		lastRecentlyUsed = getMaxRecentlyUsed();
 		
 		if(!noCheck) {
-			checkForHoles(chkBlocksInStore);
+			checkForHoles(chkBlocksInStore, false);
 			maybeShrink(true, true);
 		}
 		
