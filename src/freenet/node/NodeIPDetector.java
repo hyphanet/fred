@@ -359,7 +359,7 @@ public class NodeIPDetector {
 		
 		// Include local IPs in noderef file
 		
-		nodeConfig.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, false, "Include local addresses in noderef", "Whether to include local addresses (LAN and localhost) in node references. This will not be useful unless the other side sets metadata.allowLocalAddresses=true for this reference.", new BooleanCallback() {
+		nodeConfig.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, false, "Include local addresses in noderef", "Whether to include local addresses (LAN and localhost) in node references. This will not be useful unless the both sides set allowLocalAddresses=true for the respective references (use the Darknet page in advanced mode to set this flag).", new BooleanCallback() {
 
 			public boolean get() {
 				return includeLocalAddressesInNoderefs;
