@@ -620,6 +620,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		Vector unwantedIgnore = new Vector(); // ignore; content is not wanted, and is not in the right place
 		Vector wantedMove = new Vector(); // content is wanted, but is in the wrong part of the store
 		Vector unwantedMove = new Vector(); // content is not wanted, but is in the part of the store we will keep
+		Vector alreadyDropped = new Vector(); // any blocks past the end which have already been truncated, but which there are still database blocks pointing to
 		
     	Cursor c = null;
     	Transaction t = null;
@@ -667,9 +668,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				Integer blockNum = new Integer((int)storeBlock.offset);
 				//Long seqNum = new Long(storeBlock.recentlyUsed);
 				//System.out.println("#"+x+" seq "+seqNum+": block "+blockNum);
-				if(blockNum.longValue() > chkBlocksInStore) {
+				if(blockNum.longValue() >= chkBlocksInStore) {
 					// Truncated already?
 					Logger.minor(this, "Truncated already? "+blockNum.longValue());
+					alreadyDropped.add(blockNum);
+					
 				} else if(x < newSize) {
 					// Wanted
 					if(block < newSize) {
@@ -742,6 +745,23 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	t = null;
     	try {
     	t = environment.beginTransaction(null,null);
+    	if(alreadyDropped.size() > 0) {
+    		System.err.println("Deleting "+alreadyDropped.size()+" blocks beyond the length of the file");
+    		for(int i=0;i<alreadyDropped.size();i++) {
+    			Integer unwantedBlock = (Integer) alreadyDropped.get(i);
+    			DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
+    			longTupleBinding.objectToEntry(unwantedBlock, unwantedBlockEntry);
+    			chkDB_blockNum.delete(t, unwantedBlockEntry);
+    			if(i % 1024 == 0) {
+    				t.commit();
+    				t = environment.beginTransaction(null,null);
+    			}
+    		}
+    		if(alreadyDropped.size() % 1024 != 0) {
+    			t.commit();
+    			t = environment.beginTransaction(null,null);
+    		}
+    	}
     	for(int i=0;i<wantedMove.size();i++) {
     		Integer wantedBlock = wantedMoveNums[i];
     		
