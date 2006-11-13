@@ -669,9 +669,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				//System.out.println("#"+x+" seq "+seqNum+": block "+blockNum);
 				if(blockNum.longValue() > chkBlocksInStore) {
 					// Truncated already?
-					continue;
-				}
-				if(x < newSize) {
+					Logger.minor(this, "Truncated already? "+blockNum.longValue());
+				} else if(x < newSize) {
 					// Wanted
 					if(block < newSize) {
 						//System.out.println("Keep where it is: block "+blockNum+" seq # "+x+" / "+newSize);
