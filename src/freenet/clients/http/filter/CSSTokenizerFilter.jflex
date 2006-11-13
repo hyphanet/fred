@@ -196,7 +196,7 @@ import java.util.*;
 	String commentEncode(String s) {
 		StringBuffer sb = new StringBuffer(s.length());
 		for(int i=0;i<s.length();i++) {
-			char c = sb.charAt(i);
+			char c = s.charAt(i);
 			if(c == '/')
 				sb.append("\\/");
 			else
