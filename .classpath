@@ -3,5 +3,6 @@
 	<classpathentry excluding="freenet/node/*Test.java|org/spaceroots/mantissa/random/MersenneTwisterTest.java|test/**" kind="src" path="src"/>
 	<classpathentry exported="true" kind="lib" path="lib/freenet-ext.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/home/nextgens/src/freenet/freenet-ext.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

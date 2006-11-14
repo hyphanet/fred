@@ -4,14 +4,12 @@ package freenet.support;
  * Size formatting utility.
  */
 public class SizeUtil {
+	public static String[] suffixes = {"B", "KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB"};
 
 	public static String formatSize(long sz) {
-		// First determine suffix
-		
-		String[] suffixes = {"B", "KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB"};
 		long s = 1;
 		int i;
-		for(i=0;i<suffixes.length;i++) {
+		for(i=0;i<SizeUtil.suffixes.length;i++) {
 			s *= 1024;
 			if(s > sz) {
 				break;
@@ -22,7 +20,7 @@ public class SizeUtil {
 		s /= 1024; // we use the previous unit
 		if (s == 1)  // Bytes? Then we don't need real numbers with a comma
 		{
-			return sz + " " + suffixes[0];
+			return sz + " " + SizeUtil.suffixes[0];
 		}
 		else
 		{
@@ -32,7 +30,8 @@ public class SizeUtil {
 				o = o.substring(0, 3);
 			else if((o.indexOf('.') > -1) && (o.indexOf('E') == -1) && (o.length() > 4))
 				o = o.substring(0, 4);
-			o += " " + suffixes[i];
+			if(i < SizeUtil.suffixes.length) // handle the case where the mantissa is Infinity
+				o += " " + SizeUtil.suffixes[i];
 			return o;
 		}
 	}
