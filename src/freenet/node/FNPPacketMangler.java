@@ -284,7 +284,6 @@ public class FNPPacketMangler implements LowLevelFilter {
         	}
         }else if (negType == 1){
         	// We are gonna do simple StS
-        	System.out.println("STS packet in! "+packetType);
         
         	if((packetType < 0) || (packetType > 3)) {
         		Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
