@@ -628,7 +628,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	long newSize = maxChkBlocks;
     	if(chkBlocksInStore < maxChkBlocks) return;
     	
-    	chkBlocksInStore = checkForHoles(maxChkBlocks, true);
+    	checkForHoles(maxChkBlocks, true);
     	
     	WrapperManager.signalStarting(24*60*60*1000);
     	
@@ -655,7 +655,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			int x = 0;
 			while(true) {
 		    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
-				//Logger.minor(this, "Found another key ("+(x++)+") ("+storeBlock.offset+")");
 				long block = storeBlock.offset;
 				if(storeBlock.offset > Integer.MAX_VALUE) {
 					// 2^31 * blockSize; ~ 70TB for CHKs, 2TB for the others
@@ -668,42 +667,44 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				Integer blockNum = new Integer((int)storeBlock.offset);
 				//Long seqNum = new Long(storeBlock.recentlyUsed);
 				//System.out.println("#"+x+" seq "+seqNum+": block "+blockNum);
-				if(blockNum.longValue() >= chkBlocksInStore) {
+				if(blockNum.longValue() >= realSize) {
 					// Truncated already?
 					Logger.minor(this, "Truncated already? "+blockNum.longValue());
 					alreadyDropped.add(blockNum);
 					
-				} else if(x < newSize) {
-					// Wanted
-					if(block < newSize) {
-						//System.out.println("Keep where it is: block "+blockNum+" seq # "+x+" / "+newSize);
-						wantedKeep.add(blockNum);
-					} else {
-						//System.out.println("Move to where it should go: "+blockNum+" seq # "+x+" / "+newSize);
-						wantedMove.add(blockNum);
-					}
 				} else {
-					// Unwanted
-					if(block < newSize) {
-						//System.out.println("Overwrite: "+blockNum+" seq # "+x+" / "+newSize);
-						unwantedMove.add(blockNum);
+					if(x < newSize) {
+						// Wanted
+						if(block < newSize) {
+							//System.out.println("Keep where it is: block "+blockNum+" seq # "+x+" / "+newSize);
+							wantedKeep.add(blockNum);
+						} else {
+							//System.out.println("Move to where it should go: "+blockNum+" seq # "+x+" / "+newSize);
+							wantedMove.add(blockNum);
+						}
 					} else {
-						//System.out.println("Ignore, will be wiped: block "+blockNum+" seq # "+x+" / "+newSize);
-						unwantedIgnore.add(blockNum);
+						// Unwanted
+						if(block < newSize) {
+							//System.out.println("Overwrite: "+blockNum+" seq # "+x+" / "+newSize);
+							unwantedMove.add(blockNum);
+						} else {
+							//System.out.println("Ignore, will be wiped: block "+blockNum+" seq # "+x+" / "+newSize);
+							unwantedIgnore.add(blockNum);
+						}
+					}
+					x++;
+					if(x % 1024 == 0) {
+						System.out.println("Reading store prior to shrink: "+(x*100/realSize)+ "% ( "+x+"/"+realSize+")");
+					}
+					if(x == Integer.MAX_VALUE) {
+						System.err.println("Key number "+x+" - ignoring store after "+(x*(dataBlockSize+headerBlockSize)+" bytes"));
+						break;
 					}
 				}
 				
 				opStat = c.getPrev(keyDBE, blockDBE, LockMode.RMW);
 				if(opStat == OperationStatus.NOTFOUND) {
 					System.out.println("Read store: "+x+" keys.");
-					break;
-				}
-				x++;
-				if(x % 1024 == 0) {
-					System.out.println("Reading store prior to shrink: "+(x*100/chkBlocksInStore)+ "% ( "+x+"/"+chkBlocksInStore+")");
-				}
-				if(x == Integer.MAX_VALUE) {
-					System.err.println("Key number "+x+" - ignoring store after "+(x*(dataBlockSize+headerBlockSize)+" bytes"));
 					break;
 				}
 			}
@@ -762,7 +763,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     			t = environment.beginTransaction(null,null);
     		}
     	}
-    	for(int i=0;i<wantedMove.size();i++) {
+    	for(int i=0;i<wantedMoveNums.length;i++) {
     		Integer wantedBlock = wantedMoveNums[i];
     		
     		Integer unwantedBlock;
@@ -833,8 +834,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	// If there are any slots left over, they must be free.
     	freeBlocks.clear();
-    	for(long i=wantedMoveNums.length;i<unwantedMoveNums.length;i++) {
-    		freeBlocks.add(i);
+    	for(int i=wantedMoveNums.length;i<unwantedMoveNums.length+freeEarlySlots.length;i++) {
+    		if(i < freeEarlySlots.length) {
+    			addFreeBlock(freeEarlySlots[i], false, "early slot "+i);
+    		} else {
+    			addFreeBlock(unwantedMoveNums[i-freeEarlySlots.length].longValue(), false, "unwanted "+(i-freeEarlySlots.length));
+    		}
     	}
     	
     	maybeQuickShrink(false, true);
@@ -935,10 +940,28 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.maxChkBlocks=maxChkBlocks;
 		this.environment = env;
 		
+		// Delete old database(s).
+		try {
+			environment.removeDatabase(null, prefix+"CHK");
+		} catch (DatabaseException e) {
+			Logger.error(this, "Could not remove old database: "+e, e);
+		}
+		try {
+			environment.removeDatabase(null, prefix+"CHK_accessTime");
+		} catch (DatabaseException e) {
+			Logger.error(this, "Could not remove old database accesstime: "+e, e);
+		}
+		try {
+			environment.removeDatabase(null, prefix+"CHK_blockNum");
+		} catch (DatabaseException e) {
+			Logger.error(this, "Could not remove old database blocknum: "+e, e);
+		}
+		
 		// Initialize CHK database
 		DatabaseConfig dbConfig = new DatabaseConfig();
 		dbConfig.setAllowCreate(true);
 		dbConfig.setTransactional(true);
+		
 		chkDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
 		
 		this.fixSecondaryFile = fixSecondaryFile;
@@ -1645,7 +1668,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			OperationStatus success = 
 				chkDB_blockNum.get(t, blockNumEntry, found, LockMode.DEFAULT);
 
-			if(success == OperationStatus.KEYEXIST) {
+			if(success == OperationStatus.KEYEXIST || success == OperationStatus.SUCCESS) {
 				System.err.println("Trying to overwrite block "+blockNum+" but already used");
 				return false;
 			} else {
