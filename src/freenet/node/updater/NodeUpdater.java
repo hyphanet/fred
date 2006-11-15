@@ -52,7 +52,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private final FreenetURI URI;
 	private final FreenetURI revocationURI;
 	private final Ticker ticker;
-	private final NodeClientCore core;
+	public final NodeClientCore core;
 	private final Node node;
 	
 	private final int currentVersion;
@@ -74,6 +74,16 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	
 	public NodeUpdater(Node n, boolean isAutoUpdateAllowed, FreenetURI URI, FreenetURI revocationURI) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(URI.lastMetaString() != null && URI.lastMetaString().length() == 0) {
+			// FIXME remove this hack, put in because of bad default
+			System.err.println("Correcting auto-update URI: Removing extra /");
+			URI = URI.popMetaString();
+		}
+		if(revocationURI.lastMetaString() != null && revocationURI.lastMetaString().length() == 0) {
+			// FIXME remove this hack, put in because of bad default
+			System.err.println("Correcting auto-update revocation URI: Removing extra /");
+			revocationURI = revocationURI.popMetaString();
+		}
 		this.URI = URI;
 		URI.setSuggestedEdition(Version.buildNumber()+1);
 		this.revocationURI = revocationURI;
@@ -225,7 +235,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			System.err.println("Searching for revocation key");
 			this.queueFetchRevocation(100);
 			while(revocationDNFCounter < NodeUpdater.REVOCATION_DNF_MIN) {
-				System.err.println("Revocation counter: "+revocationDNFCounter);
 				if(this.hasBeenBlown) {
 					Logger.error(this, "The revocation key has been found on the network : blocking auto-update");
 					return;
@@ -484,6 +493,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				maybeUpdate();
 			} else {
 				Logger.error(this, "Canceling fetch : "+ e.getMessage());
+				System.err.println("Unexpected error fetching update: "+e.getMessage());
 			}
 		}else{
 			Logger.minor(this, "Revocation fetch failed: "+e);

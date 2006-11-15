@@ -377,9 +377,13 @@ public class FreenetURI implements Cloneable{
 	}
 
 	public String getMetaString() {
-		return ((metaStr == null) || (metaStr.length == 0) ? null : metaStr[0]);
+		return ((metaStr == null) || (metaStr.length == 0)) ? null : metaStr[0];
 	}
 
+	public String lastMetaString() {
+		return ((metaStr == null ) || (metaStr.length == 0)) ? null : metaStr[metaStr.length-1]; 
+	}
+	
 	public String[] getAllMetaStrings() {
 		return metaStr;
 	}

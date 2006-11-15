@@ -98,10 +98,6 @@ public class WelcomeToadlet extends Toadlet {
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}else if (request.getPartAsString("update", 32).length() > 0) {
-			if(noPassword) {
-				redirectToRoot(ctx);
-				return;
-			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Update");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Update"));
