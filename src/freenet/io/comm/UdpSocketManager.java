@@ -637,6 +637,12 @@ public class UdpSocketManager extends Thread {
      * @return The maximum packet size supported by this SocketManager.
      */
     public int getMaxPacketSize() {
-        return 1476-(20+8); // 1476 = GRE, minus IP headers (20), minus UDP headers (8)
+    	/**
+    	 * 28 bytes for UDP/IP.
+    	 * WinXP maximum for PPTP is 1400. Subtract 28 to get the MSS.
+    	 * Did consider 1476 (GRE) minus 28, but this will cause trouble for many VPN users.
+    	 * Of course, some VPN users have under 1000, but we can't please everyone!
+    	 */
+    	return 1400-28;
     }
 }
