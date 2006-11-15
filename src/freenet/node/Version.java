@@ -38,10 +38,17 @@ public class Version {
 		transitionTime = _cal.getTimeInMillis();
 	}
 	
+	/**
+	 * @return The build number (not SVN revision number) of this node.
+	 */
 	public static final int buildNumber() {
 		return buildNumber;
 	}
-	
+
+	/**
+	 * @return The lowest build number with which the node will connect and exchange
+	 * data normally.
+	 */
 	public static final int lastGoodBuild() {
 		if(System.currentTimeMillis() > transitionTime)
 			return newLastGoodBuild;
