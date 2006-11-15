@@ -700,8 +700,9 @@ public class Node {
 	 Node(FreenetFilePersistentConfig config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
 		// Easy stuff
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		Logger.normal(this, "Initializing Node using SVN r"+Version.cvsRevision+" and freenet-ext r"+NodeStarter.extRevisionNumber);
-		System.out.println("Initializing Node using SVN r"+Version.cvsRevision+" and freenet-ext r"+NodeStarter.extRevisionNumber);
+		String tmp = "Initializing Node using SVN r"+Version.cvsRevision+" ("+Version.buildNumber()+") and freenet-ext r"+NodeStarter.extRevisionNumber;
+		Logger.normal(this, tmp);
+		System.out.println(tmp);
 		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0);
 	  	nodeStarter=ns;
 		if(logConfigHandler != lc)
