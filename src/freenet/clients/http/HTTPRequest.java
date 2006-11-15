@@ -1,6 +1,7 @@
 package freenet.clients.http;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -521,6 +522,7 @@ public class HTTPRequest {
 			// we can only give an upper bound for the size of the bucket
 			filedata = this.bucketfactory.makeBucket(bis.available());
 			OutputStream bucketos = filedata.getOutputStream();
+			OutputStream bbos = new BufferedOutputStream(bucketos, 32768);
 			// buffer characters that match the boundary so far
 			// FIXME use whatever charset was used
 			byte[] bbound = boundary.getBytes("UTF-8"); // ISO-8859-1? boundary should be in US-ASCII
@@ -533,19 +535,19 @@ public class HTTPRequest {
 				} else if ((b != bbound[offset]) && (offset > 0)) {
 					// offset bytes matched, but no more
 					// write the bytes that matched, then the non-matching byte
-					bucketos.write(bbound, 0, offset);
-					bucketos.write((int) b & 0xff);
+					bbos.write(bbound, 0, offset);
+					bbos.write((int) b & 0xff);
 					offset = 0;
 				} else {
-					bucketos.write((int) b & 0xff);
+					bbos.write((int) b & 0xff);
 				}
 			}
 			
-			bucketos.close();
+			bbos.close();
 			
-			this.parts.put(name, filedata);
+			parts.put(name, filedata);
 			if (filename != null) {
-				this.uploadedFiles.put(name, new File(filename, contentType, filedata));
+				uploadedFiles.put(name, new File(filename, contentType, filedata));
 			}
 		}
 	}
