@@ -67,6 +67,7 @@ public class TempBucketFactory implements BucketFactory {
 		throws IOException {
 		logDebug = Logger.shouldLog(Logger.DEBUG,this);
 		File f = filenameGenerator.makeRandomFilename();
+		if(f == null) throw new NullPointerException();
 
 		return new TempFileBucket(f, hook, size, increment, factor);
 	}
