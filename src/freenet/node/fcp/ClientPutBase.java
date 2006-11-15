@@ -324,7 +324,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	}
 	
 	public synchronized boolean isTotalFinalized() {
-		return true;
+		if(!(progressMessage instanceof SimpleProgressMessage)) return false;
+		else return ((SimpleProgressMessage)progressMessage).isTotalFinalized();
 	}
 	
 	public synchronized String getFailureReason() {
