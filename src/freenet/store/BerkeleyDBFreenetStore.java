@@ -152,6 +152,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			if(oldDBDir.exists()) {
 				
+				System.err.println("Old database dir exists, migrating...");
 				// Try to open old database with new store file.
 				// If database is invalid, do below.
 				// Otherwise, copy data from old database to new database.
@@ -179,6 +180,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				Database oldChkDB = oldEnv.openDatabase(null,"CHK",dbConfig);
 				
 				// Open the new store
+				// Don't reconstruct yet
 				tmp = openStore(storeEnvironment, newDBPrefix, storeFile, newFixSecondaryFile, maxStoreKeys,
 							blockSize, headerSize, false, true, lastVersion, type, true, storeShutdownHook);
 				
@@ -189,7 +191,20 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 				oldEnv.close();
 
+				// Now do we need to reconstruct?
+				
+				if(throwOnTooFewKeys && tmp.shouldReconstruct()) {
+					tmp.close(false);
+					System.err.println("Attempting to reconstruct after migration...");
+					WrapperManager.signalStarting(5*60*60*1000);
+					
+					// Reconstruct
+					
+					tmp = new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile, maxStoreKeys, blockSize, headerSize, type, true, storeShutdownHook);
+				}
+				
 				tmp.checkForHoles(tmp.countCHKBlocksFromFile(), false);
+				
 				tmp.maybeShrink(true, true);
 				
 			} else {
@@ -198,7 +213,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				// Reconstruct the new database from the store file which is now in the right place.
 				
 				tmp = openStore(storeEnvironment, newDBPrefix, storeFile, newFixSecondaryFile, maxStoreKeys,
-						blockSize, headerSize, true, false, lastVersion, type, false, storeShutdownHook);
+						blockSize, headerSize, throwOnTooFewKeys, false, lastVersion, type, false, storeShutdownHook);
 				
 			}
 			
@@ -208,7 +223,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Start from scratch, with new store.
 			
 			tmp = openStore(storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile, maxStoreKeys,
-					blockSize, headerSize, true, false, lastVersion, type, false, storeShutdownHook);
+					blockSize, headerSize, throwOnTooFewKeys, false, lastVersion, type, false, storeShutdownHook);
 			
 		}
 
@@ -216,6 +231,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		deleteOldStoreDir(baseStoreDir, oldDBDir, oldDir, oldDirName, random);
 		
 		return tmp;
+	}
+
+	private boolean shouldReconstruct() throws DatabaseException, IOException {
+		long chkBlocksInDatabase = countCHKBlocksFromDatabase();
+		long chkBlocksFromFile;
+		try {
+			chkBlocksFromFile = countCHKBlocksFromFile();
+		} catch (IOException e) {
+			System.err.println("Cannot determine number of blocks in file: "+e);
+			e.printStackTrace();
+			Logger.error(this, "Cannot determine number of blocks in file: "+e, e);
+			throw e;
+		}
+		
+		return (((chkBlocksInDatabase == 0) && (chkBlocksFromFile != 0)) ||
+				(((chkBlocksInDatabase + 10) * 1.1) < chkBlocksFromFile));
 	}
 
 	private static void migrateTuples(Environment oldEnv, Database oldChkDB, BerkeleyDBFreenetStore newStore) throws DatabaseException {
