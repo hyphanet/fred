@@ -162,6 +162,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			try{
 				if((cg==null)||cg.isCancelled()){
 					if(logMINOR) Logger.minor(this, "Scheduling request for "+URI.setSuggestedEdition(availableVersion));
+					System.err.println("Starting fetch for "+availableVersion);
 					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, 
 							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.UPDATE_PRIORITY_CLASS, 
 							this, new ArrayBucket());
@@ -315,7 +316,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			return;
 		}
 		
-		System.out.println("################## New jar written! "+cg.getURI().getSuggestedEdition()+ " " +fNew.getAbsolutePath());
+		System.out.println("################## New jar written! "+fetchedVersion+ " " +fNew.getAbsolutePath());
 
 		if(!nastyRestart) {
 			// Easy way.
@@ -429,7 +430,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			Logger.normal(this, "Found a new version! (" + fetchingVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
 			alert.set(availableVersion,fetchingVersion,true);
 			alert.isValid(true);
-			this.cg = state;
+			this.cg = null;
 			if(this.result != null) this.result.asBucket().free();
 			this.result = result;
 			if(this.isAutoUpdateAllowed) {
@@ -470,7 +471,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		if(!state.getURI().equals(revocationURI)){
 			if(logMINOR) Logger.minor(this, "onFailure("+e+","+state+")");
 			synchronized(this) {
-				this.cg = state;
+				this.cg = null;
 				isFetching=false;
 			}
 			state.cancel();
