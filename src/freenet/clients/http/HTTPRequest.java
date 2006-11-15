@@ -1,5 +1,6 @@
 package freenet.clients.http;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -457,11 +458,12 @@ public class HTTPRequest {
 		boundary = "--"+boundary;
 		
 		InputStream is = this.data.getInputStream();
-		LineReadingInputStream lis = new LineReadingInputStream(is);
+		BufferedInputStream bis = new BufferedInputStream(is, 32768);
+		LineReadingInputStream lis = new LineReadingInputStream(bis);
 		
 		String line;
 		line = lis.readLine(100, 100, false); // really it's US-ASCII, but ISO-8859-1 is close enough.
-		while ((is.available() > 0) && !line.equals(boundary)) {
+		while ((bis.available() > 0) && !line.equals(boundary)) {
 			line = lis.readLine(100, 100, false);
 		}
 		
@@ -472,7 +474,7 @@ public class HTTPRequest {
 		String filename = null;
 		String contentType = null;
 		
-		while(is.available() > 0) {
+		while(bis.available() > 0) {
 			name = null;
 			filename = null;
 			contentType = null;
@@ -517,13 +519,14 @@ public class HTTPRequest {
 			// boundary string
 			
 			// we can only give an upper bound for the size of the bucket
-			filedata = this.bucketfactory.makeBucket(is.available());
+			filedata = this.bucketfactory.makeBucket(bis.available());
 			OutputStream bucketos = filedata.getOutputStream();
 			// buffer characters that match the boundary so far
+			// FIXME use whatever charset was used
 			byte[] bbound = boundary.getBytes("UTF-8"); // ISO-8859-1? boundary should be in US-ASCII
 			int offset = 0;
-			while ((is.available() > 0) && (offset < bbound.length)) {
-				byte b = (byte)is.read();
+			while ((bis.available() > 0) && (offset < bbound.length)) {
+				byte b = (byte)bis.read();
 				
 				if (b == bbound[offset]) {
 					offset++;
