@@ -637,6 +637,6 @@ public class UdpSocketManager extends Thread {
      * @return The maximum packet size supported by this SocketManager.
      */
     public int getMaxPacketSize() {
-        return 1400; // REDFLAG: Reasonable?
+        return 1492-(20+8); // 1492 = PPPoE, minus IP headers (20), minus UDP headers (8)
     }
 }
