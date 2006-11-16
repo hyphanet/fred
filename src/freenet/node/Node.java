@@ -3306,4 +3306,8 @@ public class Node {
 			nextRoutableConnectionStatsUpdateTime = now + routableConnectionStatsUpdateInterval;
 		}
 	}
+
+	public Ticker getTicker() {
+		return ps;
+	}
 }
