@@ -4,7 +4,7 @@
 package freenet.crypt;
 
 import java.math.BigInteger;
-import java.util.Random;
+import java.util.SecureRandom;
 
 import freenet.support.Logger;
 
@@ -63,7 +63,7 @@ public class DSA {
 		BigInteger s=kInv.multiply(s1).mod(g.getQ());
 		if((r.compareTo(BigInteger.ZERO) == 0) || (s.compareTo(BigInteger.ZERO) == 0)) {
 			Logger.normal(DSA.class, "R or S equals 0 : Weird behaviour detected, please report if seen too often.");
-			return sign(g, x, r, generateK(g, new Random()), m);
+			return sign(g, x, r, generateK(g, new SecureRandom()), m);
 		}
 		return new DSASignature(r,s);
 	}
