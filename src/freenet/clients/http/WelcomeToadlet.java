@@ -118,7 +118,7 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			if(node.isUsingWrapper()){
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Thread Dump generation"));
-				ctx.getPageMaker().getContentNode(infobox).addChild("#", "A thread dump has been generated, it's aviable in "+ WrapperManager.getProperties().getProperty("wrapper.logfile"));
+				ctx.getPageMaker().getContentNode(infobox).addChild("#", "A thread dump has been generated, it's available in "+ WrapperManager.getProperties().getProperty("wrapper.logfile"));
 				System.out.println("Thread Dump:");
 				WrapperManager.requestThreadDump();
 			}else{
