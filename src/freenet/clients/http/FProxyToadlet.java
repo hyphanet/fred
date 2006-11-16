@@ -102,7 +102,7 @@ public class FProxyToadlet extends Toadlet {
 			
 			if (forceDownload) {
 				MultiValueTable headers = new MultiValueTable();
-				headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + "\"");
+				headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + '"');
 				context.sendReplyHeaders(200, "OK", headers, "application/x-msdownload", data.size());
 				context.writeData(data);
 			} else {
@@ -133,7 +133,7 @@ public class FProxyToadlet extends Toadlet {
 			option.addChild("#", " to force your browser to download the file to disk.");
 			option = optionList.addChild("li");
 			option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now)+extras, "Click here");
-			option.addChild("#", " to open the file as " + mimeType + ".");
+			option.addChild("#", " to open the file as " + mimeType + '.');
 			option = optionList.addChild("li");
 			option.addChild("a", "href", "/", "Click here");
 			option.addChild("#", " to go to the FProxy home page.");
@@ -230,7 +230,7 @@ public class FProxyToadlet extends Toadlet {
 		}
 		try {
 			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+")");
+				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
 			FetchResult result = fetch(key, maxSize);
 			
 			// Now, is it safe?
@@ -245,9 +245,9 @@ public class FProxyToadlet extends Toadlet {
 			String msg = e.getMessage();
 			String extra = "";
 			if(e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) {
-				this.writePermanentRedirect(ctx, "Not enough meta-strings", "/" + URLEncoder.encode(key.toString(false)) + "/");
+				this.writePermanentRedirect(ctx, "Not enough meta-strings", '/' + URLEncoder.encode(key.toString(false)) + '/');
 			} else if(e.newURI != null) {
-				this.writePermanentRedirect(ctx, msg, "/"+e.newURI.toString());
+				this.writePermanentRedirect(ctx, msg, '/' +e.newURI.toString());
 			} else if(e.mode == FetchException.TOO_BIG) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode("File information");
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -258,7 +258,7 @@ public class FProxyToadlet extends Toadlet {
 				HTMLNode fileInformationList = infoboxContent.addChild("ul");
 				HTMLNode option = fileInformationList.addChild("li");
 				option.addChild("#", "Filename: ");
-				option.addChild("a", "href", "/" + key.toString(false), getFilename(e, key, e.getExpectedMimeType()));
+				option.addChild("a", "href", '/' + key.toString(false), getFilename(e, key, e.getExpectedMimeType()));
 
 				boolean finalized = e.finalizedSize();
 				if(e.expectedSize > 0) {
@@ -287,7 +287,7 @@ public class FProxyToadlet extends Toadlet {
 				infoboxContent.addChild("#", "The Freenet key you requested refers to a large file. Files of this size cannot generally be sent directly to your browser since they take too long for your Freenet node to retrieve. The following options are available:");
 				HTMLNode optionList = infoboxContent.addChild("ul");
 				option = optionList.addChild("li");
-				HTMLNode optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] { "/" + key.toString(false), "get" });
+				HTMLNode optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] {'/' + key.toString(false), "get" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", "Fetch anyway and display file in browser" });
 				option = optionList.addChild("li");
@@ -430,16 +430,16 @@ public class FProxyToadlet extends Toadlet {
 		if(ext == null)
 			ext = "bin";
 		if((dotIdx == -1) && (expectedMimeType != null)) {
-			s += "." + ext;
+			s += '.' + ext;
 			return s;
 		}
 		if(dotIdx != -1) {
 			String oldExt = s.substring(dotIdx+1);
 			if(DefaultMIMETypes.isValidExt(expectedMimeType, oldExt))
 				return s;
-			return s + "." + ext;
+			return s + '.' + ext;
 		}
-		return s + "." + ext;
+		return s + '.' + ext;
 	}
 	
 	private String getFilename(FetchException e, FreenetURI uri) {

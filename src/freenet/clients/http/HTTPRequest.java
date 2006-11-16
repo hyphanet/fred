@@ -97,7 +97,7 @@ public class HTTPRequest {
 		this.parts = null;
 		this.bucketfactory = null;
 		if ((encodedQueryString!=null) && (encodedQueryString.length()>0)) {
-			this.uri = new URI(path+"?"+encodedQueryString);
+			this.uri = new URI(path+ '?' +encodedQueryString);
 		} else {
 			this.uri = new URI(path);
 		}
@@ -224,7 +224,7 @@ public class HTTPRequest {
 			} catch (URLEncodedFormatException e) {
 				// if we fail to decode the name or value we fail spectacularly
 				String msg = "Failed to decode request parameter " + name
-						+ " with value '" + value + "'";
+						+ " with value '" + value + '\'';
 				throw new RuntimeException(msg, e);
 			}
 		}

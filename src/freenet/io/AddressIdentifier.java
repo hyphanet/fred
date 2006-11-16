@@ -66,7 +66,7 @@ public class AddressIdentifier {
 			return AddressType.IPv4;
 		}
 		String wordRegex = "([0-9a-fA-F]{1,4})";
-		String ipv6AddressRegex = wordRegex + "?:" + wordRegex + ":" + wordRegex + ":" + wordRegex + ":" + wordRegex + ":" + wordRegex + ":" + wordRegex + ":" + wordRegex;
+		String ipv6AddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex;
 		if (Pattern.matches(ipv6AddressRegex, address)) {
 			return AddressType.IPv6;
 		}

@@ -60,7 +60,7 @@ public class IOStatisticCollector {
 			totalbytesout += (outbytes>0)?outbytes:0;
 			totalbytesin += (inbytes>0)?inbytes:0;
 			if(Logger.shouldLog(Logger.MINOR, IOStatisticCollector.class))
-				Logger.minor(IOStatisticCollector.class, "Add("+key+","+inbytes+","+outbytes+" -> "+totalbytesin+" : "+totalbytesout);
+				Logger.minor(IOStatisticCollector.class, "Add("+key+ ',' +inbytes+ ',' +outbytes+" -> "+totalbytesin+" : "+totalbytesout);
 		}
 	}
 	
@@ -138,8 +138,8 @@ public class IOStatisticCollector {
 				int in = (int) ((tin*10.0) / (divby*(i+1)));
 				int out =(int) ((tout*10.0) /(divby*(i+1)));
 				
-				System.err.print("i:" + (in/10) + "." + (in%10));
-				System.err.print(" o:" + (out/10) + "." + (out%10));
+				System.err.print("i:" + (in/10) + '.' + (in%10));
+				System.err.print(" o:" + (out/10) + '.' + (out%10));
 				System.err.print(" \t");
 			}
 			System.err.println();

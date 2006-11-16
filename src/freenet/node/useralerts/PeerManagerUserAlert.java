@@ -75,7 +75,7 @@ public class PeerManagerUserAlert implements UserAlert {
 	static final String NO_PEERS_LOG_ONTO_IRC = 
 		" log on to irc.freenode.net channel #freenet-refs and ask around for somebody to connect to";
 	static final String NO_PEERS_TESTNET = NO_PEERS_START +
-		", but since this is a testnet node, we suggest that you " + NO_PEERS_LOG_ONTO_IRC + ".";
+		", but since this is a testnet node, we suggest that you " + NO_PEERS_LOG_ONTO_IRC + '.';
 	static final String NO_PEERS_DARKNET = NO_PEERS_START +
 		". You could " + NO_PEERS_LOG_ONTO_IRC + ", but remember that you are vulnerable to " +
 		"those you are directly connected to. (This is especially true in this early alpha of Freenet 0.7...)\n" +

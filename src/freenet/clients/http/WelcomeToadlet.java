@@ -65,7 +65,7 @@ public class WelcomeToadlet extends Toadlet {
 		String passwd = request.getPartAsString("formPassword", 32);
 		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
 		if(noPassword) {
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "No password ("+passwd+" should be "+core.formPassword+")");
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "No password ("+passwd+" should be "+core.formPassword+ ')');
 		}
 		
 		if(request.getPartAsString("updateconfirm", 32).length() > 0){
@@ -335,7 +335,7 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Insert Succeeded"));
 				content = ctx.getPageMaker().getContentNode(infobox);
 				content.addChild("#", "The key ");
-				content.addChild("a", "href", "/" + key.getKeyType() + "@" + key.getGuessableKey(), key.getKeyType() + "@" + key.getGuessableKey());
+				content.addChild("a", "href", '/' + key.getKeyType() + '@' + key.getGuessableKey(), key.getKeyType() + '@' + key.getGuessableKey());
 				content.addChild("#", " has been inserted successfully.");
 			} catch (InserterException e) {
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", "Insert Failed"));
@@ -469,7 +469,7 @@ public class WelcomeToadlet extends Toadlet {
 					HTMLNode bookmark = bookmarkList.addChild("li", "style", "clear: right;"); /* TODO */
 					bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "delete_" + b.hashCode(), "Delete", "float: right;" });
 					bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "edit_" + b.hashCode(), "Edit", "float: right;" });
-					bookmark.addChild("a", "href", "/" + b.getKey(), b.getDesc());
+					bookmark.addChild("a", "href", '/' + b.getKey(), b.getDesc());
 				}
 				manageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 				manageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
@@ -546,7 +546,7 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode bookmarkList = bookmarkContent.addChild("ul", "id", "bookmarks");
 			while (e.hasMoreElements()) {
 				Bookmark b = (Bookmark)e.nextElement();
-				bookmarkList.addChild("li").addChild("a", "href", "/" + b.getKey(), b.getDesc());
+				bookmarkList.addChild("li").addChild("a", "href", '/' + b.getKey(), b.getDesc());
 			}
 		}
 		bookmarkContent.addChild("div", "id", "bookmarkedit").addChild("a", new String[] { "href", "class" }, new String[] { "?managebookmarks", "interfacelink" }, "Edit my bookmarks");

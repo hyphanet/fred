@@ -187,10 +187,10 @@ public class Message {
 		for (Iterator i = _spec.getFields().keySet().iterator(); i.hasNext();) {
 			ret.append(comma);
 			String name = (String) i.next();
-            ret.append(name).append("=").append(_payload.get(name));
+            ret.append(name).append('=').append(_payload.get(name));
 			comma = ", ";
 		}
-		ret.append("}");
+		ret.append('}');
 		return ret.toString();
 	}
 

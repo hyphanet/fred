@@ -85,10 +85,10 @@ public class HexUtil {
 			throw new IndexOutOfBoundsException(
 				"Output buffer too small for input ("
 					+ out.length
-					+ "<"
-					+ off
+					+ '<'
+                        + off
 					+ slen / 2
-					+ ")");
+					+ ')');
 		}
 
 		// Safe to assume the string is even length
@@ -125,7 +125,7 @@ public class HexUtil {
 			b[i] = (byte)s;
 		}
 		if(logDEBUG) Logger.debug(HexUtil.class, "bytes: "+bytesAlloc+" returned from bitsToBytes("
-				+ba+","+size+"): "+bytesToHex(b)+" for "+sb.toString());
+				+ba+ ',' +size+"): "+bytesToHex(b)+" for "+sb.toString());
 		return b;
 	}
 

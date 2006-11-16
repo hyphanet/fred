@@ -77,7 +77,7 @@ public class PproxyToadlet extends Toadlet {
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-query");
 			infobox.addChild("div", "class", "infobox-header", "Unload plugin?");
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-			infoboxContent.addChild("#", "Are you sure you wish to unload " + request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH) + "?");
+			infoboxContent.addChild("#", "Are you sure you wish to unload " + request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH) + '?');
 			HTMLNode unloadForm = infoboxContent.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });

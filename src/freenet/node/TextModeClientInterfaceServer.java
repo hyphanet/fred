@@ -77,8 +77,8 @@ public class TextModeClientInterfaceServer implements Runnable {
 
 		if(TMCIEnabled){
 			new TextModeClientInterfaceServer(node, port, bind_ip, allowedHosts).start();
-			Logger.normal(core, "TMCI started on "+bind_ip+":"+port);
-			System.out.println("TMCI started on "+bind_ip+":"+port);
+			Logger.normal(core, "TMCI started on "+bind_ip+ ':' +port);
+			System.out.println("TMCI started on "+bind_ip+ ':' +port);
 		}
 		else{
 			Logger.normal(core, "Not starting TMCI as it's disabled");
@@ -219,8 +219,8 @@ public class TextModeClientInterfaceServer implements Runnable {
     		try {
     			networkInterface = new NetworkInterface(curPort, tempBindTo, allowedHosts);
     		} catch (IOException e) {
-    			Logger.error(this, "Could not bind to TMCI port: "+tempBindTo+":"+port);
-    			System.err.println("Could not bind to TMCI port: "+tempBindTo+":"+port);
+    			Logger.error(this, "Could not bind to TMCI port: "+tempBindTo+ ':' +port);
+    			System.err.println("Could not bind to TMCI port: "+tempBindTo+ ':' +port);
     			return;
     		}
     		try {

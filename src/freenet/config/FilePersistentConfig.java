@@ -114,7 +114,7 @@ public class FilePersistentConfig extends Config {
 		Iterator i = origConfigFileContents.keyIterator();
 		while(i.hasNext()) {
 			String key = (String) i.next();
-			Logger.error(this, "Unknown option: "+key+" (value="+origConfigFileContents.get(key)+")");
+			Logger.error(this, "Unknown option: "+key+" (value="+origConfigFileContents.get(key)+ ')');
 		}
 		origConfigFileContents = null;
 	}
@@ -191,7 +191,7 @@ public class FilePersistentConfig extends Config {
 		String val, name;
 		synchronized(this) {
 			if(finishedInit)
-				throw new IllegalStateException("onRegister("+config+":"+o+") called after finishedInit() !!");
+				throw new IllegalStateException("onRegister("+config+ ':' +o+") called after finishedInit() !!");
 			if(origConfigFileContents == null) return;
 			name = config.prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+o.name;
 			val = origConfigFileContents.get(name);

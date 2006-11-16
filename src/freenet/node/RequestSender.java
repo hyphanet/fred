@@ -355,10 +355,10 @@ public final class RequestSender implements Runnable, ByteCounter {
     					((NodeSSK)key).setPubKey(pubKey);
     				} catch (SSKVerifyException e) {
     					pubKey = null;
-    					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+")", e);
+    					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
     					break; // try next node
     				} catch (IOException e) {
-    					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+")");
+    					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
     					break; // try next node
     				}
     				if(sskData != null) {
@@ -517,7 +517,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     }
     
     private void finish(int code, PeerNode next) {
-    	if(logMINOR) Logger.minor(this, "finish("+code+")");
+    	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;

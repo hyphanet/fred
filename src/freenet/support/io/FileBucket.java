@@ -72,8 +72,8 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		file =
 			new File(
 				tempDir,
-				"t"
-					+ Integer.toHexString(
+                    't'
+                            + Integer.toHexString(
 						Math.abs(random.nextInt())));
 		// Useful for finding temp file leaks.
 		//System.err.println("-- FileBucket.ctr(1) -- " +
@@ -342,7 +342,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 	}
 	
 	public synchronized String toString() {
-		return super.toString()+":"+file.getPath();
+		return super.toString()+ ':' +file.getPath();
 	}
 
 	public synchronized SimpleFieldSet toFieldSet() {

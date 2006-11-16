@@ -140,7 +140,7 @@ public class FCPConnectionHandler {
 
 	public void startClientPut(ClientPutMessage message) {
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Starting insert ID=\""+message.identifier+"\"");
+			Logger.minor(this, "Starting insert ID=\""+message.identifier+ '"');
 		String id = message.identifier;
 		ClientPut cp = null;
 		boolean success;

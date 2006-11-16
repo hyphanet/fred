@@ -58,7 +58,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLNode explanation = new HTMLNode("p");
 			explanation.addChild("b", "Unknown character set!");
 			explanation.addChild("#", " The page you are about to display has an unknown character set. This means that we are not able to filter the page, and it may compromize your anonymity.");
-			throw new DataFilterException("Warning: Unknown character set ("+charset+")", "Warning: Unknown character set ("+HTMLEncoder.encode(charset)+")",
+			throw new DataFilterException("Warning: Unknown character set ("+charset+ ')', "Warning: Unknown character set ("+HTMLEncoder.encode(charset)+ ')',
 					"<p><b>Unknown character set</b> The page you are about to display has an unknown character set. "+
 					"This means that we are not able to filter the page, and it may compromize your anonymity.", explanation);
 		}
@@ -503,7 +503,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						}
 					}
 					if (safe)
-						err += element + " ";
+						err += element + ' ';
 					err += "-->";
 					// FIXME: Hmmm, why did we just do all this, err is not
 					// used beyond this point... (avian)

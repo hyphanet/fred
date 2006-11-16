@@ -80,7 +80,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	        		
 	        		ret.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, null, f.length()));
 	        	} else if(filelist[i].isDirectory()) {
-	        		HashMap subdir = makeBucketsByName(new File(thisdir, filelist[i].getName()), prefix + filelist[i].getName() + "/" );
+	        		HashMap subdir = makeBucketsByName(new File(thisdir, filelist[i].getName()), prefix + filelist[i].getName() + '/');
 	        		ret.put(filelist[i].getName(), subdir);
 	        	} else if(!allowUnreadableFiles) {
 	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not directory and not file: "+filelist[i], identifier);

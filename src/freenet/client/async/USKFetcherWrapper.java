@@ -49,6 +49,6 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
 	public String toString() {
-		return super.toString()+":"+usk;
+		return super.toString()+ ':' +usk;
 	}
 }

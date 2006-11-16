@@ -345,7 +345,7 @@ public class Metadata implements Cloneable {
 			byte[] buf = new byte[len];
 			dis.readFully(buf);
 			nameInArchive = new String(buf, "UTF-8");
-			if(logMINOR) Logger.minor(this, "Zip internal redirect: "+nameInArchive+" ("+len+")");
+			if(logMINOR) Logger.minor(this, "Zip internal redirect: "+nameInArchive+" ("+len+ ')');
 		}
 	}
 	

@@ -502,7 +502,7 @@ class SingleFileInserter implements ClientPutState {
 					// Otherwise, wait until the data is fetchable (to improve persistence).
 					if(!(dataFetchable || earlyEncode)) return;
 				}
-				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+")");
+				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+ ')');
 			} catch (InserterException e1) {
 				cb.onFailure(e1, this);
 				return;
@@ -592,7 +592,7 @@ class SingleFileInserter implements ClientPutState {
 
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 
-			if(logMINOR) Logger.minor(this, "onFetchable("+state+")");
+			if(logMINOR) Logger.minor(this, "onFetchable("+state+ ')');
 			
 			boolean meta;
 			

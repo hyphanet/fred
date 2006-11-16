@@ -52,7 +52,7 @@ public class AddPeer extends FCPMessage {
 				String line;
 				while((line = in.readLine()) != null) {
 					line = line.trim();
-					ref.append( line ).append( "\n" );
+					ref.append( line ).append('\n');
 				}
 				in.close();
 			} catch (MalformedURLException e) {
@@ -62,10 +62,10 @@ public class AddPeer extends FCPMessage {
 			}
 			ref = new StringBuffer(ref.toString().trim());
 			if(ref == null) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">", null);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+ '>', null);
 			}
 			if(ref.equals("")) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">", null);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+ '>', null);
 			}
 			try {
 				fs = new SimpleFieldSet(ref.toString(), true);
@@ -83,7 +83,7 @@ public class AddPeer extends FCPMessage {
 				String line;
 				while((line = in.readLine()) != null) {
 					line = line.trim();
-					ref.append( line ).append( "\n" );
+					ref.append( line ).append('\n');
 				}
 				in.close();
 			} catch (FileNotFoundException e) {
@@ -93,10 +93,10 @@ public class AddPeer extends FCPMessage {
 			}
 			ref = new StringBuffer(ref.toString().trim());
 			if(ref == null) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">", null);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+ '>', null);
 			}
 			if(ref.equals("")) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">", null);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+ '>', null);
 			}
 			try {
 				fs = new SimpleFieldSet(ref.toString(), true);

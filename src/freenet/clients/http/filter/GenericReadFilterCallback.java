@@ -41,7 +41,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 	
 	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb) {
 		try {
-			this.baseURI = new URI("/" + uri.toString(false));
+			this.baseURI = new URI('/' + uri.toString(false));
 			this.cb = cb;
 		} catch (URISyntaxException e) {
 			throw new Error(e);
@@ -140,7 +140,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		}
 		
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
-			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+"="+uri;	
+			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+ '=' +uri;
 		else {
 			if(uri.getScheme() == null) {
 				throw new CommentException("Invalid freenet URL: "+reason);
@@ -184,7 +184,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// Now what about the queries?
 		HTTPRequest req = new HTTPRequest(uri);
 		if(cb != null) cb.foundURI(furi);
-		return finishProcess(req, overrideType, "/" + furi.toString(false), uri, noRelative);
+		return finishProcess(req, overrideType, '/' + furi.toString(false), uri, noRelative);
 	}
 
 	public String onBaseHref(String baseHref) {

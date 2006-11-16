@@ -566,7 +566,7 @@ public class NativeBigInteger extends BigInteger {
     	String suff = getLibrarySuffix();
     	if((pref == null) || (middle == null) || (suff == null))
     		return null;
-    	return pname+"/"+pref+middle+"."+suff;
+    	return pname+ '/' +pref+middle+ '.' +suff;
     }
     
     private static final String getMiddleName(boolean optimized){
@@ -577,7 +577,7 @@ public class NativeBigInteger extends BigInteger {
     		if(sCPUType == null)
     			return null;
     		else
-    			sAppend = "-"+sCPUType;		
+    			sAppend = '-' +sCPUType;
     	}else
        		sAppend = "-none";
 
@@ -593,7 +593,7 @@ public class NativeBigInteger extends BigInteger {
 			return "jbigi-freebsd"+sAppend; // The convention on freebsd...
 		if(isMacOS)
 			return "jbigi-osx"+sAppend; // The convention on Mac OS X...
-		throw new RuntimeException("Dont know jbigi library name for os type '"+System.getProperty("os.name")+"'");
+		throw new RuntimeException("Dont know jbigi library name for os type '"+System.getProperty("os.name")+ '\'');
     }
     private static final String getLibrarySuffix()
     {

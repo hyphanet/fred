@@ -309,7 +309,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 
 	public String toString() {
-		return super.toString()+":"+bucket.toString();
+		return super.toString()+ ':' +bucket.toString();
 	}
 	
 	public synchronized long size() {

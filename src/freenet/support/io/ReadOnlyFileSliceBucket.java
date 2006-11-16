@@ -58,7 +58,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	}
 
 	public String getName() {
-		return "ROFS:"+file.getAbsolutePath()+":"+startAt+":"+length;
+		return "ROFS:"+file.getAbsolutePath()+ ':' +startAt+ ':' +length;
 	}
 
 	public long size() {

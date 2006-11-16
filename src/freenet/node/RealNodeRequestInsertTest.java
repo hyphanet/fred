@@ -137,13 +137,13 @@ public class RealNodeRequestInsertTest {
                     avg.report(0.0);
                     avg2.report(0.0);
                     double ratio = (double)successes / ((double)(failures+successes));
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" FAILED from "+randomNode.portNumber+" to "+randomNode2.portNumber+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+")");
+                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" FAILED from "+randomNode.portNumber+" to "+randomNode2.portNumber+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
                 } else {
                     successes++;
                     avg.report(1.0);
                     avg2.report(1.0);
                     double ratio = (double)successes / ((double)(failures+successes));
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" success: "+hopsTaken+" "+randomNode.portNumber+" to "+randomNode2.portNumber+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+")");
+                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" success: "+hopsTaken+ ' ' +randomNode.portNumber+" to "+randomNode2.portNumber+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
                 }
                 } catch (Throwable t) {
                     Logger.error(RealNodeRoutingTest.class, "Caught "+t, t);
@@ -158,7 +158,7 @@ public class RealNodeRequestInsertTest {
         System.out.println();
         int requestNumber = 0;
         RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
-        String baseString = "" + System.currentTimeMillis() + " ";
+        String baseString = "" + System.currentTimeMillis() + ' ';
         while(true) {
             try {
                 requestNumber++;

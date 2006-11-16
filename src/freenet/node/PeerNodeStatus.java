@@ -327,7 +327,7 @@ public class PeerNodeStatus {
 	}
 
 	public String toString() {
-		return statusName + " " + peerAddress + ":" + peerPort + " " + name + " " + location + " " + version + " backoff: " + routingBackoffLength + " (" + (Math.max(routingBackedOffUntil - System.currentTimeMillis(), 0)) + ")";
+		return statusName + ' ' + peerAddress + ':' + peerPort + ' ' + name + ' ' + location + ' ' + version + " backoff: " + routingBackoffLength + " (" + (Math.max(routingBackedOffUntil - System.currentTimeMillis(), 0)) + ')';
 	}
 
 	public int hashCode() {

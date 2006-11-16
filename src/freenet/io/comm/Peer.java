@@ -177,7 +177,7 @@ public class Peer implements WritableToDataOutputStream {
 	}
 
 	public String toString() {
-		return addr.toString() + ":" + _port;
+		return addr.toString() + ':' + _port;
 	}
 
 	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {

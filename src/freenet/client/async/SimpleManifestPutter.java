@@ -267,7 +267,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(o instanceof HashMap) {
 				HashMap subMap = new HashMap();
 				putHandlersByName.put(name, subMap);
-				makePutHandlers((HashMap)o, subMap, ZipPrefix+name+"/");
+				makePutHandlers((HashMap)o, subMap, ZipPrefix+name+ '/');
 			} else {
 				ManifestElement element = (ManifestElement) o;
 				String mimeType = element.mimeOverride;
@@ -643,7 +643,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		Iterator i = manifestElements.keySet().iterator();
 		while(i.hasNext()) {
 			String name = (String) i.next();
-			String fullName = prefix.length() == 0 ? name : prefix+"/"+name;
+			String fullName = prefix.length() == 0 ? name : prefix+ '/' +name;
 			Object o = manifestElements.get(name);
 			if(o instanceof HashMap) {
 				flatten((HashMap)o, v, fullName);

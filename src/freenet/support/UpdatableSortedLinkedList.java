@@ -51,7 +51,7 @@ public class UpdatableSortedLinkedList {
                 checkList();
                 return;
             }
-            if(logMINOR) Logger.minor(this, "Not matching "+cur+" "+prev);
+            if(logMINOR) Logger.minor(this, "Not matching "+cur+ ' ' +prev);
             prev = cur;
         }
         throw new IllegalStateException("impossible");
@@ -69,7 +69,7 @@ public class UpdatableSortedLinkedList {
     		UpdatableSortedLinkedListItem i = (UpdatableSortedLinkedListItem) e.nextElement();
     		// Sanity check for infinite looping 
     		if(realLength > 100*1000)
-    			Logger.normal(this, "["+realLength+"] = "+i+" (prev="+i.getPrev()+")");
+    			Logger.normal(this, "["+realLength+"] = "+i+" (prev="+i.getPrev()+ ')');
     		realLength++;
     	}
     	if(statedLength != realLength) {

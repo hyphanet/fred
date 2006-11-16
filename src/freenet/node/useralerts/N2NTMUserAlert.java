@@ -30,7 +30,7 @@ public class N2NTMUserAlert implements UserAlert {
 	}
 
 	public String getTitle() {
-		return "Node To Node Text Message "+fileNumber+" from "+sourcePeerNode.getName()+" ("+sourcePeerNode.getPeer()+")";
+		return "Node To Node Text Message "+fileNumber+" from "+sourcePeerNode.getName()+" ("+sourcePeerNode.getPeer()+ ')';
 	}
 	
 	public String getText() {

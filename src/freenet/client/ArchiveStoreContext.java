@@ -55,7 +55,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		
 		// Fetch from cache
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Checking cache: "+key+" "+internalName);
+			Logger.minor(this, "Checking cache: "+key+ ' ' +internalName);
 		if((data = manager.getCached(key, internalName)) != null) {
 			return data;
 		}	

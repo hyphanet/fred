@@ -101,7 +101,7 @@ public class MessageType {
 	
 	public static MessageType getSpec(Integer specID) {
 		if (!_specs.containsKey(specID)) {
-			Logger.error(MessageType.class, "Unrecognised message type received (" + specID + ")");
+			Logger.error(MessageType.class, "Unrecognised message type received (" + specID + ')');
 			return null;
 		}
 		return (MessageType) _specs.get(specID);

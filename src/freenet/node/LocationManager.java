@@ -593,14 +593,14 @@ class LocationManager {
         
         for(int i=0;i<friendLocs.length;i++) {
             sb.append(friendLocs[i]);
-            sb.append(" ");
+            sb.append(' ');
         }
 
         sb.append("\nhis:\n");
         
         for(int i=0;i<hisFriendLocs.length;i++) {
             sb.append(hisFriendLocs[i]);
-            sb.append(" ");
+            sb.append(' ');
         }
 
         if(logMINOR) Logger.minor(this, sb.toString());
@@ -868,7 +868,7 @@ class LocationManager {
             return true;
         }
         item.lastMessageTime = System.currentTimeMillis();
-        if(logMINOR) Logger.minor(this, "Forwarding SwapCommit "+uid+","+item.outgoingID+" from "+m.getSource()+" to "+item.routedTo);
+        if(logMINOR) Logger.minor(this, "Forwarding SwapCommit "+uid+ ',' +item.outgoingID+" from "+m.getSource()+" to "+item.routedTo);
         // Sending onwards - use outgoing ID
         m.set(DMT.UID, item.outgoingID);
         try {
@@ -885,7 +885,7 @@ class LocationManager {
      */
     public boolean handleSwapComplete(Message m) {
         long uid = m.getLong(DMT.UID);
-        if(logMINOR) Logger.minor(this, "handleSwapComplete("+uid+")");
+        if(logMINOR) Logger.minor(this, "handleSwapComplete("+uid+ ')');
         Long luid = new Long(uid);
         RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
         if(item == null) {
@@ -974,7 +974,7 @@ class LocationManager {
     private final HashMap knownLocs = new HashMap();
     
     void registerLocationLink(double d, double t) {
-    	if(logMINOR) Logger.minor(this, "Known Link: "+d+" "+t);
+    	if(logMINOR) Logger.minor(this, "Known Link: "+d+ ' ' +t);
     }
     
     void registerKnownLocation(double d) {

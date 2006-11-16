@@ -108,7 +108,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
 		String titleCountString = null;
 		if(advancedEnabled) {
-			titleCountString = "(" + numberOfConnected + "/" + numberOfRoutingBackedOff + "/" + numberOfTooNew + "/" + numberOfTooOld + "/" + numberOfNotConnected + ")";
+			titleCountString = "(" + numberOfConnected + '/' + numberOfRoutingBackedOff + '/' + numberOfTooNew + '/' + numberOfTooOld + '/' + numberOfNotConnected + ')';
 		} else {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
@@ -381,7 +381,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						if (peerNodeStatus.isConnected()) {
 							pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms)";
 						}
-						peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ":" + peerNodeStatus.getPeerPort()) : ("(unknown address)")) + pingTime);
+						peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : ("(unknown address)")) + pingTime);
 					}
 
 					// version column
@@ -405,8 +405,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						if ((backoff > 0) && (backoff < 1000)) {
 							backoff = 1000;
 						}
-						backoffCell.addChild("#", " " + String.valueOf(backoff / 1000) + "/" + String.valueOf(peerNodeStatus.getRoutingBackoffLength() / 1000));
-						backoffCell.addChild("#", (peerNodeStatus.getLastBackoffReason() == null) ? "" : ("/" + (peerNodeStatus.getLastBackoffReason())));
+						backoffCell.addChild("#", ' ' + String.valueOf(backoff / 1000) + '/' + String.valueOf(peerNodeStatus.getRoutingBackoffLength() / 1000));
+						backoffCell.addChild("#", (peerNodeStatus.getLastBackoffReason() == null) ? "" : ('/' + (peerNodeStatus.getLastBackoffReason())));
 
 						// overload probability column
 						HTMLNode pRejectCell = peerRow.addChild("td", "class", "peer-backoff"); // FIXME
@@ -554,7 +554,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+")");
+			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+ ')');
 			return;
 		}
 		
@@ -580,7 +580,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
 					String line;
 					while ( (line = in.readLine()) != null) {
-						ref.append( line ).append( "\n" );
+						ref.append( line ).append('\n');
 					}
 				} catch (IOException e) {
 					this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to retrieve node reference from " + urltext + ". Please try again.");

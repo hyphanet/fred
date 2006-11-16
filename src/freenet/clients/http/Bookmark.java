@@ -48,6 +48,6 @@ public class Bookmark {
 		}
 		
 		public String toString() {
-			return this.key.toString() + "=" + this.desc;
+			return this.key.toString() + '=' + this.desc;
 		}
 	}

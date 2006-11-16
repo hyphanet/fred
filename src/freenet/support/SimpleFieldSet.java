@@ -184,7 +184,7 @@ public class SimpleFieldSet {
 			if(x == null) {
 				values.put(key, value);
 			} else {
-				values.put(key, ((String)values.get(key))+";"+value);
+				values.put(key, ((String)values.get(key))+ ';' +value);
 			}
 		} else {
 			String before = key.substring(0, idx);
@@ -238,7 +238,7 @@ public class SimpleFieldSet {
             Map.Entry entry = (Map.Entry) i.next();
             String key = (String) entry.getKey();
             String value = (String) entry.getValue();
-            w.write(prefix+key+"="+value+"\n");
+            w.write(prefix+key+ '=' +value+ '\n');
     	}
     	if(subsets != null) {
     		for(Iterator i = subsets.entrySet().iterator();i.hasNext();) {
@@ -253,7 +253,7 @@ public class SimpleFieldSet {
     		if(endMarker == null)
     			w.write("End\n");
     		else
-    			w.write(endMarker+"\n");
+    			w.write(endMarker+ '\n');
     	}
     }
     
@@ -288,7 +288,7 @@ public class SimpleFieldSet {
     		if(endMarker == null)
     			w.write("End\n");
     		else
-    			w.write(endMarker+"\n");
+    			w.write(endMarker+ '\n');
     	}
     }
     

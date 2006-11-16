@@ -142,7 +142,7 @@ public class Version {
 							+ version
 							+ "(lastGoodBuild="
 							+ req
-							+ ")");
+							+ ')');
 					return false;
 				}
 			} catch (NumberFormatException e) {
@@ -162,7 +162,7 @@ public class Version {
 							+ version
 							+ "(lastGoodStableBuild="
 							+ lastGoodStableBuild
-							+ ")");
+							+ ')');
 					return false;
 				}
 			} catch (NumberFormatException e) {
@@ -213,7 +213,7 @@ public class Version {
 							+ version
 							+ "(lastGoodVersion="
 							+ lastGoodVersion
-							+ ")");
+							+ ')');
 					return false;
 				}
 			} catch (NumberFormatException e) {
@@ -233,7 +233,7 @@ public class Version {
 							+ version
 							+ "(lastGoodStableBuild="
 							+ lastGoodStableBuild
-							+ ")");
+							+ ')');
 					return false;
 				}
 			} catch (NumberFormatException e) {
@@ -364,14 +364,14 @@ public class Version {
 		System.out.println(
 			"Freenet: "
 				+ nodeName
-				+ " "
-				+ nodeVersion
+				+ ' '
+                    + nodeVersion
 				+ " (protocol "
 				+ protocolVersion
 				+ ") build "
 				+ buildNumber
 				+ " (last good build: "
 				+ lastGoodBuild()
-				+ ")");
+				+ ')');
 	}
 }

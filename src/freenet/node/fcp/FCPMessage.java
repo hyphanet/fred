@@ -14,7 +14,7 @@ public abstract class FCPMessage {
 		SimpleFieldSet sfs = getFieldSet();
 		sfs.setEndMarker(getEndString());
 		String msg = sfs.toString();
-		os.write((getName()+"\n").getBytes("UTF-8"));
+		os.write((getName()+ '\n').getBytes("UTF-8"));
 		os.write(msg.getBytes("UTF-8"));
 	}
 

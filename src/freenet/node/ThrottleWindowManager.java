@@ -49,7 +49,7 @@ public class ThrottleWindowManager {
 	public synchronized String toString() {
 		return  super.toString()+" w: "
 				+ _simulatedWindowSize + ", d:"
-				+ (((float) _droppedPackets / (float) _totalPackets)) + "="+_droppedPackets+"/"+_totalPackets;
+				+ (((float) _droppedPackets / (float) _totalPackets)) + '=' +_droppedPackets+ '/' +_totalPackets;
 	}
 
 	public SimpleFieldSet exportFieldSet() {

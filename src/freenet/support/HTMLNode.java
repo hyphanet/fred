@@ -142,32 +142,32 @@ public class HTMLNode {
 			tagBuffer.append(content);
 			return tagBuffer;
 		}
-		tagBuffer.append("<").append(name);
+		tagBuffer.append('<').append(name);
 		Set attributeSet = attributes.entrySet();
 		for (Iterator attributeIterator = attributeSet.iterator(); attributeIterator.hasNext();) {
 			Map.Entry attributeEntry = (Map.Entry) attributeIterator.next();
 			String attributeName = (String) attributeEntry.getKey();
 			String attributeValue = (String) attributeEntry.getValue();
-			tagBuffer.append(" ").append(HTMLEncoder.encode(attributeName)).append("=\"").append(HTMLEncoder.encode(attributeValue)).append("\"");
+			tagBuffer.append(' ').append(HTMLEncoder.encode(attributeName)).append("=\"").append(HTMLEncoder.encode(attributeValue)).append('"');
 		}
 		if (children.size() == 0) {
 			if (name.equals("textarea") || name.equals("div") || name.equals("a")) {
-                tagBuffer.append("></").append(name).append(">");
+                tagBuffer.append("></").append(name).append('>');
 			} else {
 				tagBuffer.append(" />");
 			}
 		} else {
-			tagBuffer.append(">");
+			tagBuffer.append('>');
 			if(name.equals("div") || name.equals("form") || name.equals("input") || name.equals("script") || name.equals("table") || name.equals("tr") || name.equals("td")) {
-				tagBuffer.append("\n");
+				tagBuffer.append('\n');
 			}
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
 				HTMLNode childNode = (HTMLNode) children.get(childIndex);
 				childNode.generate(tagBuffer);
 			}
-			tagBuffer.append("</").append(name).append(">");
+			tagBuffer.append("</").append(name).append('>');
 			if(name.equals("div") || name.equals("form") || name.equals("input") || name.equals("li") || name.equals("option") || name.equals("script") || name.equals("table") || name.equals("tr") || name.equals("td")) {
-				tagBuffer.append("\n");
+				tagBuffer.append('\n');
 			}
 		}
 		return tagBuffer;

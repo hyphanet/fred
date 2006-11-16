@@ -63,7 +63,7 @@ public class DSAGroup extends CryptoKey {
             // yea, i know, don't catch NPEs .. but _some_ JVMs don't
             // throw the NFE like they are supposed to (*cough* kaffe)
             throw new NumberFormatException(e + " while converting "
-                    + pAsHexString + "," + qAsHexString + " and "
+                    + pAsHexString + ',' + qAsHexString + " and "
                     + gAsHexString + " to integers");
         }
     }

@@ -25,7 +25,7 @@ public class PluginInfoWrapper {
 		thread = ps;
 		this.plug = plug;
 		this.filename = filename;
-		threadName = "p" + className.replaceAll("^class ", "") + "_" + ps.hashCode();
+		threadName = 'p' + className.replaceAll("^class ", "") + '_' + ps.hashCode();
 		start = System.currentTimeMillis();
 		ps.setName(threadName);
 		fedPluginThread = true;

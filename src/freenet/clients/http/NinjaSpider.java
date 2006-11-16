@@ -139,7 +139,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 					uri = new FreenetURI(uriStr);
 				}
 		} catch (MalformedURLException e) {
-			Logger.error(this, "Spider: MalformedURLException: "+uriStr+":"+e);
+			Logger.error(this, "Spider: MalformedURLException: "+uriStr+ ':' +e);
 			return;
 		}
 
@@ -500,7 +500,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 
 				for(int k=0; k < positions.length ; k++) {
 					if(k!=0)
-						positionList.append(",");
+						positionList.append(',');
 
 					positionList.append(positions[k].toString());
 				}
@@ -660,16 +660,16 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		HTMLNode infobox = new HTMLNode("div", "class", "infobox navbar");
 		infobox.addChild("div", "class", "infobox-header", "Page navigation");
 		HTMLNode links = infobox.addChild("div", "class", "infobox-content").addChild("ul");
-		links.addChild("li").addChild("a", "href", "#running", "Running (" + running + ")");
-		links.addChild("li").addChild("a", "href", "#queued", "Queued (" + queued + ")");
-		links.addChild("li").addChild("a", "href", "#visited", "Visited (" + visited + ")");
-		links.addChild("li").addChild("a", "href", "#failed", "Failed (" + failed + ")");
+		links.addChild("li").addChild("a", "href", "#running", "Running (" + running + ')');
+		links.addChild("li").addChild("a", "href", "#queued", "Queued (" + queued + ')');
+		links.addChild("li").addChild("a", "href", "#visited", "Visited (" + visited + ')');
+		links.addChild("li").addChild("a", "href", "#failed", "Failed (" + failed + ')');
 		return infobox;
 	}
 
 	private HTMLNode[] createList(String listName, String anchorName, Collection collection, int maxCount) {
 		HTMLNode listBox = new HTMLNode("div", "class", "infobox");
-		listBox.addChild("div", "class", "infobox-header", listName + " (" + collection.size() + ")");
+		listBox.addChild("div", "class", "infobox-header", listName + " (" + collection.size() + ')');
 		HTMLNode listContent = listBox.addChild("div", "class", "infobox-content");
 		Iterator collectionItems = collection.iterator();
 		int itemCount = 0;

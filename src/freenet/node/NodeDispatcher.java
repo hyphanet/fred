@@ -272,7 +272,7 @@ public class NodeDispatcher implements Dispatcher {
      * @return False if we want the message put back on the queue.
      */
     boolean handleRouted(Message m) {
-    	if(logMINOR) Logger.minor(this, "handleRouted("+m+")");
+    	if(logMINOR) Logger.minor(this, "handleRouted("+m+ ')');
         if((m.getSource() != null) && (!(m.getSource() instanceof PeerNode))) {
             Logger.error(this, "Routed message but source "+m.getSource()+" not a PeerNode!");
             return true;
@@ -449,7 +449,7 @@ public class NodeDispatcher implements Dispatcher {
 		short htl = m.getShort(DMT.HTL);
 		short counter = m.getShort(DMT.COUNTER);
 		if(logMINOR)
-			Logger.minor(this, "Probe request: "+id+" "+target+" "+best+" "+nearest+" "+htl+" "+counter);
+			Logger.minor(this, "Probe request: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest+ ' ' +htl+ ' ' +counter);
 		synchronized(recentProbeContexts) {
 			if(recentProbeRequestIDs.contains(lid)) {
 				// Reject: Loop
@@ -522,7 +522,7 @@ public class NodeDispatcher implements Dispatcher {
 			ctx.htl = htl;
 			ctx.nearest = nearest;
 			if(logMINOR)
-				Logger.minor(this, "oldDist ("+oldDist+") > newDist ("+newDist+")");
+				Logger.minor(this, "oldDist ("+oldDist+") > newDist ("+newDist+ ')');
 		} else if(Math.abs(oldDist - newDist) < Double.MIN_VALUE*2) {
 			// oldDist == newDist
 			if(!isNew) {
@@ -658,7 +658,7 @@ public class NodeDispatcher implements Dispatcher {
 		double nearest = m.getDouble(DMT.NEAREST_LOCATION);
 		short counter = m.getShort(DMT.COUNTER);
 		if(logMINOR)
-			Logger.minor(this, "Probe reply: "+id+" "+target+" "+best+" "+nearest);
+			Logger.minor(this, "Probe reply: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest);
     	// Just propagate back to source
 		ProbeContext ctx;
 		synchronized(recentProbeContexts) {
@@ -677,7 +677,7 @@ public class NodeDispatcher implements Dispatcher {
 			try {
 				ctx.src.sendAsync(complete, null, 0, null);
 			} catch (NotConnectedException e) {
-				Logger.error(this, "Not connected completing a probe request from "+ctx.src+" (forwarding completion from "+src+")");
+				Logger.error(this, "Not connected completing a probe request from "+ctx.src+" (forwarding completion from "+src+ ')');
 			}
 		} else {
 			if(ctx.cb != null)
@@ -696,7 +696,7 @@ public class NodeDispatcher implements Dispatcher {
 		short counter = m.getShort(DMT.COUNTER);
 		short reason = m.getShort(DMT.REASON);
 		if(logMINOR)
-			Logger.minor(this, "Probe rejected: "+id+" "+target+" "+best+" "+nearest+" "+htl+" "+counter+" "+reason);
+			Logger.minor(this, "Probe rejected: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest+ ' ' +htl+ ' ' +counter+ ' ' +reason);
 		
 		ProbeContext ctx;
 		synchronized(recentProbeContexts) {

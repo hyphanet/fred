@@ -75,7 +75,7 @@ public class DSAGroupGenerator {
 		// 4: Check that q is prime, and 2q+1 is prime
 		// 5: If not, restart from step 1
 		
-		System.out.println("Maybe got prime: "+q.toString(16)+ " ("+q.bitLength()+")");
+		System.out.println("Maybe got prime: "+q.toString(16)+ " ("+q.bitLength()+ ')');
 		
 		if(!isPrime(q))
 			return false;
@@ -136,8 +136,8 @@ public class DSAGroupGenerator {
     private static void finish(RandomSource r, int hashLength, NativeBigInteger p, NativeBigInteger q, byte[] seed, int counter) {
     	System.out.println("SEED: "+HexUtil.bytesToHex(seed));
     	System.out.println("COUNTER: "+counter);
-    	System.out.println("p: "+p.toString(16)+" ("+p.bitLength()+")");
-    	System.out.println("q: "+q.toString(16)+" ("+q.bitLength()+")");
+    	System.out.println("p: "+p.toString(16)+" ("+p.bitLength()+ ')');
+    	System.out.println("q: "+q.toString(16)+" ("+q.bitLength()+ ')');
 		// Now generate g (algorithm from appendix 4 of FIPS 186-2)
     	NativeBigInteger g;
     	do {
@@ -149,7 +149,7 @@ public class DSAGroupGenerator {
     		g = (NativeBigInteger) h.modPow(e, p);
     	} while (g.equals(BigInteger.ONE));
     	DSAGroup group = new DSAGroup(p, q, g);
-    	System.out.println("g: "+g.toHexString()+" ("+g.bitLength()+")");
+    	System.out.println("g: "+g.toHexString()+" ("+g.bitLength()+ ')');
     	System.out.println("Group: "+group.verboseToString());
     	long totalSigTime = 0;
     	long totalVerifyTime = 0;

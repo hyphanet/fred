@@ -362,7 +362,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         String testnet = fs.get("testnet");
         testnetEnabled = testnet == null ? false : (testnet.equalsIgnoreCase("true") || testnet.equalsIgnoreCase("yes"));
         if(testnetEnabled != node.testnetEnabled) {
-        	String err = "Ignoring incompatible node "+detectedPeer+" - peer.testnet="+testnetEnabled+"("+testnet+") but node.testnet="+node.testnetEnabled;
+        	String err = "Ignoring incompatible node "+detectedPeer+" - peer.testnet="+testnetEnabled+ '(' +testnet+") but node.testnet="+node.testnetEnabled;
         	Logger.error(this, err);
         	throw new PeerParseException(err);
         }
@@ -387,7 +387,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
                 throw new FSParseException(e1);
         }
         if(nominalPeer.isEmpty()) {
-        	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation.getValue())+"' with name '"+getName()+"'");
+        	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation.getValue())+"' with name '"+getName()+ '\'');
         	detectedPeer = null;
         } else {
         	detectedPeer = (Peer) nominalPeer.firstElement();
@@ -606,7 +606,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
 				+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
 		if(isBurstOnly) {
-			Logger.minor(this, "First BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+")");
+			Logger.minor(this, "First BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')');
 		}
 
         // status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
@@ -701,10 +701,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     			needSep = true;
         		continue;
         	}
-    		toOutputString.append("'");
+    		toOutputString.append('\'');
         	// Actually do the DNS request for the member Peer of localHandshakeIPs
         	toOutputString.append(localHandshakeIPs[i].getAddress(false));
-    		toOutputString.append("'");
+    		toOutputString.append('\'');
     		needSep = true;
         }
     	toOutputString.append(" ]");
@@ -721,12 +721,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             // Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
             // upon startup (I suspect the following won't do anything, but just in case)
         	if(logMINOR)
-        		Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
+        		Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+ ')');
             localHandshakeIPs[i].getAddress(false);
           } else {
             // Actually do the DNS request for the member Peer of localHandshakeIPs
         	if(logMINOR)
-        		Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
+        		Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+ ')');
             localHandshakeIPs[i].getHandshakeAddress();
           }
         }
@@ -751,7 +751,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				lastAttemptedHandshakeIPUpdateTime = now;
 			}
 	    }
-    	if(logMINOR) Logger.minor(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
+    	if(logMINOR) Logger.minor(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+ ')');
     	Peer[] localHandshakeIPs;
     	Peer[] myNominalPeer;
     	
@@ -824,7 +824,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         	}
     	}
     	if(logMINOR) {
-    		Logger.minor(this, "3: detectedPeer = "+localDetectedPeer+" ("+localDetectedPeer.getAddress(false)+")");
+    		Logger.minor(this, "3: detectedPeer = "+localDetectedPeer+" ("+localDetectedPeer.getAddress(false)+ ')');
     		Logger.minor(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     	}
     }
@@ -1018,7 +1018,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             if(!rateLimitLogging) {
                 String reasonWrapper = "";
                 if( 0 <= reason.length()) {
-                  reasonWrapper = " because of '"+reason+"'";
+                  reasonWrapper = " because of '"+reason+ '\'';
                 }
                 Logger.normal(this, "Requeueing "+messages.length+" messages"+reasonWrapper+" on "+this+rateLimitWrapper);
             }
@@ -1137,7 +1137,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
 						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 				}
-				if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+")", new Exception("double-called debug"));
+				if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')', new Exception("double-called debug"));
 			}
         }
 		setPeerNodeStatus(now);  // Because of isBursting being set above and it can't hurt others
@@ -1312,7 +1312,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * @return short version of toString()
      */
     public synchronized String shortToString() {
-        return super.toString()+"@"+detectedPeer+"@"+HexUtil.bytesToHex(identity);
+        return super.toString()+ '@' +detectedPeer+ '@' +HexUtil.bytesToHex(identity);
     }
 
     public String toString() {
@@ -1541,7 +1541,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         		 sendAsync(locMsg, null, 0, null);
             sendAsync(ipMsg, null, 0, null);
         } catch (NotConnectedException e) {
-            Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected ("+isConnected+":"+currentTracker+"!!!: "+e, e);
+            Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected ("+isConnected+ ':' +currentTracker+"!!!: "+e, e);
         }
     }
     
@@ -1632,7 +1632,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
                 }
             }
         }
-        if(logMINOR) Logger.minor(this, "Reference: "+new String(data, offset, length)+"("+length+")");
+        if(logMINOR) Logger.minor(this, "Reference: "+new String(data, offset, length)+ '(' +length+ ')');
         // Now decode it
         ByteArrayInputStream bais = new ByteArrayInputStream(data, offset+1, length-1);
         InputStreamReader isr;
@@ -1832,11 +1832,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         }
         if((getPeerNodeStatus() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) && (getPeerAddedTime() > 1))
             idle = (int) ((now - getPeerAddedTime()) / 1000);
-        return getName()+"\t"+getPeer()+"\t"+getIdentityString()+"\t"+getLocation().getValue()+"\t"+getPeerNodeStatusString()+"\t"+idle;
+        return getName()+ '\t' +getPeer()+ '\t' +getIdentityString()+ '\t' +getLocation().getValue()+ '\t' +getPeerNodeStatusString()+ '\t' +idle;
     }
     
     public String getFreevizOutput() {
-    	return getStatus().toString()+"|"+ Base64.encode(identity);
+    	return getStatus().toString()+ '|' + Base64.encode(identity);
     }
 	
 	public synchronized String getVersion(){
@@ -2087,7 +2087,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				routingBackedOffUntil = now + x;
 				String reasonWrapper = "";
 				if( 0 <= reason.length()) {
-					reasonWrapper = " because of '"+reason+"'";
+					reasonWrapper = " because of '"+reason+ '\'';
 				}
 				if(logMINOR) Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+peer);
 			} else {
@@ -2147,7 +2147,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			lPingNo = new Long(pingNo);
 			Long lnow = new Long(now);
 			pingsSentTimes.push(lPingNo, lnow);
-			if(logMINOR) Logger.minor(this, "Pushed "+lPingNo+" "+lnow);
+			if(logMINOR) Logger.minor(this, "Pushed "+lPingNo+ ' ' +lnow);
 			while(pingsSentTimes.size() > MAX_PINGS) {
 				Long l = (Long) pingsSentTimes.popValue();
 				if(logMINOR) Logger.minor(this, "pingsSentTimes.size()="+pingsSentTimes.size()+", l="+l);
@@ -2624,7 +2624,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					gotError = true;
 				}
 			} catch (FSParseException e2) {
-				Logger.error(this, "Could not parse extra peer data: "+e2+"\n"+fs.toString(),e2);
+				Logger.error(this, "Could not parse extra peer data: "+e2+ '\n' +fs.toString(),e2);
 				gotError = true;
 			}
 		} catch (EOFException e3) {

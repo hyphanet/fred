@@ -188,14 +188,14 @@ public class NodeIPDetector {
 				if(best != null) {
 					if((bestPopularity > 2) || (detectedAddrs.length == 0)) {
 						if(!addresses.contains(best)) {
-							Logger.normal(this, "Adding best peer "+best+" ("+bestPopularity+")");
+							Logger.normal(this, "Adding best peer "+best+" ("+bestPopularity+ ')');
 							addresses.add(best);
 							if(best.getFreenetAddress().isRealInternetAddress(false, false))
 								addedValidIP = true;
 						}
 						if((secondBest != null) && (secondBestPopularity > 2)) {
 							if(!addresses.contains(secondBest)) {
-								Logger.normal(this, "Adding second best peer "+secondBest+" ("+secondBest+")");
+								Logger.normal(this, "Adding second best peer "+secondBest+" ("+secondBest+ ')');
 								addresses.add(secondBest);
 								if(secondBest.getFreenetAddress().isRealInternetAddress(false, false))
 									addedValidIP = true;

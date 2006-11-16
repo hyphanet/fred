@@ -163,11 +163,11 @@ public class DSA {
 			}
 			System.out.println("Total time signing: "+totalTimeSigning);
 			System.out.println("Total time verifying: "+totalTimeVerifying);
-			System.out.println("Total R size: "+totalRSize+" (max "+maxRSize+")");
-			System.out.println("Total S size: "+totalSSize+" (max "+maxSSize+")");
+			System.out.println("Total R size: "+totalRSize+" (max "+maxRSize+ ')');
+			System.out.println("Total S size: "+totalSSize+" (max "+maxSSize+ ')');
 			System.out.println("Total R unsigned bitsize: "+totalRUnsignedBitSize);
-			System.out.println("Total pub key size: "+totalPubKeySize+" (max "+maxPubKeySize+")");
-			System.out.println("Total priv key size: "+totalPrivKeySize+" (max "+maxPrivKeySize+")");
+			System.out.println("Total pub key size: "+totalPubKeySize+" (max "+maxPubKeySize+ ')');
+			System.out.println("Total priv key size: "+totalPrivKeySize+" (max "+maxPrivKeySize+ ')');
 		}
     }
 }

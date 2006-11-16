@@ -128,7 +128,7 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
 	}
 	
 	public synchronized String toString() {
-		return super.toString() + " ("+extraToString()+")"+
+		return super.toString() + " ("+extraToString()+ ')' +
 			", init="+defaultValue+", index="+index+", totalReported="+
 			totalReported;
 	}

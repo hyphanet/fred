@@ -31,7 +31,7 @@ public class LRUHashtable {
             list.remove(insert);
         }
         if(Logger.shouldLog(Logger.MINOR, this))
-        	Logger.minor(this, "Pushed "+insert+" ( "+key+" "+value+" )");
+        	Logger.minor(this, "Pushed "+insert+" ( "+key+ ' ' +value+" )");
 
         list.unshift(insert);
     } 
@@ -117,7 +117,7 @@ public class LRUHashtable {
         }
         
         public String toString() {
-        	return super.toString()+": "+obj+" "+value;
+        	return super.toString()+": "+obj+ ' ' +value;
         }
     }
 }

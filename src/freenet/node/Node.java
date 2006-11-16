@@ -672,7 +672,7 @@ public class Node {
 		private static final long serialVersionUID = -1;
 		
 		NodeInitException(int exitCode, String msg) {
-			super(msg+" ("+exitCode+")");
+			super(msg+" ("+exitCode+ ')');
 			this.exitCode = exitCode;
 		}
 	}
@@ -815,8 +815,8 @@ public class Node {
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
-					Logger.normal(this, "Could not use port: "+bindto+":"+portNo+": "+e, e);
-					System.err.println("Could not use port: "+bindto+":"+portNo+": "+e);
+					Logger.normal(this, "Could not use port: "+bindto+ ':' +portNo+": "+e, e);
+					System.err.println("Could not use port: "+bindto+ ':' +portNo+": "+e);
 					e.printStackTrace();
 					continue;
 				}
@@ -832,8 +832,8 @@ public class Node {
 		}
 		usm = u;
 		
-		Logger.normal(this, "FNP port created on "+bindto+":"+port);
-		System.out.println("FNP port created on "+bindto+":"+port);
+		Logger.normal(this, "FNP port created on "+bindto+ ':' +port);
+		System.out.println("FNP port created on "+bindto+ ':' +port);
 		portNumber = port;
 		
 		Logger.normal(Node.class, "Creating node...");
@@ -1163,7 +1163,7 @@ public class Node {
 			chkDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
 					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook);
 			Logger.normal(this, "Initializing CHK Datacache");
-			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+":"+maxCacheKeys+" keys)");
+			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+ ':' +maxCacheKeys+" keys)");
 			chkDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxCacheKeys, 
 					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook);
 			Logger.normal(this, "Initializing pubKey Datastore");
@@ -1232,7 +1232,7 @@ public class Node {
 			} catch (FileNotFoundException e1) {
 				// Ignore
 			} catch (IOException e1) {
-				Logger.error(this, "Could not read "+persistTarget+" ("+e+") and could not read "+persistTemp+" either ("+e1+")");
+				Logger.error(this, "Could not read "+persistTarget+" ("+e+") and could not read "+persistTemp+" either ("+e1+ ')');
 			}
 		}
 
@@ -1354,8 +1354,8 @@ public class Node {
 		}
 		Logger.normal(this, "Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
 		System.out.println("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
-		Logger.normal(this, "FNP port is on "+bindto+":"+portNumber);
-		System.out.println("FNP port is on "+bindto+":"+portNumber);
+		Logger.normal(this, "FNP port is on "+bindto+ ':' +portNumber);
+		System.out.println("FNP port is on "+bindto+ ':' +portNumber);
 		// Start services
 		
 //		SubConfig pluginManagerConfig = new SubConfig("pluginmanager3", config);
@@ -1541,13 +1541,13 @@ public class Node {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
 					pInstantRejectIncoming.report(1.0);
-					return ">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+")";
+					return ">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
 				}
 			} else if(pingTime > SUB_MAX_PING_TIME) {
 				double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
 				if(random.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
-					return ">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+")";
+					return ">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
 				}
 			}
 		
@@ -1557,13 +1557,13 @@ public class Node {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
 					pInstantRejectIncoming.report(1.0);
-					return ">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+")";
+					return ">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
 				}
 			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
 				double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
 				if(random.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
-					return ">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+")";
+					return ">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
 				}
 			}
 			
@@ -1601,15 +1601,15 @@ public class Node {
 	
 	private void dumpByteCostAverages() {
 		Logger.minor(this, "Byte cost averages: REMOTE:"+
-				" CHK insert "+remoteChkInsertBytesSentAverage.currentValue()+"/"+remoteChkInsertBytesReceivedAverage.currentValue()+
-				" SSK insert "+remoteSskInsertBytesSentAverage.currentValue()+"/"+remoteSskInsertBytesReceivedAverage.currentValue()+
-				" CHK fetch "+remoteChkFetchBytesSentAverage.currentValue()+"/"+remoteChkFetchBytesReceivedAverage.currentValue()+
-				" SSK fetch "+remoteSskFetchBytesSentAverage.currentValue()+"/"+remoteSskFetchBytesReceivedAverage.currentValue());
+				" CHK insert "+remoteChkInsertBytesSentAverage.currentValue()+ '/' +remoteChkInsertBytesReceivedAverage.currentValue()+
+				" SSK insert "+remoteSskInsertBytesSentAverage.currentValue()+ '/' +remoteSskInsertBytesReceivedAverage.currentValue()+
+				" CHK fetch "+remoteChkFetchBytesSentAverage.currentValue()+ '/' +remoteChkFetchBytesReceivedAverage.currentValue()+
+				" SSK fetch "+remoteSskFetchBytesSentAverage.currentValue()+ '/' +remoteSskFetchBytesReceivedAverage.currentValue());
 		Logger.minor(this, "Byte cost averages: LOCAL"+
-				" CHK insert "+localChkInsertBytesSentAverage.currentValue()+"/"+localChkInsertBytesReceivedAverage.currentValue()+
-				" SSK insert "+localSskInsertBytesSentAverage.currentValue()+"/"+localSskInsertBytesReceivedAverage.currentValue()+
-				" CHK fetch "+localChkFetchBytesSentAverage.currentValue()+"/"+localChkFetchBytesReceivedAverage.currentValue()+
-				" SSK fetch "+localSskFetchBytesSentAverage.currentValue()+"/"+localSskFetchBytesReceivedAverage.currentValue());
+				" CHK insert "+localChkInsertBytesSentAverage.currentValue()+ '/' +localChkInsertBytesReceivedAverage.currentValue()+
+				" SSK insert "+localSskInsertBytesSentAverage.currentValue()+ '/' +localSskInsertBytesReceivedAverage.currentValue()+
+				" CHK fetch "+localChkFetchBytesSentAverage.currentValue()+ '/' +localChkFetchBytesReceivedAverage.currentValue()+
+				" SSK fetch "+localSskFetchBytesSentAverage.currentValue()+ '/' +localSskFetchBytesReceivedAverage.currentValue());
 	}
 
 	public SimpleFieldSet exportPrivateFieldSet() {
@@ -1922,7 +1922,7 @@ public class Node {
 	 */
 	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean resetClosestLocation, boolean localOnly, boolean cache, boolean ignoreStore) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
+		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+portNumber);
 		// In store?
 		KeyBlock chk = null;
 		if(!ignoreStore) {
@@ -1933,7 +1933,7 @@ public class Node {
 				DSAPublicKey pubKey = k.getPubKey();
 				if(pubKey == null) {
 					pubKey = getKey(k.getPubKeyHash());
-					if(logMINOR) Logger.minor(this, "Fetched pubkey: "+pubKey+" "+(pubKey == null ? "" : pubKey.writeAsField()));
+					if(logMINOR) Logger.minor(this, "Fetched pubkey: "+pubKey+ ' ' +(pubKey == null ? "" : pubKey.writeAsField()));
 					try {
 						k.setPubKey(pubKey);
 					} catch (SSKVerifyException e) {
@@ -1941,7 +1941,7 @@ public class Node {
 					}
 				}
 				if(pubKey != null) {
-					if(logMINOR) Logger.minor(this, "Got pubkey: "+pubKey+" "+pubKey.writeAsField());
+					if(logMINOR) Logger.minor(this, "Got pubkey: "+pubKey+ ' ' +pubKey.writeAsField());
 					chk = fetch((NodeSSK)key, !cache);
 				} else {
 					if(logMINOR) Logger.minor(this, "Not found because no pubkey: "+uid);
@@ -2006,7 +2006,7 @@ public class Node {
 		}
 		
 		public String toString() {
-			return key.toString()+":"+htl;
+			return key.toString()+ ':' +htl;
 		}
 	}
 
@@ -2093,10 +2093,10 @@ public class Node {
 			timeLastDumpedHits = now;
 		} else return;
 		Logger.minor(this, "Distribution of hits and misses over stores:\n"+
-				"CHK Datastore: "+chkDatastore.hits()+"/"+(chkDatastore.hits()+chkDatastore.misses())+"/"+chkDatastore.keyCount()+
-				"\nCHK Datacache: "+chkDatacache.hits()+"/"+(chkDatacache.hits()+chkDatacache.misses())+"/"+chkDatacache.keyCount()+
-				"\nSSK Datastore: "+sskDatastore.hits()+"/"+(sskDatastore.hits()+sskDatastore.misses())+"/"+sskDatastore.keyCount()+
-				"\nSSK Datacache: "+sskDatacache.hits()+"/"+(sskDatacache.hits()+sskDatacache.misses())+"/"+sskDatacache.keyCount());
+				"CHK Datastore: "+chkDatastore.hits()+ '/' +(chkDatastore.hits()+chkDatastore.misses())+ '/' +chkDatastore.keyCount()+
+				"\nCHK Datacache: "+chkDatacache.hits()+ '/' +(chkDatacache.hits()+chkDatacache.misses())+ '/' +chkDatacache.keyCount()+
+				"\nSSK Datastore: "+sskDatastore.hits()+ '/' +(sskDatastore.hits()+sskDatastore.misses())+ '/' +sskDatastore.keyCount()+
+				"\nSSK Datacache: "+sskDatacache.hits()+ '/' +(sskDatacache.hits()+sskDatacache.misses())+ '/' +sskDatacache.keyCount());
 	}
 	
 	public void store(CHKBlock block) {
@@ -2183,7 +2183,7 @@ public class Node {
 			KeyHTLPair kh = new KeyHTLPair(key, htl);
 			RequestSender rs = (RequestSender) requestSenders.remove(kh);
 			if(rs != sender) {
-				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+","+htl+" in removeRequestSender");
+				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+ ',' +htl+" in removeRequestSender");
 			}
 			requestSenders.notifyAll();
 		}
@@ -2197,7 +2197,7 @@ public class Node {
 			KeyHTLPair kh = new KeyHTLPair(key, htl);
 			AnyInsertSender is = (AnyInsertSender) insertSenders.remove(kh);
 			if(is != sender) {
-				Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+","+htl+" in removeInsertSender");
+				Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+ ',' +htl+" in removeInsertSender");
 			}
 			insertSenders.notifyAll();
 		}
@@ -2242,7 +2242,7 @@ public class Node {
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
 			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc, boolean cache) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
+		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl);
 		CHKInsertSender is = null;
 		synchronized(insertSenders) {
@@ -2280,7 +2280,7 @@ public class Node {
 		}
 		if(cache)
 			cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble()));
-		Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
+		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl);
 		SSKInsertSender is = null;
 		synchronized(insertSenders) {
@@ -2315,7 +2315,7 @@ public class Node {
 		completed(uid);
 		synchronized(runningUIDs) {
 			if(!runningUIDs.remove(l))
-				throw new IllegalStateException("Could not unlock "+uid+"!");
+				throw new IllegalStateException("Could not unlock "+uid+ '!');
 		}
 	}
 
@@ -2396,7 +2396,7 @@ public class Node {
 		
 		sb.append("\ninserts=");
 		sb.append(getNumInserts());
-		sb.append("\n");
+		sb.append('\n');
 		
 		
 		if (peers != null)
@@ -2577,7 +2577,7 @@ public class Node {
 	public void exit(String reason){
 		try {
 			this.park();
-			System.out.println("Goodbye. from "+this+" ("+reason+")");
+			System.out.println("Goodbye. from "+this+" ("+reason+ ')');
 		} finally {
 			System.exit(0);
 		}
@@ -3007,7 +3007,7 @@ public class Node {
 			} else {
 				nodeAveragePingAlertRelevant = false;
 			}
-			if(logMINOR && Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "mUPMUAS: "+now+": "+getBwlimitDelayTime()+" >? "+MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+" since "+firstBwlimitDelayTimeThresholdBreak+" ("+bwlimitDelayAlertRelevant+") "+getNodeAveragePingTime()+" >? "+MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+" since "+firstNodeAveragePingTimeThresholdBreak+" ("+nodeAveragePingAlertRelevant+")");
+			if(logMINOR && Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "mUPMUAS: "+now+": "+getBwlimitDelayTime()+" >? "+MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+" since "+firstBwlimitDelayTimeThresholdBreak+" ("+bwlimitDelayAlertRelevant+") "+getNodeAveragePingTime()+" >? "+MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+" since "+firstNodeAveragePingTimeThresholdBreak+" ("+nodeAveragePingAlertRelevant+ ')');
 			nextPeerManagerUserAlertStatsUpdateTime = now + peerManagerUserAlertStatsUpdateInterval;
 		}
 	}

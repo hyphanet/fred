@@ -161,7 +161,7 @@ public class FCPClient {
 	public void removeByIdentifier(String identifier, boolean kill) throws MessageInvalidException {
 		ClientRequest req;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "removeByIdentifier("+identifier+","+kill+")");
+		if(logMINOR) Logger.minor(this, "removeByIdentifier("+identifier+ ',' +kill+ ')');
 		synchronized(this) {
 			req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
 			if(req == null)
@@ -269,6 +269,6 @@ public class FCPClient {
 	}
 	
 	public String toString() {
-		return super.toString()+":"+name;
+		return super.toString()+ ':' +name;
 	}
 }

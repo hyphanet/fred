@@ -42,9 +42,9 @@ public final class Rijndael_Algorithm // implicit no-argument constructor
 
     static void debug (String s) { err.println(">>> "+NAME+": "+s); }
     static void trace (boolean in, String s) {
-        if (TRACE) err.println((in?"==> ":"<== ")+NAME+"."+s);
+        if (TRACE) err.println((in?"==> ":"<== ")+NAME+ '.' +s);
     }
-    static void trace (String s) { if (TRACE) err.println("<=> "+NAME+"."+s); }
+    static void trace (String s) { if (TRACE) err.println("<=> "+NAME+ '.' +s); }
 
 
 // Constants and variables
@@ -315,7 +315,7 @@ System.out.println();
      */
     public static final void
     blockEncrypt (byte[] in, byte[] result, int inOffset, Object sessionKey) {
-if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+")");
+if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+ ')');
         int[][] Ke = (int[][]) ((Object[]) sessionKey)[0]; // extract encryption round keys
         int ROUNDS = Ke.length - 1;
         int[] Ker = Ke[0];
@@ -361,7 +361,7 @@ if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+")");
             t1 = a1;
             t2 = a2;
             t3 = a3;
-if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+"="+intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
         }
 
         // last round is special
@@ -404,7 +404,7 @@ if (RDEBUG) trace(OUT, "blockEncrypt()");
      */
     public static final void
     blockDecrypt (byte[] in, byte[] result, int inOffset, Object sessionKey) {
-if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+")");
+if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+ ')');
         int[][] Kd = (int[][]) ((Object[]) sessionKey)[1]; // extract decryption round keys
         int ROUNDS = Kd.length - 1;
         int[] Kdr = Kd[0];
@@ -450,7 +450,7 @@ if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+")");
             t1 = a1;
             t2 = a2;
             t3 = a3;
-if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+"="+intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
         }
 
         // last round is special
@@ -511,7 +511,7 @@ if (RDEBUG) trace(OUT, "blockDecrypt()");
     //CPU will result in fewer cache misses.  -- ejhuff 2003-10-12
     public final static synchronized Object makeKey (byte[] k, int blockSize)
     throws InvalidKeyException {
-if (RDEBUG) trace(IN, "makeKey("+k+", "+blockSize+")");
+if (RDEBUG) trace(IN, "makeKey("+k+", "+blockSize+ ')');
         if (k == null)
             throw new InvalidKeyException("Empty key");
         if (!((k.length == 16) || (k.length == 24) || (k.length == 32)))
@@ -611,7 +611,7 @@ if (RDEBUG) trace(OUT, "makeKey()");
             blockEncrypt(in, result, inOffset, sessionKey);
             return;
         }
-if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+", "+blockSize+")");
+if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+", "+blockSize+ ')');
         Object[] sKey = (Object[]) sessionKey; // extract encryption round keys
         int[][] Ke = (int[][]) sKey[0];
 
@@ -638,7 +638,7 @@ if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+", "+bloc
                         T3[(t[(i + s2) % BC] >>>  8) & 0xFF] ^
                         T4[ t[(i + s3) % BC]         & 0xFF]  ) ^ Ke[r][i];
             System.arraycopy(a, 0, t, 0, BC);
-if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+"="+toString(t));
+if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+ '=' +toString(t));
         }
         for (i = 0; i < BC; i++) {                   // last round is special
             tt = Ke[ROUNDS][i];
@@ -670,7 +670,7 @@ if (RDEBUG) trace(OUT, "blockEncrypt()");
             return;
         }
 
-if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+", "+blockSize+")");
+if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+", "+blockSize+ ')');
         Object[] sKey = (Object[]) sessionKey; // extract decryption round keys
         int[][] Kd = (int[][]) sKey[1];
 
@@ -697,7 +697,7 @@ if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+", "+bloc
                         T7[(t[(i + s2) % BC] >>>  8) & 0xFF] ^
                         T8[ t[(i + s3) % BC]         & 0xFF]  ) ^ Kd[r][i];
             System.arraycopy(a, 0, t, 0, BC);
-if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+"="+toString(t));
+if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+ '=' +toString(t));
         }
         for (i = 0; i < BC; i++) {                   // last round is special
             tt = Kd[ROUNDS][i];
@@ -715,7 +715,7 @@ if (RDEBUG) trace(OUT, "blockDecrypt()");
 
     /** A basic symmetric encryption/decryption test for a given key size. */
     private static boolean self_test (int keysize) {
-if (RDEBUG) trace(IN, "self_test("+keysize+")");
+if (RDEBUG) trace(IN, "self_test("+keysize+ ')');
         boolean ok = false;
         try {
             byte[] kb = new byte[keysize];

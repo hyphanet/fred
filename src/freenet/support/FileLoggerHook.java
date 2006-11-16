@@ -515,7 +515,7 @@ public class FileLoggerHook extends LoggerHook {
 				}
 				name = name.substring(prefix.length());
 				if((name.length() == 0) || (name.charAt(0) != '-')) {
-					if(logMINOR) Logger.minor(this, "Deleting unrecognized: "+name+" ("+f.getPath()+")");
+					if(logMINOR) Logger.minor(this, "Deleting unrecognized: "+name+" ("+f.getPath()+ ')');
 					f.delete();
 					continue;
 				} else
@@ -941,7 +941,7 @@ public class FileLoggerHook extends LoggerHook {
 			try {
 				dis.readFully(buf, 0, toRead);
 			} catch (IOException e) {
-				Logger.error(this, "Could not read bytes "+written+" to "+(written + toRead)+" from file "+toReturn.filename+" which is supposed to be "+size+" bytes ("+toReturn.filename.length()+")");
+				Logger.error(this, "Could not read bytes "+written+" to "+(written + toRead)+" from file "+toReturn.filename+" which is supposed to be "+size+" bytes ("+toReturn.filename.length()+ ')');
 				return;
 			}
 			os.write(buf, 0, toRead);

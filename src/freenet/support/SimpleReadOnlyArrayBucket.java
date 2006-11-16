@@ -38,7 +38,7 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 	}
 
 	public String getName() {
-		return "SimpleReadOnlyArrayBucket: len="+length+" "+super.toString();
+		return "SimpleReadOnlyArrayBucket: len="+length+ ' ' +super.toString();
 	}
 
 	public long size() {

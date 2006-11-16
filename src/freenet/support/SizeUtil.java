@@ -31,7 +31,7 @@ public class SizeUtil {
 			else if((o.indexOf('.') > -1) && (o.indexOf('E') == -1) && (o.length() > 4))
 				o = o.substring(0, 4);
 			if(i < SizeUtil.suffixes.length) // handle the case where the mantissa is Infinity
-				o += " " + SizeUtil.suffixes[i];
+				o += ' ' + SizeUtil.suffixes[i];
 			return o;
 		}
 	}

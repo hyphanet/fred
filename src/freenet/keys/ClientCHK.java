@@ -115,9 +115,9 @@ public class ClientCHK extends ClientKey {
 	}
 	
     public String toString() {
-        return super.toString()+":"+Base64.encode(routingKey)+","+
-        	Base64.encode(cryptoKey)+","+compressionAlgorithm+","+controlDocument+
-        	","+cryptoAlgorithm;
+        return super.toString()+ ':' +Base64.encode(routingKey)+ ',' +
+        	Base64.encode(cryptoKey)+ ',' +compressionAlgorithm+ ',' +controlDocument+
+                ',' +cryptoAlgorithm;
     }
 
 	public Key getNodeKey() {

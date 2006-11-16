@@ -146,7 +146,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		allRequestsByClientRequest = new HashMap();
 		
 		this.name = name;
-		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false, "Priority policy of the "+name+"scheduler", "Set the priority policy scheme used by the scheduler. Could be one of ["+PRIORITY_HARD+", "+PRIORITY_SOFT+"]",
+		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false, "Priority policy of the "+name+"scheduler", "Set the priority policy scheme used by the scheduler. Could be one of ["+PRIORITY_HARD+", "+PRIORITY_SOFT+ ']',
 				new PrioritySchedulerCallback(this));
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -262,7 +262,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				return priority;
 			}
 			
-			if(logMINOR) Logger.debug(this, "Priority "+priority+" is null (fuzz = "+fuzz+")");
+			if(logMINOR) Logger.debug(this, "Priority "+priority+" is null (fuzz = "+fuzz+ ')');
 			fuzz++;
 		}
 		
@@ -293,18 +293,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 					}
 				}
 				if(req == null) {
-					if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+rga.getNumber()+" ("+rga+")");
+					if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+rga.getNumber()+" ("+rga+ ')');
 					break;
 				} else if(req.getPriorityClass() != choosenPriorityClass) {
 					// Reinsert it : shouldn't happen if we are calling reregisterAll,
 					// maybe we should ask people to report that error if seen
-					if(logMINOR) Logger.minor(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+")");
+					if(logMINOR) Logger.minor(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
 					innerRegister(req);
 					continue;
 				}
 				
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+", prio "+
-						req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+")");
+						req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
 				ClientRequester cr = req.getClientRequest();
 				HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
 				v.remove(req);

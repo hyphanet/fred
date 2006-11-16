@@ -129,7 +129,7 @@ public class CPUID {
 			return new AMDInfoImpl();
 		if(getCPUVendorID().equals("GenuineIntel"))
 			return new IntelInfoImpl();
-		throw new UnknownCPUException("Unknown CPU type: '"+getCPUVendorID()+"'");
+		throw new UnknownCPUException("Unknown CPU type: '"+getCPUVendorID()+ '\'');
 	}
 	
 	protected abstract static class CPUIDCPUInfo
@@ -517,7 +517,7 @@ public class CPUID {
     private static final String getResourceName()
     {
     	String pname = CPUID.class.getPackage().getName().replace('.','/');
-    	return pname+"/"+getLibraryPrefix()+getLibraryMiddlePart()+"."+getLibrarySuffix();
+    	return pname+ '/' +getLibraryPrefix()+getLibraryMiddlePart()+ '.' +getLibrarySuffix();
     }
     
     private static final String getLibraryPrefix()
@@ -542,7 +542,7 @@ public class CPUID {
 			return "jcpuid-x86-freebsd"; // The convention on freebsd...
 		if(isMacOS)
 			return "jcpuid-x86-osx"; // The convention on Mac OS X...
-		throw new RuntimeException("Dont know jcpuid library name for os type '"+System.getProperty("os.name")+"'");
+		throw new RuntimeException("Dont know jcpuid library name for os type '"+System.getProperty("os.name")+ '\'');
     }
     
     private static final String getLibrarySuffix()

@@ -83,7 +83,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			runningInserters.remove(data);
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Successfully inserted healing block: "+sbi.getURINoEncode()+" for "+data+" ("+sbi.token+")");
+			Logger.minor(this, "Successfully inserted healing block: "+sbi.getURINoEncode()+" for "+data+" ("+sbi.token+ ')');
 		data.free();
 	}
 
@@ -94,7 +94,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			runningInserters.remove(data);
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Failed to insert healing block: "+sbi.getURINoEncode()+" : "+e+" for "+data+" ("+sbi.token+")", e);
+			Logger.minor(this, "Failed to insert healing block: "+sbi.getURINoEncode()+" : "+e+" for "+data+" ("+sbi.token+ ')', e);
 		data.free();
 	}
 

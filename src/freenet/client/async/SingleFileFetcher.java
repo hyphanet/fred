@@ -304,7 +304,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 					onSuccess(new FetchResult(this.clientMetadata, out));
 					return;
 				} else {
-					if(logMINOR) Logger.minor(this, "Fetching archive (thisKey="+thisKey+")");
+					if(logMINOR) Logger.minor(this, "Fetching archive (thisKey="+thisKey+ ')');
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.

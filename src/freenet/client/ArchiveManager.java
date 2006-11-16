@@ -131,7 +131,7 @@ public class ArchiveManager {
 	 * @throws ArchiveFailureException 
 	 */
 	public synchronized Bucket getCached(FreenetURI key, String filename) throws ArchiveFailureException {
-		if(logMINOR) Logger.minor(this, "Fetch cached: "+key+" "+filename);
+		if(logMINOR) Logger.minor(this, "Fetch cached: "+key+ ' ' +filename);
 		ArchiveKey k = new ArchiveKey(key, filename);
 		ArchiveStoreItem asi = (ArchiveStoreItem) storedData.get(k);
 		if(asi == null) return null;
@@ -350,7 +350,7 @@ outer:		while(true) {
 				throw new ArchiveFailureException("Invalid archive: contains "+name+" as both file and dir");
 			}
 			map = (HashMap) o;
-			addToDirectory(map, after, prefix + before + "/");
+			addToDirectory(map, after, prefix + before + '/');
 		}
 	}
 
@@ -365,7 +365,7 @@ outer:		while(true) {
 	 */
 	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error) {
 		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error);
-		if(logMINOR) Logger.minor(this, "Adding error element: "+element+" for "+key+" "+name);
+		if(logMINOR) Logger.minor(this, "Adding error element: "+element+" for "+key+ ' ' +name);
 		synchronized(storedData) {
 			storedData.push(element.key, element);
 		}
@@ -376,7 +376,7 @@ outer:		while(true) {
 	 */
 	private void addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp) {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(this, ctx, key, name, temp);
-		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+" "+name+" )");
+		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" )");
 		synchronized(storedData) {
 			storedData.push(element.key, element);
 			trimStoredData();

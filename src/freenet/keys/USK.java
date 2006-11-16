@@ -126,6 +126,6 @@ public class USK extends BaseClientKey {
 	}
 	
 	public String toString() {
-		return super.toString()+":"+getURI();
+		return super.toString()+ ':' +getURI();
 	}
 }

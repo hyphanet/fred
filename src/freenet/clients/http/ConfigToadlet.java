@@ -54,17 +54,17 @@ public class ConfigToadlet extends Toadlet {
 			
 			for(int j=0; j<o.length; j++){
 				configName=o[j].getName();
-				if(logMINOR) Logger.minor(this, "Setting "+prefix+"."+configName);
+				if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName);
 				
 				// we ignore unreconized parameters 
-				if(request.isPartSet(prefix+"."+configName)) {
-					String value = request.getPartAsString(prefix+"."+configName, MAX_PARAM_VALUE_SIZE);
+				if(request.isPartSet(prefix+ '.' +configName)) {
+					String value = request.getPartAsString(prefix+ '.' +configName, MAX_PARAM_VALUE_SIZE);
 					if(!(o[j].getValueString().equals(value))){
-						if(logMINOR) Logger.minor(this, "Setting "+prefix+"."+configName+" to "+value);
+						if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName+" to "+value);
 						try{
 							o[j].setValue(value);
 						}catch(Exception e){
-                            errbuf.append(o[j].getName()).append(" ").append(e).append("\n");
+                            errbuf.append(o[j].getName()).append(' ').append(e).append('\n');
 							Logger.error(this, "Caught "+e, e);
 						}
 					}
@@ -110,7 +110,7 @@ public class ConfigToadlet extends Toadlet {
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", "Configuration Navigation");
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
 			for(int i=0; i<sc.length;i++){
-				navigationContent.addChild("li").addChild("a", "href", "#"+sc[i].getPrefix(), sc[i].getPrefix());
+				navigationContent.addChild("li").addChild("a", "href", '#' +sc[i].getPrefix(), sc[i].getPrefix());
 			}
 			contentNode.addChild(navigationBar);
 		}
@@ -140,7 +140,7 @@ public class ConfigToadlet extends Toadlet {
 						continue;
 					}
 					if(o[j].getValueString().equals("true") || o[j].getValueString().equals("false")){
-						HTMLNode selectNode = configItemValueNode.addChild("select", "name", sc[i].getPrefix() + "." + configName);
+						HTMLNode selectNode = configItemValueNode.addChild("select", "name", sc[i].getPrefix() + '.' + configName);
 						if(o[j].getValueString().equals("true")){
 							selectNode.addChild("option", new String[] { "value", "selected" }, new String[] { "true", "selected" }, "true");
 							selectNode.addChild("option", "value", "false", "false");
@@ -149,7 +149,7 @@ public class ConfigToadlet extends Toadlet {
 							selectNode.addChild("option", new String[] { "value", "selected" }, new String[] { "false", "selected" }, "false");
 						}
 					}else{
-						configItemValueNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o[j].getShortDesc(), sc[i].getPrefix() + "." + configName, o[j].getValueString() });
+						configItemValueNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o[j].getShortDesc(), sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
 					}
 					configItemNode.addChild("span", "class", "configlongdesc", o[j].getLongDesc());
 				}

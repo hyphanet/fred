@@ -326,10 +326,10 @@ public class UdpSocketManager extends Thread {
 		boolean matched = false;
 		if ((!(m.getSpec().equals(DMT.packetTransmit))) && logMINOR) {
 			if ((m.getSpec().equals(DMT.ping) || m.getSpec().equals(DMT.pong)) && Logger.shouldLog(Logger.DEBUG, this)) {
-				Logger.debug(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getLocalPort() + " <- "
+				Logger.debug(this, "" + (System.currentTimeMillis() % 60000) + ' ' + _sock.getLocalPort() + " <- "
 						+ m.getSource() + " : " + m);
 			} else {
-				Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getLocalPort() + " <- "
+				Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + ' ' + _sock.getLocalPort() + " <- "
 						+ m.getSource() + " : " + m);
 			}
 		}
@@ -522,10 +522,10 @@ public class UdpSocketManager extends Thread {
 	    }
 		if ((m.getSpec().equals(DMT.ping) || m.getSpec().equals(DMT.pong)) && logMINOR) {
 			if(Logger.shouldLog(Logger.DEBUG, this))
-				Logger.debug(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getPort() + " -> " + destination
+				Logger.debug(this, "" + (System.currentTimeMillis() % 60000) + ' ' + _sock.getPort() + " -> " + destination
 						+ " : " + m);
 		} else {
-			if(logMINOR) Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getPort() + " -> " + destination
+			if(logMINOR) Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + ' ' + _sock.getPort() + " -> " + destination
 					+ " : " + m);
 		}
 //		byte[] blockToSend = m.encodeToPacket(lowLevelFilter, destination);

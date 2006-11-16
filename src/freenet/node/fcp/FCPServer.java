@@ -113,14 +113,14 @@ public class FCPServer implements Runnable {
 				loadPersistentRequests();
 			}
 			
-			Logger.normal(this, "Starting FCP server on "+bindTo+":"+port+".");
-			System.out.println("Starting FCP server on "+bindTo+":"+port+".");
+			Logger.normal(this, "Starting FCP server on "+bindTo+ ':' +port+ '.');
+			System.out.println("Starting FCP server on "+bindTo+ ':' +port+ '.');
 			NetworkInterface tempNetworkInterface = null;
 			try {
 				tempNetworkInterface = new NetworkInterface(port, bindTo, allowedHosts);
 			} catch (BindException be) {
-				Logger.error(this, "Couldn't bind to FCP Port "+bindTo+":"+port+". FCP Server not started.");
-				System.out.println("Couldn't bind to FCP Port "+bindTo+":"+port+". FCP Server not started.");
+				Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
+				System.out.println("Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
 			}
 			
 			this.networkInterface = tempNetworkInterface;
@@ -502,7 +502,7 @@ public class FCPServer implements Runnable {
 					GZIPOutputStream gos = new GZIPOutputStream(bos);
 					OutputStreamWriter osw = new OutputStreamWriter(gos);
 					BufferedWriter w = new BufferedWriter(osw);
-					w.write(Integer.toString(persistentRequests.length)+"\n");
+					w.write(Integer.toString(persistentRequests.length)+ '\n');
 					for(int i=0;i<persistentRequests.length;i++)
 						persistentRequests[i].write(w);
 					w.close();
@@ -637,7 +637,7 @@ public class FCPServer implements Runnable {
 				} catch (IdentifierCollisionException e1) {
 					// FIXME maybe use DateFormat
 					try {
-						innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy ("+System.currentTimeMillis()+")", returnFilename, returnTempFilename);
+						innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy ("+System.currentTimeMillis()+ ')', returnFilename, returnTempFilename);
 						return;
 					} catch (IdentifierCollisionException e2) {
 						while(true) {
@@ -666,14 +666,14 @@ public class FCPServer implements Runnable {
 				!expectedMimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE)) {
 			ext = DefaultMIMETypes.getExtension(expectedMimeType);
 		} else ext = null;
-		String extAdd = (ext == null ? "" : "." + ext);
+		String extAdd = (ext == null ? "" : '.' + ext);
 		String preferred = uri.getPreferredFilename();
 		File f = new File(core.getDownloadDir(), preferred + extAdd);
 		File f1 = new File(core.getDownloadDir(), preferred + ".freenet-tmp");
 		int x = 0;
 		while(f.exists() || f1.exists()) {
-			f = new File(core.getDownloadDir(), preferred + "-" + x + extAdd);
-			f1 = new File(core.getDownloadDir(), preferred + "-" + x + extAdd + ".freenet-tmp");
+			f = new File(core.getDownloadDir(), preferred + '-' + x + extAdd);
+			f1 = new File(core.getDownloadDir(), preferred + '-' + x + extAdd + ".freenet-tmp");
 		}
 		return f;
 	}

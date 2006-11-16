@@ -195,6 +195,6 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public String toString() {
-		return super.toString()+":"+uri;
+		return super.toString()+ ':' +uri;
 	}
 }

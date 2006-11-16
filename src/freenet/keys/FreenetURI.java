@@ -524,7 +524,7 @@ public class FreenetURI implements Cloneable{
 		}
 		if (metaStr != null) {
 			for (int i = 0; i < metaStr.length; i++) {
-				b.append("/").append(metaStr[i]);
+				b.append('/').append(metaStr[i]);
 			}
 		}
 		return b.toString();
@@ -549,7 +549,7 @@ public class FreenetURI implements Cloneable{
 		}
 		if (metaStr != null) {
 			for (int i = 0; i < metaStr.length; i++) {
-				b.append("/").append(metaStr[i]);
+				b.append('/').append(metaStr[i]);
 			}
 		}
 		return b.toString();
@@ -721,7 +721,7 @@ public class FreenetURI implements Cloneable{
 			if(logMINOR) Logger.minor(this, "Sanitized name "+i+" = "+s);
 			if(s.length() > 0) {
 				if(out.length() > 0)
-					out.append("-");
+					out.append('-');
 				out.append(s);
 			}
 		}

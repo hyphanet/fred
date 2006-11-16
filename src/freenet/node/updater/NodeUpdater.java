@@ -166,7 +166,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			
 			alert.set(availableVersion,fetchedVersion,result != null && result.asBucket() != null && result.asBucket().size() > 0);
 			alert.isValid(true);
-			Logger.normal(this,"Starting the update process ("+availableVersion+")");
+			Logger.normal(this,"Starting the update process ("+availableVersion+ ')');
 			System.err.println("Starting the update process: found the update ("+availableVersion+"), now fetching it.");
 			// We fetch it
 			try{
@@ -325,7 +325,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			return;
 		}
 		
-		System.out.println("################## New jar written! "+fetchedVersion+ " " +fNew.getAbsolutePath());
+		System.out.println("################## New jar written! "+fetchedVersion+ ' ' +fNew.getAbsolutePath());
 
 		if(!nastyRestart) {
 			// Easy way.
@@ -478,7 +478,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		int errorCode = e.getMode();
 		
 		if(!state.getURI().equals(revocationURI)){
-			if(logMINOR) Logger.minor(this, "onFailure("+e+","+state+")");
+			if(logMINOR) Logger.minor(this, "onFailure("+e+ ',' +state+ ')');
 			synchronized(this) {
 				this.cg = null;
 				isFetching=false;

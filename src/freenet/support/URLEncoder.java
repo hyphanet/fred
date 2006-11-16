@@ -28,7 +28,7 @@ public class URLEncoder {
         if (c < 16) {
           enc.append("%0");
         } else {
-          enc.append("%");
+          enc.append('%');
         }
         enc.append(Integer.toHexString(c));
       }

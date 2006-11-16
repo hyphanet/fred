@@ -27,7 +27,7 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	}
 
 	public String getTitle() {
-		return "A new stable version of Freenet is available ("+version+")";
+		return "A new stable version of Freenet is available ("+version+ ')';
 	}
 
 	public String getText() {
@@ -35,7 +35,7 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 		if(updater.inFinalCheck()) {
 			return s + "Your node is currently doing a final check to verify the security of the update"+
 			(version == readyVersion ? "" : (" to "+readyVersion)) +
-			". ("+updater.getRevocationDNFCounter()+"/"+NodeUpdater.REVOCATION_DNF_MIN+")";
+			". ("+updater.getRevocationDNFCounter()+ '/' +NodeUpdater.REVOCATION_DNF_MIN+ ')';
 		} else {
 			s+="Updating to "+version+" is advised. ";
 			if(isReady) s += " <form action=\"/\" method=\"post\"><input type=\"submit\" name=\"update\" value=\"Update to "+readyVersion+" Now\" /></form>";
@@ -49,13 +49,13 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 		HTMLNode alertNode = new HTMLNode("div");
 		alertNode.addChild("#", "It seems that your node isn't running the latest version of the software.");
 		if (updater.inFinalCheck()) {
-			alertNode.addChild("#", " Your node is currently doing a final check to verify the security of the update " + (version == readyVersion ? "" : (" to " + readyVersion)) + ". (Finished checks: " + updater.getRevocationDNFCounter() + " of " + NodeUpdater.REVOCATION_DNF_MIN + ")");
+			alertNode.addChild("#", " Your node is currently doing a final check to verify the security of the update " + (version == readyVersion ? "" : (" to " + readyVersion)) + ". (Finished checks: " + updater.getRevocationDNFCounter() + " of " + NodeUpdater.REVOCATION_DNF_MIN + ')');
 		} else {
 			if (isReady) {
 				alertNode.addChild("#", " Updating to " + version + " is advised.");
 				alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", "Update to " + readyVersion + " now" });
 				if(readyVersion < version)
-					alertNode.addChild("#", "The node is currently fetching version "+version+" but you can update to "+readyVersion+" now, or wait for the node to fetch "+version+".");
+					alertNode.addChild("#", "The node is currently fetching version "+version+" but you can update to "+readyVersion+" now, or wait for the node to fetch "+version+ '.');
 			} else {
 				if(updater.isAutoUpdateAllowed)
 					alertNode.addChild("#", " Your node is currently fetching the update over Freenet and will automatically restart when it's ready (as configured).");

@@ -64,7 +64,7 @@ public class TempFileBucket extends FileBucket {
 			if (logDebug)
 				Logger.debug(
 					this,
-					"Initializing TempFileBucket(" + f + "," + hook + ")");
+					"Initializing TempFileBucket(" + f + ',' + hook + ')');
 		}
 	}
 
@@ -325,14 +325,14 @@ public class TempFileBucket extends FileBucket {
 						+ l
 						+ " (real length: "
 						+ length
-						+ ")");
+						+ ')');
 			hook.enlargeFile(fakeLength, l);
 		}
 		fakeLength = l;
 	}
 
 	public synchronized String toString(){
-		return "TempFileBucket (File: '"+getFile().getAbsolutePath()+"', streams: "+streams.size()+", hook: "+hook+")";
+		return "TempFileBucket (File: '"+getFile().getAbsolutePath()+"', streams: "+streams.size()+", hook: "+hook+ ')';
 	}
 
 	class HookedFileBucketInputStream extends FileBucketInputStream {
@@ -360,9 +360,9 @@ public class TempFileBucket extends FileBucket {
 					this,
 					"Created HookedFileBucketOutputStream("
 						+ s
-						+ ","
-						+ restartCount
-						+ ")");
+						+ ','
+                            + restartCount
+						+ ')');
 		}
 
 		public void close() throws IOException {

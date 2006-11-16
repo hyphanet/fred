@@ -114,10 +114,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		File oldStoreFile = new File(oldDir, "store");
 		
 		// Location of new store file
-		String newStoreFileName = newTypeName(type) + suffix + "."+ (isStore ? "store" : "cache");
+		String newStoreFileName = newTypeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
 
-		String newDBPrefix = newTypeName(type)+"-"+(isStore ? "store" : "cache")+"-";
+		String newDBPrefix = newTypeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';
 		
 		File newFixSecondaryFile = new File(baseStoreDir, "recreate_secondary_db-"+newStoreFileName);
 		
@@ -392,7 +392,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Try to rename the old directory
 			File f = new File(baseStoreDir, "lost+found-"+oldDirName);
 			while(f.exists()) {
-				f = new File(baseStoreDir, "lost+found-"+oldDirName+"-"+Long.toHexString(random.nextLong()));
+				f = new File(baseStoreDir, "lost+found-"+oldDirName+ '-' +Long.toHexString(random.nextLong()));
 			}
 			if(!oldDir.renameTo(f)) {
 				System.err.println("Unable to rename old store directory "+oldDir+" to "+f+" (would have deleted it but it has user files or is not deletable)");
@@ -666,7 +666,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	long realSize = countCHKBlocksFromFile();
     	
-    	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+")");
+    	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
     	
     	try {
 			c = chkDB_accessTime.openCursor(null,null);
@@ -726,7 +726,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					}
 					x++;
 					if(x % 1024 == 0) {
-						System.out.println("Reading store prior to shrink: "+(x*100/realSize)+ "% ( "+x+"/"+realSize+")");
+						System.out.println("Reading store prior to shrink: "+(x*100/realSize)+ "% ( "+x+ '/' +realSize+ ')');
 					}
 					if(x == Integer.MAX_VALUE) {
 						System.err.println("Key number "+x+" - ignoring store after "+(x*(dataBlockSize+headerBlockSize)+" bytes"));
@@ -852,7 +852,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		if((i+1) % 2048 == 0) {
     			t.commit();
     			t = environment.beginTransaction(null,null);
-				System.out.println("Moving blocks: "+(i*100/wantedMove.size())+ "% ( "+i+"/"+wantedMove.size()+")");
+				System.out.println("Moving blocks: "+(i*100/wantedMove.size())+ "% ( "+i+ '/' +wantedMove.size()+ ')');
     		}
     		//System.err.println("Moved "+wantedBlock+" to "+unwantedBlock);
     	}
@@ -891,8 +891,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				if(maxBlocks >= curBlocks)
 					return;
 			}
-			System.err.println("Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+")");
-			Logger.error(this, "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+")");
+			System.err.println("Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
+			Logger.error(this, "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
 	    	WrapperManager.signalStarting((int)Math.min(0,(curBlocks-maxBlocks)*100)+5*60*1000); // 10 per second plus 5 minutes
 			while(true) {
 				t = environment.beginTransaction(null,null);
@@ -1085,7 +1085,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 							Logger.error(this, err, e);
 							System.err.println(err);
 							e.printStackTrace();
-							addFreeBlock(l, true, "bogus key ("+type+")");
+							addFreeBlock(l, true, "bogus key ("+type+ ')');
 							routingkey = null;
 							continue;
 						}
@@ -1105,7 +1105,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					chkDB.put(t,routingkeyDBE,blockDBE);
 					t.commit();
 					if(l % 1024 == 0)
-						System.out.println("Key "+l+"/"+(chkStore.length()/(dataBlockSize+headerBlockSize))+" OK");
+						System.out.println("Key "+l+ '/' +(chkStore.length()/(dataBlockSize+headerBlockSize))+" OK");
 					t = null;
 				} finally {
 					l++;
@@ -1155,7 +1155,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			int x = 0;
 			while(true) {
 		    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
-		    	if(logMINOR) Logger.minor(this, "Found another key ("+(x++)+") ("+storeBlock.offset+")");
+		    	if(logMINOR) Logger.minor(this, "Found another key ("+(x++)+") ("+storeBlock.offset+ ')');
 				Long l = new Long(storeBlock.offset);
 				if(s.contains(l)) {
 					if(logMINOR) Logger.minor(this, "Deleting (block number conflict).");
@@ -1234,7 +1234,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    					Logger.error(this, "Environment does not support files bigger than 2 GB?");
 	    					System.out.println("Environment does not support files bigger than 2 GB? (exception to follow)");
 	    				}
-		    			Logger.error(this, "Caught IOException on chkStore.seek("+seekTarget+")");
+		    			Logger.error(this, "Caught IOException on chkStore.seek("+seekTarget+ ')');
 		    			throw ioe;
 		    		}
 		    		chkStore.readFully(header);
@@ -1269,7 +1269,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		
 	    	}catch(CHKVerifyException ex){
 	    		Logger.error(this, "CHKBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+chk);
-	    		System.err.println("Does not verify (CHK block "+storeBlock.offset+")");
+	    		System.err.println("Does not verify (CHK block "+storeBlock.offset+ ')');
 	    		c.close();
 	    		c = null;
 	    		chkDB.delete(t, routingkeyDBE);
@@ -1452,7 +1452,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    	DSAPublicKey block = null;
 	    	
     		byte[] data = new byte[dataBlockSize];
-    		if(logMINOR) Logger.minor(this, "Reading from store... "+storeBlock.offset+" ("+storeBlock.recentlyUsed+")");
+    		if(logMINOR) Logger.minor(this, "Reading from store... "+storeBlock.offset+" ("+storeBlock.recentlyUsed+ ')');
     		synchronized(chkStore) {
 	    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
 	    		chkStore.readFully(data);
@@ -1527,13 +1527,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private void addFreeBlock(long offset, boolean loud, String reason) {
    		if(freeBlocks.push(offset)) {
    			if(loud) {
-   				System.err.println("Freed block "+offset+" ("+reason+")");
-   				Logger.normal(this, "Freed block "+offset+" ("+reason+")");
+   				System.err.println("Freed block "+offset+" ("+reason+ ')');
+   				Logger.normal(this, "Freed block "+offset+" ("+reason+ ')');
    			} else {
-   				if(logMINOR) Logger.minor(this, "Freed block "+offset+" ("+reason+")");
+   				if(logMINOR) Logger.minor(this, "Freed block "+offset+" ("+reason+ ')');
    			}
    		} else {
-   			if(logMINOR) Logger.minor(this, "Already freed block "+offset+" ("+reason+")");
+   			if(logMINOR) Logger.minor(this, "Already freed block "+offset+" ("+reason+ ')');
    		}
 	}
 
@@ -1719,7 +1719,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					Logger.error(this, "Environment does not support files bigger than 2 GB?");
 					System.out.println("Environment does not support files bigger than 2 GB? (exception to follow)");
 				}
-				Logger.error(this, "Caught IOException on chkStore.seek("+byteOffset+")");
+				Logger.error(this, "Caught IOException on chkStore.seek("+byteOffset+ ')');
 				throw ioe;
 			}
 			chkStore.write(header);

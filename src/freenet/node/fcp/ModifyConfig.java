@@ -41,14 +41,14 @@ public class ModifyConfig extends FCPMessage {
 			
 			for(int j=0; j<o.length; j++){
 				configName=o[j].getName();
-				if(logMINOR) Logger.minor(this, "Setting "+prefix+"."+configName);
+				if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName);
 				
 				// we ignore unreconized parameters 
-				if(fs.get(prefix+"."+configName) != null) {
-					if(!(o[j].getValueString().equals(fs.get(prefix+"."+configName)))){
-						if(logMINOR) Logger.minor(this, "Setting "+prefix+"."+configName+" to "+fs.get(prefix+"."+configName));
+				if(fs.get(prefix+ '.' +configName) != null) {
+					if(!(o[j].getValueString().equals(fs.get(prefix+ '.' +configName)))){
+						if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName+" to "+fs.get(prefix+ '.' +configName));
 						try{
-							o[j].setValue(fs.get(prefix+"."+configName));
+							o[j].setValue(fs.get(prefix+ '.' +configName));
 						}catch(Exception e){
 							// Bad values silently fail from an FCP perspective, but the FCP client can tell if a change took by comparing ConfigData messages before and after
 							Logger.error(this, "Caught "+e, e);

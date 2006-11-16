@@ -100,7 +100,7 @@ public class SymlinkerToadlet extends Toadlet {
 			int i = 0;
 			while(it.hasNext()) {
 				String key = (String)it.next();
-				retarr[i++] = key + "#" + linkMap.get(key); 
+				retarr[i++] = key + '#' + linkMap.get(key);
 			}
 		}
 		return StringArrOption.arrayToString(retarr);

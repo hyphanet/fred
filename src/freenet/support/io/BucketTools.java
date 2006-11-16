@@ -363,7 +363,7 @@ public class BucketTools {
 			if((bytesRead < bucketLength) && (bucketLength > 0))
 				throw new EOFException();
 			if((bytesRead != bucketLength) && (bucketLength > 0))
-				throw new IOException("Read "+bytesRead+" but bucket length "+bucketLength+"!");
+				throw new IOException("Read "+bytesRead+" but bucket length "+bucketLength+ '!');
 			return md.digest();
 		} finally {
 			if(is != null) is.close();
@@ -388,7 +388,7 @@ public class BucketTools {
 				if(bytes <= 0) {
 					if(truncateLength == Long.MAX_VALUE)
 						break;
-					throw new IOException("Could not move required quantity of data: "+bytes+" (moved "+moved+" of "+truncateLength+")");
+					throw new IOException("Could not move required quantity of data: "+bytes+" (moved "+moved+" of "+truncateLength+ ')');
 				}
 				os.write(buf, 0, bytes);
 				moved += bytes;
@@ -414,7 +414,7 @@ public class BucketTools {
 				if(bytes <= 0) {
 					if(truncateLength == Long.MAX_VALUE)
 						break;
-					throw new IOException("Could not move required quantity of data: "+bytes+" (moved "+moved+" of "+truncateLength+")");
+					throw new IOException("Could not move required quantity of data: "+bytes+" (moved "+moved+" of "+truncateLength+ ')');
 				}
 				os.write(buf, 0, bytes);
 				moved += bytes;

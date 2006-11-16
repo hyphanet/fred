@@ -90,7 +90,7 @@ public class NumberedRecentItems {
             if((item != null) && (num < 0))
                 throw new IllegalStateException("getNumber() must return positive numbers");
             if((num < prevNum) || ((num != -1) && (num == prevNum))) {
-                throw new IllegalStateException("Must be higher than prev: "+num+" "+prevNum);
+                throw new IllegalStateException("Must be higher than prev: "+num+ ' ' +prevNum);
             }
             prevNum = num;
         }

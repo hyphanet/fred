@@ -122,7 +122,7 @@ public class PluginManager {
 			}
 			Logger.normal(this, "Plugin loaded: " + filename);
 		} catch (PluginNotFoundException e) {
-			Logger.normal(this, "Loading plugin failed (" + filename + ")", e);
+			Logger.normal(this, "Loading plugin failed (" + filename + ')', e);
 		} catch (UnsupportedClassVersionError e) {
 			Logger.error(this, "Could not load plugin "+filename+" : "+e, e);
 			System.err.println("Could not load plugin "+filename+" : "+e);
@@ -144,7 +144,7 @@ public class PluginManager {
 		synchronized (toadletList) {
 			toadletList.put(pl.getClass().getName(), pl);
 		}
-		Logger.normal(this, "Added HTTP handler for /plugins/"+pl.getClass().getName()+"/");
+		Logger.normal(this, "Added HTTP handler for /plugins/"+pl.getClass().getName()+ '/');
 	}
 	
 	public void removePlugin(Thread t) {
@@ -160,7 +160,7 @@ public class PluginManager {
 						try {
 							toadletList.remove(pi.getPluginClassName());
 							Logger.normal(this, "Removed HTTP handler for /plugins/"+
-									pi.getPluginClassName()+"/");
+									pi.getPluginClassName()+ '/');
 						} catch (Throwable ex) {
 							Logger.error(this, "removing Plugin", ex);
 						}
@@ -185,7 +185,7 @@ public class PluginManager {
 				for (int i = 0 ; i < targets.length ; i++) {
 					toadletList.remove(targets[i]);
 					Logger.normal(this, "Removed HTTP symlink: " + targets[i] +
-							" => /plugins/"+pi.getPluginClassName()+"/");
+							" => /plugins/"+pi.getPluginClassName()+ '/');
 				}
 			} catch (Throwable ex) {
 				Logger.error(this, "removing Toadlet-link", ex);
@@ -206,7 +206,7 @@ public class PluginManager {
 					toadletList.remove(targets[i]);
 					pi.removePluginToadletSymlink(targets[i]);
 					Logger.normal(this, "Removed HTTP symlink: " + targets[i] +
-							" => /plugins/"+pi.getPluginClassName()+"/");
+							" => /plugins/"+pi.getPluginClassName()+ '/');
 				}
 			} catch (Throwable ex) {
 				Logger.error(this, "removing Toadlet-link: " + rm, ex);

@@ -304,7 +304,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 	
 	public void start() throws InserterException {
-		if(logMINOR) Logger.minor(this, "Starting segment "+segNo+" of "+parent+" ("+parent.dataLength+"): "+this+" ( finished="+finished+" encoded="+encoded+" hasURIs="+hasURIs+")");
+		if(logMINOR) Logger.minor(this, "Starting segment "+segNo+" of "+parent+" ("+parent.dataLength+"): "+this+" ( finished="+finished+" encoded="+encoded+" hasURIs="+hasURIs+ ')');
 		boolean fin = true;
 		
 		for(int i=0;i<dataBlockInserters.length;i++) {
@@ -322,7 +322,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		if(!encoded) {
 			if(logMINOR) Logger.minor(this, "Segment "+segNo+" of "+parent+" ("+parent.dataLength+") is not encoded");
 			if(splitfileAlgo != null) {
-				if(logMINOR) Logger.minor(this, "Encoding segment "+segNo+" of "+parent+" ("+parent.dataLength+")");
+				if(logMINOR) Logger.minor(this, "Encoding segment "+segNo+" of "+parent+" ("+parent.dataLength+ ')');
 				// Encode blocks
 				Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder for "+this);
 				t.setDaemon(true);

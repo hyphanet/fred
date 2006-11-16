@@ -20,7 +20,7 @@ public class BlockInsertErrorEvent implements ClientEvent {
 	}
 	
 	public String getDescription() {
-		return e.getMessage()+" for "+key+" ("+retryNumber+")";
+		return e.getMessage()+" for "+key+" ("+retryNumber+ ')';
 	}
 
 	public int getCode() {

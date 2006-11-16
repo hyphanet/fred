@@ -84,7 +84,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 					uri = new FreenetURI(uriStr);
 				}
 		} catch (MalformedURLException e) {
-			Logger.error(this, "Spider: MalformedURLException: "+uriStr+":"+e);
+			Logger.error(this, "Spider: MalformedURLException: "+uriStr+ ':' +e);
 			return;
 		}
 
@@ -266,8 +266,8 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		HashMap urisToNumbers = new HashMap();
 		for (int i = 0; i < uris.length; i++) {
 			urisToNumbers.put(uris[i], new Integer(i));
-			bw.write("!" + uris[i].toString(false) + "\n");
-			bw.write("+" + titlesOfURIs.get(uris[i].toString(false)) + "\n");
+			bw.write('!' + uris[i].toString(false) + '\n');
+			bw.write("+" + titlesOfURIs.get(uris[i].toString(false)) + '\n');
 		}
 		for (int i = 0; i < words.length; i++) {
 			StringBuffer s = new StringBuffer();
@@ -397,10 +397,10 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private HTMLNode createNavbar(PageMaker pageMaker, int running, int queued, int visited, int failed) {
 		HTMLNode navbar = pageMaker.getInfobox("navbar", "Page Navigation");
 		HTMLNode list = pageMaker.getContentNode(navbar).addChild("ul");
-		list.addChild("li").addChild("a", "href", "#running", "Running (" + running + ")");
-		list.addChild("li").addChild("a", "href", "#queued", "Queued (" + queued + ")");
-		list.addChild("li").addChild("a", "href", "#visited", "Visited (" + visited + ")");
-		list.addChild("li").addChild("a", "href", "#failed", "Failed (" + failed + ")");
+		list.addChild("li").addChild("a", "href", "#running", "Running (" + running + ')');
+		list.addChild("li").addChild("a", "href", "#queued", "Queued (" + queued + ')');
+		list.addChild("li").addChild("a", "href", "#visited", "Visited (" + visited + ')');
+		list.addChild("li").addChild("a", "href", "#failed", "Failed (" + failed + ')');
 		return navbar;
 	}
 

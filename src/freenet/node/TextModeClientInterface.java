@@ -192,8 +192,8 @@ public class TextModeClientInterface implements Runnable {
         try {
             line = reader.readLine();
         } catch (IOException e) {
-            outsb.append("Bye... (").append(e).append(")");
-            System.err.println("Bye... ("+e+")");
+            outsb.append("Bye... (").append(e).append(')');
+            System.err.println("Bye... ("+e+ ')');
             return true;
         }
         boolean getCHKOnly = false;
@@ -291,12 +291,12 @@ public class TextModeClientInterface implements Runnable {
                     fnam = "freenet-download-"+HexUtil.bytesToHex(BucketTools.hash(data), 0, 10);
                     String ext = DefaultMIMETypes.getExtension(cm.getMIMEType());
                     if((ext != null) && !ext.equals(""))
-                    	fnam += "." + ext;
+                    	fnam += '.' + ext;
                 }
                 File f = new File(downloadsDir, fnam);
                 if(f.exists()) {
                     outsb.append("File exists already: ").append(fnam);
-                    fnam = "freenet-"+System.currentTimeMillis()+"-"+fnam;
+                    fnam = "freenet-"+System.currentTimeMillis()+ '-' +fnam;
                 }
                 FileOutputStream fos = null;
                 try {
@@ -846,7 +846,7 @@ public class TextModeClientInterface implements Runnable {
     private HashMap makeBucketsByName(String directory) {
     	
     	if (!directory.endsWith("/"))
-    		directory = directory + "/";
+    		directory = directory + '/';
     	File thisdir = new File(directory);
     	
     	System.out.println("Listing dir: "+thisdir);
@@ -889,7 +889,7 @@ public class TextModeClientInterface implements Runnable {
                 line = reader.readLine();
                 if(line == null) throw new EOFException();
             } catch (IOException e1) {
-                System.err.println("Bye... ("+e1+")");
+                System.err.println("Bye... ("+e1+ ')');
                 return null;
             }
             if((!isFieldSet) && line.equals(".")) break;

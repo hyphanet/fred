@@ -20,7 +20,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 	}
 
 	void start() {
-		Thread t = new Thread(this, "FCP output handler for "+handler.sock.getRemoteSocketAddress()+":"+handler.sock.getPort());
+		Thread t = new Thread(this, "FCP output handler for "+handler.sock.getRemoteSocketAddress()+ ':' +handler.sock.getPort());
 		t.setDaemon(true);
 		t.start();
 	}

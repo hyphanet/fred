@@ -20,6 +20,6 @@ public class PromiscuousItemException extends RuntimeException {
     }
 
 	public PromiscuousItemException(Item item, DoublyLinkedList parent) {
-		super(item.toString()+":"+parent);
+		super(item.toString()+ ':' +parent);
 	}
 }

@@ -305,7 +305,7 @@ public class NodeClientCore {
 				continue;
 			
 	        if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
-	        	if(logMINOR) Logger.minor(this, "CHK fetch cost "+rs.getTotalSentBytes()+"/"+rs.getTotalReceivedBytes()+" bytes ("+status+")");
+	        	if(logMINOR) Logger.minor(this, "CHK fetch cost "+rs.getTotalSentBytes()+ '/' +rs.getTotalReceivedBytes()+" bytes ("+status+ ')');
             	node.localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
             	node.localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 	        }
@@ -402,7 +402,7 @@ public class NodeClientCore {
 				continue;
 
 	        if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
-            	if(logMINOR) Logger.minor(this, "SSK fetch cost "+rs.getTotalSentBytes()+"/"+rs.getTotalReceivedBytes()+" bytes ("+status+")");
+            	if(logMINOR) Logger.minor(this, "SSK fetch cost "+rs.getTotalSentBytes()+ '/' +rs.getTotalReceivedBytes()+" bytes ("+status+ ')');
             	node.localSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
             	node.localSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 	        }
@@ -523,7 +523,7 @@ public class NodeClientCore {
 			}
 		}
 		
-		if(logMINOR) Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+" "+is.getStatusString());
+		if(logMINOR) Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+ ' ' +is.getStatusString());
 		
 		// Finished?
 		if(!hasReceivedRejectedOverload) {
@@ -545,7 +545,7 @@ public class NodeClientCore {
         		&& status != CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
         	int sent = is.getTotalSentBytes();
         	int received = is.getTotalReceivedBytes();
-        	if(logMINOR) Logger.minor(this, "Local CHK insert cost "+sent+"/"+received+" bytes ("+status+")");
+        	if(logMINOR) Logger.minor(this, "Local CHK insert cost "+sent+ '/' +received+" bytes ("+status+ ')');
         	node.localChkInsertBytesSentAverage.report(sent);
         	node.localChkInsertBytesReceivedAverage.report(received);
         }
@@ -631,7 +631,7 @@ public class NodeClientCore {
 			}
 		}
 		
-		if(logMINOR) Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+" "+is.getStatusString());
+		if(logMINOR) Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+ ' ' +is.getStatusString());
 		
 		// Finished?
 		if(!hasReceivedRejectedOverload) {
@@ -652,7 +652,7 @@ public class NodeClientCore {
         		&& status != CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
         	int sent = is.getTotalSentBytes();
         	int received = is.getTotalReceivedBytes();
-        	if(logMINOR) Logger.minor(this, "Local SSK insert cost "+sent+"/"+received+" bytes ("+status+")");
+        	if(logMINOR) Logger.minor(this, "Local SSK insert cost "+sent+ '/' +received+" bytes ("+status+ ')');
         	node.localSskInsertBytesSentAverage.report(sent);
         	node.localSskInsertBytesReceivedAverage.report(received);
         }

@@ -302,7 +302,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		AllDataMessage adm = null;
 		synchronized(this) {
 			if(succeeded) {
-				Logger.error(this, "onSuccess called twice for "+this+" ("+identifier+")");
+				Logger.error(this, "onSuccess called twice for "+this+" ("+identifier+ ')');
 				return; // We might be called twice; ignore it if so.
 			}
 			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {

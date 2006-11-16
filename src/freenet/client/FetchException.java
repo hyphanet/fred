@@ -47,7 +47,7 @@ public class FetchException extends Exception {
 		newURI = null;
 		expectedSize = -1;
 		if(Logger.shouldLog(Logger.MINOR, this)) 
-			Logger.minor(this, "FetchException("+getMessage(mode)+")", this);
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
 	public FetchException(int m, long expectedSize, boolean finalizedSize, String expectedMimeType) {
@@ -60,7 +60,7 @@ public class FetchException extends Exception {
 		this.expectedSize = expectedSize;
 		this.expectedMimeType = expectedMimeType;
 		if(Logger.shouldLog(Logger.MINOR, this)) 
-			Logger.minor(this, "FetchException("+getMessage(mode)+")", this);
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 	
 	public FetchException(int m, long expectedSize, boolean finalizedSize, String expectedMimeType, FreenetURI uri) {
@@ -73,7 +73,7 @@ public class FetchException extends Exception {
 		this.expectedSize = expectedSize;
 		this.expectedMimeType = expectedMimeType;
 		if(Logger.shouldLog(Logger.MINOR, this)) 
-			Logger.minor(this, "FetchException("+getMessage(mode)+")", this);
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 	
 	public FetchException(MetadataParseException e) {
@@ -131,7 +131,7 @@ public class FetchException extends Exception {
 		newURI = null;
 		expectedSize = -1;
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "FetchException("+getMessage(mode)+")");
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')');
 	}
 	
 	public FetchException(int mode, String msg) {
@@ -232,17 +232,17 @@ public class FetchException extends Exception {
 		StringBuffer sb = new StringBuffer(200);
 		sb.append("FetchException:");
 		sb.append(getShortMessage(mode));
-		sb.append(":");
+		sb.append(':');
 		sb.append(newURI);
-		sb.append(":");
+		sb.append(':');
 		sb.append(expectedSize);
-		sb.append(":");
+		sb.append(':');
 		sb.append(expectedMimeType);
-		sb.append(":");
+		sb.append(':');
 		sb.append(finalizedSizeAndMimeType);
-		sb.append(":");
+		sb.append(':');
 		sb.append(errorCodes);
-		sb.append(":");
+		sb.append(':');
 		sb.append(extraMessage);
 		return sb.toString();
 	}

@@ -36,7 +36,7 @@ public class NodeCHK extends Key {
     }
 
     public String toString() {
-        return super.toString() + "@"+Base64.encode(routingKey)+":"+Integer.toHexString(hash);
+        return super.toString() + '@' +Base64.encode(routingKey)+ ':' +Integer.toHexString(hash);
     }
 
     public final void write(DataOutput _index) throws IOException {

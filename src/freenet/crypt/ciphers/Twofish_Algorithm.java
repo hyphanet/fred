@@ -49,9 +49,9 @@ public final class Twofish_Algorithm // implicit no-argument constructor
 
    static void debug (String s) { err.println(">>> "+NAME+": "+s); }
    static void trace (boolean in, String s) {
-      if (TRACE) err.println((in?"==> ":"<== ")+NAME+"."+s);
+      if (TRACE) err.println((in?"==> ":"<== ")+NAME+ '.' +s);
    }
-   static void trace (String s) { if (TRACE) err.println("<=> "+NAME+"."+s); }
+   static void trace (String s) { if (TRACE) err.println("<=> "+NAME+ '.' +s); }
 
 
 // Constants and variables
@@ -343,7 +343,7 @@ System.out.println();
     */
    public static final synchronized Object makeKey (byte[] k)
    throws InvalidKeyException {
-if (TDEBUG) trace(IN, "makeKey("+k+")");
+if (TDEBUG) trace(IN, "makeKey("+k+ ')');
       if (k == null)
          throw new InvalidKeyException("Empty key");
       int length = k.length;
@@ -459,7 +459,7 @@ if (TDEBUG) trace(OUT, "makeKey()");
     */
    public static final void
    blockEncrypt (byte[] in, byte[] result, int inOffset, Object sessionKey) {
-if (TDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+")");
+if (TDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+ ')');
       Object[] sk = (Object[]) sessionKey; // extract S-box and session key
       int[] sBox = (int[]) sk[0];
       int[] sKey = (int[]) sk[1];
@@ -498,7 +498,7 @@ if (TDEBUG && (debuglevel > 6)) System.out.println("PTw="+intToString(x0)+intToS
          x2  = x2 >>> 1 | x2 << 31;
          x3  = x3 << 1 | x3 >>> 31;
          x3 ^= t0 + 2*t1 + sKey[k++];
-if (TDEBUG && (debuglevel > 6)) System.out.println("CT"+(R)+"="+intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
+if (TDEBUG && (debuglevel > 6)) System.out.println("CT"+(R)+ '=' +intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
 
          t0 = Fe32_0( sBox, x2 );
          t1 = Fe32_3( sBox, x3 );
@@ -506,7 +506,7 @@ if (TDEBUG && (debuglevel > 6)) System.out.println("CT"+(R)+"="+intToString(x0)+
          x0  = x0 >>> 1 | x0 << 31;
          x1  = x1 << 1 | x1 >>> 31;
          x1 ^= t0 + 2*t1 + sKey[k++];
-if (TDEBUG && (debuglevel > 6)) System.out.println("CT"+(R+1)+"="+intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
+if (TDEBUG && (debuglevel > 6)) System.out.println("CT"+(R+1)+ '=' +intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
       }
       x2 ^= sKey[OUTPUT_WHITEN    ];
       x3 ^= sKey[OUTPUT_WHITEN + 1];
@@ -547,7 +547,7 @@ if (TDEBUG) trace(OUT, "blockEncrypt()");
     */
    public static final void
    blockDecrypt (byte[] in, byte[] result, int inOffset, Object sessionKey) {
-if (TDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+")");
+if (TDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+ ')');
       Object[] sk = (Object[]) sessionKey; // extract S-box and session key
       int[] sBox = (int[]) sk[0];
       int[] sKey = (int[]) sk[1];
@@ -586,7 +586,7 @@ if (TDEBUG && (debuglevel > 6)) System.out.println("CTw="+intToString(x2)+intToS
          x1  = x1 >>> 1 | x1 << 31;
          x0  = x0 << 1 | x0 >>> 31;
          x0 ^= t0 + t1 + sKey[k--];
-if (TDEBUG && (debuglevel > 6)) System.out.println("PT"+(ROUNDS-R)+"="+intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
+if (TDEBUG && (debuglevel > 6)) System.out.println("PT"+(ROUNDS-R)+ '=' +intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
 
          t0 = Fe32_0( sBox, x0 );
          t1 = Fe32_3( sBox, x1 );
@@ -594,7 +594,7 @@ if (TDEBUG && (debuglevel > 6)) System.out.println("PT"+(ROUNDS-R)+"="+intToStri
          x3  = x3 >>> 1 | x3 << 31;
          x2  = x2 << 1 | x2 >>> 31;
          x2 ^= t0 + t1 + sKey[k--];
-if (TDEBUG && (debuglevel > 6)) System.out.println("PT"+(ROUNDS-R-1)+"="+intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
+if (TDEBUG && (debuglevel > 6)) System.out.println("PT"+(ROUNDS-R-1)+ '=' +intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
       }
       x0 ^= sKey[INPUT_WHITEN    ];
       x1 ^= sKey[INPUT_WHITEN + 1];
@@ -732,7 +732,7 @@ if (TDEBUG) trace(OUT, "blockDecrypt()");
 
    /** A basic symmetric encryption/decryption test for a given key size. */
    private static boolean self_test (int keysize) {
-if (TDEBUG) trace(IN, "self_test("+keysize+")");
+if (TDEBUG) trace(IN, "self_test("+keysize+ ')');
       boolean ok = false;
       try {
          byte[] kb = new byte[keysize];

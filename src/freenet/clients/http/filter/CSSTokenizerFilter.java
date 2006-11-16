@@ -986,7 +986,7 @@ class CSSTokenizerFilter {
 			if(quote != ' ') out.append(quote);
 			out.append(unescapeData());
 			if(quote != ' ') out.append(quote);
-			if(url) out.append(")");
+			if(url) out.append(')');
 			out.append(suffix);
 			return out.toString();
 		}
@@ -1412,7 +1412,7 @@ class CSSTokenizerFilter {
         case 26: 
           { String s = yytext();
 	s = s.substring("@media".length()).trim();
-	w.write("@media "+s+" ");
+	w.write("@media "+s+ ' ');
 	if(debug) log("Matched @media: "+s);
           }
         case 43: break;

@@ -144,7 +144,7 @@ public class StandardOnionFECCodec extends FECCodec {
 					System.err.println("Failed to load native FEC: "+t);
 					t.printStackTrace();
 				}
-				Logger.error(this, "Failed to load native FEC: "+t+" (k="+k+" n="+n+")", t);
+				Logger.error(this, "Failed to load native FEC: "+t+" (k="+k+" n="+n+ ')', t);
 				fec = new PureCode(k,n);
 				if(t instanceof UnsatisfiedLinkError)
 					noNative = true;
@@ -268,7 +268,7 @@ public class StandardOnionFECCodec extends FECCodec {
 
 			if (idx < k)
 				throw new IllegalArgumentException(
-						"Must have at least k packets (k="+k+",idx="+idx+")");
+						"Must have at least k packets (k="+k+",idx="+idx+ ')');
 
 			if(logMINOR) for (int i = 0; i < packetIndexes.length; i++)
 				Logger.minor(this, "[" + i + "] = " + packetIndexes[i]);

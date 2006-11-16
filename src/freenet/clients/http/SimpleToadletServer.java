@@ -298,8 +298,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	public void start() {
 		if(myThread != null) {
 			myThread.start();
-			Logger.normal(this, "Starting FProxy on "+bindTo+":"+port);
-			System.out.println("Starting FProxy on "+bindTo+":"+port);
+			Logger.normal(this, "Starting FProxy on "+bindTo+ ':' +port);
+			System.out.println("Starting FProxy on "+bindTo+ ':' +port);
 		}
 	}
 	

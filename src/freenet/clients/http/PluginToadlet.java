@@ -179,7 +179,7 @@ public class PluginToadlet extends Toadlet {
 		Plugin[] plugins = pluginManager.getPlugins();
 		for (int pluginIndex = 0, pluginCount = plugins.length; pluginIndex < pluginCount; pluginIndex++) {
 			Plugin plugin = plugins[pluginIndex];
-			String pluginName = plugin.getClass().getName() + "@" + pluginIndex;
+			String pluginName = plugin.getClass().getName() + '@' + pluginIndex;
 			if (pluginName.equals(internalPluginName)) {
 				return plugin;
 			}
@@ -209,7 +209,7 @@ public class PluginToadlet extends Toadlet {
 		headerRow.addChild("th", "colspan", "3");
 		for (int pluginIndex = 0, pluginCount = plugins.length; pluginIndex < pluginCount; pluginIndex++) {
 			Plugin plugin = plugins[pluginIndex];
-			String internalName = plugin.getClass().getName() + "@" + pluginIndex;
+			String internalName = plugin.getClass().getName() + '@' + pluginIndex;
 			HTMLNode tableRow = table.addChild("tr");
 			tableRow.addChild("td", plugin.getPluginName());
 			tableRow.addChild("td", internalName);

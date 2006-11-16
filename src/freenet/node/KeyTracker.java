@@ -155,7 +155,7 @@ public class KeyTracker {
         long urgentTime;
         
         public String toString() {
-            return super.toString()+": packet "+packetNumber+" urgent@"+urgentTime+"("+(System.currentTimeMillis()-urgentTime)+")";
+            return super.toString()+": packet "+packetNumber+" urgent@"+urgentTime+ '(' +(System.currentTimeMillis()-urgentTime)+ ')';
         }
     }
     
@@ -343,7 +343,7 @@ public class KeyTracker {
 		public void onAcked() {
 			long t = Math.max(0, System.currentTimeMillis() - createdTime);
 			pn.pingAverage.report(t);
-			if(logMINOR) Logger.minor(this, "Reported round-trip time of "+TimeUtil.formatTime(t, 2, true)+" on "+pn.getPeer()+" (avg "+TimeUtil.formatTime((long)pn.pingAverage.currentValue(),2,true)+", #"+packetNumber+")");
+			if(logMINOR) Logger.minor(this, "Reported round-trip time of "+TimeUtil.formatTime(t, 2, true)+" on "+pn.getPeer()+" (avg "+TimeUtil.formatTime((long)pn.pingAverage.currentValue(),2,true)+", #"+packetNumber+ ')');
 		}
 
 		long urgentDelay() {
@@ -585,7 +585,7 @@ public class KeyTracker {
         } else {
         	synchronized(this) {
         		String msg = "Asking me to resend packet "+seqNumber+
-        			" which we haven't sent yet or which they have already acked (next="+nextPacketNumber+")";
+        			" which we haven't sent yet or which they have already acked (next="+nextPacketNumber+ ')';
         		// Probably just a bit late - caused by overload etc
         		if(logMINOR) Logger.minor(this, msg);
         	}

@@ -110,7 +110,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
 
     public String getName() {
         return file.getAbsolutePath() + " [" + offset + ", " + 
-            (offset + len - 1) + "]";
+            (offset + len - 1) + ']';
     }
         
     public synchronized void resetWrite() {
@@ -225,7 +225,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
             raf = new RandomAccessFile(file, "r");
             raf.seek(offset);
             println(" -- Created new InputStream [" + offset + 
-                    ", " + (offset + len -1) + "]" );
+                    ", " + (offset + len -1) + ']');
         }
         
         ////////////////////////////////////////////////////////////
@@ -352,7 +352,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
             raf = new RandomAccessFile(file, "rw");
             raf.seek(offset + localOffset);
             println(" -- Created new OutputStream [" + offset + ", " 
-                    + (offset + len -1) + "]" );
+                    + (offset + len -1) + ']');
         }
     
         ////////////////////////////////////////////////////////////

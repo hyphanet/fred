@@ -108,7 +108,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(finished) return;
 			edition = edNo;
 			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+" "+edition);
+				Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+ ' ' +edition);
 			sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
 					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject);
 		}
@@ -203,12 +203,12 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	public void onTransition(ClientPutState oldState, ClientPutState newState) {
 		// Shouldn't happen
-		Logger.error(this, "Got onTransition("+oldState+","+newState+")");
+		Logger.error(this, "Got onTransition("+oldState+ ',' +newState+ ')');
 	}
 
 	public void onMetadata(Metadata m, ClientPutState state) {
 		// Shouldn't happen
-		Logger.error(this, "Got onMetadata("+m+","+state+")");
+		Logger.error(this, "Got onMetadata("+m+ ',' +state+ ')');
 	}
 
 	public void onBlockSetFinished(ClientPutState state) {

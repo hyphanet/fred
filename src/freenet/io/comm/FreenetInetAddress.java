@@ -60,7 +60,7 @@ public class FreenetInetAddress {
         // debugging log messages because AddressIdentifier doesn't appear to handle all IPv6 literals correctly, such as "fe80::204:1234:dead:beef"
         AddressIdentifier.AddressType addressType = AddressIdentifier.getAddressType(host);
         boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-        if(logDEBUG) Logger.debug(this, "Address type of '"+host+"' appears to be '"+addressType+"'");
+        if(logDEBUG) Logger.debug(this, "Address type of '"+host+"' appears to be '"+addressType+ '\'');
         if(!addressType.toString().equals("Other")) {
             try {
                 addr = InetAddress.getByName(host);
@@ -68,16 +68,16 @@ public class FreenetInetAddress {
             	if(!allowUnknown) throw e;
                 addr = null;
             }
-            if(logDEBUG) Logger.debug(this, "host is '"+host+"' and addr.getHostAddress() is '"+addr.getHostAddress()+"'");
+            if(logDEBUG) Logger.debug(this, "host is '"+host+"' and addr.getHostAddress() is '"+addr.getHostAddress()+ '\'');
             if(addr != null && addr.getHostAddress().equals(host)) {
-            	if(logDEBUG) Logger.debug(this, "'"+host+"' looks like an IP address");
+            	if(logDEBUG) Logger.debug(this, '\'' +host+"' looks like an IP address");
                 host = null;
             } else {
                 addr = null;
             }
         }
         if( addr == null ) {
-        	if(logDEBUG) Logger.debug(this, "'"+host+"' does not look like an IP address");
+        	if(logDEBUG) Logger.debug(this, '\'' +host+"' does not look like an IP address");
         }
         this._address = addr;
         this.hostname = host;
@@ -198,7 +198,7 @@ public class FreenetInetAddress {
 	         */
 	        try {
 	        	InetAddress addr = InetAddress.getByName(hostname);
-	        	if(logMINOR) Logger.minor(this, "Look up got '"+addr+"'");
+	        	if(logMINOR) Logger.minor(this, "Look up got '"+addr+ '\'');
 	        	if( addr != null ) {
 	        		/*
 	        		 * cache the answer since getHandshakeAddress()

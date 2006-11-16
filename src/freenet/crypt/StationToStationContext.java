@@ -94,7 +94,7 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     	
     	MessageDigest md = SHA256.getMessageDigest();
     	
-    	String message = "(" + myExponential + "," + hisExponential + ")";
+    	String message = "(" + myExponential + ',' + hisExponential + ')';
     	DSASignature signature = DSA.sign(group, myPrivateKey, new BigInteger(md.digest(message.getBytes())), random);
     	
     	if(logMINOR)
@@ -125,7 +125,7 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     	
     	ByteArrayInputStream is = new ByteArrayInputStream(data);
     	EncipherInputStream ei = new EncipherInputStream(is, getCipher());
-    	final String message = "(" + hisExponential + "," + myExponential + ")";
+    	final String message = "(" + hisExponential + ',' + myExponential + ')';
 
     	MessageDigest md = SHA256.getMessageDigest();
         try{

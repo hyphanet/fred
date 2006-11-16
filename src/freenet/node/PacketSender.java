@@ -74,7 +74,7 @@ public class PacketSender implements Runnable, Ticker {
 					FileLoggerHook flh = Node.logConfigHandler.getFileLoggerHook();
 					boolean redirected = flh != null && !flh.hasRedirectedStdOutErrNoLock();
 					if(!redirected)
-						System.err.println("Restarting node: PacketSender froze for 3 minutes! ("+diff+")");
+						System.err.println("Restarting node: PacketSender froze for 3 minutes! ("+diff+ ')');
 					
 					try {
 						if(node.isUsingWrapper()){

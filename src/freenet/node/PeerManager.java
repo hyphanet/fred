@@ -107,13 +107,13 @@ public class PeerManager {
                 try {
                     pn = new PeerNode(fs, node, true);
                 } catch (FSParseException e2) {
-                    Logger.error(this, "Could not parse peer: "+e2+"\n"+fs.toString(),e2);
+                    Logger.error(this, "Could not parse peer: "+e2+ '\n' +fs.toString(),e2);
                     continue;
                 } catch (PeerParseException e2) {
-                    Logger.error(this, "Could not parse peer: "+e2+"\n"+fs.toString(),e2);
+                    Logger.error(this, "Could not parse peer: "+e2+ '\n' +fs.toString(),e2);
                     continue;
                 } catch (ReferenceSignatureVerificationException e2) {
-                	Logger.error(this, "Could not parse peer: "+e2+"\n"+fs.toString(),e2);
+                	Logger.error(this, "Could not parse peer: "+e2+ '\n' +fs.toString(),e2);
                     continue;
 				}
                 addPeer(pn);

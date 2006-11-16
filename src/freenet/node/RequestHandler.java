@@ -78,7 +78,7 @@ public class RequestHandler implements Runnable, ByteCounter {
                 if(needsPubKey) {
                 	DSAPublicKey key = ((NodeSSK)block.getKey()).getPubKey();
                 	Message pk = DMT.createFNPSSKPubKey(uid, key.asBytes());
-                	if(logMINOR) Logger.minor(this, "Sending PK: "+key+" "+key.writeAsField());
+                	if(logMINOR) Logger.minor(this, "Sending PK: "+key+ ' ' +key.writeAsField());
                 	source.send(pk, null);
                 }
                 status = RequestSender.SUCCESS; // for byte logging
@@ -193,11 +193,11 @@ public class RequestHandler implements Runnable, ByteCounter {
             	int sent = rs.getTotalSentBytes() + sentBytes;
             	int rcvd = rs.getTotalReceivedBytes() + receivedBytes;
             	if(key instanceof NodeSSK) {
-            		if(logMINOR) Logger.minor(this, "Remote SSK fetch cost "+sent+"/"+rcvd+" bytes ("+status+")");
+            		if(logMINOR) Logger.minor(this, "Remote SSK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
                 	node.remoteSskFetchBytesSentAverage.report(sent);
                 	node.remoteSskFetchBytesReceivedAverage.report(rcvd);
             	} else {
-            		if(logMINOR) Logger.minor(this, "Remote CHK fetch cost "+sent+"/"+rcvd+" bytes ("+status+")");
+            		if(logMINOR) Logger.minor(this, "Remote CHK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
                 	node.remoteChkFetchBytesSentAverage.report(sent);
                 	node.remoteChkFetchBytesReceivedAverage.report(rcvd);
             	}

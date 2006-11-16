@@ -131,7 +131,7 @@ public class PageMaker {
 	
 	public HTMLNode getInfobox(String category, HTMLNode header) {
 		if (header == null) throw new NullPointerException();
-		HTMLNode infobox = new HTMLNode("div", "class", "infobox" + ((category == null) ? "" : (" " + category)));
+		HTMLNode infobox = new HTMLNode("div", "class", "infobox" + ((category == null) ? "" : (' ' + category)));
 		if (header != null) {
 			infobox.addChild("div", "class", "infobox-header").addChild(header);
 		}
