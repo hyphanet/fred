@@ -116,6 +116,7 @@ public class BlockTransmitter {
 							continue;
 						}
 						delay(startCycleTime);
+						if(_sendComplete) break;
 						_sentPackets.setBit(packetNo, true);
 						try {
 							((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
@@ -163,7 +164,11 @@ public class BlockTransmitter {
 				if(now > end) return;
 				while(now < end) {
 					long l = end - now;
-					int x = (int) (Math.min(l, Integer.MAX_VALUE));
+					synchronized(_senderThread) {
+						if(_sendComplete) return;
+					}
+					// Check for completion every 2 minutes
+					int x = (int) (Math.min(l, 120*1000));
 					if(x > 0) {
 						try {
 							Thread.sleep(x);
