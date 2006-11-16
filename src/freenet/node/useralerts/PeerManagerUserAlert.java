@@ -70,7 +70,8 @@ public class PeerManagerUserAlert implements UserAlert {
 	static final String NO_PEERS_START = 
 		"This node has no peers to connect to, therefore it will not " +
 		"be able to function normally. Ideally you should connect to peers run by people you know " +
-		"(if you are paranoid, then people you trust; if not, then at least people you've talked to)";
+		"(if you are paranoid, then people you trust; if not, then at least people you've talked to). " +
+		"You need at least 3 connected peers at all times, and ideally 10-15.";
 	static final String NO_PEERS_LOG_ONTO_IRC = 
 		" log on to irc.freenode.net channel #freenet-refs and ask around for somebody to connect to";
 	static final String NO_PEERS_TESTNET = NO_PEERS_START +
@@ -82,17 +83,17 @@ public class PeerManagerUserAlert implements UserAlert {
 	
 	static final String NO_CONNS = 
 		"This node has not been able to connect to any other nodes so far; it will not be able to function normally. " +
-		"Hopefully some of your peers will connect soon; if not, try to get some more peers.";
+		"Hopefully some of your peers will connect soon; if not, try to get some more peers. You need at least 3 peers at any time, and should aim for 10-15.";
 	
 	static final String ONE_CONN = 
 		"This node only has one connection. Performance will be impaired, and you have no anonymity nor even plausible deniability if that one person is malicious. " +
 		"Your node is attached to the network like a \u201cleaf\u201d and does not contribute to the network's health. " +
-		"Try to get at least 3 connected peers at any given time.";
+		"Try to get at least 3 (ideally more like 10-15) connected peers at any given time.";
 	
 	static final String TWO_CONNS =
 		"This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes. " +
 		"Your node is embedded like a 'chain' in the network and does not contribute (much) to the network's health. " +
-		"Try to get at least 3 connected peers at any given time.";
+		"Try to get at least 3 (ideally more like 10-15) connected peers at any given time.";
 	
 	static final String NEVER_CONN_START = 
 		"Many of this node's peers have never connected even once: {NEVER_CONN}. You should not add peers unless you know that they have also added ";
