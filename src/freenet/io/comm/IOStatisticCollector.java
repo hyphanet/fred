@@ -219,15 +219,13 @@ public class IOStatisticCollector {
 		
 		public int[] getRecieved() {
 			int retint[] = new int[IOStatisticCollector.STATISTICS_ENTRIES];
-			for(int i = 1 ; i < IOStatisticCollector.STATISTICS_ENTRIES + 1 ; i++)
-				retint[i-1] = recieved[i];
+			System.arraycopy(recieved, 1, retint, 0, IOStatisticCollector.STATISTICS_ENTRIES);
 			return retint;
 		}
 		
 		public int[] getSent() {
 			int retint[] = new int[IOStatisticCollector.STATISTICS_ENTRIES];
-			for(int i = 1 ; i < IOStatisticCollector.STATISTICS_ENTRIES + 1; i++)
-				retint[i-1] = sent[i];
+			System.arraycopy(sent, 1, retint, 0, IOStatisticCollector.STATISTICS_ENTRIES);
 			return retint;
 		}
 		
