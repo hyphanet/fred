@@ -34,7 +34,7 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     final DSAGroup group;
     
     /** The rng */
-    final Random random;
+    final RandomSource random;
     
     // Generated or set later
     NativeBigInteger hisExponential = null;
@@ -42,7 +42,7 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     
     boolean logMINOR;
 
-    public StationToStationContext(DSAPrivateKey ourKey, DSAGroup group, DSAPublicKey hisKey, Random rand) {
+    public StationToStationContext(DSAPrivateKey ourKey, DSAGroup group, DSAPublicKey hisKey, RandomSource rand) {
         this.myPrivateKey = ourKey;
         this.random = rand;
         this.group = group;

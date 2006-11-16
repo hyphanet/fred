@@ -23,17 +23,18 @@ public class DSA {
 	public static DSASignature sign(DSAGroup g,
 			DSAPrivateKey x,
 			BigInteger k, 
-			BigInteger m) {
+			BigInteger m,
+			RandomSource random) {
 		BigInteger r=g.getG().modPow(k, g.getP()).mod(g.getQ());
 
 		BigInteger kInv=k.modInverse(g.getQ());
-		return sign(g, x, r, kInv, m);
+		return sign(g, x, r, kInv, m, random);
 	} 
 
 	public static DSASignature sign(DSAGroup g, DSAPrivateKey x, BigInteger m,
-			Random r) {
+			RandomSource r) {
 		BigInteger k = DSA.generateK(g, r);
-		return sign(g, x, k, m);
+		return sign(g, x, k, m, r);
 	}
 
 	/**
@@ -59,12 +60,12 @@ public class DSA {
 	 */
 	public static DSASignature sign(DSAGroup g, DSAPrivateKey x,
 			BigInteger r, BigInteger kInv, 
-			BigInteger m) {
+			BigInteger m, RandomSource random) {
 		BigInteger s1=m.add(x.getX().multiply(r)).mod(g.getQ());
 		BigInteger s=kInv.multiply(s1).mod(g.getQ());
 		if((r.compareTo(BigInteger.ZERO) == 0) || (s.compareTo(BigInteger.ZERO) == 0)) {
 			Logger.normal(DSA.class, "R or S equals 0 : Weird behaviour detected, please report if seen too often.");
-			return sign(g, x, r, generateK(g, new SecureRandom()), m);
+			return sign(g, x, r, generateK(g, random), m, random);
 		}
 		return new DSASignature(r,s);
 	}
