@@ -335,7 +335,7 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Insert Succeeded"));
 				content = ctx.getPageMaker().getContentNode(infobox);
 				content.addChild("#", "The key ");
-				content.addChild("a", "href", '/' + key.getKeyType() + '@' + key.getGuessableKey(), key.getKeyType() + '@' + key.getGuessableKey());
+				content.addChild("a", "href", '/' + key.toString(false), key.toString(false));
 				content.addChild("#", " has been inserted successfully.");
 			} catch (InserterException e) {
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", "Insert Failed"));
