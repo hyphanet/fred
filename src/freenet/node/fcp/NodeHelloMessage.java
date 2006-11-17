@@ -4,6 +4,7 @@
 package freenet.node.fcp;
 
 import freenet.node.Node;
+import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
@@ -64,6 +65,10 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.put("FCPVersion", "2.0");
 		sfs.put("Node", "Fred");
 		sfs.put("Version", Version.getVersionString());
+		sfs.put("Build", Version.buildNumber());
+		sfs.put("Revision", Version.cvsRevision);
+		sfs.put("ExtBuild", NodeStarter.extBuildNumber);
+		sfs.put("ExtRevision", NodeStarter.extRevisionNumber);
 		sfs.put("Testnet", Boolean.toString(node == null ? false : node.isTestnetEnabled()));
 		sfs.put("CompressionCodecs", Integer.toString(Compressor.countCompressAlgorithms()));
 		return sfs;
