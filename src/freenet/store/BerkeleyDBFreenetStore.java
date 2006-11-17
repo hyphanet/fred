@@ -592,7 +592,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	private long checkForHoles(long blocksInFile, boolean dontTruncate) throws DatabaseException {
 		System.err.println("Checking for holes in database...");
-		WrapperManager.signalStarting((int)blocksInFile*100); // 10/sec
+		WrapperManager.signalStarting(5*60*1000 + (int)blocksInFile*100); // 10/sec
 		long holes = 0;
 		long maxPresent = 0;
 		freeBlocks.clear();
@@ -662,7 +662,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	checkForHoles(maxChkBlocks, true);
     	
-    	WrapperManager.signalStarting((int)chkBlocksInStore * 100); // 10 per second
+    	WrapperManager.signalStarting(5*60*1000 + (int)chkBlocksInStore * 100); // 10 per second
     	
     	long realSize = countCHKBlocksFromFile();
     	
@@ -774,7 +774,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	// Now move all the wantedMove blocks onto the corresponding unwantedMove's.
     	
-    	WrapperManager.signalStarting(wantedMoveNums.length*1000); // 1 per second
+    	WrapperManager.signalStarting(5*60*1000 + wantedMoveNums.length*1000); // 1 per second
     	
     	byte[] buf = new byte[headerBlockSize + dataBlockSize];
     	t = null;
