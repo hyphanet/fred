@@ -188,9 +188,9 @@ public class NodeUpdaterManager {
 					throw new InvalidConfigValueException("Cannot update because not running under wrapper");
 				}
 				// Start it
-				mainUpdater = new NodeUpdater(this, updateURI, revocationURI, false, Version.buildNumber());
+				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber());
 				if(shouldUpdateExt)
-					extUpdater = new NodeUpdater(this, extURI, revocationURI, true, NodeStarter.extBuildNumber);
+					extUpdater = new NodeUpdater(this, extURI, true, NodeStarter.extBuildNumber);
 			}
 		}
 		if(!enable) {

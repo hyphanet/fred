@@ -30,7 +30,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private ClientGetter cg;
 	private boolean finalCheck;
 	private final FreenetURI URI;
-	private final FreenetURI revocationURI;
 	private final Ticker ticker;
 	public final NodeClientCore core;
 	private final Node node;
@@ -47,12 +46,11 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	
 	public final boolean extUpdate;
 	
-	NodeUpdater(NodeUpdaterManager manager, FreenetURI URI, FreenetURI revocationURI, boolean extUpdate, int current) {
+	NodeUpdater(NodeUpdaterManager manager, FreenetURI URI, boolean extUpdate, int current) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manager = manager;
 		this.node = manager.node;
 		this.URI = URI.setSuggestedEdition(Version.buildNumber()+1);
-		this.revocationURI = revocationURI;
 		this.ticker = node.ps;
 		this.core = node.clientCore;
 		this.currentVersion = current;
@@ -263,10 +261,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	
 	public FreenetURI getUpdateKey(){
 		return URI;
-	}
-	
-	public FreenetURI getRevocationKey(){
-		return revocationURI;
 	}
 	
 	public boolean inFinalCheck() {
