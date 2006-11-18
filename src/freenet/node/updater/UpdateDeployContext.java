@@ -66,15 +66,15 @@ class UpdateDeployContext {
 			}
 			if(mainJar == null) {
 				// Try to match it
-				if(!(name.startsWith("freenet") && (name.endsWith(".jar")))) {
+				if((name.startsWith("freenet") && (name.endsWith(".jar")))) {
 					mainJar = f;
-					newMainJar = new File(mainJar.getParent(), "freenet.jar");
+					newMainJar = new File(mainJar.getParent(), "freenet.jar.new");
 					mainJarAbsolute = isAbsolute;
 					mainClasspathNo = propNo;
 					continue;
-				} else if(!(name.startsWith("freenet") && (name.endsWith(".jar.new")))) {
+				} else if((name.startsWith("freenet") && (name.endsWith(".jar.new")))) {
 					mainJar = f;
-					newMainJar = new File(mainJar.getParent(), "freenet.jar.new");
+					newMainJar = new File(mainJar.getParent(), "freenet.jar");
 					mainJarAbsolute = isAbsolute;
 					mainClasspathNo = propNo;
 					continue;
