@@ -676,7 +676,7 @@ public class NodeUpdaterManager {
 	}
 
 	public boolean fetchingNewMainJar() {
-		return mainUpdater.isFetching();
+		return mainUpdater != null && mainUpdater.isFetching();
 	}
 
 	public boolean fetchingNewExtJar() {
