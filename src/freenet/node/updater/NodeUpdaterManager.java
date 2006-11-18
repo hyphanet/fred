@@ -279,6 +279,7 @@ public class NodeUpdaterManager {
 		long startedMillisAgo = -1;
 		synchronized(this) {
 			if(!(hasNewMainJar || hasNewExtJar)) return false; // no jar
+			if(hasBeenBlown) return false; // Duh
 			// Don't immediately deploy if still fetching
 			startedMillisAgo = now - Math.max(startedFetchingNextMainJar, startedFetchingNextExtJar);
 			if(startedMillisAgo < WAIT_FOR_SECOND_FETCH_TO_COMPLETE)
@@ -527,6 +528,7 @@ public class NodeUpdaterManager {
 	}
 	
 	public void blow(String msg){
+		NodeUpdater main, ext;
 		synchronized(this) {
 			if(hasBeenBlown){
 				Logger.error(this, "The key has ALREADY been marked as blown! Message was "+revocationMessage+" new message "+msg);
@@ -544,7 +546,13 @@ public class NodeUpdaterManager {
 					} catch (Throwable t1) {}
 				}
 			}
+			main = mainUpdater;
+			ext = extUpdater;
+			if(main != null) main.preKill();
+			if(ext != null) ext.preKill();
 		}
+		if(main != null) main.kill();
+		if(ext != null) ext.kill();
 		if(revocationAlert==null){
 			revocationAlert = new RevocationKeyFoundUserAlert(msg);
 			node.clientCore.alerts.register(revocationAlert);
