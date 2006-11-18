@@ -66,23 +66,15 @@ class UpdateDeployContext {
 			}
 			if(mainJar == null) {
 				// Try to match it
-				if(name.equals("freenet-stable-latest.jar.new")) {
+				if(!(name.startsWith("freenet") && (name.endsWith(".jar")))) {
 					mainJar = f;
-					newMainJar = new File(mainJar.getParent(), "freenet-stable-latest.jar");
+					newMainJar = new File(mainJar.getParent(), "freenet.jar");
 					mainJarAbsolute = isAbsolute;
 					mainClasspathNo = propNo;
 					continue;
-				} else if(name.equals("freenet-stable-latest.jar")) {
+				} else if(!(name.startsWith("freenet") && (name.endsWith(".jar.new")))) {
 					mainJar = f;
-					newMainJar = new File(mainJar.getParent(), "freenet-stable-latest.jar.new");
-					mainJarAbsolute = isAbsolute;
-					mainClasspathNo = propNo;
-					continue;
-				} else if(!(name.equals("freenet.jar") || name.equals("freenet.jar.new") || 
-							name.equals("freenet-cvs-snapshot.jar") || name.equals("freenet-cvs-snapshot.jar.new") ||
-							name.startsWith("freenet") && (name.endsWith(".jar") || name.endsWith(".jar.new")))) {
-					mainJar = f;
-					newMainJar = new File(mainJar.getParent(), "freenet-stable-latest.jar");
+					newMainJar = new File(mainJar.getParent(), "freenet.jar.new");
 					mainJarAbsolute = isAbsolute;
 					mainClasspathNo = propNo;
 					continue;
@@ -93,7 +85,7 @@ class UpdateDeployContext {
 		if(mainJar == null && extJar == null)
 			throw new UpdaterParserException("Could not find freenet jars in wrapper.conf");
 		if(mainJar == null)
-			throw new UpdaterParserException("Could not find freenet jar in wrapper.conf (did find freenet-ext.jar: "+extJar+')');
+			throw new UpdaterParserException("Could not find freenet.jar in wrapper.conf (did find freenet-ext.jar: "+extJar+')');
 		if(extJar == null)
 			throw new UpdaterParserException("Could not find freenet-ext.jar in wrapper.conf (did find freenet.jar: "+mainJar+')');
 	}
