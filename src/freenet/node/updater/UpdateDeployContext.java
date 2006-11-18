@@ -152,7 +152,7 @@ class UpdateDeployContext {
 		}
 		br.close();
 		
-		if(!(writtenMain && writtenExt)) {
+		if(!((writtenMain || !writtenNewJar) && (writtenExt || !writtenNewExt))) {
 			throw new IOException("Not able to update because of non-standard config: written main="+writtenMain+" ext="+writtenExt+" - should not happen! Report this to the devs, include your wrapper.conf");
 		}
 
