@@ -600,6 +600,66 @@ public class NodeUpdaterManager {
 	public boolean isBlown() {
 		return hasBeenBlown;
 	}
+	
+	public synchronized boolean hasNewMainJar() {
+		return hasNewMainJar;
+	}
+
+	public synchronized boolean hasNewExtJar() {
+		return hasNewExtJar;
+	}
+
+	public int newMainJarVersion() {
+		return mainUpdater.getFetchedVersion();
+	}
+
+	public int newExtJarVersion() {
+		return extUpdater.getFetchedVersion();
+	}
+
+	public boolean fetchingNewMainJar() {
+		return mainUpdater != null && mainUpdater.isFetching();
+	}
+
+	public boolean fetchingNewExtJar() {
+		return extUpdater != null && extUpdater.isFetching();
+	}
+
+	public int fetchingNewMainJarVersion() {
+		return mainUpdater.fetchingVersion();
+	}
+
+	public int fetchingNewExtJarVersion() {
+		return extUpdater.fetchingVersion();
+	}
+
+	public boolean inFinalCheck() {
+		return isReadyToDeployUpdate(true) && !isReadyToDeployUpdate(false);
+	}
+
+	public int getRevocationDNFCounter() {
+		return revocationChecker.getRevocationDNFCounter();
+	}
+
+	public int getMainVersion() {
+		return Version.buildNumber();
+	}
+	
+	public int getExtVersion() {
+		return NodeStarter.extBuildNumber;
+	}
+
+	public boolean isArmed() {
+		return armed || isAutoUpdateAllowed;
+	}
+
+	public boolean canUpdateNow() {
+		return isReadyToDeployUpdate(true);
+	}
+
+	public boolean canUpdateImmediately() {
+		return isReadyToDeployUpdate(false);
+	}
 
 	// Config callbacks
 	
@@ -665,66 +725,6 @@ public class NodeUpdaterManager {
 			setRevocationURI(uri);
 		}
 		
-	}
-
-	public synchronized boolean hasNewMainJar() {
-		return hasNewMainJar;
-	}
-
-	public synchronized boolean hasNewExtJar() {
-		return hasNewExtJar;
-	}
-
-	public int newMainJarVersion() {
-		return mainUpdater.getFetchedVersion();
-	}
-
-	public int newExtJarVersion() {
-		return extUpdater.getFetchedVersion();
-	}
-
-	public boolean fetchingNewMainJar() {
-		return mainUpdater != null && mainUpdater.isFetching();
-	}
-
-	public boolean fetchingNewExtJar() {
-		return extUpdater != null && extUpdater.isFetching();
-	}
-
-	public int fetchingNewMainJarVersion() {
-		return mainUpdater.fetchingVersion();
-	}
-
-	public int fetchingNewExtJarVersion() {
-		return extUpdater.fetchingVersion();
-	}
-
-	public boolean inFinalCheck() {
-		return isReadyToDeployUpdate(true) && !isReadyToDeployUpdate(false);
-	}
-
-	public int getRevocationDNFCounter() {
-		return revocationChecker.getRevocationDNFCounter();
-	}
-
-	public int getMainVersion() {
-		return Version.buildNumber();
-	}
-	
-	public int getExtVersion() {
-		return NodeStarter.extBuildNumber;
-	}
-
-	public boolean isArmed() {
-		return armed || isAutoUpdateAllowed;
-	}
-
-	public boolean canUpdateNow() {
-		return isReadyToDeployUpdate(true);
-	}
-
-	public boolean canUpdateImmediately() {
-		return isReadyToDeployUpdate(false);
 	}
 
 }
