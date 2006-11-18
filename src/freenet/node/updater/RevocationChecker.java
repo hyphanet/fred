@@ -150,6 +150,7 @@ public class RevocationChecker implements ClientCallback {
 			if(revocationDNFCounter >= 3) {
 				lastSucceeded = now;
 				completed = true;
+				revocationDNFCounter = 0;
 			}
 			revocationGetter = null;
 		}
