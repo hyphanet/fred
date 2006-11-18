@@ -352,8 +352,6 @@ public class NodeUpdaterManager {
 		 * - Otherwise, write to a new jar file, then move the new jar file over the old jar file.
 		 * 2. If we have a new ext jar:
 		 * - Write it to a new jar file, update the wrapper.conf to point to it.
-		 * 
-		 * Then restart.
 		 */
 
 		boolean writtenNewJar = false;
