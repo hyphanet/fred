@@ -120,10 +120,10 @@ public class RevocationChecker implements ClientCallback {
 			msg = new String(buf);
 		} catch (Throwable t) {
 			try {
-				Logger.error(this, "Failed to extract result when key blown: "+t, t);
-				System.err.println("Failed to extract result when key blown: "+t);
-				t.printStackTrace();
 				msg = "Failed to extract result when key blown: "+t;
+				Logger.error(this, msg, t);
+				System.err.println(msg);
+				t.printStackTrace();
 			} catch (Throwable t1) {
 				msg = "Internal error after retreiving revocation key";
 			}
