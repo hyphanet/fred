@@ -657,10 +657,13 @@ public class NodeUpdaterManager {
 		return armed || isAutoUpdateAllowed;
 	}
 
+	/** Is the node able to update as soon as the revocation fetch has been completed? */
 	public boolean canUpdateNow() {
 		return isReadyToDeployUpdate(true);
 	}
 
+	/** Is the node able to update *immediately*? (i.e. not only is it ready in every other sense, but also a revocation
+	 * fetch has completed recently enough not to need another one) */
 	public boolean canUpdateImmediately() {
 		return isReadyToDeployUpdate(false);
 	}
