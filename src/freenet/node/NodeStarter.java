@@ -32,9 +32,11 @@ public class NodeStarter
     private Node node;
 	static LoggingConfigHandler logConfigHandler;
 	//TODO: cleanup
-	public static int RECOMMENDED_EXT_BUILD_NUMBER = 
+	public static int RECOMMENDED_EXT_BUILD_NUMBER = 7;
+	/*
 		(File.separatorChar == '\\') &&
 		(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")) ? 6 : 2;
+	*/
 	public static int extBuildNumber;
 	public static String extRevisionNumber;
 	private FreenetFilePersistentConfig cfg;

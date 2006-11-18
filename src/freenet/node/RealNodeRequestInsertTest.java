@@ -158,7 +158,7 @@ public class RealNodeRequestInsertTest {
         System.out.println();
         int requestNumber = 0;
         RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
-        String baseString = "" + System.currentTimeMillis() + ' ';
+        String baseString = System.currentTimeMillis() + ' ';
         while(true) {
             try {
                 requestNumber++;
