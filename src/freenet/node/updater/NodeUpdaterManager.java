@@ -610,10 +610,12 @@ public class NodeUpdaterManager {
 	}
 
 	public int newMainJarVersion() {
+		if(mainUpdater == null) return -1;
 		return mainUpdater.getFetchedVersion();
 	}
 
 	public int newExtJarVersion() {
+		if(extUpdater == null) return -1;
 		return extUpdater.getFetchedVersion();
 	}
 
