@@ -43,7 +43,7 @@ public class RevocationChecker implements ClientCallback {
 		// big enough ?
 		ctxRevocation.maxOutputLength = 4096;
 		ctxRevocation.maxTempLength = 4096;
-		ctxRevocation.maxSplitfileBlockRetries = -1; // if we find content, try forever to get it.
+		ctxRevocation.maxSplitfileBlockRetries = -1; // if we find content, try forever to get it; not used because of the above size limits.
 		ctxRevocation.maxNonSplitfileRetries = 0; // but return quickly normally
 	}
 	
