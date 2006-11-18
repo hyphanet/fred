@@ -245,7 +245,7 @@ public class NodeUpdaterManager {
 		}
 		if(updater == null) return;
 		if(updater.isRunning()) return;
-		updater.onChangeURI();
+		updater.onChangeURI(uri);
 	}
 
 	/**

@@ -29,7 +29,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private FetchResult result;
 	private ClientGetter cg;
 	private boolean finalCheck;
-	private final FreenetURI URI;
+	private FreenetURI URI;
 	private final Ticker ticker;
 	public final NodeClientCore core;
 	private final Node node;
@@ -279,9 +279,11 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		// Ignore, we don't insert
 	}
 
-	/** Called when the fetch URI has changed. No major locks are held by caller. */
-	public void onChangeURI() {
+	/** Called when the fetch URI has changed. No major locks are held by caller. 
+	 * @param uri The new URI. */
+	public void onChangeURI(FreenetURI uri) {
 		kill();
+		this.URI = uri;
 		maybeUpdate();
 	}
 
