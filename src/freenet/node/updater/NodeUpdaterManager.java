@@ -248,6 +248,23 @@ public class NodeUpdaterManager {
 		updater.onChangeURI(uri);
 	}
 
+	/** @return The revocation URI. */
+	public synchronized FreenetURI getRevocationURI() {
+		return revocationURI;
+	}
+	
+	/**
+	 * Set the revocation URI.
+	 * @param uri The new revocation URI.
+	 */
+	public void setRevocationURI(FreenetURI uri) {
+		synchronized(this) {
+			if(revocationURI.equals(uri)) return;
+			this.revocationURI = uri;
+		}
+		revocationChecker.onChangeRevocationURI();
+	}
+	
 	/**
 	 * @return Is auto-update currently enabled?
 	 */
@@ -476,23 +493,6 @@ public class NodeUpdaterManager {
 		node.clientCore.alerts.register(new SimpleUserAlert(true, "Update Failed!", "Update Failed: "+reason, UserAlert.ERROR));
 	}
 
-	/** @return The revocation URI. */
-	public synchronized FreenetURI getRevocationURI() {
-		return revocationURI;
-	}
-	
-	/**
-	 * Set the revocation URI.
-	 * @param uri The new revocation URI.
-	 */
-	public void setRevocationURI(FreenetURI uri) {
-		synchronized(this) {
-			if(revocationURI.equals(uri)) return;
-			this.revocationURI = uri;
-		}
-		revocationChecker.onChangeRevocationURI();
-	}
-	
 	/**
 	 * Called when a new jar has been downloaded.
 	 * @param isExt If true, the new jar is the ext jar; if false, it is the main jar.
