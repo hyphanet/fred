@@ -550,6 +550,8 @@ public class NodeUpdaterManager {
 			ext = extUpdater;
 			if(main != null) main.preKill();
 			if(ext != null) ext.preKill();
+			mainUpdater = null;
+			extUpdater = null;
 		}
 		if(main != null) main.kill();
 		if(ext != null) ext.kill();
