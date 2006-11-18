@@ -331,7 +331,7 @@ public class TextModeClientInterface implements Runnable {
     		// FIXME run on separate thread
     		n.ps.queueTimedJob(new Runnable() {
     			public void run() {
-    				n.getNodeUpdater().Update();
+    				n.getNodeUpdater().arm();
     			}
     		}, 0);
 		outsb.append("\r\n");

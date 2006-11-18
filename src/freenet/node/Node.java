@@ -79,6 +79,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.node.updater.NodeUpdater;
+import freenet.node.updater.NodeUpdaterManager;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
@@ -402,6 +403,8 @@ public class Node {
 	public static final int EXIT_COULD_NOT_START_UPDATER = 21;
 	public static final int EXIT_EXTRA_PEER_DATA_DIR = 22;
 	public static final int EXIT_THROTTLE_FILE_ERROR = 23;
+	public static final int EXIT_RESTART_FAILED = 24;
+	
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
 	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
@@ -465,7 +468,7 @@ public class Node {
 	public int lastVersion;
 	
 	/** NodeUpdater **/
-	public NodeUpdater nodeUpdater;
+	public NodeUpdaterManager nodeUpdater;
 	
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
@@ -1258,7 +1261,7 @@ public class Node {
 		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesReceivedAverage"));
 		
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder, throttleFS == null ? null : throttleFS.subset("RequestStarters"));
-		
+
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
 		
@@ -1362,23 +1365,16 @@ public class Node {
 //		pluginManager3 = new freenet.plugin_new.PluginManager(pluginManagerConfig);
 		
 		ipDetector.start();
-		
+
 		// Node Updater
 		try{
-			nodeUpdater = NodeUpdater.maybeCreate(this, config);
+			nodeUpdater = NodeUpdaterManager.maybeCreate(this, config);
 			Logger.normal(this, "Starting the node updater");
+			nodeUpdater.start();
 		}catch (Exception e) {
 			e.printStackTrace();
 			throw new NodeInitException(EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
 		}
-		
-		/*
-		SimpleToadletServer server = new SimpleToadletServer(port+2000);
-		FProxyToadlet fproxy = new FProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
-		PProxyToadlet pproxy = new PProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), n.pluginManager);
-		server.register(fproxy, "/", false);
-		server.register(pproxy, "/plugins/", true);
-		 * */
 		
 		// Start testnet handler
 		if(testnetHandler != null)
@@ -2595,7 +2591,7 @@ public class Node {
 		config.store();
 	}
 
-	public NodeUpdater getNodeUpdater(){
+	public NodeUpdaterManager getNodeUpdater(){
 		return nodeUpdater;
 	}
 	

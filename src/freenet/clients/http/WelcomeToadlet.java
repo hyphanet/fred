@@ -82,8 +82,7 @@ public class WelcomeToadlet extends Toadlet {
 			content.addChild("p").addChild("#", "Thank you for using Freenet.");
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			Logger.normal(this, "Node is updating/restarting");
-			node.ps.queueTimedJob(new Runnable() {
-				public void run() { node.getNodeUpdater().Update(); }}, 0);
+			node.getNodeUpdater().arm();
 			return;
 		}else if (request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH).length()>0){
 			if(noPassword) {
