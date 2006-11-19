@@ -214,87 +214,87 @@ public class BlockTransmitter {
 					}
 				});
 			}
-		_senderThread.start();
-		
-		while (true) {
-			if (_prb.isAborted()) {
-				synchronized(_senderThread) {
-					_sendComplete = true;
-					_senderThread.notifyAll();
-				}
-				return false;
-			}
-			Message msg;
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-			try {
-				MessageFilter mfMissingPacketNotification = MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
-				MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
-				MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
-				msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)), _ctr);
-				if(logMINOR) Logger.minor(this, "Got "+msg);
-			} catch (DisconnectedException e) {
-				// Ignore, see below
-				msg = null;
-			}
-			if(logMINOR) Logger.minor(this, "Got "+msg);
-			if(!_destination.isConnected()) {
-				Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" because node disconnected while waiting");
-				synchronized(_senderThread) {
-					_sendComplete = true;
-					_senderThread.notifyAll();
-				}
-				return false;
-			}
-			if(_sendComplete)
-				return false;
-			if (msg == null) {
-				long now = System.currentTimeMillis();
-				if((timeAllSent > 0) && ((now - timeAllSent) > SEND_TIMEOUT) &&
-						(getNumSent() == _prb.getNumPackets())) {
+			_senderThread.start();
+			
+			while (true) {
+				if (_prb.isAborted()) {
 					synchronized(_senderThread) {
 						_sendComplete = true;
 						_senderThread.notifyAll();
 					}
-					Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+TimeUtil.formatTime((now - timeAllSent), 2, true)+ '.');
 					return false;
-				} else {
-					if(logMINOR) Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+ '/' +_prb.getNumPackets());
-					continue;
 				}
-			} else if (msg.getSpec().equals(DMT.missingPacketNotification)) {
-				LinkedList missing = (LinkedList) msg.getObject(DMT.MISSING);
-				for (Iterator i = missing.iterator(); i.hasNext();) {
-					Integer packetNo = (Integer) i.next();
-					if (_prb.isReceived(packetNo.intValue())) {
+				Message msg;
+				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				try {
+					MessageFilter mfMissingPacketNotification = MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
+					MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
+					MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
+					msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)), _ctr);
+					if(logMINOR) Logger.minor(this, "Got "+msg);
+				} catch (DisconnectedException e) {
+					// Ignore, see below
+					msg = null;
+				}
+				if(logMINOR) Logger.minor(this, "Got "+msg);
+				if(!_destination.isConnected()) {
+					Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" because node disconnected while waiting");
+					synchronized(_senderThread) {
+						_sendComplete = true;
+						_senderThread.notifyAll();
+					}
+					return false;
+				}
+				if(_sendComplete)
+					return false;
+				if (msg == null) {
+					long now = System.currentTimeMillis();
+					if((timeAllSent > 0) && ((now - timeAllSent) > SEND_TIMEOUT) &&
+							(getNumSent() == _prb.getNumPackets())) {
 						synchronized(_senderThread) {
-							_unsent.addFirst(packetNo);
-							_sentPackets.setBit(packetNo.intValue(), false);
-							_senderThread.notify();
+							_sendComplete = true;
+							_senderThread.notifyAll();
+						}
+						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+TimeUtil.formatTime((now - timeAllSent), 2, true)+ '.');
+						return false;
+					} else {
+						if(logMINOR) Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+ '/' +_prb.getNumPackets());
+						continue;
+					}
+				} else if (msg.getSpec().equals(DMT.missingPacketNotification)) {
+					LinkedList missing = (LinkedList) msg.getObject(DMT.MISSING);
+					for (Iterator i = missing.iterator(); i.hasNext();) {
+						Integer packetNo = (Integer) i.next();
+						if (_prb.isReceived(packetNo.intValue())) {
+							synchronized(_senderThread) {
+								_unsent.addFirst(packetNo);
+								_sentPackets.setBit(packetNo.intValue(), false);
+								_senderThread.notify();
+							}
 						}
 					}
+				} else if (msg.getSpec().equals(DMT.allReceived)) {
+					synchronized(_senderThread) {
+						_sendComplete = true;
+						_senderThread.notifyAll();
+					}
+					return true;
+				} else if (msg.getSpec().equals(DMT.sendAborted)) {
+					// Overloaded: receiver no longer wants the data
+					// Do NOT abort PRB, it's none of its business.
+					// And especially, we don't want a downstream node to 
+					// be able to abort our sends to all the others!
+					_prb.removeListener(myListener);
+					synchronized(_senderThread) {
+						_sendComplete = true;
+						_senderThread.notifyAll();
+					}
+					return false;
+				} else if(_sendComplete) {
+					// Terminated abnormally
+					return false;
 				}
-			} else if (msg.getSpec().equals(DMT.allReceived)) {
-				synchronized(_senderThread) {
-					_sendComplete = true;
-					_senderThread.notifyAll();
-				}
-				return true;
-			} else if (msg.getSpec().equals(DMT.sendAborted)) {
-				// Overloaded: receiver no longer wants the data
-				// Do NOT abort PRB, it's none of its business.
-				// And especially, we don't want a downstream node to 
-				// be able to abort our sends to all the others!
-				_prb.removeListener(myListener);
-				synchronized(_senderThread) {
-					_sendComplete = true;
-					_senderThread.notifyAll();
-				}
-				return false;
-			} else if(_sendComplete) {
-				// Terminated abnormally
-				return false;
 			}
-		}
 		} catch (AbortedException e) {
 			// Terminate
 			synchronized(_senderThread) {
