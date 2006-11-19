@@ -703,7 +703,7 @@ public class Node {
 	 Node(FreenetFilePersistentConfig config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
 		// Easy stuff
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		String tmp = "Initializing Node using SVN r"+Version.cvsRevision+" ("+Version.buildNumber()+") and freenet-ext r"+NodeStarter.extRevisionNumber;
+		String tmp = "Initializing Node using freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber;
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
 		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0);
@@ -1684,6 +1684,7 @@ public class Node {
 		fs.put("routingMissDistance", Double.toString(routingMissDistance.currentValue()));
 		fs.put("backedOffPercent", Double.toString(backedOffPercent.currentValue()));
 		fs.put("pInstantReject", Double.toString(pRejectIncomingInstantly()));
+		fs.put("unclaimedFIFOSize", Integer.toString(usm.getUnclaimedFIFOSize()));
 		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = getPeerNodeStatuses();
@@ -3305,5 +3306,9 @@ public class Node {
 
 	public Ticker getTicker() {
 		return ps;
+	}
+
+	public int getUnclaimedFIFOSize() {
+		return usm.getUnclaimedFIFOSize();
 	}
 }

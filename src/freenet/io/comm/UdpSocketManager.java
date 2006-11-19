@@ -640,4 +640,11 @@ public class UdpSocketManager extends Thread {
     	return 1476-28; // GRE (1476) minus headers (20 IP 8 UDP)
     	// Note that some auth packets can be over 1400 bytes.
     }
+
+	/**
+	 * @return the number of received messages that are currently unclaimed
+	 */
+	public synchronized int getUnclaimedFIFOSize() {
+		return _unclaimed.size();
+	}
 }

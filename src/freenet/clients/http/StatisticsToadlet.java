@@ -158,6 +158,7 @@ public class StatisticsToadlet extends Toadlet {
 				overviewList.addChild("li", "routingMissDistance:\u00a0" + fix1p4.format(routingMissDistance));
 				overviewList.addChild("li", "backedOffPercent:\u00a0" + fix3p1pct.format(backedOffPercent));
 				overviewList.addChild("li", "pInstantReject:\u00a0" + fix3p1pct.format(node.pRejectIncomingInstantly()));
+				overviewList.addChild("li", "unclaimedFIFOSize:\u00a0" + node.getUnclaimedFIFOSize());
 				nextTableCell = overviewTableRow.addChild("td");
 			}
 
