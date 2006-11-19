@@ -51,6 +51,7 @@ public class UdpSocketManager extends Thread {
 	private boolean _isDone;
 	private static UdpSocketManager _usm;
 	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
+	private static final long MAX_UNCLAIMED_FIFO_ITEM_LIFETIME = 60*60*1000;  // 1 hour
 	private volatile int lastTimeInSeconds;
 	private final InetAddress _bindTo;
 
@@ -401,9 +402,9 @@ public class UdpSocketManager extends Thread {
 				        Message removed = (Message)_unclaimed.removeFirst();
 				        long messageLifeTime = System.currentTimeMillis() - removed.localInstantiationTime;
 				        if ((removed.getSource()) instanceof PeerNode) {
-				            Logger.normal(this, "Dropping unclaimed from "+removed.getSource().getPeer()+", lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" : "+removed);
+				            Logger.normal(this, "Dropping unclaimed from "+removed.getSource().getPeer()+", lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (quantity)"+": "+removed);
 				        } else {
-				            Logger.normal(this, "Dropping unclaimed, lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" : "+removed);
+				            Logger.normal(this, "Dropping unclaimed, lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (quantity)"+": "+removed);
 				        }
 				    }
 				    _unclaimed.addLast(m);
@@ -441,6 +442,10 @@ public class UdpSocketManager extends Thread {
 		        lowLevelFilter.isDisconnected(filter._source))
 		    throw new DisconnectedException();
 		// Check to see whether the filter matches any of the recently _unclaimed messages
+		// Drop any _unclaimed messages that the filter doesn't match that are also older than MAX_UNCLAIMED_FIFO_ITEM_LIFETIME
+		long now = System.currentTimeMillis();
+		long messageDropTime = now - MAX_UNCLAIMED_FIFO_ITEM_LIFETIME;
+		long messageLifeTime = 0;
 		synchronized (_filters) {
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
 			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
@@ -450,6 +455,14 @@ public class UdpSocketManager extends Thread {
 					ret = m;
 					if(logMINOR) Logger.debug(this, "Matching from _unclaimed");
 					break;
+				} else if (m.localInstantiationTime < messageDropTime) {
+					i.remove();
+					messageLifeTime = now - m.localInstantiationTime;
+					if ((m.getSource()) instanceof PeerNode) {
+						Logger.normal(this, "Dropping unclaimed from "+m.getSource().getPeer()+", lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (age)"+": "+m);
+					} else {
+						Logger.normal(this, "Dropping unclaimed, lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (age)"+": "+m);
+					}
 				}
 			}
 			if (ret == null) {
