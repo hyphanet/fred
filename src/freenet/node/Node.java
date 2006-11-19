@@ -2619,6 +2619,10 @@ public class Node {
 		return this.bindto;
 	}
 	
+	public int getFNPPort(){
+		return this.portNumber;
+	}
+	
 	public int getIdentityHash(){
 		return Fields.hashCode(identityHash);
 	}

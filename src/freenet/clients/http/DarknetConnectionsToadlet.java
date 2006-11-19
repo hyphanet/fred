@@ -534,6 +534,35 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		referenceInfobox.addChild("div", "class", "infobox-header").addChild("a", "href", "myref.fref", "My reference");
 		referenceInfobox.addChild("div", "class", "infobox-content").addChild("pre", "id", "reference", node.exportPublicFieldSet().toString());
 		
+		// our ports
+		HTMLNode portInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		portInfobox.addChild("div", "class", "infobox-header", "Node's Ports");
+		HTMLNode portInfoboxContent = portInfobox.addChild("div", "class", "infobox-content");
+		HTMLNode portInfoList = portInfoboxContent.addChild("ul");
+		SimpleFieldSet fproxyConfig = node.config.get("fproxy").exportFieldSet(true);
+		SimpleFieldSet fcpConfig = node.config.get("fcp").exportFieldSet(true);
+		SimpleFieldSet tmciConfig = node.config.get("console").exportFieldSet(true);
+		portInfoList.addChild("li", "FNP:\u00a0" + node.getFNPPort() + "/udp\u00a0\u00a0\u00a0(between nodes; this is usually the only port that you might want to port forward)");
+		try {
+			if(fproxyConfig.getBoolean("enabled", false)) {
+				portInfoList.addChild("li", "FProxy:\u00a0" + fproxyConfig.getInt("port") + "/tcp\u00a0\u00a0\u00a0(this web interface)");
+			} else {
+				portInfoList.addChild("li", "FProxy:\u00a0disabled/tcp\u00a0\u00a0\u00a0(this web interface)");
+			}
+			if(fcpConfig.getBoolean("enabled", false)) {
+				portInfoList.addChild("li", "FCP:\u00a0" + fcpConfig.getInt("port") + "/tcp\u00a0\u00a0\u00a0(for Freenet clients such as Frost and Thaw)");
+			} else {
+				portInfoList.addChild("li", "FCP:\u00a0disabled/tcp\u00a0\u00a0\u00a0(for Freenet clients such as Frost and Thaw)");
+			}
+			if(tmciConfig.getBoolean("enabled", false)) {
+				portInfoList.addChild("li", "TMCI:\u00a0" + tmciConfig.getInt("port") + "/tcp\u00a0\u00a0\u00a0(simple telnet-based command-line interface)");
+			} else {
+				portInfoList.addChild("li", "TMCI:\u00a0disabled/tcp\u00a0\u00a0\u00a0(simple telnet-based command-line interface)");
+			}
+		} catch (FSParseException e) {
+			// ignore
+		}
+		
 		StringBuffer pageBuffer = new StringBuffer();
 		pageNode.generate(pageBuffer);
 		this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
