@@ -2798,6 +2798,27 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		extraPeerDataFile.delete();
 	}
 
+	public void removeExtraPeerDataDir() {
+		String extraPeerDataDirPath = node.getExtraPeerDataDir();
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+	 	if(!extraPeerDataPeerDir.exists()) {
+			Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
+			return;
+	 	}
+	 	if(!extraPeerDataPeerDir.isDirectory()) {
+	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+	 		return;
+	 	}
+		Integer[] localFileNumbers = null;
+		synchronized(extraPeerDataFileNumbers) {
+			localFileNumbers = (Integer[]) extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
+		}
+		for (int i = 0; i < localFileNumbers.length; i++) {
+			deleteExtraPeerDataFile(localFileNumbers[i].intValue());
+		}
+		extraPeerDataPeerDir.delete();
+	}
+
 	public boolean rewriteExtraPeerDataFile(SimpleFieldSet fs, int extraPeerDataType, int fileNumber) {
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
 		if(extraPeerDataType > 0)

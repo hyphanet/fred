@@ -161,6 +161,7 @@ public class PeerManager {
         if(peerNodePreviousRoutingBackoffReason != null) {
         	node.removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
         }
+        pn.removeExtraPeerDataDir();
         if(!isInPeers) return false;
                 
         // removing from connectedPeers
