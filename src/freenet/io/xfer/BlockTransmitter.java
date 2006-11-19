@@ -77,7 +77,7 @@ public class BlockTransmitter {
 		}
 		throttle = PacketThrottle.getThrottle(_destination.getPeer(), _prb._packetSize);
 		_senderThread = new Thread("_senderThread for "+_uid+ " to "+_destination.getPeer()) {
-		    
+		
 			public void run() {
 				int sentSinceLastPing = 0;
 				while (!_sendComplete) {
@@ -121,19 +121,19 @@ public class BlockTransmitter {
 						try {
 							((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
 							_ctr.sentPayload(PACKET_SIZE);
-						// We accelerate the ping rate during the transfer to keep a closer eye on round-trip-time
-						sentSinceLastPing++;
-						if (sentSinceLastPing >= PING_EVERY) {
-							sentSinceLastPing = 0;
-							//_usm.send(BlockTransmitter.this._destination, DMT.createPing());
-							((PeerNode)_destination).sendAsync(DMT.createPing(), null, 0, _ctr);
-						}
+							// We accelerate the ping rate during the transfer to keep a closer eye on round-trip-time
+							sentSinceLastPing++;
+							if (sentSinceLastPing >= PING_EVERY) {
+								sentSinceLastPing = 0;
+								//_usm.send(BlockTransmitter.this._destination, DMT.createPing());
+								((PeerNode)_destination).sendAsync(DMT.createPing(), null, 0, _ctr);
+							}
 						} catch (NotConnectedException e) {
-						    Logger.normal(this, "Terminating send: "+e);
-						    synchronized(_senderThread) {
-						    	_sendComplete = true;
-						    	_senderThread.notifyAll();
-						    }
+							Logger.normal(this, "Terminating send: "+e);
+							synchronized(_senderThread) {
+								_sendComplete = true;
+								_senderThread.notifyAll();
+							}
 						} catch (AbortedException e) {
 							Logger.normal(this, "Terminating send due to abort: "+e);
 							synchronized(_senderThread) {
@@ -194,24 +194,25 @@ public class BlockTransmitter {
 		
 		try {
 			synchronized(_prb) {
-		_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
+				_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
 
-			public void packetReceived(int packetNo) {
-				synchronized(_senderThread) {
-					_unsent.addLast(new Integer(packetNo));
-					_sentPackets.setBit(packetNo, false);
-					_senderThread.notify();
-				}
-			}
+					public void packetReceived(int packetNo) {
+						synchronized(_senderThread) {
+							_unsent.addLast(new Integer(packetNo));
+							_sentPackets.setBit(packetNo, false);
+							_senderThread.notify();
+						}
+					}
 
-			public void receiveAborted(int reason, String description) {
-				try {
-					((PeerNode)_destination).sendAsync(DMT.createSendAborted(_uid, reason, description), null, 0, _ctr);
-                } catch (NotConnectedException e) {
-                    if(Logger.shouldLog(Logger.MINOR, this))
-                    	Logger.minor(this, "Receive aborted and receiver is not connected");
-                }
-			} });
+					public void receiveAborted(int reason, String description) {
+						try {
+							((PeerNode)_destination).sendAsync(DMT.createSendAborted(_uid, reason, description), null, 0, _ctr);
+						} catch (NotConnectedException e) {
+							if(Logger.shouldLog(Logger.MINOR, this))
+								Logger.minor(this, "Receive aborted and receiver is not connected");
+						}
+					}
+				});
 			}
 		_senderThread.start();
 		
@@ -229,23 +230,23 @@ public class BlockTransmitter {
 				MessageFilter mfMissingPacketNotification = MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
 				MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
 				MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
-                msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)), _ctr);
-                if(logMINOR) Logger.minor(this, "Got "+msg);
-            } catch (DisconnectedException e) {
-            	// Ignore, see below
-            	msg = null;
-            }
-            if(logMINOR) Logger.minor(this, "Got "+msg);
-            if(!_destination.isConnected()) {
-                Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" because node disconnected while waiting");
-                synchronized(_senderThread) {
-                	_sendComplete = true;
-                	_senderThread.notifyAll();
-                }
-                return false;
-            }
-            if(_sendComplete)
-            	return false;
+				msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)), _ctr);
+				if(logMINOR) Logger.minor(this, "Got "+msg);
+			} catch (DisconnectedException e) {
+				// Ignore, see below
+				msg = null;
+			}
+			if(logMINOR) Logger.minor(this, "Got "+msg);
+			if(!_destination.isConnected()) {
+				Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" because node disconnected while waiting");
+				synchronized(_senderThread) {
+					_sendComplete = true;
+					_senderThread.notifyAll();
+				}
+				return false;
+			}
+			if(_sendComplete)
+				return false;
 			if (msg == null) {
 				long now = System.currentTimeMillis();
 				if((timeAllSent > 0) && ((now - timeAllSent) > SEND_TIMEOUT) &&
@@ -267,8 +268,8 @@ public class BlockTransmitter {
 					if (_prb.isReceived(packetNo.intValue())) {
 						synchronized(_senderThread) {
 							_unsent.addFirst(packetNo);
-						    _sentPackets.setBit(packetNo.intValue(), false);
-					        _senderThread.notify();
+							_sentPackets.setBit(packetNo.intValue(), false);
+							_senderThread.notify();
 						}
 					}
 				}
@@ -290,8 +291,8 @@ public class BlockTransmitter {
 				}
 				return false;
 			} else if(_sendComplete) {
-			    // Terminated abnormally
-			    return false;
+				// Terminated abnormally
+				return false;
 			}
 		}
 		} catch (AbortedException e) {
@@ -314,16 +315,16 @@ public class BlockTransmitter {
 		return ret;
 	}
 
-    /**
-     * Send the data, off-thread.
-     */
-    public void sendAsync() {
-        Runnable r = new Runnable() {
-            public void run() { send(); } };
-        Thread t = new Thread(r, "BlockTransmitter:sendAsync() for "+this);
-        t.setDaemon(true);
-        t.start();
-    }
+	/**
+	 * Send the data, off-thread.
+	 */
+	public void sendAsync() {
+		Runnable r = new Runnable() {
+			public void run() { send(); } };
+		Thread t = new Thread(r, "BlockTransmitter:sendAsync() for "+this);
+		t.setDaemon(true);
+		t.start();
+	}
 
 	public void waitForComplete() {
 		synchronized(_senderThread) {
