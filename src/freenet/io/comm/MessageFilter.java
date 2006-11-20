@@ -126,10 +126,11 @@ public class MessageFilter {
 			_matched = true;
 			return true;
 		}
-		if (_type != null) {
-			if (!m.getSpec().equals(_type)) {
-				return false;
-			}
+		if ((_type != null) && (!_type.equals(m.getSpec()))) {
+			return false;
+		}
+		if ((_source != null) && (!_source.equals(m.getSource()))) {
+			return false;
 		}
 		synchronized (_fields) {
 			for (Iterator iter = _fields.keySet().iterator(); iter.hasNext();) {
@@ -141,9 +142,6 @@ public class MessageFilter {
 					return false;
 				}
 			}
-		}
-		if ((_source != null) && (!_source.equals(m.getSource()))) {
-			return false;
 		}
 		_matched=true;
 		return true;
