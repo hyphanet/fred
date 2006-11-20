@@ -2815,7 +2815,7 @@ public class Node {
 		Logger.normal(this, "Received N2NM from '"+source.getPeer());
 		SimpleFieldSet fs = null;
 		try {
-			fs = new SimpleFieldSet(messageData, true);
+			fs = new SimpleFieldSet(messageData);
 		} catch (IOException e) {
 			Logger.error(this, "IOException while parsing node to node message data", e);
 			return;

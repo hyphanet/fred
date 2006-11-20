@@ -952,7 +952,7 @@ public class TextModeClientInterface implements Runnable {
         SimpleFieldSet fs;
         System.out.println("Connecting to:\r\n"+content);
         try {
-            fs = new SimpleFieldSet(content, true);
+            fs = new SimpleFieldSet(content);
         } catch (IOException e) {
             System.err.println("Did not parse: "+e);
             e.printStackTrace();

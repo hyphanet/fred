@@ -62,7 +62,7 @@ public class SimpleFieldSet {
      * Construct from a string.
      * @throws IOException if the string is too short or invalid.
      */
-    public SimpleFieldSet(String content, boolean multiLevel) throws IOException {
+    public SimpleFieldSet(String content) throws IOException {
     	values = new HashMap();
     	subsets = null;
         StringReader sr = new StringReader(content);

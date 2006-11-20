@@ -2947,7 +2947,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		
 		SimpleFieldSet fs;
 		try {
-			fs = new SimpleFieldSet(ref, true);
+			fs = new SimpleFieldSet(ref);
 			if(logMINOR) Logger.minor(this, "Got ARK for "+this);
 			gotARK(fs, edition);
 		} catch (IOException e) {
