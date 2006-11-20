@@ -89,6 +89,7 @@ public class DMT {
 	public static final String TARGET_NODENAME = "targetNodename";
 	public static final String NODE_TO_NODE_MESSAGE_TYPE = "nodeToNodeMessageType";
 	public static final String NODE_TO_NODE_MESSAGE_TEXT = "nodeToNodeMessageText";
+	public static final String NODE_TO_NODE_MESSAGE_DATA = "nodeToNodeMessageData";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -350,6 +351,19 @@ public class DMT {
 		msg.set(UID, id);
 		msg.set(SUCCESS, success);
 		msg.set(REASON, reason);
+		return msg;
+	}
+
+	// Node-To-Node Message (generic)
+	public static final MessageType nodeToNodeMessage = new MessageType("nodeToNodeMessage", false) {{
+		addField(NODE_TO_NODE_MESSAGE_TYPE, Integer.class);
+		addField(NODE_TO_NODE_MESSAGE_DATA, String.class);
+	}};
+
+	public static final Message createNodeToNodeMessage(int type, String data) {
+		Message msg = new Message(nodeToNodeTextMessage);
+		msg.set(NODE_TO_NODE_MESSAGE_TYPE, type);
+		msg.set(NODE_TO_NODE_MESSAGE_DATA, data);
 		return msg;
 	}
 

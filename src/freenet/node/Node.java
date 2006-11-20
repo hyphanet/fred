@@ -415,7 +415,8 @@ public class Node {
 	public static final int PEER_NODE_STATUS_BURSTING = 8;
 	public static final int PEER_NODE_STATUS_LISTENING = 9;
 	public static final int PEER_NODE_STATUS_LISTEN_ONLY = 10;
-	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = 1;
+	public static final int N2N_MESSAGE_TYPE_FPROXY_USERALERT = 1;
+	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = N2N_MESSAGE_TYPE_FPROXY_USERALERT;  // **FIXME** For backwards-compatibility, remove when removing DMT.nodeToNodeTextMessage
 	public static final int EXTRA_PEER_DATA_TYPE_N2NTM = 1;
 	public static final int EXTRA_PEER_DATA_TYPE_PEER_NOTE = 2;
 	public static final int EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM = 3;
@@ -2804,6 +2805,42 @@ public class Node {
 	}
 
 	/**
+	 * Handle a received node to node message
+	 */
+	public void receivedNodeToNodeMessage(Message m) {
+	  PeerNode source = (PeerNode)m.getSource();
+	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+	  if(type == Node.N2N_MESSAGE_TYPE_FPROXY_USERALERT) {
+		String messageData = (String) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
+		Logger.normal(this, "Received N2NM from '"+source.getPeer());
+		SimpleFieldSet fs = null;
+		try {
+			fs = new SimpleFieldSet(messageData, true);
+		} catch (IOException e) {
+			Logger.error(this, "IOException while parsing node to node message data", e);
+			return;
+		}
+		if(fs.get("N2NType") == null) {
+			fs.removeValue("N2NType");
+		}
+		fs.put("N2NType", Integer.toString(type));
+		int fileNumber = source.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
+		if( fileNumber == -1 ) {
+			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+source.getPeer());
+		}
+		// Keep track of the fileNumber so we can potentially delete the extra peer data file later, the file is authoritative
+		try {
+			handleNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
+		} catch (FSParseException e) {
+			// Shouldn't happen
+			throw new Error(e);
+		}
+	  } else {
+		Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
+	  }
+	}
+
+	/**
 	 * Handle a received node to node text message
 	 */
 	public void receivedNodeToNodeTextMessage(Message m) {
@@ -2831,7 +2868,7 @@ public class Node {
 			throw new Error(e);
 		}
 	  } else {
-		Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
+		Logger.error(this, "Received unknown node to node text message type '"+type+"' from "+source.getPeer());
 	  }
 	}
 

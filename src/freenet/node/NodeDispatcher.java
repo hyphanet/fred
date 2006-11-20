@@ -77,6 +77,9 @@ public class NodeDispatcher implements Dispatcher {
         	node.ipDetector.redetectAddress();
         } else if(spec == DMT.FNPVoid) {
         	return true;
+        } else if(spec == DMT.nodeToNodeMessage) {
+        	node.receivedNodeToNodeMessage(m);
+        	return true;
         } else if(spec == DMT.nodeToNodeTextMessage) {
         	node.receivedNodeToNodeTextMessage(m);
         	return true;
