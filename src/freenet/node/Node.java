@@ -78,7 +78,6 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
-import freenet.node.updater.NodeUpdater;
 import freenet.node.updater.NodeUpdaterManager;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
@@ -1384,7 +1383,7 @@ public class Node {
 		checkForEvilJVMBug();
 		
 		// TODO: implement a "required" version if needed
-		if(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER > NodeStarter.extBuildNumber)
+		if(!nodeUpdater.isEnabled() && (NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER > NodeStarter.extBuildNumber))
 			clientCore.alerts.register(new ExtOldAgeUserAlert());
 		else if(NodeStarter.extBuildNumber == -1)
 			clientCore.alerts.register(new ExtOldAgeUserAlert());
