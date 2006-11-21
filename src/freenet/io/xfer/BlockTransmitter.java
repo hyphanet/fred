@@ -79,7 +79,6 @@ public class BlockTransmitter {
 		_senderThread = new Thread("_senderThread for "+_uid+ " to "+_destination.getPeer()) {
 		
 			public void run() {
-				int sentSinceLastPing = 0;
 				while (!_sendComplete) {
 						long startCycleTime = System.currentTimeMillis();
 						try {
@@ -121,13 +120,6 @@ public class BlockTransmitter {
 						try {
 							((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
 							_ctr.sentPayload(PACKET_SIZE);
-							// We accelerate the ping rate during the transfer to keep a closer eye on round-trip-time
-							sentSinceLastPing++;
-							if (sentSinceLastPing >= PING_EVERY) {
-								sentSinceLastPing = 0;
-								//_usm.send(BlockTransmitter.this._destination, DMT.createPing());
-								((PeerNode)_destination).sendAsync(DMT.createPing(), null, 0, _ctr);
-							}
 						} catch (NotConnectedException e) {
 							Logger.normal(this, "Terminating send: "+e);
 							synchronized(_senderThread) {
