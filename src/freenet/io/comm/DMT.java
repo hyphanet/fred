@@ -357,7 +357,7 @@ public class DMT {
 	// Node-To-Node Message (generic)
 	public static final MessageType nodeToNodeMessage = new MessageType("nodeToNodeMessage", false) {{
 		addField(NODE_TO_NODE_MESSAGE_TYPE, Integer.class);
-		addField(NODE_TO_NODE_MESSAGE_DATA, String.class);
+		addField(NODE_TO_NODE_MESSAGE_DATA, ShortBuffer.class);
 	}};
 
 	public static final Message createNodeToNodeMessage(int type, String data) {

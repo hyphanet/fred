@@ -99,6 +99,7 @@ import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
@@ -2810,11 +2811,11 @@ public class Node {
 	  PeerNode source = (PeerNode)m.getSource();
 	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
 	  if(type == Node.N2N_MESSAGE_TYPE_FPROXY_USERALERT) {
-		String messageData = (String) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
+		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
 		Logger.normal(this, "Received N2NM from '"+source.getPeer());
 		SimpleFieldSet fs = null;
 		try {
-			fs = new SimpleFieldSet(messageData);
+			fs = new SimpleFieldSet(messageData.toString());
 		} catch (IOException e) {
 			Logger.error(this, "IOException while parsing node to node message data", e);
 			return;
