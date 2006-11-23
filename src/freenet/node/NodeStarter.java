@@ -105,8 +105,11 @@ public class NodeStarter
     	
     	try{ 	 
     		extBuildNumber = ExtVersion.buildNumber();
-    		extRevisionNumber = ExtVersion.cvsRevision;
-    		// extRevisionNumber = ExtVersion.cvsRevision();  **FIXME** Use this line when ready to make the next freenet-ext.jar mandatory
+			if(ExtVersion.cvsRevision.equals("-2")) {
+				extRevisionNumber = ExtVersion.cvsRevision();
+			} else {
+				extRevisionNumber = ExtVersion.cvsRevision;
+			}
     		if(extBuildNumber == 0 || extRevisionNumber == null) throw new Throwable();
     	}catch(Throwable t){ 	 
     		// Compatibility code ... will be removed
