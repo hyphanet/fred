@@ -47,7 +47,7 @@ public class NodeDispatcher implements Dispatcher {
     public boolean handleMessage(Message m) {
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
         PeerNode source = (PeerNode)m.getSource();
-        if(logMINOR) Logger.minor(this, "Dispatching "+m);
+        if(logMINOR) Logger.minor(this, "Dispatching "+m+" from "+source);
         MessageType spec = m.getSpec();
         if(spec == DMT.FNPPing) {
             // Send an FNPPong
