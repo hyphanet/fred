@@ -77,6 +77,7 @@ public class BlockReceiver {
                 if(!_sender.isConnected()) throw new DisconnectedException();
             } catch (DisconnectedException e1) {
                 Logger.normal(this, "Disconnected during receive: "+_uid+" from "+_sender);
+                _prb.abort(RetrievalException.SENDER_DIED, "Disconnected during receive");
                 throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
             }
             if(Logger.shouldLog(Logger.MINOR, this))
