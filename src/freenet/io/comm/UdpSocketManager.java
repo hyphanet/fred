@@ -320,6 +320,7 @@ public class UdpSocketManager extends Thread {
 	 * @param m The Message to dispatch.
 	 */
 	public void checkFilters(Message m) {
+		if(logMINOR) Logger.minor(this, "checkFilters: "+m+" from "+m.getSource());
 		if ((m.getSource()) instanceof PeerNode)
 		{
 			((PeerNode)m.getSource()).addToLocalNodeReceivedMessagesFromStatistic(m);
