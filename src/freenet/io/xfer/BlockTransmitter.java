@@ -80,59 +80,59 @@ public class BlockTransmitter {
 		
 			public void run() {
 				while (!_sendComplete) {
-						long startCycleTime = System.currentTimeMillis();
-						try {
-							while (true) {
-								synchronized(_senderThread) {
-									if(_unsent.size() != 0) break;
-									// No unsent packets
-									if(getNumSent() == _prb.getNumPackets()) {
-										if(Logger.shouldLog(Logger.MINOR, this))
-											Logger.minor(this, "Sent all blocks, none unsent");
-										if(timeAllSent <= 0)
-											timeAllSent = System.currentTimeMillis();
-									}
-									if(_sendComplete) return;
-									_senderThread.wait(10*1000);
+					long startCycleTime = System.currentTimeMillis();
+					try {
+						while (true) {
+							synchronized(_senderThread) {
+								if(_unsent.size() != 0) break;
+								// No unsent packets
+								if(getNumSent() == _prb.getNumPackets()) {
+									if(Logger.shouldLog(Logger.MINOR, this))
+										Logger.minor(this, "Sent all blocks, none unsent");
+									if(timeAllSent <= 0)
+										timeAllSent = System.currentTimeMillis();
 								}
-							}
-							timeAllSent = -1;
-						} catch (InterruptedException e) {
-						} catch (AbortedException e) {
-							synchronized(_senderThread) {
-								_sendComplete = true;
-								_senderThread.notifyAll();
-							}
-							return;
-						}
-						int packetNo;
-						try {
-							synchronized(_senderThread) {
-								packetNo = ((Integer) _unsent.removeFirst()).intValue();
-							}
-						} catch (NoSuchElementException nsee) {
-							// back up to the top to check for completion
-							continue;
-						}
-						delay(startCycleTime);
-						if(_sendComplete) break;
-						_sentPackets.setBit(packetNo, true);
-						try {
-							((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
-							_ctr.sentPayload(PACKET_SIZE);
-						} catch (NotConnectedException e) {
-							Logger.normal(this, "Terminating send: "+e);
-							synchronized(_senderThread) {
-								_sendComplete = true;
-								_senderThread.notifyAll();
-							}
-						} catch (AbortedException e) {
-							Logger.normal(this, "Terminating send due to abort: "+e);
-							synchronized(_senderThread) {
-								_sendComplete = true;
-								_senderThread.notifyAll();
+								if(_sendComplete) return;
+								_senderThread.wait(10*1000);
 							}
 						}
+						timeAllSent = -1;
+					} catch (InterruptedException e) {
+					} catch (AbortedException e) {
+						synchronized(_senderThread) {
+							_sendComplete = true;
+							_senderThread.notifyAll();
+						}
+						return;
+					}
+					int packetNo;
+					try {
+						synchronized(_senderThread) {
+							packetNo = ((Integer) _unsent.removeFirst()).intValue();
+						}
+					} catch (NoSuchElementException nsee) {
+						// back up to the top to check for completion
+						continue;
+					}
+					delay(startCycleTime);
+					if(_sendComplete) break;
+					_sentPackets.setBit(packetNo, true);
+					try {
+						((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
+						_ctr.sentPayload(PACKET_SIZE);
+					} catch (NotConnectedException e) {
+						Logger.normal(this, "Terminating send: "+e);
+						synchronized(_senderThread) {
+							_sendComplete = true;
+							_senderThread.notifyAll();
+						}
+					} catch (AbortedException e) {
+						Logger.normal(this, "Terminating send due to abort: "+e);
+						synchronized(_senderThread) {
+							_sendComplete = true;
+							_senderThread.notifyAll();
+						}
+					}
 				}
 			}
 
