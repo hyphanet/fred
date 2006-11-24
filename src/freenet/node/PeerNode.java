@@ -1222,7 +1222,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     	synchronized(this) {
             if(!isConnected()) {
                 Logger.error(this, "Tried to send "+req+" but not connected to "+this, new Exception("debug"));
-                return;
+                throw new NotConnectedException();
             }
 		}
         node.usm.send(this, req, ctr);
