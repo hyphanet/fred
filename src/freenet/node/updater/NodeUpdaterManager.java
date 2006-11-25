@@ -169,6 +169,10 @@ public class NodeUpdaterManager {
 	 */
 	void enable(boolean enable) throws InvalidConfigValueException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(!node.isUsingWrapper()){
+			Logger.normal(this, "Don't try to start the updater as we are not running under the wrapper.");
+			return;
+		}
 		NodeUpdater main = null, ext = null;
 		synchronized(this) {
 			boolean enabled = (mainUpdater != null && mainUpdater.isRunning());
