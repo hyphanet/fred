@@ -2812,18 +2812,18 @@ public class Node {
 	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
 	  if(type == Node.N2N_MESSAGE_TYPE_FPROXY_USERALERT) {
 		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
-		Logger.normal(this, "Received N2NM from '"+source.getPeer());
+		Logger.normal(this, "Received N2NM from '"+source.getPeer()+"'");
 		SimpleFieldSet fs = null;
 		try {
-			fs = new SimpleFieldSet(messageData.toString());
+			fs = new SimpleFieldSet(new String(messageData.getData(), "UTF-8"));
 		} catch (IOException e) {
 			Logger.error(this, "IOException while parsing node to node message data", e);
 			return;
 		}
-		if(fs.get("N2NType") == null) {
-			fs.removeValue("N2NType");
+		if(fs.get("type") != null) {
+			fs.removeValue("type");
 		}
-		fs.put("N2NType", Integer.toString(type));
+		fs.put("type", Integer.toString(type));
 		int fileNumber = source.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
 		if( fileNumber == -1 ) {
 			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+source.getPeer());
