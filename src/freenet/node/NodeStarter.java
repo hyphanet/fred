@@ -103,14 +103,29 @@ public class NodeStarter
     		return new Integer(-2);
     	}
     	
-    	try{ 	 
+    	try{
+    		extBuildNumber = ExtVersion.buildNumber;
+			extRevisionNumber = ExtVersion.cvsRevision;
+			String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #"+extBuildNumber+" r"+extRevisionNumber;
+			Logger.normal(this, builtWithMessage);
+			System.out.println(builtWithMessage);
     		extBuildNumber = ExtVersion.buildNumber();
-			if(ExtVersion.cvsRevision.equals("-2")) {
-				extRevisionNumber = ExtVersion.cvsRevision;
-			} else {
-				extRevisionNumber = ExtVersion.cvsRevision;
+			if(extBuildNumber == -42) {
+				extBuildNumber = ExtVersion.extBuildNumber();
+				extRevisionNumber = ExtVersion.extRevisionNumber();
 			}
-    		if(extBuildNumber == 0 || extRevisionNumber == null) throw new Throwable();
+			if(extBuildNumber == 0) {
+				String buildMessage = "extBuildNumber is 0; perhaps your freenet-ext.jar file is corrupted?";
+				Logger.error(this, buildMessage);
+				System.err.println(buildMessage);
+				extBuildNumber = -1;
+			}
+			if(extRevisionNumber == null) {
+				String revisionMessage = "extRevisionNumber is null; perhaps your freenet-ext.jar file is corrupted?";
+				Logger.error(this, revisionMessage);
+				System.err.println(revisionMessage);
+				extRevisionNumber = "INVALID";
+			}
     	}catch(Throwable t){ 	 
     		// Compatibility code ... will be removed
     		Logger.error(this, "Unable to get the version of your freenet-ext file : it's probably corrupted!");
