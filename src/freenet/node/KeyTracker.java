@@ -360,12 +360,7 @@ public class KeyTracker {
     public synchronized void receivedPacket(int seqNumber) {
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(logMINOR) Logger.minor(this, "Received packet "+seqNumber);
-        try {
-			pn.receivedPacket(false);
-		} catch (NotConnectedException e) {
-			if(logMINOR) Logger.minor(this, "Ignoring, because disconnected");
-			return;
-		}
+		pn.receivedPacket(false);
         if(seqNumber == -1) return;
         // FIXME delete this log statement
         if(logMINOR) Logger.minor(this, "Still received packet: "+seqNumber);

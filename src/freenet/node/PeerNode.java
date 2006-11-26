@@ -1326,12 +1326,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * @param dontLog If true, don't log an error or throw an exception if we are not connected. This
      * can be used in handshaking when the connection hasn't been verified yet.
      */
-	void receivedPacket(boolean dontLog) throws NotConnectedException {
+	void receivedPacket(boolean dontLog) {
 		synchronized(this) {
 			if((!isConnected) && (!dontLog)) {
 				if((unverifiedTracker == null) && (currentTracker == null)) {
 					Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
-					throw new NotConnectedException();
+					// Presumably caller can handle it.
 				} else {
 					if(logMINOR) Logger.minor(this, "Received packet while disconnected on "+this+" - recently disconnected() ?");
 				}
@@ -1468,12 +1468,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" getName(): "+getName());
 		
 		// Received a packet
-		try {
-			receivedPacket(unverified);
-		} catch (NotConnectedException e) {
-			Logger.error(this, "Disconnected in completedHandshake with "+this);
-			return true; // i suppose
-		}
+		receivedPacket(unverified);
 		
     	if(newer || older || !isConnected())
     		node.peers.disconnected(this);

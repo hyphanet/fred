@@ -850,11 +850,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 
         if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
             tracker.queueAck(seqNumber);
-            try {
-				tracker.pn.receivedPacket(false);
-			} catch (NotConnectedException e) {
-				Logger.normal(this, "Processing packet while disconnected: "+e+" for "+tracker, e);
-			}
+			tracker.pn.receivedPacket(false);
             Logger.error(this, "Received packet twice ("+seqNumber+") from "+tracker.pn.getPeer()+": "+seqNumber+" ("+TimeUtil.formatTime((long) tracker.pn.pingAverage.currentValue(), 2, true)+" ping avg)");
             return;
         }
