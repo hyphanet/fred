@@ -106,7 +106,7 @@ public class NodeStarter
     	try{ 	 
     		extBuildNumber = ExtVersion.buildNumber();
 			if(ExtVersion.cvsRevision.equals("-2")) {
-				extRevisionNumber = ExtVersion.cvsRevision();
+				extRevisionNumber = ExtVersion.cvsRevision;
 			} else {
 				extRevisionNumber = ExtVersion.cvsRevision;
 			}
