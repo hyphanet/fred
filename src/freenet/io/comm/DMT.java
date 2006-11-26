@@ -360,10 +360,10 @@ public class DMT {
 		addField(NODE_TO_NODE_MESSAGE_DATA, ShortBuffer.class);
 	}};
 
-	public static final Message createNodeToNodeMessage(int type, String data) {
-		Message msg = new Message(nodeToNodeTextMessage);
+	public static final Message createNodeToNodeMessage(int type, byte[] data) {
+		Message msg = new Message(nodeToNodeMessage);
 		msg.set(NODE_TO_NODE_MESSAGE_TYPE, type);
-		msg.set(NODE_TO_NODE_MESSAGE_DATA, data);
+		msg.set(NODE_TO_NODE_MESSAGE_DATA, new ShortBuffer(data));
 		return msg;
 	}
 

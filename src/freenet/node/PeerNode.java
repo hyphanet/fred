@@ -1008,7 +1008,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             String rateLimitWrapper = "";
             boolean rateLimitLogging = false;
             if( messages.length > messageRequeueLogRateLimitThreshold ) {
-              rateLimitWrapper = " (rate limited)";
+              rateLimitWrapper = " (log message rate limited)";
               if(nextMessageRequeueLogTime <= now ) {
                 nextMessageRequeueLogTime = now + messageRequeueLogRateLimitInterval;
               } else {

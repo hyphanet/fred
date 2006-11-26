@@ -320,6 +320,7 @@ public class UdpSocketManager extends Thread {
 	 * @param m The Message to dispatch.
 	 */
 	public void checkFilters(Message m) {
+		long tStart = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "checkFilters: "+m+" from "+m.getSource());
 		if ((m.getSource()) instanceof PeerNode)
 		{
@@ -413,6 +414,13 @@ public class UdpSocketManager extends Thread {
 				}
 			}
 		}
+		long tEnd = System.currentTimeMillis();
+		if(tEnd - tStart > 50) {
+			if(tEnd - tStart > 500)
+				Logger.error(this, "checkFilters took "+(tEnd-tStart)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
+			else
+				Logger.normal(this, "checkFilters took "+(tEnd-tStart)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
+		}
 	}
 	
 	/** LowLevelFilter should call this when a node is disconnected. */
@@ -447,6 +455,7 @@ public class UdpSocketManager extends Thread {
 		long now = System.currentTimeMillis();
 		long messageDropTime = now - MAX_UNCLAIMED_FIFO_ITEM_LIFETIME;
 		long messageLifeTime = 0;
+		long tStart = System.currentTimeMillis();
 		synchronized (_filters) {
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
 			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
@@ -485,6 +494,13 @@ public class UdpSocketManager extends Thread {
 					}
 				}
 			}
+		}
+		long tEnd = System.currentTimeMillis();
+		if(tEnd - tStart > 50) {
+			if(tEnd - tStart > 500)
+				Logger.error(this, "waitFor _unclaimed iteration took "+(tEnd-tStart)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for ret of "+ret);
+			else
+				Logger.normal(this, "waitFor _unclaimed iteration took "+(tEnd-tStart)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for ret of "+ret);
 		}
 		// Unlock to wait on filter
 		// Waiting on the filter won't release the outer lock
