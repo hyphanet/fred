@@ -677,4 +677,20 @@ public class UdpSocketManager extends Thread {
 	public synchronized int getUnclaimedFIFOSize() {
 		return _unclaimed.size();
 	}
+	
+	public synchronized Map getUnclaimedFIFOMessageCounts() {
+		Map messageCounts = new HashMap();
+		for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
+			Message m = (Message) i.next();
+			String messageName = m.getSpec().getName();
+			Integer messageCount = (Integer) messageCounts.get(messageName);
+			if (messageCount == null) {
+				messageCounts.put(messageName, new Integer(1) );
+			} else {
+				messageCount = new Integer(messageCount.intValue() + 1);
+				messageCounts.put(messageName, messageCount );
+			}
+		}
+		return messageCounts;
+	}
 }

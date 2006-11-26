@@ -27,6 +27,16 @@ public class StatisticsToadlet extends Toadlet {
 		}
 
 	}
+	
+	private class STMessageCount {
+		public String messageName;
+		public int messageCount;
+		
+		STMessageCount( String messageName, int messageCount ) {
+			this.messageName = messageName;
+			this.messageCount = messageCount;
+		}
+	}
 
 	private final Node node;
 	private final NodeClientCore core;
@@ -435,6 +445,56 @@ public class StatisticsToadlet extends Toadlet {
                 jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem));
                 jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
                 jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
+            }
+			
+			// unclaimedFIFOMessageCounts box
+			if(advancedEnabled) {
+				overviewTableRow = overviewTable.addChild("tr");
+				nextTableCell = overviewTableRow.addChild("td", "class", "first");
+				Map unclaimedFIFOMessageCountsMap = node.getUSM().getUnclaimedFIFOMessageCounts();
+				STMessageCount[] unclaimedFIFOMessageCountsArray = new STMessageCount[unclaimedFIFOMessageCountsMap.size()];
+				int i = 0;
+				int totalCount = 0;
+				for (Iterator messageCounts = unclaimedFIFOMessageCountsMap.keySet().iterator(); messageCounts.hasNext(); ) {
+					String messageName = (String) messageCounts.next();
+					int messageCount = ((Integer) unclaimedFIFOMessageCountsMap.get(messageName)).intValue();
+					totalCount = totalCount + messageCount;
+					unclaimedFIFOMessageCountsArray[i++] = new STMessageCount( messageName, messageCount );
+				}
+				Arrays.sort(unclaimedFIFOMessageCountsArray, new Comparator() {
+					public int compare(Object first, Object second) {
+						STMessageCount firstCount = (STMessageCount) first;
+						STMessageCount secondCount = (STMessageCount) second;
+						return secondCount.messageCount - firstCount.messageCount;  // sort in descending order
+					}
+				});
+				
+				HTMLNode unclaimedFIFOMessageCountsInfobox = nextTableCell.addChild("div", "class", "infobox");
+				unclaimedFIFOMessageCountsInfobox.addChild("div", "class", "infobox-header", "unclaimedFIFO Message Counts");
+				HTMLNode unclaimedFIFOMessageCountsInfoboxContent = unclaimedFIFOMessageCountsInfobox.addChild("div", "class", "infobox-content");
+				HTMLNode unclaimedFIFOMessageCountsList = unclaimedFIFOMessageCountsInfoboxContent.addChild("ul");
+				for (int countsArrayIndex = 0, countsArrayCount = unclaimedFIFOMessageCountsArray.length; countsArrayIndex < countsArrayCount; countsArrayIndex++) {
+					STMessageCount messageCountItem = (STMessageCount) unclaimedFIFOMessageCountsArray[countsArrayIndex];
+					int thisMessageCount = messageCountItem.messageCount;
+					double thisMessagePercentOfTotal = ((double) thisMessageCount) / ((double) totalCount);
+					unclaimedFIFOMessageCountsList.addChild("li", "" + messageCountItem.messageName + ":\u00a0" + thisMessageCount + "\u00a0(" + fix3p1pct.format(thisMessagePercentOfTotal) + ')');
+				}
+				unclaimedFIFOMessageCountsList.addChild("li", "Unclaimed Messages Considered:\u00a0" + totalCount);
+				nextTableCell = overviewTableRow.addChild("td");
+			}
+
+            // node version information box
+            if (advancedEnabled) {
+                HTMLNode versionInfobox = nextTableCell.addChild("div", "class", "infobox");
+                versionInfobox.addChild("div", "class", "infobox-header", "Node Version Information");
+                HTMLNode versionInfoboxContent = versionInfobox.addChild("div", "class", "infobox-content");
+				versionInfoboxContent.addChild("#", "Freenet " + Version.nodeVersion + " Build #" + Version.buildNumber() + " r" + Version.cvsRevision);
+				versionInfoboxContent.addChild("br");
+				if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER) {
+					versionInfoboxContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + '(' + NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER + ") r" + NodeStarter.extRevisionNumber);
+				} else {
+					versionInfoboxContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + " r" + NodeStarter.extRevisionNumber);
+				}
             }
 		}
 

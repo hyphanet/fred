@@ -555,10 +555,11 @@ public class WelcomeToadlet extends Toadlet {
 		HTMLNode versionContent = ctx.getPageMaker().getContentNode(versionBox);
 		versionContent.addChild("#", "Freenet " + Version.nodeVersion + " Build #" + Version.buildNumber() + " r" + Version.cvsRevision);
 		versionContent.addChild("br");
-		if(NodeStarter.extBuildNumber<NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER)
+		if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER) {
 			versionContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + '(' + NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER + ") r" + NodeStarter.extRevisionNumber);
-		else
+		} else {
 			versionContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + " r" + NodeStarter.extRevisionNumber);
+		}
 		versionContent.addChild("br");
 		HTMLNode shutdownForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "GET" });
 		shutdownForm.addChild("input", new String[] { "type", "name" }, new String[] { "hidden", "exit" });
