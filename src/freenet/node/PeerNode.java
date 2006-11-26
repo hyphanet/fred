@@ -1799,7 +1799,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         }
         tracker = prev;
         if(tracker != null) {
-            if(tracker.isDeprecated()) return;
             long t = tracker.getNextUrgentTime();
             if(t < now) {
                 try {
