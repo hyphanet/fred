@@ -455,7 +455,6 @@ public class UdpSocketManager extends Thread {
 		long now = System.currentTimeMillis();
 		long messageDropTime = now - MAX_UNCLAIMED_FIFO_ITEM_LIFETIME;
 		long messageLifeTime = 0;
-		long tStart = System.currentTimeMillis();
 		synchronized (_filters) {
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
 			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
@@ -496,11 +495,11 @@ public class UdpSocketManager extends Thread {
 			}
 		}
 		long tEnd = System.currentTimeMillis();
-		if(tEnd - tStart > 50) {
-			if(tEnd - tStart > 500)
-				Logger.error(this, "waitFor _unclaimed iteration took "+(tEnd-tStart)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for ret of "+ret);
+		if(tEnd - now > 50) {
+			if(tEnd - now > 500)
+				Logger.error(this, "waitFor _unclaimed iteration took "+(tEnd-now)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for ret of "+ret);
 			else
-				Logger.normal(this, "waitFor _unclaimed iteration took "+(tEnd-tStart)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for ret of "+ret);
+				Logger.normal(this, "waitFor _unclaimed iteration took "+(tEnd-now)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for ret of "+ret);
 		}
 		// Unlock to wait on filter
 		// Waiting on the filter won't release the outer lock
