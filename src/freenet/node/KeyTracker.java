@@ -108,6 +108,9 @@ public class KeyTracker {
      * Set the deprecated flag to indicate that we are now
      * no longer the primary key. And wake up any threads trying to lock
      * a packet number; they can be sent with the new KT.
+     * 
+     * After this, new packets will not be sent. It will not be possible to allocate a new
+     * packet number. However, old resend requests etc may still be sent.
      */
     public void deprecated() {
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -581,8 +584,8 @@ public class KeyTracker {
         	synchronized(this) {
         		String msg = "Asking me to resend packet "+seqNumber+
         			" which we haven't sent yet or which they have already acked (next="+nextPacketNumber+ ')';
-        		// Probably just a bit late - caused by overload etc
-        		if(logMINOR) Logger.minor(this, msg);
+        		// Might just be late, but could indicate something serious.
+        		if(logMINOR) Logger.error(this, msg);
         	}
         }
     }
@@ -666,7 +669,9 @@ public class KeyTracker {
                 sentPacketsContents.lock(packetNumber);
                 return packetNumber;
             } catch (InterruptedException e) {
-                if(isDeprecated) throw new KeyChangedException();
+            	synchronized(this) {
+            		if(isDeprecated) throw new KeyChangedException();
+            	}
             }
         }
     }
@@ -848,14 +853,41 @@ public class KeyTracker {
 		}
     }
 
-    public void completelyDeprecated(KeyTracker newTracker) {
-    	if(logMINOR) Logger.minor(this, "Completely deprecated: "+this+" in favour of "+newTracker);
+    /**
+     * Clear the KeyTracker. Deprecate it, clear all resend, ack, request-ack etc queues.
+     * Return the messages we still had in flight. The caller will then either add them to
+     * another KeyTracker, or call their callbacks to indicate failure.
+     */
+    private LimitedRangeIntByteArrayMapElement[] clear() {
+    	if(logMINOR) Logger.minor(this, "Clearing "+this);
         isDeprecated = true;
         LimitedRangeIntByteArrayMapElement[] elements;
         synchronized(sentPacketsContents) {
-            // Anything to resend?
-            elements = sentPacketsContents.grabAll();
+            elements = sentPacketsContents.grabAll(); // will clear
         }
+        synchronized(ackQueue) {
+            ackQueue.clear();
+        }
+        resendRequestQueue.kill();
+        ackRequestQueue.kill();
+        synchronized(packetsToResend) {
+            packetsToResend.clear();
+        }
+    	packetNumbersReceived.clear();
+    	return elements;
+    }
+
+    /**
+     * Completely deprecate the KeyTracker, in favour of a new one. 
+     * It will no longer be used for anything. The KeyTracker will be cleared and all outstanding packets
+     * moved to the new KeyTracker.
+     * 
+     * *** Must only be called if the KeyTracker is not to be kept. Otherwise, we may receive some packets twice. ***
+     */
+    public void completelyDeprecated(KeyTracker newTracker) {
+    	if(logMINOR) Logger.minor(this, "Completely deprecated: "+this+" in favour of "+newTracker);
+    	LimitedRangeIntByteArrayMapElement[] elements = clear();
+    	if(elements.length == 0) return; // nothing more to do
         MessageItem[] messages = new MessageItem[elements.length];
         for(int i=0;i<elements.length;i++) {
             LimitedRangeIntByteArrayMapElement element = elements[i];
@@ -866,6 +898,7 @@ public class KeyTracker {
             messages[i] = new MessageItem(buf, callbacks, true, 0, null);
         }
         pn.requeueMessageItems(messages, 0, messages.length, true);
+        
         pn.node.ps.queuedResendPacket();
     }
 
@@ -874,13 +907,8 @@ public class KeyTracker {
      * Dump all sent messages.
      */
     public void disconnected() {
-        isDeprecated = true;
-        LimitedRangeIntByteArrayMapElement[] elements;
         // Clear everything, call the callbacks
-        synchronized(sentPacketsContents) {
-            // Anything to resend?
-            elements = sentPacketsContents.grabAll();
-        }
+    	LimitedRangeIntByteArrayMapElement[] elements = clear();
         for(int i=0;i<elements.length;i++) {
             LimitedRangeIntByteArrayMapElement element = elements[i];
             AsyncMessageCallback[] callbacks = element.callbacks;
@@ -888,14 +916,6 @@ public class KeyTracker {
                 for(int j=0;j<callbacks.length;j++)
                     callbacks[j].disconnected();
             }
-        }
-        synchronized(ackQueue) {
-            ackQueue.clear();
-        }
-        resendRequestQueue.kill();
-        ackRequestQueue.kill();
-        synchronized(packetsToResend) {
-            packetsToResend.clear();
         }
     }
 
