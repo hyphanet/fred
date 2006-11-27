@@ -652,8 +652,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 (seqBuf[3] & 0xff);
 
         int targetSeqNumber = tracker.highestReceivedIncomingSeqNumber();
-        if(logMINOR) Logger.minor(this, "Target seq: "+targetSeqNumber);
-        if(logMINOR) Logger.minor(this, "Sequence number: "+seqNumber+ '=' +Integer.toHexString(seqNumber));
+        if(logMINOR) Logger.minor(this, "Seqno: "+seqNumber+" (highest seen "+targetSeqNumber+") receiving packet from "+tracker.pn.getPeer());
 
         if(seqNumber == -1) {
             // Ack/resendreq-only packet
@@ -1286,7 +1285,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         	ackRequests = tracker.grabAckRequests();
             realSeqNumber = tracker.getLastOutgoingSeqNumber();
             otherSideSeqNumber = tracker.highestReceivedIncomingSeqNumber();
-            if(logMINOR) Logger.minor(this, "otherSideSeqNumber: "+otherSideSeqNumber);
+            if(logMINOR) Logger.minor(this, "Sending packet to "+tracker.pn.getPeer()+", other side max seqno: "+otherSideSeqNumber);
         }
         
         int packetLength = acks.length + resendRequests.length + ackRequests.length + 4 + 1 + length + 4 + 4 + RANDOM_BYTES_LENGTH;
