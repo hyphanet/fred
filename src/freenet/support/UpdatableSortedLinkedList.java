@@ -11,7 +11,7 @@ import java.util.Enumeration;
  */
 public class UpdatableSortedLinkedList {
 
-	private boolean killed = false;
+	protected boolean killed = false;
 	private static boolean logMINOR;
 	
     public UpdatableSortedLinkedList() {

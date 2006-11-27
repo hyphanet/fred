@@ -22,6 +22,7 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
         if(!(item instanceof IndexableUpdatableSortedLinkedListItem)) {
             throw new IllegalArgumentException();
         }
+    	if(killed) throw new UpdatableSortedLinkedListKilledException();
         IndexableUpdatableSortedLinkedListItem i = (IndexableUpdatableSortedLinkedListItem)item;
         if(map.get(i.indexValue()) != null) {
             // Ignore duplicate
@@ -34,6 +35,7 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
     }
     
     public synchronized UpdatableSortedLinkedListItem remove(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
+    	if(killed) throw new UpdatableSortedLinkedListKilledException();
         map.remove(((IndexableUpdatableSortedLinkedListItem)item).indexValue());
         return super.remove(item);
     }
@@ -47,10 +49,16 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
      * @throws UpdatableSortedLinkedListKilledException 
      */
     public synchronized IndexableUpdatableSortedLinkedListItem removeByKey(Object key) throws UpdatableSortedLinkedListKilledException {
+    	if(killed) throw new UpdatableSortedLinkedListKilledException();
         IndexableUpdatableSortedLinkedListItem item = 
             (IndexableUpdatableSortedLinkedListItem) map.get(key);
         if(item != null) remove(item);
         checkList();
         return item;
+    }
+    
+    public synchronized void clear() {
+    	map.clear();
+    	super.clear();
     }
 }
