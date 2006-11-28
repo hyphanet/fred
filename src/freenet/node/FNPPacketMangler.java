@@ -455,7 +455,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         output[1] = (byte) negType;
         output[2] = (byte) phase;
         System.arraycopy(data, 0, output, 3, data.length);
-        if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (ph="+phase+", v="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
+        if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
         sendAuthPacket(output, pn, replyTo);
     }
 
