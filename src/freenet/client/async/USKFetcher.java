@@ -346,6 +346,11 @@ public class USKFetcher implements ClientGetState {
 				lastEd = uskManager.lookup(origUSK);
 				if((lastEd <= a.number) && !a.cancelled)
 					a.schedule();
+				else {
+					synchronized(this) {
+						runningAttempts.remove(a);
+					}
+				}
 			}
 		}
 	}
@@ -441,6 +446,11 @@ public class USKFetcher implements ClientGetState {
 				long lastEd = uskManager.lookup(origUSK);
 				if(attempts[i].number > lastEd)
 					attempts[i].schedule();
+				else {
+					synchronized(this) {
+						runningAttempts.remove(attempts[i]);
+					}
+				}
 			}
 		}
 	}
