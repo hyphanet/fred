@@ -1021,7 +1021,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 			if(!dontRequeue) {
 				requeueLogString = ", requeueing remaining messages";
 			}
-            length = 0;
+            length = 1;
             int count = 0;
             int lastIndex = 0;
             alreadyReportedBytes = 0;
