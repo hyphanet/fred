@@ -132,7 +132,20 @@ public class UdpSocketManager extends Thread {
 //			if (Updater.hasResource()) {
 //				_sock = (DatagramSocket) Updater.getResource();
 //			} else {
-				_sock = new DatagramSocket(listenPort, bindto);
+		_sock = new DatagramSocket(listenPort, bindto);
+		int sz = _sock.getReceiveBufferSize();
+		if(sz < 32768)
+			_sock.setReceiveBufferSize(32768);
+		try {
+			// We make it timeout every 100ms so that we can check for
+			// _filters which have timed out, this
+			// is ugly but our only option without resorting to java.nio
+			// because there is no way to forcefully
+			// interrupt a socket wait operation
+			_sock.setSoTimeout(100);
+		} catch (SocketException e) {
+			throw new RuntimeException(e);
+		}
 //			}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = new Random();
@@ -259,20 +272,14 @@ public class UdpSocketManager extends Thread {
         }
     }
 
+    // FIXME necessary to deal with bugs around build 1000; arguably necessary to deal with large node names in connection setup
+    // Revert to 1500?
+    private static final int MAX_RECEIVE_SIZE = 2048;
+    
     private DatagramPacket getPacket() {
-		try {
-			// We make it timeout every 100ms so that we can check for
-			// _filters which have timed out, this
-			// is ugly but our only option without resorting to java.nio
-			// because there is no way to forcefully
-			// interrupt a socket wait operation
-			_sock.setSoTimeout(100);
-		} catch (SocketException e) {
-			throw new RuntimeException(e);
-		}
 		// TODO: Avoid recreating the packet each time (warning, there are some issues reusing DatagramPackets, be
 		// careful)
-		DatagramPacket packet = new DatagramPacket(new byte[1500], 1500);
+		DatagramPacket packet = new DatagramPacket(new byte[MAX_RECEIVE_SIZE], MAX_RECEIVE_SIZE);
 		try {
 			_sock.receive(packet);
 			// TODO: keep?
