@@ -1021,7 +1021,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 			if(!dontRequeue) {
 				requeueLogString = ", requeueing remaining messages";
 			}
-            length = 56;
+            length = 0;
             int count = 0;
             int lastIndex = 0;
             alreadyReportedBytes = 0;
@@ -1031,7 +1031,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 else thisLength = (messageData[i].length + 2);
                 int newLength = length + thisLength;
                 count++;
-                if((newLength > node.usm.getMaxPacketSize()) || (count > 255) || (i == messages.length)) {
+                if((newLength + HEADERS_LENGTH_MINIMUM > node.usm.getMaxPacketSize()) || (count > 255) || (i == messages.length)) {
                     // lastIndex up to the message right before this one
                     // e.g. lastIndex = 0, i = 1, we just send message 0
                     if(lastIndex != i) {
@@ -1102,7 +1102,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             System.arraycopy(data, 0, buf, loc, len);
             loc += len;
         }
-        processOutgoingPreformatted(buf, 0, bufferLength, pn, neverWaitForPacketNumber, callbacks, alreadyReportedBytes);
+        processOutgoingPreformatted(buf, 0, loc, pn, neverWaitForPacketNumber, callbacks, alreadyReportedBytes);
     }
 
     /**
