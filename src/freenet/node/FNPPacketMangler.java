@@ -966,7 +966,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 byte[] data = mi.getData(pn);
                 messageData[x] = data;
                 if(data.length > node.usm.getMaxPacketSize()) {
-                    Logger.error(this, "Message exceeds packet size: "+messages[i]);
+                    Logger.error(this, "Message exceeds packet size: "+messages[i]+" size "+data.length+" message "+mi.msg);
                     // Will be handled later
                 }
                 newMsgs[x] = mi;
