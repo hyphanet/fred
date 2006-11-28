@@ -686,7 +686,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         System.arraycopy(temp, 0, packetHash, 0, blockSize);
         
         // Check the hash
-        if(!java.util.Arrays.equals(packetHash, realHash)) {
+        if(!Arrays.equals(packetHash, realHash)) {
             if(logMINOR) Logger.minor(this, "Packet possibly from "+tracker+" hash does not match:\npacketHash="+
                     HexUtil.bytesToHex(packetHash)+"\n  realHash="+HexUtil.bytesToHex(realHash)+" ("+(length-HASH_LENGTH)+" bytes payload)");
             return false;
@@ -1422,7 +1422,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 
         if(logMINOR) Logger.minor(this, "\nHash:      "+HexUtil.bytesToHex(digestTemp));
                 
-        // Put plaintext in output
+        // Put encrypted digest in output
         sessionCipher.encipher(digestTemp, digestTemp);
         
         // Now copy it back
