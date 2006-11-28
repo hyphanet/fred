@@ -906,7 +906,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         byte[][] messageData = new byte[messages.length][];
         int[] alreadyReported = new int[messages.length];
         MessageItem[] newMsgs = new MessageItem[messages.length];
+        KeyTracker kt = pn.getCurrentKeyTracker();
         int length = 1;
+        length += kt.countAcks() + kt.countAckRequests() + kt.countResendRequests();
         int callbacksCount = 0;
         int x = 0;
 		String mi_name = null;
@@ -917,7 +919,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             if(mi.formatted) {
                 try {
                     byte[] buf = mi.getData(pn);
-                    KeyTracker kt = pn.getCurrentKeyTracker();
+                    kt = pn.getCurrentKeyTracker();
                     if(kt == null) {
                         if(logMINOR) Logger.minor(this, "kt = null");
                         pn.requeueMessageItems(messages, i, messages.length-i, false, "kt = null");
@@ -1036,6 +1038,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 				requeueLogString = ", requeueing remaining messages";
 			}
             length = 1;
+            length += kt.countAcks() + kt.countAckRequests() + kt.countResendRequests();
             int count = 0;
             int lastIndex = 0;
             alreadyReportedBytes = 0;

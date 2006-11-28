@@ -959,4 +959,20 @@ public class KeyTracker {
 	public boolean isDeprecated() {
 		return this.isDeprecated;
 	}
+
+	public int countAckRequests() {
+		return ackRequestQueue.size();
+	}
+
+	public int countResendRequests() {
+		synchronized(resendRequestQueue) {
+			return resendRequestQueue.size();
+		}
+	}
+
+	public int countAcks() {
+		synchronized(ackQueue) {
+			return ackQueue.size();
+		}
+	}
 }
