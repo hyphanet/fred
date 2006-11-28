@@ -17,6 +17,7 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -299,7 +300,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     private int privateDarknetCommentFileNumber;
     
     /** Queued-to-send N2NTM extra peer data file numbers */
-    private Vector queuedToSendN2NTMExtraPeerDataFileNumbers;
+    private HashSet queuedToSendN2NTMExtraPeerDataFileNumbers;
 
     /** Total low-level input bytes */
     private long totalBytesIn;
@@ -621,8 +622,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		extraPeerDataFileNumbers.removeAllElements();
 		
 		// Setup the queuedToSendN2NTMExtraPeerDataFileNumbers
-		queuedToSendN2NTMExtraPeerDataFileNumbers = new Vector();
-		queuedToSendN2NTMExtraPeerDataFileNumbers.removeAllElements();
+		queuedToSendN2NTMExtraPeerDataFileNumbers = new HashSet();
     }
 
     private boolean parseARK(SimpleFieldSet fs, boolean onStartup) {
@@ -2690,9 +2690,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					Logger.normal(this, "Sent queued ("+fileNumber+") N2NTM to '"+getName()+"': "+text);
 					sendSuccess = true;
 					synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
-						if(queuedToSendN2NTMExtraPeerDataFileNumbers.contains(new Integer(fileNumber))) {
-							queuedToSendN2NTMExtraPeerDataFileNumbers.removeElement(new Integer(fileNumber));
-						}
+						queuedToSendN2NTMExtraPeerDataFileNumbers.remove(new Integer(fileNumber));
 					}
 					deleteExtraPeerDataFile(fileNumber);
 				} catch (NotConnectedException e) {
@@ -2701,7 +2699,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			if(!sendSuccess) {
 				synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
-					queuedToSendN2NTMExtraPeerDataFileNumbers.addElement(new Integer(fileNumber));
+					queuedToSendN2NTMExtraPeerDataFileNumbers.add(new Integer(fileNumber));
 				}
 			}
 			return true;
@@ -2882,7 +2880,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	public void queueN2NTM(SimpleFieldSet fs) {
 		int fileNumber = writeNewExtraPeerDataFile( fs, Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM);
 		synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
-			queuedToSendN2NTMExtraPeerDataFileNumbers.addElement(new Integer(fileNumber));
+			queuedToSendN2NTMExtraPeerDataFileNumbers.add(new Integer(fileNumber));
 		}
 	}
 
