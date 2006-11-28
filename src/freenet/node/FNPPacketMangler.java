@@ -1423,8 +1423,6 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(logMINOR) Logger.minor(this, "\nHash:      "+HexUtil.bytesToHex(digestTemp));
                 
         // Put plaintext in output
-        System.arraycopy(digestTemp, 0, output, 0, digestLength);
-        
         sessionCipher.encipher(digestTemp, digestTemp);
         
         // Now copy it back
