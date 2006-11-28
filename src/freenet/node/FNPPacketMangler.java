@@ -1364,9 +1364,13 @@ public class FNPPacketMangler implements LowLevelFilter {
         plaintext[ptr++] = 0;
 
         System.arraycopy(buf, offset, plaintext, ptr, length);
+        ptr += length;
         
-        if(ptr + length != plaintext.length) {
-        	Logger.error(this, "Inconsistent length: "+plaintext.length+" buffer but "+(ptr+length)+" actual");
+        if(ptr != plaintext.length) {
+        	Logger.error(this, "Inconsistent length: "+plaintext.length+" buffer but "+(ptr)+" actual");
+        	byte[] newBuf = new byte[ptr];
+        	System.arraycopy(plaintext, 0, newBuf, 0, ptr);
+        	plaintext = newBuf;
         }
 
         if(seqNumber != -1) {
