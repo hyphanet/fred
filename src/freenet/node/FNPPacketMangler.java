@@ -1265,7 +1265,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         	resendRequests.length + // resend requests
         	1 + // number of ack requests
         	ackRequests.length + // ack requests
-        	1; // no forgotten packets
+        	1 + // no forgotten packets
+        	length; // the payload !
         
         if(logMINOR) Logger.minor(this, "Packet length: "+packetLength+" ("+length+")");
 
