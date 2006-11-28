@@ -2428,7 +2428,6 @@ public class Node {
 		obuf[0] = 1;
 		System.arraycopy(buf, 0, obuf, 1, buf.length);
 		return obuf;
-		// FIXME support compression when noderefs get big enough for it to be useful
 	}
 
 	final LRUQueue recentlyCompletedIDs;
