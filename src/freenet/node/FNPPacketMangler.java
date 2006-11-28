@@ -45,10 +45,23 @@ public class FNPPacketMangler implements LowLevelFilter {
     static final int HASH_LENGTH = 32;
     /** Minimum headers overhead */
 	public static final int HEADERS_LENGTH_MINIMUM =
-		HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6;
+		4 + // sequence number
+    	RANDOM_BYTES_LENGTH + // random junk
+    	1 + // version
+    	1 + // assume seqno != -1; otherwise would be 4
+    	4 + // other side's seqno
+    	1 + // number of acks
+    	0 + // assume no acks
+    	1 + // number of resend reqs
+    	0 + // assume no resend requests
+    	1 + // number of ack requests
+    	0 + // assume no ack requests
+    	1 + // no forgotten packets
+    	HASH_LENGTH + // hash
+    	1; // number of messages
 	/** Headers overhead if there is one message and no acks. */
 	public static final int HEADERS_LENGTH_ONE_MESSAGE = 
-		HEADERS_LENGTH_MINIMUM + 1; // 1 byte = length of message. rest is the same.
+		HEADERS_LENGTH_MINIMUM + 2; // 2 bytes = length of message. rest is the same.
     
     public FNPPacketMangler(Node node) {
         this.node = node;
@@ -899,6 +912,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 		String mi_name = null;
         for(int i=0;i<messageData.length;i++) {
             MessageItem mi = messages[i];
+        	if(logMINOR) Logger.minor(this, "Handling formatted MessageItem "+mi+" : "+mi.buf.length);
 			mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
             if(mi.formatted) {
                 try {
@@ -983,7 +997,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
         if(x != callbacksCount) throw new IllegalStateException();
         
-        if((length < node.usm.getMaxPacketSize()) &&
+        if((length + HEADERS_LENGTH_MINIMUM < node.usm.getMaxPacketSize()) &&
                 (messageData.length < 256)) {
 			mi_name = null;
             try {
@@ -1111,59 +1125,11 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @throws PacketSequenceException 
      * @throws WouldBlockException 
      */
-    public void processOutgoing(byte[] buf, int offset, int length, PeerContext peer, int alreadyReportedBytes) throws NotConnectedException, PacketSequenceException, WouldBlockException {
-    	if(logMINOR) Logger.minor(this, "processOutgoing(buf, "+offset+", "+length+", "+peer.getPeer());
-        if(!(peer instanceof PeerNode))
-            throw new IllegalArgumentException();
-        PeerNode pn = (PeerNode)peer;
-        byte[] newBuf = preformat(buf, offset, length);
-        try {
-        	processOutgoingPreformatted(newBuf, 0, newBuf.length, pn, -1, null, alreadyReportedBytes);
-        } catch (NotConnectedException e){
-        	pn.invalidate();
-        	pn.setPeerNodeStatus(System.currentTimeMillis());
-        	throw e;
-        }
-    }
-
-
-    /**
-     * Build a packet and send it. From a Message recently converted into byte[],
-     * but with no outer formatting.
-     * @throws PacketSequenceException 
-     * @throws WouldBlockException 
-     */
     public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker, int alreadyReportedBytes) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
         byte[] newBuf = preformat(buf, offset, length);
         processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, -1, null, alreadyReportedBytes);
     }
     
-
-    /**
-     * Send a packet using the current key. Retry if it fails solely because
-     * the key changes.
-     * @throws PacketSequenceException 
-     * @throws WouldBlockException 
-     */
-    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, int k, AsyncMessageCallback[] callbacks, 
-    		int alreadyReportedBytes) throws NotConnectedException, PacketSequenceException, WouldBlockException {
-        while(true) {
-            try {
-            	if(logMINOR) Logger.minor(this, "At beginning of processOutgoingPreformatted loop for "+peer.getPeer());
-                KeyTracker tracker = peer.getCurrentKeyTracker();
-                if(tracker == null) {
-                    Logger.normal(this, "Dropping packet: Not connected to "+peer.getPeer()+" yet(1)");
-                    throw new NotConnectedException();
-                }
-                processOutgoingPreformatted(buf, offset, length, tracker, k, callbacks, alreadyReportedBytes);
-                return;
-            } catch (KeyChangedException e) {
-            	Logger.normal(this, "Key changed(1) for "+peer.getPeer());
-                // Go around again
-            }
-        }
-    }
-
     /**
      * Send a packet using the current key. Retry if it fails solely because
      * the key changes.
@@ -1288,9 +1254,20 @@ public class FNPPacketMangler implements LowLevelFilter {
             if(logMINOR) Logger.minor(this, "Sending packet to "+tracker.pn.getPeer()+", other side max seqno: "+otherSideSeqNumber);
         }
         
-        int packetLength = acks.length + resendRequests.length + ackRequests.length + 4 + 1 + length + 4 + 4 + RANDOM_BYTES_LENGTH;
-        if(packetNumber == -1) packetLength += 4;
-        else packetLength++;
+        int packetLength = 4 + // seq number
+        	RANDOM_BYTES_LENGTH + // random junk
+        	1 + // version
+        	((packetNumber == -1) ? 4 : 1) + // highest sent seqno - 4 bytes if seqno = -1
+        	4 + // other side's seqno
+        	1 + // number of acks
+        	acks.length + // acks
+        	1 + // number of resend reqs
+        	resendRequests.length + // resend requests
+        	1 + // number of ack requests
+        	ackRequests.length + // ack requests
+        	1; // no forgotten packets
+        
+        if(logMINOR) Logger.minor(this, "Packet length: "+packetLength+" ("+length+")");
 
         byte[] plaintext = new byte[packetLength];
         
