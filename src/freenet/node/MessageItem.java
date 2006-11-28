@@ -35,6 +35,8 @@ public class MessageItem {
         this.msg = null;
         this.buf = data;
         this.formatted = formatted;
+        if(formatted && buf == null)
+        	throw new NullPointerException();
         this.ctrCallback = ctr;
         this.submitted = System.currentTimeMillis();
     }
