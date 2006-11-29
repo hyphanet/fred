@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
 /**
@@ -7,37 +10,21 @@ package freenet.keys;
  */
 public class CHKDecodeException extends KeyDecodeException {
     private static final long serialVersionUID = -1;
-    /**
-     * 
-     */
+    
     public CHKDecodeException() {
         super();
-        // TODO Auto-generated constructor stub
     }
 
-    /**
-     * @param message
-     */
     public CHKDecodeException(String message) {
         super(message);
-        // TODO Auto-generated constructor stub
     }
 
-    /**
-     * @param message
-     * @param cause
-     */
     public CHKDecodeException(String message, Throwable cause) {
         super(message, cause);
-        // TODO Auto-generated constructor stub
     }
 
-    /**
-     * @param cause
-     */
     public CHKDecodeException(Throwable cause) {
         super(cause);
-        // TODO Auto-generated constructor stub
     }
 
 }
