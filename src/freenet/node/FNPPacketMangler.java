@@ -229,7 +229,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         int packetType = payload[2];
         int version = payload[0];
     	
-        if(logMINOR) Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (pt="+packetType+", v="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) from "+replyTo+"");
+        if(logMINOR) Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (phase="+packetType+", v="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) from "+replyTo+"");
         
         /* Format:
          * 1 byte - version number (1)
