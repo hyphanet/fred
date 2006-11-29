@@ -1733,7 +1733,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         // The given physical.udp may be WRONG!!!
                 
         String name = fs.get("myName");
-        if(name == null) throw new FSParseException("No name");
+        
         // In future, ARKs may support automatic transition when the ARK key is changed.
         // So parse it anyway. If it fails, no big loss; it won't even log an error.
         
@@ -1741,8 +1741,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         
         if(parseARK(fs, false))
         	changedAnything = true;
-        if(!name.equals(myName)) changedAnything = true;
-        myName = name;
+        if(name != null && !name.equals(myName)) {
+        	changedAnything = true;
+            myName = name;
+        }
         
 		return changedAnything;
 	}
