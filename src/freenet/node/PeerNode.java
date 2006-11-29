@@ -2771,6 +2771,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(!extraPeerDataFile.delete()) {
 			if(extraPeerDataFile.exists()) {
 				Logger.error(this, "Cannot delete file "+extraPeerDataFile+" after sending message to "+getPeer()+" - it may be resent on resting the node");
+			} else {
+				Logger.normal(this, "File does not exist when deleting: "+extraPeerDataFile+" after sending message to "+getPeer());
 			}
 		}
 	}
