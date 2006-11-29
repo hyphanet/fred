@@ -213,11 +213,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /** Version of the node */
     private String version;
     
-    /** Peer node crypto group */
-    DSAGroup peerCryptoGroup;
+    /** Peer node crypto group; changing this means new noderef */
+    final DSAGroup peerCryptoGroup;
 
-    /** Peer node public key */
-    DSAPublicKey peerPubKey;
+    /** Peer node public key; changing this means new noderef */
+    final DSAPublicKey peerPubKey;
     
     private boolean isSignatureVerificationSuccessfull;
     
@@ -1666,26 +1666,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             if(!Arrays.equals(newIdentity, identity))
                 throw new FSParseException("Identity changed!!");
             
-            // FIXME: throw an exception if not present once everyone has updated but do NOT replace things
-            if(peerCryptoGroup == null){
-            	SimpleFieldSet sfs = fs.subset("dsaGroup");
-            	Logger.normal(this, "Picking up peerCrypto group from "+ (forARK ? "ark" : "DH") +" for "+Base64.encode(this.identity));
-            	if(sfs == null)
-            		this.peerCryptoGroup = null;
-            	else
-            		this.peerCryptoGroup = DSAGroup.create(sfs);
-            }
-
-            if(peerPubKey == null){
-            	SimpleFieldSet sfs = fs.subset("dsaGroup");
-            	Logger.normal(this, "Picking up dsaGroup from "+ (forARK ? "ark" : "DH") +" for "+Base64.encode(this.identity));
-
-            	sfs = fs.subset("dsaPubKey");
-            	if(sfs == null)
-            		this.peerPubKey = null;
-            	else
-            		this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
-            }
         } catch (NumberFormatException e) {
             throw new FSParseException(e);
         } catch (IllegalBase64Exception e) {
