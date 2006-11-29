@@ -1660,16 +1660,20 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     private synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
         boolean changedAnything = false;
         String identityString = fs.get("identity");
-        try {
-            byte[] newIdentity = Base64.decode(identityString);
-            if(!Arrays.equals(newIdentity, identity))
-                throw new FSParseException("Identity changed!!");
-            
-        } catch (NumberFormatException e) {
-            throw new FSParseException(e);
-        } catch (IllegalBase64Exception e) {
-            throw new FSParseException(e);
-		}
+        if(identityString != null) {
+        	// REDFLAG this is optional now, because it is invariant.
+        	// But if it IS there, check it.
+        	try {
+        		byte[] newIdentity = Base64.decode(identityString);
+        		if(!Arrays.equals(newIdentity, identity))
+        			throw new FSParseException("Identity changed!!");
+        		
+        	} catch (NumberFormatException e) {
+        		throw new FSParseException(e);
+        	} catch (IllegalBase64Exception e) {
+        		throw new FSParseException(e);
+        	}
+        }
         String newVersion = fs.get("version");
         if(newVersion == null) {
         	// Version may be ommitted for an ARK.
