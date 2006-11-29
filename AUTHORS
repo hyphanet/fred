@@ -47,18 +47,18 @@ Disappeared contributors, who either we don't have an email address for, or who 
 respond to email, or who haven't responded to my request for either permission to or
 refusal to license the code as GPL2+:
 
-iakin
-Jogy
+bobsan
+devrandom
 giannij
-mjr
 gthyni
 hirvox
-pascal666
+iakin
+Jogy
 kodist
+mjr
 nacktschneck
-bobsan
 odonata
-devrandom
+pascal666
 
 Note that up until 2006, Freenet included the COPYING file and most source files did 
 not include a GPL notice; a few files actually specified just version 2. A decision was
