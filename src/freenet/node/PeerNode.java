@@ -1731,7 +1731,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         
         // DO NOT change detectedPeer !!!
         // The given physical.udp may be WRONG!!!
-                
+        
         String name = fs.get("myName");
         
         // In future, ARKs may support automatic transition when the ARK key is changed.
