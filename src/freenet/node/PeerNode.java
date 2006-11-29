@@ -398,13 +398,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         try {
         	SimpleFieldSet sfs = fs.subset("dsaGroup");
         	if(sfs == null)
-        		this.peerCryptoGroup = null;
+        		throw new FSParseException("No dsaGroup - very old reference?");
         	else
         		this.peerCryptoGroup = DSAGroup.create(sfs);
         	
         	sfs = fs.subset("dsaPubKey");
         	if(sfs == null || peerCryptoGroup == null)
-        		this.peerPubKey = null;
+        		throw new FSParseException("No dsaPubKey - very old reference?");
         	else
         		this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
         	
@@ -423,8 +423,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     					Logger.error(this, "The integrity of the reference has been compromized!"+errCause);
     					this.isSignatureVerificationSuccessfull = false;
     					fs.put("sig", signature);
-    					if(Version.getArbitraryBuildNumber(version)>970) // TODO: REMOVE: the backward compat. kludge : version checking
-    						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!"+errCause);
+   						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!"+errCause);
     				}else
     					this.isSignatureVerificationSuccessfull = true;
     			} catch (UnsupportedEncodingException e) {
