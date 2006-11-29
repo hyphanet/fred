@@ -13,7 +13,6 @@ import freenet.keys.FreenetURI;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
-import freenet.support.URLEncoder;
 import freenet.support.io.Bucket;
 
 /**
