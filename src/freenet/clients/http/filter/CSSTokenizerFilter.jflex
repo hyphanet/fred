@@ -6,6 +6,8 @@ import java.io.*;
 import java.util.*;
 /* This class tokenizes a CSS2 Reader stream, writes it out to the output Writer, and filters any URLs found */
 // WARNING: this is not as thorough as the HTML parser - new versions of the standard could lead to anonymity risks. See comments in SaferFilter.java
+// FIXME: Rewrite this as a proper whitelist filter. It's about half way there, it
+// just needs somebody to go over the standard carefully and eliminate everything that isn't sufficiently specific (e.g. matching a '-' on its own).
 // Mostly from http://www.w3.org/TR/REC-CSS2/grammar.html
 
 %%
@@ -228,6 +230,7 @@ STRING1=\"(\\{NL}|\'|(\\\")|{NONASCII}|{ESCAPE}|[^\"])*\"
 STRING2=\'(\\{NL}|\"|(\\\')|{NONASCII}|{ESCAPE}|[^\'])*\'
 
 IDENT={NMSTART}{NMCHAR}*
+UNOFFICIAL_IDENT="-"{IDENT}
 NAME={NMCHAR}+
 NUM=[0-9]+|[0-9]*"."[0-9]+
 STRING={STRING1}|{STRING2}
@@ -380,6 +383,14 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 	String s = yytext();
 	w.write(s);
 	if(debug) log("Matched ident: "+s);
+}
+{UNOFFICIAL_IDENT} {
+	if(debug) log("Deleted unofficial ident: "+yytext());
+	w.write("/* Deleted unofficial ident */");
+}
+{UNOFFICIAL_IDENT}{W}":"{W}{REALURL} {
+	if(debug) log("Deleted unofficial ident with url: "+yytext());
+	w.write("/* Deleted unofficial ident with url */");
 }
 "@page" {
 	String s = yytext();

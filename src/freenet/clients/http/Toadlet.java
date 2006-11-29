@@ -13,6 +13,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
+import freenet.support.URLEncoder;
 import freenet.support.io.Bucket;
 
 /**
@@ -145,7 +146,7 @@ public abstract class Toadlet {
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
 			"<html><head><title>"+msg+"</title></head><body><h1>Permanent redirect: "+
-			msg+"</h1><a href=\""+location+"\">Click here</a></body></html>";
+			msg+"</h1><a href=\""+HTMLEncoder.encode(location)+"\">Click here</a></body></html>";
 		byte[] buf;
 		try {
 			buf = redirDoc.getBytes("UTF-8");

@@ -27,6 +27,7 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.support.Base64;
+import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -228,6 +229,8 @@ public class FProxyToadlet extends Toadlet {
 			this.writeReply(ctx, 400, "text/html", "Invalid key", pageBuffer.toString());
 			return;
 		}
+		String requestedMimeType = httprequest.getParam("type", null);
+		String override = (requestedMimeType == null) ? "" : "?type="+URLEncoder.encode(requestedMimeType);
 		try {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
@@ -237,7 +240,6 @@ public class FProxyToadlet extends Toadlet {
 			
 			Bucket data = result.asBucket();
 			String mimeType = result.getMimeType();
-			String requestedMimeType = httprequest.getParam("type", null);
 			
 			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "");
 			
@@ -245,9 +247,9 @@ public class FProxyToadlet extends Toadlet {
 			String msg = e.getMessage();
 			String extra = "";
 			if(e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) {
-				this.writePermanentRedirect(ctx, "Not enough meta-strings", '/' + URLEncoder.encode(key.toString(false)) + '/');
+				this.writePermanentRedirect(ctx, "Not enough meta-strings", '/' + key.toString(false) + '/' + override);
 			} else if(e.newURI != null) {
-				this.writePermanentRedirect(ctx, msg, '/' +e.newURI.toString());
+				this.writePermanentRedirect(ctx, msg, '/' +e.newURI.toString() + override);
 			} else if(e.mode == FetchException.TOO_BIG) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode("File information");
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -332,7 +334,7 @@ public class FProxyToadlet extends Toadlet {
 			PrintWriter pw = new PrintWriter(sw);
 			t.printStackTrace(pw);
 			pw.flush();
-			msg = msg + sw.toString() + "</pre></body></html>";
+			msg = msg + HTMLEncoder.encode(sw.toString()) + "</pre></body></html>";
 			this.writeReply(ctx, 500, "text/html", "Internal Error", msg);
 		}
 	}
