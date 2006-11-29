@@ -75,6 +75,7 @@ public class NodeDispatcher implements Dispatcher {
         	Peer p = (Peer) m.getObject(DMT.EXTERNAL_ADDRESS);
         	source.setRemoteDetectedPeer(p);
         	node.ipDetector.redetectAddress();
+        	return true;
         } else if(spec == DMT.FNPVoid) {
         	return true;
         } else if(spec == DMT.nodeToNodeMessage) {
