@@ -288,7 +288,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     private boolean allowLocalAddresses;
     
     /** Extra peer data file numbers */
-    private Vector extraPeerDataFileNumbers;
+    private HashSet extraPeerDataFileNumbers;
 
     /** Average proportion of requests which are rejected or timed out */
     private TimeDecayingRunningAverage pRejected;
@@ -617,8 +617,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         privateDarknetCommentFileNumber = -1;
 
 		// Setup the extraPeerDataFileNumbers
-		extraPeerDataFileNumbers = new Vector();
-		extraPeerDataFileNumbers.removeAllElements();
+		extraPeerDataFileNumbers = new HashSet();
 		
 		// Setup the queuedToSendN2NTMExtraPeerDataFileNumbers
 		queuedToSendN2NTMExtraPeerDataFileNumbers = new HashSet();
@@ -2546,9 +2545,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				continue;
 			}
 			synchronized(extraPeerDataFileNumbers) {
-				if(!extraPeerDataFileNumbers.contains(fileNumber)) {
-					extraPeerDataFileNumbers.addElement(fileNumber);
-				}
+				extraPeerDataFileNumbers.add(fileNumber);
 			}
 			readResult = readExtraPeerDataFile(extraPeerDataFiles[i], fileNumber.intValue());
 			if(!readResult) {
@@ -2711,6 +2708,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		Integer[] localFileNumbers = null;
 		int nextFileNumber = 0;
 		synchronized(extraPeerDataFileNumbers) {
+			// Find the first free slot
 			localFileNumbers = (Integer[]) extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
 			Arrays.sort(localFileNumbers);
 			for (int i = 0; i < localFileNumbers.length; i++) {
@@ -2719,7 +2717,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				}
 				nextFileNumber = localFileNumbers[i].intValue() + 1;
 			}
-			extraPeerDataFileNumbers.addElement(new Integer(nextFileNumber));
+			extraPeerDataFileNumbers.add(new Integer(nextFileNumber));
 		}
 		FileOutputStream fos;
 		File extraPeerDataFile = new File(extraPeerDataPeerDir.getPath()+File.separator+nextFileNumber);
@@ -2753,7 +2751,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public void deleteExtraPeerDataFile(int fileNumber) {
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath, getIdentityString());
 	 	if(!extraPeerDataPeerDir.exists()) {
 	   		Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
 	 		return;
@@ -2762,17 +2760,19 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
 	 		return;
 	 	}
-		File extraPeerDataFile = new File(extraPeerDataDirPath+File.separator+getIdentityString()+File.separator+fileNumber);
+		File extraPeerDataFile = new File(extraPeerDataPeerDir, Integer.toString(fileNumber));
 	 	if(!extraPeerDataFile.exists()) {
 	   		Logger.error(this, "Extra peer data file for peer does not exist: "+extraPeerDataFile.getPath());
 	 		return;
 	 	}
 		synchronized(extraPeerDataFileNumbers) {
-			if(extraPeerDataFileNumbers.contains(new Integer(fileNumber))) {
-				extraPeerDataFileNumbers.removeElement(new Integer(fileNumber));
+			extraPeerDataFileNumbers.remove(new Integer(fileNumber));
+		}
+		if(!extraPeerDataFile.delete()) {
+			if(extraPeerDataFile.exists()) {
+				Logger.error(this, "Cannot delete file "+extraPeerDataFile+" after sending message to "+getPeer()+" - it may be resent on resting the node");
 			}
 		}
-		extraPeerDataFile.delete();
 	}
 
 	public void removeExtraPeerDataDir() {
