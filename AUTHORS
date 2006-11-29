@@ -1,0 +1,66 @@
+Known Freenet contributors, and their email addresses
+-----------------------------------------------------
+
+Many projects have a file like this. I decided to add one. Anyone who wants his email
+to be disguised please contact me. Please keep your email address here up to date.
+
+Contributors with working email addresses who have consented to the GPL2+ wording:
+
+aum - david@rebirthing.co.nz
+avian - skyrider@vcnet.com
+bback - bback@gmx.net
+blured75 - blured75@hotmail.com
+bombe - bombe@pterodactylus.net
+caco_patane - cacopatane@gmail.com
+cyberdo - cyberdo@acc.umu.se
+danderson - david.anderson@calixo.net
+dbkr - dbkr@freenetproject.org
+hobbex/hobx - oskar@freenetproject.org
+jflesch - jflesch@gmail.com
+jiriki - niklas.mehner@freenet.de
+ljn1981 - lars.j.nielsen@gmail.com
+m0davis - m0davis@pacbell.net
+mrogers - m.rogers@cs.ucl.ac.uk
+nextgens - nextgens@freenetproject.org
+nullacht15 - guido@unknownsite.de
+raoksane - roger.oksanen@cs.helsinki.fi
+sandos - sandos@sandos.se
+sanity - ian@freenetproject.org
+sbc - s@compadre.dk
+scipient - tavin@agilecomputing.com
+sheldonish - sheldon_young@yahoo.com
+sich - sich@cafe-philo.net
+sitharus - sitharus@sitharus.com
+sleon - sleon@sleon.dyndns.org
+supermihi - supermihi@web.de
+syoung - softwareeng@gmail.com
+tailchaser - dwhitm@gmail.com
+taral - taral@taral.net
+thelema - thelema@swbell.net
+toad - toad@amphibian.dyndns.org (most work under contract to Freenet Project Inc)
+tubbie - tubbie@games-on.nl
+volodya - Volodya@WhenGendarmeSleeps.org
+zothar - david@sowder.com
+
+
+Disappeared contributors, who either we don't have an email address for, or who don't
+respond to email, or who haven't responded to my request for either permission to or
+refusal to license the code as GPL2+:
+
+iakin
+Jogy
+giannij
+mjr
+gthyni
+hirvox
+pascal666
+kodist
+nacktschneck
+bobsan
+odonata
+devrandom
+
+Note that up until 2006, Freenet included the COPYING file and most source files did 
+not include a GPL notice; a few files actually specified just version 2. A decision was
+made to relicense to "GPL 2 or later" if possible and add headers to that effect to all
+files.
