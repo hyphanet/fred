@@ -1610,35 +1610,49 @@ public class Node {
 	}
 
 	public SimpleFieldSet exportPrivateFieldSet() {
-		SimpleFieldSet fs = exportPublicFieldSet();
+		SimpleFieldSet fs = exportPublicFieldSet(false);
 		fs.put("dsaPrivKey", myPrivKey.asFieldSet());
 		fs.put("ark.privURI", this.myARK.getInsertURI().toString(false));
 		return fs;
 	}
 	
 	/**
-	 * Export my reference so that another node can connect to me.
-	 * @return
+	 * Export my node reference so that another node can connect to me.
+	 * Public version, includes everything apart from private keys.
+	 * @see exportPublicFieldSet(boolean forSetup).
 	 */
 	public SimpleFieldSet exportPublicFieldSet() {
+		return exportPublicFieldSet(false);
+	}
+	
+	/**
+	 * Export my reference so that another node can connect to me.
+	 * @param forSetup If true, strip out everything that isn't needed for the references
+	 * exchanged immediately after connection setup. I.e. strip out everything that is invariant,
+	 * or that can safely be exchanged later.
+	 */
+	SimpleFieldSet exportPublicFieldSet(boolean forSetup) {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		Peer[] ips = ipDetector.getPrimaryIPAddress();
 		if(ips != null) {
 			for(int i=0;i<ips.length;i++)
-				fs.put("physical.udp", ips[i].toString());
+				fs.put("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
 		}
-		fs.put("identity", Base64.encode(myIdentity));
-		fs.put("location", Double.toString(lm.getLocation().getValue()));
-		fs.put("version", Version.getVersionString());
-		fs.put("testnet", Boolean.toString(testnetEnabled));
-		fs.put("lastGoodVersion", Version.getLastGoodVersionString());
+		fs.put("identity", Base64.encode(myIdentity)); // FIXME !forSetup after 11104 is mandatory
+		fs.put("location", Double.toString(lm.getLocation().getValue())); // FIXME maybe !forSetup; see #943
+		fs.put("version", Version.getVersionString()); // Keep, vital that peer know our version
+		fs.put("testnet", Boolean.toString(testnetEnabled)); // Vital that peer know this!
+		fs.put("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
 		if(testnetEnabled)
-			fs.put("testnetPort", Integer.toString(testnetHandler.getPort()));
-		fs.put("myName", myName);
-		fs.put("dsaGroup", myCryptoGroup.asFieldSet());
-		fs.put("dsaPubKey", myPubKey.asFieldSet());
-		fs.put("ark.number", Long.toString(this.myARKNumber));
-		fs.put("ark.pubURI", this.myARK.getURI().toString(false));
+			fs.put("testnetPort", Integer.toString(testnetHandler.getPort())); // Useful, saves a lot of complexity
+		fs.put("myName", myName); // FIXME see #942
+		if(!forSetup) {
+			// These are invariant. They cannot change on connection setup. They can safely be excluded.
+			fs.put("dsaGroup", myCryptoGroup.asFieldSet());
+			fs.put("dsaPubKey", myPubKey.asFieldSet());
+		}
+		fs.put("ark.number", Long.toString(this.myARKNumber)); // Can be changed on setup
+		fs.put("ark.pubURI", this.myARK.getURI().toString(false)); // Can be changed on setup
 		
 		synchronized (referenceSync) {
 			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
@@ -2404,10 +2418,11 @@ public class Node {
 	}
 
 	/**
-	 * @return Our reference, compressed
+	 * The part of our node reference which is exchanged in the connection setup, compressed.
+	 * @see exportSetupFieldSet()
 	 */
-	public byte[] myPublicRefCompressed() {
-		SimpleFieldSet fs = exportPublicFieldSet();
+	public byte[] myCompressedSetupRef() {
+		SimpleFieldSet fs = exportPublicFieldSet(true);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DeflaterOutputStream gis;
 		gis = new DeflaterOutputStream(baos);

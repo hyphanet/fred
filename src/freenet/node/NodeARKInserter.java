@@ -105,7 +105,7 @@ public class NodeARKInserter implements ClientCallback {
 		
 		if(logMINOR) Logger.minor(this, "starting inserter");
 		
-		SimpleFieldSet fs = this.node.exportPublicFieldSet();
+		SimpleFieldSet fs = this.node.exportPublicFieldSet(true); // More or less
 		
 		// Remove some unnecessary fields that only cause collisions.
 		
