@@ -163,23 +163,6 @@ public class Util {
 		return null;
 	}
 
-	/**
-	 * Hashes len bytes from an InputStream.
-	 */
-	public static byte[] hashStream(Digest d, InputStream in, long len)
-		throws IOException {
-		byte[] buffer = new byte[BUFFER_SIZE];
-		int rc = 0;
-		do {
-			int nBytes = (len > BUFFER_SIZE) ? BUFFER_SIZE : (int) len;
-			rc = in.read(buffer, 0, nBytes);
-			if (rc > 0)
-				d.update(buffer, 0, rc);
-			len -= rc;
-		} while ((rc != -1) && (len > 0));
-		return d.digest();
-	}
-
 	public static byte[] xor(byte[] b1, byte[] b2) {
 		int maxl = Math.max(b1.length, b2.length);
 		byte[] rv = new byte[maxl];
