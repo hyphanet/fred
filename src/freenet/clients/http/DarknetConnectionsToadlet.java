@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.config.SubConfig;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
@@ -196,15 +197,21 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					long totalPayload = node.getTotalPayloadSent();
 					long total_payload_rate = totalPayload / nodeUptimeSeconds;
 					int percent = (int) (100 * totalPayload / total[0]);
-					activityList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]) + "\u00a0(" + SizeUtil.formatSize(total_output_rate) + "ps)");
-					activityList.addChild("li", "Payload Output:\u00a0" + SizeUtil.formatSize(totalPayload) + "\u00a0(" + SizeUtil.formatSize(total_payload_rate) + "ps) ("+percent+"%)");
-					activityList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]) + "\u00a0(" + SizeUtil.formatSize(total_input_rate) + "ps)");
+					activityList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0], true) + "\u00a0(" + SizeUtil.formatSize(total_output_rate, true) + "ps)");
+					activityList.addChild("li", "Payload Output:\u00a0" + SizeUtil.formatSize(totalPayload, true) + "\u00a0(" + SizeUtil.formatSize(total_payload_rate, true) + "ps) ("+percent+"%)");
+					activityList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1], true) + "\u00a0(" + SizeUtil.formatSize(total_input_rate, true) + "ps)");
 					long[] rate = node.getNodeIOStats();
 					long delta = (rate[5] - rate[2]) / 1000;
 					long output_rate = (rate[3] - rate[0]) / delta;
 					long input_rate = (rate[4] - rate[1]) / delta;
-					activityList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate) + "ps");
-					activityList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate) + "ps");
+					SubConfig nodeConfig = node.config.get("node");
+					int outputBandwidthLimit = nodeConfig.getInt("outputBandwidthLimit");
+					int inputBandwidthLimit = nodeConfig.getInt("inputBandwidthLimit");
+					if(inputBandwidthLimit == -1) {
+						inputBandwidthLimit = outputBandwidthLimit * 4;
+					}
+					activityList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(outputBandwidthLimit, true)+"ps)");
+					activityList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(inputBandwidthLimit, true)+"ps)");
 				}
 			}
 

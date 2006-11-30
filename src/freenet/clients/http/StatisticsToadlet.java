@@ -6,6 +6,7 @@ import java.text.*;
 import java.util.*;
 
 import freenet.client.*;
+import freenet.config.SubConfig;
 import freenet.io.comm.*;
 import freenet.node.*;
 import freenet.support.*;
@@ -350,15 +351,21 @@ public class StatisticsToadlet extends Toadlet {
 				long totalPayload = node.getTotalPayloadSent();
 				long total_payload_rate = totalPayload / nodeUptimeSeconds;
 				int percent = (int) (100 * totalPayload / total[0]);
-				bandwidthList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]) + "\u00a0(" + SizeUtil.formatSize(total_output_rate) + "ps)");
-				bandwidthList.addChild("li", "Payload Output:\u00a0" + SizeUtil.formatSize(totalPayload) + "\u00a0(" + SizeUtil.formatSize(total_payload_rate) + "ps) ("+percent+"%)");
-				bandwidthList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]) + "\u00a0(" + SizeUtil.formatSize(total_input_rate) + "ps)");
+				bandwidthList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]) + " (" + SizeUtil.formatSize(total_output_rate, true) + "ps)");
+				bandwidthList.addChild("li", "Payload Output:\u00a0" + SizeUtil.formatSize(totalPayload) + " (" + SizeUtil.formatSize(total_payload_rate, true) + "ps) ("+percent+"%)");
+				bandwidthList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]) + " (" + SizeUtil.formatSize(total_input_rate, true) + "ps)");
 				long[] rate = node.getNodeIOStats();
 				long delta = (rate[5] - rate[2]) / 1000;
 				long output_rate = (rate[3] - rate[0]) / delta;
 				long input_rate = (rate[4] - rate[1]) / delta;
-				bandwidthList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate) + "ps");
-				bandwidthList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate) + "ps");
+				SubConfig nodeConfig = node.config.get("node");
+				int outputBandwidthLimit = nodeConfig.getInt("outputBandwidthLimit");
+				int inputBandwidthLimit = nodeConfig.getInt("inputBandwidthLimit");
+				if(inputBandwidthLimit == -1) {
+					inputBandwidthLimit = outputBandwidthLimit * 4;
+				}
+				bandwidthList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(outputBandwidthLimit, true)+"ps)");
+				bandwidthList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(inputBandwidthLimit, true)+"ps)");
                 nextTableCell = overviewTableRow.addChild("td");
 			}
 
@@ -393,17 +400,17 @@ public class StatisticsToadlet extends Toadlet {
                 
                 storeSizeList.addChild("li", 
                         "Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
-                        "\u00a0(" + SizeUtil.formatSize(cachedSize) + ')');
+                        " (" + SizeUtil.formatSize(cachedSize, true) + ')');
 
                 storeSizeList.addChild("li", 
                         "Stored keys:\u00a0" + thousendPoint.format(storeKeys) + 
-                        "\u00a0(" + SizeUtil.formatSize(storeSize) + ')');
+                        " (" + SizeUtil.formatSize(storeSize, true) + ')');
 
                 storeSizeList.addChild("li", 
                         "Overall size:\u00a0" + thousendPoint.format(overallKeys) + 
                         "\u00a0/\u00a0" + thousendPoint.format(maxOverallKeys) +
-                        "\u00a0(" + SizeUtil.formatSize(overallSize) + 
-                        "\u00a0/\u00a0" + SizeUtil.formatSize(maxOverallSize) + 
+                        " (" + SizeUtil.formatSize(overallSize, true) + 
+                        "\u00a0/\u00a0" + SizeUtil.formatSize(maxOverallSize, true) + 
                         ")\u00a0(" + ((overallKeys*100)/maxOverallKeys) + "%)");
 
                 storeSizeList.addChild("li", 
@@ -440,9 +447,9 @@ public class StatisticsToadlet extends Toadlet {
                 int threadCount = Thread.activeCount();
                 int availableCpus = rt.availableProcessors();
 
-                jvmStatsList.addChild("li", "Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem));
-                jvmStatsList.addChild("li", "Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem));
-                jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem));
+                jvmStatsList.addChild("li", "Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem, true));
+                jvmStatsList.addChild("li", "Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem, true));
+                jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true));
                 jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
                 jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
             }

@@ -7,6 +7,10 @@ public class SizeUtil {
 	public static String[] suffixes = {"B", "KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB"};
 
 	public static String formatSize(long sz) {
+		return formatSize(sz, false);
+	}
+
+	public static String formatSize(long sz, boolean useNonBreakingSpace) {
 		long s = 1;
 		int i;
 		for(i=0;i<SizeUtil.suffixes.length;i++) {
@@ -31,7 +35,11 @@ public class SizeUtil {
 			else if((o.indexOf('.') > -1) && (o.indexOf('E') == -1) && (o.length() > 4))
 				o = o.substring(0, 4);
 			if(i < SizeUtil.suffixes.length) // handle the case where the mantissa is Infinity
-				o += ' ' + SizeUtil.suffixes[i];
+				if(useNonBreakingSpace) {
+					o += '\u00a0' + SizeUtil.suffixes[i];
+				} else {
+					o += ' ' + SizeUtil.suffixes[i];
+				}
 			return o;
 		}
 	}
