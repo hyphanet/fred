@@ -2838,6 +2838,14 @@ public class Node {
 			fs.removeValue("type");
 		}
 		fs.put("type", Integer.toString(type));
+		if(fs.get("receivedTime") != null) {
+			fs.removeValue("receivedTime");
+		}
+		fs.put("receivedTime", Long.toString(System.currentTimeMillis()));
+		if(fs.get("receivedAs") != null) {
+			fs.removeValue("receivedAs");
+		}
+		fs.put("receivedAs", "nodeToNodeMessage");
 		int fileNumber = source.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
 		if( fileNumber == -1 ) {
 			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+source.getPeer());
@@ -2870,6 +2878,8 @@ public class Node {
 		fs.put("source_nodename", Base64.encode(source_nodename.getBytes()));
 		fs.put("target_nodename", Base64.encode(target_nodename.getBytes()));
 		fs.put("text", Base64.encode(text.getBytes()));
+		fs.put("receivedTime", Long.toString(System.currentTimeMillis()));
+		fs.put("receivedAs", "nodeToNodeTextMessage");
 		int fileNumber = source.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
 		if( fileNumber == -1 ) {
 			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+source.getPeer());

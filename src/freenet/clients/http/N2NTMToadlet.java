@@ -120,8 +120,8 @@ public class N2NTMToadlet extends Toadlet {
 	  if (request.isPartSet("send")) {
 		  String message = request.getPartAsString("message", 5*1024);
 		  message = message.trim();
-			if(message.length() > 2000) {
-				this.writeReply(ctx, 400, "text/plain", "Too long", "N2NTMs are limited to 2000 characters");
+			if(message.length() > 1024) {
+				this.writeReply(ctx, 400, "text/plain", "Too long", "N2NTMs are limited to 1024 characters");
 				return;
 			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message Processing");
@@ -139,13 +139,16 @@ public class N2NTMToadlet extends Toadlet {
 					String sendStatusLong;
 					String sendStatusClass;
 					try {
+						long now = System.currentTimeMillis();
 						SimpleFieldSet fs = new SimpleFieldSet();
 						fs.put("type", Integer.toString(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT));
 						fs.put("source_nodename", Base64.encode(node.getMyName().getBytes()));
 						fs.put("target_nodename", Base64.encode(pn.getName().getBytes()));
 						fs.put("text", Base64.encode(message.getBytes()));
+						fs.put("composedTime", Long.toString(now));
+						fs.put("sentTime", Long.toString(now));
 						Message n2ntm;
-						if(Version.buildNumber() < 1000) {  // FIXME/TODO: This test shouldn't be need eventually
+						if(Version.buildNumber() < 1000) {  // FIXME/TODO: This test shouldn't be needed eventually
 							n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, node.getMyName(), pn.getName(), message);
 						} else {
 							n2ntm = DMT.createNodeToNodeMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, fs.toString().getBytes("UTF-8"));
@@ -154,6 +157,7 @@ public class N2NTMToadlet extends Toadlet {
 							sendStatusShort = "Queued";
 							sendStatusLong = "Queued: Peer not connected, so message queued for when it connects";
 							sendStatusClass = "n2ntm-send-queued";
+							fs.removeValue("sentTime");
 							pn.queueN2NTM(fs);
 							Logger.normal(this, "Queued N2NTM to '"+pn.getName()+"': "+message);
 						} else if(pn.getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {

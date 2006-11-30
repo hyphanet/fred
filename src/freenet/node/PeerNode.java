@@ -2698,7 +2698,28 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
 					return false;
 				}
-				Message n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, source_nodename, target_nodename, text);
+				Message n2ntm;
+				if(fs.get("extraPeerDataType") != null) {
+					fs.removeValue("extraPeerDataType");
+				}
+				if(fs.get("senderFileNumber") != null) {
+					fs.removeValue("senderFileNumber");
+				}
+				fs.put("senderFileNumber", Integer.toString(fileNumber));
+				if(fs.get("sentTime") != null) {
+					fs.removeValue("sentTime");
+				}
+				fs.put("sentTime", Long.toString(System.currentTimeMillis()));
+				if(Version.buildNumber() < 1000) {  // FIXME/TODO: This test shouldn't be needed eventually
+					n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, node.getMyName(), getName(), text);
+				} else {
+					try {
+						n2ntm = DMT.createNodeToNodeMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, fs.toString().getBytes("UTF-8"));
+					} catch (UnsupportedEncodingException e) {
+						Logger.error(this, "UnsupportedEncodingException processing extraPeerDataType ("+extraPeerDataTypeString+") in file "+extraPeerDataFile.getPath(), e);
+						return false;
+					}
+				}
 				try {
 					node.usm.send(this, n2ntm, null);
 					Logger.normal(this, "Sent queued ("+fileNumber+") N2NTM to '"+getName()+"': "+text);
@@ -2712,6 +2733,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				}
 			}
 			if(!sendSuccess) {
+				fs.put("extraPeerDataType", Integer.toString(extraPeerDataType));
+				fs.removeValue("sentTime");
 				synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
 					queuedToSendN2NTMExtraPeerDataFileNumbers.add(new Integer(fileNumber));
 				}
