@@ -56,7 +56,7 @@ public class ModifyPeer extends FCPMessage {
 				pn.setBurstOnly(Fields.stringToBool(isBurstOnlyString, false));
 			}
 		}
-		String ignoreSourcePortString = fs.get("IsBurstOnly");
+		String ignoreSourcePortString = fs.get("IgnoreSourcePort");
 		if(ignoreSourcePortString != null) {
 			if(!ignoreSourcePortString.equals("")) {
 				pn.setIgnoreSourcePort(Fields.stringToBool(ignoreSourcePortString, false));
