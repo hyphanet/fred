@@ -187,7 +187,7 @@ public class PacketSender implements Runnable, Ticker {
                 long urgentTime = pn.getNextUrgentTime();
                 // Should spam the logs, unless there is a deadlock
                 if(urgentTime < Long.MAX_VALUE && logMINOR)
-                	Logger.minor(this, "Next urgent time: "+urgentTime+" for "+pn.getDetectedPeer());
+                	Logger.minor(this, "Next urgent time: "+urgentTime+" for "+pn.getPeer());
                 if(urgentTime <= now) {
                     // Send them
                     try {
