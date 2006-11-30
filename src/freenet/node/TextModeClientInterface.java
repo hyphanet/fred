@@ -987,7 +987,7 @@ public class TextModeClientInterface implements Runnable {
 		PeerNode[] pn = n.peers.myPeers;
 		for(int i=0;i<pn.length;i++)
 		{
-			Peer peer = pn[i].getDetectedPeer();
+			Peer peer = pn[i].getPeer();
 			String nodeIpAndPort = "";
 			if(peer != null) {
 				nodeIpAndPort = peer.toString();
@@ -1010,7 +1010,7 @@ public class TextModeClientInterface implements Runnable {
 		PeerNode[] pn = n.peers.myPeers;
 		for(int i=0;i<pn.length;i++)
 		{
-			Peer peer = pn[i].getDetectedPeer();
+			Peer peer = pn[i].getPeer();
 			String nodeIpAndPort = "";
 			if(peer != null) {
 				nodeIpAndPort = peer.toString();
@@ -1033,7 +1033,7 @@ public class TextModeClientInterface implements Runnable {
     	PeerNode[] pn = n.peers.myPeers;
     	for(int i=0;i<pn.length;i++)
     	{
-    		Peer peer = pn[i].getDetectedPeer();
+    		Peer peer = pn[i].getPeer();
     		String nodeIpAndPort = "";
     		if(peer != null) {
     			nodeIpAndPort = peer.toString();
@@ -1057,7 +1057,7 @@ public class TextModeClientInterface implements Runnable {
     	PeerNode[] pn = n.peers.myPeers;
     	for(int i=0;i<pn.length;i++)
     	{
-    		Peer peer = pn[i].getDetectedPeer();
+    		Peer peer = pn[i].getPeer();
     		String nodeIpAndPort = "";
     		if(peer != null) {
         		nodeIpAndPort = peer.toString();
