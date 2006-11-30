@@ -283,6 +283,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     
     /** True if we are currently sending this peer a burst of handshake requests */
     private boolean isBursting;
+
+    /** True if we want to ignore the source port of the node's sent packets.
+     * This is normally set when dealing with an Evil Corporate Firewall which rewrites the port on outgoing
+     * packets but does not redirect incoming packets destined to the rewritten port.
+     * What it does is this: If we have an address with the same IP but a different port, to the detectedPeer,
+     * we use that instead. */
+    private boolean ignoreSourcePort;
     
     /** True if we want to allow LAN/localhost addresses. */
     private boolean allowLocalAddresses;
@@ -461,7 +468,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         			"\nNode hash: "+HexUtil.bytesToHex(nodeKeyHash)+
         			"\nThis:      "+HexUtil.bytesToHex(identityHash)+
         			"\nThis hash: "+HexUtil.bytesToHex(setupKeyHash)+
-        			"\nFor:       "+getDetectedPeer());
+        			"\nFor:       "+getPeer());
         
         try {
             incomingSetupCipher = new Rijndael(256,256);
@@ -576,6 +583,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             	isDisabled = Fields.stringToBool(metadata.get("isDisabled"), false);
             	isListenOnly = Fields.stringToBool(metadata.get("isListenOnly"), false);
             	isBurstOnly = Fields.stringToBool(metadata.get("isBurstOnly"), false);
+            	ignoreSourcePort = Fields.stringToBool(metadata.get("ignoreSourcePort"), false);
             	allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
             	String tempHadRoutableConnectionCountString = metadata.get("hadRoutableConnectionCount");
             	if(tempHadRoutableConnectionCountString != null) {
@@ -664,13 +672,24 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     }
 
     /**
-     * Get my low-level address
+     * Get my low-level address.
+     * 
+     * Normally this is the address that packets have been received from from this node.
+     * However, if ignoreSourcePort is set, we will search for a similar address with a different port 
+     * number in the node reference.
      */
-    public synchronized Peer getDetectedPeer() {
-        return detectedPeer;
-    }
-
     public synchronized Peer getPeer(){
+    	if(ignoreSourcePort) {
+    		FreenetInetAddress addr = detectedPeer == null ? null : detectedPeer.getFreenetAddress();
+    		int port = detectedPeer == null ? -1 : detectedPeer.getPort();
+    		if(nominalPeer == null) return detectedPeer;
+    		for(int i=0;i<nominalPeer.size();i++) {
+    			Peer p = (Peer) nominalPeer.get(i);
+    			if(p.getPort() != port && p.getFreenetAddress().equals(addr)) {
+    				return p;
+    			}
+    		}
+    	}
     	return detectedPeer;
     }
     
@@ -1527,7 +1546,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     private void sendInitialMessages() {
         Message locMsg = DMT.createFNPLocChangeNotification(node.lm.loc.getValue());
-        Message ipMsg = DMT.createFNPDetectedIPAddress(getDetectedPeer());
+        Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         
         try {
         	if(isRoutable())
@@ -1539,7 +1558,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     }
     
     private void sendIPAddressMessage() {
-        Message ipMsg = DMT.createFNPDetectedIPAddress(getDetectedPeer());
+        Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         try {
             sendAsync(ipMsg, null, 0, null);
         } catch (NotConnectedException e) {
@@ -1845,7 +1864,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     public synchronized SimpleFieldSet exportMetadataFieldSet() {
     	SimpleFieldSet fs = new SimpleFieldSet();
-    	if(getDetectedPeer() != null)
+    	if(detectedPeer != null)
     		fs.put("detected.udp", detectedPeer.toString());
     	if(lastReceivedPacketTime() > 0)
     		fs.put("timeLastReceivedPacket", Long.toString(timeLastReceivedPacket));
@@ -1863,6 +1882,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     		fs.put("isListenOnly", "true");
     	if(isBurstOnly)
     		fs.put("isBurstOnly", "true");
+    	if(ignoreSourcePort)
+    		fs.put("ignoreSourcePort", "true");
     	if(allowLocalAddresses)
     		fs.put("allowLocalAddresses", "true");
     	if(hadRoutableConnectionCount > 0)
@@ -2494,6 +2515,17 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		node.peers.writePeers();
 	}
 
+	public void setIgnoreSourcePort(boolean setting) {
+		synchronized(this) {
+			ignoreSourcePort = setting;
+		}
+	}
+	
+
+	public boolean isIgnoreSourcePort() {
+		return ignoreSourcePort;
+	}
+	
 	public synchronized boolean isBurstOnly() {
 		return isBurstOnly;
 	}

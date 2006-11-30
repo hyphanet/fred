@@ -495,12 +495,14 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				if(advancedEnabled) {
 					actionSelect.addChild("option", "value", "enable", "Enable selected peers");
 					actionSelect.addChild("option", "value", "disable", "Disable selected peers");
-					actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly");
+					actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly (only set this if you have a static IP and are not NATed and neither is the peer)");
 					actionSelect.addChild("option", "value", "clear_burst_only", "On selected peers, clear BurstOnly");
-					actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly");
+					actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly (not recommended)");
 					actionSelect.addChild("option", "value", "clear_listen_only", "On selected peers, clear ListenOnly");
-					actionSelect.addChild("option", "value", "set_allow_local", "On selected peers, set allowLocalAddresses");
+					actionSelect.addChild("option", "value", "set_allow_local", "On selected peers, set allowLocalAddresses (useful if you are connecting to another node on the same LAN)");
 					actionSelect.addChild("option", "value", "clear_allow_local", "On selected peers, clear allowLocalAddresses");
+					actionSelect.addChild("option", "value", "set_ignore_source_port", "On selected peers, set ignoreSourcePort (try this if behind an evil corporate firewall; otherwise not recommended)");
+					actionSelect.addChild("option", "value", "clear_ignore_source_port", "On selected peers, clear ignoreSourcePort");
 				}
 				actionSelect.addChild("option", "value", "", "-- -- --");
 				actionSelect.addChild("option", "value", "remove", "Remove selected peers");
@@ -758,6 +760,32 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			for(int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
 					peerNodes[i].setBurstOnly(false);
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_ignore_source_port")) {
+			//int hashcode = Integer.decode(request.getParam("node")).intValue();
+			
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					peerNodes[i].setIgnoreSourcePort(true);
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_ignore_source_port")) {
+			//int hashcode = Integer.decode(request.getParam("node")).intValue();
+			
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					peerNodes[i].setIgnoreSourcePort(false);
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();

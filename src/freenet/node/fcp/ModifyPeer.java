@@ -56,6 +56,12 @@ public class ModifyPeer extends FCPMessage {
 				pn.setBurstOnly(Fields.stringToBool(isBurstOnlyString, false));
 			}
 		}
+		String ignoreSourcePortString = fs.get("IsBurstOnly");
+		if(ignoreSourcePortString != null) {
+			if(!ignoreSourcePortString.equals("")) {
+				pn.setIgnoreSourcePort(Fields.stringToBool(ignoreSourcePortString, false));
+			}
+		}
 		String allowLocalAddressesString = fs.get("AllowLocalAddresses");
 		if(allowLocalAddressesString != null) {
 			if(!allowLocalAddressesString.equals("")) {

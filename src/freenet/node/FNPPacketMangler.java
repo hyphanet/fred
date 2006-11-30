@@ -494,6 +494,10 @@ public class FNPPacketMangler implements LowLevelFilter {
      }
 
     private void sendPacket(byte[] data, Peer replyTo, PeerNode pn, int alreadyReportedBytes) throws LocalAddressException {
+    	if(pn.isIgnoreSourcePort()) {
+    		Peer p = pn.getPeer();
+    		if(p != null) replyTo = p;
+    	}
     	usm.sendPacket(data, replyTo, pn.allowLocalAddresses());
     	pn.reportOutgoingBytes(data.length);
     	node.outputThrottle.forceGrab(data.length - alreadyReportedBytes);
