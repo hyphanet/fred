@@ -7,6 +7,7 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import freenet.clients.http.DarknetConnectionsToadlet;
+import freenet.io.comm.Peer;
 
 /**
  * Contains various status information for a {@link PeerNode}. Used e.g. in
@@ -86,8 +87,14 @@ public class PeerNodeStatus {
 
 	public PeerNodeStatus(PeerNode peerNode) {
 		this.name = peerNode.getName();
-		this.peerAddress = (peerNode.getDetectedPeer() != null) ? peerNode.getDetectedPeer().getFreenetAddress().toString() : null;
-		this.peerPort = (peerNode.getDetectedPeer() != null) ? peerNode.getDetectedPeer().getPort() : -1;
+		Peer p = peerNode.getPeer();
+		if(p == null) {
+			peerAddress = null;
+			peerPort = -1;
+		} else {
+			peerAddress = p.getFreenetAddress().toString();
+			peerPort = p.getPort();
+		}
 		this.statusValue = peerNode.getPeerNodeStatus();
 		this.statusName = peerNode.getPeerNodeStatusString();
 		this.statusCSSName = peerNode.getPeerNodeStatusCSSClassName();
