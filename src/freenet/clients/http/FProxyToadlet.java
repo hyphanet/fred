@@ -127,7 +127,7 @@ public class FProxyToadlet extends Toadlet {
 					if(!mimeType.startsWith("text/plain")) {
 						option = optionList.addChild("li");
 						option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now)+extras, "Click here");
-						option.addChild("#", " to open the file as " + mimeType + '.');
+						option.addChild("#", " to open the file as " + mimeType + " (<b>this may also be dangerous</b>).");
 					}
 					option = optionList.addChild("li");
 					option.addChild("a", "href", "/", "Click here");
