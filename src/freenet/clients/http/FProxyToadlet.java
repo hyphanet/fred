@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -101,6 +102,10 @@ public class FProxyToadlet extends Toadlet {
 				mimeType = fo.type;
 			}
 			
+			if(!forceDownload) {
+				forceDownload = horribleEvilHack(data);
+			}
+			
 			if (forceDownload) {
 				MultiValueTable headers = new MultiValueTable();
 				headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + '"');
@@ -145,6 +150,50 @@ public class FProxyToadlet extends Toadlet {
 		}
 	}
 	
+	/** Does the first 512 bytes of the data contain anything that Firefox might regard as RSS?
+	 * This is a horrible evil hack; we shouldn't be doing blacklisting, we should be doing whitelisting.
+	 * REDFLAG Expect future security issues! 
+	 * @throws IOException */
+	private static boolean horribleEvilHack(Bucket data) throws IOException {
+		int sz = (int) Math.min(data.size(), 512);
+		if(sz == 0) return false;
+		InputStream is = data.getInputStream();
+		byte[] buf = new byte[sz];
+		// FIXME Fortunately firefox doesn't detect RSS in UTF16 etc ... yet
+		is.read(buf);
+		/**
+		 * Look for any of the following strings:
+		 * <rss
+		 * <feed
+		 * <rdf:RDF
+		 * 
+		 * If they start at the beginning of the file, or are preceded by one or more <! or <? tags,
+		 * then firefox will read it as RSS. In which case we must force it to be downloaded to disk. 
+		 */
+		if(checkForString(buf, "<rss")) return true;
+		if(checkForString(buf, "<feed")) return true;
+		if(checkForString(buf, "<rdf:RDF")) return true;
+		return false;
+	}
+
+	/** Scan for a US-ASCII (byte = char) string within a given buffer of possibly binary data */
+	private static boolean checkForString(byte[] buf, String find) {
+		int offset = 0;
+		int bufProgress = 0;
+		while(offset < buf.length) {
+			byte b = buf[offset];
+			if((int)b == (int)find.charAt(bufProgress)) {
+				bufProgress++;
+				if(bufProgress == find.length()) return true;
+			} else {
+				bufProgress = 0;
+				continue; // check if this byte is equal to the first one
+			}
+			offset++;
+		}
+		return false;
+	}
+
 	public void handleGet(URI uri, ToadletContext ctx) 
 			throws ToadletContextClosedException, IOException, RedirectException {
 		//String ks = uri.toString();
