@@ -117,7 +117,10 @@ public class ToadletContextImpl implements ToadletContext {
 		// Also this may fix a wierd bug...
 		// All keys are lower-case
 		mvt.put("expires", "Thu, 01 Jan 1970 00:00:00 GMT");
-		mvt.put("last-modified", makeHTTPDate(System.currentTimeMillis()-1000));
+		// Sent now, expires now.
+		String time = makeHTTPDate(System.currentTimeMillis());
+		mvt.put("last-modified", time);
+		mvt.put("date", time);
 		mvt.put("pragma", "no-cache");
 		mvt.put("cache-control", "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0");
 		if(disconnect)
