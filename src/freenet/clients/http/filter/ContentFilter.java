@@ -168,7 +168,7 @@ public class ContentFilter {
 				
 				Bucket outputData = handler.readFilter.readFilter(data, bf, charset, otherParams, new GenericReadFilterCallback(baseURI, cb));
 				if(charset != null)
-					type = type + ";charset="+charset;
+					type = type + "; charset="+charset;
 				return new FilterOutput(outputData, type);
 			}
 			handler.throwUnsafeContentTypeException();

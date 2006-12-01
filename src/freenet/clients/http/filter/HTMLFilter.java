@@ -1956,7 +1956,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if(logMINOR)
 			Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" )");
 		if((overrideCharset != null) && (overrideCharset.length() > 0))
-			overrideType += ";charset="+overrideCharset;
+			overrideType += "; charset="+overrideCharset;
 		return cb.processURI(suri, overrideType);
 	}
 
