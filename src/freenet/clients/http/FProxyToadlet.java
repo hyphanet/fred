@@ -119,7 +119,7 @@ public class FProxyToadlet extends Toadlet {
 					HTMLNode option = optionList.addChild("li");
 					
 					option.addChild("a", "href", basePath + key.toString(false) + "?type=text/plain&force=" + getForceValue(key, now)+extras, "Click here");
-					option.addChild("#", " to open the file as plain text (this <b>may be dangerous</b> if you are running IE7 or FF2).");
+					option.addChild("%", " to open the file as plain text (this <b>may be dangerous</b> if you are running IE7 or FF2).");
 					// 	FIXME: is this safe? See bug #131
 					option = optionList.addChild("li");
 					option.addChild("a", "href", basePath + key.toString(false) + "?forcedownload"+extras, "Click here");
