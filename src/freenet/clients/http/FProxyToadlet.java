@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -121,11 +120,12 @@ public class FProxyToadlet extends Toadlet {
 					// 	FIXME: is this safe? See bug #131
 					option = optionList.addChild("li");
 					option.addChild("a", "href", basePath + key.toString(false) + "?forcedownload"+extras, "Click here");
-					option.addChild("#", " to force your browser to download the file to disk.");
+					option.addChild("%", " to try to force your browser to download the file to disk (<b>this may also be dangerous if you run such a browser</b>).");
 					if(!mimeType.startsWith("text/plain")) {
 						option = optionList.addChild("li");
 						option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now)+extras, "Click here");
-						option.addChild("#", " to open the file as " + mimeType + " (<b>this may also be dangerous</b>).");
+						option.addChild("#", " to open the file as " + mimeType);
+						option.addChild("%", " (<b>this may also be dangerous</b>).");
 					}
 					option = optionList.addChild("li");
 					option.addChild("a", "href", basePath + key.toString(false) + "?type=application/xml+rss&force=" + getForceValue(key, now)+extras, "Click here");
