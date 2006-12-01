@@ -100,9 +100,7 @@ public class FProxyToadlet extends Toadlet {
 				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, new URI(basePath + URLEncoder.encode(key.toString(false))), null);
 				data = fo.data;
 				mimeType = fo.type;
-			}
-			
-			if(!forceDownload) {
+				
 				if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
 					HTMLNode pageNode = context.getPageMaker().getPageNode("Potentially Dangerous Content (RSS)");
 					HTMLNode contentNode = context.getPageMaker().getContentNode(pageNode);
