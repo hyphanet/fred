@@ -431,7 +431,7 @@ public class FProxyToadlet extends Toadlet {
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Caught "+e+" while handling GET", e);
 			} else {
-				Logger.normal(this, "Caught "+e, e);
+				Logger.normal(this, "Caught "+e);
 			}
 			throw e;
 		} catch (Throwable t) {
