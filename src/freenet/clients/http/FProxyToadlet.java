@@ -103,7 +103,41 @@ public class FProxyToadlet extends Toadlet {
 			}
 			
 			if(!forceDownload) {
-				forceDownload = horribleEvilHack(data);
+				if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
+					HTMLNode pageNode = context.getPageMaker().getPageNode("Potentially Dangerous Content (RSS)");
+					HTMLNode contentNode = context.getPageMaker().getContentNode(pageNode);
+					
+					HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
+					infobox.addChild("div", "class", "infobox-header", "RSS feed may be dangerous");
+					HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+					infoboxContent.addChild("#", "Freenet has detected that the file you are trying to fetch might be RSS. "+
+							"RSS cannot be properly filtered by Freenet, and may contain web-bugs (inline images etc which may "+
+							"expose your IP address to a malicious site author and therefore break your anonymity). "+
+							"Firefox 2.0 and Internet Explorer 7.0 will open the file as RSS even though its content type is \""+HTMLEncoder.encode(mimeType)+"\".");
+					infoboxContent.addChild("p", "Your options are:");
+					HTMLNode optionList = infoboxContent.addChild("ul");
+					HTMLNode option = optionList.addChild("li");
+					
+					option.addChild("a", "href", basePath + key.toString(false) + "?type=text/plain&force=" + getForceValue(key, now)+extras, "Click here");
+					option.addChild("#", " to open the file as plain text (this <b>may be dangerous</b> if you are running IE7 or FF2).");
+					// 	FIXME: is this safe? See bug #131
+					option = optionList.addChild("li");
+					option.addChild("a", "href", basePath + key.toString(false) + "?forcedownload"+extras, "Click here");
+					option.addChild("#", " to force your browser to download the file to disk.");
+					if(!mimeType.startsWith("text/plain")) {
+						option = optionList.addChild("li");
+						option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now)+extras, "Click here");
+						option.addChild("#", " to open the file as " + mimeType + '.');
+					}
+					option = optionList.addChild("li");
+					option.addChild("a", "href", "/", "Click here");
+					option.addChild("#", " to go to the FProxy home page.");
+					
+					byte[] pageBytes = pageNode.generate().getBytes();
+					context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", pageBytes.length);
+					context.writeData(pageBytes);
+					return;
+				}
 			}
 			
 			if (forceDownload) {
@@ -187,7 +221,8 @@ public class FProxyToadlet extends Toadlet {
 				if(bufProgress == find.length()) return true;
 			} else {
 				bufProgress = 0;
-				continue; // check if this byte is equal to the first one
+				if(bufProgress != 0)
+					continue; // check if this byte is equal to the first one
 			}
 			offset++;
 		}
