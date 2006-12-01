@@ -428,6 +428,7 @@ public class HTTPRequest {
 	 * params, whereas if it is multipart/form-data it will be separated into buckets.
 	 */
 	private void parseMultiPartData() throws IOException {
+		if(data == null) return;
 		String ctype = (String) this.headers.get("content-type");
 		if (ctype == null) return;
 		String[] ctypeparts = ctype.split(";");
