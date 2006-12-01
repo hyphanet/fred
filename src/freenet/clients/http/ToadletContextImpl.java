@@ -3,6 +3,8 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -11,8 +13,10 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.TimeZone;
 
+import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.URIPreEncoder;
 import freenet.support.io.Bucket;
 import freenet.support.io.BucketFactory;
 import freenet.support.io.BucketTools;
@@ -74,8 +78,13 @@ public class ToadletContextImpl implements ToadletContext {
 		sendError(sockOutputStream, 404, "Service not found", shouldDisconnect, null);
 	}
 	
-	private static void sendURIParseError(OutputStream os, boolean shouldDisconnect) throws IOException {
-		sendError(os, 400, "URI parse error", shouldDisconnect, null);
+	private static void sendURIParseError(OutputStream os, boolean shouldDisconnect, Throwable e) throws IOException {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		pw.close();
+		String message = "<html><head><title>URI parse error</title></head><body><p>"+HTMLEncoder.encode(e.getMessage())+"</p><pre>\n"+sw.toString();
+		sendError(os, 400, "URI parse error", message, shouldDisconnect, null);
 	}
 	
 	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
@@ -196,16 +205,10 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				URI uri;
 				try {
-					//uri = new URI(URLDecoder.decode(split[1]));
-					uri = new URI(split[1]);
+					uri = URIPreEncoder.encodeURI(split[1]).normalize();
 				} catch (URISyntaxException e) {
-					sendURIParseError(sock.getOutputStream(), true);
+					sendURIParseError(sock.getOutputStream(), true, e);
 					return;
-					/*
-					 } catch (URLEncodedFormatException e) {
-					 sendURIParseError(sock.getOutputStream(), true);
-					 return;
-					 */
 				}
 				
 				String method = split[0];
