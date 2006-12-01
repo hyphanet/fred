@@ -310,7 +310,7 @@ public class QueueToadlet extends Toadlet {
 							String mimeType = clientGet.getMIMEType();
 							String requestedMimeType = request.getParam("type", null);
 							String forceString = request.getParam("force");
-							FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key, "");
+							FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key, "", "/queue/");
 							return;
 						}
 					}

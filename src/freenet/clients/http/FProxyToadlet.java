@@ -83,7 +83,7 @@ public class FProxyToadlet extends Toadlet {
 		
 	}
 
-	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras) throws ToadletContextClosedException, IOException {
+	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer) throws ToadletContextClosedException, IOException {
 		if(requestedMimeType != null)
 			mimeType = requestedMimeType;
 		
@@ -130,6 +130,11 @@ public class FProxyToadlet extends Toadlet {
 					option = optionList.addChild("li");
 					option.addChild("a", "href", basePath + key.toString(false) + "?type=application/xml+rss&force=" + getForceValue(key, now)+extras, "Click here");
 					option.addChild("%", " to open the file as RSS (<b>this is dangerous if the site author is malicious</b>).");
+					if(referrer != null) {
+						option = optionList.addChild("li");
+						option.addChild("a", "href", referrer, "Click here");
+						option.addChild("#", " to go back to the referring page.");
+					}
 					option = optionList.addChild("li");
 					option.addChild("a", "href", "/", "Click here");
 					option.addChild("#", " to go to the FProxy home page.");
@@ -175,6 +180,11 @@ public class FProxyToadlet extends Toadlet {
 			option = optionList.addChild("li");
 			option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now)+extras, "Click here");
 			option.addChild("#", " to open the file as " + mimeType + '.');
+			if(referrer != null) {
+				option = optionList.addChild("li");
+				option.addChild("a", "href", referrer, "Click here");
+				option.addChild("#", " to go back to the referring page.");
+			}
 			option = optionList.addChild("li");
 			option.addChild("a", "href", "/", "Click here");
 			option.addChild("#", " to go to the FProxy home page.");
@@ -326,7 +336,9 @@ public class FProxyToadlet extends Toadlet {
 			Bucket data = result.asBucket();
 			String mimeType = result.getMimeType();
 			
-			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "");
+			String referer = sanitizeReferer(ctx);
+			
+			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "", referer);
 			
 		} catch (FetchException e) {
 			String msg = e.getMessage();
@@ -422,6 +434,28 @@ public class FProxyToadlet extends Toadlet {
 			msg = msg + HTMLEncoder.encode(sw.toString()) + "</pre></body></html>";
 			this.writeReply(ctx, 500, "text/html", "Internal Error", msg);
 		}
+	}
+
+	private String sanitizeReferer(ToadletContext ctx) {
+		// FIXME we do something similar in the GenericFilterCallback thingy?
+		String referer = (String) ctx.getHeaders().get("referer");
+		if(referer != null) {
+			try {
+				URI refererURI = new URI(referer);
+				String path = refererURI.getPath();
+				while(path.startsWith("/")) path = path.substring(1);
+				FreenetURI furi = new FreenetURI(path);
+				HTTPRequest req = new HTTPRequest(refererURI);
+				String type = req.getParam("type");
+				referer = "/" + furi.toString(false);
+				if(type != null && type.length() > 0)
+					referer += "?type=" + type;
+			} catch (Throwable t) {
+				Logger.error(this, "Caught handling referrer: "+t+" for "+referer, t);
+				referer = null;
+			}
+		}
+		return referer;
 	}
 
 	private static String getForceValue(FreenetURI key, long time) {
