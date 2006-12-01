@@ -121,7 +121,7 @@ public class FProxyToadlet extends Toadlet {
 					// 	FIXME: is this safe? See bug #131
 					option = optionList.addChild("li");
 					option.addChild("a", "href", basePath + key.toString(false) + "?forcedownload"+extras, "Click here");
-					option.addChild("%", " to try to force your browser to download the file to disk (<b>this may also be dangerous if you run such a browser</b>).");
+					option.addChild("%", " to try to force your browser to download the file to disk (<b>this may also be dangerous if you run Firefox 2.0.0 (2.0.1 should fix this)</b>).");
 					if(!mimeType.startsWith("text/plain")) {
 						option = optionList.addChild("li");
 						option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now)+extras, "Click here");
