@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.BindException;
 import java.net.MalformedURLException;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.MessageDigest;
@@ -424,6 +425,15 @@ public class FProxyToadlet extends Toadlet {
 				this.writeReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
 						"text/html", FetchException.getShortMessage(e.mode), pageBuffer.toString());
 			}
+		} catch (SocketException e) {
+			// Probably irrelevant
+			if(e.getMessage().equals("Broken pipe")) {
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Caught "+e+" while handling GET", e);
+			} else {
+				Logger.normal(this, "Caught "+e, e);
+			}
+			throw e;
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			String msg = "<html><head><title>Internal Error</title></head><body><h1>Internal Error: please report</h1><pre>";
