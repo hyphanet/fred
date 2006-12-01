@@ -129,7 +129,7 @@ public class FProxyToadlet extends Toadlet {
 					}
 					option = optionList.addChild("li");
 					option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now)+extras, "Click here");
-					option.addChild("#", " to open the file as RSS (<b>this is dangerous if the site author is malicious</b>).");
+					option.addChild("%", " to open the file as RSS (<b>this is dangerous if the site author is malicious</b>).");
 					option = optionList.addChild("li");
 					option.addChild("a", "href", "/", "Click here");
 					option.addChild("#", " to go to the FProxy home page.");
