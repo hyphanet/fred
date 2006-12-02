@@ -38,5 +38,9 @@ public class DataFilterException extends UnsafeContentTypeException {
 	public String getRawTitle() {
 		return rawTitle;
 	}
+	
+	public String toString() {
+		return rawTitle;
+	}
 
 }

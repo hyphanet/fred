@@ -37,7 +37,7 @@ public class PNGFilter implements ContentDataFilter {
 				// Throw an exception
 				String message = 
 					"The file you tried to fetch is not a PNG. It does not include a valid PNG header. "+
-					"It might be some other file format, and your browser may do something horrible with it, "+
+					"It might be some other file format, and your browser may do something dangerous with it, "+
 					"therefore we have blocked it."; 
 				throw new DataFilterException("Not a PNG - invalid header", "Not a PNG - invalid header",
 						"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));

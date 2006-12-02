@@ -37,20 +37,20 @@ public class ContentFilter {
 				"Plain text - not dangerous unless you include compromizing information",
 				true, "US-ASCII", null));
 		
-		// GIF - probably safe - FIXME check this out, write filters 
+		// GIF - has a filter 
 		register(new MIMEType("image/gif", "gif", new String[0], new String[0], 
 				true, false, new GIFFilter(), null, false, false, false, false, false, false,
 				"GIF image - probably not dangerous",
 				"GIF image - probably not dangerous but you should wipe any comments",
 				false, null, null));
 		
-		// JPEG - probably safe - FIXME check this out, write filters
+		// JPEG - has a filter
 		register(new MIMEType("image/jpeg", "jpeg", new String[0], new String[] { "jpg" },
-				true, false, null, null, false, false, false, false, false, false,
+				true, false, new JPEGFilter(true, true), null, false, false, false, false, false, false,
 				"JPEG image - probably not dangerous",
 				"JPEG image - probably not dangerous but can contain EXIF data", false, null, null));
 		
-		// PNG - probably safe - FIXME check this out, write filters
+		// PNG - has a filter
 		register(new MIMEType("image/png", "png", new String[0], new String[0],
 				true, false, new PNGFilter(), null, false, false, false, false, true, false,
 				"PNG image - probably not dangerous",
@@ -157,10 +157,7 @@ public class ContentFilter {
 		if(handler == null)
 			throw new UnknownContentTypeException(typeName);
 		else {
-			if(handler.safeToRead) {
-				return new FilterOutput(data, typeName);
-			}
-			
+			// Run the read filter if there is one.
 			if(handler.readFilter != null) {
 				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
 					charset = detectCharset(data, handler);
@@ -171,6 +168,11 @@ public class ContentFilter {
 					type = type + "; charset="+charset;
 				return new FilterOutput(outputData, type);
 			}
+			
+			if(handler.safeToRead) {
+				return new FilterOutput(data, typeName);
+			}
+			
 			handler.throwUnsafeContentTypeException();
 			return null;
 		}

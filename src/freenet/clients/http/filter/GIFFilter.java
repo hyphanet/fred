@@ -21,8 +21,8 @@ import freenet.support.io.BucketFactory;
 public class GIFFilter implements ContentDataFilter {
 
 	static final String ERROR_MESSAGE = 
-		"The file you tried to fetch is not a GIF. It does not include a valid GIF header. "+
-		"It might be some other file format, and your browser may do something horrible with it, "+
+		"The file you tried to fetch is not a GIF. "+
+		"It might be some other file format, and your browser may do something dangerous with it, "+
 		"therefore we have blocked it.";
 	
 	static final int HEADER_SIZE = 6;

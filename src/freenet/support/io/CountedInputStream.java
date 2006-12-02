@@ -29,7 +29,7 @@ public class CountedInputStream extends FilterInputStream {
         return ret;
     }
     
-    public long skip(int n) throws IOException {
+    public long skip(long n) throws IOException {
     	long l = in.skip(n);
     	if(l > 0) count += l;
     	return l;
