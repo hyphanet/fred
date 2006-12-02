@@ -154,10 +154,11 @@ public class QueueToadlet extends Toadlet {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				short newPriority = Short.parseShort(request.getPartAsString("priority", 32));
 				ClientRequest[] clientRequests = fcp.getGlobalRequests();
-				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
+loop:				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
 					ClientRequest clientRequest = clientRequests[requestIndex];
 					if (clientRequest.getIdentifier().equals(identifier)) {
 						clientRequest.setPriorityClass(newPriority);
+						break loop;
 					}
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
@@ -221,7 +222,7 @@ public class QueueToadlet extends Toadlet {
 			} else if (request.isPartSet("get")) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				ClientRequest[] clientRequests = fcp.getGlobalRequests();
-				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
+loop:				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
 					ClientRequest clientRequest = clientRequests[requestIndex];
 					if (clientRequest.getIdentifier().equals(identifier)) {
 						if (clientRequest instanceof ClientGet) {
@@ -233,7 +234,7 @@ public class QueueToadlet extends Toadlet {
 									if (forceDownload.length() > 0) {
 										long forceDownloadTime = Long.parseLong(forceDownload);
 										if ((System.currentTimeMillis() - forceDownloadTime) > 60 * 1000) {
-											break;
+											break loop;
 										}
 										MultiValueTable responseHeaders = new MultiValueTable();
 										responseHeaders.put("Content-Disposition", "attachment; filename=\"" + clientGet.getURI().getPreferredFilename() + '"');
