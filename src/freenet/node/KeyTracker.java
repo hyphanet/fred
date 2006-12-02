@@ -533,7 +533,9 @@ public class KeyTracker {
         AsyncMessageCallback[] callbacks;
         if(logMINOR) Logger.minor(this, "Acknowledged packet: "+realSeqNo);
 	try {
-		removeAckRequest(realSeqNo);
+		synchronized (this){
+			removeAckRequest(realSeqNo);
+		}
 	} catch (UpdatableSortedLinkedListKilledException e) {
 		// Ignore, we are processing an incoming packet
 	}
