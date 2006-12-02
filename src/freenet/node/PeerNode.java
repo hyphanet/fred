@@ -1692,6 +1692,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         		throw new FSParseException(e);
         	}
         }
+        String testnet = fs.get("testnet");
+        if(node.testnetEnabled != (testnet == null ? false : (testnet.equalsIgnoreCase("true") || testnet.equalsIgnoreCase("yes")))) {
+        	String err = "Preventing connection to node "+detectedPeer+" - peer.testnet="+!node.testnetEnabled+'(' +testnet+") but node.testnet="+node.testnetEnabled;
+        	Logger.error(this, err);
+        	throw new FSParseException(err);
+        }
         String newVersion = fs.get("version");
         if(newVersion == null) {
         	// Version may be ommitted for an ARK.
