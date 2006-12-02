@@ -52,6 +52,7 @@ public class QueueToadlet extends Toadlet {
 	private static final int LIST_PROGRESS = 11;
 	private static final int LIST_REASON = 12;
 
+	private static final int MAX_IDENTIFIER_LENGTH = 1024*1024;
 	private static final int MAX_FILENAME_LENGTH = 1024*1024;
 	private static final int MAX_TYPE_LENGTH = 1024;
 	static final int MAX_KEY_LENGTH = 1024*1024;
@@ -88,7 +89,7 @@ public class QueueToadlet extends Toadlet {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			
 			if(request.isPartSet("remove_request") && (request.getPartAsString("remove_request", 32).length() > 0)) {
-				String identifier = request.getParam("identifier");
+				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				if(logMINOR) Logger.minor(this, "Removing "+identifier);
 				try {
 					fcp.removeGlobalRequest(identifier);
@@ -98,7 +99,7 @@ public class QueueToadlet extends Toadlet {
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if(request.isPartSet("restart_request") && (request.getPartAsString("restart_request", 32).length() > 0)) {
-				String identifier = request.getParam("identifier");
+				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				if(logMINOR) Logger.minor(this, "Restarting "+identifier);
 				ClientRequest[] clientRequests = fcp.getGlobalRequests();
 				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
@@ -150,7 +151,7 @@ public class QueueToadlet extends Toadlet {
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("change_priority")) {
-				String identifier = request.getParam("identifier");
+				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				short newPriority = Short.parseShort(request.getPartAsString("priority", 32));
 				ClientRequest[] clientRequests = fcp.getGlobalRequests();
 				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
@@ -218,7 +219,7 @@ public class QueueToadlet extends Toadlet {
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("get")) {
-				String identifier = request.getParam("identifier");
+				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				ClientRequest[] clientRequests = fcp.getGlobalRequests();
 				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
 					ClientRequest clientRequest = clientRequests[requestIndex];
