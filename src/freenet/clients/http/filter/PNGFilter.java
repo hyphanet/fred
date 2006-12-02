@@ -40,6 +40,7 @@ public class PNGFilter implements ContentDataFilter {
 			throw new DataFilterException("Not a PNG - invalid header", "Not a PNG - invalid header",
 					"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
 		}
+		dis.close();
 		return data;
 	}
 
