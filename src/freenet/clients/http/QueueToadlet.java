@@ -246,7 +246,7 @@ public class QueueToadlet extends Toadlet {
 									HTMLNode alertContent = ctx.getPageMaker().getContentNode(alertNode);
 									alertContent.addChild("#", "The file you want to download is currently not filtered by Freenet\u2019s content filter! That means that your anonymity can be compromised by opening the file!");
 									HTMLNode optionListNode = alertContent.addChild("ul");
-									HTMLNode optionForm = optionListNode.addChild("li").addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+									HTMLNode optionForm = optionListNode.addChild("li").addChild("form", new String[] { "action", "method", "enctype", "encoding" }, new String[] { "/queue/", "post", "UTF-8", "multipart/form-data" });
 									optionForm.addChild(ctx.getPageMaker().createFormPasswordInput(core.formPassword));
 									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceDownload", String.valueOf(System.currentTimeMillis()) });
@@ -671,7 +671,7 @@ public class QueueToadlet extends Toadlet {
 
 	private HTMLNode createPriorityCell(PageMaker pageMaker, String identifier, short priorityClass) {
 		HTMLNode priorityCell = new HTMLNode("td", "class", "request-priority nowrap");
-		HTMLNode priorityForm = priorityCell.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+		HTMLNode priorityForm = priorityCell.addChild("form", new String[] { "action", "method", "enctype", "encoding" }, new String[] { "/queue/", "post", "UTF-8", "multipart/form-data" });
 		priorityForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
 		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		HTMLNode prioritySelect = priorityForm.addChild("select", "name", "priority");
@@ -688,7 +688,7 @@ public class QueueToadlet extends Toadlet {
 
 	private HTMLNode createDeleteCell(PageMaker pageMaker, String identifier, ClientRequest clientRequest) {
 		HTMLNode deleteNode = new HTMLNode("td", "class", "request-delete");
-		HTMLNode deleteForm = deleteNode.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+		HTMLNode deleteForm = deleteNode.addChild("form", new String[] { "action", "method", "enctype", "encoding" }, new String[] { "/queue/", "post", "UTF-8", "multipart/form-data" });
 		deleteForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", "Delete" });
@@ -696,7 +696,7 @@ public class QueueToadlet extends Toadlet {
 		// If it's failed, offer to restart it
 		
 		if(clientRequest.hasFinished() && !clientRequest.hasSucceeded() && clientRequest.canRestart()) {
-			HTMLNode retryForm = deleteNode.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+			HTMLNode retryForm = deleteNode.addChild("form", new String[] { "action", "method", "enctype", "encoding" }, new String[] { "/queue/", "post", "UTF-8", "multipart/form-data" });
 			retryForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
 			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", "Retry" });
@@ -775,7 +775,7 @@ public class QueueToadlet extends Toadlet {
 		/* the insert file box */
 		HTMLNode insertBox = pageMaker.getInfobox("Insert File");
 		HTMLNode insertContent = pageMaker.getContentNode(insertBox);
-		HTMLNode insertForm = insertContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
+		HTMLNode insertForm = insertContent.addChild("form", new String[] { "action", "method", "enctype", "encoding" }, new String[] { "/queue/", "post", "UTF-8", "multipart/form-data" });
 		insertForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
 		insertForm.addChild("#", "Insert as: ");
 		insertForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "keytype", "chk", "checked" });
