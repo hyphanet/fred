@@ -178,7 +178,7 @@ public class QueueToadlet extends Toadlet {
 					return;
 				}
 				HTTPRequest.File file = request.getUploadedFile("filename");
-				if (file.getFilename().trim().length() == 0) {
+				if (file == null || file.getFilename().trim().length() == 0) {
 					writeError("No file selected", "You did not select a file to upload.", ctx);
 					return;
 				}
