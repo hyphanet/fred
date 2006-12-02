@@ -39,7 +39,7 @@ public class ContentFilter {
 		
 		// GIF - probably safe - FIXME check this out, write filters 
 		register(new MIMEType("image/gif", "gif", new String[0], new String[0], 
-				true, false, null, null, false, false, false, false, false, false,
+				true, false, new GIFFilter(), null, false, false, false, false, false, false,
 				"GIF image - probably not dangerous",
 				"GIF image - probably not dangerous but you should wipe any comments",
 				false, null, null));
