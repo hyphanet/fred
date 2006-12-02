@@ -52,7 +52,7 @@ public class ContentFilter {
 		
 		// PNG - probably safe - FIXME check this out, write filters
 		register(new MIMEType("image/png", "png", new String[0], new String[0],
-				true, false, null, null, false, false, false, false, true, false,
+				true, false, new PNGFilter(), null, false, false, false, false, true, false,
 				"PNG image - probably not dangerous",
 				"PNG image - probably not dangerous but you should wipe any comments or text blocks",
 				false, null, null));

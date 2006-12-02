@@ -52,7 +52,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			explanation.addChild("#", " The page you are about to display has an unknown character set. This means that we are not able to filter the page, and it may compromize your anonymity.");
 			throw new DataFilterException("Warning: Unknown character set ("+charset+ ')', "Warning: Unknown character set ("+HTMLEncoder.encode(charset)+ ')',
 					"<p><b>Unknown character set</b> The page you are about to display has an unknown character set. "+
-					"This means that we are not able to filter the page, and it may compromize your anonymity.", explanation);
+					"This means that we are not able to filter the page, and it may compromize your anonymity.</p>", explanation);
 		}
 		CSSParser parser = new CSSParser(r, w, false, cb);
 		parser.parse();
