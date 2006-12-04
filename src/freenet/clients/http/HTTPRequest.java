@@ -431,6 +431,8 @@ public class HTTPRequest {
 		if(data == null) return;
 		String ctype = (String) this.headers.get("content-type");
 		if (ctype == null) return;
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Uploaded content-type: "+ctype);
 		String[] ctypeparts = ctype.split(";");
 		if(ctypeparts[0].equalsIgnoreCase("application/x-www-form-urlencoded")) {
 			// Completely different encoding, but easy to handle
