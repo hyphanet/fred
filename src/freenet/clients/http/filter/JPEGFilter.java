@@ -47,9 +47,6 @@ public class JPEGFilter implements ContentDataFilter {
 	static final byte[] soi = new byte[] {
 		(byte)0xFF, (byte)0xD8 // Start of Image
 	};
-	static final byte[] app0 = new byte[] {
-		(byte)0xFF, (byte)0xE0 // APP0 (header)
-	};
 	static final byte[] identifier = new byte[] {
 		(byte)'J', (byte)'F', (byte)'I', (byte)'F', 0
 	};
@@ -74,9 +71,8 @@ public class JPEGFilter implements ContentDataFilter {
 	throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long length = data.size();
-		boolean hadHeader = false;
 		if(length < 6) {
-			throwError("Too short", "The file is too short to be a GIF.");
+			throwError("Too short", "The file is too short to be a JPEG.");
 		}
 		InputStream is = data.getInputStream();
 		BufferedInputStream bis = new BufferedInputStream(is);
