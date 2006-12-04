@@ -368,8 +368,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         if(name == null) throw new FSParseException("No name");
         myName = name;
         String testnet = fs.get("testnet");
-        testnetEnabled = testnet == null ? false : (testnet.equalsIgnoreCase("true") || testnet.equalsIgnoreCase("yes"));
-        if(testnetEnabled != node.testnetEnabled) {
+        testnetEnabled = Fields.stringToBool(fs.get("testnet"), true);
+        if(node.testnetEnabled != testnetEnabled) {
         	String err = "Ignoring incompatible node "+detectedPeer+" - peer.testnet="+testnetEnabled+ '(' +testnet+") but node.testnet="+node.testnetEnabled;
         	Logger.error(this, err);
         	throw new PeerParseException(err);
@@ -1691,10 +1691,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         	} catch (IllegalBase64Exception e) {
         		throw new FSParseException(e);
         	}
-        }
-        String testnet = fs.get("testnet");
-        if(node.testnetEnabled != (testnet == null ? false : (testnet.equalsIgnoreCase("true") || testnet.equalsIgnoreCase("yes")))) {
-        	String err = "Preventing connection to node "+detectedPeer+" - peer.testnet="+!node.testnetEnabled+'(' +testnet+") but node.testnet="+node.testnetEnabled;
+        }        
+        if(node.testnetEnabled != Fields.stringToBool(fs.get("testnet"), true)) {
+        	String err = "Preventing connection to node "+detectedPeer+" - peer.testnet="+!node.testnetEnabled+'(' +Fields.stringToBool(fs.get("testnet"), true)+") but node.testnet="+node.testnetEnabled;
         	Logger.error(this, err);
         	throw new FSParseException(err);
         }
