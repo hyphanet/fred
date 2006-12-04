@@ -45,6 +45,10 @@ public class URIPreEncoder {
 		return output.toString();
 	}
 	
+	/**
+	 * Create a new URI from a string, which may contain characters which should have been encoded.
+	 * @throws URISyntaxException If the string does not represent a valid URI, even after encoding.
+	 */
 	public static URI encodeURI(String s) throws URISyntaxException {
 		return new URI(encode(s));
 	}
