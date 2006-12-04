@@ -121,8 +121,7 @@ public class ConfigToadlet extends Toadlet {
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		infobox.addChild("div", "class", "infobox-header", "Freenet node configuration");
 		HTMLNode configNode = infobox.addChild("div", "class", "infobox-content");
-		HTMLNode formNode = configNode.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
-		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+		HTMLNode formNode = ctx.addFormChild(configNode, ".", "configForm");
 		
 		for(int i=0; i<sc.length;i++){
 			short displayedConfigElements = 0;

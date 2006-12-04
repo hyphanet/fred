@@ -391,11 +391,10 @@ public class FProxyToadlet extends Toadlet {
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", "Fetch anyway and display file in browser" });
 				option = optionList.addChild("li");
-				optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+				optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString(false) });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 				if (mime != null) {
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
 				}

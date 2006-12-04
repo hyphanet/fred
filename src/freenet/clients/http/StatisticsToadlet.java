@@ -109,8 +109,7 @@ public class StatisticsToadlet extends Toadlet {
 		// Generate a Thread-Dump
 		if(node.isUsingWrapper()){
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Request a Thread Dump to be generated"));
-			HTMLNode threadDumpForm = ctx.getPageMaker().getContentNode(infobox).addChild("form", new String[] { "action", "method" }, new String[] { "/", "POST" });
-			threadDumpForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			HTMLNode threadDumpForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(infobox), "/", "threadDumpForm");
 			threadDumpForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getThreadDump", "Generate a Thread Dump" });
 		}
 		

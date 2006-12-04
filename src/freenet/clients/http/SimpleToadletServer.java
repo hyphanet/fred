@@ -58,6 +58,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private boolean advancedDarknetEnabled;
 	private boolean fProxyJavascriptEnabled;
 	private final PageMaker pageMaker;
+	private final NodeClientCore core;
 	
 	static boolean isPanicButtonToBeShown;
 	static final int DEFAULT_FPROXY_PORT = 8888;
@@ -188,6 +189,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	 */
 	public SimpleToadletServer(SubConfig fproxyConfig, NodeClientCore core) throws IOException, InvalidConfigValueException {
 
+		this.core = core;
 		int configItemOrder = 0;
 		
 		fproxyConfig.register("enabled", true, configItemOrder++, true, true, "Enable FProxy?", "Whether to enable FProxy and related HTTP services",
@@ -287,7 +289,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	public SimpleToadletServer(int i, String newbindTo, String allowedHosts, BucketFactory bf, String cssName) throws IOException {
+	public SimpleToadletServer(int i, String newbindTo, String allowedHosts, BucketFactory bf, String cssName, NodeClientCore core) throws IOException {
 		this.port = i;
 		this.bindTo = newbindTo;
 		this.allowedHosts = allowedHosts;
@@ -296,6 +298,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		toadlets = new LinkedList();
 		this.cssName = cssName;
 		pageMaker = new PageMaker(cssName);
+		this.core = core;
 	}
 
 	public void start() {
@@ -342,7 +345,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
         Logger.globalSetThreshold(Logger.MINOR);
         Logger.globalAddHook(logger);
         logger.start();
-		SimpleToadletServer server = new SimpleToadletServer(1111, "127.0.0.1", "127.0.0.1", new TempBucketFactory(new FilenameGenerator(new DummyRandomSource(), true, new File("temp-test"), "test-temp-")), "aqua");
+		SimpleToadletServer server = new SimpleToadletServer(1111, "127.0.0.1", "127.0.0.1", new TempBucketFactory(new FilenameGenerator(new DummyRandomSource(), true, new File("temp-test"), "test-temp-")), "aqua", null);
 		server.register(new TrivialToadlet(null), "", true);
 		server.start();
 		System.out.println("Bound to port 1111.");
@@ -422,5 +425,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	public synchronized void enableFProxyJavascript(boolean b){
 		fProxyJavascriptEnabled = b;
+	}
+
+	public String getFormPassword() {
+		return core.formPassword;
 	}
 }

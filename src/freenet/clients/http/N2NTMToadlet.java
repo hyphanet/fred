@@ -75,7 +75,7 @@ public class N2NTMToadlet extends Toadlet {
 		  }
 			HashMap peers = new HashMap();
 			peers.put( input_hashcode_string, peernode_name );
-			String resultString = createN2NTMSendForm( pageNode, contentNode, ctx, peers, core.formPassword);
+			String resultString = createN2NTMSendForm( pageNode, contentNode, ctx, peers);
 			if(resultString != null) {  // was there an error in createN2NTMSendForm()?
 				this.writeReply(ctx, 200, "text/html", "OK", resultString);
 				return;
@@ -198,7 +198,7 @@ public class N2NTMToadlet extends Toadlet {
 	  ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 	    
-	public static String createN2NTMSendForm(HTMLNode pageNode, HTMLNode contentNode, ToadletContext ctx, HashMap peers, String formPassword) throws ToadletContextClosedException, IOException {
+	public static String createN2NTMSendForm(HTMLNode pageNode, HTMLNode contentNode, ToadletContext ctx, HashMap peers) throws ToadletContextClosedException, IOException {
 		if(contentNode == null) {
 			contentNode.addChild(createPeerInfobox("infobox-error", "Internal error", "Internal error: N2NTMToadlet.createN2NTMSendForm() not passed a valid contentNode."));
 			StringBuffer pageBuffer = new StringBuffer();
@@ -216,8 +216,7 @@ public class N2NTMToadlet extends Toadlet {
 			messageTargetList.addChild("li", peer_name);
 		}
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-		HTMLNode messageForm = infoboxContent.addChild("form", new String[] { "action", "method" }, new String[] { "/send_n2ntm/", "post" });
-		messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", formPassword });
+		HTMLNode messageForm = ctx.addFormChild(infoboxContent, "/send_n2ntm/", "sendN2NTMForm");
 		// Iterate peers
 		for (Iterator it = peers.keySet().iterator(); it.hasNext(); ) {
 			String peerNodeHash = (String) it.next();

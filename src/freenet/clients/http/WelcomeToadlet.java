@@ -105,10 +105,9 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Update"));
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 			content.addChild("p").addChild("#", "Are you sure you wish to update your Freenet node?");
-			HTMLNode updateForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
+			HTMLNode updateForm = ctx.addFormChild(content, "/", "updateConfirmForm");
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "updateconfirm", "Update" });
-			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if(request.isPartSet("getThreadDump")) {
@@ -247,8 +246,7 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Frost Instant Note insert"));
 				HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 				content.addChild("p").addChild("#", "Do you want to insert the following Frost message?");
-				HTMLNode postForm = content.addChild("p").addChild("form", new String[] { "action", "method", "enctype", "encoding" }, new String[] { "/", "post", "UTF-8", "multipart/form-data" });
-				postForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+				HTMLNode postForm = ctx.addFormChild(content.addChild("p"), "/", "finConfirmForm"); 
 				HTMLNode table = postForm.addChild("table", "align", "center");
 				
 				finInputRow(table, "boardname", "Target Board", boardName);
@@ -428,12 +426,11 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Confirm Bookmark Addition"));
-			HTMLNode addForm = ctx.getPageMaker().getContentNode(infobox).addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
+			HTMLNode addForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(infobox), "/", "bookmarkAddForm");
 			addForm.addChild("#", "Please confirm that you want to add the key " + request.getParam("newbookmark") + " to your bookmarks and enter the description that you would prefer:");
 			addForm.addChild("br");
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", request.getParam("newbookmark") });
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", request.getParam("desc") });
-			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addbookmark", "Add bookmark" });
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
@@ -441,14 +438,13 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Link to external resources");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode warnbox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "External link"));
-			HTMLNode externalLinkForm = ctx.getPageMaker().getContentNode(warnbox).addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
+			HTMLNode externalLinkForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(warnbox), "/", "confirmExternalLinkForm");
 
 			// FIXME: has request.getParam(GenericReadFilterCallback.magicHTTPEscapeString) been sanityzed ?
 			final String target = request.getParam(GenericReadFilterCallback.magicHTTPEscapeString);
 			externalLinkForm.addChild("#", "Please confirm that you want to go to " + target + ". WARNING: You are leaving FREENET! Clicking on this link WILL seriously jeopardize your anonymity!. It is strongly recommended not to do so!");
 			externalLinkForm.addChild("br");
 			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", GenericReadFilterCallback.magicHTTPEscapeString, target });
-			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Go", "Go to the specified link" });
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
@@ -463,7 +459,7 @@ public class WelcomeToadlet extends Toadlet {
 			if (!e.hasMoreElements()) {
 				infoboxContent.addChild("#", "You currently do not have any bookmarks defined.");
 			} else {
-				HTMLNode manageForm = infoboxContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+				HTMLNode manageForm = ctx.addFormChild(infoboxContent, ".", "manageBookmarksForm");
 				HTMLNode bookmarkList = manageForm.addChild("ul", "id", "bookmarks");
 				while (e.hasMoreElements()) {
 					Bookmark b = (Bookmark)e.nextElement();
@@ -473,10 +469,9 @@ public class WelcomeToadlet extends Toadlet {
 					bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "edit_" + b.hashCode(), "Edit", "float: right;" });
 					bookmark.addChild("a", "href", '/' + b.getKey(), b.getDesc());
 				}
-				manageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 				manageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
 			}
-			contentNode.addChild(createBookmarkEditForm(ctx.getPageMaker(), MODE_ADD, null, "", ""));
+			contentNode.addChild(createBookmarkEditForm(ctx, MODE_ADD, null, "", ""));
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if (request.isParameterSet("exit")) {
@@ -485,8 +480,7 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Shutdown"));
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 			content.addChild("p").addChild("#", "Are you sure you wish to shut down your Freenet node?");
-			HTMLNode shutdownForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "POST" });
-			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			HTMLNode shutdownForm = ctx.addFormChild(content.addChild("p"), "/", "confirmShutdownForm");
 			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "shutdownconfirm", "Shut down" });
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
@@ -497,8 +491,7 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Restart"));
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 			content.addChild("p").addChild("#", "Are you sure you want to restart your Freenet node?");
-			HTMLNode restartForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "POST" });
-			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			HTMLNode restartForm = ctx.addFormChild(content.addChild("p"), "/", "confirmRestartForm");
 			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restartconfirm", "Restart" });
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
@@ -600,15 +593,16 @@ public class WelcomeToadlet extends Toadlet {
 			ctx.getPageMaker().getContentNode(errorBox).addChild("#", message);
 		}
 		
-		contentNode.addChild(createBookmarkEditForm(ctx.getPageMaker(), mode, b, origKey, origDesc));
+		contentNode.addChild(createBookmarkEditForm(ctx, mode, b, origKey, origDesc));
 		
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 	
-	private HTMLNode createBookmarkEditForm(PageMaker pageMaker, int mode, Bookmark b, String origKey, String origDesc) {
+	private HTMLNode createBookmarkEditForm(ToadletContext ctx, int mode, Bookmark b, String origKey, String origDesc) {
+		PageMaker pageMaker = ctx.getPageMaker();
 		HTMLNode infobox = pageMaker.getInfobox("infobox-normal bookmark-edit", (mode == MODE_ADD) ? "New Bookmark" : "Update Bookmark");
 		HTMLNode content = pageMaker.getContentNode(infobox);
-		HTMLNode editForm = content.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+		HTMLNode editForm = ctx.addFormChild(content, ".", mode == MODE_ADD ? "addBookmarkForm" : "editBookmarkForm");
 		editForm.addChild("#", "Key: ");
 		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "key", origKey });
 		editForm.addChild("br");
@@ -622,7 +616,6 @@ public class WelcomeToadlet extends Toadlet {
 		}
 		editForm.addChild("input", new String[] { "type", "value", "class" }, new String[] { "submit", "Cancel", "cancel" });
 		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
-		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 		return infobox;
 	}
 	

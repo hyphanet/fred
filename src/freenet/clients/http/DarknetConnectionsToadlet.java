@@ -342,8 +342,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				peerTableInfoboxContent.addChild("a", "href", "/", "node homepage");
 				peerTableInfoboxContent.addChild("#", " and read the top infobox to see how it is done.");
 			} else {
-				HTMLNode peerForm = peerTableInfoboxContent.addChild("form", new String[] { "action", "method", "enctype", "id", "name" }, new String[] { ".", "post", "multipart/form-data", "peersForm", "peersForm" });
-				peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+				HTMLNode peerForm = ctx.addFormChild(peerTableInfoboxContent, ".", "peersForm");
 				HTMLNode peerTable = peerForm.addChild("table", "class", "darknet_connections");
 				HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
 				peerTableHeaderRow.addChild("th");
@@ -523,8 +522,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		peerAdditionInfobox.addChild("div", "class", "infobox-header", "Add another peer");
 		HTMLNode peerAdditionContent = peerAdditionInfobox.addChild("div", "class", "infobox-content");
-		HTMLNode peerAdditionForm = peerAdditionContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
-		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+		HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, ".", "addPeerForm");
 		peerAdditionForm.addChild("#", "Paste the reference here:");
 		peerAdditionForm.addChild("br");
 		peerAdditionForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "reftext", "ref", "8", "74" });
@@ -697,7 +695,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}
 				}
 			}
-			String resultString = N2NTMToadlet.createN2NTMSendForm( pageNode, contentNode, ctx, peers, core.formPassword);
+			String resultString = N2NTMToadlet.createN2NTMSendForm( pageNode, contentNode, ctx, peers);
 			if(resultString != null) {  // was there an error in createN2NTMSendForm()?
 				this.writeReply(ctx, 200, "text/html", "OK", resultString);
 				return;
@@ -867,9 +865,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "Node removal"));
 						HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 						content.addChild("p").addChild("#", "Are you sure you wish to remove "+peerNodes[i].getName()+" ? Before it has at least one week downtime, it's not recommended to do so, as it may be down only temporarily, and many users cannot run their nodes 24x7.");
-						HTMLNode removeForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/darknet/", "post" });
+						HTMLNode removeForm = ctx.addFormChild(content, "/darknet/", "removeConfirmForm");
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
-						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", "Remove it!" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceit", "Force" });

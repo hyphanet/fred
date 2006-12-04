@@ -24,4 +24,9 @@ public interface ToadletContainer {
 	 * Get the name of the theme to be used by all the Toadlets
 	 */
 	public String getCSSName();
+	
+	/**
+	 * Get the form password
+	 */
+	public String getFormPassword();
 }

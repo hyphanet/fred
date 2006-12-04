@@ -312,7 +312,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 				Set visited = new HashSet(visitedURIs);
 				Set failed = new HashSet(failedURIs);
 				contentNode.addChild(createNavbar(pageMaker, runningFetches.size(), queued.size(), visited.size(), failed.size()));
-				contentNode.addChild(createAddBox(pageMaker));
+				contentNode.addChild(createAddBox(pageMaker, context));
 				contentNode.addChild(createList(pageMaker, "Running Fetches", "running", runningFetches.keySet(), maxShownURIs));
 				contentNode.addChild(createList(pageMaker, "Queued URIs", "queued", queued, maxShownURIs));
 				contentNode.addChild(createList(pageMaker, "Visited URIs", "visited", visited, maxShownURIs));
@@ -385,7 +385,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		return backbox;
 	}
 	
-	private HTMLNode createAddBox(PageMaker pageMaker) {
+	private HTMLNode createAddBox(PageMaker pageMaker, ToadletContext ctx) {
 		HTMLNode addBox = pageMaker.getInfobox("Add a URI");
 		HTMLNode formNode = pageMaker.getContentNode(addBox).addChild("form", new String[] { "action", "method" }, new String[] { "", "get" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "action", "add" });

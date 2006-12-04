@@ -139,10 +139,6 @@ public class PageMaker {
 		return infobox;
 	}
 	
-	public HTMLNode createFormPasswordInput(String formPassword) {
-		return new HTMLNode("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", formPassword });
-	}
-	
 	/**
 	 * Returns an {@link ArrayList} containing the names of all available
 	 * themes. If freenet was started from a JAR file the list is cached

@@ -78,8 +78,8 @@ public class PproxyToadlet extends Toadlet {
 			infobox.addChild("div", "class", "infobox-header", "Unload plugin?");
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 			infoboxContent.addChild("#", "Are you sure you wish to unload " + request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH) + '?');
-			HTMLNode unloadForm = infoboxContent.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
-			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			HTMLNode unloadForm = 
+				ctx.addFormChild(infoboxContent, "/plugins/", "unloadPluginConfirmForm");
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unloadconfirm", request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH) });
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", "Unload" });
@@ -202,19 +202,16 @@ public class PproxyToadlet extends Toadlet {
 						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Visit" });
 					}
-					HTMLNode unloadForm = actionCell.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
-					unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+					HTMLNode unloadForm = ctx.addFormChild(actionCell, ".", "unloadPluginForm");
 					unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unload", pi.getThreadName() });
 					unloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Unload" });
-					HTMLNode reloadForm = actionCell.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
-					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+					HTMLNode reloadForm = ctx.addFormChild(actionCell, ".", "reloadPluginForm");
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reload", pi.getThreadName() });
 					reloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Reload" });
 				}
 			}
 			
-			HTMLNode addForm = infoboxContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
-			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			HTMLNode addForm = ctx.addFormChild(infoboxContent, ".", "addPluginForm");
 			HTMLNode loadDiv = addForm.addChild("div");
 			loadDiv.addChild("#", "Load plugin: ");
 			loadDiv.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "load", "40" });

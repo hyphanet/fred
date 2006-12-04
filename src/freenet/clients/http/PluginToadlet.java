@@ -218,19 +218,17 @@ public class PluginToadlet extends Toadlet {
 			} else {
 				tableRow.addChild("td");
 			}
-			HTMLNode reloadForm = tableRow.addChild("td").addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+			HTMLNode reloadForm = context.addFormChild(tableRow, ".", "pluginReloadForm"); 
 			reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "action", "reload" });
 			reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginName", internalName });
 			reloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Reload" });
-			reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
-			HTMLNode unloadForm = tableRow.addChild("td").addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+			HTMLNode unloadForm = context.addFormChild(tableRow, ".", "pluginUnloadForm");
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "action", "unload" });
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginName", internalName });
 			unloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Unload" });
-			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 		}
 
-		contentNode.addChild(createAddPluginBox());
+		contentNode.addChild(createAddPluginBox(context));
 
 		StringBuffer pageBuffer = new StringBuffer();
 		pageNode.generate(pageBuffer);
@@ -273,12 +271,11 @@ public class PluginToadlet extends Toadlet {
 	 * @param outputBuffer
 	 *            The StringBuffer to append the HTML code to
 	 */
-	private HTMLNode createAddPluginBox() {
+	private HTMLNode createAddPluginBox(ToadletContext ctx) {
 		HTMLNode addPluginBox = new HTMLNode("div", "class", "infobox");
 		addPluginBox.addChild("div", "class", "infobox-header", "Add a plugin");
-		HTMLNode addForm = addPluginBox.addChild("div", "class", "infobox-content").addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+		HTMLNode addForm = ctx.addFormChild(addPluginBox.addChild("div", "class", "infobox-content"), ".", "addPluginBox");
 		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "action", "add" });
-		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 		addForm.addChild("input", new String[] { "type", "name", "value", "size" }, new String[] { "text", "pluginName", "", "40" });
 		addForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Load plugin" });
 		return addPluginBox;

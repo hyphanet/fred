@@ -13,7 +13,9 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.TimeZone;
 
+import freenet.node.NodeClientCore;
 import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.URIPreEncoder;
@@ -36,6 +38,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private final OutputStream sockOutputStream;
 	private final PageMaker pagemaker;
 	private final BucketFactory bf;
+	private final ToadletContainer container;
 	
 	/** Is the context closed? If so, don't allow any more writes. This is because there
 	 * may be later requests.
@@ -43,12 +46,13 @@ public class ToadletContextImpl implements ToadletContext {
 	private boolean closed;
 	private boolean shouldDisconnect;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable headers, String CSSName, BucketFactory bf, PageMaker pageMaker) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable headers, String CSSName, BucketFactory bf, PageMaker pageMaker, ToadletContainer container) throws IOException {
 		this.headers = headers;
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();
 		this.bf = bf;
 		this.pagemaker = pageMaker;
+		this.container = container;
 	}
 	
 	private void close() {
@@ -238,7 +242,7 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				boolean shouldDisconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers);
 				
-				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, container.getCSSName(), bf, pageMaker);
+				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, container.getCSSName(), bf, pageMaker, container);
 				ctx.shouldDisconnect = shouldDisconnect;
 				
 				/*
@@ -379,5 +383,15 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public BucketFactory getBucketFactory() {
 		return bf;
+	}
+
+	public HTMLNode addFormChild(HTMLNode parentNode, String target, String name) {
+		HTMLNode formNode =
+			parentNode.addChild("form", new String[] { "action", "method", "enctype", "id", "name", "accept-charset" }, 
+					new String[] { target, "post", "multipart/form-data", name, name, "utf-8"} );
+		formNode.addChild("input", new String[] { "type", "name", "value" }, 
+				new String[] { "hidden", "formPassword", container.getFormPassword() });
+		
+		return formNode;
 	}
 }

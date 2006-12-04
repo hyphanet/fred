@@ -2,6 +2,7 @@ package freenet.clients.http;
 
 import java.io.IOException;
 
+import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;
 import freenet.support.io.BucketFactory;
@@ -52,5 +53,15 @@ public interface ToadletContext {
 	BucketFactory getBucketFactory();
 	
 	MultiValueTable getHeaders();
+
+	/**
+	 * Add a form node to an HTMLNode under construction. This will have the correct enctype and 
+	 * formPassword set already, so all the caller needs to do is add its specific fields.
+	 * @param parentNode The parent HTMLNode.
+	 * @param target Where the form should be POSTed to.
+	 * @param id HTML name for the form for stylesheet/script access. Will be added as both id and name.
+	 * @return The form HTMLNode.
+	 */
+	HTMLNode addFormChild(HTMLNode parentNode, String target, String id);
 }
 
