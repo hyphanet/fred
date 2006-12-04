@@ -216,6 +216,15 @@ public class FreenetURI implements Cloneable{
 			throw new MalformedURLException("No URI specified");
 		}
 		
+		int percent = URI.indexOf('%');
+		int slash = URI.indexOf('/');
+		if((percent>-1) && ((percent<slash) || (slash<0))){ /* likely to be a copy/pasted url from a browser */
+			try{
+				URI=URLDecoder.decode(URI);
+			}catch(URLEncodedFormatException e){
+			}
+		}
+		
 		// check scheme
 		int colon = URI.indexOf(':');
 		if ((colon != -1)
@@ -241,15 +250,6 @@ public class FreenetURI implements Cloneable{
 			if (s != null)
 				sv.addElement(s);
 			URI = URI.substring(0, slash2);
-		}
-		
-		int percent = URI.indexOf('%');
-		int slash = URI.indexOf('/');
-		if((percent>-1) && ((percent<slash) || (slash<0))){ /* likely to be a copy/pasted url from a browser */
-			try{
-				URI=URLDecoder.decode(URI);
-			}catch(URLEncodedFormatException e){
-			}
 		}
 		
 		// sv is *backwards*
