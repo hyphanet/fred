@@ -510,6 +510,7 @@ public class HTTPRequest {
 					}
 				} else if (hdrname.equalsIgnoreCase("Content-Type")) {
 					contentType = lineparts[1].trim();
+					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Parsed type: "+contentType);
 				} else {
 					
 				}
