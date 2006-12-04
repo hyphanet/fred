@@ -483,7 +483,7 @@ public class HTTPRequest {
 			filename = null;
 			contentType = null;
 			// chomp headers
-			while( (line = lis.readLine(200, 200, false)) /* see above */ != null) {
+			while( (line = lis.readLine(200, 200, true)) /* should be UTF-8 as we told the browser to send UTF-8 */ != null) {
 				if (line.length() == 0) break;
 				
 				String[] lineparts = line.split(":");
@@ -550,6 +550,8 @@ public class HTTPRequest {
 			bbos.close();
 			
 			parts.put(name, filedata);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Name = "+name+" length = "+filedata.size()+" filename = "+filename);
 			if (filename != null) {
 				uploadedFiles.put(name, new File(filename, contentType, filedata));
 			}
