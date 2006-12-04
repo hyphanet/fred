@@ -1693,7 +1693,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         	}
         }        
         if(node.testnetEnabled != Fields.stringToBool(fs.get("testnet"), true)) {
-        	String err = "Preventing connection to node "+detectedPeer+" - peer.testnet="+!node.testnetEnabled+'(' +Fields.stringToBool(fs.get("testnet"), true)+") but node.testnet="+node.testnetEnabled;
+        	String err = "Preventing connection to node "+detectedPeer+" - peer.testnet="+!node.testnetEnabled+'(' +fs.get("testnet")+") but node.testnet="+node.testnetEnabled;
         	Logger.error(this, err);
         	throw new FSParseException(err);
         }
