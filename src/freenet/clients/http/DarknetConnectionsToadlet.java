@@ -84,7 +84,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}else if(sortBy.equals("address")){
 						result = firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
 					}else if(sortBy.equals("location")){
-						result = (int) firstNode.getLocation() - (int) secondNode.getLocation();
+						result = (firstNode.getLocation() - secondNode.getLocation()) < 0 ? -1 : 1; // Shouldn't be equal anyway
 					}else if(sortBy.equals("version")){
 						result = Version.getArbitraryBuildNumber(firstNode.getVersion()) - Version.getArbitraryBuildNumber(secondNode.getVersion());
 					}else if(sortBy.equals("privnote")){
