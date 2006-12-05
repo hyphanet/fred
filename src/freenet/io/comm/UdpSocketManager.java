@@ -38,10 +38,10 @@ public class UdpSocketManager extends Thread {
 	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.22 2005/08/25 17:28:19 amphibian Exp $";
 	private static boolean logMINOR; 
 	private Dispatcher _dispatcher;
-	private DatagramSocket _sock;
+	private final DatagramSocket _sock;
 	/** _filters serves as lock for both */
-	private LinkedList _filters = new LinkedList();
-	private LinkedList _unclaimed = new LinkedList();
+	private final LinkedList _filters = new LinkedList();
+	private final LinkedList _unclaimed = new LinkedList();
 	private int _dropProbability;
 	private LowLevelFilter lowLevelFilter;
 	/** RNG for debugging, used with _dropProbability.
@@ -682,9 +682,7 @@ public class UdpSocketManager extends Thread {
 	 * @return the number of received messages that are currently unclaimed
 	 */
 	public int getUnclaimedFIFOSize() {
-		synchronized(_filters) { // FIXME unnecessary synch?
-			return _unclaimed.size();
-		}
+		return _unclaimed.size();
 	}
 	
 	public Map getUnclaimedFIFOMessageCounts() {
