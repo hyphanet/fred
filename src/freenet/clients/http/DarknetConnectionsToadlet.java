@@ -98,7 +98,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				if(!isSet){
 					int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
 					if (statusDifference != 0) 
-						result = statusDifference;
+						result = (statusDifference < 0 ? -1 : 1);
 					else
 						result = firstNode.getName().compareToIgnoreCase(secondNode.getName());
 				}
