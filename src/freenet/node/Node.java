@@ -888,6 +888,7 @@ public class Node {
 							inputLimitDefault = true;
 							ibwLimit = (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick()) * 4;
 						} else {
+							inputLimitDefault = false;
 							ibwLimit = ibwLimit * 4 / 5; // fudge factor; take into account non-request activity
 						}
 						if(ibwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
