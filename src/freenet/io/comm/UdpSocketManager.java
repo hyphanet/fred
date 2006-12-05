@@ -673,8 +673,9 @@ public class UdpSocketManager extends Thread {
      * @return The maximum packet size supported by this SocketManager.
      */
     public int getMaxPacketSize() {
-    	return 1476-28; // GRE (1476) minus headers (20 IP 8 UDP)
-    	// Note that some auth packets can be over 1400 bytes.
+    	return 1472-28; // officially GRE is 1476 and PPPoE is 1492.
+    	// unofficially, PPPoE is often 1472 (seen in the wild). So use that.
+    	// Minus 28 bytes for UDP/IP header.
     }
 
 	/**
