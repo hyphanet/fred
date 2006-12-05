@@ -27,6 +27,7 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.PeerNode;
 import freenet.node.PeerNodeStatus;
+import freenet.node.Version;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -84,9 +85,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						result = firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
 					}else if(sortBy.equals("location")){
 						double diff = firstNode.getLocation() - secondNode.getLocation();
-						result = diff > 0 ? -1 : 1; // It shouldn't ever be equal anyway
+						result = diff < 0 ? -1 : 1; // It shouldn't ever be equal anyway
 					}else if(sortBy.equals("version")){
-						result = firstNode.getVersion().compareTo(secondNode.getVersion());
+						int diff = Version.getArbitraryBuildNumber(firstNode.getVersion()) - Version.getArbitraryBuildNumber(secondNode.getVersion());
+						result = (diff == 0 ? 0 : (diff < 0 ? -1 : 1));
 					}else if(sortBy.equals("privnote")){
 						result = firstNode.getPrivateDarknetCommentNote().compareTo(secondNode.getPrivateDarknetCommentNote());
 					}else
@@ -361,20 +363,20 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				HTMLNode peerTable = peerForm.addChild("table", "class", "darknet_connections");
 				HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
 				peerTableHeaderRow.addChild("th");
-				peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=status&reversed" : "?sortBy=status")).addChild("#", "Status");
-				peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=name&reversed" : "?sortBy=name")).addChild("span", new String[] { "title", "style" }, new String[] { "The node's name. Click on the name link to send the node a N2NTM (Node To Node Text Message)", "border-bottom: 1px dotted; cursor: help;" }, "Name");
+				peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=status" : "?sortBy=status&reversed")).addChild("#", "Status");
+				peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=name" : "?sortBy=name&reversed")).addChild("span", new String[] { "title", "style" }, new String[] { "The node's name. Click on the name link to send the node a N2NTM (Node To Node Text Message)", "border-bottom: 1px dotted; cursor: help;" }, "Name");
 				if (advancedEnabled) {
-					peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=address&reversed" : "?sortBy=address")).addChild("span", new String[] { "title", "style" }, new String[] { "The node's network address as IP:Port", "border-bottom: 1px dotted; cursor: help;" }, "Address");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=address" : "?sortBy=address&reversed")).addChild("span", new String[] { "title", "style" }, new String[] { "The node's network address as IP:Port", "border-bottom: 1px dotted; cursor: help;" }, "Address");
 				}
-				peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=version&reversed" : "?sortBy=version")).addChild("#", "Version");
+				peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=version" : "?sortBy=version&reversed")).addChild("#", "Version");
 				if (advancedEnabled) {
-					peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=location&reversed" : "?sortBy=location")).addChild("#", "Location");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=location" : "?sortBy=location&reversed")).addChild("#", "Location");
 					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
 
 					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Probability of the node rejecting a request due to overload or causing a timeout.", "border-bottom: 1px dotted; cursor: help;" }, "Overload Probability");
 				}
 				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How long since the node was connected or last seen", "border-bottom: 1px dotted; cursor: help;" }, "Connected\u00a0/\u00a0Idle");
-				peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=privnote&reversed" : "?sortBy=privnote")).addChild("span", new String[] { "title", "style" }, new String[] { "A private note concerning this peer", "border-bottom: 1px dotted; cursor: help;" }, "Private Note");
+				peerTableHeaderRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=privnote" : "?sortBy=privnote&reversed")).addChild("span", new String[] { "title", "style" }, new String[] { "A private note concerning this peer", "border-bottom: 1px dotted; cursor: help;" }, "Private Note");
 
 				if(advancedEnabled) {
 					peerTableHeaderRow.addChild("th", "%\u00a0Time Routable");
