@@ -102,10 +102,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 
 				if(request.isParameterSet("reversed")){
-					isReverted = true;
+					isReversed = true;
 					return (result == 0 ? 0 : (result == 1 ? -1 : 1));
 				}else{
-					isReverted = false;
+					isReversed = false;
 					return result;
 				}
 			}
