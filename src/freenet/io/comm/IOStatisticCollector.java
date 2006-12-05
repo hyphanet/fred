@@ -4,7 +4,7 @@
 package freenet.io.comm;
 
 import java.util.Date;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Iterator;
 
 import freenet.support.Logger;
@@ -18,12 +18,12 @@ public class IOStatisticCollector {
 	private static IOStatisticCollector _currentSC;
 	private long totalbytesin;
 	private long totalbytesout;
-	private final HashMap targets;
+	private final LinkedHashMap targets;
 	
 	private IOStatisticCollector() {
 		// Only I should be able to create myself
 		_currentSC = this;
-		targets = new HashMap();
+		targets = new LinkedHashMap();
 		// TODO: only for testing!!!!
 		// This should only happen once
 		//SNMPAgent.create();
