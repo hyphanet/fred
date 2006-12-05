@@ -84,16 +84,15 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}else if(sortBy.equals("address")){
 						result = firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
 					}else if(sortBy.equals("location")){
-						double diff = firstNode.getLocation() - secondNode.getLocation();
-						result = diff < 0 ? -1 : 1; // It shouldn't ever be equal anyway
+						result = (int) firstNode.getLocation() - (int) secondNode.getLocation();
 					}else if(sortBy.equals("version")){
-						int diff = Version.getArbitraryBuildNumber(firstNode.getVersion()) - Version.getArbitraryBuildNumber(secondNode.getVersion());
-						result = (diff == 0 ? 0 : (diff < 0 ? -1 : 1));
+						result = Version.getArbitraryBuildNumber(firstNode.getVersion()) - Version.getArbitraryBuildNumber(secondNode.getVersion());
 					}else if(sortBy.equals("privnote")){
-						result = firstNode.getPrivateDarknetCommentNote().compareTo(secondNode.getPrivateDarknetCommentNote());
+						result = firstNode.getPrivateDarknetCommentNote().compareToIgnoreCase(secondNode.getPrivateDarknetCommentNote());
 					}else
 						isSet=false;
-				}
+				}else
+					isSet=false;
 				
 				if(!isSet){
 					int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
@@ -103,12 +102,14 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						result = firstNode.getName().compareToIgnoreCase(secondNode.getName());
 				}
 
-				if(request.isParameterSet("reversed")){
+				if(result == 0){
+					return 0;
+				}else if(request.isParameterSet("reversed")){
 					isReversed = true;
-					return (result == 0 ? 0 : (result == 1 ? -1 : 1));
+					return result > 0 ? -1 : 1;
 				}else{
 					isReversed = false;
-					return result;
+					return result < 0 ? -1 : 1;
 				}
 			}
 		});
