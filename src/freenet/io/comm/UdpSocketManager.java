@@ -682,7 +682,9 @@ public class UdpSocketManager extends Thread {
 	 * @return the number of received messages that are currently unclaimed
 	 */
 	public int getUnclaimedFIFOSize() {
-		return _unclaimed.size();
+		synchronized (_filters){
+			return _unclaimed.size();
+		}
 	}
 	
 	public Map getUnclaimedFIFOMessageCounts() {
