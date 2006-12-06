@@ -13,7 +13,6 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.TimeZone;
 
-import freenet.node.NodeClientCore;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;

@@ -60,6 +60,8 @@ public class QueueToadlet extends Toadlet {
 	private NodeClientCore core;
 	final FCPServer fcp;
 	
+	private boolean isReversed = false;
+	
 	public QueueToadlet(NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client) {
 		super(client);
 		this.core = core;
@@ -292,8 +294,8 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			return;
 		}
 		
-		HTTPRequest request = new HTTPRequest(uri, null, ctx);
-		String requestPath = request.getPath().substring("/queue/".length());
+		final HTTPRequest request = new HTTPRequest(uri, null, ctx);
+		final String requestPath = request.getPath().substring("/queue/".length());
 		
 		if (requestPath.length() > 0) {
 			/* okay, there is something in the path, check it. */
@@ -318,6 +320,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				}
 			} catch (MalformedURLException mue1) {
 			}
+			return;
 		}
 		
 		PageMaker pageMaker = ctx.getPageMaker();
@@ -391,28 +394,58 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			}
 		}
 		
-		Comparator identifierComparator = new Comparator() {
+		Comparator jobComparator = new Comparator() {
 			public int compare(Object first, Object second) {
 				ClientRequest firstRequest = (ClientRequest) first;
 				ClientRequest secondRequest = (ClientRequest) second;
-				short firstPrio = firstRequest.getPriority();
-				short secondPrio = secondRequest.getPriority();
-				if(firstPrio > secondPrio) return 1;
-				if(secondPrio > firstPrio) return -1;
-				return firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
+
+				int result = 0;
+				boolean isSet = true;
+				
+				if(request.isParameterSet("sortBy")){
+					final String sortBy = request.getParam("sortBy"); 
+
+					if(sortBy.equals("id")){
+						result = firstRequest.getIdentifier().compareToIgnoreCase(secondRequest.getIdentifier());
+					}else if(sortBy.equals("size")){
+						result = (firstRequest.getTotalBlocks() - secondRequest.getTotalBlocks()) < 0 ? -1 : 1;
+					}else if(sortBy.equals("progress")){
+						result = firstRequest.getSuccessFraction() - secondRequest.getSuccessFraction() < 0 ? -1 : 1;
+					}else
+						isSet=false;
+				}else
+					isSet=false;
+				
+				if(!isSet){
+					int priorityDifference =  firstRequest.getPriority() - secondRequest.getPriority(); 
+					if (priorityDifference != 0) 
+						result = (priorityDifference < 0 ? -1 : 1);
+					else
+						result = firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
+				}
+
+				if(result == 0){
+					return 0;
+				}else if(request.isParameterSet("reversed")){
+					isReversed = true;
+					return result > 0 ? -1 : 1;
+				}else{
+					isReversed = false;
+					return result < 0 ? -1 : 1;
+				}
 			}
 		};
 		
-		Collections.sort(completedDownloadToDisk, identifierComparator);
-		Collections.sort(completedDownloadToTemp, identifierComparator);
-		Collections.sort(completedUpload, identifierComparator);
-		Collections.sort(completedDirUpload, identifierComparator);
-		Collections.sort(failedDownload, identifierComparator);
-		Collections.sort(failedUpload, identifierComparator);
-		Collections.sort(failedDirUpload, identifierComparator);
-		Collections.sort(uncompletedDownload, identifierComparator);
-		Collections.sort(uncompletedUpload, identifierComparator);
-		Collections.sort(uncompletedDirUpload, identifierComparator);
+		Collections.sort(completedDownloadToDisk, jobComparator);
+		Collections.sort(completedDownloadToTemp, jobComparator);
+		Collections.sort(completedUpload, jobComparator);
+		Collections.sort(completedDirUpload, jobComparator);
+		Collections.sort(failedDownload, jobComparator);
+		Collections.sort(failedUpload, jobComparator);
+		Collections.sort(failedDirUpload, jobComparator);
+		Collections.sort(uncompletedDownload, jobComparator);
+		Collections.sort(uncompletedUpload, jobComparator);
+		Collections.sort(uncompletedDirUpload, jobComparator);
 		
 		HTMLNode pageNode = pageMaker.getPageNode("(" + (uncompletedDirUpload.size() + uncompletedDownload.size()
 				+ uncompletedUpload.size()) + '/' + (failedDirUpload.size() + failedDownload.size() + failedUpload.size()) + '/'
@@ -799,9 +832,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
 			int column = columns[columnIndex];
 			if (column == LIST_IDENTIFIER) {
-				headerRow.addChild("th", "Identifier");
+				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=id" : "?sortBy=id&reversed")).addChild("#", "Identifier");
 			} else if (column == LIST_SIZE) {
-				headerRow.addChild("th", "Size");
+				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=size" : "?sortBy=size&reversed")).addChild("#", "Size");
 			} else if (column == LIST_DOWNLOAD) {
 				headerRow.addChild("th", "Download");
 			} else if (column == LIST_MIME_TYPE) {
@@ -813,13 +846,13 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			} else if (column == LIST_FILENAME) {
 				headerRow.addChild("th", "Filename");
 			} else if (column == LIST_PRIORITY) {
-				headerRow.addChild("th", "Priority");
+				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=priority" : "?sortBy=priority&reversed")).addChild("#", "Priority");
 			} else if (column == LIST_FILES) {
 				headerRow.addChild("th", "Files");
 			} else if (column == LIST_TOTAL_SIZE) {
 				headerRow.addChild("th", "Total Size");
 			} else if (column == LIST_PROGRESS) {
-				headerRow.addChild("th", "Progress");
+				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=progress" : "?sortBy=progress&reversed")).addChild("#", "Progress");
 			} else if (column == LIST_REASON) {
 				headerRow.addChild("th", "Reason");
 			}

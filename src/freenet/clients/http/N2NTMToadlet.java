@@ -21,7 +21,6 @@ import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
-import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Bucket;
 
