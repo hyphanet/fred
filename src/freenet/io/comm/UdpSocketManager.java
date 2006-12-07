@@ -673,9 +673,10 @@ public class UdpSocketManager extends Thread {
      * @return The maximum packet size supported by this SocketManager.
      */
     public int getMaxPacketSize() {
-    	return 1472-28; // officially GRE is 1476 and PPPoE is 1492.
-    	// unofficially, PPPoE is often 1472 (seen in the wild). Also PPPoATM is sometimes 1472. 
-    	// So use that. Minus 28 bytes for UDP/IP header.
+    	return 1400-28; // AOL and CompuServe use 1400 MTU
+    	// officially GRE is 1476 and PPPoE is 1492.
+    	// unofficially, PPPoE is often 1472 (seen in the wild). Also PPPoATM is sometimes 1472.
+    	// UDP/IP header is 28 bytes.
     }
 
 	/**
