@@ -32,7 +32,8 @@ public interface FilterCallback {
 	 * @param method The form sending method. Normally GET or POST.
 	 * @param action The URI to send the form to.
 	 * @return The new action URI, or null if the form is not allowed.
+	 * @throws CommentException 
 	 */
-	public String processForm(String method, String action);
+	public String processForm(String method, String action) throws CommentException;
 	
 }

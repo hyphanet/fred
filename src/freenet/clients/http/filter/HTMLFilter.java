@@ -1570,7 +1570,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			String method = (String) h.get("method");
 			String action = (String) h.get("action");
-			String finalAction = pc.cb.processForm(method, action);
+			String finalAction;
+			try {
+				finalAction = pc.cb.processForm(method, action);
+			} catch (CommentException e) {
+	            pc.writeAfterTag.append("<!-- ").append(HTMLEncoder.encode(e.toString())).append(" -->");
+				return null;
+			}
 			if(finalAction == null) return null;
 			hn.put("method", method);
 			hn.put("action", finalAction);

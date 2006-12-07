@@ -216,13 +216,16 @@ public class GenericReadFilterCallback implements FilterCallback {
 			cb.onText(s, type, baseURI);
 	}
 
+	static final String PLUGINS_PREFIX = "/plugins/";
+	
 	/**
 	 * Process a form.
 	 * Current strategy:
 	 * - Both POST and GET forms are allowed to /
 	 * Anything that is hazardous should be protected through formPassword.
+	 * @throws CommentException If the form element could not be parsed and the user should be told.
 	 */
-	public String processForm(String method, String action) {
+	public String processForm(String method, String action) throws CommentException {
 		if(action == null) return null;
 		method = method.toUpperCase();
 		if(!(method.equals("POST") || method.equals("GET"))) 
@@ -233,6 +236,21 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// FIXME what about /queue/ /darknet/ etc?
 		if(action.equals("/")) 
 			return action;
+		try {
+			URI uri = URIPreEncoder.encodeURI(action);
+			if(uri.getScheme() != null || uri.getHost() != null || uri.getPort() != -1 || uri.getUserInfo() != null)
+				throw new CommentException("Invalid form URI had scheme, user-info, host or port");
+			String path = uri.getPath();
+			if(path.startsWith(PLUGINS_PREFIX)) {
+				String after = path.substring(PLUGINS_PREFIX.length());
+				if(after.indexOf("/../") > -1)
+					throw new CommentException("Attempt to escape directory structure");
+				if(after.matches("[A-Za-z0-9\\.]+"))
+					return uri.toASCIIString();
+			}
+		} catch (URISyntaxException e) {
+			throw new CommentException("Could not encode form URI");
+		}
 		// Otherwise disallow.
 		return null;
 	}
