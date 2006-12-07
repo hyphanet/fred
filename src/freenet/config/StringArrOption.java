@@ -28,7 +28,9 @@ public class StringArrOption extends Option {
 	/** Get the current value. This is the value in use if we have finished
 	 * initialization, otherwise it is the value set at startup (possibly the default). */
 	public String[] getValue() {
-		return getValueString().split(delimiter);
+		String[] values = getValueString().split(delimiter);
+		if(values.length == 1 && values[0].length() == 0) return new String[0]; 
+		return values;
 	}
 
 	public void setValue(String val) throws InvalidConfigValueException {
@@ -73,6 +75,7 @@ public class StringArrOption extends Option {
 	}
 
 	public boolean isDefault() {
+		getValueString();
 		return currentValue == null ? false : currentValue.equals(defaultValue);
 	}
 	

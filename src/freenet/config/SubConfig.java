@@ -155,6 +155,8 @@ public class SubConfig implements Comparable {
 	 */
 	public void finishedInitialization() {
 		hasInitialized = true;
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Finished initialization on "+this+" ("+prefix+')');
 	}
 
 	/**
@@ -188,12 +190,23 @@ public class SubConfig implements Comparable {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		Set entrySet = map.entrySet();
 		Iterator i = entrySet.iterator();
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR)
+			Logger.minor(this, "Prefix="+prefix);
 		while(i.hasNext()) {
 			Map.Entry entry = (Map.Entry) i.next();
 			String key = (String) entry.getKey();
 			Option o = (Option) entry.getValue();
-			if(!withDefaults && o.isDefault() && !o.forceWrite) continue;
+//			if(logMINOR)
+//				Logger.minor(this, "Key="+key+" value="+o.getValueString()+" default="+o.isDefault());
+			if((!withDefaults) && o.isDefault() && (!o.forceWrite)) {
+				if(logMINOR)
+					Logger.minor(this, "Skipping "+key+" - "+o.isDefault());
+				continue;
+			}
 			fs.put(key, o.getValueString());
+			if(logMINOR)
+				Logger.minor(this, "Key="+prefix+'.'+key+" value="+o.getValueString());
 		}
 		return fs;
 	}
