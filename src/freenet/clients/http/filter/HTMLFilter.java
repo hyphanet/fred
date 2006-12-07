@@ -955,8 +955,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"name",
 					"enctype",
 					"accept",
-					"accept-charset",
-					"target" },
+					"accept-charset" },
 				new String[] { "action" },
 				new String[] { "onsubmit", "onreset" }));
 		allowedTagsVerifiers.put(
