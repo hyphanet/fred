@@ -215,5 +215,26 @@ public class GenericReadFilterCallback implements FilterCallback {
 		if(cb != null)
 			cb.onText(s, type, baseURI);
 	}
+
+	/**
+	 * Process a form.
+	 * Current strategy:
+	 * - Both POST and GET forms are allowed to /
+	 * Anything that is hazardous should be protected through formPassword.
+	 */
+	public String processForm(String method, String action) {
+		if(action == null) return null;
+		method = method.toUpperCase();
+		if(!(method.equals("POST") || method.equals("GET"))) 
+			return null; // no irregular form sending methods
+		// Everything is allowed to / - updating the node, shutting it down, everything.
+		// Why? Becuase it's all protected by formPassword anyway.
+		// FIXME whitelist? Most things are okay if the user is prompted for a confirmation...
+		// FIXME what about /queue/ /darknet/ etc?
+		if(action.equals("/")) 
+			return action;
+		// Otherwise disallow.
+		return null;
+	}
 	
 }

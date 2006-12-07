@@ -951,12 +951,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			new FormTagVerifier(
 				"form",
 				new String[] {
-					"method",
-					"name",
-					"enctype",
-					"accept",
-					"accept-charset" },
-				new String[] { "action" },
+					"name" }, // FIXME add a whitelist filter for accept
+					// All other attributes are handled by FormTagVerifier.
+				new String[] { },
 				new String[] { "onsubmit", "onreset" }));
 		allowedTagsVerifiers.put(
 			"input",
@@ -1571,9 +1568,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
-			// Action has been previously sanitized, we force it :p
-			hn.put("action","/");
-			
+			String method = (String) h.get("method");
+			String action = (String) h.get("action");
+			String finalAction = pc.cb.processForm(method, action);
+			if(finalAction == null) return null;
+			hn.put("method", method);
+			hn.put("action", finalAction);
+			// Force enctype and accept-charset to acceptable values.
+			hn.put("enctype", "multipart/form-data");
+			hn.put("accept-charset", "UTF-8");
 			return hn;
 		}
 	}

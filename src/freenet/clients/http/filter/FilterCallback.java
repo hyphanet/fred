@@ -15,16 +15,6 @@ public interface FilterCallback {
 	public String processURI(String uri, String overrideType) throws CommentException;
 
 	/**
-	 * Should we allow GET forms?
-	 */
-	public boolean allowGetForms();
-	
-	/**
-	 * Should we allow POST forms?
-	 */
-	public boolean allowPostForms();
-
-	/**
 	 * Process a base URI in the page. Not only is this filtered, it affects all
 	 * relative uri's on the page.
 	 */
@@ -36,5 +26,13 @@ public interface FilterCallback {
 	 *    (for example: "title")
 	 */
 	public void onText(String s, String type);
+
+	/**
+	 * Process a form on the page.
+	 * @param method The form sending method. Normally GET or POST.
+	 * @param action The URI to send the form to.
+	 * @return The new action URI, or null if the form is not allowed.
+	 */
+	public String processForm(String method, String action);
 	
 }

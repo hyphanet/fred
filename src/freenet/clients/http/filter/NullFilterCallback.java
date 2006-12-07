@@ -5,14 +5,6 @@ package freenet.clients.http.filter;
 
 public class NullFilterCallback implements FilterCallback {
 
-	public boolean allowGetForms() {
-		return false;
-	}
-
-	public boolean allowPostForms() {
-		return false;
-	}
-
 	public String processURI(String uri, String overrideType) {
 		return null;
 	}
@@ -23,6 +15,10 @@ public class NullFilterCallback implements FilterCallback {
 
 	public void onText(String s, String type) {
 		// Do nothing
+	}
+
+	public String processForm(String method, String action) {
+		return null;
 	}
 
 }
