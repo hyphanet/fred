@@ -79,6 +79,6 @@ public abstract class Option {
 	 */
 	public abstract boolean isDefault();
 
-	/** Set to the default */
+	/** Set to the default. Don't use after completed initialization, as this does not call the callback. FIXME fix this? */
 	public abstract void setDefault();
 }
