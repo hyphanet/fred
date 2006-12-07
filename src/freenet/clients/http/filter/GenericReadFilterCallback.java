@@ -165,6 +165,8 @@ public class GenericReadFilterCallback implements FilterCallback {
 					u.getFragment());
 			if(!noRelative)
 				uri = baseURI.relativize(uri);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Returning "+uri.toASCIIString()+" from "+path+" from baseURI="+baseURI);
 			return uri.toASCIIString();
 		} catch (URISyntaxException e) {
 			Logger.error(this, "Could not parse own URI: path="+path+", typeOverride="+typeOverride+", frag="+u.getFragment()+" : "+e, e);

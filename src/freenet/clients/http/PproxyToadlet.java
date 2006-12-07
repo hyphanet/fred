@@ -133,19 +133,14 @@ public class PproxyToadlet extends Toadlet {
 			} else {
 				// split path into plugin class name and 'data' path for plugin
 				int to = path.indexOf("/");
-				String plugin, data;
+				String plugin;
 				if (to == -1) {
 					plugin = path;
-					data = "";
 				} else {
 					plugin = path.substring(0, to);
-					data = path.substring(to + 1);
 				}
 				
-				//pm.handleHTTPGet(plugin, data);
-				
-				// create a new request with the 'data' path and pass it to the plugin 
-				request = new HTTPRequest(data, uri.getRawQuery());
+				// Plugin may need to know where it was accessed from, so it can e.g. produce relative URLs.
 				//writeReply(ctx, 200, "text/html", "OK", mkPage("plugin", pm.handleHTTPGet(plugin, data)));
 				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPGet(plugin, request));
 
