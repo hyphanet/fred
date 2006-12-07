@@ -760,6 +760,7 @@ public class Node {
 		});
 		if(lastVersion <= 954)
 			nodeConfig.fixOldDefault("aggressiveGC", "250");
+		aggressiveGCModificator = nodeConfig.getInt("aggressiveGC");
 		
 		//Memory Checking thread
 		// TODO: proper config. callbacks : maybe we shoudln't start the thread at all if it's not worthy
