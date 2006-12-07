@@ -68,13 +68,14 @@ public class PluginManager {
         });
 		
 		String fns[] = pmconfig.getStringArr("loadplugin");
-		if (fns != null)
+		if (fns != null) {
 			for (int i = 0 ; i < fns.length ; i++) {
 				//System.err.println("Load: " + StringArrOption.decode(fns[i]));
 				startPlugin(StringArrOption.decode(fns[i]), false);
 			}
+		}
 			
-			pmconfig.finishedInitialization();
+		pmconfig.finishedInitialization();
 		/*System.err.println("=================================");
 		pmconfig.finishedInitialization();
 		fns = pmconfig.getStringArr("loadplugin");
