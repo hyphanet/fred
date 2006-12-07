@@ -69,6 +69,8 @@ public class PluginManager {
 						optionValue.append(StringArrOption.encode(plugin.getClass().getName()));
 					}
 				}
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Plugin list: "+optionValue.toString());
 				return optionValue.toString();
 			};
 
@@ -95,7 +97,8 @@ public class PluginManager {
 				String pluginName = StringArrOption.decode(loadedPluginNames[pluginIndex]);
 				try {
 					addPlugin(pluginName, false);
-				} catch (IllegalArgumentException iae1) {
+				} catch (Throwable t) {
+					Logger.error(this, "Failed to load plugin "+pluginName+" : "+t, t);
 				}
 			}
 		}
@@ -135,12 +138,17 @@ public class PluginManager {
 	 * @param pluginName
 	 *            The name of the plugin
 	 */
-	public void addPlugin(String pluginName, boolean store) throws IllegalArgumentException {
+	public void addPlugin(String pluginName, final boolean store) throws IllegalArgumentException {
+		if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "Loading plugin "+pluginName+(store?"" : " (don't store afterwards)"));
 		final Plugin newPlugin = createPlugin(pluginName);
 		if (newPlugin == null) {
 			throw new IllegalArgumentException();
 		}
 		newPlugin.setPluginManager(this);
+		synchronized (syncObject) {
+			plugins.add(newPlugin);
+		}
 		node.ps.queueTimedJob(new Runnable() {
 			public void run() {
 				try{
@@ -148,14 +156,11 @@ public class PluginManager {
 						Thread.sleep(1000);
 				}catch (InterruptedException e) {}
 				newPlugin.startPlugin();
+				if(store)
+					node.clientCore.storeConfig();
 			}
 		}, 0);
 		
-		synchronized (syncObject) {
-			plugins.add(newPlugin);
-		}
-		if(store)
-			node.clientCore.storeConfig();
 	}
 
 	/**
