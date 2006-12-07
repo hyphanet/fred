@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
@@ -15,6 +16,9 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.clients.http.BookmarkManager;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.clients.http.filter.FilterCallback;
+import freenet.clients.http.filter.FoundURICallback;
+import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
@@ -788,4 +792,7 @@ public class NodeClientCore {
 		return node.getMyName();
 	}
 
+	public FilterCallback createFilterCallback(URI uri, FoundURICallback cb) {
+		return new GenericReadFilterCallback(uri, cb);
+	}
 }

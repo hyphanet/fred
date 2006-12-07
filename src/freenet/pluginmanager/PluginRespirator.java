@@ -1,8 +1,13 @@
 package freenet.pluginmanager;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.filter.FilterCallback;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
+import freenet.support.URIPreEncoder;
 
 public class PluginRespirator {
 	private HighLevelSimpleClient hlsc = null;
@@ -20,5 +25,13 @@ public class PluginRespirator {
 	
 	public Node getNode(){
 		return node;
+	}
+
+	public FilterCallback makeFilterCallback(String path) {
+		try {
+			return node.clientCore.createFilterCallback(URIPreEncoder.encodeURI(path), null);
+		} catch (URISyntaxException e) {
+			throw new Error(e);
+		}
 	}
 }
