@@ -104,6 +104,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// Try as an absolute URI
 		
 		String rpath = uri.getPath();
+		
 		if(rpath != null) {
 			if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): "+rpath);
 			
@@ -118,6 +119,9 @@ public class GenericReadFilterCallback implements FilterCallback {
 				// Not a FreenetURI
 				if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);
 				reason = "Malformed URL (absolute): "+e.getMessage();
+				if(e.getMessage() == null) {
+					reason = "Could not be parsed as a Freenet URI";
+				}
 			}
 		}
 		
@@ -138,7 +142,10 @@ public class GenericReadFilterCallback implements FilterCallback {
 			if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
 			if(reason.length() > 0)
 				reason += " , ";
-			reason += "Malformed URL (relative): "+e.getMessage();
+			if(e.getMessage() != null)
+				reason += "Malformed URL (relative): "+e.getMessage();
+			else
+				reason += "Could not be parsed as a (relative) Freenet URI";
 			// Not a FreenetURI
 		}
 		
