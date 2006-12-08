@@ -40,6 +40,7 @@ public class ShortOption extends Option {
 	}
 
 	public boolean isDefault() {
+		getValue();
 		return currentValue == defaultValue;
 	}
 	

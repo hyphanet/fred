@@ -64,6 +64,7 @@ public class IntOption extends Option {
 	}
 
 	public boolean isDefault() {
+		getValue();
 		return currentValue == defaultValue;
 	}
 	

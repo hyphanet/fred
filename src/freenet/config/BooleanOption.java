@@ -53,6 +53,7 @@ public class BooleanOption extends Option {
 	}
 
 	public boolean isDefault() {
+		getValue();
 		return currentValue == defaultValue;
 	}
 
