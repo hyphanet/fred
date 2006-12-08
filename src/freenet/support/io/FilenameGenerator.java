@@ -6,6 +6,7 @@ import java.io.IOException;
 import freenet.crypt.RandomSource;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 
 public class FilenameGenerator {
 
@@ -34,6 +35,8 @@ public class FilenameGenerator {
 			throw new IOException("Not a directory or cannot read/write: "+tmpDir);
 		
 		if(wipeFiles) {
+			long wipedFiles = 0;
+			long startWipe = System.currentTimeMillis();
 			File[] filenames = tmpDir.listFiles();
 			if(filenames != null) {
 				for(int i=0;i<filenames.length;i++) {
@@ -41,10 +44,14 @@ public class FilenameGenerator {
 					String name = f.getName();
 					if((((File.separatorChar == '\\') && name.toLowerCase().startsWith(prefix.toLowerCase())) ||
 							name.startsWith(prefix))) {
-						f.delete();
+						wipedFiles++;
+						if(!f.delete() && f.exists())
+							System.err.println("Unable to delete temporary file "+f+" - permissions problem?");
 					}
 				}
 			}
+			long endWipe = System.currentTimeMillis();
+			System.err.println("Deleted "+wipedFiles+" temporary files in "+TimeUtil.formatTime(endWipe-startWipe));
 		}
 	}
 
