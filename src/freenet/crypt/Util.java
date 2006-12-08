@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
 import java.io.EOFException;
@@ -14,12 +17,6 @@ import freenet.support.HexUtil;
 import freenet.support.Loader;
 import net.i2p.util.NativeBigInteger;
 
-
-/*
- * This code is part of the Java Adaptive Network Client by Ian Clarke. It is
- * distributed under the GNU Public Licence (GPL) version 2. See
- * http://www.gnu.org/ for further details of the GPL.
- */
 public class Util {
 
 	// bah, i'm tired of chasing down dynamically loaded classes..

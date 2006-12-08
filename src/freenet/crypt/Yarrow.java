@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
 import java.io.BufferedOutputStream;
@@ -18,12 +21,6 @@ import java.util.Hashtable;
 import java.util.Properties;
 
 import freenet.support.Logger;
-
-/*
- * This code is part of the Java Adaptive Network Client by Ian Clarke. It is
- * distributed under the GNU Public Licence (GPL) version 2. See
- * http://www.gnu.org/ for further details of the GPL.
- */
 
 /**
  * An implementation of the Yarrow PRNG in Java.
