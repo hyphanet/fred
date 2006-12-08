@@ -36,6 +36,7 @@ public class FilenameGenerator {
 		
 		if(wipeFiles) {
 			long wipedFiles = 0;
+			long wipeableFiles = 0;
 			long startWipe = System.currentTimeMillis();
 			File[] filenames = tmpDir.listFiles();
 			if(filenames != null) {
@@ -44,14 +45,16 @@ public class FilenameGenerator {
 					String name = f.getName();
 					if((((File.separatorChar == '\\') && name.toLowerCase().startsWith(prefix.toLowerCase())) ||
 							name.startsWith(prefix))) {
-						wipedFiles++;
-						if(!f.delete() && f.exists())
+						wipeableFiles++;
+						if((!f.delete()) && f.exists())
 							System.err.println("Unable to delete temporary file "+f+" - permissions problem?");
+						else
+							wipedFiles++;
 					}
 				}
 			}
 			long endWipe = System.currentTimeMillis();
-			System.err.println("Deleted "+wipedFiles+" temporary files in "+TimeUtil.formatTime(endWipe-startWipe));
+			System.err.println("Deleted "+wipedFiles+" of "+wipeableFiles+" temporary files ("+(filenames.length-wipeableFiles)+" non-temp files in temp directory) in "+TimeUtil.formatTime(endWipe-startWipe));
 		}
 	}
 
