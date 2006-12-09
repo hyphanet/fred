@@ -117,14 +117,18 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 
 	public FetchResult fetch(FreenetURI uri, long overrideMaxSize) throws FetchException {
+		return fetch(uri, overrideMaxSize, this);
+	}
+
+	public FetchResult fetch(FreenetURI uri, long overrideMaxSize, Object clientContext) throws FetchException {
 		if(uri == null) throw new NullPointerException();
-		FetcherContext context = getFetcherContext(overrideMaxSize);
 		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, this, null);
+		FetcherContext context = getFetcherContext(overrideMaxSize);
+		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, clientContext, null);
 		get.start();
 		return fw.waitForCompletion();
 	}
-
+	
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InserterException {
 		return insert(insert, getCHKOnly, filenameHint, false);
 	}

@@ -335,7 +335,7 @@ public class FProxyToadlet extends Toadlet {
 		try {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
-			FetchResult result = fetch(key, maxSize);
+			FetchResult result = fetch(key, maxSize, httprequest /* fixme replace if HTTPRequest ever becomes comparable */); 
 			
 			// Now, is it safe?
 			

@@ -32,6 +32,11 @@ public interface HighLevelSimpleClient {
 	public FetchResult fetch(FreenetURI uri, long maxSize) throws FetchException;
 	
 	/**
+	 * Blocking fetch of a URI with a configurable max-size and context object.
+	 */
+	public FetchResult fetch(FreenetURI uri, long maxSize, Object context) throws FetchException;
+	
+	/**
 	 * Blocking insert.
 	 * @param filenameHint If set, insert a single-file manifest containing only this file, under the given filename.
 	 * @throws InserterException If there is an error inserting the data
