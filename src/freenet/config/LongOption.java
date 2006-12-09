@@ -53,8 +53,11 @@ public class LongOption extends Option {
 	}
 	
 	public String getValueString() {
-		if(cachedStringValue != null) return cachedStringValue;
-		return Long.toString(getValue());
+		long l = getValue();
+		if(cachedStringValue != null) 
+			return cachedStringValue;
+		else 
+			return Long.toString(l);
 	}
 
 	public void setInitialValue(String val) throws InvalidConfigValueException {
