@@ -64,7 +64,7 @@ public class NodeIPDetector {
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
 		arkPutter = new NodeARKInserter(node, this);
 	}
-	
+
 	/**
 	 * @return Our current main IP address.
 	 * FIXME - we should support more than 1, and we should do the
@@ -147,10 +147,9 @@ public class NodeIPDetector {
 				Peer p = peerList[i].getRemoteDetectedPeer();
 				if((p == null) || p.isNull()) continue;
 				// DNSRequester doesn't deal with our own node
-				InetAddress ip = p.getAddress(true);
-				if(!IPUtil.isValidAddress(ip, false)) continue;
+				if(!IPUtil.isValidAddress(p.getAddress(true), false)) continue;
 				Logger.normal(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
-				if(countsByPeer.containsKey(ip)) {
+				if(countsByPeer.containsKey(p)) {
 					Integer count = (Integer) countsByPeer.get(p);
 					Integer newCount = new Integer(count.intValue()+1);
 					countsByPeer.put(p, newCount);
