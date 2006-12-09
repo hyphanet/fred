@@ -150,13 +150,14 @@ public class IOStatisticCollector {
 	private void rotate() {
 		long now = System.currentTimeMillis();
 		if ((now - lastrotate) >= STATISTICS_DURATION) {
+			lastrotate = now;
 			Object[] keys = targets.keySet().toArray();
+			if(keys == null) return; // Why aren't we iterating there ?
 			for(int i = 0 ; i < keys.length ; i++) {
 				Object key = keys[i];
 				if (((StatisticEntry)(targets.get(key))).rotate() == false)
 					targets.remove(key);
 			}
-			lastrotate = now;
 			// FIXME: debugging
 			//_dumpInfo();
 		}
