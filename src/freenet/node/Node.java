@@ -267,6 +267,8 @@ public class Node {
 	private long maxTotalKeys;
 	private long maxCacheKeys;
 	private long maxStoreKeys;
+	/** The maximum size of the datastore. Kept to avoid rounding turning 5G into 5368698672 */
+	private long maxTotalDatastoreSize;
 	
 	/* These are private because must be protected by synchronized(this) */
 	private final Environment storeEnvironment;
@@ -1042,7 +1044,7 @@ public class Node {
 				new LongCallback() {
 
 					public long get() {
-						return maxTotalKeys * sizePerKey;
+						return maxTotalDatastoreSize;
 					}
 
 					public void set(long storeSize) throws InvalidConfigValueException {
@@ -1052,6 +1054,7 @@ public class Node {
 						if(newMaxStoreKeys == maxTotalKeys) return;
 						// Update each datastore
 						synchronized(Node.this) {
+							maxTotalDatastoreSize = storeSize;
 							maxTotalKeys = newMaxStoreKeys;
 							maxStoreKeys = maxTotalKeys / 2;
 							maxCacheKeys = maxTotalKeys - maxStoreKeys;
@@ -1076,13 +1079,13 @@ public class Node {
 					}
 		});
 		
-		long storeSize = nodeConfig.getLong("storeSize");
+		maxTotalDatastoreSize = nodeConfig.getLong("storeSize");
 		
-		if(storeSize < 0 || storeSize < (32 * 1024 * 1024)) { // totally arbitrary minimum!
+		if(maxTotalDatastoreSize < 0 || maxTotalDatastoreSize < (32 * 1024 * 1024)) { // totally arbitrary minimum!
 			throw new NodeInitException(EXIT_INVALID_STORE_SIZE, "Invalid store size");
 		}
 
-		maxTotalKeys = storeSize / sizePerKey;
+		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
 		
 		nodeConfig.register("storeDir", ".", sortOrder++, true, false, "Store directory", "Name of directory to put store files in", 
 				new StringCallback() {
