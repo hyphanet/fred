@@ -28,11 +28,18 @@ import freenet.support.io.CountedInputStream;
  * http://www.obrador.com/essentialjpeg/headerinfo.htm
  * Also the JFIF spec.
  * Also http://cs.haifa.ac.il/~nimrod/Compression/JPEG/J6sntx2005.pdf
+ * http://svn.xiph.org/experimental/giles/jpegdump.c
+ * 
  */
 public class JPEGFilter implements ContentDataFilter {
 
 	private final boolean deleteComments;
 	private final boolean deleteExif;
+
+	private static final int MARKER_EOI = 0xD9; // End of image
+	private static final int MARKER_SOI = 0xD8; // Start of image
+	private static final int MARKER_RST0 = 0xD0; // First reset marker
+	private static final int MARKER_RST7 = 0xD7; // Last reset marker
 	
 	JPEGFilter(boolean deleteComments, boolean deleteExif) {
 		this.deleteComments = deleteComments;
@@ -113,12 +120,14 @@ public class JPEGFilter implements ContentDataFilter {
 					markerType = dis.readUnsignedByte();
 					if(baos != null) baos.write(markerType);
 				}
+				if(logMINOR)
+					Logger.minor(this, "Marker type: "+Integer.toHexString(markerType));
 				long countAtStart = cis.count(); // After marker but before type
 				int blockLength;
-				if(markerType != 0xD9)
-					blockLength = dis.readUnsignedShort();
-				else
+				if(markerType == MARKER_EOI || markerType >= MARKER_RST0 && markerType <= MARKER_RST7)
 					blockLength = 0;
+				else
+					blockLength = dis.readUnsignedShort();
 				if(markerType == 0xDB // quantisation table
 						|| markerType == 0xC4 // huffman table
 						|| markerType == 0xC0) { // start of frame
@@ -161,7 +170,9 @@ public class JPEGFilter implements ContentDataFilter {
 							// Termination inside a scan; valid I suppose
 							break;
 						}
-						if(prevChar == 0xFF && x != 0) {
+						if(prevChar == 0xFF && x != 0 &&
+								!(x >= MARKER_RST0 && x <= MARKER_RST7)) { // reset markers can occur in the scan
+							
 							forceMarkerType = x;
 							if(logMINOR)
 								Logger.minor(this, "Moved scan at "+cis.count()+", found a marker type "+Integer.toHexString(x));
@@ -254,10 +265,16 @@ public class JPEGFilter implements ContentDataFilter {
 					if(logMINOR)
 						Logger.minor(this, "End of image");
 				} else {
+					if(markerType >= 0xE0 && markerType <= 0xEF) {
+						// APP marker. Can be safely deleted.
+						if(logMINOR)
+							Logger.minor(this, "Dropping application marker type "+Integer.toHexString(markerType)+" length "+blockLength);
+					} else {
+						if(logMINOR)
+							Logger.minor(this, "Dropping unknown frame type "+Integer.toHexString(markerType)+" blockLength");
+					}
 					// Delete frame
 					skipBytes(dis, blockLength - 2);
-					if(logMINOR)
-						Logger.minor(this, "Dropping unknown frame "+Integer.toHexString(markerType));
 					continue;
 				}
 				
