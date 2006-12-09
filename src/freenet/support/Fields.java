@@ -597,7 +597,7 @@ public abstract class Fields {
 					1000 * 1000,
 					1 << 20,
 					1000l * 1000l * 1000l,
-					1 << 30,
+					1l << 30,
 					1000l * 1000l * 1000l * 1000l,
 					1l << 40,
 					1000l * 1000l * 1000l * 1000l * 1000,
@@ -609,7 +609,14 @@ public abstract class Fields {
 				x--;
 				res *= l[idx];
 			}
-			res *= Double.parseDouble(s.substring(0, x + 1));
+			String multiplier = s.substring(0, x + 1);
+			if(multiplier.indexOf('.') > -1 || multiplier.indexOf('E') > -1) {
+				res *= Double.parseDouble(multiplier);
+				if(Logger.shouldLog(Logger.MINOR, Fields.class)) Logger.minor(Fields.class, "Parsed "+multiplier+" of "+s+" as double: "+res);
+			} else {
+				res *= Long.parseLong(multiplier);
+				if(Logger.shouldLog(Logger.MINOR, Fields.class)) Logger.minor(Fields.class, "Parsed "+multiplier+" of "+s+" as long: "+res);
+			}
 		} catch (ArithmeticException e) {
 			res = Long.MAX_VALUE;
 			throw new NumberFormatException(e.getMessage());
