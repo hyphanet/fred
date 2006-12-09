@@ -272,6 +272,7 @@ public class Node {
 	private final Environment storeEnvironment;
 	private final EnvironmentMutableConfig envMutableConfig;
 	private final SemiOrderedShutdownHook storeShutdownHook;
+	private long databaseMaxMemory;
 	/** The CHK datastore. Long term storage; data should only be inserted here if
 	 * this node is the closest location on the chain so far, and it is on an 
 	 * insert (because inserts will always reach the most specialized node; if we
@@ -1123,7 +1124,7 @@ public class Node {
 		
 		try {
 			storeEnvironment = new Environment(dbDir, envConfig);
-			envMutableConfig = storeEnvironment.getMutableConfig();
+			envMutableConfig = storeEnvironment.getConfig();
 		} catch (DatabaseException e) {
 			System.err.println("Could not open store: "+e);
 			e.printStackTrace();
@@ -1145,21 +1146,25 @@ public class Node {
 			}
 		});
 		
-		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Datastore maximum memory usage", "Maximum memory usage of the database backing the datastore indexes", new LongCallback() {
+		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Datastore maximum memory usage", "Maximum memory usage of the database backing the datastore indexes. 0 means no limit (limited to ~ 30% of maximum memory)", 
+				new LongCallback() {
 
 			public long get() {
-				return envMutableConfig.getCacheSize();
+				return databaseMaxMemory;
 			}
 
 			public void set(long val) throws InvalidConfigValueException {
 				if(val < 0)
-					throw new InvalidConfigValueException("Negative values not supported");
+					throw new InvalidConfigValueException("Negative or zero values not supported");
 				envMutableConfig.setCacheSize(val);
+				databaseMaxMemory = val;
 			}
 			
 		});
 		
-		envMutableConfig.setCacheSize(nodeConfig.getLong("databaseMaxMemory"));
+		if(lastVersion <= 1007) nodeConfig.fixOldDefault("databaseMaxMemory", "0"); // FIXME remove; 1007 had a bug which reset this to 0
+		databaseMaxMemory = nodeConfig.getLong("databaseMaxMemory");
+		envMutableConfig.setCacheSize(databaseMaxMemory);
 		
 		String suffix = "-" + portNumber;
 		
