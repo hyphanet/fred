@@ -144,7 +144,7 @@ public class Node {
 				node=n;
 			}
 			public String get() {
-				if(myName.startsWith("Node created around")|| myName.equals("MyFirstFreenetNode")){
+				if(myName.startsWith("Node id|")|| myName.equals("MyFirstFreenetNode")){
 					clientCore.alerts.register(nodeNameUserAlert);
 				}else{
 					clientCore.alerts.unregister(nodeNameUserAlert);
@@ -154,7 +154,7 @@ public class Node {
 
 			public void set(String val) throws InvalidConfigValueException {
 				myName = val;
-				if(myName.startsWith("Node created around")|| myName.equals("MyFirstFreenetNode")){
+				if(myName.startsWith("Node id|")|| myName.equals("MyFirstFreenetNode")){
 					clientCore.alerts.register(nodeNameUserAlert);
 				}else{
 					clientCore.alerts.unregister(nodeNameUserAlert);
@@ -612,7 +612,7 @@ public class Node {
 	}
 
 	private String newName() {
-		return "Node created around "+System.currentTimeMillis();
+		return "Node id|"+random.nextLong();
 	}
 
 	public void writeNodeFile() {
