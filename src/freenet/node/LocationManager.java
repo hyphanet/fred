@@ -84,11 +84,12 @@ class LocationManager {
         this.loc = l;
     }
     
-    public void updateLocationChangeSession(double l) {
-		if (l < this.loc.getValue()) {
-			this.locChangeSession -= (this.loc.getValue() - l);
+    public void updateLocationChangeSession(double newLoc) {
+    	double oldLoc = this.loc.getValue();
+		if (newLoc < oldLoc) {
+			this.locChangeSession -= (oldLoc - newLoc);
 		} else {
-			this.locChangeSession += (l - this.loc.getValue());
+			this.locChangeSession += (newLoc - oldLoc);
 		}
     }
 
