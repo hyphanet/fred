@@ -55,7 +55,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 
 	public void onFailure(FetchException e, ClientGetState state) {
 		Object token = state.getToken();
-		Logger.error(this, "Failed to fetch "+token+" - original insert corrupt?? : "+e, e);
+		Logger.error(this, "Found "+token+" but failed to fetch edition: "+e, e);
 	}
 
 	public void onBlockSetFinished(ClientGetState state) {
