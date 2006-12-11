@@ -122,20 +122,32 @@ public class PacketSender implements Runnable, Ticker {
             	logMINOR = Logger.shouldLog(Logger.MINOR, this);
                 realRun();
             } catch (OutOfMemoryError e) {
-            	Runtime r = Runtime.getRuntime();
-            	long usedAtStart = r.totalMemory() - r.freeMemory();
-            	System.gc();
-            	System.runFinalization();
-            	System.gc();
-            	System.runFinalization();
-            	System.err.println(e.getClass());
-            	System.err.println(e.getMessage());
-            	e.printStackTrace();
-            	long usedNow = r.totalMemory() - r.freeMemory();
-            	Logger.error(this, "Caught "+e, e);
-            	Logger.error(this, "Used: "+usedAtStart+" now "+usedNow);
+            	Runtime r = null;
+            	try {
+            		r = Runtime.getRuntime();
+            		long usedAtStart = r.totalMemory() - r.freeMemory();
+            		System.gc();
+            		System.runFinalization();
+            		System.gc();
+            		System.runFinalization();
+            		System.err.println(e.getClass());
+            		System.err.println(e.getMessage());
+            		e.printStackTrace();
+            		long usedNow = r.totalMemory() - r.freeMemory();
+            		Logger.error(this, "Caught "+e, e);
+            		Logger.error(this, "Used: "+usedAtStart+" now "+usedNow);
+            	} catch (Throwable t) {
+            		// Try without GCing, it might be a thread error; GCing creates a thread
+            		System.err.println("Caught handling OOM "+e+" : "+t);
+            		e.printStackTrace();
+            		if(r != null)
+            			System.err.println("Memory: total "+r.totalMemory()+" free "+r.freeMemory()+" max "+r.maxMemory());
+            		WrapperManager.requestThreadDump(); // Will probably crash, but never mind...
+            	}
             } catch (Throwable t) {
                 Logger.error(this, "Caught in PacketSender: "+t, t);
+                System.err.println("Caught in PacketSender: "+t);
+                t.printStackTrace();
             }
         }
     }
