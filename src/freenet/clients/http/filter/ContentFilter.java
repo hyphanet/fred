@@ -72,7 +72,7 @@ public class ContentFilter {
 				false, null, null));
 		
 		// HTML - dangerous if not filtered
-		register(new MIMEType("text/html", "html", new String[] { "text/xhtml", "text/xml+xhtml" }, new String[] { "htm" },
+		register(new MIMEType("text/html", "html", new String[] { "text/xhtml", "text/xml+xhtml", "application/xhtml+xml" }, new String[] { "htm" },
 				false, false /* maybe? */, new HTMLFilter(), null /* FIXME */, 
 				true, true, true, true, true, true, "HTML - not dangerous if filtered",
 				"HTML - may contain dangerous metadata etc; suggest you check it by hand",
