@@ -5,6 +5,8 @@ import java.net.*;
 import java.text.*;
 import java.util.*;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.client.*;
 import freenet.config.SubConfig;
 import freenet.io.comm.*;
@@ -452,14 +454,18 @@ public class StatisticsToadlet extends Toadlet {
                 long usedJavaMem = (long)(totalMemory - freeMemory);
                 long allocatedJavaMem = (long)totalMemory;
                 long maxJavaMem = (long)maxMemory;
-                int threadCount = Thread.activeCount();
                 int availableCpus = rt.availableProcessors();
+                
+        		ThreadGroup tg = Thread.currentThread().getThreadGroup();
+        		while(tg.getParent() != null) tg = tg.getParent();
+        		int threadCount = tg.activeCount();
 
                 jvmStatsList.addChild("li", "Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem, true));
                 jvmStatsList.addChild("li", "Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem, true));
                 jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true));
                 jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
                 jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
+                
 			
                 // unclaimedFIFOMessageCounts box
 				overviewTableRow = overviewTable.addChild("tr");
