@@ -142,6 +142,9 @@ public class PacketSender implements Runnable, Ticker {
             		e.printStackTrace();
             		if(r != null)
             			System.err.println("Memory: total "+r.totalMemory()+" free "+r.freeMemory()+" max "+r.maxMemory());
+            		ThreadGroup tg = Thread.currentThread().getThreadGroup();
+            		while(tg.getParent() != null) tg = tg.getParent();
+            		System.err.println("Running threads: "+Thread.activeCount());
             		WrapperManager.requestThreadDump(); // Will probably crash, but never mind...
             	}
             } catch (Throwable t) {
