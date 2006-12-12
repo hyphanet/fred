@@ -1948,7 +1948,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(myARK != null) {
 			// Decrement it because we keep the number we would like to fetch, not the last one fetched.
 			fs.put("ark.number", Long.toString(myARK.suggestedEdition - 1));
-			fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));
+			fs.put("ark.pubURI", myARK.getBaseSSK().toString(false, false));
 		}
         return fs;
     }

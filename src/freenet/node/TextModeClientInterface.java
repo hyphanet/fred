@@ -558,13 +558,13 @@ public class TextModeClientInterface implements Runnable {
             }
         } else if(uline.startsWith("MAKESSK")) {
         	InsertableClientSSK key = InsertableClientSSK.createRandom(r, "");
-            outsb.append("Insert URI: ").append(key.getInsertURI().toString(false)).append("\r\n");
-            outsb.append("Request URI: ").append(key.getURI().toString(false)).append("\r\n");
+            outsb.append("Insert URI: ").append(key.getInsertURI().toString(false, false)).append("\r\n");
+            outsb.append("Request URI: ").append(key.getURI().toString(false, false)).append("\r\n");
         	FreenetURI insertURI = key.getInsertURI().setDocName("testsite");
-        	String fixedInsertURI = insertURI.toString(false);
+        	String fixedInsertURI = insertURI.toString(false, false);
             outsb.append("Note that you MUST add a filename to the end of the above URLs e.g.:\r\n").append(fixedInsertURI).append("\r\n");
             outsb.append("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\r\nPUTSSKDIR:").append(fixedInsertURI).append("#directoryToUpload/\r\n");
-            outsb.append("This will then produce a manifest site containing all the files, the default document can be accessed at\r\n").append(key.getURI().toString(false)).append("testsite/");
+            outsb.append("This will then produce a manifest site containing all the files, the default document can be accessed at\r\n").append(key.getURI().toString(false, false)).append("testsite/");
         } else if(uline.startsWith("PUTSSK:")) {
         	String cmd = line.substring("PUTSSK:".length());
         	cmd = cmd.trim();

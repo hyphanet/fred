@@ -49,7 +49,7 @@ public class PersistentPutDir extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
-		fs.put("URI", uri.toString(false));
+		fs.put("URI", uri.toString(false, false));
 		fs.put("Verbosity", Integer.toString(verbosity));
 		fs.put("PriorityClass", Short.toString(priorityClass));
 		fs.put("Persistence", ClientRequest.persistenceTypeString(persistenceType));

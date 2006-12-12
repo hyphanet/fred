@@ -2,6 +2,7 @@ package freenet.support;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 /*
   This code is part of the Java Adaptive Network Client by Ian Clarke. 
@@ -11,28 +12,15 @@ import java.io.IOException;
 
 
 /**
- * The class contains a utility method for converting a 
- * <code>String</code> out of a MIME format called 
- * "<code>x-www-form-urlencoded</code>" format. 
- * <p>
- * To convert a <code>String</code>, each character is examined in turn:
- * <ul>
- * <li>The ASCII characters '<code>a</code>' through '<code>z</code>', 
- *     '<code>A</code>' through '<code>Z</code>', and '<code>0</code>' 
- *     through '<code>9</code>' remain the same. 
- * <li>The plus sign '<code>+</code>' is converted into a 
- *     space character '<code>&nbsp;</code>'. 
- * <li>The percent sign '<code>%</code>' must be followed by a 
- *     two-digit hexadecimal number, and is converted into the
- *     corresponding 8-bit character.
- * <li>The following "safe" characters [RFC 1738] are passed as is,
- *     if they appear:
- *     <code>$ - _ . + ! * ' ( ) ,</code>
- * <li>Anything else encountered, though strictly speaking illegal, 
- *     is passed as is.
- * </ul>
- *
+ * Decode encoded URLs (or parts of URLs). @see URLEncoder.
+ * This class does NOT decode application/x-www-form-urlencoded
+ * strings, unlike @see java.net.URLDecoder. What it does is
+ * decode bits of URIs, in UTF-8. This simply means that it 
+ * converts encoded characters (assuming a charset of UTF-8).
+ * java.net.URI does similar things internally.
+ * 
  * @author <a href="http://www.doc.ic.ac.uk/~twh1/">Theodore Hong</a>
+ * Originally!
  **/
 
 public class URLDecoder
@@ -43,11 +31,6 @@ public class URLDecoder
 	    System.out.println(args[i] + " -> " + decode(args[i]));
 	}
     }
-
-    /**
-     * Characters which will be passed unaltered.
-     **/
-    private static final String safeCharList = "$-_.+!*'(),";
 
     /**
 	 * Translates a string out of x-www-form-urlencoded format.
@@ -65,10 +48,6 @@ public class URLDecoder
 		for (int i = 0; i < len; i++) {
 			char c = s.charAt(i);
 			if (Character.isLetterOrDigit(c))
-				decodedBytes.write(c);
-			else if (c == '+')
-				decodedBytes.write(' ');
-			else if (safeCharList.indexOf(c) != -1)
 				decodedBytes.write(c);
 			else if (c == '%') {
 				if (i >= len - 2) {
@@ -88,9 +67,14 @@ public class URLDecoder
 				} catch (NumberFormatException nfe) {
 					throw new URLEncodedFormatException(s);
 				}
-			} else
-				decodedBytes.write(c);
-			// throw new URLEncodedFormatException(s);
+			} else {
+				try {
+					byte[] encoded = (""+c).getBytes("UTF-8");
+					decodedBytes.write(encoded, 0, encoded.length);
+				} catch (UnsupportedEncodingException e) {
+					throw new Error(e);
+				}
+			}
 		}
 		try {
 			decodedBytes.close();

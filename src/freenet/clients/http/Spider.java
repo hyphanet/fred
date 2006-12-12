@@ -72,23 +72,6 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private boolean stopped = true;
 
 	private synchronized void queueURI(FreenetURI uri) {
-		String uriStr = null;
-		
-		/* We remove HTML targets from URI (http://my.server/file#target) */
-		/* Else we re-index already indexed file */
-		try {
-			uriStr = uri.toString(false);
-			if(uriStr.indexOf("#") > 0)
-				{
-					uriStr = uriStr.substring(0, uriStr.indexOf("#"));
-					uri = new FreenetURI(uriStr);
-				}
-		} catch (MalformedURLException e) {
-			Logger.error(this, "Spider: MalformedURLException: "+uriStr+ ':' +e);
-			return;
-		}
-
-		
 		if ((!visitedURIs.contains(uri)) && queuedURISet.add(uri)) {
 			queuedURIList.addLast(uri);
 			visitedURIs.add(uri);
@@ -152,7 +135,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		Bucket data = result.asBucket();
 		String mimeType = cm.getMIMEType();
 		try {
-			ContentFilter.filter(data, ctx.bucketFactory, mimeType, new URI("http://127.0.0.1:8888/" + uri.toString(false)), this);
+			ContentFilter.filter(data, ctx.bucketFactory, mimeType, uri.toURI("http://127.0.0.1:8888/"), this);
 		} catch (UnsafeContentTypeException e) {
 			return; // Ignore
 		} catch (IOException e) {
@@ -207,7 +190,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		if((type != null) && (type.length() != 0) && type.toLowerCase().equals("title")
 		   && (s != null) && (s.length() != 0) && (s.indexOf('\n') < 0)) {
 			/* We should have a correct title */
-			titlesOfURIs.put(uri.toString(false), s);
+			titlesOfURIs.put(uri.toString(), s);
 		}
 
 
@@ -266,8 +249,8 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		HashMap urisToNumbers = new HashMap();
 		for (int i = 0; i < uris.length; i++) {
 			urisToNumbers.put(uris[i], new Integer(i));
-			bw.write('!' + uris[i].toString(false) + '\n');
-			bw.write("+" + titlesOfURIs.get(uris[i].toString(false)) + '\n');
+			bw.write('!' + uris[i].toString() + '\n');
+			bw.write("+" + titlesOfURIs.get(uris[i].toString()) + '\n');
 		}
 		for (int i = 0; i < words.length; i++) {
 			StringBuffer s = new StringBuffer();
@@ -414,7 +397,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		int itemCount = 0;
 		while (collectionItems.hasNext()) {
 			FreenetURI uri = (FreenetURI) collectionItems.next();
-			listContent.addChild("#", uri.toString(false));
+			listContent.addChild("#", uri.toString());
 			listContent.addChild("br");
 			if (itemCount++ == maxCount) {
 				listContent.addChild("br");

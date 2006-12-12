@@ -21,7 +21,7 @@ public class PutFetchableMessage extends FCPMessage {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
 		if(uri != null)
-			fs.put("URI", uri.toString(false));
+			fs.put("URI", uri.toString(false, false));
 		return fs;
 	}
 

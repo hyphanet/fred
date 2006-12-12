@@ -635,7 +635,7 @@ public class FCPServer implements Runnable {
 				return;
 			} catch (IdentifierCollisionException e) {
 				try {
-					innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy:"+fetchURI.toString(false), returnFilename, returnTempFilename);
+					innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy:"+fetchURI.toString(false, false), returnFilename, returnTempFilename);
 					return;
 				} catch (IdentifierCollisionException e1) {
 					// FIXME maybe use DateFormat

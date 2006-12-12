@@ -188,7 +188,7 @@ public class ClientGetMessage extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("IgnoreDS", Boolean.toString(ignoreDS));
-		fs.put("URI", uri.toString(false));
+		fs.put("URI", uri.toString(false, false));
 		fs.put("Identifier", identifier);
 		fs.put("Verbosity", Integer.toString(verbosity));
 		fs.put("ReturnType", getReturnTypeString());

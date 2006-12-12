@@ -705,7 +705,7 @@ public class NodeUpdaterManager {
 		}
 		
 		public String get() {
-			return getURI(isExt).toString(false);
+			return getURI(isExt).toString(false, false);
 		}
 
 		public void set(String val) throws InvalidConfigValueException {
@@ -723,7 +723,7 @@ public class NodeUpdaterManager {
 	public class UpdateRevocationURICallback implements StringCallback {
 
 		public String get() {
-			return getRevocationURI().toString(false);
+			return getRevocationURI().toString(false, false);
 		}
 
 		public void set(String val) throws InvalidConfigValueException {

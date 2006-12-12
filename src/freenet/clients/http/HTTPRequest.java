@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,7 +21,6 @@ import java.util.StringTokenizer;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleReadOnlyArrayBucket;
-import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.io.Bucket;
 import freenet.support.io.BucketFactory;
@@ -193,39 +193,36 @@ public class HTTPRequest {
 			}
 
 			// url-decode the name and value
-			try {
-				if (doUrlDecoding) {
-					name = URLDecoder.decode(name);
-					value = URLDecoder.decode(value);
-					if(logMINOR) {
-						Logger.minor(this, "Decoded name: "+name);
-						Logger.minor(this, "Decoded value: "+value);
-					}
-				}
-
-				if(asParts) {
-					// Store as a part
-					byte[] buf;
+			if (doUrlDecoding) {
 					try {
-						buf = value.getBytes("UTF-8");
+						name = java.net.URLDecoder.decode(name, "UTF-8");
+						value = java.net.URLDecoder.decode(value, "UTF-8");
 					} catch (UnsupportedEncodingException e) {
 						throw new Error(e);
-					} // FIXME some other encoding?
-					Bucket b = new SimpleReadOnlyArrayBucket(buf);
-					parts.put(name, b);
-					if(logMINOR)
-						Logger.minor(this, "Added as part: name="+name+" value="+value);
-				} else {
-					// get the list of values for this parameter that were parsed so far
-					List valueList = this.getParameterValueList(name);
-					// add this value to the list
-					valueList.add(value);
+					}
+				if(logMINOR) {
+					Logger.minor(this, "Decoded name: "+name);
+					Logger.minor(this, "Decoded value: "+value);
 				}
-			} catch (URLEncodedFormatException e) {
-				// if we fail to decode the name or value we fail spectacularly
-				String msg = "Failed to decode request parameter " + name
-						+ " with value '" + value + '\'';
-				throw new RuntimeException(msg, e);
+			}
+			
+			if(asParts) {
+				// Store as a part
+				byte[] buf;
+				try {
+					buf = value.getBytes("UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					throw new Error(e);
+				} // FIXME some other encoding?
+				Bucket b = new SimpleReadOnlyArrayBucket(buf);
+				parts.put(name, b);
+				if(logMINOR)
+					Logger.minor(this, "Added as part: name="+name+" value="+value);
+			} else {
+				// get the list of values for this parameter that were parsed so far
+				List valueList = this.getParameterValueList(name);
+				// add this value to the list
+				valueList.add(value);
 			}
 		}
 	}

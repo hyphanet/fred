@@ -119,7 +119,7 @@ public class GetFailedMessage extends FCPMessage {
 		if(finalizedExpected)
 			sfs.put("FinalizedExpected", "true");
 		if(redirectURI != null)
-			sfs.put("RedirectURI", redirectURI.toString(false));
+			sfs.put("RedirectURI", redirectURI.toString(false, false));
 		return sfs;
 	}
 

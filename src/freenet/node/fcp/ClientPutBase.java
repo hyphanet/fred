@@ -245,7 +245,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	public synchronized SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(); // we will need multi-level later...
 		fs.put("Type", getTypeName());
-		fs.put("URI", uri.toString(false));
+		fs.put("URI", uri.toString(false, false));
 		fs.put("Identifier", identifier);
 		fs.put("Verbosity", Integer.toString(verbosity));
 		fs.put("PriorityClass", Short.toString(priorityClass));
@@ -258,7 +258,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		fs.put("Succeeded", Boolean.toString(succeeded));
 		fs.put("GetCHKOnly", Boolean.toString(getCHKOnly));
 		if(generatedURI != null)
-			fs.put("GeneratedURI", generatedURI.toString(false));
+			fs.put("GeneratedURI", generatedURI.toString(false, false));
 		if(finished && (!succeeded))
 			// Should have a putFailedMessage... unless there is a race condition.
 			fs.put("PutFailed", putFailedMessage.getFieldSet(false));

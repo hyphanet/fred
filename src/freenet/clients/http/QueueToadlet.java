@@ -308,7 +308,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					ClientRequest clientRequest = clientRequests[requestIndex];
 					if (clientRequest.hasFinished() && (clientRequest instanceof ClientGet)) {
 						ClientGet clientGet = (ClientGet) clientRequest;
-						if (clientGet.getURI().toString(false).equals(key.toString(false))) {
+						if (clientGet.getURI().equals(key)) {
 							Bucket data = clientGet.getBucket();
 							String mimeType = clientGet.getMIMEType();
 							String requestedMimeType = request.getParam("type", null);
@@ -767,7 +767,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 
 	private HTMLNode createDownloadCell(PageMaker pageMaker, ClientGet p) {
 		HTMLNode downloadCell = new HTMLNode("td", "class", "request-download");
-		downloadCell.addChild("a", "href", p.getURI().toString(false), "Download");
+		downloadCell.addChild("a", "href", p.getURI().toString(), "Download");
 		return downloadCell;
 	}
 
@@ -794,7 +794,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	private HTMLNode createKeyCell(FreenetURI uri) {
 		HTMLNode keyCell = new HTMLNode("td", "class", "request-key");
 		if (uri != null) {
-			keyCell.addChild("span", "class", "key_is").addChild("a", "href", '/' + uri.toString(false), uri.toShortString());
+			keyCell.addChild("span", "class", "key_is").addChild("a", "href", '/' + uri.toString(), uri.toShortString());
 		} else {
 			keyCell.addChild("span", "class", "key_unknown", "unknown");
 		}

@@ -102,7 +102,7 @@ public class FProxyToadlet extends Toadlet {
 
 		try {
 			if((!force) && (!forceDownload)) {
-				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, new URI(basePath + URLEncoder.encode(key.toString(false))), null);
+				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), null);
 				data = fo.data;
 				mimeType = fo.type;
 				
@@ -121,20 +121,20 @@ public class FProxyToadlet extends Toadlet {
 					HTMLNode optionList = infoboxContent.addChild("ul");
 					HTMLNode option = optionList.addChild("li");
 					
-					option.addChild("a", "href", basePath + key.toString(false) + "?type=text/plain&force=" + getForceValue(key, now)+extras, "Click here");
+					option.addChild("a", "href", basePath + key.toString() + "?type=text/plain&force=" + getForceValue(key, now)+extras, "Click here");
 					option.addChild("%", " to open the file as plain text (this <b>may be dangerous</b> if you are running IE7 or FF2).");
 					// 	FIXME: is this safe? See bug #131
 					option = optionList.addChild("li");
-					option.addChild("a", "href", basePath + key.toString(false) + "?forcedownload"+extras, "Click here");
+					option.addChild("a", "href", basePath + key.toString() + "?forcedownload"+extras, "Click here");
 					option.addChild("%", " to try to force your browser to download the file to disk (<b>this may also be dangerous if you run Firefox 2.0.0 (2.0.1 should fix this)</b>).");
 					if(!mimeType.startsWith("text/plain")) {
 						option = optionList.addChild("li");
-						option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now)+extras, "Click here");
+						option.addChild("a", "href", basePath + key.toString() + "?force=" + getForceValue(key, now)+extras, "Click here");
 						option.addChild("#", " to open the file as " + mimeType);
 						option.addChild("%", " (<b>this may also be dangerous</b>).");
 					}
 					option = optionList.addChild("li");
-					option.addChild("a", "href", basePath + key.toString(false) + "?type=application/xml+rss&force=" + getForceValue(key, now)+extras, "Click here");
+					option.addChild("a", "href", basePath + key.toString() + "?type=application/xml+rss&force=" + getForceValue(key, now)+extras, "Click here");
 					option.addChild("%", " to open the file as RSS (<b>this is dangerous if the site author is malicious</b>).");
 					if(referrer != null) {
 						option = optionList.addChild("li");
@@ -177,14 +177,14 @@ public class FProxyToadlet extends Toadlet {
 			infoboxContent.addChild("p", "Your options are:");
 			HTMLNode optionList = infoboxContent.addChild("ul");
 			HTMLNode option = optionList.addChild("li");
-			option.addChild("a", "href", basePath + key.toString(false) + "?type=text/plain"+extras, "Click here");
+			option.addChild("a", "href", basePath + key.toString() + "?type=text/plain"+extras, "Click here");
 			option.addChild("#", " to open the file as plain text (this should not be dangerous but it may be garbled).");
 			// FIXME: is this safe? See bug #131
 			option = optionList.addChild("li");
-			option.addChild("a", "href", basePath + key.toString(false) + "?forcedownload"+extras, "Click here");
+			option.addChild("a", "href", basePath + key.toString() + "?forcedownload"+extras, "Click here");
 			option.addChild("#", " to force your browser to download the file to disk.");
 			option = optionList.addChild("li");
-			option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now)+extras, "Click here");
+			option.addChild("a", "href", basePath + key.toString() + "?force=" + getForceValue(key, now)+extras, "Click here");
 			option.addChild("#", " to open the file as " + mimeType + '.');
 			if(referrer != null) {
 				option = optionList.addChild("li");
@@ -350,7 +350,7 @@ public class FProxyToadlet extends Toadlet {
 			String msg = e.getMessage();
 			String extra = "";
 			if(e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) {
-				this.writePermanentRedirect(ctx, "Not enough meta-strings", '/' + key.toString(false) + '/' + override);
+				this.writePermanentRedirect(ctx, "Not enough meta-strings", '/' + key.toString() + '/' + override);
 			} else if(e.newURI != null) {
 				this.writePermanentRedirect(ctx, msg, '/' +e.newURI.toString() + override);
 			} else if(e.mode == FetchException.TOO_BIG) {
@@ -363,7 +363,7 @@ public class FProxyToadlet extends Toadlet {
 				HTMLNode fileInformationList = infoboxContent.addChild("ul");
 				HTMLNode option = fileInformationList.addChild("li");
 				option.addChild("#", "Filename: ");
-				option.addChild("a", "href", '/' + key.toString(false), getFilename(e, key, e.getExpectedMimeType()));
+				option.addChild("a", "href", '/' + key.toString(), getFilename(e, key, e.getExpectedMimeType()));
 
 				boolean finalized = e.finalizedSize();
 				if(e.expectedSize > 0) {
@@ -392,12 +392,12 @@ public class FProxyToadlet extends Toadlet {
 				infoboxContent.addChild("#", "The Freenet key you requested refers to a large file. Files of this size cannot generally be sent directly to your browser since they take too long for your Freenet node to retrieve. The following options are available:");
 				HTMLNode optionList = infoboxContent.addChild("ul");
 				option = optionList.addChild("li");
-				HTMLNode optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] {'/' + key.toString(false), "get" });
+				HTMLNode optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] {'/' + key.toString(), "get" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", "Fetch anyway and display file in browser" });
 				option = optionList.addChild("li");
 				optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString(false) });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
 				if (mime != null) {
@@ -461,7 +461,7 @@ public class FProxyToadlet extends Toadlet {
 				FreenetURI furi = new FreenetURI(path);
 				HTTPRequest req = new HTTPRequest(refererURI);
 				String type = req.getParam("type");
-				referer = "/" + furi.toString(false);
+				referer = "/" + furi.toString();
 				if(type != null && type.length() > 0)
 					referer += "?type=" + type;
 			} catch (Throwable t) {
@@ -478,7 +478,7 @@ public class FProxyToadlet extends Toadlet {
 		
 		try{
 			bos.write(random);
-			bos.write(key.toString(false).getBytes());
+			bos.write(key.toString().getBytes("UTF-8"));
 			bos.write(Long.toString(time / FORCE_GRAIN_INTERVAL).getBytes());
 		} catch (IOException e) {
 			throw new Error(e);

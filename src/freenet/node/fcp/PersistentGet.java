@@ -51,7 +51,7 @@ public class PersistentGet extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
-		fs.put("URI", uri.toString(false));
+		fs.put("URI", uri.toString(false, false));
 		fs.put("Verbosity", verbosity);
 		fs.put("ReturnType", ClientGetMessage.returnTypeString(returnType));
 		fs.put("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));

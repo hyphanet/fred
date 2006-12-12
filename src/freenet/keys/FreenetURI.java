@@ -8,7 +8,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
@@ -19,8 +23,7 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
-import freenet.support.URLDecoder;
-import freenet.support.URLEncodedFormatException;
+import freenet.support.URLEncoder;
 import freenet.client.InserterException;
 
 /**
@@ -216,12 +219,12 @@ public class FreenetURI implements Cloneable{
 			throw new MalformedURLException("No URI specified");
 		}
 		
-		int percent = URI.indexOf('%');
-		int slash = URI.indexOf('/');
-		if((percent>-1) && ((percent<slash) || (slash<0))){ /* likely to be a copy/pasted url from a browser */
-			try{
-				URI=URLDecoder.decode(URI);
-			}catch(URLEncodedFormatException e){
+		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0) {
+			// Encoded URL?
+			try {
+				URI=URLDecoder.decode(URI, "UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				throw new Error(e);
 			}
 		}
 		
@@ -246,7 +249,12 @@ public class FreenetURI implements Cloneable{
 		int slash2;
 		sv = new Vector();
 		while ((slash2 = URI.lastIndexOf("/")) != -1) {
-			String s = URI.substring(slash2 + "/".length());
+			String s;
+			try {
+				s = URLDecoder.decode(URI.substring(slash2 + "/".length()), "UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				throw new Error(e);
+			}
 			if (s != null)
 				sv.addElement(s);
 			URI = URI.substring(0, slash2);
@@ -493,10 +501,14 @@ public class FreenetURI implements Cloneable{
 	}
 
 	public String toString() {
-		return toString(true);
+		return toString(false, false);
+	}
+	
+	public String toACIIString() {
+		return toString(true, true);
 	}
 
-	public String toString(boolean prefix) {
+	public String toString(boolean prefix, boolean pureAscii) {
 		StringBuffer b;
 		if (prefix)
 			b = new StringBuffer("freenet:");
@@ -517,14 +529,14 @@ public class FreenetURI implements Cloneable{
 		}
 
 		if (docName != null)
-			b.append(docName);
+			b.append(URLEncoder.encode(docName, "/", pureAscii));
 		if(keyType.equals("USK")) {
 			b.append('/');
 			b.append(suggestedEdition);
 		}
 		if (metaStr != null) {
 			for (int i = 0; i < metaStr.length; i++) {
-				b.append('/').append(metaStr[i]);
+				b.append('/').append(URLEncoder.encode(metaStr[i], "/", pureAscii));
 			}
 		}
 		return b.toString();
@@ -542,14 +554,14 @@ public class FreenetURI implements Cloneable{
 		}
 		
 		if (docName != null)
-			b.append(docName);
+			b.append(URLEncoder.encode(docName, "/", false));
 		if(keyType.equals("USK")) {
 			b.append('/');
 			b.append(suggestedEdition);
 		}
 		if (metaStr != null) {
 			for (int i = 0; i < metaStr.length; i++) {
-				b.append('/').append(metaStr[i]);
+				b.append('/').append(URLEncoder.encode(metaStr[i], "/", false));
 			}
 		}
 		return b.toString();
@@ -782,5 +794,15 @@ public class FreenetURI implements Cloneable{
 	}
 	
 	public static void checkInsertURI(FreenetURI uri) throws InserterException { uri.checkInsertURI(); }
+
+	public URI toRelativeURI() throws URISyntaxException {
+		// Single-argument constructor used because it preserves encoded /'es in path.
+		// Hence we can have slashes, question marks etc in the path, but they are encoded.
+		return new URI('/' + toString(false, false));
+	}
+
+	public URI toURI(String basePath) throws URISyntaxException {
+		return new URI(basePath + toString(false, false));
+	}
 
 }

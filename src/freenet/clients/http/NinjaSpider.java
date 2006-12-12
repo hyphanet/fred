@@ -117,31 +117,16 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 
 
 	private synchronized void queueURI(FreenetURI uri) {
-		byte[] uriBytes = uri.toString(false).getBytes();
-
 		/* Currently we don't handle PDF or other contents,
 		   so it's not interresting to download them
 		*/
 
+		String tmp = uri.toString().toLowerCase();
+		
 		if(htmlOnly
-		   && (uri.toString(false).toLowerCase().indexOf(".htm") < 0)
-		   && (uriBytes[uriBytes.length - 1] != '/'))
+		   && (tmp.indexOf(".htm") < 0)
+		   && (tmp.charAt(tmp.length()-1) != '/'))
 			return;
-
-		/* We remove HTML targets from URI (http://my.server/file#target) */
-		/* Else we re-index already indexed file */
-		String uriStr = null;
-		try {
-			uriStr = uri.toString(false);
-			if(uriStr.indexOf("#") > 0)
-				{
-					uriStr = uriStr.substring(0, uriStr.indexOf("#"));
-					uri = new FreenetURI(uriStr);
-				}
-		} catch (MalformedURLException e) {
-			Logger.error(this, "Spider: MalformedURLException: "+uriStr+ ':' +e);
-			return;
-		}
 
 		if ((!visitedURIs.contains(uri)) && queuedURISet.add(uri)) {
 			queuedURIList.addLast(uri);
@@ -198,11 +183,11 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		Bucket data = result.asBucket();
 		String mimeType = cm.getMIMEType();
 
-		sizeOfURIs.put(uri.toString(false), new Long(data.size()));
-		mimeOfURIs.put(uri.toString(false), mimeType);
+		sizeOfURIs.put(uri.toString(), new Long(data.size()));
+		mimeOfURIs.put(uri.toString(), mimeType);
 
 		try {
-			ContentFilter.filter(data, ctx.bucketFactory, mimeType, new URI("http://127.0.0.1:8888/" + uri.toString(false)), this);
+			ContentFilter.filter(data, ctx.bucketFactory, mimeType, new URI("http://127.0.0.1:8888/" + uri.toString()), this);
 		} catch (UnsafeContentTypeException e) {
 			return; // Ignore
 		} catch (IOException e) {
@@ -257,7 +242,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		if((type != null) && (type.length() != 0) && type.toLowerCase().equals("title")
 		   && (s != null) && (s.length() != 0) && (s.indexOf('\n') < 0)) {
 			/* We should have a correct title */
-			titlesOfURIs.put(uri.toString(false), s);
+			titlesOfURIs.put(uri.toString(), s);
 			type = "title";
 		}
 		else
@@ -268,7 +253,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 
 		Integer lastPosition = null;
 
-		lastPosition = (Integer)lastPositionByURI.get(uri.toString(false));
+		lastPosition = (Integer)lastPositionByURI.get(uri.toString());
 
 		if(lastPosition == null)
 			lastPosition = new Integer(1); /* We start to count from 1 */
@@ -287,7 +272,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		
 		if(type == null) {
 			lastPosition = new Integer(lastPosition.intValue() + words.length);
-			lastPositionByURI.put(uri.toString(false), lastPosition);
+			lastPositionByURI.put(uri.toString(), lastPosition);
 		}
 	}
 
@@ -307,12 +292,12 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 
 
 		/* Word position indexation */
-		HashMap wordPositionsForOneUri = (HashMap)positionsByWordByURI.get(uri.toString(false)); /* For a given URI, take as key a word, and gives position */
+		HashMap wordPositionsForOneUri = (HashMap)positionsByWordByURI.get(uri.toString()); /* For a given URI, take as key a word, and gives position */
 		
 		if(wordPositionsForOneUri == null) {
 			wordPositionsForOneUri = new HashMap();
 			wordPositionsForOneUri.put(word, new Integer[] { new Integer(position) });
-			positionsByWordByURI.put(uri.toString(false), wordPositionsForOneUri);
+			positionsByWordByURI.put(uri.toString(), wordPositionsForOneUri);
 		} else {
 			Integer[] positions = (Integer[])wordPositionsForOneUri.get(word);
 
@@ -449,20 +434,20 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 			Element fileElement = xmlDoc.createElement("file");
 
 			fileElement.setAttribute("id", Integer.toString(i));
-			fileElement.setAttribute("key", uris[i].toString(false));
+			fileElement.setAttribute("key", uris[i].toString());
 			
-			Long size = (Long)sizeOfURIs.get(uris[i].toString(false));
+			Long size = (Long)sizeOfURIs.get(uris[i].toString());
 
 			if(size == null) {
 				Logger.error(this, "Spider: size is missing");
 			} else {
 				fileElement.setAttribute("size", size.toString());
 			}
-			fileElement.setAttribute("mime", ((String)mimeOfURIs.get(uris[i].toString(false))));
+			fileElement.setAttribute("mime", ((String)mimeOfURIs.get(uris[i].toString())));
 
 			Element titleElement = xmlDoc.createElement("option");
 			titleElement.setAttribute("name", "title");
-			titleElement.setAttribute("value", (String)titlesOfURIs.get(uris[i].toString(false)));
+			titleElement.setAttribute("value", (String)titlesOfURIs.get(uris[i].toString()));
 
 			fileElement.appendChild(titleElement);
 			filesElement.appendChild(fileElement);
@@ -493,7 +478,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 				uriElement.setAttribute("id", x.toString());
 
 				/* Position by position */
-				HashMap positionsForGivenWord = (HashMap)positionsByWordByURI.get(uri.toString(false));
+				HashMap positionsForGivenWord = (HashMap)positionsByWordByURI.get(uri.toString());
 				Integer[] positions = (Integer[])positionsForGivenWord.get(words[i]);
 
 				StringBuffer positionList = new StringBuffer();

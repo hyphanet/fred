@@ -1622,7 +1622,7 @@ public class Node {
 	public SimpleFieldSet exportPrivateFieldSet() {
 		SimpleFieldSet fs = exportPublicFieldSet(false);
 		fs.put("dsaPrivKey", myPrivKey.asFieldSet());
-		fs.put("ark.privURI", this.myARK.getInsertURI().toString(false));
+		fs.put("ark.privURI", this.myARK.getInsertURI().toString(false, false));
 		return fs;
 	}
 	
@@ -1662,7 +1662,7 @@ public class Node {
 			fs.put("dsaPubKey", myPubKey.asFieldSet());
 		}
 		fs.put("ark.number", Long.toString(this.myARKNumber)); // Can be changed on setup
-		fs.put("ark.pubURI", this.myARK.getURI().toString(false)); // Can be changed on setup
+		fs.put("ark.pubURI", this.myARK.getURI().toString(false, false)); // Can be changed on setup
 		
 		synchronized (referenceSync) {
 			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){

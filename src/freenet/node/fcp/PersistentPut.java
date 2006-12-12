@@ -53,7 +53,7 @@ public class PersistentPut extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
-		fs.put("URI", uri.toString(false));
+		fs.put("URI", uri.toString(false, false));
 		fs.put("Verbosity", verbosity);
 		fs.put("PriorityClass", priorityClass);
 		fs.put("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
