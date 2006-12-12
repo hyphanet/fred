@@ -41,7 +41,7 @@ public class Message {
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
 
-	public static Message decodeFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
+	public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
 		DataInputStream dis
 	    = new DataInputStream(new ByteArrayInputStream(buf,
 	        offset, length));
@@ -168,7 +168,7 @@ public class Message {
 			dos.writeInt(_spec.getName().hashCode());
 			for (Iterator i = _spec.getOrderedFields().iterator(); i.hasNext();) {
 				String name = (String) i.next();
-				Serializer.writeToDataOutputStream(_payload.get(name), dos);
+				Serializer.writeToDataOutputStream(_payload.get(name), dos, destination);
 			}
 			dos.flush();
 		} catch (IOException e) {

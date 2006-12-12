@@ -246,7 +246,7 @@ public class UdpSocketManager extends Thread {
 				}
 			} else {
 				// Create a bogus context since no filter
-				Message m = decodePacket(data, offset, length,
+				Message m = decodeSingleMessage(data, offset, length,
 						new DummyPeerContext(peer), 0);
 				if (m != null) {
 					checkFilters(m);
@@ -263,9 +263,9 @@ public class UdpSocketManager extends Thread {
      * @param length
      * @param peer
      */
-    public Message decodePacket(byte[] data, int offset, int length, PeerContext peer, int overhead) {
+    public Message decodeSingleMessage(byte[] data, int offset, int length, PeerContext peer, int overhead) {
         try {
-            return Message.decodeFromPacket(data, offset, length, peer, overhead);
+            return Message.decodeMessageFromPacket(data, offset, length, peer, overhead);
         } catch (Throwable t) {
             Logger.error(this, "Could not decode packet: "+t, t);
             return null;

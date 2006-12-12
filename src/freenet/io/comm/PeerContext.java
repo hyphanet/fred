@@ -21,4 +21,7 @@ public interface PeerContext {
 	
 	/** Is the peer connected? are we able to route requests to it? */
 	boolean isRoutable();
+
+	/** Peer version, if this is supported, else -1 */
+	int getVersionNumber();
 }

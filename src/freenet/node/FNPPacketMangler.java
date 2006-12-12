@@ -888,7 +888,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 return;
             }
             if(logMINOR) Logger.minor(this, "Message "+i+" length "+length+", hash code: "+Fields.hashCode(decrypted, ptr, length));
-            Message m = usm.decodePacket(decrypted, ptr, length, tracker.pn, 1 + (overhead / messages));
+            Message m = usm.decodeSingleMessage(decrypted, ptr, length, tracker.pn, 1 + (overhead / messages));
             ptr+=length;
             if(m != null) {
                 //Logger.minor(this, "Dispatching packet: "+m);

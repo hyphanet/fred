@@ -31,8 +31,24 @@ public class FreenetInetAddress {
 	 * Create from serialized form on a DataInputStream.
 	 */
 	public FreenetInetAddress(DataInputStream dis) throws IOException {
-		byte[] ba = new byte[4];
-		dis.readFully(ba);
+		int firstByte = dis.readUnsignedByte();
+		byte[] ba;
+		if(firstByte == 255) {
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "New format IPv6 address");
+			// New format IPv6 address
+			ba = new byte[16];
+			dis.readFully(ba);
+		} else if(firstByte == 0) {
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "New format IPv4 address");
+			// New format IPv4 address
+			ba = new byte[4];
+			dis.readFully(ba);
+		} else {
+			// Old format IPv4 address
+			ba = new byte[4];
+			ba[0] = (byte)firstByte;
+			dis.readFully(ba, 1, 3);
+		}
 		_address = InetAddress.getByAddress(ba);
 		String name = null;
 		String s = dis.readUTF();
@@ -233,12 +249,19 @@ public class FreenetInetAddress {
 		}
 	}
 
-	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
+	public void writeToDataOutputStream(DataOutputStream dos, boolean oldForm) throws IOException {
 		InetAddress addr = this.getAddress();
 		if (addr == null) throw new UnknownHostException();
 		byte[] data = addr.getAddress();
-		if(data.length > 4)
-			throw new IllegalArgumentException("IPv6 not supported at present");
+		if(oldForm) {
+			if(data.length != 4)
+				throw new IllegalArgumentException("IPv6 not supported at present");
+		} else {
+			if(data.length == 4)
+				dos.write(0);
+			else
+				dos.write(255);
+		}
 		dos.write(data);
 		if(hostname != null)
 			dos.writeUTF(hostname);

@@ -28,6 +28,7 @@ import java.util.List;
 
 import freenet.io.WritableToDataOutputStream;
 import freenet.io.comm.Peer;
+import freenet.io.comm.PeerContext;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
@@ -94,7 +95,18 @@ public class Serializer {
 		}
 	}
 
-	public static void writeToDataOutputStream(Object object, DataOutputStream dos) throws IOException {
+	private static boolean needOldPeerFormat(PeerContext ctx) {
+		int ver = ctx.getVersionNumber();
+		if(ver >= 1008) {
+			if(Logger.shouldLog(Logger.MINOR, Serializer.class)) Logger.minor(Serializer.class, "New format peer: "+ver+" : "+ctx);
+		} else {
+			if(Logger.shouldLog(Logger.MINOR, Serializer.class)) Logger.minor(Serializer.class, "Old format peer: "+ver+" : "+ctx);
+		}
+		
+		return ver < 1008;
+	}
+
+	public static void writeToDataOutputStream(Object object, DataOutputStream dos, PeerContext ctx) throws IOException {
 		Class type = object.getClass();
 		if (type.equals(Boolean.class)) {
 			dos.write(((Boolean) object).booleanValue() ? 1 : 0);
@@ -119,9 +131,11 @@ public class Serializer {
 			dos.writeInt(ll.size());
 			synchronized (ll) {
 				for (Iterator i = ll.iterator(); i.hasNext();) {
-					writeToDataOutputStream(i.next(), dos);
+					writeToDataOutputStream(i.next(), dos, ctx);
 				}
 			}
+		} else if (type.equals(Peer.class)) {
+			((Peer)object).writeToDataOutputStream(dos, needOldPeerFormat(ctx));
 		} else if (WritableToDataOutputStream.class.isAssignableFrom(type)) {
 			WritableToDataOutputStream b = (WritableToDataOutputStream) object;
 			b.writeToDataOutputStream(dos);

@@ -36,4 +36,8 @@ public class DummyPeerContext implements PeerContext {
 	public void reportOutgoingBytes(int length) {
 		// Ignore
 	}
+
+	public int getVersionNumber() {
+		return -1;
+	}
 }

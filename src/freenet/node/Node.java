@@ -1650,7 +1650,7 @@ public class Node {
 		}
 		fs.put("identity", Base64.encode(myIdentity)); // FIXME !forSetup after 11104 is mandatory
 		fs.put("location", Double.toString(lm.getLocation().getValue())); // FIXME maybe !forSetup; see #943
-		fs.put("version", Version.getVersionString()); // Keep, vital that peer know our version
+		fs.put("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some messages may be interpreted differently depending on version.
 		fs.put("testnet", Boolean.toString(testnetEnabled)); // Vital that peer know this!
 		fs.put("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
 		if(testnetEnabled)

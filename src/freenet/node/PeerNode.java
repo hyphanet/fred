@@ -3050,4 +3050,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		return ((double) hadRoutableConnectionCount) / routableConnectionCheckCount;
 	}
+
+	public int getVersionNumber() {
+		return Version.getArbitraryBuildNumber(getVersion());
+	}
 }
