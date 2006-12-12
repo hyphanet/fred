@@ -147,7 +147,8 @@ class SingleFileInserter implements ClientPutState {
 		Compressor bestCodec = null;
 		Bucket bestCompressedData = null;
 
-		if((origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress)) {
+		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
+		if(tryCompress) {
 			// Try to compress the data.
 			// Try each algorithm, starting with the fastest and weakest.
 			// Stop when run out of algorithms, or the compressed data fits in a single block.
@@ -188,7 +189,8 @@ class SingleFileInserter implements ClientPutState {
 		}
 		
 		if(parent == cb) {
-			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.codecNumberForMetadata(), origSize, data.size()));
+			if(tryCompress)
+				ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.codecNumberForMetadata(), origSize, data.size()));
 			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this);
 		}
 		
