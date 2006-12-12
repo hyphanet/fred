@@ -169,12 +169,12 @@ public class RequestStarterGroup {
 		sb.append(isSSK ? "SSK" : "CHK");
 		sb.append(' ');
 		sb.append(isInsert ? "Insert" : "Request");
-		sb.append(' ');
+		sb.append(" RTT=");
 		MyRequestThrottle throttle = getThrottle(isSSK, isInsert);
 		sb.append(TimeUtil.formatTime((long)throttle.getRTT(), 2, true));
-		sb.append(" RTT ");
+		sb.append(" delay=");
 		sb.append(TimeUtil.formatTime((long)throttle.getDelay(), 2, true));
-		sb.append(" delay = ");
+		sb.append(" bw=");
 		sb.append((long)throttle.getRate());
 		sb.append("B/sec");
 		return sb.toString();
