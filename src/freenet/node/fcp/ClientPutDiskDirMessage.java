@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 
+import freenet.client.DefaultMIMETypes;
 import freenet.client.async.ManifestElement;
 import freenet.node.Node;
 import freenet.support.Fields;
@@ -78,7 +79,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	        		
 	        		FileBucket bucket = new FileBucket(f, true, false, false, false);
 	        		
-	        		ret.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, null, f.length()));
+	        		ret.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, DefaultMIMETypes.guessMIMEType(f.getName(), true), f.length()));
 	        	} else if(filelist[i].isDirectory()) {
 	        		HashMap subdir = makeBucketsByName(new File(thisdir, filelist[i].getName()), prefix + filelist[i].getName() + '/');
 	        		ret.put(filelist[i].getName(), subdir);
