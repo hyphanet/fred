@@ -183,9 +183,11 @@ public class FProxyToadlet extends Toadlet {
 			option = optionList.addChild("li");
 			option.addChild("a", "href", basePath + key.toString() + "?forcedownload"+extras, "Click here");
 			option.addChild("#", " to force your browser to download the file to disk.");
-			option = optionList.addChild("li");
-			option.addChild("a", "href", basePath + key.toString() + "?force=" + getForceValue(key, now)+extras, "Click here");
-			option.addChild("#", " to open the file as " + mimeType + '.');
+			if(!(mimeType.equals("application/octet-stream") || mimeType.equals("application/x-msdownload"))) {
+				option = optionList.addChild("li");
+				option.addChild("a", "href", basePath + key.toString() + "?force=" + getForceValue(key, now)+extras, "Click here");
+				option.addChild("#", " to open the file as " + mimeType + '.');
+			}
 			if(referrer != null) {
 				option = optionList.addChild("li");
 				option.addChild("a", "href", referrer, "Click here");
