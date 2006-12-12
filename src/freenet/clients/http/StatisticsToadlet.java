@@ -1,17 +1,26 @@
 package freenet.clients.http;
 
-import java.io.*;
-import java.net.*;
-import java.text.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.URI;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Map;
 
-import org.tanukisoftware.wrapper.WrapperManager;
-
-import freenet.client.*;
+import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
-import freenet.io.comm.*;
-import freenet.node.*;
-import freenet.support.*;
+import freenet.io.comm.IOStatisticCollector;
+import freenet.node.Node;
+import freenet.node.NodeClientCore;
+import freenet.node.NodeStarter;
+import freenet.node.PeerNodeStatus;
+import freenet.node.RequestStarterGroup;
+import freenet.node.Version;
+import freenet.support.HTMLNode;
+import freenet.support.SizeUtil;
+import freenet.support.TimeUtil;
 
 public class StatisticsToadlet extends Toadlet {
 
