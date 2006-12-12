@@ -51,7 +51,6 @@ public class PersistentPutDir extends FCPMessage {
 		fs.put("Identifier", identifier);
 		fs.put("URI", uri.toString(false, false));
 		fs.put("Verbosity", Integer.toString(verbosity));
-		fs.put("PriorityClass", Short.toString(priorityClass));
 		fs.put("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		fs.put("PriorityClass", Short.toString(priorityClass));
 		fs.put("Global", Boolean.toString(global));
