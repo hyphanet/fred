@@ -195,8 +195,8 @@ public class HTTPRequest {
 			// url-decode the name and value
 			if (doUrlDecoding) {
 					try {
-						name = java.net.URLDecoder.decode(name, "UTF-8");
-						value = java.net.URLDecoder.decode(value, "UTF-8");
+						name = URLDecoder.decode(name, "UTF-8");
+						value = URLDecoder.decode(value, "UTF-8");
 					} catch (UnsupportedEncodingException e) {
 						throw new Error(e);
 					}

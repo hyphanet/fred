@@ -28,22 +28,26 @@ public class URLDecoder
     // test harness
     public static void main(String[] args) throws URLEncodedFormatException {
 	for (int i = 0; i < args.length; i++) {
-	    System.out.println(args[i] + " -> " + decode(args[i]));
+	    System.out.println(args[i] + " -> " + decode(args[i], false));
 	}
     }
 
     /**
-	 * Translates a string out of x-www-form-urlencoded format.
+	 * Decodes a URLEncoder format string.
 	 *
 	 * @param s String to be translated.
+	 * @param tolerant If true, be tolerant of bogus escapes; bogus escapes are treated as
+	 * just plain characters. Not recommended; a hack to allow users to paste in URLs 
+	 * containing %'s.
 	 * @return the translated String.
 	 *
 	 **/
-	public static String decode(String s) throws URLEncodedFormatException {
+	public static String decode(String s, boolean tolerant) throws URLEncodedFormatException {
 		if (s.length() == 0)
 			return "";
 		int len = s.length();
 		ByteArrayOutputStream decodedBytes = new ByteArrayOutputStream();
+		boolean hasDecodedSomething = false;
 
 		for (int i = 0; i < len; i++) {
 			char c = s.charAt(i);
@@ -64,8 +68,20 @@ public class URLDecoder
 					if (read == 0)
 						throw new URLEncodedFormatException("Can't encode" + " 00");
 					decodedBytes.write((int) read);
+					hasDecodedSomething = true;
 				} catch (NumberFormatException nfe) {
-					throw new URLEncodedFormatException(s);
+					// Not encoded?
+					if(tolerant && !hasDecodedSomething) {
+						try {
+							byte[] buf = ('%'+hexval).getBytes("UTF-8");
+							decodedBytes.write(buf, 0, buf.length);
+							continue;
+						} catch (UnsupportedEncodingException e) {
+							throw new Error(e);
+						}
+					}
+					
+					throw new URLEncodedFormatException("Not a two character hex % escape: "+hexval+" in "+s);
 				}
 			} else {
 				try {

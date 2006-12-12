@@ -64,7 +64,7 @@ public class StringArrOption extends Option {
 	
 	public static String decode(String s) {
 		try {
-			return URLDecoder.decode(s);
+			return URLDecoder.decode(s, false);
 		} catch (URLEncodedFormatException e) {
 			return null;
 		}

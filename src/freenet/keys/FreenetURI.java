@@ -12,7 +12,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
@@ -23,6 +22,8 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
 import freenet.client.InserterException;
 
@@ -222,9 +223,9 @@ public class FreenetURI implements Cloneable{
 		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0) {
 			// Encoded URL?
 			try {
-				URI=URLDecoder.decode(URI, "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				throw new Error(e);
+				URI=URLDecoder.decode(URI, false);
+			} catch (URLEncodedFormatException e) {
+				throw new MalformedURLException("Invalid URI: no @ or /, or @ or / is escaped but there are invalid escapes");
 			}
 		}
 		
@@ -251,9 +252,11 @@ public class FreenetURI implements Cloneable{
 		while ((slash2 = URI.lastIndexOf("/")) != -1) {
 			String s;
 			try {
-				s = URLDecoder.decode(URI.substring(slash2 + "/".length()), "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				throw new Error(e);
+				s = URLDecoder.decode(URI.substring(slash2 + "/".length()), true);
+			} catch (URLEncodedFormatException e) {
+				MalformedURLException ue = new MalformedURLException(e.toString());
+				ue.initCause(e);
+				throw ue;
 			}
 			if (s != null)
 				sv.addElement(s);

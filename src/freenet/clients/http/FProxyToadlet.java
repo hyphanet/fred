@@ -264,7 +264,8 @@ public class FProxyToadlet extends Toadlet {
 				try {
 					newURI = new FreenetURI(k);
 				} catch (MalformedURLException e) {
-					sendErrorPage(ctx, 404, "Not found", "Invalid key");
+					Logger.normal(this, "Invalid key: "+e+" for "+k, e);
+					sendErrorPage(ctx, 404, "Not found", "Invalid key: "+e);
 					return;
 				}
 				
@@ -318,7 +319,7 @@ public class FProxyToadlet extends Toadlet {
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 			HTMLNode errorInfobox = contentNode.addChild("div", "class", "infobox infobox-error");
-			errorInfobox.addChild("div", "class", "infobox-header", "Invalid key");
+			errorInfobox.addChild("div", "class", "infobox-header", "Invalid key: "+e);
 			HTMLNode errorContent = errorInfobox.addChild("div", "class", "infobox-content");
 			errorContent.addChild("#", "Expected a freenet key, but got ");
 			errorContent.addChild("code", ks);
