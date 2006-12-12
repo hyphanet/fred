@@ -519,7 +519,7 @@ public class KeyTracker {
     		Logger.minor(this, "Executed "+cbCount+" callbacks");
     }
     
-    private PacketThrottle getThrottle() {
+    PacketThrottle getThrottle() {
     	// pn.getPeer() cannot be null as it has already connected.
     	return PacketThrottle.getThrottle(pn.getPeer(), Node.PACKET_SIZE);
 	}

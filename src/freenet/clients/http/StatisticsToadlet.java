@@ -259,8 +259,24 @@ public class StatisticsToadlet extends Toadlet {
 				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
 			}
 
-			// Peer routing backoff reason box
 			if(advancedEnabled) {
+			
+				// Load balancing box
+				// Include overall window, and RTTs for each
+				RequestStarterGroup starters = core.requestStarters;
+				double window = starters.getWindow();
+				HTMLNode loadStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+				loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting");
+				HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
+				HTMLNode loadStatsList = loadStatsContent.addChild("ul");
+				loadStatsList.addChild("ul", "Global window: "+window);
+				loadStatsList.addChild("ul", starters.statsPageLine(false, false));
+				loadStatsList.addChild("ul", starters.statsPageLine(true, false));
+				loadStatsList.addChild("ul", starters.statsPageLine(false, true));
+				loadStatsList.addChild("ul", starters.statsPageLine(true, true));
+				nextTableCell = overviewTableRow.addChild("td");
+				
+				// Peer routing backoff reason box
 				nextTableCell = overviewTableRow.addChild("td", "class", "last");
 				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
 				backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
@@ -277,10 +293,8 @@ public class StatisticsToadlet extends Toadlet {
 						}
 					}
 				}
-			}
 			
-			//Swap statistics box
-			if(advancedEnabled) {
+				//Swap statistics box
 				overviewTableRow = overviewTable.addChild("tr");
 				nextTableCell = overviewTableRow.addChild("td", "class", "first");
 				int startedSwaps = node.getStartedSwaps();
@@ -336,10 +350,8 @@ public class StatisticsToadlet extends Toadlet {
 					locationSwapList.addChild("li", "swapsRejectedRecognizedID:\u00a0" + swapsRejectedRecognizedID);
 				}
 				nextTableCell = overviewTableRow.addChild("td");
-			}
 			
-			// Bandwidth box
-			if (advancedEnabled) {
+				// Bandwidth box
 				HTMLNode bandwidthInfobox = nextTableCell.addChild("div", "class", "infobox");
 				bandwidthInfobox.addChild("div", "class", "infobox-header", "Bandwidth");
 				HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
@@ -366,10 +378,8 @@ public class StatisticsToadlet extends Toadlet {
 				bandwidthList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(outputBandwidthLimit, true)+"ps)");
 				bandwidthList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(inputBandwidthLimit, true)+"ps)");
                 nextTableCell = overviewTableRow.addChild("td");
-			}
 
-            // store size box
-            if (advancedEnabled) {
+                // store size box
                 HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
                 storeSizeInfobox.addChild("div", "class", "infobox-header", "Store size");
                 HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
@@ -424,12 +434,10 @@ public class StatisticsToadlet extends Toadlet {
 
                 storeSizeList.addChild("li", 
                         "Avg. access rate:\u00a0" + thousendPoint.format(overallAccesses/nodeUptimeSeconds) + "/s");
-            }
             
-            nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+                nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 
-            // jvm stats box
-            if (advancedEnabled) {
+                // jvm stats box
                 HTMLNode jvmStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
                 jvmStatsInfobox.addChild("div", "class", "infobox-header", "JVM info");
                 HTMLNode jvmStatsInfoboxContent = jvmStatsInfobox.addChild("div", "class", "infobox-content");
@@ -451,10 +459,8 @@ public class StatisticsToadlet extends Toadlet {
                 jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true));
                 jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
                 jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
-            }
 			
-			// unclaimedFIFOMessageCounts box
-			if(advancedEnabled) {
+                // unclaimedFIFOMessageCounts box
 				overviewTableRow = overviewTable.addChild("tr");
 				nextTableCell = overviewTableRow.addChild("td", "class", "first");
 				Map unclaimedFIFOMessageCountsMap = node.getUSM().getUnclaimedFIFOMessageCounts();
@@ -487,10 +493,8 @@ public class StatisticsToadlet extends Toadlet {
 				}
 				unclaimedFIFOMessageCountsList.addChild("li", "Unclaimed Messages Considered:\u00a0" + totalCount);
 				nextTableCell = overviewTableRow.addChild("td");
-			}
 
-            // node version information box
-            if (advancedEnabled) {
+				// node version information box
                 HTMLNode versionInfobox = nextTableCell.addChild("div", "class", "infobox");
                 versionInfobox.addChild("div", "class", "infobox-header", "Node Version Information");
                 HTMLNode versionInfoboxContent = versionInfobox.addChild("div", "class", "infobox-content");
@@ -501,7 +505,7 @@ public class StatisticsToadlet extends Toadlet {
 				} else {
 					versionInfoboxContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + " r" + NodeStarter.extRevisionNumber);
 				}
-            }
+			}
 		}
 
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());

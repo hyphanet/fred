@@ -116,4 +116,12 @@ public class PacketThrottle {
 		lastScheduledDelay += getDelay();
 		return lastScheduledDelay;
 	}
+
+	public long getRoundTripTime() {
+		return _roundTripTime;
+	}
+
+	public double getWindowSize() {
+		return _simulatedWindowSize;
+	}
 }

@@ -47,6 +47,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.xfer.PacketThrottle;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -3053,5 +3054,15 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public int getVersionNumber() {
 		return Version.getArbitraryBuildNumber(getVersion());
+	}
+
+	public PacketThrottle getThrottle() {
+		if(currentTracker != null)
+			return currentTracker.getThrottle();
+		if(unverifiedTracker != null)
+			return unverifiedTracker.getThrottle();
+		if(previousTracker != null)
+			return previousTracker.getThrottle();
+		return null;
 	}
 }

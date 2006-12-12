@@ -8,6 +8,7 @@ import java.util.Map;
 
 import freenet.clients.http.DarknetConnectionsToadlet;
 import freenet.io.comm.Peer;
+import freenet.io.xfer.PacketThrottle;
 
 /**
  * Contains various status information for a {@link PeerNode}. Used e.g. in
@@ -84,6 +85,8 @@ public class PeerNodeStatus {
 	private long totalBytesOut;
 	
 	private double percentTimeRoutableConnection;
+	
+	private PacketThrottle throttle;
 
 	public PeerNodeStatus(PeerNode peerNode) {
 		this.name = peerNode.getName();
@@ -125,6 +128,7 @@ public class PeerNodeStatus {
 		this.totalBytesIn = peerNode.getTotalInputBytes();
 		this.totalBytesOut = peerNode.getTotalOutputBytes();
 		this.percentTimeRoutableConnection = peerNode.getPercentTimeRoutableConnection();
+		this.throttle = peerNode.getThrottle();
 	}
 
 	/**
@@ -362,5 +366,9 @@ public class PeerNodeStatus {
 	
 	public double getPercentTimeRoutableConnection() {
 		return percentTimeRoutableConnection;
+	}
+
+	public PacketThrottle getThrottle() {
+		return throttle;
 	}
 }

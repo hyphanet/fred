@@ -22,6 +22,7 @@ import freenet.config.SubConfig;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.xfer.PacketThrottle;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -382,6 +383,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				if(advancedEnabled) {
 					peerTableHeaderRow.addChild("th", "%\u00a0Time Routable");
 					peerTableHeaderRow.addChild("th", "Total\u00a0Traffic\u00a0(in/out)");
+					peerTableHeaderRow.addChild("th", "Congestion\u00a0Control");
 				}
 				
 				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
@@ -464,6 +466,15 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", fix1.format(peerNodeStatus.getPercentTimeRoutableConnection()));
 						// total traffic column
 						peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputBytes())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputBytes()));
+						// congestion control
+						PacketThrottle t = peerNodeStatus.getThrottle();
+						String val;
+						if(t == null)
+							val = "none";
+						else
+							val = (int)((1000.0 / t.getDelay()) * 1024.0)+"B/sec delay "+
+								t.getDelay()+"ms (RTT "+t.getRoundTripTime()+"ms window "+t.getWindowSize();
+						peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", val);
 					}
 					
 					if (path.endsWith("displaymessagetypes.html")) {
