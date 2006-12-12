@@ -9,14 +9,17 @@ import freenet.support.SimpleFieldSet;
 public class IdentifierCollisionMessage extends FCPMessage {
 
 	final String identifier;
+	final boolean global;
 	
-	public IdentifierCollisionMessage(String id) {
+	public IdentifierCollisionMessage(String id, boolean global) {
 		this.identifier = id;
+		this.global = global;
 	}
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet();
 		sfs.put("Identifier", identifier);
+		if(global) sfs.put("Global", "true");
 		return sfs;
 	}
 
@@ -26,7 +29,7 @@ public class IdentifierCollisionMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "IdentifierCollision goes from server to client not the other way around", identifier);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "IdentifierCollision goes from server to client not the other way around", identifier, global);
 	}
 
 }

@@ -65,12 +65,13 @@ public class ClientPutMessage extends DataCarryingMessage {
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		String fnam = null;
 		identifier = fs.get("Identifier");
+		global = Fields.stringToBool(fs.get("Global"), false);
 		if(identifier == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
 		try {
 			String u = fs.get("URI");
 			if(u == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI", identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI", identifier, global);
 			FreenetURI uu = new FreenetURI(fs.get("URI"));
 			String[] metas = uu.getAllMetaStrings();
 			if(metas != null && metas.length == 1) {
@@ -79,9 +80,8 @@ public class ClientPutMessage extends DataCarryingMessage {
 			} // if >1, will fail later
 			uri = uu;
 		} catch (MalformedURLException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier, global);
 		}
-		global = Fields.stringToBool(fs.get("Global"), false);
 		String verbosityString = fs.get("Verbosity");
 		if(verbosityString == null)
 			verbosity = 0;
@@ -89,7 +89,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			try {
 				verbosity = Integer.parseInt(verbosityString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier, global);
 			}
 		}
 		contentType = fs.get("Metadata.ContentType");
@@ -101,7 +101,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			try {
 				maxRetries = Integer.parseInt(maxRetriesString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
 			}
 		}
 		getCHKOnly = Fields.stringToBool(fs.get("GetCHKOnly"), false);
@@ -113,9 +113,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 			try {
 				priorityClass = Short.parseShort(priorityString, 10);
 				if((priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS) || (priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS))
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier, global);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier, global);
 			}
 		}
 		String uploadFrom = fs.get("UploadFrom");
@@ -123,11 +123,11 @@ public class ClientPutMessage extends DataCarryingMessage {
 			uploadFromType = UPLOAD_FROM_DIRECT;
 			String dataLengthString = fs.get("DataLength");
 			if(dataLengthString == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a ClientPut", identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a ClientPut", identifier, global);
 			try {
 				dataLength = Long.parseLong(dataLengthString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier, global);
 			}
 			this.origFilename = null;
 			redirectTarget = null;
@@ -135,10 +135,10 @@ public class ClientPutMessage extends DataCarryingMessage {
 			uploadFromType = UPLOAD_FROM_DISK;
 			String filename = fs.get("Filename");
 			if(filename == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Filename", identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Filename", identifier, global);
 			File f = new File(filename);
 			if(!(f.exists() && f.isFile() && f.canRead()))
-				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, null, identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, null, identifier, global);
 			dataLength = f.length();
 			FileBucket fileBucket = new FileBucket(f, true, false, false, false);
 			this.bucket = fileBucket;
@@ -150,17 +150,17 @@ public class ClientPutMessage extends DataCarryingMessage {
 			uploadFromType = UPLOAD_FROM_REDIRECT;
 			String target = fs.get("TargetURI");
 			if(target == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "TargetURI missing but UploadFrom=redirect", identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "TargetURI missing but UploadFrom=redirect", identifier, global);
 			try {
 				redirectTarget = new FreenetURI(target);
 			} catch (MalformedURLException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: "+e, identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: "+e, identifier, global);
 			}
 			dataLength = 0;
 			origFilename = null;
 			bucket = null;
 		} else
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "UploadFrom invalid or unrecognized: "+uploadFrom, identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "UploadFrom invalid or unrecognized: "+uploadFrom, identifier, global);
 		dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
 		String persistenceString = fs.get("Persistence");
 		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
@@ -174,14 +174,14 @@ public class ClientPutMessage extends DataCarryingMessage {
 			// Same as reboot but saved to disk, persists forever.
 			persistenceType = ClientRequest.PERSIST_FOREVER;
 		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
 		}
 		clientToken = fs.get("ClientToken");
 		String f = fs.get("TargetFilename");
 		if(f != null)
 			fnam = f;
 		if(fnam != null && fnam.indexOf('/') > -1) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "TargetFilename must not contain slashes", identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "TargetFilename must not contain slashes", identifier, global);
 		}
 		if(fnam != null && fnam.length() == 0) {
 			fnam = null; // Deliberate override to tell us not to create one.
@@ -261,6 +261,10 @@ public class ClientPutMessage extends DataCarryingMessage {
 		default:
 			throw new IllegalArgumentException();
 		}
+	}
+
+	boolean isGlobal() {
+		return global;
 	}
 	
 }

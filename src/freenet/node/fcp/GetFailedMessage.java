@@ -22,12 +22,13 @@ public class GetFailedMessage extends FCPMessage {
 	final FailureCodeTracker tracker;
 	final boolean isFatal;
 	final String identifier;
+	final boolean global;
 	final long expectedDataLength;
 	final String expectedMimeType;
 	final boolean finalizedExpected;
 	final FreenetURI redirectURI;
 	
-	public GetFailedMessage(FetchException e, String identifier) {
+	public GetFailedMessage(FetchException e, String identifier, boolean global) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Creating get failed from "+e+" for "+identifier, e);
 		this.tracker = e.errorCodes;
@@ -37,6 +38,7 @@ public class GetFailedMessage extends FCPMessage {
 		this.shortCodeDescription = FetchException.getShortMessage(code);
 		this.isFatal = e.isFatal();
 		this.identifier = identifier;
+		this.global = global;
 		this.expectedDataLength = e.expectedSize;
 		this.expectedMimeType = e.getExpectedMimeType();
 		this.finalizedExpected = e.finalizedSize();
@@ -84,6 +86,7 @@ public class GetFailedMessage extends FCPMessage {
 			this.redirectURI = new FreenetURI(s);
 		else
 			this.redirectURI = null;
+		this.global = Fields.stringToBool(fs.get("Global"), false);
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -128,7 +131,7 @@ public class GetFailedMessage extends FCPMessage {
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "FetchError goes from server to client not the other way around", identifier);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "FetchError goes from server to client not the other way around", identifier, global);
 	}
 
 }

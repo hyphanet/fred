@@ -56,26 +56,26 @@ public class AddPeer extends FCPMessage {
 				}
 				in.close();
 			} catch (MalformedURLException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "Error parsing ref URL <"+urlString+">: "+e.getMessage(), null);
+				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "Error parsing ref URL <"+urlString+">: "+e.getMessage(), null, false);
 			} catch (IOException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "IO error while retrieving ref URL <"+urlString+">: "+e.getMessage(), null);
+				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "IO error while retrieving ref URL <"+urlString+">: "+e.getMessage(), null, false);
 			}
 			ref = new StringBuffer(ref.toString().trim());
 			if(ref == null) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+ '>', null);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+ '>', null, false);
 			}
 			if(ref.equals("")) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+ '>', null);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+ '>', null, false);
 			}
 			try {
 				fs = new SimpleFieldSet(ref.toString());
 			} catch (IOException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">: "+e.getMessage(), null);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">: "+e.getMessage(), null, false);
 			}
 		} else if(fileString != null) {
 			File f = new File(fileString);
 			if(!f.isFile()) {
-				throw new MessageInvalidException(ProtocolErrorMessage.NOT_A_FILE_ERROR, "The given ref file path <"+fileString+"> is not a file", null);
+				throw new MessageInvalidException(ProtocolErrorMessage.NOT_A_FILE_ERROR, "The given ref file path <"+fileString+"> is not a file", null, false);
 			}
 			try {
 				in = new BufferedReader(new FileReader(f));
@@ -87,33 +87,33 @@ public class AddPeer extends FCPMessage {
 				}
 				in.close();
 			} catch (FileNotFoundException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "File not found when retrieving ref file <"+fileString+">: "+e.getMessage(), null);
+				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "File not found when retrieving ref file <"+fileString+">: "+e.getMessage(), null, false);
 			} catch (IOException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.FILE_PARSE_ERROR, "IO error while retrieving ref file <"+fileString+">: "+e.getMessage(), null);
+				throw new MessageInvalidException(ProtocolErrorMessage.FILE_PARSE_ERROR, "IO error while retrieving ref file <"+fileString+">: "+e.getMessage(), null, false);
 			}
 			ref = new StringBuffer(ref.toString().trim());
 			if(ref == null) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+ '>', null);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+ '>', null, false);
 			}
 			if(ref.equals("")) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+ '>', null);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+ '>', null, false);
 			}
 			try {
 				fs = new SimpleFieldSet(ref.toString());
 			} catch (IOException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">: "+e.getMessage(), null);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">: "+e.getMessage(), null, false);
 			}
 		}
 		PeerNode pn;
 		try {
 			pn = new PeerNode(fs, node, false);
 		} catch (FSParseException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null);
+			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null, false);
 		} catch (PeerParseException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null);
+			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null, false);
 		} catch (ReferenceSignatureVerificationException e) {
 			// TODO: maybe a special ProtocolErrorMessage ?
-			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null);
+			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null, false);
 		}
 		// **FIXME** Handle duplicates somehow maybe?  What about when node.addDarknetConnection() fails for some reason?
 		if(node.addDarknetConnection(pn))

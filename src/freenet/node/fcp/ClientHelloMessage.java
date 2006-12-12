@@ -22,9 +22,9 @@ public class ClientHelloMessage extends FCPMessage {
 		clientName = fs.get("Name");
 		clientExpectedVersion = fs.get("ExpectedVersion");
 		if(clientName == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a Name field", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a Name field", null, false);
 		if(clientExpectedVersion == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a ExpectedVersion field", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a ExpectedVersion field", null, false);
 		// FIXME check the expected version
 	}
 

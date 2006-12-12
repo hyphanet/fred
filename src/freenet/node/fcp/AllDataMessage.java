@@ -15,12 +15,14 @@ import freenet.support.io.Bucket;
 public class AllDataMessage extends DataCarryingMessage {
 
 	final long dataLength;
+	final boolean global;
 	final String identifier;
 	
-	public AllDataMessage(Bucket bucket, String identifier) {
+	public AllDataMessage(Bucket bucket, String identifier, boolean global) {
 		this.bucket = bucket;
 		this.dataLength = bucket.size();
 		this.identifier = identifier;
+		this.global = global;
 	}
 
 	long dataLength() {
@@ -31,6 +33,7 @@ public class AllDataMessage extends DataCarryingMessage {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("DataLength", Long.toString(dataLength));
 		fs.put("Identifier", identifier);
+		if(global) fs.put("Global", "true");
 		return fs;
 	}
 
@@ -39,11 +42,15 @@ public class AllDataMessage extends DataCarryingMessage {
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "AllData goes from server to client not the other way around", identifier);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "AllData goes from server to client not the other way around", identifier, global);
 	}
 
 	String getIdentifier() {
 		return identifier;
+	}
+
+	boolean isGlobal() {
+		return global;
 	}
 
 }

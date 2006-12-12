@@ -17,20 +17,20 @@ public class DirectDirPutFile extends DirPutFile {
 	private final Bucket data;
 	private final long length;
 	
-	public DirectDirPutFile(SimpleFieldSet subset, String identifier, BucketFactory bf) throws MessageInvalidException {
-		super(subset, identifier);
+	public DirectDirPutFile(SimpleFieldSet subset, String identifier, boolean global, BucketFactory bf) throws MessageInvalidException {
+		super(subset, identifier, global);
 		String s = subset.get("DataLength");
 		if(s == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "UploadFrom=direct requires a DataLength for "+name, identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "UploadFrom=direct requires a DataLength for "+name, identifier, global);
 		try {
 			length = Long.parseLong(s);
 		} catch (NumberFormatException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Could not parse DataLength: "+e.toString(), identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Could not parse DataLength: "+e.toString(), identifier, global);
 		}
 		try {
 			data = bf.makeBucket(length);
 		} catch (IOException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Internal error: could not allocate temp bucket: "+e.toString(), identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Internal error: could not allocate temp bucket: "+e.toString(), identifier, global);
 		}
 	}
 

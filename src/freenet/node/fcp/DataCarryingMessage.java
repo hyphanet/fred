@@ -22,6 +22,7 @@ public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
 	}
 	
 	abstract String getIdentifier();
+	abstract boolean isGlobal();
 
 	protected boolean freeOnSent;
 	
@@ -39,7 +40,7 @@ public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
 			tempBucket = createBucket(bf, len, server);
 		} catch (IOException e) {
 			Logger.error(this, "Bucket error: "+e, e);
-			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), getIdentifier());
+			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), getIdentifier(), isGlobal());
 		}
 		BucketTools.copyFrom(tempBucket, is, len);
 		this.bucket = tempBucket;

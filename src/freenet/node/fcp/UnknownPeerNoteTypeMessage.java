@@ -26,7 +26,7 @@ public class UnknownPeerNoteTypeMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "UnknownPeerNoteType goes from server to client not the other way around", null);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "UnknownPeerNoteType goes from server to client not the other way around", null, false);
 	}
 
 }

@@ -33,7 +33,7 @@ public class ModifyPeerNote extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		String nodeIdentifier = fs.get("NodeIdentifier");
 		if( nodeIdentifier == null ) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", null, false);
 		}
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
@@ -45,11 +45,11 @@ public class ModifyPeerNote extends FCPMessage {
 		try {
 			peerNoteType = fs.getInt("PeerNoteType");
 		} catch (FSParseException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Error parsing PeerNoteType field: "+e.getMessage(), null);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Error parsing PeerNoteType field: "+e.getMessage(), null, false);
 		}
 		String encodedNoteText = fs.get("NoteText");
 		if( encodedNoteText == null ) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NoteText field missing", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NoteText field missing", null, false);
 		}
 		String noteText;
 		// **FIXME** this should be generalized for multiple peer notes per peer, after PeerNode is similarly generalized

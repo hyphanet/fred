@@ -32,25 +32,25 @@ public class NodeHelloMessage extends FCPMessage {
 	public NodeHelloMessage(SimpleFieldSet fs) throws MessageInvalidException {	
 		this.nodeNode = fs.get("Node");
 		if(nodeNode == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Node!", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Node!", null, false);
 		else if(!nodeNode.equals("Fred"))
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Not talking to Fred!", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Not talking to Fred!", null, false);
 		
 		this.nodeFCPVersion = fs.get("FCPVersion");
 		if(nodeFCPVersion == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No FCPVersion!", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No FCPVersion!", null, false);
 		else if(!nodeFCPVersion.equals("2.0"))
-			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "FCPVersion is incompatible!", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "FCPVersion is incompatible!", null, false);
 		
 		this.nodeVersion = fs.get("Version");
 		if(nodeVersion == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Version!", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Version!", null, false);
 		else if(!nodeVersion.startsWith("Fred,0.7,1.0,"))
-			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Fred Version is incompatible!", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Fred Version is incompatible!", null, false);
 		
 		this.nodeCompressionCodecs = fs.get("CompressionCodecs");
 		if(nodeCompressionCodecs == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No CompressionCodecs!", null);	
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No CompressionCodecs!", null, false);
 		
 		this.isTestnet = Fields.stringToBool(fs.get("Testnet"), false);
 	}
@@ -79,7 +79,7 @@ public class NodeHelloMessage extends FCPMessage {
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "NodeHello goes from server to client not the other way around", null);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "NodeHello goes from server to client not the other way around", null, false);
 	}
 
 }

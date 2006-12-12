@@ -50,6 +50,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	final String extra;
 	final boolean fatal;
 	final String ident;
+	final boolean global;
 	
 	private String codeDescription() {
 		switch(code) {
@@ -105,11 +106,12 @@ public class ProtocolErrorMessage extends FCPMessage {
 		}
 	}
 
-	public ProtocolErrorMessage(int code, boolean fatal, String extra, String ident) {
+	public ProtocolErrorMessage(int code, boolean fatal, String extra, String ident, boolean global) {
 		this.code = code;
 		this.extra = extra;
 		this.fatal = fatal;
 		this.ident = ident;
+		this.global = global;
 	}
 
 	public ProtocolErrorMessage(SimpleFieldSet fs) {
@@ -117,6 +119,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 		code = Integer.parseInt(fs.get("Code"));
 		extra = fs.get("ExtraDescription");
 		fatal = Fields.stringToBool(fs.get("Fatal"), false);
+		global = Fields.stringToBool(fs.get("Global"), false);
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -128,6 +131,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 		if(extra != null)
 			sfs.put("ExtraDescription", extra);
 		sfs.put("Fatal", Boolean.toString(fatal));
+		if(global)
+			sfs.put("Global", "true");
 		return sfs;
 	}
 

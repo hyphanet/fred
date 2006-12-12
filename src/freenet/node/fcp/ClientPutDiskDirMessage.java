@@ -39,7 +39,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 		allowUnreadableFiles = Fields.stringToBool(fs.get("AllowUnreadableFiles"), false);
 		String fnam = fs.get("Filename");
 		if(fnam == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Filename missing", identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Filename missing", identifier, global);
 		dirname = new File(fnam);
 	}
 
@@ -84,10 +84,10 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	        		HashMap subdir = makeBucketsByName(new File(thisdir, filelist[i].getName()), prefix + filelist[i].getName() + '/');
 	        		ret.put(filelist[i].getName(), subdir);
 	        	} else if(!allowUnreadableFiles) {
-	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not directory and not file: "+filelist[i], identifier);
+	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not directory and not file: "+filelist[i], identifier, global);
 	        	}
 	        } else {
-	        	throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not readable or doesn't exist: "+filelist[i], identifier);
+	        	throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not readable or doesn't exist: "+filelist[i], identifier, global);
 	        }
     	}
     	return ret;

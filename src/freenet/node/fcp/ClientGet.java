@@ -243,7 +243,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			} catch (IOException e) {
 				Logger.error(this, "Caught "+e, e);
 				succeeded = false;
-				getFailedMessage = new GetFailedMessage(new FetchException(FetchException.BUCKET_ERROR, e), identifier);
+				getFailedMessage = new GetFailedMessage(new FetchException(FetchException.BUCKET_ERROR, e), identifier, global);
 				ret = client.server.core.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, 0);
 			}
 		} else {
@@ -266,7 +266,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		
 		if(finished){
 			if(succeeded) 
-				allDataPending = new AllDataMessage(returnBucket, identifier);
+				allDataPending = new AllDataMessage(returnBucket, identifier, global);
 			else
 				started = true;
 		}
@@ -308,7 +308,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 				// Send all the data at once
 				// FIXME there should be other options
-				adm = new AllDataMessage(data, identifier);
+				adm = new AllDataMessage(data, identifier, global);
 				if(persistenceType == PERSIST_CONNECTION)
 					adm.setFreeOnSent();
 				dontFree = true;
@@ -330,14 +330,14 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 						}
 					}
 					if(!tempFile.renameTo(targetFile)) {
-						postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier);
+						postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
 						// Don't delete temp file, user might want it.
 					}
 					returnBucket = new FileBucket(targetFile, false, false, false, false);
 				} catch (FileNotFoundException e) {
-					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
+					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier, global);
 				} catch (IOException e) {
-					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
+					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier, global);
 				}
 				try {
 					if((fos != null) && !closed)
@@ -368,7 +368,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Don't need to lock. succeeded is only ever set, never unset.
 		// and succeeded and getFailedMessage are both atomic.
 		if(succeeded) {
-			msg = new DataFoundMessage(foundDataLength, foundDataMimeType, identifier);
+			msg = new DataFoundMessage(foundDataLength, foundDataMimeType, identifier, global);
 		} else {
 			msg = getFailedMessage;
 		}
@@ -432,7 +432,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public void onFailure(FetchException e, ClientGetter state) {
 		synchronized(this) {
 			succeeded = false;
-			getFailedMessage = new GetFailedMessage(e, identifier);
+			getFailedMessage = new GetFailedMessage(e, identifier, global);
 			finished = true;
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -462,7 +462,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				(ce instanceof SplitfileProgressEvent)))
 			return;
 		SimpleProgressMessage progress =
-			new SimpleProgressMessage(identifier, (SplitfileProgressEvent)ce);
+			new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
 		trySendProgress(progress, null);
 	}
 

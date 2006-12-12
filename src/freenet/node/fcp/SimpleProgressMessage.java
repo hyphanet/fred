@@ -10,11 +10,13 @@ import freenet.support.SimpleFieldSet;
 public class SimpleProgressMessage extends FCPMessage {
 
 	private final String ident;
+	private final boolean global;
 	private final SplitfileProgressEvent event;
 	
-	public SimpleProgressMessage(String identifier, SplitfileProgressEvent event) {
+	public SimpleProgressMessage(String identifier, boolean global, SplitfileProgressEvent event) {
 		this.ident = identifier;
 		this.event = event;
+		this.global = global;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -26,6 +28,7 @@ public class SimpleProgressMessage extends FCPMessage {
 		fs.put("Succeeded",Integer.toString(event.fetchedBlocks));
 		fs.put("FinalizedTotal", Boolean.toString(event.finalizedTotal));
 		fs.put("Identifier", ident);
+		if(global) fs.put("Global", "true");
 		return fs;
 	}
 
@@ -34,7 +37,7 @@ public class SimpleProgressMessage extends FCPMessage {
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "SimpleProgress goes from server to client not the other way around", ident);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "SimpleProgress goes from server to client not the other way around", ident, global);
 	}
 
 	public double getFraction() {

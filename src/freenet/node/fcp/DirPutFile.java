@@ -20,10 +20,10 @@ abstract class DirPutFile {
 	final String name;
 	ClientMetadata meta;
 	
-	public DirPutFile(SimpleFieldSet subset, String identifier) throws MessageInvalidException {
+	public DirPutFile(SimpleFieldSet subset, String identifier, boolean global) throws MessageInvalidException {
 		this.name = subset.get("Name");
 		if(name == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Name", identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Name", identifier, global);
 		String contentTypeOverride = subset.get("Metadata.ContentType");
 		if(contentTypeOverride != null) {
 			meta = new ClientMetadata(contentTypeOverride);
@@ -40,16 +40,16 @@ abstract class DirPutFile {
 	/**
 	 * Create a DirPutFile from a SimpleFieldSet.
 	 */
-	public static DirPutFile create(SimpleFieldSet subset, String identifier, BucketFactory bf) throws MessageInvalidException {
+	public static DirPutFile create(SimpleFieldSet subset, String identifier, boolean global, BucketFactory bf) throws MessageInvalidException {
 		String type = subset.get("UploadFrom");
 		if((type == null) || type.equalsIgnoreCase("direct")) {
-			return new DirectDirPutFile(subset, identifier, bf);
+			return new DirectDirPutFile(subset, identifier, global, bf);
 		} else if(type.equalsIgnoreCase("disk")) {
-			return new DiskDirPutFile(subset, identifier);
+			return new DiskDirPutFile(subset, identifier, global);
 		} else if(type.equalsIgnoreCase("redirect")) {
-			return new RedirectDirPutFile(subset, identifier);
+			return new RedirectDirPutFile(subset, identifier, global);
 		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unsupported or unknown UploadFrom: "+type, identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unsupported or unknown UploadFrom: "+type, identifier, global);
 		}
 	}
 

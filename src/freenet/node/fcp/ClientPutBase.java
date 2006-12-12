@@ -117,7 +117,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	public void onFailure(InserterException e, BaseClientPutter state) {
 		synchronized(this) {
 			finished = true;
-			putFailedMessage = new PutFailedMessage(e, identifier);
+			putFailedMessage = new PutFailedMessage(e, identifier, global);
 		}
 		trySendFinalMessage(null);
 		freeData();
@@ -140,19 +140,19 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		if(ce instanceof SplitfileProgressEvent) {
 			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
 				SimpleProgressMessage progress = 
-					new SimpleProgressMessage(identifier, (SplitfileProgressEvent)ce);
+					new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
 				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null);
 			}
 		} else if(ce instanceof StartedCompressionEvent) {
 			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
 				StartedCompressionMessage msg =
-					new StartedCompressionMessage(identifier, ((StartedCompressionEvent)ce).codec);
+					new StartedCompressionMessage(identifier, global, ((StartedCompressionEvent)ce).codec);
 				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null);
 			}
 		} else if(ce instanceof FinishedCompressionEvent) {
 			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
 				FinishedCompressionMessage msg = 
-					new FinishedCompressionMessage(identifier, (FinishedCompressionEvent)ce);
+					new FinishedCompressionMessage(identifier, global, (FinishedCompressionEvent)ce);
 				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null);
 			}
 		}
@@ -166,7 +166,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 				temp = generatedURI;
 			}
 			PutFetchableMessage msg =
-				new PutFetchableMessage(identifier, temp);
+				new PutFetchableMessage(identifier, global, temp);
 			trySendProgressMessage(msg, VERBOSITY_PUT_FETCHABLE, null);
 		}
 	}
@@ -176,7 +176,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		FCPMessage msg;
 		synchronized (this) {
 			if(succeeded) {
-				msg = new PutSuccessfulMessage(identifier, generatedURI);
+				msg = new PutSuccessfulMessage(identifier, global, generatedURI);
 			} else {
 				msg = putFailedMessage;
 			}

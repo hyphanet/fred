@@ -78,7 +78,7 @@ public abstract class FCPMessage {
 			return null;
 		if(name.equals(NodeHelloMessage.name))
 			return new NodeHelloMessage(fs);
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null, false);
 //		if(name.equals("ClientPut"))
 //			return new ClientPutFCPMessage(fs);
 		// TODO Auto-generated method stub

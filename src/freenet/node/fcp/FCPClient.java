@@ -165,9 +165,9 @@ public class FCPClient {
 		synchronized(this) {
 			req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
 			if(req == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not in hash", identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not in hash", identifier, isGlobalQueue);
 			else if(!(runningPersistentRequests.remove(req) || completedUnackedRequests.remove(req)))
-				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not found", identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not found", identifier, isGlobalQueue);
 			clientRequestsByIdentifier.remove(identifier);
 		}
 		if(kill) {

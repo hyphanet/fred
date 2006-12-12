@@ -59,12 +59,12 @@ public class FCPConnectionInputHandler implements Runnable {
 				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.core.persistentTempBucketFactory);
 				if(msg == null) continue;
 			} catch (MessageInvalidException e) {
-				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident);
+				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, false);
 				handler.outputHandler.queue(err);
 				continue;
 			}
 			if(firstMessage && !(msg instanceof ClientHelloMessage)) {
-				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.CLIENT_HELLO_MUST_BE_FIRST_MESSAGE, true, null, null);
+				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.CLIENT_HELLO_MUST_BE_FIRST_MESSAGE, true, null, null, false);
 				handler.outputHandler.queue(err);
 				handler.close();
 				continue;
@@ -74,20 +74,20 @@ public class FCPConnectionInputHandler implements Runnable {
 				try {
 					((BaseDataCarryingMessage)msg).readFrom(lis, handler.bf, handler.server);
 				} catch (MessageInvalidException e) {
-					FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident);
+					FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
 					handler.outputHandler.queue(err);
 					continue;
 				}
 			}
 			if((!firstMessage) && (msg instanceof ClientHelloMessage)) {
-				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.NO_LATE_CLIENT_HELLOS, false, null, null);
+				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.NO_LATE_CLIENT_HELLOS, false, null, null, false);
 				handler.outputHandler.queue(err);
 				continue;
 			}
 			try {
 				msg.run(handler, handler.server.node);
 			} catch (MessageInvalidException e) {
-				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident);
+				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
 				handler.outputHandler.queue(err);
 				continue;
 			}

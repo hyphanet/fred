@@ -32,19 +32,19 @@ public class ModifyPersistentRequest extends FCPMessage {
 	final String clientToken;
 	
 	ModifyPersistentRequest(SimpleFieldSet fs) throws MessageInvalidException {
+		this.global = Fields.stringToBool(fs.get("Global"), false);
 		this.identifier = fs.get("Identifier");
 		this.clientToken = fs.get("ClientToken");
 		if(identifier == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field: Identifier", null);
-		this.global = Fields.stringToBool(fs.get("Global"), false);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field: Identifier", null, global);
 		String prio = fs.get("PriorityClass");
 		if(prio != null) {
 			try {
 				priorityClass = Short.parseShort(prio);
 				if(!RequestStarter.isValidPriorityClass(priorityClass))
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class "+priorityClass+" - range is "+RequestStarter.MINIMUM_PRIORITY_CLASS+" to "+RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class "+priorityClass+" - range is "+RequestStarter.MINIMUM_PRIORITY_CLASS+" to "+RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier, global);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Could not parse PriorityClass: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Could not parse PriorityClass: "+e.getMessage(), identifier, global);
 			}
 		} else
 			priorityClass = -1;

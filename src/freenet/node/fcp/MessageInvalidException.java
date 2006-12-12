@@ -12,13 +12,15 @@ package freenet.node.fcp;
 public class MessageInvalidException extends Exception {
 	private static final long serialVersionUID = -1;
 
-	int protocolCode;
-	public String ident;
+	final int protocolCode;
+	public final String ident;
+	public final boolean global;
 	
-	public MessageInvalidException(int protocolCode, String extra, String ident) {
+	public MessageInvalidException(int protocolCode, String extra, String ident, boolean global) {
 		super(extra);
 		this.protocolCode = protocolCode;
 		this.ident = ident;
+		this.global = global;
 	}
 
 }

@@ -9,17 +9,20 @@ import freenet.support.SimpleFieldSet;
 
 public class PutFetchableMessage extends FCPMessage {
 
-	PutFetchableMessage(String ident, FreenetURI uri) {
+	PutFetchableMessage(String ident, boolean global, FreenetURI uri) {
 		this.identifier = ident;
+		this.global = global;
 		this.uri = uri;
 	}
 	
 	final String identifier;
+	final boolean global;
 	final FreenetURI uri;
 	
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
+		if(global) fs.put("Global", "true");
 		if(uri != null)
 			fs.put("URI", uri.toString(false, false));
 		return fs;
@@ -31,7 +34,7 @@ public class PutFetchableMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PutFetchable goes from server to client not the other way around", identifier);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PutFetchable goes from server to client not the other way around", identifier, global);
 	}
 
 }

@@ -18,10 +18,10 @@ public class RemovePersistentRequest extends FCPMessage {
 	final boolean global;
 	
 	public RemovePersistentRequest(SimpleFieldSet fs) throws MessageInvalidException {
+		this.global = Fields.stringToBool(fs.get("Global"), false);
 		this.identifier = fs.get("Identifier");
 		if(identifier == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must have Identifier", null);
-		this.global = Fields.stringToBool(fs.get("Global"), false);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must have Identifier", null, global);
 	}
 
 	public SimpleFieldSet getFieldSet() {

@@ -69,11 +69,11 @@ public class ClientGetMessage extends FCPMessage {
 		dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		identifier = fs.get("Identifier");
 		if(identifier == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
 		try {
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier, global);
 		}
 		String verbosityString = fs.get("Verbosity");
 		if(verbosityString == null)
@@ -82,7 +82,7 @@ public class ClientGetMessage extends FCPMessage {
 			try {
 				verbosity = Integer.parseInt(verbosityString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier, global);
 			}
 		}
 		String returnTypeString = fs.get("ReturnType");
@@ -100,24 +100,24 @@ public class ClientGetMessage extends FCPMessage {
 			defaultPriority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 			String filename = fs.get("Filename");
 			if(filename == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Filename", identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Filename", identifier, global);
 			diskFile = new File(filename);
 			String tempFilename = fs.get("TempFilename");
 			if(tempFilename == null)
 				tempFilename = filename + ".freenet-tmp";
 			tempFile = new File(tempFilename);
 			if(!diskFile.getAbsoluteFile().getParentFile().equals(tempFile.getAbsoluteFile().getParentFile()))
-				throw new MessageInvalidException(ProtocolErrorMessage.FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR, null, identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR, null, identifier, global);
 			if(diskFile.exists())
-				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, null, identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, null, identifier, global);
 			try {
 				if(!(tempFile.createNewFile() || (tempFile.exists() && tempFile.canRead() && tempFile.canWrite())))
-					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, "Could not create temp file "+tempFile, identifier);
+					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, "Could not create temp file "+tempFile, identifier, global);
 			} catch (IOException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, e.getMessage(), identifier, global);
 			}
 		} else
-			throw new MessageInvalidException(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, "Unknown return-type", identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, "Unknown return-type", identifier, global);
 		String maxSizeString = fs.get("MaxSize");
 		if(maxSizeString == null)
 			// default to unlimited
@@ -126,7 +126,7 @@ public class ClientGetMessage extends FCPMessage {
 			try {
 				maxSize = Long.parseLong(maxSizeString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
 			}
 		}
 		String maxTempSizeString = fs.get("MaxTempSize");
@@ -137,7 +137,7 @@ public class ClientGetMessage extends FCPMessage {
 			try {
 				maxTempSize = Long.parseLong(maxTempSizeString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
 			}
 		}
 		String maxRetriesString = fs.get("MaxRetries");
@@ -148,7 +148,7 @@ public class ClientGetMessage extends FCPMessage {
 			try {
 				maxRetries = Integer.parseInt(maxRetriesString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
 			}
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -161,9 +161,9 @@ public class ClientGetMessage extends FCPMessage {
 			try {
 				priorityClass = Short.parseShort(priorityString, 10);
 				if((priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS) || (priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS))
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier, global);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier, global);
 			}
 		}
 		String persistenceString = fs.get("Persistence");
@@ -178,10 +178,10 @@ public class ClientGetMessage extends FCPMessage {
 			// Same as reboot but saved to disk, persists forever.
 			persistenceType = ClientRequest.PERSIST_FOREVER;
 		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
 		}
 		if(global && (persistenceType == ClientRequest.PERSIST_CONNECTION)) {
-			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Global requests must be persistent", identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Global requests must be persistent", identifier, global);
 		}
 	}
 

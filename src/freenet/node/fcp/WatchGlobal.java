@@ -20,7 +20,7 @@ public class WatchGlobal extends FCPMessage {
 			try {
 				verbosityMask = Integer.parseInt(s);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, e.toString(), null);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, e.toString(), null, false);
 			}
 		else
 			verbosityMask = Integer.MAX_VALUE;

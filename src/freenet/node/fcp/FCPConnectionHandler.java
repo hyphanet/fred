@@ -124,7 +124,7 @@ public class FCPConnectionHandler {
 		}
 		if(!success) {
 			Logger.normal(this, "Identifier collision on "+this);
-			FCPMessage msg = new IdentifierCollisionMessage(id);
+			FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
 			outputHandler.queue(msg);
 			return;
 		} else {
@@ -164,7 +164,7 @@ public class FCPConnectionHandler {
 		}
 		if(!success) {
 			Logger.normal(this, "Identifier collision on "+this);
-			FCPMessage msg = new IdentifierCollisionMessage(id);
+			FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
 			outputHandler.queue(msg);
 			return;
 		} else {
@@ -205,7 +205,7 @@ public class FCPConnectionHandler {
 		}
 		if(!success) {
 			Logger.normal(this, "Identifier collision on "+this);
-			FCPMessage msg = new IdentifierCollisionMessage(id);
+			FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
 			outputHandler.queue(msg);
 			return;
 		} else {

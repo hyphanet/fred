@@ -46,13 +46,14 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	
 	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
+		global = Fields.stringToBool(fs.get("Global"), false);
 		defaultName = fs.get("DefaultName");
 		if(identifier == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
 		try {
 			String u = fs.get("URI");
 			if(u == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI", identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI", identifier, global);
 			FreenetURI uu = new FreenetURI(fs.get("URI"));
 			// Client is allowed to put a slash at the end if it wants to, but this is discouraged.
 			String[] meta = uu.getAllMetaStrings();
@@ -60,9 +61,8 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 				uu = uu.setMetaString(null);
 			uri = uu;
 		} catch (MalformedURLException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier, global);
 		}
-		global = Fields.stringToBool(fs.get("Global"), false);
 		String verbosityString = fs.get("Verbosity");
 		if(verbosityString == null)
 			verbosity = 0;
@@ -70,7 +70,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			try {
 				verbosity = Integer.parseInt(verbosityString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier, global);
 			}
 		}
 		String maxRetriesString = fs.get("MaxRetries");
@@ -81,7 +81,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			try {
 				maxRetries = Integer.parseInt(maxRetriesString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
 			}
 		}
 		getCHKOnly = Fields.stringToBool(fs.get("GetCHKOnly"), false);
@@ -93,9 +93,9 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			try {
 				priorityClass = Short.parseShort(priorityString, 10);
 				if((priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS) || (priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS))
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier, global);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier, global);
 			}
 		}
 		dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
@@ -111,7 +111,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			// Same as reboot but saved to disk, persists forever.
 			persistenceType = ClientRequest.PERSIST_FOREVER;
 		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
 		}
 		clientToken = fs.get("ClientToken");
 		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);

@@ -21,9 +21,10 @@ public class PutFailedMessage extends FCPMessage {
 	final FailureCodeTracker tracker;
 	final FreenetURI expectedURI;
 	final String identifier;
+	final boolean global;
 	final boolean isFatal;
 	
-	public PutFailedMessage(InserterException e, String identifier) {
+	public PutFailedMessage(InserterException e, String identifier, boolean global) {
 		this.code = e.getMode();
 		this.codeDescription = InserterException.getMessage(code);
 		this.shortCodeDescription = InserterException.getShortMessage(code);
@@ -31,6 +32,7 @@ public class PutFailedMessage extends FCPMessage {
 		this.tracker = e.errorCodes;
 		this.expectedURI = e.uri;
 		this.identifier = identifier;
+		this.global = global;
 		this.isFatal = InserterException.isFatal(code);
 	}
 
@@ -45,6 +47,7 @@ public class PutFailedMessage extends FCPMessage {
 	public PutFailedMessage(SimpleFieldSet fs, boolean useVerboseFields) throws MalformedURLException {
 		identifier = fs.get("Identifier");
 		if(identifier == null) throw new NullPointerException();
+		global = fs.getBoolean("Global", false);
 		code = Integer.parseInt(fs.get("Code"));
 		
 		if(useVerboseFields) {
@@ -78,6 +81,7 @@ public class PutFailedMessage extends FCPMessage {
 	public SimpleFieldSet getFieldSet(boolean verbose) {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
+		if(global) fs.put("Global", "true");
 		fs.put("Code", Integer.toString(code));
 		if(verbose)
 			fs.put("CodeDescription", codeDescription);
@@ -101,7 +105,7 @@ public class PutFailedMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PutFailed goes from server to client not the other way around", identifier);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PutFailed goes from server to client not the other way around", identifier, global);
 	}
 
 }

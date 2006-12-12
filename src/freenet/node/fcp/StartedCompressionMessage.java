@@ -9,18 +9,21 @@ import freenet.support.SimpleFieldSet;
 public class StartedCompressionMessage extends FCPMessage {
 
 	final String identifier;
+	final boolean global;
 	
 	final int codec;
 	
-	public StartedCompressionMessage(String identifier, int codec) {
+	public StartedCompressionMessage(String identifier, boolean global, int codec) {
 		this.identifier = identifier;
 		this.codec = codec;
+		this.global = global;
 	}
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
 		fs.put("Codec", Integer.toString(codec));
+		if(global) fs.put("Global", "true");
 		return fs;
 	}
 
@@ -30,7 +33,7 @@ public class StartedCompressionMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "StartedCompression goes from server to client not the other way around", identifier);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "StartedCompression goes from server to client not the other way around", identifier, global);
 	}
 
 }

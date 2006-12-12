@@ -13,15 +13,15 @@ public class RedirectDirPutFile extends DirPutFile {
 
 	final FreenetURI targetURI;
 	
-	public RedirectDirPutFile(SimpleFieldSet subset, String identifier) throws MessageInvalidException {
-		super(subset, identifier);
+	public RedirectDirPutFile(SimpleFieldSet subset, String identifier, boolean global) throws MessageInvalidException {
+		super(subset, identifier, global);
 		String target = subset.get("TargetURI");
 		if(target == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "TargetURI missing but UploadFrom=redirect", identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "TargetURI missing but UploadFrom=redirect", identifier, global);
 		try {
 			targetURI = new FreenetURI(target);
 		} catch (MalformedURLException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: "+e, identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: "+e, identifier, global);
 		}
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "targetURI = "+targetURI);

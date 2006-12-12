@@ -59,12 +59,12 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		// Now parse the meat
 		SimpleFieldSet files = fs.subset("Files");
 		if(files == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Files section", identifier);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Files section", identifier, global);
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		for(int i=0;;i++) {
 			SimpleFieldSet subset = files.subset(Integer.toString(i));
 			if(subset == null) break;
-			DirPutFile f = DirPutFile.create(subset, identifier, (persistenceType == ClientRequest.PERSIST_FOREVER) ? bfPersistent : bfTemp);
+			DirPutFile f = DirPutFile.create(subset, identifier, global, (persistenceType == ClientRequest.PERSIST_FOREVER) ? bfPersistent : bfTemp);
 			addFile(f);
 			if(logMINOR) Logger.minor(this, "Adding "+f);
 			if(f instanceof DirectDirPutFile) {
@@ -97,7 +97,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 					addFile((HashMap)o, after, f);
 					return;
 				} else {
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Cannot be both a file and a directory: "+before, identifier);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Cannot be both a file and a directory: "+before, identifier, global);
 				}
 			} else {
 				o = new HashMap();

@@ -26,7 +26,7 @@ public class UnknownNodeIdentifierMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "UnknownNodeIdentifier goes from server to client not the other way around", nodeIdentifier);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "UnknownNodeIdentifier goes from server to client not the other way around", nodeIdentifier, false);
 	}
 
 }
