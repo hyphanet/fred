@@ -1412,6 +1412,7 @@ public class Node {
 		Thread t = new Thread(throttlePersister, "Throttle data persister thread");
 		t.setDaemon(true);
 		t.start();
+		Logger.normal(this, "Started node");
 		
 		hasStarted = true;
 	}
@@ -3193,6 +3194,7 @@ public class Node {
 	}
 
 	public void persistThrottle() {
+		if(logMINOR) Logger.minor(this, "Trying to persist throttles...");
 		SimpleFieldSet fs = persistThrottlesToFieldSet();
 		try {
 			FileOutputStream fos = new FileOutputStream(persistTemp);
