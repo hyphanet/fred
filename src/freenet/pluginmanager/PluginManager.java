@@ -48,13 +48,14 @@ public class PluginManager {
 	private final Node node;
 	private final NodeClientCore core;
 	SubConfig pmconfig;
-	
+	private boolean logMINOR;
 	
 	public PluginManager(Node node) {
 		pluginInfo = new HashMap();
 		toadletList = new HashMap();
 		this.node = node;
 		this.core = node.clientCore;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		pluginRespirator = new PluginRespirator(node, this);
 		
 		pmconfig = new SubConfig("pluginmanager", node.config);
@@ -292,16 +293,18 @@ public class PluginManager {
 	 * @throws PluginNotFoundException	If anything goes wrong.
 	 */
 	private FredPlugin LoadPlugin(String filename) throws PluginNotFoundException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
         Class cls = null;
         if (filename.endsWith("*")) {
-        	filename = filename.substring(0,filename.length()-1) + 
-        	"@http://downloads.freenetproject.org/alpha/plugins/" + 
-        	filename.substring(filename.lastIndexOf(".")+1, filename.length()-1) +
-        	".jar.url";
+        	filename = "*@http://downloads.freenetproject.org/alpha/plugins/" + 
+        		filename.substring(filename.lastIndexOf(".")+1, filename.length()-1) +
+        		".jar.url";
         	//System.out.println(filename);
+        	if(logMINOR) Logger.minor(this, "Rewritten to "+filename);
         }
         
         if ((filename.indexOf("@") >= 0)) {
+        	boolean assumeURLRedirect = true;
         	// Open from external file
         	for (int tries = 0 ; (tries <= 5) && (cls == null) ; tries++)
         		try {
@@ -315,16 +318,21 @@ public class PluginManager {
         			}
         			realClass = parts[0];
         			realURL = parts[1];
+        			if(logMINOR) Logger.minor(this, "Class: "+realClass+" URL: "+realURL);
         			
         			if (filename.endsWith(".url")) {
-        				// Load the txt-file
-        				BufferedReader in;
-        				URL url = new URL(parts[1]);
-        				URLConnection uc = url.openConnection();
-        				in = new BufferedReader(
-        						new InputStreamReader(uc.getInputStream()));
-        				
-        				realURL = in.readLine().trim();
+        				if(!assumeURLRedirect) {
+        					// Load the txt-file
+        					BufferedReader in;
+        					URL url = new URL(parts[1]);
+        					URLConnection uc = url.openConnection();
+        					in = new BufferedReader(
+        							new InputStreamReader(uc.getInputStream()));
+        					
+        					realURL = in.readLine().trim();
+        					if(logMINOR) Logger.minor(this, "Loaded new URL: "+realURL+" from .url file");
+        				}
+        				assumeURLRedirect = !assumeURLRedirect;
         			}
         			
         			// Load the class inside file
@@ -336,6 +344,7 @@ public class PluginManager {
         			if (realClass.equals("*")) {
         				if (realURL.startsWith("file:")) {
         					URI liburi = URIPreEncoder.encodeURI(realURL);
+        					if(logMINOR) Logger.minor(this, "file: URI voodoo: "+realURL+" -> "+liburi.toString());
         					realURL = liburi.toString();
         				}
         				
@@ -357,6 +366,7 @@ public class PluginManager {
         					//	System.err.println(line + "\t\t\t" + realClass);
         					if (line.startsWith("Plugin-Main-Class: ")) {
         						realClass = line.substring("Plugin-Main-Class: ".length()).trim();
+        						if(logMINOR) Logger.minor(this, "Found plugin main class "+realClass+" from manifest");
         					}
         				}
         				//System.err.println("Real classname: " + realClass);
