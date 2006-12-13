@@ -5,7 +5,6 @@ package freenet.crypt;
 
 import java.math.BigInteger;
 import java.util.Random;
-import java.security.SecureRandom;
 
 import freenet.support.Logger;
 
