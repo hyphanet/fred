@@ -8,7 +8,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -724,7 +723,7 @@ public class FreenetURI implements Cloneable{
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Logger.minor(this, "Getting preferred filename for "+this);
 		Vector names = new Vector();
-		if(keyType.equals("KSK") || keyType.equals("SSK")) {
+		if(keyType != null && (keyType.equals("KSK") || keyType.equals("SSK"))) {
 			if(logMINOR) Logger.minor(this, "Adding docName: "+docName);
 			names.add(docName);
 		}
