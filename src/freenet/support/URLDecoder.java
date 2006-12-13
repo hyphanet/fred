@@ -1,15 +1,11 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-
-/*
-  This code is part of the Java Adaptive Network Client by Ian Clarke. 
-  It is distributed under the GNU Public Licence (GPL) version 2.  See
-  http://www.gnu.org/ for further details of the GPL.
-*/
-
 
 /**
  * Decode encoded URLs (or parts of URLs). @see URLEncoder.
@@ -22,7 +18,6 @@ import java.io.UnsupportedEncodingException;
  * @author <a href="http://www.doc.ic.ac.uk/~twh1/">Theodore Hong</a>
  * Originally!
  **/
-
 public class URLDecoder
 {
     // test harness
