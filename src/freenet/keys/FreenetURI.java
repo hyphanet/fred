@@ -298,8 +298,10 @@ public class FreenetURI implements Cloneable{
 		
 		if (!sv.isEmpty()) {
 			metaStr = new String[sv.size()];
-			for (int i = 0; i < metaStr.length; i++)
+			for (int i = 0; i < metaStr.length; i++) {
 				metaStr[i] = (String) sv.elementAt(metaStr.length - 1 - i);
+				if(metaStr[i] == null) throw new NullPointerException();
+			}
 		} else {
 			metaStr = null;
 		}
@@ -442,11 +444,13 @@ public class FreenetURI implements Cloneable{
 	 */
 	public FreenetURI pushMetaString(String name) {
 		String[] newMetaStr;
+		if(name == null) throw new NullPointerException();
 		if(metaStr == null)
 			newMetaStr = new String[] { name };
 		else {
 			newMetaStr = new String[metaStr.length+1];
 			System.arraycopy(metaStr, 0, newMetaStr, 0, metaStr.length);
+			newMetaStr[metaStr.length] = name;
 		}
 		return setMetaString(newMetaStr);
 	}
@@ -457,6 +461,7 @@ public class FreenetURI implements Cloneable{
 	public FreenetURI addMetaStrings(String[] strs) {
 		if (strs == null)
 			return this; // legal noop, since getMetaStrings can return null
+		for(int i=0;i<strs.length;i++) if(strs[i] == null) throw new NullPointerException("element "+i+" of "+strs.length+" is null");
 		String[] newMetaStr;
 		if (metaStr == null)
 			return setMetaString(strs);
