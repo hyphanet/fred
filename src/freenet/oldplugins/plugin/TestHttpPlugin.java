@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.plugin;
+package freenet.oldplugins.plugin;
 
 import java.io.IOException;
 
@@ -20,7 +20,7 @@ public class TestHttpPlugin implements HttpPlugin {
 
 	/**
 	 * @throws ToadletContextClosedException
-	 * @see freenet.plugin.HttpPlugin#handleGet(freenet.clients.http.HTTPRequest)
+	 * @see freenet.oldplugins.plugin.HttpPlugin#handleGet(freenet.clients.http.HTTPRequest)
 	 */
 	public void handleGet(HTTPRequest request, ToadletContext context) throws IOException, ToadletContextClosedException {
 		byte[] messageBytes = "Plugin works.".getBytes("UTF-8");
@@ -29,32 +29,32 @@ public class TestHttpPlugin implements HttpPlugin {
 	}
 
 	/**
-	 * @see freenet.plugin.HttpPlugin#handlePost(freenet.clients.http.HTTPRequest)
+	 * @see freenet.oldplugins.plugin.HttpPlugin#handlePost(freenet.clients.http.HTTPRequest)
 	 */
 	public void handlePost(HTTPRequest request, ToadletContext context) throws IOException, ToadletContextClosedException {
 	}
 
 	/**
-	 * @see freenet.plugin.Plugin#getPluginName()
+	 * @see freenet.oldplugins.plugin.Plugin#getPluginName()
 	 */
 	public String getPluginName() {
 		return "Simple HTTP Test Plugin";
 	}
 
 	/**
-	 * @see freenet.plugin.Plugin#setPluginManager(freenet.plugin.PluginManager)
+	 * @see freenet.oldplugins.plugin.Plugin#setPluginManager(freenet.oldplugins.plugin.PluginManager)
 	 */
 	public void setPluginManager(PluginManager pluginManager) {
 	}
 
 	/**
-	 * @see freenet.plugin.Plugin#startPlugin()
+	 * @see freenet.oldplugins.plugin.Plugin#startPlugin()
 	 */
 	public void startPlugin() {
 	}
 
 	/**
-	 * @see freenet.plugin.Plugin#stopPlugin()
+	 * @see freenet.oldplugins.plugin.Plugin#stopPlugin()
 	 */
 	public void stopPlugin() {
 	}

@@ -8,9 +8,9 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.node.NodeClientCore;
-import freenet.plugin.HttpPlugin;
-import freenet.plugin.Plugin;
-import freenet.plugin.PluginManager;
+import freenet.oldplugins.plugin.HttpPlugin;
+import freenet.oldplugins.plugin.Plugin;
+import freenet.oldplugins.plugin.PluginManager;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;

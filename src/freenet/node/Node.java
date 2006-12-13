@@ -476,7 +476,7 @@ public class Node {
 	
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
-	public freenet.plugin.PluginManager pluginManager2;
+	public freenet.oldplugins.plugin.PluginManager pluginManager2;
 	
 	// Helpers
 	public final InetAddress localhostAddress;
@@ -1280,7 +1280,7 @@ public class Node {
 		Logger.normal(this, "Initializing Plugin Manager");
 		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this);
-		pluginManager2 = new freenet.plugin.PluginManager(this);
+		pluginManager2 = new freenet.oldplugins.plugin.PluginManager(this);
 		
 		FetcherContext ctx = clientCore.makeClient((short)0, true).getFetcherContext();
 		

@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.plugin;
+package freenet.oldplugins.plugin;
 
 /**
  * Test plugin. Does absolutely nothing.
@@ -12,26 +12,26 @@ package freenet.plugin;
 public class TestPlugin implements Plugin {
 
 	/**
-	 * @see freenet.plugin.Plugin#getPluginName()
+	 * @see freenet.oldplugins.plugin.Plugin#getPluginName()
 	 */
 	public String getPluginName() {
 		return "Simple Test Plugin";
 	}
 
 	/**
-	 * @see freenet.plugin.Plugin#setPluginManager(freenet.plugin.PluginManager)
+	 * @see freenet.oldplugins.plugin.Plugin#setPluginManager(freenet.oldplugins.plugin.PluginManager)
 	 */
 	public void setPluginManager(PluginManager pluginManager) {
 	}
 
 	/**
-	 * @see freenet.plugin.Plugin#startPlugin()
+	 * @see freenet.oldplugins.plugin.Plugin#startPlugin()
 	 */
 	public void startPlugin() {
 	}
 
 	/**
-	 * @see freenet.plugin.Plugin#stopPlugin()
+	 * @see freenet.oldplugins.plugin.Plugin#stopPlugin()
 	 */
 	public void stopPlugin() {
 	}

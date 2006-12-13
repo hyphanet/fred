@@ -350,6 +350,8 @@ public class PluginManager {
         				
         				URL url = new URL("jar:"+realURL+"!/");
         				JarURLConnection jarConnection = (JarURLConnection)url.openConnection();
+        				// Java seems to cache even file: urls...
+        				jarConnection.setUseCaches(false);
         				JarFile jf = jarConnection.getJarFile();
         				//URLJarFile jf = new URLJarFile(new File(liburi));
         				//is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));

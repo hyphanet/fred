@@ -36,8 +36,8 @@ import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
-import freenet.plugin.HttpPlugin;
-import freenet.plugin.PluginManager;
+import freenet.oldplugins.plugin.HttpPlugin;
+import freenet.oldplugins.plugin.PluginManager;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -274,7 +274,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	}
 
 	/**
-	 * @see freenet.plugin.HttpPlugin#handleGet(freenet.clients.http.HTTPRequest, freenet.clients.http.ToadletContext)
+	 * @see freenet.oldplugins.plugin.HttpPlugin#handleGet(freenet.clients.http.HTTPRequest, freenet.clients.http.ToadletContext)
 	 */
 	public void handleGet(HTTPRequest request, ToadletContext context) throws IOException, ToadletContextClosedException {
 		String action = request.getParam("action");
@@ -342,7 +342,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	}
 
 	/**
-	 * @see freenet.plugin.HttpPlugin#handlePost(freenet.clients.http.HTTPRequest, freenet.clients.http.ToadletContext)
+	 * @see freenet.oldplugins.plugin.HttpPlugin#handlePost(freenet.clients.http.HTTPRequest, freenet.clients.http.ToadletContext)
 	 */
 	public void handlePost(HTTPRequest request, ToadletContext context) throws IOException {
 	}
@@ -409,14 +409,14 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	}
 
 	/**
-	 * @see freenet.plugin.Plugin#getPluginName()
+	 * @see freenet.oldplugins.plugin.Plugin#getPluginName()
 	 */
 	public String getPluginName() {
 		return "The Definitive Spider";
 	}
 
 	/**
-	 * @see freenet.plugin.Plugin#setPluginManager(freenet.plugin.PluginManager)
+	 * @see freenet.oldplugins.plugin.Plugin#setPluginManager(freenet.oldplugins.plugin.PluginManager)
 	 */
 	public void setPluginManager(PluginManager pluginManager) {
 		this.core = pluginManager.getClientCore();
@@ -430,7 +430,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 
 
 	/**
-	 * @see freenet.plugin.Plugin#startPlugin()
+	 * @see freenet.oldplugins.plugin.Plugin#startPlugin()
 	 */
 	public void startPlugin() {
 		stopped = false;
@@ -444,7 +444,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	}
 
 	/**
-	 * @see freenet.plugin.Plugin#stopPlugin()
+	 * @see freenet.oldplugins.plugin.Plugin#stopPlugin()
 	 */
 	public void stopPlugin() {
 		synchronized (this) {
