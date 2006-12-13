@@ -188,6 +188,9 @@ public class DSAGroupGenerator {
     	return obuf;
 	}
 
+	/**
+	 * WARNING: it won't work reliably for integers above 30
+	 */
 	public static boolean isPrime(BigInteger b) {
         for (int i = 0; i < smallPrimes.length; i++) {
             if (b.mod(smallPrimes[i]).equals(BigInteger.ZERO)) return false;
