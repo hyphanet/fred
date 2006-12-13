@@ -3,6 +3,7 @@ package freenet.support.io;
 import java.io.IOException;
 
 import freenet.crypt.RandomSource;
+import freenet.support.api.Bucket;
 
 /**
  * Factory wrapper for PaddedEphemerallyEncryptedBucket's, which are themselves

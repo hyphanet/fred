@@ -26,7 +26,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 import freenet.frost.message.*;
 

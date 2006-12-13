@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 public interface HealingQueue {
 

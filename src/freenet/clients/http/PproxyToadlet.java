@@ -15,7 +15,7 @@ import freenet.pluginmanager.PluginManager;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 public class PproxyToadlet extends Toadlet {
 	private static final int MAX_PLUGIN_NAME_LENGTH = 1024;

@@ -51,7 +51,7 @@ import freenet.oldplugins.plugin.PluginManager;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 /**
  * NinjaSpider. Produces a ninj^W err ... an XML index.

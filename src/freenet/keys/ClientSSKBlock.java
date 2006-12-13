@@ -8,7 +8,7 @@ import java.io.IOException;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketFactory;
 import freenet.support.io.BucketTools;
 

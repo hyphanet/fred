@@ -4,6 +4,7 @@
 package freenet.support.io;
 
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 
 public interface SerializableToFieldSetBucket extends Bucket {
 	

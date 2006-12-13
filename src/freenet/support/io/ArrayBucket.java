@@ -8,6 +8,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import freenet.support.api.Bucket;
+
 /**
  * A bucket that stores data in the memory.
  * 

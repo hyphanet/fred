@@ -35,7 +35,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 public class DarknetConnectionsToadlet extends Toadlet {
 	

@@ -1,6 +1,6 @@
 package freenet.client;
 
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 public interface SplitfileBlock {
 

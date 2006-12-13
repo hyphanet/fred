@@ -24,7 +24,7 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.NullBucket;

@@ -11,6 +11,7 @@ import java.util.LinkedList;
 
 import freenet.crypt.RandomSource;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 
 /**
  * Handles persistent temp files. These are used for e.g. persistent downloads.

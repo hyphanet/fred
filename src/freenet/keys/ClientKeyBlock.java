@@ -5,7 +5,7 @@ package freenet.keys;
 
 import java.io.IOException;
 
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketFactory;
 
 public interface ClientKeyBlock extends KeyBlock {

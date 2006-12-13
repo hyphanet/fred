@@ -16,7 +16,7 @@ import freenet.keys.KeyDecodeException;
 import freenet.keys.USK;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 /**
  * 

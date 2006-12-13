@@ -23,7 +23,7 @@ import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 public class InsertableClientSSK extends ClientSSK {
 

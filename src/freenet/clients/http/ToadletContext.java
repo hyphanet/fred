@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketFactory;
 
 /**

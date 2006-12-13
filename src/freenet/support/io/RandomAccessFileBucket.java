@@ -10,6 +10,7 @@ import java.util.Vector;
 
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 
 /**
  * Bucket implementation that can efficiently access any arbitrary byte-range

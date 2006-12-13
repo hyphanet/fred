@@ -10,7 +10,7 @@ import freenet.client.async.SimpleManifestPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 

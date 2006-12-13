@@ -16,8 +16,8 @@ import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
-import freenet.support.io.Bucket;
 import freenet.support.io.BucketTools;
 
 public class SplitFileInserter implements ClientPutState {

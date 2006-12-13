@@ -17,9 +17,9 @@ import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
-import freenet.support.io.Bucket;
 import freenet.support.io.BucketTools;
 
 /**

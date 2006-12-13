@@ -18,7 +18,7 @@ import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 
 /**

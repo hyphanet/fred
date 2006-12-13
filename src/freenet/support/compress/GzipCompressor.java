@@ -9,7 +9,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.support.Logger;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketFactory;
 
 public class GzipCompressor extends Compressor {

@@ -20,7 +20,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 public class NodeARKInserter implements ClientCallback {
 

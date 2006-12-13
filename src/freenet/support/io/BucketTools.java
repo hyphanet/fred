@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import freenet.crypt.SHA256;
+import freenet.support.api.Bucket;
 
 /**
  * Helper functions for working with Buckets.

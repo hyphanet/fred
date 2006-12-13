@@ -40,7 +40,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.support.Base64;
 import freenet.support.Logger;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 /**
  * FCP server process.

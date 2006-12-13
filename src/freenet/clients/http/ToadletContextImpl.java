@@ -18,7 +18,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.URIPreEncoder;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.LineReadingInputStream;

@@ -16,6 +16,7 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 
 /**
  * A proxy Bucket which adds:

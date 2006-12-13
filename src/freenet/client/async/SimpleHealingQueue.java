@@ -12,7 +12,7 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue, PutCompletionCallback {
 

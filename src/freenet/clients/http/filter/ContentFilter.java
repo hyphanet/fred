@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 
 import freenet.support.Logger;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketFactory;
 
 /**

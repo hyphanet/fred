@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 
 
 /**

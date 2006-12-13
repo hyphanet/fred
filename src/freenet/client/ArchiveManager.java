@@ -17,7 +17,7 @@ import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FilenameGenerator;

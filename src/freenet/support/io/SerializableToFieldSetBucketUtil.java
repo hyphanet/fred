@@ -5,6 +5,7 @@ package freenet.support.io;
 
 import freenet.crypt.RandomSource;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 
 public class SerializableToFieldSetBucketUtil {
 

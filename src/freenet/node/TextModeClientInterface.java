@@ -36,8 +36,8 @@ import freenet.keys.InsertableClientSSK;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 

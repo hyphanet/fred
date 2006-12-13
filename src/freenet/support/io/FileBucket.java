@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 
 /**
  * A file Bucket is an implementation of Bucket that writes to a file.

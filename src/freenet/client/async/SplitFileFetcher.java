@@ -18,9 +18,9 @@ import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
-import freenet.support.io.Bucket;
 
 /**
  * Fetch a splitfile, decompress it if need be, and return it to the GetCompletionCallback.

@@ -8,7 +8,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.async.ManifestElement;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketFactory;
 
 /**

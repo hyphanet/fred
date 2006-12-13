@@ -3,7 +3,7 @@ package freenet.support.compress;
 import java.io.IOException;
 
 import freenet.client.Metadata;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketFactory;
 
 /**

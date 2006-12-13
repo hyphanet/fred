@@ -18,7 +18,7 @@ import java.util.HashMap;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketFactory;
 import freenet.support.io.NullWriter;
 

@@ -6,7 +6,7 @@ package freenet.client;
 import java.io.File;
 
 import freenet.keys.FreenetURI;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;

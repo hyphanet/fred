@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 /**
  * Simple read-only array bucket. Just an adapter class to save some RAM.

@@ -4,7 +4,7 @@
 package freenet.client;
 
 import freenet.keys.FreenetURI;
-import freenet.support.io.Bucket;
+import freenet.support.api.Bucket;
 
 /**
  * Class to contain everything needed for an insert.

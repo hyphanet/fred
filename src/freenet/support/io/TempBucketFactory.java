@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 
 /*
  * This code is part of FProxy, an HTTP proxy server for Freenet. It is
