@@ -7,11 +7,11 @@ package freenet.plugin.api;
  */
 public interface FreenetPlugin {
 
-	/** The plugin's name */
-	public String name();
+	/** The plugin's short name (shouldn't usually have spaces, punctuation, author etc; one to three words StuckTogetherLikeThis) */
+	public String shortName();
 	
-	/** The plugin's author (largely to disambiguate name!) */
-	public String author();
+	/** The plugin's long name (can have spaces, mention author or purpose, etc) */
+	public String longName();
 	
 	/** The plugin's version number. MUST BE AT LEAST INCREMENTED ON EVERY RELEASE. */
 	public long version();
