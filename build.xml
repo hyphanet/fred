@@ -12,7 +12,6 @@
 	<property name="test" location="test"/>
 	<property name="build" location="build"/>
 	<property name="build-test" location="build-test"/>
-	<property name="test-results" location="test-results"/>
 	<property name="lib"	location="lib"/>
 	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
 	<property name="javadoc" location="javadoc"/>
@@ -24,7 +23,6 @@
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
 		<mkdir dir="${build-test}"/>
-		<mkdir dir="${test-results}"/>
 		<mkdir dir="${lib}"/>
 	</target>
 
@@ -114,7 +112,7 @@
 	<!-- ================================================== -->
 
 	<target name="unit-build" depends="compile">
-		<javac srcdir="${test}" destdir="${build-test}" debug="off" optimize="on" source="1.4">
+		<javac srcdir="${test}" destdir="${build-test}" debug="on" optimize="on" source="1.4">
 			<classpath>
 				<pathelement path="${build}"/>
 				<pathelement location="${freenet-ext.location}"/>
@@ -129,13 +127,14 @@
 			<classpath>
 				<pathelement path="${build}"/>
 				<pathelement path="${build-test}"/>
+				<pathelement location="${freenet-ext.location}"/>
 			</classpath>
 
-			<formatter type="plain"/>
+			<formatter type="plain" usefile="false"/>
 
-			<batchtest fork="yes" todir="${test-results}">
+			<batchtest fork="yes">
 				<fileset dir="${build-test}">
-					<include name="**/*.java"/>
+					<include name="**/*.class"/>
 				</fileset>
 			</batchtest>
 		</junit>
