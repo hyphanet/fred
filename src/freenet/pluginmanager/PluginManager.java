@@ -28,6 +28,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Logger;
+import freenet.support.URIPreEncoder;
 
 public class PluginManager {
 
@@ -334,7 +335,7 @@ public class PluginManager {
         			// Handle automatic fetching of pluginclassname
         			if (realClass.equals("*")) {
         				if (realURL.startsWith("file:")) {
-        					URI liburi = new URI(realURL);
+        					URI liburi = URIPreEncoder.encodeURI(realURL);
         					realURL = liburi.toString();
         				}
         				
