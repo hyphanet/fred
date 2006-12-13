@@ -272,24 +272,8 @@ public class StatisticsToadlet extends Toadlet {
             nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 
 			if(advancedEnabled) {
-			
-				// Load balancing box
-				// Include overall window, and RTTs for each
-				RequestStarterGroup starters = core.requestStarters;
-				double window = starters.getWindow();
-				HTMLNode loadStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
-				loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting");
-				HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
-				HTMLNode loadStatsList = loadStatsContent.addChild("ul");
-				loadStatsList.addChild("ul", "Global window: "+window);
-				loadStatsList.addChild("ul", starters.statsPageLine(false, false));
-				loadStatsList.addChild("ul", starters.statsPageLine(true, false));
-				loadStatsList.addChild("ul", starters.statsPageLine(false, true));
-				loadStatsList.addChild("ul", starters.statsPageLine(true, true));
-				nextTableCell = overviewTableRow.addChild("td");
 				
 				// Peer routing backoff reason box
-				nextTableCell = overviewTableRow.addChild("td", "class", "last");
 				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
 				backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
 				HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
@@ -496,7 +480,6 @@ public class StatisticsToadlet extends Toadlet {
 						return secondCount.messageCount - firstCount.messageCount;  // sort in descending order
 					}
 				});
-				
 				HTMLNode unclaimedFIFOMessageCountsInfobox = nextTableCell.addChild("div", "class", "infobox");
 				unclaimedFIFOMessageCountsInfobox.addChild("div", "class", "infobox-header", "unclaimedFIFO Message Counts");
 				HTMLNode unclaimedFIFOMessageCountsInfoboxContent = unclaimedFIFOMessageCountsInfobox.addChild("div", "class", "infobox-content");
@@ -508,6 +491,21 @@ public class StatisticsToadlet extends Toadlet {
 					unclaimedFIFOMessageCountsList.addChild("li", "" + messageCountItem.messageName + ":\u00a0" + thisMessageCount + "\u00a0(" + fix3p1pct.format(thisMessagePercentOfTotal) + ')');
 				}
 				unclaimedFIFOMessageCountsList.addChild("li", "Unclaimed Messages Considered:\u00a0" + totalCount);
+				nextTableCell = overviewTableRow.addChild("td");
+			
+				// Load balancing box
+				// Include overall window, and RTTs for each
+				RequestStarterGroup starters = core.requestStarters;
+				double window = starters.getWindow();
+				HTMLNode loadStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+				loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting");
+				HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
+				HTMLNode loadStatsList = loadStatsContent.addChild("ul");
+				loadStatsList.addChild("ul", "Global window: "+window);
+				loadStatsList.addChild("ul", starters.statsPageLine(false, false));
+				loadStatsList.addChild("ul", starters.statsPageLine(true, false));
+				loadStatsList.addChild("ul", starters.statsPageLine(false, true));
+				loadStatsList.addChild("ul", starters.statsPageLine(true, true));
 				nextTableCell = overviewTableRow.addChild("td");
 
 				// node version information box
