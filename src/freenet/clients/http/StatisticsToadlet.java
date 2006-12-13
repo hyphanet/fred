@@ -458,7 +458,6 @@ public class StatisticsToadlet extends Toadlet {
                 jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true));
                 jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
                 jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
-                
 			
                 // unclaimedFIFOMessageCounts box
 				overviewTableRow = overviewTable.addChild("tr");
@@ -512,13 +511,18 @@ public class StatisticsToadlet extends Toadlet {
                 HTMLNode versionInfobox = nextTableCell.addChild("div", "class", "infobox");
                 versionInfobox.addChild("div", "class", "infobox-header", "Node Version Information");
                 HTMLNode versionInfoboxContent = versionInfobox.addChild("div", "class", "infobox-content");
-				versionInfoboxContent.addChild("#", "Freenet " + Version.nodeVersion + " Build #" + Version.buildNumber() + " r" + Version.cvsRevision);
-				versionInfoboxContent.addChild("br");
+                HTMLNode versionInfoboxList = versionInfoboxContent.addChild("ul");
+				versionInfoboxList.addChild("li", "Freenet " + Version.nodeVersion + " Build #" + Version.buildNumber() + " r" + Version.cvsRevision);
 				if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER) {
-					versionInfoboxContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + '(' + NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER + ") r" + NodeStarter.extRevisionNumber);
+					versionInfoboxList.addChild("li", "Freenet-ext Build #" + NodeStarter.extBuildNumber + '(' + NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER + ") r" + NodeStarter.extRevisionNumber);
 				} else {
-					versionInfoboxContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + " r" + NodeStarter.extRevisionNumber);
+					versionInfoboxList.addChild("li", "Freenet-ext Build #" + NodeStarter.extBuildNumber + " r" + NodeStarter.extRevisionNumber);
 				}
+				versionInfoboxList.addChild("li", "JVM Vendor:\u00a0" + System.getProperty("java.vm.vendor"));
+				versionInfoboxList.addChild("li", "JVM Version:\u00a0" + System.getProperty("java.vm.version"));
+				versionInfoboxList.addChild("li", "OS Name:\u00a0" + System.getProperty("os.name"));
+				versionInfoboxList.addChild("li", "OS Version:\u00a0" + System.getProperty("os.version"));
+				versionInfoboxList.addChild("li", "OS Architecture:\u00a0" + System.getProperty("os.arch"));
 			}
 		}
 
