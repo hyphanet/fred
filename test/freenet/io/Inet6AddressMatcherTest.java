@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package test;
+package freenet.io;
 
 import java.net.InetAddress;
 
@@ -29,7 +29,7 @@ import freenet.io.Inet6AddressMatcher;
  * very basic tests. Feel free to add more complicated tests!
  * 
  * @author David Roden &lt;droden@gmail.com&gt;
- * @version $Id$
+ * @version $Id: Inet6AddressMatcherTest.java 10490 2006-09-20 00:07:46Z toad $
  */
 public class Inet6AddressMatcherTest extends TestCase {
 

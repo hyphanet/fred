@@ -14,7 +14,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package test;
+package freenet.io;
 
 import junit.framework.TestCase;
 import freenet.io.AddressIdentifier;
@@ -24,7 +24,7 @@ import freenet.io.AddressIdentifier.AddressType;
  * Test case for the {@link freenet.io.AddressIdentifier} class.
  * 
  * @author David Roden &lt;droden@gmail.com&gt;
- * @version $Id$
+ * @version $Id: AddressIdentifierTest.java 10490 2006-09-20 00:07:46Z toad $
  */
 public class AddressIdentifierTest extends TestCase {
 

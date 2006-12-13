@@ -9,7 +9,10 @@
 
 	<!-- set global properties for this build -->
 	<property name="src" location="src"/>
+	<property name="test" location="test"/>
 	<property name="build" location="build"/>
+	<property name="build-test" location="build-test"/>
+	<property name="test-results" location="test-results"/>
 	<property name="lib"	location="lib"/>
 	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
 	<property name="javadoc" location="javadoc"/>
@@ -20,6 +23,8 @@
 
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
+		<mkdir dir="${build-test}"/>
+		<mkdir dir="${test-results}"/>
 		<mkdir dir="${lib}"/>
 	</target>
 
@@ -48,6 +53,7 @@
 	</target>
 
 	<!-- ================================================== -->
+
 	<target name="compile" depends="get-extjar, generate-CSSTokenizerFilter">
 		<!-- Create the time stamp -->
 		<tstamp/>
@@ -83,7 +89,8 @@
 
 
 	<!-- ================================================== -->
-	<target name="dist" depends="compile"
+
+	<target name="dist" depends="compile,unit"
 		description="generate the distribution" >
 		<!-- Create the distribution directory -->
 		<!--<mkdir dir="."/>-->
@@ -105,12 +112,44 @@
 	</target>
 
 	<!-- ================================================== -->
+
+	<target name="unit-build" depends="compile">
+		<javac srcdir="${test}" destdir="${build-test}" debug="off" optimize="on" source="1.4">
+			<classpath>
+				<pathelement path="${build}"/>
+				<pathelement location="${freenet-ext.location}"/>
+			</classpath>
+			<include name="**/*.java"/>
+			<exclude name="*.java"/>
+		</javac>
+	</target>
+
+	<target name="unit" depends="unit-build">
+		<junit printsummary="yes" fork="yes" haltonfailure="yes">
+			<classpath>
+				<pathelement path="${build}"/>
+				<pathelement path="${build-test}"/>
+			</classpath>
+
+			<formatter type="plain"/>
+
+			<batchtest fork="yes" todir="${test-results}">
+				<fileset dir="${build-test}">
+					<include name="**/*.java"/>
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+
+	<!-- ================================================== -->
+
 	<target name="clean" description="Delete class files and docs dir.">
 		<delete dir="${build}"/>
 	</target>
 	<target name="distclean" description="Delete class files, lib dir and docs dir.">
 		<delete file="${CSSTokenizerFilter.java}"/>
 		<delete dir="${build}"/>
+		<delete dir="${build-test}"/>
 		<delete dir="${lib}"/>
 		<delete dir="${javadoc}"/>
 	</target>
