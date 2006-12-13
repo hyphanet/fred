@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-package test.freenet.crypt;
+package freenet.crypt;
 
 import java.math.BigInteger;
 
@@ -23,7 +23,7 @@ import junit.framework.TestCase;
 /**
  * Test case for the {@link freenet.crypt.DSAGroupGeneratorTest} class.
  * 
- * @author Florent Daigni;egrave;re &gt;nextgens@freenetproject.org&gt;
+ * @author Florent Daigni&egrave;re &gt;nextgens@freenetproject.org&gt;
  */
 public class DSAGroupGeneratorTest extends TestCase {
 
