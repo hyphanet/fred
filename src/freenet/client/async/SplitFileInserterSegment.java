@@ -399,11 +399,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		synchronized(this) {
 			for(int i=0;i<dataBlockInserters.length;i++) {
 				if(dataBlockInserters[i] == null && dataBlocks[i] != null) {
-					try {
-						parent.ctx.persistentBucketFactory.freeBucket(dataBlocks[i]);
-					} catch (IOException e) {
-						Logger.error(this, "Could not free "+dataBlocks[i]+" : "+e, e);
-					}
+					dataBlocks[i].free();
 					dataBlocks[i] = null;
 				}
 			}
@@ -506,11 +502,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				return blocksCompleted;
 			}
 			checkBlockInserters[x] = null;
-			try {
-				parent.ctx.persistentBucketFactory.freeBucket(checkBlocks[x]);
-			} catch (IOException e) {
-				Logger.error(this, "Could not free "+checkBlocks[x]+" : "+e, e);
-			}
+			checkBlocks[x].free();
 			checkBlocks[x] = null;
 		} else {
 			if(dataBlockInserters[x] == null) {
@@ -519,11 +511,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			}
 			dataBlockInserters[x] = null;
 			if(encoded) {
-				try {
-					parent.ctx.persistentBucketFactory.freeBucket(dataBlocks[x]);
-				} catch (IOException e) {
-					Logger.error(this, "Could not free "+dataBlocks[x]+" : "+e, e);
-				}
+				dataBlocks[x].free();
 				dataBlocks[x] = null;
 			}
 		}

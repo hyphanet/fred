@@ -20,8 +20,4 @@ public class PersistentEncryptedTempBucketFactory implements BucketFactory {
 	public Bucket makeBucket(long size) throws IOException {
 		return bf.makeEncryptedBucket();
 	}
-
-	public void freeBucket(Bucket b) throws IOException {
-		bf.freeBucket(b);
-	}
 }

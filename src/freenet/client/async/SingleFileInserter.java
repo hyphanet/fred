@@ -165,12 +165,12 @@ class SingleFileInserter implements ClientPutState {
 						bestCodec = comp;
 						data = result;
 						if(bestCompressedData != null)
-							ctx.bf.freeBucket(bestCompressedData);
+							bestCompressedData.free();
 						bestCompressedData = data;
 						break;
 					}
 					if((bestCompressedData != null) && (result.size() <  bestCompressedData.size())) {
-						ctx.bf.freeBucket(bestCompressedData);
+						bestCompressedData.free();
 						bestCompressedData = result;
 						data = result;
 						bestCodec = comp;

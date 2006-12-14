@@ -164,16 +164,10 @@ public class BucketTools {
 
 		for (int i = 0; i < buckets.length; i++) {
 			// Make sure we free any temp buckets on exception
-			try {
-				if (buckets[i] != null) {
-					bf.freeBucket(buckets[i]);
-				}
-				buckets[i] = null;
-			} catch (IOException e) {
-				if (firstIoe == null) {
-					firstIoe = e;
-				}
+			if (buckets[i] != null) {
+				buckets[i].free();
 			}
+			buckets[i] = null;
 		}
 
 		if (firstIoe != null) {

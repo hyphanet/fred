@@ -5,6 +5,8 @@ package freenet.support.io;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -81,19 +83,23 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		if(mustExist && !f.exists())
 			throw new IOException("File does not exist (deleted?): "+f);
 		Bucket b = new FileBucket(f, false, false, false, true);
-		originalFiles.remove(f);
+		synchronized(this) {
+			originalFiles.remove(f);
+		}
 		return b;
 	}
 	
 	public void register(File file) {
-		originalFiles.remove(file);
+		synchronized(this) {
+			originalFiles.remove(file);
+		}
 	}
 	
 	/**
 	 * Called when boot-up is complete.
 	 * Deletes any old temp files still unclaimed.
 	 */
-	public void completedInit() {
+	public synchronized void completedInit() {
 		Iterator i = originalFiles.iterator();
 		while(i.hasNext()) {
 			File f = (File) (i.next());
@@ -101,18 +107,18 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 
-	public Bucket makeRawBucket(long size) throws IOException {
+	private Bucket makeRawBucket(long size) throws IOException {
 		return new FileBucket(fg.makeRandomFilename(), false, false, false, true);
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
 		Bucket b = makeRawBucket(size);
-		return new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false);
+		return new DelayedFreeBucket(new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false));
 	}
 	
 	public Bucket makeEncryptedBucket() throws IOException {
 		Bucket b = makeRawBucket(-1);
-		return new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false);
+		return new DelayedFreeBucket(new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false));
 	}
 
 	/**
@@ -125,13 +131,13 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 */
 	public Bucket registerEncryptedBucket(String filename, byte[] key, long len) throws IOException {
 		Bucket fileBucket = register(filename, len > 0);
-		return new PaddedEphemerallyEncryptedBucket(fileBucket, 1024, len, key, rand);
+		return new DelayedFreeBucket(new PaddedEphemerallyEncryptedBucket(fileBucket, 1024, len, key, rand));
 	}
 	
 	/**
 	 * Free an allocated bucket, but only after the change has been written to disk.
 	 */
-	public void freeBucket(Bucket b) throws IOException {
+	public void delayedFreeBucket(Bucket b) {
 		synchronized(this) {
 			bucketsToFree.add(b);
 		}
@@ -139,11 +145,59 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	public Bucket[] grabBucketsToFree() {
 		synchronized(this) {
-			return (Bucket[]) bucketsToFree.toArray(new Bucket[bucketsToFree.size()]);
+			Bucket[] toFree = (Bucket[]) bucketsToFree.toArray(new Bucket[bucketsToFree.size()]);
+			bucketsToFree.clear();
+			return toFree;
 		}
 	}
 	
 	public File getDir() {
 		return dir;
 	}
+	
+	public class DelayedFreeBucket implements Bucket {
+
+		Bucket bucket;
+		boolean freed;
+		
+		public DelayedFreeBucket(PaddedEphemerallyEncryptedBucket bucket) {
+			this.bucket = bucket;
+		}
+
+		public OutputStream getOutputStream() throws IOException {
+			if(freed) throw new IOException("Already freed");
+			return bucket.getOutputStream();
+		}
+
+		public InputStream getInputStream() throws IOException {
+			if(freed) throw new IOException("Already freed");
+			return bucket.getInputStream();
+		}
+
+		public String getName() {
+			return bucket.getName();
+		}
+
+		public long size() {
+			return bucket.size();
+		}
+
+		public boolean isReadOnly() {
+			return bucket.isReadOnly();
+		}
+
+		public void setReadOnly() {
+			bucket.setReadOnly();
+		}
+
+		public void free() {
+			synchronized(this) { // mutex on just this method; make a separate lock if necessary to lock the above
+				if(freed) return;
+				delayedFreeBucket(bucket);
+				freed = true;
+			}
+		}
+
+	}
+
 }
