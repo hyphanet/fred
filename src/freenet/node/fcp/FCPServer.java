@@ -523,8 +523,16 @@ public class FCPServer implements Runnable {
 			if(logMINOR) Logger.minor(this, "Stored persistent requests");
 		} finally {
 			if(toFree != null) {
-				for(int i=0;i<toFree.length;i++)
-					toFree[i].free();
+				for(int i=0;i<toFree.length;i++) {
+					try {
+						toFree[i].free();
+					} catch (Throwable t) {
+						try {
+							System.err.println("Caught "+t+" trying to free bucket "+toFree[i]);
+							t.printStackTrace();
+						} catch (Throwable t1) { /* ignore */ }
+					}
+				}
 			}
 		}
 	}
