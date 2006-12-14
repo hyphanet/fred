@@ -189,7 +189,7 @@ public class DSAGroupGenerator {
 	}
 
 	/**
-	 * WARNING: it won't work reliably for integers above 30
+	 * WARNING: it won't work reliably for integers below 30
 	 */
 	public static boolean isPrime(BigInteger b) {
         for (int i = 0; i < smallPrimes.length; i++) {
