@@ -2594,6 +2594,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public boolean rereadExtraPeerDataFile(int fileNumber) {
+		if(logMINOR)
+			Logger.minor(this, "Rereading peer data file "+fileNumber+" for "+shortToString());
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
 		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
 		if(!extraPeerDataPeerDir.exists()) {
@@ -2613,8 +2615,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public boolean readExtraPeerDataFile(File extraPeerDataFile, int fileNumber) {
+		if(logMINOR) Logger.minor(this, "Reading "+extraPeerDataFile+" : "+fileNumber+" for "+shortToString());
 		boolean gotError = false;
 	 	if(!extraPeerDataFile.exists()) {
+	 		if(logMINOR)
+	 			Logger.minor(this, "Does not exist");
 	 		return false;
 	 	}
 		Logger.normal(this, "extraPeerDataFile: "+extraPeerDataFile.getPath());
@@ -2627,20 +2632,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		InputStreamReader isr = new InputStreamReader(fis);
 		BufferedReader br = new BufferedReader(isr);
+		SimpleFieldSet fs = null;
 		try {
 			// Read in the single SimpleFieldSet
-			SimpleFieldSet fs;
 			fs = new SimpleFieldSet(br);
-			boolean parseResult = false;
-			try {
-				parseResult = parseExtraPeerData(fs, extraPeerDataFile, fileNumber);
-				if(!parseResult) {
-					gotError = true;
-				}
-			} catch (FSParseException e2) {
-				Logger.error(this, "Could not parse extra peer data: "+e2+ '\n' +fs.toString(),e2);
-				gotError = true;
-			}
 		} catch (EOFException e3) {
 			// End of file, fine
 		} catch (IOException e4) {
@@ -2651,6 +2646,21 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			} catch (IOException e5) {
 				Logger.error(this, "Ignoring "+e5+" caught reading "+extraPeerDataFile.getPath(), e5);
 			}
+		}
+		if(fs == null) {
+			Logger.normal(this, "Deleting corrupt (too short?) file: "+extraPeerDataFile);
+			deleteExtraPeerDataFile(fileNumber);
+			return true;
+		}
+		boolean parseResult = false;
+		try {
+			parseResult = parseExtraPeerData(fs, extraPeerDataFile, fileNumber);
+			if(!parseResult) {
+				gotError = true;
+			}
+		} catch (FSParseException e2) {
+			Logger.error(this, "Could not parse extra peer data: "+e2+ '\n' +fs.toString(),e2);
+			gotError = true;
 		}
 		return !gotError;
 	}
@@ -2933,6 +2943,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public void sendQueuedN2NTMs() {
+		if(logMINOR)
+			Logger.minor(this, "Sending queued N2NTMs for "+shortToString());
 		Integer[] localFileNumbers = null;
 		synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
 			localFileNumbers = (Integer[]) queuedToSendN2NTMExtraPeerDataFileNumbers.toArray(new Integer[queuedToSendN2NTMExtraPeerDataFileNumbers.size()]);
