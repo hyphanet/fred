@@ -1,4 +1,4 @@
-package freenet.support.api;
+package freenet.plugin.api;
 
 import java.io.InputStream;
 

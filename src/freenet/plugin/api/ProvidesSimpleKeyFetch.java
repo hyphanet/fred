@@ -3,10 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.plugin.api;
 
-import freenet.support.api.Bucket;
-import freenet.support.api.PluginFetchException;
-import freenet.support.api.PluginFetchResult;
-import freenet.support.api.PluginFreenetURI;
 
 /**
  * Provides an interface to the client for it to fetch keys from.
