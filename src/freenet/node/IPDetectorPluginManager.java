@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Vector;
 
 import freenet.io.comm.Peer;
+import freenet.node.useralerts.ProxyUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
@@ -29,6 +30,7 @@ public class IPDetectorPluginManager {
 	private SimpleUserAlert portRestrictedAlert;
 	private SimpleUserAlert restrictedAlert;
 	private SimpleUserAlert connectedAlert;
+	private ProxyUserAlert proxyAlert;
 	
 	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
@@ -53,6 +55,7 @@ public class IPDetectorPluginManager {
 		connectedAlert = new SimpleUserAlert(true, "Direct internet connection detected",
 				"You appear to be directly connected to the internet. Congratulations, you should be able to connect "+
 				"to any other freenet node.", UserAlert.WARNING);
+		proxyAlert = new ProxyUserAlert(node.clientCore.alerts);
 	}
 
 	void start() {
@@ -446,15 +449,15 @@ public class IPDetectorPluginManager {
 				}
 				
 				if(countClosed > 0 && (countOpen + countRestricted + countPortRestricted + countSymmetric) == 0) {
-					node.clientCore.alerts.register(noConnectionAlert);
+					proxyAlert.setAlert(noConnectionAlert);
 				} else if(countSymmetric > 0 && (countOpen + countRestricted + countPortRestricted == 0)) {
-					node.clientCore.alerts.register(symmetricAlert);
+					proxyAlert.setAlert(symmetricAlert);
 				} else if(countPortRestricted > 0 && (countOpen + countRestricted == 0)) {
-					node.clientCore.alerts.register(portRestrictedAlert);
+					proxyAlert.setAlert(portRestrictedAlert);
 				} else if(countRestricted > 0 && (countOpen == 0)) {
-					node.clientCore.alerts.register(restrictedAlert);
+					proxyAlert.setAlert(restrictedAlert);
 				} else if(countOpen > 0) {
-					node.clientCore.alerts.register(connectedAlert);
+					proxyAlert.setAlert(connectedAlert);
 				}
 				detector.processDetectedIPs(list);
 			} finally {
