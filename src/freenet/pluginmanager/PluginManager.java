@@ -342,11 +342,12 @@ public class PluginManager {
         			
         			// Handle automatic fetching of pluginclassname
         			if (realClass.equals("*")) {
-        				if (realURL.startsWith("file:")) {
-        					URI liburi = URIPreEncoder.encodeURI(realURL);
-        					if(logMINOR) Logger.minor(this, "file: URI voodoo: "+realURL+" -> "+liburi.toString());
-        					realURL = liburi.toString();
-        				}
+        				
+        				// Clean URL
+        				URI liburi = URIPreEncoder.encodeURI(realURL);
+       					if(logMINOR) 
+       						Logger.minor(this, "cleaned url: "+realURL+" -> "+liburi.toString());
+        				realURL = liburi.toString();
         				
         				URL url = new URL("jar:"+realURL+"!/");
         				JarURLConnection jarConnection = (JarURLConnection)url.openConnection();
