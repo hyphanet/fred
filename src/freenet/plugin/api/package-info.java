@@ -5,5 +5,7 @@
  * Needs* interfaces depending on what services they require from the node. These 
  * interfaces indicate to the node what services are required by the plugin; the node
  * may ask the user whether (s)he wants to allow the plugin to use these services.
+ * 
+ * @see freenet.support.api
  */
 package freenet.plugin.api;

@@ -4,5 +4,7 @@
  * classes too. Anything here must not support more functionality than is really
  * necessary; it must not be possible for a plugin to escalate its privelidges
  * through this API.
+ * 
+ * @see freenet.plugin.api
  */
 package freenet.support.api;
