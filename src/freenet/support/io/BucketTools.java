@@ -131,24 +131,6 @@ public class BucketTools {
 		}
 	}
 
-	public static class BucketFactoryWrapper implements BucketFactory {
-		public BucketFactoryWrapper(BucketFactory bf) {
-			BucketFactoryWrapper.this.bf = bf;
-		}
-		public Bucket makeBucket(long size) throws IOException {
-			return bf.makeBucket(size);
-		}
-
-		public void freeBucket(Bucket b) throws IOException {
-			if (b instanceof RandomAccessFileBucket) {
-				((RandomAccessFileBucket) b).release();
-				return;
-			}
-			bf.freeBucket(b);
-		}
-		private BucketFactory bf = null;
-	}
-
 	public static Bucket[] makeBuckets(BucketFactory bf, int count, int size)
 		throws IOException {
 		Bucket[] ret = new Bucket[count];
@@ -197,68 +179,6 @@ public class BucketTools {
 		if (firstIoe != null) {
 			throw firstIoe;
 		}
-	}
-
-	// Note: Not all buckets are allocated by the bf.
-	//       You must use the BucketFactoryWrapper class above
-	//       to free the returned buckets.
-	//
-	// Always returns blocks, blocks, even if it has to create
-	// zero padded ones.
-	public static Bucket[] splitFile(
-		File file,
-		int blockSize,
-		long offset,
-		int blocks,
-		boolean readOnly,
-		BucketFactoryWrapper bf)
-		throws IOException {
-
-		long len = file.length() - offset;
-		if (len > blocks * blockSize) {
-			len = blocks * blockSize;
-		}
-
-		long padBlocks = 0;
-		if ((blocks * blockSize) - len >= blockSize) {
-			padBlocks = ((blocks * blockSize) - len) / blockSize;
-		}
-
-		Bucket[] ret = new Bucket[blocks];
-		Bucket[] rab =
-			RandomAccessFileBucket.segment(
-				file,
-				blockSize,
-				offset,
-				(int) (blocks - padBlocks),
-				true);
-		System.arraycopy(rab, 0, ret, 0, rab.length);
-
-		boolean groovy = false;
-		try {
-			if (len % blockSize != 0) {
-				// Copy and zero pad final partial block
-				Bucket partial = ret[rab.length - 1];
-				ret[rab.length - 1] = bf.makeBucket(blockSize);
-				paddedCopy(
-					partial,
-					ret[rab.length - 1],
-					len % blockSize,
-					blockSize);
-			}
-
-			// Trailing zero padded blocks
-			for (int i = rab.length; i < ret.length; i++) {
-				ret[i] = bf.makeBucket(blockSize);
-				zeroPad(ret[i], blockSize);
-			}
-			groovy = true;
-		} finally {
-			if (!groovy) {
-				freeBuckets(bf, ret);
-			}
-		}
-		return ret;
 	}
 
 	public final static int[] nullIndices(Bucket[] array) {
