@@ -5,6 +5,7 @@ package freenet.plugin.api;
 
 import freenet.support.api.Bucket;
 import freenet.support.api.PluginFetchException;
+import freenet.support.api.PluginFetchResult;
 import freenet.support.api.PluginFreenetURI;
 
 /**
@@ -13,6 +14,6 @@ import freenet.support.api.PluginFreenetURI;
  */
 public interface ProvidesSimpleKeyFetch {
 
-	public Bucket fetch(PluginFreenetURI uri) throws PluginFetchException;
+	public PluginFetchResult fetch(PluginFreenetURI uri) throws PluginFetchException;
 	
 }
