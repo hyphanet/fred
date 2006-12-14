@@ -331,6 +331,7 @@ public class PluginManager {
         					
         					realURL = in.readLine().trim();
         					if(logMINOR) Logger.minor(this, "Loaded new URL: "+realURL+" from .url file");
+        					in.close();
         				}
         				assumeURLRedirect = !assumeURLRedirect;
         			}
