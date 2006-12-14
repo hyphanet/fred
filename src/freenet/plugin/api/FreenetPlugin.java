@@ -13,8 +13,8 @@ public interface FreenetPlugin {
 	/** The plugin's short name (shouldn't usually have spaces, punctuation, author etc; one to three words StuckTogetherLikeThis) */
 	public String shortName();
 	
-	/** The plugin's long name (can have spaces, mention author or purpose, etc) */
-	public String longName();
+	/** The plugin's description or long name (can have spaces, mention author or purpose, etc) */
+	public String description();
 	
 	/** The plugin's version number. MUST BE AT LEAST INCREMENTED ON EVERY RELEASE. */
 	public long version();
