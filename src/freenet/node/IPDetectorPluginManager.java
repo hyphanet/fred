@@ -25,11 +25,11 @@ public class IPDetectorPluginManager {
 	private final Ticker ticker;
 	private final Node node;
 	FredPluginIPDetector[] plugins;
-	private SimpleUserAlert noConnectionAlert;
-	private SimpleUserAlert symmetricAlert;
-	private SimpleUserAlert portRestrictedAlert;
-	private SimpleUserAlert restrictedAlert;
-	private SimpleUserAlert connectedAlert;
+	private final SimpleUserAlert noConnectionAlert;
+	private final SimpleUserAlert symmetricAlert;
+	private final SimpleUserAlert portRestrictedAlert;
+	private final SimpleUserAlert restrictedAlert;
+	private final SimpleUserAlert connectedAlert;
 	private ProxyUserAlert proxyAlert;
 	
 	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
@@ -55,10 +55,11 @@ public class IPDetectorPluginManager {
 		connectedAlert = new SimpleUserAlert(true, "Direct internet connection detected",
 				"You appear to be directly connected to the internet. Congratulations, you should be able to connect "+
 				"to any other freenet node.", UserAlert.WARNING);
-		proxyAlert = new ProxyUserAlert(node.clientCore.alerts);
 	}
 
 	void start() {
+		// Cannot be initialized until UserAlertManager has been created.
+		proxyAlert = new ProxyUserAlert(node.clientCore.alerts);
 		try {
 			maybeRun();
 		} catch (Throwable t) {
