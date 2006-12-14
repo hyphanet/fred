@@ -819,17 +819,20 @@ public class FileLoggerHook extends LoggerHook {
 		logString(sb.toString().getBytes());
 	}
 
+	/** Memory allocation overhead (estimated through experimentation with bsh) */
+	private static final int LINE_OVERHEAD = 60;
+	
 	public void logString(byte[] b) {
 		synchronized (list) {
 			int sz = list.size();
 			list.add(b);
-			listBytes += (b.length + 16); /* total guess */
+			listBytes += (b.length + LINE_OVERHEAD); /* total guess */
 			int x = 0;
 			if ((list.size() > MAX_LIST_SIZE) || (listBytes > MAX_LIST_BYTES)) {
 				while ((list.size() > (MAX_LIST_SIZE * 0.9F))
 					|| (listBytes > (MAX_LIST_BYTES * 0.9F))) {
 					byte[] ss = (byte[]) (list.removeFirst());
-					listBytes -= (ss.length + 16);
+					listBytes -= (ss.length + LINE_OVERHEAD);
 					x++;
 				}
 				String err =
@@ -840,7 +843,7 @@ public class FileLoggerHook extends LoggerHook {
 						+ " bytes in memory\n";
 				byte[] buf = err.getBytes();
 				list.add(0, buf);
-				listBytes += (buf.length + 16);
+				listBytes += (buf.length + LINE_OVERHEAD);
 			}
 			if (sz == 0)
 				list.notify();
