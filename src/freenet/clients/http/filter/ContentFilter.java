@@ -13,7 +13,7 @@ import java.util.Hashtable;
 
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 
 /**
  * Freenet content filter. This doesn't actually do any filtering,

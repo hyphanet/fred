@@ -5,7 +5,7 @@ import java.io.OutputStream;
 
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 
 public abstract class FCPMessage {

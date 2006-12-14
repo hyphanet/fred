@@ -6,7 +6,7 @@ package freenet.client;
 import java.io.IOException;
 
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 
 /**
  * FEC (forward error correction) handler.

@@ -5,7 +5,7 @@ import java.io.IOException;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 
 /**
  * Object represents context for a single request. Is used as a token,

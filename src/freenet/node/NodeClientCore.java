@@ -46,7 +46,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.io.PersistentEncryptedTempBucketFactory;

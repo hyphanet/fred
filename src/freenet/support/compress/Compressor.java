@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import freenet.client.Metadata;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 
 /**
  * A data compressor. Contains methods to get all data compressors.

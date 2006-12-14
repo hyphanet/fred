@@ -36,7 +36,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.URLEncoder;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 
 public class FProxyToadlet extends Toadlet {
 	

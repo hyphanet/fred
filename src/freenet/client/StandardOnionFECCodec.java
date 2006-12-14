@@ -17,7 +17,7 @@ import com.onionnetworks.util.Buffer;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
 
 /**

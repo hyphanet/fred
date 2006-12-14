@@ -13,7 +13,7 @@ import freenet.node.RequestStarter;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.FileBucket;
 
 /**

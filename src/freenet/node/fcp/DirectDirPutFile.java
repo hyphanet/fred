@@ -6,7 +6,7 @@ import java.io.OutputStream;
 
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
 
 /**

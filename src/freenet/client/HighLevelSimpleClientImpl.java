@@ -20,7 +20,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NullPersistentFileTracker;
 import freenet.support.io.PersistentFileTracker;

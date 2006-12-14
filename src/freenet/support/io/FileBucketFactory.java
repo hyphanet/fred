@@ -6,6 +6,7 @@ import java.util.Vector;
 
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.api.BucketFactory;
 
 public class FileBucketFactory implements BucketFactory {
     

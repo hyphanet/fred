@@ -17,9 +17,9 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.node.Node;
 import freenet.support.api.Bucket;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
-import freenet.support.io.BucketFactory;
 import freenet.support.io.BucketTools;
 
 /**

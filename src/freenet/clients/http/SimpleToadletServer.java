@@ -32,7 +32,7 @@ import freenet.node.NodeClientCore;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.FileLoggerHook.IntervalParseException;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.TempBucketFactory;
 

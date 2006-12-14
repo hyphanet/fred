@@ -9,7 +9,7 @@ import java.io.OutputStream;
 
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
 
 

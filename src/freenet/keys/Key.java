@@ -14,11 +14,11 @@ import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.api.Bucket;
+import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
-import freenet.support.io.BucketFactory;
 import freenet.support.io.BucketTools;
 
 /**

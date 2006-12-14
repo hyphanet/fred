@@ -14,7 +14,7 @@ import freenet.client.async.ManifestElement;
 import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 
 /**

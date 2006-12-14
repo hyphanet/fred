@@ -5,7 +5,7 @@ import java.net.Socket;
 import java.util.HashMap;
 
 import freenet.support.Logger;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 
 public class FCPConnectionHandler {
 

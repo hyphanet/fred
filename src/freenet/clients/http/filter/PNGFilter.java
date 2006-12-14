@@ -12,7 +12,7 @@ import java.util.HashMap;
 
 import freenet.support.HTMLNode;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 
 /**
  * Content filter for PNG's.

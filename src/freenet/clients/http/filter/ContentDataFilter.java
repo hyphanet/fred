@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 
 /**
  * Data filter for a specific MIME type.

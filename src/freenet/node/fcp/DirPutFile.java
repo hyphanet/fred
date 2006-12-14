@@ -9,7 +9,7 @@ import freenet.client.async.ManifestElement;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 
 /**
  * A request to upload a file to a manifest.

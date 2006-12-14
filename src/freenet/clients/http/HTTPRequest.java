@@ -26,7 +26,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketFactory;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.LineReadingInputStream;
 
