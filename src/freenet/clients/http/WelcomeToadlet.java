@@ -136,7 +136,7 @@ public class WelcomeToadlet extends Toadlet {
 			String key = request.getPartAsString("key", MAX_KEY_LENGTH);
 			String name = request.getPartAsString("name", MAX_NAME_LENGTH);
 			try {
-				bookmarks.addBookmark(new Bookmark(key, name), true);
+				bookmarks.addBookmark(new Bookmark(key, name, core.alerts), true);
 			} catch (MalformedURLException mue) {
 				this.sendBookmarkEditPage(ctx, MODE_ADD, null, key, name, "Given key does not appear to be a valid Freenet key.");
 				return;
@@ -166,7 +166,7 @@ public class WelcomeToadlet extends Toadlet {
 					String key = request.getPartAsString("key", MAX_KEY_LENGTH);
 					String name = request.getPartAsString("name", MAX_NAME_LENGTH);
 					try {
-						Bookmark newbkmk = new Bookmark(key, name);
+						Bookmark newbkmk = new Bookmark(key, name, core.alerts);
 						bookmarks.removeBookmark(b, false);
 						bookmarks.addBookmark(newbkmk, true);
 					} catch (MalformedURLException mue) {

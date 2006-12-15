@@ -10,6 +10,8 @@ import java.net.MalformedURLException;
 import freenet.keys.USK;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
+import freenet.node.useralerts.UserAlert;
+import freenet.support.HTMLNode;
 import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
 import freenet.config.InvalidConfigValueException;
@@ -51,7 +53,7 @@ public class BookmarkManager {
 			bookmarks.clear();
 			for (int i = 0; i < newvals.length; i++) {
 				try {
-					bookmarks.add(new Bookmark(newvals[i]));
+					bookmarks.add(new Bookmark(newvals[i], node.alerts));
 				} catch (MalformedURLException mue) {
 					throw new InvalidConfigValueException(mue.getMessage());
 				}
@@ -63,18 +65,17 @@ public class BookmarkManager {
 		public void onFoundEdition(long edition, USK key) {
 			
 			for (Enumeration e = bookmarks.elements(); e.hasMoreElements(); ) {
-				Bookmark i = (Bookmark) e.nextElement();
+				Bookmark b = (Bookmark) e.nextElement();
 				
-				if (!i.getKeyType().equals("USK")) continue;
+				if (!b.getKeyType().equals("USK")) continue;
 				
 				try {
-					FreenetURI furi = new FreenetURI(i.getKey());
+					FreenetURI furi = new FreenetURI(b.getKey());
 					USK usk = USK.create(furi);
 					
 					if (usk.equals(key, false)) {
-						i.setKey(key.getURI());
-						i.key = i.key.setMetaString(furi.getAllMetaStrings());
-					} else {
+						b.setEdition(key.suggestedEdition, node);
+						break;
 					}
 				} catch (MalformedURLException mue) {
 				}
@@ -92,7 +93,7 @@ public class BookmarkManager {
 		String[] initialbookmarks = sc.getStringArr("bookmarks");
 		for (int i = 0; i < initialbookmarks.length; i++) {
 			try {
-				addBookmark(new Bookmark(initialbookmarks[i]), false);
+				addBookmark(new Bookmark(initialbookmarks[i], n.alerts), false);
 			} catch (MalformedURLException mue) {
 				// just ignore that one
 			}
@@ -114,7 +115,7 @@ public class BookmarkManager {
 		Bookmark[] b = (Bookmark[]) bookmarks.toArray(new Bookmark[bookmarks.size()]);
 		FreenetURI[] uris = new FreenetURI[b.length];
 		for(int i=0;i<uris.length;i++) {
-			uris[i] = b[i].key;
+			uris[i] = b[i].getURI();
 		}
 		return uris;
 	}
@@ -126,7 +127,7 @@ public class BookmarkManager {
 			if (!i.getKeyType().equals("USK")) continue;
 			
 			try {
-				USK u = USK.create(i.key);
+				USK u = i.getUSK();
 				this.node.uskManager.unsubscribe(u, this.uskcb, true);
 			} catch (MalformedURLException mue) {
 				
@@ -139,7 +140,7 @@ public class BookmarkManager {
 		this.bookmarks.add(b);
 		if (b.getKeyType().equals("USK")) {
 			try {
-				USK u = USK.create(b.key);
+				USK u = b.getUSK();
 				this.node.uskManager.subscribe(u, this.uskcb, true, this);
 			} catch (MalformedURLException mue) {
 				
@@ -151,7 +152,7 @@ public class BookmarkManager {
 	public void removeBookmark(Bookmark b, boolean store) {
 		if (b.getKeyType().equals("USK")) {
 			try {
-				USK u = USK.create(b.key);
+				USK u = b.getUSK();
 				this.node.uskManager.unsubscribe(u, this.uskcb, true);
 			} catch (MalformedURLException mue) {
 			
