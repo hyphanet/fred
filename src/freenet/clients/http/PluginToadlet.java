@@ -63,9 +63,7 @@ public class PluginToadlet extends Toadlet {
 	 * @param ctx
 	 *            The context of this toadlet
 	 */
-	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		HTTPRequest httpRequest = new HTTPRequestImpl(uri, null, ctx);
-
+	public void handleGet(URI uri, HTTPRequest httpRequest, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String uriPath = uri.getPath();
 		String pluginName = uriPath.substring(uriPath.lastIndexOf('/') + 1);
 
@@ -102,9 +100,7 @@ public class PluginToadlet extends Toadlet {
 	/**
 	 * @see freenet.clients.http.Toadlet#handlePost(java.net.URI, freenet.support.api.Bucket, freenet.clients.http.ToadletContext)
 	 */
-	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		HTTPRequest httpRequest = new HTTPRequestImpl(uri, data, ctx);
-		
+	public void handlePost(URI uri, HTTPRequest httpRequest, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String uriPath = uri.getPath();
 		String pluginName = uriPath.substring(uriPath.lastIndexOf('/') + 1);
 		

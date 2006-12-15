@@ -42,8 +42,7 @@ public class N2NTMToadlet extends Toadlet {
     return "GET, POST";
   }
 
-  public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-	  HTTPRequest request = new HTTPRequestImpl(uri, null, ctx);
+  public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 	  if (request.isParameterSet("peernode_hashcode")) {
 		  HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message");
 		  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -101,14 +100,7 @@ public class N2NTMToadlet extends Toadlet {
 	  return infobox;
   }
   
-  public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-	  if(data.size() > 5*1024) {
-		  this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, N2NTM toadlet limited to 5KB");
-		  return;
-	  }
-	  
-	  HTTPRequest request = new HTTPRequestImpl(uri, data, ctx);
-	  
+  public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 	  String pass = request.getPartAsString("formPassword", 32);
 	  if((pass == null) || !pass.equals(core.formPassword)) {
 		  MultiValueTable headers = new MultiValueTable();

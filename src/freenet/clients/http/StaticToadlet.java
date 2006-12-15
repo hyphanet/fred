@@ -8,6 +8,7 @@ import java.net.URI;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
 
 /**
  * Static Toadlet.
@@ -21,7 +22,7 @@ public class StaticToadlet extends Toadlet {
 	private static final String ROOT_URL = "/static/";
 	private static final String ROOT_PATH = "staticfiles/";
 	
-	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String path = uri.getPath();
 		
 		if (!path.startsWith(ROOT_URL)) {

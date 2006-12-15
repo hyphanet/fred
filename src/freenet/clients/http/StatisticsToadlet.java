@@ -21,6 +21,7 @@ import freenet.node.Version;
 import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
+import freenet.support.api.HTTPRequest;
 
 public class StatisticsToadlet extends Toadlet {
 
@@ -80,7 +81,7 @@ public class StatisticsToadlet extends Toadlet {
 		return count;
 	}
 
-	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
 		final boolean advancedEnabled = node.isAdvancedDarknetEnabled();
 		

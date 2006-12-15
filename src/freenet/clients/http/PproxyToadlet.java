@@ -33,10 +33,8 @@ public class PproxyToadlet extends Toadlet {
 		return "GET, POST";
 	}
 
-	public void handlePost(URI uri, Bucket data, ToadletContext ctx)
+	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx)
 		throws ToadletContextClosedException, IOException {
-		
-		HTTPRequest request = new HTTPRequestImpl(uri, data, ctx);
 		
 		MultiValueTable headers = new MultiValueTable();
 		
@@ -116,10 +114,9 @@ public class PproxyToadlet extends Toadlet {
 
 	}
 	
-	public void handleGet(URI uri, ToadletContext ctx)
+	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException {
 		//String basepath = "/plugins/";
-		HTTPRequest request = new HTTPRequestImpl(uri);
 		String path = request.getPath();
 
 		// remove leading / and 'plugins/' from path

@@ -71,8 +71,7 @@ public class QueueToadlet extends Toadlet {
 		if(fcp == null) throw new NullPointerException();
 	}
 	
-	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		HTTPRequest request = new HTTPRequestImpl(uri, data, ctx);
+	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		try {
 			// Browse... button
 			if (request.getPartAsString("insert-local", 128).length() > 0) {
@@ -272,7 +271,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		} finally {
 			request.freeParts();
 		}
-		this.handleGet(uri, ctx);
+		this.handleGet(uri, new HTTPRequestImpl(uri), ctx);
 	}
 	
 	private void writeError(String header, String message, ToadletContext context) throws ToadletContextClosedException, IOException {
@@ -287,7 +286,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		writeReply(context, 400, "text/html; charset=utf-8", "Error", pageNode.generate());
 	}
 
-	public void handleGet(URI uri, ToadletContext ctx) 
+	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) 
 	throws ToadletContextClosedException, IOException, RedirectException {
 		
 		// We ensure that we have a FCP server running
@@ -296,7 +295,6 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			return;
 		}
 		
-		final HTTPRequest request = new HTTPRequestImpl(uri, null, ctx);
 		final String requestPath = request.getPath().substring("/queue/".length());
 		
 		if (requestPath.length() > 0) {

@@ -54,9 +54,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		return "GET, POST";
 	}
 
-	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		final HTTPRequest request = new HTTPRequestImpl(uri);
-		
+	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String path = uri.getPath();
 		if(path.endsWith("myref.fref")) {
 			SimpleFieldSet fs = node.exportPublicFieldSet();
@@ -611,14 +609,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		return (isReversed ? ("?sortBy="+type) : ("?sortBy="+type+"&reversed"));
 	}
 
-	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		if(data.size() > 1024*1024) {
-			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, darknet toadlet limited to 1MB");
-			return;
-		}
-		
-		HTTPRequest request = new HTTPRequestImpl(uri, data, ctx);
-		
+	public void handlePost(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		String pass = request.getPartAsString("formPassword", 32);
@@ -917,7 +908,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else {
-			this.handleGet(uri, ctx);
+			this.handleGet(uri, new HTTPRequestImpl(uri), ctx);
 		}
 	}
 	

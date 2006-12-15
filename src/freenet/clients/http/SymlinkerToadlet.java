@@ -13,6 +13,7 @@ import freenet.config.StringArrOption;
 import freenet.config.SubConfig;
 import freenet.node.Node;
 import freenet.support.Logger;
+import freenet.support.api.HTTPRequest;
 
 public class SymlinkerToadlet extends Toadlet {
 	
@@ -110,7 +111,7 @@ public class SymlinkerToadlet extends Toadlet {
 		return "GET";
 	}
 	
-	public void handleGet(URI uri, ToadletContext ctx)
+	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx)
 	throws ToadletContextClosedException, IOException, RedirectException {
 		String path = uri.getPath();
 		String foundkey = null;

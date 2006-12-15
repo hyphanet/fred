@@ -69,7 +69,7 @@ public class FProxyToadlet extends Toadlet {
 		return "GET";
 	}
 
-	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String ks = uri.getPath();
 		
 		if (ks.equals("/")||ks.startsWith("/servlet/")) {
@@ -249,12 +249,10 @@ public class FProxyToadlet extends Toadlet {
 		return false;
 	}
 
-	public void handleGet(URI uri, ToadletContext ctx) 
+	public void handleGet(URI uri, HTTPRequest httprequest, ToadletContext ctx) 
 			throws ToadletContextClosedException, IOException, RedirectException {
 		//String ks = uri.toString();
 		String ks = uri.getPath();
-		
-		HTTPRequest httprequest = new HTTPRequestImpl(uri);
 		
 		if (ks.equals("/")) {
 			if (httprequest.isParameterSet("key")) {

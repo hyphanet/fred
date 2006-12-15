@@ -288,7 +288,7 @@ public class ToadletContextImpl implements ToadletContext {
 					
 					if(method.equals("GET")) {
 						try {
-							t.handleGet(uri, ctx);
+							t.handleGet(uri, new HTTPRequestImpl(uri), ctx);
 							ctx.close();
 						} catch (RedirectException re) {
 							uri = re.newuri;
@@ -297,7 +297,7 @@ public class ToadletContextImpl implements ToadletContext {
 						
 					} else if(method.equals("PUT")) {
 						try {
-							t.handlePut(uri, null, ctx);
+							t.handlePut(uri, ctx);
 							ctx.close();
 						} catch (RedirectException re) {
 							uri = re.newuri;
@@ -306,7 +306,7 @@ public class ToadletContextImpl implements ToadletContext {
 						
 					} else if(method.equals("POST")) {
 						try {
-							t.handlePost(uri, data, ctx);
+							t.handlePost(uri, new HTTPRequestImpl(uri, data, ctx), ctx);
 						} catch (RedirectException re) {
 							uri = re.newuri;
 							redirect = true;

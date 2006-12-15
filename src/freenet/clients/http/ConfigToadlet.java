@@ -35,11 +35,9 @@ public class ConfigToadlet extends Toadlet {
 		this.node = node;
 	}
 
-	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		StringBuffer errbuf = new StringBuffer();
 		SubConfig[] sc = config.getConfigs();
-		
-		HTTPRequest request = new HTTPRequestImpl(uri, data, ctx);
 		
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
@@ -101,7 +99,7 @@ public class ConfigToadlet extends Toadlet {
 		
 	}
 	
-	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		SubConfig[] sc = config.getConfigs();
 		Arrays.sort(sc);
 		boolean advancedEnabled = core.isAdvancedDarknetEnabled();

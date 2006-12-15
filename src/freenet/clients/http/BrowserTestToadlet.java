@@ -174,10 +174,7 @@ public class BrowserTestToadlet extends Toadlet {
 		"TTfltFP4CgA1VFFFraqAAAIANUIAYJzwRFRHhRVWT2eltVZbb8U1V1135bVX" +
 		"X38FNlhhhyW2WGOPRTZZZbEMCAA7====";
 	
-	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		final boolean advancedEnabled = core.isAdvancedDarknetEnabled();
-		HTTPRequest request = new HTTPRequestImpl(uri);
-		
+	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		// Yes, we need that in order to test the browser (number of connections per server)
 		if (request.isParameterSet("wontload")) return;
 		else if (request.isParameterSet("mimeTest")){

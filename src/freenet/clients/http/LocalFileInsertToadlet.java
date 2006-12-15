@@ -37,9 +37,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 	 * @see freenet.clients.http.Toadlet#handleGet(java.net.URI,
 	 *      freenet.clients.http.ToadletContext)
 	 */
-	public void handleGet(URI uri, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
-		HTTPRequest request = new HTTPRequestImpl(uri, null, toadletContext);
-
+	public void handleGet(URI uri, HTTPRequest request, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
 		String path = request.getParam("path");
 		if (path.length() == 0) {
 			if (currentPath == null) {

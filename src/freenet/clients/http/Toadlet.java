@@ -17,6 +17,7 @@ import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
 
 /**
  * Replacement for servlets. Just an easy to use HTTP interface, which is
@@ -51,18 +52,18 @@ public abstract class Toadlet {
 	 * @throws IOException 
 	 * @throws ToadletContextClosedException 
 	 */
-	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		handleUnhandledRequest(uri, null, ctx);
 	}
 	
 	/**
 	 * Likewise for a PUT request.
 	 */
-	public void handlePut(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handlePut(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		handleUnhandledRequest(uri, null, ctx);
 	}
 	
-	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		handleUnhandledRequest(uri, null, ctx);
 	}
 	
