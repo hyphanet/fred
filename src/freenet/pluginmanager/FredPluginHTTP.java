@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
-import freenet.clients.http.HTTPRequest;
+import freenet.support.api.HTTPRequest;
 
 public interface FredPluginHTTP {
 	

@@ -6,6 +6,7 @@ import java.net.URI;
 import freenet.client.HighLevelSimpleClient;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
+import freenet.support.api.HTTPRequest;
 
 /**
  * Browser Test Toadlet.
@@ -175,7 +176,7 @@ public class BrowserTestToadlet extends Toadlet {
 	
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		final boolean advancedEnabled = core.isAdvancedDarknetEnabled();
-		HTTPRequest request = new HTTPRequest(uri);
+		HTTPRequest request = new HTTPRequestImpl(uri);
 		
 		// Yes, we need that in order to test the browser (number of connections per server)
 		if (request.isParameterSet("wontload")) return;

@@ -23,6 +23,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
 
 public class N2NTMToadlet extends Toadlet {
 
@@ -42,7 +43,7 @@ public class N2NTMToadlet extends Toadlet {
   }
 
   public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-	  HTTPRequest request = new HTTPRequest(uri, null, ctx);
+	  HTTPRequest request = new HTTPRequestImpl(uri, null, ctx);
 	  if (request.isParameterSet("peernode_hashcode")) {
 		  HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message");
 		  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -106,7 +107,7 @@ public class N2NTMToadlet extends Toadlet {
 		  return;
 	  }
 	  
-	  HTTPRequest request = new HTTPRequest(uri, data, ctx);
+	  HTTPRequest request = new HTTPRequestImpl(uri, data, ctx);
 	  
 	  String pass = request.getPartAsString("formPassword", 32);
 	  if((pass == null) || !pass.equals(core.formPassword)) {

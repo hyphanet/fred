@@ -16,6 +16,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
 
 public class PproxyToadlet extends Toadlet {
 	private static final int MAX_PLUGIN_NAME_LENGTH = 1024;
@@ -35,7 +36,7 @@ public class PproxyToadlet extends Toadlet {
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx)
 		throws ToadletContextClosedException, IOException {
 		
-		HTTPRequest request = new HTTPRequest(uri, data, ctx);
+		HTTPRequest request = new HTTPRequestImpl(uri, data, ctx);
 		
 		MultiValueTable headers = new MultiValueTable();
 		
@@ -118,7 +119,7 @@ public class PproxyToadlet extends Toadlet {
 	public void handleGet(URI uri, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException {
 		//String basepath = "/plugins/";
-		HTTPRequest request = new HTTPRequest(uri);
+		HTTPRequest request = new HTTPRequestImpl(uri);
 		String path = request.getPath();
 
 		// remove leading / and 'plugins/' from path

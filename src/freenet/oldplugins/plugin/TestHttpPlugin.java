@@ -5,10 +5,10 @@ package freenet.oldplugins.plugin;
 
 import java.io.IOException;
 
-import freenet.clients.http.HTTPRequest;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.support.MultiValueTable;
+import freenet.support.api.HTTPRequest;
 
 /**
  * Test HTTP plugin. Outputs "Plugin works" to the browser.
@@ -20,7 +20,7 @@ public class TestHttpPlugin implements HttpPlugin {
 
 	/**
 	 * @throws ToadletContextClosedException
-	 * @see freenet.oldplugins.plugin.HttpPlugin#handleGet(freenet.clients.http.HTTPRequest)
+	 * @see freenet.oldplugins.plugin.HttpPlugin#handleGet(freenet.clients.http.HTTPRequestImpl)
 	 */
 	public void handleGet(HTTPRequest request, ToadletContext context) throws IOException, ToadletContextClosedException {
 		byte[] messageBytes = "Plugin works.".getBytes("UTF-8");
@@ -29,7 +29,7 @@ public class TestHttpPlugin implements HttpPlugin {
 	}
 
 	/**
-	 * @see freenet.oldplugins.plugin.HttpPlugin#handlePost(freenet.clients.http.HTTPRequest)
+	 * @see freenet.oldplugins.plugin.HttpPlugin#handlePost(freenet.clients.http.HTTPRequestImpl)
 	 */
 	public void handlePost(HTTPRequest request, ToadletContext context) throws IOException, ToadletContextClosedException {
 	}

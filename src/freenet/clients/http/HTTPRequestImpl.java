@@ -24,9 +24,10 @@ import java.util.StringTokenizer;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleReadOnlyArrayBucket;
-import freenet.support.URLEncodedFormatException;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.HTTPRequest;
+import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.BucketTools;
 import freenet.support.io.LineReadingInputStream;
 
@@ -37,7 +38,7 @@ import freenet.support.io.LineReadingInputStream;
  * 
  * @author nacktschneck
  */
-public class HTTPRequest {
+public class HTTPRequestImpl implements HTTPRequest {
 
 	/**
 	 * This map is used to store all parameter values. The name (as String) of
@@ -80,7 +81,7 @@ public class HTTPRequest {
 	 * @param uri
 	 *            the URI being requested
 	 */
-	public HTTPRequest(URI uri) {
+	public HTTPRequestImpl(URI uri) {
 		this.uri = uri;
 		this.parseRequestParameters(uri.getRawQuery(), true, false);
 		this.data = null;
@@ -95,7 +96,7 @@ public class HTTPRequest {
 	 * @param encodedQueryString a=some+text&b=abc%40def.de
 	 * @throws URISyntaxException if the URI is invalid
 	 */
-	public HTTPRequest(String path, String encodedQueryString) throws URISyntaxException {
+	public HTTPRequestImpl(String path, String encodedQueryString) throws URISyntaxException {
 		this.data = null;
 		this.parts = null;
 		this.bucketfactory = null;
@@ -116,7 +117,7 @@ public class HTTPRequest {
 	 * @param ctx The toadlet context (for headers and bucket factory)
 	 * @throws URISyntaxException if the URI is invalid
 	 */
-	public HTTPRequest(URI uri, Bucket d, ToadletContext ctx) {
+	public HTTPRequestImpl(URI uri, Bucket d, ToadletContext ctx) {
 		this.uri = uri;
 		this.headers = ctx.getHeaders();
 		this.parseRequestParameters(uri.getRawQuery(), true, false);
@@ -131,18 +132,16 @@ public class HTTPRequest {
 	}
 	
 
-	/**
-	 * The path of this request, where the part of the path the specified the
-	 * plugin has already been removed..
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getPath()
 	 */
 	public String getPath() {
 		return this.uri.getPath();
 	}
 
 
-	/**
-	 * 
-	 * @return true if the query string was totally empty
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#hasParameters()
 	 */
 	public boolean hasParameters() {
 		return ! this.parameterNameValuesMap.isEmpty();
@@ -268,49 +267,22 @@ public class HTTPRequest {
 		return values;
 	}
 
-	/**
-	 * Check if a parameter was set in the request at all, either with or
-	 * without a value.
-	 * 
-	 * @param name
-	 *            the name of the parameter to check
-	 * @return true if the parameter was set in the request, not regarding if
-	 *         the value is empty
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#isParameterSet(java.lang.String)
 	 */
 	public boolean isParameterSet(String name) {
 		return this.parameterNameValuesMap.containsKey(name);
 	}
 
-	/**
-	 * Get the value of a request parameter, using an empty string as default
-	 * value if the parameter was not set. This method will never return null,
-	 * so its safe to do things like
-	 * 
-	 * <p>
-	 * <code>
-	 *   if (request.getParam(&quot;abc&quot;).equals(&quot;def&quot;))
-	 * </code>
-	 * </p>
-	 * 
-	 * @param name
-	 *            the name of the parameter to get
-	 * @return the parameter value as String, or an empty String if the value
-	 *         was missing or empty
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getParam(java.lang.String)
 	 */
 	public String getParam(String name) {
 		return this.getParam(name, "");
 	}
 
-	/**
-	 * Get the value of a request parameter, using the specified default value
-	 * if the parameter was not set or has an empty value.
-	 * 
-	 * @param name
-	 *            the name of the parameter to get
-	 * @param defaultValue
-	 *            the default value to be returned if the parameter is missing
-	 *            or empty
-	 * @return either the parameter value as String, or the default value
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getParam(java.lang.String, java.lang.String)
 	 */
 	public String getParam(String name, String defaultValue) {
 		String value = this.getParameterValue(name);
@@ -320,31 +292,15 @@ public class HTTPRequest {
 		return value;
 	}
 
-	/**
-	 * Get the value of a request parameter converted to an int, using 0 as
-	 * default value. If there are multiple values for this parameter, the first
-	 * value is used.
-	 * 
-	 * @param name
-	 *            the name of the parameter to get
-	 * @return either the parameter value as int, or 0 if the parameter is
-	 *         missing, empty or invalid
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getIntParam(java.lang.String)
 	 */
 	public int getIntParam(String name) {
 		return this.getIntParam(name, 0);
 	}
 
-	/**
-	 * Get the value of a request parameter converted to an <code>int</code>,
-	 * using the specified default value. If there are multiple values for this
-	 * parameter, the first value is used.
-	 * 
-	 * @param name
-	 *            the name of the parameter to get
-	 * @param defaultValue
-	 *            the default value to be returned if the parameter is missing,
-	 *            empty or invalid
-	 * @return either the parameter value as int, or the default value
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getIntParam(java.lang.String, int)
 	 */
 	public int getIntParam(String name, int defaultValue) {
 		if (!this.isParameterSet(name)) {
@@ -358,6 +314,9 @@ public class HTTPRequest {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getIntPart(java.lang.String, int)
+	 */
 	public int getIntPart(String name, int defaultValue) {
 		if (!this.isPartSet(name)) {
 			return defaultValue;
@@ -372,14 +331,8 @@ public class HTTPRequest {
 
 	// TODO: add similar methods for long, boolean etc.
 
-	/**
-	 * Get all values of a request parameter as a string array. If the parameter
-	 * was not set at all, an empty array is returned, so this method will never
-	 * return <code>null</code>.
-	 * 
-	 * @param name
-	 *            the name of the parameter to get
-	 * @return an array of all paramter values that might include empty values
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getMultipleParam(java.lang.String)
 	 */
 	public String[] getMultipleParam(String name) {
 		List valueList = this.getParameterValueList(name);
@@ -388,14 +341,8 @@ public class HTTPRequest {
 		return values;
 	}
 
-	/**
-	 * Get all values of a request parameter as int array, ignoring all values
-	 * that can not be parsed. If the parameter was not set at all, an empty
-	 * array is returned, so this method will never return <code>null</code>.
-	 * 
-	 * @param name
-	 *            the name of the parameter to get
-	 * @return an int array of all parameter values that could be parsed as int
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getMultipleIntParam(java.lang.String)
 	 */
 	public int[] getMultipleIntParam(String name) {
 		List valueList = this.getParameterValueList(name);
@@ -553,23 +500,35 @@ public class HTTPRequest {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Name = "+name+" length = "+filedata.size()+" filename = "+filename);
 			if (filename != null) {
-				uploadedFiles.put(name, new File(filename, contentType, filedata));
+				uploadedFiles.put(name, new HTTPUploadedFileImpl(filename, contentType, filedata));
 			}
 		}
 	}
 	
-	public File getUploadedFile(String name) {
-		return (File) uploadedFiles.get(name);
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getUploadedFile(java.lang.String)
+	 */
+	public HTTPUploadedFile getUploadedFile(String name) {
+		return (HTTPUploadedFile) uploadedFiles.get(name);
 	}
 	
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getPart(java.lang.String)
+	 */
 	public Bucket getPart(String name) {
 		return (Bucket)this.parts.get(name);
 	}
 	
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#isPartSet(java.lang.String)
+	 */
 	public boolean isPartSet(String name) {
 		return this.parts.containsKey(name);
 	}
 	
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getPartAsString(java.lang.String, int)
+	 */
 	public String getPartAsString(String name, int maxlength) {
 		Bucket part = (Bucket)this.parts.get(name);
 		if(part == null) return "";
@@ -589,6 +548,9 @@ public class HTTPRequest {
 		return "";
 	}
 	
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#freeParts()
+	 */
 	public void freeParts() {
 		if (this.parts == null) return;
 		Iterator i = this.parts.keySet().iterator();
@@ -600,6 +562,9 @@ public class HTTPRequest {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.HTTPRequest#getLongParam(java.lang.String, long)
+	 */
 	public long getLongParam(String name, long defaultValue) {
 		if (!this.isParameterSet(name)) {
 			return defaultValue;
@@ -618,7 +583,7 @@ public class HTTPRequest {
 	 * @author David 'Bombe' Roden &lt;bombe@freenetproject.org&gt;
 	 * @version $Id$
 	 */
-	public static class File {
+	public static class HTTPUploadedFileImpl implements HTTPUploadedFile {
 
 		/** The filename. */
 		private final String filename;
@@ -640,34 +605,28 @@ public class HTTPRequest {
 		 * @param data
 		 *            The data of the file
 		 */
-		public File(String filename, String contentType, Bucket data) {
+		public HTTPUploadedFileImpl(String filename, String contentType, Bucket data) {
 			this.filename = filename;
 			this.contentType = contentType;
 			this.data = data;
 		}
 
-		/**
-		 * Returns the content type of the file.
-		 * 
-		 * @return The content type of the file
+		/* (non-Javadoc)
+		 * @see freenet.clients.http.HTTPUploadedFile#getContentType()
 		 */
 		public String getContentType() {
 			return contentType;
 		}
 
-		/**
-		 * Returns the data of the file.
-		 * 
-		 * @return The data of the file
+		/* (non-Javadoc)
+		 * @see freenet.clients.http.HTTPUploadedFile#getData()
 		 */
 		public Bucket getData() {
 			return data;
 		}
 
-		/**
-		 * Returns the name of the file.
-		 * 
-		 * @return The name of the file
+		/* (non-Javadoc)
+		 * @see freenet.clients.http.HTTPUploadedFile#getFilename()
 		 */
 		public String getFilename() {
 			return filename;

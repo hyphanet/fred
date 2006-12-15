@@ -32,6 +32,8 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
+import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
@@ -70,7 +72,7 @@ public class QueueToadlet extends Toadlet {
 	}
 	
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		HTTPRequest request = new HTTPRequest(uri, data, ctx);
+		HTTPRequest request = new HTTPRequestImpl(uri, data, ctx);
 		try {
 			// Browse... button
 			if (request.getPartAsString("insert-local", 128).length() > 0) {
@@ -182,7 +184,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					writeError("Invalid URI to insert", "You fooled around with the POST request. Shame on you.", ctx);
 					return;
 				}
-				HTTPRequest.File file = request.getUploadedFile("filename");
+				HTTPUploadedFile file = request.getUploadedFile("filename");
 				if (file == null || file.getFilename().trim().length() == 0) {
 					writeError("No file selected", "You did not select a file to upload.", ctx);
 					return;
@@ -294,7 +296,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			return;
 		}
 		
-		final HTTPRequest request = new HTTPRequest(uri, null, ctx);
+		final HTTPRequest request = new HTTPRequestImpl(uri, null, ctx);
 		final String requestPath = request.getPath().substring("/queue/".length());
 		
 		if (requestPath.length() > 0) {

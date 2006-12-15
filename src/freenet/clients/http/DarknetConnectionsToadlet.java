@@ -36,6 +36,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
 
 public class DarknetConnectionsToadlet extends Toadlet {
 	
@@ -54,7 +55,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 	}
 
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		final HTTPRequest request = new HTTPRequest(uri);
+		final HTTPRequest request = new HTTPRequestImpl(uri);
 		
 		String path = uri.getPath();
 		if(path.endsWith("myref.fref")) {
@@ -616,7 +617,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			return;
 		}
 		
-		HTTPRequest request = new HTTPRequest(uri, data, ctx);
+		HTTPRequest request = new HTTPRequestImpl(uri, data, ctx);
 		
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		

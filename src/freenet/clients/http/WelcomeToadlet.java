@@ -27,6 +27,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
 
 import freenet.frost.message.*;
 
@@ -63,7 +64,7 @@ public class WelcomeToadlet extends Toadlet {
 			return;
 		}
 		
-		HTTPRequest request = new HTTPRequest(uri,data,ctx);
+		HTTPRequest request = new HTTPRequestImpl(uri,data,ctx);
 		
 		String passwd = request.getPartAsString("formPassword", 32);
 		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
@@ -422,7 +423,7 @@ public class WelcomeToadlet extends Toadlet {
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		boolean advancedDarknetOutputEnabled = core.getToadletContainer().isAdvancedDarknetEnabled();
 		
-		HTTPRequest request = new HTTPRequest(uri);
+		HTTPRequest request = new HTTPRequestImpl(uri);
 		if (request.getParam("newbookmark").length() > 0) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);

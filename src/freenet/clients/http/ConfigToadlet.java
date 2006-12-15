@@ -17,6 +17,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
 
 
 // FIXME: add logging, comments
@@ -38,7 +39,7 @@ public class ConfigToadlet extends Toadlet {
 		StringBuffer errbuf = new StringBuffer();
 		SubConfig[] sc = config.getConfigs();
 		
-		HTTPRequest request = new HTTPRequest(uri, data, ctx);
+		HTTPRequest request = new HTTPRequestImpl(uri, data, ctx);
 		
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {

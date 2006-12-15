@@ -10,11 +10,12 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.HashSet;
 
-import freenet.clients.http.HTTPRequest;
+import freenet.clients.http.HTTPRequestImpl;
 import freenet.keys.FreenetURI;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
+import freenet.support.api.HTTPRequest;
 
 public class GenericReadFilterCallback implements FilterCallback {
 	public static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
@@ -82,7 +83,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		}
 		String path = uri.getPath();
 		
-		HTTPRequest req = new HTTPRequest(uri);
+		HTTPRequest req = new HTTPRequestImpl(uri);
 		if (path != null){
 			if(path.equals("/") && req.isParameterSet("newbookmark")){
 				// allow links to the root to add bookmarks
@@ -194,7 +195,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 	private String processURI(FreenetURI furi, URI uri, String overrideType, boolean noRelative) {
 		// Valid freenet URI, allow it
 		// Now what about the queries?
-		HTTPRequest req = new HTTPRequest(uri);
+		HTTPRequest req = new HTTPRequestImpl(uri);
 		if(cb != null) cb.foundURI(furi);
 		return finishProcess(req, overrideType, '/' + furi.toString(false, false), uri, noRelative);
 	}

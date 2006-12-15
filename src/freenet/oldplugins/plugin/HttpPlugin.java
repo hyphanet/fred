@@ -5,9 +5,9 @@ package freenet.oldplugins.plugin;
 
 import java.io.IOException;
 
-import freenet.clients.http.HTTPRequest;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
+import freenet.support.api.HTTPRequest;
 
 /**
  * Interface for plugins that support HTTP interaction.

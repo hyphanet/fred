@@ -18,7 +18,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.jar.JarFile;
 
-import freenet.clients.http.HTTPRequest;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
@@ -29,6 +28,7 @@ import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
+import freenet.support.api.HTTPRequest;
 
 public class PluginManager {
 

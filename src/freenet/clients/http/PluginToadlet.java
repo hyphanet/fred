@@ -14,6 +14,7 @@ import freenet.oldplugins.plugin.PluginManager;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
 
 /**
  * Toadlet for the plugin manager.
@@ -63,7 +64,7 @@ public class PluginToadlet extends Toadlet {
 	 *            The context of this toadlet
 	 */
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		HTTPRequest httpRequest = new HTTPRequest(uri, null, ctx);
+		HTTPRequest httpRequest = new HTTPRequestImpl(uri, null, ctx);
 
 		String uriPath = uri.getPath();
 		String pluginName = uriPath.substring(uriPath.lastIndexOf('/') + 1);
@@ -102,7 +103,7 @@ public class PluginToadlet extends Toadlet {
 	 * @see freenet.clients.http.Toadlet#handlePost(java.net.URI, freenet.support.api.Bucket, freenet.clients.http.ToadletContext)
 	 */
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		HTTPRequest httpRequest = new HTTPRequest(uri, data, ctx);
+		HTTPRequest httpRequest = new HTTPRequestImpl(uri, data, ctx);
 		
 		String uriPath = uri.getPath();
 		String pluginName = uriPath.substring(uriPath.lastIndexOf('/') + 1);

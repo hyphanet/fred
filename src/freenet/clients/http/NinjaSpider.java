@@ -52,6 +52,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
 
 /**
  * NinjaSpider. Produces a ninj^W err ... an XML index.
@@ -531,7 +532,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	}
 
 	/**
-	 * @see freenet.oldplugins.plugin.HttpPlugin#handleGet(freenet.clients.http.HTTPRequest, freenet.clients.http.ToadletContext)
+	 * @see freenet.oldplugins.plugin.HttpPlugin#handleGet(freenet.clients.http.HTTPRequestImpl, freenet.clients.http.ToadletContext)
 	 */
 	public void handleGet(HTTPRequest request, ToadletContext context) throws IOException, ToadletContextClosedException {
 		String action = request.getParam("action");
@@ -603,7 +604,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	}
 
 	/**
-	 * @see freenet.oldplugins.plugin.HttpPlugin#handlePost(freenet.clients.http.HTTPRequest, freenet.clients.http.ToadletContext)
+	 * @see freenet.oldplugins.plugin.HttpPlugin#handlePost(freenet.clients.http.HTTPRequestImpl, freenet.clients.http.ToadletContext)
 	 */
 	public void handlePost(HTTPRequest request, ToadletContext context) throws IOException {
 	}

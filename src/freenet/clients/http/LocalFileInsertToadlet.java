@@ -13,6 +13,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.URLEncoder;
+import freenet.support.api.HTTPRequest;
 
 /**
  * @author David 'Bombe' Roden &lt;bombe@freenetproject.org&gt;
@@ -37,7 +38,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 	 *      freenet.clients.http.ToadletContext)
 	 */
 	public void handleGet(URI uri, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
-		HTTPRequest request = new HTTPRequest(uri, null, toadletContext);
+		HTTPRequest request = new HTTPRequestImpl(uri, null, toadletContext);
 
 		String path = request.getParam("path");
 		if (path.length() == 0) {

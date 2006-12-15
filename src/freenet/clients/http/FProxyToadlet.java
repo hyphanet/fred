@@ -37,6 +37,7 @@ import freenet.support.SizeUtil;
 import freenet.support.URLEncoder;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.HTTPRequest;
 
 public class FProxyToadlet extends Toadlet {
 	
@@ -253,7 +254,7 @@ public class FProxyToadlet extends Toadlet {
 		//String ks = uri.toString();
 		String ks = uri.getPath();
 		
-		HTTPRequest httprequest = new HTTPRequest(uri);
+		HTTPRequest httprequest = new HTTPRequestImpl(uri);
 		
 		if (ks.equals("/")) {
 			if (httprequest.isParameterSet("key")) {
@@ -462,7 +463,7 @@ public class FProxyToadlet extends Toadlet {
 				String path = refererURI.getPath();
 				while(path.startsWith("/")) path = path.substring(1);
 				FreenetURI furi = new FreenetURI(path);
-				HTTPRequest req = new HTTPRequest(refererURI);
+				HTTPRequest req = new HTTPRequestImpl(refererURI);
 				String type = req.getParam("type");
 				referer = "/" + furi.toString();
 				if(type != null && type.length() > 0)
