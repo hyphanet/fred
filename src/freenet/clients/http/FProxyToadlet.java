@@ -351,7 +351,6 @@ public class FProxyToadlet extends Toadlet {
 			
 		} catch (FetchException e) {
 			String msg = e.getMessage();
-			String extra = "";
 			if(e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) {
 				this.writePermanentRedirect(ctx, "Not enough meta-strings", '/' + key.toString() + '/' + override);
 			} else if(e.newURI != null) {
@@ -413,15 +412,16 @@ public class FProxyToadlet extends Toadlet {
 				pageNode.generate(pageBuffer);
 				writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
 			} else {
-				if(e.errorCodes != null)
-					extra = "<pre>"+e.errorCodes.toVerboseString()+"</pre>";
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(FetchException.getShortMessage(e.mode));
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
 				infobox.addChild("div", "class", "infobox-header", FetchException.getShortMessage(e.mode));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addChild("#", "Error: " + msg + extra);
+				HTMLNode err = infoboxContent.addChild("#", "Error: "+msg);
+				if(e.errorCodes != null) {
+					err.addChild("pre").addChild("#", e.errorCodes.toVerboseString());
+				}
 				infoboxContent.addChild("br");
 				infoboxContent.addChild(ctx.getPageMaker().createBackLink(ctx));
 				infoboxContent.addChild("br");
