@@ -837,7 +837,7 @@ public class FileLoggerHook extends LoggerHook {
 					try {
 						ss = (byte[]) (list.removeFirst());
 					} catch (NoSuchElementException e) {
-						// Yes I know this is impossible but it happens with 1.6
+						// Yes I know this is impossible but it happens with 1.6 with heap profiling enabled
 						noElementCount++;
 						if(noElementCount > 1000) {
 							System.err.println("Lost log line because of constant NoSuchElementException's");
