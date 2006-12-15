@@ -921,7 +921,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 	}
 	
 	private String idleToString(long now, long idle) {
-		if (idle == -1) {
+		if (idle <= 0) {
 			return " ";
 		}
 		long idleMilliseconds = now - idle;
