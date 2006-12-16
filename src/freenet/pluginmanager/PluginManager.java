@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Vector;
 import java.util.jar.JarFile;
 
 import freenet.config.InvalidConfigValueException;
@@ -62,10 +63,10 @@ public class PluginManager {
 		// Start plugins in the config
 		pmconfig.register("loadplugin", null, 9, true, false, "Plugins to load on startup ", "Classpath, name and location for plugins to load when node starts up", 
         		new StringArrCallback() {
-					public String get() {
+					public String[] get() {
 						return getConfigLoadString();
 					}
-					public void set(String val) throws InvalidConfigValueException {
+					public void set(String[] val) throws InvalidConfigValueException {
 						//if(storeDir.equals(new File(val))) return;
 						// FIXME
 						throw new InvalidConfigValueException("Cannot set the plugins that's loaded.");
@@ -90,20 +91,20 @@ public class PluginManager {
 		*/
 	}
 	
-	private String getConfigLoadString() {
-		StringBuffer out = new StringBuffer();
+	private String[] getConfigLoadString() {
 		try{
 			Iterator it = getPlugins().iterator();
 
-			if (it.hasNext())
-				out.append(StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
-			while (it.hasNext())
-                out.append(StringArrOption.delimiter).append(StringArrOption.encode(((PluginInfoWrapper) it.next()).getFilename()));
+			Vector v = new Vector();
+			
+			while(it.hasNext())
+				v.add(((PluginInfoWrapper)it.next()).getFilename());
+			
+			return (String[]) v.toArray(new String[v.size()]);
 		}catch (NullPointerException e){
 			Logger.error(this, "error while loading plugins: disabling them:"+e);
-			return "";
+			return new String[0];
 		}
-		return out.toString();
 	}
 	
 	public void startPlugin(String filename, boolean store) {

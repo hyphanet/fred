@@ -56,22 +56,19 @@ public class PluginManager {
 			 * @see freenet.support.api.StringArrCallback#get()
 			 * @return The current value of this option
 			 */
-			public String get() {
-				if(plugins.size() == 0) return "";
-				StringBuffer optionValue = new StringBuffer();
+			public String[] get() {
+				if(plugins.size() == 0) return new String[0];
+				String[] retval;
 				synchronized (syncObject) {
-					Iterator pluginIterator = plugins.iterator();
-					while (pluginIterator.hasNext()) {
-						Plugin plugin = (Plugin) pluginIterator.next();
-						if (optionValue.length() != 0) {
-							optionValue.append(StringArrOption.delimiter);
-						}
-						optionValue.append(StringArrOption.encode(plugin.getClass().getName()));
+					retval = new String[plugins.size()];
+					for(int i=0;i<plugins.size();i++) {
+						Plugin plugin = (Plugin) plugins.get(i);
+						retval[i] = plugin.getClass().getName();
 					}
 				}
 				if(Logger.shouldLog(Logger.MINOR, this))
-					Logger.minor(this, "Plugin list: "+optionValue.toString());
-				return optionValue.toString();
+					Logger.minor(this, "Plugin list: "+retval);
+				return retval;
 			};
 
 			/**
@@ -84,10 +81,8 @@ public class PluginManager {
 			 *             if setting the value is not allowed, or the new value
 			 *             is not valid
 			 */
-			public void set(String val) throws InvalidConfigValueException {
-				if(val == null || get().indexOf(val) >= 0) return;
-				// it's probably silly as it won't allow more than 1 plugin to be loaded
-				addPlugin(val, true);
+			public void set(String[] val) throws InvalidConfigValueException {
+				throw new InvalidConfigValueException("Not supported");
 			};
 		});
 

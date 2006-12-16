@@ -11,7 +11,7 @@ public interface StringArrCallback {
 	/**
 	 * Get the current, used value of the config variable.
 	 */
-	String get();
+	String[] get();
 
 	/**
 	 * Set the config variable to a new value.
@@ -19,6 +19,6 @@ public interface StringArrCallback {
 	 * @throws InvalidConfigOptionException If the new value is invalid for 
 	 * this particular option.
 	 */
-	void set(String val) throws InvalidConfigValueException;
+	void set(String[] val) throws InvalidConfigValueException;
 	
 }

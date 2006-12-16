@@ -28,10 +28,10 @@ public class SymlinkerToadlet extends Toadlet {
 		tslconfig.register("symlinks", null, 9, true, false, "Symlinks in ToadletServer", 
 				"A list of \"alias#target\"'s that forms a bunch of symlinks", 
         		new StringArrCallback() {
-			public String get() {
+			public String[] get() {
 				return getConfigLoadString();
 			}
-			public void set(String val) throws InvalidConfigValueException {
+			public void set(String[] val) throws InvalidConfigValueException {
 				//if(storeDir.equals(new File(val))) return;
 				// FIXME
 				throw new InvalidConfigValueException("Cannot set the plugins that's loaded.");
@@ -94,7 +94,7 @@ public class SymlinkerToadlet extends Toadlet {
 		return ret;
 	}
 	
-	private String getConfigLoadString() {
+	private String[] getConfigLoadString() {
 		String retarr[] = new String[linkMap.size()];
 		synchronized (linkMap) {
 			Iterator it = linkMap.keySet().iterator();
@@ -104,7 +104,7 @@ public class SymlinkerToadlet extends Toadlet {
 				retarr[i++] = key + '#' + linkMap.get(key);
 			}
 		}
-		return StringArrOption.arrayToString(retarr);
+		return retarr;
 	}
 	
 	public String supportedMethods() {

@@ -7,48 +7,50 @@ import freenet.support.api.StringArrCallback;
 
 public class StringArrOption extends Option {
 
-    private final String defaultValue;
+    private final String[] defaultValue;
     private final StringArrCallback cb;
-	private String currentValue;
+	private String[] currentValue;
 	
     public static final String delimiter = ";";
 	
-	public StringArrOption(SubConfig conf, String optionName, String defaultValue, int sortOrder, 
+	public StringArrOption(SubConfig conf, String optionName, String[] defaultValue, int sortOrder, 
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringArrCallback cb) {
 		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
-		this.defaultValue = (defaultValue==null)?"":defaultValue;
+		this.defaultValue = (defaultValue==null)?new String[0]:defaultValue;
 		this.cb = cb;
-		this.currentValue = (defaultValue==null)?"":defaultValue;
-	}
-	
-	public StringArrOption(SubConfig conf, String optionName, String defaultValue[], int sortOrder, 
-			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringArrCallback cb) {
-		this(conf, optionName, arrayToString(defaultValue), sortOrder, expert, forceWrite, shortDesc, longDesc, cb);
+		this.currentValue = (defaultValue==null)?new String[0]:defaultValue;
 	}
 	
 	/** Get the current value. This is the value in use if we have finished
 	 * initialization, otherwise it is the value set at startup (possibly the default). */
 	public String[] getValue() {
+		if(config.hasFinishedInitialization())
+			currentValue = cb.get();
 		String[] values = getValueString().split(delimiter);
 		if(values.length == 1 && values[0].length() == 0) return new String[0]; 
 		return values;
 	}
 
-	public void setValue(String val) throws InvalidConfigValueException {
+	public void setValue(String[] val) throws InvalidConfigValueException {
 		setInitialValue(val);
 		cb.set(this.currentValue);
 	}
 	
-	public String getValueString() {
-		if(config.hasFinishedInitialization())
-			currentValue = cb.get();
-		return currentValue;
+	public void setValue(String val) throws InvalidConfigValueException {
+		setValue(val.split(delimiter));
 	}
 	
-	public void setInitialValue(String val) throws InvalidConfigValueException {
+	public String getValueString() {
+		return arrayToString(getValue());
+	}
+	
+	public void setInitialValue(String[] val) throws InvalidConfigValueException {
 		this.currentValue = val;
 	}
 	
+	public void setInitialValue(String val) throws InvalidConfigValueException {
+		this.currentValue = val.split(delimiter);
+	}
 	
 	public static String arrayToString(String[] arr) {
 		if (arr == null)
@@ -71,7 +73,7 @@ public class StringArrOption extends Option {
 		}
 	}
 
-	public String getDefaultValue() {
+	public String[] getDefaultValue() {
 		return defaultValue;
 	}
 

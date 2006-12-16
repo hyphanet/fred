@@ -33,23 +33,16 @@ public class BookmarkManager {
 	private boolean started;
 	
 	public class BookmarkCallback implements StringArrCallback {
-		public String get() {
-			StringBuffer buf = new StringBuffer("");
-			
-			for (Enumeration e = bookmarks.elements(); e.hasMoreElements(); ) {
-				buf.append(e.nextElement().toString());
-				buf.append(StringArrOption.delimiter);
-			}
-			
-			if (buf.length() > 0) {
-				return buf.substring(0, buf.length() - 1);
-			} else {
-				return "";
+		public String[] get() {
+			synchronized(BookmarkManager.this) {
+				String[] values = new String[bookmarks.size()];
+				for(int i=0;i<bookmarks.size();i++)
+					values[i] = bookmarks.get(i).toString();
+				return values;
 			}
 		}
 		
-		public void set(String newval) throws InvalidConfigValueException {
-			String[] newvals = newval.split(StringArrOption.delimiter);
+		public void set(String[] newvals) throws InvalidConfigValueException {
 			bookmarks.clear();
 			for (int i = 0; i < newvals.length; i++) {
 				try {
