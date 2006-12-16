@@ -17,15 +17,15 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import freenet.config.BooleanCallback;
 import freenet.config.Config;
-import freenet.config.IntCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.node.Node.NodeInitException;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.BooleanCallback;
+import freenet.support.api.IntCallback;
 
 /**
  * Testnet handler.

@@ -8,12 +8,12 @@ import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
 import freenet.config.SubConfig;
 import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
+import freenet.support.api.StringArrCallback;
 
 public class SymlinkerToadlet extends Toadlet {
 	

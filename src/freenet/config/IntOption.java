@@ -4,6 +4,7 @@
 package freenet.config;
 
 import freenet.support.Fields;
+import freenet.support.api.IntCallback;
 
 /** Integer config variable */
 public class IntOption extends Option {

@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKeyBlock;
@@ -23,6 +22,7 @@ import freenet.support.Logger;
 import freenet.support.SectoredRandomGrabArrayWithClient;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SortedVectorByNumber;
+import freenet.support.api.StringCallback;
 
 /**
  * Every X seconds, the RequestSender calls the ClientRequestScheduler to

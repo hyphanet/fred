@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
+import freenet.support.api.BooleanCallback;
+
 public class BooleanOption extends Option {
 	
 	final boolean defaultValue;

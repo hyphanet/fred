@@ -1,6 +1,7 @@
 package freenet.config;
 
 import freenet.support.Fields;
+import freenet.support.api.ShortCallback;
 
 public class ShortOption extends Option {
 	

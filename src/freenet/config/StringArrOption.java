@@ -3,6 +3,7 @@ package freenet.config;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
+import freenet.support.api.StringArrCallback;
 
 public class StringArrOption extends Option {
 

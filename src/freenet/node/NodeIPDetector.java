@@ -7,9 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
-import freenet.config.BooleanCallback;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
@@ -20,6 +18,8 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.support.Logger;
+import freenet.support.api.BooleanCallback;
+import freenet.support.api.StringCallback;
 import freenet.support.transport.ip.IPAddressDetector;
 import freenet.support.transport.ip.IPUtil;
 

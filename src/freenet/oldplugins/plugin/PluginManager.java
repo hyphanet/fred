@@ -11,12 +11,12 @@ import java.util.Iterator;
 import java.util.List;
 
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
 import freenet.config.SubConfig;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
+import freenet.support.api.StringArrCallback;
 
 /**
  * Manages plugins.
@@ -53,7 +53,7 @@ public class PluginManager {
 			/**
 			 * Returns the current value of this option.
 			 * 
-			 * @see freenet.config.StringArrCallback#get()
+			 * @see freenet.support.api.StringArrCallback#get()
 			 * @return The current value of this option
 			 */
 			public String get() {
@@ -77,7 +77,7 @@ public class PluginManager {
 			/**
 			 * Sets the new value of this option.
 			 * 
-			 * @see freenet.config.StringArrCallback#set(java.lang.String)
+			 * @see freenet.support.api.StringArrCallback#set(java.lang.String)
 			 * @param val
 			 *            The new value
 			 * @throws InvalidConfigValueException

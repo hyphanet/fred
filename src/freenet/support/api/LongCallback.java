@@ -1,18 +1,20 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.config;
+package freenet.support.api;
+
+import freenet.config.InvalidConfigValueException;
 
 /**
- * A callback to be called when a config value of integer type changes.
+ * A callback to be called when a config value of long type changes.
  * Also reports the current value.
  */
-public interface IntCallback {
+public interface LongCallback {
 
 	/**
 	 * Get the current, used value of the config variable.
 	 */
-	int get();
+	long get();
 	
 	/**
 	 * Set the config variable to a new value.
@@ -20,6 +22,6 @@ public interface IntCallback {
 	 * @throws InvalidConfigOptionException If the new value is invalid for 
 	 * this particular option.
 	 */
-	void set(int val) throws InvalidConfigValueException;
+	void set(long val) throws InvalidConfigValueException;
 	
 }

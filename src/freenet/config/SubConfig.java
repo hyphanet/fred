@@ -10,6 +10,12 @@ import java.util.Set;
 
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.BooleanCallback;
+import freenet.support.api.IntCallback;
+import freenet.support.api.LongCallback;
+import freenet.support.api.ShortCallback;
+import freenet.support.api.StringArrCallback;
+import freenet.support.api.StringCallback;
 
 /**
  * A specific configuration block.

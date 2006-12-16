@@ -12,7 +12,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
-import freenet.config.StringArrCallback;
+import freenet.support.api.StringArrCallback;
 import freenet.config.StringArrOption;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;

@@ -38,10 +38,7 @@ import com.sleepycat.je.EnvironmentMutableConfig;
 
 import freenet.client.FetcherContext;
 import freenet.config.FreenetFilePersistentConfig;
-import freenet.config.IntCallback;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.LongCallback;
-import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
@@ -103,6 +100,9 @@ import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
+import freenet.support.api.IntCallback;
+import freenet.support.api.LongCallback;
+import freenet.support.api.StringCallback;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 

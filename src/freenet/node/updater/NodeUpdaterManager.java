@@ -6,10 +6,8 @@ import java.net.MalformedURLException;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
@@ -21,6 +19,8 @@ import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UpdatedVersionAvailableUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Logger;
+import freenet.support.api.BooleanCallback;
+import freenet.support.api.StringCallback;
 
 /**
  * Supervises NodeUpdater's. Enables us to easily update multiple files, 

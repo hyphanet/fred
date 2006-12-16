@@ -13,15 +13,15 @@ import java.net.SocketTimeoutException;
 import java.util.Hashtable;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.config.BooleanCallback;
 import freenet.config.Config;
-import freenet.config.IntCallback;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.NetworkInterface;
 import freenet.support.Logger;
+import freenet.support.api.BooleanCallback;
+import freenet.support.api.IntCallback;
+import freenet.support.api.StringCallback;
 
 public class TextModeClientInterfaceServer implements Runnable {
 

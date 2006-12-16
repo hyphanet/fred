@@ -1,4 +1,6 @@
-package freenet.config;
+package freenet.support.api;
+
+import freenet.config.InvalidConfigValueException;
 
 /**
  * A callback to be called when a config value of short type changes.

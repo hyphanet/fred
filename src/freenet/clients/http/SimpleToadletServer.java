@@ -21,10 +21,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import freenet.config.BooleanCallback;
-import freenet.config.IntCallback;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
 import freenet.io.NetworkInterface;
@@ -32,7 +29,10 @@ import freenet.node.NodeClientCore;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.FileLoggerHook.IntervalParseException;
+import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.IntCallback;
+import freenet.support.api.StringCallback;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.TempBucketFactory;
 

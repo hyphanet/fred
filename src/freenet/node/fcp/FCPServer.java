@@ -26,12 +26,8 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.FetcherContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InserterContext;
-import freenet.config.BooleanCallback;
 import freenet.config.Config;
-import freenet.config.IntCallback;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.LongCallback;
-import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.io.NetworkInterface;
 import freenet.keys.FreenetURI;
@@ -40,7 +36,11 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.support.Base64;
 import freenet.support.Logger;
+import freenet.support.api.BooleanCallback;
 import freenet.support.api.Bucket;
+import freenet.support.api.IntCallback;
+import freenet.support.api.LongCallback;
+import freenet.support.api.StringCallback;
 
 /**
  * FCP server process.

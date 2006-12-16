@@ -4,6 +4,7 @@
 package freenet.config;
 
 import freenet.support.Fields;
+import freenet.support.api.LongCallback;
 
 /** Long config variable */
 public class LongOption extends Option {

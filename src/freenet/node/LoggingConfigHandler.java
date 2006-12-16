@@ -6,12 +6,8 @@ package freenet.node;
 import java.io.File;
 import java.io.IOException;
 
-import freenet.config.BooleanCallback;
-import freenet.config.IntCallback;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.LongCallback;
 import freenet.config.OptionFormatException;
-import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
@@ -19,6 +15,10 @@ import freenet.support.LoggerHook;
 import freenet.support.LoggerHookChain;
 import freenet.support.FileLoggerHook.IntervalParseException;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.api.BooleanCallback;
+import freenet.support.api.IntCallback;
+import freenet.support.api.LongCallback;
+import freenet.support.api.StringCallback;
 
 public class LoggingConfigHandler {
 
