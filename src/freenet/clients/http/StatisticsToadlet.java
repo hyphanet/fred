@@ -459,6 +459,11 @@ public class StatisticsToadlet extends Toadlet {
                 jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true));
                 jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
                 jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
+        				jvmStatsList.addChild("li", "JVM Vendor:\u00a0" + System.getProperty("java.vm.vendor"));
+				        jvmStatsList.addChild("li", "JVM Version:\u00a0" + System.getProperty("java.vm.version"));
+        				jvmStatsList.addChild("li", "OS Name:\u00a0" + System.getProperty("os.name"));
+				        jvmStatsList.addChild("li", "OS Version:\u00a0" + System.getProperty("os.version"));
+        				jvmStatsList.addChild("li", "OS Architecture:\u00a0" + System.getProperty("os.arch"));
 			
                 // unclaimedFIFOMessageCounts box
 				overviewTableRow = overviewTable.addChild("tr");
@@ -519,11 +524,6 @@ public class StatisticsToadlet extends Toadlet {
 				} else {
 					versionInfoboxList.addChild("li", "Freenet-ext Build #" + NodeStarter.extBuildNumber + " r" + NodeStarter.extRevisionNumber);
 				}
-				versionInfoboxList.addChild("li", "JVM Vendor:\u00a0" + System.getProperty("java.vm.vendor"));
-				versionInfoboxList.addChild("li", "JVM Version:\u00a0" + System.getProperty("java.vm.version"));
-				versionInfoboxList.addChild("li", "OS Name:\u00a0" + System.getProperty("os.name"));
-				versionInfoboxList.addChild("li", "OS Version:\u00a0" + System.getProperty("os.version"));
-				versionInfoboxList.addChild("li", "OS Architecture:\u00a0" + System.getProperty("os.arch"));
 			}
 		}
 
