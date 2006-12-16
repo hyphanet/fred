@@ -26,7 +26,7 @@ public class StringArrOption extends Option {
 	public String[] getValue() {
 		if(config.hasFinishedInitialization())
 			currentValue = cb.get();
-		String[] values = currentValue.split(delimiter);
+		String[] values = currentValue.toString().split(delimiter);
 		if(values.length == 1 && values[0].length() == 0) return new String[0]; 
 		return values;
 	}
