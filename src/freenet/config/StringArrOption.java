@@ -26,9 +26,7 @@ public class StringArrOption extends Option {
 	public String[] getValue() {
 		if(config.hasFinishedInitialization())
 			currentValue = cb.get();
-		String[] values = currentValue.toString().split(delimiter);
-		if(values.length == 1 && values[0].length() == 0) return new String[0]; 
-		return values;
+		return currentValue;
 	}
 
 	public void setValue(String[] val) throws InvalidConfigValueException {
@@ -57,7 +55,7 @@ public class StringArrOption extends Option {
 			return null;
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0 ; i < arr.length ; i++)
-            sb.append(arr[i]).append(delimiter);
+			sb.append(arr[i]).append(delimiter);
 		return sb.toString();
 	}
 	
