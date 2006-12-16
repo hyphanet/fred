@@ -16,6 +16,9 @@ public interface FreenetPlugin {
 	/** The plugin's description or long name (can have spaces, mention author or purpose, etc) */
 	public String description();
 	
+	/** Minimum build number of host node for this plugin to function */
+	public long minimumNodeVersion();
+	
 	/** The plugin's version number. MUST BE AT LEAST INCREMENTED ON EVERY RELEASE. */
 	public long version();
 	
