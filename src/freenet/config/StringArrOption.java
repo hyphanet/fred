@@ -66,7 +66,7 @@ public class StringArrOption extends Option {
 			return null;
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0 ; i < arr.length ; i++)
-			sb.append(arr[i]).append(URLEncoder.encode(delimiter));
+			sb.append(URLEncoder.encode(arr[i])).append(delimiter);
 		return sb.toString();
 	}
 	
