@@ -9,7 +9,7 @@ public class StringArrOption extends Option {
 
     private final String[] defaultValue;
     private final StringArrCallback cb;
-	private String[] currentValue;
+    private String[] currentValue;
 	
     public static final String delimiter = ";";
 	
@@ -26,7 +26,7 @@ public class StringArrOption extends Option {
 	public String[] getValue() {
 		if(config.hasFinishedInitialization())
 			currentValue = cb.get();
-		String[] values = getValueString().split(delimiter);
+		String[] values = currentValue.split(delimiter);
 		if(values.length == 1 && values[0].length() == 0) return new String[0]; 
 		return values;
 	}
