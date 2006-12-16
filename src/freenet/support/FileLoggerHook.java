@@ -333,7 +333,7 @@ public class FileLoggerHook extends LoggerHook {
 							}
 						}
 						o = list.removeFirst();
-						listBytes -= (((byte[]) o).length + 16);
+						listBytes -= (((byte[]) o).length + LINE_OVERHEAD);
 					}
 					myWrite(logStream, ((byte[]) o));
 			        if(altLogStream != null)
