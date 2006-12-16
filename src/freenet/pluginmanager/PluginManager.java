@@ -77,7 +77,7 @@ public class PluginManager {
 		if (fns != null) {
 			for (int i = 0 ; i < fns.length ; i++) {
 				//System.err.println("Load: " + StringArrOption.decode(fns[i]));
-				startPlugin(StringArrOption.decode(fns[i]), false);
+				startPlugin(fns[i], false);
 			}
 		}
 			

@@ -115,6 +115,10 @@ public interface HTTPRequest {
 
 	public boolean isPartSet(String name);
 
+	/**
+	 * Get a request part as a String. Parameters are passed in through the URL; parts are 
+	 * passed in through attached data.
+	 */
 	public String getPartAsString(String name, int maxlength);
 
 	public void freeParts();

@@ -35,9 +35,20 @@ public class StringArrOption extends Option {
 	}
 	
 	public void setValue(String val) throws InvalidConfigValueException {
-		setValue(val.split(delimiter));
+		try {
+			setValue(stringToArray(val));
+		} catch (URLEncodedFormatException e) {
+			throw new InvalidConfigValueException("Cannot parse value: "+e);
+		}
 	}
 	
+	private String[] stringToArray(String val) throws URLEncodedFormatException {
+		String[] out = val.split(delimiter);
+		for(int i=0;i<out.length;i++)
+			out[i] = URLDecoder.decode(out[i], true /* FIXME false */);
+		return out;
+	}
+
 	public String getValueString() {
 		return arrayToString(getValue());
 	}
@@ -55,7 +66,7 @@ public class StringArrOption extends Option {
 			return null;
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0 ; i < arr.length ; i++)
-			sb.append(arr[i]).append(delimiter);
+			sb.append(arr[i]).append(URLEncoder.encode(delimiter));
 		return sb.toString();
 	}
 	

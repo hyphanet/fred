@@ -3,20 +3,17 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
-import java.util.Vector;
-import java.util.Enumeration;
 import java.net.MalformedURLException;
+import java.util.Enumeration;
+import java.util.Vector;
 
-import freenet.keys.USK;
-import freenet.keys.FreenetURI;
-import freenet.node.NodeClientCore;
-import freenet.node.useralerts.UserAlert;
-import freenet.support.HTMLNode;
-import freenet.support.api.StringArrCallback;
-import freenet.config.StringArrOption;
+import freenet.client.async.USKCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
-import freenet.client.async.USKCallback;
+import freenet.keys.FreenetURI;
+import freenet.keys.USK;
+import freenet.node.NodeClientCore;
+import freenet.support.api.StringArrCallback;
 
 public class BookmarkManager {
 	private static final String[] DEFAULT_TESTNET_BOOKMARKS = {

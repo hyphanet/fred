@@ -89,7 +89,7 @@ public class PluginManager {
 		String[] loadedPluginNames = config.getStringArr("loadedPlugins");
 		if (loadedPluginNames != null && loadedPluginNames.length > 0) {
 			for (int pluginIndex = 0, pluginCount = loadedPluginNames.length; pluginIndex < pluginCount; pluginIndex++) {
-				String pluginName = StringArrOption.decode(loadedPluginNames[pluginIndex]);
+				String pluginName = loadedPluginNames[pluginIndex];
 				try {
 					addPlugin(pluginName, false);
 				} catch (Throwable t) {
