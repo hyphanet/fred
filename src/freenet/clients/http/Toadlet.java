@@ -73,7 +73,7 @@ public abstract class Toadlet {
 
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
 		infobox.addChild("div", "class", "infobox-header", "Not supported");
-		infobox.addChild("div", "class", "infobox-content", "Your browser sent a request that Freenet could not understand.");
+		infobox.addChild("div", "class", "infobox-content", "Your browser sent a request that Freenet ("+getClass().getName()+") could not understand.");
 
 		MultiValueTable hdrtbl = new MultiValueTable();
 		hdrtbl.put("Allow", this.supportedMethods());

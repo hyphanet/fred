@@ -5,6 +5,7 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.support.HTMLEncoder;
+import freenet.support.api.HTTPRequest;
 
 public class TrivialToadlet extends Toadlet {
 
@@ -12,7 +13,7 @@ public class TrivialToadlet extends Toadlet {
 		super(client);
 	}
 
-	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String fetched = uri.toString();
 		String encFetched = HTMLEncoder.encode(fetched);
 		String reply = "<html><head><title>You requested "+encFetched+

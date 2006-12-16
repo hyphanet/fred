@@ -48,6 +48,11 @@ public class WelcomeToadlet extends Toadlet {
 		this.node = node;
 		this.config = sc;
 		this.bookmarks = core.bookmarkManager;
+		try {
+			manageBookmarksURI = new URI("/welcome/?managebookmarks");
+		} catch (URISyntaxException e) {
+			throw new Error(e);
+		}
 	}
 
 	void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -56,15 +61,10 @@ public class WelcomeToadlet extends Toadlet {
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 		return;
 	}
+
+	URI manageBookmarksURI;
 	
-	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		
-		if(data.size() > 1024*1024) {
-			this.writeReply(ctx, 400, "text/plain", "Too big", "Data exceeds 1MB limit");
-			return;
-		}
-		
-		HTTPRequest request = new HTTPRequestImpl(uri,data,ctx);
+	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		String passwd = request.getPartAsString("formPassword", 32);
 		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
@@ -143,11 +143,7 @@ public class WelcomeToadlet extends Toadlet {
 				return;
 			}
 			
-			try {
-				this.handleGet(new URI("/welcome/?managebookmarks"), ctx);
-			} catch (URISyntaxException ex) {
-				
-			}
+			this.handleGet(manageBookmarksURI, new HTTPRequestImpl(manageBookmarksURI), ctx);
 		} else if (request.isPartSet("managebookmarks")) {
 			if(noPassword) {
 				redirectToRoot(ctx);
@@ -174,18 +170,10 @@ public class WelcomeToadlet extends Toadlet {
 						this.sendBookmarkEditPage(ctx, MODE_EDIT, b, key, name, "Given key does not appear to be a valid freenet key.");
 						return;
 					}
-					try {
-						this.handleGet(new URI("/welcome/?managebookmarks"), ctx);
-					} catch (URISyntaxException ex) {
-						return;
-					}
+					this.handleGet(manageBookmarksURI, new HTTPRequestImpl(manageBookmarksURI), ctx);
 				}
 			}
-			try {
-				this.handleGet(new URI("/welcome/?managebookmarks"), ctx);
-			} catch (URISyntaxException ex) {
-				return;
-			}
+			this.handleGet(manageBookmarksURI, new HTTPRequestImpl(manageBookmarksURI), ctx);
 		}else if(request.isPartSet("disable")){
 			if(noPassword) {
 				redirectToRoot(ctx);
@@ -420,10 +408,9 @@ public class WelcomeToadlet extends Toadlet {
 				new String[] { "text", name, "30", message });
 	}
 
-	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		boolean advancedDarknetOutputEnabled = core.getToadletContainer().isAdvancedDarknetEnabled();
 		
-		HTTPRequest request = new HTTPRequestImpl(uri);
 		if (request.getParam("newbookmark").length() > 0) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
