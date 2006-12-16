@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.plugin.api;
 
-
 /**
  * Provides an interface to the client for it to fetch keys from.
  * Simple version of the interface.

@@ -560,6 +560,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 			Bucket b = (Bucket)this.parts.get(key);
 			b.free();
 		}
+		parts.clear();
 	}
 
 	/* (non-Javadoc)
