@@ -18,6 +18,7 @@
 	<property name="svn.revision" value="@custom@"/>
 	<property name="CSSTokenizerFilter.relative.jflex" value="freenet/clients/http/filter/CSSTokenizerFilter.jflex"/>
 	<property name="CSSTokenizerFilter.java" value="${src}/freenet/clients/http/filter/CSSTokenizerFilter.java"/>
+	<property name="junit.location" value="/usr/share/java/junit.jar"/>
 
 
 	<target name="mkdir">
@@ -29,6 +30,7 @@
 	<target name="env" depends="mkdir"   description="Learn about the environment">
 		<available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
 		<available file="${CSSTokenizerFilter.java}" property="CSSTokenizerFilter.present"/>
+		<available file="${junit.location}" property="junit.present"/>
 	</target>
 
 	<target name="generate-CSSTokenizerFilter" depends="env" unless="CSSTokenizerFilter.present">
@@ -122,7 +124,7 @@
 		</javac>
 	</target>
 
-	<target name="unit" depends="unit-build">
+	<target name="unit" depends="unit-build" if="junit.present">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes">
 			<classpath>
 				<pathelement path="${build}"/>
