@@ -104,6 +104,7 @@ public class AddPeer extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">: "+e.getMessage(), null, false);
 			}
 		}
+		fs.setEndMarker( "End" );
 		PeerNode pn;
 		try {
 			pn = new PeerNode(fs, node, false);
