@@ -24,7 +24,7 @@ import junit.framework.TestCase;
 /**
  * Test case for the {@link freenet.crypt.DSAGroupGeneratorTest} class.
  * 
- * @author Florent Daignière &gt;nextgens@freenetproject.org&gt;
+ * @author Florent Daignière &lt;nextgens@freenetproject.org&gt;
  */
 public class DSAGroupGeneratorTest extends TestCase {
 
