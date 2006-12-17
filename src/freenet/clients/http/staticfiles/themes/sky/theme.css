@@ -366,6 +366,30 @@ table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes
 	font-size: 7pt;
 }
 
+div.peercircle span.mark {
+  color: #d0d0d0;
+}
+
+div.peercircle span.me {
+  color: #0080ff;
+  font-weight: bold;
+}
+
+div.peercircle span.connected {
+  color: #008000;
+  font-weight: bold;
+}
+
+div.peercircle span.backed_off {
+  color: #008000;
+  font-weight: bold;
+}
+
+div.peercircle span.disconnected {
+  color: #d0d0d0;
+  font-weight: bold;
+}
+
 #reftext {
 	width: 100%;
 }

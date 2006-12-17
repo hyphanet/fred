@@ -37,7 +37,7 @@ table, pre {
 }
 
 form {
-	margin: 0;
+	margin: 0 0 5px 0;
 	padding: 0;
 }
 
@@ -356,6 +356,30 @@ table.receivedmessagetypes {
 
 table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes th, table.receivedmessagetypes td {
 	font-size: 7pt;
+}
+
+div.peercircle span.mark {
+  color: #d0d0d0;
+}
+
+div.peercircle span.me {
+  color: #0080ff;
+  font-weight: bold;
+}
+
+div.peercircle span.connected {
+  color: #008000;
+  font-weight: bold;
+}
+
+div.peercircle span.backed_off {
+  color: #008000;
+  font-weight: bold;
+}
+
+div.peercircle span.disconnected {
+  color: #d0d0d0;
+  font-weight: bold;
 }
 
 /* queue page */

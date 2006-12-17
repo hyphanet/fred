@@ -541,11 +541,21 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				actionSelect.addChild("option", "value", "", "-- -- --");
 				actionSelect.addChild("option", "value", "remove", "Remove selected peers");
 				peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doAction", "Go" });
+				
+    		// BEGIN PEER LOCATION DISTRIBUTION CIRCLE
+  			HTMLNode peerCircleTable = peerTableInfobox.addChild("table", "class", "column");
+  			HTMLNode peerCircleTableRow = peerCircleTable.addChild("tr");
+  			HTMLNode nextPeerCircleTableCell = peerCircleTableRow.addChild("td", "class", "first");
+        //  
+ 				HTMLNode peerCircleInfobox = nextPeerCircleTableCell.addChild("div", "class", "infobox");
+  			peerCircleInfobox.addChild("div", "class", "infobox-header", "Peer Location Distribution");
+  			HTMLNode peerCircleInfoboxContent = peerCircleInfobox.addChild("div", "class", "infobox-content");
+  			addPeerCircle(peerCircleInfoboxContent);
+    		// END PEER LOCATION DISTRIBUTION CIRCLE
 			}
 			// END PEER TABLE
-
 		}
-		
+
 		// BEGIN PEER ADDITION BOX
 		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		peerAdditionInfobox.addChild("div", "class", "infobox-header", "Add another peer");
@@ -603,6 +613,38 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		StringBuffer pageBuffer = new StringBuffer();
 		pageNode.generate(pageBuffer);
 		this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
+	}
+	
+	private void addPeerCircle (HTMLNode htmlNode)
+	{
+		HTMLNode peerCircleInfoboxContentDiv = htmlNode.addChild("div", new String[] { "style", "class" }, new String[] {"position: relative; height:210px", "peercircle" });
+		peerCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0),     "mark" }, "+");
+		peerCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.125), "mark" }, "+");
+		peerCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.25),  "mark" }, "+");
+		peerCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.375), "mark" }, "+");
+		peerCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.5),   "mark" }, "+");
+		peerCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.625), "mark" }, "+");
+		peerCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.75),  "mark" }, "+");
+		peerCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875), "mark" }, "+");
+		//
+		PeerNodeStatus[] peerNodeStatuses = node.getPeerNodeStatuses();
+		for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
+			PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
+  		peerCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(peerNodeStatus.getLocation()), ((peerNodeStatus.isConnected())?"connected":"disconnected") }, "x");
+    }
+		//
+		peerCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(node.getLocation()), "me" }, "x");
+	}
+	
+	private String generatePeerCircleStyleString (double peerLocation)
+	{
+	 int radius = 100;
+   peerLocation *= Math.PI * 2;
+	 //
+	 double x = radius + Math.sin(peerLocation) * radius;
+	 double y = radius - Math.cos(peerLocation) * radius;
+	 //
+	 return "position: absolute; top: " + y + "px; left: " + x + "px";
 	}
 	
 	private String sortString(boolean isReversed, String type) {
