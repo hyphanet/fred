@@ -26,7 +26,13 @@ public class StringArrOption extends Option {
 	public String[] getValue() {
 		if(config.hasFinishedInitialization())
 			currentValue = cb.get();
-		return currentValue;
+		
+		String[] returnValue = new String[currentValue.length];
+
+		for(int i=0; i<currentValue.length; i++)
+			returnValue[i] = decode(currentValue[i]);
+
+		return returnValue;
 	}
 
 	public void setValue(String[] val) throws InvalidConfigValueException {
