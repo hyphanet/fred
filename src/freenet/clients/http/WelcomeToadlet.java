@@ -546,11 +546,11 @@ public class WelcomeToadlet extends Toadlet {
 			versionContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + " r" + NodeStarter.extRevisionNumber);
 		}
 		versionContent.addChild("br");
-		HTMLNode shutdownForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "GET" });
+		HTMLNode shutdownForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "get" });
 		shutdownForm.addChild("input", new String[] { "type", "name" }, new String[] { "hidden", "exit" });
 		shutdownForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Shutdown the node" });
 		if(node.isUsingWrapper()){
-			HTMLNode restartForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "GET" });
+			HTMLNode restartForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "get" });
 			restartForm.addChild("input", new String[] { "type", "name" }, new String[] { "hidden", "restart" });
 			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart2", "Restart the node" });
 		}

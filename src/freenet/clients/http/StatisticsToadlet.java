@@ -506,11 +506,11 @@ public class StatisticsToadlet extends Toadlet {
 				loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting");
 				HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
 				HTMLNode loadStatsList = loadStatsContent.addChild("ul");
-				loadStatsList.addChild("ul", "Global window: "+window);
-				loadStatsList.addChild("ul", starters.statsPageLine(false, false));
-				loadStatsList.addChild("ul", starters.statsPageLine(true, false));
-				loadStatsList.addChild("ul", starters.statsPageLine(false, true));
-				loadStatsList.addChild("ul", starters.statsPageLine(true, true));
+				loadStatsList.addChild("li", "Global window: "+window);
+				loadStatsList.addChild("li", starters.statsPageLine(false, false));
+				loadStatsList.addChild("li", starters.statsPageLine(true, false));
+				loadStatsList.addChild("li", starters.statsPageLine(false, true));
+				loadStatsList.addChild("li", starters.statsPageLine(true, true));
 				nextTableCell = overviewTableRow.addChild("td");
 
 				// node version information box
@@ -539,6 +539,7 @@ public class StatisticsToadlet extends Toadlet {
 	}
 	
 	private final static int PEER_CIRCLE_RADIUS = 100;
+	private final DecimalFormat fix4p2 = new DecimalFormat("###0.0#");
 	
 	private void addPeerCircle (HTMLNode htmlNode) {
 		HTMLNode peerCircleInfoboxContentDiv = htmlNode.addChild("div", new String[] { "style", "class" }, new String[] {"position: relative; height: " + (PEER_CIRCLE_RADIUS * 2 + 10) + "px", "peercircle" });
@@ -570,6 +571,6 @@ public class StatisticsToadlet extends Toadlet {
 		double x = PEER_CIRCLE_RADIUS + Math.sin(peerLocation) * (PEER_CIRCLE_RADIUS - offset);
 		double y = PEER_CIRCLE_RADIUS - Math.cos(peerLocation) * (PEER_CIRCLE_RADIUS - offset);
 		//
-		return "position: absolute; top: " + y + "px; left: " + x + "px";
+		return "position: absolute; top: " + fix4p2.format(y) + "px; left: " + fix4p2.format(x) + "px";
 	}
 }

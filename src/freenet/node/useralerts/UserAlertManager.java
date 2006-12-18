@@ -56,11 +56,12 @@ public class UserAlertManager implements Comparator {
 	public HTMLNode createAlerts() {
 		HTMLNode alertsNode = new HTMLNode("div");
 		UserAlert[] alerts = getAlerts();
+		int totalNumber = 0;
 		for (int i = 0; i < alerts.length; i++) {
 			UserAlert alert = alerts[i];
 			if (!alert.isValid())
 				continue;
-
+			totalNumber++;
 			HTMLNode alertNode = null;
 			short level = alert.getPriorityClass();
 			if (level <= UserAlert.CRITICAL_ERROR)
@@ -82,6 +83,9 @@ public class UserAlertManager implements Comparator {
 				dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 				dismissFormNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", alert.dismissButtonText() });
 			}
+		}
+		if (totalNumber == 0) {
+			return new HTMLNode("#", "");
 		}
 		return alertsNode;
 	}
