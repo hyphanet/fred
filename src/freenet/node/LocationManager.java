@@ -897,10 +897,11 @@ class LocationManager {
         } catch (NotConnectedException e) {
         	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapCommit "+uid+" to "+item.routedTo);
         }
+        spyOnLocations(m);
         return true;
     }
-    
-    /**
+
+	/**
      * Handle an unmatched FNPSwapComplete
      * @return True if we recognized and forwarded this message.
      */
@@ -936,8 +937,35 @@ class LocationManager {
         }
         item.lastMessageTime = System.currentTimeMillis();
         removeRecentlyForwardedItem(item);
+        spyOnLocations(m);
         return true;
     }
+
+    /** Spy on locations in somebody else's swap request. Greatly increases the
+     * speed at which we can gather location data to estimate the network's size.
+     */
+    private void spyOnLocations(Message m) {
+        byte[] data = ((ShortBuffer)m.getObject(DMT.DATA)).getData();
+        if(data.length < 16 || data.length % 8 != 0) {
+        	Logger.error(this, "Data invalid length in swap commit: "+data.length, new Exception("error"));
+        	return;
+        }
+        
+        long[] longs = Fields.bytesToLongs(data);
+        // First field is his random
+        // Second field is his loc
+        double hisLoc = Double.longBitsToDouble(longs[1]);
+        if(hisLoc < 0.0 || hisLoc > 1.0) {
+        	Logger.error(this, "Invalid hisLoc in swap commit: "+hisLoc, new Exception("error"));
+        	return;
+        }
+        registerKnownLocation(hisLoc);
+        // Third etc are locs of peers
+        for(int i=2;i<longs.length;i++) {
+        	double loc = Double.longBitsToDouble(longs[i]);
+        	registerLocationLink(hisLoc, loc);
+        }
+	}
 
     public void clearOldSwapChains() {
         long now = System.currentTimeMillis();
