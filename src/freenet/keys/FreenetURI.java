@@ -128,7 +128,7 @@ public class FreenetURI implements Cloneable{
 		return new FreenetURI(this);
 	}
 	
-	private FreenetURI(FreenetURI uri) {
+	public FreenetURI(FreenetURI uri) {
 		keyType = uri.keyType;
 		docName = uri.docName;
 		metaStr = new String[uri.metaStr.length];
