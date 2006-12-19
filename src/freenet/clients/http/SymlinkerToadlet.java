@@ -39,29 +39,19 @@ public class SymlinkerToadlet extends Toadlet {
 		});
 		
 		String fns[] = tslconfig.getStringArr("symlinks");
-		if (fns != null)
+		if (fns != null) {
 			for (int i = 0 ; i < fns.length ; i++) {
+				//System.err.println("Load: " + StringArrOption.decode(fns[i]));
 				String tuple[] = fns[i].split("#");
 				if (tuple.length == 2)
 					System.out.println("Adding link: " + tuple[0] + " => " + tuple[1]);
-			}
-
-		if (fns != null)
-			for (int i = 0 ; i < fns.length ; i++) {
-				//System.err.println("Load: " + StringArrOption.decode(fns[i]));
-				String tuple[] = StringArrOption.decode(fns[i]).split("#");
 				if (tuple.length == 2)
 					addLink(tuple[0], tuple[1], false);
 			}
+		}
+		
 		tslconfig.finishedInitialization();
 		
-		fns = tslconfig.getStringArr("symlinks");
-		if (fns != null)
-			for (int i = 0 ; i < fns.length ; i++) {
-				String tuple[] = StringArrOption.decode(fns[i]).split("#");
-				if (tuple.length == 2)
-					Logger.normal(this, "Added link: " + tuple[0] + " => " + tuple[1]);
-			}
 		addLink("/sl/search/", "/plugins/plugins.Librarian/", false);
 		addLink("/sl/gallery/", "/plugins/plugins.TestGallery/", false);
 	}
