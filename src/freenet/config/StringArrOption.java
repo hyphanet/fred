@@ -27,12 +27,7 @@ public class StringArrOption extends Option {
 		if(config.hasFinishedInitialization())
 			currentValue = cb.get();
 		
-		String[] returnValue = new String[currentValue.length];
-
-		for(int i=0; i<currentValue.length; i++)
-			returnValue[i] = decode(currentValue[i]);
-
-		return returnValue;
+		return currentValue;
 	}
 
 	public void setValue(String[] val) throws InvalidConfigValueException {
@@ -64,7 +59,11 @@ public class StringArrOption extends Option {
 	}
 	
 	public void setInitialValue(String val) throws InvalidConfigValueException {
-		this.currentValue = val.split(delimiter);
+		try {
+			this.currentValue = stringToArray(val);
+		} catch (URLEncodedFormatException e) {
+			throw new InvalidConfigValueException("Cannot parse value: "+e);
+		}
 	}
 	
 	public static String arrayToString(String[] arr) {
@@ -75,10 +74,6 @@ public class StringArrOption extends Option {
 			sb.append(URLEncoder.encode(arr[i])).append(delimiter);
 		if(sb.length() > 0) sb.setLength(sb.length()-1); // drop surplus delimiter
 		return sb.toString();
-	}
-	
-	public static String encode(String s) {
-		return URLEncoder.encode(s);
 	}
 	
 	public static String decode(String s) {
