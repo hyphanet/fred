@@ -1062,4 +1062,28 @@ class LocationManager {
 			}
 			return size;
 	}
+    
+    // Return a copy of the known locations HashMap for a given timestamp
+    public HashMap getKnownLocations(long timestamp) {
+    		if (timestamp > -1) {
+    			HashMap knownLocsCopy = new HashMap();
+    			//TODO optimize some more if it is to be called a lot.
+    			Double location = new Double(0.0);
+    			Long locationTime = new Long(0);
+				Iterator knownLocationsIterator = knownLocs.keySet().iterator();
+				while (knownLocationsIterator.hasNext()) {
+					location = (Double) knownLocationsIterator.next();
+					locationTime = (Long) knownLocs.get(location);
+					if (locationTime.longValue() > timestamp) {
+						//If the location is already recorded, remove it from the hashmap
+						if (knownLocsCopy.containsKey(location)) {
+							knownLocsCopy.remove(location);
+						}
+						knownLocsCopy.put(location, locationTime);
+					}
+				}
+				return knownLocsCopy;
+			}
+			return new HashMap( knownLocs );
+	}
 }

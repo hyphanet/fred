@@ -2943,6 +2943,10 @@ public class Node {
 	public int getNetworkSizeEstimate(long timestamp) {
 	  return lm.getNetworkSizeEstimate( timestamp );
 	}
+
+	public HashMap getKnownLocations(long timestamp) {
+	  return lm.getKnownLocations( timestamp );
+	}
 	
 	public int getSwaps() {
 		return LocationManager.swaps;
