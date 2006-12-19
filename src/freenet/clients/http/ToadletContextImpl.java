@@ -11,6 +11,7 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.TimeZone;
 
 import freenet.support.HTMLEncoder;
@@ -156,7 +157,7 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	private static String makeHTTPDate(long time) {
 		// For HTTP, GMT == UTC
-		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'");
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
 		sdf.setTimeZone(TZ_UTC);
 		return sdf.format(new Date(time));
 	}
