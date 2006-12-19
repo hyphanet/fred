@@ -21,8 +21,9 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.api.Bucket;
+import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
-import freenet.support.io.PaddedEphemerallyEncryptedBucket;
+import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class ClientPut extends ClientPutBase {
 
@@ -229,15 +230,10 @@ public class ClientPut extends ClientPutBase {
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			origFilename = null;
 			if(!finished) {
-				byte[] key = HexUtil.hexToBytes(fs.get("TempBucket.DecryptKey"));
-				String fnam = fs.get("TempBucket.Filename");
-				long sz = Long.parseLong(fs.get("TempBucket.Size"));
 				try {
-					data = client.server.core.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, sz);
-					if(data.size() != sz)
-						throw new PersistenceParseException("Size of bucket is wrong: "+data.size()+" should be "+sz);
-				} catch (IOException e) {
-					throw new PersistenceParseException("Could not read old bucket (should be "+sz+" bytes) for "+identifier);
+					data = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), ctx.random, client.server.core.persistentTempBucketFactory);
+				} catch (CannotCreateFromFieldSetException e) {
+					throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
 				}
 			} else data = null;
 			targetURI = null;
@@ -308,10 +304,7 @@ public class ClientPut extends ClientPutBase {
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			if(!finished) {
 				// the bucket is a persistent encrypted temp bucket
-				PaddedEphemerallyEncryptedBucket bucket = (PaddedEphemerallyEncryptedBucket) data;
-				fs.put("TempBucket.DecryptKey", HexUtil.bytesToHex(bucket.getKey()));
-				fs.put("TempBucket.Filename", ((FileBucket)(bucket.getUnderlying())).getName());
-				fs.put("TempBucket.Size", Long.toString(bucket.size()));
+				bucketToFS(fs, "TempBucket", true, data);
 			}
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			fs.put("TargetURI", targetURI.toString());

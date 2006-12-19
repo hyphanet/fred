@@ -13,4 +13,8 @@ public class PersistenceParseException extends Exception {
 		super(string);
 	}
 
+	public PersistenceParseException(String string, Exception reason) {
+		super(string, reason);
+	}
+
 }

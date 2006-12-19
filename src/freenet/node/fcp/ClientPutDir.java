@@ -21,8 +21,10 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
+import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class ClientPutDir extends ClientPutBase {
 
@@ -97,12 +99,11 @@ public class ClientPutDir extends ClientPutBase {
 			if((uploadFrom == null) || uploadFrom.equalsIgnoreCase("direct")) {
 				long sz = Long.parseLong(subset.get("DataLength"));
 				if(!finished) {
-					// Direct (persistent temp bucket)
-					byte[] key = HexUtil.hexToBytes(subset.get("TempBucket.DecryptKey"));
-					String fnam = subset.get("TempBucket.Filename");
-					data = client.server.core.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, sz);
-					if(data.size() != sz)
-						throw new PersistenceParseException("Size of bucket is wrong: "+data.size()+" should be "+sz);
+					try {
+						data = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), ctx.random, client.server.core.persistentTempBucketFactory);
+					} catch (CannotCreateFromFieldSetException e) {
+						throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
+					}
 				} else {
 					data = null;
 				}
@@ -229,9 +230,7 @@ public class ClientPutDir extends ClientPutBase {
 				} else if(data instanceof PaddedEphemerallyEncryptedBucket) {
 					subset.put("UploadFrom", "direct");
 					// the bucket is a persistent encrypted temp bucket
-					PaddedEphemerallyEncryptedBucket bucket = (PaddedEphemerallyEncryptedBucket) data;
-					subset.put("TempBucket.DecryptKey", HexUtil.bytesToHex(bucket.getKey()));
-					subset.put("TempBucket.Filename", ((FileBucket)(bucket.getUnderlying())).getName());
+					bucketToFS(fs, "TempBucket", false, data);
 				} else {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
 				}

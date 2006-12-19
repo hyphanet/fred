@@ -8,8 +8,13 @@ import java.net.MalformedURLException;
 import freenet.client.async.ClientRequester;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
+import freenet.support.io.FileBucket;
+import freenet.support.io.PaddedEphemerallyEncryptedBucket;
+import freenet.support.io.SerializableToFieldSetBucket;
 
 /**
  * A request process carried out by the node for an FCP client.
@@ -287,5 +292,11 @@ public abstract class ClientRequest {
 	public abstract boolean canRestart();
 
 	public abstract boolean restart();
-	
+
+	/** Utility method for storing details of a possibly encrypted bucket. */
+	protected void bucketToFS(SimpleFieldSet fs, String name, boolean includeSize, Bucket data) {
+		SerializableToFieldSetBucket bucket = (SerializableToFieldSetBucket) data;
+		fs.put(name, bucket.toFieldSet());
+	}
+
 }

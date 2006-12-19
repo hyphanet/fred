@@ -26,9 +26,10 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
 import freenet.support.io.NullBucket;
-import freenet.support.io.PaddedEphemerallyEncryptedBucket;
+import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 /**
  * A simple client fetch. This can of course fetch arbitrarily large
@@ -236,15 +237,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			ret = new NullBucket();
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-			byte[] key = HexUtil.hexToBytes(fs.get("ReturnBucket.DecryptKey"));
-			String fnam = fs.get("ReturnBucket.Filename");
 			try {
-				ret = client.server.core.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, succeeded ? foundDataLength : 0);
-			} catch (IOException e) {
-				Logger.error(this, "Caught "+e, e);
+				ret = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), fctx.random, client.server.core.persistentTempBucketFactory);
+			} catch (CannotCreateFromFieldSetException e) {
+				ret = null;
+				finished = false;
 				succeeded = false;
-				getFailedMessage = new GetFailedMessage(new FetchException(FetchException.BUCKET_ERROR, e), identifier, global);
-				ret = client.server.core.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, 0);
 			}
 		} else {
 			throw new IllegalArgumentException();
@@ -504,10 +502,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		// Return bucket
 		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-			PaddedEphemerallyEncryptedBucket b = (PaddedEphemerallyEncryptedBucket) returnBucket;
-			FileBucket underlying = (FileBucket) (b.getUnderlying());
-			fs.put("ReturnBucket.DecryptKey", HexUtil.bytesToHex(b.getKey()));
-			fs.put("ReturnBucket.Filename", underlying.getName());
+			bucketToFS(fs, "ReturnBucket", false, returnBucket);
 		}
 		fs.put("Global", Boolean.toString(client.isGlobalQueue));
 		return fs;
