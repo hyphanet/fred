@@ -963,6 +963,7 @@ class LocationManager {
         // Third etc are locs of peers
         for(int i=2;i<longs.length;i++) {
         	double loc = Double.longBitsToDouble(longs[i]);
+        	registerKnownLocation(loc);
         	registerLocationLink(hisLoc, loc);
         }
 	}
