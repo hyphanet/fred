@@ -21,7 +21,6 @@ import freenet.client.events.ClientEventListener;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
-import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -240,6 +239,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			try {
 				ret = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), fctx.random, client.server.core.persistentTempBucketFactory);
 			} catch (CannotCreateFromFieldSetException e) {
+				Logger.error(this, "Cannot read: "+this+" : "+e, e);
 				ret = null;
 				finished = false;
 				succeeded = false;
@@ -501,7 +501,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 		}
 		// Return bucket
-		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && !(succeeded == false && returnBucket == null)) {
 			bucketToFS(fs, "ReturnBucket", false, returnBucket);
 		}
 		fs.put("Global", Boolean.toString(client.isGlobalQueue));

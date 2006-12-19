@@ -16,7 +16,6 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
-import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
@@ -39,6 +38,7 @@ public class ClientPut extends ClientPutBase {
 	private long finishedSize;
 	/** Filename if the file has one */
 	private final String targetFilename;
+	private boolean logMINOR;
 	
 	/**
 	 * Creates a new persistent insert.
@@ -85,6 +85,7 @@ public class ClientPut extends ClientPutBase {
 			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
 			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode) throws IdentifierCollisionException {
 		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.targetFilename = targetFilename;
 		this.uploadFrom = uploadFromType;
 		this.origFilename = origFilename;
@@ -135,7 +136,7 @@ public class ClientPut extends ClientPutBase {
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
 		this.targetFilename = message.targetFilename;
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.uploadFrom = message.uploadFromType;
 		this.origFilename = message.origFilename;
 		// Now go through the fields one at a time
@@ -196,6 +197,7 @@ public class ClientPut extends ClientPutBase {
 	 */
 	public ClientPut(SimpleFieldSet fs, FCPClient client2) throws PersistenceParseException, IOException {
 		super(fs, client2);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String mimeType = fs.get("Metadata.ContentType");
 
 		String from = fs.get("UploadFrom");
@@ -225,21 +227,31 @@ public class ClientPut extends ClientPutBase {
 		
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			origFilename = new File(fs.get("Filename"));
+			if(logMINOR)
+				Logger.minor(this, "Uploading from disk: "+origFilename+" for "+this);
 			data = new FileBucket(origFilename, true, false, false, false);
 			targetURI = null;
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			origFilename = null;
+			if(logMINOR)
+				Logger.minor(this, "Uploading from direct for "+this);
 			if(!finished) {
 				try {
-					data = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), ctx.random, client.server.core.persistentTempBucketFactory);
+					data = SerializableToFieldSetBucketUtil.create(fs.subset("TempBucket"), ctx.random, client.server.core.persistentTempBucketFactory);
 				} catch (CannotCreateFromFieldSetException e) {
 					throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
 				}
-			} else data = null;
+			} else {
+				if(Logger.shouldLog(Logger.MINOR, this)) 
+					Logger.minor(this, "Finished already so not reading bucket for "+this);
+				data = null;
+			}
 			targetURI = null;
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			String target = fs.get("TargetURI");
 			targetURI = new FreenetURI(target);
+			if(logMINOR)
+				Logger.minor(this, "Uploading from redirect for "+this+" : "+targetURI);
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
 			cm = null;
 			byte[] d;
@@ -261,6 +273,7 @@ public class ClientPut extends ClientPutBase {
 		} else {
 			throw new PersistenceParseException("shouldn't happen");
 		}
+		if(logMINOR) Logger.minor(this, "data = "+data);
 		this.clientMetadata = cm;
 		putter = new ClientPutter(this, data, uri, cm, ctx, client.core.requestStarters.chkPutScheduler, 
 				client.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client.lowLevelClient, fs.subset("progress"), targetFilename);
