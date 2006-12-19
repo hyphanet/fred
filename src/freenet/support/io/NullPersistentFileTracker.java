@@ -18,4 +18,8 @@ public class NullPersistentFileTracker implements PersistentFileTracker {
 		bucket.free();
 	}
 
+	public File getDir() {
+		return new File(".");
+	}
+
 }

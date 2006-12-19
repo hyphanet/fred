@@ -9,7 +9,7 @@ public class CannotCreateFromFieldSetException extends Exception {
 		super(msg);
 	}
 
-	public CannotCreateFromFieldSetException(String msg, NumberFormatException e) {
+	public CannotCreateFromFieldSetException(String msg, Exception e) {
 		super(msg+" : "+e, e);
 	}
 

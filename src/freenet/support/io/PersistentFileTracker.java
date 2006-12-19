@@ -16,5 +16,10 @@ public interface PersistentFileTracker {
 	 * @param bucket The bucket to free. Should be a DelayedFreeBucket.
 	 */
 	public void delayedFreeBucket(Bucket bucket);
+
+	/**
+	 * Get the persistent temp files directory.
+	 */
+	public File getDir();
 	
 }
