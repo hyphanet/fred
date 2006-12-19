@@ -26,6 +26,7 @@ public class SerializableToFieldSetBucketUtil {
 		if(Logger.shouldLog(Logger.MINOR, SerializableToFieldSetBucketUtil.class))
 			Logger.minor(SerializableToFieldSetBucketUtil.class, "Creating: "+type);
 		if(type == null) {
+			// FIXME remove when not being used any more (after 1008 is mandatory)
 			if(fs.get("DecryptKey") != null && fs.get("Filename") != null) {
 				String filename = fs.get("Filename");
 				byte[] decryptKey = HexUtil.hexToBytes(fs.get("DecryptKey"));
