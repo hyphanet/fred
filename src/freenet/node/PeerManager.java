@@ -442,6 +442,10 @@ public class PeerManager {
      * Both parameters must be in [0.0, 1.0].
      */
     public static double distance(double a, double b) {
+        if((a < 0.0 || a > 1.0)||(b < 0.0 || b > 1.0)) {
+        	Logger.error(PeerManager.class, "Invalid Location ! a = "+a +" b = "+ b + "Please report this bug!", new Exception("error"));
+        	throw new NullPointerException();
+        }
         // Circular keyspace
     	if (a > b) return Math.min (a - b, 1.0 - a + b);
     	else return Math.min (b - a, 1.0 - b + a);
