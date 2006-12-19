@@ -5,10 +5,17 @@ package freenet.support.io;
 
 import java.io.File;
 
+import freenet.support.api.Bucket;
+
 public class NullPersistentFileTracker implements PersistentFileTracker {
 
 	public void register(File file) {
 		// Do nothing
+	}
+
+	public void delayedFreeBucket(Bucket bucket) {
+		// Free immediately
+		bucket.free();
 	}
 
 }

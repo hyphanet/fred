@@ -26,6 +26,8 @@ public class SerializableToFieldSetBucketUtil {
 			return new RandomAccessFileBucket(fs, f);
 		} else if(type.equals("ReadOnlyFileSliceBucket")) {
 			return new ReadOnlyFileSliceBucket(fs);
+		} else if(type.equals("DelayedFreeBucket")) {
+			return new DelayedFreeBucket(fs, random, f);
 		} else
 			throw new CannotCreateFromFieldSetException("Unrecognized type "+type);
 	}

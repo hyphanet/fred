@@ -5,8 +5,16 @@ package freenet.support.io;
 
 import java.io.File;
 
+import freenet.support.api.Bucket;
+
 public interface PersistentFileTracker {
 
 	public void register(File file);
+
+	/** Notify that we have finished with a bucket and it should be freed after the
+	 * next serialization to disk.
+	 * @param bucket The bucket to free. Should be a DelayedFreeBucket.
+	 */
+	public void delayedFreeBucket(Bucket bucket);
 	
 }
