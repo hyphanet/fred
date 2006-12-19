@@ -28,7 +28,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	public DelayedFreeBucket(SimpleFieldSet fs, RandomSource random, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		factory = f;
 		freed = false;
-		bucket = SerializableToFieldSetBucketUtil.create(fs, random, f);
+		bucket = SerializableToFieldSetBucketUtil.create(fs.subset("Underlying"), random, f);
 	}
 
 	public OutputStream getOutputStream() throws IOException {
@@ -60,13 +60,18 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	public void free() {
 		synchronized(this) { // mutex on just this method; make a separate lock if necessary to lock the above
 			if(freed) return;
+			if(Logger.shouldLog(Logger.MINOR, this)) 
+				Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
 			this.factory.delayedFreeBucket(bucket);
 			freed = true;
 		}
 	}
 
 	public SimpleFieldSet toFieldSet() {
-		if(freed) return null;
+		if(freed) {
+			Logger.error(this, "Cannot serialize because already freed: "+this);
+			return null;
+		}
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Type", "DelayedFreeBucket");
 		if(bucket instanceof SerializableToFieldSetBucket) {
