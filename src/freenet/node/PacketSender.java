@@ -229,7 +229,7 @@ public class PacketSender implements Runnable, Ticker {
                         if(item == null) continue;
                         try {
                             if(logMINOR) Logger.minor(this, "Resending "+item.packetNumber+" to "+item.kt);
-                            node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks, 0);
+                            node.packetMangler.resend(item);
                         } catch (KeyChangedException e) {
                             Logger.error(this, "Caught "+e+" resending packets to "+kt);
                             pn.requeueResendItems(resendItems);

@@ -6,7 +6,7 @@ package freenet.io.comm;
 /**
  * @author amphibian
  * 
- * Default PeerContext if we don't have a LowLevelFilter installed.
+ * Default PeerContext if we don't have a IncomingPacketFilter installed.
  * Just carries the Peer.
  */
 public class DummyPeerContext implements PeerContext {

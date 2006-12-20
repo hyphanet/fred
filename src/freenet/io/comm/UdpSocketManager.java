@@ -43,7 +43,7 @@ public class UdpSocketManager extends Thread {
 	private final LinkedList _filters = new LinkedList();
 	private final LinkedList _unclaimed = new LinkedList();
 	private int _dropProbability;
-	private LowLevelFilter lowLevelFilter;
+	private IncomingPacketFilter lowLevelFilter;
 	/** RNG for debugging, used with _dropProbability.
 	 * NOT CRYPTO SAFE. DO NOT USE FOR THINGS THAT NEED CRYPTO SAFE RNG!
 	 */
@@ -257,7 +257,7 @@ public class UdpSocketManager extends Thread {
 	
 	/**
 	 * Decode a packet from data and a peer.
-	 * Can be called by LowLevelFilter's.
+	 * Can be called by IncomingPacketFilter's.
      * @param data
      * @param offset
      * @param length
@@ -430,7 +430,7 @@ public class UdpSocketManager extends Thread {
 		}
 	}
 	
-	/** LowLevelFilter should call this when a node is disconnected. */
+	/** IncomingPacketFilter should call this when a node is disconnected. */
 	public void onDisconnect(PeerContext ctx) {
 	    synchronized(_filters) {
 			ListIterator i = _filters.listIterator();
@@ -569,7 +569,7 @@ public class UdpSocketManager extends Thread {
 //			try {
 //				lowLevelFilter.processOutgoing(blockToSend, 0, blockToSend.length, destination);
 //				return;
-//			} catch (LowLevelFilterException t) {
+//			} catch (IncomingPacketFilterException t) {
 //				Logger.error(this, "Caught "+t+" sending "+m+" to "+destination, t);
 //				destination.forceDisconnect();
 //				throw new NotConnectedException("Error "+t.toString()+" forced disconnect");
@@ -582,7 +582,7 @@ public class UdpSocketManager extends Thread {
 
 	/**
 	 * Send a block of encoded bytes to a peer. This is called by
-	 * send, and by LowLevelFilter.processOutgoing(..).
+	 * send, and by IncomingPacketFilter.processOutgoing(..).
      * @param blockToSend The data block to send.
      * @param destination The peer to send it to.
      */
@@ -642,7 +642,7 @@ public class UdpSocketManager extends Thread {
 		_dispatcher = d;
 	}
 
-	public void setLowLevelFilter(LowLevelFilter f) {
+	public void setLowLevelFilter(IncomingPacketFilter f) {
 	    lowLevelFilter = f;
 	}
 	

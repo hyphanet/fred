@@ -30,21 +30,21 @@ import freenet.support.WouldBlockException;
  * 
  * This includes encryption, authentication, and may later
  * include queueing etc. (that may require some interface
- * changes in LowLevelFilter).
+ * changes in IncomingPacketFilter).
  */
-public class FNPPacketMangler implements LowLevelFilter {
+public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFilter {
 
 	private static boolean logMINOR;
     final Node node;
     final PeerManager pm;
     final UdpSocketManager usm;
-    static final int MAX_PACKETS_IN_FLIGHT = 256; 
-    static final EntropySource fnpTimingSource = new EntropySource();
-    static final EntropySource myPacketDataSource = new EntropySource();
-    static final int RANDOM_BYTES_LENGTH = 12;
-    static final int HASH_LENGTH = 32;
+    final EntropySource fnpTimingSource;
+    final EntropySource myPacketDataSource;
+    private static final int MAX_PACKETS_IN_FLIGHT = 256; 
+    private static final int RANDOM_BYTES_LENGTH = 12;
+    private static final int HASH_LENGTH = 32;
     /** Minimum headers overhead */
-	public static final int HEADERS_LENGTH_MINIMUM =
+	private static final int HEADERS_LENGTH_MINIMUM =
 		4 + // sequence number
     	RANDOM_BYTES_LENGTH + // random junk
     	1 + // version
@@ -60,13 +60,15 @@ public class FNPPacketMangler implements LowLevelFilter {
     	HASH_LENGTH + // hash
     	1; // number of messages
 	/** Headers overhead if there is one message and no acks. */
-	public static final int HEADERS_LENGTH_ONE_MESSAGE = 
+	static public final int HEADERS_LENGTH_ONE_MESSAGE = 
 		HEADERS_LENGTH_MINIMUM + 2; // 2 bytes = length of message. rest is the same.
     
     public FNPPacketMangler(Node node) {
         this.node = node;
         this.pm = node.peers;
         this.usm = node.usm;
+        fnpTimingSource = new EntropySource();
+        myPacketDataSource = new EntropySource();
     }
 
     /**
@@ -84,12 +86,12 @@ public class FNPPacketMangler implements LowLevelFilter {
      * 
      */
     
-    /**
-     * Decrypt and authenticate packet.
-     * Then feed it to USM.checkFilters.
-     * Packets generated should have a PeerNode on them.
-     * Note that the buffer can be modified by this method.
-     */
+	/**
+	 * Decrypt and authenticate packet.
+	 * Then feed it to USM.checkFilters.
+	 * Packets generated should have a PeerNode on them.
+	 * Note that the buffer can be modified by this method.
+	 */
     public void process(byte[] buf, int offset, int length, Peer peer) {
         node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -898,9 +900,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(logMINOR) Logger.minor(this, "Done");
     }
 
-    /**
-     * Build a packet and send it, from a whole bunch of messages.
-     */
+    /* (non-Javadoc)
+	 * @see freenet.node.OutgoingPacketMangler#processOutgoingOrRequeue(freenet.node.MessageItem[], freenet.node.PeerNode, boolean, boolean)
+	 */
     public void processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber, boolean dontRequeue) {
     	String requeueLogString = "";
     	if(!dontRequeue) {
@@ -1126,12 +1128,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         processOutgoingPreformatted(buf, 0, loc, pn, neverWaitForPacketNumber, callbacks, alreadyReportedBytes);
     }
 
-    /**
-     * Build a packet and send it. From a Message recently converted into byte[],
-     * but with no outer formatting.
-     * @throws PacketSequenceException 
-     * @throws WouldBlockException 
-     */
+    /* (non-Javadoc)
+	 * @see freenet.node.OutgoingPacketMangler#processOutgoing(byte[], int, int, freenet.node.KeyTracker, int)
+	 */
     public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker, int alreadyReportedBytes) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
         byte[] newBuf = preformat(buf, offset, length);
         processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, -1, null, alreadyReportedBytes);
@@ -1171,12 +1170,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
     }
 
-    public byte[] preformat(Message msg, PeerNode pn) {
-        byte[] buf = msg.encodeToPacket(pn);
-        return preformat(buf, 0, buf.length);
-    }
-    
-    public byte[] preformat(byte[] buf, int offset, int length) {
+    byte[] preformat(byte[] buf, int offset, int length) {
         byte[] newBuf;
         if(buf != null) {
             newBuf = new byte[length+3];
@@ -1191,22 +1185,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         return newBuf;
     }
     
-    /**
-     * Encrypt a packet, prepend packet acks and packet resend requests, and send it. 
-     * The provided data is ready-formatted, meaning that it already has the message 
-     * length's and message counts.
-     * @param buf Buffer to read data from.
-     * @param offset Point at which to start reading.
-     * @param length Number of bytes to read.
-     * @param tracker The KeyTracker to use to encrypt the packet and send it to the
-     * associated PeerNode.
-     * @param packetNumber If specified, force use of this particular packet number.
-     * Means this is a resend of a dropped packet.
-     * @throws NotConnectedException If the node is not connected.
-     * @throws KeyChangedException If the primary key changes while we are trying to send this packet.
-     * @throws PacketSequenceException 
-     * @throws WouldBlockException If we cannot allocate a packet number because it would block.
-     */
+    /* (non-Javadoc)
+	 * @see freenet.node.OutgoingPacketMangler#processOutgoingPreformatted(byte[], int, int, freenet.node.KeyTracker, int, freenet.node.AsyncMessageCallback[], int)
+	 */
     public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks, int alreadyReportedBytes) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
         if(logMINOR) {
             String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+ ',' +length+ ',' +tracker+ ',' +packetNumber+ ',';
@@ -1435,10 +1416,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         kt.pn.sentPacket();
     }
 
-    /**
-     * Send a handshake, if possible, to the node.
-     * @param pn
-     */
+    /* (non-Javadoc)
+	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
+	 */
     public void sendHandshake(PeerNode pn) {
     	if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn);
         DiffieHellmanContext ctx;
@@ -1502,6 +1482,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
     }
 
+    /* (non-Javadoc)
+	 * @see freenet.node.OutgoingPacketMangler#isDisconnected(freenet.io.comm.PeerContext)
+	 */
     public boolean isDisconnected(PeerContext context) {
         if(context == null) return false;
         return !((PeerNode)context).isConnected();
@@ -1526,4 +1509,8 @@ public class FNPPacketMangler implements LowLevelFilter {
     	
         sendAuthPacket(1, 1, phase, ctx.concatAndSignAndCrypt(), pn, replyTo);
     }
+
+	public void resend(ResendPacketItem item) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {
+		processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks, 0);
+	}
 }

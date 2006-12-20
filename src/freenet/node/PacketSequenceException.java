@@ -3,9 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.io.comm.LowLevelFilterException;
+import freenet.io.comm.IncomingPacketFilterException;
 
-public class PacketSequenceException extends LowLevelFilterException {
+public class PacketSequenceException extends IncomingPacketFilterException {
 	private static final long serialVersionUID = -1;
 
 	public PacketSequenceException(String string) {

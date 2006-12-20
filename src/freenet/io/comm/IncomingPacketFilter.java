@@ -4,9 +4,10 @@
 package freenet.io.comm;
 
 /**
- * Filter interface used by Freenet to decrypt incoming packets.
+ * Filter interface used by Freenet to decrypt incoming UDP packets.
+ * @see freenet.node.OutgoingPacketMangler
  */
-public interface LowLevelFilter {
+public interface IncomingPacketFilter {
 
     /**
      * Process an incoming packet. This method should call

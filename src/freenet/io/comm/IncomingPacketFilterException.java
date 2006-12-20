@@ -3,14 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
-public class LowLevelFilterException extends Exception {
+public class IncomingPacketFilterException extends Exception {
 	private static final long serialVersionUID = -1;
 
-	public LowLevelFilterException(String string) {
+	public IncomingPacketFilterException(String string) {
 		super(string);
 	}
 
-	public LowLevelFilterException() {
+	public IncomingPacketFilterException() {
 		super();
 	}
 
