@@ -12,7 +12,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.Iterator;
 
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -27,12 +26,10 @@ import freenet.support.io.LineReadingInputStream;
  * If so, we complain about them.
  * And then we write the config file back out.
  */
-public class FilePersistentConfig extends Config {
+public class FilePersistentConfig extends PersistentConfig {
 
 	final File filename;
 	final File tempFilename;
-	private SimpleFieldSet origConfigFileContents;
-	protected boolean finishedInit;
 	protected final Object storeSync = new Object();
 	
 	public FilePersistentConfig(File f) throws IOException {
@@ -105,20 +102,6 @@ public class FilePersistentConfig extends Config {
 		super.register(sc);
 	}
 	
-	/**
-	 * Finished initialization. So any remaining options must be invalid.
-	 */
-	public synchronized void finishedInit() {
-		finishedInit = true;
-		if(origConfigFileContents == null) return;
-		Iterator i = origConfigFileContents.keyIterator();
-		while(i.hasNext()) {
-			String key = (String) i.next();
-			Logger.error(this, "Unknown option: "+key+" (value="+origConfigFileContents.get(key)+ ')');
-		}
-		origConfigFileContents = null;
-	}
-	
 	public void store() {
 		synchronized(this) {
 			if(!finishedInit) {
@@ -174,34 +157,4 @@ public class FilePersistentConfig extends Config {
 		return exportFieldSet(false);
 	}
 
-	public synchronized SimpleFieldSet exportFieldSet(boolean withDefaults) {
-		SimpleFieldSet fs = new SimpleFieldSet();
-		SubConfig[] configs;
-		synchronized(this) {
-			configs = (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
-		}
-		for(int i=0;i<configs.length;i++) {
-			SimpleFieldSet scfs = configs[i].exportFieldSet(withDefaults);
-			fs.tput(configs[i].prefix, scfs);
-		}
-		return fs;
-	}
-	
-	public void onRegister(SubConfig config, Option o) {
-		String val, name;
-		synchronized(this) {
-			if(finishedInit)
-				throw new IllegalStateException("onRegister("+config+ ':' +o+") called after finishedInit() !!");
-			if(origConfigFileContents == null) return;
-			name = config.prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+o.name;
-			val = origConfigFileContents.get(name);
-			origConfigFileContents.removeValue(name);
-			if(val == null) return;
-		}
-		try {
-			o.setInitialValue(val);
-		} catch (InvalidConfigValueException e) {
-			Logger.error(this, "Could not parse config option "+name+": "+e, e);
-		}
-	}
 }
