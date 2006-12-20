@@ -427,6 +427,10 @@ public class PeerManager {
     	double nodeLoc = node.lm.getLocation().getValue();
     	double nodeDist = distance(nodeLoc, loc);
     	double closest = closestPeerLocation(loc, nodeLoc);
+    	if(closest > 1.0) {
+    		// No peers found
+    		return false;
+    	}
     	double closestDist = distance(closest, loc);
     	return closestDist < nodeDist;
     }
