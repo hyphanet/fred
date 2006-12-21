@@ -1201,7 +1201,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         
         // We do not support forgotten packets at present
 
-        int[] acks, resendRequests, ackRequests;
+        int[] acks, resendRequests, ackRequests, forgotPackets;
     	int seqNumber;
         /* Locking:
          * Avoid allocating a packet number, then a long pause due to 
@@ -1235,6 +1235,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
        	
        	synchronized(tracker) {
         	acks = tracker.grabAcks();
+        	forgotPackets = tracker.grabForgotten();
         	resendRequests = tracker.grabResendRequests();
         	ackRequests = tracker.grabAckRequests();
             realSeqNumber = tracker.getLastOutgoingSeqNumber();
@@ -1326,9 +1327,42 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             plaintext[ptr++] = (byte)offsetSeq;
         }
         
-        // No forgotten packets
-        plaintext[ptr++] = 0;
-
+        byte[] forgotOffsets = null;
+        int forgotCount = 0;
+        
+        if(forgotPackets.length > 0) {
+        	for(int i=0;i<forgotPackets.length;i++) {
+        		int seq = forgotPackets[i];
+        		if(logMINOR) Logger.minor(this, "Forgot packet "+i+": "+seq);
+        		int offsetSeq = realSeqNumber - seq;
+        		if((offsetSeq > 255) || (offsetSeq < 0)) {
+        			if(tracker.isDeprecated()) {
+        				// Oh well
+        				Logger.error(this, "Dropping forgot-packet notification on deprecated tracker: "+seq+" on "+tracker+" - real seq="+realSeqNumber);
+        				// Ignore it
+        				continue;
+        			} else {
+        				Logger.error(this, "bad forgot packet offset: "+offsetSeq+
+                                " - forgotSeq="+seq+", packetNumber="+realSeqNumber+" talking to "+tracker.pn.getPeer(), new Exception("error"));
+        			}
+        		} else {
+        			if(forgotOffsets == null)
+        				forgotOffsets = new byte[forgotPackets.length - i];
+        			forgotOffsets[i] = (byte) offsetSeq;
+        			forgotCount++;
+        			if(forgotCount == 256)
+        				tracker.requeueForgot(forgotPackets, forgotCount, forgotPackets.length - forgotCount);
+        		}
+        	}
+        }
+        
+        plaintext[ptr++] = (byte) forgotCount;
+        
+        if(forgotOffsets != null) {
+        	System.arraycopy(forgotOffsets, 0, plaintext, ptr, forgotCount);
+        	ptr += forgotCount;
+        }
+        
         System.arraycopy(buf, offset, plaintext, ptr, length);
         ptr += length;
         
@@ -1345,10 +1379,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             tracker.sentPacket(saveable, seqNumber, callbacks);
         }
         
-        if(logMINOR) Logger.minor(this, "Sending...");
+        if(logMINOR) Logger.minor(this, "Sending... "+seqNumber);
 
         processOutgoingFullyFormatted(plaintext, tracker, callbacks, alreadyReportedBytes);
-        if(logMINOR) Logger.minor(this, "Sent packet");
+        if(logMINOR) Logger.minor(this, "Sent packet "+seqNumber);
     }
 
     /**

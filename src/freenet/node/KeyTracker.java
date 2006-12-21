@@ -58,6 +58,13 @@ public class KeyTracker {
      * be consistent. */
     private final DoublyLinkedList ackQueue;
     
+    /** Serial numbers of packets that we have forgotten. Usually
+     * when we have forgotten a packet it just means that it has 
+     * been shifted to another KeyTracker because this one was
+     * deprecated; the messages will get through in the end.
+     */
+    private final DoublyLinkedList forgottenQueue;
+    
     /** The highest incoming serial number we have ever seen
      * from the other side. Includes actual packets and resend
      * requests (provided they are within range). */
@@ -92,6 +99,7 @@ public class KeyTracker {
         this.sessionCipher = cipher;
         this.sessionKey = sessionKey;
         ackQueue = new DoublyLinkedListImpl();
+        forgottenQueue = new DoublyLinkedListImpl();
         highestSeenIncomingSerialNumber = -1;
         // give some leeway
         sentPacketsContents = new LimitedRangeIntByteArrayMap(128);
@@ -150,6 +158,22 @@ public class KeyTracker {
         // Will go urgent in 200ms
     }
     
+    public void queueForgotten(int seqNumber) {
+    	queueForgotten(seqNumber, true);
+    }
+    
+    public void queueForgotten(int seqNumber, boolean log) {
+    	if(log && ((!isDeprecated) || logMINOR)) {
+    		String msg = "Queueing forgotten for "+seqNumber+" for "+this;
+    		if(!isDeprecated) Logger.error(this, msg);
+    		else Logger.minor(this, msg);
+    	}
+    	QueuedForgotten qf = new QueuedForgotten(seqNumber);
+    	synchronized(forgottenQueue) {
+    		forgottenQueue.push(qf);
+    	}
+    }
+    
     class PacketActionItem { // anyone got a better name?
         /** Packet sequence number */
         int packetNumber;
@@ -176,6 +200,59 @@ public class KeyTracker {
              * force a send of an otherwise empty packet.
              */
             urgentTime = now + 200;
+        }
+
+        Item prev;
+        Item next;
+        
+        public Item getNext() {
+            return next;
+        }
+
+        public Item setNext(Item i) {
+            Item old = next;
+            next = i;
+            return old;
+        }
+
+        public Item getPrev() {
+            return prev;
+        }
+
+        public Item setPrev(Item i) {
+            Item old = prev;
+            prev = i;
+            return old;
+        }
+
+        private DoublyLinkedList parent;
+        
+		public DoublyLinkedList getParent() {
+			return parent;
+		}
+
+		public DoublyLinkedList setParent(DoublyLinkedList l) {
+			DoublyLinkedList old = parent;
+			parent = l;
+			return old;
+		}
+    }
+
+    // FIXME this is almost identical to QueuedAck, coalesce the classes
+    class QueuedForgotten extends PacketActionItem implements DoublyLinkedList.Item {
+        void sent() {
+            synchronized(forgottenQueue) {
+                forgottenQueue.remove(this);
+            }
+        }
+        
+        QueuedForgotten(int packet) {
+            long now = System.currentTimeMillis();
+            packetNumber = packet;
+            /** If not included on a packet in next 500ms, then
+             * force a send of an otherwise empty packet.
+             */
+            urgentTime = now + 500;
         }
 
         Item prev;
@@ -587,7 +664,11 @@ public class KeyTracker {
         		String msg = "Asking me to resend packet "+seqNumber+
         			" which we haven't sent yet or which they have already acked (next="+nextPacketNumber+ ')';
         		// Might just be late, but could indicate something serious.
-        		if(logMINOR) Logger.error(this, msg);
+        		if(isDeprecated) {
+        			Logger.minor(this, "Other side wants us to resend packet "+seqNumber+" for "+this+" - we cannot do this because we are deprecated");
+        		} else {
+        			Logger.normal(this, msg);
+        		}
         	}
         }
     }
@@ -697,6 +778,33 @@ public class KeyTracker {
         }
     }
 
+    public int[] grabForgotten() {
+    	if(logMINOR) Logger.minor(this, "Grabbing forgotten packet numbers");
+        int[] acks;
+        synchronized(forgottenQueue) {
+            // Grab the acks and tell them they are sent
+            int length = forgottenQueue.size();
+            acks = new int[length];
+            int i=0;
+            for(Enumeration e=forgottenQueue.elements();e.hasMoreElements();) {
+                QueuedForgotten ack = (QueuedForgotten)e.nextElement();
+                acks[i++] = ack.packetNumber;
+                if(logMINOR) Logger.minor(this, "Grabbing ack "+ack.packetNumber+" from "+this);
+                ack.sent();
+            }
+        }
+        return acks;
+    }
+
+	public void requeueForgot(int[] forgotPackets, int start, int length) {
+		synchronized(forgottenQueue) { // It doesn't do anything else does it? REDFLAG
+			for(int i=start;i<start+length;i++) {
+				queueForgotten(i, false);
+			}
+		}
+	}
+
+    
     /**
      * Grab all the currently queued acks to be sent to this node.
      * @return An array of packet numbers that we need to acknowledge.
@@ -977,4 +1085,5 @@ public class KeyTracker {
 			return ackQueue.size();
 		}
 	}
+
 }
