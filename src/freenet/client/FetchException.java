@@ -170,6 +170,17 @@ public class FetchException extends Exception {
 			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+msg,this);
 	}
 
+	public FetchException(FetchException e, int newMode) {
+		super(getMessage(newMode)+(e.extraMessage != null ? ": "+e.extraMessage : ""));
+		this.mode = newMode;
+		this.newURI = e.newURI;
+		this.errorCodes = e.errorCodes;
+		this.expectedMimeType = e.expectedMimeType;
+		this.expectedSize = e.expectedSize;
+		this.extraMessage = e.extraMessage;
+		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
+	}
+
 	public static String getShortMessage(int mode) {
 		switch(mode) {
 		case TOO_DEEP_ARCHIVE_RECURSION:
@@ -200,6 +211,8 @@ public class FetchException extends Exception {
 			return "Temporary files error";
 		case DATA_NOT_FOUND:
 			return "Data not found";
+		case ALL_DATA_NOT_FOUND:
+			return "All data not found";
 		case ROUTE_NOT_FOUND:
 			return "Route not found";
 		case REJECTED_OVERLOAD:
@@ -280,6 +293,8 @@ public class FetchException extends Exception {
 			return "Internal temp files error, maybe disk full or permissions problem?";
 		case DATA_NOT_FOUND:
 			return "Data not found";
+		case ALL_DATA_NOT_FOUND:
+			return "Not enough data found; some data was fetched but redirect may point to nowhere";
 		case ROUTE_NOT_FOUND:
 			return "Route not found - could not find enough nodes to be sure the data doesn't exist";
 		case REJECTED_OVERLOAD:
@@ -342,6 +357,8 @@ public class FetchException extends Exception {
 	public static final int BUCKET_ERROR = 12;
 	/** Data not found */
 	public static final int DATA_NOT_FOUND = 13;
+	/** Not all data was found; some DNFs but some successes */
+	public static final int ALL_DATA_NOT_FOUND = 28;
 	/** Route not found */
 	public static final int ROUTE_NOT_FOUND = 14;
 	/** Downstream overload */
@@ -399,6 +416,7 @@ public class FetchException extends Exception {
 		case ROUTE_NOT_FOUND:
 		case REJECTED_OVERLOAD:
 		case TRANSFER_FAILED:
+		case ALL_DATA_NOT_FOUND:
 			return false;
 			
 		case BUCKET_ERROR:
