@@ -12,7 +12,7 @@ import java.io.UnsupportedEncodingException;
  */
 public class URLEncoder {
 	// Moved here from FProxy by amphibian
-	final static String safeURLCharacters = "*-_./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz ";
+	final static String safeURLCharacters = "*-_./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
 	/**
 	 * Encode a string for inclusion in a URI.
