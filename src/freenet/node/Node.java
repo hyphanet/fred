@@ -37,8 +37,10 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentMutableConfig;
 
 import freenet.client.FetcherContext;
+import freenet.config.Config;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
@@ -56,6 +58,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.UdpSocketManager;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
@@ -100,8 +103,10 @@ import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
+import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
+import freenet.support.api.ShortCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -163,7 +168,7 @@ public class Node {
 	}
 	
 	/** Config object for the whole node. */
-	public final FreenetFilePersistentConfig config;
+	public final PersistentConfig config;
 	
 	// Static stuff related to logger
 	
@@ -344,6 +349,10 @@ public class Node {
 	public final TimeDecayingRunningAverage pInstantRejectIncoming;
 	/** IP detector */
 	public final NodeIPDetector ipDetector;
+    /** For debugging/testing, set this to true to stop the
+     * probabilistic decrement at the edges of the HTLs.
+     */
+    boolean disableProbabilisticHTLs;
 	
 	private final HashSet runningUIDs;
 	
@@ -372,7 +381,7 @@ public class Node {
 	public final PacketSender ps;
 	final NodeDispatcher dispatcher;
 	final NodePinger nodePinger;
-	static final int MAX_CACHED_KEYS = 1000;
+	static final int MAX_MEMORY_CACHED_PUBKEYS = 1000;
 	final LRUHashtable cachedPubKeys;
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
@@ -381,7 +390,9 @@ public class Node {
 	final TokenBucket requestOutputThrottle;
 	final TokenBucket requestInputThrottle;
 	private boolean inputLimitDefault;
-	public static short MAX_HTL = 10;
+	public static final short DEFAULT_MAX_HTL = (short)10;
+	public static final int DEFAULT_SWAP_INTERVAL = 2000;
+	private short maxHTL;
 	public static final int EXIT_STORE_FILE_NOT_FOUND = 1;
 	public static final int EXIT_STORE_IOEXCEPTION = 2;
 	public static final int EXIT_STORE_OTHER = 3;
@@ -407,6 +418,7 @@ public class Node {
 	public static final int EXIT_EXTRA_PEER_DATA_DIR = 22;
 	public static final int EXIT_THROTTLE_FILE_ERROR = 23;
 	public static final int EXIT_RESTART_FAILED = 24;
+	public static final int EXIT_TEST_ERROR = 25;
 	
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
@@ -673,7 +685,7 @@ public class Node {
 		NodeStarter.main(args);
 	}
 	
-	static class NodeInitException extends Exception {
+	public static class NodeInitException extends Exception {
 		// One of the exit codes from above
 		public final int exitCode;
 		private static final long serialVersionUID = -1;
@@ -704,7 +716,7 @@ public class Node {
 	 * @param the loggingHandler
 	 * @throws NodeInitException If the node initialization fails.
 	 */
-	 Node(FreenetFilePersistentConfig config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
+	 Node(PersistentConfig config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
 		// Easy stuff
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String tmp = "Initializing Node using freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber;
@@ -736,9 +748,6 @@ public class Node {
 		runningUIDs = new HashSet();
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
-		// FIXME maybe these should persist? They need to be private though, so after the node/peers split. (bug 51).
-		decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
-		decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
 		bootID = random.nextLong();
 		throttledPacketSendAverage =
 			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
@@ -749,6 +758,39 @@ public class Node {
 		// Setup node-specific configuration
 		SubConfig nodeConfig = new SubConfig("node", config);
 		
+		nodeConfig.register("disableProbabilisticHTLs", false, sortOrder++, true, false, "Disable probabilistic HTL", "Disable probabilistic HTL (don't touch this unless you know what you are doing)", 
+				new BooleanCallback() {
+
+					public boolean get() {
+						return disableProbabilisticHTLs;
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						disableProbabilisticHTLs = val;
+					}
+			
+		});
+		
+		disableProbabilisticHTLs = nodeConfig.getBoolean("disableProbabilisticHTLs");
+		
+		nodeConfig.register("maxHTL", DEFAULT_MAX_HTL, sortOrder++, true, false, "Maximum HTL", "Maximum HTL (FOR DEVELOPER USE ONLY!)",
+				new ShortCallback() {
+
+					public short get() {
+						return maxHTL;
+					}
+
+					public void set(short val) throws InvalidConfigValueException {
+						if(maxHTL < 0) throw new InvalidConfigValueException("Impossible max HTL");
+						maxHTL = val;
+					}
+		});
+		
+		maxHTL = nodeConfig.getShort("maxHTL");
+		
+		// FIXME maybe these should persist? They need to be private.
+		decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
+		decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
 		
 		nodeConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, false, "AggressiveGC modificator", "Enables the user to tweak the time in between GC and forced finalization. SHOULD NOT BE CHANGED unless you know what you're doing! -1 means : disable forced call to System.gc() and System.runFinalization()",
 				new IntCallback() {
@@ -776,8 +818,6 @@ public class Node {
     	sortOrder = ipDetector.registerConfigs(nodeConfig, sortOrder);
     	
 		// Determine where to bind to
-		
-
 		
 		nodeConfig.register("bindTo", "0.0.0.0", sortOrder++, true, true, "IP address to bind to", "IP address to bind to",
 				new NodeBindtoCallback(this));
@@ -843,6 +883,22 @@ public class Node {
 		Logger.normal(this, "FNP port created on "+bindto+ ':' +port);
 		System.out.println("FNP port created on "+bindto+ ':' +port);
 		portNumber = port;
+
+		nodeConfig.register("testingDropPacketsEvery", 0, sortOrder++, true, false, "Testing packet drop frequency", "Frequency of dropping packets. Testing option used by devs to simulate packet loss. 0 means never artificially drop a packet. Don't touch this!",
+				new IntCallback() {
+
+					public int get() {
+						return usm.getDropProbability();
+					}
+
+					public void set(int val) throws InvalidConfigValueException {
+						usm.setDropProbability(val);
+					}
+			
+		});
+		
+		int dropProb = nodeConfig.getInt("testingDropPacketsEvery");
+		usm.setDropProbability(dropProb);
 		
 		Logger.normal(Node.class, "Creating node...");
 
@@ -915,7 +971,7 @@ public class Node {
 		
 		// SwapRequestInterval
 		
-		nodeConfig.register("swapRequestSendInterval", 2000, sortOrder++, true, false,
+		nodeConfig.register("swapRequestSendInterval", DEFAULT_SWAP_INTERVAL, sortOrder++, true, false,
 				"Swap request send interval (ms)", "Interval between swap attempting to send swap requests in milliseconds. Leave this alone!",
 				new IntCallback() {
 					public int get() {
@@ -1348,7 +1404,7 @@ public class Node {
 		"Note that the node will try to automatically restart the node in the event of such a deadlock, " +
 		"but this will cause some disruption, and may not be 100% reliable.";
 	
-	void start(boolean noSwaps) throws NodeInitException {
+	public void start(boolean noSwaps) throws NodeInitException {
 		
 		if(!noSwaps)
 			lm.startSender(this, this.swapInterval);
@@ -1402,8 +1458,11 @@ public class Node {
 		this.clientCore.start(config);
 		
 		// After everything has been created, write the config file back to disk.
-		config.finishedInit(this.ps);
-		config.setHasNodeStarted();
+		if(config instanceof FreenetFilePersistentConfig) {
+			FreenetFilePersistentConfig cfg = (FreenetFilePersistentConfig) config;
+			cfg.finishedInit(this.ps);
+			cfg.setHasNodeStarted();
+		}
 		config.store();
 		
 		// Process any data in the extra peer data directory
@@ -1913,7 +1972,7 @@ public class Node {
 	public int routedPing(double loc2) {
 		long uid = random.nextLong();
 		int initialX = random.nextInt();
-		Message m = DMT.createFNPRoutedPing(uid, loc2, MAX_HTL, initialX);
+		Message m = DMT.createFNPRoutedPing(uid, loc2, maxHTL, initialX);
 		Logger.normal(this, "Message: "+m);
 		
 		dispatcher.handleRouted(m);
@@ -2238,14 +2297,14 @@ public class Node {
 		if(source != null)
 			return source.decrementHTL(htl);
 		// Otherwise...
-		if(htl >= MAX_HTL) htl = MAX_HTL;
+		if(htl >= maxHTL) htl = maxHTL;
 		if(htl <= 0) htl = 1;
-		if(htl == MAX_HTL) {
-			if(decrementAtMax) htl--;
+		if(htl == maxHTL) {
+			if(decrementAtMax && !disableProbabilisticHTLs) htl--;
 			return htl;
 		}
 		if(htl == 1) {
-			if(decrementAtMin) htl--;
+			if(decrementAtMin && !disableProbabilisticHTLs) htl--;
 			return htl;
 		}
 		return --htl;
@@ -2537,7 +2596,7 @@ public class Node {
 				throw new IllegalArgumentException("Wrong hash?? Already have different key with same hash!");
 			}
 			cachedPubKeys.push(w, key);
-			while(cachedPubKeys.size() > MAX_CACHED_KEYS)
+			while(cachedPubKeys.size() > MAX_MEMORY_CACHED_PUBKEYS)
 				cachedPubKeys.popKey();
 		}
 		try {
@@ -3391,5 +3450,20 @@ public class Node {
 
 	public int getUnclaimedFIFOSize() {
 		return usm.getUnclaimedFIFOSize();
+	}
+
+	/** 
+	 * Connect this node to another node (for purposes of testing) 
+	 */
+	public void connect(Node node) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		peers.connect(node.exportPublicFieldSet());
+	}
+	
+	public short maxHTL() {
+		return maxHTL;
+	}
+
+	public int getPortNumber() {
+		return portNumber;
 	}
 }

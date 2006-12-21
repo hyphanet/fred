@@ -6,17 +6,21 @@ package freenet.node;
 import java.io.File;
 import java.io.IOException;
 
-import org.tanukisoftware.wrapper.WrapperManager;
 import org.tanukisoftware.wrapper.WrapperListener;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
 import freenet.node.Node.NodeInitException;
+import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
+import freenet.support.LoggerHook.InvalidThresholdException;
        
 
 /**
@@ -30,7 +34,7 @@ public class NodeStarter
     implements WrapperListener
 {
     private Node node;
-	static LoggingConfigHandler logConfigHandler;
+	private static LoggingConfigHandler logConfigHandler;
 	//TODO: cleanup
 	public static int RECOMMENDED_EXT_BUILD_NUMBER = 9;
 	/*
@@ -85,7 +89,7 @@ public class NodeStarter
     	java.security.Security.setProperty("networkaddress.cache.negative.ttl" , "0");
     	  	
     	try{
-    		cfg = new FreenetFilePersistentConfig(configFilename);	
+    		cfg = FreenetFilePersistentConfig.constructFreenetFilePersistentConfig(configFilename);	
     	}catch(IOException e){
     		System.out.println("Error : "+e);
     		e.printStackTrace();
@@ -102,38 +106,8 @@ public class NodeStarter
     		e.printStackTrace();
     		return new Integer(-2);
     	}
-    	
-    	try{
-    		extBuildNumber = ExtVersion.buildNumber;
-			extRevisionNumber = ExtVersion.cvsRevision;
-			String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #"+extBuildNumber+" r"+extRevisionNumber;
-			Logger.normal(this, builtWithMessage);
-			System.out.println(builtWithMessage);
-    		extBuildNumber = ExtVersion.buildNumber();
-			if(extBuildNumber == -42) {
-				extBuildNumber = ExtVersion.extBuildNumber();
-				extRevisionNumber = ExtVersion.extRevisionNumber();
-			}
-			if(extBuildNumber == 0) {
-				String buildMessage = "extBuildNumber is 0; perhaps your freenet-ext.jar file is corrupted?";
-				Logger.error(this, buildMessage);
-				System.err.println(buildMessage);
-				extBuildNumber = -1;
-			}
-			if(extRevisionNumber == null) {
-				String revisionMessage = "extRevisionNumber is null; perhaps your freenet-ext.jar file is corrupted?";
-				Logger.error(this, revisionMessage);
-				System.err.println(revisionMessage);
-				extRevisionNumber = "INVALID";
-			}
-    	}catch(Throwable t){ 	 
-    		// Compatibility code ... will be removed
-    		Logger.error(this, "Unable to get the version of your freenet-ext file : it's probably corrupted!");
-    		System.err.println("Unable to get the version of your freenet-ext file : it's probably corrupted!");
-    		System.err.println(t.getMessage());
-    		extRevisionNumber = "INVALID";
-    		extBuildNumber = -1;
-    	}
+
+    	getExtBuild();
     	
     	// Setup RNG
     	RandomSource random = new Yarrow();
@@ -183,7 +157,41 @@ public class NodeStarter
 		return null;
     }
 
-    /**
+    private void getExtBuild() {
+    	try{
+    		extBuildNumber = ExtVersion.buildNumber;
+			extRevisionNumber = ExtVersion.cvsRevision;
+			String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #"+extBuildNumber+" r"+extRevisionNumber;
+			Logger.normal(this, builtWithMessage);
+			System.out.println(builtWithMessage);
+    		extBuildNumber = ExtVersion.buildNumber();
+			if(extBuildNumber == -42) {
+				extBuildNumber = ExtVersion.extBuildNumber();
+				extRevisionNumber = ExtVersion.extRevisionNumber();
+			}
+			if(extBuildNumber == 0) {
+				String buildMessage = "extBuildNumber is 0; perhaps your freenet-ext.jar file is corrupted?";
+				Logger.error(this, buildMessage);
+				System.err.println(buildMessage);
+				extBuildNumber = -1;
+			}
+			if(extRevisionNumber == null) {
+				String revisionMessage = "extRevisionNumber is null; perhaps your freenet-ext.jar file is corrupted?";
+				Logger.error(this, revisionMessage);
+				System.err.println(revisionMessage);
+				extRevisionNumber = "INVALID";
+			}
+    	}catch(Throwable t){ 	 
+    		// Compatibility code ... will be removed
+    		Logger.error(this, "Unable to get the version of your freenet-ext file : it's probably corrupted!");
+    		System.err.println("Unable to get the version of your freenet-ext file : it's probably corrupted!");
+    		System.err.println(t.getMessage());
+    		extRevisionNumber = "INVALID";
+    		extBuildNumber = -1;
+    	}
+	}
+
+	/**
      * Called when the application is shutting down.  The Wrapper assumes that
      *  this method will return fairly quickly.  If the shutdown code code
      *  could potentially take a long time, then WrapperManager.signalStopping()
@@ -247,4 +255,106 @@ public class NodeStarter
         //  will be called immediately.
         WrapperManager.start( new NodeStarter(), args );
     }
+
+    /**
+     * VM-specific init.
+     * Not Node-specific; many nodes may be created later.
+     * @param testName The name of the test instance.
+     */
+	public static RandomSource globalTestInit(String testName) throws InvalidThresholdException {
+		
+		File dir = new File(testName);
+		if((!dir.mkdir()) && ((!dir.exists()) || (!dir.isDirectory()))) {
+			System.err.println("Cannot create directory for test");
+			System.exit(Node.EXIT_TEST_ERROR);
+		}
+		
+        FileLoggerHook fh = Logger.setupStdoutLogging(Logger.MINOR, "");
+		
+    	// set Java's DNS cache not to cache forever, since many people
+    	// use dyndns hostnames
+    	java.security.Security.setProperty("networkaddress.cache.ttl" , "0");
+    	java.security.Security.setProperty("networkaddress.cache.negative.ttl" , "0");
+    	  	
+    	// Setup RNG
+    	RandomSource random = new Yarrow();
+    	
+    	DiffieHellman.init(random);
+   	 
+		// Thread to keep the node up.
+		// JVM deadlocks losing a lock when two threads of different types (daemon|app)
+		// are contended for the same lock. So make USM daemon, and use useless to keep the JVM
+		// up.
+		// http://forum.java.sun.com/thread.jspa?threadID=343023&messageID=2942637 - last message
+		Runnable useless =
+			new Runnable() {
+			public void run() {
+				while(true)
+					try {
+						Thread.sleep(60*60*1000);
+					} catch (InterruptedException e) {
+						// Ignore
+					} catch (Throwable t) {
+						try {
+							Logger.error(this, "Caught "+t, t);
+						} catch (Throwable t1) {
+							// Ignore
+						}
+					}
+			}
+		};
+		Thread plug = new Thread(useless, "Plug");
+		// Not daemon, but doesn't do anything.
+		// Keeps the JVM alive.
+		// DO NOT do anything in the plug thread, if you do you risk the EvilJVMBug.
+		plug.setDaemon(false);
+		plug.start();
+		
+		return random;
+	}
+	
+	/**
+	 * Create a test node.
+	 * @param port The node port number. Each test node must have a different port
+	 * number.
+	 * @param testName The test name.
+	 * @param doClient Boot up the client layer?
+	 * @param doSwapping Allow swapping?
+	 * @throws NodeInitException If the node cannot start up for some reason, most
+	 * likely a config problem.
+	 */
+	public static Node createTestNode(int port, String testName, boolean doClient, 
+			boolean doSwapping, boolean disableProbabilisticHTLs, short maxHTL,
+			int dropProb, int swapInterval, RandomSource random) throws NodeInitException {
+		
+		File baseDir = new File(testName);
+		File portDir = new File(baseDir, Integer.toString(port));
+		if((!portDir.mkdir()) && ((!portDir.exists()) || (!portDir.isDirectory()))) {
+			System.err.println("Cannot create directory for test");
+			System.exit(Node.EXIT_TEST_ERROR);
+		}
+		
+		// Set up config for testing
+		SimpleFieldSet configFS = new SimpleFieldSet();
+		configFS.put("node.listenPort", port);
+		configFS.put("node.disableProbabilisticHTLs", disableProbabilisticHTLs);
+		configFS.put("fproxy.enabled", false);
+		configFS.put("fcp.enabled", false);
+		configFS.put("console.enabled", false);
+		configFS.put("pluginmanager.loadplugin", "");
+		configFS.put("node.updater.enabled", false);
+		configFS.put("node.tempDir", new File(portDir, "temp").toString());
+		configFS.put("node.storeDir", new File(portDir, "store").toString());
+		configFS.put("node.persistentTempDir", new File(portDir, "persistent").toString());
+		configFS.put("node.throttleFile", new File(portDir, "throttle.dat").toString());
+		configFS.put("node.nodeDir", portDir.toString());
+		configFS.put("node.maxHTL", maxHTL);
+		configFS.put("node.testingDropPacketsEvery", dropProb);
+		configFS.put("node.swapRequestSendInterval", swapInterval);
+		
+		PersistentConfig config = new PersistentConfig(configFS);
+		
+		return new Node(config, random, null, null);
+	}
+	
 }

@@ -477,7 +477,8 @@ public class NodeDispatcher implements Dispatcher {
 
 	private boolean innerHandleProbeRequest(PeerNode src, long id, Long lid, double target, double best, 
 			double nearest, short htl, short counter, boolean checkRecent, boolean canReject, ProbeCallback cb) {
-		if(htl > Node.MAX_HTL) htl = Node.MAX_HTL;
+		short max = node.maxHTL();
+		if(htl > max) htl = max;
 		if(htl <= 1) htl = 1;
 		ProbeContext ctx = null;
 		boolean rejected = false;
@@ -580,9 +581,9 @@ public class NodeDispatcher implements Dispatcher {
 
 		if(PeerManager.distance(myLoc, target) < PeerManager.distance(nearest, target)) {
 			if(logMINOR)
-				Logger.minor(this, "Updating nearest to "+myLoc+" from "+nearest+" for "+target+" and resetting htl from "+htl+" to "+Node.MAX_HTL);
+				Logger.minor(this, "Updating nearest to "+myLoc+" from "+nearest+" for "+target+" and resetting htl from "+htl+" to "+max);
 			nearest = myLoc;
-			htl = Node.MAX_HTL;
+			htl = max;
 			ctx.nearest = nearest;
 			ctx.htl = htl;
 		} else {
@@ -724,6 +725,6 @@ public class NodeDispatcher implements Dispatcher {
 			recentProbeRequestIDs.push(ll);
 		}
 		double nodeLoc = node.getLocation();
-		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : 1.0, nodeLoc, Node.MAX_HTL, (short)0, false, false, cb);
+		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : 1.0, nodeLoc, node.maxHTL(), (short)0, false, false, cb);
 	}
 }

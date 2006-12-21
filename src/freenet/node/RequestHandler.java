@@ -51,7 +51,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         double keyLoc = key.toNormalizedDouble();
         if(PeerManager.distance(keyLoc, myLoc) < PeerManager.distance(keyLoc, closestLoc)) {
             closestLoc = myLoc;
-            htl = Node.MAX_HTL;
+            htl = node.maxHTL();
             resetClosestLoc = true;
         } else
         	resetClosestLoc = false;

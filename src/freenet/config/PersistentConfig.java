@@ -13,6 +13,10 @@ public class PersistentConfig extends Config {
 	protected SimpleFieldSet origConfigFileContents;
 	protected boolean finishedInit;
 
+	public PersistentConfig(SimpleFieldSet initialContents) {
+		this.origConfigFileContents = initialContents;
+	}
+	
 	/**
 	 * Finished initialization. So any remaining options must be invalid.
 	 */

@@ -708,4 +708,8 @@ public class UdpSocketManager extends Thread {
 		}
 		return messageCounts;
 	}
+
+	public int getDropProbability() {
+		return _dropProbability;
+	}
 }

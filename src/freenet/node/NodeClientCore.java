@@ -282,7 +282,7 @@ public class NodeClientCore {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
-		Object o = node.makeRequestSender(key.getNodeCHK(), Node.MAX_HTL, uid, null, node.getLocation(), false, localOnly, cache, ignoreStore);
+		Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, node.getLocation(), false, localOnly, cache, ignoreStore);
 		if(o instanceof CHKBlock) {
 			try {
 				return new ClientCHKBlock((CHKBlock)o, key);
@@ -378,7 +378,7 @@ public class NodeClientCore {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
-		Object o = node.makeRequestSender(key.getNodeKey(), Node.MAX_HTL, uid, null, node.getLocation(), false, localOnly, cache, ignoreStore);
+		Object o = node.makeRequestSender(key.getNodeKey(), node.maxHTL(), uid, null, node.getLocation(), false, localOnly, cache, ignoreStore);
 		if(o instanceof SSKBlock) {
 			try {
 				SSKBlock block = (SSKBlock)o;
@@ -491,7 +491,7 @@ public class NodeClientCore {
 			node.store(block);
 		}
 		is = node.makeInsertSender((NodeCHK)block.getKey(), 
-				Node.MAX_HTL, uid, null, headers, prb, false, node.getLocation(), cache);
+				node.maxHTL(), uid, null, headers, prb, false, node.getLocation(), cache);
 		boolean hasReceivedRejectedOverload = false;
 		// Wait for status
 		while(true) {
@@ -603,7 +603,7 @@ public class NodeClientCore {
 			}
 		}
 		is = node.makeInsertSender(block, 
-				Node.MAX_HTL, uid, null, false, node.getLocation(), false, cache);
+				node.maxHTL(), uid, null, false, node.getLocation(), false, cache);
 		boolean hasReceivedRejectedOverload = false;
 		// Wait for status
 		while(true) {

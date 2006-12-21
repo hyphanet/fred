@@ -1,15 +1,18 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.simulator;
 
-import freenet.crypt.DiffieHellman;
-import freenet.crypt.Yarrow;
+import freenet.crypt.RandomSource;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
-import freenet.support.FileLoggerHook;
+import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.node.FSParseException;
+import freenet.node.Node;
+import freenet.node.NodeStarter;
+import freenet.node.PeerNode;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
+import freenet.support.LoggerHook.InvalidThresholdException;
 
 /**
  * @author amphibian
@@ -23,23 +26,19 @@ import freenet.support.SimpleFieldSet;
  */
 public class RealNodePingTest {
 
-    public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException {
-        FileLoggerHook fh = Logger.setupStdoutLogging(Logger.MINOR, "");
-        Yarrow yarrow = new Yarrow();
-        DiffieHellman.init(yarrow);
+    public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, Node.NodeInitException, InvalidThresholdException {
+        RandomSource random = NodeStarter.globalTestInit("pingtest");
         // Create 2 nodes
-        Node node1 = new Node(5001, yarrow, null, "pingtest-", 0, false, fh, 0);
-        Node node2 = new Node(5002, yarrow, null, "pingtest-", 0, false, fh, 0);
-        SimpleFieldSet node1ref = node1.exportPublicFieldSet();
-        SimpleFieldSet node2ref = node2.exportPublicFieldSet();
+        Node node1 = NodeStarter.createTestNode(5001, "pingtest", false, false, true, Node.DEFAULT_MAX_HTL, 0, Node.DEFAULT_SWAP_INTERVAL, random);
+        Node node2 = NodeStarter.createTestNode(5002, "pingtest", false, false, true, Node.DEFAULT_MAX_HTL, 0, Node.DEFAULT_SWAP_INTERVAL, random);
         // Connect
-        node1.peers.connect(node2ref);
-        node2.peers.connect(node1ref);
+        node1.connect(node2);
+        node2.connect(node1);
         // No swapping
-        node1.start(null);
-        node2.start(null);
+        node1.start(true);
+        node2.start(true);
         // Ping
-        PeerNode pn = node1.peers.myPeers[0];
+        PeerNode pn = node1.getPeerNodes()[0];
         int pingID = 0;
         Thread.sleep(20000);
         //node1.usm.setDropProbability(4);

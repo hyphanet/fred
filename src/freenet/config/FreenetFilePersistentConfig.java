@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import freenet.node.Ticker;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 public class FreenetFilePersistentConfig extends FilePersistentConfig {
 	private boolean isWritingConfig = false;
@@ -34,10 +35,16 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 		}
 	};
 	
-	public FreenetFilePersistentConfig(File f) throws IOException {
-		super(f);
+	public FreenetFilePersistentConfig(SimpleFieldSet set, File filename, File tempFilename) throws IOException {
+		super(set, filename, tempFilename);
 	}
 
+	public static FreenetFilePersistentConfig constructFreenetFilePersistentConfig(File f) throws IOException {
+		File filename = f;
+		File tempFilename = new File(f.getPath()+".tmp");
+		return new FreenetFilePersistentConfig(load(filename, tempFilename), filename, tempFilename);
+	}
+	
 	public void store() {
 		synchronized(this) {
 			if(!finishedInit) {

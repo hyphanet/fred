@@ -31,25 +31,28 @@ public class FilePersistentConfig extends PersistentConfig {
 	final File filename;
 	final File tempFilename;
 	protected final Object storeSync = new Object();
+
+	public static FilePersistentConfig constructFilePersistentConfig(File f) throws IOException {
+		File filename = f;
+		File tempFilename = new File(f.getPath()+".tmp");
+		return new FilePersistentConfig(load(filename, tempFilename), filename, tempFilename);
+	}
 	
-	public FilePersistentConfig(File f) throws IOException {
-		this.filename = f;
-		this.tempFilename = new File(f.getPath()+".tmp");
+	static SimpleFieldSet load(File filename, File tempFilename) throws IOException {
 		boolean filenameExists = filename.exists();
 		boolean tempFilenameExists = tempFilename.exists();
 		if(filenameExists && !filename.canWrite()) {
-			Logger.error(this, "Warning: Cannot write to config file: "+filename);
+			Logger.error(FilePersistentConfig.class, "Warning: Cannot write to config file: "+filename);
 			System.err.println("Warning: Cannot write to config file: "+filename);
 		}
 		if(tempFilenameExists && !tempFilename.canWrite()) {
-			Logger.error(this, "Warning: Cannot write to config tempfile: "+tempFilename);
+			Logger.error(FilePersistentConfig.class, "Warning: Cannot write to config tempfile: "+tempFilename);
 			System.err.println("Warning: Cannot write to config tempfile: "+tempFilename);
 		}
 		if(filenameExists) {
-			if(f.canRead()) {
+			if(filename.canRead()) {
 				try {
-					initialLoad(filename);
-					return;
+					return initialLoad(filename);
 				} catch (FileNotFoundException e) {
 					System.err.println("Cannot open config file "+filename+" : "+e+" - checking for temp file "+tempFilename);
 				} catch (EOFException e) {
@@ -65,7 +68,7 @@ public class FilePersistentConfig extends PersistentConfig {
 		if(tempFilename.exists()) {
 			if(tempFilename.canRead()) {
 				try {
-					initialLoad(tempFilename);
+					return initialLoad(tempFilename);
 				} catch (FileNotFoundException e) {
 					System.err.println("Cannot open temp config file either: "+tempFilename+" : "+e);
 				} // Other IOE's indicate a more serious problem.
@@ -74,25 +77,31 @@ public class FilePersistentConfig extends PersistentConfig {
 				throw new IOException("Cannot read (temp) config file "+tempFilename);
 			}
 		}
-		System.err.println("No config file found, creating new: "+f);
+		System.err.println("No config file found, creating new: "+filename);
+		return null;
+	}
+	
+	protected FilePersistentConfig(SimpleFieldSet origFS, File fnam, File temp) throws IOException {
+		super(origFS);
+		this.filename = fnam;
+		this.tempFilename = temp;
 	}
 
 	/** Load the config file into a SimpleFieldSet. 
 	 * @throws IOException */
-	protected void initialLoad(File toRead) throws IOException {
+	private static SimpleFieldSet initialLoad(File toRead) throws IOException {
+		if(toRead == null) return null;
 		FileInputStream fis = new FileInputStream(toRead);
 		BufferedInputStream bis = new BufferedInputStream(fis);
 		try {
 			LineReadingInputStream lis = new LineReadingInputStream(bis);
 			// Config file is UTF-8 too!
-			synchronized (this) {
-				origConfigFileContents = new SimpleFieldSet(lis, 32768, 128, true, true);
-			}
+			return new SimpleFieldSet(lis, 32768, 128, true, true);
 		} finally {
 			try {
 				fis.close();
 			} catch (IOException e) {
-				System.err.println("Could not close "+filename+": "+e);
+				System.err.println("Could not close "+toRead+": "+e);
 				e.printStackTrace();
 			}
 		}

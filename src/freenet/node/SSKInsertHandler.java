@@ -56,7 +56,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         double myLoc = node.lm.getLocation().getValue();
         if(PeerManager.distance(targetLoc, myLoc) < PeerManager.distance(targetLoc, closestLoc)) {
             closestLoc = myLoc;
-            htl = Node.MAX_HTL;
+            htl = node.maxHTL();
             resetClosestLoc = true;
         } else resetClosestLoc = false;
         byte[] pubKeyHash = ((ShortBuffer)req.getObject(DMT.PUBKEY_HASH)).getData();

@@ -90,11 +90,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     private boolean verifiedIncompatibleNewerVersion;
 	
-    /** For debugging/testing, set this to true to stop the
-     * probabilistic decrement at the edges of the HTLs.
-     */
-    static boolean disableProbabilisticHTLs;
-
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;
     
@@ -1219,14 +1214,15 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * @return The new HTL.
      */
     public short decrementHTL(short htl) {
-        if(htl > Node.MAX_HTL) htl = Node.MAX_HTL;
+    	short max = node.maxHTL();
+        if(htl > max) htl = max;
         if(htl <= 0) htl = 1;
-        if(htl == Node.MAX_HTL) {
-            if(decrementHTLAtMaximum) htl--;
+        if(htl == max) {
+            if(decrementHTLAtMaximum && !node.disableProbabilisticHTLs) htl--;
             return htl;
         }
         if(htl == 1) {
-            if(decrementHTLAtMinimum) htl--;
+            if(decrementHTLAtMinimum && !node.disableProbabilisticHTLs) htl--;
             return htl;
         }
         htl--;

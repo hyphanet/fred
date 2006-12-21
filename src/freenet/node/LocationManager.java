@@ -28,7 +28,7 @@ import freenet.support.ShortBuffer;
  * Tracks the Location of the node. Negotiates swap attempts.
  * Initiates swap attempts. Deals with locking.
  */
-class LocationManager {
+public class LocationManager {
 
     public class MyCallback extends SendMessageOnErrorCallback {
         
