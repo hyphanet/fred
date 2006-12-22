@@ -81,7 +81,7 @@ public class PluginToadlet extends Toadlet {
 			return;
 		}
 
-		String action = httpRequest.getPartAsString("action", 32);
+		String action = httpRequest.getParam("action");
 		if (action.length() == 0) {
 			writePermanentRedirect(ctx, "Plugin list", "?action=list");
 			return;
