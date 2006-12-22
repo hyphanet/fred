@@ -44,9 +44,14 @@ public class StringArrOption extends Option {
 	}
 	
 	private String[] stringToArray(String val) throws URLEncodedFormatException {
+		if(val.length() == 0) return new String[0];
 		String[] out = val.split(delimiter);
-		for(int i=0;i<out.length;i++)
-			out[i] = URLDecoder.decode(out[i], true /* FIXME false */);
+		for(int i=0;i<out.length;i++) {
+			if(out[i].equals(":"))
+				out[i] = "";
+			else
+				out[i] = URLDecoder.decode(out[i], true /* FIXME false */);
+		}
 		return out;
 	}
 
@@ -70,8 +75,13 @@ public class StringArrOption extends Option {
 		if (arr == null)
 			return null;
 		StringBuffer sb = new StringBuffer();
-		for (int i = 0 ; i < arr.length ; i++)
-			sb.append(URLEncoder.encode(arr[i])).append(delimiter);
+		for (int i = 0 ; i < arr.length ; i++) {
+			String val = arr[i];
+			if(val.length() == 0)
+				sb.append(":").append(delimiter);
+			else
+				sb.append(URLEncoder.encode(arr[i])).append(delimiter);
+		}
 		if(sb.length() > 0) sb.setLength(sb.length()-1); // drop surplus delimiter
 		return sb.toString();
 	}
