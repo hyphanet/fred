@@ -665,7 +665,8 @@ public class KeyTracker {
         			" which we haven't sent yet or which they have already acked (next="+nextPacketNumber+ ')';
         		// Might just be late, but could indicate something serious.
         		if(isDeprecated) {
-        			Logger.minor(this, "Other side wants us to resend packet "+seqNumber+" for "+this+" - we cannot do this because we are deprecated");
+        			if(logMINOR)
+        				Logger.minor(this, "Other side wants us to resend packet "+seqNumber+" for "+this+" - we cannot do this because we are deprecated");
         		} else {
         			Logger.normal(this, msg);
         		}
