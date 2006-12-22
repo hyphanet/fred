@@ -472,12 +472,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         BlockCipher cipher = pn.outgoingSetupCipher;
         if(logMINOR) Logger.minor(this, "Outgoing cipher: "+HexUtil.bytesToHex(pn.outgoingSetupKey));
         PCFBMode pcfb = new PCFBMode(cipher);
+        int paddingLength = node.random.nextInt(100);
         byte[] iv = new byte[pcfb.lengthIV()];
         node.random.nextBytes(iv);
         MessageDigest md = SHA256.getMessageDigest();
         byte[] hash = md.digest(output);
         if(logMINOR) Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
-        byte[] data = new byte[iv.length + hash.length + 2 /* length */ + output.length];
+        byte[] data = new byte[iv.length + hash.length + 2 /* length */ + output.length + paddingLength];
         pcfb.reset(iv);
         System.arraycopy(iv, 0, data, 0, iv.length);
         pcfb.blockEncipher(hash, 0, hash.length);
@@ -487,6 +488,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         data[hash.length+iv.length+1] = (byte) pcfb.encipher((byte)length);
         pcfb.blockEncipher(output, 0, output.length);
         System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
+        byte[] random = new byte[paddingLength];
+        // FIXME don't use node.random
+        node.random.nextBytes(random);
+        System.arraycopy(random, 0, data, hash.length+iv.length+2+output.length, random.length);
         try {
         	sendPacket(data, replyTo, pn, 0);
 		} catch (LocalAddressException e) {
