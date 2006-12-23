@@ -4,6 +4,7 @@
 package freenet.config;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 /** Global configuration object for a node. SubConfig's register here.
  * Handles writing to a file etc.
@@ -13,7 +14,7 @@ public class Config {
 	protected final HashMap configsByPrefix;
 	
 	public Config() {
-		configsByPrefix = new HashMap();
+		configsByPrefix = new LinkedHashMap();
 	}
 	
 	public void register(SubConfig sc) {
