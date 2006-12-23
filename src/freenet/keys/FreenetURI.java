@@ -36,7 +36,7 @@ import freenet.client.InserterException;
  * <code>freenet:[KeyType@]RoutingKey,CryptoKey[,n1=v1,n2=v2,...][/docname][/metastring]</code>
  * </p>
  * <p>
- * where KeyType is the TLA of the key (currently SVK, SSK, KSK, or CHK). If
+ * where KeyType is the TLA of the key (currently USK, SSK, KSK, or CHK). If
  * omitted, KeyType defaults to KSK.
  * BUT: CHKs don't support or require a docname.
  * KSKs and SSKs do.
