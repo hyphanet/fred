@@ -14,7 +14,10 @@ public class ThrottleWindowManager {
 	private long _totalPackets = 0, _droppedPackets = 0;
 	private double _simulatedWindowSize = 2;
 	
-	public ThrottleWindowManager(double def, SimpleFieldSet fs) {
+	private final Node node;
+	
+	public ThrottleWindowManager(double def, SimpleFieldSet fs, Node node) {
+		this.node = node;
 		if(fs != null) {
 			_totalPackets = fs.getInt("TotalPackets", 0);
 			_droppedPackets = fs.getInt("DroppedPackets", 0);
@@ -28,7 +31,7 @@ public class ThrottleWindowManager {
 		if (_simulatedWindowSize < 1.0) {
 			_simulatedWindowSize = 1.0F;
 		}
-		return _simulatedWindowSize;
+		return _simulatedWindowSize * Math.max(1, node.peers.countRoutablePeers());
 	}
 
 	public synchronized void rejectedOverload() {

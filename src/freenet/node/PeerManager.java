@@ -721,4 +721,21 @@ public class PeerManager {
 	public void start() {
 		node.clientCore.alerts.register(ua);
 	}
+
+	public int countRoutablePeers() {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = connectedPeers; // even if myPeers peers are connected they won't be routed to
+		}
+		int count = 0;
+		int countNoBackoff = 0;
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i].isRoutable()) {
+				count++;
+				if(peers[i].isRoutingBackedOff()) countNoBackoff++;
+			}
+		}
+		if(countNoBackoff == 0) return count;
+		return countNoBackoff;
+	}
 }
