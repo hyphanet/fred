@@ -37,7 +37,6 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentMutableConfig;
 
 import freenet.client.FetcherContext;
-import freenet.config.Config;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.PersistentConfig;
