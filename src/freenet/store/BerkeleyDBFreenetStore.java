@@ -1291,9 +1291,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		}
     		if(t!=null)
     			try{t.abort();}catch(DatabaseException ex2){}
-           	checkSecondaryDatabaseError(ex);
     		Logger.error(this, "Caught "+ex, ex);
     		ex.printStackTrace();
+           	checkSecondaryDatabaseError(ex);
         	throw new IOException(ex.getMessage());
         }
     	
