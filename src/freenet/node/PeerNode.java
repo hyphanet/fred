@@ -2492,6 +2492,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(setting && isBurstOnly()) {
 			setBurstOnly(false);
 		}
+		stopARKFetcher();
 		setPeerNodeStatus(System.currentTimeMillis());
         node.peers.writePeers();
 	}
