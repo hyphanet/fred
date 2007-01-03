@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import java.text.DateFormat;
+import java.util.Date;
+
 import freenet.node.PeerNode;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
@@ -15,13 +18,19 @@ public class N2NTMUserAlert implements UserAlert {
 	private String targetNodename;
 	private String messageText;
 	private int fileNumber;
+	private long composedTime;
+	private long sentTime;
+	private long receivedTime;
 
-	public N2NTMUserAlert(PeerNode sourcePeerNode, String source, String target, String message, int fileNumber) {
-	  this.sourcePeerNode = sourcePeerNode;
+	public N2NTMUserAlert(PeerNode sourcePeerNode, String source, String target, String message, int fileNumber, long composedTime, long  sentTime, long receivedTime) {
+		this.sourcePeerNode = sourcePeerNode;
 		this.sourceNodename = source;
 		this.targetNodename = target;
 		this.messageText = message;
 		this.fileNumber = fileNumber;
+		this.composedTime = composedTime;
+		this.sentTime = sentTime;
+		this.receivedTime = receivedTime;
 		isValid=true;
 	}
 	
@@ -52,7 +61,7 @@ public class N2NTMUserAlert implements UserAlert {
 
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
-		alertNode.addChild("p", "From: " + sourceNodename);
+		alertNode.addChild("p", "From: " + sourceNodename + " (composed: " + DateFormat.getInstance().format(new Date(composedTime)) + "/sent: " + DateFormat.getInstance().format(new Date(sentTime)) + "/received: " + DateFormat.getInstance().format(new Date(receivedTime)) + ')');
 		String[] lines = messageText.split("\n");
 		for (int i = 0, c = lines.length; i < c; i++) {
 			alertNode.addChild("div", lines[i]);

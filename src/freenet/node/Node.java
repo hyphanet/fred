@@ -2975,15 +2975,21 @@ public class Node {
 		String source_nodename = null;
 		String target_nodename = null;
 		String text = null;
+		long composedTime = -1;
+		long sentTime = -1;
+		long receivedTime = -1;
 	  	try {
 			source_nodename = new String(Base64.decode(fs.get("source_nodename")));
 			target_nodename = new String(Base64.decode(fs.get("target_nodename")));
 			text = new String(Base64.decode(fs.get("text")));
+			composedTime = fs.getLong("composedTime", -1);
+			sentTime = fs.getLong("sentTime", -1);
+			receivedTime = fs.getLong("receivedTime", -1);
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
 			return;
 		}
-		N2NTMUserAlert userAlert = new N2NTMUserAlert(source, source_nodename, target_nodename, text, fileNumber);
+		N2NTMUserAlert userAlert = new N2NTMUserAlert(source, source_nodename, target_nodename, text, fileNumber, composedTime, sentTime, receivedTime);
 			clientCore.alerts.register(userAlert);
 	  } else {
 		Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
