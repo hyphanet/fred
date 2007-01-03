@@ -156,12 +156,8 @@ public abstract class Fields {
 	}
 
 	public static final String[] commaList(String ls) {
+		if(ls == null) return null;
 		StringTokenizer st = new StringTokenizer(ls, ",");
-		// FIXME: Next line can NPE
-		//       at java.lang.String.charAt(String.java:560)
-		//       at java.util.StringTokenizer.skipDelimiters(StringTokenizer.java:234)
-		//       at java.util.StringTokenizer.countTokens(StringTokenizer.java:406)
-		//       at freenet.support.Fields.commaList(Fields.java:160)
 		String[] r = new String[st.countTokens()];
 		for (int i = 0; i < r.length; i++) {
 			r[i] = st.nextToken().trim();

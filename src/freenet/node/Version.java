@@ -196,10 +196,10 @@ public class Version {
 		String[] v = Fields.commaList(version);
 		String[] lgv = Fields.commaList(lastGoodVersion);
 
-		if ((v.length < 3) || !goodProtocol(v[2])) {
+		if ((v == null || v.length < 3) || !goodProtocol(v[2])) {
 			return false;
 		}
-		if ((lgv.length < 3) || !goodProtocol(lgv[2])) {
+		if ((lgv == null || lgv.length < 3) || !goodProtocol(lgv[2])) {
 			return false;
 		}
 		if (sameArbitraryVersion(v,lgv)) {
