@@ -114,7 +114,7 @@ public class FilePersistentConfig extends PersistentConfig {
 	public void store() {
 		synchronized(this) {
 			if(!finishedInit) {
-				Logger.error(this, "Initialization not finished, refusing to write config", new Exception("error"));
+				Logger.minor(this, "Initialization not finished, refusing to write config", new Exception("error"));
 				return;
 			}
 		}
