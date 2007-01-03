@@ -61,7 +61,7 @@ public class N2NTMUserAlert implements UserAlert {
 
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
-		alertNode.addChild("p", "From: " + sourceNodename + " (composed: " + DateFormat.getInstance().format(new Date(composedTime)) + "/sent: " + DateFormat.getInstance().format(new Date(sentTime)) + "/received: " + DateFormat.getInstance().format(new Date(receivedTime)) + ')');
+		alertNode.addChild("p", "From: " + sourceNodename + " (composed: " + DateFormat.getInstance().format(new Date(composedTime)) + " | sent: " + DateFormat.getInstance().format(new Date(sentTime)) + " | received: " + DateFormat.getInstance().format(new Date(receivedTime)) + ')');
 		String[] lines = messageText.split("\n");
 		for (int i = 0, c = lines.length; i < c; i++) {
 			alertNode.addChild("div", lines[i]);
