@@ -366,6 +366,24 @@ table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes
 	font-size: 7pt;
 }
 
+#reftext {
+	width: 100%;
+}
+
+#refurl {
+	width: 100%;
+}
+
+#reffile {
+	width: 100%;
+}
+
+/* statistics page */
+
+div.peercircle {
+  margin: 0 auto;
+}
+
 div.peercircle span.mark {
   color: #d0d0d0;
 }
@@ -390,16 +408,18 @@ div.peercircle span.disconnected {
   font-weight: bold;
 }
 
-#reftext {
-	width: 100%;
+div.histogramLabel {
+  margin-left: 3px;
+  margin-right: 3px;
+  font-size: 60%;
 }
 
-#refurl {
-	width: 100%;
+div.histogramConnected {
+  background-color: #008000;
 }
 
-#reffile {
-	width: 100%;
+div.histogramDisconnected {
+  background-color: #d0d0d0;
 }
 
 /* queue page */

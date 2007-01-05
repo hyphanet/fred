@@ -186,6 +186,10 @@ li .configlongdesc {
 	color: #840;
 }
 
+div.peercircle {
+  margin: 0 auto;
+}
+
 div.peercircle span.mark {
   color: #d0d0d0;
 }
@@ -208,6 +212,20 @@ div.peercircle span.backed_off {
 div.peercircle span.disconnected {
   color: #d0d0d0;
   font-weight: bold;
+}
+
+div.histogramLabel {
+  margin-left: 3px;
+  margin-right: 3px;
+  font-size: 60%;
+}
+
+div.histogramConnected {
+  background-color: #008000;
+}
+
+div.histogramDisconnected {
+  background-color: #d0d0d0;
 }
 
 th {
