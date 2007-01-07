@@ -162,7 +162,7 @@ public class PeerManagerUserAlert implements UserAlert {
 			
 			// FIXME I'm not convinced about the next one!
 		} else if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
-			s = replace(TOO_HIGH_PING, "\\{PING_TIME\\}", Integer.toString(bwlimitDelayTime));
+			s = replace(TOO_HIGH_PING, "\\{PING_TIME\\}", Integer.toString(nodeAveragePingTime));
 		} else if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
 			s = NEVER_CONNECTED_TWO_WEEKS;
 		} else throw new IllegalArgumentException("Not valid");
