@@ -27,7 +27,7 @@ public abstract class KeyAgreementSchemeContext {
         if(cipher != null) return cipher;
         getKey();
         try {
-            cipher = new Rijndael(256, 256);
+            cipher = new Rijndael(256, 256, false);
         } catch (UnsupportedCipherException e1) {
             throw new Error(e1);
         }

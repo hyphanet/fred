@@ -29,8 +29,8 @@ public class InsertableClientSSK extends ClientSSK {
 
 	public final DSAPrivateKey privKey;
 	
-	public InsertableClientSSK(String docName, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] cryptoKey) throws MalformedURLException {
-		super(docName, pubKeyHash, getExtraBytes(), pubKey, cryptoKey);
+	public InsertableClientSSK(String docName, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] cryptoKey, byte cryptoAlgorithm) throws MalformedURLException {
+		super(docName, pubKeyHash, getExtraBytes(cryptoAlgorithm), pubKey, cryptoKey);
 		if(pubKey == null) throw new NullPointerException();
 		this.privKey = privKey;
 	}
@@ -38,18 +38,38 @@ public class InsertableClientSSK extends ClientSSK {
 	public static InsertableClientSSK create(FreenetURI uri) throws MalformedURLException {
 		if(uri.getKeyType().equalsIgnoreCase("KSK"))
 			return ClientKSK.create(uri);
-		if(!uri.getKeyType().equalsIgnoreCase("SSK"))
-			throw new MalformedURLException();
+		
+		byte keyType;
+
+		byte[] extra = uri.getExtra();
+		if(uri.getKeyType().equals("SSK")) {
+			// FIXME remove once everyone is using PSKs
+			if(extra == null) {
+				keyType = Key.ALGO_INSECURE_AES_PCFB_256_SHA256;
+			} else {
+				// Formatted exactly as ,extra on fetching
+				if(extra.length < 5)
+					throw new MalformedURLException("SSK private key ,extra too short");
+				if(extra[1] != 1) {
+					throw new MalformedURLException("SSK not a private key");
+				}
+				keyType = extra[2];
+				if(!(keyType == Key.ALGO_AES_PCFB_256_SHA256 ||
+						keyType == Key.ALGO_INSECURE_AES_PCFB_256_SHA256))
+					throw new MalformedURLException("Unrecognized crypto type in SSK private key");
+			}
+		} else {
+			throw new MalformedURLException("Not a valid SSK insert URI type: "+uri.getKeyType());
+		}
+		
 		if((uri.getDocName() == null) || (uri.getDocName().length() == 0))
 			throw new MalformedURLException("SSK URIs must have a document name (to avoid ambiguity)");
-		if(uri.getExtra() != null)
-			throw new MalformedURLException("Insertable SSK URIs must NOT have ,extra - inserting from a pubkey rather than the privkey perhaps?");
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getKeyVal()));
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(pubKey.asBytes());
-		return new InsertableClientSSK(uri.getDocName(), md.digest(), pubKey, privKey, uri.getCryptoKey());
+		return new InsertableClientSSK(uri.getDocName(), md.digest(), pubKey, privKey, uri.getCryptoKey(), keyType);
 	}
 	
 	public ClientSSKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, RandomSource r) throws SSKEncodeException, IOException {
@@ -89,7 +109,7 @@ public class InsertableClientSSK extends ClientSSK {
 
         Rijndael aes;
         try {
-			aes = new Rijndael(256, 256);
+			aes = new Rijndael(256, 256, cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256);
 		} catch (UnsupportedCipherException e) {
 			throw new Error("256/256 Rijndael not supported!");
 		}
@@ -188,14 +208,24 @@ public class InsertableClientSSK extends ClientSSK {
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
 		MessageDigest md = SHA256.getMessageDigest();
 		try {
-			return new InsertableClientSSK(docName, md.digest(pubKey.asBytes()), pubKey, privKey, ckey);
+			return new InsertableClientSSK(docName, md.digest(pubKey.asBytes()), pubKey, privKey, ckey, Key.ALGO_AES_PCFB_256_SHA256);
 		} catch (MalformedURLException e) {
 			throw new Error(e);
 		}
 	}
 
 	public FreenetURI getInsertURI() {
-		return new FreenetURI("SSK", docName, privKey.getX().toByteArray(), cryptoKey, null);
+		return new FreenetURI("SSK", docName, privKey.getX().toByteArray(), cryptoKey, getInsertExtraBytes());
+	}
+
+	private byte[] getInsertExtraBytes() {
+		byte[] extra = getExtraBytes();
+		extra[1] = 1; // insert
+		return extra;
+	}
+
+	public DSAGroup getCryptoGroup() {
+		return Global.DSAgroupBigA;
 	}
 	
 }

@@ -21,18 +21,21 @@ public class NodeCHK extends Key {
     /** 32 bytes for hash, 2 bytes for type */
     public static final short KEY_SIZE_ON_DISK = 34;
 	
-    public NodeCHK(byte[] routingKey2) {
+    public NodeCHK(byte[] routingKey2, byte cryptoAlgorithm) {
     	super(routingKey2);
         if(routingKey2.length != KEY_LENGTH)
             throw new IllegalArgumentException("Wrong length: "+routingKey2.length+" should be "+KEY_LENGTH);
+        this.cryptoAlgorithm = cryptoAlgorithm;
     }
 
     static final int KEY_LENGTH = 32;
     
-    // 01 = CHK, 01 = first version of CHK
-    public static final short TYPE = 0x0101;
+	/** Crypto algorithm */
+	final byte cryptoAlgorithm;
     /** The size of the data */
 	public static final int BLOCK_SIZE = 32768;
+
+	public static final byte BASE_TYPE = 1;
 
     public final void writeToDataOutputStream(DataOutputStream stream) throws IOException {
         write(stream);
@@ -43,14 +46,14 @@ public class NodeCHK extends Key {
     }
 
     public final void write(DataOutput _index) throws IOException {
-        _index.writeShort(TYPE);
+        _index.writeShort(getType());
         _index.write(routingKey);
     }
     
-    public static Key readCHK(DataInput raf) throws IOException {
+    public static Key readCHK(DataInput raf, byte algo) throws IOException {
         byte[] buf = new byte[KEY_LENGTH];
         raf.readFully(buf);
-        return new NodeCHK(buf);
+        return new NodeCHK(buf, algo);
     }
 
     public boolean equals(Object key) {
@@ -66,7 +69,7 @@ public class NodeCHK extends Key {
     }
 
 	public short getType() {
-		return TYPE;
+		return (short) (0x100 + (cryptoAlgorithm & 0xFF));
 	}
     
     public byte[] getRoutingKey(){

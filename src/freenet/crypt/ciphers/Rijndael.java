@@ -19,7 +19,10 @@ import freenet.support.Logger;
  */
 public class Rijndael implements BlockCipher {
     private Object sessionKey;
-    private int keysize, blocksize;
+    private final int keysize, blocksize;
+    // FIXME remove. This is used to simulate an old security threatening bug in order
+    // to have backwards compatibility with old keys.
+    private final int cryptBlockSize;
 
     // for Util.getCipherByName..  and yes, screw you too, java
     public Rijndael(Integer keysize) throws UnsupportedCipherException {
@@ -27,10 +30,19 @@ public class Rijndael implements BlockCipher {
     }
 
     public Rijndael(int keysize) throws UnsupportedCipherException {
-	this(keysize, 128);
+	this(keysize, 128, false);
     }
 
-    public Rijndael(int keysize, int blocksize) throws UnsupportedCipherException {
+    /**
+     * Create a Rijndael instance.
+     * @param keysize The key size.
+     * @param blocksize The block size.
+     * @param fakeInsecure If true, only encrypt the first 128 bits of any block. This
+     * is insecure! It is used for backwards compatibility with old data encrypted with
+     * the old code.
+     * @throws UnsupportedCipherException
+     */
+    public Rijndael(int keysize, int blocksize, boolean fakeInsecure) throws UnsupportedCipherException {
 	if (! ((keysize == 128) ||
 	       (keysize == 192) ||
 	       (keysize == 256)))
@@ -41,11 +53,18 @@ public class Rijndael implements BlockCipher {
 	    throw new UnsupportedCipherException("Invalid blocksize");
 	this.keysize=keysize;
 	this.blocksize=blocksize;
+	// FIXME This is deliberate insecurity! It is used for backwards compatibility *ONLY*!
+	// FIXME IT MUST BE REMOVED SOON!
+	if(fakeInsecure)
+		this.cryptBlockSize = 128;
+	else
+		this.cryptBlockSize = blocksize;
     }
 
     public Rijndael() {
         this.keysize   = 128;
         this.blocksize = 128;
+        this.cryptBlockSize = 128;
     }
 
     public final int getBlockSize() {
@@ -60,7 +79,7 @@ public class Rijndael implements BlockCipher {
 	try {
 	    byte[] nkey=new byte[keysize>>3];
 	    System.arraycopy(key, 0, nkey, 0, nkey.length);
-	    sessionKey=Rijndael_Algorithm.makeKey(nkey);
+	    sessionKey=Rijndael_Algorithm.makeKey(nkey, cryptBlockSize/8);
 	} catch (InvalidKeyException e) {
 	    e.printStackTrace();
 	    Logger.error(this,"Invalid key");
@@ -70,13 +89,13 @@ public class Rijndael implements BlockCipher {
     public synchronized final void encipher(byte[] block, byte[] result) {
         if(block.length != blocksize/8)
             throw new IllegalArgumentException();
-	Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey);
+	Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, cryptBlockSize/8);
     }
 
     public synchronized final void decipher(byte[] block, byte[] result) {
         if(block.length != blocksize/8)
             throw new IllegalArgumentException();
-	Rijndael_Algorithm.blockDecrypt(block, result, 0, sessionKey);
+	Rijndael_Algorithm.blockDecrypt(block, result, 0, sessionKey, cryptBlockSize/8);
     }
 
     public static void main(String[] args) throws UnsupportedCipherException {

@@ -24,11 +24,11 @@ public class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 1009;
+	private static final int buildNumber = 1010;
 
 	/** Oldest build of Fred we will talk to */
-	private static final int oldLastGoodBuild = 1007;
-	private static final int newLastGoodBuild = 1009;
+	private static final int oldLastGoodBuild = 1010;
+	private static final int newLastGoodBuild = 1010;
 	private static final long transitionTime;
 	
 	static {

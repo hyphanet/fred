@@ -300,7 +300,7 @@ System.out.println();
      * @param k The 128/192/256-bit user-key to use.
      * @exception  InvalidKeyException  If the key is invalid.
      */
-    public static final Object makeKey (byte[] k) throws InvalidKeyException {
+    private static final Object makeKey (byte[] k) throws InvalidKeyException {
         return makeKey(k, BLOCK_SIZE);
     }
 
@@ -313,7 +313,7 @@ System.out.println();
      * @param  inOffset   Index of in from which to start considering data.
      * @param  sessionKey The session key to use for encryption.
      */
-    public static final void
+    private static final void
     blockEncrypt (byte[] in, byte[] result, int inOffset, Object sessionKey) {
 if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+ ')');
         int[][] Ke = (int[][]) ((Object[]) sessionKey)[0]; // extract encryption round keys
@@ -402,7 +402,7 @@ if (RDEBUG) trace(OUT, "blockEncrypt()");
      * @param  inOffset   Index of in from which to start considering data.
      * @param  sessionKey The session key to use for decryption.
      */
-    public static final void
+    private static final void
     blockDecrypt (byte[] in, byte[] result, int inOffset, Object sessionKey) {
 if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+ ')');
         int[][] Kd = (int[][]) ((Object[]) sessionKey)[1]; // extract decryption round keys

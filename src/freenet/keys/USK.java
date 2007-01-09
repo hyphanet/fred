@@ -25,6 +25,8 @@ public class USK extends BaseClientKey {
 	 * SSK form, and we don't need to go vice versa.
 	 */
 	static protected final String SEPARATOR = "-";
+	/** Encryption type */
+	public final byte cryptoAlgorithm;
 	/** Public key hash */
 	public final byte[] pubKeyHash;
 	/** Encryption key */
@@ -41,8 +43,9 @@ public class USK extends BaseClientKey {
 		this.cryptoKey = cryptoKey;
 		this.siteName = siteName;
 		this.suggestedEdition = suggestedEdition;
-		if(!Arrays.equals(extra, ClientSSK.getExtraBytes()))
-			throw new MalformedURLException("Invalid extra bytes");
+		// Verify extra bytes, get cryptoAlgorithm
+		ClientSSK tmp = new ClientSSK(siteName, pubKeyHash, extra, null, cryptoKey);
+		cryptoAlgorithm = tmp.cryptoAlgorithm;
 		if(pubKeyHash.length != NodeSSK.PUBKEY_HASH_SIZE)
 			throw new MalformedURLException("Pubkey hash wrong length: "+pubKeyHash.length+" should be "+NodeSSK.PUBKEY_HASH_SIZE);
 		if(cryptoKey.length != ClientSSK.CRYPTO_KEY_LENGTH)
@@ -56,11 +59,12 @@ public class USK extends BaseClientKey {
 		return new USK(uri.getRoutingKey(), uri.getCryptoKey(), uri.getExtra(), uri.getDocName(), uri.getSuggestedEdition());
 	}
 	
-	protected USK(byte[] pubKeyHash2, byte[] cryptoKey2, String siteName2, long suggestedEdition2) {
+	protected USK(byte[] pubKeyHash2, byte[] cryptoKey2, String siteName2, long suggestedEdition2, byte cryptoAlgorithm) {
 		this.pubKeyHash = pubKeyHash2;
 		this.cryptoKey = cryptoKey2;
 		this.siteName = siteName2;
 		this.suggestedEdition = suggestedEdition2;
+		this.cryptoAlgorithm = cryptoAlgorithm;
 		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^
 			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
 	}
@@ -70,17 +74,18 @@ public class USK extends BaseClientKey {
 		this.cryptoKey = ssk.cryptoKey;
 		this.siteName = ssk.docName;
 		this.suggestedEdition = myARKNumber;
+		this.cryptoAlgorithm = ssk.cryptoAlgorithm;
 		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^
 			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
 	}
 
 	public FreenetURI getURI() {
-		return new FreenetURI(pubKeyHash, cryptoKey, ClientSSK.getExtraBytes(), siteName, suggestedEdition);
+		return new FreenetURI(pubKeyHash, cryptoKey, ClientSSK.getExtraBytes(cryptoAlgorithm), siteName, suggestedEdition);
 	}
 
 	public ClientSSK getSSK(long ver) {
 		try {
-			return new ClientSSK(siteName + SEPARATOR + ver, pubKeyHash, ClientSSK.getExtraBytes(), null, cryptoKey);
+			return new ClientSSK(siteName + SEPARATOR + ver, pubKeyHash, ClientSSK.getExtraBytes(cryptoAlgorithm), null, cryptoKey);
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Caught "+e+" should not be possible in USK.getSSK", e);
 			throw new Error(e);
@@ -93,7 +98,7 @@ public class USK extends BaseClientKey {
 	
 	public USK copy(long edition) {
 		if(suggestedEdition == edition) return this;
-		return new USK(pubKeyHash, cryptoKey, siteName, edition);
+		return new USK(pubKeyHash, cryptoKey, siteName, edition, cryptoAlgorithm);
 	}
 
 	public USK clearCopy() {
@@ -122,7 +127,7 @@ public class USK extends BaseClientKey {
 	}
 
 	public FreenetURI getBaseSSK() {
-		return new FreenetURI("SSK", siteName, pubKeyHash, cryptoKey, ClientSSK.getExtraBytes());
+		return new FreenetURI("SSK", siteName, pubKeyHash, cryptoKey, ClientSSK.getExtraBytes(cryptoAlgorithm));
 	}
 	
 	public String toString() {

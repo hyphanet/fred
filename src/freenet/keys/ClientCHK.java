@@ -25,7 +25,7 @@ public class ClientCHK extends ClientKey {
     /** Is the data a control document? */
     final boolean controlDocument;
     /** Encryption algorithm */
-    final short cryptoAlgorithm;
+    final byte cryptoAlgorithm;
     /** Compression algorithm, negative means uncompressed */
     final short compressionAlgorithm;
     
@@ -49,7 +49,7 @@ public class ClientCHK extends ClientKey {
      * values.
      */
     public ClientCHK(byte[] routingKey, byte[] encKey,  
-            boolean isControlDocument, short algo, short compressionAlgorithm) {
+            boolean isControlDocument, byte algo, short compressionAlgorithm) {
         this.routingKey = routingKey;
         this.cryptoKey = encKey;
         this.controlDocument = isControlDocument;
@@ -68,8 +68,10 @@ public class ClientCHK extends ClientKey {
         byte[] extra = uri.getExtra();
         if((extra == null) || (extra.length < 5))
             throw new MalformedURLException();
-        cryptoAlgorithm = (short)(((extra[0] & 0xff) << 8) + (extra[1] & 0xff));
-		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
+        // byte 0 is reserved, for now
+        cryptoAlgorithm = extra[1];
+		if((!(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 ||
+				cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256)))
 			throw new MalformedURLException("Invalid crypto algorithm");
         controlDocument = (extra[2] & 0x02) != 0;
         compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
@@ -83,8 +85,10 @@ public class ClientCHK extends ClientKey {
 	private ClientCHK(DataInputStream dis) throws IOException {
 		byte[] extra = new byte[EXTRA_LENGTH];
 		dis.readFully(extra);
-        cryptoAlgorithm = (short)(((extra[0] & 0xff) << 8) + (extra[1] & 0xff));
-		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
+		// byte 0 is reserved, for now
+        cryptoAlgorithm = extra[1];
+		if((!(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 ||
+				cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256)))
 			throw new MalformedURLException("Invalid crypto algorithm");
         compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
         controlDocument = (extra[2] & 0x02) != 0;
@@ -126,7 +130,7 @@ public class ClientCHK extends ClientKey {
 
 	public NodeCHK getNodeCHK() {
 		if(nodeKey == null)
-	        nodeKey = new NodeCHK(routingKey);
+	        nodeKey = new NodeCHK(routingKey, cryptoAlgorithm);
 	    return nodeKey;
 	}
 	

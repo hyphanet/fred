@@ -467,9 +467,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         			"\nFor:       "+getPeer());
         
         try {
-            incomingSetupCipher = new Rijndael(256,256);
+            incomingSetupCipher = new Rijndael(256,256,false);
             incomingSetupCipher.initialize(incomingSetupKey);
-            outgoingSetupCipher = new Rijndael(256,256);
+            outgoingSetupCipher = new Rijndael(256,256,false);
             outgoingSetupCipher.initialize(outgoingSetupKey);
         } catch (UnsupportedCipherException e1) {
             Logger.error(this, "Caught: "+e1);

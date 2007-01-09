@@ -47,7 +47,7 @@ public class SerializableToFieldSetBucketUtil {
 				FileBucket fb = new FileBucket(fnam, false, false, false, true);
 				try {
 					PaddedEphemerallyEncryptedBucket eb = 
-						new PaddedEphemerallyEncryptedBucket(fb, 1024, len, decryptKey, random);
+						new PaddedEphemerallyEncryptedBucket(fb, 1024, len, decryptKey, random, true);
 					return eb;
 				} catch (IOException e) {
 					throw new CannotCreateFromFieldSetException("Cannot create from old-format fieldset: "+e, e);

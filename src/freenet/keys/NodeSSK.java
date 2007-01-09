@@ -27,6 +27,8 @@ import freenet.support.Logger;
  */
 public class NodeSSK extends Key {
 	
+	/** Crypto algorithm */
+	final byte cryptoAlgorithm;
 	/** Public key hash */
 	final byte[] pubKeyHash;
 	/** E(H(docname)) (E = encrypt using decrypt key, which only clients know) */
@@ -39,15 +41,17 @@ public class NodeSSK extends Key {
 	
 	static final int PUBKEY_HASH_SIZE = 32;
 	static final int E_H_DOCNAME_SIZE = 32;
+	static final byte BASE_TYPE = 2;
 	
 	public String toString() {
 		return super.toString()+":pkh="+HexUtil.bytesToHex(pubKeyHash)+":ehd="+HexUtil.bytesToHex(encryptedHashedDocname);
 	}
 	
-	public NodeSSK(byte[] pkHash, byte[] ehDocname, DSAPublicKey pubKey) throws SSKVerifyException {
+	public NodeSSK(byte[] pkHash, byte[] ehDocname, DSAPublicKey pubKey, byte cryptoAlgorithm) throws SSKVerifyException {
 		super(makeRoutingKey(pkHash, ehDocname));
 		this.encryptedHashedDocname = ehDocname;
 		this.pubKeyHash = pkHash;
+		this.cryptoAlgorithm = cryptoAlgorithm;
 		this.pubKey = pubKey;
 		if(pubKey != null) {
 			MessageDigest md256 = SHA256.getMessageDigest();
@@ -70,22 +74,19 @@ public class NodeSSK extends Key {
 		return md256.digest();
 	}
 	
-	// 01 = SSK, 01 = first version of SSK
-	public static short TYPE = 0x0201;
-	
 	public void write(DataOutput _index) throws IOException {
-        _index.writeShort(TYPE);
+        _index.writeShort(getType());
         _index.write(encryptedHashedDocname);
         _index.write(pubKeyHash);
 	}
 
-    public static Key readSSK(DataInput raf) throws IOException {
+    public static Key readSSK(DataInput raf, byte cryptoAlgorithm) throws IOException {
         byte[] buf = new byte[E_H_DOCNAME_SIZE];
         raf.readFully(buf);
         byte[] buf2 = new byte[PUBKEY_HASH_SIZE];
         raf.readFully(buf2);
         try {
-			return new NodeSSK(buf2, buf, null);
+			return new NodeSSK(buf2, buf, null, cryptoAlgorithm);
 		} catch (SSKVerifyException e) {
 			IllegalStateException impossible = 
 				new IllegalStateException("Impossible: "+e);
@@ -95,7 +96,7 @@ public class NodeSSK extends Key {
     }
 
 	public short getType() {
-		return TYPE;
+		return (short) (0x0200 + (cryptoAlgorithm & 0xff));
 	}
 
 	public void writeToDataOutputStream(DataOutputStream stream) throws IOException {

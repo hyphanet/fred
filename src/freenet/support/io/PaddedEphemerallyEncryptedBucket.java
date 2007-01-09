@@ -31,6 +31,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	private final Rijndael aes;
 	/** The decryption key. May be null. */
 	private final byte[] key;
+	/** Broken (old) encryption? */
+	private final boolean brokenEncryption;
 	private long dataLength;
 	private boolean readOnly;
 	private int lastOutputStream;
@@ -48,10 +50,11 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		this.bucket = bucket;
 		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");
 		try {
-			aes = new Rijndael(256, 256);
+			aes = new Rijndael(256, 256, false);
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
+		brokenEncryption = false;
 		byte[] tempKey = new byte[32];
 		origRandom.nextBytes(tempKey);
 		aes.initialize(tempKey);
@@ -78,14 +81,15 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	 * @param origRandom
 	 * @throws IOException 
 	 */
-	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, long knownSize, byte[] key, RandomSource origRandom) throws IOException {
+	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, long knownSize, byte[] key, RandomSource origRandom, boolean oldCrypto) throws IOException {
 		if(bucket.size() < knownSize)
 			throw new IOException("Bucket "+bucket+" is too small on disk - knownSize="+knownSize+" but bucket.size="+bucket.size()+" for "+bucket);
 		this.dataLength = knownSize;
 		this.origRandom = origRandom;
 		this.bucket = bucket;
+		brokenEncryption = oldCrypto;
 		try {
-			aes = new Rijndael(256, 256);
+			aes = new Rijndael(256, 256, oldCrypto);
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
@@ -113,9 +117,10 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		tmp = fs.get("DecryptKey");
 		if(tmp == null)
 			throw new CannotCreateFromFieldSetException("No key");
+		brokenEncryption = fs.get("CryptoType") == null;
 		key = HexUtil.hexToBytes(tmp);
 		try {
-			aes = new Rijndael(256, 256);
+			aes = new Rijndael(256, 256, brokenEncryption);
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
@@ -362,6 +367,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			return null;
 		}
 		fs.put("MinPaddedSize", minPaddedSize);
+		if(!brokenEncryption)
+			fs.put("CryptoType", "aes256");
 		return fs;
 	}
 

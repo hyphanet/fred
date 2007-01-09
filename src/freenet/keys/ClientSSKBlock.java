@@ -8,6 +8,7 @@ import java.io.IOException;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
@@ -47,7 +48,8 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		System.arraycopy(headers, headersOffset, decryptedHeaders, 0, ENCRYPTED_HEADERS_LENGTH);
 		Rijndael aes;
 		try {
-			aes = new Rijndael(256,256);
+			Logger.minor(this, "cryptoAlgorithm="+key.cryptoAlgorithm+" for "+getClientKey().getURI());
+			aes = new Rijndael(256,256,key.cryptoAlgorithm==Key.ALGO_INSECURE_AES_PCFB_256_SHA256);
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}

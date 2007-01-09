@@ -42,12 +42,16 @@ public class CHKBlock implements KeyBlock {
     public byte[] getData() {
         return data;
     }
-
+    
     public CHKBlock(byte[] data2, byte[] header2, NodeCHK key) throws CHKVerifyException {
-        this(data2, header2, key, true);
+    	this(data2, header2, key, key.cryptoAlgorithm);
+    }
+
+    public CHKBlock(byte[] data2, byte[] header2, NodeCHK key, byte cryptoAlgorithm) throws CHKVerifyException {
+        this(data2, header2, key, true, cryptoAlgorithm);
     }
     
-    public CHKBlock(byte[] data2, byte[] header2, NodeCHK key, boolean verify) throws CHKVerifyException {
+    public CHKBlock(byte[] data2, byte[] header2, NodeCHK key, boolean verify, byte cryptoAlgorithm) throws CHKVerifyException {
         data = data2;
         headers = header2;
         if(headers.length != TOTAL_HEADERS_LENGTH)
@@ -69,7 +73,7 @@ public class CHKBlock implements KeyBlock {
         md.update(data);
         byte[] hash = md.digest();
         if(key == null) {
-        	chk = new NodeCHK(hash);
+        	chk = new NodeCHK(hash, cryptoAlgorithm);
         } else {
         	chk = key;
             byte[] check = chk.routingKey;

@@ -34,7 +34,10 @@ public abstract class Key implements WritableToDataOutputStream {
     final byte[] routingKey;
     
     /** Code for 256-bit AES with PCFB and SHA-256 */
-    static final short ALGO_AES_PCFB_256_SHA256 = 1;
+    static final byte ALGO_AES_PCFB_256_SHA256 = 2;
+    /** Code for old, insecure (only encrypts first 128 bits of block) 256-bit AES with PCFB and SHA-256.
+     * FIXME: REMOVE!! */
+	static final byte ALGO_INSECURE_AES_PCFB_256_SHA256 = 1;
 
     protected Key(byte[] routingKey) {
     	this.routingKey = routingKey;
@@ -55,11 +58,12 @@ public abstract class Key implements WritableToDataOutputStream {
      * @return a Key, or throw an exception, or return null if the key is not parsable.
      */
     public static final Key read(DataInput raf) throws IOException {
-        short type = raf.readShort();
-        if(type == NodeCHK.TYPE) {
-            return NodeCHK.readCHK(raf);
-        } else if(type == NodeSSK.TYPE)
-        	return NodeSSK.readSSK(raf);
+    	byte type = raf.readByte();
+    	byte subtype = raf.readByte();
+        if(type == NodeCHK.BASE_TYPE) {
+            return NodeCHK.readCHK(raf, subtype);
+        } else if(type == NodeSSK.BASE_TYPE)
+        	return NodeSSK.readSSK(raf, subtype);
         
         throw new IOException("Unrecognized format: "+type);
     }

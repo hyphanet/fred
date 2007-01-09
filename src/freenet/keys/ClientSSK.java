@@ -16,6 +16,8 @@ import freenet.support.Logger;
 
 public class ClientSSK extends ClientKey {
 
+	/** Crypto type */
+	public final byte cryptoAlgorithm;
 	/** Document name */
 	public final String docName;
 	/** Public key */
@@ -34,6 +36,12 @@ public class ClientSSK extends ClientKey {
 		this.docName = docName;
 		this.pubKey = pubKey;
 		this.pubKeyHash = pubKeyHash;
+		if(extras.length < 5)
+			throw new MalformedURLException("Extra bytes too short: "+extras.length+" bytes");
+		this.cryptoAlgorithm = extras[2];
+		if(!(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 ||
+				cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256))
+			throw new MalformedURLException("Unknown encryption algorithm "+cryptoAlgorithm);
 		if(!Arrays.equals(extras, getExtraBytes()))
 			throw new MalformedURLException("Wrong extra bytes");
 		if(pubKeyHash.length != NodeSSK.PUBKEY_HASH_SIZE)
@@ -56,7 +64,7 @@ public class ClientSSK extends ClientKey {
 		}
 		byte[] buf = md.digest();
 		try {
-			Rijndael aes = new Rijndael(256,256);
+			Rijndael aes = new Rijndael(256,256,cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256);
 			aes.initialize(cryptoKey);
 			aes.encipher(buf, buf);
 			ehDocname = buf;
@@ -80,15 +88,17 @@ public class ClientSSK extends ClientKey {
 	public FreenetURI getURI() {
 		return new FreenetURI("SSK", docName, pubKeyHash, cryptoKey, getExtraBytes());
 	}
+
+	protected final byte[] getExtraBytes() {
+		return getExtraBytes(cryptoAlgorithm);
+	}
 	
-	protected static final byte[] getExtraBytes() {
+	protected static byte[] getExtraBytes(byte cryptoAlgorithm) {
 		// 5 bytes.
 		byte[] extra = new byte[5];
 
-		short cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
-		
 		extra[0] = NodeSSK.SSK_VERSION;
-		extra[1] = (byte) (cryptoAlgorithm >> 8);
+		extra[1] = 0; // 0 = fetch (public) URI; 1 = insert (private) URI
 		extra[2] = (byte) cryptoAlgorithm;
 		extra[3] = (byte) (KeyBlock.HASH_SHA256 >> 8);
 		extra[4] = (byte) KeyBlock.HASH_SHA256;
@@ -97,7 +107,7 @@ public class ClientSSK extends ClientKey {
 
 	public Key getNodeKey() {
 		try {
-			return new NodeSSK(pubKeyHash, ehDocname, pubKey);
+			return new NodeSSK(pubKeyHash, ehDocname, pubKey, cryptoAlgorithm);
 		} catch (SSKVerifyException e) {
 			IllegalStateException x = new IllegalStateException("Have already verified and yet it fails!: "+e);
 			Logger.error(this, "Have already verified and yet it fails!: "+e);

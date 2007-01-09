@@ -120,19 +120,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 
 	/**
-	 * Restore an encrypted temp bucket from last time.
-	 * @param filename The filename. Must exist unless len=0.
-	 * @param key The encryption key for the bucket.
-	 * @param len The data length. The file must be of at least this length.
-	 * @return
-	 * @throws IOException If the file doesn't exist or if it is too short.
-	 */
-	public Bucket registerEncryptedBucket(String filename, byte[] key, long len) throws IOException {
-		Bucket fileBucket = register(filename, len > 0);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(fileBucket, 1024, len, key, rand));
-	}
-	
-	/**
 	 * Free an allocated bucket, but only after the change has been written to disk.
 	 */
 	public void delayedFreeBucket(Bucket b) {
