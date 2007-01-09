@@ -36,7 +36,7 @@ public class InsertableUSK extends USK {
 		InsertableClientSSK ssk =
 			InsertableClientSSK.create(uri);
 		uri = uri.setKeyType("USK");
-		return new InsertablEusk(SSK.docName, ssk.pubKeyHash, ssk.cryptoKey, ssk.privKey, ssk.getCryptoGroup(), uri.getSuggestedEdition(), ssk.cryptoAlgorithm);
+		return new InsertableUSK(ssk.docName, ssk.pubKeyHash, ssk.cryptoKey, ssk.privKey, ssk.getCryptoGroup(), uri.getSuggestedEdition(), ssk.cryptoAlgorithm);
 	}
 	
 	InsertableUSK(String docName, byte[] pubKeyHash, byte[] cryptoKey, DSAPrivateKey key, DSAGroup group, long suggestedEdition, byte cryptoAlgorithm) throws MalformedURLException {
