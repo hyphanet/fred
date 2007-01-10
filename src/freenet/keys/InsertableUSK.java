@@ -32,10 +32,8 @@ public class InsertableUSK extends USK {
 	public static InsertableUSK createInsertable(FreenetURI uri) throws MalformedURLException {
 		if(!uri.getKeyType().equalsIgnoreCase("USK"))
 			throw new MalformedURLException();
-		uri = uri.setKeyType("SSK");
 		InsertableClientSSK ssk =
-			InsertableClientSSK.create(uri);
-		uri = uri.setKeyType("USK");
+			InsertableClientSSK.create(uri.setKeyType("SSK"));
 		return new InsertableUSK(ssk.docName, ssk.pubKeyHash, ssk.cryptoKey, ssk.privKey, ssk.getCryptoGroup(), uri.getSuggestedEdition(), ssk.cryptoAlgorithm);
 	}
 	
