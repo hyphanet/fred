@@ -27,6 +27,7 @@ public class FCPClient {
 	
 	public FCPClient(String name2, FCPServer server, FCPConnectionHandler handler, boolean isGlobalQueue) {
 		this.name = name2;
+		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
 		this.runningPersistentRequests = new HashSet();
 		this.completedUnackedRequests = new LRUQueue();
