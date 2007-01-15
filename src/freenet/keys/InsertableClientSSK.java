@@ -43,7 +43,7 @@ public class InsertableClientSSK extends ClientSSK {
 
 		byte[] extra = uri.getExtra();
 		if(uri.getKeyType().equals("SSK")) {
-			// FIXME remove once everyone is using PSKs
+			// FIXME: Remove once all SSKs migrated.
 			if(extra == null) {
 				keyType = Key.ALGO_INSECURE_AES_PCFB_256_SHA256;
 			} else {
