@@ -145,12 +145,12 @@ public abstract class ClientRequest {
 	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server) throws IOException {
 		SimpleFieldSet fs = new SimpleFieldSet(br);
 		String clientName = fs.get("ClientName");
-		if(clientName == null) {
+		boolean isGlobal = Fields.stringToBool(fs.get("Global"), false);
+		if(clientName == null && !isGlobal) {
 			Logger.error(ClientRequest.class, "Discarding old request with no ClientName: "+fs);
 			System.err.println("Discarding old request with no ClientName (see logs)");
 			return null;
 		}
-		boolean isGlobal = Fields.stringToBool(fs.get("Global"), false);
 		FCPClient client;
 		if(!isGlobal)
 			client = server.registerClient(clientName, server.core, null);
