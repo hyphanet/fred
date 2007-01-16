@@ -237,7 +237,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 	 */
 	public String processForm(String method, String action) throws CommentException {
 		if(action == null) return null;
-		if(method == "") method = "GET";
+		if(method == null) method = "GET";
 		method = method.toUpperCase();
 		if(!(method.equals("POST") || method.equals("GET"))) 
 			return null; // no irregular form sending methods
