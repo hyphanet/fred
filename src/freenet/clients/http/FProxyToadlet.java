@@ -561,8 +561,8 @@ public class FProxyToadlet extends Toadlet {
 	 * @param expectedMimeType The expected MIME type.
 	 */
 	private String getFilename(FetchException e, FreenetURI uri, String expectedMimeType) {
-		String s = getFilename(e, uri);
-		int dotIdx = s.indexOf('.');
+		String s = uri.getPreferredFilename();
+		int dotIdx = s.lastIndexOf('.');
 		String ext = DefaultMIMETypes.getExtension(expectedMimeType);
 		if(ext == null)
 			ext = "bin";
@@ -579,32 +579,4 @@ public class FProxyToadlet extends Toadlet {
 		return s + '.' + ext;
 	}
 	
-	private String getFilename(FetchException e, FreenetURI uri) {
-		String fnam = sanitize(uri.getDocName());
-		if((fnam != null) && (fnam.length() > 0)) return fnam;
-		String[] meta = uri.getAllMetaStrings();
-		if(meta != null) {
-			for(int i=meta.length-1;i>=0;i++) {
-				String s = meta[i];
-				if(s == null) continue;
-				if(s.length() == 0) continue;
-				fnam = sanitize(s);
-				if((s != null) && (s.length() > 0)) return fnam;
-			}
-		}
-		return Base64.encode(uri.getRoutingKey());
-	}
-	
-	private String sanitize(String s) {
-		if(s == null) return null;
-		StringBuffer sb = new StringBuffer(s.length());
-		for(int i=0;i<s.length();i++) {
-			char c = s.charAt(i);
-			if(Character.isLetterOrDigit(c) ||
-					(c == ' ') || (c == '.') || (c == '-') || (c == '_') ||
-					(c == '+') || (c == ','))
-				sb.append(c);
-		}
-		return sb.toString();
-	}
 }

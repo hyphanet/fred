@@ -37,7 +37,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 		handler.close();
 		handler.closedOutput();
 	}
-
+ 
 	private void realRun() throws IOException {
 		OutputStream os = handler.sock.getOutputStream();
 		while(true) {
