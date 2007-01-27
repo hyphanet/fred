@@ -220,7 +220,7 @@ public class PeerManagerUserAlert implements UserAlert {
 		} else if (n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
 			alertNode.addChild("#", replace(TOO_HIGH_BWLIMITDELAYTIME, "\\{BWLIMIT_DELAY_TIME\\}", Integer.toString(bwlimitDelayTime)));
 		} else if (n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
-			alertNode.addChild("#", replace(TOO_HIGH_PING, "\\{PING_TIME\\}", Integer.toString(bwlimitDelayTime)));
+			alertNode.addChild("#", replace(TOO_HIGH_PING, "\\{PING_TIME\\}", Integer.toString(nodeAveragePingTime)));
 		} else if (oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
 			alertNode.addChild("#", NEVER_CONNECTED_TWO_WEEKS);
 		} else throw new IllegalArgumentException("not valid");
