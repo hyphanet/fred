@@ -32,6 +32,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
+import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
@@ -1078,7 +1079,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					byte[] routingkey = null;
 					if(type == TYPE_CHK) {
 						try {
-							CHKBlock chk = new CHKBlock(data, header, null);
+							CHKBlock chk = CHKBlock.construct(data, header);
 							routingkey = chk.getKey().getRoutingKey();
 						} catch (CHKVerifyException e) {
 							String err = "Bogus key at slot "+l+" : "+e+" - lost block "+l;
