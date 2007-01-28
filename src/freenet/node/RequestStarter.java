@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.TokenBucket;
 import freenet.support.math.RunningAverage;
 
@@ -93,13 +94,14 @@ public class RequestStarter implements Runnable {
 						if(logMINOR) Logger.minor(this, "Started "+req+" on "+t);
 						break;
 					} catch (OutOfMemoryError e) {
-						// Probably out of threads
+						OOMHandler.handleOOM(e);
+						System.err.println("Will retry above failed operation...");
+						// Possibly out of threads
 						try {
 							Thread.sleep(5000);
 						} catch (InterruptedException e1) {
 							// Ignore
 						}
-						System.err.println(e.getMessage());
 					}
 				}
 				sentRequestTime = System.currentTimeMillis();

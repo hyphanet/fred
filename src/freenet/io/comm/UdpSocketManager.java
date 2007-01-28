@@ -31,6 +31,7 @@ import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.TimeUtil;
 
 public class UdpSocketManager extends Thread {
@@ -201,10 +202,13 @@ public class UdpSocketManager extends Thread {
 			try {
 				lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
 				realRun();
+            } catch (OutOfMemoryError e) {
+				OOMHandler.handleOOM(e);
+				System.err.println("Will retry above failed operation...");
 			} catch (Throwable t) {
-				Logger.error(this, "Caught " + t, t);
 				System.err.println("Caught "+t);
 				t.printStackTrace(System.err);
+				Logger.error(this, "Caught " + t, t);
 			}
 		}
 	}

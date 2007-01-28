@@ -27,8 +27,9 @@ import freenet.crypt.DummyRandomSource;
 import freenet.io.NetworkInterface;
 import freenet.node.NodeClientCore;
 import freenet.support.FileLoggerHook;
-import freenet.support.Logger;
 import freenet.support.FileLoggerHook.IntervalParseException;
+import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
@@ -397,7 +398,16 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		public void run() {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
-			ToadletContextImpl.handle(sock, SimpleToadletServer.this, bf, pageMaker);
+			try {
+				ToadletContextImpl.handle(sock, SimpleToadletServer.this, bf, pageMaker);
+			} catch (OutOfMemoryError e) {
+				OOMHandler.handleOOM(e);
+				System.err.println("SimpleToadlesServer request above failed.");
+			} catch (Throwable t) {
+				System.err.println("Caught in SimpleToadletServer: "+t);
+				t.printStackTrace();
+				Logger.error(this, "Caught in SimpleToadletServer: "+t, t);
+			}
 			if(logMINOR) Logger.minor(this, "Handled connection");
 		}
 

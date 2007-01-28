@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 
 /**
  * @author amphibian
@@ -33,18 +34,8 @@ public class DNSRequester implements Runnable {
             try {
                 realRun();
             } catch (OutOfMemoryError e) {
-                Runtime r = Runtime.getRuntime();
-                long usedAtStart = r.totalMemory() - r.freeMemory();
-                System.gc();
-                System.runFinalization();
-                System.gc();
-                System.runFinalization();
-                System.err.println(e.getClass());
-                System.err.println(e.getMessage());
-                e.printStackTrace();
-                long usedNow = r.totalMemory() - r.freeMemory();
-                Logger.error(this, "Caught "+e, e);
-                Logger.error(this, "Used: "+usedAtStart+" now "+usedNow);
+				OOMHandler.handleOOM(e);
+				System.err.println("Will retry above failed operation...");
             } catch (Throwable t) {
                 Logger.error(this, "Caught in DNSRequester: "+t, t);
             }

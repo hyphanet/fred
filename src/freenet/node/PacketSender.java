@@ -14,6 +14,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.WouldBlockException;
 
 /**
@@ -122,31 +123,8 @@ public class PacketSender implements Runnable, Ticker {
             	logMINOR = Logger.shouldLog(Logger.MINOR, this);
                 realRun();
             } catch (OutOfMemoryError e) {
-            	Runtime r = null;
-            	try {
-            		r = Runtime.getRuntime();
-            		long usedAtStart = r.totalMemory() - r.freeMemory();
-            		System.gc();
-            		System.runFinalization();
-            		System.gc();
-            		System.runFinalization();
-            		System.err.println(e.getClass());
-            		System.err.println(e.getMessage());
-            		e.printStackTrace();
-            		long usedNow = r.totalMemory() - r.freeMemory();
-            		Logger.error(this, "Caught "+e, e);
-            		Logger.error(this, "Used: "+usedAtStart+" now "+usedNow);
-            	} catch (Throwable t) {
-            		// Try without GCing, it might be a thread error; GCing creates a thread
-            		System.err.println("Caught handling OOM "+e+" : "+t);
-            		e.printStackTrace();
-            		if(r != null)
-            			System.err.println("Memory: total "+r.totalMemory()+" free "+r.freeMemory()+" max "+r.maxMemory());
-            		ThreadGroup tg = Thread.currentThread().getThreadGroup();
-            		while(tg.getParent() != null) tg = tg.getParent();
-            		System.err.println("Running threads: "+tg.activeCount());
-            		WrapperManager.requestThreadDump(); // Will probably crash, but never mind...
-            	}
+				OOMHandler.handleOOM(e);
+				System.err.println("Will retry above failed operation...");
             } catch (Throwable t) {
                 Logger.error(this, "Caught in PacketSender: "+t, t);
                 System.err.println("Caught in PacketSender: "+t);
@@ -353,9 +331,19 @@ public class PacketSender implements Runnable, Ticker {
         				Logger.error(this, "Caught "+t+" running "+r, t);
         			}
         		} else {
-        			Thread t = new Thread(r, "Scheduled job: "+r);
-        			t.setDaemon(true);
-        			t.start();
+        			try {
+						Thread t = new Thread(r, "Scheduled job: "+r);
+						t.setDaemon(true);
+						t.start();
+					} catch (OutOfMemoryError e) {
+						OOMHandler.handleOOM(e);
+						System.err.println("Will retry above failed operation...");
+						queueTimedJob(r, 200);
+					} catch (Throwable t) {
+						Logger.error(this, "Caught in PacketSender: "+t, t);
+						System.err.println("Caught in PacketSender: "+t);
+						t.printStackTrace();
+					}
         		}
         	}
         }

@@ -339,6 +339,9 @@ public class FileLoggerHook extends LoggerHook {
 			        if(altLogStream != null)
 			        	myWrite(altLogStream, (byte[]) o);
 				} catch (OutOfMemoryError e) {
+					System.err.println(e.getClass());
+					System.err.println(e.getMessage());
+					e.printStackTrace();
 				    // FIXME
 					//freenet.node.Main.dumpInterestingObjects();
 				} catch (Throwable t) {
