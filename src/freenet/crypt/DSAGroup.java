@@ -69,6 +69,8 @@ public class DSAGroup extends CryptoKey {
     }
 
     private void updateCachedHexStrings() {
+    	if(pAsHexString != null && qAsHexString != null && gAsHexString != null)
+    		return;
         pAsHexString = HexUtil.biToHex(p);
         qAsHexString = HexUtil.biToHex(q);
         gAsHexString = HexUtil.biToHex(g);
@@ -107,6 +109,7 @@ public class DSAGroup extends CryptoKey {
     //    }
 
     public String writeAsField() {
+    	updateCachedHexStrings();
         StringBuffer b = new StringBuffer();
         b.append(pAsHexString).append(',');
         b.append(qAsHexString).append(',');
@@ -144,14 +147,17 @@ public class DSAGroup extends CryptoKey {
     }
 
     public String getPAsHexString() {
+    	updateCachedHexStrings();
         return pAsHexString;
     }
 
     public String getQAsHexString() {
+    	updateCachedHexStrings();
         return qAsHexString;
     }
 
     public String getGAsHexString() {
+    	updateCachedHexStrings();
         return gAsHexString;
     }
 
@@ -347,6 +353,8 @@ public class DSAGroup extends CryptoKey {
 		BigInteger p = new NativeBigInteger(1, Base64.decode(fs.get("p")));
 		BigInteger q = new NativeBigInteger(1, Base64.decode(fs.get("q")));
 		BigInteger g = new NativeBigInteger(1, Base64.decode(fs.get("g")));
-		return new DSAGroup(p, q, g);
+		DSAGroup dg = new DSAGroup(p, q, g);
+		if(dg.equals(Global.DSAgroupBigA)) return Global.DSAgroupBigA;
+		return dg;
 	}
 }
