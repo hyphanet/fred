@@ -27,7 +27,7 @@ public class DSAGroup extends CryptoKey {
 	
 	public static final int Q_BIT_LENGTH = 160;
 
-    private BigInteger p, q, g;
+    private final BigInteger p, q, g;
 
     private String pAsHexString, gAsHexString, qAsHexString; //Cached versions
 
@@ -337,10 +337,6 @@ public class DSAGroup extends CryptoKey {
         return p.hashCode() ^ q.hashCode() ^ g.hashCode();
     }
     
-    public void destroy() {
-        p = q = g = null;
-    }
-
 	public SimpleFieldSet asFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("p", Base64.encode(p.toByteArray()));
