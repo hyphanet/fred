@@ -17,7 +17,7 @@ public class DSAPublicKey extends CryptoKey {
     
     private final BigInteger y;
 	/** A cache of the hexadecimal string representation of y */
-    private final String yAsHexString; 
+    private String yAsHexString; 
     
     public static final int PADDED_SIZE = 1024;
 
@@ -27,7 +27,6 @@ public class DSAPublicKey extends CryptoKey {
     
     public DSAPublicKey(DSAGroup g, BigInteger y) {
 		this.y=y;
-		this.yAsHexString = HexUtil.biToHex(y);
 		this.group=g;
 		if(g == null) throw new NullPointerException();
     }
@@ -50,7 +49,6 @@ public class DSAPublicKey extends CryptoKey {
     public DSAPublicKey(InputStream is) throws IOException {
 		group=(DSAGroup) DSAGroup.read(is);
 		y=Util.readMPI(is);
-		this.yAsHexString = HexUtil.biToHex(y);
     }
     
     public DSAPublicKey(byte[] pubkeyAsBytes) throws IOException {
@@ -62,6 +60,8 @@ public class DSAPublicKey extends CryptoKey {
     }
     
 	public String getYAsHexString() {
+		if(yAsHexString == null)
+			this.yAsHexString = HexUtil.biToHex(y);
 		return yAsHexString;
 	}
 
