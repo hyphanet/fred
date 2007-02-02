@@ -78,6 +78,7 @@ public class ModifyPersistentRequest extends FCPMessage {
 			req.setPriorityClass(priorityClass);
 		if(req.isPersistentForever())
 			client.server.forceStorePersistentRequests();
-	}
 
+        req.requestWasModified();
+	}
 }

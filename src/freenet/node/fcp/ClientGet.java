@@ -423,7 +423,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			handler.queue(allDataPending);
 	}
 
-	private FCPMessage persistentTagMessage() {
+	protected FCPMessage persistentTagMessage() {
 		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries);
 	}
 
@@ -657,5 +657,4 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return false;
 		}
 	}
-
 }

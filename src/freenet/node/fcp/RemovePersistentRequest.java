@@ -4,8 +4,7 @@
 package freenet.node.fcp;
 
 import freenet.node.Node;
-import freenet.support.Fields;
-import freenet.support.SimpleFieldSet;
+import freenet.support.*;
 
 /**
  * Client telling node to remove a (completed or not) persistent request.
@@ -37,7 +36,12 @@ public class RemovePersistentRequest extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		FCPClient client = global ? handler.server.globalClient : handler.getClient();
+        ClientRequest req = client.getRequest(identifier);
+        if(req==null){
+            Logger.error(this, "Huh ? the request is null!");
+            return;
+        }
 		client.removeByIdentifier(identifier, true);
+        req.requestWasRemoved();
 	}
-
 }

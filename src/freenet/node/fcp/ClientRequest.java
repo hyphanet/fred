@@ -1,20 +1,13 @@
 package freenet.node.fcp;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.*;
+import java.net.*;
 
-import freenet.client.async.ClientRequester;
-import freenet.keys.FreenetURI;
-import freenet.support.Fields;
-import freenet.support.HexUtil;
-import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
-import freenet.support.api.Bucket;
-import freenet.support.io.FileBucket;
-import freenet.support.io.PaddedEphemerallyEncryptedBucket;
-import freenet.support.io.SerializableToFieldSetBucket;
+import freenet.client.async.*;
+import freenet.keys.*;
+import freenet.support.*;
+import freenet.support.api.*;
+import freenet.support.io.*;
 
 /**
  * A request process carried out by the node for an FCP client.
@@ -297,6 +290,24 @@ public abstract class ClientRequest {
 	public abstract boolean canRestart();
 
 	public abstract boolean restart();
+
+    protected abstract FCPMessage persistentTagMessage();
+
+    /**
+     * Called after a ModifyPersistentRequest. Send a PersistentTagMessage to the clients.
+     */
+    public void requestWasModified() {
+        FCPMessage msg = persistentTagMessage();
+        client.queueClientRequestMessage(msg, 0);
+    }
+
+    /**
+     * Called after a RemovePersistentRequest. Send a PersistentRequestRemoved to the clients.
+     */
+    public void requestWasRemoved() {
+        FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
+        client.queueClientRequestMessage(msg, 0);
+    }
 
 	/** Utility method for storing details of a possibly encrypted bucket. */
 	protected void bucketToFS(SimpleFieldSet fs, String name, boolean includeSize, Bucket data) {
