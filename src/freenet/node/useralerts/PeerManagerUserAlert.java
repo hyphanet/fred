@@ -129,7 +129,7 @@ public class PeerManagerUserAlert implements UserAlert {
 		"This node has to wait too long for available bandwidth ({BWLIMIT_DELAY_TIME} > "+Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
 	
 	static final String TOO_HIGH_PING =
-		"This node is having trouble talking with it's peers quickly enough ({PING_TIME} > "+
+		"This node is having trouble talking with its peers quickly enough ({PING_TIME} > "+
 		Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+").  Decrease your output bandwidth limit and/or remove some peers to improve the situation.";
 
 	static final String NEVER_CONNECTED_TWO_WEEKS =
