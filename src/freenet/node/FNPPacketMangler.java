@@ -918,6 +918,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         int[] alreadyReported = new int[messages.length];
         MessageItem[] newMsgs = new MessageItem[messages.length];
         KeyTracker kt = pn.getCurrentKeyTracker();
+        if(kt == null) {
+        	Logger.error(this, "Not connected while sending packets: "+pn);
+        	return;
+        }
         int length = 1;
         length += kt.countAcks() + kt.countAckRequests() + kt.countResendRequests();
         int callbacksCount = 0;
