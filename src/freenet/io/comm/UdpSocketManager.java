@@ -198,10 +198,12 @@ public class UdpSocketManager extends Thread {
 	}
 
 	private void runLoop() {
+		byte[] buf = new byte[MAX_RECEIVE_SIZE];
+		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 		while (/*_active*/true) {
 			try {
 				lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
-				realRun();
+				realRun(packet);
             } catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Will retry above failed operation...");
@@ -213,10 +215,8 @@ public class UdpSocketManager extends Thread {
 		}
 	}
 	
-	private void realRun() {
+	private void realRun(DatagramPacket packet) {
 		// Single receiving thread
-		byte[] buf = new byte[MAX_RECEIVE_SIZE];
-		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 		boolean gotPacket = getPacket(packet);
 		// Check for timedout _filters
 		removeTimedOutFilters();
