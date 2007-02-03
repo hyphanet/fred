@@ -150,11 +150,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					switch (mode) {
 						case INTEXT :
 							if (c == '<') {
-
 								saveText(b, currentTag, w, this);
-
-								b = new StringBuffer(100);
-								balt = new StringBuffer(4000);
+								b.setLength(0);
+								balt.setLength(0);
 								mode = INTAG;
 							} else {
 								b.append(c);
@@ -165,21 +163,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							if (HTMLDecoder.isWhitespace(c)) {
 								splitTag.add(b.toString());
 								mode = INTAGWHITESPACE;
-								b = new StringBuffer(100);
+								b.setLength(0);
 							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
 								saveText(b, currentTag, w, this);
 
-								balt = new StringBuffer(4000);
-								b = new StringBuffer(100);
+								balt.setLength(0);
+								b.setLength(0);
 								splitTag.clear();
 							} else if (c == '>') {
 								splitTag.add(b.toString());
-								b = new StringBuffer(100);
+								b.setLength(0);
 								processTag(splitTag, w, this);
 								currentTag = (String)splitTag.get(0);
 								splitTag.clear();
-								balt = new StringBuffer(4000);
+								balt.setLength(0);
 								mode = INTEXT;
 							} else if (
 								(b.length() == 2)
@@ -253,7 +251,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						case INTAGCOMMENTCLOSING :
 							if (c == '>') {
 								saveComment(b, w, this);
-								b = new StringBuffer(100);
+								b.setLength(0);
 								mode = INTEXT;
 							} else {
 								b.append(c);
@@ -275,14 +273,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								killTag = false;
 								currentTag = (String)splitTag.get(0);
 								splitTag.clear();
-								b = new StringBuffer(100);
-								balt = new StringBuffer(4000);
+								b.setLength(0);
+								balt.setLength(0);
 								mode = INTEXT;
 							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
 								saveText(balt, currentTag, w, this);
-								balt = new StringBuffer(4000);
-								b = new StringBuffer(100);
+								balt.setLength(0);
+								b.setLength(0);
 								splitTag.clear();
 								mode = INTAG;
 							} else if (HTMLDecoder.isWhitespace(c)) {
