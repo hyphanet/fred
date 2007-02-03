@@ -29,7 +29,7 @@ public class Version {
 	/** Oldest build of Fred we will talk to */
 	private static final int oldLastGoodBuild = 1010;
 	private static final int newLastGoodBuild = 1010;
-	private static final long transitionTime;
+	static final long transitionTime;
 	
 	static {
 		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
@@ -50,7 +50,7 @@ public class Version {
 	 * data normally.
 	 */
 	public static final int lastGoodBuild() {
-		if(System.currentTimeMillis() > transitionTime)
+		if(System.currentTimeMillis() >= transitionTime)
 			return newLastGoodBuild;
 		else
 			return oldLastGoodBuild;
