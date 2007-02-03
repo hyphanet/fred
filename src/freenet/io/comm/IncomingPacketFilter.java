@@ -13,7 +13,8 @@ public interface IncomingPacketFilter {
      * Process an incoming packet. This method should call
      * USM.decodePacket() and USM.checkFilters() if necessary to 
      * decode and dispatch messages.
-     * @param buf The buffer to read from.
+     * @param buf The buffer to read from. Note that this may be reused later on; any
+     * data to keep must be copied.
      * @param offset The offset to start reading from.
      * @param length The length in bytes to read.
      * @param peer The peer which sent us the packet. We only know
