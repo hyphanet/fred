@@ -79,11 +79,6 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 			throw new SSKDecodeException("Data length: "+dataLength+" but data.length="+data.length);
 		}
 		
-		if(dataLength != data.length) {
-			byte[] realDataOutput = new byte[dataLength];
-			System.arraycopy(dataOutput, 0, realDataOutput, 0, dataLength);
-			dataOutput = realDataOutput;
-		}
         compressionAlgorithm = (short)(((decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+2] & 0xff) << 8) + (decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+3] & 0xff));
         decoded = true;
         
@@ -91,7 +86,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
         	return BucketTools.makeImmutableBucket(factory, dataOutput);
         }
 
-        Bucket b = Key.decompress(compressionAlgorithm >= 0, dataOutput, factory, Math.min(MAX_DECOMPRESSED_DATA_LENGTH, maxLength), compressionAlgorithm, true);
+        Bucket b = Key.decompress(compressionAlgorithm >= 0, dataOutput, dataLength, factory, Math.min(MAX_DECOMPRESSED_DATA_LENGTH, maxLength), compressionAlgorithm, true);
         return b;
 	}
 

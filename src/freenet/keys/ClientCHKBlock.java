@@ -114,10 +114,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         int size = ((hbuf[32] & 0xff) << 8) + (hbuf[33] & 0xff);
         if((size > 32768) || (size < 0))
             throw new CHKDecodeException("Invalid size: "+size);
-        byte[] output = new byte[size];
-        // No particular reason to check the padding, is there?
-        System.arraycopy(dbuf, 0, output, 0, size);
-        return Key.decompress(dontCompress ? false : key.isCompressed(), output, bf, Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
+        return Key.decompress(dontCompress ? false : key.isCompressed(), dbuf, size, bf, Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
 
     /**

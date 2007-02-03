@@ -101,7 +101,7 @@ public abstract class Key implements WritableToDataOutputStream {
     	return this.hash == o.hashCode();
     }
     
-    static Bucket decompress(boolean isCompressed, byte[] output, BucketFactory bf, int maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
+    static Bucket decompress(boolean isCompressed, byte[] output, int outputLength, BucketFactory bf, int maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
         if(isCompressed) {
         	if(Logger.shouldLog(Logger.MINOR, Key.class))
         		Logger.minor(Key.class, "Decompressing "+output.length+" bytes in decode with codec "+compressionAlgorithm);
@@ -117,7 +117,7 @@ public abstract class Key implements WritableToDataOutputStream {
             if(len > maxLength)
                 throw new CHKDecodeException("Invalid precompressed size: "+len);
             Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(compressionAlgorithm);
-            Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, shortLength?2:4, output.length-(shortLength?2:4));
+            Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, shortLength?2:4, outputLength-(shortLength?2:4));
             try {
 				return decompressor.decompress(inputBucket, bf, maxLength, -1, null);
 			} catch (CompressionOutputSizeException e) {
