@@ -124,7 +124,7 @@ public abstract class Key implements WritableToDataOutputStream {
 				throw new CHKDecodeException("Too big");
 			}
         } else {
-        	return BucketTools.makeImmutableBucket(bf, output);
+        	return BucketTools.makeImmutableBucket(bf, output, outputLength);
         }
 	}
 

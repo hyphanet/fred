@@ -254,9 +254,13 @@ public class BucketTools {
 	}
 	
 	public static Bucket makeImmutableBucket(BucketFactory bucketFactory, byte[] data) throws IOException {
-		Bucket bucket = bucketFactory.makeBucket(data.length);
+		return makeImmutableBucket(bucketFactory, data, data.length);
+	}
+	
+	public static Bucket makeImmutableBucket(BucketFactory bucketFactory, byte[] data, int length) throws IOException {
+		Bucket bucket = bucketFactory.makeBucket(length);
 		OutputStream os = bucket.getOutputStream();
-		os.write(data);
+		os.write(data, 0, length);
 		os.close();
 		bucket.setReadOnly();
 		return bucket;
