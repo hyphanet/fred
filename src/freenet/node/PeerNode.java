@@ -1574,12 +1574,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     public void verified(KeyTracker tracker) {
     	long now = System.currentTimeMillis();
+    	KeyTracker completelyDeprecatedTracker;
     	synchronized(this) {
     		if(tracker == unverifiedTracker) {
     			if(logMINOR) Logger.minor(this, "Promoting unverified tracker "+tracker+" for "+getPeer());
-    			if(previousTracker != null) {
-    				previousTracker.completelyDeprecated(tracker);
-    			}
+    			completelyDeprecatedTracker = previousTracker;
     			previousTracker = currentTracker;
     			if(previousTracker != null)
     				previousTracker.deprecated();
@@ -1594,6 +1593,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     	}
         setPeerNodeStatus(now);
         node.peers.addConnectedPeer(this);
+		if(completelyDeprecatedTracker != null) {
+			completelyDeprecatedTracker.completelyDeprecated(tracker);
+		}
     }
     
     private synchronized boolean invalidVersion() {
