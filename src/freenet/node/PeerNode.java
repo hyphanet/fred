@@ -1326,8 +1326,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
     /**
      * @return short version of toString()
+     * *** Note that this is not synchronized! It is used by logging in code paths that
+     * will deadlock if it is synchronized! ***
      */
-    public synchronized String shortToString() {
+    public String shortToString() {
         return super.toString()+ '@' +detectedPeer+ '@' +HexUtil.bytesToHex(identity);
     }
 
