@@ -360,6 +360,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         // FIXME make mandatory once everyone has upgraded
         lastGoodVersion = fs.get("lastGoodVersion");
         
+        updateShouldDisconnectNow();
+        
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
         myName = name;
@@ -1601,11 +1603,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     }
     
     public boolean publicInvalidVersion() {
-        return !Version.checkGoodVersion(getVersion());
+        return verifiedIncompatibleOlderVersion;
     }
     
     public synchronized boolean publicReverseInvalidVersion() {
-        return !Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion);
+        return verifiedIncompatibleNewerVersion;
     }
 
     /**
@@ -1705,6 +1707,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         	version = newVersion;
         	Version.seenVersion(newVersion);
         }
+
+        lastGoodVersion = fs.get("lastGoodVersion");
+        
+        updateShouldDisconnectNow();
+        
         String locationString = fs.get("location");
         if(locationString == null) {
         	// Location WILL be ommitted for an ARK.
@@ -1721,8 +1728,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         if(nominalPeer==null)
         	nominalPeer=new Vector();
         nominalPeer.removeAllElements();
-        
-        lastGoodVersion = fs.get("lastGoodVersion");
         
         Peer[] oldPeers = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
         
@@ -2535,6 +2540,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		return isBurstOnly;
 	}
 
+	synchronized void updateShouldDisconnectNow() {
+		verifiedIncompatibleOlderVersion = invalidVersion();
+		verifiedIncompatibleNewerVersion = reverseInvalidVersion();
+	}
+	
 	/**
 	 * Should the node be disconnected from immediately?
 	 * This will return true if our lastGoodBuild has changed due to a timed mandatory.
@@ -2542,8 +2552,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	public synchronized boolean shouldDisconnectNow() {
 		// TODO: We should disconnect here if "protocol version mismatch", maybe throwing an exception
 		// TODO: shouldDisconnectNow() is hopefully only called when we're connected, otherwise we're breaking the meaning of verifiedIncompable[Older|Newer]Version
-		verifiedIncompatibleOlderVersion = invalidVersion();
-		verifiedIncompatibleNewerVersion = reverseInvalidVersion();
 		if(verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion) return true;
 		return false;
 	}

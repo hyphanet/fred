@@ -108,7 +108,20 @@ public class PacketSender implements Runnable, Ticker {
     void start() {
         Logger.normal(this, "Starting PacketSender");
         System.out.println("Starting PacketSender");
-        lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
+    	long now = System.currentTimeMillis();
+    	long transition = Version.transitionTime;
+    	if(now < transition) {
+    		queueTimedJob(new Runnable() {
+    			public void run() {
+    				PeerNode[] nodes = node.peers.myPeers;
+    				for(int i=0;i<nodes.length;i++) {
+    					PeerNode pn = nodes[i];
+    					pn.updateShouldDisconnectNow();
+    				}
+    			}
+    		}, transition - now);
+    	}
+        lastTimeInSeconds = (int) (now / 1000);
         // Necessary because of sun JVM bugs when NPTL is enabled. Write once, debug everywhere!
         Thread t1 = new Thread(new Watchdog(), "PacketSender watchdog");
         t1.setDaemon(true);
