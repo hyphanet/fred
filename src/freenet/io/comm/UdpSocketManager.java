@@ -214,10 +214,13 @@ public class UdpSocketManager extends Thread {
 	}
 	
 	private void realRun() {
-		DatagramPacket packet = getPacket();
+		// Single receiving thread
+		byte[] buf = new byte[MAX_RECEIVE_SIZE];
+		DatagramPacket packet = new DatagramPacket(buf, buf.length);
+		boolean gotPacket = getPacket(packet);
 		// Check for timedout _filters
 		removeTimedOutFilters();
-		if (packet != null) {
+		if (gotPacket) {
 			long startTime = System.currentTimeMillis();
 			Peer peer = new Peer(packet.getAddress(), packet.getPort());
 			long endTime = System.currentTimeMillis();
@@ -280,22 +283,19 @@ public class UdpSocketManager extends Thread {
     // Revert to 1500?
     private static final int MAX_RECEIVE_SIZE = 2048;
     
-    private DatagramPacket getPacket() {
-		// TODO: Avoid recreating the packet each time (warning, there are some issues reusing DatagramPackets, be
-		// careful)
-		DatagramPacket packet = new DatagramPacket(new byte[MAX_RECEIVE_SIZE], MAX_RECEIVE_SIZE);
+    private boolean getPacket(DatagramPacket packet) {
 		try {
 			_sock.receive(packet);
 			// TODO: keep?
 			IOStatisticCollector.addInfo(packet.getAddress() + ":" + packet.getPort(),
 					packet.getLength(), 0);
 		} catch (SocketTimeoutException e1) {
-			packet = null;
+			return false;
 		} catch (IOException e2) {
 			throw new RuntimeException(e2);
 		}
 		if(logMINOR) Logger.minor(this, "Received packet");
-		return packet;
+		return true;
 	}
 
 	private void removeTimedOutFilters() {
