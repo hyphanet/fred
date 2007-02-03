@@ -89,7 +89,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
             throw new CHKDecodeException("Crypto key too short");
         cipher.initialize(key.cryptoKey);
-        PCFBMode pcfb = new PCFBMode(cipher);
+        PCFBMode pcfb = PCFBMode.create(cipher);
         byte[] hbuf = new byte[headers.length-2];
         System.arraycopy(headers, 2, hbuf, 0, headers.length-2);
         byte[] dbuf = new byte[data.length];
@@ -182,7 +182,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new Error(e);
         }
         cipher.initialize(encKey);
-        PCFBMode pcfb = new PCFBMode(cipher);
+        PCFBMode pcfb = PCFBMode.create(cipher);
         pcfb.blockEncipher(header, 2, header.length-2);
         pcfb.blockEncipher(data, 0, data.length);
         
