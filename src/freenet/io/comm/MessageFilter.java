@@ -38,6 +38,7 @@ public class MessageFilter {
     private PeerContext _droppedConnection;
 	private MessageType _type;
     private HashMap _fields = new HashMap();
+    private Vector _fieldList = new Vector(1,1);
     PeerContext _source;
     private long _timeout;
     private int _initialTimeout;
@@ -102,7 +103,8 @@ public class MessageFilter {
 			throw new IncorrectTypeException("Got " + fieldValue.getClass() + ", expected " + _type.typeOf(fieldName) + " for " + _type.getName());
 		}
 		synchronized (_fields) {
-			_fields.put(fieldName, fieldValue);
+			if(_fields.put(fieldName, fieldValue) == null)
+				_fieldList.add(fieldName);
 		}
 		return this;
 	}
@@ -133,8 +135,8 @@ public class MessageFilter {
 			return false;
 		}
 		synchronized (_fields) {
-			for (Iterator iter = _fields.keySet().iterator(); iter.hasNext();) {
-				String fieldName = (String) iter.next();
+			for (int i = 0; i < _fieldList.size(); i++) {
+				String fieldName = (String) _fieldList.get(i);
 				if (!m.isSet(fieldName)) {
 					return false;
 				}
