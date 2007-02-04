@@ -167,7 +167,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         BlockCipher authKey = opn.incomingSetupCipher;
         if(logMINOR) Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(opn.incomingSetupKey)+" for "+peer+" : "+opn);
         // Does the packet match IV E( H(data) data ) ?
-        PCFBMode pcfb = new PCFBMode(authKey);
+        PCFBMode pcfb = PCFBMode.create(authKey);
         int ivLength = pcfb.lengthIV();
         MessageDigest md = SHA256.getMessageDigest();
         int digestLength = md.getDigestLength();
@@ -385,7 +385,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
          * Where Data = our bootID
          * Very similar to the surrounding wrapper in fact.
          */
-        PCFBMode pcfb = new PCFBMode(cipher);
+        PCFBMode pcfb = PCFBMode.create(cipher);
         byte[] iv = new byte[pcfb.lengthIV()];
         
         byte[] myRef = node.myCompressedSetupRef();
@@ -471,7 +471,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         }
         BlockCipher cipher = pn.outgoingSetupCipher;
         if(logMINOR) Logger.minor(this, "Outgoing cipher: "+HexUtil.bytesToHex(pn.outgoingSetupKey));
-        PCFBMode pcfb = new PCFBMode(cipher);
+        PCFBMode pcfb = PCFBMode.create(cipher);
         int paddingLength = node.random.nextInt(100);
         byte[] iv = new byte[pcfb.lengthIV()];
         node.random.nextBytes(iv);
@@ -527,7 +527,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         }
         byte[] encKey = ctx.getKey();
         BlockCipher cipher = ctx.getCipher();
-        PCFBMode pcfb = new PCFBMode(cipher);
+        PCFBMode pcfb = PCFBMode.create(cipher);
         int ivLength = pcfb.lengthIV();
         if(payload.length-3 < HASH_LENGTH + ivLength + 8) {
             Logger.error(this, "Too short phase "+i+" packet from "+replyTo+" probably from "+pn);
@@ -659,7 +659,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         // Verify the hash later
         
         PCFBMode pcfb;
-        pcfb = new PCFBMode(sessionCipher);
+        pcfb = PCFBMode.create(sessionCipher);
         // Set IV to the hash, after it is encrypted
         pcfb.reset(packetHash);
         //Logger.minor(this,"IV:\n"+HexUtil.bytesToHex(packetHash));
@@ -1440,7 +1440,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
         if(logMINOR) Logger.minor(this, "\nEncrypted: "+HexUtil.bytesToHex(digestTemp)+" ("+plaintext.length+" bytes plaintext)");
         
-        PCFBMode pcfb = new PCFBMode(sessionCipher, digestTemp);
+        PCFBMode pcfb = PCFBMode.create(sessionCipher, digestTemp);
         pcfb.blockEncipher(output, digestLength, plaintext.length);
         
         //Logger.minor(this, "Ciphertext:\n"+HexUtil.bytesToHex(output, digestLength, plaintext.length));

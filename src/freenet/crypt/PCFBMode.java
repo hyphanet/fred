@@ -5,6 +5,8 @@ package freenet.crypt;
 
 import java.io.*;
 
+import freenet.crypt.ciphers.Rijndael;
+
 /**
  * Control mechanism for the Periodic Cipher Feed Back mode.  This is
  * a CFB variant used apparently by a number of programs, including PGP. 
@@ -14,17 +16,29 @@ import java.io.*;
  */
 public class PCFBMode {
     
-    private BlockCipher c;
-    private byte[] feedback_register;
-    private int registerPointer;
+    protected BlockCipher c;
+    protected byte[] feedback_register;
+    protected int registerPointer;
     
-    public PCFBMode(BlockCipher c) {
+    public static PCFBMode create(BlockCipher c) {
+    	if(c instanceof Rijndael)
+    		return new RijndaelPCFBMode((Rijndael)c);
+    	return new PCFBMode(c);
+    }
+    
+    public static PCFBMode create(BlockCipher c, byte[] iv) {
+    	if(c instanceof Rijndael)
+    		return new RijndaelPCFBMode((Rijndael)c, iv);
+    	return new PCFBMode(c, iv);
+    }
+    
+    PCFBMode(BlockCipher c) {
         this.c = c;
         feedback_register = new byte[c.getBlockSize() >> 3];
         registerPointer = feedback_register.length;
     }
 
-    public PCFBMode(BlockCipher c, byte[] iv) {
+    PCFBMode(BlockCipher c, byte[] iv) {
         this(c);
         System.arraycopy(iv, 0, feedback_register, 0, feedback_register.length);
     }
@@ -149,6 +163,3 @@ public class PCFBMode {
         registerPointer=0;
     }
 }
-
-
-

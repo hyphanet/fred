@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.Random;
 
 import freenet.crypt.ciphers.Rijndael;
-import freenet.crypt.ciphers.Twofish;
 import freenet.support.HexUtil;
 import freenet.support.Loader;
 import net.i2p.util.NativeBigInteger;
@@ -24,7 +23,6 @@ public class Util {
 	static {
 		SHA1.class.toString();
 		JavaSHA1.class.toString();
-		Twofish.class.toString();
 		Rijndael.class.toString();
 	}
 
