@@ -153,7 +153,7 @@ public class StatisticsToadlet extends Toadlet {
 			DecimalFormat fix6p6 = new DecimalFormat("#####0.0#####");
 			DecimalFormat fix1p6sci = new DecimalFormat("0.######E0");
 			DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
-            NumberFormat thousendPoint = NumberFormat.getInstance();
+			NumberFormat thousendPoint = NumberFormat.getInstance();
 			double routingMissDistance =  node.routingMissDistance.currentValue();
 			double backedOffPercent =  node.backedOffPercent.currentValue();
 			String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
@@ -274,7 +274,7 @@ public class StatisticsToadlet extends Toadlet {
 				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_listen_only", "Not connected and listen only: this node won't try to connect to these peers at all because the user has set ListenOnly on them", "border-bottom: 1px dotted; cursor: help;" }, "Listen Only");
 				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
 			}
-            nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+			nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 
 			if(advancedEnabled) {
 				
@@ -378,98 +378,98 @@ public class StatisticsToadlet extends Toadlet {
 				}
 				bandwidthList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(outputBandwidthLimit, true)+"ps)");
 				bandwidthList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(inputBandwidthLimit, true)+"ps)");
-                nextTableCell = overviewTableRow.addChild("td");
+				nextTableCell = overviewTableRow.addChild("td");
 
-                // store size box
-                HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
-                storeSizeInfobox.addChild("div", "class", "infobox-header", "Store size");
-                HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
-                HTMLNode storeSizeList = storeSizeInfoboxContent.addChild("ul");
-                
-                final long fix32kb = 32 * 1024;
-                
-                long cachedKeys = node.getChkDatacache().keyCount();
-                long cachedSize = cachedKeys * fix32kb;
-                long storeKeys = node.getChkDatastore().keyCount();
-                long storeSize = storeKeys * fix32kb;
-                long overallKeys = cachedKeys + storeKeys;
-                long overallSize = cachedSize + storeSize;
-                
-//                long maxCachedKeys = node.getChkDatacache().getMaxKeys();
-//                long maxStoreKeys = node.getChkDatastore().getMaxKeys();
-                long maxOverallKeys = node.getMaxTotalKeys();
-                long maxOverallSize = maxOverallKeys * fix32kb;
-                
-                long cachedStoreHits = node.getChkDatacache().hits();
-                long cachedStoreMisses = node.getChkDatacache().misses();
-                long cacheAccesses = cachedStoreHits + cachedStoreMisses;
-                long storeHits = node.getChkDatastore().hits();
-                long storeMisses = node.getChkDatastore().misses();
-                long storeAccesses = storeHits + storeMisses;
-                long overallAccesses = storeAccesses + cacheAccesses;
-                
-                storeSizeList.addChild("li", 
-                        "Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
-                        " (" + SizeUtil.formatSize(cachedSize, true) + ')');
+				// store size box
+				HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
+				storeSizeInfobox.addChild("div", "class", "infobox-header", "Store size");
+				HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
+				HTMLNode storeSizeList = storeSizeInfoboxContent.addChild("ul");
+				
+				final long fix32kb = 32 * 1024;
+				
+				long cachedKeys = node.getChkDatacache().keyCount();
+				long cachedSize = cachedKeys * fix32kb;
+				long storeKeys = node.getChkDatastore().keyCount();
+				long storeSize = storeKeys * fix32kb;
+				long overallKeys = cachedKeys + storeKeys;
+				long overallSize = cachedSize + storeSize;
+				
+//				long maxCachedKeys = node.getChkDatacache().getMaxKeys();
+//				long maxStoreKeys = node.getChkDatastore().getMaxKeys();
+				long maxOverallKeys = node.getMaxTotalKeys();
+				long maxOverallSize = maxOverallKeys * fix32kb;
+				
+				long cachedStoreHits = node.getChkDatacache().hits();
+				long cachedStoreMisses = node.getChkDatacache().misses();
+				long cacheAccesses = cachedStoreHits + cachedStoreMisses;
+				long storeHits = node.getChkDatastore().hits();
+				long storeMisses = node.getChkDatastore().misses();
+				long storeAccesses = storeHits + storeMisses;
+				long overallAccesses = storeAccesses + cacheAccesses;
+				
+				storeSizeList.addChild("li", 
+						"Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
+						" (" + SizeUtil.formatSize(cachedSize, true) + ')');
 
-                storeSizeList.addChild("li", 
-                        "Stored keys:\u00a0" + thousendPoint.format(storeKeys) + 
-                        " (" + SizeUtil.formatSize(storeSize, true) + ')');
+				storeSizeList.addChild("li", 
+						"Stored keys:\u00a0" + thousendPoint.format(storeKeys) + 
+						" (" + SizeUtil.formatSize(storeSize, true) + ')');
 
-                storeSizeList.addChild("li", 
-                        "Overall size:\u00a0" + thousendPoint.format(overallKeys) + 
-                        "\u00a0/\u00a0" + thousendPoint.format(maxOverallKeys) +
-                        " (" + SizeUtil.formatSize(overallSize, true) + 
-                        "\u00a0/\u00a0" + SizeUtil.formatSize(maxOverallSize, true) + 
-                        ")\u00a0(" + ((overallKeys*100)/maxOverallKeys) + "%)");
+				storeSizeList.addChild("li", 
+						"Overall size:\u00a0" + thousendPoint.format(overallKeys) + 
+						"\u00a0/\u00a0" + thousendPoint.format(maxOverallKeys) +
+						" (" + SizeUtil.formatSize(overallSize, true) + 
+						"\u00a0/\u00a0" + SizeUtil.formatSize(maxOverallSize, true) + 
+						")\u00a0(" + ((overallKeys*100)/maxOverallKeys) + "%)");
 
-                storeSizeList.addChild("li", 
-                        "Cache hits:\u00a0" + thousendPoint.format(cachedStoreHits) + 
-                        "\u00a0/\u00a0"+thousendPoint.format(cacheAccesses) +
-                        "\u00a0(" + ((cachedStoreHits*100) / (cacheAccesses)) + "%)");
-                
-                storeSizeList.addChild("li", 
-                        "Store hits:\u00a0" + thousendPoint.format(storeHits) + 
-                        "\u00a0/\u00a0"+thousendPoint.format(storeAccesses) +
-                        "\u00a0(" + ((storeHits*100) / (storeAccesses)) + "%)");
+				storeSizeList.addChild("li", 
+						"Cache hits:\u00a0" + thousendPoint.format(cachedStoreHits) + 
+						"\u00a0/\u00a0"+thousendPoint.format(cacheAccesses) +
+						"\u00a0(" + ((cachedStoreHits*100) / (cacheAccesses)) + "%)");
+				
+				storeSizeList.addChild("li", 
+						"Store hits:\u00a0" + thousendPoint.format(storeHits) + 
+						"\u00a0/\u00a0"+thousendPoint.format(storeAccesses) +
+						"\u00a0(" + ((storeHits*100) / (storeAccesses)) + "%)");
 
-                storeSizeList.addChild("li", 
-                        "Avg. access rate:\u00a0" + thousendPoint.format(overallAccesses/nodeUptimeSeconds) + "/s");
-            
-                nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
-
-                // jvm stats box
-                HTMLNode jvmStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
-                jvmStatsInfobox.addChild("div", "class", "infobox-header", "JVM info");
-                HTMLNode jvmStatsInfoboxContent = jvmStatsInfobox.addChild("div", "class", "infobox-content");
-                HTMLNode jvmStatsList = jvmStatsInfoboxContent.addChild("ul");
-
-                Runtime rt = Runtime.getRuntime();
-                float freeMemory = (float) rt.freeMemory();
-                float totalMemory = (float) rt.totalMemory();
-                float maxMemory = (float) rt.maxMemory();
-
-                long usedJavaMem = (long)(totalMemory - freeMemory);
-                long allocatedJavaMem = (long)totalMemory;
-                long maxJavaMem = (long)maxMemory;
-                int availableCpus = rt.availableProcessors();
-                
-        		ThreadGroup tg = Thread.currentThread().getThreadGroup();
-        		while(tg.getParent() != null) tg = tg.getParent();
-        		int threadCount = tg.activeCount();
-
-                jvmStatsList.addChild("li", "Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem, true));
-                jvmStatsList.addChild("li", "Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem, true));
-                jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true));
-                jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
-                jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
-        				jvmStatsList.addChild("li", "JVM Vendor:\u00a0" + System.getProperty("java.vm.vendor"));
-				        jvmStatsList.addChild("li", "JVM Version:\u00a0" + System.getProperty("java.vm.version"));
-        				jvmStatsList.addChild("li", "OS Name:\u00a0" + System.getProperty("os.name"));
-				        jvmStatsList.addChild("li", "OS Version:\u00a0" + System.getProperty("os.version"));
-        				jvmStatsList.addChild("li", "OS Architecture:\u00a0" + System.getProperty("os.arch"));
+				storeSizeList.addChild("li", 
+						"Avg. access rate:\u00a0" + thousendPoint.format(overallAccesses/nodeUptimeSeconds) + "/s");
 			
-                // unclaimedFIFOMessageCounts box
+				nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+
+				// jvm stats box
+				HTMLNode jvmStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+				jvmStatsInfobox.addChild("div", "class", "infobox-header", "JVM info");
+				HTMLNode jvmStatsInfoboxContent = jvmStatsInfobox.addChild("div", "class", "infobox-content");
+				HTMLNode jvmStatsList = jvmStatsInfoboxContent.addChild("ul");
+
+				Runtime rt = Runtime.getRuntime();
+				float freeMemory = (float) rt.freeMemory();
+				float totalMemory = (float) rt.totalMemory();
+				float maxMemory = (float) rt.maxMemory();
+
+				long usedJavaMem = (long)(totalMemory - freeMemory);
+				long allocatedJavaMem = (long)totalMemory;
+				long maxJavaMem = (long)maxMemory;
+				int availableCpus = rt.availableProcessors();
+				
+				ThreadGroup tg = Thread.currentThread().getThreadGroup();
+				while(tg.getParent() != null) tg = tg.getParent();
+				int threadCount = tg.activeCount();
+
+				jvmStatsList.addChild("li", "Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem, true));
+				jvmStatsList.addChild("li", "Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem, true));
+				jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true));
+				jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
+				jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
+				jvmStatsList.addChild("li", "JVM Vendor:\u00a0" + System.getProperty("java.vm.vendor"));
+				jvmStatsList.addChild("li", "JVM Version:\u00a0" + System.getProperty("java.vm.version"));
+				jvmStatsList.addChild("li", "OS Name:\u00a0" + System.getProperty("os.name"));
+				jvmStatsList.addChild("li", "OS Version:\u00a0" + System.getProperty("os.version"));
+				jvmStatsList.addChild("li", "OS Architecture:\u00a0" + System.getProperty("os.arch"));
+			
+				// unclaimedFIFOMessageCounts box
 				overviewTableRow = overviewTable.addChild("tr");
 				nextTableCell = overviewTableRow.addChild("td", "class", "first");
 				Map unclaimedFIFOMessageCountsMap = node.getUSM().getUnclaimedFIFOMessageCounts();
@@ -518,10 +518,10 @@ public class StatisticsToadlet extends Toadlet {
 				nextTableCell = overviewTableRow.addChild("td");
 
 				// node version information box
-                HTMLNode versionInfobox = nextTableCell.addChild("div", "class", "infobox");
-                versionInfobox.addChild("div", "class", "infobox-header", "Node Version Information");
-                HTMLNode versionInfoboxContent = versionInfobox.addChild("div", "class", "infobox-content");
-                HTMLNode versionInfoboxList = versionInfoboxContent.addChild("ul");
+				HTMLNode versionInfobox = nextTableCell.addChild("div", "class", "infobox");
+				versionInfobox.addChild("div", "class", "infobox-header", "Node Version Information");
+				HTMLNode versionInfoboxContent = versionInfobox.addChild("div", "class", "infobox-content");
+				HTMLNode versionInfoboxList = versionInfoboxContent.addChild("ul");
 				versionInfoboxList.addChild("li", "Freenet " + Version.nodeVersion + " Build #" + Version.buildNumber() + " r" + Version.cvsRevision);
 				if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER) {
 					versionInfoboxList.addChild("li", "Freenet-ext Build #" + NodeStarter.extBuildNumber + '(' + NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER + ") r" + NodeStarter.extRevisionNumber);
@@ -539,7 +539,7 @@ public class StatisticsToadlet extends Toadlet {
 			
 				// node distribution box
 				nextTableCell = overviewTableRow.addChild("td", "class", "first");
-   				HTMLNode nodeCircleInfobox = nextTableCell.addChild("div", "class", "infobox");
+				HTMLNode nodeCircleInfobox = nextTableCell.addChild("div", "class", "infobox");
 				nodeCircleInfobox.addChild("div", "class", "infobox-header", "Node\u00a0Location\u00a0Distribution (w/Swap\u00a0Age)");
 				HTMLNode nodeCircleInfoboxContent = nodeCircleInfobox.addChild("div", "class", "infobox-content");
 				addNodeCircle(nodeCircleInfoboxContent);
@@ -560,7 +560,7 @@ public class StatisticsToadlet extends Toadlet {
 	
 	private void addNodeCircle (HTMLNode htmlNode) {
 		HTMLNode nodeCircleInfoboxContentDiv = htmlNode.addChild("div", new String[] { "style", "class" }, new String[] {"position: relative; height: " + ((PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) * 2) + "px; width: " + ((PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) * 2) + "px", "peercircle" });
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0, false, 1.0),     "mark" }, "|");
+		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0, false, 1.0),	 "mark" }, "|");
 		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.125, false, 1.0), "mark" }, "+");
 		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.25, false, 1.0),  "mark" }, "--");
 		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.375, false, 1.0), "mark" }, "+");
@@ -585,7 +585,7 @@ public class StatisticsToadlet extends Toadlet {
 				age = MAX_CIRCLE_AGE_THRESHOLD;
 			}
 			strength = 1 - ((double) age / MAX_CIRCLE_AGE_THRESHOLD );
-  			nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location.doubleValue(), false, strength), "connected" }, "x");
+			nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location.doubleValue(), false, strength), "connected" }, "x");
 		}
 		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(node.getLocation(), true, 1.0), "me" }, "x");
 	}
@@ -604,7 +604,7 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode peerHistogramLegendCell;
 		HTMLNode peerHistogramGraphCell;
 		HTMLNode peerCircleInfoboxContent = peerCircleTableCell.addChild("div", new String[] { "style", "class" }, new String[] {"position: relative; height: " + ((PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) * 2) + "px; width: " + ((PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) * 2) + "px", "peercircle" });
-		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0, false, 1.0),     "mark" }, "|");
+		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0, false, 1.0),	 "mark" }, "|");
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.125, false, 1.0), "mark" }, "+");
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.25, false, 1.0),  "mark" }, "--");
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.375, false, 1.0), "mark" }, "+");
@@ -625,16 +625,16 @@ public class StatisticsToadlet extends Toadlet {
 			peerLocation = peerNodeStatus.getLocation();
 			peerDistance = PeerManager.distance( myLocation, peerLocation );
 			histogramIndex = (int) (Math.floor(peerDistance * HISTOGRAM_LENGTH * 2));
-      if (peerNodeStatus.isConnected()) {
-        histogramConnected[histogramIndex]++;
-      } else {
-        histogramDisconnected[histogramIndex]++;
+			if (peerNodeStatus.isConnected()) {
+				histogramConnected[histogramIndex]++;
+			} else {
+				histogramDisconnected[histogramIndex]++;
 			}
-      peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(peerLocation, false, (1.0 - peerNodeStatus.getPReject())), ((peerNodeStatus.isConnected())?"connected":"disconnected") }, "x");
+			peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(peerLocation, false, (1.0 - peerNodeStatus.getPReject())), ((peerNodeStatus.isConnected())?"connected":"disconnected") }, "x");
 		}
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(myLocation, true, 1.0), "me" }, "x");
 		//
-    double histogramPercent;
+		double histogramPercent;
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
 			peerHistogramLegendCell = peerHistogramLegendTableRow.addChild("td");
 			peerHistogramGraphCell = peerHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
@@ -653,7 +653,7 @@ public class StatisticsToadlet extends Toadlet {
 		//
 		int offset = 0;
 		if( offsetMe ) {
-		    // Make our own peer stand out from the crowd better so we can see it easier
+			// Make our own peer stand out from the crowd better so we can see it easier
 			offset = -10;
 		} else {
 			offset = (int) (((double) PEER_CIRCLE_INNER_RADIUS) * (1.0 - strength));
