@@ -29,7 +29,7 @@ public final class RijndaelPCFBMode extends PCFBMode {
     }
 
     public RijndaelPCFBMode(Rijndael c, byte[] iv) {
-    	super(c);
+    	super(c, iv);
     	int tempSize = c.getTempArraySize();
     	a = new int[tempSize];
     	t = new int[tempSize];
