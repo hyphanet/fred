@@ -159,7 +159,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			this.out = out;
 			dataLength = 0;
 			this.streamNumber = streamNumber;
-			pcfb = PCFBMode.create(aes);
+			pcfb = new PCFBMode(aes);
 		}
 		
 		public void write(int b) throws IOException {
@@ -235,7 +235,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		
 		public PaddedEphemerallyEncryptedInputStream(InputStream in) {
 			this.in = in;
-			pcfb = PCFBMode.create(aes);
+			pcfb = new PCFBMode(aes);
 			ptr = 0;
 		}
 		
