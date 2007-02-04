@@ -461,8 +461,8 @@ public class StatisticsToadlet extends Toadlet {
 				jvmStatsList.addChild("li", "Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem, true));
 				jvmStatsList.addChild("li", "Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem, true));
 				jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true));
-				jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
 				jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
+				jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
 				jvmStatsList.addChild("li", "JVM Vendor:\u00a0" + System.getProperty("java.vm.vendor"));
 				jvmStatsList.addChild("li", "JVM Version:\u00a0" + System.getProperty("java.vm.version"));
 				jvmStatsList.addChild("li", "OS Name:\u00a0" + System.getProperty("os.name"));
