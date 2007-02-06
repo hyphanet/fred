@@ -360,7 +360,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler) {
-
 		FCPMessage msg;
 
 		// Don't need to lock. succeeded is only ever set, never unset.
@@ -452,6 +451,25 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		// Ignore
 	}
+    
+    public void requestWasRemoved() {
+        // if request is still running, send a GetFailed with code=cancelled
+        if( !finished ) {
+            synchronized(this) {
+                succeeded = false;
+                finished = true;
+                FetchException cancelled = new FetchException(FetchException.CANCELLED);
+                getFailedMessage = new GetFailedMessage(cancelled, identifier, global);
+            }
+            trySendDataFoundOrGetFailed(null);
+        }
+        // notify client that request was removed
+        FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
+        client.queueClientRequestMessage(msg, 0);
+
+        freeData();
+        finish();
+    }
 
 	public void receive(ClientEvent ce) {
 		// Don't need to lock, verbosity is final and finished is never unset.

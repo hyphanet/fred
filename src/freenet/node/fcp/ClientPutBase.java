@@ -2,8 +2,7 @@ package freenet.node.fcp;
 
 import java.net.MalformedURLException;
 
-import freenet.client.InserterContext;
-import freenet.client.InserterException;
+import freenet.client.*;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.events.ClientEvent;
@@ -134,6 +133,24 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 		trySendGeneratedURIMessage(null);
 	}
+    
+    public void requestWasRemoved() {
+        // if request is still running, send a PutFailed with code=cancelled
+        if( !finished ) {
+            synchronized(this) {
+                finished = true;
+                InserterException cancelled = new InserterException(InserterException.CANCELLED);
+                putFailedMessage = new PutFailedMessage(cancelled, identifier, global);
+            }
+            trySendFinalMessage(null);
+        }
+        // notify client that request was removed
+        FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
+        client.queueClientRequestMessage(msg, 0);
+
+        freeData();
+        finish();
+    }
 
 	public void receive(ClientEvent ce) {
 		if(finished) return;

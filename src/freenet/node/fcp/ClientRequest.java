@@ -304,15 +304,11 @@ public abstract class ClientRequest {
     /**
      * Called after a RemovePersistentRequest. Send a PersistentRequestRemoved to the clients.
      */
-    public void requestWasRemoved() {
-        FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
-        client.queueClientRequestMessage(msg, 0);
-    }
-
+    public abstract void requestWasRemoved();
+    
 	/** Utility method for storing details of a possibly encrypted bucket. */
 	protected void bucketToFS(SimpleFieldSet fs, String name, boolean includeSize, Bucket data) {
 		SerializableToFieldSetBucket bucket = (SerializableToFieldSetBucket) data;
 		fs.put(name, bucket.toFieldSet());
 	}
-
 }
