@@ -331,7 +331,7 @@ public class SHA256 implements Digest {
 	 */
 	public synchronized static MessageDigest getMessageDigest() {
 	    try {
-	    	if(!digests.isEmpty()) return (MessageDigest) digests.remove(0);
+	    	if(!digests.isEmpty()) return (MessageDigest) digests.remove(digests.size()-1);
 	        return MessageDigest.getInstance("SHA-256");
 	    } catch (NoSuchAlgorithmException e2) {
 	    	//TODO: maybe we should point to a HOWTO for freejvms
