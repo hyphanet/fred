@@ -3,6 +3,8 @@ package freenet.support.io;
 import java.io.File;
 import java.io.IOException;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.crypt.RandomSource;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -39,8 +41,12 @@ public class FilenameGenerator {
 			long wipeableFiles = 0;
 			long startWipe = System.currentTimeMillis();
 			File[] filenames = tmpDir.listFiles();
+			WrapperManager.signalStarting(5*60*1000 + filenames.length);
 			if(filenames != null) {
 				for(int i=0;i<filenames.length;i++) {
+					if(i % 1024 == 0 && i > 0)
+						// User may want some feedback during startup
+						System.err.println("Deleted "+wipedFiles+" temp files ("+(i - wipeableFiles)+" non-temp files in temp dir)");
 					File f = filenames[i];
 					String name = f.getName();
 					if((((File.separatorChar == '\\') && name.toLowerCase().startsWith(prefix.toLowerCase())) ||
