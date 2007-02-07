@@ -129,6 +129,22 @@ public class WelcomeToadlet extends Toadlet {
 			}
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
+		}else if(request.isPartSet("getJEStatsDump")) {
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Get JE Statistics");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Database Statistics"));
+
+			System.out.println(">>>>>>>>>>>>>>>>>>>>>>> START DATABASE STATS <<<<<<<<<<<<<<<<<<<<<<<");
+			node.JEStatsDump();
+			System.out.println(">>>>>>>>>>>>>>>>>>>>>>>  END DATABASE STATS  <<<<<<<<<<<<<<<<<<<<<<<");
+
+			ctx.getPageMaker().getContentNode(infobox).addChild("#", "Runtime database statistics have been written to the wrapper logfile");
+			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			return;
 		}else if (request.isPartSet("addbookmark")) {
 			if(noPassword) {
 				redirectToRoot(ctx);

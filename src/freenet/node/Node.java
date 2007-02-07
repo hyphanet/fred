@@ -35,6 +35,7 @@ import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentMutableConfig;
+import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FetcherContext;
 import freenet.config.FreenetFilePersistentConfig;
@@ -274,6 +275,7 @@ public class Node {
 	/** The maximum size of the datastore. Kept to avoid rounding turning 5G into 5368698672 */
 	private long maxTotalDatastoreSize;
 	
+	private StatsConfig statsConf;
 	/* These are private because must be protected by synchronized(this) */
 	private final Environment storeEnvironment;
 	private final EnvironmentMutableConfig envMutableConfig;
@@ -1190,6 +1192,9 @@ public class Node {
 			e.printStackTrace();
 			throw new NodeInitException(EXIT_STORE_OTHER, e.getMessage());			
 		}
+
+		statsConf = new StatsConfig();
+		statsConf.setClear(true);
 
 		storeShutdownHook = new SemiOrderedShutdownHook();
 		Runtime.getRuntime().addShutdownHook(storeShutdownHook);
@@ -3474,5 +3479,14 @@ public class Node {
 
 	public int getPortNumber() {
 		return portNumber;
+	}
+
+	public void JEStatsDump() {
+		try { 
+			System.out.println(storeEnvironment.getStats(statsConf));
+		}
+		catch(DatabaseException e) {
+			System.out.println("Failed to get stats from JE environment: " + e);
+		}
 	}
 }

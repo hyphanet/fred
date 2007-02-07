@@ -128,6 +128,13 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode threadDumpForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(infobox), "/", "threadDumpForm");
 			threadDumpForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getThreadDump", "Generate a Thread Dump" });
 		}
+
+		// BDB statistics dump 
+		if(advancedEnabled) {
+			HTMLNode JEinfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Dump Database runtime statistics to wrapper.log"));
+			HTMLNode JEStatsForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(JEinfobox), "/", "JEStatsForm");
+			JEStatsForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getJEStatsDump", "Generate a JE Dump" });
+		}
 		
 		double swaps = (double)node.getSwaps();
 		double noSwaps = (double)node.getNoSwaps();
