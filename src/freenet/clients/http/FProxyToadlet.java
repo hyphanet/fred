@@ -475,7 +475,6 @@ public class FProxyToadlet extends Toadlet {
 	}
 
 	private static String getForceValue(FreenetURI key, long time) {
-		MessageDigest md = SHA256.getMessageDigest();
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		
 		try{
@@ -486,8 +485,7 @@ public class FProxyToadlet extends Toadlet {
 			throw new Error(e);
 		}
 		
-		String f = HexUtil.bytesToHex(md.digest(bos.toByteArray()));
-		SHA256.returnMessageDigest(md);
+		String f = HexUtil.bytesToHex(SHA256.digest(bos.toByteArray()));
 		return f;
 	}
 
