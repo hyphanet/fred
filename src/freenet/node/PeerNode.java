@@ -1970,15 +1970,15 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * Requeue ResendPacketItem[]s if they are not sent.
      * @param resendItems
      */
-    public void requeueResendItems(ResendPacketItem[] resendItems) {
+    public void requeueResendItems(Vector resendItems) {
     	KeyTracker cur, prev, unv;
     	synchronized(this) {
     		cur = currentTracker;
     		prev = previousTracker;
     		unv = unverifiedTracker;
     	}
-        for(int i=0;i<resendItems.length;i++) {
-            ResendPacketItem item = resendItems[i];
+        for(int i=0;i<resendItems.size();i++) {
+            ResendPacketItem item = (ResendPacketItem) resendItems.get(i);
             if(item.pn != this)
                 throw new IllegalArgumentException("item.pn != this!");
             KeyTracker kt = cur;

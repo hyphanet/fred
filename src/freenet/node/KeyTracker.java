@@ -6,6 +6,7 @@ package freenet.node;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
 import freenet.io.comm.NotConnectedException;
@@ -1031,17 +1032,24 @@ public class KeyTracker {
     }
 
     /**
-     * @return An array of packets that need to be resent, if any.
-     * Some of the elements may be null. Otherwise null.
+     * Fill rpiTemp with ResendPacketItems of packets that need to be
+     * resent.
+     * @return An array of integers which contains the packet numbers
+     * to be resent (the RPI's are put into rpiTemp), or null if there
+     * are no packets to resend.
+     * 
+     * Not a very nice API, but it saves a load of allocations, and at
+     * least it's documented!
      */
-    public ResendPacketItem[] grabResendPackets() {
-        int[] numbers;
+    public int[] grabResendPackets(Vector rpiTemp, int[] numbers) {
+    	rpiTemp.clear();
         long now = System.currentTimeMillis();
         long fourRTTs = fourRTTs();
         int count=0;
         synchronized(packetsToResend) {
             int len = packetsToResend.size();
-            numbers = new int[len];
+            if(numbers.length < len)
+            	numbers = new int[len * 2];
             for(Iterator it=packetsToResend.iterator();it.hasNext();) {
                 int packetNo = ((Integer)it.next()).intValue();
                 long resentTime = sentPacketsContents.getReaddedTime(packetNo);
@@ -1053,7 +1061,6 @@ public class KeyTracker {
             }
             packetsToResend.clear();
         }
-        ResendPacketItem[] items = new ResendPacketItem[count];
         for(int i=0;i<count;i++) {
             int packetNo = numbers[i];
             byte[] buf = sentPacketsContents.get(packetNo);
@@ -1062,9 +1069,10 @@ public class KeyTracker {
                 continue; // acked already?
             }
             AsyncMessageCallback[] callbacks = sentPacketsContents.getCallbacks(packetNo);
-            items[i] = new ResendPacketItem(buf, packetNo, this, callbacks);
+            rpiTemp.add(new ResendPacketItem(buf, packetNo, this, callbacks));
         }
-        return items;
+        if(rpiTemp.isEmpty()) return null;
+        return numbers;
     }
 
 	public boolean isDeprecated() {

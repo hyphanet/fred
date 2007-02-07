@@ -41,6 +41,9 @@ public class PacketSender implements Runnable, Ticker {
     /** For watchdog. 32-bit to avoid locking. */
     volatile int lastTimeInSeconds;
     
+    private Vector rpiTemp;
+    private int[] rpiIntTemp;
+    
     PacketSender(Node node) {
         resendPackets = new LinkedList();
         timedJobsByTime = new TreeMap();
@@ -49,6 +52,8 @@ public class PacketSender implements Runnable, Ticker {
         myThread.setDaemon(true);
         myThread.setPriority(Thread.MAX_PRIORITY);
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
+        rpiTemp = new Vector();
+        rpiIntTemp = new int[64];
     }
 
     
@@ -213,21 +218,22 @@ public class PacketSender implements Runnable, Ticker {
                     else if(j == 1) kt = pn.getPreviousKeyTracker();
                     else break; // impossible
                     if(kt == null) continue;
-                    ResendPacketItem[] resendItems = kt.grabResendPackets();
-                    if(resendItems == null) continue;
-                    for(int k=0;k<resendItems.length;k++) {
-                        ResendPacketItem item = resendItems[k];
+                    int[] tmp = kt.grabResendPackets(rpiTemp, rpiIntTemp);
+                    if(tmp == null) continue;
+                    rpiIntTemp = tmp;
+                    for(int k=0;k<rpiTemp.size();k++) {
+                        ResendPacketItem item = (ResendPacketItem) rpiTemp.get(k);
                         if(item == null) continue;
                         try {
                             if(logMINOR) Logger.minor(this, "Resending "+item.packetNumber+" to "+item.kt);
                             node.packetMangler.resend(item);
                         } catch (KeyChangedException e) {
                             Logger.error(this, "Caught "+e+" resending packets to "+kt);
-                            pn.requeueResendItems(resendItems);
+                            pn.requeueResendItems(rpiTemp);
                             break;
                         } catch (NotConnectedException e) {
                             Logger.normal(this, "Caught "+e+" resending packets to "+kt);
-                            pn.requeueResendItems(resendItems);
+                            pn.requeueResendItems(rpiTemp);
                             break;
                         } catch (PacketSequenceException e) {
                         	Logger.error(this, "Caught "+e+" - disconnecting", e);
