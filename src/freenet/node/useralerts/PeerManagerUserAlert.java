@@ -130,7 +130,7 @@ public class PeerManagerUserAlert implements UserAlert {
 	
 	static final String TOO_HIGH_PING =
 		"This node is having trouble talking with its peers quickly enough ({PING_TIME} > "+
-		Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+").  Decrease your output bandwidth limit and/or remove some peers to improve the situation.";
+		Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
 
 	static final String NEVER_CONNECTED_TWO_WEEKS =
 		"One or more of your node's peers have never connected in the two weeks since they were added.  Consider removing them since they are marginally affecting performance.";
