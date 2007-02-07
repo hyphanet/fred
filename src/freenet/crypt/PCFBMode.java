@@ -32,13 +32,13 @@ public class PCFBMode {
     	return new PCFBMode(c, iv);
     }
     
-    PCFBMode(BlockCipher c) {
+    protected PCFBMode(BlockCipher c) {
         this.c = c;
         feedback_register = new byte[c.getBlockSize() >> 3];
         registerPointer = feedback_register.length;
     }
 
-    PCFBMode(BlockCipher c, byte[] iv) {
+    protected PCFBMode(BlockCipher c, byte[] iv) {
         this(c);
         System.arraycopy(iv, 0, feedback_register, 0, feedback_register.length);
     }
@@ -156,7 +156,7 @@ public class PCFBMode {
         
     // Refills the encrypted buffer with data.
     //private synchronized void refillBuffer() {
-    private void refillBuffer() {
+    protected void refillBuffer() {
         // Encrypt feedback into result
         c.encipher(feedback_register, feedback_register);
 

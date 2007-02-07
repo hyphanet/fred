@@ -15,7 +15,7 @@ public class EncipherInputStream extends FilterInputStream {
     protected PCFBMode ctx;
 
     public EncipherInputStream(InputStream in, BlockCipher c) {
-        this(in, new PCFBMode(c));
+        this(in, PCFBMode.create(c));
     }
 
     public EncipherInputStream(InputStream in, BlockCipher c, int bufSize) {

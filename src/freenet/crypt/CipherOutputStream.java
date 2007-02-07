@@ -21,11 +21,11 @@ public class CipherOutputStream extends FilterOutputStream {
     }
     
     public CipherOutputStream(BlockCipher c, OutputStream out) {
-        this(new PCFBMode(c), out);
+        this(PCFBMode.create(c), out);
     }
 
     public CipherOutputStream(BlockCipher c, OutputStream out, byte[] iv) {
-        this(new PCFBMode(c, iv), out);
+        this(PCFBMode.create(c, iv), out);
     }
 
     public CipherOutputStream(PCFBMode ctx, OutputStream out) {

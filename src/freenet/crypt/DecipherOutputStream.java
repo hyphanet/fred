@@ -16,7 +16,7 @@ public class DecipherOutputStream extends FilterOutputStream {
     private PCFBMode ctx;
 
     public DecipherOutputStream(OutputStream out, BlockCipher c) {
-        this(out, new PCFBMode(c));
+        this(out, PCFBMode.create(c));
     }
 
     public DecipherOutputStream(OutputStream out, BlockCipher c, int bufSize) {

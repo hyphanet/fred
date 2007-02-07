@@ -19,13 +19,13 @@ public class CipherInputStream extends FilterInputStream {
     private boolean needIV = false;
 
     public CipherInputStream(BlockCipher c, InputStream in) {
-        this(new PCFBMode(c), in);
+        this(PCFBMode.create(c), in);
     }
 
     public CipherInputStream(BlockCipher c, InputStream in, boolean readIV) 
         throws IOException {
 
-        this(new PCFBMode(c), in);
+        this(PCFBMode.create(c), in);
         if (readIV) ctx.readIV(this.in);
     }
 
@@ -39,7 +39,7 @@ public class CipherInputStream extends FilterInputStream {
      */
     public CipherInputStream(BlockCipher c, InputStream in, boolean readIV,
                              boolean later) throws IOException {
-        this(new PCFBMode(c), in);
+        this(PCFBMode.create(c), in);
         if (readIV && later)
             needIV = true;
         else if (readIV)
