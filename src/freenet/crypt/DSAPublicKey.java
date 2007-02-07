@@ -141,9 +141,7 @@ public class DSAPublicKey extends CryptoKey {
     }
 
     public byte[] asBytesHash() {
-    	MessageDigest md256 = SHA256.getMessageDigest();
-    	byte[] hash = md256.digest(asBytes());
-    	SHA256.returnMessageDigest(md256);
+    	byte[] hash = SHA256.digest(asBytes());
     	return hash;
     }
     

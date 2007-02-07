@@ -57,9 +57,7 @@ public class DiffieHellmanContext extends KeyAgreementSchemeContext {
             (NativeBigInteger) peerExponential.modPow(myExponent, group.getP());
         MessageDigest md;
         
-        md = SHA256.getMessageDigest();
-        key = md.digest(sharedSecret.toByteArray());
-        SHA256.returnMessageDigest(md);
+        key = SHA256.digest(sharedSecret.toByteArray());
         if(logMINOR)
             Logger.minor(this, "Key="+HexUtil.bytesToHex(key));
         return key;

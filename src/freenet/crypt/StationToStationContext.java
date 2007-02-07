@@ -92,10 +92,8 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     	if(hisExponential == null) throw new IllegalStateException("Can't call concatAndSignAndCrypt() until setOtherSideExponential() has been called!");
     	if(key == null)  getKey();
 
-    	MessageDigest md = SHA256.getMessageDigest();
-    	
     	String message = "(" + myExponential + ',' + hisExponential + ')';
-    	DSASignature signature = DSA.sign(group, myPrivateKey, new BigInteger(md.digest(message.getBytes())), random);
+    	DSASignature signature = DSA.sign(group, myPrivateKey, new BigInteger(SHA256.digest(message.getBytes())), random);
     	
     	if(logMINOR)
             Logger.minor(this, "The concat result : "+message+". Its signature : "+signature);
@@ -114,8 +112,6 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     		e.printStackTrace();
     	}
 
-    	SHA256.returnMessageDigest(md);
-    	
     	return result;
     }
     
@@ -129,15 +125,13 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     	EncipherInputStream ei = new EncipherInputStream(is, getCipher());
     	final String message = "(" + hisExponential + ',' + myExponential + ')';
 
-    	MessageDigest md = SHA256.getMessageDigest();
         try{
     		String signatureToCheck = ei.toString();
     		ei.close();
     		is.close();
 
     		if(signatureToCheck != null)
-    			if(DSA.verify(hisPubKey, new DSASignature(signatureToCheck), new BigInteger(md.digest(message.getBytes())))) {
-    				SHA256.returnMessageDigest(md);
+    			if(DSA.verify(hisPubKey, new DSASignature(signatureToCheck), new BigInteger(SHA256.digest(message.getBytes())))) {
     				return true;
     			}
 
@@ -146,7 +140,6 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     		e.printStackTrace();
     	}
 
-    	SHA256.returnMessageDigest(md);
     	return false;
     }
 
