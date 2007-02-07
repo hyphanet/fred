@@ -866,7 +866,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         }
 
         if(seqNumber == -1) {
-        	Logger.minor(this, "Returning because seqno = "+seqNumber);
+        	if(logMINOR) Logger.minor(this, "Returning because seqno = "+seqNumber);
         	return;
         }
         // No sequence number == no messages
