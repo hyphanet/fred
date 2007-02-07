@@ -689,9 +689,14 @@ public class FCPServer implements Runnable {
 		File f = new File(core.getDownloadDir(), preferredWithExt);
 		File f1 = new File(core.getDownloadDir(), preferredWithExt + ".freenet-tmp");
 		int x = 0;
-		while(f.exists() || f1.exists()) {
-			f = new File(core.getDownloadDir(), preferred + '-' + x + extAdd);
-			f1 = new File(core.getDownloadDir(), preferred + '-' + x + extAdd + ".freenet-tmp");
+		StringBuffer sb = new StringBuffer();
+		for(;f.exists() || f1.exists();sb.setLength(0)) {
+			sb.append(preferred);
+			sb.append('-');
+			sb.append(x);
+			sb.append(extAdd);
+			f = new File(core.getDownloadDir(), sb.toString());
+			f1 = new File(core.getDownloadDir(), sb.append(".freenet-tmp").toString());
 		}
 		return f;
 	}
