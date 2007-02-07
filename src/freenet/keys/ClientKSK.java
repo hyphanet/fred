@@ -46,6 +46,7 @@ public class ClientKSK extends InsertableClientSSK {
 		DSAPublicKey pubKey = new DSAPublicKey(Global.DSAgroupBigA, privKey);
 		byte[] pubKeyHash = md256.digest(pubKey.asBytes());
 		try {
+			SHA256.returnMessageDigest(md256);
 			return new ClientKSK(keyword, pubKeyHash, pubKey, privKey, keywordHash);
 		} catch (MalformedURLException e) {
 			throw new Error(e);

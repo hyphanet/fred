@@ -627,6 +627,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		
 		// Setup the queuedToSendN2NTMExtraPeerDataFileNumbers
 		queuedToSendN2NTMExtraPeerDataFileNumbers = new HashSet();
+		
+		SHA256.returnMessageDigest(md);
     }
 
     private boolean parseARK(SimpleFieldSet fs, boolean onStartup) {

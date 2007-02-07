@@ -81,6 +81,7 @@ public class CHKBlock implements KeyBlock {
         md.update(headers);
         md.update(data);
         byte[] hash = md.digest();
+        SHA256.returnMessageDigest(md);
         if(key == null) {
         	chk = new NodeCHK(hash, cryptoAlgorithm);
         } else {

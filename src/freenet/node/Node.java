@@ -552,6 +552,7 @@ public class Node {
 		MessageDigest md = SHA256.getMessageDigest();
 		identityHash = md.digest(myIdentity);
 		identityHashHash = md.digest(identityHash);
+		SHA256.returnMessageDigest(md); md = null;
 		String loc = fs.get("location");
 		Location l;
 		try {
@@ -673,6 +674,7 @@ public class Node {
 		this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
 		myARK = InsertableClientSSK.createRandom(r, "ark");
 		myARKNumber = 0;
+		SHA256.returnMessageDigest(md);
 	}
 
 	/**
@@ -1730,6 +1732,7 @@ public class Node {
 				try{
 					MessageDigest md = SHA256.getMessageDigest();
 					myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, new BigInteger(md.digest(mySignedReference.getBytes("UTF-8"))), random);
+					SHA256.returnMessageDigest(md);
 				} catch(UnsupportedEncodingException e){
 					//duh ?
 					Logger.error(this, "Error while signing the node identity!"+e);
@@ -2592,6 +2595,7 @@ public class Node {
 				} else {
 					Logger.error(this, "New hash is wrong");
 				}
+				// REDFLAG don't recycle md256 because something wierd is happening if we are here
 				throw new IllegalArgumentException("Wrong hash?? Already have different key with same hash!");
 			}
 			cachedPubKeys.push(w, key);

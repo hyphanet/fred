@@ -224,6 +224,8 @@ public class LocationManager {
         }
         
         public void run() {
+            MessageDigest md = SHA256.getMessageDigest();
+            
             try {
             // We are already locked by caller
             // Because if we can't get lock they need to send a reject
@@ -231,8 +233,6 @@ public class LocationManager {
             // Firstly, is their message valid?
             
             byte[] hisHash = ((ShortBuffer)origMessage.getObject(DMT.HASH)).getData();
-            
-            MessageDigest md = SHA256.getMessageDigest();
             
             if(hisHash.length != md.getDigestLength()) {
                 Logger.error(this, "Invalid SwapRequest from peer: wrong length hash "+hisHash.length+" on "+uid);
@@ -347,6 +347,7 @@ public class LocationManager {
         } finally {
             unlock();
             removeRecentlyForwardedItem(item);
+            SHA256.returnMessageDigest(md);
         }
         }
     }
@@ -364,6 +365,7 @@ public class LocationManager {
         public void run() {
             long uid = r.nextLong();            
             if(!lock()) return;
+            MessageDigest md = SHA256.getMessageDigest();
             try {
                 startedSwaps++;
                 // We can't lock friends_locations, so lets just
@@ -377,8 +379,6 @@ public class LocationManager {
                 for(int i=0;i<friendLocs.length;i++)
                     myValueLong[i+2] = Double.doubleToLongBits(friendLocs[i]);
                 byte[] myValue = Fields.longsToBytes(myValueLong);
-                
-                MessageDigest md = SHA256.getMessageDigest();
                 
                 byte[] myHash = md.digest(myValue);
                 
@@ -522,6 +522,7 @@ public class LocationManager {
                 unlock();
                 if(item != null)
                     removeRecentlyForwardedItem(item);
+                SHA256.returnMessageDigest(md);
             }
         }
 

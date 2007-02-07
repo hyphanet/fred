@@ -69,7 +69,9 @@ public class InsertableClientSSK extends ClientSSK {
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(pubKey.asBytes());
-		return new InsertableClientSSK(uri.getDocName(), md.digest(), pubKey, privKey, uri.getCryptoKey(), keyType);
+		byte[] pkHash = md.digest();
+		SHA256.returnMessageDigest(md);
+		return new InsertableClientSSK(uri.getDocName(), pkHash, pubKey, privKey, uri.getCryptoKey(), keyType);
 	}
 	
 	public ClientSSKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, RandomSource r) throws SSKEncodeException, IOException {
@@ -173,6 +175,7 @@ public class InsertableClientSSK extends ClientSSK {
 		if(x != SSKBlock.TOTAL_HEADERS_LENGTH)
 			throw new IllegalStateException("Too long");
 		try {
+			SHA256.returnMessageDigest(md256);
 			return new ClientSSKBlock(data, headers, this, false); // FIXME set last arg to true to not verify
 		} catch (SSKVerifyException e) {
 			IllegalStateException exception=new IllegalStateException("Impossible encoding error: "+e.getMessage());
@@ -208,7 +211,10 @@ public class InsertableClientSSK extends ClientSSK {
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
 		MessageDigest md = SHA256.getMessageDigest();
 		try {
-			return new InsertableClientSSK(docName, md.digest(pubKey.asBytes()), pubKey, privKey, ckey, Key.ALGO_AES_PCFB_256_SHA256);
+			byte[] pkHash = md.digest(pubKey.asBytes());
+			SHA256.returnMessageDigest(md);
+			return new InsertableClientSSK(docName, pkHash, pubKey, privKey, ckey, 
+					Key.ALGO_AES_PCFB_256_SHA256);
 		} catch (MalformedURLException e) {
 			throw new Error(e);
 		}

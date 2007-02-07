@@ -91,7 +91,7 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     	lastUsedTime = System.currentTimeMillis();
     	if(hisExponential == null) throw new IllegalStateException("Can't call concatAndSignAndCrypt() until setOtherSideExponential() has been called!");
     	if(key == null)  getKey();
-    	
+
     	MessageDigest md = SHA256.getMessageDigest();
     	
     	String message = "(" + myExponential + ',' + hisExponential + ')';
@@ -114,6 +114,8 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     		e.printStackTrace();
     	}
 
+    	SHA256.returnMessageDigest(md);
+    	
     	return result;
     }
     
@@ -134,14 +136,17 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     		is.close();
 
     		if(signatureToCheck != null)
-    			if(DSA.verify(hisPubKey, new DSASignature(signatureToCheck), new BigInteger(md.digest(message.getBytes()))))
+    			if(DSA.verify(hisPubKey, new DSASignature(signatureToCheck), new BigInteger(md.digest(message.getBytes())))) {
+    				SHA256.returnMessageDigest(md);
     				return true;
+    			}
 
     	} catch(IOException e){
     		Logger.error(this, "Error :"+e);
     		e.printStackTrace();
     	}
 
+    	SHA256.returnMessageDigest(md);
     	return false;
     }
 

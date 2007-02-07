@@ -90,8 +90,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
     		throw new IllegalArgumentException("Must have pubkey to insert data!!");
     	// pubKey.fingerprint() is not the same as hash(pubKey.asBytes())). FIXME it should be!
     	byte[] pubKeyAsBytes = pubKey.asBytes();
-    	MessageDigest md256 = SHA256.getMessageDigest();
-    	pubKeyHash = md256.digest(pubKeyAsBytes);
+    	pubKeyHash = SHA256.digest(pubKeyAsBytes);
     	this.block = block;
     	startTime = System.currentTimeMillis();
     }

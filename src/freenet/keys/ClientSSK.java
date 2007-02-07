@@ -71,6 +71,7 @@ public class ClientSSK extends ClientKey {
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
+		SHA256.returnMessageDigest(md);
 	}
 	
 	public ClientSSK(FreenetURI origURI) throws MalformedURLException {

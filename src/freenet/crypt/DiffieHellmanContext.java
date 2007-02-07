@@ -59,6 +59,7 @@ public class DiffieHellmanContext extends KeyAgreementSchemeContext {
         
         md = SHA256.getMessageDigest();
         key = md.digest(sharedSecret.toByteArray());
+        SHA256.returnMessageDigest(md);
         if(logMINOR)
             Logger.minor(this, "Key="+HexUtil.bytesToHex(key));
         return key;

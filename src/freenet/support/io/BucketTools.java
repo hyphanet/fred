@@ -284,7 +284,9 @@ public class BucketTools {
 				throw new EOFException();
 			if((bytesRead != bucketLength) && (bucketLength > 0))
 				throw new IOException("Read "+bytesRead+" but bucket length "+bucketLength+ '!');
-			return md.digest();
+			byte[] retval = md.digest();
+			SHA256.returnMessageDigest(md);
+			return retval;
 		} finally {
 			if(is != null) is.close();
 		}

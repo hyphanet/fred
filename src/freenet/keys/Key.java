@@ -82,6 +82,7 @@ public abstract class Key implements WritableToDataOutputStream {
         md.update((byte)(TYPE >> 8));
         md.update((byte)TYPE);
         byte[] digest = md.digest();
+        SHA256.returnMessageDigest(md); md = null;
         long asLong = Math.abs(Fields.bytesToLong(digest));
         // Math.abs can actually return negative...
         if(asLong == Long.MIN_VALUE)

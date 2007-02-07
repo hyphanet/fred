@@ -171,6 +171,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         int ivLength = pcfb.lengthIV();
         MessageDigest md = SHA256.getMessageDigest();
         int digestLength = md.getDigestLength();
+        SHA256.returnMessageDigest(md);
         if(length < digestLength + ivLength + 4) {
             if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
             return false;
@@ -393,9 +394,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
         System.arraycopy(myRef, 0, data, 8, myRef.length);
         
-        MessageDigest md = SHA256.getMessageDigest();
-        
-        byte[] hash = md.digest(data);
+        byte[] hash = SHA256.digest(data);
         
         pcfb.blockEncipher(hash, 0, hash.length);
         pcfb.blockEncipher(data, 0, data.length);
@@ -498,6 +497,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
 		}
 		if(logMINOR) Logger.minor(this, "Sending auth packet (long) to "+replyTo+" - size "+data.length+" data length: "+output.length);
+		SHA256.returnMessageDigest(md);
      }
 
     private void sendPacket(byte[] data, Peer replyTo, PeerNode pn, int alreadyReportedBytes) throws LocalAddressException {
@@ -548,6 +548,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         // Check the hash
         MessageDigest md = SHA256.getMessageDigest();
         byte[] realHash = md.digest(data);
+        SHA256.returnMessageDigest(md); md = null;
         if(Arrays.equals(realHash, hash)) {
             // Success!
             long bootID = Fields.bytesToLong(data);
@@ -701,6 +702,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         md.update(seqBuf);
         md.update(plaintext);
         byte[] realHash = md.digest();
+        SHA256.returnMessageDigest(md);
 
         // Now decrypt the original hash
         
@@ -1428,6 +1430,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         byte[] digestTemp;
         
         digestTemp = md.digest();
+        
+        SHA256.returnMessageDigest(md); md = null;
 
         if(logMINOR) Logger.minor(this, "\nHash:      "+HexUtil.bytesToHex(digestTemp));
                 

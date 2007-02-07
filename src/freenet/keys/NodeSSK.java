@@ -56,6 +56,7 @@ public class NodeSSK extends Key {
 		if(pubKey != null) {
 			MessageDigest md256 = SHA256.getMessageDigest();
 			byte[] hash = md256.digest(pubKey.asBytes());
+			SHA256.returnMessageDigest(md256);
 			if(!Arrays.equals(hash, pkHash))
 				throw new SSKVerifyException("Invalid pubKey: wrong hash");
 		}
@@ -71,7 +72,9 @@ public class NodeSSK extends Key {
 		MessageDigest md256 = SHA256.getMessageDigest();
 		md256.update(ehDocname);
 		md256.update(pkHash);
-		return md256.digest();
+		byte[] key = md256.digest();
+		SHA256.returnMessageDigest(md256);
+		return key;
 	}
 	
 	public void write(DataOutput _index) throws IOException {
@@ -126,8 +129,7 @@ public class NodeSSK extends Key {
 		if(pubKey2 == null) return;
 		if((pubKey == null) || !pubKey2.equals(pubKey)) {
 			if(pubKey2 != null) {
-				MessageDigest md256 = SHA256.getMessageDigest();
-				byte[] newPubKeyHash = md256.digest(pubKey2.asBytes());
+				byte[] newPubKeyHash = SHA256.digest(pubKey2.asBytes());
 				if(Arrays.equals(pubKeyHash, newPubKeyHash)) {
 					if(pubKey != null) {
 						// same hash, yet different keys!

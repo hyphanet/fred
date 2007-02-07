@@ -143,6 +143,7 @@ public class SSKBlock implements KeyBlock {
 		}
 		if(!Arrays.equals(ehDocname, nodeKey.encryptedHashedDocname))
 			throw new SSKVerifyException("E(H(docname)) wrong - wrong key?? \nfrom headers: "+HexUtil.bytesToHex(ehDocname)+"\nfrom key:     "+HexUtil.bytesToHex(nodeKey.encryptedHashedDocname));
+		SHA256.returnMessageDigest(md);
 	}
 
 	public Key getKey() {

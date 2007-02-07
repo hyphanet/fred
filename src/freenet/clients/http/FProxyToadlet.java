@@ -486,7 +486,9 @@ public class FProxyToadlet extends Toadlet {
 			throw new Error(e);
 		}
 		
-		return HexUtil.bytesToHex(md.digest(bos.toByteArray()));
+		String f = HexUtil.bytesToHex(md.digest(bos.toByteArray()));
+		SHA256.returnMessageDigest(md);
+		return f;
 	}
 
 	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SubConfig fproxyConfig) throws IOException, InvalidConfigValueException {

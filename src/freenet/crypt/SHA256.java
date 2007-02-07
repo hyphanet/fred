@@ -41,6 +41,7 @@ package freenet.crypt;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -322,12 +323,15 @@ public class SHA256 implements Digest {
 	return HexUtil.bytesToHex(d);
     }
 
+    static private final Vector digests = new Vector();
+    
     /**
 	 * Create a new SHA-256 MessageDigest
 	 * Either succeed or stop the node.
 	 */
-	public  static MessageDigest getMessageDigest() {
+	public synchronized static MessageDigest getMessageDigest() {
 	    try {
+	    	if(!digests.isEmpty()) return (MessageDigest) digests.remove(0);
 	        return MessageDigest.getInstance("SHA-256");
 	    } catch (NoSuchAlgorithmException e2) {
 	    	//TODO: maybe we should point to a HOWTO for freejvms
@@ -337,6 +341,26 @@ public class SHA256 implements Digest {
 			WrapperManager.stop(Node.EXIT_CRAPPY_JVM);
 		}
 		return null;
+	}
+
+	/**
+	 * Return a MessageDigest to the pool.
+	 * Must be SHA-256 !
+	 */
+	public synchronized static void returnMessageDigest(MessageDigest md256) {
+		if(md256 == null) return;
+		String algo = md256.getAlgorithm();
+		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
+			throw new IllegalArgumentException("Should be SHA-256 but is "+algo);
+		md256.reset();
+		digests.add(md256);
+	}
+
+	public static byte[] digest(byte[] data) {
+		MessageDigest md = getMessageDigest();
+		byte[] hash = md.digest(data);
+		returnMessageDigest(md);
+		return hash;
 	}
 
 	public static void main(String[] args) {

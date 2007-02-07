@@ -101,10 +101,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         MessageDigest md256 = SHA256.getMessageDigest();
         byte[] dkey = md256.digest(dbuf);
         if(!java.util.Arrays.equals(dkey, key.cryptoKey)) {
+        	SHA256.returnMessageDigest(md256);
             throw new CHKDecodeException("Check failed: decrypt key == H(data)");
         }
         // Check: IV == hash of decryption key
         byte[] predIV = md256.digest(dkey);
+        SHA256.returnMessageDigest(md256); md256 = null;
         // Extract the IV
         byte[] iv = new byte[32];
         System.arraycopy(hbuf, 0, iv, 0, 32);
@@ -112,9 +114,11 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new CHKDecodeException("Check failed: Decrypted IV == H(decryption key)");
         // Checks complete
         int size = ((hbuf[32] & 0xff) << 8) + (hbuf[33] & 0xff);
-        if((size > 32768) || (size < 0))
+        if((size > 32768) || (size < 0)) {
             throw new CHKDecodeException("Invalid size: "+size);
-        return Key.decompress(dontCompress ? false : key.isCompressed(), dbuf, size, bf, Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
+        }
+        return Key.decompress(dontCompress ? false : key.isCompressed(), dbuf, size, bf, 
+        		Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
 
     /**
@@ -189,6 +193,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // Now calculate the final hash
         md256.update(header);
         byte[] finalHash = md256.digest(data);
+        
+        SHA256.returnMessageDigest(md256);
         
         // Now convert it into a ClientCHK
         key = new ClientCHK(finalHash, encKey, asMetadata, Key.ALGO_AES_PCFB_256_SHA256, compressionAlgorithm);
