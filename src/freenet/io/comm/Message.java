@@ -37,7 +37,7 @@ public class Message {
 
 	private final MessageType _spec;
 	private final PeerContext _source;
-	private final HashMap _payload = new HashMap();
+	private final HashMap _payload = new HashMap(8, 1.0F); // REDFLAG at the moment memory is more of an issue than CPU so we use a high load factor
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
 
