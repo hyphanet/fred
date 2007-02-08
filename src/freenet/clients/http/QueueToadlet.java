@@ -121,16 +121,24 @@ public class QueueToadlet extends Toadlet {
 				ClientRequest[] reqs = fcp.getGlobalRequests();
 				if(logMINOR) Logger.minor(this, "Request count: "+reqs.length);
 				
+				StringBuffer failedIdentifiers = new StringBuffer();
+				
 				for(int i=0; i<reqs.length ; i++){
 					String identifier = reqs[i].getIdentifier();
 					if(logMINOR) Logger.minor(this, "Removing "+identifier);
 					try {
 						fcp.removeGlobalRequest(identifier);
 					} catch (MessageInvalidException e) {
-						this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove " + identifier + ": " + e.getMessage());
+						failedIdentifiers.append(identifier + ' ' + e.getMessage() + ';');
+						Logger.error(this, "Failed to remove " + identifier + ':' + e.getMessage());
+						continue;
 					}
 				}
-				writePermanentRedirect(ctx, "Done", "/queue/");
+				
+				if(failedIdentifiers.length() > 0)
+					this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove " + failedIdentifiers);
+				else
+					writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			}else if(request.isPartSet("download")) {
 				// Queue a download
