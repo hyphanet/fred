@@ -402,7 +402,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				ToadletContextImpl.handle(sock, SimpleToadletServer.this, bf, pageMaker);
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
-				System.err.println("SimpleToadlesServer request above failed.");
+				System.err.println("SimpleToadletServer request above failed.");
 			} catch (Throwable t) {
 				System.err.println("Caught in SimpleToadletServer: "+t);
 				t.printStackTrace();
