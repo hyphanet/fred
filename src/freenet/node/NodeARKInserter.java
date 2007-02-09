@@ -17,6 +17,7 @@ import freenet.client.async.ClientPutter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
@@ -30,6 +31,7 @@ public class NodeARKInserter implements ClientCallback {
 	private final Node node;
 	private final NodeIPDetector detector;
 	private static boolean logMINOR;
+	private final boolean old;
 
 	/**
 	 * @param node
@@ -38,6 +40,7 @@ public class NodeARKInserter implements ClientCallback {
 	NodeARKInserter(Node node, NodeIPDetector detector, boolean old) {
 		this.node = node;
 		this.detector = detector;
+		this.old = old;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -127,7 +130,9 @@ public class NodeARKInserter implements ClientCallback {
 		
 		Bucket b = new SimpleReadOnlyArrayBucket(buf);
 		
-		FreenetURI uri = this.node.myARK.getInsertURI().setKeyType("USK").setSuggestedEdition(this.node.myARKNumber);
+		long number = old ? node.myOldARKNumber : node.myARKNumber;
+		InsertableClientSSK ark = old ? node.myOldARK : node.myARK;
+		FreenetURI uri = ark.getInsertURI().setKeyType("USK").setSuggestedEdition(number);
 		
 		if(logMINOR) Logger.minor(this, "Inserting ARK: "+uri);
 		
