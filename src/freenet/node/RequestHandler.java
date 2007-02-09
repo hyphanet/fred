@@ -78,7 +78,7 @@ public class RequestHandler implements Runnable, ByteCounter {
                 if(needsPubKey) {
                 	DSAPublicKey key = ((NodeSSK)block.getKey()).getPubKey();
                 	Message pk = DMT.createFNPSSKPubKey(uid, key.asBytes());
-                	if(logMINOR) Logger.minor(this, "Sending PK: "+key+ ' ' +key.writeAsField());
+                	if(logMINOR) Logger.minor(this, "Sending PK: "+key+ ' ' +key.toLongString());
                 	source.send(pk, null);
                 }
                 status = RequestSender.SUCCESS; // for byte logging
