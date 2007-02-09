@@ -41,6 +41,8 @@ public class DSAGroup extends CryptoKey {
         this.p = p;
         this.q = q;
         this.g = g;
+        if(p.signum() != 1 || q.signum() != 1 || g.signum() != 1)
+        	throw new IllegalArgumentException();
         updateCachedHexStrings();
     }
 
@@ -66,6 +68,8 @@ public class DSAGroup extends CryptoKey {
                     + pAsHexString + ',' + qAsHexString + " and "
                     + gAsHexString + " to integers");
         }
+        if(p.signum() != 1 || q.signum() != 1 || g.signum() != 1)
+        	throw new IllegalArgumentException();
     }
 
     private void updateCachedHexStrings() {

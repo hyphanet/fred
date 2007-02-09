@@ -21,6 +21,8 @@ public class DSAPrivateKey extends CryptoKey {
 
     public DSAPrivateKey(BigInteger x) {
         this.x = x;
+        if(x.signum() != 1)
+        	throw new IllegalArgumentException();
     }
 
     // this is dangerous...  better to force people to construct the

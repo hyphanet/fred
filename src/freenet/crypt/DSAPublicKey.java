@@ -26,6 +26,7 @@ public class DSAPublicKey extends CryptoKey {
 	private byte[] fingerprint = null;
     
     public DSAPublicKey(DSAGroup g, BigInteger y) {
+    	if(y.signum() != 1) throw new IllegalArgumentException();
 		this.y=y;
 		this.group=g;
 		if(g == null) throw new NullPointerException();
@@ -37,6 +38,7 @@ public class DSAPublicKey extends CryptoKey {
 	 */
 	public DSAPublicKey(DSAGroup g, String yAsHexString) throws NumberFormatException {
 		this.y=new NativeBigInteger(yAsHexString,16);
+    	if(y.signum() != 1) throw new IllegalArgumentException();
 		this.yAsHexString = yAsHexString;
 		this.group=g;
 		if(g == null) throw new NullPointerException();

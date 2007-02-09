@@ -33,6 +33,7 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 	    	throw new NumberFormatException("DSA Signatures have two values");
 		r = new NativeBigInteger(sig.substring(0,x), 16);
 		s = new NativeBigInteger(sig.substring(x+1), 16);
+		if(r.signum() != 1 || s.signum() != 1) throw new IllegalArgumentException();
     }
 
     public static DSASignature read(InputStream in) throws IOException {
@@ -59,6 +60,7 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 		this.s=s;
 		if((r == null) || (s == null)) //Do not allow this sice we wont do any sanity checking beyond this place
 			throw new NullPointerException();
+		if(r.signum() != 1 || s.signum() != 1) throw new IllegalArgumentException();
     }
 
     public BigInteger getR() {

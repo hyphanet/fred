@@ -24,6 +24,8 @@ public class DSA {
 			BigInteger k, 
 			BigInteger m,
 			RandomSource random) {
+		if(k.signum() == -1) throw new IllegalArgumentException();
+		if(m.signum() == -1) throw new IllegalArgumentException();
 		BigInteger r=g.getG().modPow(k, g.getP()).mod(g.getQ());
 
 		BigInteger kInv=k.modInverse(g.getQ());
@@ -84,6 +86,7 @@ public class DSA {
 	public static boolean verify(DSAPublicKey kp,
 			DSASignature sig,
 			BigInteger m) {
+		if(m.signum() == -1) throw new IllegalArgumentException();
 		try {
 			// 0<r<q has to be true
 			if((sig.getR().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getR()) < 1)) return false;
