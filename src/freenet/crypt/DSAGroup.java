@@ -23,7 +23,7 @@ import freenet.support.SimpleFieldSet;
 public class DSAGroup extends CryptoKey {
 	private static final long serialVersionUID = -1;
 	
-	public static final int Q_BIT_LENGTH = 160;
+	public static final int Q_BIT_LENGTH = 256;
 
     private final BigInteger p, q, g;
 
