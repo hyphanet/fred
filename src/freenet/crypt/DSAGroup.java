@@ -8,15 +8,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Random;
-import java.util.StringTokenizer;
 import java.util.Vector;
 
+import net.i2p.util.NativeBigInteger;
 import freenet.support.Base64;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
-
-import net.i2p.util.NativeBigInteger;
 
 /**
  * Holds DSA group parameters. These are the public (possibly shared) values
@@ -118,19 +116,6 @@ public class DSAGroup extends CryptoKey {
         b.append(qAsHexString).append(',');
         b.append(gAsHexString);
         return b.toString();
-    }
-
-    public static DSAGroup readFromField(String field) {
-        BigInteger p, q, g;
-        StringTokenizer str = new StringTokenizer(field, ",");
-        if (str.countTokens() != 3) throw new NumberFormatException();
-        p = new NativeBigInteger(str.nextToken(), 16);
-        q = new NativeBigInteger(str.nextToken(), 16);
-        g = new NativeBigInteger(str.nextToken(), 16);
-        DSAGroup r = new DSAGroup(p, q, g);
-        return (r.equals(Global.DSAgroupA) ? Global.DSAgroupA : (r
-                .equals(Global.DSAgroupB) ? Global.DSAgroupB : (r
-                .equals(Global.DSAgroupC) ? Global.DSAgroupC : r)));
     }
 
     public String keyType() {
