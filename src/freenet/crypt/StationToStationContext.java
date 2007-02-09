@@ -7,8 +7,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.util.Random;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.support.HexUtil;

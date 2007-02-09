@@ -1,6 +1,8 @@
-package freenet.crypt;
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 
-import java.security.MessageDigest;
+package freenet.crypt;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.support.HexUtil;
@@ -55,7 +57,6 @@ public class DiffieHellmanContext extends KeyAgreementSchemeContext {
             Logger.minor(this, "My exponent: "+myExponent.toHexString()+", my exponential: "+myExponential.toHexString()+", peer's exponential: "+peerExponential.toHexString());
         NativeBigInteger sharedSecret =
             (NativeBigInteger) peerExponential.modPow(myExponent, group.getP());
-        MessageDigest md;
         
         key = SHA256.digest(sharedSecret.toByteArray());
         if(logMINOR)
