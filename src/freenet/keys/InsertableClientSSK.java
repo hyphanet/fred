@@ -234,7 +234,7 @@ public class InsertableClientSSK extends ClientSSK {
 		return Global.DSAgroupBigA;
 	}
 
-	/** If true, this SSK is using the old, back compatible, insecure crypto algorithm */
+	/** If true, this SSK is using the old, back compatible, insecure crypto algorithm. FIXME remove with support for old crypto. */
 	public boolean isInsecure() {
 		return cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256;
 	}
