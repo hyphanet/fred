@@ -129,7 +129,7 @@ public class FailureCodeTracker {
 			if(verbose)
 				sfs.putSingle(Integer.toString(code)+".Description", 
 						insert ? InserterException.getMessage(code) : FetchException.getMessage(code));
-			sfs.putSingle(Integer.toString(code)+".Count", Integer.toString(item.x));
+			sfs.put(Integer.toString(code)+".Count", item.x);
 		}
 		return sfs;
 	}
