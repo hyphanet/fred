@@ -635,6 +635,7 @@ public class Node {
 		this.myARK = ark;
 		
 		if(arkIsOld) {
+			System.out.println("Creating new ARK, old is insecure");
 			myOldARKNumber = myARKNumber;
 			myOldARK = myARK;
 			myARK = InsertableClientSSK.createRandom(r, "ark");
