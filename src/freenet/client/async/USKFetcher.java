@@ -310,7 +310,7 @@ public class USKFetcher implements ClientGetState {
 			if(!dontUpdate)
 				uskManager.update(origUSK, curLatest);
 			if(completed || cancelled) return;
-			if(curLatest >= lastEd) {
+			if(curLatest >= lastEd && !(dontUpdate && block == null)) {
 				try {
 					Bucket data = lastRequestData = block.decode(ctx.bucketFactory, 1025 /* it's an SSK */, true);
 					lastCompressionCodec = block.getCompressionCodec();
