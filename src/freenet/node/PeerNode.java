@@ -2723,7 +2723,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 						node.usm.send(this, n2ntm, null);
 						Logger.normal(this, "Sent queued ("+fileNumber+") N2NTM to '"+getName()+"': "+text);
 						sendSuccess = true;
-						queuedToSendN2NTMExtraPeerDataFileNumbers.remove(Integer.valueOf(fileNumber));
+						queuedToSendN2NTMExtraPeerDataFileNumbers.remove(Integer.toString(fileNumber));
 					}
 					deleteExtraPeerDataFile(fileNumber);
 				} catch (NotConnectedException e) {
@@ -2734,7 +2734,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
 					fs.put("extraPeerDataType", Integer.toString(extraPeerDataType));
 					fs.removeValue("sentTime");
-					queuedToSendN2NTMExtraPeerDataFileNumbers.add(Integer.valueOf(fileNumber));
+					queuedToSendN2NTMExtraPeerDataFileNumbers.add(Integer.toString(fileNumber));
 				}
 			}
 			return true;
