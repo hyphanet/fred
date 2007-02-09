@@ -91,7 +91,7 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     	if(key == null)  getKey();
 
     	String message = "(" + myExponential + ',' + hisExponential + ')';
-    	DSASignature signature = DSA.sign(group, myPrivateKey, new BigInteger(SHA256.digest(message.getBytes())), random);
+    	DSASignature signature = DSA.sign(group, myPrivateKey, new BigInteger(1, SHA256.digest(message.getBytes())), random);
     	
     	if(logMINOR)
             Logger.minor(this, "The concat result : "+message+". Its signature : "+signature);
@@ -129,7 +129,7 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     		is.close();
 
     		if(signatureToCheck != null)
-    			if(DSA.verify(hisPubKey, new DSASignature(signatureToCheck), new BigInteger(SHA256.digest(message.getBytes())))) {
+    			if(DSA.verify(hisPubKey, new DSASignature(signatureToCheck), new BigInteger(1, SHA256.digest(message.getBytes())))) {
     				return true;
     			}
 

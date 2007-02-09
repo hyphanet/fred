@@ -1788,7 +1788,7 @@ public class Node {
 				mySignedReference = fs.toOrderedString();	
 
 				try{
-					myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, new BigInteger(SHA256.digest(mySignedReference.getBytes("UTF-8"))), random);
+					myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, new BigInteger(1, SHA256.digest(mySignedReference.getBytes("UTF-8"))), random);
 				} catch(UnsupportedEncodingException e){
 					//duh ?
 					Logger.error(this, "Error while signing the node identity!"+e);

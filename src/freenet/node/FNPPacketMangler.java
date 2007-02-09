@@ -344,7 +344,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         		if(ctx == null) return;
         		pn.setKeyAgreementSchemeContext(ctx);
         		// We got g^y
-        		ctx.setOtherSideExponential(new NativeBigInteger(payload));
+        		ctx.setOtherSideExponential(new NativeBigInteger(1, payload));
         		// We send E(S(H( our exponential, his exponential)))
         		sendSecondStSPacket(3, ctx, pn, replyTo, payload);
         	} else if(packetType == 1) {
@@ -1551,7 +1551,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     }
     
     private void sendSecondStSPacket(int phase, StationToStationContext ctx, PeerNode pn, Peer replyTo, byte[] data) {
-    	NativeBigInteger hisExponent = new NativeBigInteger(data);
+    	NativeBigInteger hisExponent = new NativeBigInteger(1, data);
     	ctx.setOtherSideExponential(hisExponent);
     	
         sendAuthPacket(1, 1, phase, ctx.concatAndSignAndCrypt(), pn, replyTo);
