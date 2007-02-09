@@ -51,8 +51,8 @@ public class DSAPrivateKey extends CryptoKey {
         return new DSAPrivateKey(Util.readMPI(i));
     }
     
-    public String writeAsField() {
-        return HexUtil.biToHex(x);
+    public String toLongString() {
+        return "x="+HexUtil.biToHex(x);
     }
     
     // what?  why is DSAGroup passed in?

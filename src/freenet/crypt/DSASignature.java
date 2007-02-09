@@ -48,13 +48,6 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 		Util.writeMPI(s, o);
     }
 
-    /** @deprecated
-      * @see #toString()
-      */
-    public String writeAsField() {
-        return toString();
-    }
-    
     public DSASignature(BigInteger r, BigInteger s) {
 		this.r=r;
 		this.s=s;
@@ -71,7 +64,7 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 		return s;
     }
 
-    public String toString() {
+    public String toLongString() {
 		if(toStringCached == null)
 			toStringCached = HexUtil.biToHex(r) + ',' + HexUtil.biToHex(s);
         return toStringCached;

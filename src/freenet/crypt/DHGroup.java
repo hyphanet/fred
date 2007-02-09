@@ -27,7 +27,7 @@ public class DHGroup extends CryptoKey {
 //		super.write(out, getClass().getName());
 //	}
 //
-	public String writeAsField() {
+	public String toLongString() {
 		String pStr = HexUtil.biToHex(p);
 		String gStr = HexUtil.biToHex(g);
 		StringBuffer b = new StringBuffer(pStr.length() + gStr.length() + 1);

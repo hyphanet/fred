@@ -16,8 +16,6 @@ public class DSAPublicKey extends CryptoKey {
 	private static final long serialVersionUID = -1;
     
     private final BigInteger y;
-	/** A cache of the hexadecimal string representation of y */
-    private String yAsHexString; 
     
     public static final int PADDED_SIZE = 1024;
 
@@ -39,7 +37,6 @@ public class DSAPublicKey extends CryptoKey {
 	public DSAPublicKey(DSAGroup g, String yAsHexString) throws NumberFormatException {
 		this.y=new NativeBigInteger(yAsHexString,16);
     	if(y.signum() != 1) throw new IllegalArgumentException();
-		this.yAsHexString = yAsHexString;
 		this.group=g;
 		if(g == null) throw new NullPointerException();
 	}
@@ -61,36 +58,18 @@ public class DSAPublicKey extends CryptoKey {
 		return y;
     }
     
-	public String getYAsHexString() {
-		if(yAsHexString == null)
-			this.yAsHexString = HexUtil.biToHex(y);
-		return yAsHexString;
-	}
-
     public BigInteger getP() {
 		return group.getP();
     }
-    
-	public String getPAsHexString() {
-		return group.getPAsHexString();
-	}
     
     public BigInteger getQ() {
 		return group.getQ();
     }
     
-	public String getQAsHexString() {
-		return group.getQAsHexString();
-	}
-
     public BigInteger getG() {
 		return group.getG();
     }
     
-	public String getGAsHexString() {
-		return group.getGAsHexString();
-	}
-
     public String keyType() {
 		return "DSA.p";
     }
@@ -123,8 +102,8 @@ public class DSAPublicKey extends CryptoKey {
 		return y.intValue();
     }
 
-    public String writeAsField() {
-        return yAsHexString;
+    public String toLongString() {
+        return "y="+HexUtil.biToHex(y);
     }
 
     // this won't correctly read the output from writeAsField

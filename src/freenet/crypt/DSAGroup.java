@@ -27,8 +27,6 @@ public class DSAGroup extends CryptoKey {
 
     private final BigInteger p, q, g;
 
-    private String pAsHexString, gAsHexString, qAsHexString; //Cached versions
-
     // of the
     // hexadecimal
     // string
@@ -45,10 +43,6 @@ public class DSAGroup extends CryptoKey {
 
     public DSAGroup(String pAsHexString, String qAsHexString,
             String gAsHexString) throws NumberFormatException {
-        this.pAsHexString = pAsHexString;
-        this.qAsHexString = qAsHexString;
-        this.gAsHexString = gAsHexString;
-
         //Sanity check. Needed because of the Kaffe workaround further down
         if ((pAsHexString == null) || (qAsHexString == null)
                 || (gAsHexString == null))
@@ -67,14 +61,6 @@ public class DSAGroup extends CryptoKey {
         }
         if(p.signum() != 1 || q.signum() != 1 || g.signum() != 1)
         	throw new IllegalArgumentException();
-    }
-
-    private void updateCachedHexStrings() {
-    	if(pAsHexString != null && qAsHexString != null && gAsHexString != null)
-    		return;
-        pAsHexString = HexUtil.biToHex(p);
-        qAsHexString = HexUtil.biToHex(q);
-        gAsHexString = HexUtil.biToHex(g);
     }
 
     /**
@@ -109,15 +95,6 @@ public class DSAGroup extends CryptoKey {
     //		writeForWire(out);
     //    }
 
-    public String writeAsField() {
-    	updateCachedHexStrings();
-        StringBuffer b = new StringBuffer();
-        b.append(pAsHexString).append(',');
-        b.append(qAsHexString).append(',');
-        b.append(gAsHexString);
-        return b.toString();
-    }
-
     public String keyType() {
         return "DSA.g-" + p.bitLength();
     }
@@ -132,21 +109,6 @@ public class DSAGroup extends CryptoKey {
 
     public BigInteger getG() {
         return g;
-    }
-
-    public String getPAsHexString() {
-    	updateCachedHexStrings();
-        return pAsHexString;
-    }
-
-    public String getQAsHexString() {
-    	updateCachedHexStrings();
-        return qAsHexString;
-    }
-
-    public String getGAsHexString() {
-    	updateCachedHexStrings();
-        return gAsHexString;
     }
 
     public byte[] fingerprint() {
@@ -340,5 +302,17 @@ public class DSAGroup extends CryptoKey {
 		DSAGroup dg = new DSAGroup(p, q, g);
 		if(dg.equals(Global.DSAgroupBigA)) return Global.DSAgroupBigA;
 		return dg;
+	}
+	
+	public String toString() {
+		if(this == Global.DSAgroupBigA)
+			return "Global.DSAgroupBigA";
+		else return super.toString();
+	}
+	
+	public String toLongString() {
+		if(this == Global.DSAgroupBigA)
+			return "Global.DSAgroupBigA";
+		return "p="+HexUtil.biToHex(p)+", q="+HexUtil.biToHex(q)+", g="+HexUtil.biToHex(g);
 	}
 }
