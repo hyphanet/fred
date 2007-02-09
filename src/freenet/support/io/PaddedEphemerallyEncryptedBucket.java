@@ -350,12 +350,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Type", "PaddedEphemerallyEncryptedBucket");
+		fs.putSingle("Type", "PaddedEphemerallyEncryptedBucket");
 		synchronized(this) {
 			fs.put("DataLength", dataLength);
 		}
 		if(key != null) {
-			fs.put("DecryptKey", HexUtil.bytesToHex(key));
+			fs.putSingle("DecryptKey", HexUtil.bytesToHex(key));
 		} else {
 			Logger.error(this, "Cannot serialize because no key");
 			return null;
@@ -368,7 +368,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		}
 		fs.put("MinPaddedSize", minPaddedSize);
 		if(!brokenEncryption)
-			fs.put("CryptoType", "aes256");
+			fs.putSingle("CryptoType", "aes256");
 		return fs;
 	}
 

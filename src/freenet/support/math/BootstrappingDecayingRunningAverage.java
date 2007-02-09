@@ -156,7 +156,7 @@ public final class BootstrappingDecayingRunningAverage implements
 
 	public synchronized SimpleFieldSet exportFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Type", "BootstrappingDecayingRunningAverage");
+		fs.putSingle("Type", "BootstrappingDecayingRunningAverage");
 		fs.put("CurrentValue", currentValue);
 		fs.put("Reports", reports);
 		fs.put("Zeros", zeros);

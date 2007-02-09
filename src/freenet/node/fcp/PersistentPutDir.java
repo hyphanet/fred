@@ -48,39 +48,39 @@ public class PersistentPutDir extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Identifier", identifier);
-		fs.put("URI", uri.toString(false, false));
-		fs.put("Verbosity", Integer.toString(verbosity));
-		fs.put("Persistence", ClientRequest.persistenceTypeString(persistenceType));
-		fs.put("PriorityClass", Short.toString(priorityClass));
-		fs.put("Global", Boolean.toString(global));
+		fs.putSingle("Identifier", identifier);
+		fs.putSingle("URI", uri.toString(false, false));
+		fs.put("Verbosity", verbosity);
+		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
+		fs.put("PriorityClass", priorityClass);
+		fs.putSingle("Global", Boolean.toString(global));
 		SimpleFieldSet files = new SimpleFieldSet();
 		// Flatten the hierarchy, it can be reconstructed on restarting.
 		// Storing it directly would be a PITA.
 		ManifestElement[] elements = SimpleManifestPutter.flatten(manifestElements);
-		fs.put("DefaultName", defaultName);
+		fs.putSingle("DefaultName", defaultName);
 		for(int i=0;i<elements.length;i++) {
 			String num = Integer.toString(i);
 			ManifestElement e = elements[i];
 			String mimeOverride = e.getMimeTypeOverride();
 			SimpleFieldSet subset = new SimpleFieldSet();
 			FreenetURI tempURI = e.getTargetURI();
-			subset.put("Name", e.getName());
+			subset.putSingle("Name", e.getName());
 			if(tempURI != null) {
-				subset.put("UploadFrom", "redirect");
-				subset.put("TargetURI", tempURI.toString());
+				subset.putSingle("UploadFrom", "redirect");
+				subset.putSingle("TargetURI", tempURI.toString());
 			} else {
 				Bucket data = e.getData();
-				subset.put("DataLength", Long.toString(e.getSize()));
+				subset.put("DataLength", e.getSize());
 				if(mimeOverride != null)
-					subset.put("Metadata.ContentType", mimeOverride);
+					subset.putSingle("Metadata.ContentType", mimeOverride);
 				// What to do with the bucket?
 				// It is either a persistent encrypted bucket or a file bucket ...
 				if(data instanceof FileBucket) {
-					subset.put("UploadFrom", "disk");
-					subset.put("Filename", ((FileBucket)data).getFile().getPath());
+					subset.putSingle("UploadFrom", "disk");
+					subset.putSingle("Filename", ((FileBucket)data).getFile().getPath());
 				} else if((data instanceof PaddedEphemerallyEncryptedBucket) || (data == null)) {
-					subset.put("UploadFrom", "direct");
+					subset.putSingle("UploadFrom", "direct");
 				} else {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
 				}
@@ -89,8 +89,8 @@ public class PersistentPutDir extends FCPMessage {
 		}
 		fs.put("Files", files);
 		if(token != null)
-			fs.put("ClientToken", token);
-		fs.put("Started", Boolean.toString(started));
+			fs.putSingle("ClientToken", token);
+		fs.put("Started", started);
 		fs.put("MaxRetries", maxRetries);
 		return fs;
 	}

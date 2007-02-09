@@ -117,7 +117,8 @@ public class FailureCodeTracker {
 	}
 
 	/** Copy verbosely to a SimpleFieldSet */
-	public synchronized void copyToFieldSet(SimpleFieldSet sfs, String prefix, boolean verbose) {
+	public synchronized SimpleFieldSet toFieldSet(boolean verbose) {
+		SimpleFieldSet sfs = new SimpleFieldSet();
 		Iterator keys = map.keySet().iterator();
 		while(keys.hasNext()) {
 			Integer k = (Integer) keys.next();
@@ -126,10 +127,11 @@ public class FailureCodeTracker {
 			// prefix.num.Description=<code description>
 			// prefix.num.Count=<count>
 			if(verbose)
-				sfs.put(prefix+Integer.toString(code)+".Description", 
+				sfs.putSingle(Integer.toString(code)+".Description", 
 						insert ? InserterException.getMessage(code) : FetchException.getMessage(code));
-			sfs.put(prefix+Integer.toString(code)+".Count", Integer.toString(item.x));
+			sfs.putSingle(Integer.toString(code)+".Count", Integer.toString(item.x));
 		}
+		return sfs;
 	}
 
 	public synchronized boolean isOneCodeOnly() {

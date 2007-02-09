@@ -31,9 +31,9 @@ public class AllDataMessage extends DataCarryingMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("DataLength", Long.toString(dataLength));
-		fs.put("Identifier", identifier);
-		if(global) fs.put("Global", "true");
+		fs.putSingle("DataLength", Long.toString(dataLength));
+		fs.putSingle("Identifier", identifier);
+		if(global) fs.putSingle("Global", "true");
 		return fs;
 	}
 

@@ -119,17 +119,17 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet();
-		sfs.put("URI", uri.toString());
-		sfs.put("Identifier", identifier);
-		sfs.put("Verbosity", Integer.toString(verbosity));
-		sfs.put("MaxRetries", Integer.toString(maxRetries));
-		sfs.put("ClientToken", clientToken);
-		sfs.put("GetCHKOnly", Boolean.toString(getCHKOnly));
-		sfs.put("PriorityClass", Short.toString(priorityClass));
-		sfs.put("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
-		sfs.put("DontCompress", Boolean.toString(dontCompress));
-		sfs.put("Global", Boolean.toString(global));
-		sfs.put("DefaultName", defaultName);
+		sfs.putSingle("URI", uri.toString());
+		sfs.putSingle("Identifier", identifier);
+		sfs.putSingle("Verbosity", Integer.toString(verbosity));
+		sfs.putSingle("MaxRetries", Integer.toString(maxRetries));
+		sfs.putSingle("ClientToken", clientToken);
+		sfs.putSingle("GetCHKOnly", Boolean.toString(getCHKOnly));
+		sfs.putSingle("PriorityClass", Short.toString(priorityClass));
+		sfs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
+		sfs.putSingle("DontCompress", Boolean.toString(dontCompress));
+		sfs.putSingle("Global", Boolean.toString(global));
+		sfs.putSingle("DefaultName", defaultName);
 		return sfs;
 	}
 

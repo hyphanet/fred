@@ -73,7 +73,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 			return null;
 		}
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Type", "DelayedFreeBucket");
+		fs.putSingle("Type", "DelayedFreeBucket");
 		if(bucket instanceof SerializableToFieldSetBucket) {
 			fs.put("Underlying", ((SerializableToFieldSetBucket)bucket).toFieldSet());
 		} else {

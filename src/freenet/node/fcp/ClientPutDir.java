@@ -203,32 +203,32 @@ public class ClientPutDir extends ClientPutBase {
 		// Flatten the hierarchy, it can be reconstructed on restarting.
 		// Storing it directly would be a PITA.
 		ManifestElement[] elements = SimpleManifestPutter.flatten(manifestElements);
-		fs.put("DefaultName", defaultName);
+		fs.putSingle("DefaultName", defaultName);
 		for(int i=0;i<elements.length;i++) {
 			String num = Integer.toString(i);
 			ManifestElement e = elements[i];
 			String name = e.getName();
 			String mimeOverride = e.getMimeTypeOverride();
 			SimpleFieldSet subset = new SimpleFieldSet();
-			subset.put("Name", name);
+			subset.putSingle("Name", name);
 			if(mimeOverride != null)
-				subset.put("Metadata.ContentType", mimeOverride);
+				subset.putSingle("Metadata.ContentType", mimeOverride);
 			FreenetURI target = e.getTargetURI();
 			if(target != null) {
-				subset.put("UploadFrom", "redirect");
-				subset.put("TargetURI", target.toString());
+				subset.putSingle("UploadFrom", "redirect");
+				subset.putSingle("TargetURI", target.toString());
 			} else {
 				Bucket data = e.getData();
 				// What to do with the bucket?
 				// It is either a persistent encrypted bucket or a file bucket ...
-				subset.put("DataLength", Long.toString(e.getSize()));
+				subset.putSingle("DataLength", Long.toString(e.getSize()));
 				if(data instanceof FileBucket) {
-					subset.put("UploadFrom", "disk");
-					subset.put("Filename", ((FileBucket)data).getFile().getPath());
+					subset.putSingle("UploadFrom", "disk");
+					subset.putSingle("Filename", ((FileBucket)data).getFile().getPath());
 				} else if(finished) {
-					subset.put("UploadFrom", "direct");
+					subset.putSingle("UploadFrom", "direct");
 				} else if(data instanceof PaddedEphemerallyEncryptedBucket) {
-					subset.put("UploadFrom", "direct");
+					subset.putSingle("UploadFrom", "direct");
 					// the bucket is a persistent encrypted temp bucket
 					bucketToFS(fs, "TempBucket", false, data);
 				} else {

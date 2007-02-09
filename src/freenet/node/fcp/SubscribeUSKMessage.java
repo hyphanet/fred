@@ -48,8 +48,8 @@ public class SubscribeUSKMessage extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("URI", key.getURI().toString());
-		fs.put("DontPoll", Boolean.toString(dontPoll));
+		fs.putSingle("URI", key.getURI().toString());
+		fs.put("DontPoll", dontPoll);
 		return fs;
 	}
 

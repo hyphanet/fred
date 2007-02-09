@@ -230,19 +230,19 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 	public synchronized SimpleFieldSet getProgressFieldset() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Type", "SplitFileInserterSegment");
-		fs.put("Finished", Boolean.toString(finished));
+		fs.putSingle("Type", "SplitFileInserterSegment");
+		fs.putSingle("Finished", Boolean.toString(finished));
 		// If true, check blocks which are null are finished 
-		fs.put("Encoded", Boolean.toString(encoded));
+		fs.putSingle("Encoded", Boolean.toString(encoded));
 		// If true, data blocks which are null are finished
-		fs.put("Started", Boolean.toString(started));
-		errors.copyToFieldSet(fs, "Errors.", false);
+		fs.putSingle("Started", Boolean.toString(started));
+		fs.put("Errors", errors.toFieldSet(false));
 		SimpleFieldSet dataFS = new SimpleFieldSet();
-		dataFS.put("Count", Integer.toString(dataBlocks.length));
+		dataFS.putSingle("Count", Integer.toString(dataBlocks.length));
 		for(int i=0;i<dataBlocks.length;i++) {
 			SimpleFieldSet block = new SimpleFieldSet();
 			if(dataURIs[i] != null)
-				block.put("URI", dataURIs[i].toString());
+				block.putSingle("URI", dataURIs[i].toString());
 			SingleBlockInserter sbi =
 				dataBlockInserters[i];
 			// If started, then sbi = null => block finished.
@@ -270,11 +270,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		}
 		fs.put("DataBlocks", dataFS);
 		SimpleFieldSet checkFS = new SimpleFieldSet();
-		checkFS.put("Count", Integer.toString(checkBlocks.length));
+		checkFS.putSingle("Count", Integer.toString(checkBlocks.length));
 		for(int i=0;i<checkBlocks.length;i++) {
 			SimpleFieldSet block = new SimpleFieldSet();
 			if(checkURIs[i] != null)
-				block.put("URI", checkURIs[i].toString());
+				block.putSingle("URI", checkURIs[i].toString());
 			SingleBlockInserter sbi =
 				checkBlockInserters[i];
 			// If encoded, then sbi == null => block finished

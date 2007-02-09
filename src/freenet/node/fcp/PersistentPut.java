@@ -52,27 +52,27 @@ public class PersistentPut extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Identifier", identifier);
-		fs.put("URI", uri.toString(false, false));
+		fs.putSingle("Identifier", identifier);
+		fs.putSingle("URI", uri.toString(false, false));
 		fs.put("Verbosity", verbosity);
 		fs.put("PriorityClass", priorityClass);
-		fs.put("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
-		fs.put("Persistence", ClientRequest.persistenceTypeString(persistenceType));
+		fs.putSingle("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
+		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		if(origFilename != null)
-			fs.put("Filename", origFilename.getAbsolutePath());
+			fs.putSingle("Filename", origFilename.getAbsolutePath());
 		if(targetURI != null)
-			fs.put("TargetURI", targetURI.toString());
+			fs.putSingle("TargetURI", targetURI.toString());
 		if(mimeType != null)
-			fs.put("Metadata.ContentType", mimeType);
+			fs.putSingle("Metadata.ContentType", mimeType);
 		fs.put("Global", global);
 		if(size != -1)
 			fs.put("DataLength", size);
 		if(token != null)
-			fs.put("ClientToken", token);
+			fs.putSingle("ClientToken", token);
 		fs.put("Started", started);
 		fs.put("MaxRetries", maxRetries);
 		if(targetFilename != null)
-			fs.put("TargetFilename", targetFilename);
+			fs.putSingle("TargetFilename", targetFilename);
 		return fs;
 	}
 

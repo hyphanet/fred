@@ -50,18 +50,18 @@ public class PersistentGet extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Identifier", identifier);
-		fs.put("URI", uri.toString(false, false));
+		fs.putSingle("Identifier", identifier);
+		fs.putSingle("URI", uri.toString(false, false));
 		fs.put("Verbosity", verbosity);
-		fs.put("ReturnType", ClientGetMessage.returnTypeString(returnType));
-		fs.put("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
+		fs.putSingle("ReturnType", ClientGetMessage.returnTypeString(returnType));
+		fs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
-			fs.put("Filename", targetFile.getAbsolutePath());
-			fs.put("TempFilename", tempFile.getAbsolutePath());
+			fs.putSingle("Filename", targetFile.getAbsolutePath());
+			fs.putSingle("TempFilename", tempFile.getAbsolutePath());
 		}
 		fs.put("PriorityClass", priorityClass);
 		if(clientToken != null)
-			fs.put("ClientToken", clientToken);
+			fs.putSingle("ClientToken", clientToken);
 		fs.put("Global", global);
 		fs.put("Started", started);
 		fs.put("MaxRetries", maxRetries);

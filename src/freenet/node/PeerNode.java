@@ -424,9 +424,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     					if(peerCryptoGroup == null) errCause += " (No peer crypto group)";
     					if(peerPubKey == null) errCause += " (No peer public key)";
     					if(failed) errCause += " (VERIFICATION FAILED)";
-    					Logger.error(this, "The integrity of the reference has been compromized!"+errCause);
+    					Logger.error(this, "The integrity of the reference has been compromized!"+errCause+" fs was\n"+fs.toOrderedString());
     					this.isSignatureVerificationSuccessfull = false;
-    					fs.put("sig", signature);
+    					fs.putSingle("sig", signature);
    						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!"+errCause);
     				}else
     					this.isSignatureVerificationSuccessfull = true;
@@ -1660,7 +1660,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         BufferedReader br = new BufferedReader(isr);
         SimpleFieldSet fs;
         try {
-            fs = new SimpleFieldSet(br);
+            fs = new SimpleFieldSet(br, false);
         } catch (IOException e) {
             Logger.error(this, "Impossible: e", e);
             return;
@@ -1877,31 +1877,31 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     public synchronized SimpleFieldSet exportMetadataFieldSet() {
     	SimpleFieldSet fs = new SimpleFieldSet();
     	if(detectedPeer != null)
-    		fs.put("detected.udp", detectedPeer.toString());
+    		fs.putSingle("detected.udp", detectedPeer.toString());
     	if(lastReceivedPacketTime() > 0)
-    		fs.put("timeLastReceivedPacket", Long.toString(timeLastReceivedPacket));
+    		fs.putSingle("timeLastReceivedPacket", Long.toString(timeLastReceivedPacket));
     	if(timeLastConnected() > 0)
-    		fs.put("timeLastConnected", Long.toString(timeLastConnected));
+    		fs.putSingle("timeLastConnected", Long.toString(timeLastConnected));
     	if(timeLastRoutable() > 0)
-    		fs.put("timeLastRoutable", Long.toString(timeLastRoutable));
+    		fs.putSingle("timeLastRoutable", Long.toString(timeLastRoutable));
     	if(getPeerAddedTime() > 0)
-    		fs.put("peerAddedTime", Long.toString(peerAddedTime));
+    		fs.putSingle("peerAddedTime", Long.toString(peerAddedTime));
     	if(neverConnected)
-    		fs.put("neverConnected", "true");
+    		fs.putSingle("neverConnected", "true");
     	if(isDisabled)
-    		fs.put("isDisabled", "true");
+    		fs.putSingle("isDisabled", "true");
     	if(isListenOnly)
-    		fs.put("isListenOnly", "true");
+    		fs.putSingle("isListenOnly", "true");
     	if(isBurstOnly)
-    		fs.put("isBurstOnly", "true");
+    		fs.putSingle("isBurstOnly", "true");
     	if(ignoreSourcePort)
-    		fs.put("ignoreSourcePort", "true");
+    		fs.putSingle("ignoreSourcePort", "true");
     	if(allowLocalAddresses)
-    		fs.put("allowLocalAddresses", "true");
+    		fs.putSingle("allowLocalAddresses", "true");
     	if(hadRoutableConnectionCount > 0)
-    		fs.put("hadRoutableConnectionCount", Long.toString(hadRoutableConnectionCount));
+    		fs.putSingle("hadRoutableConnectionCount", Long.toString(hadRoutableConnectionCount));
     	if(routableConnectionCheckCount > 0)
-    		fs.put("routableConnectionCheckCount", Long.toString(routableConnectionCheckCount));
+    		fs.putSingle("routableConnectionCheckCount", Long.toString(routableConnectionCheckCount));
     	return fs;
 	}
 
@@ -1912,24 +1912,24 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			fs.put("averagePingTime", Double.toString(averagePingTime()));
+			fs.putSingle("averagePingTime", Double.toString(averagePingTime()));
 			long idle = now - lastReceivedPacketTime();
 			if(idle > (60 * 1000)) {  // 1 minute
-				fs.put("idle", Long.toString(idle));
+				fs.putSingle("idle", Long.toString(idle));
 			}
 			if(peerAddedTime > 1) {
-				fs.put("peerAddedTime", Long.toString(peerAddedTime));
+				fs.putSingle("peerAddedTime", Long.toString(peerAddedTime));
 			}
-			fs.put("lastRoutingBackoffReason", lastRoutingBackoffReason);
-			fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
-			fs.put("routingBackoff", Long.toString((Math.max(routingBackedOffUntil - now, 0))));
-			fs.put("routingBackoffLength", Integer.toString(routingBackoffLength));
-			fs.put("overloadProbability", Double.toString(getPRejected() * 100));
-			fs.put("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));
-			fs.put("totalBytesIn", Long.toString(totalBytesIn));
-			fs.put("totalBytesOut", Long.toString(totalBytesOut));
+			fs.putSingle("lastRoutingBackoffReason", lastRoutingBackoffReason);
+			fs.putSingle("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
+			fs.putSingle("routingBackoff", Long.toString((Math.max(routingBackedOffUntil - now, 0))));
+			fs.putSingle("routingBackoffLength", Integer.toString(routingBackoffLength));
+			fs.putSingle("overloadProbability", Double.toString(getPRejected() * 100));
+			fs.putSingle("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));
+			fs.putSingle("totalBytesIn", Long.toString(totalBytesIn));
+			fs.putSingle("totalBytesOut", Long.toString(totalBytesOut));
 		}
-		fs.put("status", getPeerNodeStatusString());
+		fs.putSingle("status", getPeerNodeStatusString());
 		return fs;
 	}
 
@@ -1939,23 +1939,23 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     public synchronized SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet();
         if(getLastGoodVersion() != null)
-        	fs.put("lastGoodVersion", lastGoodVersion);
+        	fs.putSingle("lastGoodVersion", lastGoodVersion);
 		for(int i=0;i<nominalPeer.size();i++) {
-			fs.put("physical.udp", nominalPeer.get(i).toString());
+			fs.putSingle("physical.udp", nominalPeer.get(i).toString());
 		}
-        fs.put("identity", getIdentityString());
-        fs.put("location", Double.toString(currentLocation.getValue()));
-        fs.put("testnet", Boolean.toString(testnetEnabled));
-        fs.put("version", version);
-        fs.put("myName", getName());
+        fs.putSingle("identity", getIdentityString());
+        fs.putSingle("location", Double.toString(currentLocation.getValue()));
+        fs.putSingle("testnet", Boolean.toString(testnetEnabled));
+        fs.putSingle("version", version);
+        fs.putSingle("myName", getName());
         if(peerCryptoGroup != null)
         	fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
         if(peerPubKey != null)
         	fs.put("dsaPubKey", peerPubKey.asFieldSet());
 		if(myARK != null) {
 			// Decrement it because we keep the number we would like to fetch, not the last one fetched.
-			fs.put("ark.number", Long.toString(myARK.suggestedEdition - 1));
-			fs.put("ark.pubURI", myARK.getBaseSSK().toString(false, false));
+			fs.putSingle("ark.number", Long.toString(myARK.suggestedEdition - 1));
+			fs.putSingle("ark.pubURI", myARK.getBaseSSK().toString(false, false));
 		}
         return fs;
     }
@@ -2628,7 +2628,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		SimpleFieldSet fs = null;
 		try {
 			// Read in the single SimpleFieldSet
-			fs = new SimpleFieldSet(br);
+			fs = new SimpleFieldSet(br, false);
 		} catch (EOFException e3) {
 			// End of file, fine
 		} catch (IOException e4) {
@@ -2704,11 +2704,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(fs.get("senderFileNumber") != null) {
 					fs.removeValue("senderFileNumber");
 				}
-				fs.put("senderFileNumber", String.valueOf(fileNumber));
+				fs.putOverwrite("senderFileNumber", String.valueOf(fileNumber));
 				if(fs.get("sentTime") != null) {
 					fs.removeValue("sentTime");
 				}
-				fs.put("sentTime", Long.toString(System.currentTimeMillis()));
+				fs.putOverwrite("sentTime", Long.toString(System.currentTimeMillis()));
 				
 				try {
 					n2ntm = DMT.createNodeToNodeMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, fs.toString().getBytes("UTF-8"));
@@ -2731,7 +2731,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			if(!sendSuccess) {
 				synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
-					fs.put("extraPeerDataType", Integer.toString(extraPeerDataType));
+					fs.putOverwrite("extraPeerDataType", Integer.toString(extraPeerDataType));
 					fs.removeValue("sentTime");
 					queuedToSendN2NTMExtraPeerDataFileNumbers.add(Integer.toString(fileNumber));
 				}
@@ -2745,7 +2745,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	public int writeNewExtraPeerDataFile(SimpleFieldSet fs, int extraPeerDataType) {
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
 		if(extraPeerDataType > 0)
-			fs.put("extraPeerDataType", Integer.toString(extraPeerDataType));
+			fs.putOverwrite("extraPeerDataType", Integer.toString(extraPeerDataType));
 		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
 	 	if(!extraPeerDataPeerDir.exists()) {
 	 		if(!extraPeerDataPeerDir.mkdir()) {
@@ -2853,7 +2853,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean rewriteExtraPeerDataFile(SimpleFieldSet fs, int extraPeerDataType, int fileNumber) {
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
 		if(extraPeerDataType > 0)
-			fs.put("extraPeerDataType", Integer.toString(extraPeerDataType));
+			fs.putOverwrite("extraPeerDataType", Integer.toString(extraPeerDataType));
 		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
 	 	if(!extraPeerDataPeerDir.exists()) {
 	   		Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
@@ -2904,8 +2904,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			localFileNumber = privateDarknetCommentFileNumber;
 		}
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("peerNoteType", Integer.toString(Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT));
-		fs.put("privateDarknetComment", Base64.encode(comment.getBytes()));
+		fs.putSingle("peerNoteType", Integer.toString(Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT));
+		fs.putSingle("privateDarknetComment", Base64.encode(comment.getBytes()));
 		if(localFileNumber == -1) {
 			localFileNumber = writeNewExtraPeerDataFile(fs, Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE);
 			synchronized(privateDarknetComment) {
@@ -2980,7 +2980,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		
 		SimpleFieldSet fs;
 		try {
-			fs = new SimpleFieldSet(ref);
+			fs = new SimpleFieldSet(ref, false);
 			if(logMINOR) Logger.minor(this, "Got ARK for "+this);
 			gotARK(fs, edition);
 		} catch (IOException e) {

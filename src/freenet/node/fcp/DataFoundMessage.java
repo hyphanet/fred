@@ -30,10 +30,10 @@ public class DataFoundMessage extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Identifier", identifier);
-		if(global) fs.put("Global", "true");
-		fs.put("Metadata.ContentType", mimeType);
-		fs.put("DataLength", Long.toString(dataLength));
+		fs.putSingle("Identifier", identifier);
+		if(global) fs.putSingle("Global", "true");
+		fs.putSingle("Metadata.ContentType", mimeType);
+		fs.putSingle("DataLength", Long.toString(dataLength));
 		return fs;
 	}
 

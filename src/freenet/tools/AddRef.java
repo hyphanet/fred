@@ -54,8 +54,8 @@ public class AddRef {
 			OutputStream os = fcpSocket.getOutputStream();
 
 			try{
-				sfs.put("Name", "AddRef");
-				sfs.put("ExpectedVersion", "2.0");
+				sfs.putSingle("Name", "AddRef");
+				sfs.putSingle("ExpectedVersion", "2.0");
 				fcpm = FCPMessage.create("ClientHello", sfs);
 				fcpm.send(os);
 				os.flush();
@@ -74,7 +74,7 @@ public class AddRef {
 			}
 			
 			try{
-				sfs = SimpleFieldSet.readFrom(reference);
+				sfs = SimpleFieldSet.readFrom(reference, false);
 				fcpm = FCPMessage.create(AddPeer.name, sfs);
 				fcpm.send(os);
 				os.flush();
@@ -114,7 +114,7 @@ public class AddRef {
 				String line = lis.readLine(128, 128, true);
 				int index = line.indexOf('=');
 				if(index == -1 || line.startsWith("End")) return sfs;
-				sfs.put(line.substring(0, index), line.substring(index+1));
+				sfs.putSingle(line.substring(0, index), line.substring(index+1));
 			}
 		}catch(IOException e){
 			return sfs;

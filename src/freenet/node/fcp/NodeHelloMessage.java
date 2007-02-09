@@ -62,15 +62,15 @@ public class NodeHelloMessage extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet();
 		// FIXME
-		sfs.put("FCPVersion", "2.0");
-		sfs.put("Node", "Fred");
-		sfs.put("Version", Version.getVersionString());
+		sfs.putSingle("FCPVersion", "2.0");
+		sfs.putSingle("Node", "Fred");
+		sfs.putSingle("Version", Version.getVersionString());
 		sfs.put("Build", Version.buildNumber());
-		sfs.put("Revision", Version.cvsRevision);
+		sfs.putSingle("Revision", Version.cvsRevision);
 		sfs.put("ExtBuild", NodeStarter.extBuildNumber);
-		sfs.put("ExtRevision", NodeStarter.extRevisionNumber);
-		sfs.put("Testnet", Boolean.toString(node == null ? false : node.isTestnetEnabled()));
-		sfs.put("CompressionCodecs", Integer.toString(Compressor.countCompressAlgorithms()));
+		sfs.putSingle("ExtRevision", NodeStarter.extRevisionNumber);
+		sfs.putSingle("Testnet", Boolean.toString(node == null ? false : node.isTestnetEnabled()));
+		sfs.putSingle("CompressionCodecs", Integer.toString(Compressor.countCompressAlgorithms()));
 		return sfs;
 	}
 

@@ -101,28 +101,28 @@ public class GetFailedMessage extends FCPMessage {
 	 */
 	public SimpleFieldSet getFieldSet(boolean verbose) {
 		SimpleFieldSet sfs = new SimpleFieldSet();
-		sfs.put("Code", Integer.toString(code));
+		sfs.putSingle("Code", Integer.toString(code));
 		if(verbose)
-			sfs.put("CodeDescription", codeDescription);
+			sfs.putSingle("CodeDescription", codeDescription);
 		if(extraDescription != null)
-			sfs.put("ExtraDescription", extraDescription);
+			sfs.putSingle("ExtraDescription", extraDescription);
 		if(verbose)
-			sfs.put("Fatal", Boolean.toString(isFatal));
+			sfs.putSingle("Fatal", Boolean.toString(isFatal));
 		if(tracker != null) {
-			tracker.copyToFieldSet(sfs, "Errors.", verbose);
+			sfs.put("Errors", tracker.toFieldSet(verbose));
 		}
 		if(verbose)
-			sfs.put("ShortCodeDescription", shortCodeDescription);
-		sfs.put("Identifier", identifier);
+			sfs.putSingle("ShortCodeDescription", shortCodeDescription);
+		sfs.putSingle("Identifier", identifier);
 		if(expectedDataLength > -1) {
-			sfs.put("ExpectedDataLength", Long.toString(expectedDataLength));
+			sfs.putSingle("ExpectedDataLength", Long.toString(expectedDataLength));
 		}
 		if(expectedMimeType != null)
-			sfs.put("ExpectedMetadata.ContentType", expectedMimeType);
+			sfs.putSingle("ExpectedMetadata.ContentType", expectedMimeType);
 		if(finalizedExpected)
-			sfs.put("FinalizedExpected", "true");
+			sfs.putSingle("FinalizedExpected", "true");
 		if(redirectURI != null)
-			sfs.put("RedirectURI", redirectURI.toString(false, false));
+			sfs.putSingle("RedirectURI", redirectURI.toString(false, false));
 		return sfs;
 	}
 

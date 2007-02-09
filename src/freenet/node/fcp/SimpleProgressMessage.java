@@ -21,14 +21,14 @@ public class SimpleProgressMessage extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Total", Integer.toString(event.totalBlocks));
-		fs.put("Required", Integer.toString(event.minSuccessfulBlocks));
-		fs.put("Failed", Integer.toString(event.failedBlocks));
-		fs.put("FatallyFailed", Integer.toString(event.fatallyFailedBlocks));
-		fs.put("Succeeded",Integer.toString(event.fetchedBlocks));
-		fs.put("FinalizedTotal", Boolean.toString(event.finalizedTotal));
-		fs.put("Identifier", ident);
-		if(global) fs.put("Global", "true");
+		fs.put("Total", event.totalBlocks);
+		fs.put("Required", event.minSuccessfulBlocks);
+		fs.put("Failed", event.failedBlocks);
+		fs.put("FatallyFailed", event.fatallyFailedBlocks);
+		fs.put("Succeeded",event.fetchedBlocks);
+		fs.put("FinalizedTotal", event.finalizedTotal);
+		fs.putSingle("Identifier", ident);
+		if(global) fs.putSingle("Global", "true");
 		return fs;
 	}
 

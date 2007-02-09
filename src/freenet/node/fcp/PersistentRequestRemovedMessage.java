@@ -21,8 +21,8 @@ public class PersistentRequestRemovedMessage extends FCPMessage {
 
     public SimpleFieldSet getFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet();
-        fs.put("Identifier", ident);
-        if(global) fs.put("Global", "true");
+        fs.putSingle("Identifier", ident);
+        if(global) fs.putSingle("Global", "true");
         return fs;
     }
 

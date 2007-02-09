@@ -310,25 +310,25 @@ public class ClientPut extends ClientPutBase {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
 		// This is all fixed, so no need for synchronization.
-		fs.put("Metadata.ContentType", clientMetadata.getMIMEType());
-		fs.put("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
+		fs.putSingle("Metadata.ContentType", clientMetadata.getMIMEType());
+		fs.putSingle("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
-			fs.put("Filename", origFilename.getPath());
+			fs.putSingle("Filename", origFilename.getPath());
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			if(!finished) {
 				// the bucket is a persistent encrypted temp bucket
 				bucketToFS(fs, "TempBucket", true, data);
 			}
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
-			fs.put("TargetURI", targetURI.toString());
+			fs.putSingle("TargetURI", targetURI.toString());
 		}
 		if(putter != null)  {
 			SimpleFieldSet sfs = putter.getProgressFieldset();
 			fs.put("progress", sfs);
 		}
 		if(targetFilename != null)
-			fs.put("TargetFilename", targetFilename);
-		fs.put("EarlyEncode", Boolean.toString(earlyEncode));
+			fs.putSingle("TargetFilename", targetFilename);
+		fs.putSingle("EarlyEncode", Boolean.toString(earlyEncode));
 		return fs;
 	}
 

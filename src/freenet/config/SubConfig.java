@@ -210,7 +210,7 @@ public class SubConfig implements Comparable {
 					Logger.minor(this, "Skipping "+key+" - "+o.isDefault());
 				continue;
 			}
-			fs.put(key, o.getValueString());
+			fs.putSingle(key, o.getValueString());
 			if(logMINOR)
 				Logger.minor(this, "Key="+prefix+'.'+key+" value="+o.getValueString());
 		}

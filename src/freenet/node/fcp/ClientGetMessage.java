@@ -187,14 +187,14 @@ public class ClientGetMessage extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("IgnoreDS", Boolean.toString(ignoreDS));
-		fs.put("URI", uri.toString(false, false));
-		fs.put("Identifier", identifier);
-		fs.put("Verbosity", Integer.toString(verbosity));
-		fs.put("ReturnType", getReturnTypeString());
-		fs.put("MaxSize", Long.toString(maxSize));
-		fs.put("MaxTempSize", Long.toString(maxTempSize));
-		fs.put("MaxRetries", Integer.toString(maxRetries));
+		fs.putSingle("IgnoreDS", Boolean.toString(ignoreDS));
+		fs.putSingle("URI", uri.toString(false, false));
+		fs.putSingle("Identifier", identifier);
+		fs.putSingle("Verbosity", Integer.toString(verbosity));
+		fs.putSingle("ReturnType", getReturnTypeString());
+		fs.putSingle("MaxSize", Long.toString(maxSize));
+		fs.putSingle("MaxTempSize", Long.toString(maxTempSize));
+		fs.putSingle("MaxRetries", Integer.toString(maxRetries));
 		return fs;
 	}
 

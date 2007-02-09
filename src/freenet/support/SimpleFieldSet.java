@@ -32,10 +32,18 @@ public class SimpleFieldSet {
     private String endMarker;
     static public final char MULTI_LEVEL_CHAR = '.';
     
-    public SimpleFieldSet(BufferedReader br) throws IOException {
+    /**
+     * Construct a SimpleFieldSet from reading a BufferedReader.
+     * @param br
+     * @param allowMultiple If true, multiple lines with the same field name will be
+     * combined; if false, the constructor will throw.
+     * @throws IOException If the buffer could not be read, or if there was a formatting
+     * problem.
+     */
+    public SimpleFieldSet(BufferedReader br, boolean allowMultiple) throws IOException {
         values = new HashMap();
        	subsets = null;
-        read(br);
+        read(br, allowMultiple);
     }
     
     public SimpleFieldSet(SimpleFieldSet sfs){
@@ -44,10 +52,10 @@ public class SimpleFieldSet {
     	endMarker = sfs.endMarker;
     }
 
-    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean tolerant, boolean utf8OrIso88591) throws IOException {
+    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean tolerant, boolean utf8OrIso88591, boolean allowMultiple) throws IOException {
     	values = new HashMap();
        	subsets = null;
-    	read(lis, maxLineLength, lineBufferSize, tolerant, utf8OrIso88591);
+    	read(lis, maxLineLength, lineBufferSize, tolerant, utf8OrIso88591, allowMultiple);
     }
     
     /**
@@ -62,12 +70,12 @@ public class SimpleFieldSet {
      * Construct from a string.
      * @throws IOException if the string is too short or invalid.
      */
-    public SimpleFieldSet(String content) throws IOException {
+    public SimpleFieldSet(String content, boolean allowMultiple) throws IOException {
     	values = new HashMap();
     	subsets = null;
         StringReader sr = new StringReader(content);
         BufferedReader br = new BufferedReader(sr);
-	    read(br);
+	    read(br, allowMultiple);
     }
     
     /**
@@ -76,8 +84,9 @@ public class SimpleFieldSet {
      * blah=blah
      * blah=blah
      * End
+     * @param allowMultiple 
      */
-    private void read(BufferedReader br) throws IOException {
+    private void read(BufferedReader br, boolean allowMultiple) throws IOException {
         boolean firstLine = true;
         while(true) {
             String line = br.readLine();
@@ -91,7 +100,7 @@ public class SimpleFieldSet {
                 // Mapping
                 String before = line.substring(0, index);
                 String after = line.substring(index+1);
-                put(before, after);
+                put(before, after, allowMultiple, false);
             } else {
             	endMarker = line;
             	return;
@@ -108,7 +117,7 @@ public class SimpleFieldSet {
      * End
      * @param utfOrIso88591 If true, read as UTF-8, otherwise read as ISO-8859-1.
      */
-    private void read(LineReader br, int maxLength, int bufferSize, boolean tolerant, boolean utfOrIso88591) throws IOException {
+    private void read(LineReader br, int maxLength, int bufferSize, boolean tolerant, boolean utfOrIso88591, boolean allowMultiple) throws IOException {
         boolean firstLine = true;
         while(true) {
             String line = br.readLine(maxLength, bufferSize, utfOrIso88591);
@@ -127,7 +136,7 @@ public class SimpleFieldSet {
                 // Mapping
                 String before = line.substring(0, index);
                 String after = line.substring(index+1);
-                put(before, after);
+                put(before, after, allowMultiple, false);
             } else {
             	endMarker = line;
             	return;
@@ -175,15 +184,54 @@ public class SimpleFieldSet {
 //    	return (String[]) v.toArray();
 	}
 
-	public synchronized void put(String key, String value) {
+    /**
+     * Set a key to a value. If the value already exists, throw IllegalStateException.
+     * @param key The key.
+     * @param value The value.
+     */
+    public void putSingle(String key, String value) {
+    	if(!put(key, value, false, false))
+    		throw new IllegalStateException("Value already exists: "+value+" but want to set "+key+" to "+value);
+    }
+    
+    /**
+     * Aggregating put. Set a key to a value, if the value already exists, append to it. 
+     * @param key The key.
+     * @param value The value.
+     */
+    public void putAppend(String key, String value) {
+    	put(key, value, true, false);
+    }
+    
+    /**
+     * Set a key to a value, overwriting any existing value if present.
+     * @param key The key.
+     * @param value The value.
+     */
+    public void putOverwrite(String key, String value) {
+    	put(key, value, false, true);
+    }
+    
+    /**
+     * Set a key to a value.
+     * @param key The key.
+     * @param value The value.
+     * @param allowMultiple If true, if the key already exists then the value will be
+     * appended to the existing value. If false, we return false to indicate that the
+     * old value is unchanged.
+     * @return True unless allowMultiple was false and there was a pre-existing value,
+     * or value was null.
+     */
+	private synchronized final boolean put(String key, String value, boolean allowMultiple, boolean overwrite) {
 		int idx;
-		if(value == null) return;
+		if(value == null) return false;
 		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
 			String x = (String) values.get(key);
 			
-			if(x == null) {
+			if(x == null || overwrite) {
 				values.put(key, value);
 			} else {
+				if(!allowMultiple) return false;
 				values.put(key, ((String)values.get(key))+ ';' +value);
 			}
 		} else {
@@ -197,32 +245,33 @@ public class SimpleFieldSet {
 				fs = new SimpleFieldSet();
 				subsets.put(before, fs);
 			}
-			fs.put(after, value);
+			fs.put(after, value, allowMultiple, overwrite);
 		}
+		return true;
     }
 
 	public void put(String key, int value) {
-		put(key, Integer.toString(value));
+		put(key, Integer.toString(value), false, false);
 	}
 	
 	public void put(String key, long value) {
-		put(key, Long.toString(value));
+		put(key, Long.toString(value), false, false);
 	}
 	
 	public void put(String key, short value) {
-		put(key, Short.toString(value));
+		put(key, Short.toString(value), false, false);
 	}
 	
 	public void put(String key, char c) {
-		put(key, ""+c);
+		put(key, ""+c, false, false);
 	}
 	
 	public void put(String key, boolean b) {
-		put(key, Boolean.toString(b));
+		put(key, Boolean.toString(b), false, false);
 	}
 	
 	public void put(String key, double windowSize) {
-		put(key, Double.toString(windowSize));
+		put(key, Double.toString(windowSize), false, false);
 	}
 
     /**
@@ -476,7 +525,7 @@ public class SimpleFieldSet {
 		return (String[]) subsets.keySet().toArray(new String[subsets.size()]);
 	}
 
-	public static SimpleFieldSet readFrom(File f) throws IOException {
+	public static SimpleFieldSet readFrom(File f, boolean allowMultiple) throws IOException {
 		FileInputStream fis = null;
 		try {
 			fis = new FileInputStream(f);
@@ -490,7 +539,7 @@ public class SimpleFieldSet {
 				return null;
 			}
 			BufferedReader br = new BufferedReader(isr);
-			SimpleFieldSet fs = new SimpleFieldSet(br);
+			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple);
 			br.close();
 			fis = null;
 			return fs;

@@ -80,22 +80,22 @@ public class PutFailedMessage extends FCPMessage {
 	
 	public SimpleFieldSet getFieldSet(boolean verbose) {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Identifier", identifier);
-		if(global) fs.put("Global", "true");
-		fs.put("Code", Integer.toString(code));
+		fs.putSingle("Identifier", identifier);
+		if(global) fs.putSingle("Global", "true");
+		fs.put("Code", code);
 		if(verbose)
-			fs.put("CodeDescription", codeDescription);
+			fs.putSingle("CodeDescription", codeDescription);
 		if(extraDescription != null)
-			fs.put("ExtraDescription", extraDescription);
+			fs.putSingle("ExtraDescription", extraDescription);
 		if(tracker != null) {
-			tracker.copyToFieldSet(fs, "Errors.", verbose);
+			fs.put("Errors", tracker.toFieldSet(verbose));
 		}
 		if(verbose)
-			fs.put("Fatal", Boolean.toString(isFatal));
+			fs.put("Fatal", isFatal);
 		if(verbose)
-			fs.put("ShortCodeDescription", shortCodeDescription);
+			fs.putSingle("ShortCodeDescription", shortCodeDescription);
 		if(expectedURI != null)
-			fs.put("ExpectedURI", expectedURI.toString());
+			fs.putSingle("ExpectedURI", expectedURI.toString());
 		return fs;
 	}
 

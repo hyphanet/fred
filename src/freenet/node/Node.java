@@ -526,7 +526,7 @@ public class Node {
 		FileInputStream fis = new FileInputStream(filename);
 		InputStreamReader isr = new InputStreamReader(fis);
 		BufferedReader br = new BufferedReader(isr);
-		SimpleFieldSet fs = new SimpleFieldSet(br);
+		SimpleFieldSet fs = new SimpleFieldSet(br, false);
 		br.close();
 		// Read contents
 		String[] udp = fs.getAll("physical.udp");
@@ -642,8 +642,14 @@ public class Node {
 			myARKNumber = 0;
 		} else {
 			ark = null;
-			s = fs.get("old-ark.number");
-			privARK = fs.get("old-ark.privURI");
+			// FIXME remove in a few versions; back compat support for 1012 only
+			// and not very important; remove in 1014??
+			// Note that "old-ark" doesn't work because it is stripped by the manually
+			// posted references filter.
+			s = fs.get("oldark.number");
+			if(s == null) s = fs.get("old-ark.number");
+			privARK = fs.get("oldark.privURI");
+			if(privARK == null) privARK = fs.get("old-ark.privURI");
 			try {
 				if(privARK != null) {
 					FreenetURI uri = new FreenetURI(privARK);
@@ -1347,10 +1353,10 @@ public class Node {
 		
 		SimpleFieldSet throttleFS = null;
 		try {
-			throttleFS = SimpleFieldSet.readFrom(persistTarget);
+			throttleFS = SimpleFieldSet.readFrom(persistTarget, false);
 		} catch (IOException e) {
 			try {
-				throttleFS = SimpleFieldSet.readFrom(persistTemp);
+				throttleFS = SimpleFieldSet.readFrom(persistTemp, false);
 			} catch (FileNotFoundException e1) {
 				// Ignore
 			} catch (IOException e1) {
@@ -1734,9 +1740,9 @@ public class Node {
 	public SimpleFieldSet exportPrivateFieldSet() {
 		SimpleFieldSet fs = exportPublicFieldSet(false);
 		fs.put("dsaPrivKey", myPrivKey.asFieldSet());
-		fs.put("ark.privURI", this.myARK.getInsertURI().toString(false, false));
+		fs.putSingle("ark.privURI", this.myARK.getInsertURI().toString(false, false));
 		if(myOldARK != null) {
-			fs.put("old-ark.privURI", this.myOldARK.getInsertURI().toString(false, false));
+			fs.putSingle("oldark.privURI", this.myOldARK.getInsertURI().toString(false, false));
 		}
 		return fs;
 	}
@@ -1761,34 +1767,40 @@ public class Node {
 		Peer[] ips = ipDetector.getPrimaryIPAddress();
 		if(ips != null) {
 			for(int i=0;i<ips.length;i++)
-				fs.put("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
+				fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
 		}
-		fs.put("identity", Base64.encode(myIdentity)); // FIXME !forSetup after 11104 is mandatory
-		fs.put("location", Double.toString(lm.getLocation().getValue())); // FIXME maybe !forSetup; see #943
-		fs.put("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
-		fs.put("testnet", Boolean.toString(testnetEnabled)); // Vital that peer know this!
-		fs.put("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
+		fs.putSingle("identity", Base64.encode(myIdentity)); // FIXME !forSetup after 11104 is mandatory
+		fs.putSingle("location", Double.toString(lm.getLocation().getValue())); // FIXME maybe !forSetup; see #943
+		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
+		fs.putSingle("testnet", Boolean.toString(testnetEnabled)); // Vital that peer know this!
+		fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
 		if(testnetEnabled)
-			fs.put("testnetPort", Integer.toString(testnetHandler.getPort())); // Useful, saves a lot of complexity
-		fs.put("myName", myName); // FIXME see #942
+			fs.putSingle("testnetPort", Integer.toString(testnetHandler.getPort())); // Useful, saves a lot of complexity
+		fs.putSingle("myName", myName); // FIXME see #942
 		if(!forSetup) {
 			// These are invariant. They cannot change on connection setup. They can safely be excluded.
 			fs.put("dsaGroup", myCryptoGroup.asFieldSet());
 			fs.put("dsaPubKey", myPubKey.asFieldSet());
 		}
-		fs.put("ark.number", Long.toString(this.myARKNumber)); // Can be changed on setup
-		fs.put("ark.pubURI", this.myARK.getURI().toString(false, false)); // Can be changed on setup
+		fs.putSingle("ark.number", Long.toString(this.myARKNumber)); // Can be changed on setup
+		fs.putSingle("ark.pubURI", this.myARK.getURI().toString(false, false)); // Can be changed on setup
 		if(myOldARK != null) {
-			fs.put("old-ark.number", Long.toString(this.myOldARKNumber));
-			fs.put("old-ark.pubURI", this.myOldARK.getURI().toString(false, false));
+			fs.putSingle("oldark.number", Long.toString(this.myOldARKNumber));
+			fs.putSingle("oldark.pubURI", this.myOldARK.getURI().toString(false, false));
 		}
 		
 		synchronized (referenceSync) {
 			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
-				mySignedReference = fs.toOrderedString();	
+				mySignedReference = fs.toOrderedString();
+				if(logMINOR) Logger.minor(this, "Signing reference:\n"+mySignedReference);
 
 				try{
-					myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, new BigInteger(1, SHA256.digest(mySignedReference.getBytes("UTF-8"))), random);
+					byte[] ref = mySignedReference.getBytes("UTF-8");
+					BigInteger m = new BigInteger(1, SHA256.digest(ref));
+					if(logMINOR) Logger.minor(this, "m = "+m.toString(16));
+					myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, m, random);
+					if(!DSA.verify(myPubKey, myReferenceSignature, m))
+						Logger.normal(this, "Signature failed!");
 				} catch(UnsupportedEncodingException e){
 					//duh ?
 					Logger.error(this, "Error while signing the node identity!"+e);
@@ -1797,10 +1809,10 @@ public class Node {
 					exit(EXIT_CRAPPY_JVM);
 				}
 			}
-			fs.put("sig", myReferenceSignature.toString());
+			fs.putSingle("sig", myReferenceSignature.toString());
 		}
 		
-		if(logMINOR) Logger.minor(this, "My reference: "+fs);
+		if(logMINOR) Logger.minor(this, "My reference: "+fs.toOrderedString());
 		return fs;
 	}
 
@@ -1810,24 +1822,24 @@ public class Node {
 	public SimpleFieldSet exportVolatileFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		long now = System.currentTimeMillis();
-		fs.put("isUsingWrapper", Boolean.toString(isUsingWrapper()));
+		fs.putSingle("isUsingWrapper", Boolean.toString(isUsingWrapper()));
 		long nodeUptimeSeconds = 0;
 		synchronized(this) {
-			fs.put("startupTime", Long.toString(startupTime));
+			fs.putSingle("startupTime", Long.toString(startupTime));
 			nodeUptimeSeconds = (now - startupTime) / 1000;
-			fs.put("uptimeSeconds", Long.toString(nodeUptimeSeconds));
+			fs.putSingle("uptimeSeconds", Long.toString(nodeUptimeSeconds));
 		}
-		fs.put("averagePingTime", Double.toString(getNodeAveragePingTime()));
-		fs.put("bwlimitDelayTime", Double.toString(getBwlimitDelayTime()));
-		fs.put("networkSizeEstimateSession", Integer.toString(getNetworkSizeEstimate(-1)));
+		fs.putSingle("averagePingTime", Double.toString(getNodeAveragePingTime()));
+		fs.putSingle("bwlimitDelayTime", Double.toString(getBwlimitDelayTime()));
+		fs.putSingle("networkSizeEstimateSession", Integer.toString(getNetworkSizeEstimate(-1)));
 		int networkSizeEstimate24hourRecent = getNetworkSizeEstimate(now - (24*60*60*1000));  // 24 hours
-		fs.put("networkSizeEstimate24hourRecent", Integer.toString(networkSizeEstimate24hourRecent));
+		fs.putSingle("networkSizeEstimate24hourRecent", Integer.toString(networkSizeEstimate24hourRecent));
 		int networkSizeEstimate48hourRecent = getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
-		fs.put("networkSizeEstimate48hourRecent", Integer.toString(networkSizeEstimate48hourRecent));
-		fs.put("routingMissDistance", Double.toString(routingMissDistance.currentValue()));
-		fs.put("backedOffPercent", Double.toString(backedOffPercent.currentValue()));
-		fs.put("pInstantReject", Double.toString(pRejectIncomingInstantly()));
-		fs.put("unclaimedFIFOSize", Integer.toString(usm.getUnclaimedFIFOSize()));
+		fs.putSingle("networkSizeEstimate48hourRecent", Integer.toString(networkSizeEstimate48hourRecent));
+		fs.putSingle("routingMissDistance", Double.toString(routingMissDistance.currentValue()));
+		fs.putSingle("backedOffPercent", Double.toString(backedOffPercent.currentValue()));
+		fs.putSingle("pInstantReject", Double.toString(pRejectIncomingInstantly()));
+		fs.putSingle("unclaimedFIFOSize", Integer.toString(usm.getUnclaimedFIFOSize()));
 		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = getPeerNodeStatuses();
@@ -1857,24 +1869,24 @@ public class Node {
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
 
-		fs.put("numberOfConnected", Integer.toString(numberOfConnected));
-		fs.put("numberOfRoutingBackedOff", Integer.toString(numberOfRoutingBackedOff));
-		fs.put("numberOfTooNew", Integer.toString(numberOfTooNew));
-		fs.put("numberOfTooOld", Integer.toString(numberOfTooOld));
-		fs.put("numberOfDisconnected", Integer.toString(numberOfDisconnected));
-		fs.put("numberOfNeverConnected", Integer.toString(numberOfNeverConnected));
-		fs.put("numberOfDisabled", Integer.toString(numberOfDisabled));
-		fs.put("numberOfBursting", Integer.toString(numberOfBursting));
-		fs.put("numberOfListening", Integer.toString(numberOfListening));
-		fs.put("numberOfListenOnly", Integer.toString(numberOfListenOnly));
+		fs.putSingle("numberOfConnected", Integer.toString(numberOfConnected));
+		fs.putSingle("numberOfRoutingBackedOff", Integer.toString(numberOfRoutingBackedOff));
+		fs.putSingle("numberOfTooNew", Integer.toString(numberOfTooNew));
+		fs.putSingle("numberOfTooOld", Integer.toString(numberOfTooOld));
+		fs.putSingle("numberOfDisconnected", Integer.toString(numberOfDisconnected));
+		fs.putSingle("numberOfNeverConnected", Integer.toString(numberOfNeverConnected));
+		fs.putSingle("numberOfDisabled", Integer.toString(numberOfDisabled));
+		fs.putSingle("numberOfBursting", Integer.toString(numberOfBursting));
+		fs.putSingle("numberOfListening", Integer.toString(numberOfListening));
+		fs.putSingle("numberOfListenOnly", Integer.toString(numberOfListenOnly));
 		
-		fs.put("numberOfSimpleConnected", Integer.toString(numberOfSimpleConnected));
-		fs.put("numberOfNotConnected", Integer.toString(numberOfNotConnected));
+		fs.putSingle("numberOfSimpleConnected", Integer.toString(numberOfSimpleConnected));
+		fs.putSingle("numberOfNotConnected", Integer.toString(numberOfNotConnected));
 
-		fs.put("numberOfInserts", Integer.toString(getNumInserts()));
-		fs.put("numberOfRequests", Integer.toString(getNumRequests()));
-		fs.put("numberOfTransferringRequests", Integer.toString(getNumTransferringRequests()));
-		fs.put("numberOfARKFetchers", Integer.toString(getNumARKFetchers()));
+		fs.putSingle("numberOfInserts", Integer.toString(getNumInserts()));
+		fs.putSingle("numberOfRequests", Integer.toString(getNumRequests()));
+		fs.putSingle("numberOfTransferringRequests", Integer.toString(getNumTransferringRequests()));
+		fs.putSingle("numberOfARKFetchers", Integer.toString(getNumARKFetchers()));
 
 		long[] total = IOStatisticCollector.getTotalIO();
 		long total_output_rate = (total[0]) / nodeUptimeSeconds;
@@ -1882,19 +1894,19 @@ public class Node {
 		long totalPayloadOutput = getTotalPayloadSent();
 		long total_payload_output_rate = totalPayloadOutput / nodeUptimeSeconds;
 		int total_payload_output_percent = (int) (100 * totalPayloadOutput / total[0]);
-		fs.put("totalOutputBytes", Long.toString(total[0]));
-		fs.put("totalOutputRate", Long.toString(total_output_rate));
-		fs.put("totalPayloadOutputBytes", Long.toString(totalPayloadOutput));
-		fs.put("totalPayloadOutputRate", Long.toString(total_payload_output_rate));
-		fs.put("totalPayloadOutputPercent", Integer.toString(total_payload_output_percent));
-		fs.put("totalInputBytes", Long.toString(total[1]));
-		fs.put("totalInputRate", Long.toString(total_input_rate));
+		fs.putSingle("totalOutputBytes", Long.toString(total[0]));
+		fs.putSingle("totalOutputRate", Long.toString(total_output_rate));
+		fs.putSingle("totalPayloadOutputBytes", Long.toString(totalPayloadOutput));
+		fs.putSingle("totalPayloadOutputRate", Long.toString(total_payload_output_rate));
+		fs.putSingle("totalPayloadOutputPercent", Integer.toString(total_payload_output_percent));
+		fs.putSingle("totalInputBytes", Long.toString(total[1]));
+		fs.putSingle("totalInputRate", Long.toString(total_input_rate));
 		long[] rate = getNodeIOStats();
 		long delta = (rate[5] - rate[2]) / 1000;
 		long recent_output_rate = (rate[3] - rate[0]) / delta;
 		long recent_input_rate = (rate[4] - rate[1]) / delta;
-		fs.put("recentOutputRate", Long.toString(recent_output_rate));
-		fs.put("recentInputRate", Long.toString(recent_input_rate));
+		fs.putSingle("recentOutputRate", Long.toString(recent_output_rate));
+		fs.putSingle("recentInputRate", Long.toString(recent_input_rate));
 
 		String [] routingBackoffReasons = getPeerNodeRoutingBackoffReasons();
 		if(routingBackoffReasons.length != 0) {
@@ -1906,12 +1918,12 @@ public class Node {
 		double swaps = (double)getSwaps();
 		double noSwaps = (double)getNoSwaps();
 		double numberOfRemotePeerLocationsSeenInSwaps = (double)getNumberOfRemotePeerLocationsSeenInSwaps();
-		fs.put("numberOfRemotePeerLocationsSeenInSwaps", Double.toString(numberOfRemotePeerLocationsSeenInSwaps));
+		fs.putSingle("numberOfRemotePeerLocationsSeenInSwaps", Double.toString(numberOfRemotePeerLocationsSeenInSwaps));
 		double avgConnectedPeersPerNode = 0.0;
 		if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
 			avgConnectedPeersPerNode = numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps);
 		}
-		fs.put("avgConnectedPeersPerNode", Double.toString(avgConnectedPeersPerNode));
+		fs.putSingle("avgConnectedPeersPerNode", Double.toString(avgConnectedPeersPerNode));
 
 		int startedSwaps = getStartedSwaps();
 		int swapsRejectedAlreadyLocked = getSwapsRejectedAlreadyLocked();
@@ -1940,20 +1952,20 @@ public class Node {
 		if ((swaps > 0.0) && (noSwaps > 0.0)) {
 			swapsPerNoSwaps = swaps/noSwaps;
 		}
-		fs.put("locationChangePerSession", Double.toString(locationChangePerSession));
-		fs.put("locationChangePerSwap", Double.toString(locationChangePerSwap));
-		fs.put("locationChangePerMinute", Double.toString(locationChangePerMinute));
-		fs.put("swapsPerMinute", Double.toString(swapsPerMinute));
-		fs.put("noSwapsPerMinute", Double.toString(noSwapsPerMinute));
-		fs.put("swapsPerNoSwaps", Double.toString(swapsPerNoSwaps));
-		fs.put("swaps", Double.toString(swaps));
-		fs.put("noSwaps", Double.toString(noSwaps));
-		fs.put("startedSwaps", Integer.toString(startedSwaps));
-		fs.put("swapsRejectedAlreadyLocked", Integer.toString(swapsRejectedAlreadyLocked));
-		fs.put("swapsRejectedNowhereToGo", Integer.toString(swapsRejectedNowhereToGo));
-		fs.put("swapsRejectedRateLimit", Integer.toString(swapsRejectedRateLimit));
-		fs.put("swapsRejectedLoop", Integer.toString(swapsRejectedLoop));
-		fs.put("swapsRejectedRecognizedID", Integer.toString(swapsRejectedRecognizedID));
+		fs.putSingle("locationChangePerSession", Double.toString(locationChangePerSession));
+		fs.putSingle("locationChangePerSwap", Double.toString(locationChangePerSwap));
+		fs.putSingle("locationChangePerMinute", Double.toString(locationChangePerMinute));
+		fs.putSingle("swapsPerMinute", Double.toString(swapsPerMinute));
+		fs.putSingle("noSwapsPerMinute", Double.toString(noSwapsPerMinute));
+		fs.putSingle("swapsPerNoSwaps", Double.toString(swapsPerNoSwaps));
+		fs.putSingle("swaps", Double.toString(swaps));
+		fs.putSingle("noSwaps", Double.toString(noSwaps));
+		fs.putSingle("startedSwaps", Integer.toString(startedSwaps));
+		fs.putSingle("swapsRejectedAlreadyLocked", Integer.toString(swapsRejectedAlreadyLocked));
+		fs.putSingle("swapsRejectedNowhereToGo", Integer.toString(swapsRejectedNowhereToGo));
+		fs.putSingle("swapsRejectedRateLimit", Integer.toString(swapsRejectedRateLimit));
+		fs.putSingle("swapsRejectedLoop", Integer.toString(swapsRejectedLoop));
+		fs.putSingle("swapsRejectedRecognizedID", Integer.toString(swapsRejectedRecognizedID));
 
 		long fix32kb = 32 * 1024;
 		long cachedKeys = getChkDatacache().keyCount();
@@ -1979,25 +1991,25 @@ public class Node {
 		long overallAccesses = storeAccesses + cacheAccesses;
 		double avgStoreAccessRate = (double)overallAccesses/(double)nodeUptimeSeconds;
 		
-		fs.put("cachedKeys", Long.toString(cachedKeys));
-		fs.put("cachedSize", Long.toString(cachedSize));
-		fs.put("storeKeys", Long.toString(storeKeys));
-		fs.put("storeSize", Long.toString(storeSize));
-		fs.put("overallKeys", Long.toString(overallKeys));
-		fs.put("overallSize", Long.toString(overallSize));
-		fs.put("maxOverallKeys", Long.toString(maxOverallKeys));
-		fs.put("maxOverallSize", Long.toString(maxOverallSize));
-		fs.put("percentOverallKeysOfMax", Double.toString(percentOverallKeysOfMax));
-		fs.put("cachedStoreHits", Long.toString(cachedStoreHits));
-		fs.put("cachedStoreMisses", Long.toString(cachedStoreMisses));
-		fs.put("cacheAccesses", Long.toString(cacheAccesses));
-		fs.put("percentCachedStoreHitsOfAccesses", Double.toString(percentCachedStoreHitsOfAccesses));
-		fs.put("storeHits", Long.toString(storeHits));
-		fs.put("storeMisses", Long.toString(storeMisses));
-		fs.put("storeAccesses", Long.toString(storeAccesses));
-		fs.put("percentStoreHitsOfAccesses", Double.toString(percentStoreHitsOfAccesses));
-		fs.put("overallAccesses", Long.toString(overallAccesses));
-		fs.put("avgStoreAccessRate", Double.toString(avgStoreAccessRate));
+		fs.putSingle("cachedKeys", Long.toString(cachedKeys));
+		fs.putSingle("cachedSize", Long.toString(cachedSize));
+		fs.putSingle("storeKeys", Long.toString(storeKeys));
+		fs.putSingle("storeSize", Long.toString(storeSize));
+		fs.putSingle("overallKeys", Long.toString(overallKeys));
+		fs.putSingle("overallSize", Long.toString(overallSize));
+		fs.putSingle("maxOverallKeys", Long.toString(maxOverallKeys));
+		fs.putSingle("maxOverallSize", Long.toString(maxOverallSize));
+		fs.putSingle("percentOverallKeysOfMax", Double.toString(percentOverallKeysOfMax));
+		fs.putSingle("cachedStoreHits", Long.toString(cachedStoreHits));
+		fs.putSingle("cachedStoreMisses", Long.toString(cachedStoreMisses));
+		fs.putSingle("cacheAccesses", Long.toString(cacheAccesses));
+		fs.putSingle("percentCachedStoreHitsOfAccesses", Double.toString(percentCachedStoreHitsOfAccesses));
+		fs.putSingle("storeHits", Long.toString(storeHits));
+		fs.putSingle("storeMisses", Long.toString(storeMisses));
+		fs.putSingle("storeAccesses", Long.toString(storeAccesses));
+		fs.putSingle("percentStoreHitsOfAccesses", Double.toString(percentStoreHitsOfAccesses));
+		fs.putSingle("overallAccesses", Long.toString(overallAccesses));
+		fs.putSingle("avgStoreAccessRate", Double.toString(avgStoreAccessRate));
 
 		Runtime rt = Runtime.getRuntime();
 		float freeMemory = (float) rt.freeMemory();
@@ -2010,12 +2022,12 @@ public class Node {
 		int threadCount = Thread.activeCount();
 		int availableCpus = rt.availableProcessors();
 
-		fs.put("freeJavaMemory", Long.toString((long)freeMemory));
-		fs.put("usedJavaMemory", Long.toString(usedJavaMem));
-		fs.put("allocatedJavaMemory", Long.toString(allocatedJavaMem));
-		fs.put("maximumJavaMemory", Long.toString(maxJavaMem));
-		fs.put("availableCPUs", Integer.toString(availableCpus));
-		fs.put("runningThreadCount", Integer.toString(threadCount));
+		fs.putSingle("freeJavaMemory", Long.toString((long)freeMemory));
+		fs.putSingle("usedJavaMemory", Long.toString(usedJavaMem));
+		fs.putSingle("allocatedJavaMemory", Long.toString(allocatedJavaMem));
+		fs.putSingle("maximumJavaMemory", Long.toString(maxJavaMem));
+		fs.putSingle("availableCPUs", Integer.toString(availableCpus));
+		fs.putSingle("runningThreadCount", Integer.toString(threadCount));
 		
 		return fs;
 	}
@@ -2957,7 +2969,7 @@ public class Node {
 		Logger.normal(this, "Received N2NM from '"+source.getPeer()+"'");
 		SimpleFieldSet fs = null;
 		try {
-			fs = new SimpleFieldSet(new String(messageData.getData(), "UTF-8"));
+			fs = new SimpleFieldSet(new String(messageData.getData(), "UTF-8"), false);
 		} catch (IOException e) {
 			Logger.error(this, "IOException while parsing node to node message data", e);
 			return;
@@ -2965,15 +2977,15 @@ public class Node {
 		if(fs.get("type") != null) {
 			fs.removeValue("type");
 		}
-		fs.put("type", Integer.toString(type));
+		fs.putOverwrite("type", Integer.toString(type));
 		if(fs.get("receivedTime") != null) {
 			fs.removeValue("receivedTime");
 		}
-		fs.put("receivedTime", Long.toString(System.currentTimeMillis()));
+		fs.putOverwrite("receivedTime", Long.toString(System.currentTimeMillis()));
 		if(fs.get("receivedAs") != null) {
 			fs.removeValue("receivedAs");
 		}
-		fs.put("receivedAs", "nodeToNodeMessage");
+		fs.putOverwrite("receivedAs", "nodeToNodeMessage");
 		int fileNumber = source.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
 		if( fileNumber == -1 ) {
 			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+source.getPeer());
@@ -3002,12 +3014,12 @@ public class Node {
 		String text = (String) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TEXT);
 		Logger.normal(this, "Received N2NTM from '"+source_nodename+"' to '"+target_nodename+"': "+text);
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("type", Integer.toString(type));
-		fs.put("source_nodename", Base64.encode(source_nodename.getBytes()));
-		fs.put("target_nodename", Base64.encode(target_nodename.getBytes()));
-		fs.put("text", Base64.encode(text.getBytes()));
-		fs.put("receivedTime", Long.toString(System.currentTimeMillis()));
-		fs.put("receivedAs", "nodeToNodeTextMessage");
+		fs.putSingle("type", Integer.toString(type));
+		fs.putSingle("source_nodename", Base64.encode(source_nodename.getBytes()));
+		fs.putSingle("target_nodename", Base64.encode(target_nodename.getBytes()));
+		fs.putSingle("text", Base64.encode(text.getBytes()));
+		fs.putSingle("receivedTime", Long.toString(System.currentTimeMillis()));
+		fs.putSingle("receivedAs", "nodeToNodeTextMessage");
 		int fileNumber = source.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
 		if( fileNumber == -1 ) {
 			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+source.getPeer());

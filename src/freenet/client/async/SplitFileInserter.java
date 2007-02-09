@@ -48,18 +48,18 @@ public class SplitFileInserter implements ClientPutState {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		// don't save basic infrastructure such as ctx and parent
 		// only save details of the request
-		fs.put("Type", "SplitFileInserter");
-		fs.put("DataLength", Long.toString(dataLength));
-		fs.put("CompressionCodec", Short.toString(compressionCodec));
-		fs.put("SplitfileCodec", Short.toString(splitfileAlgorithm));
-		fs.put("Finished", Boolean.toString(finished));
-		fs.put("SegmentSize", Integer.toString(segmentSize));
-		fs.put("CheckSegmentSize", Integer.toString(checkSegmentSize));
+		fs.putSingle("Type", "SplitFileInserter");
+		fs.putSingle("DataLength", Long.toString(dataLength));
+		fs.putSingle("CompressionCodec", Short.toString(compressionCodec));
+		fs.putSingle("SplitfileCodec", Short.toString(splitfileAlgorithm));
+		fs.putSingle("Finished", Boolean.toString(finished));
+		fs.putSingle("SegmentSize", Integer.toString(segmentSize));
+		fs.putSingle("CheckSegmentSize", Integer.toString(checkSegmentSize));
 		SimpleFieldSet segs = new SimpleFieldSet();
 		for(int i=0;i<segments.length;i++) {
 			segs.put(Integer.toString(i), segments[i].getProgressFieldset());
 		}
-		segs.put("Count", Integer.toString(segments.length));
+		segs.putSingle("Count", Integer.toString(segments.length));
 		fs.put("Segments", segs);
 		return fs;
 	}

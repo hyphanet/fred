@@ -233,7 +233,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 
 	public synchronized SimpleFieldSet exportFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Type", "TimeDecayingRunningAverage");
+		fs.putSingle("Type", "TimeDecayingRunningAverage");
 		fs.put("CurrentValue", curValue);
 		fs.put("Started", started);
 		fs.put("TotalReports", totalReports);

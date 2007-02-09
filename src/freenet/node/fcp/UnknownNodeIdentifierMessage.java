@@ -16,7 +16,7 @@ public class UnknownNodeIdentifierMessage extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet();
-		sfs.put("NodeIdentifier", nodeIdentifier);
+		sfs.putSingle("NodeIdentifier", nodeIdentifier);
 		return sfs;
 	}
 

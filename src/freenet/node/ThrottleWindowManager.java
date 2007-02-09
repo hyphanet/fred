@@ -57,7 +57,7 @@ public class ThrottleWindowManager {
 
 	public SimpleFieldSet exportFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Type", "ThrottleWindowManager");
+		fs.putSingle("Type", "ThrottleWindowManager");
 		fs.put("TotalPackets", _totalPackets);
 		fs.put("DroppedPackets", _droppedPackets);
 		fs.put("SimulatedWindowSize", _simulatedWindowSize);

@@ -487,29 +487,29 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	// different (it can store detailed state).
 	public synchronized SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(); // we will need multi-level later...
-		fs.put("Type", "GET");
-		fs.put("URI", uri.toString(false, false));
-		fs.put("Identifier", identifier);
-		fs.put("Verbosity", Integer.toString(verbosity));
-		fs.put("PriorityClass", Short.toString(priorityClass));
-		fs.put("ReturnType", ClientGetMessage.returnTypeString(returnType));
-		fs.put("Persistence", persistenceTypeString(persistenceType));
-		fs.put("ClientName", client.name);
+		fs.putSingle("Type", "GET");
+		fs.putSingle("URI", uri.toString(false, false));
+		fs.putSingle("Identifier", identifier);
+		fs.putSingle("Verbosity", Integer.toString(verbosity));
+		fs.putSingle("PriorityClass", Short.toString(priorityClass));
+		fs.putSingle("ReturnType", ClientGetMessage.returnTypeString(returnType));
+		fs.putSingle("Persistence", persistenceTypeString(persistenceType));
+		fs.putSingle("ClientName", client.name);
 		if(targetFile != null)
-			fs.put("Filename", targetFile.getPath());
+			fs.putSingle("Filename", targetFile.getPath());
 		if(tempFile != null)
-			fs.put("TempFilename", tempFile.getPath());
+			fs.putSingle("TempFilename", tempFile.getPath());
 		if(clientToken != null)
-			fs.put("ClientToken", clientToken);
-		fs.put("IgnoreDS", Boolean.toString(fctx.ignoreStore));
-		fs.put("DSOnly", Boolean.toString(fctx.localRequestOnly));
-		fs.put("MaxRetries", Integer.toString(fctx.maxNonSplitfileRetries));
-		fs.put("Finished", Boolean.toString(finished));
-		fs.put("Succeeded", Boolean.toString(succeeded));
+			fs.putSingle("ClientToken", clientToken);
+		fs.putSingle("IgnoreDS", Boolean.toString(fctx.ignoreStore));
+		fs.putSingle("DSOnly", Boolean.toString(fctx.localRequestOnly));
+		fs.putSingle("MaxRetries", Integer.toString(fctx.maxNonSplitfileRetries));
+		fs.putSingle("Finished", Boolean.toString(finished));
+		fs.putSingle("Succeeded", Boolean.toString(succeeded));
 		if(finished) {
 			if(succeeded) {
-				fs.put("FoundDataLength", Long.toString(foundDataLength));
-				fs.put("FoundDataMimeType", foundDataMimeType);
+				fs.putSingle("FoundDataLength", Long.toString(foundDataLength));
+				fs.putSingle("FoundDataMimeType", foundDataMimeType);
 				if(postFetchProtocolErrorMessage != null) {
 					fs.put("PostFetchProtocolError", postFetchProtocolErrorMessage.getFieldSet());
 				}
@@ -523,7 +523,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && !(succeeded == false && returnBucket == null)) {
 			bucketToFS(fs, "ReturnBucket", false, returnBucket);
 		}
-		fs.put("Global", Boolean.toString(client.isGlobalQueue));
+		fs.putSingle("Global", Boolean.toString(client.isGlobalQueue));
 		return fs;
 	}
 

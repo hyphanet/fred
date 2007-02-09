@@ -25,7 +25,7 @@ public class RemovePersistentRequest extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Identifier", identifier);
+		fs.putSingle("Identifier", identifier);
 		return fs;
 	}
 

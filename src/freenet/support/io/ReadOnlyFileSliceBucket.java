@@ -145,8 +145,8 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Type", "ReadOnlyFileSliceBucket");
-		fs.put("Filename", file.toString());
+		fs.putSingle("Type", "ReadOnlyFileSliceBucket");
+		fs.putSingle("Filename", file.toString());
 		fs.put("Offset", startAt);
 		fs.put("Length", length);
 		return fs;

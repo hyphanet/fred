@@ -21,11 +21,11 @@ public class PutSuccessfulMessage extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Identifier", identifier);
-		if(global) fs.put("Global", "true");
+		fs.putSingle("Identifier", identifier);
+		if(global) fs.putSingle("Global", "true");
 		// FIXME debug and remove!
 		if(uri != null)
-			fs.put("URI", uri.toString());
+			fs.putSingle("URI", uri.toString());
 		return fs;
 	}
 

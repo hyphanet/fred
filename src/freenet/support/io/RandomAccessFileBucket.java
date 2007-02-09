@@ -462,8 +462,8 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
 
 	public synchronized SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("Type", "RandomAccessFileBucket");
-		fs.put("Filename", file.toString());
+		fs.putSingle("Type", "RandomAccessFileBucket");
+		fs.putSingle("Filename", file.toString());
 		fs.put("Offset", offset);
 		fs.put("Length", len);
 		return fs;

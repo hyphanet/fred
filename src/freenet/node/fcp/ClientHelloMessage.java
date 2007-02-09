@@ -30,8 +30,8 @@ public class ClientHelloMessage extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet();
-		sfs.put("Name", clientName);
-		sfs.put("ExpectedVersion", clientExpectedVersion);
+		sfs.putSingle("Name", clientName);
+		sfs.putSingle("ExpectedVersion", clientExpectedVersion);
 		return sfs;
 	}
 

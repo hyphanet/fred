@@ -260,25 +260,25 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	public synchronized SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(); // we will need multi-level later...
-		fs.put("Type", getTypeName());
-		fs.put("URI", uri.toString(false, false));
-		fs.put("Identifier", identifier);
-		fs.put("Verbosity", Integer.toString(verbosity));
-		fs.put("PriorityClass", Short.toString(priorityClass));
-		fs.put("Persistence", ClientRequest.persistenceTypeString(persistenceType));
-		fs.put("ClientName", client.name);
-		fs.put("ClientToken", clientToken);
-		fs.put("DontCompress", Boolean.toString(ctx.dontCompress));
-		fs.put("MaxRetries", Integer.toString(ctx.maxInsertRetries));
-		fs.put("Finished", Boolean.toString(finished));
-		fs.put("Succeeded", Boolean.toString(succeeded));
-		fs.put("GetCHKOnly", Boolean.toString(getCHKOnly));
+		fs.putSingle("Type", getTypeName());
+		fs.putSingle("URI", uri.toString(false, false));
+		fs.putSingle("Identifier", identifier);
+		fs.putSingle("Verbosity", Integer.toString(verbosity));
+		fs.putSingle("PriorityClass", Short.toString(priorityClass));
+		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
+		fs.putSingle("ClientName", client.name);
+		fs.putSingle("ClientToken", clientToken);
+		fs.putSingle("DontCompress", Boolean.toString(ctx.dontCompress));
+		fs.putSingle("MaxRetries", Integer.toString(ctx.maxInsertRetries));
+		fs.putSingle("Finished", Boolean.toString(finished));
+		fs.putSingle("Succeeded", Boolean.toString(succeeded));
+		fs.putSingle("GetCHKOnly", Boolean.toString(getCHKOnly));
 		if(generatedURI != null)
-			fs.put("GeneratedURI", generatedURI.toString(false, false));
+			fs.putSingle("GeneratedURI", generatedURI.toString(false, false));
 		if(finished && (!succeeded))
 			// Should have a putFailedMessage... unless there is a race condition.
 			fs.put("PutFailed", putFailedMessage.getFieldSet(false));
-		fs.put("Global", Boolean.toString(client.isGlobalQueue));
+		fs.putSingle("Global", Boolean.toString(client.isGlobalQueue));
 		return fs;
 	}
 	

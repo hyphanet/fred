@@ -435,7 +435,7 @@ public class TempFileBucket extends FileBucket {
 
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = super.toFieldSet();
-		fs.put("Type", "TempFileBucket");
+		fs.putSingle("Type", "TempFileBucket");
 		return fs;
 	}
 }
