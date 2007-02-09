@@ -15,17 +15,25 @@ import net.i2p.util.NativeBigInteger;
  */
 public class DSA {
 
+	// FIXME DSAgroupBigA is 256 bits long and therefore cannot accomodate
+	// all SHA-256 output's. Therefore we chop it down to 255 bits.
+	
+	static final BigInteger SIGNATURE_MASK =
+		Util.TWO.pow(255).subtract(BigInteger.ONE);
+	
 	/**
 	 * Returns a DSA signature given a group, private key (x), a random nonce
 	 * (k), and the hash of the message (m).
 	 */
-	public static DSASignature sign(DSAGroup g,
+	static DSASignature sign(DSAGroup g,
 			DSAPrivateKey x,
 			BigInteger k, 
 			BigInteger m,
 			RandomSource random) {
 		if(k.signum() == -1) throw new IllegalArgumentException();
 		if(m.signum() == -1) throw new IllegalArgumentException();
+		if(g.getQ().bitLength() == 256)
+			m = m.and(SIGNATURE_MASK);
 		if(m.compareTo(g.getQ()) != -1)
 			throw new IllegalArgumentException();
 		BigInteger r=g.getG().modPow(k, g.getP()).mod(g.getQ());
@@ -61,7 +69,7 @@ public class DSA {
 	 * the precalculated values of r and k^-1, and the hash
 	 * of the message (m)
 	 */
-	public static DSASignature sign(DSAGroup g, DSAPrivateKey x,
+	static DSASignature sign(DSAGroup g, DSAPrivateKey x,
 			BigInteger r, BigInteger kInv, 
 			BigInteger m, RandomSource random) {
 		BigInteger s1=m.add(x.getX().multiply(r)).mod(g.getQ());
@@ -89,6 +97,8 @@ public class DSA {
 			DSASignature sig,
 			BigInteger m) {
 		if(m.signum() == -1) throw new IllegalArgumentException();
+		if(kp.getGroup().getQ().bitLength() == 256)
+			m = m.and(SIGNATURE_MASK);
 		try {
 			// 0<r<q has to be true
 			if((sig.getR().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getR()) < 1)) {
