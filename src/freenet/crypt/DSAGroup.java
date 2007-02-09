@@ -43,7 +43,6 @@ public class DSAGroup extends CryptoKey {
         this.g = g;
         if(p.signum() != 1 || q.signum() != 1 || g.signum() != 1)
         	throw new IllegalArgumentException();
-        updateCachedHexStrings();
     }
 
     public DSAGroup(String pAsHexString, String qAsHexString,
