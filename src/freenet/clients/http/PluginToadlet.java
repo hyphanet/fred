@@ -13,7 +13,6 @@ import freenet.oldplugins.plugin.Plugin;
 import freenet.oldplugins.plugin.PluginManager;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
-import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
 /**

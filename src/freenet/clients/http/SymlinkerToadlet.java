@@ -8,7 +8,6 @@ import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringArrOption;
 import freenet.config.SubConfig;
 import freenet.node.Node;
 import freenet.support.Logger;

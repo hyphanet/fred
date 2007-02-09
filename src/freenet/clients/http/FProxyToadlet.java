@@ -10,7 +10,6 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.MessageDigest;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
@@ -27,7 +26,6 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
-import freenet.support.Base64;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;

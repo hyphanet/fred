@@ -5,8 +5,8 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.io.comm.DMT;
@@ -22,7 +22,6 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
-import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
 public class N2NTMToadlet extends Toadlet {

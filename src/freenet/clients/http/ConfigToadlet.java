@@ -16,7 +16,6 @@ import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
-import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
 
