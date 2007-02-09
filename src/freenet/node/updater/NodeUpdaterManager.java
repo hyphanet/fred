@@ -30,7 +30,7 @@ import freenet.support.api.StringCallback;
 public class NodeUpdaterManager {
 
 	public final static String UPDATE_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/update/"+Version.buildNumber();
-	public final static String REVOCATION_URI = "freenet:SSK@VOfCZVTYPaatJ~eB~4lu2cPrWEmGyt4bfbB1v15Z6qQ,B6EynLhm7QE0se~rMgWWhl7wh3rFWjxJsEUcyohAm8A,AQABAAE/revoked";
+	public final static String REVOCATION_URI = "freenet:SSK@i1F0GnBgMHNLZC~KrI8IiMCnDZeIy2YaLGsX~C0Mgv0,NlgBgblPys8YINj8CXabLW6AtUlWvZYNpYfNV08aoPo,AQACAAE/revoked";
 	public final static String EXT_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/ext/"+NodeStarter.extBuildNumber;
 	
 	FreenetURI updateURI;
