@@ -26,6 +26,8 @@ public class DSA {
 			RandomSource random) {
 		if(k.signum() == -1) throw new IllegalArgumentException();
 		if(m.signum() == -1) throw new IllegalArgumentException();
+		if(m.compareTo(g.getQ()) != -1)
+			throw new IllegalArgumentException();
 		BigInteger r=g.getG().modPow(k, g.getP()).mod(g.getQ());
 
 		BigInteger kInv=k.modInverse(g.getQ());
@@ -89,9 +91,17 @@ public class DSA {
 		if(m.signum() == -1) throw new IllegalArgumentException();
 		try {
 			// 0<r<q has to be true
-			if((sig.getR().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getR()) < 1)) return false;
+			if((sig.getR().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getR()) < 1)) {
+				if(Logger.shouldLog(Logger.MINOR, DSA.class))
+					Logger.minor(DSA.class, "r < 0 || r > q");
+				return false;
+			}
 			// 0<s<q has to be true as well
-			if((sig.getS().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getS()) < 1)) return false;
+			if((sig.getS().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getS()) < 1)) {
+				if(Logger.shouldLog(Logger.MINOR, DSA.class))
+					Logger.minor(DSA.class, "s < 0 || s > q");
+				return false;
+			}
 
 			BigInteger w=sig.getS().modInverse(kp.getQ());
 			BigInteger u1=m.multiply(w).mod(kp.getQ());
@@ -103,6 +113,8 @@ public class DSA {
 
 			//FIXME: is there a better way to handle this exception raised on the 'w=' line above?
 		} catch (ArithmeticException e) {  // catch error raised by invalid data
+			if(Logger.shouldLog(Logger.MINOR, DSA.class))
+				Logger.minor(DSA.class, "Verify failed: "+e, e);
 			return false;                  // and report that that data is bad.
 		}
 	}
