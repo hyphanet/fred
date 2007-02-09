@@ -33,8 +33,9 @@ public class NodeARKInserter implements ClientCallback {
 
 	/**
 	 * @param node
+	 * @param old If true, use the old ARK rather than the new ARK
 	 */
-	NodeARKInserter(Node node, NodeIPDetector detector) {
+	NodeARKInserter(Node node, NodeIPDetector detector, boolean old) {
 		this.node = node;
 		this.detector = detector;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);

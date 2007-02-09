@@ -318,6 +318,11 @@ public class Node {
 	InsertableClientSSK myARK;
 	/** My ARK sequence number */
 	long myARKNumber;
+	// FIXME remove old ARK support
+	/** My old ARK SSK private key */
+	InsertableClientSSK myOldARK;
+	/** My old ARK sequence number */
+	long myOldARKNumber;
 	/** FetcherContext for ARKs */
 	public final FetcherContext arkFetcherContext;
 	/** Next time to log the PeerNode status summary */
@@ -595,6 +600,11 @@ public class Node {
 			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
 		}
 		InsertableClientSSK ark = null;
+		
+		// ARK
+		
+		boolean arkIsOld = false;
+		
 		String s = fs.get("ark.number");
 		
 		String privARK = fs.get("ark.privURI");
@@ -602,6 +612,7 @@ public class Node {
 			if(privARK != null) {
 				FreenetURI uri = new FreenetURI(privARK);
 				ark = InsertableClientSSK.create(uri);
+				arkIsOld = ark.isInsecure();
 				if(s == null) {
 					ark = null;
 				} else {
@@ -622,6 +633,40 @@ public class Node {
 			myARKNumber = 0;
 		}
 		this.myARK = ark;
+		
+		if(arkIsOld) {
+			myOldARKNumber = myARKNumber;
+			myOldARK = myARK;
+			myARK = InsertableClientSSK.createRandom(r, "ark");
+			myARKNumber = 0;
+		} else {
+			ark = null;
+			s = fs.get("old-ark.number");
+			privARK = fs.get("old-ark.privURI");
+			try {
+				if(privARK != null) {
+					FreenetURI uri = new FreenetURI(privARK);
+					ark = InsertableClientSSK.create(uri);
+					arkIsOld = ark.isInsecure();
+					if(s == null) {
+						ark = null;
+					} else {
+						try {
+							myOldARKNumber = Long.parseLong(s);
+						} catch (NumberFormatException e) {
+							myOldARKNumber = 0;
+							ark = null;
+						}
+					}
+				}
+			} catch (MalformedURLException e) {
+				Logger.minor(this, "Caught "+e, e);
+				ark = null;
+			}
+			this.myOldARK = ark;
+			
+		}
+		
 		wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
 	}
 
@@ -1689,6 +1734,9 @@ public class Node {
 		SimpleFieldSet fs = exportPublicFieldSet(false);
 		fs.put("dsaPrivKey", myPrivKey.asFieldSet());
 		fs.put("ark.privURI", this.myARK.getInsertURI().toString(false, false));
+		if(myOldARK != null) {
+			fs.put("old-ark.privURI", this.myOldARK.getInsertURI().toString(false, false));
+		}
 		return fs;
 	}
 	
@@ -1729,6 +1777,10 @@ public class Node {
 		}
 		fs.put("ark.number", Long.toString(this.myARKNumber)); // Can be changed on setup
 		fs.put("ark.pubURI", this.myARK.getURI().toString(false, false)); // Can be changed on setup
+		if(myOldARK != null) {
+			fs.put("old-ark.number", Long.toString(this.myOldARKNumber));
+			fs.put("old-ark.pubURI", this.myOldARK.getURI().toString(false, false));
+		}
 		
 		synchronized (referenceSync) {
 			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){

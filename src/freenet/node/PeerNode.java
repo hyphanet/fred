@@ -2293,25 +2293,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		return myARK;
 	}
 
-	public synchronized void updateARK(FreenetURI newURI) {
-		try {
-			USK usk = USK.create(newURI);
-			if(!myARK.equals(usk.copy(myARK.suggestedEdition), false)) {
-				Logger.error(this, "Changing ARK not supported (and shouldn't be possible): from "+myARK+" to "+usk+" for "+this);
-			} else if(myARK.suggestedEdition > usk.suggestedEdition) {
-				Logger.minor(this, "Ignoring ARK edition decrease: "+myARK.suggestedEdition+" to "+usk.suggestedEdition+" for "+this);
-			} else if(myARK.suggestedEdition < usk.suggestedEdition) {
-				if(logMINOR) Logger.minor(this, "New ARK edition found");
-				myARK = usk;
-			} else if(myARK == null) {
-				if(logMINOR) Logger.minor(this, "Setting ARK to "+usk+" was null on "+this);
-				myARK = usk;
-			}
-		} catch (MalformedURLException e) {
-			Logger.error(this, "ARK update failed: Could not parse permanent redirect (from USK): "+newURI+" : "+e, e);
-		}
-	}
-
 	public void gotARK(SimpleFieldSet fs, long fetchedEdition) {
 		try {
 			synchronized(this) {

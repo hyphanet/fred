@@ -49,6 +49,8 @@ public class NodeIPDetector {
 	public boolean includeLocalAddressesInNoderefs;
 	/** ARK inserter. */
 	private final NodeARKInserter arkPutter;
+	// FIXME remove old ARK support
+	private final NodeARKInserter oldARKPutter;
 	/** Set when we have grounds to believe that we may be behind a symmetric NAT. */
 	boolean maybeSymmetric;
 	private boolean hasDetectedPM;
@@ -62,7 +64,11 @@ public class NodeIPDetector {
 		ipDetectorManager = new IPDetectorPluginManager(node, this);
 		ipDetector = new IPAddressDetector(10*1000, this);
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
-		arkPutter = new NodeARKInserter(node, this);
+		arkPutter = new NodeARKInserter(node, this, false);
+		if(node.myOldARK != null)
+			oldARKPutter = new NodeARKInserter(node, this, true);
+		else
+			oldARKPutter = null;
 	}
 
 	/**
@@ -256,6 +262,8 @@ public class NodeIPDetector {
 		pluginDetectedIPs = list;
 		redetectAddress();
 		arkPutter.update();
+		if(oldARKPutter != null)
+			oldARKPutter.update();
 	}
 
 	public void redetectAddress() {
@@ -265,6 +273,8 @@ public class NodeIPDetector {
 			lastIP = newIP;
 		}
 		arkPutter.update();
+		if(oldARKPutter != null)
+			oldARKPutter.update();
 		node.writeNodeFile();
 	}
 
@@ -388,6 +398,7 @@ public class NodeIPDetector {
 		ticker.queueTimedJob(new FastRunnable() {
 			public void run() {
 				arkPutter.start();
+				if(oldARKPutter != null) oldARKPutter.start();
 			}
 		}, 60*1000);
 	}
