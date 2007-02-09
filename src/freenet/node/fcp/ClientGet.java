@@ -427,6 +427,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {
+        if(finished) return;
 		synchronized(this) {
 			succeeded = false;
 			getFailedMessage = new GetFailedMessage(e, identifier, global);

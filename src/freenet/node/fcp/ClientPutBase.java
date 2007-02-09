@@ -114,6 +114,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	}
 
 	public void onFailure(InserterException e, BaseClientPutter state) {
+        if(finished) return;
 		synchronized(this) {
 			finished = true;
 			putFailedMessage = new PutFailedMessage(e, identifier, global);
