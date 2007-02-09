@@ -1,16 +1,16 @@
 /* -*- Mode: java; c-basic-indent: 4; tab-width: 4 -*- */
 package freenet.crypt;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.io.*;
 
+import net.i2p.util.NativeBigInteger;
 import freenet.support.Base64;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
-
-import net.i2p.util.NativeBigInteger;
 
 public class DSAPublicKey extends CryptoKey {
 	private static final long serialVersionUID = -1;
