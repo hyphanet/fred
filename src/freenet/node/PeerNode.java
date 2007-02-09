@@ -374,7 +374,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         }
         
         nominalPeer=new Vector();
-        nominalPeer.removeAllElements();
         try{
         	String physical[]=fs.getAll("physical.udp");
         	if(physical==null){
@@ -419,7 +418,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     			try{
     				boolean failed = false;
     				if(signature == null || peerCryptoGroup == null || peerPubKey == null || 
-    						(failed = !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(md.digest(fs.toOrderedString().getBytes("UTF-8")))))){
+    						(failed = !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, md.digest(fs.toOrderedString().getBytes("UTF-8")))))){
     					String errCause = "";
     					if(signature == null) errCause += " (No signature)";
     					if(peerCryptoGroup == null) errCause += " (No peer crypto group)";
