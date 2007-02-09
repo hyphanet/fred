@@ -141,7 +141,7 @@ public class LoggingConfigHandler {
     	
     	// interval
     	
-    	config.register("interval", "5MINUTE", 5, true, false, "Log rotation interval", "Log rotation interval - period after which logs are rotated. We keep the last two log files (current and prev), plus lots of compressed logfiles up to maxZippedLogsSize",
+    	config.register("interval", "1HOUR", 5, true, false, "Log rotation interval", "Log rotation interval - period after which logs are rotated. We keep the last two log files (current and prev), plus lots of compressed logfiles up to maxZippedLogsSize",
     			new StringCallback() {
 					public String get() {
 						return logRotateInterval;
