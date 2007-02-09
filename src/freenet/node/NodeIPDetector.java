@@ -288,7 +288,9 @@ public class NodeIPDetector {
 
 	public int registerConfigs(SubConfig nodeConfig, int sortOrder) {
 		// IP address override
-		nodeConfig.register("ipAddressOverride", "", sortOrder++, true, false, "IP address override", "IP address override (not usually needed)", new StringCallback() {
+		nodeConfig.register("ipAddressOverride", "", sortOrder++, false, false, "IP address override", 
+				"IP address override (not usually needed) - set this if you have a static IP address or a domain name (e.g. dyndns), and you are behind a firewall", 
+				new StringCallback() {
 
 			public String get() {
 				if(overrideIPAddress == null) return "";
