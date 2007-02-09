@@ -250,7 +250,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				"Be careful who you give fproxy access to!", new FProxyAllowedHostsCallback());
 		fproxyConfig.register("css", "clean", configItemOrder++, false, false, "CSS Name", "Name of the CSS FProxy should use "+themes.toString(),
 				new FProxyCSSNameCallback());
-		fproxyConfig.register("advancedDarknetEnabled", false, configItemOrder++, false, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
+		fproxyConfig.register("advancedDarknetEnabled", false, configItemOrder++, false, false, "Enable Advanced Mode?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
 				new FProxyAdvancedDarknetEnabledCallback(this));
 		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, false, false, "Enable FProxy use of Javascript?", "Whether or not FProxy should use Javascript \"helpers\". This setting should be turned to false in most cases. Note that freesites may not use javascript even if this is enabled.",
 				new FProxyJavascriptEnabledCallback(this));
