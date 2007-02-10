@@ -54,9 +54,7 @@ public class NodeSSK extends Key {
 		this.cryptoAlgorithm = cryptoAlgorithm;
 		this.pubKey = pubKey;
 		if(pubKey != null) {
-			MessageDigest md256 = SHA256.getMessageDigest();
-			byte[] hash = md256.digest(pubKey.asBytes());
-			SHA256.returnMessageDigest(md256);
+			byte[] hash = SHA256.digest(pubKey.asBytes());
 			if(!Arrays.equals(hash, pkHash))
 				throw new SSKVerifyException("Invalid pubKey: wrong hash");
 		}
