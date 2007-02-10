@@ -16,7 +16,7 @@ public class PersistentRequestModifiedMessage extends FCPMessage {
 
     private final SimpleFieldSet fs;
     
-    protected PersistentRequestModifiedMessage(String identifier, boolean global) {
+    private PersistentRequestModifiedMessage(String identifier, boolean global) {
         // remembered for the MessageInvalidException only
         this.ident = identifier;
         this.global = global;
