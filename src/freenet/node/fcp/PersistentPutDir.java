@@ -9,8 +9,10 @@ import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 
@@ -71,12 +73,17 @@ public class PersistentPutDir extends FCPMessage {
 				subset.putSingle("TargetURI", tempURI.toString());
 			} else {
 				Bucket data = e.getData();
+				if(data instanceof DelayedFreeBucket) {
+					data = ((DelayedFreeBucket)data).getUnderlying();
+				}
 				subset.put("DataLength", e.getSize());
 				if(mimeOverride != null)
 					subset.putSingle("Metadata.ContentType", mimeOverride);
 				// What to do with the bucket?
 				// It is either a persistent encrypted bucket or a file bucket ...
-				if(data instanceof FileBucket) {
+				if(data == null) {
+					Logger.error(this, "Bucket already freed: "+e.getData()+" for "+e+" for "+identifier);
+				} else if(data instanceof FileBucket) {
 					subset.putSingle("UploadFrom", "disk");
 					subset.putSingle("Filename", ((FileBucket)data).getFile().getPath());
 				} else if((data instanceof PaddedEphemerallyEncryptedBucket) || (data == null)) {

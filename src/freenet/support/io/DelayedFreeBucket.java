@@ -57,6 +57,11 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		bucket.setReadOnly();
 	}
 
+	public Bucket getUnderlying() {
+		if(freed) return null;
+		return bucket;
+	}
+	
 	public void free() {
 		synchronized(this) { // mutex on just this method; make a separate lock if necessary to lock the above
 			if(freed) return;
