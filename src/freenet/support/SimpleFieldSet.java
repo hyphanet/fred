@@ -50,7 +50,7 @@ public class SimpleFieldSet {
        	this.shortLived = shortLived;
         read(br, allowMultiple);
     }
-    
+
     public SimpleFieldSet(SimpleFieldSet sfs){
     	values = new HashMap(sfs.values);
     	subsets = new HashMap(sfs.subsets);
@@ -66,7 +66,10 @@ public class SimpleFieldSet {
     }
     
     /**
-     * Empty constructor
+     * Create a SimpleFieldSet.
+     * @param shortLived If false, strings will be interned to ensure that they use as
+     * little memory as possible. Only set to true if the SFS will be short-lived or
+     * small.
      */
     public SimpleFieldSet(boolean shortLived) {
         values = new HashMap();
@@ -76,6 +79,9 @@ public class SimpleFieldSet {
 
     /**
      * Construct from a string.
+     * @param shortLived If false, strings will be interned to ensure that they use as
+     * little memory as possible. Only set to true if the SFS will be short-lived or
+     * small.
      * @throws IOException if the string is too short or invalid.
      */
     public SimpleFieldSet(String content, boolean allowMultiple, boolean shortLived) throws IOException {
