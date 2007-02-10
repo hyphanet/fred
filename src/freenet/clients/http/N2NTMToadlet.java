@@ -132,12 +132,12 @@ public class N2NTMToadlet extends Toadlet {
 					try {
 						long now = System.currentTimeMillis();
 						SimpleFieldSet fs = new SimpleFieldSet();
-						fs.putSingle("type", Integer.toString(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT));
+						fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_USERALERT);
 						fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes()));
 						fs.putSingle("target_nodename", Base64.encode(pn.getName().getBytes()));
 						fs.putSingle("text", Base64.encode(message.getBytes()));
-						fs.putSingle("composedTime", Long.toString(now));
-						fs.putSingle("sentTime", Long.toString(now));
+						fs.put("composedTime", now);
+						fs.put("sentTime", now);
 						Message n2ntm;
 						if(Version.buildNumber() < 1000) {  // FIXME/TODO: This test shouldn't be needed eventually
 							n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, node.getMyName(), pn.getName(), message);
