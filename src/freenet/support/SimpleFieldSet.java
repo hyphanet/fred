@@ -224,7 +224,7 @@ public class SimpleFieldSet {
      */
 	private synchronized final boolean put(String key, String value, boolean allowMultiple, boolean overwrite) {
 		int idx;
-		if(value == null) return false;
+		if(value == null) return true; // valid no-op
 		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
 			String x = (String) values.get(key);
 			
