@@ -1580,7 +1580,7 @@ public class Node {
 			}
 			
 			if(spuriousOOMs) {
-				System.err.println("Please upgrade to at least sun jvm 1.4.2_13, 1.5.0_10 or 1.6. This version is buggy and may cause spurious OutOfMemoryErrors.");
+				System.err.println("Please upgrade to at least sun jvm 1.4.2_13, 1.5.0_10 or 1.6 (recommended). This version is buggy and may cause spurious OutOfMemoryErrors.");
 				clientCore.alerts.register(new UserAlert() {
 
 					public String dismissButtonText() {
@@ -1592,7 +1592,7 @@ public class Node {
 						HTMLNode n = new HTMLNode("div");
 						n.addChild("#", "The JVM you are using ("+System.getProperty("java.vm.version")+") is known to be ");
 						n.addChild("a", "href", "/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795").addChild("#", "buggy");
-						n.addChild("#", ". It may produce OutOfMemoryError's when there is plenty of memory available. Please upgrade to at least Sun Java 1.4.2_13, 1.5.0_10 or 1.6.");
+						n.addChild("#", ". It may produce OutOfMemoryError's when there is plenty of memory available. Please upgrade to at least Sun Java 1.4.2_13, 1.5.0_10 or 1.6 (recommended).");
 						return n;
 					}
 
@@ -1602,7 +1602,7 @@ public class Node {
 
 					public String getText() {
 						return "The JVM you are using ("+System.getProperty("java.vm.version")+") is known to be " +
-						"buggy. It may produce OutOfMemoryError's when there is plenty of memory available. Please upgrade to at least Sun Java 1.4.2_13, 1.5.0_10 or 1.6. See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795 .";
+						"buggy. It may produce OutOfMemoryError's when there is plenty of memory available. Please upgrade to at least Sun Java 1.4.2_13, 1.5.0_10 or 1.6 (recommended). See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795 .";
 					}
 
 					public String getTitle() {
