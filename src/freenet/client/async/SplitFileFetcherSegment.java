@@ -55,7 +55,6 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	private int failedBlocks;
 	private int fetchedBlocks;
 	private final FailureCodeTracker errors;
-	private boolean createdFetchers;
 	
 	public SplitFileFetcherSegment(short splitfileType, FreenetURI[] splitfileDataBlocks, FreenetURI[] splitfileCheckBlocks, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetcherContext fetchContext, long maxTempLength, boolean splitUseLengths, int recursionLevel) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -390,9 +389,6 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 					Logger.error(this, "Scheduling twice? dataBlockStatus["+i+"] = "+checkBlockStatus[i]);
 				} else checkBlockStatus[i] =
 					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false, null, false);
-			}
-			synchronized(this) {
-				createdFetchers = true;
 			}
 			for(int i=0;i<dataBlocks.length;i++) {
 				if(dataBlockStatus[i] != null)
