@@ -157,20 +157,21 @@ public abstract class ClientRequest {
 			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use loading request "+clientName+" "+fs.get("Identifier"));
 		try {
 			String type = fs.get("Type");
+			boolean lazyResume = server.core.lazyResume();
 			if(type.equals("GET")) {
 				ClientGet cg = new ClientGet(fs, client);
-				client.register(cg, true);
-				cg.start();
+				client.register(cg, lazyResume);
+				if(!lazyResume) cg.start();
 				return cg;
 			} else if(type.equals("PUT")) {
 				ClientPut cp = new ClientPut(fs, client);
-				client.register(cp, true);
-				cp.start();
+				client.register(cp, lazyResume);
+				if(!lazyResume) cp.start();
 				return cp;
 			} else if(type.equals("PUTDIR")) {
 				ClientPutDir cp = new ClientPutDir(fs, client);
-				client.register(cp, true);
-				cp.start();
+				client.register(cp, lazyResume);
+				if(!lazyResume) cp.start();
 				return cp;
 			} else {
 				Logger.error(ClientRequest.class, "Unrecognized type: "+type);

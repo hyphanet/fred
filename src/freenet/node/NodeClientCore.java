@@ -88,6 +88,10 @@ public class NodeClientCore {
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
 	/** If true, allow extra path components at the end of URIs */
 	public boolean ignoreTooManyPathComponents;
+	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
+	private boolean lazyResume;
+	/** Has the startup process reached the point of resuming requests yet? If this is true, lazyResume can safely be modified. */
+	private boolean startedResume;
 	
 	// Client stuff that needs to be configged - FIXME
 	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -207,16 +211,36 @@ public class NodeClientCore {
 					}
 
 					public void set(boolean val) throws InvalidConfigValueException {
-						ignoreTooManyPathComponents = val;
+						synchronized(NodeClientCore.this) {
+							ignoreTooManyPathComponents = val;
+						}
 					}
 			
 		});
 		
 		ignoreTooManyPathComponents = nodeConfig.getBoolean("ignoreTooManyPathComponents");
 		
+		nodeConfig.register("lazyResume", true, sortOrder++, true, false, "Complete loading of persistent requests after startup? (Uses more memory)",
+				"The node can load persistent queued requests during startup, or it can read the data into memory and then complete the request resuming process after the node has started up. "+
+				"Shorter start-up times, but uses more memory.", new BooleanCallback() {
+
+					public boolean get() {
+						return lazyResume;
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						synchronized(NodeClientCore.this) {
+							if(!startedResume)
+								throw new InvalidConfigValueException("Cannot be set until node has started up");
+							lazyResume = val;
+						}
+					}
+					
+		});
+		
+		lazyResume = nodeConfig.getBoolean("lazyResume");
+		
 	}
-	
-	
 
 	public void start(Config config) throws NodeInitException {
 		
@@ -255,7 +279,15 @@ public class NodeClientCore {
 			public void run() {
 				System.out.println("Resuming persistent requests");
 				Logger.normal(this, "Resuming persistent requests");
-//				fcpServer.finishStart();
+				if(lazyResume) {
+					synchronized(NodeClientCore.this) {
+						startedResume = true;
+					}
+					fcpServer.finishStart();
+				} else
+					synchronized(NodeClientCore.this) {
+						startedResume = true;
+					}
 				persistentTempBucketFactory.completedInit();
 				System.out.println("Completed startup: All persistent requests resumed or restarted");
 				Logger.normal(this, "Completed startup: All persistent requests resumed or restarted");
@@ -795,5 +827,9 @@ public class NodeClientCore {
 	public FilterCallback createFilterCallback(URI uri, FoundURICallback cb) {
 		if(logMINOR) Logger.minor(this, "Creating filter callback: "+uri+", "+cb);
 		return new GenericReadFilterCallback(uri, cb);
+	}
+	
+	public boolean lazyResume() {
+		return lazyResume;
 	}
 }
