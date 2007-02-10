@@ -201,6 +201,7 @@ public class SimpleFieldSet {
      * @param value The value.
      */
     public void putSingle(String key, String value) {
+    	if(value == null) return;
     	if(!shortLived) value = value.intern();
     	if(!put(key, value, false, false))
     		throw new IllegalStateException("Value already exists: "+value+" but want to set "+key+" to "+value);
@@ -212,6 +213,7 @@ public class SimpleFieldSet {
      * @param value The value.
      */
     public void putAppend(String key, String value) {
+    	if(value == null) return;
     	if(!shortLived) value = value.intern();
     	put(key, value, true, false);
     }
@@ -222,6 +224,7 @@ public class SimpleFieldSet {
      * @param value The value.
      */
     public void putOverwrite(String key, String value) {
+    	if(value == null) return;
     	if(!shortLived) value = value.intern();
     	put(key, value, false, true);
     }
