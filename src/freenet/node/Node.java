@@ -1568,6 +1568,8 @@ public class Node {
 				}
 				int subver = Integer.parseInt(secondPart);
 				
+				Logger.minor(this, "JVM version: "+jvmVersion+" subver: "+subver+" from "+secondPart+" is142="+is142+" is150="+is150);
+				
 				if(is142) {
 					if(subver < 13)
 						spuriousOOMs = true;
