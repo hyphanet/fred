@@ -136,6 +136,10 @@ public abstract class ClientRequest {
 	}
 
 	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server) throws IOException {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequest.class);
+		Runtime rt = Runtime.getRuntime();;
+		if(logMINOR)
+			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use before loading request");
 		SimpleFieldSet fs = new SimpleFieldSet(br, false);
 		String clientName = fs.get("ClientName");
 		boolean isGlobal = Fields.stringToBool(fs.get("Global"), false);
@@ -149,19 +153,24 @@ public abstract class ClientRequest {
 			client = server.registerClient(clientName, server.core, null);
 		else
 			client = server.globalClient;
+		if(logMINOR)
+			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use loading request "+clientName+" "+fs.get("Identifier"));
 		try {
 			String type = fs.get("Type");
 			if(type.equals("GET")) {
 				ClientGet cg = new ClientGet(fs, client);
 				client.register(cg, true);
+				cg.start();
 				return cg;
 			} else if(type.equals("PUT")) {
 				ClientPut cp = new ClientPut(fs, client);
 				client.register(cp, true);
+				cp.start();
 				return cp;
 			} else if(type.equals("PUTDIR")) {
 				ClientPutDir cp = new ClientPutDir(fs, client);
 				client.register(cp, true);
+				cp.start();
 				return cp;
 			} else {
 				Logger.error(ClientRequest.class, "Unrecognized type: "+type);

@@ -590,6 +590,7 @@ public class FCPServer implements Runnable {
 				throw new IOException(e.toString());
 			}
 			for(int i=0;i<count;i++) {
+				System.out.println("Loading persistent request "+i+" of "+count+"...");
 				ClientRequest.readAndRegister(br, this);
 			}
 			br.close();

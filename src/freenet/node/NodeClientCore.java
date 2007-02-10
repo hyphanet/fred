@@ -255,7 +255,7 @@ public class NodeClientCore {
 			public void run() {
 				System.out.println("Resuming persistent requests");
 				Logger.normal(this, "Resuming persistent requests");
-				fcpServer.finishStart();
+//				fcpServer.finishStart();
 				persistentTempBucketFactory.completedInit();
 				System.out.println("Completed startup: All persistent requests resumed or restarted");
 				Logger.normal(this, "Completed startup: All persistent requests resumed or restarted");
