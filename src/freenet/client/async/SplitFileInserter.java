@@ -45,7 +45,7 @@ public class SplitFileInserter implements ClientPutState {
 	private boolean forceEncode;
 
 	public SimpleFieldSet getProgressFieldset() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(false);
 		// don't save basic infrastructure such as ctx and parent
 		// only save details of the request
 		fs.putSingle("Type", "SplitFileInserter");
@@ -55,7 +55,7 @@ public class SplitFileInserter implements ClientPutState {
 		fs.put("Finished", finished);
 		fs.put("SegmentSize", segmentSize);
 		fs.put("CheckSegmentSize", checkSegmentSize);
-		SimpleFieldSet segs = new SimpleFieldSet();
+		SimpleFieldSet segs = new SimpleFieldSet(false);
 		for(int i=0;i<segments.length;i++) {
 			segs.put(Integer.toString(i), segments[i].getProgressFieldset());
 		}

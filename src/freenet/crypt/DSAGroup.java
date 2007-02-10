@@ -288,7 +288,7 @@ public class DSAGroup extends CryptoKey {
     }
     
 	public SimpleFieldSet asFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("p", Base64.encode(p.toByteArray()));
 		fs.putSingle("q", Base64.encode(q.toByteArray()));
 		fs.putSingle("g", Base64.encode(g.toByteArray()));

@@ -194,7 +194,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet();
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("URI", uri.toString());
 		sfs.putSingle("Identifier", identifier);
 		sfs.putSingle("Verbosity", Integer.toString(verbosity));

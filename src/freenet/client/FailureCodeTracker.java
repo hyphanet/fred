@@ -118,7 +118,7 @@ public class FailureCodeTracker {
 
 	/** Copy verbosely to a SimpleFieldSet */
 	public synchronized SimpleFieldSet toFieldSet(boolean verbose) {
-		SimpleFieldSet sfs = new SimpleFieldSet();
+		SimpleFieldSet sfs = new SimpleFieldSet(false);
 		Iterator keys = map.keySet().iterator();
 		while(keys.hasNext()) {
 			Integer k = (Integer) keys.next();

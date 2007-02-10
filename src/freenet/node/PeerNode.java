@@ -1660,7 +1660,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         BufferedReader br = new BufferedReader(isr);
         SimpleFieldSet fs;
         try {
-            fs = new SimpleFieldSet(br, false);
+            fs = new SimpleFieldSet(br, false, true);
         } catch (IOException e) {
             Logger.error(this, "Impossible: e", e);
             return;
@@ -1875,7 +1875,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * Export metadata about the node as a SimpleFieldSet
      */
     public synchronized SimpleFieldSet exportMetadataFieldSet() {
-    	SimpleFieldSet fs = new SimpleFieldSet();
+    	SimpleFieldSet fs = new SimpleFieldSet(true);
     	if(detectedPeer != null)
     		fs.putSingle("detected.udp", detectedPeer.toString());
     	if(lastReceivedPacketTime() > 0)
@@ -1909,7 +1909,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * Export volatile data about the node as a SimpleFieldSet
      */
     public SimpleFieldSet exportVolatileFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			fs.putSingle("averagePingTime", Double.toString(averagePingTime()));
@@ -1937,7 +1937,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * Export the peer's noderef as a SimpleFieldSet
      */
     public synchronized SimpleFieldSet exportFieldSet() {
-        SimpleFieldSet fs = new SimpleFieldSet();
+        SimpleFieldSet fs = new SimpleFieldSet(true);
         if(getLastGoodVersion() != null)
         	fs.putSingle("lastGoodVersion", lastGoodVersion);
 		for(int i=0;i<nominalPeer.size();i++) {
@@ -2628,7 +2628,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		SimpleFieldSet fs = null;
 		try {
 			// Read in the single SimpleFieldSet
-			fs = new SimpleFieldSet(br, false);
+			fs = new SimpleFieldSet(br, false, true);
 		} catch (EOFException e3) {
 			// End of file, fine
 		} catch (IOException e4) {
@@ -2903,8 +2903,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			privateDarknetComment = comment;
 			localFileNumber = privateDarknetCommentFileNumber;
 		}
-		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.putSingle("peerNoteType", Integer.toString(Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT));
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("peerNoteType", Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT);
 		fs.putSingle("privateDarknetComment", Base64.encode(comment.getBytes()));
 		if(localFileNumber == -1) {
 			localFileNumber = writeNewExtraPeerDataFile(fs, Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE);
@@ -2980,7 +2980,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		
 		SimpleFieldSet fs;
 		try {
-			fs = new SimpleFieldSet(ref, false);
+			fs = new SimpleFieldSet(ref, false, true);
 			if(logMINOR) Logger.minor(this, "Got ARK for "+this);
 			gotARK(fs, edition);
 		} catch (IOException e) {

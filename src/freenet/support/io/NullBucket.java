@@ -66,7 +66,7 @@ public class NullBucket implements Bucket, SerializableToFieldSetBucket {
 	}
 
 	public SimpleFieldSet toFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.putSingle("Type", "NullBucket");
 		return fs;
 	}

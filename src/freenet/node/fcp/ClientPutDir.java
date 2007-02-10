@@ -199,7 +199,7 @@ public class ClientPutDir extends ClientPutBase {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
 		// Translate manifestElements directly into a fieldset
-		SimpleFieldSet files = new SimpleFieldSet();
+		SimpleFieldSet files = new SimpleFieldSet(false);
 		// Flatten the hierarchy, it can be reconstructed on restarting.
 		// Storing it directly would be a PITA.
 		ManifestElement[] elements = SimpleManifestPutter.flatten(manifestElements);
@@ -209,7 +209,7 @@ public class ClientPutDir extends ClientPutBase {
 			ManifestElement e = elements[i];
 			String name = e.getName();
 			String mimeOverride = e.getMimeTypeOverride();
-			SimpleFieldSet subset = new SimpleFieldSet();
+			SimpleFieldSet subset = new SimpleFieldSet(false);
 			subset.putSingle("Name", name);
 			if(mimeOverride != null)
 				subset.putSingle("Metadata.ContentType", mimeOverride);

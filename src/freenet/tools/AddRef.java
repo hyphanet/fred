@@ -43,7 +43,7 @@ public class AddRef {
 		Socket fcpSocket = null;
 
 		FCPMessage fcpm;
-		SimpleFieldSet sfs = new SimpleFieldSet();
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		try{
 			fcpSocket = new Socket("127.0.0.1", FCPServer.DEFAULT_FCP_PORT);
@@ -74,7 +74,7 @@ public class AddRef {
 			}
 			
 			try{
-				sfs = SimpleFieldSet.readFrom(reference, false);
+				sfs = SimpleFieldSet.readFrom(reference, false, true);
 				fcpm = FCPMessage.create(AddPeer.name, sfs);
 				fcpm.send(os);
 				os.flush();
@@ -107,8 +107,8 @@ public class AddRef {
 	}
 
 	protected SimpleFieldSet getMessage(LineReadingInputStream lis){
-		SimpleFieldSet sfs = new SimpleFieldSet();
-		sfs=new SimpleFieldSet();
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs=new SimpleFieldSet(true);
 		try {
 			while(lis.available()>0){
 				String line = lis.readLine(128, 128, true);

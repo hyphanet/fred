@@ -32,7 +32,7 @@ public class PersistentConfig extends Config {
 	}
 	
 	public synchronized SimpleFieldSet exportFieldSet(boolean withDefaults) {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		SubConfig[] configs;
 		synchronized(this) {
 			configs = (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);

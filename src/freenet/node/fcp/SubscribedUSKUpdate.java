@@ -22,7 +22,7 @@ public class SubscribedUSKUpdate extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
 		fs.put("Edition", edition);
 		fs.putSingle("URI", key.getURI().toString());

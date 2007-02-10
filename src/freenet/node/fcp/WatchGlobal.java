@@ -27,7 +27,7 @@ public class WatchGlobal extends FCPMessage {
 	}
 	
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("Enabled", enabled);
 		fs.put("VerbosityMask", verbosityMask);
 		return fs;

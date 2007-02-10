@@ -335,7 +335,7 @@ public class NodeStarter
 		}
 		
 		// Set up config for testing
-		SimpleFieldSet configFS = new SimpleFieldSet();
+		SimpleFieldSet configFS = new SimpleFieldSet(false); // only happens once in entire simulation
 		configFS.put("node.listenPort", port);
 		configFS.put("node.disableProbabilisticHTLs", disableProbabilisticHTLs);
 		configFS.put("fproxy.enabled", false);

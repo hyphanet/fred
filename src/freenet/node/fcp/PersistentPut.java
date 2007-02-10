@@ -51,7 +51,7 @@ public class PersistentPut extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
 		fs.putSingle("URI", uri.toString(false, false));
 		fs.put("Verbosity", verbosity);

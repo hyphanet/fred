@@ -15,7 +15,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 	}
 	
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet();
+		return new SimpleFieldSet(true);
 	}
 	
 	public String getName() {

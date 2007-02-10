@@ -20,7 +20,7 @@ public class SSKKeypairMessage extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet();
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("InsertURI", insertURI.toString());
 		sfs.putSingle("RequestURI", requestURI.toString());
 		if(identifier != null) // is optional on these two only

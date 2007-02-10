@@ -60,7 +60,7 @@ public class NodeHelloMessage extends FCPMessage {
 	}
 	
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet();
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		// FIXME
 		sfs.putSingle("FCPVersion", "2.0");
 		sfs.putSingle("Node", "Fred");

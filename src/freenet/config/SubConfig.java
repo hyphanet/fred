@@ -193,7 +193,7 @@ public class SubConfig implements Comparable {
 	}
 
 	public SimpleFieldSet exportFieldSet(boolean withDefaults) {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		Set entrySet = map.entrySet();
 		Iterator i = entrySet.iterator();
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);

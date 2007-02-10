@@ -668,7 +668,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			SimpleFieldSet fs;
 			
 			try {
-				fs = new SimpleFieldSet(ref.toString(), false);
+				fs = new SimpleFieldSet(ref.toString(), false, true);
 				fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
 			} catch (IOException e) {
 				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference ("+e+"). Please try again.");

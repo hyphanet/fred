@@ -581,7 +581,7 @@ class SingleFileInserter implements ClientPutState {
 				curSFI = sfi;
 				curMetadataPutter = metadataPutter;
 			}
-			SimpleFieldSet fs = new SimpleFieldSet();
+			SimpleFieldSet fs = new SimpleFieldSet(false);
 			fs.putSingle("Type", "SplitHandler");
 			if(curSFI != null)
 				fs.put("SplitFileInserter", curSFI.getProgressFieldset());

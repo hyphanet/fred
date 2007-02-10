@@ -13,7 +13,7 @@ import freenet.support.SimpleFieldSet;
 public class CloseConnectionDuplicateClientNameMessage extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet();
+		return new SimpleFieldSet(true);
 	}
 
 	public String getName() {

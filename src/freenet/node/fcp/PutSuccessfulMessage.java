@@ -20,7 +20,7 @@ public class PutSuccessfulMessage extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
 		if(global) fs.putSingle("Global", "true");
 		// FIXME debug and remove!

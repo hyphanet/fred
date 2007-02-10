@@ -55,8 +55,8 @@ public class ThrottleWindowManager {
 				+ (((float) _droppedPackets / (float) _totalPackets)) + '=' +_droppedPackets+ '/' +_totalPackets;
 	}
 
-	public SimpleFieldSet exportFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+	public SimpleFieldSet exportFieldSet(boolean shortLived) {
+		SimpleFieldSet fs = new SimpleFieldSet(shortLived);
 		fs.putSingle("Type", "ThrottleWindowManager");
 		fs.put("TotalPackets", _totalPackets);
 		fs.put("DroppedPackets", _droppedPackets);

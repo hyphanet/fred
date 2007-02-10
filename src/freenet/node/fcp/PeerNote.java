@@ -21,7 +21,7 @@ public class PeerNote extends FCPMessage {
 	}
 	
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("NodeIdentifier", nodeIdentifier);
 		fs.putSingle("PeerNoteType", Integer.toString(peerNoteType));
 		fs.putSingle("NoteText", Base64.encode(noteText.getBytes(), true));

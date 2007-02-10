@@ -70,7 +70,7 @@ public class DSAPrivateKey extends CryptoKey {
     }
 
 	public SimpleFieldSet asFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("x", Base64.encode(x.toByteArray()));
 		return fs;
 	}

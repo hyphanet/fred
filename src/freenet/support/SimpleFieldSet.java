@@ -30,6 +30,7 @@ public class SimpleFieldSet {
     private final Map values;
     private Map subsets;
     private String endMarker;
+    private final boolean shortLived;
     static public final char MULTI_LEVEL_CHAR = '.';
     
     /**
@@ -37,42 +38,50 @@ public class SimpleFieldSet {
      * @param br
      * @param allowMultiple If true, multiple lines with the same field name will be
      * combined; if false, the constructor will throw.
+     * @param shortLived If false, strings will be interned to ensure that they use as
+     * little memory as possible. Only set to true if the SFS will be short-lived or
+     * small.
      * @throws IOException If the buffer could not be read, or if there was a formatting
      * problem.
      */
-    public SimpleFieldSet(BufferedReader br, boolean allowMultiple) throws IOException {
+    public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
         values = new HashMap();
        	subsets = null;
+       	this.shortLived = shortLived;
         read(br, allowMultiple);
     }
     
     public SimpleFieldSet(SimpleFieldSet sfs){
     	values = new HashMap(sfs.values);
     	subsets = new HashMap(sfs.subsets);
+    	this.shortLived = false; // it's been copied!
     	endMarker = sfs.endMarker;
     }
 
-    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean tolerant, boolean utf8OrIso88591, boolean allowMultiple) throws IOException {
+    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean tolerant, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived) throws IOException {
     	values = new HashMap();
        	subsets = null;
+       	this.shortLived = shortLived;
     	read(lis, maxLineLength, lineBufferSize, tolerant, utf8OrIso88591, allowMultiple);
     }
     
     /**
      * Empty constructor
      */
-    public SimpleFieldSet() {
+    public SimpleFieldSet(boolean shortLived) {
         values = new HashMap();
        	subsets = null;
+       	this.shortLived = shortLived;
     }
 
     /**
      * Construct from a string.
      * @throws IOException if the string is too short or invalid.
      */
-    public SimpleFieldSet(String content, boolean allowMultiple) throws IOException {
+    public SimpleFieldSet(String content, boolean allowMultiple, boolean shortLived) throws IOException {
     	values = new HashMap();
     	subsets = null;
+    	this.shortLived = shortLived;
         StringReader sr = new StringReader(content);
         BufferedReader br = new BufferedReader(sr);
 	    read(br, allowMultiple);
@@ -100,6 +109,7 @@ public class SimpleFieldSet {
                 // Mapping
                 String before = line.substring(0, index);
                 String after = line.substring(index+1);
+                if(!shortLived) after = after.intern();
                 put(before, after, allowMultiple, false);
             } else {
             	endMarker = line;
@@ -136,6 +146,7 @@ public class SimpleFieldSet {
                 // Mapping
                 String before = line.substring(0, index);
                 String after = line.substring(index+1);
+                if(!shortLived) after = after.intern();
                 put(before, after, allowMultiple, false);
             } else {
             	endMarker = line;
@@ -190,6 +201,7 @@ public class SimpleFieldSet {
      * @param value The value.
      */
     public void putSingle(String key, String value) {
+    	if(!shortLived) value = value.intern();
     	if(!put(key, value, false, false))
     		throw new IllegalStateException("Value already exists: "+value+" but want to set "+key+" to "+value);
     }
@@ -200,6 +212,7 @@ public class SimpleFieldSet {
      * @param value The value.
      */
     public void putAppend(String key, String value) {
+    	if(!shortLived) value = value.intern();
     	put(key, value, true, false);
     }
     
@@ -209,6 +222,7 @@ public class SimpleFieldSet {
      * @param value The value.
      */
     public void putOverwrite(String key, String value) {
+    	if(!shortLived) value = value.intern();
     	put(key, value, false, true);
     }
     
@@ -228,6 +242,7 @@ public class SimpleFieldSet {
 		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
 			String x = (String) values.get(key);
 			
+			if(!shortLived) key = key.intern();
 			if(x == null || overwrite) {
 				values.put(key, value);
 			} else {
@@ -242,7 +257,8 @@ public class SimpleFieldSet {
 				subsets = new HashMap();
 			fs = (SimpleFieldSet) (subsets.get(before));
 			if(fs == null) {
-				fs = new SimpleFieldSet();
+				fs = new SimpleFieldSet(shortLived);
+				if(!shortLived) before = before.intern();
 				subsets.put(before, fs);
 			}
 			fs.put(after, value, allowMultiple, overwrite);
@@ -251,27 +267,29 @@ public class SimpleFieldSet {
     }
 
 	public void put(String key, int value) {
-		put(key, Integer.toString(value), false, false);
+		// Use putSingle so it does the intern check
+		putSingle(key, Integer.toString(value));
 	}
 	
 	public void put(String key, long value) {
-		put(key, Long.toString(value), false, false);
+		putSingle(key, Long.toString(value));
 	}
 	
 	public void put(String key, short value) {
-		put(key, Short.toString(value), false, false);
+		putSingle(key, Short.toString(value));
 	}
 	
 	public void put(String key, char c) {
-		put(key, ""+c, false, false);
+		putSingle(key, Character.toString(c));
 	}
 	
 	public void put(String key, boolean b) {
+		// Don't use putSingle, avoid intern check (Boolean.toString returns interned strings anyway)
 		put(key, Boolean.toString(b), false, false);
 	}
 	
 	public void put(String key, double windowSize) {
-		put(key, Double.toString(windowSize), false, false);
+		putSingle(key, Double.toString(windowSize));
 	}
 
     /**
@@ -467,6 +485,7 @@ public class SimpleFieldSet {
 			subsets = new HashMap();
 		if(subsets.containsKey(key))
 			throw new IllegalArgumentException("Already contains "+key+" but trying to add a SimpleFieldSet!");
+		if(!shortLived) key = key.intern();
 		subsets.put(key, fs);
 	}
 
@@ -525,7 +544,7 @@ public class SimpleFieldSet {
 		return (String[]) subsets.keySet().toArray(new String[subsets.size()]);
 	}
 
-	public static SimpleFieldSet readFrom(File f, boolean allowMultiple) throws IOException {
+	public static SimpleFieldSet readFrom(File f, boolean allowMultiple, boolean shortLived) throws IOException {
 		FileInputStream fis = null;
 		try {
 			fis = new FileInputStream(f);
@@ -539,7 +558,7 @@ public class SimpleFieldSet {
 				return null;
 			}
 			BufferedReader br = new BufferedReader(isr);
-			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple);
+			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived);
 			br.close();
 			fis = null;
 			return fs;

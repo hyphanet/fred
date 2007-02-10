@@ -229,7 +229,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 
 	public synchronized SimpleFieldSet getProgressFieldset() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(false); // these get BIG
 		fs.putSingle("Type", "SplitFileInserterSegment");
 		fs.put("Finished", finished);
 		// If true, check blocks which are null are finished 
@@ -237,10 +237,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		// If true, data blocks which are null are finished
 		fs.put("Started", started);
 		fs.tput("Errors", errors.toFieldSet(false));
-		SimpleFieldSet dataFS = new SimpleFieldSet();
+		SimpleFieldSet dataFS = new SimpleFieldSet(false);
 		dataFS.put("Count", dataBlocks.length);
 		for(int i=0;i<dataBlocks.length;i++) {
-			SimpleFieldSet block = new SimpleFieldSet();
+			SimpleFieldSet block = new SimpleFieldSet(false);
 			if(dataURIs[i] != null)
 				block.putSingle("URI", dataURIs[i].toString());
 			SingleBlockInserter sbi =
@@ -269,10 +269,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				dataFS.put(Integer.toString(i), block);
 		}
 		fs.put("DataBlocks", dataFS);
-		SimpleFieldSet checkFS = new SimpleFieldSet();
+		SimpleFieldSet checkFS = new SimpleFieldSet(false);
 		checkFS.put("Count", checkBlocks.length);
 		for(int i=0;i<checkBlocks.length;i++) {
-			SimpleFieldSet block = new SimpleFieldSet();
+			SimpleFieldSet block = new SimpleFieldSet(false);
 			if(checkURIs[i] != null)
 				block.putSingle("URI", checkURIs[i].toString());
 			SingleBlockInserter sbi =

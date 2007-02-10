@@ -31,7 +31,7 @@ public class AddPeer extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet();
+		return new SimpleFieldSet(true);
 	}
 
 	public String getName() {
@@ -68,7 +68,7 @@ public class AddPeer extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+ '>', null, false);
 			}
 			try {
-				fs = new SimpleFieldSet(ref.toString(), false);
+				fs = new SimpleFieldSet(ref.toString(), false, true);
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">: "+e.getMessage(), null, false);
 			}
@@ -99,7 +99,7 @@ public class AddPeer extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+ '>', null, false);
 			}
 			try {
-				fs = new SimpleFieldSet(ref.toString(), false);
+				fs = new SimpleFieldSet(ref.toString(), false, true);
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">: "+e.getMessage(), null, false);
 			}

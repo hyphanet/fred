@@ -140,7 +140,7 @@ public abstract class ClientRequest {
 		Runtime rt = Runtime.getRuntime();;
 		if(logMINOR)
 			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use before loading request");
-		SimpleFieldSet fs = new SimpleFieldSet(br, false);
+		SimpleFieldSet fs = new SimpleFieldSet(br, false, false); // can get enormous
 		String clientName = fs.get("ClientName");
 		boolean isGlobal = Fields.stringToBool(fs.get("Global"), false);
 		if(clientName == null && !isGlobal) {

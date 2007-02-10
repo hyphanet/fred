@@ -526,7 +526,7 @@ public class Node {
 		FileInputStream fis = new FileInputStream(filename);
 		InputStreamReader isr = new InputStreamReader(fis);
 		BufferedReader br = new BufferedReader(isr);
-		SimpleFieldSet fs = new SimpleFieldSet(br, false);
+		SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
 		br.close();
 		// Read contents
 		String[] udp = fs.getAll("physical.udp");
@@ -1353,10 +1353,10 @@ public class Node {
 		
 		SimpleFieldSet throttleFS = null;
 		try {
-			throttleFS = SimpleFieldSet.readFrom(persistTarget, false);
+			throttleFS = SimpleFieldSet.readFrom(persistTarget, false, true);
 		} catch (IOException e) {
 			try {
-				throttleFS = SimpleFieldSet.readFrom(persistTemp, false);
+				throttleFS = SimpleFieldSet.readFrom(persistTemp, false, true);
 			} catch (FileNotFoundException e1) {
 				// Ignore
 			} catch (IOException e1) {
@@ -1853,7 +1853,7 @@ public class Node {
 	 * or that can safely be exchanged later.
 	 */
 	SimpleFieldSet exportPublicFieldSet(boolean forSetup) {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		Peer[] ips = ipDetector.getPrimaryIPAddress();
 		if(ips != null) {
 			for(int i=0;i<ips.length;i++)
@@ -1911,7 +1911,7 @@ public class Node {
 	 * Export volatile data about the node as a SimpleFieldSet
 	 */
 	public SimpleFieldSet exportVolatileFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		long now = System.currentTimeMillis();
 		fs.put("isUsingWrapper", isUsingWrapper());
 		long nodeUptimeSeconds = 0;
@@ -3060,7 +3060,7 @@ public class Node {
 		Logger.normal(this, "Received N2NM from '"+source.getPeer()+"'");
 		SimpleFieldSet fs = null;
 		try {
-			fs = new SimpleFieldSet(new String(messageData.getData(), "UTF-8"), false);
+			fs = new SimpleFieldSet(new String(messageData.getData(), "UTF-8"), false, true);
 		} catch (IOException e) {
 			Logger.error(this, "IOException while parsing node to node message data", e);
 			return;
@@ -3104,7 +3104,7 @@ public class Node {
 		String target_nodename = (String) m.getObject(DMT.TARGET_NODENAME);
 		String text = (String) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TEXT);
 		Logger.normal(this, "Received N2NTM from '"+source_nodename+"' to '"+target_nodename+"': "+text);
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("type", type);
 		fs.putSingle("source_nodename", Base64.encode(source_nodename.getBytes()));
 		fs.putSingle("target_nodename", Base64.encode(target_nodename.getBytes()));
@@ -3471,24 +3471,24 @@ public class Node {
 	}
 
 	private SimpleFieldSet persistThrottlesToFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("RequestStarters", clientCore.requestStarters.persistToFieldSet());
-		fs.put("RemoteChkFetchBytesSentAverage", remoteChkFetchBytesSentAverage.exportFieldSet());
-		fs.put("RemoteSskFetchBytesSentAverage", remoteSskFetchBytesSentAverage.exportFieldSet());
-		fs.put("RemoteChkInsertBytesSentAverage", remoteChkInsertBytesSentAverage.exportFieldSet());
-		fs.put("RemoteSskInsertBytesSentAverage", remoteSskInsertBytesSentAverage.exportFieldSet());
-		fs.put("RemoteChkFetchBytesReceivedAverage", remoteChkFetchBytesReceivedAverage.exportFieldSet());
-		fs.put("RemoteSskFetchBytesReceivedAverage", remoteSskFetchBytesReceivedAverage.exportFieldSet());
-		fs.put("RemoteChkInsertBytesReceivedAverage", remoteChkInsertBytesReceivedAverage.exportFieldSet());
-		fs.put("RemoteSskInsertBytesReceivedAverage", remoteSskInsertBytesReceivedAverage.exportFieldSet());
-		fs.put("LocalChkFetchBytesSentAverage", localChkFetchBytesSentAverage.exportFieldSet());
-		fs.put("LocalSskFetchBytesSentAverage", localSskFetchBytesSentAverage.exportFieldSet());
-		fs.put("LocalChkInsertBytesSentAverage", localChkInsertBytesSentAverage.exportFieldSet());
-		fs.put("LocalSskInsertBytesSentAverage", localSskInsertBytesSentAverage.exportFieldSet());
-		fs.put("LocalChkFetchBytesReceivedAverage", localChkFetchBytesReceivedAverage.exportFieldSet());
-		fs.put("LocalSskFetchBytesReceivedAverage", localSskFetchBytesReceivedAverage.exportFieldSet());
-		fs.put("LocalChkInsertBytesReceivedAverage", localChkInsertBytesReceivedAverage.exportFieldSet());
-		fs.put("LocalSskInsertBytesReceivedAverage", localSskInsertBytesReceivedAverage.exportFieldSet());
+		fs.put("RemoteChkFetchBytesSentAverage", remoteChkFetchBytesSentAverage.exportFieldSet(true));
+		fs.put("RemoteSskFetchBytesSentAverage", remoteSskFetchBytesSentAverage.exportFieldSet(true));
+		fs.put("RemoteChkInsertBytesSentAverage", remoteChkInsertBytesSentAverage.exportFieldSet(true));
+		fs.put("RemoteSskInsertBytesSentAverage", remoteSskInsertBytesSentAverage.exportFieldSet(true));
+		fs.put("RemoteChkFetchBytesReceivedAverage", remoteChkFetchBytesReceivedAverage.exportFieldSet(true));
+		fs.put("RemoteSskFetchBytesReceivedAverage", remoteSskFetchBytesReceivedAverage.exportFieldSet(true));
+		fs.put("RemoteChkInsertBytesReceivedAverage", remoteChkInsertBytesReceivedAverage.exportFieldSet(true));
+		fs.put("RemoteSskInsertBytesReceivedAverage", remoteSskInsertBytesReceivedAverage.exportFieldSet(true));
+		fs.put("LocalChkFetchBytesSentAverage", localChkFetchBytesSentAverage.exportFieldSet(true));
+		fs.put("LocalSskFetchBytesSentAverage", localSskFetchBytesSentAverage.exportFieldSet(true));
+		fs.put("LocalChkInsertBytesSentAverage", localChkInsertBytesSentAverage.exportFieldSet(true));
+		fs.put("LocalSskInsertBytesSentAverage", localSskInsertBytesSentAverage.exportFieldSet(true));
+		fs.put("LocalChkFetchBytesReceivedAverage", localChkFetchBytesReceivedAverage.exportFieldSet(true));
+		fs.put("LocalSskFetchBytesReceivedAverage", localSskFetchBytesReceivedAverage.exportFieldSet(true));
+		fs.put("LocalChkInsertBytesReceivedAverage", localChkInsertBytesReceivedAverage.exportFieldSet(true));
+		fs.put("LocalSskInsertBytesReceivedAverage", localSskInsertBytesReceivedAverage.exportFieldSet(true));
 
 		// FIXME persist the rest
 		return fs;

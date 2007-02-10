@@ -99,8 +99,8 @@ public class RequestStarterGroup {
 		}
 
 		public SimpleFieldSet exportFieldSet() {
-			SimpleFieldSet fs = new SimpleFieldSet();
-			fs.put("RoundTripTime", roundTripTime.exportFieldSet());
+			SimpleFieldSet fs = new SimpleFieldSet(false);
+			fs.put("RoundTripTime", roundTripTime.exportFieldSet(false));
 			return fs;
 		}
 
@@ -133,8 +133,8 @@ public class RequestStarterGroup {
 	 * Persist the throttle data to a SimpleFieldSet.
 	 */
 	SimpleFieldSet persistToFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
-		fs.put("ThrottleWindow", throttleWindow.exportFieldSet());
+		SimpleFieldSet fs = new SimpleFieldSet(false);
+		fs.put("ThrottleWindow", throttleWindow.exportFieldSet(false));
 		fs.put("CHKRequestThrottle", chkRequestThrottle.exportFieldSet());
 		fs.put("SSKRequestThrottle", sskRequestThrottle.exportFieldSet());
 		fs.put("CHKInsertThrottle", chkInsertThrottle.exportFieldSet());

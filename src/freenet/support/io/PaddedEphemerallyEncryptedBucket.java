@@ -349,7 +349,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 
 	public SimpleFieldSet toFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.putSingle("Type", "PaddedEphemerallyEncryptedBucket");
 		synchronized(this) {
 			fs.put("DataLength", dataLength);

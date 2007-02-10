@@ -15,7 +15,7 @@ public class UnknownPeerNoteTypeMessage extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("PeerNoteType", peerNoteType);
 		return fs;
 	}

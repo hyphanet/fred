@@ -11,7 +11,7 @@ public class EndListPersistentRequestsMessage extends FCPMessage {
 	static final String name = "EndListPersistentRequests";
 	
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet();
+		return new SimpleFieldSet(true);
 	}
 
 	public String getName() {

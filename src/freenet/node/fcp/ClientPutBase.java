@@ -259,7 +259,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	}
 
 	public synchronized SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(); // we will need multi-level later...
+		SimpleFieldSet fs = new SimpleFieldSet(false); // we will need multi-level later...
 		fs.putSingle("Type", getTypeName());
 		fs.putSingle("URI", uri.toString(false, false));
 		fs.putSingle("Identifier", identifier);

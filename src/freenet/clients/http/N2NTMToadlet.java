@@ -131,7 +131,7 @@ public class N2NTMToadlet extends Toadlet {
 					String sendStatusClass;
 					try {
 						long now = System.currentTimeMillis();
-						SimpleFieldSet fs = new SimpleFieldSet();
+						SimpleFieldSet fs = new SimpleFieldSet(true);
 						fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_USERALERT);
 						fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes()));
 						fs.putSingle("target_nodename", Base64.encode(pn.getName().getBytes()));

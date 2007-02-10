@@ -486,7 +486,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	// This is distinct from the ClientGetMessage code, as later on it will be radically
 	// different (it can store detailed state).
 	public synchronized SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(); // we will need multi-level later...
+		SimpleFieldSet fs = new SimpleFieldSet(false); // we will need multi-level later...
 		fs.putSingle("Type", "GET");
 		fs.putSingle("URI", uri.toString(false, false));
 		fs.putSingle("Identifier", identifier);

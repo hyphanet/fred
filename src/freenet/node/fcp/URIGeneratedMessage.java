@@ -18,7 +18,7 @@ public class URIGeneratedMessage extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("URI", uri.toString());
 		fs.putSingle("Identifier", identifier);
 		return fs;

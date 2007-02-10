@@ -77,7 +77,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 			Logger.error(this, "Cannot serialize because already freed: "+this);
 			return null;
 		}
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.putSingle("Type", "DelayedFreeBucket");
 		if(bucket instanceof SerializableToFieldSetBucket) {
 			fs.put("Underlying", ((SerializableToFieldSetBucket)bucket).toFieldSet());

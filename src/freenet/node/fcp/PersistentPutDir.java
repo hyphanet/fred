@@ -49,14 +49,14 @@ public class PersistentPutDir extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(false); // false because this can get HUGE
 		fs.putSingle("Identifier", identifier);
 		fs.putSingle("URI", uri.toString(false, false));
 		fs.put("Verbosity", verbosity);
 		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		fs.put("PriorityClass", priorityClass);
 		fs.putSingle("Global", Boolean.toString(global));
-		SimpleFieldSet files = new SimpleFieldSet();
+		SimpleFieldSet files = new SimpleFieldSet(false);
 		// Flatten the hierarchy, it can be reconstructed on restarting.
 		// Storing it directly would be a PITA.
 		ManifestElement[] elements = SimpleManifestPutter.flatten(manifestElements);
@@ -65,7 +65,7 @@ public class PersistentPutDir extends FCPMessage {
 			String num = Integer.toString(i);
 			ManifestElement e = elements[i];
 			String mimeOverride = e.getMimeTypeOverride();
-			SimpleFieldSet subset = new SimpleFieldSet();
+			SimpleFieldSet subset = new SimpleFieldSet(false);
 			FreenetURI tempURI = e.getTargetURI();
 			subset.putSingle("Name", e.getName());
 			if(tempURI != null) {
