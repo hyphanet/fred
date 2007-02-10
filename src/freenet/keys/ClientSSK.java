@@ -36,6 +36,8 @@ public class ClientSSK extends ClientKey {
 		this.docName = docName;
 		this.pubKey = pubKey;
 		this.pubKeyHash = pubKeyHash;
+		if(extras == null)
+			throw new MalformedURLException("No extra bytes in SSK - maybe a 0.5 key?");
 		if(extras.length < 5)
 			throw new MalformedURLException("Extra bytes too short: "+extras.length+" bytes");
 		this.cryptoAlgorithm = extras[2];

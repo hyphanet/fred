@@ -43,6 +43,8 @@ public class USK extends BaseClientKey {
 		this.cryptoKey = cryptoKey;
 		this.siteName = siteName;
 		this.suggestedEdition = suggestedEdition;
+		if(extra == null)
+			throw new MalformedURLException("No extra bytes in USK");
 		// Verify extra bytes, get cryptoAlgorithm
 		ClientSSK tmp = new ClientSSK(siteName, pubKeyHash, extra, null, cryptoKey);
 		cryptoAlgorithm = tmp.cryptoAlgorithm;
