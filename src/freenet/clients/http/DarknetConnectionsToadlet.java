@@ -63,7 +63,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			return;
 		}
 		
-		final boolean advancedEnabled = node.isAdvancedDarknetEnabled();
+		final boolean advancedModeEnabled = node.isAdvancedModeEnabled();
 		final boolean fProxyJavascriptEnabled = node.isFProxyJavascriptEnabled();
 		
 		/* gather connection statistics */
@@ -127,7 +127,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
 		String titleCountString = null;
-		if(advancedEnabled) {
+		if(advancedModeEnabled) {
 			titleCountString = "(" + numberOfConnected + '/' + numberOfRoutingBackedOff + '/' + numberOfTooNew + '/' + numberOfTooOld + '/' + numberOfNotConnected + ')';
 		} else {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
@@ -164,7 +164,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
 
 			/* node status overview box */
-			if(advancedEnabled) {
+			if(advancedModeEnabled) {
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
 				overviewInfobox.addChild("div", "class", "infobox-header", "Node status overview");
 				HTMLNode overviewInfoboxContent = overviewInfobox.addChild("div", "class", "infobox-content");
@@ -204,7 +204,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				if (numTransferringRequests > 0) {
 					activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests);
 				}
-				if (advancedEnabled) {
+				if (advancedModeEnabled) {
 					if (numARKFetchers > 0) {
 						activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 					}
@@ -232,7 +232,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 
-			nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+			nextTableCell = advancedModeEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 
 			// Peer statistics box
 			HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -246,7 +246,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			if (numberOfRoutingBackedOff > 0) {
 				HTMLNode peerStatsRoutingBackedOffListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsRoutingBackedOffListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_backed_off", (advancedEnabled ? "Connected but backed off: These peers are connected but we're backed off of them" : "Busy: These peers are connected but they're busy") + ", so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, advancedEnabled ? "Backed off" : "Busy");
+				peerStatsRoutingBackedOffListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_backed_off", (advancedModeEnabled ? "Connected but backed off: These peers are connected but we're backed off of them" : "Busy: These peers are connected but they're busy") + ", so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, advancedModeEnabled ? "Backed off" : "Busy");
 				peerStatsRoutingBackedOffListItem.addChild("span", ":\u00a0" + numberOfRoutingBackedOff);
 			}
 			if (numberOfTooNew > 0) {
@@ -291,7 +291,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 
 			// Peer routing backoff reason box
-			if(advancedEnabled) {
+			if(advancedModeEnabled) {
 				nextTableCell = overviewTableRow.addChild("td", "class", "last");
 				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
 				backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
@@ -346,7 +346,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
 			peerTableInfoboxHeader.addChild("#", "My peers");
-			if (advancedEnabled) {
+			if (advancedModeEnabled) {
 				if (!path.endsWith("displaymessagetypes.html")) {
 					peerTableInfoboxHeader.addChild("#", " ");
 					peerTableInfoboxHeader.addChild("a", "href", "displaymessagetypes.html", "(more detailed)");
@@ -365,11 +365,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th");
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "status")).addChild("#", "Status");
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "name")).addChild("span", new String[] { "title", "style" }, new String[] { "The node's name. Click on the name link to send the node a N2NTM (Node To Node Text Message)", "border-bottom: 1px dotted; cursor: help;" }, "Name");
-				if (advancedEnabled) {
+				if (advancedModeEnabled) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "address")).addChild("span", new String[] { "title", "style" }, new String[] { "The node's network address as IP:Port", "border-bottom: 1px dotted; cursor: help;" }, "Address");
 				}
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "version")).addChild("#", "Version");
-				if (advancedEnabled) {
+				if (advancedModeEnabled) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "location")).addChild("#", "Location");
 					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
 
@@ -378,7 +378,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How long since the node was connected or last seen", "border-bottom: 1px dotted; cursor: help;" }, "Connected\u00a0/\u00a0Idle");
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "privnote")).addChild("span", new String[] { "title", "style" }, new String[] { "A private note concerning this peer", "border-bottom: 1px dotted; cursor: help;" }, "Private Note");
 
-				if(advancedEnabled) {
+				if(advancedModeEnabled) {
 					peerTableHeaderRow.addChild("th", "%\u00a0Time Routable");
 					peerTableHeaderRow.addChild("th", "Total\u00a0Traffic\u00a0(in/out)");
 					peerTableHeaderRow.addChild("th", "Congestion\u00a0Control");
@@ -393,7 +393,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 
 					// status column
 					String statusString = peerNodeStatus.getStatusName();
-					if (!advancedEnabled && (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
+					if (!advancedModeEnabled && (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
 						statusString = "BUSY";
 					}
 					peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNodeStatus.getStatusCSSName(), statusString + (peerNodeStatus.isFetchingARK() ? "*" : ""));
@@ -402,7 +402,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), peerNodeStatus.getName());
 
 					// address column
-					if (advancedEnabled) {
+					if (advancedModeEnabled) {
 						String pingTime = "";
 						if (peerNodeStatus.isConnected()) {
 							pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms)";
@@ -418,11 +418,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}
 
 					// location column
-					if (advancedEnabled) {
+					if (advancedModeEnabled) {
 						peerRow.addChild("td", "class", "peer-location", String.valueOf(peerNodeStatus.getLocation()));
 					}
 
-					if (advancedEnabled) {
+					if (advancedModeEnabled) {
 						// backoff column
 						HTMLNode backoffCell = peerRow.addChild("td", "class", "peer-backoff");
 						backoffCell.addChild("#", fix1.format(peerNodeStatus.getBackedOffPercent()));
@@ -459,7 +459,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", peerNodeStatus.getPrivateDarknetCommentNote() });
 					}
 
-					if(advancedEnabled) {
+					if(advancedModeEnabled) {
 						// percent of time connected column
 						peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", fix1.format(peerNodeStatus.getPercentTimeRoutableConnection()));
 						// total traffic column
@@ -478,7 +478,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					if (path.endsWith("displaymessagetypes.html")) {
 						HTMLNode messageCountRow = peerTable.addChild("tr", "class", "message-status");
 						messageCountRow.addChild("td", "colspan", "2");
-						HTMLNode messageCountCell = messageCountRow.addChild("td", "colspan", String.valueOf(advancedEnabled ? 9 : 5));  // = total table row width - 2 from above colspan
+						HTMLNode messageCountCell = messageCountRow.addChild("td", "colspan", String.valueOf(advancedModeEnabled ? 9 : 5));  // = total table row width - 2 from above colspan
 						HTMLNode messageCountTable = messageCountCell.addChild("table", "class", "message-count");
 						HTMLNode countHeaderRow = messageCountTable.addChild("tr");
 						countHeaderRow.addChild("th", "Message");
@@ -525,7 +525,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				actionSelect.addChild("option", "value", "", "-- Select action --");
 				actionSelect.addChild("option", "value", "send_n2ntm", "Send N2NTM to selected peers");
 				actionSelect.addChild("option", "value", "update_notes", "Update changed private notes");
-				if(advancedEnabled) {
+				if(advancedModeEnabled) {
 					actionSelect.addChild("option", "value", "enable", "Enable selected peers");
 					actionSelect.addChild("option", "value", "disable", "Disable selected peers");
 					actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly (only set this if you have a static IP and are not NATed and neither is the peer)");

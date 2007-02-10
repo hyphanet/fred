@@ -3295,8 +3295,8 @@ public class Node {
 		return lm.numberOfRemotePeerLocationsSeenInSwaps;
 	}
 	
-	public boolean isAdvancedDarknetEnabled() {
-		return clientCore.isAdvancedDarknetEnabled();
+	public boolean isAdvancedModeEnabled() {
+		return clientCore.isAdvancedModeEnabled();
 	}
 	
 	public boolean isFProxyJavascriptEnabled() {

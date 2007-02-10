@@ -778,9 +778,9 @@ public class NodeClientCore {
 		return node.isTestnetEnabled();
 	}
 
-	public boolean isAdvancedDarknetEnabled() {
+	public boolean isAdvancedModeEnabled() {
 		return (getToadletContainer() != null) &&
-			getToadletContainer().isAdvancedDarknetEnabled();
+			getToadletContainer().isAdvancedModeEnabled();
 	}
 
 	public boolean isFProxyJavascriptEnabled() {

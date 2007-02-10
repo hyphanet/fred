@@ -101,13 +101,13 @@ public class ConfigToadlet extends Toadlet {
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		SubConfig[] sc = config.getConfigs();
 		Arrays.sort(sc);
-		boolean advancedEnabled = core.isAdvancedDarknetEnabled();
+		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
 		
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet Node Configuration of " + node.getMyName());
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		contentNode.addChild(core.alerts.createSummary());
-		if(advancedEnabled){
+		if(advancedModeEnabled){
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", "Configuration Navigation");
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
 			for(int i=0; i<sc.length;i++){
@@ -128,7 +128,7 @@ public class ConfigToadlet extends Toadlet {
 			HTMLNode configGroupUlNode = new HTMLNode("ul", "class", "config");
 			
 			for(int j=0; j<o.length; j++){
-				if(! (!advancedEnabled && o[j].isExpert())){
+				if(! (!advancedModeEnabled && o[j].isExpert())){
 					displayedConfigElements++;
 					String configName = o[j].getName();
 					

@@ -56,7 +56,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private final LinkedList toadlets;
 	private String cssName;
 	private Thread myThread;
-	private boolean advancedDarknetEnabled;
+	private boolean advancedModeEnabled;
 	private boolean fProxyJavascriptEnabled;
 	private final PageMaker pageMaker;
 	private final NodeClientCore core;
@@ -148,21 +148,21 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	private static class FProxyAdvancedDarknetEnabledCallback implements BooleanCallback {
+	private static class FProxyAdvancedModeEnabledCallback implements BooleanCallback {
 		
 		private final SimpleToadletServer ts;
 		
-		FProxyAdvancedDarknetEnabledCallback(SimpleToadletServer ts){
+		FProxyAdvancedModeEnabledCallback(SimpleToadletServer ts){
 			this.ts = ts;
 		}
 		
 		public boolean get() {
-			return ts.isAdvancedDarknetEnabled();
+			return ts.isAdvancedModeEnabled();
 		}
 		
 		public void set(boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
-				ts.enableAdvancedDarknet(val);
+				ts.enableAdvancedMode(val);
 		}
 	}
 	
@@ -250,8 +250,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				"Be careful who you give fproxy access to!", new FProxyAllowedHostsCallback());
 		fproxyConfig.register("css", "clean", configItemOrder++, false, false, "CSS Name", "Name of the CSS FProxy should use "+themes.toString(),
 				new FProxyCSSNameCallback());
-		fproxyConfig.register("advancedDarknetEnabled", false, configItemOrder++, false, false, "Enable Advanced Mode?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
-				new FProxyAdvancedDarknetEnabledCallback(this));
+		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, false, false, "Enable Advanced Mode?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
+				new FProxyAdvancedModeEnabledCallback(this));
 		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, false, false, "Enable FProxy use of Javascript?", "Whether or not FProxy should use Javascript \"helpers\". This setting should be turned to false in most cases. Note that freesites may not use javascript even if this is enabled.",
 				new FProxyJavascriptEnabledCallback(this));
 		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "Show the panic button?", "Whether to show or not the panic button on the /queue/ page.",
@@ -274,7 +274,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		cssName = fproxyConfig.getString("css");
 		if((cssName.indexOf(':') != -1) || (cssName.indexOf('/') != -1))
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
-		this.advancedDarknetEnabled = fproxyConfig.getBoolean("advancedDarknetEnabled");
+		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");
 		pageMaker = new PageMaker(cssName);
 		
 		toadlets = new LinkedList();
@@ -421,12 +421,12 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.cssName = name;
 	}
 
-	public synchronized boolean isAdvancedDarknetEnabled() {
-		return this.advancedDarknetEnabled;
+	public synchronized boolean isAdvancedModeEnabled() {
+		return this.advancedModeEnabled;
 	}
 	
-	public synchronized void enableAdvancedDarknet(boolean b){
-		advancedDarknetEnabled = b;
+	public synchronized void enableAdvancedMode(boolean b){
+		advancedModeEnabled = b;
 	}
 
 	public synchronized boolean isFProxyJavascriptEnabled() {

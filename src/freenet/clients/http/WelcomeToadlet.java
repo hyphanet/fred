@@ -425,7 +425,7 @@ public class WelcomeToadlet extends Toadlet {
 	}
 
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		boolean advancedDarknetOutputEnabled = core.getToadletContainer().isAdvancedDarknetEnabled();
+		boolean advancedModeOutputEnabled = core.getToadletContainer().isAdvancedModeEnabled();
 		
 		if (request.getParam("newbookmark").length() > 0) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark");
@@ -578,7 +578,7 @@ public class WelcomeToadlet extends Toadlet {
 		activityList.addChild("li", "Inserts: " + node.getNumInserts());
 		activityList.addChild("li", "Requests: " + node.getNumRequests());
 		activityList.addChild("li", "Transferring Requests: " + node.getNumTransferringRequests());
-		if (advancedDarknetOutputEnabled) {
+		if (advancedModeOutputEnabled) {
 			activityList.addChild("li", "ARK Fetch Requests: " + node.getNumARKFetchers());
 		}
 		

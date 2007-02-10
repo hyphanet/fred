@@ -87,7 +87,7 @@ public class StatisticsToadlet extends Toadlet {
 
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
-		final boolean advancedEnabled = node.isAdvancedDarknetEnabled();
+		final boolean advancedModeEnabled = node.isAdvancedModeEnabled();
 		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = node.getPeerNodeStatuses();
@@ -130,7 +130,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 
 		// BDB statistics dump 
-		if(advancedEnabled) {
+		if(advancedModeEnabled) {
 			HTMLNode JEinfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Dump Database runtime statistics to wrapper.log"));
 			HTMLNode JEStatsForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(JEinfobox), "/", "JEStatsForm");
 			JEStatsForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getJEStatsDump", "Generate a JE Dump" });
@@ -170,7 +170,7 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
 
 			/* node status overview box */
-			if(advancedEnabled) {
+			if(advancedModeEnabled) {
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
 				overviewInfobox.addChild("div", "class", "infobox-header", "Node status overview");
 				HTMLNode overviewInfoboxContent = overviewInfobox.addChild("div", "class", "infobox-content");
@@ -217,14 +217,14 @@ public class StatisticsToadlet extends Toadlet {
 				if (numTransferringRequests > 0) {
 					activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests);
 				}
-				if (advancedEnabled) {
+				if (advancedModeEnabled) {
 					if (numARKFetchers > 0) {
 						activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 					}
 				}
 			}
 
-			nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+			nextTableCell = advancedModeEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 
 			// Peer statistics box
 			HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -238,7 +238,7 @@ public class StatisticsToadlet extends Toadlet {
 			}
 			if (numberOfRoutingBackedOff > 0) {
 				HTMLNode peerStatsRoutingBackedOffListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsRoutingBackedOffListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_backed_off", (advancedEnabled ? "Connected but backed off: These peers are connected but we're backed off of them" : "Busy: These peers are connected but they're busy") + ", so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, advancedEnabled ? "Backed off" : "Busy");
+				peerStatsRoutingBackedOffListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_backed_off", (advancedModeEnabled ? "Connected but backed off: These peers are connected but we're backed off of them" : "Busy: These peers are connected but they're busy") + ", so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, advancedModeEnabled ? "Backed off" : "Busy");
 				peerStatsRoutingBackedOffListItem.addChild("span", ":\u00a0" + numberOfRoutingBackedOff);
 			}
 			if (numberOfTooNew > 0) {
@@ -281,9 +281,9 @@ public class StatisticsToadlet extends Toadlet {
 				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_listen_only", "Not connected and listen only: this node won't try to connect to these peers at all because the user has set ListenOnly on them", "border-bottom: 1px dotted; cursor: help;" }, "Listen Only");
 				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
 			}
-			nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+			nextTableCell = advancedModeEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 
-			if(advancedEnabled) {
+			if(advancedModeEnabled) {
 				
 				// Peer routing backoff reason box
 				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -443,7 +443,7 @@ public class StatisticsToadlet extends Toadlet {
 				storeSizeList.addChild("li", 
 						"Avg. access rate:\u00a0" + thousendPoint.format(overallAccesses/nodeUptimeSeconds) + "/s");
 			
-				nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+				nextTableCell = advancedModeEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 
 				// jvm stats box
 				HTMLNode jvmStatsInfobox = nextTableCell.addChild("div", "class", "infobox");

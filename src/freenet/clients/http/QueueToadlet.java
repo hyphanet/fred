@@ -528,13 +528,13 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			contentNode.addChild(createPanicBox(pageMaker, ctx));
 		}
 
-		boolean advancedEnabled = core.isAdvancedDarknetEnabled();
+		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
 		
 		if (!completedDownloadToTemp.isEmpty()) {
 			contentNode.addChild("a", "name", "completedDownloadToTemp");
 			HTMLNode completedDownloadsTempInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Downloads to temporary directory (" + completedDownloadToTemp.size() + ')'));
 			HTMLNode completedDownloadsToTempContent = pageMaker.getContentNode(completedDownloadsTempInfobox);
-			if (advancedEnabled) {
+			if (advancedModeEnabled) {
 				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_IDENTIFIER, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }));
 			} else {
 				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }));
@@ -545,7 +545,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			contentNode.addChild("a", "name", "completedDownloadToDisk");
 			HTMLNode completedToDiskInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Downloads to download directory (" + completedDownloadToDisk.size() + ')'));
 			HTMLNode completedToDiskInfoboxContent = pageMaker.getContentNode(completedToDiskInfobox);
-			if (advancedEnabled) {
+			if (advancedModeEnabled) {
 				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }));
 			} else {
 				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }));
@@ -556,7 +556,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			contentNode.addChild("a", "name", "completedUpload");
 			HTMLNode completedUploadInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Uploads (" + completedUpload.size() + ')'));
 			HTMLNode completedUploadInfoboxContent = pageMaker.getContentNode(completedUploadInfobox);
-			if (advancedEnabled) {
+			if (advancedModeEnabled) {
 				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }));
 			} else  {
 				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }));
@@ -567,7 +567,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			contentNode.addChild("a", "name", "completedDirUpload");
 			HTMLNode completedUploadDirInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Directory Uploads (" + completedDirUpload.size() + ')'));
 			HTMLNode completedUploadDirContent = pageMaker.getContentNode(completedUploadDirInfobox);
-			if (advancedEnabled) {
+			if (advancedModeEnabled) {
 				completedUploadDirContent.addChild(createRequestTable(pageMaker, ctx, completedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }));
 			} else {
 				completedUploadDirContent.addChild(createRequestTable(pageMaker, ctx, completedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }));
@@ -578,7 +578,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			contentNode.addChild("a", "name", "failedDownload");
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", "Failed: Downloads (" + failedDownload.size() + ')'));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
-			if (advancedEnabled) {
+			if (advancedModeEnabled) {
 				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDownload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
 			} else {
 				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDownload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
@@ -589,7 +589,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			contentNode.addChild("a", "name", "failedUpload");
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", "Failed: Uploads (" + failedUpload.size() + ')'));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
-			if (advancedEnabled) {
+			if (advancedModeEnabled) {
 				failedContent.addChild(createRequestTable(pageMaker, ctx, failedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
 			} else {
 				failedContent.addChild(createRequestTable(pageMaker, ctx, failedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
@@ -600,7 +600,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			contentNode.addChild("a", "name", "failedDirUpload");
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", "Failed: Directory Uploads (" + failedDirUpload.size() + ')'));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
-			if (advancedEnabled) {
+			if (advancedModeEnabled) {
 				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
 			} else {
 				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
@@ -611,7 +611,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			contentNode.addChild("a", "name", "uncompletedDownload");
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: Downloads (" + uncompletedDownload.size() + ')'));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
-			if (advancedEnabled) {
+			if (advancedModeEnabled) {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }));
 			} else {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
@@ -622,7 +622,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			contentNode.addChild("a", "name", "uncompletedUpload");
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: Uploads (" + uncompletedUpload.size() + ')'));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
-			if (advancedEnabled) {
+			if (advancedModeEnabled) {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }));
 			} else {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
@@ -633,7 +633,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			contentNode.addChild("a", "name", "uncompletedDirUpload");
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: DirUploads (" + uncompletedDirUpload.size() + ')'));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
-			if (advancedEnabled) {
+			if (advancedModeEnabled) {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_PRIORITY, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
 			} else {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
@@ -663,7 +663,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		
 		//double frac = p.getSuccessFraction();
-		if (!core.isAdvancedDarknetEnabled()) {
+		if (!core.isAdvancedModeEnabled()) {
 			total = min;
 		}
 		
