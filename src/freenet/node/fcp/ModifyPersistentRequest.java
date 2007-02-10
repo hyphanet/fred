@@ -72,13 +72,7 @@ public class ModifyPersistentRequest extends FCPMessage {
 			Logger.error(this, "Huh ? the request is null!");
 			return;
 		}
-		if(clientToken != null)
-			req.setClientToken(clientToken);
-		if(priorityClass >= 0)
-			req.setPriorityClass(priorityClass);
-		if(req.isPersistentForever())
-			client.server.forceStorePersistentRequests();
-
-        req.requestWasModified();
+        
+        req.requestWasModified(clientToken, priorityClass);
 	}
 }

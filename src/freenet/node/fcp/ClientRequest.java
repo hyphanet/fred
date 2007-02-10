@@ -306,9 +306,52 @@ public abstract class ClientRequest {
     /**
      * Called after a ModifyPersistentRequest. Send a PersistentTagMessage to the clients.
      */
-    public void requestWasModified() {
-        FCPMessage msg = persistentTagMessage();
-        client.queueClientRequestMessage(msg, 0);
+    /**
+     * Called after a ModifyPersistentRequest. 
+     */
+    public void requestWasModified(String newClientToken, short newPriorityClass) {
+
+        boolean clientTokenChanged = false;
+        boolean priorityClassChanged = false;
+        
+        if(newClientToken != null) {
+            if( clientToken != null ) {
+                if( !newClientToken.equals(clientToken) ) {
+                    setClientToken(newClientToken); // token changed
+                    clientTokenChanged = true;
+                }
+            } else {
+                setClientToken(newClientToken); // first time the token is set
+                clientTokenChanged = true;
+            }
+        }
+
+        if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
+            setPriorityClass(newPriorityClass);
+            priorityClassChanged = true;
+        }
+
+        if( clientTokenChanged || priorityClassChanged ) {
+            if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
+                if(client != null)
+                    client.server.forceStorePersistentRequests();
+            }
+        } else {
+            return; // quick return, nothing was changed
+        }
+
+        // this could become too complex with more parameters, but for now its ok
+        final PersistentRequestModifiedMessage modifiedMsg;
+        if( clientTokenChanged && priorityClassChanged ) {
+            modifiedMsg = new PersistentRequestModifiedMessage(identifier, global, priorityClass, clientToken);
+        } else if( priorityClassChanged ) {
+            modifiedMsg = new PersistentRequestModifiedMessage(identifier, global, priorityClass);
+        } else if( clientTokenChanged ) {
+            modifiedMsg = new PersistentRequestModifiedMessage(identifier, global, clientToken);
+        } else {
+            return; // paranoia, we should not be here if nothing was changed!
+        }
+        client.queueClientRequestMessage(modifiedMsg, 0);
     }
 
     /**
