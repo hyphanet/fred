@@ -1900,7 +1900,7 @@ public class Node {
 					exit(EXIT_CRAPPY_JVM);
 				}
 			}
-			fs.putSingle("sig", myReferenceSignature.toString());
+			fs.putSingle("sig", myReferenceSignature.toLongString());
 		}
 		
 		if(logMINOR) Logger.minor(this, "My reference: "+fs.toOrderedString());
