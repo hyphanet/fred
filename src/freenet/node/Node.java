@@ -1545,46 +1545,66 @@ public class Node {
 		
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
-		// If we are using the wrapper, we ignore:
-		// Any problem should be detected by the watchdog and the node will be restarted
-		if(osName.equals("Linux") && jvmVendor.startsWith("Sun ") && 
-				((osVersion.indexOf("nptl")!=-1) || osVersion.startsWith("2.6") || 
-						osVersion.startsWith("2.7") || osVersion.startsWith("3."))
-						&& !isUsingWrapper()) {
-			// Hopefully we won't still have to deal with this **** when THAT comes out! 
-			// Check the environment.
-			String assumeKernel;
-			try {
-				// It is essential to check the environment.
-				// Make an alternative way to do it if you like.
-				assumeKernel = System.getenv("LD_ASSUME_KERNEL");
-			} catch (Error e) {
-				assumeKernel = null;
-				assumeKernel = WrapperManager.getProperties().getProperty("set.LD_ASSUME_KERNEL");
+		if(jvmVendor.startsWith("Sun ")) {
+			// Sun bugs
+			
+			// Spurious OOMs
+			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795
+			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=2138757
+			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=2138759
+			// Fixed in 1.5.0_10 and 1.4.2_13
+			
+			boolean is142 = jvmVersion.startsWith("1.4.2_");
+			boolean is150 = jvmVersion.startsWith("1.5.0_");
+			
+			boolean spuriousOOMs = false;
+			
+			if(is142 || is150) {
+				String[] split = jvmVersion.split("_");
+				String secondPart = split[1];
+				if(secondPart.indexOf("-") != -1) {
+					split = secondPart.split("-");
+					secondPart = split[0];
+				}
+				int subver = Integer.parseInt(secondPart);
+				
+				if(is142) {
+					if(subver < 13)
+						spuriousOOMs = true;
+				} else /*if(is150)*/ {
+					if(subver < 10)
+						spuriousOOMs = true;
+				}
 			}
-			if((assumeKernel == null) || (assumeKernel.length() == 0) || (!(assumeKernel.startsWith("2.2") || assumeKernel.startsWith("2.4")))) {
-				System.err.println(ERROR_SUN_NPTL);
-				Logger.error(this, ERROR_SUN_NPTL);
+			
+			if(spuriousOOMs) {
+				System.err.println("Please upgrade to at least sun jvm 1.4.2_13 or 1.5.0_10. This version is buggy and may cause spurious OutOfMemoryErrors.");
 				clientCore.alerts.register(new UserAlert() {
 
-					public boolean userCanDismiss() {
-						return false;
-					}
-
-					public String getTitle() {
-						return "Deadlocking likely due to buggy JVM/kernel combination";
-					}
-
-					public String getText() {
-						return ERROR_SUN_NPTL;
+					public String dismissButtonText() {
+						// Not dismissable
+						return null;
 					}
 
 					public HTMLNode getHTMLText() {
-						return new HTMLNode("div", ERROR_SUN_NPTL);
+						HTMLNode n = new HTMLNode("div");
+						n.addChild("#", "The JVM you are using ("+System.getProperty("java.vm.version")+") is known to be ");
+						n.addChild("a", "href", "/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795").addChild("#", "buggy");
+						n.addChild("#", ". It may produce OutOfMemoryError's when there is plenty of memory available. Please upgrade to at least Sun JVM 1.4.2_13 or 1.5.0_10.");
+						return n;
 					}
 
 					public short getPriorityClass() {
-						return UserAlert.CRITICAL_ERROR;
+						return UserAlert.ERROR;
+					}
+
+					public String getText() {
+						return "The JVM you are using ("+System.getProperty("java.vm.version")+") is known to be " +
+						"buggy. It may produce OutOfMemoryError's when there is plenty of memory available. Please upgrade to at least Sun JVM 1.4.2_13 or 1.5.0_10. See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795 .";
+					}
+
+					public String getTitle() {
+						return "Buggy JVM Warning";
 					}
 
 					public boolean isValid() {
@@ -1592,25 +1612,93 @@ public class Node {
 					}
 
 					public void isValid(boolean validity) {
-						// Not clearable.
-					}
-
-					public String dismissButtonText() {
-						// Not dismissable.
-						return null;
-					}
-
-					public boolean shouldUnregisterOnDismiss() {
-						// Not dismissable.
-						return false;
+						// Ignore
 					}
 
 					public void onDismiss() {
-						// Not dismissable.
+						// Ignore
 					}
+
+					public boolean shouldUnregisterOnDismiss() {
+						return false;
+					}
+
+					public boolean userCanDismiss() {
+						// Cannot be dismissed
+						return false;
+					}
+					
 				});
 			}
+			
+			// If we are using the wrapper, we ignore:
+			// Any problem should be detected by the watchdog and the node will be restarted
+			if(osName.equals("Linux") && jvmVendor.startsWith("Sun ") && 
+					((osVersion.indexOf("nptl")!=-1) || osVersion.startsWith("2.6") || 
+							osVersion.startsWith("2.7") || osVersion.startsWith("3."))
+							&& !isUsingWrapper()) {
+				// Hopefully we won't still have to deal with this **** when THAT comes out! 
+				// Check the environment.
+				String assumeKernel;
+				try {
+					// It is essential to check the environment.
+					// Make an alternative way to do it if you like.
+					assumeKernel = System.getenv("LD_ASSUME_KERNEL");
+				} catch (Error e) {
+					assumeKernel = null;
+					assumeKernel = WrapperManager.getProperties().getProperty("set.LD_ASSUME_KERNEL");
+				}
+				if((assumeKernel == null) || (assumeKernel.length() == 0) || (!(assumeKernel.startsWith("2.2") || assumeKernel.startsWith("2.4")))) {
+					System.err.println(ERROR_SUN_NPTL);
+					Logger.error(this, ERROR_SUN_NPTL);
+					clientCore.alerts.register(new UserAlert() {
+						
+						public boolean userCanDismiss() {
+							return false;
+						}
+						
+						public String getTitle() {
+							return "Deadlocking likely due to buggy JVM/kernel combination";
+						}
+						
+						public String getText() {
+							return ERROR_SUN_NPTL;
+						}
+						
+						public HTMLNode getHTMLText() {
+							return new HTMLNode("div", ERROR_SUN_NPTL);
+						}
+						
+						public short getPriorityClass() {
+							return UserAlert.CRITICAL_ERROR;
+						}
+						
+						public boolean isValid() {
+							return true;
+						}
+						
+						public void isValid(boolean validity) {
+							// Not clearable.
+						}
+						
+						public String dismissButtonText() {
+							// Not dismissable.
+							return null;
+						}
+						
+						public boolean shouldUnregisterOnDismiss() {
+							// Not dismissable.
+							return false;
+						}
+						
+						public void onDismiss() {
+							// Not dismissable.
+						}
+					});
+				}
+			}
 		}
+		
 	}
 
 	private long lastAcceptedRequest = -1;
