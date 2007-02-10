@@ -403,10 +403,10 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 					checkBlockStatus[i].schedule();
 		} catch (MalformedURLException e) {
 			// Invalidates the whole splitfile
-			fail(new FetchException(FetchException.INVALID_URI, "Invalid URI in splitfile"));
+			fail(new FetchException(FetchException.INVALID_URI, "Invalid URI in splitfile: "+e));
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" scheduling "+this, t);
-			fail(new FetchException(FetchException.INVALID_URI, t));
+			fail(new FetchException(FetchException.INTERNAL_ERROR, t));
 		}
 	}
 

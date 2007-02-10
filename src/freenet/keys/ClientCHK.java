@@ -67,7 +67,7 @@ public class ClientCHK extends ClientKey {
         cryptoKey = uri.getCryptoKey();
         byte[] extra = uri.getExtra();
         if((extra == null) || (extra.length < 5))
-            throw new MalformedURLException();
+            throw new MalformedURLException("No extra bytes in CHK - maybe a 0.5 key?");
         // byte 0 is reserved, for now
         cryptoAlgorithm = extra[1];
 		if((!(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 ||
