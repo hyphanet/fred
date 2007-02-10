@@ -418,7 +418,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     			try{
     				boolean failed = false;
     				if(signature == null || peerCryptoGroup == null || peerPubKey == null || 
-    						(failed = !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, md.digest(fs.toOrderedString().getBytes("UTF-8"))), false))){
+    						(failed = !
+    								(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, md.digest(fs.toOrderedString().getBytes("UTF-8"))), false) ||
+    								(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, md.digest(fs.toOrderedString().getBytes("UTF-8"))), true))))) { // FIXME remove ,true after pre-1013 are obsolete
     					String errCause = "";
     					if(signature == null) errCause += " (No signature)";
     					if(peerCryptoGroup == null) errCause += " (No peer crypto group)";
