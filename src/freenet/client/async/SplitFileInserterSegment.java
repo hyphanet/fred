@@ -236,7 +236,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		fs.put("Encoded", encoded);
 		// If true, data blocks which are null are finished
 		fs.put("Started", started);
-		fs.put("Errors", errors.toFieldSet(false));
+		fs.tput("Errors", errors.toFieldSet(false));
 		SimpleFieldSet dataFS = new SimpleFieldSet();
 		dataFS.put("Count", dataBlocks.length);
 		for(int i=0;i<dataBlocks.length;i++) {
