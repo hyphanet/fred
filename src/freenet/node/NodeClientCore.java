@@ -220,7 +220,7 @@ public class NodeClientCore {
 		
 		ignoreTooManyPathComponents = nodeConfig.getBoolean("ignoreTooManyPathComponents");
 		
-		nodeConfig.register("lazyResume", true, sortOrder++, true, false, "Complete loading of persistent requests after startup? (Uses more memory)",
+		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "Complete loading of persistent requests after startup? (Uses more memory)",
 				"The node can load persistent queued requests during startup, or it can read the data into memory and then complete the request resuming process after the node has started up. "+
 				"Shorter start-up times, but uses more memory.", new BooleanCallback() {
 
