@@ -88,7 +88,7 @@ public class PutFailedMessage extends FCPMessage {
 		if(extraDescription != null)
 			fs.putSingle("ExtraDescription", extraDescription);
 		if(tracker != null) {
-			fs.put("Errors", tracker.toFieldSet(verbose));
+			fs.tput("Errors", tracker.toFieldSet(verbose));
 		}
 		if(verbose)
 			fs.put("Fatal", isFatal);

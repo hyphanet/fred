@@ -109,7 +109,7 @@ public class GetFailedMessage extends FCPMessage {
 		if(verbose)
 			sfs.putSingle("Fatal", Boolean.toString(isFatal));
 		if(tracker != null) {
-			sfs.put("Errors", tracker.toFieldSet(verbose));
+			sfs.tput("Errors", tracker.toFieldSet(verbose));
 		}
 		if(verbose)
 			sfs.putSingle("ShortCodeDescription", shortCodeDescription);
