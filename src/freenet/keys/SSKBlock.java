@@ -137,7 +137,8 @@ public class SSKBlock implements KeyBlock {
 			// Now verify it
 			NativeBigInteger r = new NativeBigInteger(1, bufR);
 			NativeBigInteger s = new NativeBigInteger(1, bufS);
-			if(!DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash))) {
+			if(!(DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash), false) ||
+					(DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash), true)))) {
 				throw new SSKVerifyException("Signature verification failed for node-level SSK");
 			}
 		}

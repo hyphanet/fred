@@ -92,12 +92,13 @@ public class DSA {
 	/**
 	 * Verifies the message authenticity given a group, the public key
 	 * (y), a signature, and the hash of the message (m).
+	 * @param forceMod If enabled, skip the clipping m to 255 bits.
 	 */
 	public static boolean verify(DSAPublicKey kp,
 			DSASignature sig,
-			BigInteger m) {
+			BigInteger m, boolean forceMod) {
 		if(m.signum() == -1) throw new IllegalArgumentException();
-		if(kp.getGroup().getQ().bitLength() == 256)
+		if(kp.getGroup().getQ().bitLength() == 256 && !forceMod)
 			m = m.and(SIGNATURE_MASK);
 		try {
 			// 0<r<q has to be true
@@ -137,7 +138,7 @@ public class DSA {
 		DSAPrivateKey pk=new DSAPrivateKey(g, y);
 		DSAPublicKey pub=new DSAPublicKey(g, pk);
 		DSASignature sig=sign(g, pk, BigInteger.ZERO, y);
-		System.err.println(verify(pub, sig, BigInteger.ZERO));
+		System.err.println(verify(pub, sig, BigInteger.ZERO, false));
 		while(true) {
 			long totalTimeSigning = 0;
 			long totalTimeVerifying = 0;
@@ -167,7 +168,7 @@ public class DSA {
 				long t1 = System.currentTimeMillis();
 				sig = sign(g, pk, m, y);
 				long t2 = System.currentTimeMillis();
-				if(!verify(pub, sig, m)) {
+				if(!verify(pub, sig, m, false)) {
 					System.err.println("Failed to verify!");
 				}
 				long t3 = System.currentTimeMillis();

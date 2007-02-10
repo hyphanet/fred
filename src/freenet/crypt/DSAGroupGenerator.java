@@ -162,7 +162,7 @@ public class DSAGroupGenerator {
     	long now = System.currentTimeMillis();
     	DSASignature sig = DSA.sign(group, privKey, m, r);
     	long middle = System.currentTimeMillis();
-    	boolean success = DSA.verify(pubKey, sig, m);
+    	boolean success = DSA.verify(pubKey, sig, m, false);
     	long end = System.currentTimeMillis();
     	if(success) {
     		totalSigTime += (middle - now);

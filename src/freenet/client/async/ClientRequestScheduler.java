@@ -174,6 +174,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				} catch (KeyVerifyException e) {
 					// Verify exception, probably bogus at source;
 					// verifies at low-level, but not at decode.
+					if(logMINOR)
+						Logger.minor(this, "Decode failed: "+e, e);
 					getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED));
 					return;
 				}

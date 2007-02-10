@@ -1800,7 +1800,7 @@ public class Node {
 					if(logMINOR) Logger.minor(this, "m = "+m.toString(16));
 					myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, m, random);
 					// FIXME remove this ... eventually
-					if(!DSA.verify(myPubKey, myReferenceSignature, m))
+					if(!DSA.verify(myPubKey, myReferenceSignature, m, false))
 						Logger.error(this, "Signature failed!");
 				} catch(UnsupportedEncodingException e){
 					//duh ?

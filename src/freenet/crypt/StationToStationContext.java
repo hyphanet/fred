@@ -129,7 +129,7 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     		is.close();
 
     		if(signatureToCheck != null)
-    			if(DSA.verify(hisPubKey, new DSASignature(signatureToCheck), new BigInteger(1, SHA256.digest(message.getBytes())))) {
+    			if(DSA.verify(hisPubKey, new DSASignature(signatureToCheck), new BigInteger(1, SHA256.digest(message.getBytes())), false)) {
     				return true;
     			}
 

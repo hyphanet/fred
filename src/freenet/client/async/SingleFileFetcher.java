@@ -131,6 +131,8 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		try {
 			data = block.decode(ctx.bucketFactory, (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
 		} catch (KeyDecodeException e1) {
+			if(logMINOR)
+				Logger.minor(this, "Decode failure: "+e1, e1);
 			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()));
 			return;
 		} catch (IOException e) {
