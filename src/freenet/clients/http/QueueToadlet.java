@@ -114,6 +114,7 @@ public class QueueToadlet extends Toadlet {
 						}
 					}
 				}
+				fcp.forceStorePersistentRequests();
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if(request.isPartSet("remove_AllRequests") && (request.getPartAsString("remove_AllRequests", 32).length() > 0)) {
@@ -139,6 +140,7 @@ public class QueueToadlet extends Toadlet {
 					this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove " + failedIdentifiers);
 				else
 					writePermanentRedirect(ctx, "Done", "/queue/");
+				fcp.forceStorePersistentRequests();
 				return;
 			}else if(request.isPartSet("download")) {
 				// Queue a download
@@ -174,6 +176,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					}
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
+				fcp.forceStorePersistentRequests();
 				return;
 			} else if (request.getPartAsString("insert", 128).length() > 0) {
 				FreenetURI insertURI;
