@@ -90,8 +90,6 @@ public class NodeClientCore {
 	public boolean ignoreTooManyPathComponents;
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	private boolean lazyResume;
-	/** Has the startup process reached the point of resuming requests yet? If this is true, lazyResume can safely be modified. */
-	private boolean startedResume;
 	
 	// Client stuff that needs to be configged - FIXME
 	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -230,8 +228,6 @@ public class NodeClientCore {
 
 					public void set(boolean val) throws InvalidConfigValueException {
 						synchronized(NodeClientCore.this) {
-							if(!startedResume)
-								throw new InvalidConfigValueException("Cannot be set until node has started up");
 							lazyResume = val;
 						}
 					}
@@ -279,15 +275,9 @@ public class NodeClientCore {
 			public void run() {
 				System.out.println("Resuming persistent requests");
 				Logger.normal(this, "Resuming persistent requests");
-				if(lazyResume) {
-					synchronized(NodeClientCore.this) {
-						startedResume = true;
-					}
-					fcpServer.finishStart();
-				} else
-					synchronized(NodeClientCore.this) {
-						startedResume = true;
-					}
+				// Call it anyway; if we are not lazy, it won't have to start any requests
+				// But it does other things too
+				fcpServer.finishStart();
 				persistentTempBucketFactory.completedInit();
 				System.out.println("Completed startup: All persistent requests resumed or restarted");
 				Logger.normal(this, "Completed startup: All persistent requests resumed or restarted");
