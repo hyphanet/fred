@@ -22,6 +22,8 @@ import java.util.WeakHashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetcherContext;
 import freenet.client.HighLevelSimpleClient;
@@ -590,6 +592,7 @@ public class FCPServer implements Runnable {
 				throw new IOException(e.toString());
 			}
 			for(int i=0;i<count;i++) {
+				WrapperManager.signalStarting(5*60*1000);  // 5 minutes per request
 				System.out.println("Loading persistent request "+i+" of "+count+"...");
 				ClientRequest.readAndRegister(br, this);
 			}
