@@ -355,10 +355,10 @@ public class Node {
 	public final TimeDecayingRunningAverage pInstantRejectIncoming;
 	/** IP detector */
 	public final NodeIPDetector ipDetector;
-    /** For debugging/testing, set this to true to stop the
-     * probabilistic decrement at the edges of the HTLs.
-     */
-    boolean disableProbabilisticHTLs;
+	/** For debugging/testing, set this to true to stop the
+	 * probabilistic decrement at the edges of the HTLs.
+	 */
+	boolean disableProbabilisticHTLs;
 	
 	private final HashSet runningUIDs;
 	
@@ -864,14 +864,14 @@ public class Node {
 		
 		//Memory Checking thread
 		// TODO: proper config. callbacks : maybe we shoudln't start the thread at all if it's not worthy
-    	this.myMemoryChecker = new Thread(new MemoryChecker(), "Memory checker");
-    	this.myMemoryChecker.setPriority(Thread.MAX_PRIORITY);
-    	this.myMemoryChecker.setDaemon(true);
+		this.myMemoryChecker = new Thread(new MemoryChecker(), "Memory checker");
+		this.myMemoryChecker.setPriority(Thread.MAX_PRIORITY);
+		this.myMemoryChecker.setDaemon(true);
 
-    	// FIXME maybe these configs should actually be under a node.ip subconfig?
-    	ipDetector = new NodeIPDetector(this);
-    	sortOrder = ipDetector.registerConfigs(nodeConfig, sortOrder);
-    	
+		// FIXME maybe these configs should actually be under a node.ip subconfig?
+		ipDetector = new NodeIPDetector(this);
+		sortOrder = ipDetector.registerConfigs(nodeConfig, sortOrder);
+		
 		// Determine where to bind to
 		
 		nodeConfig.register("bindTo", "0.0.0.0", sortOrder++, true, true, "IP address to bind to", "IP address to bind to",
@@ -1144,10 +1144,10 @@ public class Node {
 			throw new NodeInitException(EXIT_EXTRA_PEER_DATA_DIR, msg);
 		}
 		
-        // Name 	 
-        nodeConfig.register("name", myName, sortOrder++, false, true, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node", 	 
-                        new NodeNameCallback(this)); 	 
-        myName = nodeConfig.getString("name"); 	 
+		// Name 	 
+		nodeConfig.register("name", myName, sortOrder++, false, true, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node", 	 
+						new NodeNameCallback(this)); 	 
+		myName = nodeConfig.getString("name"); 	 
 
 		
 		// Datastore
@@ -1711,7 +1711,7 @@ public class Node {
 		1024 + DMT.packetTransmitSize(1024, 32)
 		+ FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
 	
-    /* return reject reason as string if should reject, otherwise return null */
+	/* return reject reason as string if should reject, otherwise return null */
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
 		if(logMINOR) dumpByteCostAverages();
 		
@@ -2317,16 +2317,16 @@ public class Node {
 			return null;
 		}
 	}
-    
-    public FreenetStore getChkDatacache() {
-        return chkDatacache;
-    }
-    public FreenetStore getChkDatastore() {
-        return chkDatastore;
-    }
-    public long getMaxTotalKeys() {
-        return maxTotalKeys;
-    }
+	
+	public FreenetStore getChkDatacache() {
+		return chkDatacache;
+	}
+	public FreenetStore getChkDatastore() {
+		return chkDatastore;
+	}
+	public long getMaxTotalKeys() {
+		return maxTotalKeys;
+	}
 
 	long timeLastDumpedHits;
 	
