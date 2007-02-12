@@ -304,10 +304,8 @@ public abstract class ClientRequest {
     protected abstract FCPMessage persistentTagMessage();
 
     /**
-     * Called after a ModifyPersistentRequest. Send a PersistentTagMessage to the clients.
-     */
-    /**
-     * Called after a ModifyPersistentRequest. 
+     * Called after a ModifyPersistentRequest.
+     * Sends a PersistentRequestModified message to clients if any value changed. 
      */
     public void requestWasModified(String newClientToken, short newPriorityClass) {
 
@@ -333,8 +331,9 @@ public abstract class ClientRequest {
 
         if( clientTokenChanged || priorityClassChanged ) {
             if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
-                if(client != null)
+                if(client != null) {
                     client.server.forceStorePersistentRequests();
+                }
             }
         } else {
             return; // quick return, nothing was changed

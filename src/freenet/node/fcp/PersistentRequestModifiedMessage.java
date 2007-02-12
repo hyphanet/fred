@@ -13,36 +13,31 @@ public class PersistentRequestModifiedMessage extends FCPMessage {
 
     private final String ident;
     private final boolean global;
-
-    private final SimpleFieldSet fs;
     
-    private PersistentRequestModifiedMessage(String identifier, boolean global) {
-        // remembered for the MessageInvalidException only
-        this.ident = identifier;
-        this.global = global;
-
-        fs = new SimpleFieldSet(true);
-        fs.putSingle("Identifier", identifier);
-        if(global) fs.putSingle("Global", "true");
-    }
-
+    private final short priorityClass;
+    private final String clientToken;
+    
     public PersistentRequestModifiedMessage(String identifier, boolean global, short priorityClass) {
-        this(identifier, global);
-        fs.putSingle("PriorityClass", Short.toString(priorityClass));
+        this(identifier, global, priorityClass, null); // clientToken not set
     }
 
     public PersistentRequestModifiedMessage(String identifier, boolean global, String clientToken) {
-        this(identifier, global);
-        fs.putSingle("ClientToken", clientToken);
+        this(identifier, global, (short)(-1), clientToken); // priorityClass not set
     }
 
     public PersistentRequestModifiedMessage(String identifier, boolean global, short priorityClass, String clientToken) {
-        this(identifier, global);
-        fs.putSingle("PriorityClass", Short.toString(priorityClass));
-        fs.putSingle("ClientToken", clientToken);
+        this.ident = identifier;
+        this.global = global;
+        this.priorityClass = priorityClass;
+        this.clientToken = clientToken;
     }
 
     public SimpleFieldSet getFieldSet() {
+        final SimpleFieldSet fs = new SimpleFieldSet(true);
+        fs.putSingle("Identifier", ident);
+        if(global) fs.putSingle("Global", "true");
+        if(priorityClass >= 0)   fs.putSingle("PriorityClass", Short.toString(priorityClass));
+        if(clientToken != null ) fs.putSingle("ClientToken", clientToken);
         return fs;
     }
 
