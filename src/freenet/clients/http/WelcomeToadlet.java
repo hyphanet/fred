@@ -618,8 +618,8 @@ public class WelcomeToadlet extends Toadlet {
 			editForm.addChild("input", new String[] { "type", "name", "value", "class" }, new String[] { "submit", "addbookmark", "Add bookmark", "confirm" });
 		} else {
 			editForm.addChild("input", new String[] { "type", "name", "value", "class" }, new String[] { "submit", "update_" + b.hashCode(), "Update bookmark", "confirm" });
+                        editForm.addChild("input", new String[] { "type", "value", "class" }, new String[] { "submit", "Cancel", "cancel" });
 		}
-		editForm.addChild("input", new String[] { "type", "value", "class" }, new String[] { "submit", "Cancel", "cancel" });
 		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
 		return infobox;
 	}
