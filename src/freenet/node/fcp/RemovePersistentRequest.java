@@ -42,6 +42,5 @@ public class RemovePersistentRequest extends FCPMessage {
             return;
         }
 		client.removeByIdentifier(identifier, true);
-        req.requestWasRemoved();
 	}
 }
