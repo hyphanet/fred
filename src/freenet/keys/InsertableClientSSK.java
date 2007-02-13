@@ -38,6 +38,11 @@ public class InsertableClientSSK extends ClientSSK {
 	public static InsertableClientSSK create(FreenetURI uri) throws MalformedURLException {
 		if(uri.getKeyType().equalsIgnoreCase("KSK"))
 			return ClientKSK.create(uri);
+
+		if(uri.getRoutingKey() == null)
+			throw new MalformedURLException("Insertable SSK URIs must have a private key!: "+uri);
+		if(uri.getCryptoKey() == null)
+			throw new MalformedURLException("Insertable SSK URIs must have a private key!: "+uri);
 		
 		byte keyType;
 
@@ -67,10 +72,7 @@ public class InsertableClientSSK extends ClientSSK {
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getRoutingKey()));
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(pubKey.asBytes());
-		byte[] pkHash = md.digest();
-		SHA256.returnMessageDigest(md);
+		byte[] pkHash = pubKey.asBytesHash();
 		return new InsertableClientSSK(uri.getDocName(), pkHash, pubKey, privKey, uri.getCryptoKey(), keyType);
 	}
 	
