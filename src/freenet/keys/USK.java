@@ -44,8 +44,12 @@ public class USK extends BaseClientKey {
 		this.siteName = siteName;
 		this.suggestedEdition = suggestedEdition;
 		if(extra == null)
-			throw new MalformedURLException("No extra bytes in USK");
-		// Verify extra bytes, get cryptoAlgorithm
+			throw new MalformedURLException("No extra bytes (third bit) in USK");
+		if(pubKeyHash == null)
+			throw new MalformedURLException("No pubkey hash (first bit) in USK");
+		if(cryptoKey == null)
+			throw new MalformedURLException("No crypto key (second bit) in USK");
+		// Verify extra bytes, get cryptoAlgorithm - FIXME this should be a static method or something?
 		ClientSSK tmp = new ClientSSK(siteName, pubKeyHash, extra, null, cryptoKey);
 		cryptoAlgorithm = tmp.cryptoAlgorithm;
 		if(pubKeyHash.length != NodeSSK.PUBKEY_HASH_SIZE)
