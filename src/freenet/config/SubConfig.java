@@ -231,9 +231,29 @@ public class SubConfig implements Comparable {
 		o.setValue(value);
 	}
 
+	/**
+	 * If the option's value is equal to the provided old default, then set it to the
+	 * new default. Used to deal with changes to important options where this is not
+	 * handled automatically because the option's value is written to the .ini.
+	 * @param name The name of the option.
+	 * @param value The value of the option.
+	 */
 	public void fixOldDefault(String name, String value) {
 		Option o = (Option) map.get(name);
 		if(o.getValueString().equals(value))
+			o.setDefault();
+	}
+	
+	/**
+	 * If the option's value matches the provided old default regex, then set it to the
+	 * new default. Used to deal with changes to important options where this is not
+	 * handled automatically because the option's value is written to the .ini.
+	 * @param name The name of the option.
+	 * @param value The value of the option.
+	 */
+	public void fixOldDefaultRegex(String name, String value) {
+		Option o = (Option) map.get(name);
+		if(o.getValueString().matches(value))
 			o.setDefault();
 	}
 	
@@ -251,4 +271,5 @@ public class SubConfig implements Comparable {
 				return -1;
 		}
 	}
+
 }

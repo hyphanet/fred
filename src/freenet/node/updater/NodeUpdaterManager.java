@@ -98,6 +98,8 @@ public class NodeUpdaterManager {
         		true, false, "Where should the node look for updates?",
         		"Where should the node look for updates?",
         		new UpdateURICallback(false));
+
+        updaterConfig.fixOldDefaultRegex("URI", "USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/update/[0-9]++");
         
         try {
 			updateURI = new FreenetURI(updaterConfig.getString("URI"));
@@ -116,6 +118,8 @@ public class NodeUpdaterManager {
         		"Where should the node look for revocation ?",
         		new UpdateRevocationURICallback());
         
+        updaterConfig.fixOldDefault("revocationURI", "SSK@VOfCZVTYPaatJ~eB~4lu2cPrWEmGyt4bfbB1v15Z6qQ,B6EynLhm7QE0se~rMgWWhl7wh3rFWjxJsEUcyohAm8A,AQABAAE/revoked");
+        
         try {
 			revocationURI = new FreenetURI(updaterConfig.getString("revocationURI"));
 		} catch (MalformedURLException e) {
@@ -133,6 +137,8 @@ public class NodeUpdaterManager {
         		"Where should the node look for updates to freenet-ext.jar?",
         		new UpdateURICallback(true));
         
+		updaterConfig.fixOldDefaultRegex("extURI", "USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/ext/[0-9]++");
+		
         try {
 			extURI = new FreenetURI(updaterConfig.getString("extURI"));
 		} catch (MalformedURLException e) {
