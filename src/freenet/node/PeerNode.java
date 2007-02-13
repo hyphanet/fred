@@ -1943,7 +1943,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         if(getLastGoodVersion() != null)
         	fs.putSingle("lastGoodVersion", lastGoodVersion);
 		for(int i=0;i<nominalPeer.size();i++) {
-			fs.putSingle("physical.udp", nominalPeer.get(i).toString());
+			fs.putAppend("physical.udp", nominalPeer.get(i).toString());
 		}
         fs.putSingle("identity", getIdentityString());
         fs.putSingle("location", Double.toString(currentLocation.getValue()));
