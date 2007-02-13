@@ -432,6 +432,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
    						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!"+errCause);
     				}else
     					this.isSignatureVerificationSuccessfull = true;
+    			} catch (NumberFormatException e) {
+    				Logger.error(this, "Invalid reference: "+e, e);
+    				throw new ReferenceSignatureVerificationException("The node reference you added is invalid: It does not have a valid signature.");
     			} catch (UnsupportedEncodingException e) {
     				//   duh ?
     				Logger.error(this, "Error while signing the node identity!"+e);
