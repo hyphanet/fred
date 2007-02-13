@@ -307,7 +307,7 @@ public abstract class ClientRequest {
      * Called after a ModifyPersistentRequest.
      * Sends a PersistentRequestModified message to clients if any value changed. 
      */
-    public void requestWasModified(String newClientToken, short newPriorityClass) {
+    public void modifyRequest(String newClientToken, short newPriorityClass) {
 
         boolean clientTokenChanged = false;
         boolean priorityClassChanged = false;

@@ -73,6 +73,6 @@ public class ModifyPersistentRequest extends FCPMessage {
 			return;
 		}
         
-        req.requestWasModified(clientToken, priorityClass);
+        req.modifyRequest(clientToken, priorityClass);
 	}
 }
