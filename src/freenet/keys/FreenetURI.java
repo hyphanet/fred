@@ -400,10 +400,6 @@ public class FreenetURI implements Cloneable{
 		return metaStr;
 	}
 
-	public byte[] getKeyVal() {
-		return getRoutingKey();
-	}
-
 	public byte[] getRoutingKey() {
 		return routingKey;
 	}
