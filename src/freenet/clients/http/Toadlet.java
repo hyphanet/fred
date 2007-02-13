@@ -219,6 +219,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("br");
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
+		pw.println(t);
 		t.printStackTrace(pw);
 		pw.close();
 		// FIXME what is the modern (CSS/XHTML) equivalent of <pre>?
