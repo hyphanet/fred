@@ -673,6 +673,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			} catch (IOException e) {
 				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference ("+e+"). Please try again.");
 				return;
+			} catch (Throwable t) {
+				this.sendErrorPage(ctx, "Failed to Add Node: Internal Error", "Unable to parse the given text as a node reference. Please report the following to the developers:", t);
+				return;
 			}
 			PeerNode pn;
 			try {
@@ -689,6 +692,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				node.addChild("#", "Unable to verify the signature of the given reference ("+e1+").");
 				node.addChild("br");
 				this.sendErrorPage(ctx, 200, "Failed To Add Node", node);
+				return;
+			} catch (Throwable t) {
+				this.sendErrorPage(ctx, "Failed to Add Node: Internal Error", "Unable to add the node reference. Please report the following to the developers:", t);
 				return;
 			}
 			if(pn.getIdentityHash()==node.getIdentityHash()) {

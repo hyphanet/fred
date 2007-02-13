@@ -4,6 +4,8 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 
@@ -198,6 +200,38 @@ public abstract class Toadlet {
 		writeReply(ctx, code, "text/html; charset=UTF-8", desc, pageNode.generate());
 	}
 
+	/**
+	 * Send an error page from an exception.
+	 * @param ctx The context object for this request.
+	 * @param desc The title of the error page
+	 * @param message The message to be sent to the user. The stack trace will follow.
+	 * @param t The Throwable which caused the error.
+	 * @throws IOException If there is an error writing the reply.
+	 * @throws ToadletContextClosedException If the context has already been closed.
+	 */
+	protected void sendErrorPage(ToadletContext ctx, String desc, String message, Throwable t) throws ToadletContextClosedException, IOException {
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(desc);
+		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		
+		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
+		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+		infoboxContent.addChild(message);
+		infoboxContent.addChild("br");
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		t.printStackTrace(pw);
+		pw.close();
+		// FIXME what is the modern (CSS/XHTML) equivalent of <pre>?
+		infoboxContent.addChild("pre", sw.toString());
+		infoboxContent.addChild("br");
+		infoboxContent.addChild("a", "href", ".", "Return to the previous page.");
+		infoboxContent.addChild("a", "href", "/", "Return to the main page.");
+		
+		writeReply(ctx, 500, "text/html; charset=UTF-8", desc, pageNode.generate());
+	}
+
+
+	
 	/**
 	 * Get the client impl. DO NOT call the blocking methods on it!!
 	 * Just use it for configuration etc.
