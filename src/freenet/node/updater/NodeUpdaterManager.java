@@ -99,6 +99,7 @@ public class NodeUpdaterManager {
         		"Where should the node look for updates?",
         		new UpdateURICallback(false));
 
+        // FIXME remove when 101X is long gone
         updaterConfig.fixOldDefaultRegex("URI", "USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/update/[0-9]++");
         
         try {
@@ -118,6 +119,7 @@ public class NodeUpdaterManager {
         		"Where should the node look for revocation ?",
         		new UpdateRevocationURICallback());
         
+        // FIXME remove
         updaterConfig.fixOldDefault("revocationURI", "SSK@VOfCZVTYPaatJ~eB~4lu2cPrWEmGyt4bfbB1v15Z6qQ,B6EynLhm7QE0se~rMgWWhl7wh3rFWjxJsEUcyohAm8A,AQABAAE/revoked");
         
         try {
@@ -137,6 +139,7 @@ public class NodeUpdaterManager {
         		"Where should the node look for updates to freenet-ext.jar?",
         		new UpdateURICallback(true));
         
+        // FIXME remove
 		updaterConfig.fixOldDefaultRegex("extURI", "USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/ext/[0-9]++");
 		
         try {
