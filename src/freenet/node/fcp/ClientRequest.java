@@ -211,15 +211,6 @@ public abstract class ClientRequest {
 		return identifier;
 	}
 
-	public void setPriorityClass(short priorityClass) {
-		this.priorityClass = priorityClass;
-		getClientRequest().setPriorityClass(priorityClass);
-	}
-
-	public void setClientToken(String clientToken) {
-		this.clientToken = clientToken;
-	}
-
 	protected abstract ClientRequester getClientRequest();
 	
 	/** Completed request dropped off the end without being acknowledged */
@@ -315,17 +306,18 @@ public abstract class ClientRequest {
         if(newClientToken != null) {
             if( clientToken != null ) {
                 if( !newClientToken.equals(clientToken) ) {
-                    setClientToken(newClientToken); // token changed
+                    this.clientToken = newClientToken; // token changed
                     clientTokenChanged = true;
                 }
             } else {
-                setClientToken(newClientToken); // first time the token is set
+                this.clientToken = newClientToken; // first time the token is set
                 clientTokenChanged = true;
             }
         }
 
         if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
-            setPriorityClass(newPriorityClass);
+            this.priorityClass = newPriorityClass;
+            getClientRequest().setPriorityClass(priorityClass);
             priorityClassChanged = true;
         }
 

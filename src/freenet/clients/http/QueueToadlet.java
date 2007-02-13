@@ -171,7 +171,7 @@ public class QueueToadlet extends Toadlet {
 loop:				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
 					ClientRequest clientRequest = clientRequests[requestIndex];
 					if (clientRequest.getIdentifier().equals(identifier)) {
-						clientRequest.setPriorityClass(newPriority);
+						clientRequest.modifyRequest(null, newPriority); // no new ClientToken
 						break loop;
 					}
 				}

@@ -171,6 +171,7 @@ public class FCPClient {
 				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not found", identifier, isGlobalQueue);
 			clientRequestsByIdentifier.remove(identifier);
 		}
+        req.requestWasRemoved();
 		if(kill) {
 			if(logMINOR) Logger.minor(this, "Killing request "+req);
 			req.cancel();
