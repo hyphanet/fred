@@ -183,6 +183,11 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	}
 
 	private void onSuccess(FetchResult result) {
+		if(parent.isCancelled()) {
+			result.asBucket().free();
+			onFailure(new FetchException(FetchException.CANCELLED));
+			return;
+		}
 		if(!decompressors.isEmpty()) {
 			Bucket data = result.asBucket();
 			while(!decompressors.isEmpty()) {

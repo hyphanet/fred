@@ -135,8 +135,10 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	}
 
 	public void onFailure(LowLevelPutException e) {
-		if(parent.isCancelled())
+		if(parent.isCancelled()) {
 			fail(new InserterException(InserterException.CANCELLED));
+			return;
+		}
 		
 		switch(e.code) {
 		case LowLevelPutException.COLLISION:
@@ -254,6 +256,10 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 
 	public void onSuccess() {
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
+		if(parent.isCancelled()) {
+			fail(new InserterException(InserterException.CANCELLED));
+			return;
+		}
 		synchronized(this) {
 			finished = true;
 		}

@@ -463,12 +463,20 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 
 	public void onSuccess(ClientPutState state) {
+		if(parent.parent.isCancelled()) {
+			parent.cancel();
+			return;
+		}
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		int x = sbi.token;
 		completed(x);
 	}
 
 	public void onFailure(InserterException e, ClientPutState state) {
+		if(parent.parent.isCancelled()) {
+			parent.cancel();
+			return;
+		}
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		int x = sbi.token;
 		errors.merge(e);
