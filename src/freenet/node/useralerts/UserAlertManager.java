@@ -48,7 +48,18 @@ public class UserAlertManager implements Comparator {
 		UserAlert a0 = (UserAlert) arg0;
 		UserAlert a1 = (UserAlert) arg1;
 		if(a0 == a1) return 0; // common case, also we should be consistent with == even with proxyuseralert's
-		return a0.getPriorityClass() - a1.getPriorityClass();
+		short prio0 = a0.getPriorityClass();
+		short prio1 = a1.getPriorityClass();
+		if(prio0 - prio1 == 0) {
+			int hash0 = a0.hashCode();
+			int hash1 = a1.hashCode();
+			if(hash0 > hash1) return 1;
+			if(hash1 > hash0) return -1;
+			return 0;
+		} else {
+			if(prio0 > prio1) return 1;
+			else return -1;
+		}
 	}
 	
 	/**
