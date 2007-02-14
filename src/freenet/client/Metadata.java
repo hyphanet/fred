@@ -304,9 +304,11 @@ public class Metadata implements Cloneable {
 			splitfileDataKeys = new FreenetURI[splitfileBlocks];
 			splitfileCheckKeys = new FreenetURI[splitfileCheckBlocks];
 			for(int i=0;i<splitfileDataKeys.length;i++)
-				splitfileDataKeys[i] = readKey(dis);
+				if((splitfileDataKeys[i] = readKey(dis)) == null)
+					throw new MetadataParseException("Null data key "+i);
 			for(int i=0;i<splitfileCheckKeys.length;i++)
-				splitfileCheckKeys[i] = readKey(dis);
+				if((splitfileCheckKeys[i] = readKey(dis)) == null)
+					throw new MetadataParseException("Null check key: "+i);
 		}
 		
 		if(documentType == SIMPLE_MANIFEST) {
