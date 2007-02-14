@@ -738,6 +738,7 @@ public class DefaultMIMETypes {
 		addMIMEType((short)610, "video/x-sgi-movie", "movie");
 		addMIMEType((short)611, "x-conference/x-cooltalk", "ice");
 		addMIMEType((short)612, "x-world/x-vrml", "vrm vrml wrl", "vrml");
+		addMIMEType((short)613, "binary/zip-compressed", "zip");
 	}
 	
 	/** Guess a MIME type from a filename.
