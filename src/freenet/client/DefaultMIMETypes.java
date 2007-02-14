@@ -31,6 +31,9 @@ public class DefaultMIMETypes {
 	/** Primary extension by MIME type number. */
 	private static HashMap primaryExtensionByMimeNumber = new HashMap();
 	
+	/** All extension (String[]) by MIME type number. */
+	private static HashMap allExtensionsByMimeNumber = new HashMap();
+	
 	/**
 	 * Add a MIME type, without any extensions.
 	 * @param number The number of the MIME type for compression. This *must not change*
@@ -75,6 +78,7 @@ public class DefaultMIMETypes {
 					mimeTypesByExtension.put(ext, t);
 				}
 			}
+			allExtensionsByMimeNumber.put(t, extensions);
 		}
 		if(outExtension != null)
 			primaryExtensionByMimeNumber.put(t, outExtension);
@@ -763,9 +767,14 @@ public class DefaultMIMETypes {
 	}
 	
 	public synchronized static boolean isValidExt(String expectedMimeType, String oldExt) {
-		Short s = (Short) mimeTypesByExtension.get(oldExt);
-		if(s == null) return false;
-		String type = byNumber(s.shortValue());
-		return type.equals(expectedMimeType);
+		short typeNumber = byName(expectedMimeType);
+		if(typeNumber < 0) return false;
+		
+		Short s = new Short(typeNumber);
+		String[] extensions = (String[]) allExtensionsByMimeNumber.get(s);
+		if(extensions == null) return false;
+		for(int i=0;i<extensions.length;i++)
+			if(oldExt.equals(extensions[i])) return true;
+		return false;
 	}
 }
