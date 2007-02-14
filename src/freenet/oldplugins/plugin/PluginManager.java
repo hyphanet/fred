@@ -132,6 +132,8 @@ public class PluginManager {
 	 * @see URL
 	 * @param pluginName
 	 *            The name of the plugin
+	 *            
+	 * FIXME IllegalArgumentException is not the best way to convey an error here!
 	 */
 	public void addPlugin(String pluginName, final boolean store) throws IllegalArgumentException {
 		if(Logger.shouldLog(Logger.MINOR, this)) 
