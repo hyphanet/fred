@@ -162,7 +162,7 @@ public abstract class Toadlet {
 			// No way!
 			throw new Error(e);
 		}
-		ctx.sendReplyHeaders(301, "Permanent redirect", mvt, "text/html; charset=UTF-8", buf.length);
+		ctx.sendReplyHeaders(301, "Moved Permanently", mvt, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);
 	}
 	
