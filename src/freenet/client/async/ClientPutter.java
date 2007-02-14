@@ -82,6 +82,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			synchronized(this) {
 				if(restart) {
 					if(currentState != null && !finished) return false;
+					finished = false;
 				}
 				if(startedStarting) return false;
 				startedStarting = true;

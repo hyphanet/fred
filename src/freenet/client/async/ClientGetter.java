@@ -61,6 +61,8 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public boolean start(boolean restart) throws FetchException {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Starting "+this);
 		try {
 			// FIXME synchronization is probably unnecessary.
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
@@ -70,6 +72,7 @@ public class ClientGetter extends BaseClientGetter {
 					if(!restart) return false;
 					currentState = null;
 					cancelled = false;
+					finished = false;
 				}
 				// FIXME Possibility for deadlock?
 				currentState = SingleFileFetcher.create(this, this, new ClientMetadata(),
@@ -77,7 +80,7 @@ public class ClientGetter extends BaseClientGetter {
 						returnBucket, true);
 			}
 			if(cancelled) cancel();
-			if(currentState != null)
+			if(currentState != null && !finished)
 				currentState.schedule();
 			if(cancelled) cancel();
 		} catch (MalformedURLException e) {
