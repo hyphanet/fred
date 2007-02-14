@@ -153,7 +153,7 @@ public class FCPClient {
 				completedUnackedRequests.push(cg);
 			} else {
 				runningPersistentRequests.add(cg);
-				toStart.add(cg);
+				if(startLater) toStart.add(cg);
 			}
 			clientRequestsByIdentifier.put(ident, cg);
 		}
