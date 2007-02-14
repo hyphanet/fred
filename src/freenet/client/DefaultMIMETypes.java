@@ -86,7 +86,8 @@ public class DefaultMIMETypes {
 	 * the format in /etc/mime-types.
 	 */
 	protected static synchronized void addMIMEType(short number, String type, String extensions) {
-		addMIMEType(number, type, extensions.split(" "), null);
+		String[] split = extensions.split(" ");
+		addMIMEType(number, type, split, split[0]);
 	}
 
 	/**
