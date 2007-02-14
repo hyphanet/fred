@@ -57,9 +57,19 @@ public class IPDetectorPluginManager {
 				"to any other freenet node.", UserAlert.WARNING);
 	}
 
+	/** Start the detector plugin manager. This includes running the plugin, if there
+	 * is one, and if it is necessary to do so. */
 	void start() {
 		// Cannot be initialized until UserAlertManager has been created.
 		proxyAlert = new ProxyUserAlert(node.clientCore.alerts);
+		tryMaybeRun();
+	}
+	
+	/**
+	 * Start the plugin detection, if necessary. Either way, schedule another attempt in
+	 * 1 minute's time.
+	 */
+	private void tryMaybeRun() {
 		try {
 			maybeRun();
 		} catch (Throwable t) {
@@ -67,12 +77,11 @@ public class IPDetectorPluginManager {
 		}
 		ticker.queueTimedJob(new Runnable() {
 			public void run() {
-				start();
+				tryMaybeRun();
 			}
 		}, 60*1000);
-		
 	}
-	
+
 	/**
 	 * Register a plugin.
 	 */
