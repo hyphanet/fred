@@ -81,9 +81,9 @@ public class SplitFileFetcher implements ClientGetState {
 		splitfileDataBlocks = metadata.getSplitfileDataKeys();
 		splitfileCheckBlocks = metadata.getSplitfileCheckKeys();
 		for(int i=0;i<splitfileDataBlocks.length;i++)
-			if(splitfileDataBlocks[i] == null) throw new NullPointerException("Null: data block "+i+" of "+splitfileDataBlocks.length);
+			if(splitfileDataBlocks[i] == null) throw new MetadataParseException("Null: data block "+i+" of "+splitfileDataBlocks.length);
 		for(int i=0;i<splitfileCheckBlocks.length;i++)
-			if(splitfileCheckBlocks[i] == null) throw new NullPointerException("Null: check block "+i+" of "+splitfileCheckBlocks.length);
+			if(splitfileCheckBlocks[i] == null) throw new MetadataParseException("Null: check block "+i+" of "+splitfileCheckBlocks.length);
 		long finalLength = splitfileDataBlocks.length * CHKBlock.DATA_LENGTH;
 		if(finalLength > overrideLength) {
 			if(finalLength - overrideLength > CHKBlock.DATA_LENGTH)
