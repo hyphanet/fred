@@ -287,17 +287,28 @@ public class ClientPut extends ClientPutBase {
 	public void start() {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this+" : "+identifier);
-		if(finished) return;
+		synchronized(this) {
+			if(finished) return;
+		}
 		try {
 			putter.start(earlyEncode);
-			started = true;
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
 			}
+			synchronized(this) {
+				started = true;
+			}
 		} catch (InserterException e) {
-			started = true;
+			synchronized(this) {
+				started = true;
+			}
 			onFailure(e, null);
+		} catch (Throwable t) {
+			synchronized(this) {
+				started = true;
+			}
+			onFailure(new InserterException(InserterException.INTERNAL_ERROR, t, null), null);
 		}
 	}
 

@@ -272,15 +272,27 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	public void start() {
 		try {
+			synchronized(this) {
+				if(finished) return;
+			}
 			getter.start();
-			started = true;
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
 			}
+			synchronized(this) {
+				started = true;
+			}
 		} catch (FetchException e) {
-			started = true;
+			synchronized(this) {
+				started = true;
+			} // before the failure handler
 			onFailure(e, null);
+		} catch (Throwable t) {
+			synchronized(this) {
+				started = true;
+			}
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), null);
 		}
 	}
 
