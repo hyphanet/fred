@@ -106,7 +106,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 			}
 			if(item == null) break;
 			manager.removeCachedItem(item);
-			item.finalize();
+			item.context.removeItem(item);
 		}
 	}
 

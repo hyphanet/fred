@@ -115,14 +115,6 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		public void close() throws IOException {
 			f.close();
 		}
-		
-		public void finalize() {
-			try {
-				close();
-			} catch (IOException e) {
-				// Ignore
-			}
-		}
 	}
 
 	public class ReadOnlyFileSliceBucketException extends IOException {
@@ -139,9 +131,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		
 	}
 
-	public void free() {
-		// Do nothing
-	}
+	public void free() {}
 
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);

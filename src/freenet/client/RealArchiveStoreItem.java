@@ -60,7 +60,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	}
 	
 	public synchronized void finalize() {
-		super.finalize();
+		super.context.removeItem(this);
 		if(finalized) return;
 		long sz = spaceUsed();
 		underBucket.finalize();
