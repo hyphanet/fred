@@ -140,6 +140,7 @@ public class PluginToadlet extends Toadlet {
 				added = true;
 			} catch (IllegalArgumentException iae1) {
 				super.sendErrorPage(ctx, "Failed to load plugin", "Failed to load plugin", iae1);
+				return;
 			}
 			if (added) {
 				writePermanentRedirect(ctx, "Plugin list", "?action=list");
