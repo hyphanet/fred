@@ -1145,7 +1145,7 @@ public class Node {
 		}
 		
 		// Name 	 
-		nodeConfig.register("name", myName, sortOrder++, false, true, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node", 	 
+		nodeConfig.register("name", myName, sortOrder++, false, true, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting darknet node", 	 
 						new NodeNameCallback(this)); 	 
 		myName = nodeConfig.getString("name"); 	 
 
