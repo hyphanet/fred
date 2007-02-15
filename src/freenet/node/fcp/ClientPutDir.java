@@ -17,7 +17,6 @@ import freenet.client.async.ClientRequester;
 import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.keys.FreenetURI;
-import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;

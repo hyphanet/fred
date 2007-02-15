@@ -7,11 +7,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringArrOption;
 import freenet.config.SubConfig;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;

@@ -5,7 +5,6 @@ package freenet.node.fcp;
 
 import freenet.node.Node;
 import freenet.node.PeerNode;
-import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 public class ListPeerNotesMessage extends FCPMessage {

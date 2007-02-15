@@ -20,6 +20,10 @@ class UpdateDeployContext {
 
 	public class UpdateCatastropheException extends Exception {
 
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 		File oldConfig;
 		File newConfig;
 		

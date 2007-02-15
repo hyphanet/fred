@@ -32,7 +32,6 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
-import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;

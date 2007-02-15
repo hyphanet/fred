@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashSet;
 

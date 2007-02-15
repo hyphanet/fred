@@ -1,6 +1,5 @@
 package freenet.pluginmanager;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;

@@ -4,7 +4,6 @@
 package freenet.pluginmanager;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.JarURLConnection;
@@ -20,7 +19,6 @@ import java.util.Vector;
 import java.util.jar.JarFile;
 
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringArrOption;
 import freenet.config.SubConfig;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;

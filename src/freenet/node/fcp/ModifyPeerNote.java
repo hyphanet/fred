@@ -7,7 +7,6 @@ import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.Base64;
-import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
