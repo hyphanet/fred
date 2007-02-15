@@ -1236,6 +1236,8 @@ public class Node {
 		File dbDir = new File(storeDir, "database-"+portNumber);
 		dbDir.mkdirs();
 		
+		// This can take some time
+		System.out.println("Starting database...");
 		try {
 			storeEnvironment = new Environment(dbDir, envConfig);
 			envMutableConfig = storeEnvironment.getConfig();
