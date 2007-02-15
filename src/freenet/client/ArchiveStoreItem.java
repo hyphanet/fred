@@ -20,6 +20,13 @@ abstract class ArchiveStoreItem extends DoublyLinkedListImpl.Item {
 		context.addItem(this);
 	}
 	
+	/** Expected to delete any stored data on disk, and decrement cachedData.
+	 * Implemented to remove self from context.
+	 */
+	void close() {
+		context.removeItem(this);
+	}
+
 	/**
 	 * Return cached data as a Bucket, or throw an ArchiveFailureException.
 	 */

@@ -59,8 +59,8 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		return FileUtil.estimateUsage(myFilename, underBucket.size());
 	}
 	
-	public synchronized void finalize() {
-		super.context.removeItem(this);
+	synchronized void close() {
+		super.close();
 		if(finalized) return;
 		long sz = spaceUsed();
 		underBucket.finalize();

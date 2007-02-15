@@ -235,7 +235,7 @@ outer:		while(true) {
 						if(readBytes > maxArchivedFileSize) {
 							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
 							out.close();
-							temp.underBucket.finalize();
+							temp.close();
 							continue outer;
 						}
 					}
@@ -393,7 +393,7 @@ outer:		while(true) {
 	private void trimStoredData() {
 		while((cachedData > maxCachedData) || (storedData.size() > maxCachedElements)) {
 			ArchiveStoreItem e = (ArchiveStoreItem) storedData.popValue();
-			e.context.removeItem(e);
+			e.close();
 		}
 	}
 

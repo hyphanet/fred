@@ -18,4 +18,8 @@ class TempStoreElement {
 	File myFilename;
 	PaddedEphemerallyEncryptedBucket bucket;
 	FileBucket underBucket;
+	
+	public void close() {
+		underBucket.free();
+	}
 }
