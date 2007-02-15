@@ -399,6 +399,10 @@ public class FreenetURI implements Cloneable{
 	public String[] getAllMetaStrings() {
 		return metaStr;
 	}
+	
+	public boolean hasMetaStrings() {
+		return metaStr == null || metaStr.length == 0;
+	}
 
 	public byte[] getRoutingKey() {
 		return routingKey;

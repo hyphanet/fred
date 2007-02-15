@@ -16,6 +16,7 @@ import freenet.client.FetcherContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
+import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -31,8 +32,8 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	final short splitfileType;
 	final FreenetURI[] dataBlocks;
 	final FreenetURI[] checkBlocks;
-	final SingleFileFetcher[] dataBlockStatus;
-	final SingleFileFetcher[] checkBlockStatus;
+	final BaseSingleFileFetcher[] dataBlockStatus;
+	final BaseSingleFileFetcher[] checkBlockStatus;
 	final MinimalSplitfileBlock[] dataBuckets;
 	final MinimalSplitfileBlock[] checkBuckets;
 	final int minFetched;
@@ -175,11 +176,11 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			startedDecode = true;
 		}
 		for(int i=0;i<dataBlockStatus.length;i++) {
-			SingleFileFetcher f = dataBlockStatus[i];
+			BaseSingleFileFetcher f = dataBlockStatus[i];
 			if(f != null) f.cancel();
 		}
 		for(int i=0;i<checkBlockStatus.length;i++) {
-			SingleFileFetcher f = checkBlockStatus[i];
+			BaseSingleFileFetcher f = checkBlockStatus[i];
 			if(f != null) f.cancel();
 		}
 		Runnable r = new Decoder();
@@ -205,8 +206,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			FECCodec codec = FECCodec.getCodec(splitfileType, dataBlocks.length, checkBlocks.length);
 			try {
 				if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
-					// FIXME hardcoded block size below.
-					codec.decode(dataBuckets, checkBuckets, 32768, fetcherContext.bucketFactory);
+					codec.decode(dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetcherContext.bucketFactory);
 					// Now have all the data blocks (not necessarily all the check blocks)
 				}
 				
@@ -252,7 +252,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			for(int i=0;i<dataBlockStatus.length;i++) {
 				boolean heal = false;
 				if(!dataBlocksSucceeded[i]) {
-					SingleFileFetcher fetcher = dataBlockStatus[i];
+					BaseSingleFileFetcher fetcher = dataBlockStatus[i];
 					if(fetcher.getRetryCount() > 0)
 						heal = true;
 				}
@@ -269,7 +269,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			for(int i=0;i<checkBlockStatus.length;i++) {
 				boolean heal = false;
 				if(!checkBlocksSucceeded[i]) {
-					SingleFileFetcher fetcher = checkBlockStatus[i];
+					BaseSingleFileFetcher fetcher = checkBlockStatus[i];
 					if(fetcher.getRetryCount() > 0)
 						heal = true;
 				}
@@ -337,7 +337,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 				return;
 			}
 			for(int i=0;i<dataBlockStatus.length;i++) {
-				SingleFileFetcher f = dataBlockStatus[i];
+				BaseSingleFileFetcher f = dataBlockStatus[i];
 				if(f != null)
 					f.cancel();
 				MinimalSplitfileBlock b = dataBuckets[i];
@@ -348,7 +348,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 				dataBuckets[i] = null;
 			}
 			for(int i=0;i<checkBlockStatus.length;i++) {
-				SingleFileFetcher f = checkBlockStatus[i];
+				BaseSingleFileFetcher f = checkBlockStatus[i];
 				if(f != null)
 					f.cancel();
 				MinimalSplitfileBlock b = checkBuckets[i];

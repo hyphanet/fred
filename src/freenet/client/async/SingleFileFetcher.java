@@ -23,16 +23,14 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
-import freenet.keys.KeyDecodeException;
 import freenet.keys.USK;
-import freenet.node.LowLevelGetException;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.io.BucketTools;
 
-public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState {
+public class SingleFileFetcher extends SimpleSingleFileFetcher implements ClientGetState {
 
 	private static boolean logMINOR;
 	/** Original URI */
@@ -42,7 +40,6 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	/** Number of metaStrings which were added by redirects etc. They are added to the start, so this is decremented
 	 * when we consume one. */
 	private int addedMetaStrings;
-	final GetCompletionCallback rcb;
 	final ClientMetadata clientMetadata;
 	private Metadata metadata;
 	private Metadata archiveMetadata;
@@ -68,7 +65,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			ArchiveContext actx, int maxRetries, int recursionLevel,
 			boolean dontTellClientGet, Object token, boolean isEssential,
 			Bucket returnBucket, boolean isFinal) throws FetchException {
-		super(key, maxRetries, ctx, get);
+		super(key, maxRetries, ctx, get, cb, isEssential);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key+" from "+origURI+" meta="+metaStrings.toString(), new Exception("debug"));
 		this.isFinal = isFinal;
@@ -81,7 +78,6 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		//metaStrings = uri.listMetaStrings();
 		this.metaStrings = metaStrings;
 		this.addedMetaStrings = addedMetaStrings;
-		this.rcb = cb;
 		this.clientMetadata = metadata;
 		thisKey = key.getURI();
 		this.uri = origURI;
@@ -91,15 +87,13 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION, "Too much recursion: "+recursionLevel+" > "+ctx.maxRecursionLevel);
 		this.decompressors = new LinkedList();
 		parent.addBlock();
-		if(isEssential)
-			parent.addMustSucceedBlocks(1);
 	}
 
 	/** Copy constructor, modifies a few given fields, don't call schedule().
 	 * Used for things like slave fetchers for MultiLevelMetadata, therefore does not remember returnBucket,
 	 * metaStrings etc. */
 	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetcherContext ctx2) throws FetchException {
-		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent);
+		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent, callback, false);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key+" meta="+fetcher.metaStrings.toString(), new Exception("debug"));
 		this.token = fetcher.token;
@@ -113,7 +107,6 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		this.metadata = newMeta;
 		this.metaStrings = new LinkedList();
 		this.addedMetaStrings = 0;
-		this.rcb = callback;
 		this.recursionLevel = fetcher.recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION);
@@ -127,19 +120,8 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	public void onSuccess(ClientKeyBlock block, boolean fromStore) {
 		parent.completedBlock(fromStore);
 		// Extract data
-		Bucket data;
-		try {
-			data = block.decode(ctx.bucketFactory, (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
-		} catch (KeyDecodeException e1) {
-			if(logMINOR)
-				Logger.minor(this, "Decode failure: "+e1, e1);
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()));
-			return;
-		} catch (IOException e) {
-			Logger.error(this, "Could not capture data - disk full?: "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e));
-			return;
-		}
+		Bucket data = extract(block);
+		if(data == null) return; // failed
 		if(!block.isMetadata()) {
 			onSuccess(new FetchResult(clientMetadata, data));
 		} else {
@@ -182,7 +164,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		}
 	}
 
-	private void onSuccess(FetchResult result) {
+	protected void onSuccess(FetchResult result) {
 		if(parent.isCancelled()) {
 			result.asBucket().free();
 			onFailure(new FetchException(FetchException.CANCELLED));
@@ -544,69 +526,6 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		
 	}
 	
-	final void onFailure(FetchException e) {
-		onFailure(e, false);
-	}
-	
-	// Real onFailure
-	protected void onFailure(FetchException e, boolean forceFatal) {
-		if(parent.isCancelled() || cancelled) {
-			if(logMINOR) Logger.minor(this, "Failing: cancelled");
-			e = new FetchException(FetchException.CANCELLED);
-			forceFatal = true;
-		}
-		if(!(e.isFatal() || forceFatal) ) {
-			if(retry()) return;
-		}
-		// :(
-		if(e.isFatal() || forceFatal)
-			parent.fatallyFailedBlock();
-		else
-			parent.failedBlock();
-		rcb.onFailure(e, this);
-	}
-
-	// Translate it, then call the real onFailure
-	public void onFailure(LowLevelGetException e) {
-		switch(e.code) {
-		case LowLevelGetException.DATA_NOT_FOUND:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND));
-			return;
-		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND));
-			return;
-		case LowLevelGetException.DECODE_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR));
-			return;
-		case LowLevelGetException.INTERNAL_ERROR:
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR));
-			return;
-		case LowLevelGetException.REJECTED_OVERLOAD:
-			onFailure(new FetchException(FetchException.REJECTED_OVERLOAD));
-			return;
-		case LowLevelGetException.ROUTE_NOT_FOUND:
-			onFailure(new FetchException(FetchException.ROUTE_NOT_FOUND));
-			return;
-		case LowLevelGetException.TRANSFER_FAILED:
-			onFailure(new FetchException(FetchException.TRANSFER_FAILED));
-			return;
-		case LowLevelGetException.VERIFY_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR));
-			return;
-		case LowLevelGetException.CANCELLED:
-			onFailure(new FetchException(FetchException.CANCELLED));
-			return;
-		default:
-			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR));
-			return;
-		}
-	}
-
-	public void schedule() {
-		super.schedule();
-	}
-	
 	public Object getToken() {
 		return token;
 	}
@@ -615,8 +534,18 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		return ctx.ignoreStore;
 	}
 
-	public static ClientGetState create(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket, boolean isFinal) throws MalformedURLException, FetchException {
+	/**
+	 * Create a fetcher for a key.
+	 */
+	public static ClientGetState create(BaseClientGetter parent, GetCompletionCallback cb, 
+			ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, 
+			int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, 
+			Bucket returnBucket, boolean isFinal) throws MalformedURLException, FetchException {
 		BaseClientKey key = BaseClientKey.getBaseKey(uri);
+		if((clientMetadata == null || clientMetadata.isTrivial()) && (!uri.hasMetaStrings()) &&
+				ctx.allowSplitfiles == false && ctx.followRedirects == true && token == null &&
+				returnBucket == null && key instanceof ClientKey)
+			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, parent, cb, isEssential);
 		if(key instanceof ClientKey)
 			return new SingleFileFetcher(parent, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket, isFinal);
 		else {

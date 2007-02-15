@@ -9,11 +9,13 @@ import freenet.support.RandomGrabArrayItem;
  */
 public interface SendableRequest extends RandomGrabArrayItem {
 	
+	/** Get the priority class of the request. */
 	public short getPriorityClass();
 	
 	public int getRetryCount();
 	
-	/** ONLY called by RequestStarter */
+	/** ONLY called by RequestStarter. Start the actual request using the NodeClientCore
+	 * provided. The request has been removed from the structure already. */
 	public void send(NodeClientCore node);
 	
 	/** Get client context object */
