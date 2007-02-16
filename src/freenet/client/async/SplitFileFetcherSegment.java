@@ -39,7 +39,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	final int minFetched;
 	final SplitFileFetcher parentFetcher;
 	final ArchiveContext archiveContext;
-	final FetchContext fetcherContext;
+	final FetchContext fetchContext;
 	final long maxBlockLength;
 	/** Has the segment finished processing? Irreversible. */
 	private boolean finished;
@@ -80,9 +80,9 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		}
 		for(int i=0;i<checkBuckets.length;i++)
 			checkBuckets[i] = new MinimalSplitfileBlock(i+dataBuckets.length);
-		this.fetcherContext = fetchContext;
+		this.fetchContext = fetchContext;
 		maxBlockLength = maxTempLength;
-		blockFetchContext = new FetchContext(fetcherContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
+		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
 		this.recursionLevel = 0;
 		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher);
 		for(int i=0;i<dataBlocks.length;i++)
@@ -198,11 +198,11 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			FECCodec codec = FECCodec.getCodec(splitfileType, dataBlocks.length, checkBlocks.length);
 			try {
 				if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
-					codec.decode(dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetcherContext.bucketFactory);
+					codec.decode(dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetchContext.bucketFactory);
 					// Now have all the data blocks (not necessarily all the check blocks)
 				}
 				
-				decodedData = fetcherContext.bucketFactory.makeBucket(-1);
+				decodedData = fetchContext.bucketFactory.makeBucket(-1);
 				if(logMINOR) Logger.minor(this, "Copying data from data blocks");
 				OutputStream os = decodedData.getOutputStream();
 				for(int i=0;i<dataBlockStatus.length;i++) {
@@ -234,7 +234,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			// Encode any check blocks we don't have
 			if(codec != null) {
 				try {
-					codec.encode(dataBuckets, checkBuckets, 32768, fetcherContext.bucketFactory);
+					codec.encode(dataBuckets, checkBuckets, 32768, fetchContext.bucketFactory);
 				} catch (IOException e) {
 					Logger.error(this, "Bucket error while healing: "+e, e);
 				}
@@ -280,7 +280,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 
 	private void queueHeal(Bucket data) {
 		if(logMINOR) Logger.minor(this, "Queueing healing insert");
-		fetcherContext.healingQueue.queue(data);
+		fetchContext.healingQueue.queue(data);
 	}
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal */
