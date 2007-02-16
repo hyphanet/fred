@@ -41,7 +41,6 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	final ArchiveContext archiveContext;
 	final FetcherContext fetcherContext;
 	final long maxBlockLength;
-	final boolean nonFullBlocksAllowed;
 	/** Has the segment finished processing? Irreversible. */
 	private boolean finished;
 	private boolean startedDecode;
@@ -57,7 +56,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	private int fetchedBlocks;
 	private final FailureCodeTracker errors;
 	
-	public SplitFileFetcherSegment(short splitfileType, FreenetURI[] splitfileDataBlocks, FreenetURI[] splitfileCheckBlocks, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetcherContext fetchContext, long maxTempLength, boolean splitUseLengths, int recursionLevel) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, FreenetURI[] splitfileDataBlocks, FreenetURI[] splitfileCheckBlocks, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetcherContext fetchContext, long maxTempLength, int recursionLevel) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parentFetcher = fetcher;
 		this.errors = new FailureCodeTracker(false);
@@ -81,16 +80,10 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		}
 		for(int i=0;i<checkBuckets.length;i++)
 			checkBuckets[i] = new MinimalSplitfileBlock(i+dataBuckets.length);
-		nonFullBlocksAllowed = splitUseLengths;
 		this.fetcherContext = fetchContext;
 		maxBlockLength = maxTempLength;
-		if(splitUseLengths) {
-			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_USE_LENGTHS_MASK, true);
-			this.recursionLevel = recursionLevel + 1;
-		} else {
-			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
-			this.recursionLevel = 0;
-		}
+		blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
+		this.recursionLevel = 0;
 		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher);
 		for(int i=0;i<dataBlocks.length;i++)
 			if(dataBlocks[i] == null) throw new NullPointerException("Null: data block "+i);

@@ -59,15 +59,13 @@ public class Metadata implements Cloneable {
 	boolean extraMetadata;
 	/** Keys stored in full (otherwise assumed to be CHKs) */
 	boolean fullKeys;
-	/** Non-final splitfile chunks can be non-full */
-	boolean splitUseLengths;
 	static final short FLAGS_SPLITFILE = 1;
 	static final short FLAGS_DBR = 2;
 	static final short FLAGS_NO_MIME = 4;
 	static final short FLAGS_COMPRESSED_MIME = 8;
 	static final short FLAGS_EXTRA_METADATA = 16;
 	static final short FLAGS_FULL_KEYS = 32;
-	static final short FLAGS_SPLIT_USE_LENGTHS = 64;
+//	static final short FLAGS_SPLIT_USE_LENGTHS = 64; FIXME not supported, reassign to something else if we need a new flag
 	static final short FLAGS_COMPRESSED = 128;
 	
 	/** Container archive type */
@@ -106,8 +104,8 @@ public class Metadata implements Cloneable {
 	byte[] splitfileParams;
 	int splitfileBlocks;
 	int splitfileCheckBlocks;
-	FreenetURI[] splitfileDataKeys;
-	FreenetURI[] splitfileCheckKeys;
+	ClientCHK[] splitfileDataKeys;
+	ClientCHK[] splitfileCheckKeys;
 	
 	// Manifests
 	/** Manifest entries by name */
@@ -189,7 +187,6 @@ public class Metadata implements Cloneable {
 			compressedMIME = (flags & FLAGS_COMPRESSED_MIME) == FLAGS_COMPRESSED_MIME;
 			extraMetadata = (flags & FLAGS_EXTRA_METADATA) == FLAGS_EXTRA_METADATA;
 			fullKeys = (flags & FLAGS_FULL_KEYS) == FLAGS_FULL_KEYS;
-			splitUseLengths = (flags & FLAGS_SPLIT_USE_LENGTHS) == FLAGS_SPLIT_USE_LENGTHS;
 			compressed = (flags & FLAGS_COMPRESSED) == FLAGS_COMPRESSED;
 		}
 		
@@ -207,7 +204,7 @@ public class Metadata implements Cloneable {
 				throw new MetadataParseException("Invalid real content length "+dataLength);
 			
 			if(dataLength == -1) {
-				if(splitfile && !splitUseLengths)
+				if(splitfile)
 					throw new MetadataParseException("Splitfile must have a real-length");
 			}
 		}
@@ -276,8 +273,8 @@ public class Metadata implements Cloneable {
 				throw new MetadataParseException("Unknown splitfile algorithm "+splitfileAlgorithm);
 			
 			if((splitfileAlgorithm == SPLITFILE_NONREDUNDANT) &&
-					!(fullKeys || splitUseLengths))
-				throw new MetadataParseException("Non-redundant splitfile invalid unless whacky");
+					!fullKeys)
+				throw new MetadataParseException("Non-redundant splitfile invalid");
 			
 			int paramsLength = dis.readInt();
 			if(paramsLength > MAX_SPLITFILE_PARAMS_LENGTH)
@@ -301,13 +298,13 @@ public class Metadata implements Cloneable {
 			if(splitfileCheckBlocks > MAX_SPLITFILE_BLOCKS)
 				throw new MetadataParseException("Too many splitfile check-blocks (soft limit to prevent memory DoS): "+splitfileCheckBlocks);
 			
-			splitfileDataKeys = new FreenetURI[splitfileBlocks];
-			splitfileCheckKeys = new FreenetURI[splitfileCheckBlocks];
+			splitfileDataKeys = new ClientCHK[splitfileBlocks];
+			splitfileCheckKeys = new ClientCHK[splitfileCheckBlocks];
 			for(int i=0;i<splitfileDataKeys.length;i++)
-				if((splitfileDataKeys[i] = readKey(dis)) == null)
+				if((splitfileDataKeys[i] = readCHK(dis)) == null)
 					throw new MetadataParseException("Null data key "+i);
 			for(int i=0;i<splitfileCheckKeys.length;i++)
-				if((splitfileCheckKeys[i] = readKey(dis)) == null)
+				if((splitfileCheckKeys[i] = readCHK(dis)) == null)
 					throw new MetadataParseException("Null check key: "+i);
 		}
 		
@@ -542,13 +539,14 @@ public class Metadata implements Cloneable {
 				noMIME = true;
 			}
 			simpleRedirectKey = uri;
-			if(!(uri.getKeyType().equals("CHK") && ((uri.getAllMetaStrings() == null) || (uri.getAllMetaStrings().length == 0))))
+			if(!(uri.getKeyType().equals("CHK") && !uri.hasMetaStrings()))
 				fullKeys = true;
 		} else
 			throw new IllegalArgumentException();
 	}
 
-	public Metadata(short algo, FreenetURI[] dataURIs, FreenetURI[] checkURIs, int segmentSize, int checkSegmentSize, ClientMetadata cm, long dataLength, short compressionAlgo, boolean isMetadata, boolean insertAsArchiveManifest) {
+	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, 
+			ClientMetadata cm, long dataLength, short compressionAlgo, boolean isMetadata, boolean insertAsArchiveManifest) {
 		if(isMetadata)
 			documentType = MULTI_LEVEL_METADATA;
 		else {
@@ -602,6 +600,13 @@ public class Metadata implements Cloneable {
 		return baos.toByteArray();
 	}
 
+	private ClientCHK readCHK(DataInputStream dis) throws IOException, MetadataParseException {
+		if(fullKeys) {
+			throw new MetadataParseException("fullKeys not supported on a splitfile");
+		}
+		return ClientCHK.readRawBinaryKey(dis);
+	}
+	
 	/**
 	 * Read a key using the current settings.
 	 * @throws IOException 
@@ -633,6 +638,14 @@ public class Metadata implements Cloneable {
 			if(key instanceof ClientCHK) {
 				((ClientCHK)key).writeRawBinaryKey(dos);
 			} else throw new IllegalArgumentException("Full keys must be enabled to write non-CHKs");
+		}
+	}
+	
+	private void writeCHK(DataOutputStream dos, ClientCHK chk) throws IOException {
+		if(fullKeys) {
+			throw new UnsupportedOperationException("Full keys not supported on splitfiles");
+		} else {
+			chk.writeRawBinaryKey(dos);
 		}
 	}
 	
@@ -746,7 +759,6 @@ public class Metadata implements Cloneable {
 			if(compressedMIME) flags |= FLAGS_COMPRESSED_MIME;
 			if(extraMetadata) flags |= FLAGS_EXTRA_METADATA;
 			if(fullKeys) flags |= FLAGS_FULL_KEYS;
-			if(splitUseLengths) flags |= FLAGS_SPLIT_USE_LENGTHS;
 			if(compressionCodec >= 0) flags |= FLAGS_COMPRESSED;
 			dos.writeShort(flags);
 		}
@@ -798,9 +810,9 @@ public class Metadata implements Cloneable {
 			dos.writeInt(splitfileBlocks);
 			dos.writeInt(splitfileCheckBlocks);
 			for(int i=0;i<splitfileBlocks;i++)
-				writeKey(dos, splitfileDataKeys[i]);
+				writeCHK(dos, splitfileDataKeys[i]);
 			for(int i=0;i<splitfileCheckBlocks;i++)
-				writeKey(dos, splitfileCheckKeys[i]);
+				writeCHK(dos, splitfileCheckKeys[i]);
 		}
 		
 		if(documentType == SIMPLE_MANIFEST) {
@@ -860,20 +872,16 @@ public class Metadata implements Cloneable {
 		return splitfileAlgorithm;
 	}
 
-	public FreenetURI[] getSplitfileDataKeys() {
+	public ClientCHK[] getSplitfileDataKeys() {
 		return splitfileDataKeys;
 	}
 	
-	public FreenetURI[] getSplitfileCheckKeys() {
+	public ClientCHK[] getSplitfileCheckKeys() {
 		return splitfileCheckKeys;
 	}
 
 	public boolean isCompressed() {
 		return compressionCodec >= 0;
-	}
-
-	public boolean splitUseLengths() {
-		return splitUseLengths;
 	}
 
 	public short getCompressionCodec() {

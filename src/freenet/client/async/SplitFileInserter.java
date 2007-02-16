@@ -13,6 +13,7 @@ import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.keys.CHKBlock;
+import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -271,8 +272,8 @@ public class SplitFileInserter implements ClientPutState {
 		Metadata m = null;
 		synchronized(this) {
 			// Create metadata
-			FreenetURI[] dataURIs = getDataURIs();
-			FreenetURI[] checkURIs = getCheckURIs();
+			ClientCHK[] dataURIs = getDataCHKs();
+			ClientCHK[] checkURIs = getCheckCHKs();
 			
 			if(logMINOR) Logger.minor(this, "Data URIs: "+dataURIs.length+", check URIs: "+checkURIs.length);
 			
@@ -308,13 +309,13 @@ public class SplitFileInserter implements ClientPutState {
 		return false;
 	}
 
-	private FreenetURI[] getCheckURIs() {
+	private ClientCHK[] getCheckCHKs() {
 		// Copy check blocks from each segment into a FreenetURI[].
-		FreenetURI[] uris = new FreenetURI[countCheckBlocks];
+		ClientCHK[] uris = new ClientCHK[countCheckBlocks];
 		int x = 0;
 		for(int i=0;i<segments.length;i++) {
-			FreenetURI[] segURIs = segments[i].getCheckURIs();
-			if(x + segURIs.length > countCheckBlocks) 
+			ClientCHK[] segURIs = segments[i].getCheckCHKs();
+			if(x + segURIs.length > countCheckBlocks)
 				throw new IllegalStateException("x="+x+", segURIs="+segURIs.length+", countCheckBlocks="+countCheckBlocks);
 			System.arraycopy(segURIs, 0, uris, x, segURIs.length);
 			x += segURIs.length;
@@ -326,12 +327,12 @@ public class SplitFileInserter implements ClientPutState {
 		return uris;
 	}
 
-	private FreenetURI[] getDataURIs() {
+	private ClientCHK[] getDataCHKs() {
 		// Copy check blocks from each segment into a FreenetURI[].
-		FreenetURI[] uris = new FreenetURI[countDataBlocks];
+		ClientCHK[] uris = new ClientCHK[countDataBlocks];
 		int x = 0;
 		for(int i=0;i<segments.length;i++) {
-			FreenetURI[] segURIs = segments[i].getDataURIs();
+			ClientCHK[] segURIs = segments[i].getDataCHKs();
 			if(x + segURIs.length > countDataBlocks) 
 				throw new IllegalStateException("x="+x+", segURIs="+segURIs.length+", countDataBlocks="+countDataBlocks);
 			System.arraycopy(segURIs, 0, uris, x, segURIs.length);

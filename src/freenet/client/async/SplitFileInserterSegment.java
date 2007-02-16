@@ -10,6 +10,8 @@ import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
+import freenet.keys.ClientCHK;
+import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -26,8 +28,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	final FECCodec splitfileAlgo;
 	final Bucket[] dataBlocks;
 	final Bucket[] checkBlocks;
-	final FreenetURI[] dataURIs;
-	final FreenetURI[] checkURIs;
+	final ClientCHK[] dataURIs;
+	final ClientCHK[] checkURIs;
 	final SingleBlockInserter[] dataBlockInserters;
 	final SingleBlockInserter[] checkBlockInserters;
 	final InserterContext blockInsertContext;
@@ -52,8 +54,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		this.dataBlocks = origDataBlocks;
 		int checkBlockCount = splitfileAlgo == null ? 0 : splitfileAlgo.countCheckBlocks();
 		checkBlocks = new Bucket[checkBlockCount];
-		checkURIs = new FreenetURI[checkBlockCount];
-		dataURIs = new FreenetURI[origDataBlocks.length];
+		checkURIs = new ClientCHK[checkBlockCount];
+		dataURIs = new ClientCHK[origDataBlocks.length];
 		dataBlockInserters = new SingleBlockInserter[dataBlocks.length];
 		checkBlockInserters = new SingleBlockInserter[checkBlocks.length];
 		parent.parent.addBlocks(dataURIs.length+checkURIs.length);
@@ -97,7 +99,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		hasURIs = true;
 		
 		dataBlocks = new Bucket[dataBlockCount];
-		dataURIs = new FreenetURI[dataBlockCount];
+		dataURIs = new ClientCHK[dataBlockCount];
 		dataBlockInserters = new SingleBlockInserter[dataBlockCount];
 
 		// Check blocks first, because if there are missing check blocks, we need
@@ -114,7 +116,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				throw new ResumeException("Corrupt check blocks count: "+e+" : "+tmp);
 			}
 			checkBlocks = new Bucket[checkBlockCount];
-			checkURIs = new FreenetURI[checkBlockCount];
+			checkURIs = new ClientCHK[checkBlockCount];
 			checkBlockInserters = new SingleBlockInserter[checkBlockCount];
 			for(int i=0;i<checkBlockCount;i++) {
 				String index = Integer.toString(i);
@@ -128,7 +130,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				tmp = blockFS.get("URI");
 				if(tmp != null) {
 					try {
-						checkURIs[i] = new FreenetURI(tmp);
+						checkURIs[i] = (ClientCHK) ClientKey.getBaseKey(new FreenetURI(tmp));
 						blocksGotURI++;
 					} catch (MalformedURLException e) {
 						throw new ResumeException("Corrupt URI: "+e+" : "+tmp);
@@ -170,7 +172,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			encoded = false;
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm, dataBlockCount);
 			int checkBlocksCount = splitfileAlgo.countCheckBlocks();
-			this.checkURIs = new FreenetURI[checkBlocksCount];
+			this.checkURIs = new ClientCHK[checkBlocksCount];
 			this.checkBlocks = new Bucket[checkBlocksCount];
 			this.checkBlockInserters = new SingleBlockInserter[checkBlocksCount];
 			hasURIs = false;
@@ -183,7 +185,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			tmp = blockFS.get("URI");
 			if(tmp != null) {
 				try {
-					dataURIs[i] = new FreenetURI(tmp);
+					dataURIs[i] = (ClientCHK) ClientKey.getBaseKey(new FreenetURI(tmp));
 					blocksGotURI++;
 				} catch (MalformedURLException e) {
 					throw new ResumeException("Corrupt URI: "+e+" : "+tmp);
@@ -242,7 +244,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		for(int i=0;i<dataBlocks.length;i++) {
 			SimpleFieldSet block = new SimpleFieldSet(false);
 			if(dataURIs[i] != null)
-				block.putSingle("URI", dataURIs[i].toString());
+				block.putSingle("URI", dataURIs[i].getURI().toString());
 			SingleBlockInserter sbi =
 				dataBlockInserters[i];
 			// If started, then sbi = null => block finished.
@@ -274,7 +276,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		for(int i=0;i<checkBlocks.length;i++) {
 			SimpleFieldSet block = new SimpleFieldSet(false);
 			if(checkURIs[i] != null)
-				block.putSingle("URI", checkURIs[i].toString());
+				block.putSingle("URI", checkURIs[i].getURI().toString());
 			SingleBlockInserter sbi =
 				checkBlockInserters[i];
 			// If encoded, then sbi == null => block finished
@@ -425,22 +427,22 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		parent.segmentFinished(this);
 	}
 	
-	public void onEncode(BaseClientKey key, ClientPutState state) {
+	public void onEncode(BaseClientKey k, ClientPutState state) {
+		ClientCHK key = (ClientCHK)k;
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		int x = sbi.token;
-		FreenetURI uri = key.getURI();
 		synchronized(this) {
 			if(finished) return;
 			if(x >= dataBlocks.length) {
 				if(checkURIs[x-dataBlocks.length] != null) {
 					return;
 				}
-				checkURIs[x-dataBlocks.length] = uri;
+				checkURIs[x-dataBlocks.length] = key;
 			} else {
 				if(dataURIs[x] != null) {
 					return;
 				}
-				dataURIs[x] = uri;
+				dataURIs[x] = key;
 			}
 			blocksGotURI++;
 			if(blocksGotURI != dataBlocks.length + checkBlocks.length) return;
@@ -544,11 +546,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		return dataBlocks.length;
 	}
 
-	public FreenetURI[] getCheckURIs() {
+	public ClientCHK[] getCheckCHKs() {
 		return checkURIs;
 	}
 
-	public FreenetURI[] getDataURIs() {
+	public ClientCHK[] getDataCHKs() {
 		return dataURIs;
 	}
 	

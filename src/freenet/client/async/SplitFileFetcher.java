@@ -15,6 +15,7 @@ import freenet.client.FetcherContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.keys.CHKBlock;
+import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -46,17 +47,15 @@ public class SplitFileFetcher implements ClientGetState {
 	/** The detailed information on each segment */
 	final SplitFileFetcherSegment[] segments;
 	/** The splitfile data blocks. */
-	final FreenetURI[] splitfileDataBlocks;
+	final ClientCHK[] splitfileDataBlocks;
 	/** The splitfile check blocks. */
-	final FreenetURI[] splitfileCheckBlocks;
+	final ClientCHK[] splitfileCheckBlocks;
 	/** Maximum temporary length */
 	final long maxTempLength;
 	/** Have all segments finished? Access synchronized. */
 	private boolean allSegmentsFinished;
 	/** Override length. If this is positive, truncate the splitfile to this length. */
 	private final long overrideLength;
-	/** Accept non-full splitfile chunks? */
-	private final boolean splitUseLengths;
 	/** Preferred bucket to return data in */
 	private final Bucket returnBucket;
 	private boolean finished;
@@ -91,7 +90,6 @@ public class SplitFileFetcher implements ClientGetState {
 			finalLength = overrideLength;
 		}
 		
-		splitUseLengths = metadata.splitUseLengths();
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			// Don't need to do much - just fetch everything and piece it together.
 			blocksPerSegment = -1;
@@ -124,7 +122,7 @@ public class SplitFileFetcher implements ClientGetState {
 			if(splitfileCheckBlocks.length > 0)
 				System.arraycopy(splitfileCheckBlocks, 0, newSplitfileCheckBlocks, 0, splitfileCheckBlocks.length);
 			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks, 
-					this, archiveContext, fetchContext, maxTempLength, splitUseLengths, recursionLevel);
+					this, archiveContext, fetchContext, maxTempLength, recursionLevel);
 		} else {
 			int dataBlocksPtr = 0;
 			int checkBlocksPtr = 0;
@@ -140,7 +138,8 @@ public class SplitFileFetcher implements ClientGetState {
 					System.arraycopy(splitfileCheckBlocks, checkBlocksPtr, checkBlocks, 0, copyCheckBlocks);
 				dataBlocksPtr += copyDataBlocks;
 				checkBlocksPtr += copyCheckBlocks;
-				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, fetchContext, maxTempLength, splitUseLengths, recursionLevel+1);
+				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, 
+						fetchContext, maxTempLength, recursionLevel+1);
 			}
 		}
 		this.token = token2;
