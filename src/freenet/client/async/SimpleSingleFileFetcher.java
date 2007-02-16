@@ -22,14 +22,17 @@ import freenet.support.api.Bucket;
  */
 public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState {
 
-	SimpleSingleFileFetcher(ClientKey key, int maxRetries, FetcherContext ctx, BaseClientGetter parent, GetCompletionCallback rcb, boolean isEssential) {
+	SimpleSingleFileFetcher(ClientKey key, int maxRetries, FetcherContext ctx, BaseClientGetter parent, GetCompletionCallback rcb, boolean isEssential, long l) {
 		super(key, maxRetries, ctx, parent);
 		this.rcb = rcb;
+		this.token = l;
+		parent.addBlock();
 		if(isEssential)
 			parent.addMustSucceedBlocks(1);
 	}
 
 	final GetCompletionCallback rcb;
+	final long token;
 	
 	// Translate it, then call the real onFailure
 	public void onFailure(LowLevelGetException e) {
@@ -132,8 +135,8 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	/** getToken() is not supported */
-	public Object getToken() {
-		throw new UnsupportedOperationException();
+	public long getToken() {
+		return token;
 	}
 
 }

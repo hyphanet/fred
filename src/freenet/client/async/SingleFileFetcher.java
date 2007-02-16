@@ -30,7 +30,7 @@ import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.io.BucketTools;
 
-public class SingleFileFetcher extends SimpleSingleFileFetcher implements ClientGetState {
+public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	private static boolean logMINOR;
 	/** Original URI */
@@ -51,7 +51,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher implements Client
 	private FreenetURI thisKey;
 	private final LinkedList decompressors;
 	private final boolean dontTellClientGet;
-	private Object token;
 	private final Bucket returnBucket;
 	/** If true, success/failure is immediately reported to the client, and therefore we can check TOO_MANY_PATH_COMPONENTS. */
 	private final boolean isFinal;
@@ -63,16 +62,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher implements Client
 	public SingleFileFetcher(BaseClientGetter get, GetCompletionCallback cb, ClientMetadata metadata,
 			ClientKey key, LinkedList metaStrings, FreenetURI origURI, int addedMetaStrings, FetcherContext ctx,
 			ArchiveContext actx, int maxRetries, int recursionLevel,
-			boolean dontTellClientGet, Object token, boolean isEssential,
+			boolean dontTellClientGet, long l, boolean isEssential,
 			Bucket returnBucket, boolean isFinal) throws FetchException {
-		super(key, maxRetries, ctx, get, cb, isEssential);
+		super(key, maxRetries, ctx, get, cb, isEssential, l);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key+" from "+origURI+" meta="+metaStrings.toString(), new Exception("debug"));
 		this.isFinal = isFinal;
 		this.cancelled = false;
 		this.returnBucket = returnBucket;
 		this.dontTellClientGet = dontTellClientGet;
-		this.token = token;
 		//this.uri = uri;
 		//this.key = ClientKey.getBaseKey(uri);
 		//metaStrings = uri.listMetaStrings();
@@ -86,17 +84,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher implements Client
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION, "Too much recursion: "+recursionLevel+" > "+ctx.maxRecursionLevel);
 		this.decompressors = new LinkedList();
-		parent.addBlock();
 	}
 
 	/** Copy constructor, modifies a few given fields, don't call schedule().
 	 * Used for things like slave fetchers for MultiLevelMetadata, therefore does not remember returnBucket,
 	 * metaStrings etc. */
 	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetcherContext ctx2) throws FetchException {
-		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent, callback, false);
+		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent, callback, false, fetcher.token);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key+" meta="+fetcher.metaStrings.toString(), new Exception("debug"));
-		this.token = fetcher.token;
 		this.returnBucket = null;
 		// We expect significant further processing in the parent
 		this.isFinal = false;
@@ -526,10 +522,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher implements Client
 		
 	}
 	
-	public Object getToken() {
-		return token;
-	}
-
 	public boolean ignoreStore() {
 		return ctx.ignoreStore;
 	}
@@ -539,21 +531,26 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher implements Client
 	 */
 	public static ClientGetState create(BaseClientGetter parent, GetCompletionCallback cb, 
 			ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, 
-			int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, 
+			int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, 
 			Bucket returnBucket, boolean isFinal) throws MalformedURLException, FetchException {
 		BaseClientKey key = BaseClientKey.getBaseKey(uri);
 		if((clientMetadata == null || clientMetadata.isTrivial()) && (!uri.hasMetaStrings()) &&
-				ctx.allowSplitfiles == false && ctx.followRedirects == false && token == null &&
+				ctx.allowSplitfiles == false && ctx.followRedirects == false && 
 				returnBucket == null && key instanceof ClientKey)
-			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, parent, cb, isEssential);
+			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, parent, cb, isEssential, l);
+		else
+			if(logMINOR) 
+				Logger.minor(SingleFileFetcher.class, "Not creating SimpleSingleFileFetcher: cm="+clientMetadata+
+					" uri="+uri+" ("+uri.getAllMetaStrings()+") ctx.allowSplitfiles="+ctx.allowSplitfiles+
+						"ctx.followRedirects="+ctx.followRedirects+" returnBucket="+returnBucket+" key="+key, new Exception());
 		if(key instanceof ClientKey)
-			return new SingleFileFetcher(parent, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket, isFinal);
+			return new SingleFileFetcher(parent, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal);
 		else {
-			return uskCreate(parent, cb, clientMetadata, (USK)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket, isFinal);
+			return uskCreate(parent, cb, clientMetadata, (USK)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal);
 		}
 	}
 
-	private static ClientGetState uskCreate(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket, boolean isFinal) throws FetchException {
+	private static ClientGetState uskCreate(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, Bucket returnBucket, boolean isFinal) throws FetchException {
 		if(usk.suggestedEdition >= 0) {
 			// Return the latest known version but at least suggestedEdition.
 			long edition = ctx.uskManager.lookup(usk);
@@ -573,7 +570,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher implements Client
 					SingleFileFetcher sf = 
 						new SingleFileFetcher(parent, myCB, clientMetadata, usk.getSSK(), metaStrings, 
 								usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, maxRetries, recursionLevel, 
-								dontTellClientGet, token, false, returnBucket, isFinal);
+								dontTellClientGet, l, false, returnBucket, isFinal);
 					return sf;
 				}
 			} else {
@@ -586,7 +583,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher implements Client
 				ctx.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, parent, false);
 			if(isEssential)
 				parent.addMustSucceedBlocks(1);
-			fetcher.addCallback(new MyUSKFetcherCallback(parent, cb, clientMetadata, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, returnBucket));
+			fetcher.addCallback(new MyUSKFetcherCallback(parent, cb, clientMetadata, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket));
 			return fetcher;
 		}
 	}
@@ -603,10 +600,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher implements Client
 		final int maxRetries;
 		final int recursionLevel;
 		final boolean dontTellClientGet;
-		final Object token;
+		final long token;
 		final Bucket returnBucket;
 		
-		public MyUSKFetcherCallback(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, Bucket returnBucket) {
+		public MyUSKFetcherCallback(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket) {
 			this.parent = parent;
 			this.cb = cb;
 			this.clientMetadata = clientMetadata;
@@ -617,7 +614,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher implements Client
 			this.maxRetries = maxRetries;
 			this.recursionLevel = recursionLevel;
 			this.dontTellClientGet = dontTellClientGet;
-			this.token = token;
+			this.token = l;
 			this.returnBucket = returnBucket;
 		}
 

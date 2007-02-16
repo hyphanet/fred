@@ -23,7 +23,8 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	final FetcherContext ctx;
 	final USKRetrieverCallback cb;
 	
-	public USKRetriever(FetcherContext fctx, short prio, ClientRequestScheduler chkSched, ClientRequestScheduler sskSched, Object client, USKRetrieverCallback cb) {
+	public USKRetriever(FetcherContext fctx, short prio, ClientRequestScheduler chkSched, 
+			ClientRequestScheduler sskSched, Object client, USKRetrieverCallback cb) {
 		super(prio, chkSched, sskSched, client);
 		this.ctx = fctx;
 		this.cb = cb;
@@ -38,7 +39,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		try {
 			SingleFileFetcher getter =
 				(SingleFileFetcher) SingleFileFetcher.create(this, this, new ClientMetadata(), uri, ctx, new ArchiveContext(ctx.maxArchiveLevels), 
-						ctx.maxNonSplitfileRetries, 0, true, key.copy(l), true, null, false);
+						ctx.maxNonSplitfileRetries, 0, true, l, true, null, false);
 			getter.schedule();
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Impossible: "+e, e);
@@ -48,14 +49,11 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetState state) {
-		Object token = state.getToken();
-		USK key = (USK) token;
-		cb.onFound(key.suggestedEdition, result);
+		cb.onFound(state.getToken(), result);
 	}
 
 	public void onFailure(FetchException e, ClientGetState state) {
-		Object token = state.getToken();
-		Logger.error(this, "Found "+token+" but failed to fetch edition: "+e, e);
+		Logger.error(this, "Found edition "+state.getToken()+" but failed to fetch edition: "+e, e);
 	}
 
 	public void onBlockSetFinished(ClientGetState state) {

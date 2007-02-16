@@ -198,14 +198,14 @@ public class USKFetcher implements ClientGetState {
 	
 	private boolean started;
 
-	private Object token;
+	private int token;
 	
-	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, BaseClientGetter parent, int minFailures, boolean pollForever, boolean keepLastData, Object token) {
+	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, BaseClientGetter parent, int minFailures, boolean pollForever, boolean keepLastData, int token) {
 		this(origUSK, manager, ctx, parent, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData, token);
 	}
 	
 	// FIXME use this!
-	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, BaseClientGetter parent, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData, Object token) {
+	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, BaseClientGetter parent, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData, int token) {
 		this.parent = parent;
 		this.maxMinFailures = maxProbeEditions;
 		this.origUSK = origUSK;
@@ -517,7 +517,7 @@ public class USKFetcher implements ClientGetState {
 		this.killOnLoseSubscribers = true;
 	}
 
-	public Object getToken() {
+	public long getToken() {
 		return token;
 	}
 	

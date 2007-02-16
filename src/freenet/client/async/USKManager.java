@@ -89,14 +89,14 @@ public class USKManager {
 			if((f.parent.priorityClass == parent.priorityClass) && f.ctx.equals(ctx) && f.keepLastData == keepLastData)
 				return f;
 		}
-		f = new USKFetcher(usk, this, ctx, parent, 3, false, keepLastData, null);
+		f = new USKFetcher(usk, this, ctx, parent, 3, false, keepLastData, -1);
 		fetchersByUSK.put(usk, f);
 		return f;
 	}
 
 	public USKFetcher getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, Object client) {
 		USKFetcher f = new USKFetcher(usk, this, backgroundFetchContext, 
-				new USKFetcherWrapper(usk, prioClass, chkRequestScheduler, sskRequestScheduler, client), 3, false, true, null);
+				new USKFetcherWrapper(usk, prioClass, chkRequestScheduler, sskRequestScheduler, client), 3, false, true, -1);
 		f.addCallback(cb);
 		return f;
 	}
@@ -107,7 +107,7 @@ public class USKManager {
 		synchronized(this) {
 			USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler, this), 10, true, false, null);
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler, this), 10, true, false, -1);
 				sched = f;
 				backgroundFetchersByClearUSK.put(clear, f);
 			}
@@ -181,7 +181,7 @@ public class USKManager {
 			if(runBackgroundFetch) {
 				USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler, client), 10, true, false, null);
+					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler, client), 10, true, false, -1);
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}
