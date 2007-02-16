@@ -29,8 +29,8 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 
 	private static boolean logMINOR;
 	final short splitfileType;
-	final ClientCHK[] dataBlocks;
-	final ClientCHK[] checkBlocks;
+	final ClientCHK[] dataKeys;
+	final ClientCHK[] checkKeys;
 	final ClientGetState[] dataBlockStatus;
 	final ClientGetState[] checkBlockStatus;
 	final MinimalSplitfileBlock[] dataBuckets;
@@ -61,19 +61,19 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		this.errors = new FailureCodeTracker(false);
 		this.archiveContext = archiveContext;
 		this.splitfileType = splitfileType;
-		dataBlocks = splitfileDataBlocks;
-		checkBlocks = splitfileCheckBlocks;
+		dataKeys = splitfileDataBlocks;
+		checkKeys = splitfileCheckBlocks;
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
-			minFetched = dataBlocks.length;
+			minFetched = dataKeys.length;
 		} else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
-			minFetched = dataBlocks.length;
+			minFetched = dataKeys.length;
 		} else throw new MetadataParseException("Unknown splitfile type"+splitfileType);
 		finished = false;
 		decodedData = null;
-		dataBlockStatus = new ClientGetState[dataBlocks.length];
-		checkBlockStatus = new ClientGetState[checkBlocks.length];
-		dataBuckets = new MinimalSplitfileBlock[dataBlocks.length];
-		checkBuckets = new MinimalSplitfileBlock[checkBlocks.length];
+		dataBlockStatus = new ClientGetState[dataKeys.length];
+		checkBlockStatus = new ClientGetState[checkKeys.length];
+		dataBuckets = new MinimalSplitfileBlock[dataKeys.length];
+		checkBuckets = new MinimalSplitfileBlock[checkKeys.length];
 		for(int i=0;i<dataBuckets.length;i++) {
 			dataBuckets[i] = new MinimalSplitfileBlock(i);
 		}
@@ -84,10 +84,10 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
 		this.recursionLevel = 0;
 		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher);
-		for(int i=0;i<dataBlocks.length;i++)
-			if(dataBlocks[i] == null) throw new NullPointerException("Null: data block "+i);
-		for(int i=0;i<checkBlocks.length;i++)
-			if(checkBlocks[i] == null) throw new NullPointerException("Null: check block "+i);
+		for(int i=0;i<dataKeys.length;i++)
+			if(dataKeys[i] == null) throw new NullPointerException("Null: data block "+i);
+		for(int i=0;i<checkKeys.length;i++)
+			if(checkKeys[i] == null) throw new NullPointerException("Null: check block "+i);
 	}
 
 	public synchronized boolean isFinished() {
@@ -139,20 +139,20 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(finished) return;
 		int blockNo = (int) state.getToken();
-		if(blockNo < dataBlocks.length) {
-			if(dataBlocks[blockNo] == null) {
+		if(blockNo < dataKeys.length) {
+			if(dataKeys[blockNo] == null) {
 				Logger.error(this, "Block already finished: "+blockNo);
 				return;
 			}
-			dataBlocks[blockNo] = null;
+			dataKeys[blockNo] = null;
 			dataBuckets[blockNo].setData(result.asBucket());
-		} else if(blockNo < checkBlocks.length + dataBlocks.length) {
-			blockNo -= dataBlocks.length;
-			if(checkBlocks[blockNo] == null) {
+		} else if(blockNo < checkKeys.length + dataKeys.length) {
+			blockNo -= dataKeys.length;
+			if(checkKeys[blockNo] == null) {
 				Logger.error(this, "Check block already finished: "+blockNo);
 				return;
 			}
-			checkBlocks[blockNo] = null;
+			checkKeys[blockNo] = null;
 			checkBuckets[blockNo].setData(result.asBucket());
 		} else
 			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
@@ -194,7 +194,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			for(int i=0;i<checkBuckets.length;i++)
 				checkBlocksSucceeded[i] = checkBuckets[i].data != null;
 			
-			FECCodec codec = FECCodec.getCodec(splitfileType, dataBlocks.length, checkBlocks.length);
+			FECCodec codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
 			try {
 				if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
 					codec.decode(dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetchContext.bucketFactory);
@@ -254,7 +254,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 					}
 					dataBuckets[i] = null;
 					dataBlockStatus[i] = null;
-					dataBlocks[i] = null;
+					dataKeys[i] = null;
 				}
 				for(int i=0;i<checkBlockStatus.length;i++) {
 					boolean heal = false;
@@ -270,7 +270,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 					}
 					checkBuckets[i] = null;
 					checkBlockStatus[i] = null;
-					checkBlocks[i] = null;
+					checkKeys[i] = null;
 				}
 			}
 		}
@@ -286,19 +286,19 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	public synchronized void onFailure(FetchException e, ClientGetState state) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		int blockNo = (int) state.getToken();
-		if(blockNo < dataBlocks.length) {
-			if(dataBlocks[blockNo] == null) {
+		if(blockNo < dataKeys.length) {
+			if(dataKeys[blockNo] == null) {
 				Logger.error(this, "Block already finished: "+blockNo);
 				return;
 			}
-			dataBlocks[blockNo] = null;
-		} else if(blockNo < checkBlocks.length + dataBlocks.length) {
-			blockNo -= dataBlocks.length;
-			if(checkBlocks[blockNo] == null) {
+			dataKeys[blockNo] = null;
+		} else if(blockNo < checkKeys.length + dataKeys.length) {
+			blockNo -= dataKeys.length;
+			if(checkKeys[blockNo] == null) {
 				Logger.error(this, "Check block already finished: "+blockNo);
 				return;
 			}
-			checkBlocks[blockNo] = null;
+			checkKeys[blockNo] = null;
 		} else
 			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 		// :(
@@ -312,7 +312,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			errors.merge(e.errorCodes);
 		else
 			errors.inc(new Integer(e.mode), state == null ? 1 : ((SingleFileFetcher)state).getRetryCount());
-		if(failedBlocks + fatallyFailedBlocks > (dataBlocks.length + checkBlocks.length - minFetched)) {
+		if(failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched)) {
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
 		}
 	}
@@ -354,8 +354,8 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 
 	public void schedule() {
 		try {
-			for(int i=0;i<dataBlocks.length;i++) {
-				if(dataBlocks[i] == null) {
+			for(int i=0;i<dataKeys.length;i++) {
+				if(dataKeys[i] == null) {
 					// Already fetched?
 					continue;
 				}
@@ -363,24 +363,24 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 					Logger.error(this, "Scheduling twice? dataBlockStatus["+i+"] = "+dataBlockStatus[i]);
 				} else {
 					dataBlockStatus[i] =
-						new SimpleSingleFileFetcher(dataBlocks[i], blockFetchContext.maxNonSplitfileRetries, blockFetchContext, parentFetcher.parent, this, true, i);
+						new SimpleSingleFileFetcher(dataKeys[i], blockFetchContext.maxNonSplitfileRetries, blockFetchContext, parentFetcher.parent, this, true, i);
 				}
 			}
-			for(int i=0;i<checkBlocks.length;i++) {
-				if(checkBlocks[i] == null) {
+			for(int i=0;i<checkKeys.length;i++) {
+				if(checkKeys[i] == null) {
 					// Already fetched?
 					continue;
 				}
 				if(checkBlockStatus[i] != null) {
 					Logger.error(this, "Scheduling twice? dataBlockStatus["+i+"] = "+checkBlockStatus[i]);
 				} else checkBlockStatus[i] =
-					new SimpleSingleFileFetcher(checkBlocks[i], blockFetchContext.maxNonSplitfileRetries, blockFetchContext, parentFetcher.parent, this, true, i);
+					new SimpleSingleFileFetcher(checkKeys[i], blockFetchContext.maxNonSplitfileRetries, blockFetchContext, parentFetcher.parent, this, true, i);
 			}
-			for(int i=0;i<dataBlocks.length;i++) {
+			for(int i=0;i<dataKeys.length;i++) {
 				if(dataBlockStatus[i] != null)
 					dataBlockStatus[i].schedule();
 			}
-			for(int i=0;i<checkBlocks.length;i++)
+			for(int i=0;i<checkKeys.length;i++)
 				if(checkBlockStatus[i] != null)
 					checkBlockStatus[i].schedule();
 		} catch (Throwable t) {
@@ -402,10 +402,10 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	}
 
 	public ClientCHK getBlockKey(int blockNum) {
-		if(blockNum > dataBlocks.length)
-			return checkBlocks[blockNum - dataBlocks.length];
+		if(blockNum > dataKeys.length)
+			return checkKeys[blockNum - dataKeys.length];
 		else
-			return dataBlocks[blockNum];
+			return dataKeys[blockNum];
 	}
 
 }
