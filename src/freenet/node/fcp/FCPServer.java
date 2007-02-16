@@ -593,7 +593,7 @@ public class FCPServer implements Runnable {
 			}
 			for(int i=0;i<count;i++) {
 				WrapperManager.signalStarting(5*60*1000);  // 5 minutes per request
-				System.out.println("Loading persistent request "+i+" of "+count+"...");
+				System.out.println("Loading persistent request "+(i+1)+" of "+count+"..."); // humans count from 1..
 				ClientRequest.readAndRegister(br, this);
 			}
 			br.close();
