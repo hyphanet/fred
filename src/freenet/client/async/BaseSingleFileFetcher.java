@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
@@ -14,9 +14,9 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	protected boolean cancelled;
 	final int maxRetries;
 	private int retryCount;
-	final FetcherContext ctx;
+	final FetchContext ctx;
 
-	BaseSingleFileFetcher(ClientKey key, int maxRetries, FetcherContext ctx, ClientRequester parent) {
+	BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
 		super(parent);
 		retryCount = 0;
 		this.maxRetries = maxRetries;
@@ -28,7 +28,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return key;
 	}
 	
-	public FetcherContext getContext() {
+	public FetchContext getContext() {
 		return ctx;
 	}
 

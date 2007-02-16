@@ -25,7 +25,7 @@ import java.util.zip.GZIPOutputStream;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.DefaultMIMETypes;
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InserterContext;
 import freenet.config.Config;
@@ -70,7 +70,7 @@ public class FCPServer implements Runnable {
 	private FCPServerPersister persister;
 	private boolean haveLoadedPersistentRequests;
 	private long persistenceInterval;
-	final FetcherContext defaultFetchContext;
+	final FetchContext defaultFetchContext;
 	public InserterContext defaultInsertContext;
 	public static final int QUEUE_MAX_RETRIES = -1;
 	public static final long QUEUE_MAX_DATA_SIZE = Long.MAX_VALUE;

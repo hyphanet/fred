@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSKBlock;
@@ -18,7 +18,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	final USKCheckerCallback cb;
 	private int dnfs;
 
-	USKChecker(USKCheckerCallback cb, ClientKey key, int maxRetries, FetcherContext ctx, ClientRequester parent) {
+	USKChecker(USKCheckerCallback cb, ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
 		super(key, maxRetries, ctx, parent);
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "Created USKChecker for "+key);

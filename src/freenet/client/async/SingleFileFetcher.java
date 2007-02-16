@@ -14,7 +14,7 @@ import freenet.client.ArchiveStoreContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.keys.BaseClientKey;
@@ -60,7 +60,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	 * FIXME: Many times where this is called internally we might be better off using a copy constructor? 
 	 */
 	public SingleFileFetcher(ClientRequester parent, GetCompletionCallback cb, ClientMetadata metadata,
-			ClientKey key, LinkedList metaStrings, FreenetURI origURI, int addedMetaStrings, FetcherContext ctx,
+			ClientKey key, LinkedList metaStrings, FreenetURI origURI, int addedMetaStrings, FetchContext ctx,
 			ArchiveContext actx, int maxRetries, int recursionLevel,
 			boolean dontTellClientGet, long l, boolean isEssential,
 			Bucket returnBucket, boolean isFinal) throws FetchException {
@@ -89,7 +89,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	/** Copy constructor, modifies a few given fields, don't call schedule().
 	 * Used for things like slave fetchers for MultiLevelMetadata, therefore does not remember returnBucket,
 	 * metaStrings etc. */
-	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetcherContext ctx2) throws FetchException {
+	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetchContext ctx2) throws FetchException {
 		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent, callback, false, fetcher.token);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key+" meta="+fetcher.metaStrings.toString(), new Exception("debug"));
@@ -432,7 +432,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		Metadata newMeta = (Metadata) meta.clone();
 		newMeta.setSimpleRedirect();
 		SingleFileFetcher f;
-		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData), new FetcherContext(ctx, FetcherContext.SET_RETURN_ARCHIVES, true));
+		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true));
 		f.handleMetadata();
 		// When it is done (if successful), the ArchiveCallback will re-call this function.
 		// Which will then discover that the metadata *is* available.
@@ -530,7 +530,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	 * Create a fetcher for a key.
 	 */
 	public static ClientGetState create(ClientRequester requester, GetCompletionCallback cb, 
-			ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, 
+			ClientMetadata clientMetadata, FreenetURI uri, FetchContext ctx, ArchiveContext actx, 
 			int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, 
 			Bucket returnBucket, boolean isFinal) throws MalformedURLException, FetchException {
 		BaseClientKey key = BaseClientKey.getBaseKey(uri);
@@ -550,7 +550,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 	}
 
-	private static ClientGetState uskCreate(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, Bucket returnBucket, boolean isFinal) throws FetchException {
+	private static ClientGetState uskCreate(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, Bucket returnBucket, boolean isFinal) throws FetchException {
 		if(usk.suggestedEdition >= 0) {
 			// Return the latest known version but at least suggestedEdition.
 			long edition = ctx.uskManager.lookup(usk);
@@ -595,7 +595,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final ClientMetadata clientMetadata;
 		final USK usk;
 		final LinkedList metaStrings;
-		final FetcherContext ctx;
+		final FetchContext ctx;
 		final ArchiveContext actx;
 		final int maxRetries;
 		final int recursionLevel;
@@ -603,7 +603,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final long token;
 		final Bucket returnBucket;
 		
-		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket) {
+		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket) {
 			this.parent = requester;
 			this.cb = cb;
 			this.clientMetadata = clientMetadata;

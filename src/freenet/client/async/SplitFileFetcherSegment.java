@@ -12,7 +12,7 @@ import freenet.client.FECCodec;
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
@@ -39,7 +39,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	final int minFetched;
 	final SplitFileFetcher parentFetcher;
 	final ArchiveContext archiveContext;
-	final FetcherContext fetcherContext;
+	final FetchContext fetcherContext;
 	final long maxBlockLength;
 	/** Has the segment finished processing? Irreversible. */
 	private boolean finished;
@@ -47,7 +47,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	/** Bucket to store the data retrieved, after it has been decoded */
 	private Bucket decodedData;
 	/** Fetch context for block fetches */
-	final FetcherContext blockFetchContext;
+	final FetchContext blockFetchContext;
 	/** Recursion level */
 	final int recursionLevel;
 	private FetchException failureException;
@@ -56,7 +56,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	private int fetchedBlocks;
 	private final FailureCodeTracker errors;
 	
-	public SplitFileFetcherSegment(short splitfileType, FreenetURI[] splitfileDataBlocks, FreenetURI[] splitfileCheckBlocks, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetcherContext fetchContext, long maxTempLength, int recursionLevel) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, FreenetURI[] splitfileDataBlocks, FreenetURI[] splitfileCheckBlocks, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parentFetcher = fetcher;
 		this.errors = new FailureCodeTracker(false);
@@ -82,7 +82,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			checkBuckets[i] = new MinimalSplitfileBlock(i+dataBuckets.length);
 		this.fetcherContext = fetchContext;
 		maxBlockLength = maxTempLength;
-		blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
+		blockFetchContext = new FetchContext(fetcherContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
 		this.recursionLevel = 0;
 		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher);
 		for(int i=0;i<dataBlocks.length;i++)

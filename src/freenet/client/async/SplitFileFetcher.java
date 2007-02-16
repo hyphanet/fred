@@ -11,7 +11,7 @@ import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.keys.CHKBlock;
@@ -29,7 +29,7 @@ import freenet.support.compress.Compressor;
  */
 public class SplitFileFetcher implements ClientGetState {
 
-	final FetcherContext fetchContext;
+	final FetchContext fetchContext;
 	final ArchiveContext archiveContext;
 	final LinkedList decompressors;
 	final ClientMetadata clientMetadata;
@@ -62,7 +62,7 @@ public class SplitFileFetcher implements ClientGetState {
 	private long token;
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
-			FetcherContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
+			FetchContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
 			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2) throws FetchException, MetadataParseException {
 		this.finished = false;
 		this.returnBucket = returnBucket;

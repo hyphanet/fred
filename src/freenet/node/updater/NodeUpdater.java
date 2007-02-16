@@ -7,7 +7,7 @@ import java.net.MalformedURLException;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.client.InserterException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
@@ -25,7 +25,7 @@ import freenet.support.io.ArrayBucket;
 
 public class NodeUpdater implements ClientCallback, USKCallback {
 	static private boolean logMINOR;
-	private FetcherContext ctx;
+	private FetchContext ctx;
 	private FetchResult result;
 	private ClientGetter cg;
 	private boolean finalCheck;
@@ -60,7 +60,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		this.isFetching = false;
 		this.extUpdate = extUpdate;
 		
-		FetcherContext tempContext = core.makeClient((short)0, true).getFetcherContext();		
+		FetchContext tempContext = core.makeClient((short)0, true).getFetcherContext();		
 		tempContext.allowSplitfiles = true;
 		tempContext.dontEnterImplicitArchives = false;
 		this.ctx = tempContext;

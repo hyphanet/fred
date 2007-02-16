@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.keys.ClientSSKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.KeyDecodeException;
@@ -74,7 +74,7 @@ public class USKFetcher implements ClientGetState {
 	private final LinkedList callbacks;
 
 	/** Fetcher context */
-	final FetcherContext ctx;
+	final FetchContext ctx;
 	
 	/** Finished? */
 	private boolean completed;
@@ -200,12 +200,12 @@ public class USKFetcher implements ClientGetState {
 
 	private int token;
 	
-	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData, int token) {
+	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData, int token) {
 		this(origUSK, manager, ctx, requester, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData, token);
 	}
 	
 	// FIXME use this!
-	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester requester, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData, int token) {
+	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData, int token) {
 		this.parent = requester;
 		this.maxMinFailures = maxProbeEditions;
 		this.origUSK = origUSK;

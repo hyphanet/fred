@@ -38,7 +38,7 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentMutableConfig;
 import com.sleepycat.je.StatsConfig;
 
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.PersistentConfig;
@@ -324,8 +324,8 @@ public class Node {
 	InsertableClientSSK myOldARK;
 	/** My old ARK sequence number */
 	long myOldARKNumber;
-	/** FetcherContext for ARKs */
-	public final FetcherContext arkFetcherContext;
+	/** FetchContext for ARKs */
+	public final FetchContext arkFetcherContext;
 	/** Next time to log the PeerNode status summary */
 	private long nextPeerNodeStatusLogTime = -1;
 	/** PeerNode status summary log interval (milliseconds) */
@@ -1416,7 +1416,7 @@ public class Node {
 		pluginManager = new PluginManager(this);
 		pluginManager2 = new freenet.oldplugins.plugin.PluginManager(this);
 		
-		FetcherContext ctx = clientCore.makeClient((short)0, true).getFetcherContext();
+		FetchContext ctx = clientCore.makeClient((short)0, true).getFetcherContext();
 		
 		ctx.allowSplitfiles = false;
 		ctx.dontEnterImplicitArchives = true;

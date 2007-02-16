@@ -53,7 +53,7 @@ public interface HighLevelSimpleClient {
 	 */
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException;
 	
-	public FetcherContext getFetcherContext();
+	public FetchContext getFetcherContext();
 
 	/**
 	 * Get an InserterContext.

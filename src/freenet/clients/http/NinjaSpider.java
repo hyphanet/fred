@@ -35,7 +35,7 @@ import org.w3c.dom.Text;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.client.InserterException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
@@ -93,7 +93,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	private int maxShownURIs = 50;
 
 	private NodeClientCore core;
-	private FetcherContext ctx;
+	private FetchContext ctx;
 	private final short PRIORITY_CLASS = RequestStarter.PREFETCH_PRIORITY_CLASS;
 	private boolean stopped = true;
 

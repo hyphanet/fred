@@ -109,7 +109,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	 */
 	public FetchResult fetch(FreenetURI uri) throws FetchException {
 		if(uri == null) throw new NullPointerException();
-		FetcherContext context = getFetcherContext();
+		FetchContext context = getFetcherContext();
 		FetchWaiter fw = new FetchWaiter();
 		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, this, null);
 		get.start();
@@ -123,7 +123,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public FetchResult fetch(FreenetURI uri, long overrideMaxSize, Object clientContext) throws FetchException {
 		if(uri == null) throw new NullPointerException();
 		FetchWaiter fw = new FetchWaiter();
-		FetcherContext context = getFetcherContext(overrideMaxSize);
+		FetchContext context = getFetcherContext(overrideMaxSize);
 		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, clientContext, null);
 		get.start();
 		return fw.waitForCompletion();
@@ -171,11 +171,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		globalEventProducer.addEventListener(listener);
 	}
 
-	public FetcherContext getFetcherContext() {
+	public FetchContext getFetcherContext() {
 		return getFetcherContext(-1);
 	}
 	
-	public FetcherContext getFetcherContext(long overrideMaxSize) {
+	public FetchContext getFetcherContext(long overrideMaxSize) {
 		long maxLength = curMaxLength;
 		long maxTempLength = curMaxTempLength;
 		if(overrideMaxSize >= 0) {
@@ -183,7 +183,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 			maxTempLength = overrideMaxSize;
 		} 
 		return 			
-			new FetcherContext(maxLength, maxTempLength, curMaxMetadataLength, 
+			new FetchContext(maxLength, maxTempLength, curMaxMetadataLength, 
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES, 
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,

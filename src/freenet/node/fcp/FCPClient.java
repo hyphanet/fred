@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InserterContext;
 import freenet.node.NodeClientCore;
@@ -63,7 +63,7 @@ public class FCPClient {
 	private final HashMap clientRequestsByIdentifier;
 	/** Client (one FCPClient = one HighLevelSimpleClient = one round-robin slot) */
 	private final HighLevelSimpleClient client;
-	public final FetcherContext defaultFetchContext;
+	public final FetchContext defaultFetchContext;
 	public final InserterContext defaultInsertContext;
 	public final NodeClientCore core;
 	/** Are we the global queue? */

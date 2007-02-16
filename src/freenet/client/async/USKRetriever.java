@@ -9,7 +9,7 @@ import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.support.Logger;
@@ -20,10 +20,10 @@ import freenet.support.Logger;
 public class USKRetriever extends BaseClientGetter implements USKCallback {
 
 	/** Context for fetching data */
-	final FetcherContext ctx;
+	final FetchContext ctx;
 	final USKRetrieverCallback cb;
 	
-	public USKRetriever(FetcherContext fctx, short prio, ClientRequestScheduler chkSched, 
+	public USKRetriever(FetchContext fctx, short prio, ClientRequestScheduler chkSched, 
 			ClientRequestScheduler sskSched, Object client, USKRetrieverCallback cb) {
 		super(prio, chkSched, sskSched, client);
 		this.ctx = fctx;

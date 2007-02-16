@@ -10,7 +10,7 @@ import java.io.IOException;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.client.InserterException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
@@ -36,7 +36,7 @@ import freenet.support.io.SerializableToFieldSetBucketUtil;
  */
 public class ClientGet extends ClientRequest implements ClientCallback, ClientEventListener {
 
-	private final FetcherContext fctx;
+	private final FetchContext fctx;
 	private final ClientGetter getter;
 	private final short returnType;
 	private final File targetFile;
@@ -77,7 +77,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
 						null, true);
 
-		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK, false);
+		fctx = new FetchContext(client.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
 		fctx.eventProducer.addEventListener(this);
 		fctx.localRequestOnly = dsOnly;
 		fctx.ignoreStore = ignoreDS;
@@ -131,7 +131,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				message.persistenceType, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
-		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK, false);
+		fctx = new FetchContext(client.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = message.dsOnly;
@@ -207,7 +207,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		boolean ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
 		boolean dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
-		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK, false);
+		fctx = new FetchContext(client.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = dsOnly;

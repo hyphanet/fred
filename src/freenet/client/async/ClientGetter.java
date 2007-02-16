@@ -10,7 +10,7 @@ import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
@@ -24,7 +24,7 @@ public class ClientGetter extends BaseClientGetter {
 
 	final ClientCallback client;
 	final FreenetURI uri;
-	final FetcherContext ctx;
+	final FetchContext ctx;
 	final ArchiveContext actx;
 	private ClientGetState currentState;
 	private boolean finished;
@@ -45,7 +45,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * former, obviously!
 	 */
 	public ClientGetter(ClientCallback client, ClientRequestScheduler chkSched, ClientRequestScheduler sskSched,
-			    FreenetURI uri, FetcherContext ctx, short priorityClass, Object clientContext, Bucket returnBucket) {
+			    FreenetURI uri, FetchContext ctx, short priorityClass, Object clientContext, Bucket returnBucket) {
 		super(priorityClass, chkSched, sskSched, clientContext);
 		this.client = client;
 		this.returnBucket = returnBucket;

@@ -2,7 +2,7 @@ package freenet.node.updater;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.client.InserterException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
@@ -25,7 +25,7 @@ public class RevocationChecker implements ClientCallback {
 	private NodeUpdaterManager manager;
 	private NodeClientCore core;
 	private int revocationDNFCounter;
-	private FetcherContext ctxRevocation;
+	private FetchContext ctxRevocation;
 	private ClientGetter revocationGetter;
 	private boolean wasAggressive;
 	/** Last time at which we got 3 DNFs on the revocation key */

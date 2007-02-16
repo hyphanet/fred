@@ -11,7 +11,7 @@ import freenet.crypt.RandomSource;
 import freenet.support.api.BucketFactory;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
-public class FetcherContext implements Cloneable {
+public class FetchContext implements Cloneable {
 
 	public static final int IDENTICAL_MASK = 0;
 	public static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
@@ -50,7 +50,7 @@ public class FetcherContext implements Cloneable {
 	public final HealingQueue healingQueue;
 	public final boolean ignoreTooManyPathComponents;
 	
-	public FetcherContext(long curMaxLength, 
+	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
 			boolean dontEnterImplicitArchives, int maxSplitfileThreads,
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries,
@@ -84,7 +84,7 @@ public class FetcherContext implements Cloneable {
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
 	}
 
-	public FetcherContext(FetcherContext ctx, int maskID, boolean keepProducer) {
+	public FetchContext(FetchContext ctx, int maskID, boolean keepProducer) {
 		this.healingQueue = ctx.healingQueue;
 		if(keepProducer)
 			this.eventProducer = ctx.eventProducer;

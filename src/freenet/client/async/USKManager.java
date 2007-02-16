@@ -5,7 +5,7 @@ package freenet.client.async;
 
 import java.util.HashMap;
 
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -38,11 +38,11 @@ public class USKManager {
 	/** USKChecker's by USK. Deleted immediately on completion. */
 	final HashMap checkersByUSK;
 
-	final FetcherContext backgroundFetchContext;
+	final FetchContext backgroundFetchContext;
 	final ClientRequestScheduler chkRequestScheduler;
 	final ClientRequestScheduler sskRequestScheduler;
 	
-	public USKManager(FetcherContext backgroundFetchContext, ClientRequestScheduler chkRequestScheduler, ClientRequestScheduler sskRequestScheduler) {
+	public USKManager(FetchContext backgroundFetchContext, ClientRequestScheduler chkRequestScheduler, ClientRequestScheduler sskRequestScheduler) {
 		latestVersionByClearUSK = new HashMap();
 		subscribersByClearUSK = new HashMap();
 		fetchersByUSK = new HashMap();
@@ -79,7 +79,7 @@ public class USKManager {
 		else return -1;
 	}
 
-	public synchronized USKFetcher getFetcher(USK usk, FetcherContext ctx,
+	public synchronized USKFetcher getFetcher(USK usk, FetchContext ctx,
 			ClientRequester requester, boolean keepLastData) {
 		USKFetcher f = (USKFetcher) fetchersByUSK.get(usk);
 		USK clear = usk.clearCopy();
@@ -234,7 +234,7 @@ public class USKManager {
 	 * @param fctx Fetcher context for actually fetching the keys. Not used by the USK polling.
 	 * @return
 	 */
-	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetcherContext fctx, short prio, Object client) {
+	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, Object client) {
 		USKRetriever ret = new USKRetriever(fctx, prio, chkRequestScheduler, sskRequestScheduler, client, cb);
 		subscribe(origUSK, ret, runBackgroundFetch, client);
 		return ret;

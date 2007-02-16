@@ -8,7 +8,7 @@ import java.io.IOException;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyDecodeException;
@@ -22,7 +22,7 @@ import freenet.support.api.Bucket;
  */
 public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState {
 
-	SimpleSingleFileFetcher(ClientKey key, int maxRetries, FetcherContext ctx, ClientRequester parent, GetCompletionCallback rcb, boolean isEssential, long l) {
+	SimpleSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, GetCompletionCallback rcb, boolean isEssential, long l) {
 		super(key, maxRetries, ctx, parent);
 		this.rcb = rcb;
 		this.token = l;

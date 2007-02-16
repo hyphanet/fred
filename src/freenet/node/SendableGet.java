@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.client.FetcherContext;
+import freenet.client.FetchContext;
 import freenet.client.async.BaseClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.keys.ClientCHK;
@@ -24,7 +24,7 @@ public abstract class SendableGet implements SendableRequest {
 	public abstract ClientKey getKey();
 	
 	/** Get the fetch context (settings) object. */
-	public abstract FetcherContext getContext();
+	public abstract FetchContext getContext();
 	
 	/** Called when/if the low-level request succeeds. */
 	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore);
@@ -55,7 +55,7 @@ public abstract class SendableGet implements SendableRequest {
 		// Do we need to support the last 3?
 		ClientKeyBlock block;
 		try {
-			FetcherContext ctx = getContext();
+			FetchContext ctx = getContext();
 			block = core.realGetKey(getKey(), ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
 		} catch (LowLevelGetException e) {
 			onFailure(e);
