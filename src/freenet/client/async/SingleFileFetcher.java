@@ -543,7 +543,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher implements Client
 			Bucket returnBucket, boolean isFinal) throws MalformedURLException, FetchException {
 		BaseClientKey key = BaseClientKey.getBaseKey(uri);
 		if((clientMetadata == null || clientMetadata.isTrivial()) && (!uri.hasMetaStrings()) &&
-				ctx.allowSplitfiles == false && ctx.followRedirects == true && token == null &&
+				ctx.allowSplitfiles == false && ctx.followRedirects == false && token == null &&
 				returnBucket == null && key instanceof ClientKey)
 			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, parent, cb, isEssential);
 		if(key instanceof ClientKey)
