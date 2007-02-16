@@ -7,6 +7,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Arrays;
 
 import freenet.support.Base64;
 
@@ -108,6 +109,8 @@ public class ClientCHK extends ClientKey {
 		dos.write(cryptoKey);
 	}
     
+	static byte[] lastExtra;
+	
 	public byte[] getExtra() {
 		byte[] extra = new byte[EXTRA_LENGTH];
 		extra[0] = (byte) (cryptoAlgorithm >> 8);
@@ -115,6 +118,10 @@ public class ClientCHK extends ClientKey {
 		extra[2] = (byte) (controlDocument ? 2 : 0);
 		extra[3] = (byte) (compressionAlgorithm >> 8);
 		extra[4] = (byte) compressionAlgorithm;
+		byte[] last = lastExtra;
+		// No synchronization required IMHO
+		if(Arrays.equals(last, extra)) return last;
+		lastExtra = extra;
 		return extra;
 	}
 	
