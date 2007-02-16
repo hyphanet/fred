@@ -401,7 +401,7 @@ public class FreenetURI implements Cloneable{
 	}
 	
 	public boolean hasMetaStrings() {
-		return metaStr == null || metaStr.length == 0;
+		return !(metaStr == null || metaStr.length == 0);
 	}
 
 	public byte[] getRoutingKey() {
