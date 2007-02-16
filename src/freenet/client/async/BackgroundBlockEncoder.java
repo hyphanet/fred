@@ -19,7 +19,7 @@ public class BackgroundBlockEncoder implements Runnable {
 	}
 	
 	public void queue(SingleBlockInserter sbi) {
-		if(sbi.isFinished()) return;
+		if(sbi.isCancelled()) return;
 		if(sbi.resultingURI != null) return;
 		WeakReference ref = new WeakReference(sbi);
 		synchronized(this) {
@@ -33,7 +33,7 @@ public class BackgroundBlockEncoder implements Runnable {
 		synchronized(this) {
 			for(int i=0;i<sbis.length;i++) {
 				if(sbis[i] == null) continue;
-				if(sbis[i].isFinished()) continue;
+				if(sbis[i].isCancelled()) continue;
 				if(sbis[i].resultingURI != null) continue;
 				Logger.minor(this, "Queueing encode of "+sbis[i]);
 				WeakReference ref = new WeakReference(sbis[i]);
@@ -61,7 +61,7 @@ public class BackgroundBlockEncoder implements Runnable {
 				}
 			}
 			Logger.minor(this, "Encoding "+sbi);
-			if(sbi.isFinished()) continue;
+			if(sbi.isCancelled()) continue;
 			if(sbi.resultingURI != null) continue;
 			sbi.tryEncode();
 		}

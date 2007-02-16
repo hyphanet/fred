@@ -47,7 +47,7 @@ public abstract class SendableGet implements SendableRequest {
 	/** Do the request, blocking. Called by RequestStarter. */
 	public void send(NodeClientCore core) {
 		synchronized (this) {
-			if(isFinished()) {
+			if(isCancelled()) {
 				onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED));
 				return;
 			}	

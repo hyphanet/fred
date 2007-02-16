@@ -69,7 +69,7 @@ public class SimpleSendableInsert implements SendableInsert {
 		return null;
 	}
 
-	public boolean isFinished() {
+	public boolean isCancelled() {
 		return finished;
 	}
 

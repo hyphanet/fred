@@ -76,7 +76,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				grabArrays = newArray;
 			}
 			if(item == null) continue;
-			if(item.isFinished()) continue;
+			if(item.isCancelled()) continue;
 			return item;
 		}
 	}

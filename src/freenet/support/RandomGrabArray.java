@@ -31,7 +31,7 @@ public class RandomGrabArray {
 	
 	public synchronized void add(RandomGrabArrayItem req) {
 		if(contents.contains(req)) return;
-		if(req.isFinished()) {
+		if(req.isCancelled()) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Is finished already: "+req);
 			return;
@@ -63,7 +63,7 @@ public class RandomGrabArray {
 				System.arraycopy(reqs, 0, r, 0, r.length);
 				reqs = r;
 			}
-			if((ret != null) && !ret.isFinished()) return ret;
+			if((ret != null) && !ret.isCancelled()) return ret;
 		}
 	}
 	

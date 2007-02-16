@@ -65,7 +65,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		cancelled = true;
 	}
 
-	public synchronized boolean isFinished() {
+	public synchronized boolean isCancelled() {
 		return cancelled;
 	}
 	
