@@ -48,4 +48,8 @@ public class ClientMetadata implements Cloneable {
 			throw new Error(e);
 		}
 	}
+	
+	public String toString() {
+		return getMIMEType();
+	}
 }
