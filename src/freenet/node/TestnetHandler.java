@@ -4,6 +4,7 @@
 package freenet.node;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -175,12 +176,13 @@ public class TestnetHandler implements Runnable {
 				} else if(command.equalsIgnoreCase("PEERS")) {
 					if(logMINOR) Logger.minor(this, "Sending references");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
-					osw.write("My ref:\n\n");
+					BufferedWriter bw = new BufferedWriter(osw);
+					bw.write("My ref:\n\n");
 					SimpleFieldSet fs = node.exportPublicFieldSet();
-					fs.writeTo(osw);
-					osw.write("\n\nMy peers:\n");
-					node.peers.writePeers(osw);
-					osw.close();
+					fs.writeTo(bw);
+					bw.write("\n\nMy peers:\n");
+					node.peers.writePeers(bw);
+					bw.close();
 				}else {
 					Logger.error(this, "Unknown testnet command: "+command);
 				}

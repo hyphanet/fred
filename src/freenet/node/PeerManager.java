@@ -4,6 +4,7 @@
 package freenet.node;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Vector;
@@ -623,13 +625,14 @@ public class PeerManager {
                 return;
             }
             OutputStreamWriter w = new OutputStreamWriter(fos);
+            BufferedWriter bw = new BufferedWriter(w);
             try {
-            	boolean succeeded = writePeers(w);
-                w.close();
+            	boolean succeeded = writePeers(bw);
+                bw.close();
                 if(!succeeded) return;
             } catch (IOException e) {
             	try {
-            		w.close();
+            		fos.close();
             	} catch (IOException e1) {
             		Logger.error(this, "Cannot close peers file: "+e, e);
             	}
@@ -646,18 +649,18 @@ public class PeerManager {
         }
     }
 
-	public boolean writePeers(OutputStreamWriter w) {
+	public boolean writePeers(Writer bw) {
         PeerNode[] peers;
         synchronized (this) {
 			peers = myPeers;
 		}
         for (int i = 0; i < peers.length; i++) {
             try {
-                peers[i].write(w);
-                w.flush();
+                peers[i].write(bw);
+                bw.flush();
             } catch (IOException e) {
                 try {
-                    w.close();
+                    bw.close();
                 } catch (IOException e1) {
                     Logger.error(this, "Cannot close file!: " + e1, e1);
                 }

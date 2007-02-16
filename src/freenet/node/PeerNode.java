@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -2791,12 +2792,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			return -1;
 		}
 		OutputStreamWriter w = new OutputStreamWriter(fos);
+		BufferedWriter bw = new BufferedWriter(w);
 		try {
-			fs.writeTo(w);
-			w.close();
+			fs.writeTo(bw);
+			bw.close();
 		} catch (IOException e) {
 			try {
-				w.close();
+				fos.close();
 			} catch (IOException e1) {
 				Logger.error(this, "Cannot close extra peer data file: "+e, e);
 			}
@@ -2883,12 +2885,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			return false;
 		}
 		OutputStreamWriter w = new OutputStreamWriter(fos);
+		BufferedWriter bw = new BufferedWriter(w);
 		try {
-			fs.writeTo(w);
-			w.close();
+			fs.writeTo(bw);
+			bw.close();
 		} catch (IOException e) {
 			try {
-				w.close();
+				fos.close();
 			} catch (IOException e1) {
 				Logger.error(this, "Cannot close extra peer data file: "+e, e);
 			}

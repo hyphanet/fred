@@ -303,18 +303,28 @@ public class SimpleFieldSet {
 
     /**
      * Write the contents of the SimpleFieldSet to a Writer.
-     * @param osr
+     * Note: The caller *must* buffer the writer to avoid lousy performance!
+     * (StringWriter is by definition buffered, otherwise wrap it in a BufferedWriter)
      */
 	public void writeTo(Writer w) throws IOException {
 		writeTo(w, "", false);
 	}
 	
+    /**
+     * Write the contents of the SimpleFieldSet to a Writer.
+     * Note: The caller *must* buffer the writer to avoid lousy performance!
+     * (StringWriter is by definition buffered, otherwise wrap it in a BufferedWriter)
+     */
     synchronized void writeTo(Writer w, String prefix, boolean noEndMarker) throws IOException {
     	for(Iterator i = values.entrySet().iterator();i.hasNext();) {
             Map.Entry entry = (Map.Entry) i.next();
             String key = (String) entry.getKey();
             String value = (String) entry.getValue();
-            w.write(prefix+key+ '=' +value+ '\n');
+            w.write(prefix);
+            w.write(key);
+            w.write('=');
+            w.write(value);
+            w.write('\n');
     	}
     	if(subsets != null) {
     		for(Iterator i = subsets.entrySet().iterator();i.hasNext();) {
@@ -328,8 +338,10 @@ public class SimpleFieldSet {
     	if(!noEndMarker) {
     		if(endMarker == null)
     			w.write("End\n");
-    		else
-    			w.write(endMarker+ '\n');
+    		else {
+    			w.write(endMarker);
+    			w.write('\n');
+    		}
     	}
     }
     

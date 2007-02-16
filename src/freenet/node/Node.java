@@ -8,6 +8,7 @@ package freenet.node;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -692,12 +693,13 @@ public class Node {
 		
 		if(orig.exists()) backup.delete();
 		
-		OutputStreamWriter osr = null;
+		FileOutputStream fos = null;
 		try {
-			FileOutputStream fos = new FileOutputStream(backup);
-			osr = new OutputStreamWriter(fos);
-			fs.writeTo(osr);
-			osr.close();
+			fos = new FileOutputStream(backup);
+			OutputStreamWriter osr = new OutputStreamWriter(fos);
+			BufferedWriter bw = new BufferedWriter(osr);
+			fs.writeTo(bw);
+			bw.close();
 			if(!backup.renameTo(orig)) {
 				orig.delete();
 				if(!backup.renameTo(orig)) {
@@ -705,9 +707,9 @@ public class Node {
 				}
 			}
 		} catch (IOException e) {
-			if(osr != null) {
+			if(fos != null) {
 				try {
-					osr.close();
+					fos.close();
 				} catch (IOException e1) {
 					Logger.error(this, "Cannot close "+backup+": "+e1, e1);
 				}
@@ -2676,14 +2678,14 @@ public class Node {
 		DeflaterOutputStream gis;
 		gis = new DeflaterOutputStream(baos);
 		OutputStreamWriter osw = new OutputStreamWriter(gis);
+		BufferedWriter bw = new BufferedWriter(osw);
 		try {
-			fs.writeTo(osw);
+			fs.writeTo(bw);
 		} catch (IOException e) {
 			throw new Error(e);
 		}
 		try {
-			osw.flush();
-			gis.close();
+			bw.close();
 		} catch (IOException e1) {
 			throw new Error(e1);
 		}
@@ -3449,8 +3451,9 @@ public class Node {
 			// FIXME common pattern, reuse it.
 			BufferedOutputStream bos = new BufferedOutputStream(fos);
 			OutputStreamWriter osw = new OutputStreamWriter(bos, "UTF-8");
+			BufferedWriter bw = new BufferedWriter(osw);
 			try {
-				fs.writeTo(osw);
+				fs.writeTo(bw);
 			} catch (IOException e) {
 				try {
 					fos.close();
@@ -3461,7 +3464,7 @@ public class Node {
 				}
 			}
 			try {
-				osw.close();
+				bw.close();
 			} catch (IOException e) {
 				// Huh?
 				Logger.error(this, "Caught while closing: "+e, e);
