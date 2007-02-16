@@ -359,6 +359,8 @@ public class Node {
 	 * probabilistic decrement at the edges of the HTLs.
 	 */
 	boolean disableProbabilisticHTLs;
+	/** If true, disable all hang-check functionality */
+	public boolean disableHangCheckers;
 	
 	private final HashSet runningUIDs;
 	
@@ -1389,6 +1391,20 @@ public class Node {
 		
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder, throttleFS == null ? null : throttleFS.subset("RequestStarters"));
 
+		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Disable all hang checkers", "Disable all hang checkers/watchdog functions. Set this if you are profiling Fred.", new BooleanCallback() {
+
+			public boolean get() {
+				return disableHangCheckers;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				disableHangCheckers = val;
+			}
+			
+		});
+		
+		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
+		
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
 		
@@ -1471,7 +1487,7 @@ public class Node {
 		nodePinger.start();
 		dnsr.start();
 		ps.start();
-		usm.start();
+		usm.start(disableHangCheckers);
 		myMemoryChecker.start();
 		peers.start();
 		

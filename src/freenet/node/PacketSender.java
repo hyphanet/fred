@@ -127,11 +127,13 @@ public class PacketSender implements Runnable, Ticker {
     		}, transition - now);
     	}
         lastTimeInSeconds = (int) (now / 1000);
-        // Necessary because of sun JVM bugs when NPTL is enabled. Write once, debug everywhere!
-        Thread t1 = new Thread(new Watchdog(), "PacketSender watchdog");
-        t1.setDaemon(true);
-        t1.start();
-        myThread.start();
+        if(!node.disableHangCheckers) {
+        	// Necessary because of sun JVM bugs when NPTL is enabled. Write once, debug everywhere!
+        	Thread t1 = new Thread(new Watchdog(), "PacketSender watchdog");
+        	t1.setDaemon(true);
+        	t1.start();
+        	myThread.start();
+        }
     }
     
     public void run() {

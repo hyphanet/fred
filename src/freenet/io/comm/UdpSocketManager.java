@@ -60,14 +60,20 @@ public class UdpSocketManager extends Thread {
 	private final Node node;
 	
 	public void start() {
+		start(false);
+	}
+	
+	public void start(boolean disableHangChecker) {
 		lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
 		setDaemon(true);
 		setPriority(Thread.MAX_PRIORITY);
 		super.start();
-		Thread checker = new Thread(new USMChecker(), "UdpSocketManager$USMChecker");
-		checker.setDaemon(true);
-		checker.setPriority(Thread.MAX_PRIORITY);
-		checker.start();
+		if(!disableHangChecker) {
+			Thread checker = new Thread(new USMChecker(), "UdpSocketManager$USMChecker");
+			checker.setDaemon(true);
+			checker.setPriority(Thread.MAX_PRIORITY);
+			checker.start();
+		}
 	}
 	
 	public class USMChecker implements Runnable {
