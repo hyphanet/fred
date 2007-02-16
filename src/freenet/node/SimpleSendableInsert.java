@@ -45,7 +45,7 @@ public class SimpleSendableInsert implements SendableInsert {
 		return 0;
 	}
 
-	public void send(NodeClientCore core) {
+	public boolean send(NodeClientCore core) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
@@ -53,12 +53,13 @@ public class SimpleSendableInsert implements SendableInsert {
 		} catch (LowLevelPutException e) {
 			onFailure(e);
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
-			return;
+			return true;
 		} finally {
 			finished = true;
 		}
 		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
 		onSuccess();
+		return true;
 	}
 
 	public Object getClient() {

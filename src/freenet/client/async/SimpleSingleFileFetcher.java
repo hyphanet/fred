@@ -6,9 +6,9 @@ package freenet.client.async;
 import java.io.IOException;
 
 import freenet.client.ClientMetadata;
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyDecodeException;
@@ -36,7 +36,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	final long token;
 	
 	// Translate it, then call the real onFailure
-	public void onFailure(LowLevelGetException e) {
+	public void onFailure(LowLevelGetException e, int reqTokenIgnored) {
 		switch(e.code) {
 		case LowLevelGetException.DATA_NOT_FOUND:
 			onFailure(new FetchException(FetchException.DATA_NOT_FOUND));
@@ -105,7 +105,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		rcb.onSuccess(data, this);
 	}
 
-	public void onSuccess(ClientKeyBlock block, boolean fromStore) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, int reqTokenIgnored) {
 		Bucket data = extract(block);
 		if(data == null) return; // failed
 		if(!block.isMetadata()) {

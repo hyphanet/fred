@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
+import freenet.keys.ClientSSK;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
 
@@ -15,6 +16,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	final int maxRetries;
 	private int retryCount;
 	final FetchContext ctx;
+	static final int[] keys = new int[] { 0 };
 
 	BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
 		super(parent);
@@ -23,13 +25,25 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		this.key = key;
 		this.ctx = ctx;
 	}
+
+	public int[] allKeys() {
+		return keys;
+	}
 	
-	public ClientKey getKey() {
+	public int chooseKey() {
+		return 0;
+	}
+	
+	public ClientKey getKey(int token) {
 		return key;
 	}
 	
 	public FetchContext getContext() {
 		return ctx;
+	}
+
+	public boolean isSSK() {
+		return key instanceof ClientSSK;
 	}
 
 	/** Try again - returns true if we can retry */

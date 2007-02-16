@@ -25,11 +25,11 @@ class USKChecker extends BaseSingleFileFetcher {
 		this.cb = cb;
 	}
 	
-	public void onSuccess(ClientKeyBlock block, boolean fromStore) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, int token) {
 		cb.onSuccess((ClientSSKBlock)block);
 	}
 
-	public void onFailure(LowLevelGetException e) {
+	public void onFailure(LowLevelGetException e, int token) {
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "onFailure: "+e+" for "+this);
 		// Firstly, can we retry?

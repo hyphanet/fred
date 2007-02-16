@@ -168,21 +168,25 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(req instanceof SendableGet) {
 			SendableGet getter = (SendableGet)req;
 			if(!getter.ignoreStore()) {
-				ClientKeyBlock block;
-				try {
-					block = node.fetchKey(getter.getKey(), getter.dontCache());
-				} catch (KeyVerifyException e) {
-					// Verify exception, probably bogus at source;
-					// verifies at low-level, but not at decode.
-					if(logMINOR)
-						Logger.minor(this, "Decode failed: "+e, e);
-					getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED));
-					return;
-				}
-				if(block != null) {
-					if(logMINOR) Logger.minor(this, "Can fulfill "+req+" immediately from store");
-					getter.onSuccess(block, true);
-					return;
+				int[] keyTokens = getter.allKeys();
+				for(int i=0;i<keyTokens.length;i++) {
+					int tok = keyTokens[i];
+					ClientKeyBlock block;
+					try {
+						block = node.fetchKey(getter.getKey(tok), getter.dontCache());
+					} catch (KeyVerifyException e) {
+						// Verify exception, probably bogus at source;
+						// verifies at low-level, but not at decode.
+						if(logMINOR)
+							Logger.minor(this, "Decode failed: "+e, e);
+						getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok);
+						return;
+					}
+					if(block != null) {
+						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" immediately from store");
+						getter.onSuccess(block, true, tok);
+						return;
+					}
 				}
 			}
 		}

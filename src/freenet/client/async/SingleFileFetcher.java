@@ -113,7 +113,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	// Process the completed data. May result in us going to a
 	// splitfile, or another SingleFileFetcher, etc.
-	public void onSuccess(ClientKeyBlock block, boolean fromStore) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, int token) {
 		parent.completedBlock(fromStore);
 		// Extract data
 		Bucket data = extract(block);

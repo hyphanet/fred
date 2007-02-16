@@ -283,21 +283,24 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		return finished;
 	}
 
-	public void send(NodeClientCore core) {
+	public boolean send(NodeClientCore core) {
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
 			ClientKeyBlock b = getBlock();
 			if(b != null)
 				core.realPut(b, ctx.cacheLocalRequests);
-			else
+			else {
 				fail(new InserterException(InserterException.CANCELLED));
+				return false;
+			}
 		} catch (LowLevelPutException e) {
 			onFailure(e);
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
-			return;
+			return true;
 		}
 		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
 		onSuccess();
+		return true;
 	}
 
 	public Object getClient() {

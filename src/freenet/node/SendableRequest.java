@@ -15,8 +15,10 @@ public interface SendableRequest extends RandomGrabArrayItem {
 	public int getRetryCount();
 	
 	/** ONLY called by RequestStarter. Start the actual request using the NodeClientCore
-	 * provided. The request has been removed from the structure already. */
-	public void send(NodeClientCore node);
+	 * provided. The request has been removed from the structure already, if canRemove().
+	 * @return True if a request was sent, false otherwise (in which case the request will
+	 * be removed if it hasn't already been). */
+	public boolean send(NodeClientCore node);
 	
 	/** Get client context object */
 	public Object getClient();

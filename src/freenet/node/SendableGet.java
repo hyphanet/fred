@@ -5,10 +5,8 @@ package freenet.node;
 
 import freenet.client.FetchContext;
 import freenet.client.async.ClientRequester;
-import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
-import freenet.keys.ClientSSK;
 import freenet.support.Logger;
 
 /**
@@ -16,20 +14,30 @@ import freenet.support.Logger;
  */
 public abstract class SendableGet implements SendableRequest {
 
+	/** Is this an SSK? */
+	public abstract boolean isSSK();
+	
 	/** Parent BaseClientGetter. Required for schedulers. */
 	public final ClientRequester parent;
 	
-	/** Get the key to fetch (this time!). */
-	public abstract ClientKey getKey();
+	/** Choose a key to fetch.
+	 * @return An integer identifying a specific key. -1 indicates no keys available. */
+	public abstract int chooseKey();
+	
+	/** All key identifiers */
+	public abstract int[] allKeys();
+	
+	/** Get a numbered key to fetch. */
+	public abstract ClientKey getKey(int token);
 	
 	/** Get the fetch context (settings) object. */
 	public abstract FetchContext getContext();
 	
 	/** Called when/if the low-level request succeeds. */
-	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore);
+	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, int token);
 	
 	/** Called when/if the low-level request fails. */
-	public abstract void onFailure(LowLevelGetException e);
+	public abstract void onFailure(LowLevelGetException e, int token);
 	
 	/** Should the request ignore the datastore? */
 	public abstract boolean ignoreStore();
@@ -43,40 +51,46 @@ public abstract class SendableGet implements SendableRequest {
 		this.parent = parent;
 	}
 	
-	/** Do the request, blocking. Called by RequestStarter. */
-	public void send(NodeClientCore core) {
-		synchronized (this) {
-			if(isCancelled()) {
-				onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED));
-				return;
-			}	
+	/** Do the request, blocking. Called by RequestStarter. 
+	 * @return True if a request was executed. False if caller should try to find another request, and remove
+	 * this one from the queue. */
+	public boolean send(NodeClientCore core) {
+		FetchContext ctx = getContext();
+		while(true) {
+			synchronized (this) {
+				if(isCancelled()) {
+					onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), -1);
+					return false;
+				}	
+			}
+			ClientKeyBlock block;
+			int keyNum = -1;
+			try {
+				keyNum = chooseKey();
+				if(keyNum == -1) return false;
+				ClientKey key = getKey(keyNum);
+				if(key == null) continue;
+				block = core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
+			} catch (LowLevelGetException e) {
+				onFailure(e, keyNum);
+				return true;
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t, t);
+				onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum);
+				return true;
+			}
+			onSuccess(block, false, keyNum);
+			return true;
 		}
-		// Do we need to support the last 3?
-		ClientKeyBlock block;
-		try {
-			FetchContext ctx = getContext();
-			block = core.realGetKey(getKey(), ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
-		} catch (LowLevelGetException e) {
-			onFailure(e);
-			return;
-		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t, t);
-			onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
-			return;
-		}
-		onSuccess(block, false);
 	}
 
 	public void schedule() {
-		ClientKey key = getKey();
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Scheduling "+this+" for "+key);
-		if(key instanceof ClientCHK)
-			parent.chkScheduler.register(this);
-		else if(key instanceof ClientSSK)
+			Logger.minor(this, "Scheduling "+this);
+		if(isSSK())
 			parent.sskScheduler.register(this);
 		else
-			throw new IllegalStateException(String.valueOf(key));
+			parent.chkScheduler.register(this);
 	}
 
 }
