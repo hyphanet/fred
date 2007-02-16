@@ -23,5 +23,5 @@ public interface SendableRequest extends RandomGrabArrayItem {
 	
 	/** Get the ClientRequest */
 	public ClientRequester getClientRequest();
-
+	
 }

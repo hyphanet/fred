@@ -329,4 +329,8 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		}
 	}
 
+	public boolean canRemove() {
+		return true;
+	}
+
 }

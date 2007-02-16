@@ -113,5 +113,9 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 		return !ctx.cacheLocalRequests;
 	}
 	
+	public boolean canRemove() {
+		// Simple request, once it's sent, it's sent. May be requeued at a different # retries.
+		return true;
+	}
 
 }

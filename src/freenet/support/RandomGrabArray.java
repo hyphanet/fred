@@ -50,6 +50,7 @@ public class RandomGrabArray {
 			if(index == 0) return null;
 			int i = rand.nextInt(index);
 			RandomGrabArrayItem ret = reqs[i];
+			if(!ret.canRemove()) return ret;
 			reqs[i] = reqs[--index];
 			reqs[index] = null;
 			if(ret != null)

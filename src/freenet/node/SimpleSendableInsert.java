@@ -73,4 +73,8 @@ public class SimpleSendableInsert implements SendableInsert {
 		return finished;
 	}
 
+	public boolean canRemove() {
+		return true;
+	}
+
 }
