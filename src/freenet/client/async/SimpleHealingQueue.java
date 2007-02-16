@@ -120,4 +120,8 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		// Ignore
 	}
 
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		// Ignore
+	}
+
 }

@@ -232,4 +232,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return start(earlyEncode, true);
 	}
 
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		// Ignore, at the moment
+	}
+
 }

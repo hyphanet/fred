@@ -80,16 +80,16 @@ public class USKManager {
 	}
 
 	public synchronized USKFetcher getFetcher(USK usk, FetcherContext ctx,
-			BaseClientGetter parent, boolean keepLastData) {
+			ClientRequester requester, boolean keepLastData) {
 		USKFetcher f = (USKFetcher) fetchersByUSK.get(usk);
 		USK clear = usk.clearCopy();
 		if(temporaryBackgroundFetchersLRU.contains(clear))
 			temporaryBackgroundFetchersLRU.push(clear);
 		if(f != null) {
-			if((f.parent.priorityClass == parent.priorityClass) && f.ctx.equals(ctx) && f.keepLastData == keepLastData)
+			if((f.parent.priorityClass == requester.priorityClass) && f.ctx.equals(ctx) && f.keepLastData == keepLastData)
 				return f;
 		}
-		f = new USKFetcher(usk, this, ctx, parent, 3, false, keepLastData, -1);
+		f = new USKFetcher(usk, this, ctx, requester, 3, false, keepLastData, -1);
 		fetchersByUSK.put(usk, f);
 		return f;
 	}

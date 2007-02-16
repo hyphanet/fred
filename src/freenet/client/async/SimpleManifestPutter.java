@@ -173,6 +173,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.onFetchable(this);
 		}
 
+		public void onTransition(ClientGetState oldState, ClientGetState newState) {
+			// Ignore
+		}
+
 	}
 
 	static boolean logMINOR;
@@ -719,6 +723,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			fetchable = true;
 		}
 		cb.onFetchable(this);
+	}
+
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		// Ignore
 	}
 
 }

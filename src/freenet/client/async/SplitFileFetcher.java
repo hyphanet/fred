@@ -32,7 +32,7 @@ public class SplitFileFetcher implements ClientGetState {
 	final ArchiveContext archiveContext;
 	final LinkedList decompressors;
 	final ClientMetadata clientMetadata;
-	final BaseClientGetter parent;
+	final ClientRequester parent;
 	final GetCompletionCallback cb;
 	final int recursionLevel;
 	/** The splitfile type. See the SPLITFILE_ constants on Metadata. */
@@ -62,7 +62,7 @@ public class SplitFileFetcher implements ClientGetState {
 	private boolean finished;
 	private long token;
 	
-	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, BaseClientGetter parent,
+	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
 			FetcherContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
 			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2) throws FetchException, MetadataParseException {
 		this.finished = false;
@@ -73,8 +73,8 @@ public class SplitFileFetcher implements ClientGetState {
 		this.clientMetadata = clientMetadata;
 		this.cb = rcb;
 		this.recursionLevel = recursionLevel + 1;
-		this.parent = parent;
-		if(parent.isCancelled())
+		this.parent = parent2;
+		if(parent2.isCancelled())
 			throw new FetchException(FetchException.CANCELLED);
 		overrideLength = metadata.dataLength();
 		this.splitfileType = metadata.getSplitfileType();

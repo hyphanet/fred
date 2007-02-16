@@ -3,25 +3,81 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.client.FetcherContext;
+import freenet.client.async.BaseClientGetter;
+import freenet.client.async.ClientRequester;
+import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.ClientSSK;
+import freenet.support.Logger;
 
 /**
  * A low-level key fetch which can be sent immediately. @see SendableRequest
  */
-public interface SendableGet extends SendableRequest {
+public abstract class SendableGet implements SendableRequest {
 
-	public ClientKey getKey();
+	/** Parent BaseClientGetter. Required for schedulers. */
+	public final ClientRequester parent;
+	
+	/** Get the key to fetch (this time!). */
+	public abstract ClientKey getKey();
+	
+	/** Get the fetch context (settings) object. */
+	public abstract FetcherContext getContext();
 	
 	/** Called when/if the low-level request succeeds. */
-	public void onSuccess(ClientKeyBlock block, boolean fromStore);
+	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore);
 	
 	/** Called when/if the low-level request fails. */
-	public void onFailure(LowLevelGetException e);
+	public abstract void onFailure(LowLevelGetException e);
 	
 	/** Should the request ignore the datastore? */
-	public boolean ignoreStore();
+	public abstract boolean ignoreStore();
 
 	/** If true, don't cache local requests */
-	public boolean dontCache();
+	public abstract boolean dontCache();
+
+	// Implementation
+
+	public SendableGet(ClientRequester parent) {
+		this.parent = parent;
+	}
+	
+	/** Do the request, blocking. Called by RequestStarter. */
+	public void send(NodeClientCore core) {
+		synchronized (this) {
+			if(isFinished()) {
+				onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED));
+				return;
+			}	
+		}
+		// Do we need to support the last 3?
+		ClientKeyBlock block;
+		try {
+			FetcherContext ctx = getContext();
+			block = core.realGetKey(getKey(), ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
+		} catch (LowLevelGetException e) {
+			onFailure(e);
+			return;
+		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
+			onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+			return;
+		}
+		onSuccess(block, false);
+	}
+
+	public void schedule() {
+		ClientKey key = getKey();
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Scheduling "+this+" for "+key);
+		if(key instanceof ClientCHK)
+			parent.chkScheduler.register(this);
+		else if(key instanceof ClientSSK)
+			parent.sskScheduler.register(this);
+		else
+			throw new IllegalStateException(String.valueOf(key));
+	}
+
 }

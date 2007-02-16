@@ -13,11 +13,13 @@ import freenet.support.Logger;
  */
 public abstract class ClientRequester {
 
+	public abstract void onTransition(ClientGetState oldState, ClientGetState newState);
+	
 	// FIXME move the priority classes from RequestStarter here
 	protected short priorityClass;
 	protected boolean cancelled;
-	final ClientRequestScheduler chkScheduler;
-	final ClientRequestScheduler sskScheduler;
+	public final ClientRequestScheduler chkScheduler;
+	public final ClientRequestScheduler sskScheduler;
 	protected final Object client;
 
 	public short getPriorityClass() {
