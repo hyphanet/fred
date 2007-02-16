@@ -116,8 +116,8 @@ public class SplitFileFetcher implements ClientGetState {
 		if(segmentCount == 1) {
 			// splitfile* will be overwritten, this is bad
 			// so copy them
-			FreenetURI[] newSplitfileDataBlocks = new FreenetURI[splitfileDataBlocks.length];
-			FreenetURI[] newSplitfileCheckBlocks = new FreenetURI[splitfileCheckBlocks.length];
+			ClientCHK[] newSplitfileDataBlocks = new ClientCHK[splitfileDataBlocks.length];
+			ClientCHK[] newSplitfileCheckBlocks = new ClientCHK[splitfileCheckBlocks.length];
 			System.arraycopy(splitfileDataBlocks, 0, newSplitfileDataBlocks, 0, splitfileDataBlocks.length);
 			if(splitfileCheckBlocks.length > 0)
 				System.arraycopy(splitfileCheckBlocks, 0, newSplitfileCheckBlocks, 0, splitfileCheckBlocks.length);
@@ -130,8 +130,8 @@ public class SplitFileFetcher implements ClientGetState {
 				// Create a segment. Give it its keys.
 				int copyDataBlocks = Math.min(splitfileDataBlocks.length - dataBlocksPtr, blocksPerSegment);
 				int copyCheckBlocks = Math.min(splitfileCheckBlocks.length - checkBlocksPtr, checkBlocksPerSegment);
-				FreenetURI[] dataBlocks = new FreenetURI[copyDataBlocks];
-				FreenetURI[] checkBlocks = new FreenetURI[copyCheckBlocks];
+				ClientCHK[] dataBlocks = new ClientCHK[copyDataBlocks];
+				ClientCHK[] checkBlocks = new ClientCHK[copyCheckBlocks];
 				if(copyDataBlocks > 0)
 					System.arraycopy(splitfileDataBlocks, dataBlocksPtr, dataBlocks, 0, copyDataBlocks);
 				if(copyCheckBlocks > 0)

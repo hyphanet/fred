@@ -4,7 +4,6 @@
 package freenet.node;
 
 import freenet.client.FetchContext;
-import freenet.client.async.BaseClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;

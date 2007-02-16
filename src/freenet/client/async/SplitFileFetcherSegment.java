@@ -17,6 +17,8 @@ import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
 import freenet.keys.CHKBlock;
+import freenet.keys.ClientCHK;
+import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -30,8 +32,8 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 
 	private static boolean logMINOR;
 	final short splitfileType;
-	final FreenetURI[] dataBlocks;
-	final FreenetURI[] checkBlocks;
+	final ClientCHK[] dataBlocks;
+	final ClientCHK[] checkBlocks;
 	final ClientGetState[] dataBlockStatus;
 	final ClientGetState[] checkBlockStatus;
 	final MinimalSplitfileBlock[] dataBuckets;
@@ -56,7 +58,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	private int fetchedBlocks;
 	private final FailureCodeTracker errors;
 	
-	public SplitFileFetcherSegment(short splitfileType, FreenetURI[] splitfileDataBlocks, FreenetURI[] splitfileCheckBlocks, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataBlocks, ClientCHK[] splitfileCheckBlocks, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parentFetcher = fetcher;
 		this.errors = new FailureCodeTracker(false);
@@ -360,16 +362,11 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 					// Already fetched?
 					continue;
 				}
-				// FIXME maybe within a non-FECced splitfile at least?
-				if(dataBlocks[i].getKeyType().equals("USK")) {
-					fail(new FetchException(FetchException.INVALID_METADATA, "Cannot have USKs within a splitfile!"));
-					return;
-				}
 				if(dataBlockStatus[i] != null) {
 					Logger.error(this, "Scheduling twice? dataBlockStatus["+i+"] = "+dataBlockStatus[i]);
 				} else {
 					dataBlockStatus[i] =
-						(ClientGetState) SingleFileFetcher.create(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, i, true, null, false);
+						new SimpleSingleFileFetcher(dataBlocks[i], blockFetchContext.maxNonSplitfileRetries, blockFetchContext, parentFetcher.parent, this, true, i);
 				}
 			}
 			for(int i=0;i<checkBlocks.length;i++) {
@@ -377,15 +374,10 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 					// Already fetched?
 					continue;
 				}
-				// FIXME maybe within a non-FECced splitfile at least?
-				if(checkBlocks[i].getKeyType().equals("USK")) {
-					fail(new FetchException(FetchException.INVALID_METADATA, "Cannot have USKs within a splitfile!"));
-					return;
-				}
 				if(checkBlockStatus[i] != null) {
 					Logger.error(this, "Scheduling twice? dataBlockStatus["+i+"] = "+checkBlockStatus[i]);
 				} else checkBlockStatus[i] =
-					(ClientGetState) SingleFileFetcher.create(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, dataBlocks.length+i, false, null, false);
+					new SimpleSingleFileFetcher(checkBlocks[i], blockFetchContext.maxNonSplitfileRetries, blockFetchContext, parentFetcher.parent, this, true, i);
 			}
 			for(int i=0;i<dataBlocks.length;i++) {
 				if(dataBlockStatus[i] != null)
@@ -394,9 +386,6 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			for(int i=0;i<checkBlocks.length;i++)
 				if(checkBlockStatus[i] != null)
 					checkBlockStatus[i].schedule();
-		} catch (MalformedURLException e) {
-			// Invalidates the whole splitfile
-			fail(new FetchException(FetchException.INVALID_URI, "Invalid URI in splitfile: "+e));
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" scheduling "+this, t);
 			fail(new FetchException(FetchException.INTERNAL_ERROR, t));
