@@ -5,21 +5,18 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 
 import freenet.client.ArchiveContext;
 import freenet.client.FECCodec;
 import freenet.client.FailureCodeTracker;
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetchContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
-import freenet.keys.ClientKey;
-import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -402,6 +399,13 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 
 	public void onTransition(ClientGetState oldState, ClientGetState newState) {
 		// Ignore
+	}
+
+	public ClientCHK getBlockKey(int blockNum) {
+		if(blockNum > dataBlocks.length)
+			return checkBlocks[blockNum - dataBlocks.length];
+		else
+			return dataBlocks[blockNum];
 	}
 
 }
