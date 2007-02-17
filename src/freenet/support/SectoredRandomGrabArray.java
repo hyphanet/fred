@@ -58,14 +58,19 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	}
 
 	public synchronized RandomGrabArrayItem removeRandom() {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		while(true) {
 			if(grabArrays.length == 0) return null;
 			int x = rand.nextInt(grabArrays.length);
 			RemoveRandomWithClient rga = grabArrays[x];
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getClient());
 			RandomGrabArrayItem item = rga.removeRandom();
+			if(logMINOR)
+				Logger.minor(this, "RGA has picked "+item);
 			if(rga.isEmpty() || (item == null)) {
+				if(logMINOR)
+					Logger.minor(this, "Removing "+x);
 				Object client = rga.getClient();
 				grabArraysByClient.remove(client);
 				RemoveRandomWithClient[] newArray = new RemoveRandomWithClient[grabArrays.length-1];

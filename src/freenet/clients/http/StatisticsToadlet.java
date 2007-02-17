@@ -375,16 +375,18 @@ public class StatisticsToadlet extends Toadlet {
 				bandwidthList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]) + " (" + SizeUtil.formatSize(total_input_rate, true) + "ps)");
 				long[] rate = node.getNodeIOStats();
 				long delta = (rate[5] - rate[2]) / 1000;
-				long output_rate = (rate[3] - rate[0]) / delta;
-				long input_rate = (rate[4] - rate[1]) / delta;
-				SubConfig nodeConfig = node.config.get("node");
-				int outputBandwidthLimit = nodeConfig.getInt("outputBandwidthLimit");
-				int inputBandwidthLimit = nodeConfig.getInt("inputBandwidthLimit");
-				if(inputBandwidthLimit == -1) {
-					inputBandwidthLimit = outputBandwidthLimit * 4;
+				if(delta > 0) {
+					long output_rate = (rate[3] - rate[0]) / delta;
+					long input_rate = (rate[4] - rate[1]) / delta;
+					SubConfig nodeConfig = node.config.get("node");
+					int outputBandwidthLimit = nodeConfig.getInt("outputBandwidthLimit");
+					int inputBandwidthLimit = nodeConfig.getInt("inputBandwidthLimit");
+					if(inputBandwidthLimit == -1) {
+						inputBandwidthLimit = outputBandwidthLimit * 4;
+					}
+					bandwidthList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(outputBandwidthLimit, true)+"ps)");
+					bandwidthList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(inputBandwidthLimit, true)+"ps)");
 				}
-				bandwidthList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(outputBandwidthLimit, true)+"ps)");
-				bandwidthList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(inputBandwidthLimit, true)+"ps)");
 				nextTableCell = overviewTableRow.addChild("td");
 
 				// store size box

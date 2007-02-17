@@ -9,14 +9,13 @@ import java.util.LinkedList;
 
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetchContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
-import freenet.keys.FreenetURI;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -111,7 +110,9 @@ public class SplitFileFetcher implements ClientGetState {
 		} else throw new MetadataParseException("Unknown splitfile format: "+splitfileType);
 		this.maxTempLength = fetchContext.maxTempLength;
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Algorithm: "+splitfileType+", blocks per segment: "+blocksPerSegment+", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount);
+			Logger.minor(this, "Algorithm: "+splitfileType+", blocks per segment: "+blocksPerSegment+
+					", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount+
+					", data blocks: "+splitfileDataBlocks.length+", check blocks: "+splitfileCheckBlocks);
 		segments = new SplitFileFetcherSegment[segmentCount]; // initially null on all entries
 		if(segmentCount == 1) {
 			// splitfile* will be overwritten, this is bad
