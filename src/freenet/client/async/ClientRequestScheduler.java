@@ -312,10 +312,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+", prio "+
 						req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
 				ClientRequester cr = req.getClientRequest();
-				HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
-				v.remove(req);
-				if(v.isEmpty())
-					allRequestsByClientRequest.remove(cr);
+				if(req.canRemove()) {
+					HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
+					v.remove(req);
+					if(v.isEmpty())
+						allRequestsByClientRequest.remove(cr);
+					if(logMINOR) Logger.minor(this, "Removed from "+v);
+				}
+				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req);
 				return req;
 			}
 		}
