@@ -129,6 +129,17 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 	
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, int token) {
+		if(fromStore) {
+			synchronized(this) {
+				for(int i=0;i<blockNums.size();i++) {
+					Integer x = (Integer) blockNums.get(i);
+					if(x.intValue() == token) {
+						blockNums.remove(i);
+						i--;
+					}
+				}
+			}
+		}
 		Bucket data = extract(block, token);
 		if(data == null) return; // failed
 		if(!block.isMetadata()) {
