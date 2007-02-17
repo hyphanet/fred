@@ -132,8 +132,8 @@ public class PacketSender implements Runnable, Ticker {
         	Thread t1 = new Thread(new Watchdog(), "PacketSender watchdog");
         	t1.setDaemon(true);
         	t1.start();
-        	myThread.start();
         }
+    	myThread.start();
     }
     
     public void run() {
