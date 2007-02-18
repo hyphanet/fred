@@ -18,10 +18,10 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.LinkedHashSet;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -292,7 +292,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     private boolean allowLocalAddresses;
     
     /** Extra peer data file numbers */
-    private HashSet extraPeerDataFileNumbers;
+    private LinkedHashSet extraPeerDataFileNumbers;
 
     /** Average proportion of requests which are rejected or timed out */
     private TimeDecayingRunningAverage pRejected;
@@ -304,7 +304,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     private int privateDarknetCommentFileNumber;
     
     /** Queued-to-send N2NTM extra peer data file numbers */
-    private HashSet queuedToSendN2NTMExtraPeerDataFileNumbers;
+    private LinkedHashSet queuedToSendN2NTMExtraPeerDataFileNumbers;
 
     /** Total low-level input bytes */
     private long totalBytesIn;
@@ -628,10 +628,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         privateDarknetCommentFileNumber = -1;
 
 		// Setup the extraPeerDataFileNumbers
-		extraPeerDataFileNumbers = new HashSet();
+		extraPeerDataFileNumbers = new LinkedHashSet();
 		
 		// Setup the queuedToSendN2NTMExtraPeerDataFileNumbers
-		queuedToSendN2NTMExtraPeerDataFileNumbers = new HashSet();
+		queuedToSendN2NTMExtraPeerDataFileNumbers = new LinkedHashSet();
 		
 		SHA256.returnMessageDigest(md);
     }
