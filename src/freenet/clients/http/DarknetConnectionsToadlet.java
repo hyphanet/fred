@@ -569,7 +569,13 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		// our reference
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		referenceInfobox.addChild("div", "class", "infobox-header").addChild("a", "href", "myref.fref", "My reference");
+		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
+		headerReferenceInfobox.addChild("a", "href", "myref.fref", "My reference");
+		HTMLNode warningSentence = headerReferenceInfobox.addChild("pre");
+		warningSentence.addChild("#", "Node reference must be copied ");
+		warningSentence.addChild("big").addChild("b", "AS IS. ");
+		warningSentence.addChild("#", "Modifying it will render it ");
+		warningSentence.addChild("big").addChild("b", "useless.");
 		referenceInfobox.addChild("div", "class", "infobox-content").addChild("pre", "id", "reference", node.exportPublicFieldSet().toString());
 		
 		// our ports
