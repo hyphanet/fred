@@ -550,8 +550,8 @@ public class StatisticsToadlet extends Toadlet {
 				nextTableCell = overviewTableRow.addChild("td", "class", "first");
 				HTMLNode nodeCircleInfobox = nextTableCell.addChild("div", "class", "infobox");
 				nodeCircleInfobox.addChild("div", "class", "infobox-header", "Node\u00a0Location\u00a0Distribution (w/Swap\u00a0Age)");
-				HTMLNode nodeCircleInfoboxContent = nodeCircleInfobox.addChild("div", "class", "infobox-content");
-				addNodeCircle(nodeCircleInfoboxContent);
+				HTMLNode nodeCircleTable = nodeCircleInfobox.addChild("table");
+				addNodeCircle(nodeCircleTable);
 			}
 		}
 
@@ -563,30 +563,44 @@ public class StatisticsToadlet extends Toadlet {
 	private final static int PEER_CIRCLE_ADDITIONAL_FREE_SPACE = 10;
 	private final static long MAX_CIRCLE_AGE_THRESHOLD = 24l*60*60*1000;   // 24 hours
 	private final static int HISTOGRAM_LENGTH = 10;
+	private final DecimalFormat fix1p1 = new DecimalFormat("0.0");
 	private final DecimalFormat fix1p2 = new DecimalFormat("0.00");
 	private final DecimalFormat fix3p1US = new DecimalFormat("##0.0", new DecimalFormatSymbols(Locale.US));
 	private final DecimalFormat fix3pctUS = new DecimalFormat("##0%", new DecimalFormatSymbols(Locale.US));
 	
-	private void addNodeCircle (HTMLNode htmlNode) {
-		HTMLNode nodeCircleInfoboxContentDiv = htmlNode.addChild("div", new String[] { "style", "class" }, new String[] {"position: relative; height: " + ((PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) * 2) + "px; width: " + ((PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) * 2) + "px", "peercircle" });
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0, false, 1.0),	 "mark" }, "|");
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.125, false, 1.0), "mark" }, "+");
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.25, false, 1.0),  "mark" }, "--");
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.375, false, 1.0), "mark" }, "+");
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.5, false, 1.0),   "mark" }, "|");
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.625, false, 1.0), "mark" }, "+");
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.75, false, 1.0),  "mark" }, "--");
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { "position: absolute; top: " + PEER_CIRCLE_RADIUS + "px; left: " + (PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) + "px", "mark" }, "+");
+	private void addNodeCircle (HTMLNode circleTable) {
+		int[] histogram = new int[HISTOGRAM_LENGTH];
+		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
+			histogram[i] = 0;
+		}
+		HTMLNode nodeCircleTableRow = circleTable.addChild("tr");
+		HTMLNode nodeHistogramLegendTableRow = circleTable.addChild("tr");
+		HTMLNode nodeHistogramGraphTableRow = circleTable.addChild("tr");
+		HTMLNode nodeCircleTableCell = nodeCircleTableRow.addChild("td", new String[] { "class", "colspan" }, new String[] {"first", "10"});
+		HTMLNode nodeHistogramLegendCell;
+		HTMLNode nodeHistogramGraphCell;
+		HTMLNode nodeCircleInfoboxContent = nodeCircleTableCell.addChild("div", new String[] { "style", "class" }, new String[] {"position: relative; height: " + ((PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) * 2) + "px; width: " + ((PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) * 2) + "px", "peercircle" });
+		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0, false, 1.0),	 "mark" }, "|");
+		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.125, false, 1.0), "mark" }, "+");
+		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.25, false, 1.0),  "mark" }, "--");
+		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.375, false, 1.0), "mark" }, "+");
+		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.5, false, 1.0),   "mark" }, "|");
+		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.625, false, 1.0), "mark" }, "+");
+		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.75, false, 1.0),  "mark" }, "--");
+		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
+		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
+		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { "position: absolute; top: " + PEER_CIRCLE_RADIUS + "px; left: " + (PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) + "px", "mark" }, "+");
 		HashMap knownLocsCopy = node.getKnownLocations(-1);
 		Double location = new Double(0.0);
 		Long locationTime = new Long(0);
 		double strength = 1.0;
 		long now = System.currentTimeMillis();
 		long age = 1;
+		int histogramIndex;
+		int nodeCount = 0;
 		Iterator knownLocationsIterator = knownLocsCopy.keySet().iterator();
 		while (knownLocationsIterator.hasNext()) {
+			nodeCount += 1;
 			location = (Double) knownLocationsIterator.next();
 			locationTime = (Long) knownLocsCopy.get(location);
 			age = now - locationTime.longValue();
@@ -594,9 +608,21 @@ public class StatisticsToadlet extends Toadlet {
 				age = MAX_CIRCLE_AGE_THRESHOLD;
 			}
 			strength = 1 - ((double) age / MAX_CIRCLE_AGE_THRESHOLD );
-			nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location.doubleValue(), false, strength), "connected" }, "x");
+			histogramIndex = (int) (Math.floor(location.doubleValue() * HISTOGRAM_LENGTH));
+			histogram[histogramIndex]++;
+			nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location.doubleValue(), false, strength), "connected" }, "x");
 		}
-		nodeCircleInfoboxContentDiv.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(node.getLocation(), true, 1.0), "me" }, "x");
+		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(node.getLocation(), true, 1.0), "me" }, "x");
+		//
+		double histogramPercent;
+		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
+			nodeHistogramLegendCell = nodeHistogramLegendTableRow.addChild("td");
+			nodeHistogramGraphCell = nodeHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
+			nodeHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p1.format(((double) i) / HISTOGRAM_LENGTH ));
+			//
+			histogramPercent = ((double) histogram[ i ] ) / nodeCount;
+			nodeHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;" }, "\u00a0");
+		}
 	}
 	
 	private void addPeerCircle (HTMLNode circleTable) {
@@ -647,7 +673,7 @@ public class StatisticsToadlet extends Toadlet {
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
 			peerHistogramLegendCell = peerHistogramLegendTableRow.addChild("td");
 			peerHistogramGraphCell = peerHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
-			peerHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p2.format(((double) i) / ( 10 * 2 )));
+			peerHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p2.format(((double) i) / ( HISTOGRAM_LENGTH * 2 )));
 			//
 			histogramPercent = ((double) histogramConnected[ i ] ) / peerCount;
 			peerHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;" }, "\u00a0");
