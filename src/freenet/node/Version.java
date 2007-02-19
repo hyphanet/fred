@@ -28,13 +28,13 @@ public class Version {
 
 	/** Oldest build of Fred we will talk to */
 	private static final int oldLastGoodBuild = 1010;
-	private static final int newLastGoodBuild = 1010;
+	private static final int newLastGoodBuild = 1016;
 	static final long transitionTime;
 	
 	static {
 		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 		// year, month - 1 (or constant), day, hour, minute, second
-		_cal.set( 2006, Calendar.DECEMBER, 31, 0, 0, 0 );
+		_cal.set( 2007, Calendar.MARCH, 1, 0, 0, 0 );
 		transitionTime = _cal.getTimeInMillis();
 	}
 	
