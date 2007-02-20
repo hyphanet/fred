@@ -198,14 +198,12 @@ public class USKFetcher implements ClientGetState {
 	
 	private boolean started;
 
-	private int token;
-	
-	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData, int token) {
-		this(origUSK, manager, ctx, requester, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData, token);
+	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData) {
+		this(origUSK, manager, ctx, requester, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData);
 	}
 	
 	// FIXME use this!
-	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData, int token) {
+	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData) {
 		this.parent = requester;
 		this.maxMinFailures = maxProbeEditions;
 		this.origUSK = origUSK;
@@ -220,7 +218,6 @@ public class USKFetcher implements ClientGetState {
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		this.token = token;
 	}
 	
 	void onDNF(USKAttempt att) {
@@ -518,7 +515,7 @@ public class USKFetcher implements ClientGetState {
 	}
 
 	public long getToken() {
-		return token;
+		return -1;
 	}
 	
 }
