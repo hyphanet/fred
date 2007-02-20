@@ -144,6 +144,8 @@ public class SplitFileFetcher implements ClientGetState {
 			}
 		}
 		this.token = token2;
+		parent.addBlocks(splitfileDataBlocks.length + splitfileCheckBlocks.length);
+		parent.addMustSucceedBlocks(splitfileDataBlocks.length);
 	}
 
 	/** Return the final status of the fetch. Throws an exception, or returns a 
