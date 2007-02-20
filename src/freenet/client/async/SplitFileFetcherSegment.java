@@ -24,7 +24,7 @@ import freenet.support.io.BucketTools;
 
 /**
  * A single segment within a SplitFileFetcher.
- * This in turn controls a large number of SingleFileFetcher's.
+ * This in turn controls a large number of SplitFileFetcherSubSegment's, which are registered on the ClientRequestScheduler.
  */
 public class SplitFileFetcherSegment {
 
