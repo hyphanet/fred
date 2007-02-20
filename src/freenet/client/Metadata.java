@@ -272,8 +272,7 @@ public class Metadata implements Cloneable {
 					(splitfileAlgorithm == SPLITFILE_ONION_STANDARD)))
 				throw new MetadataParseException("Unknown splitfile algorithm "+splitfileAlgorithm);
 			
-			if((splitfileAlgorithm == SPLITFILE_NONREDUNDANT) &&
-					!fullKeys)
+			if(splitfileAlgorithm == SPLITFILE_NONREDUNDANT)
 				throw new MetadataParseException("Non-redundant splitfile invalid");
 			
 			int paramsLength = dis.readInt();
