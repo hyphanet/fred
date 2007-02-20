@@ -92,15 +92,15 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		}
 		
 		public int read() throws IOException {
-			if(ptr > length)
+			if(ptr >= length)
 				throw new EOFException();
 			int x = f.read();
-			ptr++;
+			if(x != -1) ptr++;
 			return x;
 		}
 		
 		public int read(byte[] buf, int offset, int len) throws IOException {
-			if(ptr > length)
+			if(ptr >= length)
 				throw new EOFException();
 			len = (int) Math.min(len, length - ptr);
 			int x = f.read(buf, offset, len);
