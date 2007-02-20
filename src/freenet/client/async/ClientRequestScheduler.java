@@ -314,10 +314,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 				ClientRequester cr = req.getClientRequest();
 				if(req.canRemove()) {
 					HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
-					v.remove(req);
-					if(v.isEmpty())
-						allRequestsByClientRequest.remove(cr);
-					if(logMINOR) Logger.minor(this, "Removed from "+v);
+					if(v == null) {
+						Logger.error(this, "No HashSet registered for "+cr);
+					} else {
+						v.remove(req);
+						if(v.isEmpty())
+							allRequestsByClientRequest.remove(cr);
+						if(logMINOR) Logger.minor(this, "Removed from "+v);
+					}
 				}
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req);
 				return req;
