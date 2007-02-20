@@ -16,7 +16,6 @@ public class FetchContext implements Cloneable {
 	public static final int IDENTICAL_MASK = 0;
 	public static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
 	public static final int SPLITFILE_DEFAULT_MASK = 2;
-	public static final int SPLITFILE_USE_LENGTHS_MASK = 3;
 	public static final int SET_RETURN_ARCHIVES = 4;
 	/** Low-level client to send low-level requests to. */
 	public long maxOutputLength;
@@ -154,28 +153,6 @@ public class FetchContext implements Cloneable {
 			this.followRedirects = ctx.followRedirects;
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = false;
-			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
-			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
-			this.cacheLocalRequests = ctx.cacheLocalRequests;
-			this.returnZIPManifests = ctx.returnZIPManifests;
-		} else if(maskID == SPLITFILE_USE_LENGTHS_MASK) {
-			this.maxOutputLength = ctx.maxOutputLength;
-			this.maxTempLength = ctx.maxTempLength;
-			this.maxMetadataSize = ctx.maxMetadataSize;
-			this.archiveManager = ctx.archiveManager;
-			this.bucketFactory = ctx.bucketFactory;
-			this.maxRecursionLevel = ctx.maxRecursionLevel;
-			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
-			this.maxArchiveLevels = ctx.maxArchiveLevels;
-			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
-			this.random = ctx.random;
-			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
-			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
-			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
-			this.allowSplitfiles = ctx.allowSplitfiles;
-			this.followRedirects = ctx.followRedirects;
-			this.localRequestOnly = ctx.localRequestOnly;
-			this.splitfileUseLengths = true;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
