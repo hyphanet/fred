@@ -39,8 +39,8 @@ bit 1 = DBR (splitfile + DBR *is* valid)
 bit 2 = no MIME type
 bit 3 = compressed MIME type
 bit 4 = has extra metadata fields
-bit 5 = redirects as full keys (valid even for splitfiles)
-bit 6 = use the chunk lengths in a splitfile (ignored unless algorithm = 0)
+bit 5 = redirects as full keys (invalid if splitfile)
+bit 6 = unused
 bit 7 = compressed splitfile (might work with normal redirects but there
 is no point as single blocks are transparently gzipped anyway)
 
@@ -51,7 +51,6 @@ below, for tar.gz, tar.bz2 etc)
 
 If a splitfile:
 8 bytes - real content length (uncompressed)
--1 if we don't know (not allowed on splitfiles unless bit 6 set above)
 Note no 2GB limit. :)
 
 If compressed:
