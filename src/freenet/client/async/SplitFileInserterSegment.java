@@ -227,7 +227,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 					throw new ResumeException("Missing data block "+i+" and need to reconstruct check blocks");
 		}
 		parent.parent.addBlocks(dataURIs.length+checkURIs.length);
-		parent.parent.addMustSucceedBlocks(dataURIs.length+checkURIs.length);
+		parent.parent.addMustSucceedBlocks(dataURIs.length);
 	}
 
 	public synchronized SimpleFieldSet getProgressFieldset() {
