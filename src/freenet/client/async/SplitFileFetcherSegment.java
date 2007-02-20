@@ -306,14 +306,14 @@ public class SplitFileFetcherSegment {
 			int maxTries = blockFetchContext.maxNonSplitfileRetries;
 			if(blockNo < dataKeys.length) {
 				tries = dataRetries[blockNo]++;
-				if(dataRetries[blockNo] > maxTries && maxTries >= 0) {
+				if(tries > maxTries && maxTries >= 0) {
 					onFatalFailure(e, blockNo);
 					return;
 				}
 			} else {
 				blockNo -= dataKeys.length;
 				tries = checkRetries[blockNo]++;
-				if(checkRetries[blockNo] > maxTries && maxTries >= 0) {
+				if(tries > maxTries && maxTries >= 0) {
 					onFatalFailure(e, blockNo);
 					return;
 				}
