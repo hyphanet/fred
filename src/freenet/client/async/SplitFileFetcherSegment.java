@@ -271,6 +271,7 @@ public class SplitFileFetcherSegment {
 	/** This is after any retries and therefore is either out-of-retries or fatal */
 	public synchronized void onFatalFailure(FetchException e, int blockNo) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		synchronized(this) {
 			if(blockNo < dataKeys.length) {
 				if(dataKeys[blockNo] == null) {
@@ -288,7 +289,6 @@ public class SplitFileFetcherSegment {
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 			// :(
-			if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this);
 			if(e.isFatal())
 				fatallyFailedBlocks++;
 			else
@@ -303,16 +303,17 @@ public class SplitFileFetcherSegment {
 	public void onNonFatalFailure(FetchException e, int blockNo) {
 		int tries;
 		synchronized(this) {
+			int maxTries = blockFetchContext.maxNonSplitfileRetries;
 			if(blockNo < dataKeys.length) {
 				tries = dataRetries[blockNo]++;
-				if(dataRetries[blockNo] > blockFetchContext.maxNonSplitfileRetries) {
+				if(dataRetries[blockNo] > maxTries && maxTries >= 0) {
 					onFatalFailure(e, blockNo);
 					return;
 				}
 			} else {
 				blockNo -= dataKeys.length;
 				tries = checkRetries[blockNo]++;
-				if(checkRetries[blockNo] > blockFetchContext.maxNonSplitfileRetries) {
+				if(checkRetries[blockNo] > maxTries && maxTries >= 0) {
 					onFatalFailure(e, blockNo);
 					return;
 				}
