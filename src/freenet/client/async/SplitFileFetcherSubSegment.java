@@ -119,7 +119,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			forceFatal = true;
 		}
 		segment.errors.inc(e.getMode());
-		if(!(e.isFatal() || forceFatal) ) {
+		if(e.isFatal() || forceFatal) {
 			parent.fatallyFailedBlock();
 			segment.onFatalFailure(e, token);
 		} else {
