@@ -120,10 +120,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		segment.errors.inc(e.getMode());
 		if(e.isFatal() || forceFatal) {
-			parent.fatallyFailedBlock();
 			segment.onFatalFailure(e, token);
 		} else {
-			parent.failedBlock();
 			segment.onNonFatalFailure(e, token);
 		}
 	}

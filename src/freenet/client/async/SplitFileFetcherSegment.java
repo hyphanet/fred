@@ -289,10 +289,13 @@ public class SplitFileFetcherSegment {
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 			// :(
-			if(e.isFatal())
+			if(e.isFatal()) {
 				fatallyFailedBlocks++;
-			else
+				parentFetcher.parent.fatallyFailedBlock();
+			} else {
 				failedBlocks++;
+				parentFetcher.parent.failedBlock();
+			}
 			if(failedBlocks + fatallyFailedBlocks <= (dataKeys.length + checkKeys.length - minFetched))
 				return;
 		}
