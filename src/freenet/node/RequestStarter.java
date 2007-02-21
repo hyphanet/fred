@@ -163,6 +163,8 @@ public class RequestStarter implements Runnable {
 
 		public void run() {
 			req.send(core); // FIXME check return value?
+			if(Logger.shouldLog(Logger.MINOR, this)) 
+				Logger.minor(this, "Finished "+req);
 		}
 		
 	}

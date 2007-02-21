@@ -27,6 +27,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	final SplitFileFetcherSegment segment;
 	final Vector blockNums;
 	final FetchContext ctx;
+	private static boolean logMINOR;
 	
 	SplitFileFetcherSubSegment(SplitFileFetcherSegment segment, int retryCount) {
 		super(segment.parentFetcher.parent);
@@ -34,6 +35,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		this.retryCount = retryCount;
 		ctx = segment.blockFetchContext;
 		blockNums = new Vector();
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	public boolean dontCache() {
@@ -62,8 +64,15 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 	
 	private synchronized int removeRandomBlockNum() {
-		if(blockNums.isEmpty()) return -1;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(blockNums.isEmpty()) {
+			if(logMINOR)
+				Logger.minor(this, "No blocks to remove");
+			return -1;
+		}
 		int x = ctx.random.nextInt(blockNums.size());
+		if(logMINOR)
+			Logger.minor(this, "Removing block "+x+" of "+blockNums.size());
 		return ((Integer) blockNums.remove(x)).intValue();
 	}
 
@@ -197,6 +206,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public synchronized boolean canRemove() {
 		if(blockNums.isEmpty()) {
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Removing "+this+" in canRemove()");
 			segment.removeSeg(this);
 			return true;
 		} else return false;
@@ -212,11 +223,16 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public void add(int blockNo, boolean dontSchedule) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Adding block "+blockNo+" to "+this+" dontSchedule="+dontSchedule);
 		if(blockNo < 0) throw new IllegalArgumentException();
 		Integer i = new Integer(blockNo);
 		synchronized(this) {
 			blockNums.add(i);
-			if(blockNums.size() > 1) return;
+			if(blockNums.size() > 1) {
+				if(logMINOR) Logger.minor(this, "Other blocks queued, not scheduling: "+blockNums.size()+" : "+blockNums);
+				return;
+			}
 			if(dontSchedule) return;
 		}
 		if(!dontSchedule) schedule();

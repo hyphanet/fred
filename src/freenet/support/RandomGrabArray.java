@@ -46,8 +46,12 @@ public class RandomGrabArray {
 	}
 	
 	public synchronized RandomGrabArrayItem removeRandom() {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		while(true) {
-			if(index == 0) return null;
+			if(index == 0) {
+				if(logMINOR) Logger.minor(this, "All null on "+this);
+				return null;
+			}
 			int i = rand.nextInt(index);
 			RandomGrabArrayItem ret = reqs[i];
 			if(ret != null && !ret.canRemove()) return ret;

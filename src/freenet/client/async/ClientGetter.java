@@ -118,11 +118,17 @@ public class ClientGetter extends BaseClientGetter {
 		client.onSuccess(result, this);
 	}
 
-	public synchronized void onFailure(FetchException e, ClientGetState state) {
+	public void onFailure(FetchException e, ClientGetState state) {
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
-				archiveRestarts++;
-				if(archiveRestarts > ctx.maxArchiveRestarts)
+				int ar;
+				synchronized(this) {
+					archiveRestarts++;
+					ar = archiveRestarts;
+				}
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Archive restart on "+this+" ar="+ar);
+				if(ar > ctx.maxArchiveRestarts)
 					e = new FetchException(FetchException.TOO_MANY_ARCHIVE_RESTARTS);
 				else {
 					try {
@@ -134,10 +140,14 @@ public class ClientGetter extends BaseClientGetter {
 					return;
 				}
 			}
-			finished = true;
+			synchronized(this) {
+				finished = true;
+			}
+			if(e.errorCodes.isOneCodeOnly())
+				e = new FetchException(e.errorCodes.getFirstCode(), e);
 			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
-			Logger.minor(this, "onFailure("+e+", "+state+")", e);
+			Logger.minor(this, "onFailure("+e+", "+state+") ", e);
 			client.onFailure(e, this);
 			return;
 		}

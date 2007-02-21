@@ -90,6 +90,22 @@ public class FailureCodeTracker {
 		return sb.toString();
 	}
 
+	public synchronized String toString() {
+		StringBuffer sb = new StringBuffer(super.toString());
+		sb.append(':');
+		if(map.size() == 0) sb.append("empty");
+		else if(map.size() == 1) {
+			sb.append("one:");
+			Integer code = (Integer) (map.keySet().toArray())[0];
+			sb.append(code);
+			sb.append('=');
+			sb.append(((Item) map.get(code)).x);
+		} else {
+			sb.append(map.size());
+		}
+		return sb.toString();
+	}
+	
 	/**
 	 * Merge codes from another tracker into this one.
 	 */

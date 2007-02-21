@@ -67,7 +67,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getClient());
 			RandomGrabArrayItem item = rga.removeRandom();
 			if(logMINOR)
-				Logger.minor(this, "RGA has picked "+item);
+				Logger.minor(this, "RGA has picked "+item+
+						(item==null ? "" : (" cancelled="+item.isCancelled()+")"))+" rga.isEmpty="+rga.isEmpty());
 			if(rga.isEmpty() || (item == null) || item.isCancelled()) {
 				if(logMINOR)
 					Logger.minor(this, "Removing "+x);

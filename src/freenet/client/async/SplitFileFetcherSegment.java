@@ -326,6 +326,8 @@ public class SplitFileFetcherSegment {
 		}
 		// If we are here we are going to retry
 		SplitFileFetcherSubSegment sub = getSubSegment(tries);
+		if(logMINOR)
+			Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+" : "+sub);
 		sub.add(blockNo, false);
 	}
 	
