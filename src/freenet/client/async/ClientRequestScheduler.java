@@ -10,6 +10,7 @@ import java.util.Iterator;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
+import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyVerifyException;
 import freenet.node.LowLevelGetException;
@@ -174,7 +175,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 					int tok = keyTokens[i];
 					ClientKeyBlock block;
 					try {
-						block = node.fetchKey(getter.getKey(tok), getter.dontCache());
+						ClientKey key = getter.getKey(tok);
+						if(key == null) {
+							if(logMINOR)
+								Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
+							continue;
+						} else
+							block = node.fetchKey(key, getter.dontCache());
 					} catch (KeyVerifyException e) {
 						// Verify exception, probably bogus at source;
 						// verifies at low-level, but not at decode.
@@ -190,7 +197,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						anyValid = true;
 					}
 				}
-				if(anyValid) return;
+				if(!anyValid) return;
 			}
 		}
 		innerRegister(req);
