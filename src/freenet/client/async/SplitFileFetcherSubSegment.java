@@ -203,7 +203,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public boolean isCancelled() {
-		return segment.isFinished();
+		return segment.isFinished() || segment.isFinishing();
 	}
 
 	public boolean isSSK() {
@@ -211,9 +211,14 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return false;
 	}
 
-	public synchronized void add(int blockNo) {
+	public void add(int blockNo, boolean dontSchedule) {
 		Integer i = new Integer(blockNo);
-		blockNums.add(i);
+		synchronized(this) {
+			blockNums.add(i);
+			if(blockNums.size() > 1) return;
+			if(dontSchedule) return;
+		}
+		if(!dontSchedule) schedule();
 	}
 
 	public String toString() {

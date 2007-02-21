@@ -325,8 +325,7 @@ public class SplitFileFetcherSegment {
 		}
 		// If we are here we are going to retry
 		SplitFileFetcherSubSegment sub = getSubSegment(tries);
-		sub.add(blockNo);
-		sub.schedule();
+		sub.add(blockNo, false);
 	}
 	
 	private SplitFileFetcherSubSegment getSubSegment(int retryCount) {
@@ -375,7 +374,7 @@ public class SplitFileFetcherSegment {
 		try {
 			SplitFileFetcherSubSegment seg = getSubSegment(0);
 			for(int i=0;i<dataRetries.length+checkRetries.length;i++)
-				seg.add(i);
+				seg.add(i, true);
 			
 			seg.schedule();
 		} catch (Throwable t) {

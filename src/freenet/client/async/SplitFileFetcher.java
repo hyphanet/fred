@@ -112,7 +112,7 @@ public class SplitFileFetcher implements ClientGetState {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Algorithm: "+splitfileType+", blocks per segment: "+blocksPerSegment+
 					", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount+
-					", data blocks: "+splitfileDataBlocks.length+", check blocks: "+splitfileCheckBlocks);
+					", data blocks: "+splitfileDataBlocks.length+", check blocks: "+splitfileCheckBlocks.length);
 		segments = new SplitFileFetcherSegment[segmentCount]; // initially null on all entries
 		if(segmentCount == 1) {
 			// splitfile* will be overwritten, this is bad
