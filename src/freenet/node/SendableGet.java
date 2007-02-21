@@ -56,9 +56,11 @@ public abstract class SendableGet implements SendableRequest {
 	 * this one from the queue. */
 	public boolean send(NodeClientCore core) {
 		FetchContext ctx = getContext();
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		while(true) {
 			synchronized (this) {
 				if(isCancelled()) {
+					if(logMINOR) Logger.minor(this, "Cancelled: "+this);
 					onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), -1);
 					return false;
 				}	
@@ -67,9 +69,15 @@ public abstract class SendableGet implements SendableRequest {
 			int keyNum = -1;
 			try {
 				keyNum = chooseKey();
-				if(keyNum == -1) return false;
+				if(keyNum == -1) {
+					if(logMINOR) Logger.minor(this, "No more keys: "+this);
+					return false;
+				}
 				ClientKey key = getKey(keyNum);
-				if(key == null) continue;
+				if(key == null) {
+					if(logMINOR) Logger.minor(this, "No key "+keyNum+": "+this);
+					continue;
+				}
 				block = core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
 			} catch (LowLevelGetException e) {
 				onFailure(e, keyNum);
