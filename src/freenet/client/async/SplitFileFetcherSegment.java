@@ -58,14 +58,14 @@ public class SplitFileFetcherSegment {
 	final FailureCodeTracker errors;
 	private boolean finishing;
 	
-	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataBlocks, ClientCHK[] splitfileCheckBlocks, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parentFetcher = fetcher;
 		this.errors = new FailureCodeTracker(false);
 		this.archiveContext = archiveContext;
 		this.splitfileType = splitfileType;
-		dataKeys = splitfileDataBlocks;
-		checkKeys = splitfileCheckBlocks;
+		dataKeys = splitfileDataKeys;
+		checkKeys = splitfileCheckKeys;
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			minFetched = dataKeys.length;
 		} else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
