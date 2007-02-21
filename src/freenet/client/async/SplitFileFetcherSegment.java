@@ -158,6 +158,7 @@ public class SplitFileFetcherSegment {
 		} else
 			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 		fetchedBlocks++;
+		if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks");
 		if(fetchedBlocks >= minFetched)
 			startDecode();
 	}

@@ -174,6 +174,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), token);
 			return null;
 		}
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, data == null ? "Could not decode: null" : ("Decoded "+data.size()+" bytes"));
 		return data;
 	}
 
