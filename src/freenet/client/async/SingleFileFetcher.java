@@ -546,11 +546,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				ctx.allowSplitfiles == false && ctx.followRedirects == false && 
 				returnBucket == null && key instanceof ClientKey)
 			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, requester, cb, isEssential, l);
-		else
-			if(logMINOR) 
-				Logger.minor(SingleFileFetcher.class, "Not creating SimpleSingleFileFetcher: cm="+clientMetadata+
-					" uri="+uri+" ("+uri.getAllMetaStrings()+") ctx.allowSplitfiles="+ctx.allowSplitfiles+
-						"ctx.followRedirects="+ctx.followRedirects+" returnBucket="+returnBucket+" key="+key, new Exception());
 		if(key instanceof ClientKey)
 			return new SingleFileFetcher(requester, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal);
 		else {

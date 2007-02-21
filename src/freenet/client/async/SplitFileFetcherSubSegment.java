@@ -205,7 +205,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public synchronized boolean canRemove() {
-		if(blockNums.isEmpty()) {
+		if(blockNums.size() < 2) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Removing "+this+" in canRemove()");
 			segment.removeSeg(this);
@@ -229,11 +229,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		Integer i = new Integer(blockNo);
 		synchronized(this) {
 			blockNums.add(i);
+			if(dontSchedule) return;
 			if(blockNums.size() > 1) {
 				if(logMINOR) Logger.minor(this, "Other blocks queued, not scheduling: "+blockNums.size()+" : "+blockNums);
 				return;
 			}
-			if(dontSchedule) return;
 		}
 		if(!dontSchedule) schedule();
 	}

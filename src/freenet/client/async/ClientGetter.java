@@ -143,7 +143,7 @@ public class ClientGetter extends BaseClientGetter {
 			synchronized(this) {
 				finished = true;
 			}
-			if(e.errorCodes.isOneCodeOnly())
+			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
 				e = new FetchException(e.errorCodes.getFirstCode(), e);
 			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
