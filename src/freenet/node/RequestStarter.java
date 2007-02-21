@@ -162,7 +162,7 @@ public class RequestStarter implements Runnable {
 		}
 
 		public void run() {
-			req.send(core);
+			req.send(core); // FIXME check return value?
 		}
 		
 	}
