@@ -36,9 +36,6 @@ public class FetchContext implements Cloneable {
 	public boolean localRequestOnly;
 	public boolean ignoreStore;
 	public final ClientEventProducer eventProducer;
-	/** Whether to allow non-full blocks, or blocks which are not direct CHKs, in splitfiles.
-	 * Set by the splitfile metadata and the mask constructor, so we don't need to pass it in. */
-	public boolean splitfileUseLengths;
 	public int maxMetadataSize;
 	public int maxDataBlocksPerSegment;
 	public int maxCheckBlocksPerSegment;
@@ -74,7 +71,6 @@ public class FetchContext implements Cloneable {
 		this.allowSplitfiles = allowSplitfiles;
 		this.followRedirects = followRedirects;
 		this.localRequestOnly = localRequestOnly;
-		this.splitfileUseLengths = false;
 		this.eventProducer = producer;
 		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
@@ -108,7 +104,6 @@ public class FetchContext implements Cloneable {
 			this.allowSplitfiles = ctx.allowSplitfiles;
 			this.followRedirects = ctx.followRedirects;
 			this.localRequestOnly = ctx.localRequestOnly;
-			this.splitfileUseLengths = ctx.splitfileUseLengths;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
@@ -130,7 +125,6 @@ public class FetchContext implements Cloneable {
 			this.allowSplitfiles = false;
 			this.followRedirects = false;
 			this.localRequestOnly = ctx.localRequestOnly;
-			this.splitfileUseLengths = false;
 			this.maxDataBlocksPerSegment = 0;
 			this.maxCheckBlocksPerSegment = 0;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
@@ -152,7 +146,6 @@ public class FetchContext implements Cloneable {
 			this.allowSplitfiles = ctx.allowSplitfiles;
 			this.followRedirects = ctx.followRedirects;
 			this.localRequestOnly = ctx.localRequestOnly;
-			this.splitfileUseLengths = false;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
@@ -174,7 +167,6 @@ public class FetchContext implements Cloneable {
 			this.allowSplitfiles = ctx.allowSplitfiles;
 			this.followRedirects = ctx.followRedirects;
 			this.localRequestOnly = ctx.localRequestOnly;
-			this.splitfileUseLengths = ctx.splitfileUseLengths;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
