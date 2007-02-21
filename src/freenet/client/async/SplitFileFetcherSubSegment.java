@@ -52,7 +52,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 	
 	public ClientKey getKey(int token) {
-		if(segment.isFinishing()) return null;
+		if(segment.isFinishing()) {
+			if(logMINOR)
+				Logger.minor(this, "Segment is finishing when getting key "+token+" on "+this);
+			return null;
+		}
 		return segment.getBlockKey(token);
 	}
 	

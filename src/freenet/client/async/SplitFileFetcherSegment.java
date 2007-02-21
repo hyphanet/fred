@@ -307,8 +307,8 @@ public class SplitFileFetcherSegment {
 	/** A request has failed non-fatally, so the block may be retried */
 	public void onNonFatalFailure(FetchException e, int blockNo) {
 		int tries;
+		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		synchronized(this) {
-			int maxTries = blockFetchContext.maxNonSplitfileRetries;
 			if(blockNo < dataKeys.length) {
 				tries = ++dataRetries[blockNo];
 				if(tries > maxTries && maxTries >= 0) {
@@ -327,7 +327,7 @@ public class SplitFileFetcherSegment {
 		// If we are here we are going to retry
 		SplitFileFetcherSubSegment sub = getSubSegment(tries);
 		if(logMINOR)
-			Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+" : "+sub);
+			Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 		sub.add(blockNo, false);
 	}
 	

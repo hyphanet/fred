@@ -191,7 +191,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return;
 					}
 					if(block != null) {
-						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" immediately from store");
+						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" ("+tok+") immediately from store");
 						getter.onSuccess(block, true, tok);
 					} else {
 						anyValid = true;
