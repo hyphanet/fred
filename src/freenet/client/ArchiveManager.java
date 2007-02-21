@@ -369,9 +369,7 @@ outer:		while(true) {
 	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error) {
 		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error);
 		if(logMINOR) Logger.minor(this, "Adding error element: "+element+" for "+key+ ' ' +name);
-		synchronized(storedData) {
-			storedData.push(element.key, element);
-		}
+		storedData.push(element.key, element);
 	}
 
 	/**
@@ -380,10 +378,8 @@ outer:		while(true) {
 	private void addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp) {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(this, ctx, key, name, temp);
 		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
-		synchronized(storedData) {
-			storedData.push(element.key, element);
-			trimStoredData();
-		}
+		storedData.push(element.key, element);
+		trimStoredData();
 	}
 
 	/**
