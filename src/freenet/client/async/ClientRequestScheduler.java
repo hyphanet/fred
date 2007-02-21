@@ -168,6 +168,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(req instanceof SendableGet) {
 			SendableGet getter = (SendableGet)req;
 			if(!getter.ignoreStore()) {
+				boolean anyValid = false;
 				int[] keyTokens = getter.allKeys();
 				for(int i=0;i<keyTokens.length;i++) {
 					int tok = keyTokens[i];
@@ -185,9 +186,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(block != null) {
 						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" immediately from store");
 						getter.onSuccess(block, true, tok);
-						return;
+					} else {
+						anyValid = true;
 					}
 				}
+				if(anyValid) return;
 			}
 		}
 		innerRegister(req);
@@ -281,7 +284,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		int choosenPriorityClass = Integer.MAX_VALUE;
 		choosenPriorityClass = removeFirstAccordingToPriorities(choosenPriorityClass);
-		if(choosenPriorityClass == -1) return null;
+		if(choosenPriorityClass == -1) {
+			if(logMINOR)
+				Logger.minor(this, "No priority with requests");
+			return null;
+		}
 		SortedVectorByNumber s = priorities[choosenPriorityClass];
 		if(s != null){
 			while(true) {
@@ -290,6 +297,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(logMINOR) Logger.minor(this, "No retrycount's left");
 					break;
 				}
+				if(logMINOR)
+					Logger.minor(this, "Got retry count tracker "+rga);
 				SendableRequest req = (SendableRequest) rga.removeRandom();
 				if(rga.isEmpty()) {
 					if(logMINOR) Logger.minor(this, "Removing retrycount "+rga.getNumber());
@@ -308,7 +317,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 					innerRegister(req);
 					continue;
 				}
-				
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+", prio "+
 						req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
 				ClientRequester cr = req.getClientRequest();
