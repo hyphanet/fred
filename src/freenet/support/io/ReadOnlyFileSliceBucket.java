@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -93,7 +92,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		
 		public int read() throws IOException {
 			if(ptr >= length)
-				throw new EOFException();
+				return -1;
 			int x = f.read();
 			if(x != -1) ptr++;
 			return x;
@@ -101,7 +100,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		
 		public int read(byte[] buf, int offset, int len) throws IOException {
 			if(ptr >= length)
-				throw new EOFException();
+				return -1;
 			len = (int) Math.min(len, length - ptr);
 			int x = f.read(buf, offset, len);
 			ptr += x;
