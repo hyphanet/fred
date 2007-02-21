@@ -391,8 +391,13 @@ outer:		while(true) {
 	 * Call synchronized on storedData.
 	 */
 	private void trimStoredData() {
-		while((cachedData > maxCachedData) || (storedData.size() > maxCachedElements)) {
+		while(true) {
+			synchronized(this) {
+				if(cachedData <= maxCachedData && storedData.size() <= maxCachedElements) return;
+			}
 			ArchiveStoreItem e = (ArchiveStoreItem) storedData.popValue();
+			if(logMINOR)
+				Logger.minor(this, "Dropping "+e+" : cachedData="+cachedData+" of "+maxCachedData);
 			e.close();
 		}
 	}
@@ -428,5 +433,9 @@ outer:		while(true) {
 		if(type.equals("application/zip") || type.equals("application/x-zip"))
 			return Metadata.ARCHIVE_ZIP;
 		else throw new IllegalArgumentException(); 
+	}
+
+	public synchronized void decrementSpace(long spaceUsed) {
+		cachedData -= spaceUsed;
 	}
 }

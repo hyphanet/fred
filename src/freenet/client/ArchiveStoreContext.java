@@ -119,9 +119,11 @@ public class ArchiveStoreContext implements ArchiveHandler {
 
 	/** Notify that an archive store item with this key has been expelled from the cache. */
 	public void removeItem(ArchiveStoreItem item) {
+		long spaceUsed = item.spaceUsed();
 		synchronized(myItems) {
-			myItems.remove(item);
+			if(myItems.remove(item) == null) return;
 		}
+		manager.decrementSpace(spaceUsed);
 	}
 
 	public short getArchiveType() {

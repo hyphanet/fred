@@ -59,13 +59,13 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		return FileUtil.estimateUsage(myFilename, underBucket.size());
 	}
 	
-	synchronized void close() {
+	void close() {
 		super.close();
-		if(finalized) return;
-		long sz = spaceUsed();
-		underBucket.finalize();
-		finalized = true;
-		this.manager.cachedData -= sz;
+		synchronized(this) {
+			if(finalized) return;
+			underBucket.finalize();
+			finalized = true;
+		}
 	}
 
 	Bucket getDataOrThrow() throws ArchiveFailureException {

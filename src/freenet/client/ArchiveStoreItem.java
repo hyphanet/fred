@@ -31,4 +31,9 @@ abstract class ArchiveStoreItem extends DoublyLinkedListImpl.Item {
 	 * Return cached data as a Bucket, or throw an ArchiveFailureException.
 	 */
 	abstract Bucket getDataOrThrow() throws ArchiveFailureException;
+
+	/**
+	 * Return the amount of cache space used by the item.
+	 */
+	abstract long spaceUsed();
 }

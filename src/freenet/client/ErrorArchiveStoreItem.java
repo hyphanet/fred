@@ -31,5 +31,9 @@ class ErrorArchiveStoreItem extends ArchiveStoreItem {
 	Bucket getDataOrThrow() throws ArchiveFailureException {
 		throw new ArchiveFailureException(error);
 	}
+
+	public long spaceUsed() {
+		return 0;
+	}
 	
 }
