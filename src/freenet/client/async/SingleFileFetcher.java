@@ -117,7 +117,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		parent.completedBlock(fromStore);
 		// Extract data
 		Bucket data = extract(block);
-		if(data == null) return; // failed
+		if(data == null) {
+			Logger.error(this, "onSuccess(null, "+fromStore+", "+fromStore+", "+token+")", new Exception("error"));
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, "onSuccess(null) in "+this));
+			return; // failed
+		}
 		if(!block.isMetadata()) {
 			onSuccess(new FetchResult(clientMetadata, data));
 		} else {
