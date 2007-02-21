@@ -102,7 +102,7 @@ public class ArchiveManager {
 	/** Maximum cached data in bytes */
 	final long maxCachedData;
 	/** Currently cached data in bytes */
-	long cachedData;
+	private long cachedData;
 	/** Map from ArchiveKey to ArchiveStoreElement */
 	final LRUHashtable storedData;
 	/** Filename generator */
@@ -379,7 +379,7 @@ outer:		while(true) {
 	 */
 	private void addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp) {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(this, ctx, key, name, temp);
-		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" )");
+		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
 		synchronized(storedData) {
 			storedData.push(element.key, element);
 			trimStoredData();
@@ -435,7 +435,11 @@ outer:		while(true) {
 		else throw new IllegalArgumentException(); 
 	}
 
-	public synchronized void decrementSpace(long spaceUsed) {
+	synchronized void decrementSpace(long spaceUsed) {
 		cachedData -= spaceUsed;
+	}
+
+	synchronized void incrementSpace(long spaceUsed) {
+		cachedData += spaceUsed;
 	}
 }
