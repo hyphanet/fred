@@ -212,6 +212,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public void add(int blockNo, boolean dontSchedule) {
+		if(blockNo < 0) throw new IllegalArgumentException();
 		Integer i = new Integer(blockNo);
 		synchronized(this) {
 			blockNums.add(i);
