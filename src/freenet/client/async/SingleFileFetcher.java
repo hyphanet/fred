@@ -122,6 +122,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, "onSuccess(null) in "+this));
 			return; // failed
 		}
+		if(logMINOR)
+			Logger.minor(this, "Block "+(block.isMetadata() ? "is metadata" : "is not metadata")+" on "+this);
 		if(!block.isMetadata()) {
 			onSuccess(new FetchResult(clientMetadata, data));
 		} else {
@@ -166,6 +168,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	protected void onSuccess(FetchResult result) {
 		if(parent.isCancelled()) {
+			if(logMINOR)
+				Logger.minor(this, "Parent is cancelled");
 			result.asBucket().free();
 			onFailure(new FetchException(FetchException.CANCELLED));
 			return;

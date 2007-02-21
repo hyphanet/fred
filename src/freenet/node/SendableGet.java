@@ -73,21 +73,27 @@ public abstract class SendableGet implements SendableRequest {
 					if(logMINOR) Logger.minor(this, "No more keys: "+this);
 					return false;
 				}
-				ClientKey key = getKey(keyNum);
-				if(key == null) {
-					if(logMINOR) Logger.minor(this, "No key "+keyNum+": "+this);
-					continue;
+				try {
+					ClientKey key = getKey(keyNum);
+					if(key == null) {
+						if(logMINOR) Logger.minor(this, "No key "+keyNum+": "+this);
+						continue;
+					}
+					block = core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
+				} catch (LowLevelGetException e) {
+					onFailure(e, keyNum);
+					return true;
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+					onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum);
+					return true;
 				}
-				block = core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
-			} catch (LowLevelGetException e) {
-				onFailure(e, keyNum);
-				return true;
+				onSuccess(block, false, keyNum);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum);
 				return true;
 			}
-			onSuccess(block, false, keyNum);
 			return true;
 		}
 	}

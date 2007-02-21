@@ -78,14 +78,18 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	
 	// Real onFailure
 	protected void onFailure(FetchException e, boolean forceFatal) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "onFailure( "+e+" , "+forceFatal+")", e);
 		if(parent.isCancelled() || cancelled) {
-			if(Logger.shouldLog(Logger.MINOR, this)) 
-				Logger.minor(this, "Failing: cancelled");
+			if(logMINOR) Logger.minor(this, "Failing: cancelled");
 			e = new FetchException(FetchException.CANCELLED);
 			forceFatal = true;
 		}
 		if(!(e.isFatal() || forceFatal) ) {
-			if(retry()) return;
+			if(retry()) {
+				if(logMINOR) Logger.minor(this, "Retrying");
+				return;
+			}
 		}
 		// :(
 		if(e.isFatal() || forceFatal)
