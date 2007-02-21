@@ -18,6 +18,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	private final File myFilename;
 	private final PaddedEphemerallyEncryptedBucket bucket;
 	private final FileBucket underBucket;
+	private final long spaceUsed;
 	
 	/**
 	 * Create an ArchiveStoreElement from a TempStoreElement.
@@ -35,7 +36,8 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		underBucket.dontDeleteOnFinalize();
 		underBucket.setReadOnly();
 		this.myFilename = underBucket.getFile();
-		this.manager.incrementSpace(spaceUsed());
+		spaceUsed = FileUtil.estimateUsage(myFilename, underBucket.size());
+		this.manager.incrementSpace(spaceUsed);
 	}
 
 	/**
@@ -55,8 +57,8 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	/**
 	 * Return the estimated space used by the data.
 	 */
-	synchronized long spaceUsed() {
-		return FileUtil.estimateUsage(myFilename, underBucket.size());
+	long spaceUsed() {
+		return spaceUsed;
 	}
 	
 	void close() {
