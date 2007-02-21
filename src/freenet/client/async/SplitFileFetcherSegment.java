@@ -137,7 +137,7 @@ public class SplitFileFetcherSegment {
 		return fatallyFailedBlocks;
 	}
 
-	public synchronized void onSuccess(FetchResult result, int blockNo) {
+	public synchronized void onSuccess(FetchResult result, int blockNo, boolean dontNotify) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(isFinished()) return;
 		if(blockNo < dataKeys.length) {
@@ -158,6 +158,7 @@ public class SplitFileFetcherSegment {
 		} else
 			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 		fetchedBlocks++;
+		parentFetcher.parent.completedBlock(dontNotify);
 		if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks");
 		if(fetchedBlocks >= minFetched)
 			startDecode();

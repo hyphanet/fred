@@ -141,20 +141,20 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		Bucket data = extract(block, token);
 		if(data == null) return; // failed
 		if(!block.isMetadata()) {
-			onSuccess(new FetchResult((ClientMetadata)null, data), token);
+			onSuccess(new FetchResult((ClientMetadata)null, data), fromStore, token);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token);
 		}
 	}
 	
 	/** Will be overridden by SingleFileFetcher */
-	protected void onSuccess(FetchResult data, int blockNo) {
+	protected void onSuccess(FetchResult data, boolean fromStore, int blockNo) {
 		if(parent.isCancelled()) {
 			data.asBucket().free();
 			onFailure(new FetchException(FetchException.CANCELLED), blockNo);
 			return;
 		}
-		segment.onSuccess(data, blockNo);
+		segment.onSuccess(data, blockNo, fromStore);
 	}
 
 	/** Convert a ClientKeyBlock to a Bucket. If an error occurs, report it via onFailure
