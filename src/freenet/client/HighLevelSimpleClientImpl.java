@@ -53,7 +53,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	/** Number of retries allowed per block in a splitfile. Must be at least 1 as 
 	 * on the first try we just check the datastore.
 	 */
-	static final int SPLITFILE_BLOCK_RETRIES = 5;
+	static final int SPLITFILE_BLOCK_RETRIES = 3;
 	/** Number of retries allowed on non-splitfile fetches. Unlike above, we always
 	 * go to network. */
 	static final int NON_SPLITFILE_RETRIES = 2;
