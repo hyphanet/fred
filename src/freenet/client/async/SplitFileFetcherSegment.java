@@ -181,7 +181,7 @@ public class SplitFileFetcherSegment {
 		public void run() {
 			
 			// Now decode
-			if(logMINOR) Logger.minor(this, "Decoding "+this);
+			if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
 			
 			boolean[] dataBlocksSucceeded = new boolean[dataBuckets.length];
 			boolean[] checkBlocksSucceeded = new boolean[checkBuckets.length];
