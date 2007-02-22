@@ -121,8 +121,9 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	public void removeItem(ArchiveStoreItem item) {
 		long spaceUsed = item.spaceUsed();
 		synchronized(myItems) {
-			if(myItems.remove(item) == null) return;
+			if(myItems.remove(item) == null) return; // only removed once
 		}
+		item.innerClose();
 		manager.decrementSpace(spaceUsed);
 	}
 

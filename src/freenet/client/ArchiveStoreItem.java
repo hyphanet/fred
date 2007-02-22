@@ -19,11 +19,14 @@ abstract class ArchiveStoreItem extends DoublyLinkedListImpl.Item {
 		this.context = context;
 		context.addItem(this);
 	}
+
+	/** Delete any stored data on disk etc. Override in subtypes for specific cleanup. */
+	void innerClose() { } // override in subtypes for cleanup
 	
-	/** Expected to delete any stored data on disk, and decrement cachedData.
-	 * Implemented to remove self from context.
+	/** 
+	 * Shortcut to start the removal/cleanup process.
 	 */
-	void close() {
+	final void close() {
 		context.removeItem(this);
 	}
 

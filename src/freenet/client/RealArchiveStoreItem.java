@@ -14,7 +14,6 @@ import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 class RealArchiveStoreItem extends ArchiveStoreItem {
 
 	private final ArchiveManager manager;
-	private boolean finalized;
 	private final File myFilename;
 	private final PaddedEphemerallyEncryptedBucket bucket;
 	private final FileBucket underBucket;
@@ -30,7 +29,6 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	RealArchiveStoreItem(ArchiveManager manager, ArchiveStoreContext ctx, FreenetURI key2, String realName, TempStoreElement temp) {
 		super(new ArchiveKey(key2, realName), ctx);
 		this.manager = manager;
-		this.finalized = false;
 		this.bucket = temp.bucket;
 		this.underBucket = temp.underBucket;
 		underBucket.setReadOnly();
@@ -60,12 +58,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		return spaceUsed;
 	}
 	
-	void close() {
-		super.close();
-		synchronized(this) {
-			if(finalized) return;
-			finalized = true;
-		}
+	void innerClose() {
 		underBucket.finalize();
 	}
 
