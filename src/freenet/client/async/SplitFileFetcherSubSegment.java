@@ -75,9 +75,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			return -1;
 		}
 		int x = ctx.random.nextInt(blockNums.size());
+		int ret = ((Integer) blockNums.remove(x)).intValue();
 		if(logMINOR)
-			Logger.minor(this, "Removing block "+x+" of "+blockNums.size());
-		return ((Integer) blockNums.remove(x)).intValue();
+			Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret);
+		return ret;
 	}
 
 	public boolean ignoreStore() {
@@ -87,6 +88,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	// Translate it, then call the real onFailure
 	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
 	public void onFailure(LowLevelGetException e, int token) {
+		if(logMINOR)
+			Logger.minor(this, "onFailure("+e+" , "+token);
 		switch(e.code) {
 		case LowLevelGetException.DATA_NOT_FOUND:
 			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token);
@@ -140,6 +143,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 	
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, int token) {
+		Bucket data = extract(block, token);
 		if(fromStore) {
 			synchronized(this) {
 				for(int i=0;i<blockNums.size();i++) {
@@ -151,8 +155,6 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				}
 			}
 		}
-		Bucket data = extract(block, token);
-		if(data == null) return; // failed
 		if(!block.isMetadata()) {
 			onSuccess(new FetchResult((ClientMetadata)null, data), fromStore, token);
 		} else {

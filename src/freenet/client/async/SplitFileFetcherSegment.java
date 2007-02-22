@@ -159,7 +159,7 @@ public class SplitFileFetcherSegment {
 			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 		fetchedBlocks++;
 		parentFetcher.parent.completedBlock(dontNotify);
-		if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks");
+		if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
 		if(fetchedBlocks >= minFetched)
 			startDecode();
 	}
@@ -282,12 +282,11 @@ public class SplitFileFetcherSegment {
 				}
 				dataKeys[blockNo] = null;
 			} else if(blockNo < checkKeys.length + dataKeys.length) {
-				blockNo -= dataKeys.length;
-				if(checkKeys[blockNo] == null) {
+				if(checkKeys[blockNo-dataKeys.length] == null) {
 					Logger.error(this, "Check block already finished: "+blockNo);
 					return;
 				}
-				checkKeys[blockNo] = null;
+				checkKeys[blockNo-dataKeys.length] = null;
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 			// :(
@@ -316,8 +315,7 @@ public class SplitFileFetcherSegment {
 					return;
 				}
 			} else {
-				blockNo -= dataKeys.length;
-				tries = ++checkRetries[blockNo];
+				tries = ++checkRetries[blockNo-dataKeys.length];
 				if(tries > maxTries && maxTries >= 0) {
 					onFatalFailure(e, blockNo);
 					return;
@@ -380,6 +378,8 @@ public class SplitFileFetcherSegment {
 				seg.add(i, true);
 			
 			seg.schedule();
+			if(logMINOR)
+				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" scheduling "+this, t);
 			fail(new FetchException(FetchException.INTERNAL_ERROR, t));
