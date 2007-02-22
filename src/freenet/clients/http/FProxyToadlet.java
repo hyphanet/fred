@@ -348,6 +348,8 @@ public class FProxyToadlet extends Toadlet {
 			
 		} catch (FetchException e) {
 			String msg = e.getMessage();
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Failed to fetch "+uri+" : "+e);
 			if(e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) {
 				this.writePermanentRedirect(ctx, "Not enough meta-strings", '/' + key.toString() + '/' + override);
 			} else if(e.newURI != null) {
@@ -415,9 +417,9 @@ public class FProxyToadlet extends Toadlet {
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
 				infobox.addChild("div", "class", "infobox-header", FetchException.getShortMessage(e.mode));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				HTMLNode err = infoboxContent.addChild("#", "Error: "+msg);
+				infoboxContent.addChild("#", "Error: "+msg);
 				if(e.errorCodes != null) {
-					err.addChild("pre").addChild("#", e.errorCodes.toVerboseString());
+					infoboxContent.addChild("pre").addChild("#", e.errorCodes.toVerboseString());
 				}
 				infoboxContent.addChild("br");
 				infoboxContent.addChild(ctx.getPageMaker().createBackLink(ctx));
