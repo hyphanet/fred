@@ -67,7 +67,7 @@ public class GzipCompressor extends Compressor {
 			int l = (int) Math.min(buffer.length, maxLength - written);
 			int x = gis.read(buffer, 0, 4096);
 			if(l < x) {
-				Logger.error(this, "l="+l+", x="+x+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
+				Logger.normal(this, "l="+l+", x="+x+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
 				if(maxCheckSizeBytes > 0) {
 					written += x;
 					while(true) {

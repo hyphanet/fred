@@ -89,6 +89,9 @@ public class SplitFileFetcher implements ClientGetState {
 			finalLength = overrideLength;
 		}
 		
+		if(overrideLength > 0 && newCtx.maxOutputLength > 0 && overrideLength > newCtx.maxOutputLength)
+			throw new FetchException(FetchException.TOO_BIG, overrideLength, false /* FIXME should be true but then need to ensure it is false if we are in a MultiLevel etc */, clientMetadata.getMIMEType());
+		
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			// Don't need to do much - just fetch everything and piece it together.
 			blocksPerSegment = -1;
