@@ -147,7 +147,7 @@ public class ClientGetter extends BaseClientGetter {
 				e = new FetchException(e.errorCodes.getFirstCode(), e);
 			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
-			Logger.minor(this, "onFailure("+e+", "+state+") ", e);
+			Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
 			client.onFailure(e, this);
 			return;
 		}
