@@ -9,6 +9,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.StringWriter;
+
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.ClientMetadata;
@@ -30,6 +34,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
 import freenet.frost.message.*;
+
 
 public class WelcomeToadlet extends Toadlet {
 	private final static int MODE_ADD = 1;
@@ -426,6 +431,20 @@ public class WelcomeToadlet extends Toadlet {
 
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		boolean advancedModeOutputEnabled = core.getToadletContainer().isAdvancedModeEnabled();
+	
+		if(request.isParameterSet("latestlog")) {
+			
+			FileReader reader = new FileReader(config.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
+			
+			StringWriter sw = new StringWriter();
+			char[] buffer = new char[1024];
+			int read;
+			while((read = reader.read(buffer)) != -1)
+				sw.write(buffer, 0, read);
+			
+			this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
+			return;
+		}
 		
 		if (request.getParam("newbookmark").length() > 0) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark");
@@ -581,7 +600,10 @@ public class WelcomeToadlet extends Toadlet {
 		if (advancedModeOutputEnabled) {
 			activityList.addChild("li", "ARK Fetch Requests: " + node.getNumARKFetchers());
 		}
-		
+
+		if(config.config.get("logger").getBoolean("enabled"))
+			activityList.addChild("li").addChild("a", "href","?latestlog","Log");
+			   	
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 	
