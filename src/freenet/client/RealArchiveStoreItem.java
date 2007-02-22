@@ -33,7 +33,6 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		this.finalized = false;
 		this.bucket = temp.bucket;
 		this.underBucket = temp.underBucket;
-		underBucket.dontDeleteOnFinalize();
 		underBucket.setReadOnly();
 		this.myFilename = underBucket.getFile();
 		spaceUsed = FileUtil.estimateUsage(myFilename, underBucket.size());
@@ -65,9 +64,9 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		super.close();
 		synchronized(this) {
 			if(finalized) return;
-			underBucket.finalize();
 			finalized = true;
 		}
+		underBucket.finalize();
 	}
 
 	Bucket getDataOrThrow() throws ArchiveFailureException {
