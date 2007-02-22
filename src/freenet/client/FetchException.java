@@ -439,4 +439,8 @@ public class FetchException extends Exception {
 			return false; // assume it isn't
 		}
 	}
+
+	public void setNotFinalizedSize() {
+		this.finalizedSizeAndMimeType = false;
+	}
 }

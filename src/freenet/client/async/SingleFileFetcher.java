@@ -468,6 +468,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} catch (MetadataParseException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e));
 			} catch (FetchException e) {
+				e.setNotFinalizedSize();
 				SingleFileFetcher.this.onFailure(e);
 			} catch (ArchiveFailureException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e));
@@ -507,6 +508,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e));
 				return;
 			} catch (FetchException e) {
+				e.setNotFinalizedSize();
 				onFailure(e, SingleFileFetcher.this);
 			} catch (ArchiveFailureException e) {
 				onFailure(new FetchException(FetchException.ARCHIVE_FAILURE), SingleFileFetcher.this);
