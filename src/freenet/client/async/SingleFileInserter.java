@@ -262,13 +262,13 @@ class SingleFileInserter implements ClientPutState {
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
-			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, false);
+			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, false);
 			cb.onTransition(this, sfi);
 			sfi.start();
 			if(earlyEncode) sfi.forceEncode();
 		} else {
 			SplitHandler sh = new SplitHandler();
-			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, false);
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, false);
 			sh.sfi = sfi;
 			cb.onTransition(this, sh);
 			sfi.start();

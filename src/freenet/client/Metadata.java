@@ -545,7 +545,7 @@ public class Metadata implements Cloneable {
 	}
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, 
-			ClientMetadata cm, long dataLength, short compressionAlgo, boolean isMetadata, boolean insertAsArchiveManifest) {
+			ClientMetadata cm, long dataLength, short compressionAlgo, long decompressedLength, boolean isMetadata, boolean insertAsArchiveManifest) {
 		if(isMetadata)
 			documentType = MULTI_LEVEL_METADATA;
 		else {
@@ -562,6 +562,7 @@ public class Metadata implements Cloneable {
 		splitfileDataKeys = dataURIs;
 		splitfileCheckKeys = checkURIs;
 		clientMetadata = cm;
+		this.decompressedLength = decompressedLength;
 		if(cm != null)
 			setMIMEType(cm.getMIMEType());
 		else
