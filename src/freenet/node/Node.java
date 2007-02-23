@@ -1305,6 +1305,11 @@ public class Node {
 				if(val < 0)
 					throw new InvalidConfigValueException("Negative or zero values not supported");
 				envMutableConfig.setCacheSize(val);
+				try{
+					storeEnvironment.setMutableConfig(envMutableConfig);
+				} catch (DatabaseException e) {
+					throw new InvalidConfigValueException("Error while applying the new config : "+e.getMessage());
+				}
 				databaseMaxMemory = val;
 			}
 			
@@ -1313,6 +1318,14 @@ public class Node {
 		if(lastVersion <= 1007) nodeConfig.fixOldDefault("databaseMaxMemory", "0"); // FIXME remove; 1007 had a bug which reset this to 0
 		databaseMaxMemory = nodeConfig.getLong("databaseMaxMemory");
 		envMutableConfig.setCacheSize(databaseMaxMemory);
+		
+		try {
+			storeEnvironment.setMutableConfig(envMutableConfig);
+		} catch (DatabaseException e) {
+			System.err.println("Could not set the database configuration: "+e);
+			e.printStackTrace();
+			throw new NodeInitException(EXIT_STORE_OTHER, e.getMessage());			
+		}
 		
 		String suffix = "-" + portNumber;
 		
