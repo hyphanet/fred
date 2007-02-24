@@ -16,6 +16,7 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Hashtable;
 
@@ -36,6 +37,7 @@ import freenet.keys.InsertableClientSSK;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SizeUtil;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
@@ -170,6 +172,7 @@ public class TextModeClientInterface implements Runnable {
 //        sb.append("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.\r\n");
 //        sb.append("SAY:<text> - send text to the last created/pushed stream\r\n");
         sb.append("STATUS - display some status information on the node including its reference and connections.\r\n");
+        sb.append("MEMSTAT - display some memory usage related informations.\r\n");
         sb.append("SHUTDOWN - exit the program\r\n");
         if(n.isUsingWrapper())
         	sb.append("RESTART - restart the program\r\n");
@@ -368,6 +371,36 @@ public class TextModeClientInterface implements Runnable {
 		out.write(sb.toString().getBytes());
 		out.flush();
 		return true;
+        } else if(uline.startsWith("MEMSTAT")) {
+		Runtime rt = Runtime.getRuntime();
+		float freeMemory = (float) rt.freeMemory();
+		float totalMemory = (float) rt.totalMemory();
+		float maxMemory = (float) rt.maxMemory();
+
+		long usedJavaMem = (long)(totalMemory - freeMemory);
+		long allocatedJavaMem = (long)totalMemory;
+		long maxJavaMem = (long)maxMemory;
+		int availableCpus = rt.availableProcessors();
+		NumberFormat thousendPoint = NumberFormat.getInstance();
+
+		ThreadGroup tg = Thread.currentThread().getThreadGroup();
+		while(tg.getParent() != null) tg = tg.getParent();
+		int threadCount = tg.activeCount();
+
+		StringBuffer sb = new StringBuffer();
+		sb.append("Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem, true)+"\r\n");
+		sb.append("Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem, true)+"\r\n");
+		sb.append("Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true)+"\r\n");
+		sb.append("Running threads:\u00a0" + thousendPoint.format(threadCount)+"\r\n");
+		sb.append("Available CPUs:\u00a0" + availableCpus+"\r\n");
+		sb.append("JVM Vendor:\u00a0" + System.getProperty("java.vm.vendor")+"\r\n");
+		sb.append("JVM Version:\u00a0" + System.getProperty("java.vm.version")+"\r\n");
+		sb.append("OS Name:\u00a0" + System.getProperty("os.name")+"\r\n");
+		sb.append("OS Version:\u00a0" + System.getProperty("os.version")+"\r\n");
+		sb.append("OS Architecture:\u00a0" + System.getProperty("os.arch")+"\r\n");
+		out.write(sb.toString().getBytes());
+		out.flush();
+		return false;
 	} else if(uline.startsWith("HELP")) {
 		printHeader(out);
 		outsb.append("\r\n");
