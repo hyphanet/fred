@@ -20,7 +20,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.clients.http.filter.GenericReadFilterCallback;
-import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -42,16 +41,14 @@ public class WelcomeToadlet extends Toadlet {
 	private static final int MAX_URL_LENGTH = 1024 * 1024;
 	private static final int MAX_KEY_LENGTH = QueueToadlet.MAX_KEY_LENGTH;
 	private static final int MAX_NAME_LENGTH = 1024 * 1024;
-	NodeClientCore core;
-	Node node;
-	SubConfig config;
-	BookmarkManager bookmarks;
+	final NodeClientCore core;
+	final Node node;
+	final BookmarkManager bookmarks;
 	
-	WelcomeToadlet(HighLevelSimpleClient client, NodeClientCore core, Node node, SubConfig sc) {
+	WelcomeToadlet(HighLevelSimpleClient client, Node node) {
 		super(client);
-		this.core = core;
 		this.node = node;
-		this.config = sc;
+		this.core = node.clientCore;
 		this.bookmarks = core.bookmarkManager;
 		try {
 			manageBookmarksURI = new URI("/welcome/?managebookmarks");
@@ -434,7 +431,7 @@ public class WelcomeToadlet extends Toadlet {
 	
 		if(request.isParameterSet("latestlog")) {
 			
-			FileReader reader = new FileReader(config.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
+			FileReader reader = new FileReader(node.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
 			
 			StringWriter sw = new StringWriter();
 			char[] buffer = new char[1024];
