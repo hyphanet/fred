@@ -41,18 +41,7 @@ public class USKManager {
 	final FetchContext backgroundFetchContext;
 	final ClientRequestScheduler chkRequestScheduler;
 	final ClientRequestScheduler sskRequestScheduler;
-	
-	public USKManager(FetchContext backgroundFetchContext, ClientRequestScheduler chkRequestScheduler, ClientRequestScheduler sskRequestScheduler) {
-		latestVersionByClearUSK = new HashMap();
-		subscribersByClearUSK = new HashMap();
-		fetchersByUSK = new HashMap();
-		checkersByUSK = new HashMap();
-		backgroundFetchersByClearUSK = new HashMap();
-		temporaryBackgroundFetchersLRU = new LRUQueue();
-		this.backgroundFetchContext = backgroundFetchContext;
-		this.chkRequestScheduler = chkRequestScheduler;
-		this.sskRequestScheduler = sskRequestScheduler;
-	}
+
 	
 	public USKManager(NodeClientCore core) {
 		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetcherContext();
@@ -127,11 +116,6 @@ public class USKManager {
 			}
 		}
 		if(sched != null) sched.schedule();
-	}
-	
-	synchronized void finished(USKFetcher f) {
-		USK u = f.getOriginalUSK();
-		fetchersByUSK.remove(u);
 	}
 	
 	void update(USK origUSK, long number) {
@@ -209,8 +193,10 @@ public class USKManager {
 			System.arraycopy(callbacks, 0, newCallbacks, 0, j);
 			if(newCallbacks.length > 0)
 				subscribersByClearUSK.put(clear, callbacks);
-			else
+			else{
 				subscribersByClearUSK.remove(clear);
+				fetchersByUSK.remove(origUSK);
+			}
 			if(runBackgroundFetch) {
 				USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 				f.removeSubscriber(cb);
@@ -242,5 +228,15 @@ public class USKManager {
 	
 	public void unsubscribeContent(USK origUSK, USKRetriever ret, boolean runBackgroundFetch) {
 		unsubscribe(origUSK, ret, runBackgroundFetch);
+	}
+	
+	// REMOVE: DO NOT Synchronize! ... debugging only.
+	/**
+	 * The result of that method will be displayed on the Statistic Toadlet : it will help catching #1147 
+	 * Afterwards it should be removed: it's not usefull :)
+	 * @return the number of Fetchers started by USKManager
+	 */
+	public int getFetcherByUSKSize(){
+		return fetchersByUSK.size();
 	}
 }
