@@ -151,4 +151,31 @@ public class BookmarkManager {
 		this.bookmarks.remove(b);
 		if(store && started) node.storeConfig();
 	}
+	
+	public void moveBookmarkDown (Bookmark b, boolean store) {		
+		int i = this.bookmarks.indexOf(b);
+		if (i == -1) return;
+		
+		Bookmark bk = (Bookmark)this.bookmarks.get(i);
+		this.bookmarks.remove(i);
+		this.bookmarks.add((i+1)%(this.bookmarks.size()+1), bk);
+		
+		if(store && started) node.storeConfig();
+	}
+
+	public void moveBookmarkUp (Bookmark b, boolean store) {
+		int i = this.bookmarks.indexOf(b);
+		if (i == -1) return;
+		
+		Bookmark bk = (Bookmark)this.bookmarks.get(i);
+		this.bookmarks.remove(i);
+		if (--i < 0) i = this.bookmarks.size();
+		this.bookmarks.add(i, bk);
+		
+		if(store && started) node.storeConfig();
+	}
+	
+	public int getSize() {
+		return this.bookmarks.size();
+	}
 }
