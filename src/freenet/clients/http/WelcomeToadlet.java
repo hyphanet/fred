@@ -173,6 +173,12 @@ public class WelcomeToadlet extends Toadlet {
 			
 				if (request.isPartSet("delete_"+b.hashCode())) {
 					bookmarks.removeBookmark(b, true);
+				} else if (request.isPartSet("movedown_"+b.hashCode())) {
+					bookmarks.moveBookmarkDown(b, true);
+					break;
+				} else if (request.isPartSet("moveup_"+b.hashCode())) {
+					bookmarks.moveBookmarkUp(b, true);
+					break;
 				} else if (request.isPartSet("edit_"+b.hashCode())) {
 					this.sendBookmarkEditPage(ctx, b);
 					return;
@@ -477,6 +483,8 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
 			
 			Enumeration e = bookmarks.getBookmarks();
+			boolean moveButtonsEnabled = (bookmarks.getSize() > 1); // activate move{up|down} buttons
+			
 			if (!e.hasMoreElements()) {
 				infoboxContent.addChild("#", "You currently do not have any bookmarks defined.");
 			} else {
@@ -488,6 +496,10 @@ public class WelcomeToadlet extends Toadlet {
 					HTMLNode bookmark = bookmarkList.addChild("li", "style", "clear: right;"); /* TODO */
 					bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "delete_" + b.hashCode(), "Delete", "float: right;" });
 					bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "edit_" + b.hashCode(), "Edit", "float: right;" });
+					if (moveButtonsEnabled) {
+						bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "movedown_" + b.hashCode(), "Down", "float: right;" });
+						bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "moveup_" + b.hashCode(), "Up", "float: right;" });
+					}
 					bookmark.addChild("a", "href", '/' + b.getKey(), b.getDesc());
 				}
 				manageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
