@@ -601,9 +601,6 @@ public class WelcomeToadlet extends Toadlet {
 			activityList.addChild("li", "ARK Fetch Requests: " + node.getNumARKFetchers());
 		}
 
-		if(config.config.get("logger").getBoolean("enabled"))
-			activityList.addChild("li").addChild("a", "href","?latestlog","Log");
-			   	
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 	

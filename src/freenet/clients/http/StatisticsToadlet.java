@@ -88,6 +88,7 @@ public class StatisticsToadlet extends Toadlet {
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
 		final boolean advancedModeEnabled = node.isAdvancedModeEnabled();
+		final SubConfig nodeConfig = node.config.get("node");
 		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = node.getPeerNodeStatuses();
@@ -122,20 +123,25 @@ public class StatisticsToadlet extends Toadlet {
 	
 		contentNode.addChild(core.alerts.createSummary());
 
+		// Generate Dumps
+		HTMLNode statGatheringBox =  contentNode.addChild(ctx.getPageMaker().getInfobox("Statistic gathering"));
+
 		// Generate a Thread-Dump
 		if(node.isUsingWrapper()){
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Request a Thread Dump to be generated"));
-			HTMLNode threadDumpForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(infobox), "/", "threadDumpForm");
+			HTMLNode threadDumpForm = ctx.addFormChild(statGatheringBox, "/", "threadDumpForm");
 			threadDumpForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getThreadDump", "Generate a Thread Dump" });
 		}
 
 		// BDB statistics dump 
-		if(advancedModeEnabled) {
-			HTMLNode JEinfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Dump Database runtime statistics to wrapper.log"));
-			HTMLNode JEStatsForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(JEinfobox), "/", "JEStatsForm");
-			JEStatsForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getJEStatsDump", "Generate a JE Dump" });
-		}
+		HTMLNode JEStatsForm = ctx.addFormChild(statGatheringBox, "/", "JEStatsForm");
+		JEStatsForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getJEStatsDump", "Generate a JE Dump" });
 		
+		// Get logs
+		HTMLNode logsList = statGatheringBox.addChild("ul");
+		if(nodeConfig.config.get("logger").getBoolean("enabled"))
+			logsList.addChild("li").addChild("a", new String[]{ "href", "target"}, new String[]{ "/?latestlog", "_new"}, "Get latest node's logfile");
+			   	
+
 		double swaps = (double)node.getSwaps();
 		double noSwaps = (double)node.getNoSwaps();
 		
@@ -378,7 +384,6 @@ public class StatisticsToadlet extends Toadlet {
 				if(delta > 0) {
 					long output_rate = (rate[3] - rate[0]) / delta;
 					long input_rate = (rate[4] - rate[1]) / delta;
-					SubConfig nodeConfig = node.config.get("node");
 					int outputBandwidthLimit = nodeConfig.getInt("outputBandwidthLimit");
 					int inputBandwidthLimit = nodeConfig.getInt("inputBandwidthLimit");
 					if(inputBandwidthLimit == -1) {
@@ -432,12 +437,14 @@ public class StatisticsToadlet extends Toadlet {
 						"\u00a0/\u00a0" + SizeUtil.formatSize(maxOverallSize, true) + 
 						")\u00a0(" + ((overallKeys*100)/maxOverallKeys) + "%)");
 
-				storeSizeList.addChild("li", 
+				if(cacheAccesses > 0)
+					storeSizeList.addChild("li", 
 						"Cache hits:\u00a0" + thousendPoint.format(cachedStoreHits) + 
 						"\u00a0/\u00a0"+thousendPoint.format(cacheAccesses) +
 						"\u00a0(" + ((cachedStoreHits*100) / (cacheAccesses)) + "%)");
 				
-				storeSizeList.addChild("li", 
+				if(storeAccesses > 0)
+					storeSizeList.addChild("li", 
 						"Store hits:\u00a0" + thousendPoint.format(storeHits) + 
 						"\u00a0/\u00a0"+thousendPoint.format(storeAccesses) +
 						"\u00a0(" + ((storeHits*100) / (storeAccesses)) + "%)");
