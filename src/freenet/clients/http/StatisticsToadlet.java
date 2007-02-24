@@ -224,10 +224,9 @@ public class StatisticsToadlet extends Toadlet {
 					activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests);
 				}
 				if (advancedModeEnabled) {
-					if (numARKFetchers > 0) {
+					if (numARKFetchers > 0)
 						activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
-						activityList.addChild("li", "FetcherByUSKSize:\u00a0" + node.clientCore.uskManager.getFetcherByUSKSize());
-					}
+					activityList.addChild("li", "FetcherByUSKSize:\u00a0" + node.clientCore.uskManager.getFetcherByUSKSize());
 				}
 			}
 
