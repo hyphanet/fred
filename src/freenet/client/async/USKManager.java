@@ -182,6 +182,13 @@ public class USKManager {
 		synchronized(this) {
 			USK clear = origUSK.clearCopy();
 			USKCallback[] callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
+			if(callbacks == null){ // maybe we should throw something ? shall we allow multiple unsubscriptions ?
+				if(Logger.shouldLog(Logger.MINOR, this)){
+					Logger.error(this, "The callback is null! it has been already unsubscribed, hasn't it?");
+					new NullPointerException("The callback is null! it has been already unsubscribed, hasn't it?").printStackTrace();
+				}
+				return;
+			}
 			int j=0;
 			for(int i=0;i<callbacks.length;i++) {
 				USKCallback c = callbacks[i];
@@ -238,5 +245,14 @@ public class USKManager {
 	 */
 	public int getFetcherByUSKSize(){
 		return fetchersByUSK.size();
+	}
+	
+	/**
+	 * The result of that method will be displayed on the Statistic Toadlet : it will help catching #1147 
+	 * Afterwards it should be removed: it's not usefull :)
+	 * @return the number of BackgroundFetchers started by USKManager
+	 */
+	public int getBackgroundFetcherByUSKSize(){
+		return backgroundFetchersByClearUSK.size();
 	}
 }
