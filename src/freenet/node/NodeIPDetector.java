@@ -432,7 +432,7 @@ public class NodeIPDetector {
 	}
 
 	public int getMinimumDetectedMTU() {
-		return minimumMTU;
+		return minimumMTU > 0 ? minimumMTU : 1500;
 	}
 	
 }
