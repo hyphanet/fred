@@ -37,6 +37,8 @@ public class NodeIPDetector {
 	DetectedIP[] pluginDetectedIPs;
 	/** Last detected IP address */
 	Peer[] lastIPAddress;
+	/** The minimum reported MTU on all detected interfaces */
+	private int minimumMTU;
 	/** IP address detector */
 	private final IPAddressDetector ipDetector;
 	/** Plugin manager for plugin IP address detectors e.g. STUN */
@@ -260,6 +262,12 @@ public class NodeIPDetector {
 	 */
 	public void processDetectedIPs(DetectedIP[] list) {
 		pluginDetectedIPs = list;
+		for(int i=0; i<pluginDetectedIPs.length; i++){
+			if(minimumMTU > pluginDetectedIPs[i].mtu){
+				minimumMTU = pluginDetectedIPs[i].mtu;
+				Logger.normal(this, "Reducing the MTU to "+minimumMTU);
+			}
+		}
 		redetectAddress();
 		arkPutter.update();
 		if(oldARKPutter != null)
@@ -421,6 +429,10 @@ public class NodeIPDetector {
 		synchronized(this) {
 			hasDetectedPM = true;
 		}
+	}
+
+	public int getMinimumDetectedMTU() {
+		return minimumMTU;
 	}
 	
 }

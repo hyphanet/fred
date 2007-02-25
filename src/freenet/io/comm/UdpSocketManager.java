@@ -682,8 +682,12 @@ public class UdpSocketManager extends Thread {
     /**
      * @return The maximum packet size supported by this SocketManager.
      */
-    public int getMaxPacketSize() {
-    	return 1400-28; // CompuServe use 1400 MTU; AOL claim 1450; DFN@home use 1448.
+    public int getMaxPacketSize() { //FIXME: what about passing a peerNode though and doing it on a per-peer basis?
+    	final int minAdvertizedMTU = node.ipDetector.getMinimumDetectedMTU();
+    	final int maxAllowedMTU = 1400-28;
+    	
+    	return minAdvertizedMTU < maxAllowedMTU ? minAdvertizedMTU : maxAllowedMTU;
+    	// CompuServe use 1400 MTU; AOL claim 1450; DFN@home use 1448.
     	// http://info.aol.co.uk/broadband/faqHomeNetworking.adp
     	// http://www.compuserve.de/cso/hilfe/linux/hilfekategorien/installation/contentview.jsp?conid=385700
     	// http://www.studenten-ins-netz.net/inhalt/service_faq.html
