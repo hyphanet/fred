@@ -3,6 +3,7 @@ package freenet.node;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Vector;
 
 import freenet.io.comm.Peer;
@@ -406,7 +407,7 @@ public class IPDetectorPluginManager {
 					}
 				}
 				// Now tell the node
-				HashMap map = new HashMap();
+				HashMap map = new LinkedHashMap();
 				for(int i=0;i<v.size();i++) {
 					DetectedIP d = (DetectedIP) v.get(i);
 					InetAddress addr = d.publicAddress;
