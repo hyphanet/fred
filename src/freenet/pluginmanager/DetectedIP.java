@@ -17,6 +17,8 @@ public class DetectedIP {
 
 	public final InetAddress publicAddress;
 	public final short natType;
+	/** The MTU as advertized by the JVM */
+	public int mtu;
 	// Constants
 	/** The plugin does not support detecting the NAT type. */
 	public static final short NOT_SUPPORTED = 1;
@@ -42,6 +44,7 @@ public class DetectedIP {
 	public DetectedIP(InetAddress addr, short type) {
 		this.publicAddress = addr;
 		this.natType = type;
+		this.mtu = 1500;
 	}
 	
 	public boolean equals(Object o) {
