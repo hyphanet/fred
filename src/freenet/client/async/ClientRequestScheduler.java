@@ -91,7 +91,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private static final int MIN_RETRY_COUNT = 3;
 	private String choosenPriorityScheduler; 
 	
-	private int[] tweakedPrioritySelector = { 
+	private final int[] tweakedPrioritySelector = { 
 			RequestStarter.MAXIMUM_PRIORITY_CLASS,
 			RequestStarter.MAXIMUM_PRIORITY_CLASS,
 			RequestStarter.MAXIMUM_PRIORITY_CLASS,
@@ -127,7 +127,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			
 			RequestStarter.MINIMUM_PRIORITY_CLASS
 	};
-	private int[] prioritySelector = {
+	private final int[] prioritySelector = {
 			RequestStarter.MAXIMUM_PRIORITY_CLASS,
 			RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
@@ -147,7 +147,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		allRequestsByClientRequest = new HashMap();
 		
 		this.name = name;
-		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false, "Priority policy of the "+name+"scheduler", "Set the priority policy scheme used by the scheduler. Could be one of ["+PRIORITY_HARD+", "+PRIORITY_SOFT+ ']',
+		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
+				"Priority policy of the "+name+"scheduler",
+				"Set the priority policy scheme used by the scheduler. Could be one of ["+
+				PRIORITY_HARD+", "+PRIORITY_SOFT+ ']',
 				new PrioritySchedulerCallback(this));
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
