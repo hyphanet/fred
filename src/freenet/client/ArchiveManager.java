@@ -406,7 +406,7 @@ outer:		while(true) {
 	 */
 	private TempStoreElement makeTempStoreBucket(long size) {
 		File myFile = filenameGenerator.makeRandomFilename();
-		FileBucket fb = new FileBucket(myFile, false, true, false, true);
+		FileBucket fb = new FileBucket(myFile, false, true, true, true);
 		
 		byte[] cipherKey = new byte[32];
 		random.nextBytes(cipherKey);
