@@ -275,6 +275,7 @@ public class SplitFileFetcherSegment {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		synchronized(this) {
+			if(isFinished()) return;
 			if(blockNo < dataKeys.length) {
 				if(dataKeys[blockNo] == null) {
 					Logger.error(this, "Block already finished: "+blockNo);
@@ -308,6 +309,7 @@ public class SplitFileFetcherSegment {
 		int tries;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		synchronized(this) {
+			if(isFinished()) return;
 			if(blockNo < dataKeys.length) {
 				tries = ++dataRetries[blockNo];
 				if(tries > maxTries && maxTries >= 0) {
