@@ -123,25 +123,6 @@ public class StatisticsToadlet extends Toadlet {
 	
 		contentNode.addChild(core.alerts.createSummary());
 
-		// Generate Dumps
-		HTMLNode statGatheringBox =  contentNode.addChild(ctx.getPageMaker().getInfobox("Statistic gathering"));
-
-		// Generate a Thread-Dump
-		if(node.isUsingWrapper()){
-			HTMLNode threadDumpForm = ctx.addFormChild(statGatheringBox, "/", "threadDumpForm");
-			threadDumpForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getThreadDump", "Generate a Thread Dump" });
-		}
-
-		// BDB statistics dump 
-		HTMLNode JEStatsForm = ctx.addFormChild(statGatheringBox, "/", "JEStatsForm");
-		JEStatsForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getJEStatsDump", "Generate a JE Dump" });
-		
-		// Get logs
-		HTMLNode logsList = statGatheringBox.addChild("ul");
-		if(nodeConfig.config.get("logger").getBoolean("enabled"))
-			logsList.addChild("li").addChild("a", new String[]{ "href", "target"}, new String[]{ "/?latestlog", "_new"}, "Get latest node's logfile");
-			   	
-
 		double swaps = (double)node.getSwaps();
 		double noSwaps = (double)node.getNoSwaps();
 		
@@ -560,6 +541,26 @@ public class StatisticsToadlet extends Toadlet {
 				nodeCircleInfobox.addChild("div", "class", "infobox-header", "Node\u00a0Location\u00a0Distribution (w/Swap\u00a0Age)");
 				HTMLNode nodeCircleTable = nodeCircleInfobox.addChild("table");
 				addNodeCircle(nodeCircleTable);
+				
+				// Generate Dumps
+				nextTableCell = overviewTableRow.addChild("td", "class", "first");
+				HTMLNode statGatheringBox =  nextTableCell.addChild(ctx.getPageMaker().getInfobox("Statistic gathering"));
+
+				// Generate a Thread-Dump
+				if(node.isUsingWrapper()){
+					HTMLNode threadDumpForm = ctx.addFormChild(statGatheringBox, "/", "threadDumpForm");
+					threadDumpForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getThreadDump", "Generate a Thread Dump" });
+				}
+
+				// BDB statistics dump 
+				HTMLNode JEStatsForm = ctx.addFormChild(statGatheringBox, "/", "JEStatsForm");
+				JEStatsForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getJEStatsDump", "Generate a JE Dump" });
+				
+				// Get logs
+				HTMLNode logsList = statGatheringBox.addChild("ul");
+				if(nodeConfig.config.get("logger").getBoolean("enabled"))
+					logsList.addChild("li").addChild("a", new String[]{ "href", "target"}, new String[]{ "/?latestlog", "_new"}, "Get latest node's logfile");
+					   	
 			}
 		}
 
