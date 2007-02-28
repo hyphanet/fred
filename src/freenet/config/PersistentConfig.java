@@ -34,11 +34,11 @@ public class PersistentConfig extends Config {
 	public synchronized SimpleFieldSet exportFieldSet(boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		Iterator configsIterator = configsByPrefix.keySet().iterator();
-		SubConfig currentSubConfig;
+		SubConfig current;
 		while (configsIterator.hasNext()) {
-			currentSubConfig = (SubConfig) configsIterator.next();
-			SimpleFieldSet scfs = currentSubConfig.exportFieldSet(withDefaults);
-			fs.tput(currentSubConfig.prefix, scfs);
+			current = (SubConfig) configsByPrefix.get(configsIterator.next());
+			SimpleFieldSet scfs = current.exportFieldSet(withDefaults);
+			fs.tput(current.prefix, scfs);
 		}
 		return fs; 
 	}
