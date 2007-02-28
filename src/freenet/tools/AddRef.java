@@ -36,7 +36,7 @@ public class AddRef {
 			System.exit(-1);	
 		}
 
-		AddRef addref = new AddRef(reference);
+		new AddRef(reference);
 	}
 
 	AddRef(File reference){

@@ -17,7 +17,6 @@ import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
 import freenet.node.Node.NodeInitException;
-import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.LoggerHook.InvalidThresholdException;
@@ -269,7 +268,7 @@ public class NodeStarter
 			System.exit(Node.EXIT_TEST_ERROR);
 		}
 		
-        FileLoggerHook fh = Logger.setupStdoutLogging(Logger.MINOR, "");
+        Logger.setupStdoutLogging(Logger.MINOR, "");
 		
     	// set Java's DNS cache not to cache forever, since many people
     	// use dyndns hostnames

@@ -42,7 +42,6 @@ public class InsertHandler implements Runnable, ByteCounter {
     private byte[] headers;
     private BlockReceiver br;
     private Thread runThread;
-    private final boolean resetNearestLoc;
     PartiallyReceivedBlock prb;
     private static boolean logMINOR;
     
@@ -60,8 +59,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         if(PeerManager.distance(targetLoc, myLoc) < PeerManager.distance(targetLoc, closestLoc)) {
             closestLoc = myLoc;
             htl = node.maxHTL();
-            resetNearestLoc = true;
-        } else resetNearestLoc = false;
+        }
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
     
