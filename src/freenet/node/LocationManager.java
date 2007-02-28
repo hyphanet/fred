@@ -851,7 +851,10 @@ public class LocationManager {
         Long luid = new Long(uid);
         RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
         if(item == null) return false;
-        if(item.requestSender == null) return false;
+        if(item.requestSender == null){
+        	if(logMINOR) Logger.minor(this, "Got a FNPSwapRejected without any requestSender set! we can't and won't claim it! UID="+uid);
+        	return false;
+        }
         if(item.routedTo == null) {
             Logger.error(this, "Got SwapRejected on "+uid+" but routedTo is null!");
             return false;
