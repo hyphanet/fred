@@ -12,12 +12,14 @@ import freenet.support.api.Bucket;
 public class InsertBlock {
 
 	private final Bucket data;
+	private boolean isFreed;
 	public final FreenetURI desiredURI;
 	public final ClientMetadata clientMetadata;
 	
 	public InsertBlock(Bucket data, ClientMetadata metadata, FreenetURI desiredURI) {
 		if(data == null) throw new NullPointerException();
 		this.data = data;
+		this.isFreed = false;
 		if(metadata == null)
 			clientMetadata = new ClientMetadata();
 		else
@@ -26,10 +28,11 @@ public class InsertBlock {
 	}
 	
 	public Bucket getData() {
-		return data;
+		return (isFreed ? null : data);
 	}
 	
-	public void free(){
+	public synchronized void free(){
+		isFreed = true;
 		data.free();
 	}
 }
