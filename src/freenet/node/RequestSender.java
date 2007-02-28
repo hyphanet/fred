@@ -550,7 +550,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     	return block;
     }
 
-	private final Object totalBytesSync = new Object();
+	private volatile Object totalBytesSync = new Object();
 	private int totalBytesSent;
 	
 	public void sentBytes(int x) {

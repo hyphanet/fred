@@ -218,7 +218,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 
 	private int sentBytes;
 	private int receivedBytes;
-	private final Object bytesSync = new Object();
+	private volatile Object bytesSync = new Object();
 	
 	public void sentBytes(int x) {
 		synchronized(bytesSync) {
