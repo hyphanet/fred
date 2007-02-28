@@ -5,8 +5,8 @@ package freenet.node;
 
 import java.security.MessageDigest;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.Vector;
 import java.util.Date;
 import java.util.Iterator;
@@ -1022,7 +1022,7 @@ public class LocationManager {
         recentlyForwardedIDs.remove(new Long(item.outgoingID));
     }
     
-    private final HashMap knownLocs = new HashMap();
+    private final LinkedHashMap knownLocs = new LinkedHashMap();
     
     void registerLocationLink(double d, double t) {
     	if(logMINOR) Logger.minor(this, "Known Link: "+d+ ' ' +t);
@@ -1065,9 +1065,9 @@ public class LocationManager {
 	}
     
     // Return a copy of the known locations HashMap for a given timestamp
-    public HashMap getKnownLocations(long timestamp) {
+    public LinkedHashMap getKnownLocations(long timestamp) {
     		if (timestamp > -1) {
-    			HashMap knownLocsCopy = new HashMap();
+    			LinkedHashMap knownLocsCopy = new LinkedHashMap();
     			//TODO optimize some more if it is to be called a lot.
     			Double location = new Double(0.0);
     			Long locationTime = new Long(0);
@@ -1085,6 +1085,6 @@ public class LocationManager {
 				}
 				return knownLocsCopy;
 			}
-			return new HashMap( knownLocs );
+			return new LinkedHashMap( knownLocs );
 	}
 }

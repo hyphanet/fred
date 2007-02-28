@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.zip.DeflaterOutputStream;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -3228,7 +3229,7 @@ public class Node {
 	  return lm.getNetworkSizeEstimate( timestamp );
 	}
 
-	public HashMap getKnownLocations(long timestamp) {
+	public LinkedHashMap getKnownLocations(long timestamp) {
 	  return lm.getKnownLocations( timestamp );
 	}
 	
