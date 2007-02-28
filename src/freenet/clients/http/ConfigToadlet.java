@@ -23,7 +23,7 @@ import freenet.support.api.HTTPRequest;
 public class ConfigToadlet extends Toadlet {
 	// If a setting has to be more than a meg, something is seriously wrong!
 	private static final int MAX_PARAM_VALUE_SIZE = 1024*1024;
-	private Config config;
+	private final Config config;
 	private final NodeClientCore core;
 	private final Node node;
 	

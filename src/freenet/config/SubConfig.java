@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -22,7 +22,7 @@ import freenet.support.api.StringCallback;
  */
 public class SubConfig implements Comparable {
 	
-	private final HashMap map;
+	private final LinkedHashMap map;
 	public final Config config;
 	final String prefix;
 	private boolean hasInitialized;
@@ -30,7 +30,7 @@ public class SubConfig implements Comparable {
 	public SubConfig(String prefix, Config config) {
 		this.config = config;
 		this.prefix = prefix;
-		map = new HashMap();
+		map = new LinkedHashMap();
 		hasInitialized = false;
 		config.register(this);
 	}

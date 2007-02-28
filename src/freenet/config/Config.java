@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 /** Global configuration object for a node. SubConfig's register here.
@@ -11,7 +10,7 @@ import java.util.LinkedHashMap;
  */
 public class Config {
 
-	protected final HashMap configsByPrefix;
+	protected final LinkedHashMap configsByPrefix;
 	
 	public Config() {
 		configsByPrefix = new LinkedHashMap();
