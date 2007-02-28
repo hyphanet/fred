@@ -28,5 +28,8 @@ public class InsertBlock {
 	public Bucket getData() {
 		return data;
 	}
-
+	
+	public void free(){
+		data.free();
+	}
 }

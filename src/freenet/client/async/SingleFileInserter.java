@@ -391,7 +391,11 @@ class SingleFileInserter implements ClientPutState {
 			if(logMINOR) Logger.minor(this, "onSuccess("+state+") for "+this);
 			boolean lateStart = false;
 			synchronized(this) {
-				if(finished) return;
+				if(finished){
+					if(freeData)
+						block.free();
+					return;
+				}
 				if(state == sfi) {
 					if(logMINOR) Logger.minor(this, "Splitfile insert succeeded for "+this+" : "+state);
 					splitInsertSuccess = true;
@@ -421,7 +425,11 @@ class SingleFileInserter implements ClientPutState {
 
 		public void onFailure(InserterException e, ClientPutState state) {
 			synchronized(this) {
-				if(finished) return;
+				if(finished){
+					if(freeData)
+						block.free();
+					return;
+				}
 			}
 			fail(e);
 		}
@@ -517,7 +525,11 @@ class SingleFileInserter implements ClientPutState {
 			ClientPutState oldSFI = null;
 			ClientPutState oldMetadataPutter = null;
 			synchronized(this) {
-				if(finished) return;
+				if(finished){
+					if(freeData)
+						block.free();
+					return;
+				}
 				finished = true;
 				oldSFI = sfi;
 				oldMetadataPutter = metadataPutter;
@@ -552,6 +564,9 @@ class SingleFileInserter implements ClientPutState {
 				oldSFI.cancel();
 			if(oldMetadataPutter != null)
 				oldMetadataPutter.cancel();
+			
+			if(freeData)
+				block.free();
 		}
 
 		public void onBlockSetFinished(ClientPutState state) {
@@ -659,6 +674,8 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	public void cancel() {
+		if(freeData)
+			block.free();
 	}
 
 	public void schedule() throws InserterException {
