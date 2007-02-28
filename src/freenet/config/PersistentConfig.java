@@ -34,14 +34,18 @@ public class PersistentConfig extends Config {
 	public synchronized SimpleFieldSet exportFieldSet(boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		SubConfig[] configs;
-		synchronized(this) {
-			configs = (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
+		try {
+			synchronized(this) {
+				configs = (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
+			}
+			for(int i=0;i<configs.length;i++) {
+				SimpleFieldSet scfs = configs[i].exportFieldSet(withDefaults);
+				fs.tput(configs[i].prefix, scfs);
+			}
+		} catch (NoSuchFieldError e) {
+			Logger.error(this, "Caught exception " + e);
 		}
-		for(int i=0;i<configs.length;i++) {
-			SimpleFieldSet scfs = configs[i].exportFieldSet(withDefaults);
-			fs.tput(configs[i].prefix, scfs);
-		}
-		return fs;
+		return fs; 
 	}
 	
 	public void onRegister(SubConfig config, Option o) {
