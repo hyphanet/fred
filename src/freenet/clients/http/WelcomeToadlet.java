@@ -564,20 +564,25 @@ public class WelcomeToadlet extends Toadlet {
 		fetchKeyForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Fetch" });
 		
 		// Bookmarks
-		HTMLNode bookmarkBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "My Bookmarks"));
-		HTMLNode bookmarkContent = ctx.getPageMaker().getContentNode(bookmarkBox);
+		HTMLNode bookmarkBox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		HTMLNode bookmarkBoxHeader = bookmarkBox.addChild("div", "class", "infobox-header");
+		bookmarkBoxHeader.addChild("#", "My Bookmarks");
+		bookmarkBoxHeader.addChild("#", " [");
+		bookmarkBoxHeader.addChild("span", "id", "bookmarkedit").addChild("a", new String[] { "href", "class" }, new String[] { "?managebookmarks", "interfacelink" }, (bookmarks.getSize() == 0) ? "Add" : "Edit");
+		bookmarkBoxHeader.addChild("#", "]");
+
+		HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
 		
 		Enumeration e = bookmarks.getBookmarks();
 		if (!e.hasMoreElements()) {
-			bookmarkContent.addChild("#", "You currently do not have any bookmarks defined.");
+			bookmarkBoxContent.addChild("#", "You currently do not have any bookmarks defined.");
 		} else {
-			HTMLNode bookmarkList = bookmarkContent.addChild("ul", "id", "bookmarks");
+			HTMLNode bookmarkList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
 			while (e.hasMoreElements()) {
 				Bookmark b = (Bookmark)e.nextElement();
 				bookmarkList.addChild("li").addChild("a", "href", '/' + b.getKey(), b.getDesc());
 			}
 		}
-		bookmarkContent.addChild("div", "id", "bookmarkedit").addChild("a", new String[] { "href", "class" }, new String[] { "?managebookmarks", "interfacelink" }, "Edit my bookmarks");
 		
 		// Version info and Quit Form
 		HTMLNode versionBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "Version Information & Node Control"));
