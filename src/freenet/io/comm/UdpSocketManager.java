@@ -231,10 +231,10 @@ public class UdpSocketManager extends Thread {
 			Peer peer = new Peer(packet.getAddress(), packet.getPort());
 			long endTime = System.currentTimeMillis();
 			if(endTime - startTime > 50) {
-				if(endTime-startTime > 500)
+				if(endTime-startTime > 3000)
 					Logger.error(this, "packet creation took "+(endTime-startTime)+"ms");
 				else
-					Logger.normal(this, "packet creation took "+(endTime-startTime)+"ms");
+					if(logMINOR) Logger.minor(this, "packet creation took "+(endTime-startTime)+"ms");
 			}
 			byte[] data = packet.getData();
 			int offset = packet.getOffset();
@@ -246,10 +246,10 @@ public class UdpSocketManager extends Thread {
 					lowLevelFilter.process(data, offset, length, peer);
 					endTime = System.currentTimeMillis();
 					if(endTime - startTime > 50) {
-						if(endTime-startTime > 500)
+						if(endTime-startTime > 3000)
 							Logger.error(this, "processing packet took "+(endTime-startTime)+"ms");
 						else
-							Logger.normal(this, "processing packet took "+(endTime-startTime)+"ms");
+							if(logMINOR) Logger.minor(this, "processing packet took "+(endTime-startTime)+"ms");
 					}
 					if(logMINOR) Logger.minor(this,
 							"Successfully handled packet length " + length);
@@ -324,10 +324,10 @@ public class UdpSocketManager extends Thread {
 		}
 		long tEnd = System.currentTimeMillis();
 		if(tEnd - tStart > 50) {
-			if(tEnd - tStart > 500)
+			if(tEnd - tStart > 3000)
 				Logger.error(this, "removeTimedOutFilters took "+(tEnd-tStart)+"ms");
 			else
-				Logger.normal(this, "removeTimedOutFilters took "+(tEnd-tStart)+"ms");
+				if(logMINOR) Logger.minor(this, "removeTimedOutFilters took "+(tEnd-tStart)+"ms");
 		}
 	}
 
@@ -349,7 +349,7 @@ public class UdpSocketManager extends Thread {
 				Logger.debug(this, "" + (System.currentTimeMillis() % 60000) + ' ' + _sock.getLocalPort() + " <- "
 						+ m.getSource() + " : " + m);
 			} else {
-				Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + ' ' + _sock.getLocalPort() + " <- "
+				if(logMINOR) Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + ' ' + _sock.getLocalPort() + " <- "
 						+ m.getSource() + " : " + m);
 			}
 		}
@@ -433,10 +433,10 @@ public class UdpSocketManager extends Thread {
 		}
 		long tEnd = System.currentTimeMillis();
 		if(tEnd - tStart > 50) {
-			if(tEnd - tStart > 500)
+			if(tEnd - tStart > 3000)
 				Logger.error(this, "checkFilters took "+(tEnd-tStart)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
 			else
-				Logger.normal(this, "checkFilters took "+(tEnd-tStart)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
+				if(logMINOR) Logger.minor(this, "checkFilters took "+(tEnd-tStart)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
 		}
 	}
 	
@@ -513,10 +513,10 @@ public class UdpSocketManager extends Thread {
 		}
 		long tEnd = System.currentTimeMillis();
 		if(tEnd - now > 50) {
-			if(tEnd - now > 500)
+			if(tEnd - now > 3000)
 				Logger.error(this, "waitFor _unclaimed iteration took "+(tEnd-now)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for ret of "+ret);
 			else
-				Logger.normal(this, "waitFor _unclaimed iteration took "+(tEnd-now)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for ret of "+ret);
+				if(logMINOR) Logger.minor(this, "waitFor _unclaimed iteration took "+(tEnd-now)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for ret of "+ret);
 		}
 		// Unlock to wait on filter
 		// Waiting on the filter won't release the outer lock
