@@ -264,9 +264,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		short fuzz = -1, iteration = 0;
 		synchronized (this) {
-			if(choosenPriorityScheduler.equals(PRIORITY_SOFT))
+			if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
 				fuzz = -1;
-			else if(choosenPriorityScheduler.equals(PRIORITY_HARD))
+			else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 				fuzz = 0;	
 		}
 		// we loop to ensure we try every possibilities ( n + 1)
