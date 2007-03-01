@@ -91,7 +91,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private static final int MIN_RETRY_COUNT = 3;
 	private String choosenPriorityScheduler; 
 	
-	private final int[] tweakedPrioritySelector = { 
+	private final short[] tweakedPrioritySelector = { 
 			RequestStarter.MAXIMUM_PRIORITY_CLASS,
 			RequestStarter.MAXIMUM_PRIORITY_CLASS,
 			RequestStarter.MAXIMUM_PRIORITY_CLASS,
@@ -127,7 +127,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			
 			RequestStarter.MINIMUM_PRIORITY_CLASS
 	};
-	private final int[] prioritySelector = {
+	private final short[] prioritySelector = {
 			RequestStarter.MAXIMUM_PRIORITY_CLASS,
 			RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
