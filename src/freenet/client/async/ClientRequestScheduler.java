@@ -259,10 +259,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
-	private int removeFirstAccordingToPriorities(int priority){
+	private int removeFirstAccordingToPriorities(){
 		SortedVectorByNumber result = null;
 		
-		short fuzz = -1, iteration = 0;
+		short fuzz = -1, iteration = 0, priority;
 		synchronized (this) {
 			if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
 				fuzz = -1;
@@ -292,11 +292,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public SendableRequest removeFirst() {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
-		int choosenPriorityClass = Integer.MAX_VALUE;
-		choosenPriorityClass = removeFirstAccordingToPriorities(choosenPriorityClass);
+		int choosenPriorityClass = removeFirstAccordingToPriorities();
 		if(choosenPriorityClass == -1) {
 			if(logMINOR)
-				Logger.minor(this, "No priority with requests");
+				Logger.minor(this, "Nothing to do");
 			return null;
 		}
 		SortedVectorByNumber s = priorities[choosenPriorityClass];
