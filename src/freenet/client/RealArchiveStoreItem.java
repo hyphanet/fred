@@ -59,7 +59,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	}
 	
 	void innerClose() {
-		underBucket.finalize();
+		underBucket.free();
 	}
 
 	Bucket getDataOrThrow() throws ArchiveFailureException {
