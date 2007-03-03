@@ -47,7 +47,12 @@ public class LongOption extends Option {
 	}
 	
 	public void setValue(String val) throws InvalidConfigValueException {
-		long x = Fields.parseLong(val);
+		long x;
+		try{
+			x = Fields.parseLong(val);
+		}catch (NumberFormatException e) {
+			throw new InvalidConfigValueException("The value specified can't be parsed : "+val);
+		}
 		cb.set(x);
 		cachedStringValue = val;
 		currentValue = x;
@@ -62,7 +67,12 @@ public class LongOption extends Option {
 	}
 
 	public void setInitialValue(String val) throws InvalidConfigValueException {
-		long x = Fields.parseLong(val);
+		long x;
+		try{
+			x = Fields.parseLong(val);
+		}catch (NumberFormatException e) {
+			throw new InvalidConfigValueException("The value specified can't be parsed : "+val);
+		}
 		cachedStringValue = val;
 		currentValue = x;
 	}
