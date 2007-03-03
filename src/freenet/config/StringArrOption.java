@@ -1,5 +1,7 @@
 package freenet.config;
 
+import java.util.Arrays;
+
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
@@ -100,7 +102,7 @@ public class StringArrOption extends Option {
 
 	public boolean isDefault() {
 		getValueString();
-		return currentValue == null ? false : currentValue.equals(defaultValue);
+		return currentValue == null ? false : Arrays.equals(currentValue, defaultValue);
 	}
 	
 	public void setDefault() {
