@@ -26,7 +26,12 @@ public class ShortOption extends Option {
 	}
 	
 	public void setValue(String val) throws InvalidConfigValueException {
-		short x = Fields.parseShort(val);
+		short x;
+		try{
+			x= Fields.parseShort(val);
+		} catch (NumberFormatException e) {
+			throw new InvalidConfigValueException("The value specified can't be parsed : "+val);
+		}
 		cb.set(x);
 		currentValue = x;
 	}
@@ -36,7 +41,12 @@ public class ShortOption extends Option {
 	}
 
 	public void setInitialValue(String val) throws InvalidConfigValueException {
-		short x = Fields.parseShort(val);
+		short x;
+		try{
+			x = Fields.parseShort(val);
+		} catch (NumberFormatException e) {
+			throw new InvalidConfigValueException("The value specified can't be parsed : "+val);
+		}
 		currentValue = x;
 	}
 

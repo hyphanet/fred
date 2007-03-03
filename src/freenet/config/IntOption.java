@@ -47,14 +47,24 @@ public class IntOption extends Option {
 	}
 
 	public void setValue(String val) throws InvalidConfigValueException {
-		int x = Fields.parseInt(val);
+		int x;
+		try{
+			x = Fields.parseInt(val);
+		} catch (NumberFormatException e) {
+			throw new InvalidConfigValueException("The value specified can't be parsed : "+val);
+		}
 		cb.set(x);
 		cachedStringValue = val;
 		currentValue = x;
 	}
 	
-	public void setInitialValue(String val) {
-		int x = Fields.parseInt(val);
+	public void setInitialValue(String val) throws InvalidConfigValueException {
+		int x;
+		try{
+			x = Fields.parseInt(val);
+		} catch (NumberFormatException e) {
+			throw new InvalidConfigValueException("The value specified can't be parsed : "+val);
+		}
 		cachedStringValue = val;
 		currentValue = x;
 	}
