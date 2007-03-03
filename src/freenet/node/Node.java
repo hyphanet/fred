@@ -3614,10 +3614,6 @@ public class Node {
 			return totalPayloadSent;
 		}
 	}
-	
-	public String getName() {
-		return myName;
-	}
 
 	public void setName(String key) throws InvalidConfigValueException {
 		 config.get("node").getOption("name").setValue(key);

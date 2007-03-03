@@ -672,7 +672,7 @@ public class TextModeClientInterface implements Runnable {
             addPeer(content);
         
         } else if(uline.startsWith("NAME:")) {
-            outsb.append("Node name currently: ").append(n.getName());
+            outsb.append("Node name currently: ").append(n.getMyName());
             String key = line.substring("NAME:".length());
             while((key.length() > 0) && (key.charAt(0) == ' '))
                 key = key.substring(1);
