@@ -577,9 +577,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 				}
 			}
 			MultiValueTable responseHeaders = new MultiValueTable();
-			StringBuffer pageBuffer = new StringBuffer();
-			pageNode.generate(pageBuffer);
-			byte[] responseBytes = pageBuffer.toString().getBytes();
+			byte[] responseBytes = pageNode.generate().getBytes();
 			context.sendReplyHeaders(200, "OK", responseHeaders, "text/html; charset=utf-8", responseBytes.length);
 			context.writeData(responseBytes);
 		} else if ("add".equals(action)) {
@@ -616,9 +614,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
 		infobox.addChild("div", "class", "infobox-header", title);
 		infobox.addChild("div", "class", "infobox-content", message);
-		StringBuffer pageBuffer = new StringBuffer();
-		pageNode.generate(pageBuffer);
-		byte[] responseBytes = pageBuffer.toString().getBytes("utf-8");
+		byte[] responseBytes = pageNode.generate().getBytes("utf-8");
 		context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", responseBytes.length);
 		context.writeData(responseBytes);
 	}

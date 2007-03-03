@@ -89,7 +89,6 @@ public class WelcomeToadlet extends Toadlet {
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			Logger.normal(this, "Node is updating/restarting");
 			node.getNodeUpdater().arm();
-			return;
 		}else if (request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH).length()>0){
 			if(noPassword) {
 				redirectToRoot(ctx);
@@ -101,7 +100,6 @@ public class WelcomeToadlet extends Toadlet {
 				url = request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH);
 			headers.put("Location", url==null ? "/" : url);
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
 		}else if (request.getPartAsString("update", 32).length() > 0) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Update");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -112,7 +110,6 @@ public class WelcomeToadlet extends Toadlet {
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "updateconfirm", "Update" });
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-			return;
 		}else if(request.isPartSet("getThreadDump")) {
 			if(noPassword) {
 				redirectToRoot(ctx);
@@ -130,7 +127,6 @@ public class WelcomeToadlet extends Toadlet {
 				ctx.getPageMaker().getContentNode(infobox).addChild("#", "It's not possible to make the node generate a thread dump if you aren't using the wrapper!");
 			}
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-			return;
 		}else if(request.isPartSet("getJEStatsDump")) {
 			if(noPassword) {
 				redirectToRoot(ctx);
@@ -146,7 +142,6 @@ public class WelcomeToadlet extends Toadlet {
 
 			ctx.getPageMaker().getContentNode(infobox).addChild("#", "Runtime database statistics have been written to the wrapper logfile");
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-			return;
 		}else if (request.isPartSet("addbookmark")) {
 			if(noPassword) {
 				redirectToRoot(ctx);
@@ -385,7 +380,6 @@ public class WelcomeToadlet extends Toadlet {
 			infoboxContent.addChild("#", "Thank you for using Freenet.");
 			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			this.node.exit("Shutdown from fproxy");
-			return;
 		}else if(request.isPartSet("restartconfirm")){
 			if(noPassword) {
 				redirectToRoot(ctx);
@@ -400,7 +394,6 @@ public class WelcomeToadlet extends Toadlet {
 			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			Logger.normal(this, "Node is restarting");
 			node.getNodeStarter().restart();
-			return;
 		}else {
 			redirectToRoot(ctx);
 		}
@@ -447,9 +440,7 @@ public class WelcomeToadlet extends Toadlet {
 			
 			this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
 			return;
-		}
-		
-		if (request.getParam("newbookmark").length() > 0) {
+		}else if (request.getParam("newbookmark").length() > 0) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Confirm Bookmark Addition"));
@@ -467,7 +458,6 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode warnbox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "External link"));
 			HTMLNode externalLinkForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(warnbox), "/", "confirmExternalLinkForm");
 
-			// FIXME: has request.getParam(GenericReadFilterCallback.magicHTTPEscapeString) been sanityzed ?
 			final String target = request.getParam(GenericReadFilterCallback.magicHTTPEscapeString);
 			externalLinkForm.addChild("#", "Please confirm that you want to go to " + target + ". WARNING: You are leaving FREENET! Clicking on this link WILL seriously jeopardize your anonymity!. It is strongly recommended not to do so!");
 			externalLinkForm.addChild("br");

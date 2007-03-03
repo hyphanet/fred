@@ -165,9 +165,7 @@ public class ConfigToadlet extends Toadlet {
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Apply" });
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", "Reset" });
 		
-		StringBuffer pageBuffer = new StringBuffer();
-		pageNode.generate(pageBuffer);
-		this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
+		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 	
 	public String supportedMethods() {

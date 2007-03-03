@@ -325,9 +325,7 @@ public class FProxyToadlet extends Toadlet {
 			errorContent.addChild("br");
 			errorContent.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node homepage" }, "Homepage");
 
-			StringBuffer pageBuffer = new StringBuffer();
-			pageNode.generate(pageBuffer);
-			this.writeReply(ctx, 400, "text/html", "Invalid key", pageBuffer.toString());
+			this.writeReply(ctx, 400, "text/html", "Invalid key", pageNode.generate());
 			return;
 		}
 		String requestedMimeType = httprequest.getParam("type", null);
@@ -407,9 +405,7 @@ public class FProxyToadlet extends Toadlet {
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", "Download in background and store in downloads directory" });
 				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, "Abort and return to the FProxy home page");
 
-				StringBuffer pageBuffer = new StringBuffer();
-				pageNode.generate(pageBuffer);
-				writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
+				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			} else {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(FetchException.getShortMessage(e.mode));
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -426,10 +422,8 @@ public class FProxyToadlet extends Toadlet {
 				infoboxContent.addChild("br");
 				infoboxContent.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node homepage" }, "Homepage");
 				
-				StringBuffer pageBuffer = new StringBuffer();
-				pageNode.generate(pageBuffer);
 				this.writeReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
-						"text/html", FetchException.getShortMessage(e.mode), pageBuffer.toString());
+						"text/html", FetchException.getShortMessage(e.mode), pageNode.generate());
 			}
 		} catch (SocketException e) {
 			// Probably irrelevant

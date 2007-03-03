@@ -888,8 +888,7 @@ public class Node {
 						aggressiveGCModificator = val;
 					}
 		});
-		if(lastVersion <= 954)
-			nodeConfig.fixOldDefault("aggressiveGC", "250");
+
 		aggressiveGCModificator = nodeConfig.getInt("aggressiveGC");
 		
 		//Memory Checking thread
@@ -1316,7 +1315,6 @@ public class Node {
 			
 		});
 		
-		if(lastVersion <= 1007) nodeConfig.fixOldDefault("databaseMaxMemory", "0"); // FIXME remove; 1007 had a bug which reset this to 0
 		databaseMaxMemory = nodeConfig.getLong("databaseMaxMemory");
 		envMutableConfig.setCacheSize(databaseMaxMemory);
 		
@@ -3601,7 +3599,7 @@ public class Node {
 	}
 	
 	// FIXME put this somewhere else
-	private final Object statsSync = new Object();
+	private volatile Object statsSync = new Object();
 	/** The total number of bytes of real data i.e. payload sent by the node */
 	private long totalPayloadSent;
 	

@@ -607,9 +607,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			// ignore
 		}
 		
-		StringBuffer pageBuffer = new StringBuffer();
-		pageNode.generate(pageBuffer);
-		this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
+		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 	
 	private String sortString(boolean isReversed, String type) {
@@ -738,9 +736,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				this.writeReply(ctx, 200, "text/html", "OK", resultString);
 				return;
 			}
-			StringBuffer pageBuffer = new StringBuffer();
-			pageNode.generate(pageBuffer);
-			this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
+			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("update_notes")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();

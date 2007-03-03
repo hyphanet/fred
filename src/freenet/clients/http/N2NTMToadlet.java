@@ -16,7 +16,6 @@ import freenet.io.comm.UdpSocketManager;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.PeerNode;
-import freenet.node.Version;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -66,9 +65,7 @@ public class N2NTMToadlet extends Toadlet {
 		  }
 		  if(peernode_name == null) {
 			  contentNode.addChild(createPeerInfobox("infobox-error", "Peer not found", "The peer with the hash code \u201c" + input_hashcode_string + "\u201d could not be found."));
-			  StringBuffer pageBuffer = new StringBuffer();
-			  pageNode.generate(pageBuffer);
-			  this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
+			  this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			  return;
 		  }
 			HashMap peers = new HashMap();
@@ -78,9 +75,7 @@ public class N2NTMToadlet extends Toadlet {
 				this.writeReply(ctx, 200, "text/html", "OK", resultString);
 				return;
 			}
-		  StringBuffer pageBuffer = new StringBuffer();
-		  pageNode.generate(pageBuffer);
-		  this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
+		  this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 		  return;
 	  }
 	  MultiValueTable headers = new MultiValueTable();
@@ -139,11 +134,7 @@ public class N2NTMToadlet extends Toadlet {
 						fs.put("composedTime", now);
 						fs.put("sentTime", now);
 						Message n2ntm;
-						if(Version.buildNumber() < 1000) {  // FIXME/TODO: This test shouldn't be needed eventually
-							n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, node.getMyName(), pn.getName(), message);
-						} else {
-							n2ntm = DMT.createNodeToNodeMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, fs.toString().getBytes("UTF-8"));
-						}
+						n2ntm = DMT.createNodeToNodeMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, fs.toString().getBytes("UTF-8"));
 						if(!pn.isConnected()) {
 							sendStatusShort = "Queued";
 							sendStatusLong = "Queued: Peer not connected, so message queued for when it connects";
@@ -179,10 +170,8 @@ public class N2NTMToadlet extends Toadlet {
 			HTMLNode list = peerTableInfobox.addChild("ul");
 			list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "Back to node homepage" }, "Homepage");
 			list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/darknet/", "Back to darknet connections" }, "Darknet connections");
-		  StringBuffer pageBuffer = new StringBuffer();
-		  pageNode.generate(pageBuffer);
-		  this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
-		  return;
+			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			return;
 	  }
 	  MultiValueTable headers = new MultiValueTable();
 	  headers.put("Location", "/darknet/");
@@ -192,9 +181,7 @@ public class N2NTMToadlet extends Toadlet {
 	public static String createN2NTMSendForm(HTMLNode pageNode, HTMLNode contentNode, ToadletContext ctx, HashMap peers) throws ToadletContextClosedException, IOException {
 		if(contentNode == null) {
 			contentNode.addChild(createPeerInfobox("infobox-error", "Internal error", "Internal error: N2NTMToadlet.createN2NTMSendForm() not passed a valid contentNode."));
-			StringBuffer pageBuffer = new StringBuffer();
-			pageNode.generate(pageBuffer);
-			return pageBuffer.toString();
+			return pageNode.generate();
 		}
 		HTMLNode infobox = contentNode.addChild("div", new String[] { "class", "id" }, new String[] { "infobox", "n2nbox" });
 		infobox.addChild("div", "class", "infobox-header", "Send Node to Node Text Message");

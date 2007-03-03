@@ -48,8 +48,6 @@ public class LocalFileInsertToadlet extends Toadlet {
 		}
 
 		currentPath = new File(path).getCanonicalFile();
-
-		StringBuffer pageBuffer = new StringBuffer(16384);
 		PageMaker pageMaker = toadletContext.getPageMaker();
 
 		HTMLNode pageNode = pageMaker.getPageNode("Listing of " + currentPath.getAbsolutePath());
@@ -134,8 +132,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 			ulNode.addChild("li", "Check that the specified path is readable by the user running the node.");
 		}
 
-		pageNode.generate(pageBuffer);
-		writeReply(toadletContext, 200, "text/html; charset=utf-8", "OK", pageBuffer.toString());
+		writeReply(toadletContext, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 	}
 
 	/**

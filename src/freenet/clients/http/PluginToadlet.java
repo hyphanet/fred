@@ -192,7 +192,7 @@ public class PluginToadlet extends Toadlet {
 	 *            The toadlet context
 	 * @return A StringBuffer containing the HTML page
 	 */
-	private StringBuffer listPlugins(ToadletContext context) {
+	private String listPlugins(ToadletContext context) {
 		Plugin[] plugins = pluginManager.getPlugins();
 		PageMaker pageMaker = context.getPageMaker();
 		HTMLNode pageNode = pageMaker.getPageNode("List of Plugins");
@@ -228,9 +228,7 @@ public class PluginToadlet extends Toadlet {
 
 		contentNode.addChild(createAddPluginBox(context));
 
-		StringBuffer pageBuffer = new StringBuffer();
-		pageNode.generate(pageBuffer);
-		return pageBuffer;
+		return pageNode.generate();
 	}
 
 	/**
