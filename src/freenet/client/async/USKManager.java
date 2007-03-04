@@ -255,4 +255,13 @@ public class USKManager {
 	public int getBackgroundFetcherByUSKSize(){
 		return backgroundFetchersByClearUSK.size();
 	}
+	
+	/**
+	 * The result of that method will be displayed on the Statistic Toadlet : it will help catching #1147 
+	 * Afterwards it should be removed: it's not usefull :)
+	 * @return the size of temporaryBackgroundFetchersLRU
+	 */
+	public int getTemporaryBackgroundFetchersLRU(){
+		return temporaryBackgroundFetchersLRU.size();
+	}
 }
