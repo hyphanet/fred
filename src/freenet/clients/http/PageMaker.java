@@ -32,7 +32,7 @@ public class PageMaker {
 	/** Cache for themes read from the JAR file. */
 	private List jarThemesCache = null;
 	
-	PageMaker(String t) {
+	public PageMaker(String t) {
 		setTheme(t);
 	}
 	
