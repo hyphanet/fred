@@ -190,7 +190,7 @@ public class PproxyToadlet extends Toadlet {
 					pluginRow.addChild("td", new Date(pi.getStarted()).toString());
 					HTMLNode actionCell = pluginRow.addChild("td");
 					if (pi.isPproxyPlugin()) {
-						HTMLNode visitForm = actionCell.addChild("form", new String[] { "method", "action" }, new String[] { "get", pi.getPluginClassName() });
+						HTMLNode visitForm = actionCell.addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_new" });
 						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Visit" });
 					}
