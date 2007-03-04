@@ -1034,17 +1034,18 @@ public class LocationManager {
     void registerKnownLocation(double d) {
     	if(logMINOR) Logger.minor(this, "Known Location: "+d);
         Double dd = new Double(d);
+        Date timestamp = new Date();
+        Long longTime = new Long(timestamp.getTime());
+        
         synchronized(knownLocs) {
-            Date timestamp = new Date();
-            Long longTime = new Long(timestamp.getTime());
         		//If the location is already recorded, remove it from the hashmap
         		if (knownLocs.containsKey(dd)) {
         			knownLocs.remove(dd);
         		}
         		//Add the location to the map with the current timestamp as value
         		knownLocs.put(dd,longTime);
-        		if(logMINOR) Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
         }
+		if(logMINOR) Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
     }
     
     //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
@@ -1052,17 +1053,19 @@ public class LocationManager {
     		int size = 0;
     		if (timestamp == -1) {
     			size = knownLocs.size();
-    		}
-    		else if (timestamp > -1) {
-    			//TODO optimize some more if it is to be called a lot.
-    			Long locationTime = new Long(0);
+    		}else if (timestamp > -1) {
+				Long locationTime = new Long(0);
 				Iterator knownLocationsIterator = knownLocs.values().iterator();
-				while (knownLocationsIterator.hasNext()) {
-					locationTime = (Long) knownLocationsIterator.next();
-					if (locationTime.longValue() > timestamp) {
-						size++;
-					}
-				}
+				
+    			synchronized (knownLocs) {
+    				//TODO optimize some more if it is to be called a lot.
+    				while (knownLocationsIterator.hasNext()) {
+    					locationTime = (Long) knownLocationsIterator.next();
+    					if (locationTime.longValue() > timestamp) {
+    						size++;
+    					}
+    				}
+    			}
 			}
 			return size;
 	}
@@ -1075,15 +1078,17 @@ public class LocationManager {
     			Double location = new Double(0.0);
     			Long locationTime = new Long(0);
 				Iterator knownLocationsIterator = knownLocs.keySet().iterator();
-				while (knownLocationsIterator.hasNext()) {
-					location = (Double) knownLocationsIterator.next();
-					locationTime = (Long) knownLocs.get(location);
-					if (locationTime.longValue() > timestamp) {
-						//If the location is already recorded, remove it from the hashmap
-						if (knownLocsCopy.containsKey(location)) {
-							knownLocsCopy.remove(location);
+				synchronized (knownLocs) {
+					while (knownLocationsIterator.hasNext()) {
+						location = (Double) knownLocationsIterator.next();
+						locationTime = (Long) knownLocs.get(location);
+						if (locationTime.longValue() > timestamp) {
+							//If the location is already recorded, remove it from the hashmap
+							if (knownLocsCopy.containsKey(location)) {
+								knownLocsCopy.remove(location);
+							}
+							knownLocsCopy.put(location, locationTime);
 						}
-						knownLocsCopy.put(location, locationTime);
 					}
 				}
 				return knownLocsCopy;
