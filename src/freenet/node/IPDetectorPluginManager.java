@@ -55,7 +55,7 @@ public class IPDetectorPluginManager {
 				"You should be able to connect to most other users.", UserAlert.WARNING);
 		connectedAlert = new SimpleUserAlert(true, "Direct internet connection detected",
 				"You appear to be directly connected to the internet. Congratulations, you should be able to connect "+
-				"to any other freenet node.", UserAlert.WARNING);
+				"to any other freenet node.", UserAlert.MINOR);
 	}
 
 	/** Start the detector plugin manager. This includes running the plugin, if there
