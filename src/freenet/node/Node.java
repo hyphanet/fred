@@ -1317,6 +1317,10 @@ public class Node {
 		
 		databaseMaxMemory = nodeConfig.getLong("databaseMaxMemory");
 		envMutableConfig.setCacheSize(databaseMaxMemory);
+		// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
+		// FIXME is this the correct place to set these parameters?
+		envMutableConfig.setConfigParam("je.evictor.lruOnly", "false");
+		envMutableConfig.setConfigParam("je.evictor.nodesPerScan", "100");
 		
 		try {
 			storeEnvironment.setMutableConfig(envMutableConfig);
