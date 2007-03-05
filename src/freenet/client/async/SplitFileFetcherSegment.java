@@ -137,7 +137,7 @@ public class SplitFileFetcherSegment {
 		return fatallyFailedBlocks;
 	}
 
-	public void onSuccess(FetchResult result, int blockNo, boolean dontNotify) {
+	public void onSuccess(Bucket data, int blockNo, boolean dontNotify) {
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
@@ -148,7 +148,7 @@ public class SplitFileFetcherSegment {
 					return;
 				}
 				dataKeys[blockNo] = null;
-				dataBuckets[blockNo].setData(result.asBucket());
+				dataBuckets[blockNo].setData(data);
 			} else if(blockNo < checkKeys.length + dataKeys.length) {
 				blockNo -= dataKeys.length;
 				if(checkKeys[blockNo] == null) {
@@ -156,7 +156,7 @@ public class SplitFileFetcherSegment {
 					return;
 				}
 				checkKeys[blockNo] = null;
-				checkBuckets[blockNo].setData(result.asBucket());
+				checkBuckets[blockNo].setData(data);
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 			fetchedBlocks++;

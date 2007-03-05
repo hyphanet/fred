@@ -159,15 +159,15 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			}
 		}
 		if(!block.isMetadata()) {
-			onSuccess(new FetchResult((ClientMetadata)null, data), fromStore, token);
+			onSuccess(data, fromStore, token);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token);
 		}
 	}
 	
-	protected void onSuccess(FetchResult data, boolean fromStore, int blockNo) {
+	protected void onSuccess(Bucket data, boolean fromStore, int blockNo) {
 		if(parent.isCancelled()) {
-			data.asBucket().free();
+			data.free();
 			onFailure(new FetchException(FetchException.CANCELLED), blockNo);
 			return;
 		}
