@@ -137,8 +137,10 @@ public class SplitFileFetcherSegment {
 		return fatallyFailedBlocks;
 	}
 
-	public synchronized void onSuccess(FetchResult result, int blockNo, boolean dontNotify) {
+	public void onSuccess(FetchResult result, int blockNo, boolean dontNotify) {
+		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		synchronized(this) {
 		if(isFinished()) return;
 		if(blockNo < dataKeys.length) {
 			if(dataKeys[blockNo] == null) {
@@ -158,24 +160,22 @@ public class SplitFileFetcherSegment {
 		} else
 			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 		fetchedBlocks++;
-		parentFetcher.parent.completedBlock(dontNotify);
 		if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
-		if(fetchedBlocks >= minFetched)
-			startDecode();
-	}
-
-	private void startDecode() {
-		synchronized(this) {
-			if(startedDecode) return;
+		if(startedDecode) {
+			return;
+		} else {
+			decodeNow = (fetchedBlocks >= minFetched);
 			startedDecode = true;
 			finishing = true;
 		}
+		}
+		parentFetcher.parent.completedBlock(dontNotify);
 		Runnable r = new Decoder();
 		Thread t = new Thread(r, "Decoder for "+this);
 		t.setDaemon(true);
 		t.start();
 	}
-	
+
 	class Decoder implements Runnable {
 
 		public void run() {
