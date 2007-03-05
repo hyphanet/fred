@@ -118,7 +118,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// Extract data
 		Bucket data = extract(block);
 		if(data == null) {
-			Logger.error(this, "onSuccess(null, "+fromStore+", "+fromStore+", "+token+")", new Exception("error"));
+			Logger.error(this, "onSuccess(null, "+fromStore+", "+token+")", new Exception("error"));
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, "onSuccess(null) in "+this));
 			return; // failed
 		}
