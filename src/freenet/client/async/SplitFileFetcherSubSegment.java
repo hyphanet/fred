@@ -145,6 +145,9 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, int token) {
 		Bucket data = extract(block, token);
 		if(fromStore) {
+			// Normally when this method is called the block number has already
+			// been removed. However if fromStore=true, it won't have been, so
+			// we have to do it. (Check the call trace for why)
 			synchronized(this) {
 				for(int i=0;i<blockNums.size();i++) {
 					Integer x = (Integer) blockNums.get(i);
