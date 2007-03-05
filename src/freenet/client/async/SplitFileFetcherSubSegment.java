@@ -162,7 +162,6 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 	}
 	
-	/** Will be overridden by SingleFileFetcher */
 	protected void onSuccess(FetchResult data, boolean fromStore, int blockNo) {
 		if(parent.isCancelled()) {
 			data.asBucket().free();
