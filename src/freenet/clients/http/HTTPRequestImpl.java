@@ -461,7 +461,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 					contentType = lineparts[1].trim();
 					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Parsed type: "+contentType);
 				} else {
-					
+					// Do nothing, irrelevant header
 				}
 			}
 			
