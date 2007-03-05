@@ -86,6 +86,8 @@ public class ClientSSK extends ClientKey {
 		if((this.pubKey != null) && (this.pubKey != pubKey) && !this.pubKey.equals(pubKey))
 			throw new IllegalArgumentException("Cannot reassign: was "+this.pubKey+" now "+pubKey);
 		this.pubKey = pubKey;
+		if(!Arrays.equals(pubKey.asBytesHash(), pubKeyHash))
+			throw new IllegalArgumentException();
 	}
 	
 	public FreenetURI getURI() {
