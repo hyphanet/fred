@@ -39,7 +39,7 @@ public abstract class LoggerHook extends Logger {
 	 *            Logs this exception with the message.
 	 * @param priority
 	 *            The priority of the mesage, one of Logger.ERROR,
-	 *            Logger.NORMAL, Logger.MINOR, or Logger.DEBUGGING.
+	 *            Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
 	 */
 	public abstract void log(
 			Object o,
@@ -53,7 +53,7 @@ public abstract class LoggerHook extends Logger {
 	 * @param source        The source object where this message was generated
 	 * @param message A clear and verbose message describing the event
 	 * @param priority The priority of the mesage, one of Logger.ERROR,
-	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUGGING.
+	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
 	 **/
 	public void log(Object source, String message, int priority) {
 		if (!instanceShouldLog(priority,source)) return;
@@ -67,7 +67,7 @@ public abstract class LoggerHook extends Logger {
 	 * @param message  A clear and verbose message describing the event.
 	 * @param e        Logs this exception with the message.
 	 * @param priority The priority of the mesage, one of Logger.ERROR,
-	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUGGING.
+	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
 	 * @see #log(Object o, String message, int priority)
 	 */
 	public void log(Object o, String message, Throwable e, 
@@ -81,7 +81,7 @@ public abstract class LoggerHook extends Logger {
 	 * @param c        The class where this message was generated.
 	 * @param message  A clear and verbose message describing the event
 	 * @param priority The priority of the mesage, one of Logger.ERROR,
-	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUGGING.
+	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
 	 */
 	public void log(Class c, String message, int priority) {
 		if (!instanceShouldLog(priority,c)) return;
