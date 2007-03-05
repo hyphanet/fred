@@ -20,8 +20,8 @@ public class BookmarkManager {
 		"USK@60I8H8HinpgZSOuTSD66AVlIFAy-xsppFr0YCzCar7c,NzdivUGCGOdlgngOGRbbKDNfSCnjI0FXjHLzJM4xkJ4,AQABAAE/index/4/=INDEX.7-freesite"
 	};
 	private static final String[] DEFAULT_DARKNET_BOOKMARKS = {
-		"USK@c55vMxUl-T-lD3nv0iOaXF~G1hnY6pOMRbzZSwACMmY,yd8~uwUmGm164-ipStoiBOJVjkbbYXJMlD~H5ftPxIA,AQABAAE/Indicia/52/=Indicia (Lots of freesites - web sites hosted on freenet)",
-		"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/4/=Entry Point (Lots of freesites - web sites hosted on freenet)",
+		"USK@c55vMxUl-T-lD3nv0iOaXF~G1hnY6pOMRbzZSwACMmY,yd8~uwUmGm164-ipStoiBOJVjkbbYXJMlD~H5ftPxIA,AQABAAE/Indicia/55/=Indicia (Lots of freesites - web sites hosted on freenet)",
+		"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/11/=Entry Point (Lots of freesites - web sites hosted on freenet)",
 		"USK@PFeLTa1si2Ml5sDeUy7eDhPso6TPdmw-2gWfQ4Jg02w,3ocfrqgUMVWA2PeorZx40TW0c-FiIOL-TWKQHoDbVdE,AQABAAE/Index/42/=Darknet Index (Older freesite index)"
 	};
 	private Vector bookmarks;
