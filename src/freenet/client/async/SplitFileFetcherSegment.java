@@ -171,10 +171,10 @@ public class SplitFileFetcherSegment {
 		}
 		parentFetcher.parent.completedBlock(dontNotify);
 		if(decodeNow) {
-		Runnable r = new Decoder();
-		Thread t = new Thread(r, "Decoder for "+this);
-		t.setDaemon(true);
-		t.start();
+			Runnable r = new Decoder();
+			Thread t = new Thread(r, "Decoder for "+this);
+			t.setDaemon(true);
+			t.start();
 		}
 	}
 
