@@ -141,33 +141,33 @@ public class SplitFileFetcherSegment {
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
-		if(isFinished()) return;
-		if(blockNo < dataKeys.length) {
-			if(dataKeys[blockNo] == null) {
-				Logger.error(this, "Block already finished: "+blockNo);
+			if(isFinished()) return;
+			if(blockNo < dataKeys.length) {
+				if(dataKeys[blockNo] == null) {
+					Logger.error(this, "Block already finished: "+blockNo);
+					return;
+				}
+				dataKeys[blockNo] = null;
+				dataBuckets[blockNo].setData(result.asBucket());
+			} else if(blockNo < checkKeys.length + dataKeys.length) {
+				blockNo -= dataKeys.length;
+				if(checkKeys[blockNo] == null) {
+					Logger.error(this, "Check block already finished: "+blockNo);
+					return;
+				}
+				checkKeys[blockNo] = null;
+				checkBuckets[blockNo].setData(result.asBucket());
+			} else
+				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
+			fetchedBlocks++;
+			if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
+			if(startedDecode) {
 				return;
+			} else {
+				decodeNow = (fetchedBlocks >= minFetched);
+				startedDecode = true;
+				finishing = true;
 			}
-			dataKeys[blockNo] = null;
-			dataBuckets[blockNo].setData(result.asBucket());
-		} else if(blockNo < checkKeys.length + dataKeys.length) {
-			blockNo -= dataKeys.length;
-			if(checkKeys[blockNo] == null) {
-				Logger.error(this, "Check block already finished: "+blockNo);
-				return;
-			}
-			checkKeys[blockNo] = null;
-			checkBuckets[blockNo].setData(result.asBucket());
-		} else
-			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
-		fetchedBlocks++;
-		if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
-		if(startedDecode) {
-			return;
-		} else {
-			decodeNow = (fetchedBlocks >= minFetched);
-			startedDecode = true;
-			finishing = true;
-		}
 		}
 		parentFetcher.parent.completedBlock(dontNotify);
 		Runnable r = new Decoder();
