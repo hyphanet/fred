@@ -31,8 +31,11 @@ public class InsertBlock {
 		return (isFreed ? null : data);
 	}
 	
-	public synchronized void free(){
-		isFreed = true;
+	public void free(){
+		synchronized (this) {
+			if(isFreed) return;
+			isFreed = true;
+		}
 		data.free();
 	}
 }
