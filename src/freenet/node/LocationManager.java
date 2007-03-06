@@ -1048,7 +1048,7 @@ public class LocationManager {
     public int getNetworkSizeEstimate(long timestamp) {
     	final SortedMap temp;
     	synchronized (knownLocs) {
-    		temp = timestamp == -1 ? knownLocs : knownLocs.tailMap(Long.valueOf(timestamp));
+    		temp = timestamp == -1 ? knownLocs : knownLocs.tailMap(new Long(timestamp));
     	}
 		return temp.size();
 	}
@@ -1061,7 +1061,7 @@ public class LocationManager {
     public Object[] getKnownLocations(long timestamp) {
 		final SortedMap temp;
     	synchronized (knownLocs) {
-    		temp = timestamp == -1 ? knownLocs :  knownLocs.tailMap(Long.valueOf(timestamp));
+    		temp = timestamp == -1 ? knownLocs :  knownLocs.tailMap(new Long(timestamp));
     	}
     	return new Object[]{ (Double[])temp.keySet().toArray(), (Long[])temp.values().toArray()};
 	}
