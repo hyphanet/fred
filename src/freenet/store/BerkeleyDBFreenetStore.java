@@ -1099,8 +1099,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						continue;
 					}
 					t = environment.beginTransaction(null,null);
-					long blockNum = chkBlocksInStore++;
-					StoreBlock storeBlock = new StoreBlock(this, blockNum);
+					chkBlocksInStore++;
+					StoreBlock storeBlock = new StoreBlock(this, l);
 					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
 					DatabaseEntry blockDBE = new DatabaseEntry();
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
