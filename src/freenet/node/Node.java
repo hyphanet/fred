@@ -41,6 +41,7 @@ import com.sleepycat.je.StatsConfig;
 import freenet.client.FetchContext;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.LongOption;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSA;
@@ -1313,8 +1314,14 @@ public class Node {
 			}
 			
 		});
-		
+
 		databaseMaxMemory = nodeConfig.getLong("databaseMaxMemory");
+		// see #1202
+		if(databaseMaxMemory > (80 * Runtime.getRuntime().maxMemory() / 100)){
+			Logger.error(this, "The databaseMemory setting is set too high " + databaseMaxMemory +
+					" ... let's assume it's not what the user wants to do and restore the default.");
+			databaseMaxMemory = ((LongOption) nodeConfig.getOption("databaseMaxMemory")).getDefault();
+		}
 		envMutableConfig.setCacheSize(databaseMaxMemory);
 		// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
 		// FIXME is this the correct place to set these parameters?

@@ -74,6 +74,10 @@ public class IntOption extends Option {
 		if(cachedStringValue != null) return cachedStringValue;
 		return Integer.toString(val);
 	}
+	
+	public int getDefault(){
+		return defaultValue;
+	}
 
 	public boolean isDefault() {
 		getValue();

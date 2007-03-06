@@ -55,6 +55,10 @@ public class ShortOption extends Option {
 		return currentValue == defaultValue;
 	}
 	
+	public short getDefault() {
+		return defaultValue;
+	}
+	
 	public void setDefault() {
 		currentValue = defaultValue;
 	}

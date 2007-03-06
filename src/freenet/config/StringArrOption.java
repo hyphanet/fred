@@ -96,7 +96,7 @@ public class StringArrOption extends Option {
 		}
 	}
 
-	public String[] getDefaultValue() {
+	public String[] getDefault() {
 		return defaultValue;
 	}
 

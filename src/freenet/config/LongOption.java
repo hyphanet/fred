@@ -81,6 +81,10 @@ public class LongOption extends Option {
 		getValue();
 		return currentValue == defaultValue;
 	}
+	
+	public long getDefault() {
+		return defaultValue;
+	}
 
 	public void setDefault() {
 		currentValue = defaultValue;

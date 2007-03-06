@@ -58,6 +58,10 @@ public class BooleanOption extends Option {
 		getValue();
 		return currentValue == defaultValue;
 	}
+	
+	public boolean getDefault() {
+		return defaultValue;
+	}
 
 	public void setDefault() {
 		currentValue = defaultValue;
