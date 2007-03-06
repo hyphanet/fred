@@ -12,6 +12,7 @@ import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.transport.ip.IPUtil;
 
@@ -21,16 +22,83 @@ import freenet.support.transport.ip.IPUtil;
  */
 public class IPDetectorPluginManager {
 	
+	public class MyUserAlert implements UserAlert {
+
+		final short code;
+		final boolean suggestPortForward;
+		final String text;
+		final String title;
+		
+		public MyUserAlert(String title, String text, boolean suggestPortForward, short code) {
+			this.title = title;
+			this.text = text;
+			this.suggestPortForward = suggestPortForward;
+			this.code = code;
+		}
+
+		public String dismissButtonText() {
+			return null;
+		}
+
+		public HTMLNode getHTMLText() {
+			HTMLNode node = new HTMLNode("div");
+			node.addChild("#", text);
+			if(suggestPortForward) {
+				node.addChild("#", " You may want to ");
+				node.addChild("a", "href", "/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues", "forward the port");
+				node.addChild("#", " manually.");
+			}
+			return node;
+		}
+
+		public short getPriorityClass() {
+			return code;
+		}
+
+		public String getText() {
+			if(!suggestPortForward) return text;
+			StringBuffer sb = new StringBuffer();
+			sb.append(text);
+			sb.append(" You may want to forward the port manually. (See http://wiki.freenetproject.org/FirewallAndRouterIssues ).");
+			return sb.toString();
+		}
+
+		public String getTitle() {
+			return title;
+		}
+
+		public boolean isValid() {
+			return true;
+		}
+
+		public void isValid(boolean validity) {
+			// Ignore
+		}
+
+		public void onDismiss() {
+			// Ignore
+		}
+
+		public boolean shouldUnregisterOnDismiss() {
+			return false;
+		}
+
+		public boolean userCanDismiss() {
+			return false;
+		}
+
+	}
+
 	static boolean logMINOR;
 	private final NodeIPDetector detector;
 	private final Ticker ticker;
 	private final Node node;
 	FredPluginIPDetector[] plugins;
-	private final SimpleUserAlert noConnectionAlert;
-	private final SimpleUserAlert symmetricAlert;
-	private final SimpleUserAlert portRestrictedAlert;
-	private final SimpleUserAlert restrictedAlert;
-	private final SimpleUserAlert connectedAlert;
+	private final MyUserAlert noConnectionAlert;
+	private final MyUserAlert symmetricAlert;
+	private final MyUserAlert portRestrictedAlert;
+	private final MyUserAlert restrictedAlert;
+	private final MyUserAlert connectedAlert;
 	private ProxyUserAlert proxyAlert;
 	
 	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
@@ -39,26 +107,24 @@ public class IPDetectorPluginManager {
 		this.node = node;
 		this.ticker = node.ps;
 		this.detector = detector;
-		noConnectionAlert = new SimpleUserAlert(false, "No UDP connectivity", 
+		noConnectionAlert = new MyUserAlert("No UDP connectivity",
 				"Your internet connection does not appear to support UDP. " +
 				"Unless this detection is wrong, it is unlikely that Freenet will work on your computer at present.",
-				UserAlert.CRITICAL_ERROR);
-		symmetricAlert = new SimpleUserAlert(false, "Symmetric firewall detected",
+				false, UserAlert.ERROR);
+		symmetricAlert = new MyUserAlert("Symmetric firewall detected",
 				"Your internet connection appears to be behind a symmetric NAT or firewall. " +
 				"You will probably only be able to connect to users directly connected to the internet or behind " +
-				"restricted cone NATs. You should forward the UDP port "+node.portNumber+" manually on your router.",
-				UserAlert.ERROR);
-		portRestrictedAlert = new SimpleUserAlert(true, "Port restricted cone NAT detected",
+				"restricted cone NATs.", true, UserAlert.ERROR);				
+		portRestrictedAlert = new MyUserAlert("Port restricted cone NAT detected",
 				"Your internet connection appears to be behind a port-restricted NAT (router). "+
-				"You will be able to connect to most other users, but not those behind symmetric NATs. " +
-				"You should forward the UDP port "+node.portNumber+" manually on your router.", UserAlert.MINOR);
-		restrictedAlert = new SimpleUserAlert(true, "Restricted cone NAT detected",
+				"You will be able to connect to most other users, but not those behind symmetric NATs.", 
+				true, UserAlert.MINOR);
+		restrictedAlert = new MyUserAlert("Restricted cone NAT detected",
 				"Your internet connection appears to be behind a \"restricted cone\" NAT (router). "+
-				"You should be able to connect to most other users. " +
-				"You should forward the UDP port "+node.portNumber+" manually on your router.", UserAlert.WARNING);
-		connectedAlert = new SimpleUserAlert(true, "Direct internet connection detected",
+				"You should be able to connect to most other users.", true, UserAlert.WARNING);
+		connectedAlert = new MyUserAlert("Direct internet connection detected",
 				"You appear to be directly connected to the internet. Congratulations, you should be able to connect "+
-				"to any other freenet node.", UserAlert.MINOR);
+				"to any other freenet node.", true, UserAlert.MINOR);
 	}
 
 	/** Start the detector plugin manager. This includes running the plugin, if there
