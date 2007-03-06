@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 
+import com.sleepycat.je.JEVersion;
+
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
 import freenet.io.comm.IOStatisticCollector;
@@ -403,6 +405,9 @@ public class StatisticsToadlet extends Toadlet {
 				long storeMisses = node.getChkDatastore().misses();
 				long storeAccesses = storeHits + storeMisses;
 				long overallAccesses = storeAccesses + cacheAccesses;
+				
+				storeSizeList.addChild("li", 
+						"Database version:\u00a0" + JEVersion.CURRENT_VERSION);
 				
 				storeSizeList.addChild("li", 
 						"Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
