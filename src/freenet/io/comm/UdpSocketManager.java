@@ -683,11 +683,16 @@ public class UdpSocketManager extends Thread {
      * @return The maximum packet size supported by this SocketManager.
      */
     public int getMaxPacketSize() { //FIXME: what about passing a peerNode though and doing it on a per-peer basis?
-    	final int minAdvertizedMTU = node.ipDetector.getMinimumDetectedMTU();
+    	final int minAdvertisedMTU = node.ipDetector.getMinimumDetectedMTU();
     	final int maxAllowedMTU = 1400;
-	final int overhead = 28;
+    	final int overhead = 28;
     	
-    	return (minAdvertizedMTU < maxAllowedMTU ? minAdvertizedMTU : maxAllowedMTU) - overhead;
+    	// We don't want the MTU detection thingy to prevent us to send PacketTransmits!
+    	if(minAdvertisedMTU < 1100){
+    		Logger.error(this, "It shouldn't happen : we disabled the MTU detection algorithm because the advertised MTU is smallish !! ("+node.ipDetector.getMinimumDetectedMTU()+')'); 
+    		return maxAllowedMTU - overhead;
+    	}else
+    		return (minAdvertisedMTU < maxAllowedMTU ? minAdvertisedMTU : maxAllowedMTU) - overhead;
     	// CompuServe use 1400 MTU; AOL claim 1450; DFN@home use 1448.
     	// http://info.aol.co.uk/broadband/faqHomeNetworking.adp
     	// http://www.compuserve.de/cso/hilfe/linux/hilfekategorien/installation/contentview.jsp?conid=385700
