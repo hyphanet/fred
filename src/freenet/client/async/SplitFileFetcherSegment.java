@@ -165,8 +165,10 @@ public class SplitFileFetcherSegment {
 				return;
 			} else {
 				decodeNow = (fetchedBlocks >= minFetched);
-				startedDecode = true;
-				finishing = true;
+				if(decodeNow) {
+					startedDecode = true;
+					finishing = true;
+				}
 			}
 		}
 		parentFetcher.parent.completedBlock(dontNotify);
