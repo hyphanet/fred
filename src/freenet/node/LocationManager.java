@@ -4,8 +4,10 @@
 package freenet.node;
 
 import java.security.MessageDigest;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Vector;
@@ -1062,7 +1064,9 @@ public class LocationManager {
 		final SortedMap temp;
     	synchronized (knownLocs) {
     		temp = timestamp == -1 ? knownLocs :  knownLocs.tailMap(new Long(timestamp));
+    		Set keys = temp.keySet();
+    		Collection values = temp.values();
+        	return new Object[]{ (Double[])keys.toArray(new Double[keys.size()]), (Long[])values.toArray(new Long[values.size()])};
     	}
-    	return new Object[]{ (Double[])temp.keySet().toArray(), (Long[])temp.values().toArray()};
 	}
 }
