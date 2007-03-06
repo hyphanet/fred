@@ -660,13 +660,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	long newSize = maxChkBlocks;
     	if(chkBlocksInStore < maxChkBlocks) return;
     	
+    	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
+    	
     	checkForHoles(maxChkBlocks, true);
     	
     	WrapperManager.signalStarting(5*60*1000 + (int)chkBlocksInStore * 100); // 10 per second
     	
     	long realSize = countCHKBlocksFromFile();
-    	
-    	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
     	
     	try {
 			c = chkDB_accessTime.openCursor(null,null);
@@ -991,6 +991,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		} catch (DatabaseException e) {
 			Logger.error(this, "Could not remove old database blocknum: "+e, e);
 		}
+		System.err.println("Removed old database "+prefix);
 		
 		// Initialize CHK database
 		DatabaseConfig dbConfig = new DatabaseConfig();
@@ -1067,6 +1068,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		Logger.error(this, "Reconstructing store index from store file: type="+type);
 		byte[] header = new byte[headerBlockSize];
 		byte[] data = new byte[dataBlockSize];
+		chkBlocksInStore = 0;
 		try {
 			chkStore.seek(0);
 			long l = 0;
@@ -1113,6 +1115,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 			}
 		} catch (EOFException e) {
+			System.err.println("Caught EOF, migrating...");
 			migrate();
 			return;
 		} catch (IOException e) {
