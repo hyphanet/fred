@@ -8,7 +8,6 @@ import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -600,7 +599,9 @@ public class StatisticsToadlet extends Toadlet {
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { "position: absolute; top: " + PEER_CIRCLE_RADIUS + "px; left: " + (PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) + "px", "mark" }, "+");
-		LinkedHashMap knownLocsCopy = node.getKnownLocations(-1);
+		final Object[] knownLocsCopy = node.getKnownLocations(-1);
+		final Double[] locations = (Double[])knownLocsCopy[0];
+		final Long[] timestamps = (Long[])knownLocsCopy[1];
 		Double location = new Double(0.0);
 		Long locationTime = new Long(0);
 		double strength = 1.0;
@@ -608,11 +609,10 @@ public class StatisticsToadlet extends Toadlet {
 		long age = 1;
 		int histogramIndex;
 		int nodeCount = 0;
-		Iterator knownLocationsIterator = knownLocsCopy.keySet().iterator();
-		while (knownLocationsIterator.hasNext()) {
+		for(int i=0; i<locations.length; i++){
 			nodeCount += 1;
-			location = (Double) knownLocationsIterator.next();
-			locationTime = (Long) knownLocsCopy.get(location);
+			location = locations[i];
+			locationTime = timestamps[i];
 			age = now - locationTime.longValue();
 			if( age > MAX_CIRCLE_AGE_THRESHOLD ) {
 				age = MAX_CIRCLE_AGE_THRESHOLD;

@@ -6,10 +6,10 @@ package freenet.node;
 import java.security.MessageDigest;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.LinkedHashMap;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.Vector;
 import java.util.Date;
-import java.util.Iterator;
 
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
@@ -1025,7 +1025,7 @@ public class LocationManager {
         recentlyForwardedIDs.remove(new Long(item.outgoingID));
     }
     
-    private final LinkedHashMap knownLocs = new LinkedHashMap();
+    private final TreeMap knownLocs = new TreeMap();
     
     void registerLocationLink(double d, double t) {
     	if(logMINOR) Logger.minor(this, "Known Link: "+d+ ' ' +t);
@@ -1038,10 +1038,6 @@ public class LocationManager {
         Long longTime = new Long(timestamp.getTime());
         
         synchronized(knownLocs) {
-        		//If the location is already recorded, remove it from the hashmap
-        		if (knownLocs.containsKey(dd)) {
-        			knownLocs.remove(dd);
-        		}
         		//Add the location to the map with the current timestamp as value
         		knownLocs.put(dd,longTime);
         }
@@ -1050,49 +1046,23 @@ public class LocationManager {
     
     //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
     public int getNetworkSizeEstimate(long timestamp) {
-    		int size = 0;
-    		if (timestamp == -1) {
-    			size = knownLocs.size();
-    		}else if (timestamp > -1) {
-				Long locationTime = new Long(0);
-				Iterator knownLocationsIterator = knownLocs.values().iterator();
-				
-    			synchronized (knownLocs) {
-    				//TODO optimize some more if it is to be called a lot.
-    				while (knownLocationsIterator.hasNext()) {
-    					locationTime = (Long) knownLocationsIterator.next();
-    					if (locationTime.longValue() > timestamp) {
-    						size++;
-    					}
-    				}
-    			}
-			}
-			return size;
+    	final SortedMap temp;
+    	synchronized (knownLocs) {
+    		temp = timestamp == -1 ? knownLocs : knownLocs.tailMap(Long.valueOf(timestamp));
+    	}
+		return temp.size();
 	}
     
-    // Return a copy of the known locations HashMap for a given timestamp
-    public LinkedHashMap getKnownLocations(long timestamp) {
-    		if (timestamp > -1) {
-    			LinkedHashMap knownLocsCopy = new LinkedHashMap();
-    			//TODO optimize some more if it is to be called a lot.
-    			Double location = new Double(0.0);
-    			Long locationTime = new Long(0);
-				Iterator knownLocationsIterator = knownLocs.keySet().iterator();
-				synchronized (knownLocs) {
-					while (knownLocationsIterator.hasNext()) {
-						location = (Double) knownLocationsIterator.next();
-						locationTime = (Long) knownLocs.get(location);
-						if (locationTime.longValue() > timestamp) {
-							//If the location is already recorded, remove it from the hashmap
-							if (knownLocsCopy.containsKey(location)) {
-								knownLocsCopy.remove(location);
-							}
-							knownLocsCopy.put(location, locationTime);
-						}
-					}
-				}
-				return knownLocsCopy;
-			}
-			return new LinkedHashMap( knownLocs );
+    /**
+     * Method called by Node.getKnownLocations(long timestamp)
+     * 
+     * @Return an array containing two cells : Locations and their last seen time for a given timestamp
+     */
+    public Object[] getKnownLocations(long timestamp) {
+		final SortedMap temp;
+    	synchronized (knownLocs) {
+    		temp = timestamp == -1 ? knownLocs :  knownLocs.tailMap(Long.valueOf(timestamp));
+    	}
+    	return new Object[]{ (Double[])temp.keySet().toArray(), (Long[])temp.values().toArray()};
 	}
 }
