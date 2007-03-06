@@ -403,8 +403,6 @@ public class Node {
 	public static final short DEFAULT_MAX_HTL = (short)10;
 	public static final int DEFAULT_SWAP_INTERVAL = 2000;
 	private short maxHTL;
-	private String homeDir;
-	private final String systemDefaultHomeDir = System.getProperty("user.home");
 	public static final int EXIT_STORE_FILE_NOT_FOUND = 1;
 	public static final int EXIT_STORE_IOEXCEPTION = 2;
 	public static final int EXIT_STORE_OTHER = 3;
@@ -849,29 +847,6 @@ public class Node {
 		});
 		
 		maxHTL = nodeConfig.getShort("maxHTL");
-		
-		nodeConfig.register("homeDir", "", sortOrder++, true, false, "Freenet-used home directory", "Freenet used home directory (i.e. where to put Onion FEC library files)(leave empty for user's default home directory (recommended))",
-				new StringCallback() {
-
-					public String get() {
-						return homeDir;
-					}
-
-					public void set(String val) throws InvalidConfigValueException {
-						if(homeDir == null) throw new InvalidConfigValueException("Tried setting the home directory to null");
-						homeDir = val;
-						if(!homeDir.equals("")) {
-							System.setProperty("user.home", homeDir);
-						} else {
-							System.setProperty("user.home", systemDefaultHomeDir);
-						}
-					}
-		});
-		
-		homeDir = nodeConfig.getString("homeDir");
-		if(!homeDir.equals("")) {
-			System.setProperty("user.home", homeDir);
-		}
 		
 		// FIXME maybe these should persist? They need to be private.
 		decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
