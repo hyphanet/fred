@@ -46,13 +46,16 @@ public class IPDetectorPluginManager {
 		symmetricAlert = new SimpleUserAlert(false, "Symmetric firewall detected",
 				"Your internet connection appears to be behind a symmetric NAT or firewall. " +
 				"You will probably only be able to connect to users directly connected to the internet or behind " +
-				"restricted cone NATs.", UserAlert.ERROR);
+				"restricted cone NATs. You should forward the UDP port "+node.portNumber+" manually on your router.",
+				UserAlert.ERROR);
 		portRestrictedAlert = new SimpleUserAlert(true, "Port restricted cone NAT detected",
 				"Your internet connection appears to be behind a port-restricted NAT (router). "+
-				"You will be able to connect to most other users, but not those behind symmetric NATs.", UserAlert.MINOR);
+				"You will be able to connect to most other users, but not those behind symmetric NATs. " +
+				"You should forward the UDP port "+node.portNumber+" manually on your router.", UserAlert.MINOR);
 		restrictedAlert = new SimpleUserAlert(true, "Restricted cone NAT detected",
 				"Your internet connection appears to be behind a \"restricted cone\" NAT (router). "+
-				"You should be able to connect to most other users.", UserAlert.WARNING);
+				"You should be able to connect to most other users. " +
+				"You should forward the UDP port "+node.portNumber+" manually on your router.", UserAlert.WARNING);
 		connectedAlert = new SimpleUserAlert(true, "Direct internet connection detected",
 				"You appear to be directly connected to the internet. Congratulations, you should be able to connect "+
 				"to any other freenet node.", UserAlert.MINOR);
