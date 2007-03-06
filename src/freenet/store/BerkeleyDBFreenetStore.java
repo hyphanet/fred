@@ -1729,7 +1729,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	private synchronized void checkSecondaryDatabaseError(Throwable ex) {
-    	if((ex instanceof DatabaseException) && (ex.getMessage().indexOf("missing key in the primary database") > -1)) {
+    	if((ex instanceof DatabaseException) && (ex.getMessage() != null && ex.getMessage().indexOf("missing key in the primary database") > -1)) {
     		try {
 				fixSecondaryFile.createNewFile();
 			} catch (IOException e) {
