@@ -8,7 +8,6 @@ import java.util.Vector;
 
 import freenet.io.comm.Peer;
 import freenet.node.useralerts.ProxyUserAlert;
-import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
@@ -28,6 +27,7 @@ public class IPDetectorPluginManager {
 		final boolean suggestPortForward;
 		final String text;
 		final String title;
+		private boolean isValid = true;
 		
 		public MyUserAlert(String title, String text, boolean suggestPortForward, short code) {
 			this.title = title;
@@ -37,7 +37,7 @@ public class IPDetectorPluginManager {
 		}
 
 		public String dismissButtonText() {
-			return null;
+			return "Hide";
 		}
 
 		public HTMLNode getHTMLText() {
@@ -68,15 +68,15 @@ public class IPDetectorPluginManager {
 		}
 
 		public boolean isValid() {
-			return true;
+			return isValid;
 		}
 
 		public void isValid(boolean validity) {
-			// Ignore
+			isValid = validity;
 		}
 
 		public void onDismiss() {
-			// Ignore
+			isValid = false;
 		}
 
 		public boolean shouldUnregisterOnDismiss() {
@@ -84,7 +84,7 @@ public class IPDetectorPluginManager {
 		}
 
 		public boolean userCanDismiss() {
-			return false;
+			return !suggestPortForward;
 		}
 
 	}
@@ -110,7 +110,7 @@ public class IPDetectorPluginManager {
 		noConnectionAlert = new MyUserAlert("No UDP connectivity",
 				"Your internet connection does not appear to support UDP. " +
 				"Unless this detection is wrong, it is unlikely that Freenet will work on your computer at present.",
-				false, UserAlert.ERROR);
+				true, UserAlert.ERROR);
 		symmetricAlert = new MyUserAlert("Symmetric firewall detected",
 				"Your internet connection appears to be behind a symmetric NAT or firewall. " +
 				"You will probably only be able to connect to users directly connected to the internet or behind " +
@@ -118,13 +118,13 @@ public class IPDetectorPluginManager {
 		portRestrictedAlert = new MyUserAlert("Port restricted cone NAT detected",
 				"Your internet connection appears to be behind a port-restricted NAT (router). "+
 				"You will be able to connect to most other users, but not those behind symmetric NATs.", 
-				true, UserAlert.MINOR);
+				true, UserAlert.WARNING);
 		restrictedAlert = new MyUserAlert("Restricted cone NAT detected",
 				"Your internet connection appears to be behind a \"restricted cone\" NAT (router). "+
-				"You should be able to connect to most other users.", true, UserAlert.WARNING);
+				"You should be able to connect to most other users.", false, UserAlert.MINOR);
 		connectedAlert = new MyUserAlert("Direct internet connection detected",
 				"You appear to be directly connected to the internet. Congratulations, you should be able to connect "+
-				"to any other freenet node.", true, UserAlert.MINOR);
+				"to any other freenet node.", false, UserAlert.MINOR);
 	}
 
 	/** Start the detector plugin manager. This includes running the plugin, if there
