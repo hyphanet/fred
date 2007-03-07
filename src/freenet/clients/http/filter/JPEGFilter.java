@@ -37,7 +37,7 @@ public class JPEGFilter implements ContentDataFilter {
 	private final boolean deleteExif;
 
 	private static final int MARKER_EOI = 0xD9; // End of image
-	private static final int MARKER_SOI = 0xD8; // Start of image
+	//private static final int MARKER_SOI = 0xD8; // Start of image
 	private static final int MARKER_RST0 = 0xD0; // First reset marker
 	private static final int MARKER_RST7 = 0xD7; // Last reset marker
 	
