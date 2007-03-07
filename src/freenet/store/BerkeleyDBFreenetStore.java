@@ -1068,11 +1068,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		Logger.error(this, "Reconstructing store index from store file: type="+type);
 		byte[] header = new byte[headerBlockSize];
 		byte[] data = new byte[dataBlockSize];
-		chkBlocksInStore = 0;
+		long l = 0;
 		try {
 			chkStore.seek(0);
-			long l = 0;
-			while(true) {
+			for(l=0;true;l++) {
 				Transaction t = null;
 				try {
 					chkStore.readFully(header);
@@ -1095,11 +1094,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						DSAPublicKey key = new DSAPublicKey(data);
 						routingkey = key.asBytesHash();
 					} else {
-						l++;
 						continue;
 					}
 					t = environment.beginTransaction(null,null);
-					chkBlocksInStore++;
 					StoreBlock storeBlock = new StoreBlock(this, l);
 					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
 					DatabaseEntry blockDBE = new DatabaseEntry();
@@ -1110,12 +1107,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						System.out.println("Key "+l+ '/' +(chkStore.length()/(dataBlockSize+headerBlockSize))+" OK");
 					t = null;
 				} finally {
-					l++;
 					if(t != null) t.abort();
 				}
 			}
 		} catch (EOFException e) {
 			System.err.println("Caught EOF, migrating...");
+			chkBlocksInStore = l;
 			migrate();
 			return;
 		} catch (IOException e) {
