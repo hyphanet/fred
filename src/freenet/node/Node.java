@@ -1240,17 +1240,41 @@ public class Node {
 		File dbDir = new File(storeDir, "database-"+portNumber);
 		dbDir.mkdirs();
 		
+		Environment env = null;
+		EnvironmentMutableConfig mutableConfig;
 		// This can take some time
 		System.out.println("Starting database...");
 		try {
-			storeEnvironment = new Environment(dbDir, envConfig);
-			envMutableConfig = storeEnvironment.getConfig();
+			env = new Environment(dbDir, envConfig);
+			mutableConfig = env.getConfig();
 		} catch (DatabaseException e) {
-			System.err.println("Could not open store: "+e);
-			e.printStackTrace();
-			throw new NodeInitException(EXIT_STORE_OTHER, e.getMessage());			
+			// The database is broken
+			// We will have to recover from scratch
+			if(env != null) {
+				try {
+					env.close();
+				} catch (Throwable t) {
+					System.err.println("Error closing database: "+t+" after "+e);
+					t.printStackTrace();
+				}
+			}
+			File[] files = dbDir.listFiles();
+			for(int i=0;i<files.length;i++) files[i].delete();
+			dbDir.delete();
+			try {
+				env = new Environment(dbDir, envConfig);
+				mutableConfig = env.getConfig();
+			} catch (DatabaseException e1) {
+				System.err.println("Could not open store: "+e1);
+				e1.printStackTrace();
+				System.err.println("Previous error was (tried deleting database and retrying): "+e);
+				e.printStackTrace();
+				throw new NodeInitException(EXIT_STORE_OTHER, e1.getMessage());
+			}
 		}
-
+		storeEnvironment = env;
+		envMutableConfig = mutableConfig;
+		
 		statsConf = new StatsConfig();
 		statsConf.setClear(true);
 
