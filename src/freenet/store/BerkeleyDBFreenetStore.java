@@ -1070,6 +1070,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		byte[] data = new byte[dataBlockSize];
 		long l = 0;
 		long dupes = 0;
+		long failures = 0;
 		try {
 			chkStore.seek(0);
 			for(l=0;true;l++) {
@@ -1104,9 +1105,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 					OperationStatus op = chkDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
 					if(op == OperationStatus.KEYEXIST) dupes++;
+					else if(op != OperationStatus.SUCCESS) failures++;
 					t.commit();
 					if(l % 1024 == 0)
-						System.out.println("Key "+l+ '/' +(chkStore.length()/(dataBlockSize+headerBlockSize))+" OK ("+dupes+" dupes)");
+						System.out.println("Key "+l+ '/' +(chkStore.length()/(dataBlockSize+headerBlockSize))+" OK ("+dupes+" dupes, "+failures+" failures)");
 					t = null;
 				} finally {
 					if(t != null) t.abort();
