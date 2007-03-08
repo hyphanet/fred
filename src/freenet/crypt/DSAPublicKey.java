@@ -45,16 +45,20 @@ public class DSAPublicKey extends CryptoKey {
 		this(g,g.getG().modPow(p.getX(), g.getP()));
     }
 
-    public DSAPublicKey(InputStream is) throws IOException {
+    public DSAPublicKey(InputStream is) throws IOException, CryptFormatException {
 		group=(DSAGroup) DSAGroup.read(is);
 		y=Util.readMPI(is);
 		// FIXME should check y < group.something?
     }
     
-    public DSAPublicKey(byte[] pubkeyAsBytes) throws IOException {
-    	this(new ByteArrayInputStream(pubkeyAsBytes));
-	}
-
+    public static DSAPublicKey create(byte[] pubkeyAsBytes) throws CryptFormatException {
+    	try {
+			return new DSAPublicKey(new ByteArrayInputStream(pubkeyAsBytes));
+		} catch (IOException e) {
+			throw new CryptFormatException(e);
+		}
+    }
+    
 	public BigInteger getY() {
 		return y;
     }
@@ -95,7 +99,7 @@ public class DSAPublicKey extends CryptoKey {
 //		Util.writeMPI(y, out);
 //    }
 //
-    public static CryptoKey read(InputStream i) throws IOException {
+    public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
 		return new DSAPublicKey(i);
     }
 

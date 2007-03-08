@@ -19,7 +19,7 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 	CryptoKey() {
 	}
 
-	public static CryptoKey read(InputStream i) throws IOException {
+	public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
 		DataInputStream dis = new DataInputStream(i);
 		String type = dis.readUTF();
 		try {
@@ -29,6 +29,8 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 			return (CryptoKey) m.invoke(null, new Object[] { dis });
 		} catch (Exception e) {
 			e.printStackTrace();
+			if (e instanceof CryptFormatException)
+				throw (CryptFormatException) e;
 			if (e instanceof IOException)
 				throw (IOException) e;
 			return null;

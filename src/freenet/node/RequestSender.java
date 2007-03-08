@@ -6,6 +6,7 @@ package freenet.node;
 import java.io.IOException;
 import java.util.HashSet;
 
+import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -354,13 +355,13 @@ public final class RequestSender implements Runnable, ByteCounter {
     				byte[] pubkeyAsBytes = ((ShortBuffer)msg.getObject(DMT.PUBKEY_AS_BYTES)).getData();
     				try {
     					if(pubKey == null)
-    						pubKey = new DSAPublicKey(pubkeyAsBytes);
+    						pubKey = DSAPublicKey.create(pubkeyAsBytes);
     					((NodeSSK)key).setPubKey(pubKey);
     				} catch (SSKVerifyException e) {
     					pubKey = null;
     					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
     					break; // try next node
-    				} catch (IOException e) {
+    				} catch (CryptFormatException e) {
     					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
     					break; // try next node
     				}

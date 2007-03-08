@@ -28,6 +28,7 @@ import com.sleepycat.je.SecondaryDatabase;
 import com.sleepycat.je.SecondaryKeyCreator;
 import com.sleepycat.je.Transaction;
 
+import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
@@ -1071,9 +1072,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			chkStore.seek(0);
 			for(l=0;true;l++) {
 				Transaction t = null;
+				chkStore.readFully(header);
+				chkStore.readFully(data);
 				try {
-					chkStore.readFully(header);
-					chkStore.readFully(data);
 					byte[] routingkey = null;
 					if(type == TYPE_CHK) {
 						try {
@@ -1089,7 +1090,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 							continue;
 						}
 					} else if(type == TYPE_PUBKEY) {
-						DSAPublicKey key = new DSAPublicKey(data);
+						DSAPublicKey key = DSAPublicKey.create(data);
 						routingkey = key.asBytesHash();
 					} else {
 						continue;
@@ -1111,6 +1112,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					if(l % 1024 == 0)
 						System.out.println("Key "+l+ '/' +(chkStore.length()/(dataBlockSize+headerBlockSize))+" OK ("+dupes+" dupes, "+failures+" failures)");
 					t = null;
+				} catch (CryptFormatException e) {
+					addFreeBlock(l, true, "invalid key: "+e);
 				} finally {
 					if(t != null) t.abort();
 				}
@@ -1471,8 +1474,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		if(logMINOR) Logger.minor(this, "Read");
     		
     		try {
-    			block = new DSAPublicKey(data);
-    		} catch (IOException e) {
+    			block = DSAPublicKey.create(data);
+    		} catch (CryptFormatException e) {
     			Logger.error(this, "Could not read key: "+e, e);
     			finishKey(storeBlock, c, t, routingkeyDBE, hash, replacement);
     			return null;

@@ -76,7 +76,7 @@ public class DSAGroup extends CryptoKey {
     //    g = new BigInteger(str.nextToken(), 16);
     //    return new DSAGroup(p,q,g);
     //}
-    public static CryptoKey read(InputStream i) throws IOException {
+    public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
         BigInteger p, q, g;
         p = Util.readMPI(i);
         q = Util.readMPI(i);
@@ -84,7 +84,7 @@ public class DSAGroup extends CryptoKey {
         try {
         	return new DSAGroup(p, q, g);
         } catch (IllegalArgumentException e) {
-        	throw new IOException("Invalid group");
+        	throw new CryptFormatException("Invalid group");
         }
     }
 

@@ -5,6 +5,7 @@ package freenet.node;
 
 import java.io.IOException;
 
+import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -107,7 +108,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 				}
 				byte[] pubkeyAsBytes = ((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData();
 				try {
-					pubKey = new DSAPublicKey(pubkeyAsBytes);
+					pubKey = DSAPublicKey.create(pubkeyAsBytes);
 					if(logMINOR) Logger.minor(this, "Got pubkey on "+uid+" : "+pubKey);
 					Message confirm = DMT.createFNPSSKPubKeyAccepted(uid);
 					try {
@@ -116,7 +117,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 						if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 						return;
 					}
-				} catch (IOException e) {
+				} catch (CryptFormatException e) {
 					Logger.error(this, "Invalid pubkey from "+source+" on "+uid);
 					Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_SSK_ERROR);
 					try {
