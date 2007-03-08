@@ -1378,7 +1378,7 @@ public class Node {
 			System.err.println(msg);
 			e1.printStackTrace();
 			throw new NodeInitException(EXIT_STORE_IOEXCEPTION, msg);
-		} catch (Exception e1) {
+		} catch (DatabaseException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
 			System.err.println(msg);
