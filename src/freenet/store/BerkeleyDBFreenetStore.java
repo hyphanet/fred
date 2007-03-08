@@ -1046,7 +1046,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		lastRecentlyUsed = getMaxRecentlyUsed();
 		
 		if(!noCheck) {
-			checkForHoles(chkBlocksInStore, false);
 			maybeShrink(true, true);
 		}
 		
