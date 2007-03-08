@@ -335,9 +335,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			boolean noCheck, int lastVersion, short type, boolean wipe, SemiOrderedShutdownHook storeShutdownHook) throws Exception {
 		
 		try {
-			if((lastVersion > 0) && (lastVersion < 852)) {
-				throw new DatabaseException("Reconstructing store because started from old version");
-			}
 			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile, 
 					maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook);
 		} catch (DatabaseException e) {
