@@ -12,6 +12,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 
 public class ClientSSK extends ClientKey {
@@ -85,9 +86,9 @@ public class ClientSSK extends ClientKey {
 	public void setPublicKey(DSAPublicKey pubKey) {
 		if((this.pubKey != null) && (this.pubKey != pubKey) && !this.pubKey.equals(pubKey))
 			throw new IllegalArgumentException("Cannot reassign: was "+this.pubKey+" now "+pubKey);
-		this.pubKey = pubKey;
 		if(!Arrays.equals(pubKey.asBytesHash(), pubKeyHash))
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("New pubKey hash does not match pubKeyHash: "+HexUtil.bytesToHex(pubKey.asBytesHash())+" != "+HexUtil.bytesToHex(pubKeyHash)+" for "+pubKey);
+		this.pubKey = pubKey;
 	}
 	
 	public FreenetURI getURI() {
