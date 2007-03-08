@@ -88,7 +88,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final static byte[] dummy = new byte[0];
 	
 	public static BerkeleyDBFreenetStore construct(int lastVersion, File baseStoreDir, boolean isStore, 
-			String suffix, long maxStoreKeys, int blockSize, int headerSize, boolean throwOnTooFewKeys, short type, Environment storeEnvironment, RandomSource random, SemiOrderedShutdownHook storeShutdownHook) throws Exception {
+			String suffix, long maxStoreKeys, int blockSize, int headerSize, boolean throwOnTooFewKeys, short type, Environment storeEnvironment, RandomSource random, SemiOrderedShutdownHook storeShutdownHook) throws DatabaseException, IOException {
 
 		/**
 		 * Migration strategy:
@@ -333,7 +333,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	private static BerkeleyDBFreenetStore openStore(Environment storeEnvironment, String newDBPrefix, File newStoreFile, 
 			File newFixSecondaryFile, long maxStoreKeys, int blockSize, int headerSize, boolean throwOnTooFewKeys, 
-			boolean noCheck, int lastVersion, short type, boolean wipe, SemiOrderedShutdownHook storeShutdownHook) throws Exception {
+			boolean noCheck, int lastVersion, short type, boolean wipe, SemiOrderedShutdownHook storeShutdownHook) throws DatabaseException, IOException {
 		
 		try {
 			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile, 
@@ -963,9 +963,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	/**
      * Recreate the index from the data file. Call this when the index has been corrupted.
      * @param the directory where the store is located
+	 * @throws DatabaseException If the store cannot be opened because of a database problem.
+	 * @throws IOException If the store cannot be opened because of a filesystem problem.
      * @throws FileNotFoundException if the dir does not exist and could not be created
      */
-	public BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, short type, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook) throws Exception {
+	public BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, short type, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook) throws DatabaseException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.dataBlockSize = blockSize;
 		this.headerBlockSize = headerSize;
@@ -1054,7 +1056,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		storeShutdownHook.addEarlyJob(new ShutdownHook());
 	}
 	
-	private void reconstruct(short type) throws DatabaseException {
+	private void reconstruct(short type) throws DatabaseException, IOException {
 		if(type == TYPE_SSK) {
 			System.err.println("Reconstruction of SSK store not supported at present.");
 			throw new UnsupportedOperationException("Reconstruction of SSK store not supported at present.");
@@ -1127,10 +1129,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			} catch (IOException e1) {
 				System.err.println("Failed to set size");
 			}
-		} catch (IOException e) {
-			Logger.error(this, "Caught "+e, e);
-			throw new Error(e);
-			// What else can we do? FIXME
 		}
 	}
 
