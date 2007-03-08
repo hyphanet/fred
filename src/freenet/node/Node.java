@@ -1259,7 +1259,11 @@ public class Node {
 				}
 			}
 			File[] files = dbDir.listFiles();
-			for(int i=0;i<files.length;i++) files[i].delete();
+			for(int i=0;i<files.length;i++) {
+				String name = files[i].getName().toLowerCase();
+				if(name.endsWith(".jdb") || name.equals("je.lck"))
+					files[i].delete();
+			}
 			dbDir.delete();
 			try {
 				env = new Environment(dbDir, envConfig);
