@@ -46,7 +46,7 @@ public class IPDetectorPluginManager {
 			if(suggestPortForward) {
 				node.addChild("#", " You may want to ");
 				node.addChild("a", "href", "/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues", "forward the port");
-				node.addChild("#", " manually.");
+				node.addChild("#", " manually (or you may already have done so, Freenet cannot easily detect this).");
 			}
 			return node;
 		}
