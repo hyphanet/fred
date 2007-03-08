@@ -1471,11 +1471,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		} catch (IOException e) {
     			Logger.error(this, "Could not read key: "+e, e);
     			finishKey(storeBlock, c, t, routingkeyDBE, hash, replacement);
+    			return null;
     		}
     		
     		if(!Arrays.equals(block.asBytesHash(), hash)) {
     			finishKey(storeBlock, c, t, routingkeyDBE, hash, replacement);
+    			return null;
     		}
+    		
 	    	// Finished, commit.
 	    	c.close();
 	    	c = null;
@@ -1525,6 +1528,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				byte[] toWrite = replacement.asPaddedBytes();
 				chkStore.write(toWrite);
 			}
+			c.close();
+			t.commit();
 			return true;
 		} else {
 			Logger.error(this, "DSAPublicKey: Does not verify (unequal hashes), setting accessTime to 0 for : "+HexUtil.bytesToHex(hash));
