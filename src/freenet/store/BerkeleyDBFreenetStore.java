@@ -875,6 +875,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	}
     	
     	maybeQuickShrink(false, true);
+    	
+    	System.err.println("Shrunk store, now have "+chkBlocksInStore+" of "+maxChkBlocks);
 	}
 	
 	private void maybeQuickShrink(boolean dontCheck, boolean dontCheckForHoles) throws DatabaseException, IOException {
@@ -886,8 +888,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			synchronized(this) {
 				maxBlocks = maxChkBlocks;
 				curBlocks = chkBlocksInStore;
-				if(maxBlocks >= curBlocks)
+				if(maxBlocks >= curBlocks) {
+					System.out.println("Not shrinking store: "+curBlocks+" < "+maxBlocks);
 					return;
+				}
 			}
 			System.err.println("Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
 			Logger.error(this, "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
