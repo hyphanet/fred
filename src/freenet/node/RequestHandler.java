@@ -104,15 +104,18 @@ public class RequestHandler implements Runnable, ByteCounter {
         
         boolean shouldHaveStartedTransfer = false;
         
+        short waitStatus = 0;
+        
         while(true) {
             
-            if(rs.waitUntilStatusChange()) {
+        	waitStatus = rs.waitUntilStatusChange(waitStatus);
+            if((waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
             	// Forward RejectedOverload
             	Message msg = DMT.createFNPRejectedOverload(uid, false);
             	source.sendAsync(msg, null, 0, null);
             }
             
-            if(rs.transferStarted()) {
+            if((waitStatus & RequestSender.WAIT_TRANSFERRING_DATA) != 0) {
             	// Is a CHK.
                 Message df = DMT.createFNPCHKDataFound(uid, rs.getHeaders());
                 source.send(df, null);

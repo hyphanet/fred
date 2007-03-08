@@ -318,8 +318,10 @@ public class NodeClientCore {
 		}
 		RequestSender rs = (RequestSender)o;
 		boolean rejectedOverload = false;
+		short waitStatus = 0;
 		while(true) {
-			if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
+			waitStatus = rs.waitUntilStatusChange(waitStatus);
+			if((!rejectedOverload) && (waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
 				// See below; inserts count both
 				requestStarters.throttleWindow.rejectedOverload();
 				rejectedOverload = true;
@@ -416,8 +418,10 @@ public class NodeClientCore {
 		}
 		RequestSender rs = (RequestSender)o;
 		boolean rejectedOverload = false;
+		short waitStatus = 0;
 		while(true) {
-			if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
+			waitStatus = rs.waitUntilStatusChange(waitStatus);
+			if((!rejectedOverload) && (waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
 				requestStarters.throttleWindow.rejectedOverload();
 				rejectedOverload = true;
 			}

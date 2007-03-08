@@ -479,25 +479,40 @@ public final class RequestSender implements Runnable, ByteCounter {
         return prb != null;
     }
 
-    boolean hadROLastTimeWaited;
-    boolean prbWasNonNull;
+    // these are bit-masks
+    static final short WAIT_REJECTED_OVERLOAD = 1;
+    static final short WAIT_TRANSFERRING_DATA = 2;
+    static final short WAIT_FINISHED = 4;
+    
+    static final short WAIT_ALL = 
+    	WAIT_REJECTED_OVERLOAD | WAIT_TRANSFERRING_DATA | WAIT_FINISHED;
     
     /**
-     * Wait until either the transfer has started or we have a 
-     * terminal status code.
-     * @return True if we got a RejectedOverload.
+     * Wait until either the transfer has started, we receive a 
+     * RejectedOverload, or we get a terminal status code.
+     * @param mask Bitmask indicating what NOT to wait for i.e. the situation when this function
+     * exited last time (see WAIT_ constants above). Bits can also be set true even though they
+     * were not valid, to indicate that the caller doesn't care about that bit.
+     * If zero, function will throw an IllegalArgumentException.
+     * @return Bitmask indicating present situation. Can be fed back to this function,
+     * if nonzero.
      */
-    public synchronized boolean waitUntilStatusChange() {
+    public synchronized short waitUntilStatusChange(short mask) {
+    	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
         while(true) {
-        	if((!hadROLastTimeWaited) && hasForwardedRejectedOverload) {
-        		hadROLastTimeWaited = true;
-        		return true;
-        	}
-        	if((!prbWasNonNull) && (prb != null)) {
-        		prbWasNonNull = true;
-        		return false;
-        	}
-            if(status != NOT_FINISHED) return false;
+        	short current = mask; // If any bits are set already, we ignore those states.
+        	
+       		if(hasForwardedRejectedOverload)
+       			current |= WAIT_REJECTED_OVERLOAD;
+        	
+       		if(prb != null)
+       			current |= WAIT_TRANSFERRING_DATA;
+        	
+        	if(status != NOT_FINISHED)
+        		current |= WAIT_FINISHED;
+        	
+        	if(current != mask) return current;
+        	
             try {
                 wait(10000);
             } catch (InterruptedException e) {
