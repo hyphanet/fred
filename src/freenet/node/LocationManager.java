@@ -1040,8 +1040,13 @@ public class LocationManager {
         Long longTime = new Long(timestamp.getTime());
         
         synchronized(knownLocs) {
+        		// FIXME: The TreeMap size will keep on increasing...
+        		// knownLocs.values().remove(dd); would be costy
+        		// Maybe the best solution is to do a 
+        		// knownLocs = knownLocs.headMap(longTime - arbitrary_value)
+        	
         		//Add the location to the map with the current timestamp as key
-        		knownLocs.put(longTime, dd);
+        		knownLocs.put(longTime, dd);	
         }
 		if(logMINOR) Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
     }
