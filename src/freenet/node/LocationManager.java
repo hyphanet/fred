@@ -1040,8 +1040,8 @@ public class LocationManager {
         Long longTime = new Long(timestamp.getTime());
         
         synchronized(knownLocs) {
-        		//Add the location to the map with the current timestamp as value
-        		knownLocs.put(dd,longTime);
+        		//Add the location to the map with the current timestamp as key
+        		knownLocs.put(longTime, dd);
         }
 		if(logMINOR) Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
     }
@@ -1050,7 +1050,7 @@ public class LocationManager {
     public int getNetworkSizeEstimate(long timestamp) {
     	final SortedMap temp;
     	synchronized (knownLocs) {
-    		temp = timestamp == -1 ? knownLocs : knownLocs.tailMap(new Long(timestamp));
+    		temp = (timestamp == -1 ? knownLocs : knownLocs.tailMap(new Long(timestamp)));
     	}
 		return temp.size();
 	}
@@ -1058,7 +1058,7 @@ public class LocationManager {
     /**
      * Method called by Node.getKnownLocations(long timestamp)
      * 
-     * @Return an array containing two cells : Locations and their last seen time for a given timestamp
+     * @Return an array containing two cells : Locations and their last seen time for a given timestamp.
      */
     public Object[] getKnownLocations(long timestamp) {
 		final SortedMap temp;
@@ -1066,7 +1066,7 @@ public class LocationManager {
     		temp = timestamp == -1 ? knownLocs :  knownLocs.tailMap(new Long(timestamp));
     		Set keys = temp.keySet();
     		Collection values = temp.values();
-        	return new Object[]{ (Double[])keys.toArray(new Double[keys.size()]), (Long[])values.toArray(new Long[values.size()])};
+        	return new Object[]{ (Double[])values.toArray(new Double[keys.size()]), (Long[])keys.toArray(new Long[values.size()])};
     	}
 	}
 }
