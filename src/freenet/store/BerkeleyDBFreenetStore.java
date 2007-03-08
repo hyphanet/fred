@@ -1111,10 +1111,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 			}
 		} catch (EOFException e) {
-			System.err.println("Caught EOF, migrating...");
+			long size = l * (dataBlockSize + headerBlockSize);
+			System.err.println("Caught EOF, truncating to "+l+" blocks : "+size);
 			chkBlocksInStore = l;
-			migrate();
-			return;
+			try {
+				chkStore.setLength(size);
+			} catch (IOException e1) {
+				System.err.println("Failed to set size");
+			}
 		} catch (IOException e) {
 			Logger.error(this, "Caught "+e, e);
 			throw new Error(e);
