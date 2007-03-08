@@ -1491,12 +1491,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	        	hits++;
 	        }
 	    	return block;
-    	}catch(Throwable ex) {  // FIXME: ugly  
+    	} catch(Throwable ex) {  // FIXME: ugly
+    		// Clean up.
+    		// Reports of wierd NPEs when aborting a transaction, deal with it
     		if(c!=null) {
-    			try{c.close();}catch(DatabaseException ex2){}
+    			try {
+    				c.close();
+    			} catch(Throwable ex2) { 
+    				Logger.error(this, "Caught "+ex2+" closing in finally block", ex2);
+    			}
     		}
     		if(t!=null) {
-    			try{t.abort();}catch(DatabaseException ex2){}
+    			try {
+    				t.abort();
+    			} catch(Throwable ex2) {
+    				Logger.error(this, "Caught "+ex2+" aborting in finally block", ex2);
+    			}
     		}
         	checkSecondaryDatabaseError(ex);
     		Logger.error(this, "Caught "+ex, ex);
