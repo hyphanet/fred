@@ -518,7 +518,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		} catch (DatabaseNotFoundException e) {
 			System.err.println("Migrating block db index");
 			// De-dupe on keys and block numbers.
-			migrate();
+			migrate(storeFile.length() / (dataBlockSize + headerBlockSize));
 			System.err.println("De-duped, creating new index...");
 			blockNoDbConfig.setSortedDuplicates(false);
 			blockNoDbConfig.setAllowCreate(true);
@@ -1138,12 +1138,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 * 
 	 * FIXME: Create a list of reusable block numbers?
 	 */
-	private void migrate() throws DatabaseException {
+	private void migrate(long keyCount) throws DatabaseException {
 		
 		System.err.println("Migrating database: Creating unique index on block number");
 		HashSet s = new HashSet();
 		
-		long keyCount = countCHKBlocksFromDatabase();
 		WrapperManager.signalStarting((int)(Math.max(Integer.MAX_VALUE, 5*60*1000 + keyCount*1000)));
 		
     	Cursor c = null;
