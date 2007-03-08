@@ -1104,8 +1104,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					DatabaseEntry blockDBE = new DatabaseEntry();
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 					OperationStatus op = chkDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
-					if(op == OperationStatus.KEYEXIST) dupes++;
-					else if(op != OperationStatus.SUCCESS) failures++;
+					if(op == OperationStatus.KEYEXIST) {
+						addFreeBlock(l, true, "duplicate");
+						dupes++;
+					} else if(op != OperationStatus.SUCCESS) {
+						addFreeBlock(l, true, "failure: "+op);
+						failures++;
+					}
 					t.commit();
 					if(l % 1024 == 0)
 						System.out.println("Key "+l+ '/' +(chkStore.length()/(dataBlockSize+headerBlockSize))+" OK ("+dupes+" dupes, "+failures+" failures)");
