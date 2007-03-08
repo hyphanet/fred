@@ -591,7 +591,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	private long checkForHoles(long blocksInFile, boolean dontTruncate) throws DatabaseException {
-		System.err.println("Checking for holes in database...");
+		System.err.println("Checking for holes in database... "+blocksInFile+" blocks in file");
 		WrapperManager.signalStarting(5*60*1000 + (int)blocksInFile*100); // 10/sec
 		long holes = 0;
 		long maxPresent = 0;
@@ -1069,6 +1069,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		byte[] header = new byte[headerBlockSize];
 		byte[] data = new byte[dataBlockSize];
 		long l = 0;
+		long dupes = 0;
 		try {
 			chkStore.seek(0);
 			for(l=0;true;l++) {
@@ -1101,10 +1102,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
 					DatabaseEntry blockDBE = new DatabaseEntry();
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
-					chkDB.put(t,routingkeyDBE,blockDBE);
+					OperationStatus op = chkDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
+					if(op == OperationStatus.KEYEXIST) dupes++;
 					t.commit();
 					if(l % 1024 == 0)
-						System.out.println("Key "+l+ '/' +(chkStore.length()/(dataBlockSize+headerBlockSize))+" OK");
+						System.out.println("Key "+l+ '/' +(chkStore.length()/(dataBlockSize+headerBlockSize))+" OK ("+dupes+" dupes)");
 					t = null;
 				} finally {
 					if(t != null) t.abort();
