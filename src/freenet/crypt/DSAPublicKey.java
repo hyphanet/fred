@@ -48,6 +48,7 @@ public class DSAPublicKey extends CryptoKey {
     public DSAPublicKey(InputStream is) throws IOException {
 		group=(DSAGroup) DSAGroup.read(is);
 		y=Util.readMPI(is);
+		// FIXME should check y < group.something?
     }
     
     public DSAPublicKey(byte[] pubkeyAsBytes) throws IOException {

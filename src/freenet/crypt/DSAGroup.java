@@ -81,7 +81,11 @@ public class DSAGroup extends CryptoKey {
         p = Util.readMPI(i);
         q = Util.readMPI(i);
         g = Util.readMPI(i);
-        return new DSAGroup(p, q, g);
+        try {
+        	return new DSAGroup(p, q, g);
+        } catch (IllegalArgumentException e) {
+        	throw new IOException("Invalid group");
+        }
     }
 
     public void writeForWire(OutputStream out) throws IOException {
