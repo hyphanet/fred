@@ -1138,6 +1138,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.err.println("Migrating database: Creating unique index on block number");
 		HashSet s = new HashSet();
 		
+		long keyCount = countCHKBlocksFromDatabase();
+		WrapperManager.signalStarting((int)(Math.max(Integer.MAX_VALUE, 5*60*1000 + keyCount*1000)));
+		
     	Cursor c = null;
     	Transaction t = null;
 		try {
