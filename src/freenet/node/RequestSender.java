@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.io.IOException;
 import java.util.HashSet;
 
 import freenet.crypt.CryptFormatException;

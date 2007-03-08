@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.io.IOException;
-
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.io.comm.DMT;
