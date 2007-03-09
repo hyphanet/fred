@@ -1273,7 +1273,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		if(logMINOR) {
 	    			Logger.minor(this, "Get key: "+chk);
 	    			Logger.minor(this, "Headers: "+header.length+" bytes, hash "+header);
-	    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+data+" fetching "+chk);
 	    		}
 	    		
 	    	}catch(CHKVerifyException ex){
@@ -1332,6 +1332,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		// Explanation of locking is in fetchPubKey.
     		// Basically, locking the whole element saves us all sorts of trouble, especially
     		// since we will usually be writing here if only to promote it.
+    		if(logMINOR) Logger.minor(this, "Fetching "+chk+" dontPromote="+dontPromote);
     		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
     				!=OperationStatus.SUCCESS) {
     			// FIXME we are supposed to close the cursor first, right?
@@ -1380,7 +1381,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		if(logMINOR) {
 	    			Logger.minor(this, "Get key: "+chk);
 	    			Logger.minor(this, "Headers: "+header.length+" bytes, hash "+header);
-	    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+data+" fetching "+chk);
 	    		}
 	    		
 	    	}catch(SSKVerifyException ex){
@@ -1503,8 +1504,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    	t = null;
 	    	
 	    	if(logMINOR) {
-	    		Logger.minor(this, "Get key: "+HexUtil.bytesToHex(hash));
-	    		Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    		Logger.minor(this, "Data: "+data.length+" bytes, hash "+data+" fetching "+HexUtil.bytesToHex(hash));
 	    	}
 	    	
 	        synchronized(this) {
@@ -1717,9 +1717,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		t = null;
         	
     		if(logMINOR) {
-    			Logger.minor(this, "Put key: "+block.getKey());
     			Logger.minor(this, "Headers: "+header.length+" bytes, hash "+Fields.hashCode(header));
-    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
+    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data)+" putting "+block.getKey());
     		}
                 
         }catch(Throwable ex) {  // FIXME: ugly  
@@ -1887,8 +1886,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		t = null;
         	
     		if(logMINOR) {
-    			Logger.minor(this, "Put key: "+HexUtil.bytesToHex(hash));
-    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
+    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data)+" putting "+HexUtil.bytesToHex(hash)+" : "+key);
     		}
                 
         } catch(Throwable ex) {  // FIXME: ugly  
