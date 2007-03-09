@@ -60,12 +60,12 @@ public class PageMaker {
 		navigationLinks.remove(name);
 	}
 	
-	public HTMLNode createBackLink(ToadletContext toadletContext) {
+	public HTMLNode createBackLink(ToadletContext toadletContext, String name) {
 		String referer = (String) toadletContext.getHeaders().get("referer");
 		if (referer != null) {
-			return new HTMLNode("a", new String[] { "href", "title" }, new String[] { referer, "Back" }, "Back");
+			return new HTMLNode("a", new String[] { "href", "title" }, new String[] { referer, name }, name);
 		}
-		return new HTMLNode("a", new String[] { "href", "title" }, new String[] { "javascript:back()", "Back" }, "Back");
+		return new HTMLNode("a", new String[] { "href", "title" }, new String[] { "javascript:back()", name }, name);
 	}
 	
 	public HTMLNode getPageNode(String title) {

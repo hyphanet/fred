@@ -321,7 +321,7 @@ public class FProxyToadlet extends Toadlet {
 			errorContent.addChild("#", "Expected a freenet key, but got ");
 			errorContent.addChild("code", ks);
 			errorContent.addChild("br");
-			errorContent.addChild(ctx.getPageMaker().createBackLink(ctx));
+			errorContent.addChild(ctx.getPageMaker().createBackLink(ctx, "Go back"));
 			errorContent.addChild("br");
 			errorContent.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node homepage" }, "Homepage");
 
@@ -411,16 +411,68 @@ public class FProxyToadlet extends Toadlet {
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
-				infobox.addChild("div", "class", "infobox-header", FetchException.getShortMessage(e.mode));
+				infobox.addChild("div", "class", "infobox-header", "Error: "+FetchException.getShortMessage(e.mode));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addChild("#", "Error: "+msg);
-				if(e.errorCodes != null) {
-					infoboxContent.addChild("pre").addChild("#", e.errorCodes.toVerboseString());
+				HTMLNode fileInformationList = infoboxContent.addChild("ul");
+				HTMLNode option = fileInformationList.addChild("li");
+				option.addChild("#", "Filename: ");
+				option.addChild("a", "href", '/' + key.toString(), getFilename(e, key, e.getExpectedMimeType()));
+
+				boolean finalized = e.finalizedSize();
+				if(e.expectedSize > 0) {
+					if (finalized) {
+						fileInformationList.addChild("li", "Size: " + SizeUtil.formatSize(e.expectedSize));
+					} else {
+						fileInformationList.addChild("li", "Size: " + SizeUtil.formatSize(e.expectedSize) + " (may change)");
+					}
+				} else {
+					fileInformationList.addChild("li", "Size: unknown");
 				}
-				infoboxContent.addChild("br");
-				infoboxContent.addChild(ctx.getPageMaker().createBackLink(ctx));
-				infoboxContent.addChild("br");
-				infoboxContent.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node homepage" }, "Homepage");
+				String mime = e.getExpectedMimeType();
+				if(mime != null) {
+					if (finalized) {
+						fileInformationList.addChild("li", "MIME type: " + mime);
+					} else {
+						fileInformationList.addChild("li", "Expected MIME type: " + mime);
+					}
+				} else {
+					fileInformationList.addChild("li", "MIME type: unknown");
+				}
+				
+				infobox.addChild("div", "class", "infobox-header", "Explanation");
+				infoboxContent = infobox.addChild("div", "class", "infobox-content");
+				infoboxContent.addChild("p", "Freenet was unable to retrieve this file. ");
+				if(e.isFatal())
+					infoboxContent.addChild("p", "This is a fatal error. It is unlikely that retrying will solve the problem.");
+				infoboxContent.addChild("p", msg);
+				if(e.errorCodes != null) {
+					infoboxContent.addChild("p").addChild("pre").addChild("#", e.errorCodes.toVerboseString());
+				}
+				
+				infobox.addChild("div", "class", "infobox-header", "You can:");
+				infoboxContent = infobox.addChild("div", "class", "infobox-content");
+				
+				HTMLNode optionList = infoboxContent.addChild("ul");
+				option = optionList.addChild("li");
+				HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "dnfQueueForm");
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+				if (mime != null) {
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
+				}
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", "Download it in the background to the downloads directory" });
+				
+				if(!e.isFatal())
+					optionList.addChild("li").
+						addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"))).addChild("#", "Retry now");
+				
+				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, "Abort and return to the FProxy home page");
+				
+				option = optionList.addChild("li");
+				option.addChild(ctx.getPageMaker().createBackLink(ctx, "Go back to the previous page"));
+				option = optionList.addChild("li");
+				option.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node homepage" }, "Return to the node homepage");
 				
 				this.writeReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
 						"text/html", FetchException.getShortMessage(e.mode), pageNode.generate());
@@ -444,6 +496,27 @@ public class FProxyToadlet extends Toadlet {
 			msg = msg + HTMLEncoder.encode(sw.toString()) + "</pre></body></html>";
 			this.writeReply(ctx, 500, "text/html", "Internal Error", msg);
 		}
+	}
+
+	private String getLink(FreenetURI uri, String requestedMimeType, long maxSize, String force, 
+			boolean forceDownload) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("/");
+		sb.append(uri.toACIIString());
+		char c = '?';
+		if(requestedMimeType != null) {
+			sb.append(c).append("type=").append(URLEncoder.encode(requestedMimeType)); c = '&';
+		}
+		if(maxSize > 0) {
+			sb.append(c).append("max-size=").append(maxSize); c = '&';
+		}
+		if(force != null) {
+			sb.append(c).append("force=").append(force); c = '&';
+		}
+		if(forceDownload) {
+			sb.append(c).append("forcedownload=true"); c = '&';
+		}
+		return sb.toString();
 	}
 
 	private String sanitizeReferer(ToadletContext ctx) {
