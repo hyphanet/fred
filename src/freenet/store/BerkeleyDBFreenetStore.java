@@ -1130,11 +1130,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 							Logger.error(this, err, e);
 							System.err.println(err);
 							e.printStackTrace();
-							t = environment.beginTransaction(null,null);
-							DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
-				    		chkDB.delete(t, routingkeyDBE);
-				    		t.commit();
-				    		t = null;
 							addFreeBlock(l, true, "bogus key ("+type+ ')');
 							routingkey = null;
 							continue;
