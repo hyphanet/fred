@@ -875,10 +875,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	}
     	System.out.println("Completing shrink"); // FIXME remove
     	
-    	WrapperManager.signalStarting(5*60*1000 + (unwantedMoveNums.length+freeEarlySlots.length-wantedMoveNums.length) * 100);
+    	int totalUnwantedBlocks = unwantedMoveNums.length+freeEarlySlots.length;
+    	WrapperManager.signalStarting(5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100);
     	// If there are any slots left over, they must be free.
     	freeBlocks.clear();
-    	for(int i=wantedMoveNums.length;i<unwantedMoveNums.length+freeEarlySlots.length;i++) {
+    	for(int i=wantedMoveNums.length;i<totalUnwantedBlocks;i++) {
     		long blockNo;
     		String reason;
     		if(i < freeEarlySlots.length) {
@@ -892,7 +893,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			LongBinding.longToEntry(blockNo, unwantedBlockEntry);
 			chkDB_blockNum.delete(t, unwantedBlockEntry);
 			if(i % 1024 == 0) {
-				System.out.println("Trimmed surplus keys in database: "+(i-wantedMoveNums.length)+"/"+(unwantedMoveNums.length+freeEarlySlots.length-wantedMoveNums.length));
+				System.out.println("Trimmed surplus keys in database: "+(i-wantedMoveNums.length)+"/"+(totalUnwantedBlocks-wantedMoveNums.length));
 				t.commit();
 				if(i == unwantedMoveNums.length+freeEarlySlots.length-1)
 					t = null;
