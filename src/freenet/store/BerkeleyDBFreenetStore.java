@@ -1208,6 +1208,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		t = environment.beginTransaction(null,null);
     		c = chkDB.openCursor(t,null);
 
+    		if(logMINOR) Logger.minor(this, "Fetching "+chk+" dontPromote="+dontPromote);
     		/**
     		 * We will have to write, unless both dontPromote and the key is valid.
     		 * The lock only applies to this record, so it's not a big problem for our use.
@@ -1379,7 +1380,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		}
 	    		
 	    		if(logMINOR) {
-	    			Logger.minor(this, "Get key: "+chk);
 	    			Logger.minor(this, "Headers: "+header.length+" bytes, hash "+header);
 	    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+data+" fetching "+chk);
 	    		}
