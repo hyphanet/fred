@@ -135,7 +135,7 @@ public class ConfigToadlet extends Toadlet {
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
 							new String[]{ "configshortdesc", "The default for that configuration option is : '" +
-							o[j].getDefault(), "cursor: help;" }, o[j].getShortDesc() + '\'');
+							o[j].getDefault() + '\'', "cursor: help;" }, o[j].getShortDesc());
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
 						Logger.error(this, sc[i].getPrefix() + configName + "has returned null from config!);");
