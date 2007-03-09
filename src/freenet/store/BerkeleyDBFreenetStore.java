@@ -10,6 +10,7 @@ import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
@@ -66,7 +67,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	
 	private final Environment environment;
 	private final TupleBinding storeBlockTupleBinding;
-	private final TupleBinding longTupleBinding;
 	private final File fixSecondaryFile;
 	
 	private long chkBlocksInStore = 0;
@@ -486,7 +486,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		secDbConfig.setTransactional(true);
 		secDbConfig.setAllowPopulate(true);
 		storeBlockTupleBinding = new StoreBlockTupleBinding();
-		longTupleBinding = TupleBinding.getPrimitiveBinding(Long.class);
 		AccessTimeKeyCreator accessTimeKeyCreator = 
 			new AccessTimeKeyCreator(storeBlockTupleBinding);
 		secDbConfig.setKeyCreator(accessTimeKeyCreator);
@@ -595,10 +594,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		long maxPresent = 0;
 		freeBlocks.clear();
 		for(long i=0;i<blocksInFile;i++) {
-			Long blockNo = new Long(i);
 			DatabaseEntry blockNumEntry = new DatabaseEntry();
 			DatabaseEntry found = new DatabaseEntry();
-			longTupleBinding.objectToEntry(blockNo, blockNumEntry);
+			LongBinding.longToEntry(i, blockNumEntry);
 			
 			OperationStatus success = 
 				chkDB_blockNum.get(null, blockNumEntry, found, LockMode.DEFAULT);
@@ -795,7 +793,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     			for(int i=0;i<alreadyDropped.size();i++) {
     				Integer unwantedBlock = (Integer) alreadyDropped.get(i);
     				DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
-    				longTupleBinding.objectToEntry(unwantedBlock, unwantedBlockEntry);
+    				LongBinding.longToEntry(unwantedBlock.longValue(), unwantedBlockEntry);
     				chkDB_blockNum.delete(t, unwantedBlockEntry);
     				if(i % 1024 == 0) {
     					t.commit();
@@ -820,7 +818,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     				unwantedBlock = unwantedMoveNums[i-freeEarlySlots.length];
     				// Delete unwantedBlock from the store
     				DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
-    				longTupleBinding.objectToEntry(unwantedBlock, unwantedBlockEntry);
+    				LongBinding.longToEntry(unwantedBlock.longValue(), unwantedBlockEntry);
     				// Delete the old block from the database.
     				chkDB_blockNum.delete(t, unwantedBlockEntry);
     			} else {
@@ -832,7 +830,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     			// Move old data to new location
     			
     			DatabaseEntry wantedBlockEntry = new DatabaseEntry();
-    			longTupleBinding.objectToEntry(wantedBlock, wantedBlockEntry);
+    			LongBinding.longToEntry(wantedBlock.longValue(), wantedBlockEntry);
     			long seekTo = wantedBlock.longValue() * (headerBlockSize + dataBlockSize);
     			try {
     				chkStore.seek(seekTo);
@@ -947,9 +945,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 					// Delete the block with this blocknum.
 					
-					Long blockNo = new Long(i);
 					DatabaseEntry blockNumEntry = new DatabaseEntry();
-					longTupleBinding.objectToEntry(blockNo, blockNumEntry);
+					LongBinding.longToEntry(i, blockNumEntry);
 					
 					OperationStatus result = 
 						chkDB_blockNum.delete(t, blockNumEntry);
@@ -1053,7 +1050,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		secDbConfig.setTransactional(true);
 		secDbConfig.setAllowPopulate(true);
 		storeBlockTupleBinding = new StoreBlockTupleBinding();
-		longTupleBinding = TupleBinding.getPrimitiveBinding(Long.class);
 		AccessTimeKeyCreator accessTimeKeyCreator = 
 			new AccessTimeKeyCreator(storeBlockTupleBinding);
 		secDbConfig.setKeyCreator(accessTimeKeyCreator);
@@ -1707,7 +1703,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		} catch (DatabaseException e) {
 			DatabaseEntry blockNumEntry = new DatabaseEntry();
 			DatabaseEntry found = new DatabaseEntry();
-			longTupleBinding.objectToEntry(new Long(blockNum), blockNumEntry);
+			LongBinding.longToEntry(blockNum, blockNumEntry);
 			
 			OperationStatus success = 
 				chkDB_blockNum.get(t, blockNumEntry, found, LockMode.DEFAULT);
@@ -1915,8 +1911,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	DatabaseEntry resultEntry) {
 
     		StoreBlock storeblock = (StoreBlock) theBinding.entryToObject(dataEntry);
-    		Long accessTime = new Long(storeblock.getRecentlyUsed());
-    		longTupleBinding.objectToEntry(accessTime, resultEntry);
+    		LongBinding.longToEntry(storeblock.getRecentlyUsed(), resultEntry);
     		return true;
     	}
     }
@@ -1934,8 +1929,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
    	    	DatabaseEntry resultEntry) {
 
    	    		StoreBlock storeblock = (StoreBlock) theBinding.entryToObject(dataEntry);
-   	    		Long blockNo = new Long(storeblock.offset);
-   	    		longTupleBinding.objectToEntry(blockNo, resultEntry);
+   	    		LongBinding.longToEntry(storeblock.offset, resultEntry);
    	    		return true;
    	    	}
     	
