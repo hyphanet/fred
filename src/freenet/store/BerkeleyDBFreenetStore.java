@@ -539,6 +539,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				storeFile.createNewFile();
 			chkStore = new RandomAccessFile(storeFile,"rw");
 			
+			boolean dontCheckOnShrink = false;
+			
 			long chkBlocksInDatabase = countCHKBlocksFromDatabase();
 			chkBlocksInStore = chkBlocksInDatabase;
 			long chkBlocksFromFile = countCHKBlocksFromFile();
@@ -557,6 +559,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					throw new DatabaseException("Keys in database: "+chkBlocksInStore+" but keys in file: "+chkBlocksFromFile);
 				} else if(!noCheck) {
 					long len = checkForHoles(chkBlocksFromFile, false);
+					dontCheckOnShrink = true;
 					if(len < chkBlocksFromFile) {
 						System.err.println("Truncating to "+len+" as no non-holes after that point");
 						chkStore.setLength(len * (dataBlockSize + headerBlockSize));
@@ -570,7 +573,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			System.out.println("Keys in store: db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+" / max "+maxChkBlocks);
 			
 			if(!noCheck) {
-				maybeShrink(true, true);
+				maybeShrink(dontCheckOnShrink, true);
 				chkBlocksFromFile = countCHKBlocksFromFile();
 				chkBlocksInStore = Math.max(chkBlocksInStore, chkBlocksFromFile);
 			}
@@ -631,7 +634,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		return bound;
 	}
 
+	private Object shrinkLock = new Object();
+	private boolean shrinking = false;
+	
 	private void maybeShrink(boolean dontCheck, boolean offline) throws DatabaseException, IOException {
+		try {
+			synchronized(shrinkLock) { if(shrinking) return; shrinking = true; };
 		if(chkBlocksInStore <= maxChkBlocks) return;
 		if(offline)
 			maybeSlowShrink(dontCheck, offline);
@@ -642,6 +650,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			} else {
 				Logger.error(this, "Online shrink only supported for small deltas because online shrink does not preserve LRU order. Suggest you restart the node.");
 			}
+		}
+		} finally {
+			synchronized(shrinkLock) { shrinking = false; };
 		}
 	}
 	
@@ -660,11 +671,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
     	
-    	checkForHoles(maxChkBlocks, true);
+    	if(!dontCheck)
+    		checkForHoles(maxChkBlocks, true);
     	
     	WrapperManager.signalStarting(5*60*1000 + (int)chkBlocksInStore * 100); // 10 per second
     	
     	long realSize = countCHKBlocksFromFile();
+    	
+    	long highestBlock = 0;
     	
     	try {
 			c = chkDB_accessTime.openCursor(null,null);
@@ -686,6 +700,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			while(true) {
 		    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
 				long block = storeBlock.offset;
+				if(block > highestBlock) highestBlock = block;
 				if(storeBlock.offset > Integer.MAX_VALUE) {
 					// 2^31 * blockSize; ~ 70TB for CHKs, 2TB for the others
 					System.err.println("Store too big, doing quick shrink"); // memory usage would be insane
@@ -863,6 +878,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		if(t != null)
     			t.abort();
     	}
+    	System.out.println("Completing shrink"); // FIXME remove
     	
     	// If there are any slots left over, they must be free.
     	freeBlocks.clear();
@@ -874,25 +890,38 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		}
     	}
     	
-    	maybeQuickShrink(false, true);
+    	System.out.println("Finishing shrink"); // FIXME remove
+    	
+    	innerQuickShrink(realSize, Math.min(newSize, highestBlock), true, dontCheck);
     	
     	System.err.println("Shrunk store, now have "+chkBlocksInStore+" of "+maxChkBlocks);
 	}
 	
+	/**
+	 * Shrink the store, on the fly/quickly.
+	 * @param dontCheck If true, keep going until the store has shrunk enough.
+	 * @param dontCheckForHoles
+	 * @throws DatabaseException
+	 * @throws IOException
+	 */
 	private void maybeQuickShrink(boolean dontCheck, boolean dontCheckForHoles) throws DatabaseException, IOException {
+		// long's are not atomic.
+		long maxBlocks;
+		long curBlocks;
+		synchronized(this) {
+			maxBlocks = maxChkBlocks;
+			curBlocks = chkBlocksInStore;
+			if(maxBlocks >= curBlocks) {
+				System.out.println("Not shrinking store: "+curBlocks+" < "+maxBlocks);
+				return;
+			}
+		}
+		innerQuickShrink(curBlocks, maxBlocks, dontCheck, dontCheckForHoles);
+	}
+
+	private void innerQuickShrink(long curBlocks, long maxBlocks, boolean dontCheck, boolean dontCheckForHoles) throws DatabaseException, IOException {
 		Transaction t = null;
 		try {
-			// long's are not atomic.
-			long maxBlocks;
-			long curBlocks;
-			synchronized(this) {
-				maxBlocks = maxChkBlocks;
-				curBlocks = chkBlocksInStore;
-				if(maxBlocks >= curBlocks) {
-					System.out.println("Not shrinking store: "+curBlocks+" < "+maxBlocks);
-					return;
-				}
-			}
 			System.err.println("Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
 			Logger.error(this, "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
 	    	WrapperManager.signalStarting((int)Math.min(0,(curBlocks-maxBlocks)*100)+5*60*1000); // 10 per second plus 5 minutes
@@ -2101,8 +2130,21 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		synchronized(this) {
 			maxChkBlocks = maxStoreKeys;
 		}
-		if(shrinkNow)
-			maybeShrink(false, false);
+		if(shrinkNow) {
+			Thread t = new Thread(new Runnable() {
+				public void run() {
+					try {
+						maybeShrink(false, false);
+					} catch (DatabaseException e) {
+						Logger.error(this, "Cannot shrink: "+e, e);
+					} catch (IOException e) {
+						Logger.error(this, "Cannot shrink: "+e, e);
+					}
+				}
+			});
+			t.setDaemon(true);
+			t.start();
+		}
 	}
     
     public long getMaxKeys() {
