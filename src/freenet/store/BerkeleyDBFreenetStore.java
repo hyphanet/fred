@@ -791,9 +791,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		if(alreadyDropped.size() > 0) {
     			System.err.println("Deleting "+alreadyDropped.size()+" blocks beyond the length of the file");
     			for(int i=0;i<alreadyDropped.size();i++) {
-    				Integer unwantedBlock = (Integer) alreadyDropped.get(i);
+    				int unwantedBlock = ((Integer) alreadyDropped.get(i)).intValue();
     				DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
-    				LongBinding.longToEntry(unwantedBlock.longValue(), unwantedBlockEntry);
+    				LongBinding.longToEntry(unwantedBlock, unwantedBlockEntry);
     				chkDB_blockNum.delete(t, unwantedBlockEntry);
     				if(i % 1024 == 0) {
     					t.commit();
