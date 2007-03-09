@@ -875,6 +875,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	}
     	System.out.println("Completing shrink"); // FIXME remove
     	
+    	WrapperManager.signalStarting(5*60*1000 + (unwantedMoveNums.length+freeEarlySlots.length-wantedMoveNums.length) * 100);
     	// If there are any slots left over, they must be free.
     	freeBlocks.clear();
     	for(int i=wantedMoveNums.length;i<unwantedMoveNums.length+freeEarlySlots.length;i++) {
