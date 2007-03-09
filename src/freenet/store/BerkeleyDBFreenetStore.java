@@ -1439,6 +1439,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	Cursor c = null;
     	Transaction t = null;
     	try{
+    		if(logMINOR) Logger.minor(this, "Fetching pubkey: "+HexUtil.bytesToHex(hash));
     		t = environment.beginTransaction(null,null);
     		c = chkDB.openCursor(t,null);
 
@@ -1859,8 +1860,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	if(result == OperationStatus.SUCCESS || result == OperationStatus.KEYEXIST) {
         		// Key already exists!
         		// But is it valid?
+        		if(logMINOR)
+        			Logger.minor(this, "Putting "+HexUtil.bytesToHex(hash)+" : already exists - aborting transaction");
         		t.abort();
-        		if(fetchPubKey(hash, key, false) != null) return; // replaced key
+        		if(logMINOR)
+        			Logger.minor(this, "Fetching (replacing) key");
+        		if(fetchPubKey(hash, key, false) != null) {
+        			if(logMINOR) Logger.minor(this, "Fetch/replace succeeded");
+        			return; // replaced key
+        		}
+        		if(logMINOR) Logger.minor(this, "Fetch failed after key already exists");
         		// If we are here, it was corrupt, and it got deleted before it could be replaced.
         		innerPut(hash, key);
         		return;
