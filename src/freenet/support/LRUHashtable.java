@@ -47,6 +47,14 @@ public class LRUHashtable {
         }
     }
 
+	public final synchronized Object peekValue() {
+        if ( list.size() > 0 ) {
+            return ((QItem)hash.get(((QItem)list.pop()).obj)).obj;
+        } else {
+            return null;
+        }
+	}
+    
     /**
      * @return Least recently pushed value.
      */
@@ -120,4 +128,5 @@ public class LRUHashtable {
         	return super.toString()+": "+obj+ ' ' +value;
         }
     }
+
 }

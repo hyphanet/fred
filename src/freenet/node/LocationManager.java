@@ -4,14 +4,9 @@
 package freenet.node;
 
 import java.security.MessageDigest;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.Vector;
-import java.util.Date;
 
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
@@ -23,6 +18,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
+import freenet.support.TimeSortedHashtable;
 
 /**
  * @author amphibian
@@ -1027,7 +1023,9 @@ public class LocationManager {
         recentlyForwardedIDs.remove(new Long(item.outgoingID));
     }
     
-    private final TreeMap knownLocs = new TreeMap();
+    private final long MAX_AGE = 7*24*60*60*1000;
+    
+    private final TimeSortedHashtable knownLocs = new TimeSortedHashtable();
     
     void registerLocationLink(double d, double t) {
     	if(logMINOR) Logger.minor(this, "Known Link: "+d+ ' ' +t);
@@ -1036,28 +1034,23 @@ public class LocationManager {
     void registerKnownLocation(double d) {
     	if(logMINOR) Logger.minor(this, "Known Location: "+d);
         Double dd = new Double(d);
-        Date timestamp = new Date();
-        Long longTime = new Long(timestamp.getTime());
+        long now = System.currentTimeMillis();
         
         synchronized(knownLocs) {
-        		// FIXME: The TreeMap size will keep on increasing...
-        		// knownLocs.values().remove(dd); would be costy
-        		// Maybe the best solution is to do a 
-        		// knownLocs = knownLocs.headMap(longTime - arbitrary_value)
-        	
-        		//Add the location to the map with the current timestamp as key
-        		knownLocs.put(longTime, dd);	
+        	Logger.minor(this, "Adding location "+dd+" knownLocs size "+knownLocs.size());
+        	knownLocs.push(dd, now);
+        	Logger.minor(this, "Added location "+dd+" knownLocs size "+knownLocs.size());
+        	knownLocs.removeBefore(now - MAX_AGE);
+        	Logger.minor(this, "Added and pruned location "+dd+" knownLocs size "+knownLocs.size());
         }
 		if(logMINOR) Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
     }
     
     //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
     public int getNetworkSizeEstimate(long timestamp) {
-    	final SortedMap temp;
     	synchronized (knownLocs) {
-    		temp = (timestamp == -1 ? knownLocs : knownLocs.tailMap(new Long(timestamp)));
+    		return knownLocs.countValuesAfter(timestamp);
     	}
-		return temp.size();
 	}
     
     /**
@@ -1066,12 +1059,8 @@ public class LocationManager {
      * @Return an array containing two cells : Locations and their last seen time for a given timestamp.
      */
     public Object[] getKnownLocations(long timestamp) {
-		final SortedMap temp;
     	synchronized (knownLocs) {
-    		temp = timestamp == -1 ? knownLocs :  knownLocs.tailMap(new Long(timestamp));
-    		Set keys = temp.keySet();
-    		Collection values = temp.values();
-        	return new Object[]{ (Double[])values.toArray(new Double[keys.size()]), (Long[])keys.toArray(new Long[values.size()])};
+    		return knownLocs.pairsAfter(timestamp, new Double[knownLocs.size()]);
     	}
 	}
 }
