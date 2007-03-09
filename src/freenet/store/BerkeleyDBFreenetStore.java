@@ -640,17 +640,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private void maybeShrink(boolean dontCheck, boolean offline) throws DatabaseException, IOException {
 		try {
 			synchronized(shrinkLock) { if(shrinking) return; shrinking = true; };
-		if(chkBlocksInStore <= maxChkBlocks) return;
-		if(offline)
-			maybeSlowShrink(dontCheck, offline);
-		else {
-			if(chkBlocksInStore * 0.9 > maxChkBlocks) {
-				Logger.error(this, "Doing quick and indiscriminate online shrink. Offline shrinks will preserve the LRU, this doesn't.");
-				maybeQuickShrink(dontCheck, false);
-			} else {
-				Logger.error(this, "Online shrink only supported for small deltas because online shrink does not preserve LRU order. Suggest you restart the node.");
+			if(chkBlocksInStore <= maxChkBlocks) return;
+			if(offline)
+				maybeSlowShrink(dontCheck, offline);
+			else {
+				if(chkBlocksInStore * 0.9 > maxChkBlocks) {
+					Logger.error(this, "Doing quick and indiscriminate online shrink. Offline shrinks will preserve the LRU, this doesn't.");
+					maybeQuickShrink(dontCheck, false);
+				} else {
+					Logger.error(this, "Online shrink only supported for small deltas because online shrink does not preserve LRU order. Suggest you restart the node.");
+				}
 			}
-		}
 		} finally {
 			synchronized(shrinkLock) { shrinking = false; };
 		}
@@ -792,88 +792,88 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	byte[] buf = new byte[headerBlockSize + dataBlockSize];
     	t = null;
     	try {
-    	t = environment.beginTransaction(null,null);
-    	if(alreadyDropped.size() > 0) {
-    		System.err.println("Deleting "+alreadyDropped.size()+" blocks beyond the length of the file");
-    		for(int i=0;i<alreadyDropped.size();i++) {
-    			Integer unwantedBlock = (Integer) alreadyDropped.get(i);
-    			DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
-    			longTupleBinding.objectToEntry(unwantedBlock, unwantedBlockEntry);
-    			chkDB_blockNum.delete(t, unwantedBlockEntry);
-    			if(i % 1024 == 0) {
+    		t = environment.beginTransaction(null,null);
+    		if(alreadyDropped.size() > 0) {
+    			System.err.println("Deleting "+alreadyDropped.size()+" blocks beyond the length of the file");
+    			for(int i=0;i<alreadyDropped.size();i++) {
+    				Integer unwantedBlock = (Integer) alreadyDropped.get(i);
+    				DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
+    				longTupleBinding.objectToEntry(unwantedBlock, unwantedBlockEntry);
+    				chkDB_blockNum.delete(t, unwantedBlockEntry);
+    				if(i % 1024 == 0) {
+    					t.commit();
+    					t = environment.beginTransaction(null,null);
+    				}
+    			}
+    			if(alreadyDropped.size() % 1024 != 0) {
     				t.commit();
     				t = environment.beginTransaction(null,null);
     			}
     		}
-    		if(alreadyDropped.size() % 1024 != 0) {
-    			t.commit();
-    			t = environment.beginTransaction(null,null);
+    		for(int i=0;i<wantedMoveNums.length;i++) {
+    			Integer wantedBlock = wantedMoveNums[i];
+    			
+    			Integer unwantedBlock;
+    			
+    			// Can we move over an empty slot?
+    			if(i < freeEarlySlots.length) {
+    				// Don't need to delete old block
+    				unwantedBlock = new Integer((int) freeEarlySlots[i]); // will fit in an int
+    			} else if(unwantedMoveNums.length + freeEarlySlots.length > i) {
+    				unwantedBlock = unwantedMoveNums[i-freeEarlySlots.length];
+    				// Delete unwantedBlock from the store
+    				DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
+    				longTupleBinding.objectToEntry(unwantedBlock, unwantedBlockEntry);
+    				// Delete the old block from the database.
+    				chkDB_blockNum.delete(t, unwantedBlockEntry);
+    			} else {
+    				System.err.println("Keys to move but no keys to move over! Moved "+i);
+    				t.commit();
+    				t = null;
+    				return;
+    			}
+    			// Move old data to new location
+    			
+    			DatabaseEntry wantedBlockEntry = new DatabaseEntry();
+    			longTupleBinding.objectToEntry(wantedBlock, wantedBlockEntry);
+    			long seekTo = wantedBlock.longValue() * (headerBlockSize + dataBlockSize);
+    			try {
+    				chkStore.seek(seekTo);
+    				chkStore.readFully(buf);
+    			} catch (EOFException e) {
+    				System.err.println("Was reading "+wantedBlock+" to write to "+unwantedBlock);
+    				System.err.println(e);
+    				e.printStackTrace();
+    				throw e;
+    			}
+    			seekTo = unwantedBlock.longValue() * (headerBlockSize + dataBlockSize);
+    			chkStore.seek(seekTo);
+    			chkStore.write(buf);
+    			
+    			// Update the database w.r.t. the old block.
+    			
+    			DatabaseEntry routingKeyDBE = new DatabaseEntry();
+    			DatabaseEntry blockDBE = new DatabaseEntry();
+    			chkDB_blockNum.get(t, wantedBlockEntry, routingKeyDBE, blockDBE, LockMode.RMW);
+    			StoreBlock block = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+    			block.offset = unwantedBlock.longValue();
+    			storeBlockTupleBinding.objectToEntry(block, blockDBE);
+    			chkDB.put(t, routingKeyDBE, blockDBE);
+    			
+    			// Think about committing the transaction.
+    			
+    			if((i+1) % 2048 == 0) {
+    				t.commit();
+    				t = environment.beginTransaction(null,null);
+    				System.out.println("Moving blocks: "+(i*100/wantedMove.size())+ "% ( "+i+ '/' +wantedMove.size()+ ')');
+    			}
+    			//System.err.println("Moved "+wantedBlock+" to "+unwantedBlock);
     		}
-    	}
-    	for(int i=0;i<wantedMoveNums.length;i++) {
-    		Integer wantedBlock = wantedMoveNums[i];
-    		
-    		Integer unwantedBlock;
-    		
-    		// Can we move over an empty slot?
-    		if(i < freeEarlySlots.length) {
-    			// Don't need to delete old block
-    			unwantedBlock = new Integer((int) freeEarlySlots[i]); // will fit in an int
-    		} else if(unwantedMoveNums.length + freeEarlySlots.length > i) {
-        		unwantedBlock = unwantedMoveNums[i-freeEarlySlots.length];
-        		// Delete unwantedBlock from the store
-        		DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
-        		longTupleBinding.objectToEntry(unwantedBlock, unwantedBlockEntry);
-        		// Delete the old block from the database.
-        		chkDB_blockNum.delete(t, unwantedBlockEntry);
-    		} else {
-    			System.err.println("Keys to move but no keys to move over! Moved "+i);
+    		System.out.println("Moved all "+wantedMove.size()+" blocks");
+    		if(t != null) {
     			t.commit();
     			t = null;
-    			return;
     		}
-    		// Move old data to new location
-
-    		DatabaseEntry wantedBlockEntry = new DatabaseEntry();
-    		longTupleBinding.objectToEntry(wantedBlock, wantedBlockEntry);
-    		long seekTo = wantedBlock.longValue() * (headerBlockSize + dataBlockSize);
-    		try {
-    			chkStore.seek(seekTo);
-    			chkStore.readFully(buf);
-    		} catch (EOFException e) {
-    			System.err.println("Was reading "+wantedBlock+" to write to "+unwantedBlock);
-    			System.err.println(e);
-    			e.printStackTrace();
-    			throw e;
-    		}
-    		seekTo = unwantedBlock.longValue() * (headerBlockSize + dataBlockSize);
-    		chkStore.seek(seekTo);
-    		chkStore.write(buf);
-    		
-    		// Update the database w.r.t. the old block.
-    		
-    		DatabaseEntry routingKeyDBE = new DatabaseEntry();
-    		DatabaseEntry blockDBE = new DatabaseEntry();
-    		chkDB_blockNum.get(t, wantedBlockEntry, routingKeyDBE, blockDBE, LockMode.RMW);
-    		StoreBlock block = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
-    		block.offset = unwantedBlock.longValue();
-    		storeBlockTupleBinding.objectToEntry(block, blockDBE);
-    		chkDB.put(t, routingKeyDBE, blockDBE);
-    		
-    		// Think about committing the transaction.
-    		
-    		if((i+1) % 2048 == 0) {
-    			t.commit();
-    			t = environment.beginTransaction(null,null);
-				System.out.println("Moving blocks: "+(i*100/wantedMove.size())+ "% ( "+i+ '/' +wantedMove.size()+ ')');
-    		}
-    		//System.err.println("Moved "+wantedBlock+" to "+unwantedBlock);
-    	}
-    	System.out.println("Moved all "+wantedMove.size()+" blocks");
-    	if(t != null) {
-    		t.commit();
-    		t = null;
-    	}
     	} finally {
     		if(t != null)
     			t.abort();
