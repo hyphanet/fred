@@ -1693,6 +1693,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	
         	// Check whether it already exists
         	
+        	if(logMINOR) Logger.minor(this, "Putting key "+block+" - checking whether it exists first");
         	OperationStatus result = chkDB.get(t, routingkeyDBE, blockDBE, LockMode.RMW);
         	
         	if(result == OperationStatus.SUCCESS || result == OperationStatus.KEYEXIST) {
@@ -1854,6 +1855,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	
         	// Check whether it already exists
         	
+        	if(logMINOR) Logger.minor(this, "Putting key: "+HexUtil.bytesToHex(hash)+" : "+key+" - checking whether it exists already...");
         	OperationStatus result = chkDB.get(t, routingkeyDBE, blockDBE, LockMode.RMW);
         	
         	if(result == OperationStatus.SUCCESS || result == OperationStatus.KEYEXIST) {
