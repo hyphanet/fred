@@ -235,7 +235,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	private boolean shouldReconstruct() throws DatabaseException, IOException {
-		long chkBlocksInDatabase = countCHKBlocksFromDatabase();
+		long chkBlocksInDatabase = chkDB.count();
 		long chkBlocksFromFile;
 		try {
 			chkBlocksFromFile = countCHKBlocksFromFile();
@@ -538,7 +538,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			boolean dontCheckOnShrink = false;
 			
-			long chkBlocksInDatabase = countCHKBlocksFromDatabase();
+			long chkBlocksInDatabase = chkDB.count();
 			chkBlocksInStore = chkBlocksInDatabase;
 			long chkBlocksFromFile = countCHKBlocksFromFile();
 			lastRecentlyUsed = getMaxRecentlyUsed();
@@ -666,7 +666,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	long newSize = maxChkBlocks;
     	if(chkBlocksInStore < maxChkBlocks) return;
     	
-    	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
+    	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks+" (from db "+chkDB.count()+" from file "+countCHKBlocksFromFile()+ ')');
     	
     	if(!dontCheck)
     		checkForHoles(maxChkBlocks, true);
@@ -929,10 +929,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 * @throws IOException If an I/O error occurs.
 	 */
 	private void innerQuickShrink(long curBlocks, long maxBlocks, boolean dontCheck) throws DatabaseException, IOException {
+		long oldCurBlocks = curBlocks;
+		try {
+			curBlocks = Math.max(oldCurBlocks, highestBlockNumberInDatabase());
+		} catch (DatabaseException e) {
+			Logger.error(this, "Ignoring "+e+" in innerQuickShrink initialisation", e);
+		}
 		Transaction t = null;
 		try {
-			System.err.println("Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
-			Logger.error(this, "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
+			String msg = "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+chkDB.count()+" highest "+highestBlockNumberInDatabase()+") from file "+countCHKBlocksFromFile()+ ')';
+			System.err.println(msg); Logger.normal(this, msg);
 	    	WrapperManager.signalStarting((int)Math.min(0,(curBlocks-maxBlocks)*100)+5*60*1000); // 10 per second plus 5 minutes
 			while(true) {
 				t = environment.beginTransaction(null,null);
@@ -2003,7 +2009,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
     }
     
-    private long countCHKBlocksFromDatabase() throws DatabaseException {
+    private long highestBlockNumberInDatabase() throws DatabaseException {
     	Cursor c = null;
     	try {
     		c = chkDB_blockNum.openCursor(null,null);
