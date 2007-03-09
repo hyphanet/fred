@@ -96,8 +96,8 @@ public class StringArrOption extends Option {
 		}
 	}
 
-	public String[] getDefault() {
-		return defaultValue;
+	public String getDefault() {
+		return arrayToString(defaultValue);
 	}
 
 	public boolean isDefault() {

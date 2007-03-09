@@ -59,8 +59,8 @@ public class BooleanOption extends Option {
 		return currentValue == defaultValue;
 	}
 	
-	public boolean getDefault() {
-		return defaultValue;
+	public String getDefault() {
+		return (defaultValue ? "true" : "false");
 	}
 
 	public void setDefault() {

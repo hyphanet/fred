@@ -81,4 +81,6 @@ public abstract class Option {
 	
 	/** Set to the default. Don't use after completed initialization, as this does not call the callback. FIXME fix this? */
 	public abstract void setDefault();
+	
+	public abstract String getDefault();
 }

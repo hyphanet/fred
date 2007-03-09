@@ -1323,7 +1323,7 @@ public class Node {
 		if(databaseMaxMemory > (80 * Runtime.getRuntime().maxMemory() / 100)){
 			Logger.error(this, "The databaseMemory setting is set too high " + databaseMaxMemory +
 					" ... let's assume it's not what the user wants to do and restore the default.");
-			databaseMaxMemory = ((LongOption) nodeConfig.getOption("databaseMaxMemory")).getDefault();
+			databaseMaxMemory = Long.valueOf(((LongOption) nodeConfig.getOption("databaseMaxMemory")).getDefault()).longValue();
 		}
 		envMutableConfig.setCacheSize(databaseMaxMemory);
 		// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
