@@ -76,7 +76,7 @@ public class IntOption extends Option {
 	}
 	
 	public String getDefault(){
-		return new Integer(defaultValue).toString();
+		return Integer.toString(defaultValue);
 	}
 
 	public boolean isDefault() {

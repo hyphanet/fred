@@ -83,7 +83,7 @@ public class LongOption extends Option {
 	}
 	
 	public String getDefault() {
-		return new Long(defaultValue).toString();
+		return Long.toString(defaultValue);
 	}
 
 	public void setDefault() {

@@ -60,7 +60,7 @@ public class BooleanOption extends Option {
 	}
 	
 	public String getDefault() {
-		return (defaultValue ? "true" : "false");
+		return Boolean.toString(defaultValue);
 	}
 
 	public void setDefault() {

@@ -56,7 +56,7 @@ public class ShortOption extends Option {
 	}
 	
 	public String getDefault() {
-		return new Short(defaultValue).toString();
+		return Short.toString(defaultValue);
 	}
 	
 	public void setDefault() {
