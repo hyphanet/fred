@@ -166,7 +166,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					EnvironmentConfig envConfig = new EnvironmentConfig();
 					envConfig.setAllowCreate(true);
 					envConfig.setTransactional(true);
-					envConfig.setTxnWriteNoSync(true);
+					envConfig.setTxnWriteNoSync(false);
 					oldEnv = new Environment(oldDBDir, envConfig);
 				} catch (DatabaseException e) {
 					if(oldEnv != null)
