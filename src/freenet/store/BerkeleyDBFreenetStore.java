@@ -2,10 +2,10 @@ package freenet.store;
 
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -881,9 +881,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	freeBlocks.clear();
     	for(int i=wantedMoveNums.length;i<unwantedMoveNums.length+freeEarlySlots.length;i++) {
     		if(i < freeEarlySlots.length) {
-    			addFreeBlock(freeEarlySlots[i], false, "early slot "+i);
+    			addFreeBlock(freeEarlySlots[i], true, "early slot "+i);
     		} else {
-    			addFreeBlock(unwantedMoveNums[i-freeEarlySlots.length].longValue(), false, "unwanted "+(i-freeEarlySlots.length));
+    			addFreeBlock(unwantedMoveNums[i-freeEarlySlots.length].longValue(), true, "unwanted "+(i-freeEarlySlots.length));
     		}
     	}
     	
@@ -1130,6 +1130,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 							Logger.error(this, err, e);
 							System.err.println(err);
 							e.printStackTrace();
+							t = environment.beginTransaction(null,null);
+							DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
+				    		chkDB.delete(t, routingkeyDBE);
+				    		t.commit();
+				    		t = null;
 							addFreeBlock(l, true, "bogus key ("+type+ ')');
 							routingkey = null;
 							continue;
