@@ -892,7 +892,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	System.out.println("Finishing shrink"); // FIXME remove
     	
-    	innerQuickShrink(realSize, Math.min(newSize, highestBlock), true, dontCheck);
+    	innerQuickShrink(realSize, Math.min(newSize, highestBlock), true, true);
     	
     	System.err.println("Shrunk store, now have "+chkBlocksInStore+" of "+maxChkBlocks);
 	}
