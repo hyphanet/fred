@@ -766,7 +766,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	Arrays.sort(wantedMoveNums);
     	Arrays.sort(unwantedMoveNums);
     	
-    	for(int i=0;i<realSize;i++) {
+    	for(int i=0;i<newSize;i++) {
     		Integer ii = new Integer(i);
     		if(Arrays.binarySearch(wantedKeepNums, ii) >= 0) continue;
     		if(Arrays.binarySearch(unwantedIgnoreNums, ii) >= 0) continue;
