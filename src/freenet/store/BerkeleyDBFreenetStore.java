@@ -646,7 +646,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			else {
 				if(chkBlocksInStore * 0.9 > maxChkBlocks) {
 					Logger.error(this, "Doing quick and indiscriminate online shrink. Offline shrinks will preserve the LRU, this doesn't.");
-					maybeQuickShrink(dontCheck, false);
+					maybeQuickShrink(dontCheck);
 				} else {
 					Logger.error(this, "Online shrink only supported for small deltas because online shrink does not preserve LRU order. Suggest you restart the node.");
 				}
@@ -706,7 +706,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					System.err.println("Store too big, doing quick shrink"); // memory usage would be insane
 					c.close();
 					c = null;
-					maybeQuickShrink(false, false);
+					maybeQuickShrink(true);
 					return;
 				}
 				Integer blockNum = new Integer((int)storeBlock.offset);
@@ -892,7 +892,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	System.out.println("Finishing shrink"); // FIXME remove
     	
-    	innerQuickShrink(realSize, Math.min(newSize, highestBlock), true, true);
+    	innerQuickShrink(realSize, Math.min(newSize, highestBlock), true);
     	
     	System.err.println("Shrunk store, now have "+chkBlocksInStore+" of "+maxChkBlocks);
 	}
@@ -904,7 +904,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 * @throws DatabaseException
 	 * @throws IOException
 	 */
-	private void maybeQuickShrink(boolean dontCheck, boolean dontCheckForHoles) throws DatabaseException, IOException {
+	private void maybeQuickShrink(boolean dontCheck) throws DatabaseException, IOException {
 		// long's are not atomic.
 		long maxBlocks;
 		long curBlocks;
@@ -916,10 +916,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				return;
 			}
 		}
-		innerQuickShrink(curBlocks, maxBlocks, dontCheck, dontCheckForHoles);
+		innerQuickShrink(curBlocks, maxBlocks, dontCheck);
 	}
 
-	private void innerQuickShrink(long curBlocks, long maxBlocks, boolean dontCheck, boolean dontCheckForHoles) throws DatabaseException, IOException {
+	/**
+	 * @param curBlocks The current number of blocks in the file. (From the file length).
+	 * @param maxBlocks The target number of blocks in the file. (The file will be truncated to this length in blocks).
+	 * @param dontCheck If true, innerQuickShrink will run once. If false, after the first run, if
+	 * the store is still over its required size, it will shrink it again, and so on until the store 
+	 * is within its required size. 
+	 * If false, innerQuickShrink will repeat itself until it deletes no more blocks, This is to handle  
+	 * @param dontCheckForHoles If true, and if dontCheck is false, this function will check the store
+	 * for holes after every pass.
+	 * @throws DatabaseException If a database error occurs.
+	 * @throws IOException If an I/O error occurs.
+	 */
+	private void innerQuickShrink(long curBlocks, long maxBlocks, boolean dontCheck) throws DatabaseException, IOException {
 		Transaction t = null;
 		try {
 			System.err.println("Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+ ')');
@@ -965,14 +977,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 				t = null;
 				
-				if((deleted == 0) || dontCheck) break;
-				else {
-					System.err.println("Checking...");
-					synchronized(this) {
-						maxBlocks = maxChkBlocks;
-						curBlocks = chkBlocksInStore;
-						if(maxBlocks >= curBlocks) break;
-					}
+				if(dontCheck) break;
+				System.err.println("Checking...");
+				synchronized(this) {
+					maxBlocks = maxChkBlocks;
+					curBlocks = chkBlocksInStore;
+					if(maxBlocks >= curBlocks) break;
 				}
 			}
 			
@@ -980,9 +990,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			chkBlocksInStore = maxChkBlocks;
 			System.err.println("Successfully shrunk store to "+chkBlocksInStore);
-			
-			if(!dontCheckForHoles)
-				checkForHoles(chkBlocksInStore, false);
 			
 		} finally {
 			if(t != null) t.abort();
