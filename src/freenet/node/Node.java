@@ -1236,6 +1236,7 @@ public class Node {
 		envConfig.setAllowCreate(true);
 		envConfig.setTransactional(true);
 		envConfig.setTxnWriteNoSync(true);
+		envConfig.setLockTimeout(60*1000); // should be long enough for fairly overloaded nodes
 		
 		File dbDir = new File(storeDir, "database-"+portNumber);
 		dbDir.mkdirs();
