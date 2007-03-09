@@ -517,10 +517,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			blockNums = environment.openSecondaryDatabase
 				(null, prefix+"CHK_blockNum", chkDB, blockNoDbConfig);
 		} catch (DatabaseNotFoundException e) {
-			System.err.println("Migrating block db index");
-			// De-dupe on keys and block numbers.
-			migrate(storeFile.length() / (dataBlockSize + headerBlockSize));
-			System.err.println("De-duped, creating new index...");
+			System.err.println("Creating new block DB index");
 			blockNoDbConfig.setSortedDuplicates(false);
 			blockNoDbConfig.setAllowCreate(true);
 			blockNoDbConfig.setAllowPopulate(true);
@@ -1169,67 +1166,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			} catch (IOException e1) {
 				System.err.println("Failed to set size");
 			}
-		}
-	}
-
-	/**
-	 * Migrate from a store which didn't have a unique index on blockNum, to one which does.
-	 * How do we do this? We scan through all entries (slow), we fetch each key, delete all data's
-	 * under it, and then insert the one we are looking at.
-	 * 
-	 * FIXME: Create a list of reusable block numbers?
-	 */
-	private void migrate(long keyCount) throws DatabaseException {
-		
-		System.err.println("Migrating database: Creating unique index on block number");
-		HashSet s = new HashSet();
-		
-		WrapperManager.signalStarting((int)(Math.max(Integer.MAX_VALUE, 5*60*1000 + keyCount*1000)));
-		
-    	Cursor c = null;
-    	Transaction t = null;
-		try {
-			t = environment.beginTransaction(null,null);
-			c = chkDB.openCursor(t,null);
-			DatabaseEntry keyDBE = new DatabaseEntry();
-			DatabaseEntry blockDBE = new DatabaseEntry();
-			OperationStatus opStat;
-			opStat = c.getLast(keyDBE, blockDBE, LockMode.RMW);
-			if(opStat == OperationStatus.NOTFOUND) {
-				System.err.println("Database is empty (migrating).");
-				c.close();
-				c = null;
-				t.abort();
-				t = null;
-				return;
-			}
-			if(logMINOR) Logger.minor(this, "Found first key");
-			int x = 0;
-			while(true) {
-		    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
-		    	if(logMINOR) Logger.minor(this, "Found another key ("+(x++)+") ("+storeBlock.offset+ ')');
-				Long l = new Long(storeBlock.offset);
-				if(s.contains(l)) {
-					if(logMINOR) Logger.minor(this, "Deleting (block number conflict).");
-					chkDB.delete(t, keyDBE);
-				}
-				s.add(l);
-				opStat = c.getPrev(keyDBE, blockDBE, LockMode.RMW);
-				if(opStat == OperationStatus.NOTFOUND) {
-					return;
-				}
-			}
-		} catch (DatabaseException e) {
-			System.err.println("Caught: "+e);
-			e.printStackTrace();
-			Logger.error(this, "Caught "+e, e);
-			t.abort();
-			t = null;
-		} finally {
-			if(c != null)
-				c.close();
-			if(t != null)
-				t.commit();
 		}
 	}
 
