@@ -98,6 +98,7 @@ public class IPDetectorPluginManager {
 	private final MyUserAlert symmetricAlert;
 	private final MyUserAlert portRestrictedAlert;
 	private final MyUserAlert restrictedAlert;
+	private final MyUserAlert fullConeAlert;
 	private final MyUserAlert connectedAlert;
 	private ProxyUserAlert proxyAlert;
 	
@@ -122,6 +123,9 @@ public class IPDetectorPluginManager {
 		restrictedAlert = new MyUserAlert("Restricted cone NAT detected",
 				"Your internet connection appears to be behind a \"restricted cone\" NAT (router). "+
 				"You should be able to connect to most other users.", false, UserAlert.MINOR);
+		fullConeAlert = new MyUserAlert("Full cone NAT detected",
+				"Your internet connection appears to be behind a \"full cone\" NAT (router). Congratulations, your node " +
+				"should be able to connect to any other Freenet node.", false, UserAlert.MINOR);
 		connectedAlert = new MyUserAlert("Direct internet connection detected",
 				"You appear to be directly connected to the internet. Congratulations, you should be able to connect "+
 				"to any other freenet node.", false, UserAlert.MINOR);
@@ -497,6 +501,7 @@ public class IPDetectorPluginManager {
 				}
 				DetectedIP[] list = (DetectedIP[]) map.values().toArray(new DetectedIP[map.size()]);
 				int countOpen = 0;
+				int countFullCone = 0;
 				int countRestricted = 0;
 				int countPortRestricted = 0;
 				int countSymmetric = 0;
@@ -506,6 +511,8 @@ public class IPDetectorPluginManager {
 					System.out.println("Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
 					switch(list[i].natType) {
 					case DetectedIP.FULL_CONE_NAT:
+						countFullCone++;
+						break;
 					case DetectedIP.FULL_INTERNET:
 						countOpen++;
 						break;
@@ -528,14 +535,16 @@ public class IPDetectorPluginManager {
 					}
 				}
 				
-				if(countClosed > 0 && (countOpen + countRestricted + countPortRestricted + countSymmetric) == 0) {
+				if(countClosed > 0 && (countOpen + countFullCone + countRestricted + countPortRestricted + countSymmetric) == 0) {
 					proxyAlert.setAlert(noConnectionAlert);
-				} else if(countSymmetric > 0 && (countOpen + countRestricted + countPortRestricted == 0)) {
+				} else if(countSymmetric > 0 && (countOpen + countFullCone + countRestricted + countPortRestricted == 0)) {
 					proxyAlert.setAlert(symmetricAlert);
-				} else if(countPortRestricted > 0 && (countOpen + countRestricted == 0)) {
+				} else if(countPortRestricted > 0 && (countOpen + countFullCone + countRestricted == 0)) {
 					proxyAlert.setAlert(portRestrictedAlert);
-				} else if(countRestricted > 0 && (countOpen == 0)) {
+				} else if(countRestricted > 0 && (countOpen + countFullCone == 0)) {
 					proxyAlert.setAlert(restrictedAlert);
+				} else if(countFullCone > 0 && countOpen == 0) {
+					proxyAlert.setAlert(fullConeAlert);
 				} else if(countOpen > 0) {
 					proxyAlert.setAlert(connectedAlert);
 				}
