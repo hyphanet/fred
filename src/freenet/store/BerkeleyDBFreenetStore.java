@@ -869,6 +869,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	} finally {
     		if(t != null)
     			t.abort();
+    		t = null;
     	}
     	System.out.println("Completing shrink"); // FIXME remove
     	
@@ -876,6 +877,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	WrapperManager.signalStarting(5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100);
     	// If there are any slots left over, they must be free.
     	freeBlocks.clear();
+		t = environment.beginTransaction(null,null);
     	for(int i=wantedMoveNums.length;i<totalUnwantedBlocks;i++) {
     		long blockNo;
     		String reason;
@@ -892,7 +894,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(i % 1024 == 0) {
 				System.out.println("Trimmed surplus keys in database: "+(i-wantedMoveNums.length)+"/"+(totalUnwantedBlocks-wantedMoveNums.length));
 				t.commit();
-				if(i == unwantedMoveNums.length+freeEarlySlots.length-1)
+				if(i == totalUnwantedBlocks-1)
 					t = null;
 				else
 					t = environment.beginTransaction(null,null);
