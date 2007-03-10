@@ -453,19 +453,20 @@ public class FProxyToadlet extends Toadlet {
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				
 				HTMLNode optionList = infoboxContent.addChild("ul");
-				option = optionList.addChild("li");
-				HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "dnfQueueForm");
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
-				if (mime != null) {
-					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
-				}
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", "Download it in the background to the downloads directory" });
-				
-				if(!e.isFatal())
+				if(!e.isFatal()) {
+					option = optionList.addChild("li");
+					HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "dnfQueueForm");
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+					if (mime != null) {
+						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
+					}
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", "Download it in the background to the downloads directory" });
+					
 					optionList.addChild("li").
 						addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"))).addChild("#", "Retry now");
+				}
 				
 				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, "Abort and return to the FProxy home page");
 				
