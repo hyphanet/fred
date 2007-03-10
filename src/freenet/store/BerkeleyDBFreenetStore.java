@@ -1126,6 +1126,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 		System.err.println("Reconstructing store index from store file: type="+type);
 		Logger.error(this, "Reconstructing store index from store file: type="+type);
+		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+(chkStore.length()/(dataBlockSize+headerBlockSize))*100)));
 		byte[] header = new byte[headerBlockSize];
 		byte[] data = new byte[dataBlockSize];
 		long l = 0;
@@ -1183,7 +1184,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			}
 		} catch (EOFException e) {
 			long size = l * (dataBlockSize + headerBlockSize);
-			System.err.println("Caught EOF, truncating to "+l+" blocks : "+size);
+			System.err.println("Found end of store, truncating to "+l+" blocks : "+size);
 			chkBlocksInStore = l;
 			try {
 				chkStore.setLength(size);
