@@ -908,6 +908,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	chkStore.setLength(newSize * (dataBlockSize + headerBlockSize));
     	
+    	synchronized(this) {
+    		chkBlocksInStore = newSize;
+    	}
     	System.err.println("Shrunk store, now have "+chkBlocksInStore+" of "+maxChkBlocks);
 	}
 	
