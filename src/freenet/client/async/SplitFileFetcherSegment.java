@@ -12,7 +12,6 @@ import freenet.client.FECCodec;
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
-import freenet.client.FetchResult;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
@@ -279,7 +278,7 @@ public class SplitFileFetcherSegment {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		synchronized(this) {
-			if(isFinished()) return;
+			if(isFinishing()) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
 			if(blockNo < dataKeys.length) {
 				if(dataKeys[blockNo] == null) {
 					Logger.error(this, "Block already finished: "+blockNo);
