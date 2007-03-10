@@ -262,6 +262,24 @@ public class PluginManager {
 		throw t;
 	}
 	
+	public String handleHTTPPost(String plugin, HTTPRequest request) throws PluginHTTPException {
+		FredPlugin handler = null;
+		synchronized (toadletList) {
+			handler = (FredPlugin)toadletList.get(plugin);
+		}
+		/*if (handler == null)
+			return null;
+			*/
+		
+		if (handler instanceof FredPluginHTTP)
+			return ((FredPluginHTTP)handler).handleHTTPPost(request);
+		
+		// no plugin found
+		PluginHTTPException t = new PluginHTTPException();
+		t.setReply("Plugin not found: " + plugin);
+		throw t;
+	}
+	
 	public void killPlugin(String name) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;

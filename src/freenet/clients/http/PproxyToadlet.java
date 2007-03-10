@@ -44,6 +44,52 @@ public class PproxyToadlet extends Toadlet {
 			ctx.sendReplyHeaders(302, "Found", hdrs, null, 0);
 			return;
 		}
+
+		String path=request.getPath();
+
+		// remove leading / and plugins/ from path
+		if(path.startsWith("/")) path = path.substring(1);
+		if(path.startsWith("plugins/")) path = path.substring("plugins/".length());
+		
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Pproxy received POST on "+path);
+
+		if(path.length()>0)
+		{
+			try
+			{
+				String plugin = null;
+				// split path into plugin class name and 'daa' path for plugin
+				int to = path.indexOf("/");
+				if(to == -1)
+				{
+					plugin = path;
+				}
+				else
+				{
+					plugin = path.substring(0, to);
+				}
+
+				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPPost(plugin, request));
+			}
+			catch(PluginHTTPException e)
+			{
+				// TODO: make it into html
+				writeReply(ctx, e.getCode(), e.getMimeType(), e.getDesc(), e.getReply());
+			}
+			catch(Throwable t)
+			{
+				Logger.error(this, "Caught "+t, t);
+				String msg = "<html><head><title>Internal Error</title></head><body><h1>Internal Error: please report</h1><pre>";
+				StringWriter sw = new StringWriter();
+				PrintWriter pw = new PrintWriter(sw);
+				t.printStackTrace(pw);
+				pw.flush();
+				msg = msg + sw.toString() + "</pre></body></html>";
+				this.writeReply(ctx, 500, "text/html", "Internal Error", msg);
+			}
+		}
+		else
+		{
 		
 		if (request.isPartSet("load")) {
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Loading "+request.getPartAsString("load", MAX_PLUGIN_NAME_LENGTH));
@@ -111,6 +157,8 @@ public class PproxyToadlet extends Toadlet {
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 		}
 
+		}
+
 	}
 	
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx)
@@ -118,10 +166,10 @@ public class PproxyToadlet extends Toadlet {
 		//String basepath = "/plugins/";
 		String path = request.getPath();
 
-		// remove leading / and 'plugins/' from path
-		if(path.startsWith("/"))
-			path = path.substring(1);
-		path = path.substring("plugins/".length());
+		// remove leading / and plugins/ from path
+		if(path.startsWith("/")) path = path.substring(1);
+		if(path.startsWith("plugins/")) path = path.substring("plugins/".length());
+
     	if(Logger.shouldLog(Logger.MINOR, this))
     		Logger.minor(this, "Pproxy fetching "+path);
 		try {
