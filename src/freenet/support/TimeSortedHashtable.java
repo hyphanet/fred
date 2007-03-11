@@ -88,6 +88,7 @@ public class TimeSortedHashtable {
     } 
 
     /**
+     * Remove and return the least recently pushed value.
      * @return Least recently pushed value.
      */
     public final synchronized Comparable popValue() {
@@ -95,6 +96,7 @@ public class TimeSortedHashtable {
     	
     	Element e = (Element) elements.first();
     	valueToElement.remove(e.value);
+    	elements.remove(e);
     	
     	assert(elements.size() == valueToElement.size());
     	return e.value;
