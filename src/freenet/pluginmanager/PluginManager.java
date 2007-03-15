@@ -346,7 +346,11 @@ public class PluginManager {
         					in = new BufferedReader(
         							new InputStreamReader(uc.getInputStream()));
         					
-        					realURL = in.readLine().trim();
+        					realURL = in.readLine();
+        					if(realURL == null)
+        						throw new PluginNotFoundException("Initialization error: " + url +
+        								" isn't a plugin loading url!");
+        					realURL = realURL.trim();
         					if(logMINOR) Logger.minor(this, "Loaded new URL: "+realURL+" from .url file");
         					in.close();
         				}
