@@ -108,6 +108,8 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
         	realRun();
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
+            if(status == NOT_FINISHED)
+            	finish(INTERNAL_ERROR, null);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
             if(status == NOT_FINISHED)
