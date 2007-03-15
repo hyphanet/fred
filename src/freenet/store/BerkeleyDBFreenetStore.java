@@ -657,6 +657,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(chkBlocksInStore <= maxChkBlocks) return true;
 		}
 		if(chkBlocksInStore * 0.9 > maxChkBlocks || forceBigOnlineShrinks) {
+			Logger.error(this, "Doing quick and dirty shrink of the store by "+(100 * (chkBlocksInStore - maxChkBlocks) / chkBlocksInStore)+"%");
+			Logger.error(this, "Offline shrinks will preserve the most recently used data, this online shrink does not.");
 			Runnable r = new Runnable() {
 				public void run() {
 					try {
