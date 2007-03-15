@@ -3209,9 +3209,9 @@ public class Node {
 		String source_nodename = null;
 		String target_nodename = null;
 		String text = null;
-		long composedTime = -1;
-		long sentTime = -1;
-		long receivedTime = -1;
+		long composedTime;
+		long sentTime;
+		long receivedTime;
 	  	try {
 			source_nodename = new String(Base64.decode(fs.get("source_nodename")));
 			target_nodename = new String(Base64.decode(fs.get("target_nodename")));

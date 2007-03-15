@@ -18,13 +18,7 @@ public class ConfigData extends FCPMessage {
 	}
 	
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		if(withDefaults) {
-			fs = node.config.exportFieldSet(true);
-		} else {
-			fs = node.config.exportFieldSet(false);
-		}
-		return fs;
+		return node.config.exportFieldSet(withDefaults);
 	}
 
 	public String getName() {

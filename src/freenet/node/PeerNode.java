@@ -2574,7 +2574,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean gotError = false;
 		boolean readResult = false;
 		for (int i = 0; i < extraPeerDataFiles.length; i++) {
-			Integer fileNumber = new Integer(-1);
+			Integer fileNumber;
 			try {
 				fileNumber = new Integer(extraPeerDataFiles[i].getName());
 			} catch (NumberFormatException e) {

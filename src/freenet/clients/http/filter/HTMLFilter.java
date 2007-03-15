@@ -503,11 +503,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					if (safe)
 						err += element + ' ';
 					err += "-->";
-					// FIXME: Hmmm, why did we just do all this, err is not
-					// used beyond this point... (avian)
 					if (!deleteErrors)
 						throwFilterException(
-							"Unknown tag: " + HTMLEncoder.encode(element));
+							"Unknown tag: " + HTMLEncoder.encode(err));
 					return null;
 				}
 			}

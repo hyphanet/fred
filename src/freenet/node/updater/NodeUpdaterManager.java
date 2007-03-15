@@ -306,7 +306,7 @@ public class NodeUpdaterManager {
 	/** Does the updater have an update ready to deploy? May be called synchronized(this) */
 	private boolean isReadyToDeployUpdate(boolean ignoreRevocation) {
 		long now = System.currentTimeMillis();
-		long startedMillisAgo = -1;
+		long startedMillisAgo;
 		synchronized(this) {
 			if(!(hasNewMainJar || hasNewExtJar)) return false; // no jar
 			if(hasBeenBlown) return false; // Duh

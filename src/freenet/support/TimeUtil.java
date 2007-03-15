@@ -72,14 +72,14 @@ public class TimeUtil {
 				DecimalFormat fix3 = new DecimalFormat("0.000");
                 sb.append(fix3.format(fractionalSeconds)).append('s');
 				termCount++;
-				l = l - ((long)fractionalSeconds * (long)1000);
+				//l = l - ((long)fractionalSeconds * (long)1000);
 			}
 		} else {
 			int seconds = (int)(l / (long)1000);
 			if (seconds > 0) {
                 sb.append(seconds).append('s');
 				termCount++;
-				l = l - ((long)seconds * (long)1000);
+				//l = l - ((long)seconds * (long)1000);
 			}
 		}
 		//

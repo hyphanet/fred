@@ -607,8 +607,8 @@ public class StatisticsToadlet extends Toadlet {
 		final Object[] knownLocsCopy = node.getKnownLocations(-1);
 		final Double[] locations = (Double[])knownLocsCopy[0];
 		final Long[] timestamps = (Long[])knownLocsCopy[1];
-		Double location = new Double(0.0);
-		Long locationTime = new Long(0);
+		Double location;
+		Long locationTime;
 		double strength = 1.0;
 		long now = System.currentTimeMillis();
 		long age = 1;

@@ -361,10 +361,10 @@ public class JPEGFilter implements ContentDataFilter {
 	private void throwError(String shortReason, String reason) throws DataFilterException {
 		// Throw an exception
 		String message = ERROR_MESSAGE;
-		if(reason != null) message += ' ' + reason;
-		String msg = "Not a GIF";
+		if(reason != null) 
+			message += ' ' + reason;
 		if(shortReason != null)
-			msg += " - " + shortReason;
+			message += " - " + shortReason;
 		DataFilterException e = new DataFilterException(shortReason, shortReason,
 				"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
 		if(Logger.shouldLog(Logger.NORMAL, this))

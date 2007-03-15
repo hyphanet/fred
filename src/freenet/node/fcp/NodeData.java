@@ -20,7 +20,7 @@ public class NodeData extends FCPMessage {
 	}
 	
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
+		SimpleFieldSet fs;
 		if(withPrivate) {
 			fs = node.exportPrivateFieldSet();
 		} else {

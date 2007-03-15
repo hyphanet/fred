@@ -58,9 +58,8 @@ public class GIFFilter implements ContentDataFilter {
 		// Throw an exception
 		String message = ERROR_MESSAGE;
 		if(reason != null) message += ' ' + reason;
-		String msg = "Not a GIF";
 		if(shortReason != null)
-			msg += " - " + shortReason;
+			message += " - (" + shortReason + ')';
 		throw new DataFilterException(shortReason, shortReason,
 				"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
 	}

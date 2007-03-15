@@ -206,9 +206,9 @@ public class FileLoggerHook extends LoggerHook {
 		public void run() {
 			File currentFilename = null;
 			Object o = null;
-			long thisTime = System.currentTimeMillis();
+			long thisTime;
 			long lastTime = -1;
-			long startTime = -1;
+			long startTime;
 			long nextHour = -1;
 			GregorianCalendar gc = null;
 			String filename = null;
@@ -745,7 +745,6 @@ public class FileLoggerHook extends LoggerHook {
 		if (sb.length() > 0) {
 			strVec.addElement(sb.toString());
 			fmtVec.addElement(new Integer(0));
-			sb = new StringBuffer();
 		}
 
 		this.fmt = new int[fmtVec.size()];
