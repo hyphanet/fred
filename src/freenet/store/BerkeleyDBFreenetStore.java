@@ -1991,7 +1991,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	public Object entryToObject(TupleInput ti) {
     		if(Logger.shouldLog(Logger.DEBUG, this))
     			Logger.debug(this, "Available: "+ti.available());
-    		long offset = ti.available() == 12 ? ti.readInt() : ti.readLong();
+    		long offset = ti.readLong();
 	    	long lastAccessed = ti.readLong();
 	    	
 	    	StoreBlock storeBlock = new StoreBlock(offset,lastAccessed);
