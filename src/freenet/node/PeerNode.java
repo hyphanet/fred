@@ -786,7 +786,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     		if(localDetectedPeer == null) {
     			localHandshakeIPs = null;
         		synchronized(this) {
-    				handshakeIPs = localHandshakeIPs;
+    				handshakeIPs = null;
     			}
         		if(logMINOR) Logger.minor(this, "1: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     			return;
@@ -2702,7 +2702,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM) {
 			boolean sendSuccess = false;
 			if(isConnected()) {
-				String text = null;
 				Message n2ntm;
 				if(fs.get("extraPeerDataType") != null) {
 					fs.removeValue("extraPeerDataType");
@@ -2726,7 +2725,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				try {
 					synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
 						node.usm.send(this, n2ntm, null);
-						Logger.normal(this, "Sent queued ("+fileNumber+") N2NTM to '"+getName()+"': "+text);
+						Logger.normal(this, "Sent queued ("+fileNumber+") N2NTM to '"+getName()+"': "+n2ntm);
 						sendSuccess = true;
 						queuedToSendN2NTMExtraPeerDataFileNumbers.remove(Integer.toString(fileNumber));
 					}
