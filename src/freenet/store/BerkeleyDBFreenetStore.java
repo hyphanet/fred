@@ -1369,7 +1369,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		if(logMINOR) Logger.minor(this, "Fetching "+chk+" dontPromote="+dontPromote);
     		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
     				!=OperationStatus.SUCCESS) {
-    			// FIXME we are supposed to close the cursor first, right?
     			c.close();
     			c = null;
     			t.abort();
@@ -1400,7 +1399,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    			DatabaseEntry updateDBE = new DatabaseEntry();
 	    			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
 	    			c.putCurrent(updateDBE);
-	    			// FIXME we are supposed to close the cursor first, right?
 		    		c.close();
 	    			c = null;
 		    		t.commit();
