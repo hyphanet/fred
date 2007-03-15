@@ -139,41 +139,6 @@ public class BucketTools {
 		return ret;
 	}
 
-	/**
-	 * Free buckets. Get yer free buckets here! No charge! All you can carry
-	 * free buckets!
-	 * <p>
-	 * If an exception happens the method will attempt to free the remaining
-	 * buckets then retun the first exception. Buckets successfully freed are
-	 * made <code>null</code> in the array.
-	 * </p>
-	 * 
-	 * @param bf
-	 * @param buckets
-	 * @throws IOException
-	 *             the first exception The <code>buckets</code> array will
-	 */
-	public static void freeBuckets(BucketFactory bf, Bucket[] buckets)
-		throws IOException {
-		if (buckets == null) {
-			return;
-		}
-
-		IOException firstIoe = null;
-
-		for (int i = 0; i < buckets.length; i++) {
-			// Make sure we free any temp buckets on exception
-			if (buckets[i] != null) {
-				buckets[i].free();
-			}
-			buckets[i] = null;
-		}
-
-		if (firstIoe != null) {
-			throw firstIoe;
-		}
-	}
-
 	public final static int[] nullIndices(Bucket[] array) {
 		List list = new ArrayList();
 		for (int i = 0; i < array.length; i++) {
