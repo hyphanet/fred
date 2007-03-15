@@ -85,7 +85,7 @@ public class ArrayBucket implements Bucket {
 		}
 
 		public void close() throws IOException {
-			data.add(toByteArray());
+			data.add(super.toByteArray());
 			if(readOnly) throw new IOException("Read only");
 			// FIXME maybe we should throw on write instead? :)
 		}
