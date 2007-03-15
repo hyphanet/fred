@@ -2178,7 +2178,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			Thread t = new Thread(new Runnable() {
 				public void run() {
 					try {
-						maybeShrink(false, false);
+						maybeShrink(true, false);
 					} catch (DatabaseException e) {
 						Logger.error(this, "Cannot shrink: "+e, e);
 					} catch (IOException e) {
