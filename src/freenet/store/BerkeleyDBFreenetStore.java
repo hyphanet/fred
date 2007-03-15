@@ -532,8 +532,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				storeFile.createNewFile();
 			chkStore = new RandomAccessFile(storeFile,"rw");
 			
-			boolean dontCheckOnShrink = false;
-			
 			long chkBlocksInDatabase = chkDB.count();
 			chkBlocksInStore = chkBlocksInDatabase;
 			long chkBlocksFromFile = countCHKBlocksFromFile();
@@ -552,7 +550,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					throw new DatabaseException("Keys in database: "+chkBlocksInStore+" but keys in file: "+chkBlocksFromFile);
 				} else if(!noCheck) {
 					long len = checkForHoles(chkBlocksFromFile, false);
-					dontCheckOnShrink = true;
 					if(len < chkBlocksFromFile) {
 						System.err.println("Truncating to "+len+" as no non-holes after that point");
 						chkStore.setLength(len * (dataBlockSize + headerBlockSize));
@@ -566,7 +563,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			System.out.println("Keys in store: db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+" / max "+maxChkBlocks);
 			
 			if(!noCheck) {
-				maybeShrink(dontCheckOnShrink, true);
+				maybeShrink(true, true);
 				chkBlocksFromFile = countCHKBlocksFromFile();
 				chkBlocksInStore = Math.max(chkBlocksInStore, chkBlocksFromFile);
 			}
