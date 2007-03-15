@@ -319,8 +319,8 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		if(length % splitSize > 0) bucketCount++;
 		Bucket[] buckets = new Bucket[bucketCount];
 		for(int i=0;i<buckets.length;i++) {
-			long startAt = i * splitSize;
-			long endAt = Math.min((i+1) * splitSize, length);
+			long startAt = i * splitSize * 1L;
+			long endAt = Math.min(startAt + splitSize * 1L, length);
 			long len = endAt - startAt;
 			buckets[i] = new ReadOnlyFileSliceBucket(file, startAt, len);
 		}

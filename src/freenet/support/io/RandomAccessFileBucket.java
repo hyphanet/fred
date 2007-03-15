@@ -205,10 +205,10 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         Bucket[] ret = new Bucket[blocks];
         
         for (int i = 0; i < blocks; i++) {
-            final long localOffset = i * blockSize + offset;
+            final long localOffset = i * blockSize * 1L + offset;
             int blockLen = blockSize;
             if (i == nBlocks - 1) {
-                blockLen = (int) (length - (nBlocks - 1) * blockSize);
+                blockLen = (int) (length - (nBlocks - 1) * blockSize * 1L);
             }
             ret[i] = new RandomAccessFileBucket(file, localOffset, blockLen, readOnly);
         }
