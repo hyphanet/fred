@@ -205,7 +205,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     public void run() {
         short origHTL;
     	synchronized (this) {
-            origHTL = htl;			
+            origHTL = htl;
 		}
 
         node.addInsertSender(myKey, origHTL, this);
@@ -213,6 +213,12 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         	realRun();
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
+            int myStatus;
+            synchronized (this) {
+				myStatus = status;
+			}
+            if(myStatus == NOT_FINISHED)
+            	finish(INTERNAL_ERROR, null);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
             int myStatus;
