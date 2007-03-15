@@ -597,6 +597,7 @@ public class UdpSocketManager extends Thread {
      * @param destination The peer to send it to.
      */
     public void sendPacket(byte[] blockToSend, Peer destination, boolean allowLocalAddresses) throws LocalAddressException {
+    	assert(blockToSend != null);
 		// there should be no DNS needed here, but go ahead if we can, but complain doing it
 		if( destination.getAddress(false, allowLocalAddresses) == null ) {
   			Logger.error(this, "Tried sending to destination without pre-looked up IP address(needs a real Peer.getHostname()): null:" + destination.getPort(), new Exception("error"));
@@ -611,13 +612,16 @@ public class UdpSocketManager extends Thread {
 				return;
 			}
 		}
+		InetAddress address = destination.getAddress(false, allowLocalAddresses);
+		assert(address != null);
+		int port = destination.getPort();
 		DatagramPacket packet = new DatagramPacket(blockToSend, blockToSend.length);
-		packet.setAddress(destination.getAddress(false, allowLocalAddresses));
-		packet.setPort(destination.getPort());
+		packet.setAddress(address);
+		packet.setPort(port);
 		
 		// TODO: keep?
-		IOStatisticCollector.addInfo(packet.getAddress() + ":" + packet.getPort(),
-				0, packet.getLength());
+		// packet.length() is simply the size of the buffer, it knows nothing of UDP headers
+		IOStatisticCollector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH); 
 		
 		try {
 			_sock.send(packet);
@@ -679,26 +683,29 @@ public class UdpSocketManager extends Thread {
         return _sock.getLocalPort();
     }
 
+    
+	// CompuServe use 1400 MTU; AOL claim 1450; DFN@home use 1448.
+	// http://info.aol.co.uk/broadband/faqHomeNetworking.adp
+	// http://www.compuserve.de/cso/hilfe/linux/hilfekategorien/installation/contentview.jsp?conid=385700
+	// http://www.studenten-ins-netz.net/inhalt/service_faq.html
+	// officially GRE is 1476 and PPPoE is 1492.
+	// unofficially, PPPoE is often 1472 (seen in the wild). Also PPPoATM is sometimes 1472.
+    static final int MAX_ALLOWED_MTU = 1400;
+    // FIXME this is different for IPv6 (check all uses of constant when fixing)
+    static final int UDP_HEADERS_LENGTH = 28;
+    
     /**
      * @return The maximum packet size supported by this SocketManager.
      */
     public int getMaxPacketSize() { //FIXME: what about passing a peerNode though and doing it on a per-peer basis?
     	final int minAdvertisedMTU = node.ipDetector.getMinimumDetectedMTU();
-    	final int maxAllowedMTU = 1400;
-    	final int overhead = 28;
     	
     	// We don't want the MTU detection thingy to prevent us to send PacketTransmits!
     	if(minAdvertisedMTU < 1100){
     		Logger.error(this, "It shouldn't happen : we disabled the MTU detection algorithm because the advertised MTU is smallish !! ("+node.ipDetector.getMinimumDetectedMTU()+')'); 
-    		return maxAllowedMTU - overhead;
-    	}else
-    		return (minAdvertisedMTU < maxAllowedMTU ? minAdvertisedMTU : maxAllowedMTU) - overhead;
-    	// CompuServe use 1400 MTU; AOL claim 1450; DFN@home use 1448.
-    	// http://info.aol.co.uk/broadband/faqHomeNetworking.adp
-    	// http://www.compuserve.de/cso/hilfe/linux/hilfekategorien/installation/contentview.jsp?conid=385700
-    	// http://www.studenten-ins-netz.net/inhalt/service_faq.html
-    	// officially GRE is 1476 and PPPoE is 1492.
-    	// unofficially, PPPoE is often 1472 (seen in the wild). Also PPPoATM is sometimes 1472.
+    		return MAX_ALLOWED_MTU - UDP_HEADERS_LENGTH;
+    	} else
+    		return (minAdvertisedMTU < MAX_ALLOWED_MTU ? minAdvertisedMTU : MAX_ALLOWED_MTU) - UDP_HEADERS_LENGTH;
     	// UDP/IP header is 28 bytes.
     }
 
