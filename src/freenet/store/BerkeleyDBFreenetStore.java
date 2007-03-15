@@ -203,7 +203,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 				tmp.checkForHoles(tmp.countCHKBlocksFromFile(), false);
 				
-				tmp.maybeShrink(true, true);
+				tmp.maybeOfflineShrink(true);
 				
 			} else {
 				
@@ -566,7 +566,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			System.out.println("Keys in store: db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+" / max "+maxChkBlocks);
 			
 			if(!noCheck) {
-				maybeShrink(dontCheckForHolesShrinking, true);
+				maybeOfflineShrink(dontCheckForHolesShrinking);
 				chkBlocksFromFile = countCHKBlocksFromFile();
 				chkBlocksInStore = Math.max(chkBlocksInStore, chkBlocksFromFile);
 			}
@@ -629,23 +629,51 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private Object shrinkLock = new Object();
 	private boolean shrinking = false;
 	
-	private void maybeShrink(boolean dontCheckForHoles, boolean offline) throws DatabaseException, IOException {
-		try {
-			synchronized(shrinkLock) { if(shrinking) return; shrinking = true; };
-			if(chkBlocksInStore <= maxChkBlocks) return;
-			if(offline)
-				maybeSlowShrink(dontCheckForHoles, offline);
-			else {
-				if(chkBlocksInStore * 0.9 > maxChkBlocks) {
-					Logger.error(this, "Doing quick and indiscriminate online shrink. Offline shrinks will preserve the LRU, this doesn't.");
-					maybeQuickShrink(offline);
-				} else {
-					Logger.error(this, "Online shrink only supported for small deltas because online shrink does not preserve LRU order. Suggest you restart the node.");
-				}
-			}
-		} finally {
-			synchronized(shrinkLock) { shrinking = false; };
+	/**
+	 * Do an offline shrink, if necessary. Will not return until completed.
+	 * @param dontCheckForHoles If true, don't check for holes.
+	 * @throws DatabaseException
+	 * @throws IOException
+	 */
+	private void maybeOfflineShrink(boolean dontCheckForHoles) throws DatabaseException, IOException {
+		if(chkBlocksInStore <= maxChkBlocks) return;
+		maybeSlowShrink(dontCheckForHoles, true);
+	}
+
+	/**
+	 * Do an online shrink, if necessary. Non-blocking i.e. it will do the shrink on another thread.
+	 * @param forceBigOnlineShrinks If true, force the node to shrink the store immediately even if
+	 * it is a major (more than 10%) shrink. Normally this is not allowed because online shrinks do not
+	 * preserve the most recently used data; the best thing to do is to restart the node and let it do
+	 * an offline shrink.
+	 * @throws DatabaseException If a database error occurs.
+	 * @throws IOException If an I/O error occurs.
+	 * @return True if the database will be shrunk in the background (or the database is already small 
+	 * enough), false if it is not possible to shrink it because a large shrink was requested and we 
+	 * don't want to do a large online shrink.
+	 */
+	private boolean maybeOnlineShrink(boolean forceBigOnlineShrinks) throws DatabaseException, IOException {
+		synchronized(this) {
+			if(chkBlocksInStore <= maxChkBlocks) return true;
 		}
+		if(chkBlocksInStore * 0.9 > maxChkBlocks || forceBigOnlineShrinks) {
+			Runnable r = new Runnable() {
+				public void run() {
+					try {
+						synchronized(shrinkLock) { if(shrinking) return; shrinking = true; };
+						maybeQuickShrink(false);
+					} catch (Throwable t) {
+						Logger.error(this, "Online shrink failed: "+t, t);
+					} finally {
+						synchronized(shrinkLock) { shrinking = false; };
+					}
+				}
+			};
+			Thread t = new Thread(r);
+			t.setDaemon(true);
+			t.start();
+			return true;
+		} else return false;
 	}
 	
 	private void maybeSlowShrink(boolean dontCheckForHoles, boolean inStartUp) throws DatabaseException, IOException {
@@ -1107,7 +1135,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		lastRecentlyUsed = getMaxRecentlyUsed();
 		
 		if(!noCheck) {
-			maybeShrink(true, true);
+			maybeOfflineShrink(true);
 		}
 		
 //		 Add shutdownhook
@@ -2170,25 +2198,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	}
     }
 
-	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException {
+	public void setMaxKeys(long maxStoreKeys, boolean forceBigShrink) throws DatabaseException, IOException {
 		synchronized(this) {
 			maxChkBlocks = maxStoreKeys;
 		}
-		if(shrinkNow) {
-			Thread t = new Thread(new Runnable() {
-				public void run() {
-					try {
-						maybeShrink(true, false);
-					} catch (DatabaseException e) {
-						Logger.error(this, "Cannot shrink: "+e, e);
-					} catch (IOException e) {
-						Logger.error(this, "Cannot shrink: "+e, e);
-					}
-				}
-			});
-			t.setDaemon(true);
-			t.start();
-		}
+		maybeOnlineShrink(false);
 	}
     
     public long getMaxKeys() {

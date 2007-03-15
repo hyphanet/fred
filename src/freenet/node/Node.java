@@ -276,6 +276,10 @@ public class Node {
 	private long maxStoreKeys;
 	/** The maximum size of the datastore. Kept to avoid rounding turning 5G into 5368698672 */
 	private long maxTotalDatastoreSize;
+	/** If true, store shrinks occur immediately even if they are over 10% of the store size. If false,
+	 * we just set the storeSize and do an offline shrink on the next startup. Online shrinks do not 
+	 * preserve the most recently used data so are not recommended. */
+	private boolean storeForceBigShrinks;
 	
 	private StatsConfig statsConf;
 	/* These are private because must be protected by synchronized(this) */
@@ -1153,8 +1157,25 @@ public class Node {
 						new NodeNameCallback(this)); 	 
 		myName = nodeConfig.getString("name"); 	 
 
-		
 		// Datastore
+		
+		nodeConfig.register("storeForceBigShrinks", false, sortOrder++, true, false, "Do large store shrinks immediately", "Whether to do large store shrinks (over 10%) immediately (rather than waiting for the next node restart). Online shrinks do not preserve the most recently used data, so this is not recommended; use it only if you must have an immediate result.",
+				new BooleanCallback() {
+
+					public boolean get() {
+						synchronized(Node.this) {
+							return storeForceBigShrinks;
+						}
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						synchronized(Node.this) {
+							storeForceBigShrinks = val;
+						}
+					}
+			
+		});
+		
 		nodeConfig.register("storeSize", "1G", sortOrder++, false, true, "Store size in bytes", "Store size in bytes", 
 				new LongCallback() {
 
