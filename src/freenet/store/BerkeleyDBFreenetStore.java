@@ -638,7 +638,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			else {
 				if(chkBlocksInStore * 0.9 > maxChkBlocks) {
 					Logger.error(this, "Doing quick and indiscriminate online shrink. Offline shrinks will preserve the LRU, this doesn't.");
-					maybeQuickShrink(dontCheck);
+					maybeQuickShrink(offline);
 				} else {
 					Logger.error(this, "Online shrink only supported for small deltas because online shrink does not preserve LRU order. Suggest you restart the node.");
 				}
