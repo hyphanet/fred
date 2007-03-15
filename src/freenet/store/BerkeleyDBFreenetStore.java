@@ -946,7 +946,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	
 	/**
 	 * Shrink the store, on the fly/quickly.
-	 * @param offline If true, keep going until the store has shrunk enough.
+	 * @param offline If false, keep going until the store has shrunk enough.
 	 * @throws DatabaseException
 	 * @throws IOException
 	 */
