@@ -35,7 +35,7 @@ import freenet.support.HexUtil;
  */
 public final class SHA1 implements Digest {
 
-    protected static boolean alwaysThisOne = false;
+    private static boolean alwaysThisOne = false;
     
     public static Digest getInstance(boolean needProgressive) {
 	if(alwaysThisOne) needProgressive = true;
