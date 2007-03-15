@@ -629,12 +629,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private Object shrinkLock = new Object();
 	private boolean shrinking = false;
 	
-	private void maybeShrink(boolean dontCheck, boolean offline) throws DatabaseException, IOException {
+	private void maybeShrink(boolean dontCheckForHoles, boolean offline) throws DatabaseException, IOException {
 		try {
 			synchronized(shrinkLock) { if(shrinking) return; shrinking = true; };
 			if(chkBlocksInStore <= maxChkBlocks) return;
 			if(offline)
-				maybeSlowShrink(dontCheck, offline);
+				maybeSlowShrink(dontCheckForHoles, offline);
 			else {
 				if(chkBlocksInStore * 0.9 > maxChkBlocks) {
 					Logger.error(this, "Doing quick and indiscriminate online shrink. Offline shrinks will preserve the LRU, this doesn't.");
@@ -648,7 +648,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 	
-	private void maybeSlowShrink(boolean dontCheck, boolean inStartUp) throws DatabaseException, IOException {
+	private void maybeSlowShrink(boolean dontCheckForHoles, boolean inStartUp) throws DatabaseException, IOException {
 		Vector wantedKeep = new Vector(); // keep; content is wanted, and is in the right place
 		Vector unwantedIgnore = new Vector(); // ignore; content is not wanted, and is not in the right place
 		Vector wantedMove = new Vector(); // content is wanted, but is in the wrong part of the store
@@ -663,7 +663,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks+" (from db "+chkDB.count()+" from file "+countCHKBlocksFromFile()+ ')');
     	
-    	if(!dontCheck)
+    	if(!dontCheckForHoles)
     		checkForHoles(maxChkBlocks, true);
     	
     	WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000 + chkBlocksInStore * 100))); // 10 per second
