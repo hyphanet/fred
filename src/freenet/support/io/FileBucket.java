@@ -49,8 +49,15 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		this.file = file;
 		this.deleteOnFinalize = deleteOnFinalize;
 		this.deleteOnFree = deleteOnFree;
-		if(deleteOnExit)
-			file.deleteOnExit();
+		if(deleteOnExit) {
+			try {
+				file.deleteOnExit();
+			} catch (NullPointerException e) {
+				Logger.error(this, "Impossible: "+e, e);
+				System.err.println("Impossible: "+e);
+				e.printStackTrace();
+			}
+		}
 		// Useful for finding temp file leaks.
 		// System.err.println("-- FileBucket.ctr(0) -- " +
 		// file.getAbsolutePath());
