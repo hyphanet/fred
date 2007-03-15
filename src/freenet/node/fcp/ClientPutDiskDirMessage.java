@@ -87,7 +87,8 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not directory and not file: "+filelist[i], identifier, global);
 	        	}
 	        } else {
-	        	throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not readable or doesn't exist: "+filelist[i], identifier, global);
+	        	if(!allowUnreadableFiles)
+	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not readable or doesn't exist: "+filelist[i], identifier, global);
 	        }
     	}
     	return ret;
