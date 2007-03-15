@@ -166,7 +166,7 @@ public class TimeSortedHashtable {
     	return values;
     }
 
-	public int countValuesAfter(long t) {
+	public synchronized int countValuesAfter(long t) {
     	Long time = new Long(t);
     	
     	Set s = elements.tailSet(time);

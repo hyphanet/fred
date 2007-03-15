@@ -1048,9 +1048,7 @@ public class LocationManager {
     
     //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
     public int getNetworkSizeEstimate(long timestamp) {
-    	synchronized (knownLocs) {
-    		return knownLocs.countValuesAfter(timestamp);
-    	}
+   		return knownLocs.countValuesAfter(timestamp);
 	}
     
     /**
