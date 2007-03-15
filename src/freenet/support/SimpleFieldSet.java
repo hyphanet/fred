@@ -460,7 +460,7 @@ public class SimpleFieldSet {
 		public String nextKey() {
 			synchronized(SimpleFieldSet.this) {
 				String ret = null;
-				if(ret == null && valuesIterator.hasNext()) {
+				if(valuesIterator != null && valuesIterator.hasNext()) {
 					return prefix + valuesIterator.next();
 				}
 				while(true) {
