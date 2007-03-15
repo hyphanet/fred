@@ -124,10 +124,14 @@ class SingleFileInserter implements ClientPutState {
             } catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("OffThreadCompressor thread above failed.");
+				// Might not be heap, so try anyway
+				cb.onFailure(new InserterException(InserterException.INTERNAL_ERROR, e, null), SingleFileInserter.this);
             } catch (Throwable t) {
                 Logger.error(this, "Caught in OffThreadCompressor: "+t, t);
                 System.err.println("Caught in OffThreadCompressor: "+t);
                 t.printStackTrace();
+                // Try to fail gracefully
+				cb.onFailure(new InserterException(InserterException.INTERNAL_ERROR, t, null), SingleFileInserter.this);
 			}
 		}
 	}
