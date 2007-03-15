@@ -16,6 +16,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
@@ -120,6 +121,13 @@ class SingleFileInserter implements ClientPutState {
 				tryCompress();
 			} catch (InserterException e) {
 				cb.onFailure(e, SingleFileInserter.this);
+            } catch (OutOfMemoryError e) {
+				OOMHandler.handleOOM(e);
+				System.err.println("OffThreadCompressor thread above failed.");
+            } catch (Throwable t) {
+                Logger.error(this, "Caught in OffThreadCompressor: "+t, t);
+                System.err.println("Caught in OffThreadCompressor: "+t);
+                t.printStackTrace();
 			}
 		}
 	}

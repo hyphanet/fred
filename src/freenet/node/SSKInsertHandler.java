@@ -15,6 +15,7 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
 
 /**
@@ -73,6 +74,8 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
     public void run() {
         try {
         	realRun();
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {

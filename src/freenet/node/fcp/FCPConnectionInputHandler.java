@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.LineReadingInputStream;
 
@@ -30,6 +31,8 @@ public class FCPConnectionInputHandler implements Runnable {
 		} catch (IOException e) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Caught "+e, e);
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			t.printStackTrace();

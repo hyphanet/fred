@@ -147,6 +147,8 @@ public class RequestStarter implements Runnable {
 		while(true) {
 			try {
 				realRun();
+            } catch (OutOfMemoryError e) {
+				OOMHandler.handleOOM(e);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 			}

@@ -13,6 +13,7 @@ import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.transport.ip.IPUtil;
 
 /**
@@ -435,6 +436,8 @@ public class IPDetectorPluginManager {
 		public void run() {
 			try {
 				realRun();
+			} catch (OutOfMemoryError e) {
+				OOMHandler.handleOOM(e);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 			}

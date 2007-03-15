@@ -1,5 +1,8 @@
 package freenet.pluginmanager;
 
+import freenet.support.Logger;
+import freenet.support.OOMHandler;
+
 /**
  * Methods to handle a specific plugin (= set it up and start it)
  * 
@@ -58,8 +61,16 @@ public class PluginHandler {
 					return;
 			}
 			
-			if (plugin instanceof FredPlugin) {	
-				((FredPlugin)plugin).runPlugin(pr);
+			if (plugin instanceof FredPlugin) {
+				try {
+					((FredPlugin)plugin).runPlugin(pr);
+				} catch (OutOfMemoryError e) {
+					OOMHandler.handleOOM(e);
+				} catch (Throwable t) {
+					Logger.normal(this, "Caught Throwable while running plugin: "+t, t);
+					System.err.println("Caught Throwable while running plugin: "+t);
+					t.printStackTrace();
+				}
 			}
 			// If not FredPlugin, then the whole thing is aborted,
 			// and then this method will return, killing the thread

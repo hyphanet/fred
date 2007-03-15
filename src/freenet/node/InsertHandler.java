@@ -17,6 +17,7 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
 
 /**
@@ -70,6 +71,8 @@ public class InsertHandler implements Runnable, ByteCounter {
     public void run() {
         try {
         	realRun();
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {

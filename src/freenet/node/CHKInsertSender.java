@@ -18,6 +18,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 
 public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 	
@@ -210,6 +211,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         node.addInsertSender(myKey, origHTL, this);
         try {
         	realRun();
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
             int myStatus;

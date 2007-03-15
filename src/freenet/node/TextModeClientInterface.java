@@ -36,6 +36,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.api.Bucket;
@@ -91,6 +92,8 @@ public class TextModeClientInterface implements Runnable {
     		realRun();
     	} catch (IOException e) {
     		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Caught "+e, e);
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
     	} catch (Throwable t) {
     		Logger.error(this, "Caught "+t, t);
     	}
