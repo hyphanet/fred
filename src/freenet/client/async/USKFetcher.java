@@ -371,7 +371,7 @@ public class USKFetcher implements ClientGetState {
 		USKFetcherCallback[] cb;
 		synchronized(this) {
 			completed = true;
-			cb = (USKFetcherCallback[]) callbacks.toArray(new USKCheckerCallback[callbacks.size()]);
+			cb = (USKFetcherCallback[]) callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
 		}
 		for(int i=0;i<cb.length;i++)
 			cb[i].onCancelled();
