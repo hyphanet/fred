@@ -144,7 +144,9 @@ public class USKFetcher implements ClientGetState {
 		
 		public void cancel() {
 			cancelled = true;
-			if(checker != null) checker.cancel();
+			if(checker != null)
+				checker.cancel();
+			onCancelled();
 		}
 		
 		public void schedule() {
