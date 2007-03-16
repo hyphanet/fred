@@ -72,6 +72,8 @@ public abstract class FCPMessage {
 			return new ShutdownMessage();
 		if(name.equals(SubscribeUSKMessage.name))
 			return new SubscribeUSKMessage(fs);
+		if(name.equals(TestDDAMessage.name))
+			return new TestDDAMessage(fs);
 		if(name.equals(WatchGlobal.name))
 			return new WatchGlobal(fs);
 		if(name.equals("Void"))
