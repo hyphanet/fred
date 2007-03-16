@@ -131,7 +131,7 @@ public class UdpSocketManager extends Thread {
 	}
 
 	public UdpSocketManager(int listenPort, InetAddress bindto, Node node) throws SocketException {
-		super("UdpSocketManager sender thread on port " + listenPort);
+		super("UdpSocketManager packet receiver thread on port " + listenPort);
 		this.node = node;
 		_bindTo = bindto;
 		    // Keep the Updater code in, just commented out, for now
