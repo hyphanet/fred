@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.util.HashMap;
+import java.util.Vector;
 
 import freenet.client.FetchContext;
 import freenet.keys.USK;
@@ -93,6 +94,7 @@ public class USKManager {
 	public void startTemporaryBackgroundFetcher(USK usk) {
 		USK clear = usk.clearCopy();
 		USKFetcher sched = null;
+		Vector toCancel = null;
 		synchronized(this) {
 			USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 			if(f == null) {
@@ -105,7 +107,8 @@ public class USKManager {
 				USK del = (USK) temporaryBackgroundFetchersLRU.pop();
 				USKFetcher fetcher = (USKFetcher) backgroundFetchersByClearUSK.get(del.clearCopy());
 				if(!fetcher.hasSubscribers()) {
-					fetcher.cancel();
+					if(toCancel == null) toCancel = new Vector(2);
+					toCancel.add(fetcher);
 					backgroundFetchersByClearUSK.remove(fetcher);
 				} else {
 					if(Logger.shouldLog(Logger.MINOR, this))
@@ -113,6 +116,12 @@ public class USKManager {
 					// It will burn itself out anyway as it's a temp fetcher, so no big harm here.
 					fetcher.killOnLoseSubscribers();
 				}
+			}
+		}
+		if(toCancel != null) {
+			for(int i=0;i<toCancel.size();i++) {
+				USKFetcher fetcher = (USKFetcher) toCancel.get(i);
+				fetcher.cancel();
 			}
 		}
 		if(sched != null) sched.schedule();
@@ -179,6 +188,7 @@ public class USKManager {
 	}
 	
 	public void unsubscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch) {
+		USKFetcher toCancel = null;
 		synchronized(this) {
 			USK clear = origUSK.clearCopy();
 			USKCallback[] callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
@@ -209,12 +219,13 @@ public class USKManager {
 				f.removeSubscriber(cb);
 				if(!f.hasSubscribers()) {
 					if(!temporaryBackgroundFetchersLRU.contains(clear)) {
-						f.cancel();
+						toCancel = f;
 						backgroundFetchersByClearUSK.remove(clear);
 					}
 				}
 			}
 		}
+		if(toCancel != null) toCancel.cancel();
 	}
 	
 	/**

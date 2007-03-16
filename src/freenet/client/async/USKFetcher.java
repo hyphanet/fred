@@ -385,12 +385,24 @@ public class USKFetcher implements ClientGetState {
 		onDNF(attempt);
 	}
 
-	private synchronized void cancelBefore(long curLatest) {
-		for(Iterator i=runningAttempts.iterator();i.hasNext();) {
-			USKAttempt att = (USKAttempt) (i.next());
-			if(att.number < curLatest) {
+	private void cancelBefore(long curLatest) {
+		Vector v = null;
+		int count = 0;
+		synchronized(this) {
+			for(Iterator i=runningAttempts.iterator();i.hasNext();) {
+				USKAttempt att = (USKAttempt) (i.next());
+				if(att.number < curLatest) {
+					if(v == null) v = new Vector(runningAttempts.size()-count);
+					v.add(att);
+					i.remove();
+				}
+				count++;
+			}
+		}
+		if(v != null) {
+			for(int i=0;i<v.size();i++) {
+				USKAttempt att = (USKAttempt) v.get(i);
 				att.cancel();
-				i.remove();
 			}
 		}
 	}

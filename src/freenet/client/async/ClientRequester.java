@@ -33,7 +33,7 @@ public abstract class ClientRequester {
 		this.client = client;
 	}
 
-	public void cancel() {
+	public synchronized void cancel() {
 		cancelled = true;
 	}
 

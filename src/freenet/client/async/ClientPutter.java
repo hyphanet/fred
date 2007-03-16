@@ -169,14 +169,15 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 	
 	public void cancel() {
+		ClientPutState oldState = null;
 		synchronized(this) {
 			if(cancelled) return;
 			super.cancel();
-			if(currentState != null)
-				currentState.cancel();
+			oldState = currentState;
 			if(startedStarting) return;
 			startedStarting = true;
 		}
+		if(oldState != null) oldState.cancel();
 		onFailure(new InserterException(InserterException.CANCELLED), null);
 	}
 	

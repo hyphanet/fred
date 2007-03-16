@@ -236,13 +236,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// FIXME do something.
 	}
 
-	public synchronized void start() throws InserterException {
+	public void start() throws InserterException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Starting "+this);
 		PutHandler[] running;
-		running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 
-		if(cancelled) cancel();
+		boolean cancel = false;
+		
+		synchronized(this) {
+		cancel = cancelled;
+		if(!cancelled) {
+		running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 		try {
 			for(int i=0;i<running.length;i++) {
 				running[i].start();
@@ -257,6 +261,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			cancelAndFinish();
 			throw e;
 		}
+		}
+		}
+		if(cancel) cancel();
 	}
 	
 	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) throws InserterException {

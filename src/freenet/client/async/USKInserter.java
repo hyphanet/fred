@@ -177,12 +177,14 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		return parent;
 	}
 
-	public synchronized void cancel() {
-		finished = true;
+	public void cancel() {
 		if(fetcher != null)
 			fetcher.cancel();
 		if(sbi != null)
 			sbi.cancel();
+		synchronized(this) {
+			finished = true;
+		}
 		cb.onFailure(new InserterException(InserterException.CANCELLED), this);
 	}
 
