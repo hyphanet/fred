@@ -12,7 +12,7 @@ import freenet.support.Logger;
 /**
  * A low-level key fetch which can be sent immediately. @see SendableRequest
  */
-public abstract class SendableGet implements SendableRequest {
+public abstract class SendableGet extends SendableRequest {
 
 	/** Is this an SSK? */
 	public abstract boolean isSSK();

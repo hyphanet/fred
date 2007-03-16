@@ -20,13 +20,14 @@ import freenet.node.LowLevelPutException;
 import freenet.node.NodeClientCore;
 import freenet.node.SendableInsert;
 import freenet.support.Logger;
+import freenet.support.RandomGrabArray;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /**
  * Insert *ONE KEY*.
  */
-public class SingleBlockInserter implements SendableInsert, ClientPutState {
+public class SingleBlockInserter extends SendableInsert implements ClientPutState {
 
 	private static boolean logMINOR;
 	final Bucket sourceData;

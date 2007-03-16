@@ -12,7 +12,7 @@ import freenet.support.Logger;
  * block. Not designed for use by the client layer. Used by the node layer for the
  * 1 in every 200 successful requests which starts an insert.
  */
-public class SimpleSendableInsert implements SendableInsert {
+public class SimpleSendableInsert extends SendableInsert {
 
 	public final NodeClientCore node;
 	public final KeyBlock block;

@@ -9,12 +9,12 @@ package freenet.node;
  * then, when it is time to send, create a thread, send the request, and call the 
  * callback below.
  */
-public interface SendableInsert extends SendableRequest {
+public abstract class SendableInsert extends SendableRequest {
 
 	/** Called when we successfully insert the data */
-	public void onSuccess();
+	public abstract void onSuccess();
 	
 	/** Called when we don't! */
-	public void onFailure(LowLevelPutException e);
+	public abstract void onFailure(LowLevelPutException e);
 
 }
