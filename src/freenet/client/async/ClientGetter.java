@@ -156,9 +156,9 @@ public class ClientGetter extends BaseClientGetter {
 	public void cancel() {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Cancelling "+this);
-		super.cancel();
 		ClientGetState s;
 		synchronized(this) {
+			super.cancel();
 			s = currentState;
 		}
 		if(s != null) {
