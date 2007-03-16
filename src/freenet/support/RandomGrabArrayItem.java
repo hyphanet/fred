@@ -15,4 +15,12 @@ public interface RandomGrabArrayItem {
 	 * it needs to return true if there are less than two requests on this object. */
 	public boolean canRemove();
 	
+	/** Does this RandomGrabArrayItem support remembering where it is registered? */
+	public boolean knowsParentGrabArray();
+	
+	/** Notify the item that it has been registered on a specific RandomGrabArray */
+	public void setParentGrabArray(RandomGrabArray parent);
+	
+	/** If the item remembers its parent RandomGrabArray, return it */
+	public RandomGrabArray getParentGrabArray();
 }

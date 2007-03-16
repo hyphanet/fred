@@ -1,6 +1,7 @@
 package freenet.node;
 
 import freenet.client.async.ClientRequester;
+import freenet.support.RandomGrabArray;
 import freenet.support.RandomGrabArrayItem;
 
 /**
@@ -8,6 +9,8 @@ import freenet.support.RandomGrabArrayItem;
  * on the ClientRequestScheduler.
  */
 public abstract class SendableRequest implements RandomGrabArrayItem {
+	
+	protected RandomGrabArray parentGrabArray;
 	
 	/** Get the priority class of the request. */
 	public abstract short getPriorityClass();
@@ -25,5 +28,17 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	
 	/** Get the ClientRequest */
 	public abstract ClientRequester getClientRequest();
+	
+	public synchronized RandomGrabArray getParentGrabArray() {
+		return parentGrabArray;
+	}
+	
+	public boolean knowsParentGrabArray() {
+		return true;
+	}
+	
+	public synchronized void setParentGrabArray(RandomGrabArray parent) {
+		parentGrabArray = parent;
+	}
 	
 }

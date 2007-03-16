@@ -29,7 +29,8 @@ public class RandomGrabArray {
 		contents = new HashSet();
 	}
 	
-	public synchronized void add(RandomGrabArrayItem req) {
+	public void add(RandomGrabArrayItem req) {
+		synchronized(this) {
 		if(contents.contains(req)) return;
 		if(req.isCancelled()) {
 			if(Logger.shouldLog(Logger.MINOR, this))
@@ -43,9 +44,13 @@ public class RandomGrabArray {
 			reqs = r;
 		}
 		reqs[index++] = req;
+		}
+		req.setParentGrabArray(this);
 	}
 	
-	public synchronized RandomGrabArrayItem removeRandom() {
+	public RandomGrabArrayItem removeRandom() {
+		RandomGrabArrayItem ret;
+		synchronized(this) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		while(true) {
 			if(index == 0) {
@@ -53,7 +58,7 @@ public class RandomGrabArray {
 				return null;
 			}
 			int i = rand.nextInt(index);
-			RandomGrabArrayItem ret = reqs[i];
+			ret = reqs[i];
 			if(ret != null && !ret.canRemove()) return ret;
 			reqs[i] = reqs[--index];
 			reqs[index] = null;
@@ -67,20 +72,26 @@ public class RandomGrabArray {
 				System.arraycopy(reqs, 0, r, 0, r.length);
 				reqs = r;
 			}
-			if((ret != null) && !ret.isCancelled()) return ret;
+			if((ret != null) && !ret.isCancelled()) break;
 		}
+		}
+		ret.setParentGrabArray(null);
+		return ret;
 	}
 	
-	public synchronized void remove(RandomGrabArrayItem it) {
+	public void remove(RandomGrabArrayItem it) {
+		synchronized(this) {
 		if(!contents.contains(it)) return;
 		contents.remove(it);
 		for(int i=0;i<index;i++) {
 			if((reqs[i] == it) || reqs[i].equals(it)) {
 				reqs[i] = reqs[--index];
 				reqs[index] = null;
-				return;
+				break;
 			}
 		}
+		}
+		it.setParentGrabArray(null);
 	}
 
 	public synchronized boolean isEmpty() {
