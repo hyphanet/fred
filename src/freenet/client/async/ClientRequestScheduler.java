@@ -349,18 +349,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void reregisterAll(ClientRequester request) {
+		SendableRequest[] reqs;
 		synchronized(this) {
 			HashSet h = (HashSet) allRequestsByClientRequest.get(request);
-			if(h != null) {
-				Iterator i = h.iterator();
-				while(i.hasNext()) {
-					SendableRequest req = (SendableRequest) i.next();
-					// Don't actually remove it as removing it is a rather slow operation
-					// It will be removed when removeFirst() reaches it.
-					//grabArray.remove(req);
-					innerRegister(req);
-				}
-			}
+			if(h == null) return;
+			reqs = (SendableRequest[]) h.toArray(new SendableRequest[h.size()]);
+		}
+		
+		for(int i=0;i<reqs.length;i++) {
+			SendableRequest req = reqs[i];
+			// Don't actually remove it as removing it is a rather slow operation
+			// It will be removed when removeFirst() reaches it.
+			//grabArray.remove(req);
+			innerRegister(req);
 		}
 		synchronized(starter) {
 			starter.notifyAll();
