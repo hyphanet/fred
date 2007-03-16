@@ -1,6 +1,6 @@
 package freenet.client.async;
 
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 
 import freenet.support.Logger;
@@ -21,7 +21,7 @@ public class BackgroundBlockEncoder implements Runnable {
 	public void queue(SingleBlockInserter sbi) {
 		if(sbi.isCancelled()) return;
 		if(sbi.resultingURI != null) return;
-		WeakReference ref = new WeakReference(sbi);
+		SoftReference ref = new SoftReference(sbi);
 		synchronized(this) {
 			queue.add(ref);
 			Logger.minor(this, "Queueing encode of "+sbi);
@@ -36,7 +36,7 @@ public class BackgroundBlockEncoder implements Runnable {
 				if(sbis[i].isCancelled()) continue;
 				if(sbis[i].resultingURI != null) continue;
 				Logger.minor(this, "Queueing encode of "+sbis[i]);
-				WeakReference ref = new WeakReference(sbis[i]);
+				SoftReference ref = new SoftReference(sbis[i]);
 				queue.add(ref);
 			}
 			notifyAll();
@@ -55,7 +55,7 @@ public class BackgroundBlockEncoder implements Runnable {
 					}
 				}
 				while(!queue.isEmpty()) {
-					WeakReference ref = (WeakReference) queue.remove(queue.size()-1);
+					SoftReference ref = (SoftReference) queue.remove(queue.size()-1);
 					sbi = (SingleBlockInserter) ref.get();
 					if(sbi != null) break;
 				}

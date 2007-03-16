@@ -4,7 +4,7 @@
 package freenet.client.async;
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.net.MalformedURLException;
 
 import freenet.client.FailureCodeTracker;
@@ -40,7 +40,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	private final FailureCodeTracker errors;
 	private boolean finished;
 	private final boolean dontSendEncoded;
-	private WeakReference refToClientKeyBlock;
+	private SoftReference refToClientKeyBlock;
 	final int token; // for e.g. splitfiles
 	private final Object tokenObject;
 	final boolean isMetadata;
@@ -113,7 +113,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 			}
 			block = innerEncode();
 			refToClientKeyBlock = 
-				new WeakReference(block);
+				new SoftReference(block);
 			shouldSend = (resultingURI == null);
 			resultingURI = block.getClientKey().getURI();
 		}
