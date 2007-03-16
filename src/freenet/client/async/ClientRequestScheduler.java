@@ -359,9 +359,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
-			// Don't actually remove it as removing it is a rather slow operation
-			// It will be removed when removeFirst() reaches it.
-			//grabArray.remove(req);
 			RandomGrabArray array = req.getParentGrabArray();
 			if(array != null) array.remove(req);
 			innerRegister(req);
