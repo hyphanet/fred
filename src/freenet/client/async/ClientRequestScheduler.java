@@ -18,8 +18,10 @@ import freenet.node.Node;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
+import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
+import freenet.support.RandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithClient;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SortedVectorByNumber;
@@ -167,8 +169,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void register(SendableRequest req) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
-		if((!isInsertScheduler) && (req instanceof ClientPutter))
-			throw new IllegalArgumentException("Expected a ClientPut: "+req);
+		if((!isInsertScheduler) && (req instanceof SendableInsert))
+			throw new IllegalArgumentException("Expected a SendableGet: "+req);
 		if(req instanceof SendableGet) {
 			SendableGet getter = (SendableGet)req;
 			if(!getter.ignoreStore()) {
