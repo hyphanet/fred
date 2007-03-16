@@ -1196,12 +1196,12 @@ public class Node {
 							maxCacheKeys = maxTotalKeys - maxStoreKeys;
 						}
 						try {
-							chkDatastore.setMaxKeys(maxStoreKeys, false);
-							chkDatacache.setMaxKeys(maxCacheKeys, false);
-							pubKeyDatastore.setMaxKeys(maxStoreKeys, false);
-							pubKeyDatacache.setMaxKeys(maxCacheKeys, false);
-							sskDatastore.setMaxKeys(maxStoreKeys, false);
-							sskDatacache.setMaxKeys(maxCacheKeys, false);
+							chkDatastore.setMaxKeys(maxStoreKeys, storeForceBigShrinks);
+							chkDatacache.setMaxKeys(maxCacheKeys, storeForceBigShrinks);
+							pubKeyDatastore.setMaxKeys(maxStoreKeys, storeForceBigShrinks);
+							pubKeyDatacache.setMaxKeys(maxCacheKeys, storeForceBigShrinks);
+							sskDatastore.setMaxKeys(maxStoreKeys, storeForceBigShrinks);
+							sskDatacache.setMaxKeys(maxCacheKeys, storeForceBigShrinks);
 						} catch (IOException e) {
 							// FIXME we need to be able to tell the user.
 							Logger.error(this, "Caught "+e+" resizing the datastore", e);
