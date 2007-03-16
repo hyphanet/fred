@@ -8,6 +8,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientSSK;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
+import freenet.support.RandomGrabArray;
 
 public abstract class BaseSingleFileFetcher extends SendableGet {
 
@@ -75,8 +76,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return ctx.ignoreStore;
 	}
 
-	public synchronized void cancel() {
-		cancelled = true;
+	public void cancel() {
+		synchronized(this) {
+			cancelled = true;
+		}
+		RandomGrabArray arr = getParentGrabArray();
+		if(arr != null) arr.remove(this);
 	}
 
 	public synchronized boolean isCancelled() {

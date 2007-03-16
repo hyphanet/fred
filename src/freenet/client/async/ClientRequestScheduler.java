@@ -5,7 +5,6 @@ package freenet.client.async;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -363,6 +362,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 			// Don't actually remove it as removing it is a rather slow operation
 			// It will be removed when removeFirst() reaches it.
 			//grabArray.remove(req);
+			RandomGrabArray array = req.getParentGrabArray();
+			if(array != null) array.remove(req);
 			innerRegister(req);
 		}
 		synchronized(starter) {
