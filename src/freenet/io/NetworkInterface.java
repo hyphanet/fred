@@ -333,7 +333,7 @@ public class NetworkInterface {
 					if (addressMatched) {
 						synchronized (syncObject) {
 							acceptedSockets.add(clientSocket);
-							syncObject.notify();
+							syncObject.notifyAll();
 						}
 					} else {
 						try {

@@ -60,7 +60,7 @@ public class StandardOnionFECCodec extends FECCodec {
 				Logger.minor(this, "Splitfile encode: k="+k+", n="+n+" encode took "+(endTime-startTime)+"ms");
 			finished = true;
 			synchronized(this) {
-				notify();
+				notifyAll();
 			}
 		}
 
@@ -187,7 +187,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		} finally {
 			synchronized(runningDecodesSync) {
 				runningDecodes--;
-				runningDecodesSync.notify();
+				runningDecodesSync.notifyAll();
 			}
 		}
 	}
@@ -359,7 +359,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		} finally {
 			synchronized(runningDecodesSync) {
 				runningDecodes--;
-				runningDecodesSync.notify();
+				runningDecodesSync.notifyAll();
 			}
 		}
 	}

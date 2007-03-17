@@ -862,7 +862,7 @@ public class FileLoggerHook extends LoggerHook {
 				listBytes += (buf.length + LINE_OVERHEAD);
 			}
 			if (sz == 0)
-				list.notify();
+				list.notifyAll();
 		}
 	}
 

@@ -192,7 +192,7 @@ public class BlockTransmitter {
 						synchronized(_senderThread) {
 							_unsent.addLast(new Integer(packetNo));
 							_sentPackets.setBit(packetNo, false);
-							_senderThread.notify();
+							_senderThread.notifyAll();
 						}
 					}
 

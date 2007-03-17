@@ -313,7 +313,7 @@ public class UdpSocketManager extends Thread {
 					f.setMessage(null);
 					synchronized (f) {
 						i.remove();
-						f.notify();
+						f.notifyAll();
 					}
 				} else { // Because _filters are in order of timeout, we
 					// can abort the iteration as soon as we find one that
@@ -361,7 +361,7 @@ public class UdpSocketManager extends Thread {
 					f.setMessage(m);
 					synchronized (f) {
 						i.remove();
-						f.notify();
+						f.notifyAll();
 					}
 					if(logMINOR) Logger.minor(this, "Matched: "+f);
 					break; // Only one match permitted per message
@@ -410,7 +410,7 @@ public class UdpSocketManager extends Thread {
 						f.setMessage(m);
 						synchronized (f) {
 							i.remove();
-							f.notify();
+							f.notifyAll();
 						}
 						if(logMINOR) Logger.minor(this, "Matched: "+f);
 						break; // Only one match permitted per message

@@ -72,7 +72,7 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 		synchronized (this) {
 			if(hasNodeStarted) Logger.error(this, "It has already been called! that shouldn't happen!");
 			this.hasNodeStarted = true;
-			notify();
+			notifyAll();
 		}
 	}
 }

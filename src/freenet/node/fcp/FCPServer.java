@@ -297,7 +297,7 @@ public class FCPServer implements Runnable {
 			FCPServerPersister p = server.persister;
 			if(p != null) {
 				synchronized(p) {
-					p.notify();
+					p.notifyAll();
 				}
 			}
 		}

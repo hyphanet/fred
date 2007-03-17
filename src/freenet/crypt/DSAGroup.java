@@ -203,7 +203,7 @@ public class DSAGroup extends CryptoKey {
                 qg.qs.removeElementAt(0);
 
                 synchronized (qg) {
-                    qg.notify();
+                    qg.notifyAll();
                 }
             } else
                 q = makePrime(DSAGroup.Q_BIT_LENGTH, 80, r);

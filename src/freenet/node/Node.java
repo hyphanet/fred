@@ -3493,7 +3493,7 @@ public class Node {
 
 		void interrupt() {
 			synchronized(this) {
-				notify();
+				notifyAll();
 			}
 		}
 		
