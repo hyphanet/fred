@@ -27,6 +27,8 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 	protected boolean readOnly;
 	protected boolean deleteOnFinalize;
 	protected boolean deleteOnFree;
+	protected final boolean deleteOnExit;
+	protected final boolean createFileOnly;
 	protected long length;
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
@@ -38,17 +40,26 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 	 * Creates a new FileBucket.
 	 * 
 	 * @param file The File to read and write to.
+	 * @param createFileOnly If true, create the file if it doesn't exist, but if it does exist,
+	 * throw a FileExistsException on any write operation. This is safe against symlink attacks
+	 * because we write to a temp file and then rename. It is technically possible that the rename
+	 * will clobber an existing file if there is a race condition, but since it will not write over
+	 * a symlink this is probably not dangerous. User-supplied filenames should in any case be
+	 * restricted by higher levels.
 	 * @param readOnly If true, any attempt to write to the bucket will result in an IOException.
 	 * Can be set later. Irreversible. @see isReadOnly(), setReadOnly()
 	 * @param deleteOnFinalize If true, delete the file on finalization. Reversible.
 	 * @param deleteOnExit If true, delete the file on a clean exit of the JVM. Irreversible - use with care!
 	 */
-	public FileBucket(File file, boolean readOnly, boolean deleteOnFinalize, boolean deleteOnExit, boolean deleteOnFree) {
+	public FileBucket(File file, boolean readOnly, boolean createFileOnly, boolean deleteOnFinalize, boolean deleteOnExit, boolean deleteOnFree) {
 		if(file == null) throw new NullPointerException();
+		file = file.getAbsoluteFile();
 		this.readOnly = readOnly;
+		this.createFileOnly = createFileOnly;
 		this.file = file;
 		this.deleteOnFinalize = deleteOnFinalize;
 		this.deleteOnFree = deleteOnFree;
+		this.deleteOnExit = deleteOnExit;
 		if(deleteOnExit) {
 			try {
 				file.deleteOnExit();
@@ -74,28 +85,28 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 	/**
 	 * Creates a new FileBucket in a random temporary file in the temporary
 	 * directory.
+	 * @throws IOException 
 	 */
-	public FileBucket(RandomSource random) {
+	public FileBucket(RandomSource random) throws IOException {
 		// **FIXME**/TODO: locking on tempDir needs to be checked by a Java guru for consistency
-		file =
-			new File(
-				tempDir,
-                    't'
-                            + Integer.toHexString(
-						Math.abs(random.nextInt())));
+		file = File.createTempFile(tempDir, ".freenet.tmp");
+		createFileOnly = true;
 		// Useful for finding temp file leaks.
 		//System.err.println("-- FileBucket.ctr(1) -- " +
 		// file.getAbsolutePath());
 		//(new Exception("get stack")).printStackTrace();
 		deleteOnFinalize = true;
+		deleteOnExit = true;
 		length = 0;
 		file.deleteOnExit();
 	}
 
 	public FileBucket(SimpleFieldSet fs, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
+		createFileOnly = true;
+		deleteOnExit = false;
 		String tmp = fs.get("Filename");
 		if(tmp == null) throw new CannotCreateFromFieldSetException("No filename");
-		this.file = new File(tmp);
+		this.file = new File(tmp).getAbsoluteFile();
 		tmp = fs.get("Length");
 		if(tmp == null) throw new CannotCreateFromFieldSetException("No length");
 		try {
@@ -112,19 +123,31 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		synchronized (this) {
 			if(readOnly)
 				throw new IOException("Bucket is read-only");
-
+			
+			if(createFileOnly && file.exists())
+				throw new FileExistsException(file);
+			
 			// FIXME: behaviour depends on UNIX semantics, to totally abstract
 			// it out we would have to kill the old write streams here
 			// FIXME: what about existing streams? Will ones on append append
 			// to the new truncated file? Do we want them to? What about
 			// truncated ones? We should kill old streams here, right?
-			return newFileBucketOutputStream(file.getPath(), ++fileRestartCounter);
+			return newFileBucketOutputStream(createFileOnly ? getTempfile() : file, file.getPath(), ++fileRestartCounter);
 		}
 	}
 
+	/**
+	 * Create a temporary file in the same directory as this file.
+	 */
+	protected File getTempfile() throws IOException {
+		File f = File.createTempFile(file.getName(), ".freenet-tmp", file.getParentFile());
+		if(deleteOnExit) f.deleteOnExit();
+		return f;
+	}
+	
 	protected FileBucketOutputStream newFileBucketOutputStream(
-		String s, long streamNumber) throws IOException {
-		return new FileBucketOutputStream(s, streamNumber);
+		File tempfile, String s, long streamNumber) throws IOException {
+		return new FileBucketOutputStream(tempfile, s, streamNumber);
 	}
 
 	protected synchronized void resetLength() {
@@ -134,11 +157,13 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 	class FileBucketOutputStream extends FileOutputStream {
 
 		private long restartCount;
+		private File tempfile;
 		
 		protected FileBucketOutputStream(
-			String s, long restartCount)
+			File tempfile, String s, long restartCount)
 			throws FileNotFoundException {
-			super(s, false);
+			super(tempfile, false);
+			this.tempfile = tempfile;
 			resetLength();
 			this.restartCount = restartCount;
 		}
@@ -171,6 +196,26 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 				confirmWriteSynchronized();
 				super.write(b);
 				length++;
+			}
+		}
+		
+		public void close() throws IOException {
+			try {
+				super.close();
+			} catch (IOException e) {
+				if(createFileOnly) tempfile.delete();
+				throw e;
+			}
+			if(createFileOnly) {
+				if(file.exists()) {
+					tempfile.delete();
+					throw new FileExistsException(file);
+				}
+				if(!tempfile.renameTo(file)) {
+					if(file.exists()) throw new FileExistsException(file);
+					tempfile.delete();
+					throw new IOException("Cannot rename file");
+				}
 			}
 		}
 	}

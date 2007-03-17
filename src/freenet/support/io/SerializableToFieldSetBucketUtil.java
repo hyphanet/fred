@@ -44,7 +44,7 @@ public class SerializableToFieldSetBucketUtil {
 					if(persistent.exists()) fnam = persistent;
 				}
 				f.register(fnam);
-				FileBucket fb = new FileBucket(fnam, false, false, false, true);
+				FileBucket fb = new FileBucket(fnam, false, true, false, false, true);
 				try {
 					PaddedEphemerallyEncryptedBucket eb = 
 						new PaddedEphemerallyEncryptedBucket(fb, 1024, len, decryptKey, random, true);

@@ -140,7 +140,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			if(!(f.exists() && f.isFile() && f.canRead()))
 				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, null, identifier, global);
 			dataLength = f.length();
-			FileBucket fileBucket = new FileBucket(f, true, false, false, false);
+			FileBucket fileBucket = new FileBucket(f, true, false, false, false, false);
 			this.bucket = fileBucket;
 			this.origFilename = f;
 			redirectTarget = null;

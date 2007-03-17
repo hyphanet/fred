@@ -229,7 +229,7 @@ public class ClientPut extends ClientPutBase {
 			origFilename = new File(fs.get("Filename"));
 			if(logMINOR)
 				Logger.minor(this, "Uploading from disk: "+origFilename+" for "+this);
-			data = new FileBucket(origFilename, true, false, false, false);
+			data = new FileBucket(origFilename, true, false, false, false, false);
 			targetURI = null;
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			origFilename = null;

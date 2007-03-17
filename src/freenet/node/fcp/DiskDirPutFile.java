@@ -31,7 +31,7 @@ public class DiskDirPutFile extends DirPutFile {
 	}
 
 	public Bucket getData() {
-		return new FileBucket(file, true, false, false, false);
+		return new FileBucket(file, true, false, false, false, false);
 	}
 
 }

@@ -77,7 +77,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	        	if (filelist[i].isFile()) {
 	        		File f = filelist[i];
 	        		
-	        		FileBucket bucket = new FileBucket(f, true, false, false, false);
+	        		FileBucket bucket = new FileBucket(f, true, false, false, false, false);
 	        		
 	        		ret.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, DefaultMIMETypes.guessMIMEType(f.getName(), true), f.length()));
 	        	} else if(filelist[i].isDirectory()) {

@@ -38,7 +38,7 @@ public class TempFileBucket extends FileBucket {
 		long minAlloc,
 		float factor)
 		throws IOException {
-		super(f, false, true, true, true);
+		super(f, false, false, true, true, true);
 		synchronized(this) {
 			logDebug = Logger.shouldLog(Logger.DEBUG, this);
 		}
@@ -274,7 +274,7 @@ public class TempFileBucket extends FileBucket {
 		if (hook != null)
 			return new HookedFileBucketOutputStream(s, restartCount);
 		else
-			return super.newFileBucketOutputStream(s, restartCount);
+			return super.newFileBucketOutputStream(new File(s), s, restartCount);
 	}
 
 	protected synchronized void deleteFile() {
@@ -353,7 +353,7 @@ public class TempFileBucket extends FileBucket {
 			String s,
 			long restartCount)
 			throws IOException {
-			super(s, restartCount);
+			super(new File(s), s, restartCount);
 			streams.addElement(this);
 			if (Logger.shouldLog(Logger.DEBUG, this))
 				Logger.debug(

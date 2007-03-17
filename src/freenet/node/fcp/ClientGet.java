@@ -90,7 +90,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = returnFilename;
 			this.tempFile = returnTempFilename;
-			ret = new FileBucket(returnTempFilename, false, false, false, false);
+			ret = new FileBucket(returnTempFilename, false, true, false, false, false);
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
 			tempFile = null;
@@ -147,7 +147,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = message.diskFile;
 			this.tempFile = message.tempFile;
-			ret = new FileBucket(message.tempFile, false, false, false, false);
+			ret = new FileBucket(message.tempFile, false, true, false, false, false);
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
 			tempFile = null;
@@ -229,9 +229,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		Bucket ret = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			if (succeeded) {
-				ret = new FileBucket(targetFile, false, false, false, false);
+				ret = new FileBucket(targetFile, false, true, false, false, false);
 			} else {
-				ret = new FileBucket(tempFile, false, false, false, false);
+				ret = new FileBucket(tempFile, false, true, false, false, false);
 			}
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			ret = new NullBucket();
@@ -343,7 +343,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 						postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
 						// Don't delete temp file, user might want it.
 					}
-					returnBucket = new FileBucket(targetFile, false, false, false, false);
+					returnBucket = new FileBucket(targetFile, false, true, false, false, false);
 				} catch (FileNotFoundException e) {
 					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier, global);
 				} catch (IOException e) {
@@ -643,9 +643,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		synchronized(this) {
 			if(targetFile != null) {
 				if(succeeded || tempFile == null)
-					return new FileBucket(targetFile, false, false, false, false);
+					return new FileBucket(targetFile, false, true, false, false, false);
 				else
-					return new FileBucket(tempFile, false, false, false, false);
+					return new FileBucket(tempFile, false, true, false, false, false);
 			} else return returnBucket;
 		}
 	}

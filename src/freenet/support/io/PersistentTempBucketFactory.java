@@ -71,22 +71,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		bucketsToFree = new LinkedList();
 	}
 	
-	/**
-	 * Called by a client to fetch the bucket denoted by a specific filename,
-	 * and to register this fact so that it is not deleted on startup completion.
-	 * @throws IOException 
-	 */
-	public Bucket register(String filename, boolean mustExist) throws IOException {
-		File f = new File(dir, filename);
-		if(mustExist && !f.exists())
-			throw new IOException("File does not exist (deleted?): "+f);
-		Bucket b = new FileBucket(f, false, false, false, true);
-		synchronized(this) {
-			originalFiles.remove(f);
-		}
-		return b;
-	}
-	
 	public void register(File file) {
 		synchronized(this) {
 			originalFiles.remove(file);
@@ -106,7 +90,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 
 	private Bucket makeRawBucket(long size) throws IOException {
-		return new FileBucket(fg.makeRandomFilename(), false, false, false, true);
+		return new FileBucket(fg.makeRandomFilename(), false, true, false, false, true);
 	}
 
 	public Bucket makeBucket(long size) throws IOException {

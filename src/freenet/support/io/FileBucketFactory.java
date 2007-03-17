@@ -10,37 +10,18 @@ import freenet.support.api.BucketFactory;
 
 public class FileBucketFactory implements BucketFactory {
     
-    private int enumm = 0;
     private Vector files = new Vector();
     
     // Must have trailing "/"
-    public String rootDir = "";
+    public final File rootDir;
 
-    public FileBucketFactory() {
-        
+    public FileBucketFactory(File rootDir) {
+        this.rootDir = rootDir;
     }
 
-    public FileBucketFactory(String rootDir) {
-        this.rootDir = (rootDir.endsWith(File.separator)
-                        ? rootDir
-                        : (rootDir + File.separator));
-    }
-
-    public FileBucketFactory(File dir) {
-        this(dir.toString());
-    }
-
-    public Bucket makeBucket(long size) {
-        File f;
-        do {
-            f = new File(rootDir + "bffile_" + ++enumm);
-            // REDFLAG: remove hoaky debugging code
-            // System.err.println("----------------------------------------");
-            // Exception e = new Exception("created: " + f.getName());
-            // e.printStackTrace();
-            // System.err.println("----------------------------------------");
-        } while (f.exists());
-        Bucket b = new FileBucket(f, false, true, false, true);
+    public Bucket makeBucket(long size) throws IOException {
+    	File f = File.createTempFile("bf_", ".freenet-tmp", rootDir);
+        Bucket b = new FileBucket(f, false, true, true, false, true);
         files.addElement(f);
         return b;
     }

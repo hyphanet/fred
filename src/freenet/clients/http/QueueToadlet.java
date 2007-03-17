@@ -225,7 +225,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				String identifier = file.getName() + "-fred-" + System.currentTimeMillis();
 				String contentType = DefaultMIMETypes.guessMIMEType(filename, false);
 				try {
-					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), new FreenetURI("CHK@"), identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false), null, file.getName(), false);
+					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), new FreenetURI("CHK@"), identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, file.getName(), false);
 					if(logMINOR) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
 					clientPut.start();
 					fcp.forceStorePersistentRequests();

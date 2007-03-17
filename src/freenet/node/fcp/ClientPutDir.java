@@ -119,7 +119,7 @@ public class ClientPutDir extends ClientPutBase {
 					Logger.error(this, "File no longer exists, cancelling upload: "+ff);
 					throw new IOException("File no longer exists, cancelling upload: "+ff);
 				}
-				data = new FileBucket(ff, true, false, false, false);
+				data = new FileBucket(ff, true, false, false, false, false);
 				me = new ManifestElement(name, data, contentTypeOverride, sz);
 				fileCount++;
 			} else if(uploadFrom.equalsIgnoreCase("redirect")) {
