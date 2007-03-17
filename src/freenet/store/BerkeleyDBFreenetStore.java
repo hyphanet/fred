@@ -1021,7 +1021,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					
 				}
 				
-				t.commit();
+				if(t != null)
+					t.commit();
 				
 				System.err.println("Deleted "+deleted+" keys");
 				
