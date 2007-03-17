@@ -276,27 +276,29 @@ public class IPDetectorPluginManager {
 						// Has been connected in the last 24 hours.
 						// Unique IP address?
 						Peer peer = p.getPeer();
-						InetAddress addr = peer.getAddress(false);
-						if(p.isConnected() && (peer != null) && (addr != null) && IPUtil.isValidAddress(peer.getAddress(), false)) {
-							// Connected node, on a real internet IP address.
-							// Is it internal?
-							boolean internal = false;
-							for(int j=0;j<nodeAddrs.length;j++) {
-								if(addr.equals(nodeAddrs[j].getAddress())) {
-									// Internal
-									internal = true;
-									break;
+						if(peer != null){
+							InetAddress addr = peer.getAddress(false);
+							if(p.isConnected() && (addr != null) && IPUtil.isValidAddress(peer.getAddress(), false)) {
+								// Connected node, on a real internet IP address.
+								// Is it internal?
+								boolean internal = false;
+								for(int j=0;j<nodeAddrs.length;j++) {
+									if(addr.equals(nodeAddrs[j].getAddress())) {
+										// Internal
+										internal = true;
+										break;
+									}
 								}
-							}
-							if(!internal) {
-								// Real IP address
-								if(addressesConnected == null)
-									addressesConnected = new HashSet();
-								addressesConnected.add(addr);
-								if(addressesConnected.size() > 2) {
-									// 3 connected addresses, lets assume we have connectivity.
-									if(logMINOR) Logger.minor(this, "Node has directly detected IP and has connected to 3 real IPs");
-									return;
+								if(!internal) {
+									// Real IP address
+									if(addressesConnected == null)
+										addressesConnected = new HashSet();
+									addressesConnected.add(addr);
+									if(addressesConnected.size() > 2) {
+										// 3 connected addresses, lets assume we have connectivity.
+										if(logMINOR) Logger.minor(this, "Node has directly detected IP and has connected to 3 real IPs");
+										return;
+									}
 								}
 							}
 						}
