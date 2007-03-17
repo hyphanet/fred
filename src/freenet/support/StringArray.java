@@ -25,4 +25,19 @@ public class StringArray {
 		}else
 			return "";
 	}
+	
+	/**
+	 * This methods returns a String[] from Object[]
+	 * @param array
+	 * @return string[]
+	 */
+	public static String[] toArray(Object[] array){
+		if((array != null) && (array.length > 0)){
+			String[] result = new String[array.length];
+			for(int i=0; i<array.length; i++)
+				result[i] = (array[i]).toString();
+			return result;
+		}else
+			return null;
+	}
 }

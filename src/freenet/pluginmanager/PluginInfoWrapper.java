@@ -3,6 +3,8 @@ package freenet.pluginmanager;
 import java.util.Date;
 import java.util.HashSet;
 
+import freenet.support.StringArray;
+
 public class PluginInfoWrapper {
 	// Parameters to make the object OTP
 	private boolean fedPluginThread = false;
@@ -52,7 +54,7 @@ public class PluginInfoWrapper {
 	
 	public String[] getPluginToadletSymlinks(){
 		synchronized (toadletLinks) {
-			return (String[])toadletLinks.toArray();
+			return StringArray.toArray(toadletLinks.toArray());
 		}
 	}
 	
