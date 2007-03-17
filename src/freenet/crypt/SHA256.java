@@ -335,12 +335,12 @@ public class SHA256 implements Digest {
 	        return MessageDigest.getInstance("SHA-256");
 	    } catch (NoSuchAlgorithmException e2) {
 	    	//TODO: maybe we should point to a HOWTO for freejvms
-			Logger.error(Node.class, "Check your JVM settings especially the JCE!"+e2);
-			System.err.println("Check your JVM settings especially the JCE!"+e2);
-			e2.printStackTrace();
-			WrapperManager.stop(Node.EXIT_CRAPPY_JVM);
+	    	Logger.error(Node.class, "Check your JVM settings especially the JCE!"+e2);
+	    	System.err.println("Check your JVM settings especially the JCE!"+e2);
+	    	e2.printStackTrace();
 		}
-		return null;
+		WrapperManager.stop(Node.EXIT_CRAPPY_JVM);
+		throw new RuntimeException();
 	}
 
 	/**
