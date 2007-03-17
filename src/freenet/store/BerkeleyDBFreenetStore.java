@@ -529,7 +529,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		// Initialize the store file
 		try {
 			if(!storeFile.exists())
-				storeFile.createNewFile();
+				if(!storeFile.createNewFile())
+					throw new DatabaseException("can't create a new file !");
 			chkStore = new RandomAccessFile(storeFile,"rw");
 			
 			boolean dontCheckForHolesShrinking = false;
@@ -1124,7 +1125,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		// Initialize the store file
 		if(!storeFile.exists())
-			storeFile.createNewFile();
+			if(!storeFile.createNewFile())
+				throw new DatabaseException("can't create a new file !");
 		chkStore = new RandomAccessFile(storeFile,"rw");
 		
 		chkBlocksInStore = 0;

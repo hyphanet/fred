@@ -22,6 +22,8 @@ package freenet.store;
 import java.io.*;
 import java.util.*;
 
+import com.sleepycat.je.DatabaseException;
+
 import freenet.keys.Key;
 
 public abstract class Store {
@@ -43,7 +45,8 @@ public abstract class Store {
 	
 	protected Store(File blockStoreFile, long maxBlocks) throws Exception {
 		if (!blockStoreFile.exists()) {
-			blockStoreFile.createNewFile();
+			if(!blockStoreFile.createNewFile())
+				throw new DatabaseException("can't create a new file !");
 		}
 		_blockStore = new RandomAccessFile(blockStoreFile, "rw");
 		_maxBlocks = maxBlocks;
