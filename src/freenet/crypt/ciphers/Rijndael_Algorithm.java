@@ -35,8 +35,7 @@ public final class Rijndael_Algorithm // implicit no-argument constructor
 
     static final boolean RDEBUG = Rijndael_Properties.GLOBAL_DEBUG;
     static final int debuglevel = RDEBUG ? Rijndael_Properties.getLevel(NAME) : 0;
-//    static final PrintWriter err = RDEBUG ? Rijndael_Properties.getOutput() : null;
-    static final PrintWriter err = null;
+    static final PrintWriter err = RDEBUG ? Rijndael_Properties.getOutput() : null;
 
     static final boolean TRACE = Rijndael_Properties.isTraceable(NAME);
 
