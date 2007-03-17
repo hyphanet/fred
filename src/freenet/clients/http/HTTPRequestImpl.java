@@ -127,7 +127,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		try {
 			this.parseMultiPartData();
 		} catch (IOException ioe) {
-			
+			Logger.error(this, "Temporary files error ? Could not parse: "+ioe, ioe);
 		}
 	}
 	
@@ -464,8 +464,6 @@ public class HTTPRequestImpl implements HTTPRequest {
 					// Do nothing, irrelevant header
 				}
 			}
-			lis.close();
-			bis.close();
 			
 			if (name == null) continue;
 			
@@ -505,6 +503,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 				uploadedFiles.put(name, new HTTPUploadedFileImpl(filename, contentType, filedata));
 			}
 		}
+		
+		bis.close();
 	}
 	
 	/* (non-Javadoc)
