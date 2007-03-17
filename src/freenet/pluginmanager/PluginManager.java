@@ -4,6 +4,7 @@
 package freenet.pluginmanager;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.JarURLConnection;
@@ -320,6 +321,8 @@ public class PluginManager {
         	if(logMINOR) Logger.minor(this, "Rewritten to "+filename);
         }
         
+        BufferedReader in = null;
+        InputStream is = null;
         if ((filename.indexOf("@") >= 0)) {
         	boolean assumeURLRedirect = true;
         	// Open from external file
@@ -340,7 +343,6 @@ public class PluginManager {
         			if (filename.endsWith(".url")) {
         				if(!assumeURLRedirect) {
         					// Load the txt-file
-        					BufferedReader in;
         					URL url = new URL(parts[1]);
         					URLConnection uc = url.openConnection();
         					in = new BufferedReader(
@@ -384,8 +386,8 @@ public class PluginManager {
         				//URL url = new URL(parts[1]);
         				//URLConnection uc = cl.getResource("/META-INF/MANIFEST.MF").openConnection();
         				
-        				InputStream is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
-        				BufferedReader in = new BufferedReader(new InputStreamReader(is));	
+        				is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
+        				in = new BufferedReader(new InputStreamReader(is));	
         				String line;
         				while ((line = in.readLine())!=null) {
         					//	System.err.println(line + "\t\t\t" + realClass);
@@ -407,6 +409,13 @@ public class PluginManager {
         			try {
         				Thread.sleep(100);
         			} catch (Exception ee) {}
+        		} finally {
+        			try {
+        				if(is != null)
+        					is.close();
+        				if(in != null)
+        					in.close();
+        			} catch (IOException ioe){}
         		}
         } else {
         	// Load class

@@ -239,11 +239,12 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		} catch (UnsupportedEncodingException e) {
 			throw new Error(e);
 		}
-		BufferedWriter bw = new BufferedWriter(osw);
+		
 		if (urisByWord.isEmpty() || urisWithWords.isEmpty()) {
 			System.out.println("No URIs with words");
 			return;
 		}
+		BufferedWriter bw = new BufferedWriter(osw);
 		String[] words = (String[]) urisByWord.keySet().toArray(new String[urisByWord.size()]);
 		Arrays.sort(words);
 		FreenetURI[] uris = (FreenetURI[]) urisWithWords.toArray(new FreenetURI[urisWithWords.size()]);

@@ -464,6 +464,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 					// Do nothing, irrelevant header
 				}
 			}
+			lis.close();
+			bis.close();
 			
 			if (name == null) continue;
 			
@@ -535,16 +537,25 @@ public class HTTPRequestImpl implements HTTPRequest {
 		
 		if (part.size() > maxlength) return "";
 		
+		InputStream is = null;
+		DataInputStream dis = null;
 		try {
-			InputStream is = part.getInputStream();
-			DataInputStream dis = new DataInputStream(is);
+			is = part.getInputStream();
+			dis = new DataInputStream(is);
 			byte[] buf = new byte[is.available()];
 			dis.readFully(buf);
-			is.close();
 			return new String(buf);
 		} catch (IOException ioe) {
-			
+	         Logger.error(this, "Caught IOE:" + ioe.getMessage());
+		} finally {
+			try {
+				if(dis != null)
+					dis.close();
+				if(is != null)
+					is.close();
+			} catch (IOException ioe) {}
 		}
+		
 		return "";
 	}
 	

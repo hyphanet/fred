@@ -194,11 +194,14 @@ public class BucketTools {
 		if(size > Integer.MAX_VALUE) throw new OutOfMemoryError();
 		byte[] data = new byte[(int)size];
 		InputStream is = bucket.getInputStream();
+		DataInputStream dis = null;
 		try {
-			DataInputStream dis = new DataInputStream(is);
+			dis = new DataInputStream(is);
 			dis.readFully(data);
 		} finally {
 			is.close();
+			if(dis != null)
+				dis.close();
 		}
 		return data;
 	}
@@ -334,8 +337,9 @@ public class BucketTools {
 		if(length % splitSize > 0) bucketCount++;
 		Bucket[] buckets = new Bucket[bucketCount];
 		InputStream is = origData.getInputStream();
+		DataInputStream dis = null;
 		try {
-			DataInputStream dis = new DataInputStream(is);
+			dis = new DataInputStream(is);
 			long remainingLength = length;
 			byte[] buf = new byte[splitSize];
 			for(int i=0;i<bucketCount;i++) {
@@ -353,6 +357,8 @@ public class BucketTools {
 			}
 		} finally {
 			is.close();
+			if(dis != null)
+				dis.close();
 		}
 		return buckets;
 	}

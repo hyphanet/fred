@@ -966,6 +966,8 @@ public class FileLoggerHook extends LoggerHook {
 			os.write(buf, 0, toRead);
 			written += toRead;
 		}
+		dis.close();
+		fis.close();
 	}
 
 	/** Set the maximum size of old (gzipped) log files to keep.
