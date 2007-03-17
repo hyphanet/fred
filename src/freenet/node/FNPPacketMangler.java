@@ -20,6 +20,7 @@ import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.StringArray;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
 
@@ -990,7 +991,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 alreadyReported[x] = mi.alreadyReportedBytes;
                 x++;
                 if(mi.cb != null) callbacksCount += mi.cb.length;
-                if(logMINOR) Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+mi.cb);
+                if(logMINOR) Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+ StringArray.toString(mi.cb));
                 length += (data.length + 2);
             }
         }

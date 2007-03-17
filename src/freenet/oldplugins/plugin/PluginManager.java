@@ -14,6 +14,7 @@ import freenet.config.SubConfig;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
+import freenet.support.StringArray;
 import freenet.support.api.StringArrCallback;
 
 /**
@@ -65,7 +66,7 @@ public class PluginManager {
 					}
 				}
 				if(Logger.shouldLog(Logger.MINOR, this))
-					Logger.minor(this, "Plugin list: "+retval);
+					Logger.minor(this, "Plugin list: " + StringArray.toString(retval));
 				return retval;
 			};
 
