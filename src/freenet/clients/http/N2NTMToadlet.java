@@ -179,10 +179,6 @@ public class N2NTMToadlet extends Toadlet {
 	}
 	    
 	public static String createN2NTMSendForm(HTMLNode pageNode, HTMLNode contentNode, ToadletContext ctx, HashMap peers) throws ToadletContextClosedException, IOException {
-		if(contentNode == null) {
-			contentNode.addChild(createPeerInfobox("infobox-error", "Internal error", "Internal error: N2NTMToadlet.createN2NTMSendForm() not passed a valid contentNode."));
-			return pageNode.generate();
-		}
 		HTMLNode infobox = contentNode.addChild("div", new String[] { "class", "id" }, new String[] { "infobox", "n2nbox" });
 		infobox.addChild("div", "class", "infobox-header", "Send Node to Node Text Message");
 		HTMLNode messageTargets = infobox.addChild("div", "class", "infobox-content");
