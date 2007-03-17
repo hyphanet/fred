@@ -185,6 +185,8 @@ public class DSAGroup extends CryptoKey {
             qg = new QG(r);
             qg.start();
         }
+        
+        assert(qg != null);
 
         do {
             if ((cc++) % 15 == 0) System.err.print(".");

@@ -118,20 +118,21 @@ public class NodeIPDetector {
 	private boolean innerDetect(Vector addresses, boolean addedValidIP) {
 		boolean setMaybeSymmetric = false;
 		InetAddress[] detectedAddrs = ipDetector.getAddress();
+		assert(detectedAddrs != null);
 		synchronized(this) {
 			hasDetectedIAD = true;
 		}
-		if(detectedAddrs != null) {
-			for(int i=0;i<detectedAddrs.length;i++) {
-				Peer p = new Peer(detectedAddrs[i], node.portNumber);
-				if(!addresses.contains(p)) {
-					Logger.normal(this, "Detected IP address: "+p);
-					addresses.add(p);
-					if(p.getFreenetAddress().isRealInternetAddress(false, false))
-						addedValidIP = true;
-				}
+		
+		for(int i=0;i<detectedAddrs.length;i++) {
+			Peer p = new Peer(detectedAddrs[i], node.portNumber);
+			if(!addresses.contains(p)) {
+				Logger.normal(this, "Detected IP address: "+p);
+				addresses.add(p);
+				if(p.getFreenetAddress().isRealInternetAddress(false, false))
+					addedValidIP = true;
 			}
 		}
+		
 		if((pluginDetectedIPs != null) && (pluginDetectedIPs.length > 0)) {
 			for(int i=0;i<pluginDetectedIPs.length;i++) {
 				InetAddress addr = pluginDetectedIPs[i].publicAddress;
