@@ -244,24 +244,24 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		boolean cancel = false;
 		
 		synchronized(this) {
-		cancel = cancelled;
-		if(!cancelled) {
-		running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
-		try {
-			for(int i=0;i<running.length;i++) {
-				running[i].start();
+			cancel = cancelled;
+			if(!cancelled) {
+				running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
+				try {
+					for(int i=0;i<running.length;i++) {
+						running[i].start();
+					}
+					if(logMINOR) Logger.minor(this, "Started "+running.length+" PutHandler's for "+this);
+					if(cancelled) cancel();
+					if(running.length == 0) {
+						insertedAllFiles = true;
+						gotAllMetadata();
+					}
+				} catch (InserterException e) {
+					cancelAndFinish();
+					throw e;
+				}
 			}
-			if(logMINOR) Logger.minor(this, "Started "+running.length+" PutHandler's for "+this);
-			if(cancelled) cancel();
-			if(running.length == 0) {
-				insertedAllFiles = true;
-				gotAllMetadata();
-			}
-		} catch (InserterException e) {
-			cancelAndFinish();
-			throw e;
-		}
-		}
 		}
 		if(cancel) cancel();
 	}
