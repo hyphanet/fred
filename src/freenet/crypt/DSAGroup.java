@@ -84,7 +84,9 @@ public class DSAGroup extends CryptoKey {
         try {
         	return new DSAGroup(p, q, g);
         } catch (IllegalArgumentException e) {
-        	throw new CryptFormatException("Invalid group");
+        	CryptFormatException ce = new CryptFormatException("Invalid group: "+e);
+        	ce.initCause(e);
+        	throw ce;
         }
     }
 
