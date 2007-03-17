@@ -1007,7 +1007,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						if(i-1 >= maxBlocks)
 							t = environment.beginTransaction(null,null);
 						else
-							t = null;
+							t = null; //FIXME: WTF ? what are we doing here ? if we dereference it, how will the t.commit() out of the loop work? btw, what's the purpose of the test above ? 
 					}
 
 					freeBlocks.remove(i);
