@@ -993,6 +993,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				long deleted = 0;
 				for(long i=curBlocks-1;i>=maxBlocks;i--) {
 
+					if(t == null)
+						t = environment.beginTransaction(null,null);
+					
 					// Delete the block with this blocknum.
 					
 					DatabaseEntry blockNumEntry = new DatabaseEntry();
@@ -1005,10 +1008,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					
 					if((curBlocks-i) % 2048 == 0) {
 						t.commit();
-						if(i-1 >= maxBlocks)
-							t = environment.beginTransaction(null,null);
-						else
-							t = null; //FIXME: WTF ? what are we doing here ? if we dereference it, how will the t.commit() out of the loop work? btw, what's the purpose of the test above ? 
+						t = null; 
 					}
 
 					freeBlocks.remove(i);
