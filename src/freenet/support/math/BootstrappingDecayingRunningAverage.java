@@ -57,9 +57,8 @@ public final class BootstrappingDecayingRunningAverage implements
         if(fs != null) {
         	currentValue = fs.getDouble("CurrentValue", currentValue);
         	reports = fs.getLong("Reports", reports);
-        	zeros = fs.getLong("Zeros", zeros);
-        	ones = fs.getLong("Ones", ones);
-        	if(reports == 0) zeros = ones = 0;
+        	zeros = fs.getLong("Zeros", reports);
+        	ones = fs.getLong("Ones", reports);
         }
     }
     
