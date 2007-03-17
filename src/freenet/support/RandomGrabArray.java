@@ -31,19 +31,19 @@ public class RandomGrabArray {
 	
 	public void add(RandomGrabArrayItem req) {
 		synchronized(this) {
-		if(contents.contains(req)) return;
-		if(req.isCancelled()) {
-			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "Is finished already: "+req);
-			return;
-		}
-		contents.add(req);
-		if(index >= reqs.length) {
-			RandomGrabArrayItem[] r = new RandomGrabArrayItem[reqs.length*2];
-			System.arraycopy(reqs, 0, r, 0, reqs.length);
-			reqs = r;
-		}
-		reqs[index++] = req;
+			if(contents.contains(req)) return;
+			if(req.isCancelled()) {
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Is finished already: "+req);
+				return;
+			}
+			contents.add(req);
+			if(index >= reqs.length) {
+				RandomGrabArrayItem[] r = new RandomGrabArrayItem[reqs.length*2];
+				System.arraycopy(reqs, 0, r, 0, reqs.length);
+				reqs = r;
+			}
+			reqs[index++] = req;
 		}
 		req.setParentGrabArray(this);
 	}
