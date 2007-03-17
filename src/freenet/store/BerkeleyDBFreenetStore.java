@@ -986,7 +986,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		try {
 			String msg = "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+chkDB.count()+", highest "+highestBlockNumberInDatabase()+", from file "+countCHKBlocksFromFile()+ ')';
 			System.err.println(msg); Logger.normal(this, msg);
-	    	WrapperManager.signalStarting((int)Math.min(0,(curBlocks-maxBlocks)*100)+5*60*1000); // 10 per second plus 5 minutes
+	    	WrapperManager.signalStarting((int)Math.max(0,(curBlocks-maxBlocks)*100)+5*60*1000); // 0.1s per block plus 5 minutes
 			while(true) {
 				t = environment.beginTransaction(null,null);
 				long deleted = 0;
