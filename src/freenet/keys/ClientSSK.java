@@ -86,8 +86,9 @@ public class ClientSSK extends ClientKey {
 	public void setPublicKey(DSAPublicKey pubKey) {
 		if((this.pubKey != null) && (this.pubKey != pubKey) && !this.pubKey.equals(pubKey))
 			throw new IllegalArgumentException("Cannot reassign: was "+this.pubKey+" now "+pubKey);
-		if(!Arrays.equals(pubKey.asBytesHash(), pubKeyHash))
-			throw new IllegalArgumentException("New pubKey hash does not match pubKeyHash: "+HexUtil.bytesToHex(pubKey.asBytesHash())+" != "+HexUtil.bytesToHex(pubKeyHash)+" for "+pubKey);
+		byte[] newKeyHash = pubKey.asBytesHash();
+		if(!Arrays.equals(newKeyHash, pubKeyHash))
+			throw new IllegalArgumentException("New pubKey hash does not match pubKeyHash: "+HexUtil.bytesToHex(newKeyHash)+" ( "+HexUtil.bytesToHex(pubKey.asBytesHash())+" != "+HexUtil.bytesToHex(pubKeyHash)+" for "+pubKey);
 		this.pubKey = pubKey;
 	}
 	
