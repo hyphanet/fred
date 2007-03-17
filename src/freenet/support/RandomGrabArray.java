@@ -51,29 +51,29 @@ public class RandomGrabArray {
 	public RandomGrabArrayItem removeRandom() {
 		RandomGrabArrayItem ret;
 		synchronized(this) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		while(true) {
-			if(index == 0) {
-				if(logMINOR) Logger.minor(this, "All null on "+this);
-				return null;
-			}
-			int i = rand.nextInt(index);
-			ret = reqs[i];
-			if(ret != null && !ret.canRemove()) return ret;
-			reqs[i] = reqs[--index];
-			reqs[index] = null;
-			if(ret != null)
-				contents.remove(ret);
-			// Shrink array
-			if((index < reqs.length / 4) && (reqs.length > MIN_SIZE)) {
+			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			while(true) {
+				if(index == 0) {
+					if(logMINOR) Logger.minor(this, "All null on "+this);
+					return null;
+				}
+				int i = rand.nextInt(index);
+				ret = reqs[i];
+				if(ret != null && !ret.canRemove()) return ret;
+				reqs[i] = reqs[--index];
+				reqs[index] = null;
+				if(ret != null)
+					contents.remove(ret);
 				// Shrink array
-				int newSize = Math.max(index * 2, MIN_SIZE);
-				RandomGrabArrayItem[] r = new RandomGrabArrayItem[newSize];
-				System.arraycopy(reqs, 0, r, 0, r.length);
-				reqs = r;
+				if((index < reqs.length / 4) && (reqs.length > MIN_SIZE)) {
+					// Shrink array
+					int newSize = Math.max(index * 2, MIN_SIZE);
+					RandomGrabArrayItem[] r = new RandomGrabArrayItem[newSize];
+					System.arraycopy(reqs, 0, r, 0, r.length);
+					reqs = r;
+				}
+				if((ret != null) && !ret.isCancelled()) break;
 			}
-			if((ret != null) && !ret.isCancelled()) break;
-		}
 		}
 		ret.setParentGrabArray(null);
 		return ret;
@@ -81,15 +81,15 @@ public class RandomGrabArray {
 	
 	public void remove(RandomGrabArrayItem it) {
 		synchronized(this) {
-		if(!contents.contains(it)) return;
-		contents.remove(it);
-		for(int i=0;i<index;i++) {
-			if((reqs[i] == it) || reqs[i].equals(it)) {
-				reqs[i] = reqs[--index];
-				reqs[index] = null;
-				break;
+			if(!contents.contains(it)) return;
+			contents.remove(it);
+			for(int i=0;i<index;i++) {
+				if((reqs[i] == it) || reqs[i].equals(it)) {
+					reqs[i] = reqs[--index];
+					reqs[index] = null;
+					break;
+				}
 			}
-		}
 		}
 		it.setParentGrabArray(null);
 	}
