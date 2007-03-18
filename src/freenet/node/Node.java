@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -103,6 +104,7 @@ import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
+import freenet.support.SizeUtil;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
@@ -185,6 +187,12 @@ public class Node {
 	// Enable this if you run into hard to debug OOMs.
 	// Disabled to prevent long pauses every 30 seconds.
 	static int aggressiveGCModificator = -1 /*250*/;
+	
+	/** Minimum free heap memory bytes required to accept a request (perhaps fewer OOMs this way) */
+	public static final long MIN_FREE_HEAP_BYTES_FOR_ROUTING_SUCCESS = 3L * 1024 * 1024;  // 3 MiB
+	
+	/** Minimum free heap memory percentage required to accept a request (perhaps fewer OOMs this way) */
+	public static final double MIN_FREE_HEAP_PERCENT_FOR_ROUTING_SUCCESS = 0.01;  // 1%
 	
 	/** If true, local requests and inserts aren't cached.
 	 * This opens up a glaring vulnerability; connected nodes
@@ -1895,6 +1903,20 @@ public class Node {
 			requestOutputThrottle.recycle(expectedSent);
 			pInstantRejectIncoming.report(1.0);
 			return "Insufficient input bandwidth";
+		}
+
+		Runtime r = Runtime.getRuntime();
+		long maxHeapMemory = r.maxMemory();
+		long freeHeapMemory = r.freeMemory();
+		if(freeHeapMemory < MIN_FREE_HEAP_BYTES_FOR_ROUTING_SUCCESS) {
+			pInstantRejectIncoming.report(1.0);
+			return "<MIN_FREE_HEAP_BYTES_FOR_ROUTING_SUCCESS ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+')';
+		}
+		double percentFreeHeapMemoryOfMax = ((double) freeHeapMemory) / ((double) maxHeapMemory);
+		if(percentFreeHeapMemoryOfMax < MIN_FREE_HEAP_PERCENT_FOR_ROUTING_SUCCESS) {
+			pInstantRejectIncoming.report(1.0);
+			DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
+			return "<MIN_FREE_HEAP_PERCENT_FOR_ROUTING_SUCCESS ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+" ("+fix3p1pct.format(percentFreeHeapMemoryOfMax)+"))";
 		}
 
 		synchronized(this) {
