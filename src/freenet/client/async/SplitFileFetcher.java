@@ -18,6 +18,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
@@ -254,6 +255,10 @@ public class SplitFileFetcher implements ClientGetState {
 			cb.onSuccess(new FetchResult(clientMetadata, data), this);
 		} catch (FetchException e) {
 			cb.onFailure(e, this);
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
+			System.err.println("Failing above attempted fetch...");
+			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), this);
 		} catch (Throwable t) {
 			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), this);
 		}

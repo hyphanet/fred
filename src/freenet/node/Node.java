@@ -101,6 +101,7 @@ import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -3501,8 +3502,14 @@ public class Node {
 			while(true) {
 				try {
 					persistThrottle();
+				} catch (OutOfMemoryError e) {
+					OOMHandler.handleOOM(e);
+					System.err.println("Will restart ThrottlePersister...");
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
+					Logger.error(this, "Caught in ThrottlePersister: "+t, t);
+					System.err.println("Caught in ThrottlePersister: "+t);
+					t.printStackTrace();
+					System.err.println("Will restart ThrottlePersister...");
 				}
 				try {
 					synchronized(this) {
