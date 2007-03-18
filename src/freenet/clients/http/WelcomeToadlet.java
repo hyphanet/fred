@@ -168,6 +168,7 @@ public class WelcomeToadlet extends Toadlet {
 			
 				if (request.isPartSet("delete_"+b.hashCode())) {
 					bookmarks.removeBookmark(b, true);
+					break;
 				} else if (request.isPartSet("movedown_"+b.hashCode())) {
 					bookmarks.moveBookmarkDown(b, true);
 					break;
