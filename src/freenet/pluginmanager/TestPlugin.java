@@ -158,7 +158,7 @@ public class TestPlugin implements FredPlugin {
 				"freenet:CHK@aH73gnCP5BHrBllzjkMidAL9omoZhArbLx~E8ohfhXY,tFiT49y7VJycJggw9oITCP5LxPza~WnrmM3KY02V~3g,AAEA--8",
 				"freenet:CHK@EWWH3-KJevOv5bFRZunpJWZmKCY5UmtStpsRL~68U1A,opipVzjgGF4jKm~f9hTRY1fjrGhDfl2vQYs5IdabixE,AAEA--8"};
 
-		return strs[Math.abs(rnd.nextInt() + 1)%strs.length];
+		return strs[rnd.nextInt(strs.length)];
 	}
 
 }
