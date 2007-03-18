@@ -599,8 +599,8 @@ public class WelcomeToadlet extends Toadlet {
 		HTMLNode activityBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "Current Activity"));
 		HTMLNode activityContent = ctx.getPageMaker().getContentNode(activityBox);
 		HTMLNode activityList = activityContent.addChild("ul", "id", "activity");
-		activityList.addChild("li", "Inserts: " + node.getNumInserts());
-		activityList.addChild("li", "Requests: " + node.getNumRequests());
+		activityList.addChild("li", "Inserts: " + node.getNumInserts()+'/'+Node.MAX_RUNNING_INSERTS);
+		activityList.addChild("li", "Requests: " + node.getNumRequests()+'/'+Node.MAX_RUNNING_REQUESTS);
 		activityList.addChild("li", "Transferring Requests: " + node.getNumTransferringRequests());
 		if (advancedModeOutputEnabled) {
 			activityList.addChild("li", "ARK Fetch Requests: " + node.getNumARKFetchers());
