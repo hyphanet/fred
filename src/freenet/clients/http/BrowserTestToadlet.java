@@ -183,7 +183,7 @@ public class BrowserTestToadlet extends Toadlet {
 		}
 		
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet browser testing tool");
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet browser testing tool", ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		contentNode.addChild(core.alerts.createSummary());

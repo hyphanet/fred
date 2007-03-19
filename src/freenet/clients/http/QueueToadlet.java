@@ -256,7 +256,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 										writeReply(ctx, 200, "application/x-msdownload", "OK", responseHeaders, dataBucket);
 										return;
 									}
-									HTMLNode pageNode = ctx.getPageMaker().getPageNode("Potentially Unsafe Content");
+									HTMLNode pageNode = ctx.getPageMaker().getPageNode("Potentially Unsafe Content", ctx);
 									HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 									HTMLNode alertNode = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-alert", "Potentially Unsafe Content"));
 									HTMLNode alertContent = ctx.getPageMaker().getContentNode(alertNode);
@@ -287,7 +287,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	
 	private void writeError(String header, String message, ToadletContext context) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = context.getPageMaker();
-		HTMLNode pageNode = pageMaker.getPageNode(header);
+		HTMLNode pageNode = pageMaker.getPageNode(header, context);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		contentNode.addChild(core.alerts.createSummary());
 		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-error", header));
@@ -355,7 +355,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			Logger.minor(this, "Request count: "+reqs.length);
 		
 		if(reqs.length < 1){
-			HTMLNode pageNode = pageMaker.getPageNode("Global queue of " + core.getMyName());
+			HTMLNode pageNode = pageMaker.getPageNode("Global queue of " + core.getMyName(), ctx);
 			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 			/* add alert summary box */
 			contentNode.addChild(core.alerts.createSummary());
@@ -461,7 +461,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode pageNode = pageMaker.getPageNode("(" + (uncompletedDirUpload.size() + uncompletedDownload.size()
 				+ uncompletedUpload.size()) + '/' + (failedDirUpload.size() + failedDownload.size() + failedUpload.size()) + '/'
                 + (completedDirUpload.size() + completedDownloadToDisk.size() + completedDownloadToTemp.size()
-				+ completedUpload.size()) + ") Queued Requests of " + core.getMyName());
+				+ completedUpload.size()) + ") Queued Requests of " + core.getMyName(), ctx);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 
 		/* add alert summary box */

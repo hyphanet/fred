@@ -63,6 +63,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			return;
 		}
 		
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			return;
+		}
+		
 		final boolean advancedModeEnabled = node.isAdvancedModeEnabled();
 		final boolean fProxyJavascriptEnabled = node.isFProxyJavascriptEnabled();
 		
@@ -133,7 +138,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(titleCountString + " Darknet Peers of " + node.getMyName());
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(titleCountString + " Darknet Peers of " + node.getMyName(), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		// FIXME! We need some nice images
@@ -617,6 +622,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 	public void handlePost(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			return;
+		}
+		
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
@@ -717,7 +727,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("send_n2ntm")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			HashMap peers = new HashMap();
@@ -894,7 +904,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
 					}else{
 						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn) : let's display the warning message.");
-						HTMLNode pageNode = ctx.getPageMaker().getPageNode("Please confirm");
+						HTMLNode pageNode = ctx.getPageMaker().getPageNode("Please confirm", ctx);
 						HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 						HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "Node removal"));
 						HTMLNode content = ctx.getPageMaker().getContentNode(infobox);

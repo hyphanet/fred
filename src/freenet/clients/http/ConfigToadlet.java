@@ -46,6 +46,11 @@ public class ConfigToadlet extends Toadlet {
 			return;
 		}
 		
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			return;
+		}
+		
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		for(int i=0; i<sc.length ; i++){
@@ -74,7 +79,7 @@ public class ConfigToadlet extends Toadlet {
 		}
 		core.storeConfig();
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Configuration Applied");
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Configuration Applied", ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		if (errbuf.length() == 0) {
@@ -99,11 +104,17 @@ public class ConfigToadlet extends Toadlet {
 	}
 	
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			return;
+		}
+		
 		SubConfig[] sc = config.getConfigs();
 		Arrays.sort(sc);
 		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet Node Configuration of " + node.getMyName());
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet Node Configuration of " + node.getMyName(), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		contentNode.addChild(core.alerts.createSummary());

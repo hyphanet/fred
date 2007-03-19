@@ -68,6 +68,11 @@ public class WelcomeToadlet extends Toadlet {
 	
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			return;
+		}
+		
 		String passwd = request.getPartAsString("formPassword", 32);
 		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
 		if(noPassword) {
@@ -80,7 +85,7 @@ public class WelcomeToadlet extends Toadlet {
 				return;
 			}
 			// false for no navigation bars, because that would be very silly
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node updating");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node updating", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "Node updating"));
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
@@ -101,7 +106,7 @@ public class WelcomeToadlet extends Toadlet {
 			headers.put("Location", url==null ? "/" : url);
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 		}else if (request.getPartAsString("update", 32).length() > 0) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Update");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Update", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Update"));
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
@@ -115,7 +120,7 @@ public class WelcomeToadlet extends Toadlet {
 				redirectToRoot(ctx);
 				return;
 			}
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Get a Thread Dump");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Get a Thread Dump", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			if(node.isUsingWrapper()){
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Thread Dump generation"));
@@ -132,7 +137,7 @@ public class WelcomeToadlet extends Toadlet {
 				redirectToRoot(ctx);
 				return;
 			}
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Get JE Statistics");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Get JE Statistics", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Database Statistics"));
 
@@ -250,7 +255,7 @@ public class WelcomeToadlet extends Toadlet {
 			}
 			
 			if(noPassword) {
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Frost Instant Note insert");
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Frost Instant Note insert", ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Frost Instant Note insert"));
 				HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
@@ -287,7 +292,7 @@ public class WelcomeToadlet extends Toadlet {
 			}
 			FrostMessage fin = new FrostMessage("news", board, sender, subject, message);
 			
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode content;
 			try {
@@ -328,7 +333,7 @@ public class WelcomeToadlet extends Toadlet {
 			
 			Bucket bucket = request.getPart("filename");
 			
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode content;
 			String filenameHint = null;
@@ -374,7 +379,7 @@ public class WelcomeToadlet extends Toadlet {
 				return;
 			}
 			// Tell the user that the node is shutting down
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", false);
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet node has been successfully shut down."));
 			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
@@ -387,7 +392,7 @@ public class WelcomeToadlet extends Toadlet {
 				return;
 			}
 			// Tell the user that the node is restarting
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", false);
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet is being restarted."));
 			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
@@ -429,6 +434,8 @@ public class WelcomeToadlet extends Toadlet {
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		boolean advancedModeOutputEnabled = core.getToadletContainer().isAdvancedModeEnabled();
 	
+		if(ctx.isAllowedFullAccess()) {
+		
 		if(request.isParameterSet("latestlog")) {
 			
 			FileReader reader = new FileReader(node.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
@@ -442,7 +449,7 @@ public class WelcomeToadlet extends Toadlet {
 			this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
 			return;
 		}else if (request.getParam("newbookmark").length() > 0) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Confirm Bookmark Addition"));
 			HTMLNode addForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(infobox), "/", "bookmarkAddForm");
@@ -454,7 +461,7 @@ public class WelcomeToadlet extends Toadlet {
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		} else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Link to external resources");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Link to external resources", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode warnbox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "External link"));
 			HTMLNode externalLinkForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(warnbox), "/", "confirmExternalLinkForm");
@@ -468,7 +475,7 @@ public class WelcomeToadlet extends Toadlet {
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		} else if (request.isParameterSet("managebookmarks")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Bookmark Manager");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Bookmark Manager", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "My Bookmarks"));
 			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
@@ -499,7 +506,7 @@ public class WelcomeToadlet extends Toadlet {
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if (request.isParameterSet("exit")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Shutdown"));
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
@@ -510,7 +517,7 @@ public class WelcomeToadlet extends Toadlet {
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if (request.isParameterSet("restart")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Restart"));
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
@@ -522,7 +529,9 @@ public class WelcomeToadlet extends Toadlet {
 			return;
 		}
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet FProxy Homepage of " + node.getMyName());
+		}
+		
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet FProxy Homepage of " + node.getMyName(), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 		if(node.isTestnetEnabled()) {
@@ -614,7 +623,7 @@ public class WelcomeToadlet extends Toadlet {
 	}
 	
 	private void sendBookmarkEditPage(ToadletContext ctx, int mode, Bookmark b, String origKey, String origDesc, String message) throws ToadletContextClosedException, IOException {
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode((mode == MODE_ADD) ? "Add a Bookmark" : "Edit a Bookmark");
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode((mode == MODE_ADD) ? "Add a Bookmark" : "Edit a Bookmark", ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		if (message != null) {  // only used for error messages so far...

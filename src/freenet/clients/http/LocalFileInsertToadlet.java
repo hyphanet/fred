@@ -50,7 +50,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 		currentPath = new File(path).getCanonicalFile();
 		PageMaker pageMaker = toadletContext.getPageMaker();
 
-		HTMLNode pageNode = pageMaker.getPageNode("Listing of " + currentPath.getAbsolutePath());
+		HTMLNode pageNode = pageMaker.getPageNode("Listing of " + currentPath.getAbsolutePath(), toadletContext);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		contentNode.addChild(core.alerts.createSummary());
 		

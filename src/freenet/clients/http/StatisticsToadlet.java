@@ -88,6 +88,11 @@ public class StatisticsToadlet extends Toadlet {
 
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			return;
+		}
+		
 		final boolean advancedModeEnabled = node.isAdvancedModeEnabled();
 		final SubConfig nodeConfig = node.config.get("node");
 		
@@ -116,7 +121,7 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfListening = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTENING);
 		int numberOfListenOnly = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTEN_ONLY);
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Statistics for " + node.getMyName());
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Statistics for " + node.getMyName(), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		// FIXME! We need some nice images

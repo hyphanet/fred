@@ -5,6 +5,7 @@ package freenet.clients.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.JarURLConnection;
 import java.net.Socket;
 import java.net.SocketException;
@@ -24,6 +25,7 @@ import java.util.jar.JarFile;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
+import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
 import freenet.node.NodeClientCore;
 import freenet.support.FileLoggerHook;
@@ -51,6 +53,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	final int port;
 	String bindTo;
 	String allowedHosts;
+	final AllowedHosts allowedFullAccess;
 	final BucketFactory bf;
 	final NetworkInterface networkInterface;
 	private final LinkedList toadlets;
@@ -265,6 +268,19 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 					else	SimpleToadletServer.isPanicButtonToBeShown = value;
 				}
 		});
+		fproxyConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "Hosts allowed full access to Fproxy", "Hosts allowed full access (i.e. change config settings, restart, etc) to the node",
+				new StringCallback() {
+
+					public String get() {
+						return allowedFullAccess.getAllowedHosts();
+					}
+
+					public void set(String val) throws InvalidConfigValueException {
+						allowedFullAccess.setAllowedHosts(val);
+					}
+			
+		});
+		allowedFullAccess = new AllowedHosts(fproxyConfig.getString("allowedHostsFullAccess"));
 		
 		SimpleToadletServer.isPanicButtonToBeShown = fproxyConfig.getBoolean("showPanicButton");
 		this.bf = core.tempBucketFactory;
@@ -294,6 +310,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.port = i;
 		this.bindTo = newbindTo;
 		this.allowedHosts = allowedHosts;
+		allowedFullAccess = new AllowedHosts(allowedHosts);
 		this.bf = bf;
 		this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
 		toadlets = new LinkedList();
@@ -310,17 +327,17 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	public void register(Toadlet t, String urlPrefix, boolean atFront) {
-		register(t, urlPrefix, atFront, null, null);
+	public void register(Toadlet t, String urlPrefix, boolean atFront, boolean fullOnly) {
+		register(t, urlPrefix, atFront, null, null, fullOnly);
 	}
 	
-	public void register(Toadlet t, String urlPrefix, boolean atFront, String name, String title) {
+	public void register(Toadlet t, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly) {
 		ToadletElement te = new ToadletElement(t, urlPrefix);
 		if(atFront) toadlets.addFirst(te);
 		else toadlets.addLast(te);
 		t.container = this;
 		if (name != null) {
-			pageMaker.addNavigationLink(urlPrefix, name, title);
+			pageMaker.addNavigationLink(urlPrefix, name, title, fullOnly);
 		}
 	}
 
@@ -347,7 +364,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
         Logger.globalAddHook(logger);
         logger.start();
 		SimpleToadletServer server = new SimpleToadletServer(1111, "127.0.0.1", "127.0.0.1", new TempBucketFactory(new FilenameGenerator(new DummyRandomSource(), true, new File("temp-test"), "test-temp-")), "aqua", null);
-		server.register(new TrivialToadlet(null), "", true);
+		server.register(new TrivialToadlet(null), "", true, false);
 		server.start();
 		System.out.println("Bound to port 1111.");
 		while(true) {
@@ -439,5 +456,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public String getFormPassword() {
 		return core.formPassword;
+	}
+
+	public boolean isAllowedFullAccess(InetAddress remoteAddr) {
+		return this.allowedFullAccess.allowed(remoteAddr);
 	}
 }

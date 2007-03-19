@@ -545,7 +545,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		} else if ("list".equals(action)) {
 			String listName = request.getParam("listName", null);
 
-			HTMLNode pageNode = pageMaker.getPageNode(pluginName);
+			HTMLNode pageNode = pageMaker.getPageNode(pluginName, context);
 			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 
 			/* create copies for multi-threaded use */
@@ -609,7 +609,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	
 	private void sendSimpleResponse(ToadletContext context, String title, String message) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = context.getPageMaker();
-		HTMLNode pageNode = pageMaker.getPageNode(title);
+		HTMLNode pageNode = pageMaker.getPageNode(title, context);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
 		infobox.addChild("div", "class", "infobox-header", title);

@@ -106,7 +106,7 @@ public class FProxyToadlet extends Toadlet {
 				mimeType = fo.type;
 				
 				if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
-					HTMLNode pageNode = context.getPageMaker().getPageNode("Potentially Dangerous Content (RSS)");
+					HTMLNode pageNode = context.getPageMaker().getPageNode("Potentially Dangerous Content (RSS)", context);
 					HTMLNode contentNode = context.getPageMaker().getContentNode(pageNode);
 					
 					HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
@@ -166,7 +166,7 @@ public class FProxyToadlet extends Toadlet {
 			use1.printStackTrace();
 			Logger.error(FProxyToadlet.class, "could not create URI", use1);
 		} catch (UnsafeContentTypeException e) {
-			HTMLNode pageNode = context.getPageMaker().getPageNode("Potentially Dangerous Content");
+			HTMLNode pageNode = context.getPageMaker().getPageNode("Potentially Dangerous Content", context);
 			HTMLNode contentNode = context.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
@@ -312,7 +312,7 @@ public class FProxyToadlet extends Toadlet {
 		try {
 			key = new FreenetURI(ks);
 		} catch (MalformedURLException e) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Invalid key");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Invalid key", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 			HTMLNode errorInfobox = contentNode.addChild("div", "class", "infobox infobox-error");
@@ -353,7 +353,7 @@ public class FProxyToadlet extends Toadlet {
 			} else if(e.newURI != null) {
 				this.writePermanentRedirect(ctx, msg, '/' +e.newURI.toString() + override);
 			} else if(e.mode == FetchException.TOO_BIG) {
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode("File information");
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("File information", ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
@@ -407,7 +407,7 @@ public class FProxyToadlet extends Toadlet {
 
 				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			} else {
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode(FetchException.getShortMessage(e.mode));
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode(FetchException.getShortMessage(e.mode), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
@@ -570,43 +570,43 @@ public class FProxyToadlet extends Toadlet {
 			core.random.nextBytes(random);
 			FProxyToadlet fproxy = new FProxyToadlet(client, core);
 			core.setFProxy(fproxy);
-			server.register(fproxy, "/", false, "Home", "homepage");
+			server.register(fproxy, "/", false, "Home", "homepage", false);
 			
 			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager, core);
-			server.register(pproxy, "/plugins/", true, "Plugins", "configure and manage plugins");
+			server.register(pproxy, "/plugins/", true, "Plugins", "configure and manage plugins", false);
 			
 			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node);
-			server.register(welcometoadlet, "/welcome/", true);
+			server.register(welcometoadlet, "/welcome/", true, false);
 			
 			PluginToadlet pluginToadlet = new PluginToadlet(client, node.pluginManager2, core);
-			server.register(pluginToadlet, "/plugin/", true);
+			server.register(pluginToadlet, "/plugin/", true, true);
 			
 			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
-			server.register(configtoadlet, "/config/", true, "Configuration", "configure your node");
+			server.register(configtoadlet, "/config/", true, "Configuration", "configure your node", true);
 			
 			StaticToadlet statictoadlet = new StaticToadlet(client);
-			server.register(statictoadlet, "/static/", true);
+			server.register(statictoadlet, "/static/", true, false);
 			
 			SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
-			server.register(symlinkToadlet, "/sl/", true);
+			server.register(symlinkToadlet, "/sl/", true, false);
 			
 			DarknetConnectionsToadlet darknetToadlet = new DarknetConnectionsToadlet(node, core, client);
-			server.register(darknetToadlet, "/darknet/", true, "Darknet", "manage darknet connections");
+			server.register(darknetToadlet, "/darknet/", true, "Darknet", "manage darknet connections", true);
 			
 			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
-			server.register(n2ntmToadlet, "/send_n2ntm/", true);
+			server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
 			
 			QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
-			server.register(queueToadlet, "/queue/", true, "Queue", "manage queued requests");
+			server.register(queueToadlet, "/queue/", true, "Queue", "manage queued requests", false);
 			
 			StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
-			server.register(statisticsToadlet, "/stats/", true, "Statistics", "view statistics");
+			server.register(statisticsToadlet, "/stats/", true, "Statistics", "view statistics", true);
 			
 			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
-			server.register(localFileInsertToadlet, "/files/", true);
+			server.register(localFileInsertToadlet, "/files/", true, true);
 
 			BrowserTestToadlet browsertTestToadlet = new BrowserTestToadlet(client, core);
-			server.register(browsertTestToadlet, "/test/", true);
+			server.register(browsertTestToadlet, "/test/", true, false);
 			
 			// Now start the server.
 			server.start();

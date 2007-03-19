@@ -63,5 +63,9 @@ public interface ToadletContext {
 	 * @return The form HTMLNode.
 	 */
 	HTMLNode addFormChild(HTMLNode parentNode, String target, String id);
+
+	/** Is this Toadlet allowed full access to the node, including the ability to reconfigure it,
+	 * restart it etc? */
+	boolean isAllowedFullAccess();
 }
 

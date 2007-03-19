@@ -41,8 +41,14 @@ public class N2NTMToadlet extends Toadlet {
   }
 
   public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	  
+	  if(!ctx.isAllowedFullAccess()) {
+		  super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+		  return;
+	  }
+		
 	  if (request.isParameterSet("peernode_hashcode")) {
-		  HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message");
+		  HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message", ctx);
 		  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		  
 		  String peernode_name = null;
@@ -103,6 +109,11 @@ public class N2NTMToadlet extends Toadlet {
 		  return;
 	  }
 	  
+	  if(!ctx.isAllowedFullAccess()) {
+		  super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+		  return;
+	  }
+		
 	  if (request.isPartSet("send")) {
 		  String message = request.getPartAsString("message", 5*1024);
 		  message = message.trim();
@@ -110,7 +121,7 @@ public class N2NTMToadlet extends Toadlet {
 				this.writeReply(ctx, 400, "text/plain", "Too long", "N2NTMs are limited to 1024 characters");
 				return;
 			}
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message Processing");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message Processing", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode peerTable = peerTableInfobox.addChild("table", "class", "n2ntm-send-statuses");

@@ -288,7 +288,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 			return;
 		} else if ("list".equals(action)) {
 			String listName = request.getParam("listName", null);
-			HTMLNode pageNode = pageMaker.getPageNode("The Definitive Spider");
+			HTMLNode pageNode = pageMaker.getPageNode("The Definitive Spider", context);
 			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 			/* create copies for multi-threaded use */
 			if (listName == null) {
@@ -351,7 +351,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	
 	private void sendSimpleResponse(ToadletContext context, String title, String message) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = context.getPageMaker();
-		HTMLNode pageNode = pageMaker.getPageNode(title);
+		HTMLNode pageNode = pageMaker.getPageNode(title, context);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-alter", title));
 		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);

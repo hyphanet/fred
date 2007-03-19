@@ -91,6 +91,11 @@ public class PproxyToadlet extends Toadlet {
 		else
 		{
 		
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			return;
+		}
+			
 		if (request.isPartSet("load")) {
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Loading "+request.getPartAsString("load", MAX_PLUGIN_NAME_LENGTH));
 			pm.startPlugin(request.getPartAsString("load", MAX_PLUGIN_NAME_LENGTH), true);
@@ -105,7 +110,7 @@ public class PproxyToadlet extends Toadlet {
 			return;
 		}if (request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 			pm.killPlugin(request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH));
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Plugins");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Plugins", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-success");
 			infobox.addChild("div", "class", "infobox-header", "Plugin unloaded");
@@ -116,7 +121,7 @@ public class PproxyToadlet extends Toadlet {
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}if (request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Plugins");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Plugins", ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-query");
 			infobox.addChild("div", "class", "infobox-header", "Unload plugin?");
@@ -174,6 +179,10 @@ public class PproxyToadlet extends Toadlet {
     		Logger.minor(this, "Pproxy fetching "+path);
 		try {
 			if (path.equals("")) {
+				if(!ctx.isAllowedFullAccess()) {
+					super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+					return;
+				}
 				this.showPluginList(ctx, request);
 			} else {
 				// split path into plugin class name and 'data' path for plugin
@@ -212,7 +221,7 @@ public class PproxyToadlet extends Toadlet {
 
 	private void showPluginList(ToadletContext ctx, HTTPRequest request) throws ToadletContextClosedException, IOException {
 		if (!request.hasParameters()) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Plugins of " + core.getMyName());
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Plugins of " + core.getMyName(), ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");

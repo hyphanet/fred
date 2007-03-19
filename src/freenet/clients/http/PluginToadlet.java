@@ -80,6 +80,11 @@ public class PluginToadlet extends Toadlet {
 			return;
 		}
 
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			return;
+		}
+		
 		String action = httpRequest.getParam("action");
 		if (action.length() == 0) {
 			writePermanentRedirect(ctx, "Plugin list", "?action=list");
@@ -114,6 +119,11 @@ public class PluginToadlet extends Toadlet {
 				return;
 			}
 			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, "Plugin not found", "The requested plugin could not be found.").toString());
+			return;
+		}
+		
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
 			return;
 		}
 		
@@ -195,7 +205,7 @@ public class PluginToadlet extends Toadlet {
 	private String listPlugins(ToadletContext context) {
 		Plugin[] plugins = pluginManager.getPlugins();
 		PageMaker pageMaker = context.getPageMaker();
-		HTMLNode pageNode = pageMaker.getPageNode("List of Plugins");
+		HTMLNode pageNode = pageMaker.getPageNode("List of Plugins", context);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox");
@@ -245,7 +255,7 @@ public class PluginToadlet extends Toadlet {
 	 */
 	private StringBuffer createBox(ToadletContext context, String title, String message) {
 		PageMaker pageMaker = context.getPageMaker();
-		HTMLNode pageNode = pageMaker.getPageNode(title);
+		HTMLNode pageNode = pageMaker.getPageNode(title, context);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
 		infobox.addChild("div", "class", "infobox-header", title);

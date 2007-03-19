@@ -25,6 +25,7 @@ public class PageMaker {
 	private static final String DEFAULT_THEME = "clean";
 	private String theme;
 	private final List navigationLinkTexts = new ArrayList();
+	private final List navigationLinkTextsNonFull = new ArrayList();
 	private final Map navigationLinkTitles = new HashMap();
 	private final Map navigationLinks = new HashMap();
 	private final Map contentNodes = new HashMap();
@@ -48,14 +49,17 @@ public class PageMaker {
 		}
 	}
 	
-	public void addNavigationLink(String path, String name, String title) {
+	public void addNavigationLink(String path, String name, String title, boolean fullOnly) {
 		navigationLinkTexts.add(name);
+		if(!fullOnly)
+			navigationLinkTextsNonFull.add(name);
 		navigationLinkTitles.put(name, title);
 		navigationLinks.put(name, path);
 	}
 	
 	public void removeNavigationLink(String name) {
 		navigationLinkTexts.remove(name);
+		navigationLinkTextsNonFull.remove(name);
 		navigationLinkTitles.remove(name);
 		navigationLinks.remove(name);
 	}
@@ -68,11 +72,12 @@ public class PageMaker {
 		return new HTMLNode("a", new String[] { "href", "title" }, new String[] { "javascript:back()", name }, name);
 	}
 	
-	public HTMLNode getPageNode(String title) {
-		return getPageNode(title, true);
+	public HTMLNode getPageNode(String title, ToadletContext ctx) {
+		return getPageNode(title, true, ctx);
 	}
 
-	public HTMLNode getPageNode(String title, boolean renderNavigationLinks) {
+	public HTMLNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
+		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
 		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", "en");
 		HTMLNode headNode = htmlNode.addChild("head");
@@ -91,7 +96,7 @@ public class PageMaker {
 		if (renderNavigationLinks) {
 			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
-			for (Iterator navigationLinkIterator = navigationLinkTexts.iterator(); navigationLinkIterator.hasNext();) {
+			for (Iterator navigationLinkIterator = fullAccess ? navigationLinkTexts.iterator() : navigationLinkTextsNonFull.iterator(); navigationLinkIterator.hasNext();) {
 				String navigationLink = (String) navigationLinkIterator.next();
 				String navigationTitle = (String) navigationLinkTitles.get(navigationLink);
 				String navigationPath = (String) navigationLinks.get(navigationLink);

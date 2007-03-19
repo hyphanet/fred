@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,6 +40,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private final PageMaker pagemaker;
 	private final BucketFactory bf;
 	private final ToadletContainer container;
+	private final InetAddress remoteAddr;
 	
 	/** Is the context closed? If so, don't allow any more writes. This is because there
 	 * may be later requests.
@@ -50,6 +52,7 @@ public class ToadletContextImpl implements ToadletContext {
 		this.headers = headers;
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();
+		remoteAddr = sock.getInetAddress();
 		this.bf = bf;
 		this.pagemaker = pageMaker;
 		this.container = container;
@@ -395,5 +398,9 @@ public class ToadletContextImpl implements ToadletContext {
 				new String[] { "hidden", "formPassword", container.getFormPassword() });
 		
 		return formNode;
+	}
+
+	public boolean isAllowedFullAccess() {
+		return container.isAllowedFullAccess(remoteAddr);
 	}
 }

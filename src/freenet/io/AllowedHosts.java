@@ -17,7 +17,6 @@ package freenet.io;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -65,6 +64,11 @@ public class AllowedHosts {
 			this.addressMatchers.clear();
 			this.addressMatchers.addAll(newAddressMatchers);
 		}
+	}
+
+	public boolean allowed(InetAddress clientAddress) {
+		AddressType clientAddressType = AddressIdentifier.getAddressType(clientAddress.getHostAddress());
+		return allowed(clientAddressType, clientAddress);
 	}
 
 	public synchronized boolean allowed(AddressType clientAddressType, InetAddress clientAddress) {
