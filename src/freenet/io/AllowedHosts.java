@@ -12,7 +12,7 @@ import freenet.io.AddressIdentifier.AddressType;
 import freenet.support.Logger;
 
 /** Implementation of allowedHosts */
-public class AddressMatcherList {
+public class AllowedHosts {
 	
 	/** List of allowed hosts. */
 	protected final List/* <String> */allowedHosts = new ArrayList();
@@ -20,7 +20,7 @@ public class AddressMatcherList {
 	/** Maps allowed hosts to address matchers, if possible. */
 	protected final Map/* <String, AddressMatcher> */addressMatchers = new HashMap();
 
-	public AddressMatcherList(String allowedHosts) {
+	public AllowedHosts(String allowedHosts) {
 		setAllowedHosts(allowedHosts);
 	}
 

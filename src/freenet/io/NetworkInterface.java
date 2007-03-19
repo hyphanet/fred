@@ -50,7 +50,7 @@ public class NetworkInterface {
 	protected final List/* <Socket> */acceptedSockets = new ArrayList();
 	
 	/** AllowedHosts structure */
-	protected final AddressMatcherList allowedHosts;
+	protected final AllowedHosts allowedHosts;
 
 	/** The timeout set by {@link #setSoTimeout(int)}. */
 	private int timeout = 0;
@@ -73,7 +73,7 @@ public class NetworkInterface {
 	public NetworkInterface(int port, String bindTo, String allowedHosts) throws IOException {
 		this.port = port;
 		setBindTo(bindTo);
-		this.allowedHosts = new AddressMatcherList(allowedHosts);
+		this.allowedHosts = new AllowedHosts(allowedHosts);
 	}
 
 	/**
