@@ -24,10 +24,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.StringTokenizer;
 
 import freenet.io.AddressIdentifier.AddressType;
@@ -48,14 +46,11 @@ public class NetworkInterface {
 	/** Acceptors created by this interface. */
 	private final List/* <Acceptor> */acceptors = new ArrayList();
 
-	/** List of allowed hosts. */
-	protected final List/* <String> */allowedHosts = new ArrayList();
-
-	/** Maps allowed hosts to address matchers, if possible. */
-	protected final Map/* <String, AddressMatcher> */addressMatchers = new HashMap();
-
 	/** Queue of accepted client connections. */
 	protected final List/* <Socket> */acceptedSockets = new ArrayList();
+	
+	/** AllowedHosts structure */
+	protected final AddressMatcherList allowedHosts;
 
 	/** The timeout set by {@link #setSoTimeout(int)}. */
 	private int timeout = 0;
@@ -78,7 +73,7 @@ public class NetworkInterface {
 	public NetworkInterface(int port, String bindTo, String allowedHosts) throws IOException {
 		this.port = port;
 		setBindTo(bindTo);
-		setAllowedHosts(allowedHosts);
+		this.allowedHosts = new AddressMatcherList(allowedHosts);
 	}
 
 	/**
@@ -133,42 +128,8 @@ public class NetworkInterface {
 		}
 	}
 
-	/**
-	 * Sets the list of allowed hosts to <code>allowedHosts</code>. The new
-	 * list is in effect immediately after this method has finished.
-	 * 
-	 * @param allowedHosts
-	 *            The new list of allowed hosts s
-	 */
 	public void setAllowedHosts(String allowedHosts) {
-		StringTokenizer allowedHostsTokens = new StringTokenizer(allowedHosts, ",");
-		List newAllowedHosts = new ArrayList();
-		Map newAddressMatchers = new HashMap();
-		while (allowedHostsTokens.hasMoreTokens()) {
-			String allowedHost = allowedHostsTokens.nextToken().trim();
-			String hostname = allowedHost;
-			if (allowedHost.indexOf('/') != -1) {
-				hostname = allowedHost.substring(0, allowedHost.indexOf('/'));
-			}
-			AddressType addressType = AddressIdentifier.getAddressType(hostname);
-			if (addressType == AddressType.IPv4) {
-				newAddressMatchers.put(allowedHost, new Inet4AddressMatcher(allowedHost));
-				newAllowedHosts.add(allowedHost);
-			} else if (addressType == AddressType.IPv6) {
-				newAddressMatchers.put(allowedHost, new Inet6AddressMatcher(allowedHost));
-				newAllowedHosts.add(allowedHost);
-			} else if (allowedHost.equals("*")) {
-				newAllowedHosts.add(allowedHost);
-			} else {
-				Logger.normal(NetworkInterface.class, "Ignoring invalid allowedHost: " + allowedHost);
-			}
-		}
-		synchronized (syncObject) {
-			this.allowedHosts.clear();
-			this.allowedHosts.addAll(newAllowedHosts);
-			this.addressMatchers.clear();
-			this.addressMatchers.putAll(newAddressMatchers);
-		}
+		this.allowedHosts.setAllowedHosts(allowedHosts);
 	}
 
 	/**
@@ -315,22 +276,7 @@ public class NetworkInterface {
 					AddressType clientAddressType = AddressIdentifier.getAddressType(clientAddress.getHostAddress());
 
 					/* check if the ip address is allowed */
-					boolean addressMatched = false;
-					synchronized (syncObject) {
-						Iterator hosts = allowedHosts.iterator();
-						while (!addressMatched && hosts.hasNext()) {
-							String host = (String) hosts.next();
-							AddressMatcher matcher = (AddressMatcher) addressMatchers.get(host);
-							
-							if (matcher != null && clientAddressType == matcher.getAddressType()) {
-								addressMatched = matcher.matches(clientAddress);
-							} else {
-								addressMatched = "*".equals(host);
-							}
-						}
-					}
-
-					if (addressMatched) {
+					if (allowedHosts.allowed(clientAddressType, clientAddress)) {
 						synchronized (syncObject) {
 							acceptedSockets.add(clientSocket);
 							syncObject.notifyAll();
