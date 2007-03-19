@@ -1309,8 +1309,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		
 	    		if(logMINOR) {
 	    			Logger.minor(this, "Get key: " + chk);
-	    			Logger.minor(this, "Headers: " + header.length+" bytes, hash " + HexUtil.bytesToHex(header));
-	    			Logger.minor(this, "Data: " + data.length + " bytes, hash " + HexUtil.bytesToHex(data) + " fetching " + chk);
+	    			Logger.minor(this, "Headers: " + header.length+" bytes, hash " + Fields.hashCode(header));
+	    			Logger.minor(this, "Data: " + data.length + " bytes, hash " + Fields.hashCode(data) + " fetching " + chk);
 	    		}
 	    		
 	    	}catch(CHKVerifyException ex){
