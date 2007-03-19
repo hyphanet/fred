@@ -3129,7 +3129,7 @@ public class Node {
 				numberOfBursting++;
 				break;
 			default:
-				Logger.error(this, "Unkown peer status value : "+pns[i].getStatusValue());
+				Logger.error(this, "Unknown peer status value : "+pns[i].getStatusValue());
 				break;
 			}
 		}

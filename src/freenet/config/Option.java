@@ -73,6 +73,14 @@ public abstract class Option {
 	public boolean isExpert(){
 		return expert;
 	}
+	
+	public boolean isForcedWrite(){
+		return forceWrite;
+	}
+	
+	public int getSortOrder(){
+		return sortOrder;
+	}
 
 	/**
 	 * Is this option set to the default?

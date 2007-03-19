@@ -10,6 +10,14 @@ import java.util.LinkedHashMap;
  */
 public class Config {
 
+    public static final int CONFIG_REQUEST_TYPE_CURRENT_SETTINGS = 1;
+    public static final int CONFIG_REQUEST_TYPE_DEFAULT_SETTINGS = 2;
+    public static final int CONFIG_REQUEST_TYPE_SORT_ORDER = 3;
+    public static final int CONFIG_REQUEST_TYPE_EXPERT_FLAG = 4;
+    public static final int CONFIG_REQUEST_TYPE_FORCE_WRITE_FLAG = 5;
+    public static final int CONFIG_REQUEST_TYPE_SHORT_DESCRIPTION = 6;
+    public static final int CONFIG_REQUEST_TYPE_LONG_DESCRIPTION = 7;
+
 	protected final LinkedHashMap configsByPrefix;
 	
 	public Config() {
