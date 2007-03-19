@@ -212,9 +212,7 @@ public class BlockTransmitter {
 				if (_prb.isAborted()) {
 					synchronized(_senderThread) {
 						_sendComplete = true;
-						synchronized (this) {
-							_senderThread.notifyAll();	
-						}
+						_senderThread.notifyAll();	
 					}
 					return false;
 				}
