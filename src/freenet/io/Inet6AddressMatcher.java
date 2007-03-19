@@ -32,6 +32,11 @@ public class Inet6AddressMatcher implements AddressMatcher {
 		return AddressType.IPv6;
 	}
 
+	private static final byte[] FULL_MASK = new byte[16];
+	static {
+		Arrays.fill(FULL_MASK, (byte) 0xff);
+	}
+	
 	private byte[] address;
 	private byte[] netmask;
 
@@ -51,8 +56,7 @@ public class Inet6AddressMatcher implements AddressMatcher {
 			}
 		} else {
 			address = convertToBytes(pattern);
-			netmask = new byte[16];
-			Arrays.fill(netmask, (byte) 0xff);
+			netmask = FULL_MASK;
 		}
 		if (address.length != 16) {
 			throw new IllegalArgumentException("address is not IPv6");
@@ -87,6 +91,23 @@ public class Inet6AddressMatcher implements AddressMatcher {
 
 	public static boolean matches(String pattern, Inet6Address address) {
 		return new Inet6AddressMatcher(pattern).matches(address);
+	}
+
+	public String getHumanRepresentation() {
+		if(netmask == FULL_MASK)
+			return convertToString(address);
+		else
+			return convertToString(address)+'/'+convertToString(netmask);
+	}
+
+	private String convertToString(byte[] addr) {
+		StringBuffer sb = new StringBuffer(4*8+7);
+		for(int i=0;i<8;i++) {
+			if(i != 0) sb.append(':');
+			int token = ((addr[i*2] & 0xff) << 8) + (addr[i*2+1] & 0xff);
+			sb.append(Integer.toHexString(token));
+		}
+		return sb.toString();
 	}
 
 }

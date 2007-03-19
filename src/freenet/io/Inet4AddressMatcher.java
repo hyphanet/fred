@@ -125,4 +125,22 @@ public class Inet4AddressMatcher implements AddressMatcher {
 		return new Inet4AddressMatcher(cidrHostname).matches(address);
 	}
 
+	public String getHumanRepresentation() {
+		if(networkMask == -1)
+			return convertToString(address);
+		else
+			return convertToString(address)+'/'+convertToString(networkMask);
+	}
+
+	private String convertToString(int addr) {
+		StringBuffer sb = new StringBuffer();
+		for(int i=0;i<4;i++) {
+			int x = addr >>> 24;
+			addr = addr << 8;
+			if(i != 0) sb.append('.');
+			sb.append(x);
+		}
+		return sb.toString();
+	}
+
 }

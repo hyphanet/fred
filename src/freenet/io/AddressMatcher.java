@@ -28,4 +28,7 @@ public interface AddressMatcher {
 
 	public boolean matches(InetAddress address);
 
+	/** Get the human-readable version of the Matcher */
+	public String getHumanRepresentation();
+
 }

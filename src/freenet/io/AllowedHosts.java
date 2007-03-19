@@ -17,10 +17,8 @@ package freenet.io;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.StringTokenizer;
 
 import freenet.io.AddressIdentifier.AddressType;
@@ -29,12 +27,8 @@ import freenet.support.Logger;
 /** Implementation of allowedHosts */
 public class AllowedHosts {
 	
-	/** List of allowed hosts. */
-	protected final List/* <String> */allowedHosts = new ArrayList();
-
-	/** Maps allowed hosts to address matchers, if possible. */
-	protected final Map/* <String, AddressMatcher> */addressMatchers = new HashMap();
-
+	protected final List addressMatchers = new ArrayList();
+	
 	public AllowedHosts(String allowedHosts) {
 		setAllowedHosts(allowedHosts);
 	}
@@ -48,8 +42,7 @@ public class AllowedHosts {
 	 */
 	public void setAllowedHosts(String allowedHosts) {
 		StringTokenizer allowedHostsTokens = new StringTokenizer(allowedHosts, ",");
-		List newAllowedHosts = new ArrayList();
-		Map newAddressMatchers = new HashMap();
+		List newAddressMatchers = new ArrayList();
 		while (allowedHostsTokens.hasMoreTokens()) {
 			String allowedHost = allowedHostsTokens.nextToken().trim();
 			String hostname = allowedHost;
@@ -58,39 +51,42 @@ public class AllowedHosts {
 			}
 			AddressType addressType = AddressIdentifier.getAddressType(hostname);
 			if (addressType == AddressType.IPv4) {
-				newAddressMatchers.put(allowedHost, new Inet4AddressMatcher(allowedHost));
-				newAllowedHosts.add(allowedHost);
+				newAddressMatchers.add(new Inet4AddressMatcher(allowedHost));
 			} else if (addressType == AddressType.IPv6) {
-				newAddressMatchers.put(allowedHost, new Inet6AddressMatcher(allowedHost));
-				newAllowedHosts.add(allowedHost);
+				newAddressMatchers.add(new Inet6AddressMatcher(allowedHost));
 			} else if (allowedHost.equals("*")) {
-				newAllowedHosts.add(allowedHost);
+				newAddressMatchers.add(new EverythingMatcher(AddressIdentifier.AddressType.IPv4));
+				newAddressMatchers.add(new EverythingMatcher(AddressIdentifier.AddressType.IPv6));
 			} else {
-				Logger.normal(NetworkInterface.class, "Ignoring invalid allowedHost: " + allowedHost);
+				Logger.error(NetworkInterface.class, "Ignoring invalid allowedHost: " + allowedHost);
 			}
 		}
 		synchronized (this) {
-			this.allowedHosts.clear();
-			this.allowedHosts.addAll(newAllowedHosts);
 			this.addressMatchers.clear();
-			this.addressMatchers.putAll(newAddressMatchers);
+			this.addressMatchers.addAll(newAddressMatchers);
 		}
 	}
 
 	public synchronized boolean allowed(AddressType clientAddressType, InetAddress clientAddress) {
-		boolean addressMatched = false;
-		Iterator hosts = allowedHosts.iterator();
-		while (!addressMatched && hosts.hasNext()) {
-			String host = (String) hosts.next();
-			AddressMatcher matcher = (AddressMatcher) addressMatchers.get(host);
+		for(int i=0;i<addressMatchers.size();i++) {
+			AddressMatcher matcher = (AddressMatcher) addressMatchers.get(i);
 			
-			if (matcher != null && clientAddressType == matcher.getAddressType()) {
-				addressMatched = matcher.matches(clientAddress);
-			} else {
-				addressMatched = "*".equals(host);
+			if (clientAddressType == matcher.getAddressType()) {
+				if(matcher.matches(clientAddress)) return true;
 			}
 		}
-		return addressMatched;
+		return false;
+	}
+
+	public synchronized String getAllowedHosts() {
+		StringBuffer sb = new StringBuffer();
+		for(int i=0;i<addressMatchers.size();i++) {
+			AddressMatcher matcher = (AddressMatcher) addressMatchers.get(i);
+			if(matcher instanceof EverythingMatcher) return "*";
+			if(i != 0) sb.append(',');
+			sb.append(matcher.getHumanRepresentation());
+		}
+		return sb.toString();
 	}
 
 }
