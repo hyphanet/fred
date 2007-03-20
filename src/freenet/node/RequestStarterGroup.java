@@ -14,7 +14,12 @@ import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 public class RequestStarterGroup {
 
-	final ThrottleWindowManager throttleWindow;
+	private final ThrottleWindowManager throttleWindow;
+	// These are for diagnostic purposes
+	private final ThrottleWindowManager throttleWindowCHK;
+	private final ThrottleWindowManager throttleWindowSSK;
+	private final ThrottleWindowManager throttleWindowInsert;
+	private final ThrottleWindowManager throttleWindowRequest;
 	final MyRequestThrottle chkRequestThrottle;
 	final RequestStarter chkRequestStarter;
 	final MyRequestThrottle chkInsertThrottle;
@@ -33,6 +38,10 @@ public class RequestStarterGroup {
 		SubConfig schedulerConfig = new SubConfig("node.scheduler", config);
 		
 		throttleWindow = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindow"), node);
+		throttleWindowCHK = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowCHK"), node);
+		throttleWindowSSK = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowSSK"), node);
+		throttleWindowInsert = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowInsert"), node);
+		throttleWindowRequest = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowRequest"), node);
 		chkRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "CHK Request", fs == null ? null : fs.subset("CHKRequestThrottle"), 32768);
 		chkRequestStarter = new RequestStarter(core, chkRequestThrottle, "CHK Request starter ("+portNumber+ ')', node.requestOutputThrottle, node.requestInputThrottle, node.localChkFetchBytesSentAverage, node.localChkFetchBytesReceivedAverage, false);
 		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, node, schedulerConfig, "CHKrequester");
@@ -129,12 +138,26 @@ public class RequestStarterGroup {
 		return sskInsertThrottle;
 	}
 
+	public void requestCompleted(boolean isSSK, boolean isInsert) {
+		throttleWindow.requestCompleted();
+		(isSSK ? throttleWindowSSK : throttleWindowCHK).requestCompleted();
+		(isInsert ? throttleWindowInsert : throttleWindowRequest).requestCompleted();
+	}
+	
+	public void rejectedOverload(boolean isSSK, boolean isInsert) {
+		throttleWindow.rejectedOverload();
+		(isSSK ? throttleWindowSSK : throttleWindowCHK).rejectedOverload();
+		(isInsert ? throttleWindowInsert : throttleWindowRequest).rejectedOverload();
+	}
+	
 	/**
 	 * Persist the throttle data to a SimpleFieldSet.
 	 */
 	SimpleFieldSet persistToFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.put("ThrottleWindow", throttleWindow.exportFieldSet(false));
+		fs.put("ThrottleWindowCHK", throttleWindowCHK.exportFieldSet(false));
+		fs.put("ThrottleWindowSSK", throttleWindowCHK.exportFieldSet(false));
 		fs.put("CHKRequestThrottle", chkRequestThrottle.exportFieldSet());
 		fs.put("SSKRequestThrottle", sskRequestThrottle.exportFieldSet());
 		fs.put("CHKInsertThrottle", chkInsertThrottle.exportFieldSet());
@@ -177,6 +200,22 @@ public class RequestStarterGroup {
 		sb.append(" bw=");
 		sb.append((long)throttle.getRate());
 		sb.append("B/sec");
+		return sb.toString();
+	}
+
+	public String diagnosticThrottlesLine(boolean mode) {
+		StringBuffer sb = new StringBuffer();
+		if(mode) {
+			sb.append("Request window: ");
+			sb.append(throttleWindowCHK.toString());
+			sb.append(", Insert window: ");
+			sb.append(throttleWindowSSK.toString());
+		} else {
+			sb.append("CHK window: ");
+			sb.append(throttleWindowCHK.toString());
+			sb.append(", SSK window: ");
+			sb.append(throttleWindowSSK.toString());
+		}
 		return sb.toString();
 	}
 	

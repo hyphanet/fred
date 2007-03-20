@@ -417,7 +417,7 @@ public class NodeClientCore {
 			waitStatus = rs.waitUntilStatusChange(waitStatus);
 			if((!rejectedOverload) && (waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
 				// See below; inserts count both
-				requestStarters.throttleWindow.rejectedOverload();
+				requestStarters.rejectedOverload(false, false);
 				rejectedOverload = true;
 			}
 
@@ -436,7 +436,7 @@ public class NodeClientCore {
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 				if(!rejectedOverload) {
 					// See below
-					requestStarters.throttleWindow.rejectedOverload();
+					requestStarters.rejectedOverload(false, false);
 					rejectedOverload = true;
 				}
 			} else {
@@ -447,7 +447,7 @@ public class NodeClientCore {
 						(status == RequestSender.VERIFY_FAILURE))) {
 					long rtt = System.currentTimeMillis() - startTime;
 					if(!rejectedOverload)
-						requestStarters.throttleWindow.requestCompleted();
+						requestStarters.requestCompleted(false, false);
 					requestStarters.chkRequestThrottle.successfulCompletion(rtt);
 				}
 			}
@@ -516,7 +516,7 @@ public class NodeClientCore {
 		while(true) {
 			waitStatus = rs.waitUntilStatusChange(waitStatus);
 			if((!rejectedOverload) && (waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
-				requestStarters.throttleWindow.rejectedOverload();
+				requestStarters.rejectedOverload(true, false);
 				rejectedOverload = true;
 			}
 
@@ -534,7 +534,7 @@ public class NodeClientCore {
 			if((status == RequestSender.TIMED_OUT) ||
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 				if(!rejectedOverload) {
-					requestStarters.throttleWindow.rejectedOverload();
+					requestStarters.rejectedOverload(true, false);
 					rejectedOverload = true;
 				}
 			} else {
@@ -546,7 +546,7 @@ public class NodeClientCore {
 					long rtt = System.currentTimeMillis() - startTime;
 					
 					if(!rejectedOverload)
-						requestStarters.throttleWindow.requestCompleted();
+						requestStarters.requestCompleted(true, false);
 					requestStarters.sskRequestThrottle.successfulCompletion(rtt);
 				}
 			}
@@ -627,7 +627,7 @@ public class NodeClientCore {
 			}
 			if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
 				hasReceivedRejectedOverload = true;
-				requestStarters.throttleWindow.rejectedOverload();
+				requestStarters.rejectedOverload(false, true);
 			}
 		}
 		
@@ -643,7 +643,7 @@ public class NodeClientCore {
 			}
 			if(is.anyTransfersFailed() && (!hasReceivedRejectedOverload)) {
 				hasReceivedRejectedOverload = true; // not strictly true but same effect
-				requestStarters.throttleWindow.rejectedOverload();
+				requestStarters.rejectedOverload(false, true);
 			}
 		}
 		
@@ -660,7 +660,7 @@ public class NodeClientCore {
 				
 				requestStarters.chkInsertThrottle.successfulCompletion(len);
 				if(!hasReceivedRejectedOverload)
-					requestStarters.throttleWindow.requestCompleted();
+					requestStarters.requestCompleted(false, true);
 			}
 		}
 		
@@ -739,7 +739,7 @@ public class NodeClientCore {
 			}
 			if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
 				hasReceivedRejectedOverload = true;
-				requestStarters.throttleWindow.rejectedOverload();
+				requestStarters.rejectedOverload(true, true);
 			}
 		}
 		
@@ -765,7 +765,7 @@ public class NodeClientCore {
 				// It worked!
 				long endTime = System.currentTimeMillis();
 				long rtt = endTime - startTime;
-				requestStarters.throttleWindow.requestCompleted();
+				requestStarters.requestCompleted(true, true);
 				requestStarters.sskInsertThrottle.successfulCompletion(rtt);
 			}
 		}

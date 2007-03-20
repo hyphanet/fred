@@ -523,6 +523,8 @@ public class StatisticsToadlet extends Toadlet {
 				loadStatsList.addChild("li", starters.statsPageLine(true, false));
 				loadStatsList.addChild("li", starters.statsPageLine(false, true));
 				loadStatsList.addChild("li", starters.statsPageLine(true, true));
+				loadStatsList.addChild("li", starters.diagnosticThrottlesLine(false));
+				loadStatsList.addChild("li", starters.diagnosticThrottlesLine(true));
 				nextTableCell = overviewTableRow.addChild("td");
 
 				// node version information box
