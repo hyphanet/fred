@@ -27,6 +27,7 @@ import freenet.node.fcp.ClientRequest;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.IdentifierCollisionException;
 import freenet.node.fcp.MessageInvalidException;
+import freenet.node.fcp.NotAllowedException;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -161,7 +162,12 @@ public class QueueToadlet extends Toadlet {
 				}
 				String persistence = request.getPartAsString("persistence", 32);
 				String returnType = request.getPartAsString("return-type", 32);
-				fcp.makePersistentGlobalRequest(fetchURI, expectedMIMEType, persistence, returnType);
+				try {
+					fcp.makePersistentGlobalRequest(fetchURI, expectedMIMEType, persistence, returnType);
+				} catch (NotAllowedException e) {
+					this.writeError("Cannot download to disk", "The node's current configuration does not allow you to download files to the downloads directory.", ctx);
+					return;
+				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("change_priority")) {
@@ -215,6 +221,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {
 					e.printStackTrace();
+				} catch (NotAllowedException e) {
+					this.writeError("Not allowed to upload from "+file, "The current configuration of the node prohibits you from uploading the file "+file+".", ctx);
+					return;
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
@@ -231,6 +240,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {
 					e.printStackTrace();
+				} catch (NotAllowedException e) {
+					this.writeError("Not allowed to upload from "+file, "The current configuration of the node prohibits you from uploading the file "+file+".", ctx);
+					return;
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;

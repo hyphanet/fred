@@ -119,6 +119,9 @@ public class FCPConnectionHandler {
 						requestsByIdentifier.put(id, cg);
 				} catch (IdentifierCollisionException e) {
 					success = false;
+				} catch (MessageInvalidException e) {
+					outputHandler.queue(new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, false));
+					return;
 				}
 			}
 		}
@@ -157,6 +160,9 @@ public class FCPConnectionHandler {
 					cp = new ClientPut(this, message);
 				} catch (IdentifierCollisionException e) {
 					success = false;
+				} catch (MessageInvalidException e) {
+					outputHandler.queue(new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, false));
+					return;
 				}
 				if(!persistent)
 					requestsByIdentifier.put(id, cp);

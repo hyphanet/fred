@@ -79,12 +79,17 @@ public class ClientPut extends ClientPutBase {
 	 *            The URI to redirect to (if <code>uploadFromType</code> is
 	 *            UPLOAD_FROM_REDIRECT)
 	 * @throws IdentifierCollisionException
+	 * @throws NotAllowedException 
 	 */
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly,
 			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
-			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode) throws IdentifierCollisionException {
+			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode) throws IdentifierCollisionException, NotAllowedException {
 		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode);
+		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
+			if(!globalClient.core.allowUploadFrom(origFilename))
+				throw new NotAllowedException();
+		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.targetFilename = targetFilename;
 		this.uploadFrom = uploadFromType;
@@ -131,10 +136,14 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 	
-	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) throws IdentifierCollisionException {
+	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) throws IdentifierCollisionException, MessageInvalidException {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
+		if(message.uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
+			if(!handler.server.core.allowUploadFrom(message.origFilename))
+				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
+		}
 		this.targetFilename = message.targetFilename;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.uploadFrom = message.uploadFromType;

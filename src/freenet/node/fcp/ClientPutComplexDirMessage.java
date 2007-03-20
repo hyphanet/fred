@@ -142,7 +142,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		// of ManifestElement's.
 		// Then simply create the ClientPutDir.
 		HashMap manifestElements = new HashMap();
-		convertFilesByNameToManifestElements(filesByName, manifestElements);
+		convertFilesByNameToManifestElements(filesByName, manifestElements, node);
 		handler.startClientPutDir(this, manifestElements);
 	}
 
@@ -150,7 +150,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 	 * Convert a hierarchy of HashMap's containing DirPutFile's into a hierarchy of
 	 * HashMap's containing ManifestElement's.
 	 */
-	private void convertFilesByNameToManifestElements(HashMap filesByName, HashMap manifestElements) {
+	private void convertFilesByNameToManifestElements(HashMap filesByName, HashMap manifestElements, Node node) throws MessageInvalidException {
 		Iterator i = filesByName.keySet().iterator();
 		while(i.hasNext()) {
 			String tempName = (String) (i.next());
@@ -159,9 +159,11 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 				HashMap h = (HashMap) val;
 				HashMap manifests = new HashMap();
 				manifestElements.put(tempName, manifests);
-				convertFilesByNameToManifestElements(h, manifests);
+				convertFilesByNameToManifestElements(h, manifests, node);
 			} else {
 				DirPutFile f = (DirPutFile) val;
+				if(f instanceof DiskDirPutFile && !node.clientCore.allowUploadFrom(((DiskDirPutFile)f).getFile()))
+					throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload "+((DiskDirPutFile) f).getFile(), identifier, global);
 				ManifestElement e = f.getElement();
 				manifestElements.put(tempName, e);
 			}

@@ -68,11 +68,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	/**
 	 * Create one for a global-queued request not made by FCP.
 	 * @throws IdentifierCollisionException
+	 * @throws NotAllowedException 
 	 */
 	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
 			short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
-			File returnFilename, File returnTempFilename) throws IdentifierCollisionException {
+			File returnFilename, File returnTempFilename) throws IdentifierCollisionException, NotAllowedException {
 		super(uri, identifier, verbosity, null, globalClient, prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
 						null, true);
@@ -90,6 +91,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = returnFilename;
 			this.tempFile = returnTempFilename;
+			if(!(client.core.allowDownloadTo(returnTempFilename) && client.core.allowDownloadTo(returnFilename)))
+				throw new NotAllowedException(); 
 			ret = new FileBucket(returnTempFilename, false, true, false, false, false);
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
@@ -126,7 +129,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 
-	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException {
+	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException, MessageInvalidException {
 		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
 				message.persistenceType, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
@@ -147,6 +150,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = message.diskFile;
 			this.tempFile = message.tempFile;
+			if(!(client.core.allowDownloadTo(tempFile) && client.core.allowDownloadTo(targetFile)))
+				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile, identifier, global); 
 			ret = new FileBucket(message.tempFile, false, true, false, false, false);
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;

@@ -34,4 +34,8 @@ public class DiskDirPutFile extends DirPutFile {
 		return new FileBucket(file, true, false, false, false, false);
 	}
 
+	public File getFile() {
+		return file;
+	}
+
 }

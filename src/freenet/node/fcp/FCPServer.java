@@ -653,8 +653,9 @@ public class FCPServer implements Runnable {
 	 * @param fetchURI The file to fetch.
 	 * @param persistence The persistence type.
 	 * @param returnType The return type.
+	 * @throws NotAllowedException 
 	 */
-	public void makePersistentGlobalRequest(FreenetURI fetchURI, String expectedMimeType, String persistenceTypeString, String returnTypeString) {
+	public void makePersistentGlobalRequest(FreenetURI fetchURI, String expectedMimeType, String persistenceTypeString, String returnTypeString) throws NotAllowedException {
 		boolean persistence = persistenceTypeString.equalsIgnoreCase("reboot");
 		short returnType = ClientGetMessage.parseReturnType(returnTypeString);
 		File returnFilename = null, returnTempFilename = null;
@@ -732,7 +733,7 @@ public class FCPServer implements Runnable {
 	}
 
 	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean persistRebootOnly, short returnType, String id, File returnFilename, 
-			File returnTempFilename) throws IdentifierCollisionException {
+			File returnTempFilename) throws IdentifierCollisionException, NotAllowedException {
 		ClientGet cg = 
 			new ClientGet(globalClient, fetchURI, defaultFetchContext.localRequestOnly, 
 					defaultFetchContext.ignoreStore, QUEUE_MAX_RETRIES, QUEUE_MAX_RETRIES,

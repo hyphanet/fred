@@ -49,6 +49,8 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
+		if(!handler.server.core.allowUploadFrom(dirname))
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+dirname, identifier, global);
 		// Create a directory listing of Buckets of data, mapped to ManifestElement's.
 		// Directories are sub-HashMap's.
 		HashMap buckets = makeBucketsByName(dirname, "");

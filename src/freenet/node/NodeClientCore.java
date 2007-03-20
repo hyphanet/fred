@@ -46,6 +46,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PaddedEphemerallyEncryptedBucketFactory;
@@ -67,6 +68,11 @@ public class NodeClientCore {
 	public final String formPassword;
 
 	File downloadDir;
+	private File[] downloadAllowedDirs;
+	private boolean includeDownloadDir;
+	private boolean downloadAllowedEverywhere;
+	private File[] uploadAllowedDirs;
+	private boolean uploadAllowedEverywhere;
 	final FilenameGenerator tempFilenameGenerator;
 	public final BucketFactory tempBucketFactory;
 	final Node node;
@@ -190,7 +196,54 @@ public class NodeClientCore {
 			throw new NodeInitException(Node.EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
 		}
 
+		// Downloads allowed, uploads allowed
+		
+		nodeConfig.register("downloadAllowedDirs", new String[] {"downloads"}, sortOrder++, true, true, "Directories downloading is allowed to", 
+				"Semicolon separated list of directories to which downloads are allowed. \"downloads\" means downloadsDir, empty means no downloads to disk allowed, \"all\" means downloads allowed from anywhere. "+
+				"WARNING! If this is set to \"all\" any user can download any file to anywhere on your computer!",
+				new StringArrCallback() {
 
+					public String[] get() {
+						synchronized(NodeClientCore.this) {
+							if(downloadAllowedEverywhere) return new String[] { "all" };
+							String[] dirs = new String[downloadAllowedDirs.length + (includeDownloadDir ? 1 : 0) ];
+							for(int i=0;i<downloadAllowedDirs.length;i++)
+								dirs[i] = downloadAllowedDirs[i].getPath();
+							if(includeDownloadDir)
+								dirs[downloadAllowedDirs.length] = "downloads";
+							return dirs;
+						}
+					}
+
+					public void set(String[] val) throws InvalidConfigValueException {
+						setDownloadAllowedDirs(val);
+					}
+			
+		});
+		setDownloadAllowedDirs(nodeConfig.getStringArr("downloadAllowedDirs"));
+		
+		nodeConfig.register("uploadAllowedDirs", new String[] {"all"}, sortOrder++, true, true, "Directories uploading is allowed from", 
+				"Semicolon separated list of directories from which uploads are allowed. Empty means no uploads from disk allowed, \"all\" means uploads allowed from anywhere (including system files etc!)."+
+				"WARNING! If this is set to \"all\" any file on your computer can be uploaded by any user.",
+				new StringArrCallback() {
+
+					public String[] get() {
+						synchronized(NodeClientCore.this) {
+							if(uploadAllowedEverywhere) return new String[] { "all" };
+							String[] dirs = new String[uploadAllowedDirs.length];
+							for(int i=0;i<uploadAllowedDirs.length;i++)
+								dirs[i] = uploadAllowedDirs[i].getPath();
+							return dirs;
+						}
+					}
+
+					public void set(String[] val) throws InvalidConfigValueException {
+						setUploadAllowedDirs(val);
+					}
+			
+		});
+		setUploadAllowedDirs(nodeConfig.getStringArr("uploadAllowedDirs"));
+		
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
@@ -236,6 +289,47 @@ public class NodeClientCore {
 		
 		lazyResume = nodeConfig.getBoolean("lazyResume");
 		
+	}
+
+	protected synchronized void setDownloadAllowedDirs(String[] val) {
+		int x = 0;
+		downloadAllowedEverywhere = false;
+		includeDownloadDir = false;
+		int i = 0;
+		downloadAllowedDirs = new File[val.length];
+		for(i=0;i<downloadAllowedDirs.length;i++) {
+			String s = val[i];
+			if(s.equals("downloads"))
+				includeDownloadDir = true;
+			else if(s.equals("all"))
+				downloadAllowedEverywhere = true;
+			else
+				downloadAllowedDirs[x++] = new File(val[i]);
+		}
+		if(x != i) {
+			File[] newDirs = new File[x];
+			System.arraycopy(downloadAllowedDirs, 0, newDirs, 0, x);
+			downloadAllowedDirs = newDirs;
+		}
+	}
+
+	protected synchronized void setUploadAllowedDirs(String[] val) {
+		int x = 0;
+		int i = 0;
+		uploadAllowedEverywhere = false;
+		uploadAllowedDirs = new File[val.length];
+		for(i=0;i<uploadAllowedDirs.length;i++) {
+			String s = val[i];
+			if(s.equals("all"))
+				uploadAllowedEverywhere = true;
+			else
+				uploadAllowedDirs[x++] = new File(val[i]);
+		}
+		if(x != i) {
+			File[] newDirs = new File[x];
+			System.arraycopy(uploadAllowedDirs, 0, newDirs, 0, x);
+			uploadAllowedDirs = newDirs;
+		}
 	}
 
 	public void start(Config config) throws NodeInitException {
@@ -825,5 +919,69 @@ public class NodeClientCore {
 	
 	public boolean lazyResume() {
 		return lazyResume;
+	}
+	
+	public synchronized File[] getAllowedDownloadDirs() {
+		if(!includeDownloadDir)
+			return downloadAllowedDirs;
+		else {
+			File[] realDownloadAllowedDirs = new File[downloadAllowedDirs.length+1];
+			realDownloadAllowedDirs[downloadAllowedDirs.length] = downloadDir;
+			return realDownloadAllowedDirs;
+		}
+	}
+	
+	public File[] getAllowedUploadDirs() {
+		return uploadAllowedDirs;
+	}
+
+	public boolean allowDownloadTo(File filename) {
+		if(downloadAllowedEverywhere) return true;
+		if(includeDownloadDir) {
+			if(isParent(downloadDir, filename)) return true;
+		}
+		for(int i=0;i<downloadAllowedDirs.length;i++) {
+			if(isParent(downloadAllowedDirs[i], filename)) return true;
+		}
+		return false;
+	}
+
+	public boolean allowUploadFrom(File filename) {
+		if(uploadAllowedEverywhere) return true;
+		for(int i=0;i<uploadAllowedDirs.length;i++) {
+			if(isParent(uploadAllowedDirs[i], filename)) return true;
+		}
+		return false;
+	}
+
+	/** Is possParent a parent of filename?
+	 * FIXME Move somewhere generic. 
+	 * Why doesn't java provide this? :( */
+	private boolean isParent(File possParent, File filename) {
+		File canonParent;
+		File canonFile;
+		try {
+			canonParent = possParent.getCanonicalFile();
+		} catch (IOException e) {
+			canonParent = possParent.getAbsoluteFile();
+		}
+		try {
+			canonFile = filename.getCanonicalFile();
+		} catch (IOException e) {
+			canonFile = filename.getAbsoluteFile();
+		}
+		if(isParentInner(possParent, filename)) return true;
+		if(isParentInner(possParent, canonFile)) return true;
+		if(isParentInner(canonParent, filename)) return true;
+		if(isParentInner(canonParent, canonFile)) return true;
+		return false;
+	}
+
+	private boolean isParentInner(File possParent, File filename) {
+		while(true) {
+			if(filename.equals(possParent)) return true;
+			filename = filename.getParentFile();
+			if(filename == null) return false;
+		}
 	}
 }
