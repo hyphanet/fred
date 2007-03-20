@@ -353,6 +353,8 @@ public class SHA256 implements Digest {
 		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
 			throw new IllegalArgumentException("Should be SHA-256 but is "+algo);
 		md256.reset();
+		if(Logger.shouldLog(Logger.DEBUG, SHA256.class))
+			Logger.debug(SHA256.class, "Returning message digest "+md256, new Exception());
 		digests.add(md256);
 	}
 
