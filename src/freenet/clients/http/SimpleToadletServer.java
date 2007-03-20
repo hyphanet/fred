@@ -52,7 +52,6 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	final int port;
 	String bindTo;
-	String allowedHosts;
 	final AllowedHosts allowedFullAccess;
 	final BucketFactory bf;
 	final NetworkInterface networkInterface;
@@ -101,13 +100,12 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	class FProxyAllowedHostsCallback implements StringCallback {
 	
 		public String get() {
-			return allowedHosts;
+			return networkInterface.getAllowedHosts();
 		}
 		
 		public void set(String allowedHosts) {
 			if (!allowedHosts.equals(get())) {
 				networkInterface.setAllowedHosts(allowedHosts);
-				SimpleToadletServer.this.allowedHosts = allowedHosts;
 			}
 		}
 		
@@ -286,7 +284,6 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.bf = core.tempBucketFactory;
 		port = fproxyConfig.getInt("port");
 		bindTo = fproxyConfig.getString("bindTo");
-		allowedHosts = fproxyConfig.getString("allowedHosts");
 		cssName = fproxyConfig.getString("css");
 		if((cssName.indexOf(':') != -1) || (cssName.indexOf('/') != -1))
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
@@ -296,7 +293,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		toadlets = new LinkedList();
 		core.setToadletContainer(this); // even if not enabled, because of config
 		
-		this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
+		this.networkInterface = new NetworkInterface(port, this.bindTo, fproxyConfig.getString("allowedHosts"));
 		if(!enabled) {
 			Logger.normal(core, "Not starting FProxy as it's disabled");
 			System.out.println("Not starting FProxy as it's disabled");
@@ -309,10 +306,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	public SimpleToadletServer(int i, String newbindTo, String allowedHosts, BucketFactory bf, String cssName, NodeClientCore core) throws IOException {
 		this.port = i;
 		this.bindTo = newbindTo;
-		this.allowedHosts = allowedHosts;
 		allowedFullAccess = new AllowedHosts(allowedHosts);
 		this.bf = bf;
-		this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
+		this.networkInterface = new NetworkInterface(port, this.bindTo, allowedHosts);
 		toadlets = new LinkedList();
 		this.cssName = cssName;
 		pageMaker = new PageMaker(cssName);

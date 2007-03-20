@@ -301,4 +301,8 @@ public class NetworkInterface {
 
 	}
 
+	public String getAllowedHosts() {
+		return allowedHosts.getAllowedHosts();
+	}
+
 }
