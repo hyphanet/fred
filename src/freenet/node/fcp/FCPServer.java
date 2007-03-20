@@ -59,7 +59,6 @@ public class FCPServer implements Runnable {
 	final int port;
 	public final boolean enabled;
 	String bindTo;
-	String allowedHosts;
 	AllowedHosts allowedHostsFullAccess;
 	final WeakHashMap clientsByName;
 	final FCPClient globalClient;
@@ -92,7 +91,6 @@ public class FCPServer implements Runnable {
 
 	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean persistentDownloadsEnabled, String persistentDownloadsDir, long persistenceInterval, boolean isEnabled) throws IOException, InvalidConfigValueException {
 		this.bindTo = ipToBindTo;
-		this.allowedHosts = allowedHosts;
 		this.allowedHostsFullAccess = new AllowedHosts(allowedHostsFullAccess);
 		this.persistenceInterval = persistenceInterval;
 		this.port = port;
@@ -115,7 +113,7 @@ public class FCPServer implements Runnable {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
-	public void maybeStart() throws IOException, InvalidConfigValueException {
+	public void maybeStart(String allowedHosts) throws IOException, InvalidConfigValueException {
 		if (this.enabled) {
 			
 			if(enablePersistentDownloads) {
@@ -245,13 +243,12 @@ public class FCPServer implements Runnable {
 		}
 		
 		public String get() {
-			return node.getFCPServer().allowedHosts;
+			return node.getFCPServer().networkInterface.getAllowedHosts();
 		}
 
 		public void set(String val) {
 			if (!val.equals(get())) {
 				node.getFCPServer().networkInterface.setAllowedHosts(val);
-				node.getFCPServer().allowedHosts = val;
 			}
 		}
 		
@@ -369,7 +366,7 @@ public class FCPServer implements Runnable {
 	
 		fcpConfig.finishedInitialization();
 		if(fcp != null)
-			fcp.maybeStart();
+			fcp.maybeStart(fcpConfig.getString("allowedHosts"));
 
 		return fcp;
 	}
