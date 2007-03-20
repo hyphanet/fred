@@ -26,6 +26,9 @@ public class ListPeerNotesMessage extends FCPMessage {
 	
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
+		if(!handler.hasFullAccess()) {
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ListPeerNotes requires full access", fs.get("Identifier"), false);
+		}
 		String nodeIdentifier = fs.get("NodeIdentifier");
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {

@@ -39,6 +39,9 @@ public class AddPeer extends FCPMessage {
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+		if(!handler.hasFullAccess()) {
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "AddPeer requires full access", fs.get("Identifier"), false);
+		}
 		String urlString = fs.get("URL");
 		String fileString = fs.get("File");
 		StringBuffer ref = null;

@@ -29,6 +29,9 @@ public class ModifyConfig extends FCPMessage {
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+		if(!handler.hasFullAccess()) {
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyConfig requires full access", fs.get("Identifier"), false);
+		}
 		Config config = node.config;
 		SubConfig[] sc = config.getConfigs();
 		

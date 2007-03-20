@@ -30,6 +30,9 @@ public class ModifyPeerNote extends FCPMessage {
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+		if(!handler.hasFullAccess()) {
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyPeerNote requires full access", fs.get("Identifier"), false);
+		}
 		String nodeIdentifier = fs.get("NodeIdentifier");
 		if( nodeIdentifier == null ) {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", null, false);

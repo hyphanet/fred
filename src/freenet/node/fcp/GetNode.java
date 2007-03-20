@@ -28,6 +28,9 @@ public class GetNode extends FCPMessage {
 	
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
+		if(!handler.hasFullAccess()) {
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetNode requires full access", null, false);
+		}
 		handler.outputHandler.queue(new NodeData(node, withPrivate, withVolatile));
 	}
 	

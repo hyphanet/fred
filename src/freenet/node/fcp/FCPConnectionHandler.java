@@ -235,4 +235,8 @@ public class FCPConnectionHandler {
 		return client.watchGlobal;
 	}
 
+	public boolean hasFullAccess() {
+		return server.allowedHostsFullAccess.allowed(sock.getInetAddress());
+	}
+
 }
