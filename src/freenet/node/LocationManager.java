@@ -340,12 +340,12 @@ public class LocationManager {
             	if(logMINOR) Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
                 noSwaps++;
             }
+            SHA256.returnMessageDigest(md);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
             unlock();
             removeRecentlyForwardedItem(item);
-            SHA256.returnMessageDigest(md);
         }
         }
     }
@@ -363,7 +363,6 @@ public class LocationManager {
         public void run() {
             long uid = r.nextLong();            
             if(!lock()) return;
-            MessageDigest md = SHA256.getMessageDigest();
             try {
                 startedSwaps++;
                 // We can't lock friends_locations, so lets just
@@ -378,7 +377,7 @@ public class LocationManager {
                     myValueLong[i+2] = Double.doubleToLongBits(friendLocs[i]);
                 byte[] myValue = Fields.longsToBytes(myValueLong);
                 
-                byte[] myHash = md.digest(myValue);
+                byte[] myHash = SHA256.digest(myValue);
                 
                 Message m = DMT.createFNPSwapRequest(uid, myHash, 6);
                 
@@ -468,7 +467,7 @@ public class LocationManager {
                 
                 // First does it verify?
                 
-                byte[] rehash = md.digest(hisBuf);
+                byte[] rehash = SHA256.digest(hisBuf);
                 
                 if(!java.util.Arrays.equals(rehash, hisHash)) {
                     Logger.error(this, "Bad hash in SwapComplete - malicious node? on "+uid);
@@ -520,7 +519,6 @@ public class LocationManager {
                 unlock();
                 if(item != null)
                     removeRecentlyForwardedItem(item);
-                SHA256.returnMessageDigest(md);
             }
         }
 

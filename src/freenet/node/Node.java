@@ -573,10 +573,8 @@ public class Node {
 		} catch (IllegalBase64Exception e2) {
 			throw new IOException();
 		}
-		MessageDigest md = SHA256.getMessageDigest();
-		identityHash = md.digest(myIdentity);
-		identityHashHash = md.digest(identityHash);
-		SHA256.returnMessageDigest(md); md = null;
+		identityHash = SHA256.digest(myIdentity);
+		identityHashHash = SHA256.digest(identityHash);
 		String loc = fs.get("location");
 		Location l;
 		try {

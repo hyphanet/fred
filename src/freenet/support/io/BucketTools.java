@@ -245,7 +245,8 @@ public class BucketTools {
 				int readBytes = is.read(buf);
 				if(readBytes < 0) break;
 				bytesRead += readBytes;
-				md.update(buf, 0, readBytes);
+				if(readBytes > 0)
+					md.update(buf, 0, readBytes);
 			}
 			if((bytesRead < bucketLength) && (bucketLength > 0))
 				throw new EOFException();

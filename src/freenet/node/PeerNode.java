@@ -347,10 +347,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             throw new FSParseException(e);
 		}
         
-        MessageDigest md = SHA256.getMessageDigest();
-        
         if(identity == null) throw new FSParseException("No identity");
-        identityHash = md.digest(identity);
+        identityHash = SHA256.digest(identity);
         hashCode = Fields.hashCode(identityHash);
         version = fs.get("version");
         Version.seenVersion(version);
@@ -420,8 +418,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     				boolean failed = false;
     				if(signature == null || peerCryptoGroup == null || peerPubKey == null || 
     						(failed = !
-    								(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, md.digest(fs.toOrderedString().getBytes("UTF-8"))), false) ||
-    								(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, md.digest(fs.toOrderedString().getBytes("UTF-8"))), true))))) { // FIXME remove ,true after pre-1013 are obsolete
+    								(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(fs.toOrderedString().getBytes("UTF-8"))), false) ||
+    								(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(fs.toOrderedString().getBytes("UTF-8"))), true))))) { // FIXME remove ,true after pre-1013 are obsolete
     					String errCause = "";
     					if(signature == null) errCause += " (No signature)";
     					if(peerCryptoGroup == null) errCause += " (No peer crypto group)";
@@ -455,9 +453,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         // Setup incoming and outgoing setup ciphers
         byte[] nodeKey = node.identityHash;
         byte[] nodeKeyHash = node.identityHashHash;
-        byte[] setupKeyHash = md.digest(identityHash);
+        byte[] setupKeyHash = SHA256.digest(identityHash);
         
-        int digestLength = md.getDigestLength();
+        int digestLength = SHA256.getDigestLength();
         incomingSetupKey = new byte[digestLength];
         for(int i=0;i<incomingSetupKey.length;i++)
             incomingSetupKey[i] = (byte) (nodeKey[i] ^ setupKeyHash[i]);
@@ -632,8 +630,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		
 		// Setup the queuedToSendN2NTMExtraPeerDataFileNumbers
 		queuedToSendN2NTMExtraPeerDataFileNumbers = new LinkedHashSet();
-		
-		SHA256.returnMessageDigest(md);
     }
 
     private boolean parseARK(SimpleFieldSet fs, boolean onStartup) {

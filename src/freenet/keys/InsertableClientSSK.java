@@ -211,10 +211,8 @@ public class InsertableClientSSK extends ClientSSK {
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(g, r);
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
-		MessageDigest md = SHA256.getMessageDigest();
 		try {
-			byte[] pkHash = md.digest(pubKey.asBytes());
-			SHA256.returnMessageDigest(md);
+			byte[] pkHash = SHA256.digest(pubKey.asBytes());
 			return new InsertableClientSSK(docName, pkHash, pubKey, privKey, ckey, 
 					Key.ALGO_AES_PCFB_256_SHA256);
 		} catch (MalformedURLException e) {

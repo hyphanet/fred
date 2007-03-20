@@ -475,8 +475,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         int paddingLength = node.random.nextInt(100);
         byte[] iv = new byte[pcfb.lengthIV()];
         node.random.nextBytes(iv);
-        MessageDigest md = SHA256.getMessageDigest();
-        byte[] hash = md.digest(output);
+        byte[] hash = SHA256.digest(output);
         if(logMINOR) Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
         byte[] data = new byte[iv.length + hash.length + 2 /* length */ + output.length + paddingLength];
         pcfb.reset(iv);
@@ -498,7 +497,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
 		}
 		if(logMINOR) Logger.minor(this, "Sending auth packet (long) to "+replyTo+" - size "+data.length+" data length: "+output.length);
-		SHA256.returnMessageDigest(md);
      }
 
     private void sendPacket(byte[] data, Peer replyTo, PeerNode pn, int alreadyReportedBytes) throws LocalAddressException {
@@ -722,7 +720,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         // Verify
         tracker.pn.verified(tracker);
         
-        for(int i=0;i<md.getDigestLength();i++) {
+        for(int i=0;i<HASH_LENGTH;i++) {
             packetHash[i] ^= buf[offset+i];
         }
         if(logMINOR) Logger.minor(this, "Contributing entropy");

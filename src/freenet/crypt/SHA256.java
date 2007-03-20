@@ -380,5 +380,9 @@ public class SHA256 implements Digest {
 	System.out.println(HexUtil.bytesToHex(rv));
     }
 
+	public static int getDigestLength() {
+		return 32;
+	}
+
 	    
 }
