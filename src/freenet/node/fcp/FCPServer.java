@@ -363,11 +363,10 @@ public class FCPServer implements Runnable {
 			cb3.server = fcp;
 		}
 		
-	
-		fcpConfig.finishedInitialization();
 		if(fcp != null)
 			fcp.maybeStart(fcpConfig.getString("allowedHosts"));
-
+		
+		fcpConfig.finishedInitialization();
 		return fcp;
 	}
 
