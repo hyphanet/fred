@@ -703,7 +703,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         md.update(seqBuf);
         md.update(plaintext);
         byte[] realHash = md.digest();
-        SHA256.returnMessageDigest(md);
+        SHA256.returnMessageDigest(md); md = null;
 
         // Now decrypt the original hash
         
@@ -726,7 +726,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             packetHash[i] ^= buf[offset+i];
         }
         if(logMINOR) Logger.minor(this, "Contributing entropy");
-        node.random.acceptEntropyBytes(myPacketDataSource, packetHash, 0, md.getDigestLength(), 0.5);
+        node.random.acceptEntropyBytes(myPacketDataSource, packetHash, 0, HASH_LENGTH, 0.5);
         if(logMINOR) Logger.minor(this, "Contributed entropy");
         
         // Lots more to do yet!
