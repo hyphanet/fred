@@ -726,6 +726,7 @@ public class FCPServer implements Runnable {
 			sb.append(extAdd);
 			f = new File(core.getDownloadDir(), sb.toString());
 			f1 = new File(core.getDownloadDir(), sb.append(".freenet-tmp").toString());
+			x++;
 		}
 		return f;
 	}
