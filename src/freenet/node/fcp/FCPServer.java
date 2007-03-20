@@ -332,7 +332,8 @@ public class FCPServer implements Runnable {
 		fcpConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", 2, false, true, "Allowed hosts (read the warning!)", 
 				"IP addresses that are allowed to connect to the FCP server. " +
 				"May be a comma-separated list of single IPs and CIDR masked IPs like 192.168.0.0/24. "+
-				"WARNING! Anyone who has access to FCP can upload any file the node has access to, or download files to disk (no overwriting).", new FCPAllowedHostsCallback(core));
+				"WARNING! Anyone who has access to FCP can upload any file the node has access to, or download files to disk " +
+				"(but the node will try not to overwrite existing files).", new FCPAllowedHostsCallback(core));
 		fcpConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", 2, false, true, "Hosts allowed full access",
 				"IP addresses which are allowed full access to the node. Clients on these IPs may restart the node, reconfigure it, etc. " +
 				"Note that ALL clients are allowed to do direct disk I/O!", new FCPAllowedHostsFullAccessCallback(core));
