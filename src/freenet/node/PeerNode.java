@@ -16,12 +16,11 @@ import java.io.Writer;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -417,9 +416,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     			try{
     				boolean failed = false;
     				if(signature == null || peerCryptoGroup == null || peerPubKey == null || 
-    						(failed = !
-    								(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(fs.toOrderedString().getBytes("UTF-8"))), false) ||
-    								(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(fs.toOrderedString().getBytes("UTF-8"))), true))))) { // FIXME remove ,true after pre-1013 are obsolete
+    						(failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(fs.toOrderedString().getBytes("UTF-8"))), false)))) {
     					String errCause = "";
     					if(signature == null) errCause += " (No signature)";
     					if(peerCryptoGroup == null) errCause += " (No peer crypto group)";
