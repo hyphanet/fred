@@ -1414,8 +1414,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		}
 	    		
 	    		if(logMINOR) {
-	    			Logger.minor(this, "Headers: " + header.length+" bytes, hash " + HexUtil.bytesToHex(header));
-	    			Logger.minor(this, "Data: " + data.length + " bytes, hash " + HexUtil.bytesToHex(data) + " fetching " + chk);
+	    			Logger.minor(this, "Headers: " + header.length+" bytes, hash " + Fields.hashCode(header));
+	    			Logger.minor(this, "Data: " + data.length + " bytes, hash " + Fields.hashCode(data) + " fetching " + chk);
 	    		}
 	    		
 	    	}catch(SSKVerifyException ex){
@@ -1538,7 +1538,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    	t = null;
 	    	
 	    	if(logMINOR) {
-	    		Logger.minor(this, "Data: " + data.length + " bytes, hash " + HexUtil.bytesToHex(data) + " fetching "+HexUtil.bytesToHex(hash));
+	    		Logger.minor(this, "Data: " + data.length + " bytes, hash " + Fields.hashCode(data) + " fetching "+HexUtil.bytesToHex(hash));
 	    	}
 	    	
 	        synchronized(this) {
