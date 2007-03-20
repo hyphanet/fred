@@ -921,20 +921,6 @@ public class NodeClientCore {
 		return lazyResume;
 	}
 	
-	public synchronized File[] getAllowedDownloadDirs() {
-		if(!includeDownloadDir)
-			return downloadAllowedDirs;
-		else {
-			File[] realDownloadAllowedDirs = new File[downloadAllowedDirs.length+1];
-			realDownloadAllowedDirs[downloadAllowedDirs.length] = downloadDir;
-			return realDownloadAllowedDirs;
-		}
-	}
-	
-	public File[] getAllowedUploadDirs() {
-		return uploadAllowedDirs;
-	}
-
 	public boolean allowDownloadTo(File filename) {
 		if(downloadAllowedEverywhere) return true;
 		if(includeDownloadDir) {
