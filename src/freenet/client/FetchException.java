@@ -417,6 +417,7 @@ public class FetchException extends Exception {
 		case REJECTED_OVERLOAD:
 		case TRANSFER_FAILED:
 		case ALL_DATA_NOT_FOUND:
+		case SPLITFILE_ERROR:
 			return false;
 			
 		case BUCKET_ERROR:
@@ -424,11 +425,7 @@ public class FetchException extends Exception {
 			// Maybe fatal
 			return false;
 			
-		case SPLITFILE_ERROR:
-			// Fatal, because there are internal retries
-			return true;
-			
-			// Wierd ones
+		// Wierd ones
 		case CANCELLED:
 		case ARCHIVE_RESTART:
 			// Fatal
