@@ -1836,7 +1836,7 @@ public class Node {
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
 		if(logMINOR) dumpByteCostAverages();
 		
-		if(threadLimit > getActiveThreadCount())
+		if(threadLimit < getActiveThreadCount())
 			return "Accepting the request would mean going above the maximum number of allowed threads";
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
@@ -2240,7 +2240,6 @@ public class Node {
 		long usedJavaMem = (long)(totalMemory - freeMemory);
 		long allocatedJavaMem = (long)totalMemory;
 		long maxJavaMem = (long)maxMemory;
-		int threadCount = Thread.activeCount();
 		int availableCpus = rt.availableProcessors();
 
 		fs.put("freeJavaMemory", (long)freeMemory);
@@ -2248,7 +2247,7 @@ public class Node {
 		fs.put("allocatedJavaMemory", allocatedJavaMem);
 		fs.put("maximumJavaMemory", maxJavaMem);
 		fs.put("availableCPUs", availableCpus);
-		fs.put("runningThreadCount", threadCount);
+		fs.put("runningThreadCount", getActiveThreadCount());
 		
 		return fs;
 	}
