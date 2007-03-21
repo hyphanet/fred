@@ -508,7 +508,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		if(x >= dataBlocks.length) {
 			x -= dataBlocks.length;
 			if(checkBlockInserters[x] == null) {
-				Logger.error(this, "Completed twice: check block "+x+" on "+this);
+				Logger.error(this, "Completed twice: check block "+x+" on "+this, new Exception());
 				return blocksCompleted;
 			}
 			checkBlockInserters[x] = null;
@@ -516,7 +516,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			checkBlocks[x] = null;
 		} else {
 			if(dataBlockInserters[x] == null) {
-				Logger.error(this, "Completed twice: data block "+x+" on "+this);
+				Logger.error(this, "Completed twice: data block "+x+" on "+this, new Exception());
 				return blocksCompleted;
 			}
 			dataBlockInserters[x] = null;
