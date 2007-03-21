@@ -202,10 +202,10 @@ public class StatisticsToadlet extends Toadlet {
 			} else {
 				HTMLNode activityList = activityInfoboxContent.addChild("ul");
 				if (numInserts > 0) {
-					activityList.addChild("li", "Inserts:\u00a0" + numInserts+'/'+Node.MAX_RUNNING_INSERTS);
+					activityList.addChild("li", "Inserts:\u00a0" + numInserts);
 				}
 				if (numRequests > 0) {
-					activityList.addChild("li", "Requests:\u00a0" + numRequests+'/'+Node.MAX_RUNNING_REQUESTS);
+					activityList.addChild("li", "Requests:\u00a0" + numRequests);
 				}
 				if (numTransferringRequests > 0) {
 					activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests);
@@ -462,14 +462,12 @@ public class StatisticsToadlet extends Toadlet {
 				long maxJavaMem = (long)maxMemory;
 				int availableCpus = rt.availableProcessors();
 				
-				ThreadGroup tg = Thread.currentThread().getThreadGroup();
-				while(tg.getParent() != null) tg = tg.getParent();
-				int threadCount = tg.activeCount();
+				int threadCount = node.getActiveThreadCount();
 
 				jvmStatsList.addChild("li", "Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem, true));
 				jvmStatsList.addChild("li", "Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem, true));
 				jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true));
-				jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
+				jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount) + '/' + node.getThreadLimit());
 				jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
 				jvmStatsList.addChild("li", "JVM Vendor:\u00a0" + System.getProperty("java.vm.vendor"));
 				jvmStatsList.addChild("li", "JVM Version:\u00a0" + System.getProperty("java.vm.version"));

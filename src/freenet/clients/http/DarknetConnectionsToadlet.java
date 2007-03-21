@@ -201,10 +201,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			} else {
 				HTMLNode activityList = activityInfoboxContent.addChild("ul");
 				if (numInserts > 0) {
-					activityList.addChild("li", "Inserts:\u00a0" + numInserts+'/'+Node.MAX_RUNNING_INSERTS);
+					activityList.addChild("li", "Inserts:\u00a0" + numInserts);
 				}
 				if (numRequests > 0) {
-					activityList.addChild("li", "Requests:\u00a0" + numRequests+'/'+Node.MAX_RUNNING_REQUESTS);
+					activityList.addChild("li", "Requests:\u00a0" + numRequests);
 				}
 				if (numTransferringRequests > 0) {
 					activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests);

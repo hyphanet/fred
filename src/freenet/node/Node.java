@@ -251,10 +251,6 @@ public class Node {
 	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
 	/** How long we're over the nodeAveragePingTime threshold before we alert (in milliseconds)*/
 	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
-	/** If more than this many requests are running, reject any more. */
-	public static final int MAX_RUNNING_REQUESTS = 100;
-	/** If more than this many inserts are running, reject any more. */
-	public static final int MAX_RUNNING_INSERTS = 100;
 	
 	/** Accept one request every 10 seconds regardless, to ensure we update the
 	 * block send time.
@@ -534,6 +530,10 @@ public class Node {
 	public RunningAverage backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
 	protected final ThrottlePersister throttlePersister;
 	
+	// ThreadCounting stuffs
+	private final ThreadGroup rootThreadGroup;
+	private int threadLimit;
+
 	/**
 	 * Read all storable settings (identity etc) from the node file.
 	 * @param filename The name of the file to read from.
@@ -804,6 +804,11 @@ public class Node {
 		this.random = random;
 		cachedPubKeys = new LRUHashtable();
 		lm = new LocationManager(random);
+
+		ThreadGroup tg = Thread.currentThread().getThreadGroup();
+		while(tg.getParent() != null) tg = tg.getParent();
+		this.rootThreadGroup = tg;
+
 		try {
 			localhostAddress = InetAddress.getByName("127.0.0.1");
 		} catch (UnknownHostException e3) {
@@ -1036,6 +1041,22 @@ public class Node {
 		requestInputThrottle = 
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (1000L*1000L*1000L) / ibwLimit, 0);
 		
+		
+		nodeConfig.register("threadLimit", 750, sortOrder++, true, true, "Thread limit", "The node will try to limit its thread usage to the specified value, refusing new requests",
+				new IntCallback() {
+					public int get() {
+						return threadLimit;
+					}
+					public void set(int val) throws InvalidConfigValueException {
+						if(val == get()) return;
+						if(val < 250)
+							throw new InvalidConfigValueException("This value is to low for that setting, increase it!");
+						threadLimit = val;
+					}
+		});
+		
+		
+		threadLimit = nodeConfig.getInt("threadLimit");
 		
 		// FIXME add an averaging/long-term/soft bandwidth limit. (bug 76)
 		
@@ -1815,13 +1836,8 @@ public class Node {
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
 		if(logMINOR) dumpByteCostAverages();
 		
-		if(isInsert) {
-			if(getNumInserts() > MAX_RUNNING_INSERTS)
-				return "Too many running inserts";
-		} else {
-			if(getNumRequests() > MAX_RUNNING_REQUESTS)
-				return "Too many running requests";
-		}
+		if(threadLimit > getActiveThreadCount())
+			return "Accepting the request would mean going above the maximum number of allowed threads";
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		
@@ -3691,24 +3707,10 @@ public class Node {
 	}
 
 	public void waitUntilNotOverloaded(boolean isInsert) {
-		if(isInsert) {
-			synchronized(insertSenders) {
-				while(insertSenders.size() > MAX_RUNNING_INSERTS)
-					try {
-						insertSenders.wait(100*1000);
-					} catch (InterruptedException e) {
-						// Ignore
-					}
-			}
-		} else {
-			synchronized(requestSenders) {
-				while(requestSenders.size() > MAX_RUNNING_REQUESTS)
-					try {
-						requestSenders.wait(100*1000);
-					} catch (InterruptedException e) {
-						// Ignore
-					}
-			}
+		while(threadLimit < getActiveThreadCount()){
+			try{
+				wait(5000);
+			} catch (InterruptedException e) {}
 		}
 	}
 
@@ -3758,5 +3760,13 @@ public class Node {
 		catch(DatabaseException e) {
 			System.out.println("Failed to get stats from JE environment: " + e);
 		}
+	}
+	
+	public int getActiveThreadCount() {
+		return rootThreadGroup.activeCount();
+	}
+
+	public int getThreadLimit() {
+		return threadLimit;
 	}
 }

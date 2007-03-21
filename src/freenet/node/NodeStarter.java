@@ -36,6 +36,7 @@ public class NodeStarter
 	private static LoggingConfigHandler logConfigHandler;
 	//TODO: cleanup
 	public static int RECOMMENDED_EXT_BUILD_NUMBER = 11;
+	
 	/*
 		(File.separatorChar == '\\') &&
 		(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")) ? 6 : 2;
