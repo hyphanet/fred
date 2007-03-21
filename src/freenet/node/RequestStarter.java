@@ -137,7 +137,6 @@ public class RequestStarter implements Runnable {
 					} catch (InterruptedException e) {
 						// Ignore
 					}
-					return;
 				}
 			}
 		}
