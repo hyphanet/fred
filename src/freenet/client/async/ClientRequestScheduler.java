@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -81,7 +82,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final RequestStarter starter;
 	private final Node node;
 	public final String name;
-	private final LinkedList /* <RandomGrabArray> */ recentSuccesses = new LinkedList();
+	private final LinkedList /* <WeakReference <RandomGrabArray> > */ recentSuccesses = new LinkedList();
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
@@ -334,7 +335,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				synchronized(this) {
 					if(!recentSuccesses.isEmpty()) {
 						if(random.nextBoolean()) {
-							altRGA = (RandomGrabArray) recentSuccesses.removeLast();
+							WeakReference ref = (WeakReference) (recentSuccesses.removeLast());
+							altRGA = (RandomGrabArray) ref.get();
 						}
 					}
 				}
@@ -400,7 +402,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public void succeeded(RandomGrabArray parentGrabArray) {
 		synchronized(this) {
-			recentSuccesses.addFirst(parentGrabArray);
+			recentSuccesses.addFirst(new WeakReference(parentGrabArray));
 			while(recentSuccesses.size() > 8)
 				recentSuccesses.removeLast();
 		}
