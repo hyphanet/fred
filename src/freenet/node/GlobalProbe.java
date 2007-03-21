@@ -8,6 +8,8 @@ import freenet.support.Logger;
 public class GlobalProbe implements Runnable {
 
 	double lastLocation = 0.0;
+	long lastTime;
+	int lastHops;
 	boolean doneSomething = false;
 	final ProbeCallback cb;
 	final Node node;
@@ -17,11 +19,12 @@ public class GlobalProbe implements Runnable {
 		this.node = n;
     	cb = new ProbeCallback() {
 			public void onCompleted(String reason, double target, double best, double nearest, long id, short counter) {
-				String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" hops, id "+id+"\r\n";
+				String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" hops in "+(System.currentTimeMillis() - lastTime)+", id "+id+"\r\n";
 				Logger.error(this, msg);
 				synchronized(GlobalProbe.this) {
 					doneSomething = true;
 					lastLocation = best;
+					lastHops = counter;
 					GlobalProbe.this.notifyAll();
 				}
 			}
@@ -35,6 +38,7 @@ public class GlobalProbe implements Runnable {
 			double prevLoc = lastLocation;
 			while(true) {
 				doneSomething = false;
+				lastTime = System.currentTimeMillis();
 	    		node.dispatcher.startProbe(lastLocation, cb);
 	    		for(int i=0;i<20 && !doneSomething;i++) {
 	    			try {
@@ -65,7 +69,7 @@ public class GlobalProbe implements Runnable {
 					}
 	    			continue;
 	    		}
-	    		output(lastLocation);
+	    		output(lastLocation, lastHops);
 	    		prevLoc = lastLocation;
 	    		if(lastLocation > 1.0 || Math.abs(lastLocation - 1.0) < 2*Double.MIN_VALUE) break;
 	    		ctr++;
@@ -80,10 +84,10 @@ public class GlobalProbe implements Runnable {
 		
 	}
 
-	private void output(double loc) {
+	private void output(double loc, int hops) {
 		double estimatedNodes = ((double) (ctr+1)) / loc;
-		Logger.error(this, "LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes);
-		System.out.println("LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes);
+		Logger.error(this, "LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes+" ("+hops+" hops)");
+		System.out.println("LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes+" ("+hops+" hops)");
 	}
 
 	private void error(String string) {
