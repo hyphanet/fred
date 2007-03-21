@@ -126,14 +126,12 @@ public class RequestStarter implements Runnable {
 				return;
 			} else {
 				if(logMINOR) Logger.minor(this, "Waiting...");				
-				req = sched.removeFirst();
-				if(req != null) {
-					continue;
-				}
 				// Always take the lock on RequestStarter first.
 				synchronized(this) {
+					req = sched.removeFirst();
+					if(req != null) continue;
 					try {
-						wait(1000);
+						wait(1000*1000);
 					} catch (InterruptedException e) {
 						// Ignore
 					}
