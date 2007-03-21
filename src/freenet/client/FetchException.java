@@ -417,6 +417,7 @@ public class FetchException extends Exception {
 		case REJECTED_OVERLOAD:
 		case TRANSFER_FAILED:
 		case ALL_DATA_NOT_FOUND:
+		// Not usually fatal
 		case SPLITFILE_ERROR:
 			return false;
 			
