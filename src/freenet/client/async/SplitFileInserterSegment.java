@@ -149,6 +149,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 					if(bucketFS != null) {
 						try {
 							checkBlocks[i] = SerializableToFieldSetBucketUtil.create(bucketFS, ctx.random, ctx.persistentFileTracker);
+							if(logMINOR)
+								Logger.minor(this, "Check block "+i+" : "+checkBlocks[i]);
 						} catch (CannotCreateFromFieldSetException e) {
 							Logger.error(this, "Failed to deserialize check block "+i+" of "+segNo+" : "+e, e);
 							// Re-encode it.
@@ -209,6 +211,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			} else {
 				try {
 					dataBlocks[i] = SerializableToFieldSetBucketUtil.create(bucketFS, ctx.random, ctx.persistentFileTracker);
+					if(logMINOR)
+						Logger.minor(this, "Data block "+i+" : "+checkBlocks[i]);
 				} catch (CannotCreateFromFieldSetException e) {
 					throw new ResumeException("Failed to deserialize block "+i+" of "+segNo+" : "+e, e);
 				}
