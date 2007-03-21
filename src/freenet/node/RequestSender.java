@@ -41,7 +41,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 5000;
-    static final int FETCH_TIMEOUT = 60000;
+    static final int FETCH_TIMEOUT = 120000;
     /** One in this many successful requests is randomly reinserted.
      * This is probably a good idea anyway but with the split store it's essential. */
     static final int RANDOM_REINSERT_INTERVAL = 200;
