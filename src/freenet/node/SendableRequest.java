@@ -19,9 +19,10 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	
 	/** ONLY called by RequestStarter. Start the actual request using the NodeClientCore
 	 * provided. The request has been removed from the structure already, if canRemove().
+	 * @param sched The scheduler this request has just been removed from.
 	 * @return True if a request was sent, false otherwise (in which case the request will
 	 * be removed if it hasn't already been). */
-	public abstract boolean send(NodeClientCore node);
+	public abstract boolean send(NodeClientCore node, RequestScheduler sched);
 	
 	/** Get client context object */
 	public abstract Object getClient();

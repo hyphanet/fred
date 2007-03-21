@@ -54,7 +54,7 @@ public abstract class SendableGet extends SendableRequest {
 	/** Do the request, blocking. Called by RequestStarter. 
 	 * @return True if a request was executed. False if caller should try to find another request, and remove
 	 * this one from the queue. */
-	public boolean send(NodeClientCore core) {
+	public boolean send(NodeClientCore core, RequestScheduler sched) {
 		FetchContext ctx = getContext();
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		while(true) {
@@ -89,6 +89,7 @@ public abstract class SendableGet extends SendableRequest {
 					return true;
 				}
 				onSuccess(block, false, keyNum);
+				sched.succeeded(this.getParentGrabArray());
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum);

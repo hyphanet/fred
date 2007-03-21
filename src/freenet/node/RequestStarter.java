@@ -162,7 +162,7 @@ public class RequestStarter implements Runnable {
 		}
 
 		public void run() {
-			if(!req.send(core))
+			if(!req.send(core, sched))
 				Logger.normal(this, "run() not able to send a request");
 			if(Logger.shouldLog(Logger.MINOR, this)) 
 				Logger.minor(this, "Finished "+req);

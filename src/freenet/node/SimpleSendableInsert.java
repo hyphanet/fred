@@ -45,7 +45,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		return 0;
 	}
 
-	public boolean send(NodeClientCore core) {
+	public boolean send(NodeClientCore core, RequestScheduler sched) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);

@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -80,6 +81,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final RequestStarter starter;
 	private final Node node;
 	public final String name;
+	private final LinkedList /* <RandomGrabArray> */ recentSuccesses = new LinkedList();
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
@@ -327,6 +329,30 @@ public class ClientRequestScheduler implements RequestScheduler {
 					innerRegister(req);
 					continue;
 				}
+				
+				RandomGrabArray altRGA = null;
+				synchronized(this) {
+					if(!recentSuccesses.isEmpty()) {
+						if(random.nextBoolean()) {
+							altRGA = (RandomGrabArray) recentSuccesses.removeLast();
+						}
+					}
+				}
+				if(altRGA != null) {
+					SendableRequest altReq = (SendableRequest) (altRGA.removeRandom());
+					if(altReq != null && altReq.getPriorityClass() <= choosenPriorityClass && 
+							altReq.getRetryCount() <= rga.getNumber()) {
+						// Use the recent one instead
+						innerRegister(req);
+						req = altReq;
+					} else {
+						synchronized(this) {
+							recentSuccesses.addLast(altRGA);
+						}
+						innerRegister(altReq);
+					}
+				}
+				
 				if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+rga.getNumber()+", prio "+
 						req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
 				ClientRequester cr = req.getClientRequest();
@@ -370,5 +396,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public String getChoosenPriorityScheduler() {
 		return choosenPriorityScheduler;
+	}
+
+	public void succeeded(RandomGrabArray parentGrabArray) {
+		synchronized(this) {
+			recentSuccesses.addFirst(parentGrabArray);
+			while(recentSuccesses.size() > 8)
+				recentSuccesses.removeLast();
+		}
 	}
 }

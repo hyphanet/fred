@@ -18,6 +18,7 @@ import freenet.keys.InsertableClientSSK;
 import freenet.keys.SSKEncodeException;
 import freenet.node.LowLevelPutException;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
@@ -286,7 +287,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return finished;
 	}
 
-	public boolean send(NodeClientCore core) {
+	public boolean send(NodeClientCore core, RequestScheduler sched) {
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
 			ClientKeyBlock b = getBlock();
