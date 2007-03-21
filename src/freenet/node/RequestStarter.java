@@ -126,12 +126,13 @@ public class RequestStarter implements Runnable {
 				return;
 			} else {
 				if(logMINOR) Logger.minor(this, "Waiting...");				
-				// Always take the lock on RequestStarter first.
+				// Always take the lock on RequestStarter first. AFAICS we don't synchronize on RequestStarter anywhere else.
+				// Nested locks here prevent extra latency when there is a race, and therefore allow us to sleep indefinitely
 				synchronized(this) {
 					req = sched.removeFirst();
 					if(req != null) continue;
 					try {
-						wait(1000*1000);
+						wait(100*1000); // as close to indefinite as I'm comfortable with! Toad
 					} catch (InterruptedException e) {
 						// Ignore
 					}
