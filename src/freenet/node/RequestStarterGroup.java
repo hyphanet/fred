@@ -207,9 +207,9 @@ public class RequestStarterGroup {
 		StringBuffer sb = new StringBuffer();
 		if(mode) {
 			sb.append("Request window: ");
-			sb.append(throttleWindowCHK.toString());
+			sb.append(throttleWindowRequest.toString());
 			sb.append(", Insert window: ");
-			sb.append(throttleWindowSSK.toString());
+			sb.append(throttleWindowInsert.toString());
 		} else {
 			sb.append("CHK window: ");
 			sb.append(throttleWindowCHK.toString());
