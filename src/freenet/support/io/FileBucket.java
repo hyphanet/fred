@@ -23,7 +23,7 @@ import freenet.support.api.Bucket;
  */
 public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 
-	protected File file;
+	protected final File file;
 	protected boolean readOnly;
 	protected boolean deleteOnFinalize;
 	protected boolean deleteOnFree;
@@ -163,6 +163,8 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 			File tempfile, String s, long restartCount)
 			throws FileNotFoundException {
 			super(tempfile, false);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Writing to "+tempfile+" for "+file);
 			this.tempfile = tempfile;
 			resetLength();
 			this.restartCount = restartCount;
@@ -200,20 +202,31 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		}
 		
 		public void close() throws IOException {
+			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			if(logMINOR)
+				Logger.minor(this, "Closing "+FileBucket.this);
 			try {
 				super.close();
 			} catch (IOException e) {
+				if(logMINOR)
+					Logger.minor(this, "Failed closing "+FileBucket.this+" : "+e, e);
 				if(createFileOnly) tempfile.delete();
 				throw e;
 			}
 			if(createFileOnly) {
 				if(file.exists()) {
+					if(logMINOR)
+						Logger.minor(this, "File exists creating file for "+this);
 					tempfile.delete();
 					throw new FileExistsException(file);
 				}
 				if(!tempfile.renameTo(file)) {
+					if(logMINOR)
+						Logger.minor(this, "Cannot rename file for "+this);
 					if(file.exists()) throw new FileExistsException(file);
 					tempfile.delete();
+					if(logMINOR)
+						Logger.minor(this, "Deleted, cannot rename file for "+this);
 					throw new IOException("Cannot rename file");
 				}
 			}
@@ -231,9 +244,11 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 	}
 
 	public synchronized InputStream getInputStream() throws IOException {
-		return file.exists()
-			? (InputStream) new FileBucketInputStream(file)
-			: (InputStream) new NullInputStream();
+		if(!file.exists()) {
+			Logger.normal(this, "File does not exist: "+file+" for "+this);
+			return new NullInputStream();
+		} else 
+			return new FileBucketInputStream(file);
 	}
 
 	/**

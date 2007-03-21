@@ -41,7 +41,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private final LinkedList bucketsToFree;
 
 	public PersistentTempBucketFactory(File dir, String prefix, RandomSource rand) throws IOException {
-		this.dir = dir;
+		this.dir = dir.getAbsoluteFile();
 		this.rand = rand;
 		this.fg = new FilenameGenerator(rand, false, dir, prefix);
 		if(!dir.exists()) {
@@ -65,7 +65,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			        	Logger.minor(this, "Ignoring "+name);
 					continue;
 				}
-				originalFiles.add(f);
+				originalFiles.add(f.getAbsoluteFile());
 			}
 		}
 		bucketsToFree = new LinkedList();
@@ -73,7 +73,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	public void register(File file) {
 		synchronized(this) {
-			originalFiles.remove(file);
+			if(!originalFiles.remove(file.getAbsoluteFile()))
+				Logger.error(this, "Preserving "+file+" but it wasn't found!");
 		}
 	}
 	
