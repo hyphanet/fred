@@ -83,7 +83,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				Logger.error(this, "Caught "+e, e);
 				throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
 			} catch (IOException e) {
-				Logger.error(this, "Caught "+e, e);
+				Logger.error(this, "Caught "+e+" encoding data "+sourceData, e);
 				throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 			}
 		} else if(uriType.equals("SSK") || uriType.equals("KSK")) {
@@ -293,7 +293,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(b != null)
 				core.realPut(b, ctx.cacheLocalRequests);
 			else {
-				fail(new InserterException(InserterException.CANCELLED));
+				if(parent.isCancelled())
+					fail(new InserterException(InserterException.CANCELLED));
+				else
+					fail(new InserterException(InserterException.BUCKET_ERROR));
 				return false;
 			}
 		} catch (LowLevelPutException e) {
