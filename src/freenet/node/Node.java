@@ -1042,7 +1042,7 @@ public class Node {
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (1000L*1000L*1000L) / ibwLimit, 0);
 		
 		
-		nodeConfig.register("threadLimit", 750, sortOrder++, true, true, "Thread limit", "The node will try to limit its thread usage to the specified value, refusing new requests",
+		nodeConfig.register("threadLimit", 300, sortOrder++, true, true, "Thread limit", "The node will try to limit its thread usage to the specified value, refusing new requests",
 				new IntCallback() {
 					public int get() {
 						return threadLimit;
