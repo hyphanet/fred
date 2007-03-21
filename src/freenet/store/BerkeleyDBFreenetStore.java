@@ -1731,11 +1731,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	OperationStatus result = chkDB.get(t, routingkeyDBE, blockDBE, LockMode.RMW);
         	
         	if(result == OperationStatus.SUCCESS || result == OperationStatus.KEYEXIST) {
+        		if(logMINOR) Logger.minor(this, "Key already exists");
         		// Key already exists!
         		// But is it valid?
         		t.abort();
         		if(fetchKey(block.getKey(), false) != null) return; // old key was valid, we are not overwriting
         		// If we are here, it was corrupt, or it was just deleted, so we can replace it.
+        		if(logMINOR) Logger.minor(this, "Old key was invalid, adding anyway");
         		innerPut(block);
         		return;
         	} else if(result == OperationStatus.KEYEMPTY) {
@@ -1814,6 +1816,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 			if(success == OperationStatus.KEYEXIST || success == OperationStatus.SUCCESS) {
 				System.err.println("Trying to overwrite block "+blockNum+" but already used");
+				Logger.error(this, "Trying to overwrite block "+blockNum+" but already used");
 				return false;
 			} else {
 				Logger.minor(this, "Key doesn't exist for block num "+blockNum+" but caught "+e, e);
@@ -1944,6 +1947,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
    		
    		while(true) {
    	       	if((blockNum = grabFreeBlock()) >= 0) {
+   	       		if(logMINOR)
+   	       			Logger.minor(this, "Overwriting free block: "+blockNum);
    	       		if(writeNewBlock(blockNum, header, data, t, routingkeyDBE))
    	       			return;
    	       	} else if(chkBlocksInStore<maxChkBlocks) {
@@ -1952,11 +1957,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
    	       			blockNum = chkBlocksInStore;
    	       			chkBlocksInStore++;
    	       		}
+   	       		if(logMINOR)
+   	       			Logger.minor(this, "Expanding store and writing block "+blockNum);
    	       		// Just in case
    	       		freeBlocks.remove(blockNum);
    	       		if(writeNewBlock(blockNum, header, data, t, routingkeyDBE))
    	       			return;
    	       	}else{
+   	       		if(logMINOR)
+   	       			Logger.minor(this, "Overwriting LRU block");
    	       		overwriteLRUBlock(header, data, t, routingkeyDBE);
    	       		return;
    	       	}
