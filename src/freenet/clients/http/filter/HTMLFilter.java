@@ -1565,6 +1565,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
+			if(p.startSlash) {
+				// Allow, but only with standard elements
+				return hn;
+			}
 			String method = (String) h.get("method");
 			String action = (String) h.get("action");
 			String finalAction;
