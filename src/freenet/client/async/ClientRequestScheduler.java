@@ -348,10 +348,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 						innerRegister(req);
 						req = altReq;
 					} else {
-						synchronized(this) {
-							recentSuccesses.addLast(new WeakReference(altRGA));
+						if(altReq != null) {
+							synchronized(this) {
+								recentSuccesses.addLast(new WeakReference(altRGA));
+							}
+							innerRegister(altReq);
 						}
-						innerRegister(altReq);
 					}
 				}
 				
