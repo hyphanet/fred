@@ -66,6 +66,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		pc.run(temp);
 		r.close();
 		w.close();
+		os.close();
+		bos.close();
+		bis.close();
+		strm.close();
 		return temp;
 	}
 	
@@ -938,9 +942,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"height",
 					"width" },
 				new String[] { "longdesc", "src" }));
-		
-		// FIXME no form support for now; when we have NIM posting support, reinstate, and
-		// LIMIT TO METHOD=GET !!!
 		
 		allowedTagsVerifiers.put(
 			"form",
