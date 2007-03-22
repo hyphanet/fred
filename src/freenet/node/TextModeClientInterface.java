@@ -14,6 +14,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.SocketException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.NumberFormat;
@@ -28,6 +30,8 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.client.events.EventDumper;
+import freenet.clients.http.filter.ContentFilter;
+import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -41,6 +45,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
+import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
@@ -172,6 +177,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("PEERS - report tab delimited list of peers with name, ip+port, identity, location, status and idle time in seconds\r\n");
         sb.append("NAME:<new node name> - change the node's name.\r\n");
         sb.append("UPDATE ask the node to self-update if possible. \r\n");
+        sb.append("FILTER: \\r\\n<text, until a . on a line by itself> - output the content as it returns from the content filter");
 //        sb.append("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.\r\n");
 //        sb.append("SAY:<text> - send text to the last created/pushed stream\r\n");
         sb.append("STATUS - display some status information on the node including its reference and connections.\r\n");
@@ -333,23 +339,43 @@ public class TextModeClientInterface implements Runnable {
                     outsb.append("Permanent redirect: ").append(e.newURI).append("\r\n");
 			}
     } else if(uline.startsWith("UPDATE")) {
-    		outsb.append("starting the update process");
-    		// FIXME run on separate thread
-    		n.ps.queueTimedJob(new Runnable() {
-    			public void run() {
-    				n.getNodeUpdater().arm();
-    			}
-    		}, 0);
-		outsb.append("\r\n");
-		out.write(outsb.toString().getBytes());
-		out.flush();
-    		return false;
+    	outsb.append("starting the update process");
+    	// FIXME run on separate thread
+    	n.ps.queueTimedJob(new Runnable() {
+    		public void run() {
+    			n.getNodeUpdater().arm();
+    		}
+    	}, 0);
+    	outsb.append("\r\n");
+    	out.write(outsb.toString().getBytes());
+    	out.flush();
+    	return false;
+    }else if(uline.startsWith("FILTER:")) {
+    	outsb.append("Here is the result:\r\n");
+    	final String content = readLines(reader, false);
+    	final Bucket data = new ArrayBucket(content.getBytes("UTF-8"));
+    	try {
+    		FilterOutput output = ContentFilter.filter(data, new ArrayBucketFactory(), "text/html", new URI("http://127.0.0.1:8888/"), null);
+    		BufferedReader br = new BufferedReader(new InputStreamReader(output.data.getInputStream()));
+    		String result = readLines(br, false);
+    		output.data.free();
+    		outsb.append(result);
+    	} catch (IOException e) {
+    		outsb.append("Bucket error?: " + e.getMessage());
+    		Logger.error(this, "Bucket error?: " + e, e);
+    	} catch (URISyntaxException e) {
+    		outsb.append("Internal error: " + e.getMessage());
+    		Logger.error(this, "Internal error: " + e, e);
+    	} finally {
+    		data.free();
+    	}
+    	outsb.append("\r\n");
     }else if(uline.startsWith("BLOW")) {
-    			n.getNodeUpdater().blow("caught an  IOException : (Incompetent Operator) :p");
-			outsb.append("\r\n");
-			out.write(outsb.toString().getBytes());
-			out.flush();
-    			return false;
+    	n.getNodeUpdater().blow("caught an  IOException : (Incompetent Operator) :p");
+    	outsb.append("\r\n");
+    	out.write(outsb.toString().getBytes());
+    	out.flush();
+    	return false;
 	} else if(uline.startsWith("SHUTDOWN")) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("Shutting node down.\r\n");
