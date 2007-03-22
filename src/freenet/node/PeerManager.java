@@ -708,6 +708,7 @@ public class PeerManager {
 	 * Also run the node's onConnectedPeers() method if applicable
 	 */
 	public void updatePMUserAlert() {
+		if(ua == null) return;
 		int conns, peers;
 		synchronized(this) {
 			conns = this.connectedPeers.length;
