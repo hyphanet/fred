@@ -35,6 +35,8 @@ public class PacketSender implements Runnable, Ticker {
     private final TreeMap timedJobsByTime;
     final Thread myThread;
     final Node node;
+    final PeerManager peers;
+    NodeStats stats;
     long lastClearedOldSwapChains;
     long lastReportedNoPackets;
     long lastReceivedPacketFromAnyNode;
@@ -48,6 +50,7 @@ public class PacketSender implements Runnable, Ticker {
         resendPackets = new LinkedList();
         timedJobsByTime = new TreeMap();
         this.node = node;
+        this.peers = node.peers;
         myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
         myThread.setDaemon(true);
         myThread.setPriority(Thread.MAX_PRIORITY);
@@ -110,7 +113,8 @@ public class PacketSender implements Runnable, Ticker {
     	}
     }
     
-    void start() {
+    void start(NodeStats stats) {
+    	this.stats = stats;
         Logger.normal(this, "Starting PacketSender");
         System.out.println("Starting PacketSender");
     	long now = System.currentTimeMillis();
@@ -163,15 +167,15 @@ public class PacketSender implements Runnable, Ticker {
             PeerNode pn = nodes[i];
             // Only routing backed off nodes should need status updating since everything else
             // should get updated immediately when it's changed
-            if(pn.getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+            if(pn.getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
                 pn.setPeerNodeStatus(now);
             }
         }
-        node.maybeLogPeerNodeStatusSummary(now);
-        node.maybeUpdateOldestNeverConnectedPeerAge(now);
-        node.maybeUpdatePeerManagerUserAlertStats(now);
-        node.maybeUpdateNodeIOStats(now);
-        node.maybeUpdatePeerNodeRoutableConnectionStats(now);
+        peers.maybeLogPeerNodeStatusSummary(now);
+        peers.maybeUpdateOldestNeverConnectedPeerAge(now);
+        stats.maybeUpdatePeerManagerUserAlertStats(now);
+        stats.maybeUpdateNodeIOStats(now);
+        peers.maybeUpdatePeerNodeRoutableConnectionStats(now);
         long nextActionTime = Long.MAX_VALUE;
         long oldTempNow = now;
         for(int i=0;i<nodes.length;i++) {

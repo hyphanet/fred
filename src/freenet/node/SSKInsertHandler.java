@@ -312,8 +312,8 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         		totalReceived += sender.getTotalReceivedBytes();
         	}
         	if(logMINOR) Logger.minor(this, "Remote SSK insert cost "+totalSent+ '/' +totalReceived+" bytes ("+code+ ')');
-        	node.remoteSskInsertBytesSentAverage.report(totalSent);
-        	node.remoteSskInsertBytesReceivedAverage.report(totalReceived);
+        	node.nodeStats.remoteSskInsertBytesSentAverage.report(totalSent);
+        	node.nodeStats.remoteSskInsertBytesReceivedAverage.report(totalReceived);
         }
 
     }

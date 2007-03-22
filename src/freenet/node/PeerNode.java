@@ -175,6 +175,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /** The Node we serve */
     final Node node;
     
+    /** The PeerManager we serve */
+    final PeerManager peers;
+    
     /** MessageItem's to send ASAP */
     private final LinkedList messagesToSendNow;
     
@@ -248,7 +251,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     private long connectedTime;
     
     /** The status of this peer node in terms of Node.PEER_NODE_STATUS_* */
-    public int peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
+    public int peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
 
     /** Holds a String-Long pair that shows which message types (as name) have been send to this peer. */
     private final Hashtable localNodeSentMessageTypes = new Hashtable();
@@ -335,6 +338,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     public PeerNode(SimpleFieldSet fs, Node node2, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
         this.node = node2;
+        this.peers = node.peers;
         String identityString = fs.get("identity");
     	if(identityString == null)
     		throw new PeerParseException("No identity!");
@@ -493,7 +497,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         
         // Not connected yet; need to handshake
         isConnected = false;
-        node.addPeerNodeStatus(Node.PEER_NODE_STATUS_DISCONNECTED, this);
+        peers.addPeerNodeStatus(PeerManager.PEER_NODE_STATUS_DISCONNECTED, this);
                
         messagesToSendNow = new LinkedList();
         
@@ -1838,7 +1842,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         synchronized(this) {
         	idle = (int) ((now - timeLastReceivedPacket) / 1000);
         }
-        if((getPeerNodeStatus() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) && (getPeerAddedTime() > 1))
+        if((getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED) && (getPeerAddedTime() > 1))
             idle = (int) ((now - getPeerAddedTime()) / 1000);
         return getName()+ '\t' +getPeer()+ '\t' +getIdentityString()+ '\t' +getLocation().getValue()+ '\t' +getPeerNodeStatusString()+ '\t' +idle;
     }
@@ -2203,7 +2207,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public void reportThrottledPacketSendTime(long timeDiff) {
-		node.throttledPacketSendAverage.report(timeDiff);
+		node.nodeStats.throttledPacketSendAverage.report(timeDiff);
 		if(logMINOR) Logger.minor(this, "Reporting throttled packet send time: "+timeDiff+" to "+getPeer());
 	}
 	
@@ -2316,50 +2320,50 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
   public String getPeerNodeStatusString() {
   	int status = getPeerNodeStatus();
-  	if(status == Node.PEER_NODE_STATUS_CONNECTED)
+  	if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
   		return "CONNECTED";
-  	if(status == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+  	if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
   		return "BACKED OFF";
-  	if(status == Node.PEER_NODE_STATUS_TOO_NEW)
+  	if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
   		return "TOO NEW";
-  	if(status == Node.PEER_NODE_STATUS_TOO_OLD)
+  	if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
   		return "TOO OLD";
-  	if(status == Node.PEER_NODE_STATUS_DISCONNECTED)
+  	if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
   		return "DISCONNECTED";
-  	if(status == Node.PEER_NODE_STATUS_NEVER_CONNECTED)
+  	if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
   		return "NEVER CONNECTED";
-  	if(status == Node.PEER_NODE_STATUS_DISABLED)
+  	if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
   		return "DISABLED";
-  	if(status == Node.PEER_NODE_STATUS_LISTEN_ONLY)
+  	if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
   		return "LISTEN ONLY";
-  	if(status == Node.PEER_NODE_STATUS_LISTENING)
+  	if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
   		return "LISTENING";
-  	if(status == Node.PEER_NODE_STATUS_BURSTING)
+  	if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
   		return "BURSTING";
   	return "UNKNOWN STATUS";
   }
 
   public String getPeerNodeStatusCSSClassName() {
   	int status = getPeerNodeStatus();
-  	if(status == Node.PEER_NODE_STATUS_CONNECTED)
+  	if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
   		return "peer_connected";
-  	if(status == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+  	if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
   		return "peer_backed_off";
-  	if(status == Node.PEER_NODE_STATUS_TOO_NEW)
+  	if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
   		return "peer_too_new";
-  	if(status == Node.PEER_NODE_STATUS_TOO_OLD)
+  	if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
   		return "peer_too_old";
-  	if(status == Node.PEER_NODE_STATUS_DISCONNECTED)
+  	if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
   		return "peer_disconnected";
-  	if(status == Node.PEER_NODE_STATUS_NEVER_CONNECTED)
+  	if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
   		return "peer_never_connected";
-  	if(status == Node.PEER_NODE_STATUS_DISABLED)
+  	if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
   		return "peer_disabled";
-  	if(status == Node.PEER_NODE_STATUS_BURSTING)
+  	if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
   		return "peer_bursting";
-  	if(status == Node.PEER_NODE_STATUS_LISTENING)
+  	if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
   		return "peer_listening";
-  	if(status == Node.PEER_NODE_STATUS_LISTEN_ONLY)
+  	if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
   		return "peer_listen_only";
   	return "peer_unknown_status";
   }
@@ -2370,46 +2374,46 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			checkConnectionsAndTrackers();
 			int oldPeerNodeStatus = peerNodeStatus;
 			if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
-				peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
 				if(now < localRoutingBackedOffUntil ) {
-					peerNodeStatus = Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
+					peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
 					if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason) || (previousRoutingBackoffReason == null)) {
 						if(previousRoutingBackoffReason != null) {
-							node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+							peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
 						}
-						node.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReason, this);
+						peers.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReason, this);
 						previousRoutingBackoffReason = lastRoutingBackoffReason;
 					}
 				} else {
 					if(previousRoutingBackoffReason != null) {
-						node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+						peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
 						previousRoutingBackoffReason = null;
 					}
 				}
 			} else if(isDisabled) {
-				peerNodeStatus = Node.PEER_NODE_STATUS_DISABLED;
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISABLED;
 			} else if(isConnected() && verifiedIncompatibleNewerVersion) {
-				peerNodeStatus = Node.PEER_NODE_STATUS_TOO_NEW;
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_NEW;
 			} else if(isConnected && verifiedIncompatibleOlderVersion) {
-				peerNodeStatus = Node.PEER_NODE_STATUS_TOO_OLD;
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_OLD;
 			} else if(neverConnected) {
-				peerNodeStatus = Node.PEER_NODE_STATUS_NEVER_CONNECTED;
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED;
 			} else if(isListenOnly) {
-				peerNodeStatus = Node.PEER_NODE_STATUS_LISTEN_ONLY;
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_LISTEN_ONLY;
 			} else if(isBursting) {
-				peerNodeStatus = Node.PEER_NODE_STATUS_BURSTING;
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_BURSTING;
 			} else if(isBurstOnly) {
-				peerNodeStatus = Node.PEER_NODE_STATUS_LISTENING;
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_LISTENING;
 			} else {
-				peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
 			}
 			if(!isConnected && (previousRoutingBackoffReason != null)) {
-				node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+				peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
 				previousRoutingBackoffReason = null;
 			}
 			if(peerNodeStatus != oldPeerNodeStatus) {
-			  node.removePeerNodeStatus( oldPeerNodeStatus, this );
-			  node.addPeerNodeStatus( peerNodeStatus, this );
+				peers.removePeerNodeStatus( oldPeerNodeStatus, this );
+			  peers.addPeerNodeStatus( peerNodeStatus, this );
 			}
 		}
 	}

@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 import java.util.ArrayList;
@@ -51,8 +52,38 @@ public class PeerManager {
     
     final String filename;
 
-    final PeerManagerUserAlert ua;
+    private PeerManagerUserAlert ua;
     
+	// Peers stuff
+	/** age of oldest never connected peer (milliseconds) */
+	private long oldestNeverConnectedPeerAge;
+	/** Next time to update oldestNeverConnectedPeerAge */
+	private long nextOldestNeverConnectedPeerAgeUpdateTime = -1;
+	/** oldestNeverConnectedPeerAge update interval (milliseconds) */
+	private static final long oldestNeverConnectedPeerAgeUpdateInterval = 5000;
+	/** Next time to log the PeerNode status summary */
+	private long nextPeerNodeStatusLogTime = -1;
+	/** PeerNode status summary log interval (milliseconds) */
+	private static final long peerNodeStatusLogInterval = 5000;
+	/** PeerNode statuses, by status */
+	private final HashMap peerNodeStatuses;
+	/** PeerNode routing backoff reasons, by reason */
+	private final HashMap peerNodeRoutingBackoffReasons;
+	/** Next time to update routableConnectionStats */
+	private long nextRoutableConnectionStatsUpdateTime = -1;
+	/** routableConnectionStats update interval (milliseconds) */
+	private static final long routableConnectionStatsUpdateInterval = 7 * 1000;  // 7 seconds
+	public static final int PEER_NODE_STATUS_CONNECTED = 1;
+	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
+	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
+	public static final int PEER_NODE_STATUS_TOO_OLD = 4;
+	public static final int PEER_NODE_STATUS_DISCONNECTED = 5;
+	public static final int PEER_NODE_STATUS_NEVER_CONNECTED = 6;
+	public static final int PEER_NODE_STATUS_DISABLED = 7;
+	public static final int PEER_NODE_STATUS_BURSTING = 8;
+	public static final int PEER_NODE_STATUS_LISTENING = 9;
+	public static final int PEER_NODE_STATUS_LISTEN_ONLY = 10;
+	
     /**
      * Create a PeerManager by reading a list of peers from
      * a file.
@@ -62,9 +93,10 @@ public class PeerManager {
     public PeerManager(Node node, String filename) {
         Logger.normal(this, "Creating PeerManager");
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		peerNodeStatuses = new HashMap();
+		peerNodeRoutingBackoffReasons = new HashMap();
         System.out.println("Creating PeerManager");
         this.filename = filename;
-        ua = new PeerManagerUserAlert(node);
         myPeers = new PeerNode[0];
         connectedPeers = new PeerNode[0];
         this.node = node;
@@ -161,10 +193,10 @@ public class PeerManager {
             if(myPeers[i] == pn) isInPeers=true;
         }
         int peerNodeStatus = pn.getPeerNodeStatus();
-        node.removePeerNodeStatus( peerNodeStatus, pn );
+        removePeerNodeStatus( peerNodeStatus, pn );
         String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
         if(peerNodePreviousRoutingBackoffReason != null) {
-        	node.removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
+        	removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
         }
         pn.removeExtraPeerDataDir();
         if(!isInPeers) return false;
@@ -472,11 +504,11 @@ public class PeerManager {
     	if (calculateMisrouting) {
     		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion);
     		if(nbo != null) {
-    			node.routingMissDistance.report(distance(best, nbo.getLocation().getValue()));
-    			int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
-    			int numberOfRoutingBackedOff = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+    			node.nodeStats.routingMissDistance.report(distance(best, nbo.getLocation().getValue()));
+    			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
+    			int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF);
     			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
-    				node.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
+    				node.nodeStats.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
     			}
     		}
     	}
@@ -684,7 +716,7 @@ public class PeerManager {
 		synchronized(ua) {
 			ua.conns = conns;
 			ua.peers = peers;
-			ua.neverConn = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_NEVER_CONNECTED);
+			ua.neverConn = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED);
 		}
 		if(anyConnectedPeers())
 			node.onConnectedPeer();
@@ -722,6 +754,7 @@ public class PeerManager {
 	}
 
 	public void start() {
+        ua = new PeerManagerUserAlert(node.nodeStats);
 		node.clientCore.alerts.register(ua);
 	}
 
@@ -741,4 +774,258 @@ public class PeerManager {
 		if(countNoBackoff == 0) return count;
 		return countNoBackoff;
 	}
+	
+	// Stats stuff
+	
+	/**
+	 * Update oldestNeverConnectedPeerAge if the timer has expired
+	 */
+	public void maybeUpdateOldestNeverConnectedPeerAge(long now) {
+	  if(now > nextOldestNeverConnectedPeerAgeUpdateTime) {
+		oldestNeverConnectedPeerAge = 0;
+		  PeerNode[] peerList = myPeers;
+		  for(int i=0;i<peerList.length;i++) {
+			PeerNode pn = peerList[i];
+			if(pn.getPeerNodeStatus() == PEER_NODE_STATUS_NEVER_CONNECTED) {
+			  if((now - pn.getPeerAddedTime()) > oldestNeverConnectedPeerAge) {
+				oldestNeverConnectedPeerAge = now - pn.getPeerAddedTime();
+			  }
+			}
+		  }
+	   	if(oldestNeverConnectedPeerAge > 0 && logMINOR)
+		  Logger.minor(this, "Oldest never connected peer is "+oldestNeverConnectedPeerAge+"ms old");
+		nextOldestNeverConnectedPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
+	  }
+	}
+
+	public long getOldestNeverConnectedPeerAge() {
+	  return oldestNeverConnectedPeerAge;
+	}
+
+	/**
+	 * Log the current PeerNode status summary if the timer has expired
+	 */
+	public void maybeLogPeerNodeStatusSummary(long now) {
+	  if(now > nextPeerNodeStatusLogTime) {
+		if((now - nextPeerNodeStatusLogTime) > (10*1000) && nextPeerNodeStatusLogTime > 0)
+		  Logger.error(this,"maybeLogPeerNodeStatusSummary() not called for more than 10 seconds ("+(now - nextPeerNodeStatusLogTime)+").  PacketSender getting bogged down or something?");
+		
+		int numberOfConnected = 0;
+		int numberOfRoutingBackedOff = 0;
+		int numberOfTooNew = 0;
+		int numberOfTooOld = 0;
+		int numberOfDisconnected = 0;
+		int numberOfNeverConnected = 0;
+		int numberOfDisabled = 0;
+		int numberOfListenOnly = 0;
+		int numberOfListening = 0;
+		int numberOfBursting = 0;
+		
+		PeerNodeStatus[] pns = getPeerNodeStatuses();
+		
+		for(int i=0; i<pns.length; i++){
+			switch (pns[i].getStatusValue()) {
+			case PEER_NODE_STATUS_CONNECTED:
+				numberOfConnected++;
+				break;
+			case PEER_NODE_STATUS_ROUTING_BACKED_OFF:
+				numberOfRoutingBackedOff++;
+				break;
+			case PEER_NODE_STATUS_TOO_NEW:
+				numberOfTooNew++;
+				break;
+			case PEER_NODE_STATUS_TOO_OLD:
+				numberOfTooOld++;
+				break;
+			case PEER_NODE_STATUS_DISCONNECTED:
+				numberOfDisconnected++;
+				break;
+			case PEER_NODE_STATUS_NEVER_CONNECTED:
+				numberOfNeverConnected++;
+				break;
+			case PEER_NODE_STATUS_DISABLED:
+				numberOfDisabled++;
+				break;
+			case PEER_NODE_STATUS_LISTEN_ONLY:
+				numberOfListenOnly++;
+				break;
+			case PEER_NODE_STATUS_LISTENING:
+				numberOfListening++;
+				break;
+			case PEER_NODE_STATUS_BURSTING:
+				numberOfBursting++;
+				break;
+			default:
+				Logger.error(this, "Unknown peer status value : "+pns[i].getStatusValue());
+				break;
+			}
+		}
+		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Bursting: "+numberOfBursting+"  Listening: "+numberOfListening+"  Listen Only: "+numberOfListenOnly);
+		nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
+		}
+	}
+
+	/**
+	 * Add a PeerNode status to the map
+	 */
+	public void addPeerNodeStatus(int pnStatus, PeerNode peerNode) {
+		Integer peerNodeStatus = new Integer(pnStatus);
+		HashSet statusSet = null;
+		synchronized(peerNodeStatuses) {
+			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
+				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
+				if(statusSet.contains(peerNode)) {
+					Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode+" with status code "+peerNodeStatus);
+					return;
+				}
+				peerNodeStatuses.remove(peerNodeStatus);
+			} else {
+				statusSet = new HashSet();
+			}
+			if(logMINOR) Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
+			statusSet.add(peerNode);
+			peerNodeStatuses.put(peerNodeStatus, statusSet);
+		}
+	}
+
+	/**
+	 * How many PeerNodes have a particular status?
+	 */
+	public int getPeerNodeStatusSize(int pnStatus) {
+		Integer peerNodeStatus = new Integer(pnStatus);
+		HashSet statusSet = null;
+		synchronized(peerNodeStatuses) {
+			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
+				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
+			} else {
+				statusSet = new HashSet();
+			}
+			return statusSet.size();
+		}
+	}
+
+	/**
+	 * Remove a PeerNode status from the map
+	 */
+	public void removePeerNodeStatus(int pnStatus, PeerNode peerNode) {
+		Integer peerNodeStatus = new Integer(pnStatus);
+		HashSet statusSet = null;
+		synchronized(peerNodeStatuses) {
+			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
+				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
+				if(!statusSet.contains(peerNode)) {
+					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status code "+peerNodeStatus);
+					return;
+				}
+				peerNodeStatuses.remove(peerNodeStatus);
+			} else {
+				statusSet = new HashSet();
+			}
+			if(logMINOR) Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
+			if(statusSet.contains(peerNode)) {
+				statusSet.remove(peerNode);
+			}
+			peerNodeStatuses.put(peerNodeStatus, statusSet);
+		}
+	}
+
+	/**
+	 * Add a PeerNode routing backoff reason to the map
+	 */
+	public void addPeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
+		synchronized(peerNodeRoutingBackoffReasons) {
+			HashSet reasonSet = null;
+			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
+				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
+				if(reasonSet.contains(peerNode)) {
+					Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' already in peerNodeRoutingBackoffReasons as "+peerNode+" with status code "+peerNodeRoutingBackoffReason);
+					return;
+				}
+				peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
+			} else {
+				reasonSet = new HashSet();
+			}
+			if(logMINOR) Logger.minor(this, "addPeerNodeRoutingBackoffReason(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
+			reasonSet.add(peerNode);
+			peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
+		}
+	}
+	
+	/**
+	 * What are the currently tracked PeerNode routing backoff reasons?
+	 */
+	public String [] getPeerNodeRoutingBackoffReasons() {
+		String [] reasonStrings;
+		synchronized(peerNodeRoutingBackoffReasons) {
+			reasonStrings = (String []) peerNodeRoutingBackoffReasons.keySet().toArray(new String[peerNodeRoutingBackoffReasons.size()]);
+		}
+		Arrays.sort(reasonStrings);
+		return reasonStrings;
+	}
+	
+	/**
+	 * How many PeerNodes have a particular routing backoff reason?
+	 */
+	public int getPeerNodeRoutingBackoffReasonSize(String peerNodeRoutingBackoffReason) {
+		HashSet reasonSet = null;
+		synchronized(peerNodeRoutingBackoffReasons) {
+			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
+				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
+				return reasonSet.size();
+			} else {
+				return 0;
+			}
+		}
+	}
+
+	/**
+	 * Remove a PeerNode routing backoff reason from the map
+	 */
+	public void removePeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
+		HashSet reasonSet = null;
+		synchronized(peerNodeRoutingBackoffReasons) {
+			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
+				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
+				if(!reasonSet.contains(peerNode)) {
+					Logger.error(this, "removePeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' not in peerNodeRoutingBackoffReasons with status code "+peerNodeRoutingBackoffReason);
+					return;
+				}
+				peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
+			} else {
+				reasonSet = new HashSet();
+			}
+			if(logMINOR) Logger.minor(this, "removePeerNodeRoutingBackoffReason(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
+			if(reasonSet.contains(peerNode)) {
+				reasonSet.remove(peerNode);
+			}
+			if(reasonSet.size() > 0) {
+				peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
+			}
+		}
+	}
+
+	public PeerNodeStatus[] getPeerNodeStatuses() {
+		PeerNodeStatus[] peerNodeStatuses = new PeerNodeStatus[myPeers.length];
+		for (int peerIndex = 0, peerCount = myPeers.length; peerIndex < peerCount; peerIndex++) {
+			peerNodeStatuses[peerIndex] = myPeers[peerIndex].getStatus();
+		}
+		return peerNodeStatuses;
+	}
+
+	/**
+	 * Update hadRoutableConnectionCount/routableConnectionCheckCount on peers if the timer has expired
+	 */
+	public void maybeUpdatePeerNodeRoutableConnectionStats(long now) {
+		if(now > nextRoutableConnectionStatsUpdateTime) {
+		 	if(-1 != nextRoutableConnectionStatsUpdateTime) {
+				PeerNode[] peerList = myPeers;
+				for(int i=0;i<peerList.length;i++) {
+					PeerNode pn = peerList[i];
+					pn.checkRoutableConnectionStatus();
+				}
+		 	}
+			nextRoutableConnectionStatsUpdateTime = now + routableConnectionStatsUpdateInterval;
+		}
+	}
+
 }

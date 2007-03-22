@@ -19,6 +19,7 @@ import freenet.io.comm.IOStatisticCollector;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
+import freenet.node.NodeStats;
 import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
 import freenet.node.RequestStarterGroup;
@@ -58,11 +59,15 @@ public class StatisticsToadlet extends Toadlet {
 
 	private final Node node;
 	private final NodeClientCore core;
+	private final NodeStats stats;
+	private final PeerManager peers;
 	
 	protected StatisticsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
 		super(client);
 		this.node = n;
 		this.core = core;
+		stats = node.nodeStats;
+		peers = node.peers;
 	}
 
 	public String supportedMethods() {
@@ -97,7 +102,7 @@ public class StatisticsToadlet extends Toadlet {
 		final SubConfig nodeConfig = node.config.get("node");
 		
 		/* gather connection statistics */
-		PeerNodeStatus[] peerNodeStatuses = node.getPeerNodeStatuses();
+		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses();
 		Arrays.sort(peerNodeStatuses, new Comparator() {
 			public int compare(Object first, Object second) {
 				PeerNodeStatus firstNode = (PeerNodeStatus) first;
@@ -110,16 +115,16 @@ public class StatisticsToadlet extends Toadlet {
 			}
 		});
 		
-		int numberOfConnected = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_CONNECTED);
-		int numberOfRoutingBackedOff = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
-		int numberOfTooNew = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_TOO_NEW);
-		int numberOfTooOld = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_TOO_OLD);
-		int numberOfDisconnected = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_DISCONNECTED);
-		int numberOfNeverConnected = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_NEVER_CONNECTED);
-		int numberOfDisabled = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_DISABLED);
-		int numberOfBursting = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_BURSTING);
-		int numberOfListening = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTENING);
-		int numberOfListenOnly = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTEN_ONLY);
+		int numberOfConnected = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
+		int numberOfRoutingBackedOff = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+		int numberOfTooNew = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_TOO_NEW);
+		int numberOfTooOld = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_TOO_OLD);
+		int numberOfDisconnected = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTED);
+		int numberOfNeverConnected = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED);
+		int numberOfDisabled = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISABLED);
+		int numberOfBursting = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_BURSTING);
+		int numberOfListening = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTENING);
+		int numberOfListenOnly = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTEN_ONLY);
 		
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Statistics for " + node.getMyName(), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -136,26 +141,26 @@ public class StatisticsToadlet extends Toadlet {
 
 			/* node status values */
 			long nodeUptimeSeconds = (now - node.startupTime) / 1000;
-			int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
-			int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
-			int networkSizeEstimateSession = node.getNetworkSizeEstimate(-1);
+			int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
+			int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
+			int networkSizeEstimateSession = stats.getNetworkSizeEstimate(-1);
 			int networkSizeEstimate24h = 0;
 			int networkSizeEstimate48h = 0;
 			double numberOfRemotePeerLocationsSeenInSwaps = (double)node.getNumberOfRemotePeerLocationsSeenInSwaps();
 			
 			if(nodeUptimeSeconds > (24*60*60)) {  // 24 hours
-				networkSizeEstimate24h = node.getNetworkSizeEstimate(now - (24*60*60*1000));  // 48 hours
+				networkSizeEstimate24h = stats.getNetworkSizeEstimate(now - (24*60*60*1000));  // 48 hours
 			}
 			if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
-				networkSizeEstimate48h = node.getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
+				networkSizeEstimate48h = stats.getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
 			}
 			DecimalFormat fix1p4 = new DecimalFormat("0.0000");
 			DecimalFormat fix6p6 = new DecimalFormat("#####0.0#####");
 			DecimalFormat fix1p6sci = new DecimalFormat("0.######E0");
 			DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
 			NumberFormat thousendPoint = NumberFormat.getInstance();
-			double routingMissDistance =  node.routingMissDistance.currentValue();
-			double backedOffPercent =  node.backedOffPercent.currentValue();
+			double routingMissDistance =  stats.routingMissDistance.currentValue();
+			double backedOffPercent =  stats.backedOffPercent.currentValue();
 			String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
 
 			HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
@@ -183,7 +188,7 @@ public class StatisticsToadlet extends Toadlet {
 				overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
 				overviewList.addChild("li", "routingMissDistance:\u00a0" + fix1p4.format(routingMissDistance));
 				overviewList.addChild("li", "backedOffPercent:\u00a0" + fix3p1pct.format(backedOffPercent));
-				overviewList.addChild("li", "pInstantReject:\u00a0" + fix3p1pct.format(node.pRejectIncomingInstantly()));
+				overviewList.addChild("li", "pInstantReject:\u00a0" + fix3p1pct.format(stats.pRejectIncomingInstantly()));
 				overviewList.addChild("li", "unclaimedFIFOSize:\u00a0" + node.getUnclaimedFIFOSize());
 				nextTableCell = overviewTableRow.addChild("td");
 			}
@@ -284,13 +289,13 @@ public class StatisticsToadlet extends Toadlet {
 				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
 				backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
 				HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
-				String [] routingBackoffReasons = node.getPeerNodeRoutingBackoffReasons();
+				String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
 				if(routingBackoffReasons.length == 0) {
 					backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
 				} else {
 					HTMLNode reasonList = backoffReasonContent.addChild("ul");
 					for(int i=0;i<routingBackoffReasons.length;i++) {
-						int reasonCount = node.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
+						int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
 						if(reasonCount > 0) {
 							reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
 						}
@@ -368,7 +373,7 @@ public class StatisticsToadlet extends Toadlet {
 				bandwidthList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]) + " (" + SizeUtil.formatSize(total_output_rate, true) + "ps)");
 				bandwidthList.addChild("li", "Payload Output:\u00a0" + SizeUtil.formatSize(totalPayload) + " (" + SizeUtil.formatSize(total_payload_rate, true) + "ps) ("+percent+"%)");
 				bandwidthList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]) + " (" + SizeUtil.formatSize(total_input_rate, true) + "ps)");
-				long[] rate = node.getNodeIOStats();
+				long[] rate = stats.getNodeIOStats();
 				long delta = (rate[5] - rate[2]) / 1000;
 				if(delta > 0) {
 					long output_rate = (rate[3] - rate[0]) / delta;
@@ -462,12 +467,12 @@ public class StatisticsToadlet extends Toadlet {
 				long maxJavaMem = (long)maxMemory;
 				int availableCpus = rt.availableProcessors();
 				
-				int threadCount = node.getActiveThreadCount();
+				int threadCount = stats.getActiveThreadCount();
 
 				jvmStatsList.addChild("li", "Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem, true));
 				jvmStatsList.addChild("li", "Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem, true));
 				jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true));
-				jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount) + '/' + node.getThreadLimit());
+				jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount) + '/' + stats.getThreadLimit());
 				jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
 				jvmStatsList.addChild("li", "JVM Vendor:\u00a0" + System.getProperty("java.vm.vendor"));
 				jvmStatsList.addChild("li", "JVM Version:\u00a0" + System.getProperty("java.vm.version"));
@@ -609,7 +614,7 @@ public class StatisticsToadlet extends Toadlet {
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { "position: absolute; top: " + PEER_CIRCLE_RADIUS + "px; left: " + (PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) + "px", "mark" }, "+");
-		final Object[] knownLocsCopy = node.getKnownLocations(-1);
+		final Object[] knownLocsCopy = stats.getKnownLocations(-1);
 		final Double[] locations = (Double[])knownLocsCopy[0];
 		final Long[] timestamps = (Long[])knownLocsCopy[1];
 		Double location;
@@ -669,7 +674,7 @@ public class StatisticsToadlet extends Toadlet {
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { "position: absolute; top: " + PEER_CIRCLE_RADIUS + "px; left: " + (PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) + "px", "mark" }, "+");
 		//
 		double myLocation = node.getLocation();
-		PeerNodeStatus[] peerNodeStatuses = node.getPeerNodeStatuses();
+		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses();
 		PeerNodeStatus peerNodeStatus;
 		double peerLocation;
 		double peerDistance;

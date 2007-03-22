@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 
@@ -57,7 +58,7 @@ import freenet.support.io.TempBucketFactory;
 /**
  * The connection between the node and the client layer.
  */
-public class NodeClientCore {
+public class NodeClientCore implements Persistable {
 
 	private static boolean logMINOR;
 	public final USKManager uskManager;
@@ -76,6 +77,7 @@ public class NodeClientCore {
 	final FilenameGenerator tempFilenameGenerator;
 	public final BucketFactory tempBucketFactory;
 	final Node node;
+	final NodeStats nodeStats;
 	public final RandomSource random;
 	final File tempDir;
 
@@ -96,6 +98,7 @@ public class NodeClientCore {
 	public boolean ignoreTooManyPathComponents;
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	private boolean lazyResume;
+	protected final Persister persister;
 	
 	// Client stuff that needs to be configged - FIXME
 	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -104,8 +107,9 @@ public class NodeClientCore {
 	static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
 	static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet throttleFS) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS) throws NodeInitException {
 		this.node = node;
+		this.nodeStats = node.nodeStats;
 		this.random = node.random;
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
 		Thread t = new Thread(backgroundBlockEncoder, "Background block encoder");
@@ -117,6 +121,17 @@ public class NodeClientCore {
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager(this);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		
+		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false, 
+				"File to store client statistics in", "File to store client throttling statistics in (used to decide how often to send requests)");
+		
+		SimpleFieldSet throttleFS = persister.read();
+		
+		if(throttleFS == null)
+			throttleFS = oldThrottleFS;
+
+		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
+		
 		if(logMINOR) Logger.minor(this, "Serializing RequestStarterGroup from:\n"+throttleFS);
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS);
 		
@@ -333,6 +348,8 @@ public class NodeClientCore {
 	}
 
 	public void start(Config config) throws NodeInitException {
+
+		persister.start();
 		
 		// TMCI
 		try{
@@ -428,8 +445,8 @@ public class NodeClientCore {
 			
 	        if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
 	        	if(logMINOR) Logger.minor(this, "CHK fetch cost "+rs.getTotalSentBytes()+ '/' +rs.getTotalReceivedBytes()+" bytes ("+status+ ')');
-            	node.localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
-            	node.localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+            	nodeStats.localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+            	nodeStats.localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 	        }
 			
 			if((status == RequestSender.TIMED_OUT) ||
@@ -527,8 +544,8 @@ public class NodeClientCore {
 
 	        if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
             	if(logMINOR) Logger.minor(this, "SSK fetch cost "+rs.getTotalSentBytes()+ '/' +rs.getTotalReceivedBytes()+" bytes ("+status+ ')');
-            	node.localSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
-            	node.localSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+            	nodeStats.localSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
+            	nodeStats.localSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 	        }
 			
 			if((status == RequestSender.TIMED_OUT) ||
@@ -670,8 +687,8 @@ public class NodeClientCore {
         	int sent = is.getTotalSentBytes();
         	int received = is.getTotalReceivedBytes();
         	if(logMINOR) Logger.minor(this, "Local CHK insert cost "+sent+ '/' +received+" bytes ("+status+ ')');
-        	node.localChkInsertBytesSentAverage.report(sent);
-        	node.localChkInsertBytesReceivedAverage.report(received);
+        	nodeStats.localChkInsertBytesSentAverage.report(sent);
+        	nodeStats.localChkInsertBytesReceivedAverage.report(received);
         }
         
 		if(status == CHKInsertSender.SUCCESS) {
@@ -777,8 +794,8 @@ public class NodeClientCore {
         	int sent = is.getTotalSentBytes();
         	int received = is.getTotalReceivedBytes();
         	if(logMINOR) Logger.minor(this, "Local SSK insert cost "+sent+ '/' +received+" bytes ("+status+ ')');
-        	node.localSskInsertBytesSentAverage.report(sent);
-        	node.localSskInsertBytesReceivedAverage.report(received);
+        	nodeStats.localSskInsertBytesSentAverage.report(sent);
+        	nodeStats.localSskInsertBytesReceivedAverage.report(received);
         }
         
 		if(is.hasCollided()) {
@@ -969,5 +986,9 @@ public class NodeClientCore {
 			filename = filename.getParentFile();
 			if(filename == null) return false;
 		}
+	}
+
+	public SimpleFieldSet persistThrottlesToFieldSet() {
+		return requestStarters.persistToFieldSet();
 	}
 }

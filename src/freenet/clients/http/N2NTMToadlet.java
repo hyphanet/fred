@@ -15,6 +15,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.UdpSocketManager;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.PeerManager;
 import freenet.node.PeerNode;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
@@ -153,7 +154,7 @@ public class N2NTMToadlet extends Toadlet {
 							fs.removeValue("sentTime");
 							pn.queueN2NTM(fs);
 							Logger.normal(this, "Queued N2NTM to '"+pn.getName()+"': "+message);
-						} else if(pn.getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+						} else if(pn.getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
 							sendStatusShort = "Delayed";
 							sendStatusLong = "Backed off: Sending of message possibly delayed to peer";
 							sendStatusClass = "n2ntm-send-delayed";

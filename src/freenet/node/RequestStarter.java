@@ -47,12 +47,14 @@ public class RequestStarter implements Runnable {
 	final RunningAverage averageOutputBytesPerRequest;
 	RequestScheduler sched;
 	final NodeClientCore core;
+	final NodeStats stats;
 	private long sentRequestTime;
 	private final boolean isInsert;
 	
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
 			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert) {
 		this.core = node;
+		this.stats = core.nodeStats;
 		this.throttle = throttle;
 		this.name = name;
 		this.outputBucket = outputBucket;
@@ -122,7 +124,7 @@ public class RequestStarter implements Runnable {
 							// Ignore
 						}
 				} while(now < sleepUntil);
-				core.node.waitUntilNotOverloaded(isInsert);
+				stats.waitUntilNotOverloaded(isInsert);
 				return;
 			} else {
 				if(logMINOR) Logger.minor(this, "Waiting...");				

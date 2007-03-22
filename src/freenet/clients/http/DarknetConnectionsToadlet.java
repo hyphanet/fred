@@ -26,6 +26,8 @@ import freenet.io.xfer.PacketThrottle;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.NodeStats;
+import freenet.node.PeerManager;
 import freenet.node.PeerNode;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
@@ -41,12 +43,16 @@ public class DarknetConnectionsToadlet extends Toadlet {
 	
 	private final Node node;
 	private final NodeClientCore core;
+	private final NodeStats stats;
+	private final PeerManager peers;
 	private boolean isReversed = false;
 	
 	protected DarknetConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
 		super(client);
 		this.node = n;
 		this.core = core;
+		this.stats = n.nodeStats;
+		this.peers = n.peers;
 	}
 
 	public String supportedMethods() {
@@ -72,7 +78,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		final boolean fProxyJavascriptEnabled = node.isFProxyJavascriptEnabled();
 		
 		/* gather connection statistics */
-		PeerNodeStatus[] peerNodeStatuses = node.getPeerNodeStatuses();
+		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses();
 		Arrays.sort(peerNodeStatuses, new Comparator() {
 			public int compare(Object first, Object second) {
 				int result = 0;
@@ -118,16 +124,16 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 		});
 		
-		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_CONNECTED);
-		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
-		int numberOfTooNew = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_TOO_NEW);
-		int numberOfTooOld = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_TOO_OLD);
-		int numberOfDisconnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_DISCONNECTED);
-		int numberOfNeverConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_NEVER_CONNECTED);
-		int numberOfDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_DISABLED);
-		int numberOfBursting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_BURSTING);
-		int numberOfListening = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTENING);
-		int numberOfListenOnly = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTEN_ONLY);
+		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
+		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+		int numberOfTooNew = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_TOO_NEW);
+		int numberOfTooOld = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_TOO_OLD);
+		int numberOfDisconnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTED);
+		int numberOfNeverConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED);
+		int numberOfDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISABLED);
+		int numberOfBursting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_BURSTING);
+		int numberOfListening = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTENING);
+		int numberOfListenOnly = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTEN_ONLY);
 		
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
@@ -150,17 +156,17 @@ public class DarknetConnectionsToadlet extends Toadlet {
 
 			/* node status values */
 			long nodeUptimeSeconds = (now - node.startupTime) / 1000;
-			int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
-			int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
-			int networkSizeEstimateSession = node.getNetworkSizeEstimate(-1);
+			int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
+			int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
+			int networkSizeEstimateSession = stats.getNetworkSizeEstimate(-1);
 			int networkSizeEstimateRecent = 0;
 			if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
-				networkSizeEstimateRecent = node.getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
+				networkSizeEstimateRecent = stats.getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
 			}
 			DecimalFormat fix4 = new DecimalFormat("0.0000");
-			double routingMissDistance =  node.routingMissDistance.currentValue();
+			double routingMissDistance =  stats.routingMissDistance.currentValue();
 			DecimalFormat fix1 = new DecimalFormat("##0.0%");
-			double backedOffPercent =  node.backedOffPercent.currentValue();
+			double backedOffPercent =  stats.backedOffPercent.currentValue();
 			String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
 
 			// BEGIN OVERVIEW TABLE
@@ -183,7 +189,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
 				overviewList.addChild("li", "routingMissDistance:\u00a0" + fix4.format(routingMissDistance));
 				overviewList.addChild("li", "backedOffPercent:\u00a0" + fix1.format(backedOffPercent));
-				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(node.pRejectIncomingInstantly()));
+				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(stats.pRejectIncomingInstantly()));
 				nextTableCell = overviewTableRow.addChild("td");
 			}
 
@@ -222,7 +228,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					activityList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0], true) + "\u00a0(" + SizeUtil.formatSize(total_output_rate, true) + "ps)");
 					activityList.addChild("li", "Payload Output:\u00a0" + SizeUtil.formatSize(totalPayload, true) + "\u00a0(" + SizeUtil.formatSize(total_payload_rate, true) + "ps) ("+percent+"%)");
 					activityList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1], true) + "\u00a0(" + SizeUtil.formatSize(total_input_rate, true) + "ps)");
-					long[] rate = node.getNodeIOStats();
+					long[] rate = stats.getNodeIOStats();
 					long delta = (rate[5] - rate[2]) / 1000;
 					if(delta > 0) {
 						long output_rate = (rate[3] - rate[0]) / delta;
@@ -303,13 +309,13 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
 				backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
 				HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
-				String [] routingBackoffReasons = node.getPeerNodeRoutingBackoffReasons();
+				String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
 				if(routingBackoffReasons.length == 0) {
 					backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
 				} else {
 					HTMLNode reasonList = backoffReasonContent.addChild("ul");
 					for(int i=0;i<routingBackoffReasons.length;i++) {
-						int reasonCount = node.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
+						int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
 						if(reasonCount > 0) {
 							reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
 						}
@@ -400,7 +406,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 
 					// status column
 					String statusString = peerNodeStatus.getStatusName();
-					if (!advancedModeEnabled && (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
+					if (!advancedModeEnabled && (peerNodeStatus.getStatusValue() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
 						statusString = "BUSY";
 					}
 					peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNodeStatus.getStatusCSSName(), statusString + (peerNodeStatus.isFetchingARK() ? "*" : ""));
@@ -418,7 +424,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}
 
 					// version column
-					if (peerNodeStatus.getStatusValue() != Node.PEER_NODE_STATUS_NEVER_CONNECTED && (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion())) {  // Don't draw attention to a version problem if NEVER CONNECTED
+					if (peerNodeStatus.getStatusValue() != PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED && (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion())) {  // Don't draw attention to a version problem if NEVER CONNECTED
 						peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_version_problem", peerNodeStatus.getSimpleVersion());
 					} else {
 						peerRow.addChild("td", "class", "peer-version").addChild("#", peerNodeStatus.getSimpleVersion());
@@ -450,7 +456,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					long idle = peerNodeStatus.getTimeLastRoutable();
 					if (peerNodeStatus.isRoutable()) {
 						idle = peerNodeStatus.getTimeLastConnectionCompleted();
-					} else if (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
+					} else if (peerNodeStatus.getStatusValue() == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED) {
 						idle = peerNodeStatus.getPeerAddedTime();
 					}
 					if(!peerNodeStatus.isConnected() && (now - idle) > (2 * 7 * 24 * 60 * 60 * (long) 1000)) { // 2 weeks
@@ -899,7 +905,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			for(int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {	
-					if((peerNodes[i].timeLastConnectionCompleted() < (System.currentTimeMillis() - 1000*60*60*24*7) /* one week */) ||  (peerNodes[i].peerNodeStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED) || request.isPartSet("forceit")){
+					if((peerNodes[i].timeLastConnectionCompleted() < (System.currentTimeMillis() - 1000*60*60*24*7) /* one week */) ||  (peerNodes[i].peerNodeStatus == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED) || request.isPartSet("forceit")){
 						this.node.removeDarknetConnection(peerNodes[i]);
 						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
 					}else{

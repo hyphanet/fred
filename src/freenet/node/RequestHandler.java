@@ -197,12 +197,12 @@ public class RequestHandler implements Runnable, ByteCounter {
             	int rcvd = rs.getTotalReceivedBytes() + receivedBytes;
             	if(key instanceof NodeSSK) {
             		if(logMINOR) Logger.minor(this, "Remote SSK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
-                	node.remoteSskFetchBytesSentAverage.report(sent);
-                	node.remoteSskFetchBytesReceivedAverage.report(rcvd);
+                	node.nodeStats.remoteSskFetchBytesSentAverage.report(sent);
+                	node.nodeStats.remoteSskFetchBytesReceivedAverage.report(rcvd);
             	} else {
             		if(logMINOR) Logger.minor(this, "Remote CHK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
-                	node.remoteChkFetchBytesSentAverage.report(sent);
-                	node.remoteChkFetchBytesReceivedAverage.report(rcvd);
+                	node.nodeStats.remoteChkFetchBytesSentAverage.report(sent);
+                	node.nodeStats.remoteChkFetchBytesReceivedAverage.report(rcvd);
             	}
             }
 

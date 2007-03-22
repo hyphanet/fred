@@ -3,12 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.node.Node;
+import freenet.node.NodeStats;
 import freenet.support.HTMLNode;
 
 public class PeerManagerUserAlert implements UserAlert {
 
-	final Node n;
+	final NodeStats n;
 	public int conns = 0;
 	public int peers = 0;
 	public int neverConn = 0;
@@ -35,7 +35,7 @@ public class PeerManagerUserAlert implements UserAlert {
 	/** How high can oldestNeverConnectedPeerAge be before we alert (in milliseconds)*/
 	static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
 	
-	public PeerManagerUserAlert(Node n) {
+	public PeerManagerUserAlert(NodeStats n) {
 		this.n = n;
 	}
 	
@@ -61,9 +61,9 @@ public class PeerManagerUserAlert implements UserAlert {
 			return "Too many open connections";
 		if(peers > MAX_PEER_ALERT_THRESHOLD)
 			return "Too many peers";
-		if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD))
+		if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD))
 			return "bwlimitDelayTime too high";
-		if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD))
+		if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD))
 			return "nodeAveragePingTime too high";
 		if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD)
 			return "Never connected peer(s) too old";
@@ -126,11 +126,11 @@ public class PeerManagerUserAlert implements UserAlert {
 		"This will also marginally impact your performance as all peers (connected or not) consume a small amount of bandwidth and CPU. Consider \"cleaning up\" your peer list.";
 	
 	static final String TOO_HIGH_BWLIMITDELAYTIME =
-		"This node has to wait too long for available bandwidth ({BWLIMIT_DELAY_TIME} > "+Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
+		"This node has to wait too long for available bandwidth ({BWLIMIT_DELAY_TIME} > "+NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
 	
 	static final String TOO_HIGH_PING =
 		"This node is having trouble talking with its peers quickly enough ({PING_TIME} > "+
-		Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
+		NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
 
 	static final String NEVER_CONNECTED_TWO_WEEKS =
 		"One or more of your node's peers have never connected in the two weeks since they were added.  Consider removing them since they are marginally affecting performance.";
@@ -157,11 +157,11 @@ public class PeerManagerUserAlert implements UserAlert {
 			s = replace(TOO_MANY_CONNECTIONS, "\\{CONNS\\}", Integer.toString(conns));
 		} else if(peers > MAX_PEER_ALERT_THRESHOLD) {
 			s = replace(TOO_MANY_PEERS, "\\{PEERS\\}", Integer.toString(peers));
-		} else if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
+		} else if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
 			s = replace(TOO_HIGH_BWLIMITDELAYTIME, "\\{BWLIMIT_DELAY_TIME\\}", Integer.toString(bwlimitDelayTime));
 			
 			// FIXME I'm not convinced about the next one!
-		} else if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
+		} else if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
 			s = replace(TOO_HIGH_PING, "\\{PING_TIME\\}", Integer.toString(nodeAveragePingTime));
 		} else if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
 			s = NEVER_CONNECTED_TWO_WEEKS;
@@ -217,9 +217,9 @@ public class PeerManagerUserAlert implements UserAlert {
 			alertNode.addChild("#", replace(TOO_MANY_CONNECTIONS, "\\{CONNS\\}", Integer.toString(conns)));
 		} else if (peers > MAX_PEER_ALERT_THRESHOLD) {
 			alertNode.addChild("#", replace(TOO_MANY_PEERS, "\\{PEERS\\}", Integer.toString(peers)));
-		} else if (n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
+		} else if (n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
 			alertNode.addChild("#", replace(TOO_HIGH_BWLIMITDELAYTIME, "\\{BWLIMIT_DELAY_TIME\\}", Integer.toString(bwlimitDelayTime)));
-		} else if (n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
+		} else if (n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
 			alertNode.addChild("#", replace(TOO_HIGH_PING, "\\{PING_TIME\\}", Integer.toString(nodeAveragePingTime)));
 		} else if (oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
 			alertNode.addChild("#", NEVER_CONNECTED_TWO_WEEKS);
@@ -235,8 +235,8 @@ public class PeerManagerUserAlert implements UserAlert {
 				((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
 				(peers > MAX_PEER_ALERT_THRESHOLD) ||
-				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
-				(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)))
+				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
+				(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)))
 			return UserAlert.CRITICAL_ERROR;
 		return UserAlert.ERROR;
 	}
@@ -245,15 +245,15 @@ public class PeerManagerUserAlert implements UserAlert {
 		// only update here so we don't get odd behavior with it fluctuating
 		bwlimitDelayTime = (int) n.getBwlimitDelayTime();
 		nodeAveragePingTime = (int) n.getNodeAveragePingTime();
-		oldestNeverConnectedPeerAge = (int) n.getOldestNeverConnectedPeerAge();
+		oldestNeverConnectedPeerAge = (int) n.peers.getOldestNeverConnectedPeerAge();
 		return ((peers == 0) ||
 				(conns < 3) ||
 				(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) ||
 				((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
 				(peers > MAX_PEER_ALERT_THRESHOLD) ||
-				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
-				(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) ||
+				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
+				(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) ||
 				(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD)) &&
 				isValid;
 	}

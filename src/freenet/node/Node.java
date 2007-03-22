@@ -172,6 +172,9 @@ public class Node {
 			}
 	}
 	
+	/** Stats */
+	public final NodeStats nodeStats;
+	
 	/** Config object for the whole node. */
 	public final PersistentConfig config;
 	
@@ -187,12 +190,6 @@ public class Node {
 	// Enable this if you run into hard to debug OOMs.
 	// Disabled to prevent long pauses every 30 seconds.
 	static int aggressiveGCModificator = -1 /*250*/;
-	
-	/** Minimum free heap memory bytes required to accept a request (perhaps fewer OOMs this way) */
-	public static final long MIN_FREE_HEAP_BYTES_FOR_ROUTING_SUCCESS = 3L * 1024 * 1024;  // 3 MiB
-	
-	/** Minimum free heap memory percentage required to accept a request (perhaps fewer OOMs this way) */
-	public static final double MIN_FREE_HEAP_PERCENT_FOR_ROUTING_SUCCESS = 0.01;  // 1%
 	
 	/** If true, local requests and inserts aren't cached.
 	 * This opens up a glaring vulnerability; connected nodes
@@ -232,31 +229,7 @@ public class Node {
 	public static final int RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE = 3;
 	// If we don't receive any packets at all in this period, from any node, tell the user
 	public static final long ALARM_TIME = 60*1000;
-	/** Sub-max ping time. If ping is greater than this, we reject some requests. */
-	public static final long SUB_MAX_PING_TIME = 700;
-	/** Maximum overall average ping time. If ping is greater than this,
-	 * we reject all requests. */
-	public static final long MAX_PING_TIME = 1500;
-	/** Maximum throttled packet delay. If the throttled packet delay is greater
-	 * than this, reject all packets. */
-	public static final long MAX_THROTTLE_DELAY = 3000;
-	/** If the throttled packet delay is less than this, reject no packets; if it's
-	 * between the two, reject some packets. */
-	public static final long SUB_MAX_THROTTLE_DELAY = 2000;
-	/** How high can bwlimitDelayTime be before we alert (in milliseconds)*/
-	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD = MAX_THROTTLE_DELAY*2;
-	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
-	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD = MAX_PING_TIME*2;
-	/** How long we're over the bwlimitDelayTime threshold before we alert (in milliseconds)*/
-	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
-	/** How long we're over the nodeAveragePingTime threshold before we alert (in milliseconds)*/
-	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
 	
-	/** Accept one request every 10 seconds regardless, to ensure we update the
-	 * block send time.
-	 */
-	public static final int MAX_INTERREQUEST_TIME = 10*1000;
-
 	// 900ms
 	static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
 	public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
@@ -323,8 +296,7 @@ public class Node {
 	private DSAPrivateKey myPrivKey;
 	/** My public key */
 	private DSAPublicKey myPubKey;
-	/** Memory Checker thread */
-	private final Thread myMemoryChecker;
+	
 	/** My ARK SSK private key */
 	InsertableClientSSK myARK;
 	/** My ARK sequence number */
@@ -336,43 +308,16 @@ public class Node {
 	long myOldARKNumber;
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
-	/** Next time to log the PeerNode status summary */
-	private long nextPeerNodeStatusLogTime = -1;
-	/** PeerNode status summary log interval (milliseconds) */
-	private static final long peerNodeStatusLogInterval = 5000;
-	/** PeerNode statuses, by status */
-	private final HashMap peerNodeStatuses;
-	/** PeerNode routing backoff reasons, by reason */
-	private final HashMap peerNodeRoutingBackoffReasons;
-	/** Next time to update oldestNeverConnectedPeerAge */
-	private long nextOldestNeverConnectedPeerAgeUpdateTime = -1;
-	/** oldestNeverConnectedPeerAge update interval (milliseconds) */
-	private static final long oldestNeverConnectedPeerAgeUpdateInterval = 5000;
-	/** age of oldest never connected peer (milliseconds) */
-	private long oldestNeverConnectedPeerAge;
-	/** Next time to update PeerManagerUserAlert stats */
-	private long nextPeerManagerUserAlertStatsUpdateTime = -1;
-	/** PeerManagerUserAlert stats update interval (milliseconds) */
-	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
-	/** first time bwlimitDelay was over PeerManagerUserAlert threshold */
-	private long firstBwlimitDelayTimeThresholdBreak ;
-	/** first time nodeAveragePing was over PeerManagerUserAlert threshold */
-	private long firstNodeAveragePingTimeThresholdBreak;
-	/** bwlimitDelay PeerManagerUserAlert should happen if true */
-	public boolean bwlimitDelayAlertRelevant;
-	/** nodeAveragePing PeerManagerUserAlert should happen if true */
-	public boolean nodeAveragePingAlertRelevant;
-	/** Average proportion of requests rejected immediately due to overload */
-	public final TimeDecayingRunningAverage pInstantRejectIncoming;
+	
 	/** IP detector */
 	public final NodeIPDetector ipDetector;
 	/** For debugging/testing, set this to true to stop the
-	 * probabilistic decrement at the edges of the HTLs.
-	 */
+	 * probabilistic decrement at the edges of the HTLs. */
 	boolean disableProbabilisticHTLs;
 	/** If true, disable all hang-check functionality */
 	public boolean disableHangCheckers;
 	
+	/** HashSet of currently running request UIDs */
 	private final HashSet runningUIDs;
 	
 	byte[] myIdentity; // FIXME: simple identity block; should be unique
@@ -388,27 +333,26 @@ public class Node {
 	private String mySignedReference = null;
 	private String myName;
 	final LocationManager lm;
-	final PeerManager peers; // my peers
+	/** My peers */
+	public final PeerManager peers;
 	/** Directory to put node, peers, etc into */
 	final File nodeDir;
 	/** Directory to put extra peer data into */
 	final File extraPeerDataDir;
-	public final RandomSource random; // strong RNG
+	/** Strong RNG */
+	public final RandomSource random;
 	final UdpSocketManager usm;
 	final FNPPacketMangler packetMangler;
 	final DNSRequester dnsr;
 	public final PacketSender ps;
 	final NodeDispatcher dispatcher;
-	final NodePinger nodePinger;
 	static final int MAX_MEMORY_CACHED_PUBKEYS = 1000;
 	final LRUHashtable cachedPubKeys;
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
 	final StaticSwapRequestInterval swapInterval;
 	public final DoubleTokenBucket outputThrottle;
-	final TokenBucket requestOutputThrottle;
-	final TokenBucket requestInputThrottle;
-	private boolean inputLimitDefault;
+	boolean inputLimitDefault;
 	public static final short DEFAULT_MAX_HTL = (short)10;
 	public static final int DEFAULT_SWAP_INTERVAL = 2000;
 	private short maxHTL;
@@ -439,16 +383,6 @@ public class Node {
 	public static final int EXIT_RESTART_FAILED = 24;
 	public static final int EXIT_TEST_ERROR = 25;
 	
-	public static final int PEER_NODE_STATUS_CONNECTED = 1;
-	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
-	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
-	public static final int PEER_NODE_STATUS_TOO_OLD = 4;
-	public static final int PEER_NODE_STATUS_DISCONNECTED = 5;
-	public static final int PEER_NODE_STATUS_NEVER_CONNECTED = 6;
-	public static final int PEER_NODE_STATUS_DISABLED = 7;
-	public static final int PEER_NODE_STATUS_BURSTING = 8;
-	public static final int PEER_NODE_STATUS_LISTENING = 9;
-	public static final int PEER_NODE_STATUS_LISTEN_ONLY = 10;
 	public static final int N2N_MESSAGE_TYPE_FPROXY_USERALERT = 1;
 	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = N2N_MESSAGE_TYPE_FPROXY_USERALERT;  // **FIXME** For backwards-compatibility, remove when removing DMT.nodeToNodeTextMessage
 	public static final int EXTRA_PEER_DATA_TYPE_N2NTM = 1;
@@ -461,43 +395,6 @@ public class Node {
 	
 	public final NodeClientCore clientCore;
 	final String bindto;
-	/** Average delay caused by throttling for sending a packet */
-	final TimeDecayingRunningAverage throttledPacketSendAverage;
-	
-	// Stats
-	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
-	final TimeDecayingRunningAverage remoteSskFetchBytesSentAverage;
-	final TimeDecayingRunningAverage remoteChkInsertBytesSentAverage;
-	final TimeDecayingRunningAverage remoteSskInsertBytesSentAverage;
-	final TimeDecayingRunningAverage remoteChkFetchBytesReceivedAverage;
-	final TimeDecayingRunningAverage remoteSskFetchBytesReceivedAverage;
-	final TimeDecayingRunningAverage remoteChkInsertBytesReceivedAverage;
-	final TimeDecayingRunningAverage remoteSskInsertBytesReceivedAverage;
-	final TimeDecayingRunningAverage localChkFetchBytesSentAverage;
-	final TimeDecayingRunningAverage localSskFetchBytesSentAverage;
-	final TimeDecayingRunningAverage localChkInsertBytesSentAverage;
-	final TimeDecayingRunningAverage localSskInsertBytesSentAverage;
-	final TimeDecayingRunningAverage localChkFetchBytesReceivedAverage;
-	final TimeDecayingRunningAverage localSskFetchBytesReceivedAverage;
-	final TimeDecayingRunningAverage localChkInsertBytesReceivedAverage;
-	final TimeDecayingRunningAverage localSskInsertBytesReceivedAverage;
-	File persistTarget; 
-	File persistTemp;
-	private long previous_input_stat;
-	private long previous_output_stat;
-	private long previous_io_stat_time;
-	private long last_input_stat;
-	private long last_output_stat;
-	private long last_io_stat_time;
-	private final Object ioStatSync = new Object();
-	/** Next time to update the node I/O stats */
-	private long nextNodeIOStatsUpdateTime = -1;
-	/** Node I/O stats update interval (milliseconds) */
-	private static final long nodeIOStatsUpdateInterval = 2000;
-	/** Next time to update routableConnectionStats */
-	private long nextRoutableConnectionStatsUpdateTime = -1;
-	/** routableConnectionStats update interval (milliseconds) */
-	private static final long routableConnectionStatsUpdateInterval = 7 * 1000;  // 7 seconds
 	
 	// The version we were before we restarted.
 	public int lastVersion;
@@ -525,15 +422,6 @@ public class Node {
 	// Debugging stuff
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
 	
-	// various metrics
-	public RunningAverage routingMissDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
-	public RunningAverage backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
-	protected final ThrottlePersister throttlePersister;
-	
-	// ThreadCounting stuffs
-	private final ThreadGroup rootThreadGroup;
-	private int threadLimit;
-
 	/**
 	 * Read all storable settings (identity etc) from the node file.
 	 * @param filename The name of the file to read from.
@@ -793,7 +681,6 @@ public class Node {
 		String tmp = "Initializing Node using freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vm.vendor")+" JVM version "+System.getProperty("java.vm.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
-		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0);
 	  	nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
@@ -805,10 +692,6 @@ public class Node {
 		cachedPubKeys = new LRUHashtable();
 		lm = new LocationManager(random);
 
-		ThreadGroup tg = Thread.currentThread().getThreadGroup();
-		while(tg.getParent() != null) tg = tg.getParent();
-		this.rootThreadGroup = tg;
-
 		try {
 			localhostAddress = InetAddress.getByName("127.0.0.1");
 		} catch (UnknownHostException e3) {
@@ -819,14 +702,10 @@ public class Node {
 		requestSenders = new HashMap();
 		transferringRequestSenders = new HashMap();
 		insertSenders = new HashMap();
-		peerNodeStatuses = new HashMap();
-		peerNodeRoutingBackoffReasons = new HashMap();
 		runningUIDs = new HashSet();
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
 		bootID = random.nextLong();
-		throttledPacketSendAverage =
-			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
 		
 		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
 
@@ -882,12 +761,6 @@ public class Node {
 
 		aggressiveGCModificator = nodeConfig.getInt("aggressiveGC");
 		
-		//Memory Checking thread
-		// TODO: proper config. callbacks : maybe we shoudln't start the thread at all if it's not worthy
-		this.myMemoryChecker = new Thread(new MemoryChecker(), "Memory checker");
-		this.myMemoryChecker.setPriority(Thread.MAX_PRIORITY);
-		this.myMemoryChecker.setDaemon(true);
-
 		// FIXME maybe these configs should actually be under a node.ip subconfig?
 		ipDetector = new NodeIPDetector(this);
 		sortOrder = ipDetector.registerConfigs(nodeConfig, sortOrder);
@@ -977,13 +850,6 @@ public class Node {
 		
 		Logger.normal(Node.class, "Creating node...");
 
-		previous_input_stat = 0;
-		previous_output_stat = 0;
-		previous_io_stat_time = 1;
-		last_input_stat = 0;
-		last_output_stat = 0;
-		last_io_stat_time = 3;
-
 		// Bandwidth limit
 
 		nodeConfig.register("outputBandwidthLimit", "15K", sortOrder++, false, true,
@@ -996,27 +862,20 @@ public class Node {
 					public void set(int obwLimit) throws InvalidConfigValueException {
 						if(obwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive");
 						outputThrottle.changeNanosAndBucketSizes((1000L * 1000L * 1000L) / obwLimit, obwLimit/2, (obwLimit * 2) / 5);
-						obwLimit = (obwLimit * 4) / 5; // fudge factor; take into account non-request activity
-						requestOutputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  obwLimit, Math.max(obwLimit*60, 32768*20));
-						if(inputLimitDefault) {
-							int ibwLimit = obwLimit * 4;
-							requestInputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  ibwLimit, Math.max(ibwLimit*60, 32768*20));
-						}
+						nodeStats.setOutputLimit(obwLimit);
 					}
 		});
 		
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
 		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) /  obwLimit, obwLimit, (obwLimit * 2) / 5);
 		obwLimit = (obwLimit * 4) / 5;  // fudge factor; take into account non-request activity
-		requestOutputThrottle = 
-			new TokenBucket(Math.max(obwLimit*60, 32768*20), (1000L*1000L*1000L) /  obwLimit, 0);
 		
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true,
 				"Input bandwidth limit (bytes per second)", "Input bandwidth limit (bytes/sec); the node will try not to exceed this; -1 = 4x set outputBandwidthLimit",
 				new IntCallback() {
 					public int get() {
 						if(inputLimitDefault) return -1;
-						return (((int) ((1000L * 1000L * 1000L) / requestInputThrottle.getNanosPerTick())) * 5) / 4;
+						return nodeStats.getInputLimit();
 					}
 					public void set(int ibwLimit) throws InvalidConfigValueException {
 						if(ibwLimit == -1) {
@@ -1027,7 +886,7 @@ public class Node {
 							ibwLimit = ibwLimit * 4 / 5; // fudge factor; take into account non-request activity
 						}
 						if(ibwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
-						requestInputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  ibwLimit, Math.max(ibwLimit*60, 32768*20));
+						nodeStats.setInputLimit(ibwLimit);
 					}
 		});
 		
@@ -1038,27 +897,7 @@ public class Node {
 		} else {
 			ibwLimit = ibwLimit * 4 / 5;
 		}
-		requestInputThrottle = 
-			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (1000L*1000L*1000L) / ibwLimit, 0);
 		
-		
-		nodeConfig.register("threadLimit", 300, sortOrder++, true, true, "Thread limit", "The node will try to limit its thread usage to the specified value, refusing new requests",
-				new IntCallback() {
-					public int get() {
-						return threadLimit;
-					}
-					public void set(int val) throws InvalidConfigValueException {
-						if(val == get()) return;
-						if(val < 250)
-							throw new InvalidConfigValueException("This value is to low for that setting, increase it!");
-						threadLimit = val;
-					}
-		});
-		
-		
-		threadLimit = nodeConfig.getInt("threadLimit");
-		
-		// FIXME add an averaging/long-term/soft bandwidth limit. (bug 76)
 		
 		// SwapRequestInterval
 		
@@ -1157,7 +996,6 @@ public class Node {
 		peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
 		peers.writePeers();
 		peers.updatePMUserAlert();
-		nodePinger = new NodePinger(this);
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 		usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
@@ -1437,62 +1275,25 @@ public class Node {
 			throw new NodeInitException(EXIT_STORE_OTHER, msg);
 		}
 
-		nodeConfig.register("throttleFile", "throttle.dat", sortOrder++, true, false, "File to store the persistent throttle data to", "File to store the persistent throttle data to", new StringCallback() {
-
-			public String get() {
-				return persistTarget.toString();
-			}
-
-			public void set(String val) throws InvalidConfigValueException {
-				setThrottles(val);
-			}
-			
-		});
-		
-		String throttleFile = nodeConfig.getString("throttleFile");
-		try {
-			setThrottles(throttleFile);
-		} catch (InvalidConfigValueException e2) {
-			throw new NodeInitException(EXIT_THROTTLE_FILE_ERROR, e2.getMessage());
-		}
-		
-		throttlePersister = new ThrottlePersister();
-		
-		SimpleFieldSet throttleFS = null;
-		try {
-			throttleFS = SimpleFieldSet.readFrom(persistTarget, false, true);
-		} catch (IOException e) {
+		// FIXME back compatibility
+		SimpleFieldSet oldThrottleFS = null;
+		File oldThrottle = new File("throttle.dat");
+		String oldThrottleName = nodeConfig.getRawOption("throttleFile");
+		if(oldThrottleName != null)
+			oldThrottle = new File(oldThrottleName);
+		if(oldThrottle.exists() && (!new File("node-throttle.dat").exists()) && lastVersion < 1021) {
+			// Migrate from old throttle file to new node- and client- throttle files
 			try {
-				throttleFS = SimpleFieldSet.readFrom(persistTemp, false, true);
-			} catch (FileNotFoundException e1) {
+				oldThrottleFS = SimpleFieldSet.readFrom(new File("throttle.dat"), false, true);
+			} catch (IOException e) {
 				// Ignore
-			} catch (IOException e1) {
-				Logger.error(this, "Could not read "+persistTarget+" ("+e+") and could not read "+persistTemp+" either ("+e1+ ')');
 			}
+			oldThrottle.delete();
 		}
-
-		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
-		// Guesstimates. Hopefully well over the reality.
-		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesSentAverage"));
-		localSskFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesSentAverage"));
-		localChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesSentAverage"));
-		localSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalSskInsertBytesSentAverage"));
-		localChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesReceivedAverage"));
-		localSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesReceivedAverage"));
-		localChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"));
-		localSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"));
-
-		remoteChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesSentAverage"));
-		remoteSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesSentAverage"));
-		remoteChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesSentAverage"));
-		remoteSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesSentAverage"));
-		remoteChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesReceivedAverage"));
-		remoteSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesReceivedAverage"));
-		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesReceivedAverage"));
-		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesReceivedAverage"));
+		nodeStats = new NodeStats(this, sortOrder, nodeConfig, oldThrottleFS, ibwLimit, ibwLimit);
 		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder, throttleFS == null ? null : throttleFS.subset("RequestStarters"));
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"));
 
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Disable all hang checkers", "Disable all hang checkers/watchdog functions. Set this if you are profiling Fred.", new BooleanCallback() {
 
@@ -1533,46 +1334,6 @@ public class Node {
 		System.out.println("Node constructor completed");
 	}
 	
-	private void setThrottles(String val) throws InvalidConfigValueException {
-		File f = new File(val);
-		File tmp = new File(val+".tmp");
-		while(true) {
-			if(f.exists()) {
-				if(!(f.canRead() && f.canWrite()))
-					throw new InvalidConfigValueException("File exists and cannot read/write it");
-				break;
-			} else {
-				try {
-					f.createNewFile();
-				} catch (IOException e) {
-					throw new InvalidConfigValueException("File does not exist and cannot be created");
-				}
-			}
-		}
-		while(true) {
-			if(tmp.exists()) {
-				if(!(tmp.canRead() && tmp.canWrite()))
-					throw new InvalidConfigValueException("File exists and cannot read/write it");
-				break;
-			} else {
-				try {
-					tmp.createNewFile();
-				} catch (IOException e) {
-					throw new InvalidConfigValueException("File does not exist and cannot be created");
-				}
-			}
-		}
-		
-		ThrottlePersister tp;
-		synchronized(Node.this) {
-			persistTarget = f;
-			persistTemp = tmp;
-			tp = throttlePersister;
-		}
-		if(tp != null)
-			tp.interrupt();
-	}
-
 	static final String ERROR_SUN_NPTL = 
 		"WARNING: Your system appears to be running a Sun JVM with NPTL. " +
 		"This has been known to cause the node to freeze up due to the JVM losing a lock. " +
@@ -1587,11 +1348,9 @@ public class Node {
 		
 		if(!noSwaps)
 			lm.startSender(this, this.swapInterval);
-		nodePinger.start();
 		dnsr.start();
-		ps.start();
+		ps.start(nodeStats);
 		usm.start(disableHangCheckers);
-		myMemoryChecker.start();
 		peers.start();
 		
 		if(isUsingWrapper()) {
@@ -1628,6 +1387,8 @@ public class Node {
 		
 		checkForEvilJVMBug();
 		
+		this.nodeStats.start();
+		
 		// TODO: implement a "required" version if needed
 		if(!nodeUpdater.isEnabled() && (NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER > NodeStarter.extBuildNumber))
 			clientCore.alerts.register(new ExtOldAgeUserAlert());
@@ -1647,9 +1408,6 @@ public class Node {
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
 		
-		Thread t = new Thread(throttlePersister, "Throttle data persister thread");
-		t.setDaemon(true);
-		t.start();
 		Logger.normal(this, "Started node");
 		
 		hasStarted = true;
@@ -1824,139 +1582,6 @@ public class Node {
 		
 	}
 
-	private long lastAcceptedRequest = -1;
-	
-	private long lastCheckedUncontended = -1;
-	
-	static final int ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET = 
-		1024 + DMT.packetTransmitSize(1024, 32)
-		+ FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
-	
-	/* return reject reason as string if should reject, otherwise return null */
-	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
-		if(logMINOR) dumpByteCostAverages();
-		
-		if(threadLimit < getActiveThreadCount())
-			return "Accepting the request would mean going above the maximum number of allowed threads";
-		
-		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
-		
-		// If no recent reports, no packets have been sent; correct the average downwards.
-		long now = System.currentTimeMillis();
-		boolean checkUncontended = false;
-		synchronized(this) {
-			if(now - lastCheckedUncontended > 1000) {
-				checkUncontended = true;
-				lastCheckedUncontended = now;
-			}
-		}
-		if(checkUncontended && throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
-			// shouldn't take long
-			outputThrottle.blockingGrab(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
-			outputThrottle.recycle(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
-			long after = System.currentTimeMillis();
-			// Report time it takes to grab the bytes.
-			throttledPacketSendAverage.report(after - now);
-			now = after;
-			// will have changed, use new value
-			synchronized(this) {
-				bwlimitDelayTime = throttledPacketSendAverage.currentValue();
-			}
-		}
-		
-		double pingTime = nodePinger.averagePingTime();
-		synchronized(this) {
-			// Round trip time
-			if(pingTime > MAX_PING_TIME) {
-				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
-					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
-				} else {
-					pInstantRejectIncoming.report(1.0);
-					return ">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
-				}
-			} else if(pingTime > SUB_MAX_PING_TIME) {
-				double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
-				if(random.nextDouble() < x) {
-					pInstantRejectIncoming.report(1.0);
-					return ">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
-				}
-			}
-		
-			// Bandwidth limited packets
-			if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
-				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
-					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
-				} else {
-					pInstantRejectIncoming.report(1.0);
-					return ">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
-				}
-			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
-				double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
-				if(random.nextDouble() < x) {
-					pInstantRejectIncoming.report(1.0);
-					return ">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
-				}
-			}
-			
-		}
-		
-		// Do we have the bandwidth?
-		double expected =
-			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
-					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
-		int expectedSent = (int)Math.max(expected, 0);
-		if(!requestOutputThrottle.instantGrab(expectedSent)) {
-			pInstantRejectIncoming.report(1.0);
-			return "Insufficient output bandwidth";
-		}
-		expected = 
-			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
-					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
-		int expectedReceived = (int)Math.max(expected, 0);
-		if(!requestInputThrottle.instantGrab(expectedReceived)) {
-			requestOutputThrottle.recycle(expectedSent);
-			pInstantRejectIncoming.report(1.0);
-			return "Insufficient input bandwidth";
-		}
-
-		Runtime r = Runtime.getRuntime();
-		long maxHeapMemory = r.maxMemory();
-		long freeHeapMemory = r.freeMemory();
-		if(freeHeapMemory < MIN_FREE_HEAP_BYTES_FOR_ROUTING_SUCCESS) {
-			pInstantRejectIncoming.report(1.0);
-			return "<MIN_FREE_HEAP_BYTES_FOR_ROUTING_SUCCESS ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+')';
-		}
-		double percentFreeHeapMemoryOfMax = ((double) freeHeapMemory) / ((double) maxHeapMemory);
-		if(percentFreeHeapMemoryOfMax < MIN_FREE_HEAP_PERCENT_FOR_ROUTING_SUCCESS) {
-			pInstantRejectIncoming.report(1.0);
-			DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
-			return "<MIN_FREE_HEAP_PERCENT_FOR_ROUTING_SUCCESS ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+" ("+fix3p1pct.format(percentFreeHeapMemoryOfMax)+"))";
-		}
-
-		synchronized(this) {
-			if(logMINOR) Logger.minor(this, "Accepting request?");
-			lastAcceptedRequest = now;
-		}
-		
-		pInstantRejectIncoming.report(0.0);
-
-		// Accept
-		return null;
-	}
-	
-	private void dumpByteCostAverages() {
-		Logger.minor(this, "Byte cost averages: REMOTE:"+
-				" CHK insert "+remoteChkInsertBytesSentAverage.currentValue()+ '/' +remoteChkInsertBytesReceivedAverage.currentValue()+
-				" SSK insert "+remoteSskInsertBytesSentAverage.currentValue()+ '/' +remoteSskInsertBytesReceivedAverage.currentValue()+
-				" CHK fetch "+remoteChkFetchBytesSentAverage.currentValue()+ '/' +remoteChkFetchBytesReceivedAverage.currentValue()+
-				" SSK fetch "+remoteSskFetchBytesSentAverage.currentValue()+ '/' +remoteSskFetchBytesReceivedAverage.currentValue());
-		Logger.minor(this, "Byte cost averages: LOCAL"+
-				" CHK insert "+localChkInsertBytesSentAverage.currentValue()+ '/' +localChkInsertBytesReceivedAverage.currentValue()+
-				" SSK insert "+localSskInsertBytesSentAverage.currentValue()+ '/' +localSskInsertBytesReceivedAverage.currentValue()+
-				" CHK fetch "+localChkFetchBytesSentAverage.currentValue()+ '/' +localChkFetchBytesReceivedAverage.currentValue()+
-				" SSK fetch "+localSskFetchBytesSentAverage.currentValue()+ '/' +localSskFetchBytesReceivedAverage.currentValue());
-	}
-
 	public SimpleFieldSet exportPrivateFieldSet() {
 		SimpleFieldSet fs = exportPublicFieldSet(false);
 		fs.put("dsaPrivKey", myPrivKey.asFieldSet());
@@ -2041,215 +1666,7 @@ public class Node {
 	 * Export volatile data about the node as a SimpleFieldSet
 	 */
 	public SimpleFieldSet exportVolatileFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		long now = System.currentTimeMillis();
-		fs.put("isUsingWrapper", isUsingWrapper());
-		long nodeUptimeSeconds = 0;
-		synchronized(this) {
-			fs.put("startupTime", startupTime);
-			nodeUptimeSeconds = (now - startupTime) / 1000;
-			fs.put("uptimeSeconds", nodeUptimeSeconds);
-		}
-		fs.put("averagePingTime", getNodeAveragePingTime());
-		fs.put("bwlimitDelayTime", getBwlimitDelayTime());
-		fs.put("networkSizeEstimateSession", getNetworkSizeEstimate(-1));
-		int networkSizeEstimate24hourRecent = getNetworkSizeEstimate(now - (24*60*60*1000));  // 24 hours
-		fs.put("networkSizeEstimate24hourRecent", networkSizeEstimate24hourRecent);
-		int networkSizeEstimate48hourRecent = getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
-		fs.put("networkSizeEstimate48hourRecent", networkSizeEstimate48hourRecent);
-		fs.put("routingMissDistance", routingMissDistance.currentValue());
-		fs.put("backedOffPercent", backedOffPercent.currentValue());
-		fs.put("pInstantReject", pRejectIncomingInstantly());
-		fs.put("unclaimedFIFOSize", usm.getUnclaimedFIFOSize());
-		
-		/* gather connection statistics */
-		PeerNodeStatus[] peerNodeStatuses = getPeerNodeStatuses();
-		Arrays.sort(peerNodeStatuses, new Comparator() {
-			public int compare(Object first, Object second) {
-				PeerNodeStatus firstNode = (PeerNodeStatus) first;
-				PeerNodeStatus secondNode = (PeerNodeStatus) second;
-				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
-				if (statusDifference != 0) {
-					return statusDifference;
-				}
-				return firstNode.getName().compareToIgnoreCase(secondNode.getName());
-			}
-		});
-		
-		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_CONNECTED);
-		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
-		int numberOfTooNew = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_TOO_NEW);
-		int numberOfTooOld = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_TOO_OLD);
-		int numberOfDisconnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_DISCONNECTED);
-		int numberOfNeverConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_NEVER_CONNECTED);
-		int numberOfDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_DISABLED);
-		int numberOfBursting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_BURSTING);
-		int numberOfListening = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTENING);
-		int numberOfListenOnly = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTEN_ONLY);
-		
-		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
-		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
-
-		fs.put("numberOfConnected", numberOfConnected);
-		fs.put("numberOfRoutingBackedOff", numberOfRoutingBackedOff);
-		fs.put("numberOfTooNew", numberOfTooNew);
-		fs.put("numberOfTooOld", numberOfTooOld);
-		fs.put("numberOfDisconnected", numberOfDisconnected);
-		fs.put("numberOfNeverConnected", numberOfNeverConnected);
-		fs.put("numberOfDisabled", numberOfDisabled);
-		fs.put("numberOfBursting", numberOfBursting);
-		fs.put("numberOfListening", numberOfListening);
-		fs.put("numberOfListenOnly", numberOfListenOnly);
-		
-		fs.put("numberOfSimpleConnected", numberOfSimpleConnected);
-		fs.put("numberOfNotConnected", numberOfNotConnected);
-
-		fs.put("numberOfInserts", getNumInserts());
-		fs.put("numberOfRequests", getNumRequests());
-		fs.put("numberOfTransferringRequests", getNumTransferringRequests());
-		fs.put("numberOfARKFetchers", getNumARKFetchers());
-
-		long[] total = IOStatisticCollector.getTotalIO();
-		long total_output_rate = (total[0]) / nodeUptimeSeconds;
-		long total_input_rate = (total[1]) / nodeUptimeSeconds;
-		long totalPayloadOutput = getTotalPayloadSent();
-		long total_payload_output_rate = totalPayloadOutput / nodeUptimeSeconds;
-		int total_payload_output_percent = (int) (100 * totalPayloadOutput / total[0]);
-		fs.put("totalOutputBytes", total[0]);
-		fs.put("totalOutputRate", total_output_rate);
-		fs.put("totalPayloadOutputBytes", totalPayloadOutput);
-		fs.put("totalPayloadOutputRate", total_payload_output_rate);
-		fs.put("totalPayloadOutputPercent", total_payload_output_percent);
-		fs.put("totalInputBytes", total[1]);
-		fs.put("totalInputRate", total_input_rate);
-		long[] rate = getNodeIOStats();
-		long delta = (rate[5] - rate[2]) / 1000;
-		long recent_output_rate = (rate[3] - rate[0]) / delta;
-		long recent_input_rate = (rate[4] - rate[1]) / delta;
-		fs.put("recentOutputRate", recent_output_rate);
-		fs.put("recentInputRate", recent_input_rate);
-
-		String [] routingBackoffReasons = getPeerNodeRoutingBackoffReasons();
-		if(routingBackoffReasons.length != 0) {
-			for(int i=0;i<routingBackoffReasons.length;i++) {
-				fs.put("numberWithRoutingBackoffReasons." + routingBackoffReasons[i], getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]));
-			}
-		}
-
-		double swaps = (double)getSwaps();
-		double noSwaps = (double)getNoSwaps();
-		double numberOfRemotePeerLocationsSeenInSwaps = (double)getNumberOfRemotePeerLocationsSeenInSwaps();
-		fs.putSingle("numberOfRemotePeerLocationsSeenInSwaps", Double.toString(numberOfRemotePeerLocationsSeenInSwaps));
-		double avgConnectedPeersPerNode = 0.0;
-		if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
-			avgConnectedPeersPerNode = numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps);
-		}
-		fs.putSingle("avgConnectedPeersPerNode", Double.toString(avgConnectedPeersPerNode));
-
-		int startedSwaps = getStartedSwaps();
-		int swapsRejectedAlreadyLocked = getSwapsRejectedAlreadyLocked();
-		int swapsRejectedNowhereToGo = getSwapsRejectedNowhereToGo();
-		int swapsRejectedRateLimit = getSwapsRejectedRateLimit();
-		int swapsRejectedLoop = getSwapsRejectedLoop();
-		int swapsRejectedRecognizedID = getSwapsRejectedRecognizedID();
-		double locationChangePerSession = getLocationChangeSession();
-		double locationChangePerSwap = 0.0;
-		double locationChangePerMinute = 0.0;
-		double swapsPerMinute = 0.0;
-		double noSwapsPerMinute = 0.0;
-		double swapsPerNoSwaps = 0.0;
-		if (swaps > 0) {
-			locationChangePerSwap = locationChangePerSession/swaps;
-		}
-		if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-			locationChangePerMinute = locationChangePerSession/(double)(nodeUptimeSeconds/60.0);
-		}
-		if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-			swapsPerMinute = swaps/(double)(nodeUptimeSeconds/60.0);
-		}
-		if ((noSwaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-			noSwapsPerMinute = noSwaps/(double)(nodeUptimeSeconds/60.0);
-		}
-		if ((swaps > 0.0) && (noSwaps > 0.0)) {
-			swapsPerNoSwaps = swaps/noSwaps;
-		}
-		fs.put("locationChangePerSession", locationChangePerSession);
-		fs.put("locationChangePerSwap", locationChangePerSwap);
-		fs.put("locationChangePerMinute", locationChangePerMinute);
-		fs.put("swapsPerMinute", swapsPerMinute);
-		fs.put("noSwapsPerMinute", noSwapsPerMinute);
-		fs.put("swapsPerNoSwaps", swapsPerNoSwaps);
-		fs.put("swaps", swaps);
-		fs.put("noSwaps", noSwaps);
-		fs.put("startedSwaps", startedSwaps);
-		fs.put("swapsRejectedAlreadyLocked", swapsRejectedAlreadyLocked);
-		fs.put("swapsRejectedNowhereToGo", swapsRejectedNowhereToGo);
-		fs.put("swapsRejectedRateLimit", swapsRejectedRateLimit);
-		fs.put("swapsRejectedLoop", swapsRejectedLoop);
-		fs.put("swapsRejectedRecognizedID", swapsRejectedRecognizedID);
-
-		long fix32kb = 32 * 1024;
-		long cachedKeys = getChkDatacache().keyCount();
-		long cachedSize = cachedKeys * fix32kb;
-		long storeKeys = getChkDatastore().keyCount();
-		long storeSize = storeKeys * fix32kb;
-		long overallKeys = cachedKeys + storeKeys;
-		long overallSize = cachedSize + storeSize;
-		
-		long maxOverallKeys = getMaxTotalKeys();
-		long maxOverallSize = maxOverallKeys * fix32kb;
-		
-		double percentOverallKeysOfMax = (double)(overallKeys*100)/(double)maxOverallKeys;
-		
-		long cachedStoreHits = getChkDatacache().hits();
-		long cachedStoreMisses = getChkDatacache().misses();
-		long cacheAccesses = cachedStoreHits + cachedStoreMisses;
-		double percentCachedStoreHitsOfAccesses = (double)(cachedStoreHits*100) / (double)cacheAccesses;
-		long storeHits = getChkDatastore().hits();
-		long storeMisses = getChkDatastore().misses();
-		long storeAccesses = storeHits + storeMisses;
-		double percentStoreHitsOfAccesses = (double)(storeHits*100) / (double)storeAccesses;
-		long overallAccesses = storeAccesses + cacheAccesses;
-		double avgStoreAccessRate = (double)overallAccesses/(double)nodeUptimeSeconds;
-		
-		fs.put("cachedKeys", cachedKeys);
-		fs.put("cachedSize", cachedSize);
-		fs.put("storeKeys", storeKeys);
-		fs.put("storeSize", storeSize);
-		fs.put("overallKeys", overallKeys);
-		fs.put("overallSize", overallSize);
-		fs.put("maxOverallKeys", maxOverallKeys);
-		fs.put("maxOverallSize", maxOverallSize);
-		fs.put("percentOverallKeysOfMax", percentOverallKeysOfMax);
-		fs.put("cachedStoreHits", cachedStoreHits);
-		fs.put("cachedStoreMisses", cachedStoreMisses);
-		fs.put("cacheAccesses", cacheAccesses);
-		fs.put("percentCachedStoreHitsOfAccesses", percentCachedStoreHitsOfAccesses);
-		fs.put("storeHits", storeHits);
-		fs.put("storeMisses", storeMisses);
-		fs.put("storeAccesses", storeAccesses);
-		fs.put("percentStoreHitsOfAccesses", percentStoreHitsOfAccesses);
-		fs.put("overallAccesses", overallAccesses);
-		fs.put("avgStoreAccessRate", avgStoreAccessRate);
-
-		Runtime rt = Runtime.getRuntime();
-		float freeMemory = (float) rt.freeMemory();
-		float totalMemory = (float) rt.totalMemory();
-		float maxMemory = (float) rt.maxMemory();
-
-		long usedJavaMem = (long)(totalMemory - freeMemory);
-		long allocatedJavaMem = (long)totalMemory;
-		long maxJavaMem = (long)maxMemory;
-		int availableCpus = rt.availableProcessors();
-
-		fs.put("freeJavaMemory", (long)freeMemory);
-		fs.put("usedJavaMemory", usedJavaMem);
-		fs.put("allocatedJavaMemory", allocatedJavaMem);
-		fs.put("maximumJavaMemory", maxJavaMem);
-		fs.put("availableCPUs", availableCpus);
-		fs.put("runningThreadCount", getActiveThreadCount());
-		
-		return fs;
+		return nodeStats.exportVolatileFieldSet();
 	}
 
 	/**
@@ -3013,171 +2430,6 @@ public class Node {
 		return false;
 	}
 	
-	public double getBwlimitDelayTime() {
-		return throttledPacketSendAverage.currentValue();
-	}
-	
-	public double getNodeAveragePingTime() {
-		return nodePinger.averagePingTime();
-	}
-
-	/**
-	 * Add a ARKFetcher to the map
-	 */
-	/**
-	 * Add a PeerNode status to the map
-	 */
-	public void addPeerNodeStatus(int pnStatus, PeerNode peerNode) {
-		Integer peerNodeStatus = new Integer(pnStatus);
-		HashSet statusSet = null;
-		synchronized(peerNodeStatuses) {
-			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
-				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
-				if(statusSet.contains(peerNode)) {
-					Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode+" with status code "+peerNodeStatus);
-					return;
-				}
-				peerNodeStatuses.remove(peerNodeStatus);
-			} else {
-				statusSet = new HashSet();
-			}
-			if(logMINOR) Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
-			statusSet.add(peerNode);
-			peerNodeStatuses.put(peerNodeStatus, statusSet);
-		}
-	}
-
-	/**
-	 * How many PeerNodes have a particular status?
-	 */
-	public int getPeerNodeStatusSize(int pnStatus) {
-		Integer peerNodeStatus = new Integer(pnStatus);
-		HashSet statusSet = null;
-		synchronized(peerNodeStatuses) {
-			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
-				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
-			} else {
-				statusSet = new HashSet();
-			}
-			return statusSet.size();
-		}
-	}
-
-	/**
-	 * Remove a PeerNode status from the map
-	 */
-	public void removePeerNodeStatus(int pnStatus, PeerNode peerNode) {
-		Integer peerNodeStatus = new Integer(pnStatus);
-		HashSet statusSet = null;
-		synchronized(peerNodeStatuses) {
-			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
-				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
-				if(!statusSet.contains(peerNode)) {
-					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status code "+peerNodeStatus);
-					return;
-				}
-				peerNodeStatuses.remove(peerNodeStatus);
-			} else {
-				statusSet = new HashSet();
-			}
-			if(logMINOR) Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
-			if(statusSet.contains(peerNode)) {
-				statusSet.remove(peerNode);
-			}
-			peerNodeStatuses.put(peerNodeStatus, statusSet);
-		}
-	}
-
-	/**
-	 * Log the current PeerNode status summary if the timer has expired
-	 */
-	public void maybeLogPeerNodeStatusSummary(long now) {
-	  if(now > nextPeerNodeStatusLogTime) {
-		if((now - nextPeerNodeStatusLogTime) > (10*1000) && nextPeerNodeStatusLogTime > 0)
-		  Logger.error(this,"maybeLogPeerNodeStatusSummary() not called for more than 10 seconds ("+(now - nextPeerNodeStatusLogTime)+").  PacketSender getting bogged down or something?");
-		
-		int numberOfConnected = 0;
-		int numberOfRoutingBackedOff = 0;
-		int numberOfTooNew = 0;
-		int numberOfTooOld = 0;
-		int numberOfDisconnected = 0;
-		int numberOfNeverConnected = 0;
-		int numberOfDisabled = 0;
-		int numberOfListenOnly = 0;
-		int numberOfListening = 0;
-		int numberOfBursting = 0;
-		
-		PeerNodeStatus[] pns = getPeerNodeStatuses();
-		
-		for(int i=0; i<pns.length; i++){
-			switch (pns[i].getStatusValue()) {
-			case PEER_NODE_STATUS_CONNECTED:
-				numberOfConnected++;
-				break;
-			case PEER_NODE_STATUS_ROUTING_BACKED_OFF:
-				numberOfRoutingBackedOff++;
-				break;
-			case PEER_NODE_STATUS_TOO_NEW:
-				numberOfTooNew++;
-				break;
-			case PEER_NODE_STATUS_TOO_OLD:
-				numberOfTooOld++;
-				break;
-			case PEER_NODE_STATUS_DISCONNECTED:
-				numberOfDisconnected++;
-				break;
-			case PEER_NODE_STATUS_NEVER_CONNECTED:
-				numberOfNeverConnected++;
-				break;
-			case PEER_NODE_STATUS_DISABLED:
-				numberOfDisabled++;
-				break;
-			case PEER_NODE_STATUS_LISTEN_ONLY:
-				numberOfListenOnly++;
-				break;
-			case PEER_NODE_STATUS_LISTENING:
-				numberOfListening++;
-				break;
-			case PEER_NODE_STATUS_BURSTING:
-				numberOfBursting++;
-				break;
-			default:
-				Logger.error(this, "Unknown peer status value : "+pns[i].getStatusValue());
-				break;
-			}
-		}
-		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Bursting: "+numberOfBursting+"  Listening: "+numberOfListening+"  Listen Only: "+numberOfListenOnly);
-		nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
-		}
-	}
-
-	/**
-	 * Update oldestNeverConnectedPeerAge if the timer has expired
-	 */
-	public void maybeUpdateOldestNeverConnectedPeerAge(long now) {
-	  if(now > nextOldestNeverConnectedPeerAgeUpdateTime) {
-		oldestNeverConnectedPeerAge = 0;
-	   	if(peers != null) {
-		  PeerNode[] peerList = peers.myPeers;
-		  for(int i=0;i<peerList.length;i++) {
-			PeerNode pn = peerList[i];
-			if(pn.getPeerNodeStatus() == PEER_NODE_STATUS_NEVER_CONNECTED) {
-			  if((now - pn.getPeerAddedTime()) > oldestNeverConnectedPeerAge) {
-				oldestNeverConnectedPeerAge = now - pn.getPeerAddedTime();
-			  }
-			}
-		  }
-	   	}
-	   	if(oldestNeverConnectedPeerAge > 0 && logMINOR)
-		  Logger.minor(this, "Oldest never connected peer is "+oldestNeverConnectedPeerAge+"ms old");
-		nextOldestNeverConnectedPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
-	  }
-	}
-
-	public long getOldestNeverConnectedPeerAge() {
-	  return oldestNeverConnectedPeerAge;
-	}
-
 	/**
 	 * Handle a received node to node message
 	 */
@@ -3295,14 +2547,6 @@ public class Node {
 	  return usm;
 	}
 
-	public int getNetworkSizeEstimate(long timestamp) {
-	  return lm.getNetworkSizeEstimate( timestamp );
-	}
-
-	public Object[] getKnownLocations(long timestamp) {
-	  return lm.getKnownLocations( timestamp );
-	}
-	
 	public int getSwaps() {
 		return LocationManager.swaps;
 	}
@@ -3335,115 +2579,6 @@ public class Node {
 		return LocationManager.swapsRejectedRecognizedID;
 	}
 
-	/**
-	 * Add a PeerNode routing backoff reason to the map
-	 */
-	public void addPeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
-		synchronized(peerNodeRoutingBackoffReasons) {
-			HashSet reasonSet = null;
-			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
-				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
-				if(reasonSet.contains(peerNode)) {
-					Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' already in peerNodeRoutingBackoffReasons as "+peerNode+" with status code "+peerNodeRoutingBackoffReason);
-					return;
-				}
-				peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
-			} else {
-				reasonSet = new HashSet();
-			}
-			if(logMINOR) Logger.minor(this, "addPeerNodeRoutingBackoffReason(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
-			reasonSet.add(peerNode);
-			peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
-		}
-	}
-	
-	/**
-	 * What are the currently tracked PeerNode routing backoff reasons?
-	 */
-	public String [] getPeerNodeRoutingBackoffReasons() {
-		String [] reasonStrings;
-		synchronized(peerNodeRoutingBackoffReasons) {
-			reasonStrings = (String []) peerNodeRoutingBackoffReasons.keySet().toArray(new String[peerNodeRoutingBackoffReasons.size()]);
-		}
-		Arrays.sort(reasonStrings);
-		return reasonStrings;
-	}
-	
-	/**
-	 * How many PeerNodes have a particular routing backoff reason?
-	 */
-	public int getPeerNodeRoutingBackoffReasonSize(String peerNodeRoutingBackoffReason) {
-		HashSet reasonSet = null;
-		synchronized(peerNodeRoutingBackoffReasons) {
-			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
-				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
-				return reasonSet.size();
-			} else {
-				return 0;
-			}
-		}
-	}
-
-	/**
-	 * Remove a PeerNode routing backoff reason from the map
-	 */
-	public void removePeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
-		HashSet reasonSet = null;
-		synchronized(peerNodeRoutingBackoffReasons) {
-			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
-				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
-				if(!reasonSet.contains(peerNode)) {
-					Logger.error(this, "removePeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' not in peerNodeRoutingBackoffReasons with status code "+peerNodeRoutingBackoffReason);
-					return;
-				}
-				peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
-			} else {
-				reasonSet = new HashSet();
-			}
-			if(logMINOR) Logger.minor(this, "removePeerNodeRoutingBackoffReason(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
-			if(reasonSet.contains(peerNode)) {
-				reasonSet.remove(peerNode);
-			}
-			if(reasonSet.size() > 0) {
-				peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
-			}
-		}
-	}
-
-	/**
-	 * Update peerManagerUserAlertStats if the timer has expired
-	 */
-	public void maybeUpdatePeerManagerUserAlertStats(long now) {
-		if(now > nextPeerManagerUserAlertStatsUpdateTime) {
-			if(getBwlimitDelayTime() > MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD) {
-				if(firstBwlimitDelayTimeThresholdBreak == 0) {
-					firstBwlimitDelayTimeThresholdBreak = now;
-				}
-			} else {
-				firstBwlimitDelayTimeThresholdBreak = 0;
-			}
-			if((firstBwlimitDelayTimeThresholdBreak != 0) && ((now - firstBwlimitDelayTimeThresholdBreak) >= MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY)) {
-				bwlimitDelayAlertRelevant = true;
-			} else {
-				bwlimitDelayAlertRelevant = false;
-			}
-			if(getNodeAveragePingTime() > MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD) {
-				if(firstNodeAveragePingTimeThresholdBreak == 0) {
-					firstNodeAveragePingTimeThresholdBreak = now;
-				}
-			} else {
-				firstNodeAveragePingTimeThresholdBreak = 0;
-			}
-			if((firstNodeAveragePingTimeThresholdBreak != 0) && ((now - firstNodeAveragePingTimeThresholdBreak) >= MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY)) {
-				nodeAveragePingAlertRelevant = true;
-			} else {
-				nodeAveragePingAlertRelevant = false;
-			}
-			if(logMINOR && Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "mUPMUAS: "+now+": "+getBwlimitDelayTime()+" >? "+MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+" since "+firstBwlimitDelayTimeThresholdBreak+" ("+bwlimitDelayAlertRelevant+") "+getNodeAveragePingTime()+" >? "+MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+" since "+firstNodeAveragePingTimeThresholdBreak+" ("+nodeAveragePingAlertRelevant+ ')');
-			nextPeerManagerUserAlertStatsUpdateTime = now + peerManagerUserAlertStatsUpdateInterval;
-		}
-	}
-
 	public PeerNode[] getPeerNodes() {
 		return peers.myPeers;
 	}
@@ -3452,14 +2587,6 @@ public class Node {
 		return peers.connectedPeers;
 	}
 	
-	public PeerNodeStatus[] getPeerNodeStatuses() {
-		PeerNodeStatus[] peerNodeStatuses = new PeerNodeStatus[peers.myPeers.length];
-		for (int peerIndex = 0, peerCount = peers.myPeers.length; peerIndex < peerCount; peerIndex++) {
-			peerNodeStatuses[peerIndex] = peers.myPeers[peerIndex].getStatus();
-		}
-		return peerNodeStatuses;
-	}
-
 	/**
 	 * Return a peer of the node given its ip and port, name or identity, as a String
 	 */
@@ -3490,10 +2617,6 @@ public class Node {
 		clientCore.queueRandomReinsert(block);
 	}
 
-	public double pRejectIncomingInstantly() {
-		return pInstantRejectIncoming.currentValue();
-	}
-	
 	public String getExtraPeerDataDir() {
 		return extraPeerDataDir.getPath();
 	}
@@ -3525,148 +2648,6 @@ public class Node {
 	// FIXME convert these kind of threads to Checkpointed's and implement a handler
 	// using the PacketSender/Ticker. Would save a few threads.
 	
-	class ThrottlePersister implements Runnable {
-
-		void interrupt() {
-			synchronized(this) {
-				notifyAll();
-			}
-		}
-		
-		public void run() {
-			while(true) {
-				try {
-					persistThrottle();
-				} catch (OutOfMemoryError e) {
-					OOMHandler.handleOOM(e);
-					System.err.println("Will restart ThrottlePersister...");
-				} catch (Throwable t) {
-					Logger.error(this, "Caught in ThrottlePersister: "+t, t);
-					System.err.println("Caught in ThrottlePersister: "+t);
-					t.printStackTrace();
-					System.err.println("Will restart ThrottlePersister...");
-				}
-				try {
-					synchronized(this) {
-						wait(60*1000);
-					}
-				} catch (InterruptedException e) {
-					// Maybe it's time to wake up?
-				}
-			}
-		}
-		
-	}
-
-	public void persistThrottle() {
-		if(logMINOR) Logger.minor(this, "Trying to persist throttles...");
-		SimpleFieldSet fs = persistThrottlesToFieldSet();
-		try {
-			FileOutputStream fos = new FileOutputStream(persistTemp);
-			// FIXME common pattern, reuse it.
-			BufferedOutputStream bos = new BufferedOutputStream(fos);
-			OutputStreamWriter osw = new OutputStreamWriter(bos, "UTF-8");
-			BufferedWriter bw = new BufferedWriter(osw);
-			try {
-				fs.writeTo(bw);
-			} catch (IOException e) {
-				try {
-					fos.close();
-					persistTemp.delete();
-					return;
-				} catch (IOException e1) {
-					// Ignore
-				}
-			}
-			try {
-				bw.close();
-			} catch (IOException e) {
-				// Huh?
-				Logger.error(this, "Caught while closing: "+e, e);
-				return;
-			}
-			// Try an atomic rename
-			if(!persistTemp.renameTo(persistTarget)) {
-				// Not supported on some systems (Windows)
-				if(!persistTarget.delete()) {
-					if(persistTarget.exists()) {
-						Logger.error(this, "Could not delete "+persistTarget+" - check permissions");
-					}
-				}
-				if(!persistTemp.renameTo(persistTarget)) {
-					Logger.error(this, "Could not rename "+persistTemp+" to "+persistTarget+" - check permissions");
-				}
-			}
-		} catch (FileNotFoundException e) {
-			Logger.error(this, "Could not store throttle data to disk: "+e, e);
-			return;
-		} catch (UnsupportedEncodingException e) {
-			Logger.error(this, "Unsupported encoding: UTF-8 !!!!: "+e, e);
-		}
-		
-	}
-
-	private SimpleFieldSet persistThrottlesToFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("RequestStarters", clientCore.requestStarters.persistToFieldSet());
-		fs.put("RemoteChkFetchBytesSentAverage", remoteChkFetchBytesSentAverage.exportFieldSet(true));
-		fs.put("RemoteSskFetchBytesSentAverage", remoteSskFetchBytesSentAverage.exportFieldSet(true));
-		fs.put("RemoteChkInsertBytesSentAverage", remoteChkInsertBytesSentAverage.exportFieldSet(true));
-		fs.put("RemoteSskInsertBytesSentAverage", remoteSskInsertBytesSentAverage.exportFieldSet(true));
-		fs.put("RemoteChkFetchBytesReceivedAverage", remoteChkFetchBytesReceivedAverage.exportFieldSet(true));
-		fs.put("RemoteSskFetchBytesReceivedAverage", remoteSskFetchBytesReceivedAverage.exportFieldSet(true));
-		fs.put("RemoteChkInsertBytesReceivedAverage", remoteChkInsertBytesReceivedAverage.exportFieldSet(true));
-		fs.put("RemoteSskInsertBytesReceivedAverage", remoteSskInsertBytesReceivedAverage.exportFieldSet(true));
-		fs.put("LocalChkFetchBytesSentAverage", localChkFetchBytesSentAverage.exportFieldSet(true));
-		fs.put("LocalSskFetchBytesSentAverage", localSskFetchBytesSentAverage.exportFieldSet(true));
-		fs.put("LocalChkInsertBytesSentAverage", localChkInsertBytesSentAverage.exportFieldSet(true));
-		fs.put("LocalSskInsertBytesSentAverage", localSskInsertBytesSentAverage.exportFieldSet(true));
-		fs.put("LocalChkFetchBytesReceivedAverage", localChkFetchBytesReceivedAverage.exportFieldSet(true));
-		fs.put("LocalSskFetchBytesReceivedAverage", localSskFetchBytesReceivedAverage.exportFieldSet(true));
-		fs.put("LocalChkInsertBytesReceivedAverage", localChkInsertBytesReceivedAverage.exportFieldSet(true));
-		fs.put("LocalSskInsertBytesReceivedAverage", localSskInsertBytesReceivedAverage.exportFieldSet(true));
-
-		// FIXME persist the rest
-		return fs;
-	}
-
-	/**
-	 * Update the node-wide bandwidth I/O stats if the timer has expired
-	 */
-	public void maybeUpdateNodeIOStats(long now) {
-		if(now > nextNodeIOStatsUpdateTime) {
-			long[] io_stats = IOStatisticCollector.getTotalIO();
-			long outdiff;
-			long indiff;
-			synchronized(ioStatSync) {
-				previous_output_stat = last_output_stat;
-				previous_input_stat = last_input_stat;
-				previous_io_stat_time = last_io_stat_time;
-				last_output_stat = io_stats[ 0 ];
-				last_input_stat = io_stats[ 1 ];
-				last_io_stat_time = now;
-				outdiff = last_output_stat - previous_output_stat;
-				indiff = last_input_stat - previous_input_stat;
-			}
-			if(logMINOR)
-				Logger.minor(this, "Last 2 seconds: input: "+indiff+" output: "+outdiff);
-			nextNodeIOStatsUpdateTime = now + nodeIOStatsUpdateInterval;
-		}
-	}
-
-	public long[] getNodeIOStats() {
-		long[] result = new long[6];
-		synchronized(ioStatSync) {
-			result[ 0 ] = previous_output_stat;
-			result[ 1 ] = previous_input_stat;
-			result[ 2 ] = previous_io_stat_time;
-			result[ 3 ] = last_output_stat;
-			result[ 4 ] = last_input_stat;
-			result[ 5 ] = last_io_stat_time;
-		}
-		return result;
-	}
-
 	public int getNumARKFetchers() {
 		PeerNode[] p = peers.myPeers;
 		int x = 0;
@@ -3705,30 +2686,6 @@ public class Node {
 		return myPubKey;
 	}
 
-	public void waitUntilNotOverloaded(boolean isInsert) {
-		while(threadLimit < getActiveThreadCount()){
-			try{
-				wait(5000);
-			} catch (InterruptedException e) {}
-		}
-	}
-
-	/**
-	 * Update hadRoutableConnectionCount/routableConnectionCheckCount on peers if the timer has expired
-	 */
-	public void maybeUpdatePeerNodeRoutableConnectionStats(long now) {
-		if(now > nextRoutableConnectionStatsUpdateTime) {
-		 	if(peers != null && -1 != nextRoutableConnectionStatsUpdateTime) {
-				PeerNode[] peerList = peers.myPeers;
-				for(int i=0;i<peerList.length;i++) {
-					PeerNode pn = peerList[i];
-					pn.checkRoutableConnectionStatus();
-				}
-		 	}
-			nextRoutableConnectionStatsUpdateTime = now + routableConnectionStatsUpdateInterval;
-		}
-	}
-
 	public Ticker getTicker() {
 		return ps;
 	}
@@ -3759,13 +2716,5 @@ public class Node {
 		catch(DatabaseException e) {
 			System.out.println("Failed to get stats from JE environment: " + e);
 		}
-	}
-	
-	public int getActiveThreadCount() {
-		return rootThreadGroup.activeCount();
-	}
-
-	public int getThreadLimit() {
-		return threadLimit;
 	}
 }

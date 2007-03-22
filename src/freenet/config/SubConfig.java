@@ -302,4 +302,10 @@ public class SubConfig implements Comparable {
 		}
 	}
 
+	public String getRawOption(String name) {
+		if(config instanceof PersistentConfig)
+			return ((PersistentConfig) config).origConfigFileContents.get(prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + name);
+		else return null;
+	}
+
 }
