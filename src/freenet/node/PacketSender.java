@@ -35,7 +35,6 @@ public class PacketSender implements Runnable, Ticker {
     private final TreeMap timedJobsByTime;
     final Thread myThread;
     final Node node;
-    final PeerManager peers;
     NodeStats stats;
     long lastClearedOldSwapChains;
     long lastReportedNoPackets;
@@ -50,7 +49,6 @@ public class PacketSender implements Runnable, Ticker {
         resendPackets = new LinkedList();
         timedJobsByTime = new TreeMap();
         this.node = node;
-        this.peers = node.peers;
         myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
         myThread.setDaemon(true);
         myThread.setPriority(Thread.MAX_PRIORITY);
@@ -171,11 +169,11 @@ public class PacketSender implements Runnable, Ticker {
                 pn.setPeerNodeStatus(now);
             }
         }
-        peers.maybeLogPeerNodeStatusSummary(now);
-        peers.maybeUpdateOldestNeverConnectedPeerAge(now);
+        pm.maybeLogPeerNodeStatusSummary(now);
+        pm.maybeUpdateOldestNeverConnectedPeerAge(now);
         stats.maybeUpdatePeerManagerUserAlertStats(now);
         stats.maybeUpdateNodeIOStats(now);
-        peers.maybeUpdatePeerNodeRoutableConnectionStats(now);
+        pm.maybeUpdatePeerNodeRoutableConnectionStats(now);
         long nextActionTime = Long.MAX_VALUE;
         long oldTempNow = now;
         for(int i=0;i<nodes.length;i++) {
