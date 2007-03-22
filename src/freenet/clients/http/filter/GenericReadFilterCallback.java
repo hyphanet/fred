@@ -51,14 +51,6 @@ public class GenericReadFilterCallback implements FilterCallback {
 			throw new Error(e);
 		}
 	}
-	
-	public boolean allowGetForms() {
-		return false;
-	}
-
-	public boolean allowPostForms() {
-		return false;
-	}
 
 	public String processURI(String u, String overrideType) throws CommentException {
 		return processURI(u, overrideType, false);
@@ -254,7 +246,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			String path = uri.getPath();
 			if(path.startsWith(PLUGINS_PREFIX)) {
 				String after = path.substring(PLUGINS_PREFIX.length());
-				if(after.indexOf("/../") > -1)
+				if(after.indexOf("../") > -1)
 					throw new CommentException("Attempt to escape directory structure");
 				if(after.matches("[A-Za-z0-9\\.]+"))
 					return uri.toASCIIString();
