@@ -142,7 +142,7 @@ public class PeerManager {
                 fs = new SimpleFieldSet(br, false, true);
                 PeerNode pn;
                 try {
-                    pn = new PeerNode(fs, node, true);
+                    pn = new PeerNode(fs, node, this, true);
                 } catch (FSParseException e2) {
                     Logger.error(this, "Could not parse peer: "+e2+ '\n' +fs.toString(),e2);
                     continue;
@@ -319,7 +319,7 @@ public class PeerManager {
      * Connect to a node provided the fieldset representing it.
      */
     public void connect(SimpleFieldSet noderef) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-        PeerNode pn = new PeerNode(noderef, node, false);
+        PeerNode pn = new PeerNode(noderef, node, this, false);
         for(int i=0;i<myPeers.length;i++) {
             if(Arrays.equals(myPeers[i].identity, pn.identity)) return;
         }

@@ -335,10 +335,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * @param fs The SimpleFieldSet to parse
      * @param node2 The running Node we are part of.
      */
-    public PeerNode(SimpleFieldSet fs, Node node2, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+    public PeerNode(SimpleFieldSet fs, Node node2, PeerManager peers, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
         this.node = node2;
-        this.peers = node.peers;
+        this.peers = peers;
         String identityString = fs.get("identity");
     	if(identityString == null)
     		throw new PeerParseException("No identity!");
