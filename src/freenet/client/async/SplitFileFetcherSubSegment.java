@@ -3,10 +3,8 @@ package freenet.client.async;
 import java.io.IOException;
 import java.util.Vector;
 
-import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
-import freenet.client.FetchResult;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyDecodeException;

@@ -6,7 +6,6 @@
  */
 package freenet.node;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -23,9 +22,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
-import java.text.DecimalFormat;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -56,7 +53,6 @@ import freenet.crypt.SHA256;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
-import freenet.io.comm.IOStatisticCollector;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
@@ -102,19 +98,13 @@ import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
-import freenet.support.SizeUtil;
 import freenet.support.SimpleFieldSet;
-import freenet.support.TimeUtil;
-import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.ShortCallback;
 import freenet.support.api.StringCallback;
-import freenet.support.math.RunningAverage;
-import freenet.support.math.TimeDecayingRunningAverage;
 
 /**
  * @author amphibian
