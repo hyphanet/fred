@@ -16,6 +16,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
+import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -55,6 +56,8 @@ public class NodeStats implements Persistable {
 	public static final int MAX_INTERREQUEST_TIME = 10*1000;
 
 	private final Node node;
+	private Thread myMemoryCheckerThread;
+	private MemoryChecker myMemoryChecker;
 	public final PeerManager peers;
 	
 	final RandomSource hardRandom;
@@ -161,10 +164,37 @@ public class NodeStats implements Persistable {
 						threadLimit = val;
 					}
 		});
-		
-		
 		threadLimit = statsConfig.getInt("threadLimit");
 		
+		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "Enable the Memory checking thread", "Enable the memory checking thread", 
+				new BooleanCallback(){
+					public boolean get() {
+						return (myMemoryCheckerThread != null);
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						if(val == get()) return;
+						if(val == false){
+							myMemoryChecker.terminate();
+							myMemoryChecker = null;
+							myMemoryCheckerThread = null;
+						} else {
+							myMemoryChecker = new MemoryChecker();
+							myMemoryCheckerThread = new Thread(myMemoryChecker, "Memory checker");
+							myMemoryCheckerThread.setPriority(Thread.MAX_PRIORITY);
+							myMemoryCheckerThread.setDaemon(true);
+							myMemoryCheckerThread.start();
+						}
+					}
+		});
+		
+		if(statsConfig.getBoolean("memoryChecker")){
+			myMemoryChecker = new MemoryChecker();
+			myMemoryCheckerThread = new Thread(myMemoryChecker, "Memory checker");
+			myMemoryCheckerThread.setPriority(Thread.MAX_PRIORITY);
+			myMemoryCheckerThread.setDaemon(true);
+		}
+
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 
 				"File to store node statistics in", "File to store node statistics in (not client statistics, and these are used to decide whether to accept requests so please don't delete)");
 		
@@ -203,11 +233,6 @@ public class NodeStats implements Persistable {
 	public void start() throws NodeInitException {
 		nodePinger.start();
 		persister.start();
-		//Memory Checking thread
-		// TODO: proper config. callbacks : maybe we shoudln't start the thread at all if it's not worthy
-		Thread myMemoryChecker = new Thread(new MemoryChecker(), "Memory checker");
-		myMemoryChecker.setPriority(Thread.MAX_PRIORITY);
-		myMemoryChecker.setDaemon(true);
 	}
 	
 	private long lastAcceptedRequest = -1;

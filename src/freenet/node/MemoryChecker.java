@@ -6,10 +6,15 @@ package freenet.node;
 import freenet.support.Logger;
 
 public class MemoryChecker implements Runnable {
+	private boolean goon = true;
+	
+	protected void terminate(){
+		goon = false;
+	}
 	
 	public void run() {
 		Runtime r = Runtime.getRuntime();
-		while(true) {
+		while(goon) {
 			int sleeptime = Node.aggressiveGCModificator;
 			if(sleeptime <= 0)
 				sleeptime = 250;
