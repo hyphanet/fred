@@ -24,54 +24,6 @@ import freenet.support.io.BucketTools;
 public class StandardOnionFECCodec extends FECCodec {
 
 	private static boolean logMINOR;
-	
-	public class Encoder implements Runnable {
-
-		private final Bucket[] dataBlockStatus, checkBlockStatus;
-		private final int blockLength;
-		private final BucketFactory bf;
-		private IOException thrownIOE;
-		private RuntimeException thrownRE;
-		private Error thrownError;
-		private boolean finished;
-		
-		public Encoder(Bucket[] dataBlockStatus, Bucket[] checkBlockStatus, int blockLength, BucketFactory bf) {
-			this.dataBlockStatus = dataBlockStatus;
-			this.checkBlockStatus = checkBlockStatus;
-			this.blockLength = blockLength;
-			this.bf = bf;
-		}
-
-		public void run() {
-			long startTime = System.currentTimeMillis();
-			try {
-				realEncode(dataBlockStatus, checkBlockStatus, blockLength, bf);
-			} catch (IOException e) {
-				thrownIOE = e;
-			} catch (RuntimeException e) {
-				thrownRE = e;
-			} catch (Error e) {
-				thrownError = e;
-			}
-			long endTime = System.currentTimeMillis();
-			if(logMINOR)
-				Logger.minor(this, "Splitfile encode: k="+k+", n="+n+" encode took "+(endTime-startTime)+"ms");
-			finished = true;
-			synchronized(this) {
-				notify();
-			}
-		}
-
-		public void throwException() throws IOException {
-			if(thrownIOE != null)
-				throw thrownIOE;
-			if(thrownRE != null)
-				throw thrownRE;
-			if(thrownError != null)
-				throw thrownError;
-		}
-
-	}
 
 	// REDFLAG: How big is one of these?
 	private static int MAX_CACHED_CODECS = 8;
@@ -344,22 +296,21 @@ public class StandardOnionFECCodec extends FECCodec {
 			runningDecodes++;
 		}
 		try {
-			// Run on a separate thread so we can tweak priority
-			Encoder et = new Encoder(dataBlockStatus, checkBlockStatus, blockLength, bf);
-			Thread t = new Thread(et, "Encoder thread for k="+k+", n="+n+" started at "+System.currentTimeMillis());
-			t.setDaemon(true);
-			t.setPriority(Thread.MIN_PRIORITY);
-			t.start();
-			synchronized(et) {
-				while(!et.finished) {
-					try {
-						et.wait(10*1000);
-					} catch (InterruptedException e) {
-						// Ignore
-					}
-				}
-			}
-			et.throwException();
+			Thread currentThread = Thread.currentThread();
+			final int currentThreadPriority = currentThread.getPriority();
+			final String oldThreadName = currentThread.getName();
+			
+			currentThread.setName("Encoder thread for k="+k+", n="+n+" enabled at "+System.currentTimeMillis());
+			currentThread.setPriority(Thread.MIN_PRIORITY);
+			
+			long startTime = System.currentTimeMillis();
+			realEncode(dataBlockStatus, checkBlockStatus, blockLength, bf);
+			long endTime = System.currentTimeMillis();
+			if(logMINOR)
+				Logger.minor(this, "Splitfile encode: k="+k+", n="+n+" encode took "+(endTime-startTime)+"ms");
+			
+			currentThread.setName(oldThreadName);
+			currentThread.setPriority(currentThreadPriority);
 		} finally {
 			synchronized(runningDecodesSync) {
 				runningDecodes--;
