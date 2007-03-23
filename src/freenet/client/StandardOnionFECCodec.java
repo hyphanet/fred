@@ -90,6 +90,8 @@ public class StandardOnionFECCodec extends FECCodec {
 	public StandardOnionFECCodec(int k, int n) {
 		this.k = k;
 		this.n = n;
+		assert(n > 256);
+		assert(k < 256);
 		
 		FECCode fec2 = null;
 		if(!noNative) {
