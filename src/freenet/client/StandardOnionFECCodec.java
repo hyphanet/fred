@@ -79,8 +79,15 @@ public class StandardOnionFECCodec extends FECCodec {
 	private static int MAX_CACHED_CODECS = 8;
 	// REDFLAG: Optimal stripe size? Smaller => less memory usage, but more JNI overhead
 	private static int STRIPE_SIZE = 4096;
-	// REDFLAG: Make this configurable, maybe make it depend on # CPUs
-	private static int PARALLEL_DECODES = 1;
+	private static int PARALLEL_DECODES;
+	
+	static {
+		int nbAvailableProcessors = Runtime.getRuntime().availableProcessors();
+		if(nbAvailableProcessors > 1)
+			PARALLEL_DECODES = nbAvailableProcessors - 1;
+		else
+			PARALLEL_DECODES = 1;
+	}
 	
 	private static class MyKey {
 		/** Number of input blocks */
