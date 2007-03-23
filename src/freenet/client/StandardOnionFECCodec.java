@@ -45,8 +45,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	private static final Object runningDecodesSync = new Object();
 	private static int runningDecodes;
 
-	private final FECCode encoder;
-	private final FECCode decoder;
+	private final FECCode fec;
 	private final int k;
 	private final int n;
 	
@@ -91,31 +90,34 @@ public class StandardOnionFECCodec extends FECCodec {
 	public StandardOnionFECCodec(int k, int n) {
 		this.k = k;
 		this.n = n;
-		// Best performance, doesn't crash
-		//encoder = FECCodeFactory.getDefault().createFECCode(k,n);
-		FECCode fec;
+		
+		FECCode fec2 = null;
 		if(!noNative) {
 			try {
-				fec = new Native8Code(k,n);
+				fec2 = new Native8Code(k,n);
 			} catch (Throwable t) {
 				if(!noNative) {
 					System.err.println("Failed to load native FEC: "+t);
 					t.printStackTrace();
 				}
 				Logger.error(this, "Failed to load native FEC: "+t+" (k="+k+" n="+n+ ')', t);
-				fec = new PureCode(k,n);
+				
 				if(t instanceof UnsatisfiedLinkError)
 					noNative = true;
 			}
-		} else {
+		}
+		
+		if (fec2 != null){
+			fec = fec2;
+		} else 	{
 			fec = new PureCode(k,n);
 		}
-		encoder = fec;
+
 		// revert to below if above causes JVM crashes
 		// Worst performance, but decode crashes
-		//decoder = new PureCode(k,n);
+		// fec = new PureCode(k,n);
 		// Crashes are caused by bugs which cause to use 320/128 etc. - n > 256, k < 256.
-		decoder = encoder;
+
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -241,7 +243,7 @@ public class StandardOnionFECCodec extends FECCodec {
 					int[] disposableIndexes = new int[packetIndexes.length];
 					System.arraycopy(packetIndexes, 0, disposableIndexes, 0,
 							packetIndexes.length);
-					decoder.decode(packets, disposableIndexes);
+					fec.decode(packets, disposableIndexes);
 					// packets now contains an array of decoded blocks, in order
 					// Write the data out
 					for (int i = 0; i < k; i++) {
@@ -425,7 +427,7 @@ public class StandardOnionFECCodec extends FECCodec {
 //					Runtime.getRuntime().runFinalization();
 					long memUsedBeforeStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 					if(logMINOR) Logger.minor(this, "Memory in use before stripe: "+memUsedBeforeStripe);
-					encoder.encode(dataPackets, checkPackets, toEncode);
+					fec.encode(dataPackets, checkPackets, toEncode);
 //					Runtime.getRuntime().gc();
 //					Runtime.getRuntime().runFinalization();
 //					Runtime.getRuntime().gc();
