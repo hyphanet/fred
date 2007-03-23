@@ -7,8 +7,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
-
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.Native8Code;
 import com.onionnetworks.fec.PureCode;
@@ -168,7 +166,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
-	private static Object runningDecodesSync = new Object();
+	private static final Object runningDecodesSync = new Object();
 	private static int runningDecodes;
 
 	public void decode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
@@ -248,8 +246,7 @@ public class StandardOnionFECCodec extends FECCodec {
 											+ dataBlockStatus[i] + ") is " + sz
 											+ " not " + blockLength);
 						if (sz < blockLength)
-							buckets[i] = pad(buckets[i], blockLength, bf,
-									(int) sz);
+							buckets[i] = BucketTools.pad(buckets[i], blockLength, bf,(int) sz);
 						else
 							throw new IllegalArgumentException("Too big: " + sz
 									+ " bigger than " + blockLength);
@@ -434,7 +431,7 @@ public class StandardOnionFECCodec extends FECCodec {
 						throw new IllegalArgumentException(
 								"All buckets except the last must be the full size");
 					if (sz < blockLength)
-						buckets[i] = pad(buckets[i], blockLength, bf, (int) sz);
+						buckets[i] = BucketTools.pad(buckets[i], blockLength, bf, (int) sz);
 					else
 						throw new IllegalArgumentException("Too big: " + sz
 								+ " bigger than " + blockLength);
@@ -523,27 +520,6 @@ public class StandardOnionFECCodec extends FECCodec {
 				throw new NullPointerException();
 			checkBlockStatus[i] = data;
 		}
-	}
-
-	private Bucket pad(Bucket oldData, int blockLength, BucketFactory bf, int l) throws IOException {
-		// FIXME move somewhere else?
-		byte[] hash = BucketTools.hash(oldData);
-		Bucket b = bf.makeBucket(blockLength);
-		MersenneTwister mt = new MersenneTwister(hash);
-		OutputStream os = b.getOutputStream();
-		BucketTools.copyTo(oldData, os, l);
-		byte[] buf = new byte[4096];
-		for(int x=l;x<blockLength;) {
-			int remaining = blockLength - x;
-			int thisCycle = Math.min(remaining, buf.length);
-			mt.nextBytes(buf); // FIXME??
-			os.write(buf, 0, thisCycle);
-			x += thisCycle;
-		}
-		os.close();
-		if(b.size() != blockLength)
-			throw new IllegalStateException();
-		return b;
 	}
 
 	public int countCheckBlocks() {

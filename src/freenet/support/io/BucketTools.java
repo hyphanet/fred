@@ -13,6 +13,8 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.spaceroots.mantissa.random.MersenneTwister;
+
 import freenet.crypt.SHA256;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -362,5 +364,35 @@ public class BucketTools {
 				dis.close();
 		}
 		return buckets;
+	}
+	
+	/**
+	 * Pad a bucket with random data
+	 * 
+	 * @param oldBucket
+	 * @param blockLength
+	 * @param BucketFactory
+	 * @param length
+	 * 
+	 * @return the paded bucket
+	 */
+	public static Bucket pad(Bucket oldBucket, int blockLength, BucketFactory bf, int length) throws IOException {
+		byte[] hash = BucketTools.hash(oldBucket);
+		Bucket b = bf.makeBucket(blockLength);
+		MersenneTwister mt = new MersenneTwister(hash);
+		OutputStream os = b.getOutputStream();
+		BucketTools.copyTo(oldBucket, os, length);
+		byte[] buf = new byte[4096];
+		for(int x=length;x<blockLength;) {
+			int remaining = blockLength - x;
+			int thisCycle = Math.min(remaining, buf.length);
+			mt.nextBytes(buf); // FIXME??
+			os.write(buf, 0, thisCycle);
+			x += thisCycle;
+		}
+		os.close();
+		if(b.size() != blockLength)
+			throw new IllegalStateException();
+		return b;
 	}
 }
