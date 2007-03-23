@@ -110,7 +110,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 
-	private static LRUHashtable recentlyUsedCodecs = new LRUHashtable();
+	private final static LRUHashtable recentlyUsedCodecs = new LRUHashtable();
 	
 	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
 		MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
@@ -197,7 +197,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 	
-	public void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+	private void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		if(logMINOR)
 			Logger.minor(this, "Doing decode: " + dataBlockStatus.length
 					+ " data blocks, " + checkBlockStatus.length
