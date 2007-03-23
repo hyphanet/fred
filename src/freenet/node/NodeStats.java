@@ -152,7 +152,7 @@ public class NodeStats implements Persistable {
 		last_output_stat = 0;
 		last_io_stat_time = 3;
 
-		statsConfig.register("threadLimit", 300, sortOrder++, true, true, "Thread limit", "The node will try to limit its thread usage to the specified value, refusing new requests",
+		statsConfig.register("threadLimit", 500, sortOrder++, true, true, "Thread limit", "The node will try to limit its thread usage to the specified value, refusing new requests",
 				new IntCallback() {
 					public int get() {
 						return threadLimit;
