@@ -1291,7 +1291,7 @@ public class Node {
 			oldThrottle.delete();
 		}
 		
-		nodeStats = new NodeStats(this, sortOrder, nodeConfig, oldThrottleFS, ibwLimit, ibwLimit);
+		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, ibwLimit, ibwLimit);
 		
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"));
 
@@ -1348,10 +1348,12 @@ public class Node {
 		
 		if(!noSwaps)
 			lm.startSender(this, this.swapInterval);
+		dispatcher.start(nodeStats); // must be before usm
 		dnsr.start();
 		ps.start(nodeStats);
+		peers.start(); // must be before usm
+		nodeStats.start();
 		usm.start(disableHangCheckers);
-		peers.start();
 		
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);

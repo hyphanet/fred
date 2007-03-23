@@ -1,13 +1,6 @@
 package freenet.node;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -19,13 +12,11 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.node.Node.NodeInitException;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
 import freenet.support.api.IntCallback;
-import freenet.support.api.StringCallback;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 
@@ -70,9 +61,6 @@ public class NodeStats implements Persistable {
 	
 	private boolean logMINOR;
 	
-	/** Memory Checker thread */
-	private final Thread myMemoryChecker;
-
 	/** first time bwlimitDelay was over PeerManagerUserAlert threshold */
 	private long firstBwlimitDelayTimeThresholdBreak ;
 	/** first time nodeAveragePing was over PeerManagerUserAlert threshold */
@@ -152,12 +140,6 @@ public class NodeStats implements Persistable {
 		this.rootThreadGroup = tg;
 		throttledPacketSendAverage =
 			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
-		//Memory Checking thread
-		// TODO: proper config. callbacks : maybe we shoudln't start the thread at all if it's not worthy
-		this.myMemoryChecker = new Thread(new MemoryChecker(), "Memory checker");
-		this.myMemoryChecker.setPriority(Thread.MAX_PRIORITY);
-		this.myMemoryChecker.setDaemon(true);
-		
 		nodePinger = new NodePinger(node);
 
 		previous_input_stat = 0;
@@ -183,7 +165,7 @@ public class NodeStats implements Persistable {
 		
 		threadLimit = statsConfig.getInt("threadLimit");
 		
-		persister = new ConfigurablePersister(this, statsConfig, "throttleFile", "node-throttle.dat", sortOrder++, true, false, 
+		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 
 				"File to store node statistics in", "File to store node statistics in (not client statistics, and these are used to decide whether to accept requests so please don't delete)");
 		
 		SimpleFieldSet throttleFS = persister.read();
@@ -220,8 +202,12 @@ public class NodeStats implements Persistable {
 	
 	public void start() throws NodeInitException {
 		nodePinger.start();
-		myMemoryChecker.start();
 		persister.start();
+		//Memory Checking thread
+		// TODO: proper config. callbacks : maybe we shoudln't start the thread at all if it's not worthy
+		Thread myMemoryChecker = new Thread(new MemoryChecker(), "Memory checker");
+		myMemoryChecker.setPriority(Thread.MAX_PRIORITY);
+		myMemoryChecker.setDaemon(true);
 	}
 	
 	private long lastAcceptedRequest = -1;
@@ -472,7 +458,7 @@ public class NodeStats implements Persistable {
 	public void waitUntilNotOverloaded(boolean isInsert) {
 		while(threadLimit < getActiveThreadCount()){
 			try{
-				wait(5000);
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {}
 		}
 	}

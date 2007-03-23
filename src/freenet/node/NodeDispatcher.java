@@ -38,7 +38,7 @@ public class NodeDispatcher implements Dispatcher {
 
 	private static boolean logMINOR;
 	final Node node;
-	final NodeStats nodeStats;
+	private NodeStats nodeStats;
 
 	NodeDispatcher(Node node) {
 		this.node = node;
@@ -728,5 +728,9 @@ public class NodeDispatcher implements Dispatcher {
 		}
 		double nodeLoc = node.getLocation();
 		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : 1.0, nodeLoc, node.maxHTL(), (short)0, false, false, cb);
+	}
+	
+	void start(NodeStats stats) {
+		this.nodeStats = stats;
 	}
 }
