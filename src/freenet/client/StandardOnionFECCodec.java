@@ -438,12 +438,6 @@ public class StandardOnionFECCodec extends FECCodec {
 					if(logMINOR) Logger.minor(this, "Stripe encode took "
 							+ (endTime - startTime) + "ms for k=" + k + ", n="
 							+ n + ", stripeSize=" + STRIPE_SIZE);
-					// Try to limit CPU usage!!
-					try {
-						Thread.sleep(endTime - startTime);
-					} catch (InterruptedException e) {
-						// Ignore
-					}
 					// packets now contains an array of decoded blocks, in order
 					// Write the data out
 					for (int i = k; i < n; i++) {
