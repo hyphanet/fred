@@ -30,7 +30,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	// REDFLAG: Optimal stripe size? Smaller => less memory usage, but more JNI overhead
 	private static int STRIPE_SIZE = 4096;
 	private static int PARALLEL_DECODES;
-	
+
 	static {
 		int nbAvailableProcessors = Runtime.getRuntime().availableProcessors();
 		if(nbAvailableProcessors > 1)
@@ -38,6 +38,17 @@ public class StandardOnionFECCodec extends FECCodec {
 		else
 			PARALLEL_DECODES = 1;
 	}
+	
+	static boolean noNative;
+
+	private static final LRUHashtable recentlyUsedCodecs = new LRUHashtable();
+	private static final Object runningDecodesSync = new Object();
+	private static int runningDecodes;
+
+	private final FECCode encoder;
+	private final FECCode decoder;
+	private final int k;
+	private final int n;
 	
 	private static class MyKey {
 		/** Number of input blocks */
@@ -62,8 +73,6 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 
-	private final static LRUHashtable recentlyUsedCodecs = new LRUHashtable();
-	
 	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
 		MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
 		StandardOnionFECCodec codec = (StandardOnionFECCodec) recentlyUsedCodecs.get(key);
@@ -79,14 +88,6 @@ public class StandardOnionFECCodec extends FECCodec {
 		return codec;
 	}
 
-	private final FECCode encoder;
-	private final FECCode decoder;
-
-	private final int k;
-	private final int n;
-	
-	static boolean noNative;
-	
 	public StandardOnionFECCodec(int k, int n) {
 		this.k = k;
 		this.n = n;
@@ -117,9 +118,6 @@ public class StandardOnionFECCodec extends FECCodec {
 		decoder = encoder;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
-
-	private static final Object runningDecodesSync = new Object();
-	private static int runningDecodes;
 
 	public void decode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
