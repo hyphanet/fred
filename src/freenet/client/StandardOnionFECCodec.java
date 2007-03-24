@@ -7,6 +7,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.Native8Code;
@@ -523,12 +524,12 @@ public class StandardOnionFECCodec extends FECCodec {
 		public void run(){
 			while(true){
 				FECJob job = null;
-				// Get a job
-				synchronized (_awaitingJobs) {
-					job = (FECJob) _awaitingJobs.removeLast();
-				}
+				try {
+					// Get a job
+					synchronized (_awaitingJobs) {
+						job = (FECJob) _awaitingJobs.removeLast();
+					}
 				
-				if(job != null){
 					// Encode it
 					try {
 						if(job.isADecodingJob)
@@ -558,7 +559,7 @@ public class StandardOnionFECCodec extends FECCodec {
 					} catch (Throwable e) {
 						Logger.error(this, "The callback failed!" + e.getMessage());
 					}
-				} else {
+				} catch (NoSuchElementException ne) {
 					try {
 						synchronized (this) {
 							wait(Integer.MAX_VALUE);	
