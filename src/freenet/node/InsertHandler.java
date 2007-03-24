@@ -340,6 +340,10 @@ public class InsertHandler implements Runnable, ByteCounter {
         	if(logMINOR) Logger.minor(this, "Remote CHK insert cost "+totalSent+ '/' +totalReceived+" bytes ("+code+ ')');
         	node.nodeStats.remoteChkInsertBytesSentAverage.report(totalSent);
         	node.nodeStats.remoteChkInsertBytesReceivedAverage.report(totalReceived);
+        	if(code == CHKInsertSender.SUCCESS) {
+        		node.nodeStats.successfulChkInsertBytesSentAverage.report(totalSent);
+        		node.nodeStats.successfulChkInsertBytesReceivedAverage.report(totalSent);
+        	}
         }
     }
     

@@ -447,6 +447,10 @@ public class NodeClientCore implements Persistable {
 	        	if(logMINOR) Logger.minor(this, "CHK fetch cost "+rs.getTotalSentBytes()+ '/' +rs.getTotalReceivedBytes()+" bytes ("+status+ ')');
             	nodeStats.localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
             	nodeStats.localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+            	if(status == RequestSender.SUCCESS) {
+            		nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+            		nodeStats.successfulChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+            	}
 	        }
 			
 			if((status == RequestSender.TIMED_OUT) ||
@@ -550,6 +554,10 @@ public class NodeClientCore implements Persistable {
             	if(logMINOR) Logger.minor(this, "SSK fetch cost "+rs.getTotalSentBytes()+ '/' +rs.getTotalReceivedBytes()+" bytes ("+status+ ')');
             	nodeStats.localSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
             	nodeStats.localSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+            	if(status == RequestSender.SUCCESS) {
+            		nodeStats.successfulSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
+            		nodeStats.successfulSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+            	}
 	        }
 			
 			if((status == RequestSender.TIMED_OUT) ||
@@ -697,6 +705,10 @@ public class NodeClientCore implements Persistable {
         	if(logMINOR) Logger.minor(this, "Local CHK insert cost "+sent+ '/' +received+" bytes ("+status+ ')');
         	nodeStats.localChkInsertBytesSentAverage.report(sent);
         	nodeStats.localChkInsertBytesReceivedAverage.report(received);
+        	if(status == CHKInsertSender.SUCCESS) {
+        		nodeStats.successfulChkInsertBytesSentAverage.report(sent);
+        		nodeStats.successfulChkInsertBytesReceivedAverage.report(received);
+        	}
         }
         
 		if(status == CHKInsertSender.SUCCESS) {
@@ -808,6 +820,10 @@ public class NodeClientCore implements Persistable {
         	if(logMINOR) Logger.minor(this, "Local SSK insert cost "+sent+ '/' +received+" bytes ("+status+ ')');
         	nodeStats.localSskInsertBytesSentAverage.report(sent);
         	nodeStats.localSskInsertBytesReceivedAverage.report(received);
+        	if(status == SSKInsertSender.SUCCESS) {
+        		nodeStats.successfulSskInsertBytesSentAverage.report(sent);
+        		nodeStats.successfulSskInsertBytesReceivedAverage.report(received);
+        	}
         }
         
 		if(is.hasCollided()) {
