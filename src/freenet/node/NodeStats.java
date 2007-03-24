@@ -159,7 +159,7 @@ public class NodeStats implements Persistable {
 					}
 					public void set(int val) throws InvalidConfigValueException {
 						if(val == get()) return;
-						if(val < 250)
+						if(val < 100)
 							throw new InvalidConfigValueException("This value is to low for that setting, increase it!");
 						threadLimit = val;
 					}
