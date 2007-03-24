@@ -171,10 +171,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         PCFBMode pcfb = PCFBMode.create(authKey);
         int ivLength = pcfb.lengthIV();
         MessageDigest md = SHA256.getMessageDigest();
-        int digestLength = md.getDigestLength();
-        SHA256.returnMessageDigest(md);
+        int digestLength = HASH_LENGTH;
         if(length < digestLength + ivLength + 4) {
             if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
+            SHA256.returnMessageDigest(md);
             return false;
         }
         // IV at the beginning
@@ -194,6 +194,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         if(logMINOR) Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+ ')');
         if(dataLength > length - (ivLength+hash.length+2)) {
             if(logMINOR) Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
+            SHA256.returnMessageDigest(md);
             return false;
         }
         // Decrypt the data
@@ -203,6 +204,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         
         md.update(payload);
         byte[] realHash = md.digest();
+        SHA256.returnMessageDigest(md); md = null;
         
         if(Arrays.equals(realHash, hash)) {
             // Got one
@@ -545,9 +547,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(payload, 3+ivLength+HASH_LENGTH, data, 0, dataLength);
         pcfb.blockDecipher(data, 0, dataLength);
         // Check the hash
-        MessageDigest md = SHA256.getMessageDigest();
-        byte[] realHash = md.digest(data);
-        SHA256.returnMessageDigest(md); md = null;
+        byte[] realHash = SHA256.digest(data);
         if(Arrays.equals(realHash, hash)) {
             // Success!
             long bootID = Fields.bytesToLong(data);
