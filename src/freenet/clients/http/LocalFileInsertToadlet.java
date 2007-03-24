@@ -48,6 +48,12 @@ public class LocalFileInsertToadlet extends Toadlet {
 		}
 
 		currentPath = new File(path).getCanonicalFile();
+		
+		if(!core.allowUploadFrom(currentPath)) {
+			this.sendErrorPage(toadletContext, 403, "Forbidden", "You cannot browse this directory");
+			return;
+		}
+		
 		PageMaker pageMaker = toadletContext.getPageMaker();
 
 		HTMLNode pageNode = pageMaker.getPageNode("Listing of " + currentPath.getAbsolutePath(), toadletContext);

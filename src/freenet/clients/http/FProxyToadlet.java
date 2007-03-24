@@ -599,13 +599,13 @@ public class FProxyToadlet extends Toadlet {
 			server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
 			
 			QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
-			server.register(queueToadlet, "/queue/", true, "Queue", "manage queued requests", true);
+			server.register(queueToadlet, "/queue/", true, "Queue", "manage queued requests", false);
 			
 			StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
 			server.register(statisticsToadlet, "/stats/", true, "Statistics", "view statistics", true);
 			
 			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
-			server.register(localFileInsertToadlet, "/files/", true, true);
+			server.register(localFileInsertToadlet, "/files/", true, false);
 
 			BrowserTestToadlet browsertTestToadlet = new BrowserTestToadlet(client, core);
 			server.register(browsertTestToadlet, "/test/", true, false);
