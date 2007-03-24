@@ -1023,7 +1023,10 @@ public class PeerManager {
 	 * Update hadRoutableConnectionCount/routableConnectionCheckCount on peers if the timer has expired
 	 */
 	public void maybeUpdatePeerNodeRoutableConnectionStats(long now) {
-		if(now > nextRoutableConnectionStatsUpdateTime) {
+		synchronized(this) {
+			if(now <= nextRoutableConnectionStatsUpdateTime) return;
+			nextRoutableConnectionStatsUpdateTime = now + routableConnectionStatsUpdateInterval;
+		}
 		 	if(-1 != nextRoutableConnectionStatsUpdateTime) {
 				PeerNode[] peerList = myPeers;
 				for(int i=0;i<peerList.length;i++) {
@@ -1031,8 +1034,6 @@ public class PeerManager {
 					pn.checkRoutableConnectionStatus();
 				}
 		 	}
-			nextRoutableConnectionStatsUpdateTime = now + routableConnectionStatsUpdateInterval;
-		}
 	}
 
 }
