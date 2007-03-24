@@ -1281,7 +1281,7 @@ public class Node {
 			oldThrottle.delete();
 		}
 		
-		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, ibwLimit, ibwLimit);
+		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit);
 		
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"));
 
