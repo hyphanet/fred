@@ -439,6 +439,13 @@ public class StandardOnionFECCodec extends FECCodec {
 	
 	// ###############################
 	
+	/**
+	 * The method used to submit {@link FECJob}s to the pool
+	 * 
+	 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
+	 * 
+	 * @param FECJob
+	 */
 	public void addToQueue(FECJob job){
 		synchronized (_awaitingJobs) {
 			if((fecRunnerThread == null) || !fecRunnerThread.isAlive()){
@@ -462,11 +469,23 @@ public class StandardOnionFECCodec extends FECCodec {
 	private final FECRunner fecRunner = new FECRunner();
 	private Thread fecRunnerThread;
 	
+	/**
+	 * An interface wich has to be implemented by FECJob submitters
+	 * 
+	 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
+	 * 
+	 * WARNING: the callback is expected to release the thread !
+	 */
 	public interface StandardOnionFECCodecEncoderCallback{
 		public void onEncodedSegment();
 		public void onDecodedSegment();
 	}
 	
+	/**
+	 * A class bundleing the data meant to be FEC processed
+	 * 
+	 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
+	 */
 	public class FECJob {
 		final Bucket[] dataBlocks, checkBlocks;
 		final SplitfileBlock[] dataBlockStatus, checkBlockStatus;
@@ -504,6 +523,13 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 	
+	/**
+	 * A private Thread started by {@link StandardOnionFECCodec}...
+	 * 
+	 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
+	 *
+	 *	TODO: maybe it ought to start more than one thread on SMP system ? (take care, it's memory consumpsive)
+	 */
 	private class FECRunner implements Runnable {		
 		public void run(){
 			while(true){
