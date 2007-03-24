@@ -723,7 +723,7 @@ public class NodeStats implements Persistable {
 	}
 
 	public int getInputLimit() {
-		return (((int) ((1000L * 1000L * 1000L) / requestInputThrottle.getNanosPerTick())) * 5) / 4;
+		return ((int) ((1000L * 1000L * 1000L) / requestInputThrottle.getNanosPerTick()));
 	}
 
 	public boolean isTestnetEnabled() {

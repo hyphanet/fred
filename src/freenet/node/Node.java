@@ -865,7 +865,7 @@ public class Node {
 				new IntCallback() {
 					public int get() {
 						if(inputLimitDefault) return -1;
-						return nodeStats.getInputLimit();
+						return (nodeStats.getInputLimit() * 4) / 5;
 					}
 					public void set(int ibwLimit) throws InvalidConfigValueException {
 						if(ibwLimit == -1) {
