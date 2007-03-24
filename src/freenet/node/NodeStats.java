@@ -566,9 +566,9 @@ public class NodeStats implements Persistable {
 		fs.put("numberOfSimpleConnected", numberOfSimpleConnected);
 		fs.put("numberOfNotConnected", numberOfNotConnected);
 
-		fs.put("numberOfInserts", node.getNumInserts());
-		fs.put("numberOfRequests", node.getNumRequests());
-		fs.put("numberOfTransferringRequests", node.getNumTransferringRequests());
+		fs.put("numberOfInserts", node.getNumInsertSenders());
+		fs.put("numberOfRequests", node.getNumRequestSenders());
+		fs.put("numberOfTransferringRequests", node.getNumTransferringRequestSenders());
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
 
 		long[] total = IOStatisticCollector.getTotalIO();

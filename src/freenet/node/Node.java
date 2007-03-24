@@ -278,6 +278,8 @@ public class Node {
 	private final HashMap requestSenders;
 	/** RequestSender's currently transferring, by key */
 	private final HashMap transferringRequestSenders;
+	/** UIDs of RequestHandler's currently transferring */
+	private final HashSet transferringRequestHandlers;
 	/** CHKInsertSender's currently running, by KeyHTLPair */
 	private final HashMap insertSenders;
 	/** My crypto group */
@@ -695,6 +697,7 @@ public class Node {
 		fLocalhostAddress = new FreenetInetAddress(localhostAddress);
 		requestSenders = new HashMap();
 		transferringRequestSenders = new HashMap();
+		transferringRequestHandlers = new HashSet();
 		insertSenders = new HashMap();
 		runningUIDs = new HashSet();
 		runningCHKGetUIDs = new HashSet();
@@ -1837,6 +1840,20 @@ public class Node {
 			transferringRequestSenders.put(key, sender);
 		}
 	}
+	
+	void addTransferringRequestHandler(long id) {
+		Long l = new Long(id);
+		synchronized(transferringRequestHandlers) {
+			transferringRequestHandlers.add(l);
+		}
+	}
+	
+	void removeTransferringRequestHandler(long id) {
+		Long l = new Long(id);
+		synchronized(transferringRequestHandlers) {
+			transferringRequestHandlers.remove(l);
+		}
+	}
 
 	public SSKBlock fetch(NodeSSK key, boolean dontPromote) {
 		if(logMINOR) dumpStoreHits();
@@ -2135,7 +2152,7 @@ public class Node {
 			sb.append("No peers yet");
 		sb.append("\nInserts: ");
 		synchronized(insertSenders) {
-			int x = getNumInserts();
+			int x = getNumInsertSenders();
 			sb.append(x);
 			if((x < 5) && (x > 0)) {
 				sb.append('\n');
@@ -2151,9 +2168,9 @@ public class Node {
 			}
 		}
 		sb.append("\nRequests: ");
-		sb.append(getNumRequests());
+		sb.append(getNumRequestSenders());
 		sb.append("\nTransferring requests: ");
-		sb.append(getNumTransferringRequests());
+		sb.append(getNumTransferringRequestSenders());
 		sb.append('\n');
 		return sb.toString();
 	}
@@ -2170,13 +2187,13 @@ public class Node {
 		return sb.toString();
 	}
 	
-	public int getNumInserts() {
+	public int getNumInsertSenders() {
 		synchronized(insertSenders) {
 			return insertSenders.size();
 		}
 	}
 	
-	public int getNumRequests() {
+	public int getNumRequestSenders() {
 		synchronized(requestSenders) {
 			return requestSenders.size();
 		}
@@ -2198,9 +2215,15 @@ public class Node {
 		return runningCHKPutUIDs.size();
 	}
 	
-	public int getNumTransferringRequests() {
+	public int getNumTransferringRequestSenders() {
 		synchronized(transferringRequestSenders) {
 			return transferringRequestSenders.size();
+		}
+	}
+	
+	public int getNumTransferringRequestHandlers() {
+		synchronized(transferringRequestHandlers) {
+			return transferringRequestHandlers.size();
 		}
 	}
 	
@@ -2210,13 +2233,13 @@ public class Node {
 	public String getFreevizOutput() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("\nrequests=");
-		sb.append(getNumRequests());
+		sb.append(getNumRequestSenders());
 		
 		sb.append("\ntransferring_requests=");
-		sb.append(getNumTransferringRequests());
+		sb.append(getNumTransferringRequestSenders());
 		
 		sb.append("\ninserts=");
-		sb.append(getNumInserts());
+		sb.append(getNumInsertSenders());
 		sb.append('\n');
 		
 		

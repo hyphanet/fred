@@ -194,13 +194,14 @@ public class StatisticsToadlet extends Toadlet {
 			}
 
 			// Activity box
-			int numInserts = node.getNumInserts();
+			int numInserts = node.getNumInsertSenders();
 			int numCHKInserts = node.getNumCHKInserts();
 			int numSSKInserts = node.getNumSSKInserts();
-			int numRequests = node.getNumRequests();
+			int numRequests = node.getNumRequestSenders();
 			int numCHKRequests = node.getNumCHKRequests();
 			int numSSKRequests = node.getNumSSKRequests();
-			int numTransferringRequests = node.getNumTransferringRequests();
+			int numTransferringRequests = node.getNumTransferringRequestSenders();
+			int numTransferringRequestHandlers = node.getNumTransferringRequestHandlers();
 			int numARKFetchers = node.getNumARKFetchers();
 
 			HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -211,13 +212,13 @@ public class StatisticsToadlet extends Toadlet {
 			} else {
 				HTMLNode activityList = activityInfoboxContent.addChild("ul");
 				if (numInserts > 0) {
-					activityList.addChild("li", "Inserts:\u00a0" + numInserts + "\u00a0running\u00a0(CHK:\u00a0" + numCHKInserts+"\u00a0SSK:\u00a0" + numSSKInserts+"\u00a0locked)");
+					activityList.addChild("li", "Inserts:\u00a0" + numInserts + "\u00a0senders\u00a0(CHK:\u00a0" + numCHKInserts+"\u00a0SSK:\u00a0" + numSSKInserts+"\u00a0locked)");
 				}
 				if (numRequests > 0) {
-					activityList.addChild("li", "Requests:\u00a0" + numRequests + "\u00a0running\u00a0(CHK:\u00a0" + numCHKRequests+"\u00a0SSK:\u00a0" + numSSKRequests+"\u00a0locked)");
+					activityList.addChild("li", "Requests:\u00a0" + numRequests + "\u00a0senders\u00a0(CHK:\u00a0" + numCHKRequests+"\u00a0SSK:\u00a0" + numSSKRequests+"\u00a0locked)");
 				}
-				if (numTransferringRequests > 0) {
-					activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests);
+				if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0) {
+					activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests+"\u00a0senders\u00a0" + numTransferringRequestHandlers+"\u00a0handlers");
 				}
 				if (advancedModeEnabled) {
 					if (numARKFetchers > 0)

@@ -88,6 +88,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
             	BlockTransmitter bt =
             		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
+            	node.addTransferringRequestHandler(uid);
             	if(bt.send())
             		status = RequestSender.SUCCESS; // for byte logging
             }
@@ -122,6 +123,7 @@ public class RequestHandler implements Runnable, ByteCounter {
                 PartiallyReceivedBlock prb = rs.getPRB();
             	BlockTransmitter bt =
             	    new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
+            	node.addTransferringRequestHandler(uid);
             	if(!bt.send()){
             		finalTransferFailed = true;
             	}
@@ -190,6 +192,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
+        	node.removeTransferringRequestHandler(uid);
             node.unlockUID(uid, key instanceof NodeSSK, false);
             if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD 
             		&& status != RequestSender.INTERNAL_ERROR) {
