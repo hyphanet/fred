@@ -1008,9 +1008,13 @@ public class PeerManager {
 	}
 
 	public PeerNodeStatus[] getPeerNodeStatuses() {
-		PeerNodeStatus[] peerNodeStatuses = new PeerNodeStatus[myPeers.length];
-		for (int peerIndex = 0, peerCount = myPeers.length; peerIndex < peerCount; peerIndex++) {
-			peerNodeStatuses[peerIndex] = myPeers[peerIndex].getStatus();
+        PeerNode[] peers;
+        synchronized (this) {
+			peers = myPeers;
+		}
+		PeerNodeStatus[] peerNodeStatuses = new PeerNodeStatus[peers.length];
+		for (int peerIndex = 0, peerCount = peers.length; peerIndex < peerCount; peerIndex++) {
+			peerNodeStatuses[peerIndex] = peers[peerIndex].getStatus();
 		}
 		return peerNodeStatuses;
 	}
