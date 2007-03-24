@@ -330,6 +330,32 @@ public class NodeStats implements Persistable {
 			
 		}
 		
+		// Successful cluster timeout protection.
+		// Reject request if the result of all our current requests completing simultaneously would be that
+		// some of them timeout.
+		double bandwidthLiabilityOutput =
+			successfulChkFetchBytesSentAverage.currentValue() * node.getNumCHKRequests() +
+			successfulSskFetchBytesSentAverage.currentValue() * node.getNumSSKRequests() +
+			successfulChkInsertBytesSentAverage.currentValue() * node.getNumCHKInserts() +
+			successfulSskInsertBytesSentAverage.currentValue() * node.getNumSSKInserts();
+		bandwidthLiabilityOutput += getSuccessfulBytes(isSSK, isInsert, false).currentValue();
+		double bandwidthAvailableOutput =
+			node.getOutputBandwidthLimit() * 90; // 90 seconds at full power; we have to leave some time for the search as well
+		if(bandwidthLiabilityOutput > bandwidthAvailableOutput)
+			return "Output bandwidth liability";
+		
+		double bandwidthLiabilityInput =
+			successfulChkFetchBytesReceivedAverage.currentValue() * node.getNumCHKRequests() +
+			successfulSskFetchBytesReceivedAverage.currentValue() * node.getNumSSKRequests() +
+			successfulChkInsertBytesReceivedAverage.currentValue() * node.getNumCHKInserts() +
+			successfulSskInsertBytesReceivedAverage.currentValue() * node.getNumSSKInserts();
+		bandwidthLiabilityInput += getSuccessfulBytes(isSSK, isInsert, true).currentValue();
+		double bandwidthAvailableInput =
+			node.getInputBandwidthLimit() * 90; // 90 seconds at full power
+		if(bandwidthLiabilityInput > bandwidthAvailableInput)
+			return "Input bandwidth liability";
+		
+		
 		// Do we have the bandwidth?
 		double expected =
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
@@ -378,6 +404,22 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 	
+	private TimeDecayingRunningAverage getSuccessfulBytes(boolean isSSK, boolean isInsert, boolean isReceived) {
+		if(isSSK) {
+			if(isInsert) {
+				return isReceived ? successfulSskInsertBytesReceivedAverage : successfulSskInsertBytesSentAverage;
+			} else {
+				return isReceived ? successfulSskFetchBytesReceivedAverage : successfulSskFetchBytesSentAverage;
+			}
+		} else {
+			if(isInsert) {
+				return isReceived ? successfulChkInsertBytesReceivedAverage : successfulChkInsertBytesSentAverage;
+			} else {
+				return isReceived ? successfulChkFetchBytesReceivedAverage : successfulChkFetchBytesSentAverage;
+			}
+		}
+	}
+
 	private void dumpByteCostAverages() {
 		Logger.minor(this, "Byte cost averages: REMOTE:"+
 				" CHK insert "+remoteChkInsertBytesSentAverage.currentValue()+ '/' +remoteChkInsertBytesReceivedAverage.currentValue()+
