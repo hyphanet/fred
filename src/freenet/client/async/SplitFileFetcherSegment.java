@@ -15,6 +15,8 @@ import freenet.client.FetchException;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
+import freenet.client.StandardOnionFECCodec;
+import freenet.client.StandardOnionFECCodec.StandardOnionFECCodecEncoderCallback;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.support.Logger;
@@ -179,7 +181,7 @@ public class SplitFileFetcherSegment {
 		}
 	}
 
-	class Decoder implements Runnable {
+	class Decoder implements Runnable, StandardOnionFECCodecEncoderCallback {
 
 		public void run() {
 			
@@ -231,41 +233,39 @@ public class SplitFileFetcherSegment {
 			
 			// Encode any check blocks we don't have
 			if(codec != null) {
-				try {
-					codec.encode(dataBuckets, checkBuckets, 32768, fetchContext.bucketFactory);
-				} catch (IOException e) {
-					Logger.error(this, "Bucket error while healing: "+e, e);
-				}
-			
-				// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
-				for(int i=0;i<dataBuckets.length;i++) {
-					boolean heal = false;
-					if(dataRetries[i] > 0)
-						heal = true;
-					if(heal) {
-						queueHeal(dataBuckets[i].getData());
-					} else {
-						dataBuckets[i].data.free();
-						dataBuckets[i].data = null;
-					}
-					dataBuckets[i] = null;
-					dataKeys[i] = null;
-				}
-				for(int i=0;i<checkBuckets.length;i++) {
-					boolean heal = false;
-					if(checkRetries[i] > 0)
-						heal = true;
-					if(heal) {
-						queueHeal(checkBuckets[i].getData());
-					} else {
-						checkBuckets[i].data.free();
-					}
-					checkBuckets[i] = null;
-					checkKeys[i] = null;
-				}
+				StandardOnionFECCodec fec = (StandardOnionFECCodec) codec;
+				fec.addToQueue(dataBuckets, checkBuckets, 32768, fetchContext.bucketFactory, this);
 			}
 		}
-
+		
+		public void onEncodedSegment() {		
+			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
+			for(int i=0;i<dataBuckets.length;i++) {
+				boolean heal = false;
+				if(dataRetries[i] > 0)
+					heal = true;
+				if(heal) {
+					queueHeal(dataBuckets[i].getData());
+				} else {
+					dataBuckets[i].data.free();
+					dataBuckets[i].data = null;
+				}
+				dataBuckets[i] = null;
+				dataKeys[i] = null;
+			}
+			for(int i=0;i<checkBuckets.length;i++) {
+				boolean heal = false;
+				if(checkRetries[i] > 0)
+					heal = true;
+				if(heal) {
+					queueHeal(checkBuckets[i].getData());
+				} else {
+					checkBuckets[i].data.free();
+				}
+				checkBuckets[i] = null;
+				checkKeys[i] = null;
+			}
+		}
 	}
 
 	private void queueHeal(Bucket data) {

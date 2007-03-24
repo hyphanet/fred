@@ -250,6 +250,9 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 
+	/**
+	 * @decapreted
+	 */
 	public void encode(Bucket[] dataBlockStatus, Bucket[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
 		if(logMINOR)
@@ -275,6 +278,9 @@ public class StandardOnionFECCodec extends FECCodec {
 		currentThread.setPriority(currentThreadPriority);
 	}
 	
+	/**
+	 * @decapreted
+	 */
 	public void encode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		Bucket[] dataBlocks = new Bucket[dataBlockStatus.length];
 		Bucket[] checkBlocks = new Bucket[checkBlockStatus.length];
@@ -446,6 +452,20 @@ public class StandardOnionFECCodec extends FECCodec {
 		synchronized (fecRunner){
 			fecRunner.notifyAll();
 		}
+	}
+	
+	public void addToQueue(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback){
+		Bucket[] dataBlocks = new Bucket[dataBlockStatus.length];
+		Bucket[] checkBlocks = new Bucket[checkBlockStatus.length];
+		for(int i=0;i<dataBlocks.length;i++)
+			dataBlocks[i] = dataBlockStatus[i].getData();
+		for(int i=0;i<checkBlocks.length;i++)
+			checkBlocks[i] = checkBlockStatus[i].getData();
+		addToQueue(dataBlocks, checkBlocks, blockLength, bucketFactory, callback);
+		for(int i=0;i<dataBlocks.length;i++)
+			dataBlockStatus[i].setData(dataBlocks[i]);
+		for(int i=0;i<checkBlocks.length;i++)
+			checkBlockStatus[i].setData(checkBlocks[i]);
 	}
 	
 	private final LinkedList _awaitingJobs = new LinkedList();
