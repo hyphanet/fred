@@ -580,9 +580,9 @@ public class NodeStats implements Persistable {
 		fs.put("totalInputBytes", total[1]);
 		fs.put("totalInputRate", total_input_rate);
 		long[] rate = getNodeIOStats();
-		long delta = (rate[5] - rate[2]) / 1000;
-		long recent_output_rate = (rate[3] - rate[0]) / delta;
-		long recent_input_rate = (rate[4] - rate[1]) / delta;
+		long deltaMS = (rate[5] - rate[2]);
+		double recent_output_rate = 1000.0 * (rate[3] - rate[0]) / deltaMS;
+		double recent_input_rate = 1000.0 * (rate[4] - rate[1]) / deltaMS;
 		fs.put("recentOutputRate", recent_output_rate);
 		fs.put("recentInputRate", recent_input_rate);
 
