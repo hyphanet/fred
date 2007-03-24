@@ -541,7 +541,7 @@ public class StandardOnionFECCodec extends FECCodec {
 							job.callback.onEncodedSegment();
 						
 					} catch (Throwable e) {
-						Logger.error(this, "The callback failed!" + e.getMessage());
+						Logger.error(this, "The callback failed!" + e.getMessage(), e);
 					}
 				} catch (NoSuchElementException ne) {
 					try {
