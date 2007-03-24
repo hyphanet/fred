@@ -389,7 +389,8 @@ public class NodeStats implements Persistable {
 	}
 	
 	/**
-	 * Update peerManagerUserAlertStats if the timer has expired
+	 * Update peerManagerUserAlertStats if the timer has expired.
+	 * Only called from PacketSender so doesn't need sync.
 	 */
 	public void maybeUpdatePeerManagerUserAlertStats(long now) {
 		if(now > nextPeerManagerUserAlertStatsUpdateTime) {
