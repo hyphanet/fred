@@ -27,11 +27,8 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 	public String getText() {
 		StringBuffer buf = new StringBuffer();
 		
-		buf.append("It seems that your node's name isn't defined. Setting " +
-		"up a node name doesn't affect your anonymity in any way but " +
-		"is useful for your peers to know who you are in case they have " +
-		"to reach you. You can change the node's name at the Configuration page. " +
-		"Putting your e-mail address or IRC nickname there is generally speaking " +
+		buf.append("It seems that your node doesn't know your nickname." +
+		"Putting your e-mail address or IRC nickname here is generally speaking " +
 		"a good idea and helps your friends to identify your node.");
 		
 		return buf.toString();
@@ -42,7 +39,7 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 		Option o = sc.getOption("name");
 
 		HTMLNode alertNode = new HTMLNode("div");
-		HTMLNode textNode = alertNode.addChild("div", "It seems that your node\u2019s name is not defined. Setting up a node name does not affect your anonymity in any way but is useful for your peers to know who you are in case they have to reach you. You can change the node\u2019s name at the ");
+		HTMLNode textNode = alertNode.addChild("div", "It seems that your node doesn\u2019t know your nickname.");
 		textNode.addChild("a", "href", "/config/", "Configuration Page");
 		textNode.addChild("#", ". Putting your e-mail address or IRC nickname there is generally speaking a good idea and helps your friends to identify your node.");
 		HTMLNode formNode = alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
