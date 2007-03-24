@@ -30,25 +30,13 @@ public class StandardOnionFECCodec extends FECCodec {
 	private static int MAX_CACHED_CODECS = 8;
 	// REDFLAG: Optimal stripe size? Smaller => less memory usage, but more JNI overhead
 	private static int STRIPE_SIZE = 4096;
-	private static int PARALLEL_DECODES;
-
-	static {
-		int nbAvailableProcessors = Runtime.getRuntime().availableProcessors();
-		if(nbAvailableProcessors > 1)
-			PARALLEL_DECODES = nbAvailableProcessors - 1;
-		else
-			PARALLEL_DECODES = 1;
-	}
 	
 	static boolean noNative;
 
 	private static final LRUHashtable recentlyUsedCodecs = new LRUHashtable();
-	private static final Object runningDecodesSync = new Object();
-	private static int runningDecodes;
 
 	private final FECCode fec;
-	private final int k;
-	private final int n;
+	private final int k, n;
 	
 	private static class MyKey {
 		/** Number of input blocks */
@@ -132,25 +120,8 @@ public class StandardOnionFECCodec extends FECCodec {
 				+ " data blocks, " + checkBlockStatus.length
 				+ " check blocks, block length " + blockLength + " with "
 				+ this, new Exception("debug"));
-		// Ensure that there are only K simultaneous running decodes.
-		synchronized(runningDecodesSync) {
-			while(runningDecodes >= PARALLEL_DECODES) {
-				try {
-					runningDecodesSync.wait(10*1000);
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-			}
-			runningDecodes++;
-		}
-		try {
-			realDecode(dataBlockStatus, checkBlockStatus, blockLength, bf);
-		} finally {
-			synchronized(runningDecodesSync) {
-				runningDecodes--;
-				runningDecodesSync.notify();
-			}
-		}
+		
+		realDecode(dataBlockStatus, checkBlockStatus, blockLength, bf);
 	}
 	
 	private void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
@@ -288,39 +259,22 @@ public class StandardOnionFECCodec extends FECCodec {
 					+ " data blocks, " + checkBlockStatus.length
 					+ " check blocks, block length " + blockLength + " with "
 					+ this, new Exception("debug"));
-		// Encodes count as decodes.
-		synchronized(runningDecodesSync) {
-			while(runningDecodes >= PARALLEL_DECODES) {
-				try {
-					runningDecodesSync.wait(10*1000);
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-			}
-			runningDecodes++;
-		}
-		try {
-			Thread currentThread = Thread.currentThread();
-			final int currentThreadPriority = currentThread.getPriority();
-			final String oldThreadName = currentThread.getName();
-			
-			currentThread.setName("Encoder thread for k="+k+", n="+n+" enabled at "+System.currentTimeMillis());
-			currentThread.setPriority(Thread.MIN_PRIORITY);
-			
-			long startTime = System.currentTimeMillis();
-			realEncode(dataBlockStatus, checkBlockStatus, blockLength, bf);
-			long endTime = System.currentTimeMillis();
-			if(logMINOR)
-				Logger.minor(this, "Splitfile encode: k="+k+", n="+n+" encode took "+(endTime-startTime)+"ms");
-			
-			currentThread.setName(oldThreadName);
-			currentThread.setPriority(currentThreadPriority);
-		} finally {
-			synchronized(runningDecodesSync) {
-				runningDecodes--;
-				runningDecodesSync.notify();
-			}
-		}
+
+		Thread currentThread = Thread.currentThread();
+		final int currentThreadPriority = currentThread.getPriority();
+		final String oldThreadName = currentThread.getName();
+
+		currentThread.setName("Encoder thread for k="+k+", n="+n+" enabled at "+System.currentTimeMillis());
+		currentThread.setPriority(Thread.MIN_PRIORITY);
+
+		long startTime = System.currentTimeMillis();
+		realEncode(dataBlockStatus, checkBlockStatus, blockLength, bf);
+		long endTime = System.currentTimeMillis();
+		if(logMINOR)
+			Logger.minor(this, "Splitfile encode: k="+k+", n="+n+" encode took "+(endTime-startTime)+"ms");
+
+		currentThread.setName(oldThreadName);
+		currentThread.setPriority(currentThreadPriority);
 	}
 	
 	public void encode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
