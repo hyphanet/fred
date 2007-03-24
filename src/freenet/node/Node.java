@@ -1009,7 +1009,7 @@ public class Node {
 		}
 		
 		// Name 	 
-		nodeConfig.register("name", myName, sortOrder++, false, true, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting darknet node", 	 
+		nodeConfig.register("name", myName, sortOrder++, false, true, "Nickname for this Freenet node", "Node nickname. This will be visible to your friend peers (but will not be visible to opennet peers). E.g. Fred Blogg's.", 	 
 						new NodeNameCallback(this)); 	 
 		myName = nodeConfig.getString("name"); 	 
 
