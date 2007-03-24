@@ -889,13 +889,13 @@ public class Node {
 							inputBandwidthLimit = ibwLimit;
 							if(ibwLimit == -1) {
 								inputLimitDefault = true;
-								ibwLimit = (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick()) * 4;
+								ibwLimit = outputBandwidthLimit * 4;
 							} else {
+								if(ibwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
 								inputLimitDefault = false;
 								ibwLimit = ibwLimit * 4 / 5; // fudge factor; take into account non-request activity
 							}
 						}
-						if(ibwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
 						nodeStats.setInputLimit(ibwLimit);
 					}
 		});
