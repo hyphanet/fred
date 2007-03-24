@@ -332,7 +332,11 @@ public class NodeStats implements Persistable {
 
 		Runtime r = Runtime.getRuntime();
 		long maxHeapMemory = r.maxMemory();
+		long totalHeapMemory = r.totalMemory();
 		long freeHeapMemory = r.freeMemory();
+		if(maxHeapMemory < Long.MAX_VALUE) { // would mean unlimited
+			freeHeapMemory = maxHeapMemory - (totalHeapMemory - freeHeapMemory);
+		}
 		if(freeHeapMemory < MIN_FREE_HEAP_BYTES_FOR_ROUTING_SUCCESS) {
 			pInstantRejectIncoming.report(1.0);
 			return "<MIN_FREE_HEAP_BYTES_FOR_ROUTING_SUCCESS ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+')';
