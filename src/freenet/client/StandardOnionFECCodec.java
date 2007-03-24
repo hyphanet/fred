@@ -107,9 +107,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		// fec = new PureCode(k,n);
 		// Crashes are caused by bugs which cause to use 320/128 etc. - n > 256, k < 256.
 
-		fecRunnerThread = new Thread(fecRunner, "FEC Pool");
-		fecRunnerThread.setDaemon(true);
-		fecRunnerThread.setPriority(Thread.MIN_PRIORITY);
+		fecRunnerThread = null;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -432,9 +430,16 @@ public class StandardOnionFECCodec extends FECCodec {
 	// ###############################
 	
 	public void addToQueue(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback){
-		if(!fecRunnerThread.isAlive()) fecRunnerThread.start();
-		
 		synchronized (_awaitingJobs) {
+			if((fecRunnerThread == null) || !fecRunnerThread.isAlive()){
+				if(fecRunnerThread != null) Logger.error(this, "The callback died!! restarting a new one, please report that error.");
+				fecRunnerThread = new Thread(fecRunner, "FEC Pool");
+				fecRunnerThread.setDaemon(true);
+				fecRunnerThread.setPriority(Thread.MIN_PRIORITY);
+				
+				fecRunnerThread.start();
+			}
+			
 			_awaitingJobs.addFirst(new FECJob(dataBlocks, checkBlocks, blockLength, bucketFactory, callback));
 		}
 		if(logMINOR) Logger.minor(this, "Adding a new job to the queue (" +_awaitingJobs.size() + ").");
@@ -445,7 +450,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	
 	private final LinkedList _awaitingJobs = new LinkedList();
 	private final FECRunner fecRunner = new FECRunner();
-	private final Thread fecRunnerThread;
+	private Thread fecRunnerThread;
 	
 	public interface StandardOnionFECCodecEncoderCallback{
 		public void onEncodedSegment();
