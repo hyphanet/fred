@@ -6,6 +6,7 @@ package freenet.client;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.LinkedList;
 
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.Native8Code;
@@ -120,6 +121,9 @@ public class StandardOnionFECCodec extends FECCodec {
 		// fec = new PureCode(k,n);
 		// Crashes are caused by bugs which cause to use 320/128 etc. - n > 256, k < 256.
 
+		fecRunnerThread = new Thread(fecRunner, "FEC Pool");
+		fecRunnerThread.setDaemon(true);
+		fecRunnerThread.setPriority(Thread.MIN_PRIORITY);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -471,5 +475,82 @@ public class StandardOnionFECCodec extends FECCodec {
 
 	public int countCheckBlocks() {
 		return n-k;
+	}
+	
+	// ###############################
+	
+	public void addToQueue(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback){
+		if(!fecRunner.getIsStarted()) fecRunner.run();
+		
+		synchronized (_awaitingJobs) {
+			_awaitingJobs.addFirst(new FECJob(dataBlocks, checkBlocks, blockLength, bucketFactory, callback));
+		}
+		if(logMINOR) Logger.minor(this, "Adding a new job to the queue (" +_awaitingJobs.size() + ").");
+		synchronized (fecRunner){
+			fecRunner.notifyAll();
+		}
+	}
+	
+	private final LinkedList _awaitingJobs = new LinkedList();
+	private final FECRunner fecRunner = new FECRunner();
+	private final Thread fecRunnerThread;
+	
+	public interface StandardOnionFECCodecEncoderCallback{
+		public void onEncodedSegment();
+	}
+	
+	private class FECJob {
+		final Bucket[] dataBlocks, checkBlocks;
+		final BucketFactory bucketFactory;
+		final int blockLength;
+		final StandardOnionFECCodecEncoderCallback callback;
+		
+		FECJob(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback) {
+			this.dataBlocks = dataBlocks;
+			this.checkBlocks = checkBlocks;
+			this.blockLength = blockLength;
+			this.bucketFactory = bucketFactory;
+			this.callback = callback;
+		}
+	}
+	
+	private class FECRunner implements Runnable {
+		private boolean isStarted = false;
+		
+		public void run(){
+			isStarted = true;
+			while(true){
+				FECJob job = null;
+				// Get a job
+				synchronized (_awaitingJobs) {
+					job = (FECJob) _awaitingJobs.removeLast();
+				}
+				
+				if(job != null){
+					// Encode it
+					try {
+						encode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
+					} catch (IOException e) {
+						Logger.error(this, "BOH! ioe:" + e.getMessage());
+					}
+					// Call the callback
+					try {
+						job.callback.onEncodedSegment();
+					} catch (Throwable e) {
+						Logger.error(this, "The callback failed!" + e.getMessage());
+					}
+				} else {
+					try {
+						synchronized (this) {
+							wait(Integer.MAX_VALUE);	
+						}
+					} catch (InterruptedException e) {}
+				}
+			}
+		}
+		
+		public boolean getIsStarted(){
+			return isStarted;
+		}
 	}
 }
