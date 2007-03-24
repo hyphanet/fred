@@ -142,19 +142,6 @@ public class NodeDispatcher implements Dispatcher {
 			}
 			return true;
 		}
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK);
-		if(rejectReason != null) {
-			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
-			Logger.normal(this, "Rejecting request from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
-			Message rejected = DMT.createFNPRejectedOverload(id, true);
-			try {
-				((PeerNode)(m.getSource())).sendAsync(rejected, null, 0, null);
-			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting (overload) data request from "+m.getSource().getPeer()+": "+e);
-			}
-			node.completed(id);
-			return true;
-		}
 		if(!node.lockUID(id)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
@@ -166,6 +153,20 @@ public class NodeDispatcher implements Dispatcher {
 			return true;
 		} else {
 			if(logMINOR) Logger.minor(this, "Locked "+id);
+		}
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK);
+		if(rejectReason != null) {
+			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
+			Logger.normal(this, "Rejecting request from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
+			Message rejected = DMT.createFNPRejectedOverload(id, true);
+			try {
+				((PeerNode)(m.getSource())).sendAsync(rejected, null, 0, null);
+			} catch (NotConnectedException e) {
+				Logger.normal(this, "Rejecting (overload) data request from "+m.getSource().getPeer()+": "+e);
+			}
+			node.unlockUID(id);
+			node.completed(id);
+			return true;
 		}
 		//if(!node.lockUID(id)) return false;
 		RequestHandler rh = new RequestHandler(m, id, node);
