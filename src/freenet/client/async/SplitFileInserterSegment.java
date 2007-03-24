@@ -424,7 +424,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback,
 				synchronized(this) {
 					if(!encoded){
 						StandardOnionFECCodec fec = (StandardOnionFECCodec) splitfileAlgo;
-						fec.addToQueue(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this);
+						fec.addToQueue(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false);
 					}
 				}				
 				fin = false;
@@ -460,6 +460,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback,
 			parent.segmentFinished(this);
 		}
 	}
+
+	public void onDecodedSegment() {} // irrevelant
 
 	public void onEncodedSegment() {
 		// Start the inserts

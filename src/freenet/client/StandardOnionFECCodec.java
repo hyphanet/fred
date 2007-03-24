@@ -13,6 +13,7 @@ import com.onionnetworks.fec.Native8Code;
 import com.onionnetworks.fec.PureCode;
 import com.onionnetworks.util.Buffer;
 
+import freenet.client.async.SplitFileFetcher;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -111,6 +112,9 @@ public class StandardOnionFECCodec extends FECCodec {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
+	/**
+	 * @deprecated
+	 */
 	public void decode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
 		if(logMINOR) 
@@ -251,7 +255,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	}
 
 	/**
-	 * @decapreted
+	 * @deprecated
 	 */
 	public void encode(Bucket[] dataBlockStatus, Bucket[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
@@ -279,7 +283,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	}
 	
 	/**
-	 * @decapreted
+	 * @deprecated
 	 */
 	public void encode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		Bucket[] dataBlocks = new Bucket[dataBlockStatus.length];
@@ -435,7 +439,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	
 	// ###############################
 	
-	public void addToQueue(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback){
+	public void addToQueue(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback, boolean isADecodingJob){
 		synchronized (_awaitingJobs) {
 			if((fecRunnerThread == null) || !fecRunnerThread.isAlive()){
 				if(fecRunnerThread != null) Logger.error(this, "The callback died!! restarting a new one, please report that error.");
@@ -446,7 +450,7 @@ public class StandardOnionFECCodec extends FECCodec {
 				fecRunnerThread.start();
 			}
 			
-			_awaitingJobs.addFirst(new FECJob(dataBlocks, checkBlocks, blockLength, bucketFactory, callback));
+			_awaitingJobs.addFirst(new FECJob(dataBlocks, checkBlocks, blockLength, bucketFactory, callback, isADecodingJob));
 		}
 		if(logMINOR) Logger.minor(this, "Adding a new job to the queue (" +_awaitingJobs.size() + ").");
 		synchronized (fecRunner){
@@ -454,14 +458,14 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 	
-	public void addToQueue(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback){
+	public void addToQueue(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback, boolean isADecodingJob){
 		Bucket[] dataBlocks = new Bucket[dataBlockStatus.length];
 		Bucket[] checkBlocks = new Bucket[checkBlockStatus.length];
 		for(int i=0;i<dataBlocks.length;i++)
 			dataBlocks[i] = dataBlockStatus[i].getData();
 		for(int i=0;i<checkBlocks.length;i++)
 			checkBlocks[i] = checkBlockStatus[i].getData();
-		addToQueue(dataBlocks, checkBlocks, blockLength, bucketFactory, callback);
+		addToQueue(dataBlocks, checkBlocks, blockLength, bucketFactory, callback, isADecodingJob);
 		for(int i=0;i<dataBlocks.length;i++)
 			dataBlockStatus[i].setData(dataBlocks[i]);
 		for(int i=0;i<checkBlocks.length;i++)
@@ -474,6 +478,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	
 	public interface StandardOnionFECCodecEncoderCallback{
 		public void onEncodedSegment();
+		public void onDecodedSegment();
 	}
 	
 	private class FECJob {
@@ -481,13 +486,15 @@ public class StandardOnionFECCodec extends FECCodec {
 		final BucketFactory bucketFactory;
 		final int blockLength;
 		final StandardOnionFECCodecEncoderCallback callback;
+		final boolean isADecodingJob;
 		
-		FECJob(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback) {
+		FECJob(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback, boolean isADecodingJob) {
 			this.dataBlocks = dataBlocks;
 			this.checkBlocks = checkBlocks;
 			this.blockLength = blockLength;
 			this.bucketFactory = bucketFactory;
 			this.callback = callback;
+			this.isADecodingJob = isADecodingJob;
 		}
 	}
 	
@@ -503,13 +510,19 @@ public class StandardOnionFECCodec extends FECCodec {
 				if(job != null){
 					// Encode it
 					try {
-						encode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
+						if(job.isADecodingJob)
+							realDecode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
+						else
+							realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
 					} catch (IOException e) {
 						Logger.error(this, "BOH! ioe:" + e.getMessage());
 					}
 					// Call the callback
 					try {
-						job.callback.onEncodedSegment();
+						if(job.isADecodingJob)
+							job.callback.onDecodedSegment();
+						else
+							job.callback.onEncodedSegment();
 					} catch (Throwable e) {
 						Logger.error(this, "The callback failed!" + e.getMessage());
 					}

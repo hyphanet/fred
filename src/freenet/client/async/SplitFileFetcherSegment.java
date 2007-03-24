@@ -27,7 +27,7 @@ import freenet.support.io.BucketTools;
  * A single segment within a SplitFileFetcher.
  * This in turn controls a large number of SplitFileFetcherSubSegment's, which are registered on the ClientRequestScheduler.
  */
-public class SplitFileFetcherSegment {
+public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCallback {
 
 	private static boolean logMINOR;
 	final short splitfileType;
@@ -58,6 +58,8 @@ public class SplitFileFetcherSegment {
 	private int fetchedBlocks;
 	final FailureCodeTracker errors;
 	private boolean finishing;
+	
+	private FECCodec codec;
 	
 	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -174,97 +176,94 @@ public class SplitFileFetcherSegment {
 		}
 		parentFetcher.parent.completedBlock(dontNotify);
 		if(decodeNow) {
-			Runnable r = new Decoder();
-			Thread t = new Thread(r, "Decoder for "+this);
-			t.setDaemon(true);
-			t.start();
+			decode();
 		}
 	}
 
-	class Decoder implements Runnable, StandardOnionFECCodecEncoderCallback {
+	public void decode() {
+		// Now decode
+		if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
 
-		public void run() {
-			
-			// Now decode
-			if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
-			
-			boolean[] dataBlocksSucceeded = new boolean[dataBuckets.length];
-			boolean[] checkBlocksSucceeded = new boolean[checkBuckets.length];
-			for(int i=0;i<dataBuckets.length;i++)
-				dataBlocksSucceeded[i] = dataBuckets[i].data != null;
-			for(int i=0;i<checkBuckets.length;i++)
-				checkBlocksSucceeded[i] = checkBuckets[i].data != null;
-			
-			FECCodec codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
-			try {
-				if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
-					codec.decode(dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetchContext.bucketFactory);
-					// Now have all the data blocks (not necessarily all the check blocks)
-				}
-				
-				decodedData = fetchContext.bucketFactory.makeBucket(-1);
-				if(logMINOR) Logger.minor(this, "Copying data from data blocks");
-				OutputStream os = decodedData.getOutputStream();
-				for(int i=0;i<dataBuckets.length;i++) {
-					SplitfileBlock status = dataBuckets[i];
-					Bucket data = status.getData();
-					BucketTools.copyTo(data, os, Long.MAX_VALUE);
-				}
-				if(logMINOR) Logger.minor(this, "Copied data");
-				os.close();
-				// Must set finished BEFORE calling parentFetcher.
-				// Otherwise a race is possible that might result in it not seeing our finishing.
-				finished = true;
-				parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
-			} catch (IOException e) {
-				Logger.normal(this, "Caught bucket error?: "+e, e);
-				finished = true;
-				failureException = new FetchException(FetchException.BUCKET_ERROR);
-				parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
-				return;
-			}
-			
-			// Now heal
-			
-			/** Splitfile healing:
-			 * Any block which we have tried and failed to download should be 
-			 * reconstructed and reinserted.
-			 */
-			
-			// Encode any check blocks we don't have
-			if(codec != null) {
-				StandardOnionFECCodec fec = (StandardOnionFECCodec) codec;
-				fec.addToQueue(dataBuckets, checkBuckets, 32768, fetchContext.bucketFactory, this);
-			}
-		}
+		boolean[] dataBlocksSucceeded = new boolean[dataBuckets.length];
+		boolean[] checkBlocksSucceeded = new boolean[checkBuckets.length];
+		for(int i=0;i<dataBuckets.length;i++)
+			dataBlocksSucceeded[i] = dataBuckets[i].data != null;
+		for(int i=0;i<checkBuckets.length;i++)
+			checkBlocksSucceeded[i] = checkBuckets[i].data != null;
+
+		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
 		
-		public void onEncodedSegment() {		
-			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
+		if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
+			StandardOnionFECCodec fec = (StandardOnionFECCodec)codec;
+			fec.addToQueue(dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetchContext.bucketFactory, this, true);
+			// Now have all the data blocks (not necessarily all the check blocks)
+		}
+	}
+	
+	public void onDecodedSegment() {
+		try {
+			decodedData = fetchContext.bucketFactory.makeBucket(-1);
+			if(logMINOR) Logger.minor(this, "Copying data from data blocks");
+			OutputStream os = decodedData.getOutputStream();
 			for(int i=0;i<dataBuckets.length;i++) {
-				boolean heal = false;
-				if(dataRetries[i] > 0)
-					heal = true;
-				if(heal) {
-					queueHeal(dataBuckets[i].getData());
-				} else {
-					dataBuckets[i].data.free();
-					dataBuckets[i].data = null;
-				}
-				dataBuckets[i] = null;
-				dataKeys[i] = null;
+				SplitfileBlock status = dataBuckets[i];
+				Bucket data = status.getData();
+				BucketTools.copyTo(data, os, Long.MAX_VALUE);
 			}
-			for(int i=0;i<checkBuckets.length;i++) {
-				boolean heal = false;
-				if(checkRetries[i] > 0)
-					heal = true;
-				if(heal) {
-					queueHeal(checkBuckets[i].getData());
-				} else {
-					checkBuckets[i].data.free();
-				}
-				checkBuckets[i] = null;
-				checkKeys[i] = null;
+			if(logMINOR) Logger.minor(this, "Copied data");
+			os.close();
+			// Must set finished BEFORE calling parentFetcher.
+			// Otherwise a race is possible that might result in it not seeing our finishing.
+			finished = true;
+			parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
+		} catch (IOException e) {
+			Logger.normal(this, "Caught bucket error?: "+e, e);
+			finished = true;
+			failureException = new FetchException(FetchException.BUCKET_ERROR);
+			parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
+			return;
+		}
+
+		// Now heal
+
+		/** Splitfile healing:
+		 * Any block which we have tried and failed to download should be 
+		 * reconstructed and reinserted.
+		 */
+
+		// Encode any check blocks we don't have
+		if(codec != null) {
+			StandardOnionFECCodec fec = (StandardOnionFECCodec) codec;
+			fec.addToQueue(dataBuckets, checkBuckets, 32768, fetchContext.bucketFactory, this, false);
+		}
+	}
+
+	public void onEncodedSegment() {		
+		// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
+		for(int i=0;i<dataBuckets.length;i++) {
+			boolean heal = false;
+			if(dataRetries[i] > 0)
+				heal = true;
+			if(heal) {
+				queueHeal(dataBuckets[i].getData());
+			} else {
+				dataBuckets[i].data.free();
+				dataBuckets[i].data = null;
 			}
+			dataBuckets[i] = null;
+			dataKeys[i] = null;
+		}
+		for(int i=0;i<checkBuckets.length;i++) {
+			boolean heal = false;
+			if(checkRetries[i] > 0)
+				heal = true;
+			if(heal) {
+				queueHeal(checkBuckets[i].getData());
+			} else {
+				checkBuckets[i].data.free();
+			}
+			checkBuckets[i] = null;
+			checkKeys[i] = null;
 		}
 	}
 
