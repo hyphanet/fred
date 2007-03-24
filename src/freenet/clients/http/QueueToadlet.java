@@ -73,6 +73,11 @@ public class QueueToadlet extends Toadlet {
 	}
 	
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		
+		if(ctx.isAllowedFullAccess()) {
+			this.sendErrorPage(ctx, 403, "Forbidden", "You are not allowed to access the queue");
+		}
+		
 		try {
 			// Browse... button
 			if (request.getPartAsString("insert-local", 128).length() > 0) {
@@ -311,6 +316,10 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 
 	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) 
 	throws ToadletContextClosedException, IOException, RedirectException {
+		
+		if(ctx.isAllowedFullAccess()) {
+			this.sendErrorPage(ctx, 403, "Forbidden", "You are not allowed to access the queue");
+		}
 		
 		// We ensure that we have a FCP server running
 		if(!fcp.enabled){

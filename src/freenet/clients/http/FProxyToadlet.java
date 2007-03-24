@@ -599,7 +599,7 @@ public class FProxyToadlet extends Toadlet {
 			server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
 			
 			QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
-			server.register(queueToadlet, "/queue/", true, "Queue", "manage queued requests", false);
+			server.register(queueToadlet, "/queue/", true, "Queue", "manage queued requests", true);
 			
 			StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
 			server.register(statisticsToadlet, "/stats/", true, "Statistics", "view statistics", true);
