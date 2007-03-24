@@ -536,19 +536,19 @@ public class StandardOnionFECCodec extends FECCodec {
 							realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength, job.bucketFactory);
 						else {
 							realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
-						}
-						
-						// Update SplitFileBlocks from buckets if necessary
-						if(job.dataBlockStatus != null){
-							for(int i=0;i<job.dataBlocks.length;i++)
-								job.dataBlockStatus[i].setData(job.dataBlocks[i]);
-							for(int i=0;i<job.checkBlocks.length;i++)
-								job.checkBlockStatus[i].setData(job.checkBlocks[i]);
-						}
-						
+						}		
 					} catch (IOException e) {
 						Logger.error(this, "BOH! ioe:" + e.getMessage());
 					}
+					
+					// Update SplitFileBlocks from buckets if necessary
+					if((job.dataBlockStatus != null) || (job.checkBlockStatus != null)){
+						for(int i=0;i<job.dataBlocks.length;i++)
+							job.dataBlockStatus[i].setData(job.dataBlocks[i]);
+						for(int i=0;i<job.checkBlocks.length;i++)
+							job.checkBlockStatus[i].setData(job.checkBlocks[i]);
+					}
+					
 					// Call the callback
 					try {
 						if(job.isADecodingJob)
