@@ -782,7 +782,10 @@ public class PeerManager {
 	 * Update oldestNeverConnectedPeerAge if the timer has expired
 	 */
 	public void maybeUpdateOldestNeverConnectedPeerAge(long now) {
-		if(now > nextOldestNeverConnectedPeerAgeUpdateTime) {
+		synchronized(this) {
+			if(now <= nextOldestNeverConnectedPeerAgeUpdateTime) return;
+			nextOldestNeverConnectedPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
+		}
 			oldestNeverConnectedPeerAge = 0;
 			PeerNode[] peerList = myPeers;
 			for(int i=0;i<peerList.length;i++) {
@@ -796,7 +799,6 @@ public class PeerManager {
 			if(oldestNeverConnectedPeerAge > 0 && logMINOR)
 				Logger.minor(this, "Oldest never connected peer is "+oldestNeverConnectedPeerAge+"ms old");
 			nextOldestNeverConnectedPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
-		}
 	}
 
 	public long getOldestNeverConnectedPeerAge() {
