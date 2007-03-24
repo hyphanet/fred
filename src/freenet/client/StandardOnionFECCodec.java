@@ -432,7 +432,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	// ###############################
 	
 	public void addToQueue(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback){
-		if(!fecRunner.getIsStarted()) fecRunner.run();
+		if(!fecRunner.getIsStarted()) fecRunnerThread.start();
 		
 		synchronized (_awaitingJobs) {
 			_awaitingJobs.addFirst(new FECJob(dataBlocks, checkBlocks, blockLength, bucketFactory, callback));
