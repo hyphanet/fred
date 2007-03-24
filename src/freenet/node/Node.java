@@ -309,6 +309,10 @@ public class Node {
 	
 	/** HashSet of currently running request UIDs */
 	private final HashSet runningUIDs;
+	private final HashSet runningCHKGetUIDs;
+	private final HashSet runningSSKGetUIDs;
+	private final HashSet runningCHKPutUIDs;
+	private final HashSet runningSSKPutUIDs;
 	
 	byte[] myIdentity; // FIXME: simple identity block; should be unique
 	/** Hash of identity. Used as setup key. */
@@ -693,6 +697,10 @@ public class Node {
 		transferringRequestSenders = new HashMap();
 		insertSenders = new HashMap();
 		runningUIDs = new HashSet();
+		runningCHKGetUIDs = new HashSet();
+		runningSSKGetUIDs = new HashSet();
+		runningCHKPutUIDs = new HashSet();
+		runningSSKPutUIDs = new HashSet();
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
 		bootID = random.nextLong();
@@ -2080,9 +2088,13 @@ public class Node {
 		return is;
 	}
 	
-	public boolean lockUID(long uid) {
+	public boolean lockUID(long uid, boolean ssk, boolean insert) {
 		if(logMINOR) Logger.minor(this, "Locking "+uid);
 		Long l = new Long(uid);
+		HashSet set = getUIDTracker(ssk, insert);
+		synchronized(set) {
+			set.add(l);
+		}
 		synchronized(runningUIDs) {
 			if(runningUIDs.contains(l)) return false;
 			runningUIDs.add(l);
@@ -2090,16 +2102,28 @@ public class Node {
 		}
 	}
 	
-	public void unlockUID(long uid) {
+	public void unlockUID(long uid, boolean ssk, boolean insert) {
 		if(logMINOR) Logger.minor(this, "Unlocking "+uid);
 		Long l = new Long(uid);
 		completed(uid);
+		HashSet set = getUIDTracker(ssk, insert);
+		synchronized(set) {
+			set.remove(l);
+		}
 		synchronized(runningUIDs) {
 			if(!runningUIDs.remove(l))
 				throw new IllegalStateException("Could not unlock "+uid+ '!');
 		}
 	}
 
+	HashSet getUIDTracker(boolean ssk, boolean insert) {
+		if(ssk) {
+			return insert ? runningSSKPutUIDs : runningSSKGetUIDs;
+		} else {
+			return insert ? runningCHKPutUIDs : runningCHKGetUIDs;
+		}
+	}
+	
 	/**
 	 * @return Some status information.
 	 */
@@ -2158,6 +2182,22 @@ public class Node {
 		}
 	}
 
+	public int getNumSSKRequests() {
+		return runningSSKGetUIDs.size();
+	}
+	
+	public int getNumCHKRequests() {
+		return runningCHKGetUIDs.size();
+	}
+	
+	public int getNumSSKInserts() {
+		return runningSSKPutUIDs.size();
+	}
+	
+	public int getNumCHKInserts() {
+		return runningCHKPutUIDs.size();
+	}
+	
 	public int getNumTransferringRequests() {
 		synchronized(transferringRequestSenders) {
 			return transferringRequestSenders.size();
@@ -2228,7 +2268,7 @@ public class Node {
 	/**
 	 * A request completed (regardless of success).
 	 */
-	public synchronized void completed(long id) {
+	private synchronized void completed(long id) {
 		recentlyCompletedIDs.push(new Long(id));
 		while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
 			recentlyCompletedIDs.pop();

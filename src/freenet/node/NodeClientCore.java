@@ -410,10 +410,11 @@ public class NodeClientCore implements Persistable {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
-		if(!node.lockUID(uid)) {
+		if(!node.lockUID(uid, false, false)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
+		try {
 		Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, node.getLocation(), false, localOnly, cache, ignoreStore);
 		if(o instanceof CHKBlock) {
 			try {
@@ -502,16 +503,20 @@ public class NodeClientCore implements Persistable {
 				}
 			}
 		}
+		} finally {
+			node.unlockUID(uid, false, false);
+		}
 	}
 
 	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
-		if(!node.lockUID(uid)) {
+		if(!node.lockUID(uid, true, false)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
+		try {
 		Object o = node.makeRequestSender(key.getNodeKey(), node.maxHTL(), uid, null, node.getLocation(), false, localOnly, cache, ignoreStore);
 		if(o instanceof SSKBlock) {
 			try {
@@ -600,6 +605,9 @@ public class NodeClientCore implements Persistable {
 				}
 			}
 		}
+		} finally {
+			node.unlockUID(uid, true, false);
+		}
 	}
 
 	public void realPut(KeyBlock block, boolean cache) throws LowLevelPutException {
@@ -618,10 +626,11 @@ public class NodeClientCore implements Persistable {
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
 		CHKInsertSender is;
 		long uid = random.nextLong();
-		if(!node.lockUID(uid)) {
+		if(!node.lockUID(uid, false, true)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
+		try {
 		long startTime = System.currentTimeMillis();
 		if(cache) {
 			node.store(block);
@@ -719,16 +728,20 @@ public class NodeClientCore implements Persistable {
 				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 			}
 		}
+		} finally {
+			node.unlockUID(uid, false, true);
+		}
 	}
 
 	public void realPutSSK(SSKBlock block, boolean cache) throws LowLevelPutException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SSKInsertSender is;
 		long uid = random.nextLong();
-		if(!node.lockUID(uid)) {
+		if(!node.lockUID(uid, true, true)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
+		try {
 		long startTime = System.currentTimeMillis();
 		if(cache) {
 			try {
@@ -835,6 +848,9 @@ public class NodeClientCore implements Persistable {
 				Logger.error(this, "Unknown CHKInsertSender code in putSSK: "+is.getStatus()+" on "+is);
 				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 			}
+		}
+		} finally {
+			node.unlockUID(uid, true, true);
 		}
 	}
 

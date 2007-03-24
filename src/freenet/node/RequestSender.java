@@ -400,7 +400,6 @@ public final class RequestSender implements Runnable, ByteCounter {
             finish(INTERNAL_ERROR, null);
         } finally {
         	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
-            node.completed(uid);
             node.removeRequestSender(key, origHTL, this);
         }
     }

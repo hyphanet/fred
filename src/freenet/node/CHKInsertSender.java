@@ -228,7 +228,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             if(myStatus == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         } finally {
-            node.completed(uid);
         	node.removeInsertSender(myKey, origHTL, this);
         }
     }

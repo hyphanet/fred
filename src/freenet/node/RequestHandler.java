@@ -190,7 +190,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
-            node.unlockUID(uid);
+            node.unlockUID(uid, key instanceof NodeSSK, false);
             if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD 
             		&& status != RequestSender.INTERNAL_ERROR) {
             	int sent = rs.getTotalSentBytes() + sentBytes;

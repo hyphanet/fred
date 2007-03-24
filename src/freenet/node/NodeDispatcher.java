@@ -142,7 +142,7 @@ public class NodeDispatcher implements Dispatcher {
 			}
 			return true;
 		}
-		if(!node.lockUID(id)) {
+		if(!node.lockUID(id, isSSK, false)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -164,8 +164,7 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+m.getSource().getPeer()+": "+e);
 			}
-			node.unlockUID(id);
-			node.completed(id);
+			node.unlockUID(id, isSSK, false);
 			return true;
 		}
 		//if(!node.lockUID(id)) return false;
@@ -187,6 +186,16 @@ public class NodeDispatcher implements Dispatcher {
 			}
 			return true;
 		}
+		if(!node.lockUID(id, isSSK, true)) {
+			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
+			Message rejected = DMT.createFNPRejectedLoop(id);
+			try {
+				((PeerNode)(m.getSource())).sendAsync(rejected, null, 0, null);
+			} catch (NotConnectedException e) {
+				Logger.normal(this, "Rejecting insert request from "+m.getSource().getPeer()+": "+e);
+			}
+			return true;
+		}
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
 		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK);
 		if(rejectReason != null) {
@@ -197,17 +206,7 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+m.getSource().getPeer()+": "+e);
 			}
-			node.completed(id);
-			return true;
-		}
-		if(!node.lockUID(id)) {
-			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
-			Message rejected = DMT.createFNPRejectedLoop(id);
-			try {
-				((PeerNode)(m.getSource())).sendAsync(rejected, null, 0, null);
-			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting insert request from "+m.getSource().getPeer()+": "+e);
-			}
+			node.unlockUID(id, isSSK, true);
 			return true;
 		}
 		long now = System.currentTimeMillis();

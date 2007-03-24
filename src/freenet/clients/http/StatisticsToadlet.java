@@ -195,7 +195,11 @@ public class StatisticsToadlet extends Toadlet {
 
 			// Activity box
 			int numInserts = node.getNumInserts();
+			int numCHKInserts = node.getNumCHKInserts();
+			int numSSKInserts = node.getNumSSKInserts();
 			int numRequests = node.getNumRequests();
+			int numCHKRequests = node.getNumCHKRequests();
+			int numSSKRequests = node.getNumSSKRequests();
 			int numTransferringRequests = node.getNumTransferringRequests();
 			int numARKFetchers = node.getNumARKFetchers();
 
@@ -207,10 +211,10 @@ public class StatisticsToadlet extends Toadlet {
 			} else {
 				HTMLNode activityList = activityInfoboxContent.addChild("ul");
 				if (numInserts > 0) {
-					activityList.addChild("li", "Inserts:\u00a0" + numInserts);
+					activityList.addChild("li", "Inserts:\u00a0" + numInserts + "\u00a0(incoming:\u00a0CHK:\u00a0" + numCHKInserts+"\u00a0SSK:\u00a0" + numSSKInserts+")");
 				}
 				if (numRequests > 0) {
-					activityList.addChild("li", "Requests:\u00a0" + numRequests);
+					activityList.addChild("li", "Requests:\u00a0" + numRequests + "\u00a0(incoming:\u00a0CHK:\u00a0" + numCHKRequests+"\u00a0SSK:\u00a0" + numSSKRequests+")");
 				}
 				if (numTransferringRequests > 0) {
 					activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests);

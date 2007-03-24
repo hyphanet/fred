@@ -115,7 +115,6 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         } finally {
-            node.completed(uid);
         	node.removeInsertSender(myKey, origHTL, this);
         }
 	}
