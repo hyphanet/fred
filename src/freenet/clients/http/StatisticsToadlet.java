@@ -211,10 +211,10 @@ public class StatisticsToadlet extends Toadlet {
 			} else {
 				HTMLNode activityList = activityInfoboxContent.addChild("ul");
 				if (numInserts > 0) {
-					activityList.addChild("li", "Inserts:\u00a0" + numInserts + "\u00a0(incoming:\u00a0CHK:\u00a0" + numCHKInserts+"\u00a0SSK:\u00a0" + numSSKInserts+")");
+					activityList.addChild("li", "Inserts:\u00a0" + numInserts + "\u00a0running\u00a0(CHK:\u00a0" + numCHKInserts+"\u00a0SSK:\u00a0" + numSSKInserts+"\u00a0locked)");
 				}
 				if (numRequests > 0) {
-					activityList.addChild("li", "Requests:\u00a0" + numRequests + "\u00a0(incoming:\u00a0CHK:\u00a0" + numCHKRequests+"\u00a0SSK:\u00a0" + numSSKRequests+")");
+					activityList.addChild("li", "Requests:\u00a0" + numRequests + "\u00a0running\u00a0(CHK:\u00a0" + numCHKRequests+"\u00a0SSK:\u00a0" + numSSKRequests+"\u00a0locked)");
 				}
 				if (numTransferringRequests > 0) {
 					activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests);
