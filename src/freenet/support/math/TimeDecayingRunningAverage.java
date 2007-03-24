@@ -74,7 +74,8 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         this.defaultValue = defaultValue;
         started = false;
         this.halfLife = halfLife;
-        createdTime = lastReportTime = System.currentTimeMillis();
+        createdTime = System.currentTimeMillis();
+        this.lastReportTime = -1; // long warm-up may skew results, so lets wait for the first report
         this.minReport = min;
         this.maxReport = max;
         totalReports = 0;
