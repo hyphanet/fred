@@ -394,15 +394,17 @@ public class FProxyToadlet extends Toadlet {
 				HTMLNode optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] {'/' + key.toString(), "get" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", "Fetch anyway and display file in browser" });
-				option = optionList.addChild("li");
-				optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
-				if (mime != null) {
-					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
+				if(ctx.isAllowedFullAccess()) {
+					option = optionList.addChild("li");
+					optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+					if (mime != null) {
+						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
+					}
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", "Download in background and store in downloads directory" });
 				}
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", "Download in background and store in downloads directory" });
 				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, "Abort and return to the FProxy home page");
 
 				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
@@ -453,7 +455,7 @@ public class FProxyToadlet extends Toadlet {
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				
 				HTMLNode optionList = infoboxContent.addChild("ul");
-				if(!e.isFatal()) {
+				if(!e.isFatal() && ctx.isAllowedFullAccess()) {
 					option = optionList.addChild("li");
 					HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "dnfQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
