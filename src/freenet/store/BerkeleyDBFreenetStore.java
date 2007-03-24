@@ -539,6 +539,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			chkBlocksInStore = chkBlocksInDatabase;
 			long chkBlocksFromFile = countCHKBlocksFromFile();
 			lastRecentlyUsed = getMaxRecentlyUsed();
+
+			System.out.println("Keys in store: db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+" / max "+maxChkBlocks);
+			
+			if(chkBlocksInDatabase > chkBlocksFromFile) {
+				System.out.println("More keys in database than in store, checking for holes...");
+				dontCheckForHolesShrinking = true;
+				checkForHoles(chkBlocksFromFile, false);
+			}
 			
 			if(((chkBlocksInStore == 0) && (chkBlocksFromFile != 0)) ||
 					(((chkBlocksInStore + 10) * 1.1) < chkBlocksFromFile)) {
@@ -564,7 +572,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			chkBlocksInStore = Math.max(chkBlocksInStore, chkBlocksFromFile);
 			if(logMINOR) Logger.minor(this, "Keys in store: "+chkBlocksInStore);
-			System.out.println("Keys in store: db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+" / max "+maxChkBlocks);
 			
 			if(!noCheck) {
 				maybeOfflineShrink(dontCheckForHolesShrinking);
