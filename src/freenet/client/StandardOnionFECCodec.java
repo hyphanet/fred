@@ -112,20 +112,6 @@ public class StandardOnionFECCodec extends FECCodec {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
-	/**
-	 * @deprecated
-	 */
-	public void decode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
-		if(logMINOR) 
-			Logger.minor(this, "Queueing decode: " + dataBlockStatus.length
-				+ " data blocks, " + checkBlockStatus.length
-				+ " check blocks, block length " + blockLength + " with "
-				+ this, new Exception("debug"));
-		
-		realDecode(dataBlockStatus, checkBlockStatus, blockLength, bf);
-	}
-	
 	private void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		if(logMINOR)
 			Logger.minor(this, "Doing decode: " + dataBlockStatus.length
@@ -252,51 +238,6 @@ public class StandardOnionFECCodec extends FECCodec {
 						+ " : " + dataBlockStatus[i] + " length " + data.size());
 			dataBlockStatus[i].setData(data);
 		}
-	}
-
-	/**
-	 * @deprecated
-	 */
-	public void encode(Bucket[] dataBlockStatus, Bucket[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
-		if(logMINOR)
-			Logger.minor(this, "Queueing encode: " + dataBlockStatus.length
-					+ " data blocks, " + checkBlockStatus.length
-					+ " check blocks, block length " + blockLength + " with "
-					+ this, new Exception("debug"));
-
-		Thread currentThread = Thread.currentThread();
-		final int currentThreadPriority = currentThread.getPriority();
-		final String oldThreadName = currentThread.getName();
-
-		currentThread.setName("Encoder thread for k="+k+", n="+n+" enabled at "+System.currentTimeMillis());
-		currentThread.setPriority(Thread.MIN_PRIORITY);
-
-		long startTime = System.currentTimeMillis();
-		realEncode(dataBlockStatus, checkBlockStatus, blockLength, bf);
-		long endTime = System.currentTimeMillis();
-		if(logMINOR)
-			Logger.minor(this, "Splitfile encode: k="+k+", n="+n+" encode took "+(endTime-startTime)+"ms");
-
-		currentThread.setName(oldThreadName);
-		currentThread.setPriority(currentThreadPriority);
-	}
-	
-	/**
-	 * @deprecated
-	 */
-	public void encode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
-		Bucket[] dataBlocks = new Bucket[dataBlockStatus.length];
-		Bucket[] checkBlocks = new Bucket[checkBlockStatus.length];
-		for(int i=0;i<dataBlocks.length;i++)
-			dataBlocks[i] = dataBlockStatus[i].getData();
-		for(int i=0;i<checkBlocks.length;i++)
-			checkBlocks[i] = checkBlockStatus[i].getData();
-		encode(dataBlocks, checkBlocks, blockLength, bf);
-		for(int i=0;i<dataBlocks.length;i++)
-			dataBlockStatus[i].setData(dataBlocks[i]);
-		for(int i=0;i<checkBlocks.length;i++)
-			checkBlockStatus[i].setData(checkBlocks[i]);
 	}
 
 	/**
@@ -479,48 +420,6 @@ public class StandardOnionFECCodec extends FECCodec {
 	public interface StandardOnionFECCodecEncoderCallback{
 		public void onEncodedSegment();
 		public void onDecodedSegment();
-	}
-	
-	/**
-	 * A class bundleing the data meant to be FEC processed
-	 * 
-	 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
-	 */
-	public class FECJob {
-		final Bucket[] dataBlocks, checkBlocks;
-		final SplitfileBlock[] dataBlockStatus, checkBlockStatus;
-		final BucketFactory bucketFactory;
-		final int blockLength;
-		final StandardOnionFECCodecEncoderCallback callback;
-		final boolean isADecodingJob;
-		
-		public FECJob(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus,  int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback, boolean isADecodingJob) {
-			this.dataBlockStatus = dataBlockStatus;
-			this.checkBlockStatus = checkBlockStatus;
-			
-			this.dataBlocks = new Bucket[dataBlockStatus.length];
-			this.checkBlocks = new Bucket[checkBlockStatus.length];
-			for(int i=0;i<dataBlocks.length;i++)
-				this.dataBlocks[i] = dataBlockStatus[i].getData();
-			for(int i=0;i<checkBlocks.length;i++)
-				this.checkBlocks[i] = checkBlockStatus[i].getData();
-			
-			this.blockLength = blockLength;
-			this.bucketFactory = bucketFactory;
-			this.callback = callback;
-			this.isADecodingJob = isADecodingJob;			
-		}
-		
-		public FECJob(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback, boolean isADecodingJob) {
-			this.dataBlocks = dataBlocks;
-			this.checkBlocks = checkBlocks;
-			this.dataBlockStatus = null;
-			this.checkBlockStatus = null;
-			this.blockLength = blockLength;
-			this.bucketFactory = bucketFactory;
-			this.callback = callback;
-			this.isADecodingJob = isADecodingJob;
-		}
 	}
 	
 	/**

@@ -3,6 +3,7 @@ package freenet.client.async;
 import java.net.MalformedURLException;
 
 import freenet.client.FECCodec;
+import freenet.client.FECJob;
 import freenet.client.FailureCodeTracker;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
@@ -423,8 +424,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback,
 				// Encode blocks
 				synchronized(this) {
 					if(!encoded){
-						StandardOnionFECCodec fec = (StandardOnionFECCodec) splitfileAlgo; 
-						fec.addToQueue(fec.new FECJob(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false));
+						splitfileAlgo.addToQueue(new FECJob(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false));
 					}
 				}				
 				fin = false;
