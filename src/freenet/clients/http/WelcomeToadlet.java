@@ -435,102 +435,101 @@ public class WelcomeToadlet extends Toadlet {
 		boolean advancedModeOutputEnabled = core.getToadletContainer().isAdvancedModeEnabled();
 	
 		if(ctx.isAllowedFullAccess()) {
-		
-		if(request.isParameterSet("latestlog")) {
-			
-			FileReader reader = new FileReader(node.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
-			
-			StringWriter sw = new StringWriter();
-			char[] buffer = new char[1024];
-			int read;
-			while((read = reader.read(buffer)) != -1)
-				sw.write(buffer, 0, read);
-			
-			this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
-			return;
-		}else if (request.getParam("newbookmark").length() > 0) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark", ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Confirm Bookmark Addition"));
-			HTMLNode addForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(infobox), "/", "bookmarkAddForm");
-			addForm.addChild("#", "Please confirm that you want to add the key " + request.getParam("newbookmark") + " to your bookmarks and enter the description that you would prefer:");
-			addForm.addChild("br");
-			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", request.getParam("newbookmark") });
-			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", request.getParam("desc") });
-			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addbookmark", "Add bookmark" });
-			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-			return;
-		} else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Link to external resources", ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			HTMLNode warnbox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "External link"));
-			HTMLNode externalLinkForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(warnbox), "/", "confirmExternalLinkForm");
 
-			final String target = request.getParam(GenericReadFilterCallback.magicHTTPEscapeString);
-			externalLinkForm.addChild("#", "Please confirm that you want to go to " + target + ". WARNING: You are leaving FREENET! Clicking on this link WILL seriously jeopardize your anonymity!. It is strongly recommended not to do so!");
-			externalLinkForm.addChild("br");
-			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", GenericReadFilterCallback.magicHTTPEscapeString, target });
-			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
-			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Go", "Go to the specified link" });
-			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-			return;
-		} else if (request.isParameterSet("managebookmarks")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Bookmark Manager", ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "My Bookmarks"));
-			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
-			
-			Enumeration e = bookmarks.getBookmarks();
-			boolean moveButtonsEnabled = (bookmarks.getSize() > 1); // activate move{up|down} buttons
-			
-			if (!e.hasMoreElements()) {
-				infoboxContent.addChild("#", "You currently do not have any bookmarks defined.");
-			} else {
-				HTMLNode manageForm = ctx.addFormChild(infoboxContent, ".", "manageBookmarksForm");
-				HTMLNode bookmarkList = manageForm.addChild("ul", "id", "bookmarks");
-				while (e.hasMoreElements()) {
-					Bookmark b = (Bookmark)e.nextElement();
-				
-					HTMLNode bookmark = bookmarkList.addChild("li", "style", "clear: right;"); /* TODO */
-					bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "delete_" + b.hashCode(), "Delete", "float: right;" });
-					bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "edit_" + b.hashCode(), "Edit", "float: right;" });
-					if (moveButtonsEnabled) {
-						bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "movedown_" + b.hashCode(), "Down", "float: right;" });
-						bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "moveup_" + b.hashCode(), "Up", "float: right;" });
+			if(request.isParameterSet("latestlog")) {
+
+				FileReader reader = new FileReader(node.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
+
+				StringWriter sw = new StringWriter();
+				char[] buffer = new char[1024];
+				int read;
+				while((read = reader.read(buffer)) != -1)
+					sw.write(buffer, 0, read);
+
+				this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
+				return;
+			}else if (request.getParam("newbookmark").length() > 0) {
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark", ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Confirm Bookmark Addition"));
+				HTMLNode addForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(infobox), "/", "bookmarkAddForm");
+				addForm.addChild("#", "Please confirm that you want to add the key " + request.getParam("newbookmark") + " to your bookmarks and enter the description that you would prefer:");
+				addForm.addChild("br");
+				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", request.getParam("newbookmark") });
+				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", request.getParam("desc") });
+				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addbookmark", "Add bookmark" });
+				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				return;
+			} else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Link to external resources", ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode warnbox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "External link"));
+				HTMLNode externalLinkForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(warnbox), "/", "confirmExternalLinkForm");
+
+				final String target = request.getParam(GenericReadFilterCallback.magicHTTPEscapeString);
+				externalLinkForm.addChild("#", "Please confirm that you want to go to " + target + ". WARNING: You are leaving FREENET! Clicking on this link WILL seriously jeopardize your anonymity!. It is strongly recommended not to do so!");
+				externalLinkForm.addChild("br");
+				externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", GenericReadFilterCallback.magicHTTPEscapeString, target });
+				externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+				externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Go", "Go to the specified link" });
+				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				return;
+			} else if (request.isParameterSet("managebookmarks")) {
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Bookmark Manager", ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "My Bookmarks"));
+				HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+
+				Enumeration e = bookmarks.getBookmarks();
+				boolean moveButtonsEnabled = (bookmarks.getSize() > 1); // activate move{up|down} buttons
+
+				if (!e.hasMoreElements()) {
+					infoboxContent.addChild("#", "You currently do not have any bookmarks defined.");
+				} else {
+					HTMLNode manageForm = ctx.addFormChild(infoboxContent, ".", "manageBookmarksForm");
+					HTMLNode bookmarkList = manageForm.addChild("ul", "id", "bookmarks");
+					while (e.hasMoreElements()) {
+						Bookmark b = (Bookmark)e.nextElement();
+
+						HTMLNode bookmark = bookmarkList.addChild("li", "style", "clear: right;"); /* TODO */
+						bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "delete_" + b.hashCode(), "Delete", "float: right;" });
+						bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "edit_" + b.hashCode(), "Edit", "float: right;" });
+						if (moveButtonsEnabled) {
+							bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "movedown_" + b.hashCode(), "Down", "float: right;" });
+							bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "moveup_" + b.hashCode(), "Up", "float: right;" });
+						}
+						bookmark.addChild("a", "href", '/' + b.getKey(), b.getDesc());
 					}
-					bookmark.addChild("a", "href", '/' + b.getKey(), b.getDesc());
+					manageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
 				}
-				manageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
+				contentNode.addChild(createBookmarkEditForm(ctx, MODE_ADD, null, "", ""));
+				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				return;
+			}else if (request.isParameterSet("exit")) {
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Shutdown"));
+				HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+				content.addChild("p").addChild("#", "Are you sure you wish to shut down your Freenet node?");
+				HTMLNode shutdownForm = ctx.addFormChild(content.addChild("p"), "/", "confirmShutdownForm");
+				shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+				shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "shutdownconfirm", "Shut down" });
+				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				return;
+			}else if (request.isParameterSet("restart")) {
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Restart"));
+				HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+				content.addChild("p").addChild("#", "Are you sure you want to restart your Freenet node?");
+				HTMLNode restartForm = ctx.addFormChild(content.addChild("p"), "/", "confirmRestartForm");
+				restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+				restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restartconfirm", "Restart" });
+				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				return;
 			}
-			contentNode.addChild(createBookmarkEditForm(ctx, MODE_ADD, null, "", ""));
-			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-			return;
-		}else if (request.isParameterSet("exit")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Shutdown"));
-			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
-			content.addChild("p").addChild("#", "Are you sure you wish to shut down your Freenet node?");
-			HTMLNode shutdownForm = ctx.addFormChild(content.addChild("p"), "/", "confirmShutdownForm");
-			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
-			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "shutdownconfirm", "Shut down" });
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-			return;
-		}else if (request.isParameterSet("restart")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Restart"));
-			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
-			content.addChild("p").addChild("#", "Are you sure you want to restart your Freenet node?");
-			HTMLNode restartForm = ctx.addFormChild(content.addChild("p"), "/", "confirmRestartForm");
-			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
-			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restartconfirm", "Restart" });
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-			return;
 		}
-		
-		}
-		
+
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet FProxy Homepage of " + node.getMyName(), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
@@ -539,9 +538,9 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode testnetContent = ctx.getPageMaker().getContentNode(testnetBox);
 			testnetContent.addChild("#", "This node runs in testnet mode. This WILL seriously jeopardize your anonymity!");
 		}
-		
+
 		String useragent = (String)ctx.getHeaders().get("user-agent");
-		
+
 		if (useragent != null) {
 			useragent = useragent.toLowerCase();
 			if ((useragent.indexOf("msie") > -1) && (useragent.indexOf("opera") == -1)) {
@@ -553,7 +552,7 @@ public class WelcomeToadlet extends Toadlet {
 
 		// Alerts
 		contentNode.addChild(core.alerts.createAlerts());
-		
+
 		// Fetch-a-key box
 		HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "Fetch a Key"));
 		HTMLNode fetchKeyContent = ctx.getPageMaker().getContentNode(fetchKeyBox);
@@ -562,7 +561,7 @@ public class WelcomeToadlet extends Toadlet {
 		fetchKeyForm.addChild("#", "Key: ");
 		fetchKeyForm.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "key" });
 		fetchKeyForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Fetch" });
-		
+
 		// Bookmarks
 		HTMLNode bookmarkBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode bookmarkBoxHeader = bookmarkBox.addChild("div", "class", "infobox-header");
@@ -572,7 +571,7 @@ public class WelcomeToadlet extends Toadlet {
 		bookmarkBoxHeader.addChild("#", "]");
 
 		HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
-		
+
 		Enumeration e = bookmarks.getBookmarks();
 		if (!e.hasMoreElements()) {
 			bookmarkBoxContent.addChild("#", "You currently do not have any bookmarks defined.");
@@ -583,7 +582,7 @@ public class WelcomeToadlet extends Toadlet {
 				bookmarkList.addChild("li").addChild("a", "href", '/' + b.getKey(), b.getDesc());
 			}
 		}
-		
+
 		// Version info and Quit Form
 		HTMLNode versionBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "Version Information & Node Control"));
 		HTMLNode versionContent = ctx.getPageMaker().getContentNode(versionBox);
@@ -603,7 +602,7 @@ public class WelcomeToadlet extends Toadlet {
 			restartForm.addChild("input", new String[] { "type", "name" }, new String[] { "hidden", "restart" });
 			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart2", "Restart the node" });
 		}
-		
+
 		// Activity
 		HTMLNode activityBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "Current Activity"));
 		HTMLNode activityContent = ctx.getPageMaker().getContentNode(activityBox);
