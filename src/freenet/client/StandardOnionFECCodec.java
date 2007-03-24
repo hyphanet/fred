@@ -432,7 +432,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	// ###############################
 	
 	public void addToQueue(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback){
-		if(!fecRunner.getIsStarted()) fecRunnerThread.start();
+		if(!fecRunnerThread.isAlive()) fecRunnerThread.start();
 		
 		synchronized (_awaitingJobs) {
 			_awaitingJobs.addFirst(new FECJob(dataBlocks, checkBlocks, blockLength, bucketFactory, callback));
@@ -466,11 +466,8 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 	
-	private class FECRunner implements Runnable {
-		private boolean isStarted = false;
-		
+	private class FECRunner implements Runnable {		
 		public void run(){
-			isStarted = true;
 			while(true){
 				FECJob job = null;
 				// Get a job
@@ -499,10 +496,6 @@ public class StandardOnionFECCodec extends FECCodec {
 					} catch (InterruptedException e) {}
 				}
 			}
-		}
-		
-		public boolean getIsStarted(){
-			return isStarted;
 		}
 	}
 }
