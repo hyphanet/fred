@@ -551,7 +551,7 @@ public class WelcomeToadlet extends Toadlet {
 		}
 
 		// Alerts
-		if(!ctx.isAllowedFullAccess())
+		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createAlerts());
 
 		// Fetch-a-key box
@@ -595,7 +595,7 @@ public class WelcomeToadlet extends Toadlet {
 			versionContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + " r" + NodeStarter.extRevisionNumber);
 		}
 		versionContent.addChild("br");
-		if(!ctx.isAllowedFullAccess()){
+		if(ctx.isAllowedFullAccess()){
 			HTMLNode shutdownForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "get" });
 			shutdownForm.addChild("input", new String[] { "type", "name" }, new String[] { "hidden", "exit" });
 			shutdownForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Shutdown the node" });
