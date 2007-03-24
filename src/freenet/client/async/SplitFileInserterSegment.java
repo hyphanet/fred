@@ -423,8 +423,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback,
 				// Encode blocks
 				synchronized(this) {
 					if(!encoded){
-						StandardOnionFECCodec fec = (StandardOnionFECCodec) splitfileAlgo;
-						fec.addToQueue(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false);
+						StandardOnionFECCodec fec = (StandardOnionFECCodec) splitfileAlgo; 
+						fec.addToQueue(fec.new FECJob(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false));
 					}
 				}				
 				fin = false;
