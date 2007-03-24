@@ -348,6 +348,8 @@ public class Node {
 	final TestnetHandler testnetHandler;
 	final StaticSwapRequestInterval swapInterval;
 	public final DoubleTokenBucket outputThrottle;
+	private int outputBandwidthLimit;
+	private int inputBandwidthLimit;
 	boolean inputLimitDefault;
 	public static final short DEFAULT_MAX_HTL = (short)10;
 	public static final int DEFAULT_SWAP_INTERVAL = 2000;
@@ -858,16 +860,20 @@ public class Node {
 				new IntCallback() {
 					public int get() {
 						//return BlockTransmitter.getHardBandwidthLimit();
-						return (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick());
+						return outputBandwidthLimit;
 					}
 					public void set(int obwLimit) throws InvalidConfigValueException {
 						if(obwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive");
+						synchronized(Node.this) {
+							outputBandwidthLimit = obwLimit;
+						}
 						outputThrottle.changeNanosAndBucketSizes((1000L * 1000L * 1000L) / obwLimit, obwLimit/2, (obwLimit * 2) / 5);
 						nodeStats.setOutputLimit(obwLimit);
 					}
 		});
 		
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
+		outputBandwidthLimit = obwLimit;
 		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) /  obwLimit, obwLimit, (obwLimit * 2) / 5);
 		obwLimit = (obwLimit * 4) / 5;  // fudge factor; take into account non-request activity
 		
@@ -876,15 +882,18 @@ public class Node {
 				new IntCallback() {
 					public int get() {
 						if(inputLimitDefault) return -1;
-						return (nodeStats.getInputLimit() * 4) / 5;
+						return inputBandwidthLimit;
 					}
 					public void set(int ibwLimit) throws InvalidConfigValueException {
-						if(ibwLimit == -1) {
-							inputLimitDefault = true;
-							ibwLimit = (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick()) * 4;
-						} else {
-							inputLimitDefault = false;
-							ibwLimit = ibwLimit * 4 / 5; // fudge factor; take into account non-request activity
+						synchronized(this) {
+							inputBandwidthLimit = ibwLimit;
+							if(ibwLimit == -1) {
+								inputLimitDefault = true;
+								ibwLimit = (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick()) * 4;
+							} else {
+								inputLimitDefault = false;
+								ibwLimit = ibwLimit * 4 / 5; // fudge factor; take into account non-request activity
+							}
 						}
 						if(ibwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
 						nodeStats.setInputLimit(ibwLimit);
@@ -892,6 +901,7 @@ public class Node {
 		});
 		
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
+		inputBandwidthLimit = ibwLimit;
 		if(ibwLimit == -1) {
 			inputLimitDefault = true;
 			ibwLimit = (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick()) * 4;
@@ -2771,5 +2781,15 @@ public class Node {
 		catch(DatabaseException e) {
 			System.out.println("Failed to get stats from JE environment: " + e);
 		}
+	}
+
+	public int getOutputBandwidthLimit() {
+		return outputBandwidthLimit;
+	}
+	
+	public synchronized int getInputBandwidthLimit() {
+		if(inputLimitDefault)
+			return outputBandwidthLimit * 4;
+		return inputBandwidthLimit;
 	}
 }

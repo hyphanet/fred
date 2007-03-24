@@ -383,8 +383,8 @@ public class StatisticsToadlet extends Toadlet {
 				if(delta > 0) {
 					long output_rate = (rate[3] - rate[0]) / delta;
 					long input_rate = (rate[4] - rate[1]) / delta;
-					int outputBandwidthLimit = nodeConfig.getInt("outputBandwidthLimit");
-					int inputBandwidthLimit = nodeConfig.getInt("inputBandwidthLimit");
+					int outputBandwidthLimit = node.getOutputBandwidthLimit();
+					int inputBandwidthLimit = node.getInputBandwidthLimit();
 					if(inputBandwidthLimit == -1) {
 						inputBandwidthLimit = outputBandwidthLimit * 4;
 					}
