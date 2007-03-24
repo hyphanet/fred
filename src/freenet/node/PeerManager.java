@@ -1027,13 +1027,13 @@ public class PeerManager {
 			if(now <= nextRoutableConnectionStatsUpdateTime) return;
 			nextRoutableConnectionStatsUpdateTime = now + routableConnectionStatsUpdateInterval;
 		}
-		 	if(-1 != nextRoutableConnectionStatsUpdateTime) {
-				PeerNode[] peerList = myPeers;
-				for(int i=0;i<peerList.length;i++) {
-					PeerNode pn = peerList[i];
-					pn.checkRoutableConnectionStatus();
-				}
-		 	}
+	 	if(-1 != nextRoutableConnectionStatsUpdateTime) {
+			PeerNode[] peerList = myPeers;
+			for(int i=0;i<peerList.length;i++) {
+				PeerNode pn = peerList[i];
+				pn.checkRoutableConnectionStatus();
+			}
+	 	}
 	}
 
 }
