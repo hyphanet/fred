@@ -144,7 +144,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(titleCountString + " Darknet Peers of " + node.getMyName(), ctx);
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(titleCountString + " Friends of " + node.getMyName(), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		// FIXME! We need some nice images
@@ -358,7 +358,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
-			peerTableInfoboxHeader.addChild("#", "My peers");
+			peerTableInfoboxHeader.addChild("#", "My friends");
 			if (advancedModeEnabled) {
 				if (!path.endsWith("displaymessagetypes.html")) {
 					peerTableInfoboxHeader.addChild("#", " ");
