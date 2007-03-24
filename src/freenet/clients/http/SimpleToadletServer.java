@@ -244,9 +244,6 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyPortCallback());
 		fproxyConfig.register("bindTo", "127.0.0.1", configItemOrder++, true, false, "IP address to bind to", "IP address to bind to",
 				new FProxyBindtoCallback());
-		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, false, "Allowed hosts", 
-				"Hostnames or IP addresses that are allowed to connect to FProxy. " +
-				"May be a comma-separated list of single IPs and CIDR masked IPs like 192.168.0.0/24. ", new FProxyAllowedHostsCallback());
 		fproxyConfig.register("css", "clean", configItemOrder++, false, false, "CSS Name", "Name of the CSS FProxy should use "+themes.toString(),
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, false, false, "Enable Advanced Mode?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
@@ -264,10 +261,13 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 					else	SimpleToadletServer.isPanicButtonToBeShown = value;
 				}
 		});
+		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, false, "Allowed hosts", 
+				"Hostnames or IP addresses that are allowed to connect to FProxy. " +
+				"May be a comma-separated list of single IPs and CIDR masked IPs like 192.168.0.0/24. ",
+				new FProxyAllowedHostsCallback());
 		fproxyConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "Hosts having a full access to Fproxy (read warning)", 
-				"Hosts allowed full access (i.e. change config settings, restart, etc) to the node" +
- 				"WARNING: Anyone from these hosts can shut down the node, upload files from disk, download files to the download directory... " +
-				"Be very careful who you give full fproxy access to!",
+				"Hosts granted full access (i.e. change config settings, restart, access hard disk, etc) to the node" +
+ 				"WARNING: Be very careful who you give full fproxy access to!",
 				new StringCallback() {
 
 					public String get() {
