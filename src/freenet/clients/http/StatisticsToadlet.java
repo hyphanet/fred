@@ -634,7 +634,7 @@ public class StatisticsToadlet extends Toadlet {
 			}
 			
 		});
-		for(int i=0;i<bunches.length;i++) {
+		for(int i=0;i<14;i++) { // TODO: maybe find something smarter or reorganize the /stats page
 			HTMLNode row = threadUsageList.addChild("tr");
 			row.addChild("td", Integer.toString(bunches[i].count));
 			row.addChild("td", bunches[i].name);
