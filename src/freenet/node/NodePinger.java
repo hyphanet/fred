@@ -26,23 +26,14 @@ public class NodePinger implements Runnable {
 	}
 
 	void start() {
-		Logger.normal(this, "Starting NodePinger");
-		Thread t = new Thread(this, "Node pinger");
-		t.setDaemon(true);
-		t.start();
+		run();
 	}
 	
 	final Node node;
 	
 	public void run() {
-		while(true) {
-			try {
-				Thread.sleep(200);
-			} catch (InterruptedException e) {
-				// Ignore
-			}
-			recalculateMean(node.peers.connectedPeers);
-		}
+		node.ps.queueTimedJob(this, 200);
+		recalculateMean(node.peers.connectedPeers);
 	}
 
 	/** Recalculate the mean ping time */
