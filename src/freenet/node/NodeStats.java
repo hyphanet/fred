@@ -51,7 +51,6 @@ public class NodeStats implements Persistable {
 	public static final int MAX_INTERREQUEST_TIME = 10*1000;
 
 	private final Node node;
-	private Thread myMemoryCheckerThread;
 	private MemoryChecker myMemoryChecker;
 	public final PeerManager peers;
 	
@@ -135,6 +134,10 @@ public class NodeStats implements Persistable {
 	
 	final NodePinger nodePinger;
 
+	// Enable this if you run into hard to debug OOMs.
+	// Disabled to prevent long pauses every 30 seconds.
+	private int aggressiveGCModificator = -1 /*250*/;
+
 	// Peers stats
 	/** Next time to update PeerManagerUserAlert stats */
 	private long nextPeerManagerUserAlertStatsUpdateTime = -1;
@@ -175,34 +178,38 @@ public class NodeStats implements Persistable {
 		});
 		threadLimit = statsConfig.getInt("threadLimit");
 		
-		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "Enable the Memory checking thread", "Enable the memory checking thread", 
+		// Yes it could be in seconds insteed of multiples of 0.12, but we don't want people to play with it :)
+		statsConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, false, "AggressiveGC modificator", "Enables the user to tweak the time in between GC and forced finalization. SHOULD NOT BE CHANGED unless you know what you're doing! -1 means : disable forced call to System.gc() and System.runFinalization()",
+				new IntCallback() {
+					public int get() {
+						return aggressiveGCModificator;
+					}
+					public void set(int val) throws InvalidConfigValueException {
+						if(val == get()) return;
+						Logger.normal(this, "Changing aggressiveGCModificator to "+val);
+						aggressiveGCModificator = val;
+					}
+		});
+		aggressiveGCModificator = statsConfig.getInt("aggressiveGC");
+		
+		myMemoryChecker = new MemoryChecker(node.ps, aggressiveGCModificator);
+		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "Enable the Memory check", "Enable the memory check (writes a message in logfile, mandatory for aggressiveGCModificator to have any effect!)", 
 				new BooleanCallback(){
 					public boolean get() {
-						return (myMemoryCheckerThread != null);
+						return myMemoryChecker.isRunning();
 					}
 
 					public void set(boolean val) throws InvalidConfigValueException {
 						if(val == get()) return;
-						if(val == false){
+						
+						if(val)
+							myMemoryChecker.start();
+						else
 							myMemoryChecker.terminate();
-							myMemoryChecker = null;
-							myMemoryCheckerThread = null;
-						} else {
-							myMemoryChecker = new MemoryChecker();
-							myMemoryCheckerThread = new Thread(myMemoryChecker, "Memory checker");
-							myMemoryCheckerThread.setPriority(Thread.MAX_PRIORITY);
-							myMemoryCheckerThread.setDaemon(true);
-							myMemoryCheckerThread.start();
-						}
 					}
 		});
-		
-		if(statsConfig.getBoolean("memoryChecker")){
-			myMemoryChecker = new MemoryChecker();
-			myMemoryCheckerThread = new Thread(myMemoryChecker, "Memory checker");
-			myMemoryCheckerThread.setPriority(Thread.MAX_PRIORITY);
-			myMemoryCheckerThread.setDaemon(true);
-		}
+		if(statsConfig.getBoolean("memoryChecker"))
+			myMemoryChecker.start();
 
 		statsConfig.register("freeHeapBytesThreshold", "5M", sortOrder++, true, true, "Free heap bytes threshold", "The node will try to keep it's free heap bytes above the threshold by refusing new requests",
 				new LongCallback() {

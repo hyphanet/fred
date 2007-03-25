@@ -177,10 +177,6 @@ public class Node {
 	/** Log config handler */
 	public static LoggingConfigHandler logConfigHandler;
 	
-	// Enable this if you run into hard to debug OOMs.
-	// Disabled to prevent long pauses every 30 seconds.
-	static int aggressiveGCModificator = -1 /*250*/;
-	
 	/** If true, local requests and inserts aren't cached.
 	 * This opens up a glaring vulnerability; connected nodes
 	 * can then probe the store, and if the node doesn't have the
@@ -749,20 +745,6 @@ public class Node {
 		// FIXME maybe these should persist? They need to be private.
 		decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
 		decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
-		
-		nodeConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, false, "AggressiveGC modificator", "Enables the user to tweak the time in between GC and forced finalization. SHOULD NOT BE CHANGED unless you know what you're doing! -1 means : disable forced call to System.gc() and System.runFinalization()",
-				new IntCallback() {
-					public int get() {
-						return aggressiveGCModificator;
-					}
-					public void set(int val) throws InvalidConfigValueException {
-						if(val == get()) return;
-						Logger.normal(this, "Changing aggressiveGCModificator to "+val);
-						aggressiveGCModificator = val;
-					}
-		});
-
-		aggressiveGCModificator = nodeConfig.getInt("aggressiveGC");
 		
 		// FIXME maybe these configs should actually be under a node.ip subconfig?
 		ipDetector = new NodeIPDetector(this);
