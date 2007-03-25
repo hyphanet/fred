@@ -18,6 +18,7 @@ import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
+import freenet.support.api.LongCallback;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 
@@ -25,12 +26,6 @@ import freenet.support.math.TimeDecayingRunningAverage;
  * to stuff required to implement that. */
 public class NodeStats implements Persistable {
 
-	/** Minimum free heap memory bytes required to accept a request (perhaps fewer OOMs this way) */
-	public static final long MIN_FREE_HEAP_BYTES_FOR_ROUTING_SUCCESS = 3L * 1024 * 1024;  // 3 MiB
-	
-	/** Minimum free heap memory percentage required to accept a request (perhaps fewer OOMs this way) */
-	public static final double MIN_FREE_HEAP_PERCENT_FOR_ROUTING_SUCCESS = 0.01;  // 1%
-	
 	/** Sub-max ping time. If ping is greater than this, we reject some requests. */
 	public static final long SUB_MAX_PING_TIME = 700;
 	/** Maximum overall average ping time. If ping is greater than this,
@@ -134,6 +129,10 @@ public class NodeStats implements Persistable {
 	public final ThreadGroup rootThreadGroup;
 	private int threadLimit;
 	
+	// Free heap memory threshold stuffs
+	private long freeHeapBytesThreshold;
+	private int freeHeapPercentThreshold;
+	
 	final NodePinger nodePinger;
 
 	// Peers stats
@@ -170,7 +169,7 @@ public class NodeStats implements Persistable {
 					public void set(int val) throws InvalidConfigValueException {
 						if(val == get()) return;
 						if(val < 100)
-							throw new InvalidConfigValueException("This value is to low for that setting, increase it!");
+							throw new InvalidConfigValueException("This value is too low for that setting, increase it!");
 						threadLimit = val;
 					}
 		});
@@ -204,6 +203,36 @@ public class NodeStats implements Persistable {
 			myMemoryCheckerThread.setPriority(Thread.MAX_PRIORITY);
 			myMemoryCheckerThread.setDaemon(true);
 		}
+
+		statsConfig.register("freeHeapBytesThreshold", "5M", sortOrder++, true, true, "Free heap bytes threshold", "The node will try to keep it's free heap bytes above the threshold by refusing new requests",
+				new LongCallback() {
+					public long get() {
+						return freeHeapBytesThreshold;
+					}
+					public void set(long val) throws InvalidConfigValueException {
+						if(val == get()) return;
+						if(val < 0)
+							throw new InvalidConfigValueException("This value is too low for that setting, increase it!");
+						freeHeapBytesThreshold = val;
+					}
+		});
+		freeHeapBytesThreshold = statsConfig.getLong("freeHeapBytesThreshold");
+
+		statsConfig.register("freeHeapPercentThreshold", "5", sortOrder++, true, true, "Free heap precent threshold", "The node will try to keep it's free heap precentage (of max heap bytes allowed) above the threshold by refusing new requests",
+				new IntCallback() {
+					public int get() {
+						return freeHeapPercentThreshold;
+					}
+					public void set(int val) throws InvalidConfigValueException {
+						if(val == get()) return;
+						if(val < 0)
+							throw new InvalidConfigValueException("This value is too low for that setting, increase it!");
+						if(val > 100)
+							throw new InvalidConfigValueException("This value is too high for that setting, increase it!");
+						freeHeapPercentThreshold = val;
+					}
+		});
+		freeHeapPercentThreshold = statsConfig.getInt("freeHeapPercentThreshold");
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 
 				"File to store node statistics in", "File to store node statistics in (not client statistics, and these are used to decide whether to accept requests so please don't delete)");
@@ -266,8 +295,9 @@ public class NodeStats implements Persistable {
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
 		if(logMINOR) dumpByteCostAverages();
 		
-		if(threadLimit < getActiveThreadCount())
-			return "Accepting the request would mean going above the maximum number of allowed threads";
+		int threadCount = getActiveThreadCount();
+		if(threadLimit < threadCount)
+			return ">threadLimit ("+threadCount+'/'+threadLimit+')';
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		
@@ -382,15 +412,16 @@ public class NodeStats implements Persistable {
 		if(maxHeapMemory < Long.MAX_VALUE) { // would mean unlimited
 			freeHeapMemory = maxHeapMemory - (totalHeapMemory - freeHeapMemory);
 		}
-		if(freeHeapMemory < MIN_FREE_HEAP_BYTES_FOR_ROUTING_SUCCESS) {
+		if(freeHeapMemory < freeHeapBytesThreshold) {
 			pInstantRejectIncoming.report(1.0);
-			return "<MIN_FREE_HEAP_BYTES_FOR_ROUTING_SUCCESS ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+')';
+			return "<freeHeapBytesThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+')';
 		}
 		double percentFreeHeapMemoryOfMax = ((double) freeHeapMemory) / ((double) maxHeapMemory);
-		if(percentFreeHeapMemoryOfMax < MIN_FREE_HEAP_PERCENT_FOR_ROUTING_SUCCESS) {
+		double freeHeapPercentThresholdDouble = ((double) freeHeapPercentThreshold) / ((double) 100);
+		if(percentFreeHeapMemoryOfMax < freeHeapPercentThresholdDouble) {
 			pInstantRejectIncoming.report(1.0);
 			DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
-			return "<MIN_FREE_HEAP_PERCENT_FOR_ROUTING_SUCCESS ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+" ("+fix3p1pct.format(percentFreeHeapMemoryOfMax)+"))";
+			return "<freeHeapPercentThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+" ("+fix3p1pct.format(percentFreeHeapMemoryOfMax)+"))";
 		}
 
 		synchronized(this) {
