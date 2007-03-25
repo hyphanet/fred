@@ -1,5 +1,6 @@
 package freenet.node;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
@@ -351,15 +352,23 @@ public class TextModeClientInterface implements Runnable {
     	out.flush();
     	return false;
     }else if(uline.startsWith("FILTER:")) {
+    	line = line.substring("FILTER:".length());
+        while((line.length() > 0) && (line.charAt(0) == ' '))
+            line = line.substring(1);
+        while((line.length() > 0) && (line.charAt(line.length()-1) == ' '))
+            line = line.substring(0, line.length()-2);
     	outsb.append("Here is the result:\r\n");
+    	
     	final String content = readLines(reader, false);
     	final Bucket data = new ArrayBucket(content.getBytes("UTF-8"));
     	try {
     		FilterOutput output = ContentFilter.filter(data, new ArrayBucketFactory(), "text/html", new URI("http://127.0.0.1:8888/"), null);
-    		BufferedReader br = new BufferedReader(new InputStreamReader(output.data.getInputStream()));
-    		String result = readLines(br, false);
+    		
+    		BufferedInputStream bis = new BufferedInputStream(output.data.getInputStream());
+    		while(bis.available() > 0){
+    			outsb.append((char)bis.read());
+    		}
     		output.data.free();
-    		outsb.append(result);
     	} catch (IOException e) {
     		outsb.append("Bucket error?: " + e.getMessage());
     		Logger.error(this, "Bucket error?: " + e, e);
