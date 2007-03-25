@@ -3,11 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import java.io.IOException;
-
-import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
-
 /**
  * FEC (forward error correction) handler.
  * I didn't keep the old freenet.client.FEC* etc as it seemed grossly overengineered with

@@ -8,7 +8,6 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
-import freenet.client.StandardOnionFECCodec;
 import freenet.client.StandardOnionFECCodec.StandardOnionFECCodecEncoderCallback;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;

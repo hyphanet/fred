@@ -64,7 +64,6 @@ public class ConfigurablePersister extends Persister {
 			}
 		}
 		
-		Persister tp;
 		synchronized(this) {
 			persistTarget = f;
 			persistTemp = tmp;
