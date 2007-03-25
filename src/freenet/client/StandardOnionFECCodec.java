@@ -392,7 +392,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	
 	public static void addToQueue(FECJob job, StandardOnionFECCodec codec){
 		synchronized (_awaitingJobs) {
-			if((fecRunnerThread == null) || !fecRunnerThread.isAlive()){
+			if(fecRunnerThread == null) {
 				if(fecRunnerThread != null) Logger.error(StandardOnionFECCodec.class, "The callback died!! restarting a new one, please report that error.");
 				fecRunnerThread = new Thread(fecRunner, "FEC Pool");
 				fecRunnerThread.setDaemon(true);
@@ -435,6 +435,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	private static class FECRunner implements Runnable {
 		
 		public void run(){
+			try {
 			while(true){
 				FECJob job = null;
 				try {
@@ -481,6 +482,7 @@ public class StandardOnionFECCodec extends FECCodec {
 					} catch (InterruptedException e) {}
 				}
 			}
+			} finally { fecRunnerThread = null; }
 		}
 	}
 }
