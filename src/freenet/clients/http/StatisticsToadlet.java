@@ -613,6 +613,8 @@ public class StatisticsToadlet extends Toadlet {
 			String name = threads[i].getName();
 			if(name.indexOf(" for ") != -1)
 				name = name.substring(0, name.indexOf(" for "));
+			if(name.indexOf("@") != -1)
+				name = name.substring(0, name.indexOf("@"));
 			ThreadBunch bunch = (ThreadBunch) map.get(name);
 			if(bunch != null) {
 				bunch.count++;
