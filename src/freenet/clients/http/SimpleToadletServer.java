@@ -404,7 +404,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 
 		void start() {
-			Thread t = new Thread(this, toString());
+			Thread t = new Thread(this, "SimpleToadletServer$SocketHandler");
 			t.setDaemon(true);
 			t.start();
 		}
