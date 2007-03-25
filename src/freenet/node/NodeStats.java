@@ -131,7 +131,7 @@ public class NodeStats implements Persistable {
 	protected final Persister persister;
 	
 	// ThreadCounting stuffs
-	private final ThreadGroup rootThreadGroup;
+	public final ThreadGroup rootThreadGroup;
 	private int threadLimit;
 	
 	final NodePinger nodePinger;

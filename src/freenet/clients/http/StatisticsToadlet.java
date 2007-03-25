@@ -7,9 +7,11 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Vector;
 
 import com.sleepycat.je.JEVersion;
 
@@ -562,6 +564,14 @@ public class StatisticsToadlet extends Toadlet {
 				HTMLNode nodeCircleTable = nodeCircleInfobox.addChild("table");
 				addNodeCircle(nodeCircleTable);
 				
+				// thread usage box
+				nextTableCell = overviewTableRow.addChild("td", "class", "first");
+				HTMLNode threadUsageInfobox = nextTableCell.addChild("div", "class", "infobox");
+				threadUsageInfobox.addChild("div", "class", "infobox-header", "Thread usage");
+				HTMLNode threadUsageContent = threadUsageInfobox.addChild("div", "class", "infobox-content");
+				HTMLNode threadUsageList = threadUsageContent.addChild("table", "border", "0");
+				getThreadNames(threadUsageList);
+				
 				// Generate Dumps
 				nextTableCell = overviewTableRow.addChild("td", "class", "first");
 				HTMLNode statGatheringBox =  nextTableCell.addChild(ctx.getPageMaker().getInfobox("Statistic gathering"));
@@ -587,6 +597,57 @@ public class StatisticsToadlet extends Toadlet {
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 	
+	// FIXME this should probably be moved to nodestats so it can be used by FCP??? would have to make ThreadBunch public :<
+	private void getThreadNames(HTMLNode threadUsageList) {
+		int count = 0;
+		Thread[] threads;
+		while(true) {
+			count = Math.max(stats.rootThreadGroup.activeCount(), count);
+			threads = new Thread[count*2+50];
+			stats.rootThreadGroup.enumerate(threads);
+			if(threads[threads.length-1] == null) break;
+		}
+		HashMap map = new HashMap();
+		for(int i=0;i<threads.length;i++) {
+			if(threads[i] == null) break;
+			String name = threads[i].getName();
+			if(name.indexOf(" for ") != -1)
+				name = name.substring(0, name.indexOf(" for "));
+			ThreadBunch bunch = (ThreadBunch) map.get(name);
+			if(bunch != null) {
+				bunch.count++;
+			} else {
+				map.put(name, new ThreadBunch(name, 1));
+			}
+		}
+		ThreadBunch[] bunches = (ThreadBunch[]) map.values().toArray(new ThreadBunch[map.size()]);
+		Arrays.sort(bunches, new Comparator() {
+
+			public int compare(Object arg0, Object arg1) {
+				ThreadBunch b0 = (ThreadBunch) arg0;
+				ThreadBunch b1 = (ThreadBunch) arg1;
+				if(b0.count > b1.count) return -1;
+				if(b0.count < b1.count) return 1;
+				return b0.name.compareTo(b1.name);
+			}
+			
+		});
+		for(int i=0;i<bunches.length;i++) {
+			HTMLNode row = threadUsageList.addChild("tr");
+			row.addChild("td", Integer.toString(bunches[i].count));
+			row.addChild("td", bunches[i].name);
+		}
+	}
+	
+	class ThreadBunch {
+		public ThreadBunch(String name2, int i) {
+			this.name = name2;
+			this.count = i;
+		}
+		String name;
+		int count;
+	}
+
 	private final static int PEER_CIRCLE_RADIUS = 100;
 	private final static int PEER_CIRCLE_INNER_RADIUS = 60;
 	private final static int PEER_CIRCLE_ADDITIONAL_FREE_SPACE = 10;
