@@ -424,7 +424,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback,
 				// Encode blocks
 				synchronized(this) {
 					if(!encoded){
-						splitfileAlgo.addToQueue(new FECJob(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false));
+						splitfileAlgo.addToQueue(new FECJob(splitfileAlgo, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false));
 					}
 				}				
 				fin = false;

@@ -195,7 +195,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
 		
 		if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
-			codec.addToQueue(new FECJob(dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetchContext.bucketFactory, this, true));
+			codec.addToQueue(new FECJob(codec, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetchContext.bucketFactory, this, true));
 			// Now have all the data blocks (not necessarily all the check blocks)
 		}
 	}
@@ -233,7 +233,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 
 		// Encode any check blocks we don't have
 		if(codec != null) {
-			codec.addToQueue(new FECJob(dataBuckets, checkBuckets, 32768, fetchContext.bucketFactory, this, false));
+			codec.addToQueue(new FECJob(codec, dataBuckets, checkBuckets, 32768, fetchContext.bucketFactory, this, false));
 		}
 	}
 

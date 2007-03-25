@@ -387,10 +387,14 @@ public class StandardOnionFECCodec extends FECCodec {
 	 * 
 	 * @param FECJob
 	 */
-	public void addToQueue(FECJob job){
+	public void addToQueue(FECJob job) {
+		addToQueue(job, this);
+	}
+	
+	public static void addToQueue(FECJob job, StandardOnionFECCodec codec){
 		synchronized (_awaitingJobs) {
 			if((fecRunnerThread == null) || !fecRunnerThread.isAlive()){
-				if(fecRunnerThread != null) Logger.error(this, "The callback died!! restarting a new one, please report that error.");
+				if(fecRunnerThread != null) Logger.error(StandardOnionFECCodec.class, "The callback died!! restarting a new one, please report that error.");
 				fecRunnerThread = new Thread(fecRunner, "FEC Pool");
 				fecRunnerThread.setDaemon(true);
 				fecRunnerThread.setPriority(Thread.MIN_PRIORITY);
@@ -400,15 +404,15 @@ public class StandardOnionFECCodec extends FECCodec {
 			
 			_awaitingJobs.addFirst(job);
 		}
-		if(logMINOR) Logger.minor(this, "Adding a new job to the queue (" +_awaitingJobs.size() + ").");
+		if(logMINOR) Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue (" +_awaitingJobs.size() + ").");
 		synchronized (fecRunner){
 			fecRunner.notifyAll();
 		}
 	}
 	
-	private final LinkedList _awaitingJobs = new LinkedList();
-	private final FECRunner fecRunner = new FECRunner();
-	private Thread fecRunnerThread;
+	private static final LinkedList _awaitingJobs = new LinkedList();
+	private static final FECRunner fecRunner = new FECRunner();
+	private static Thread fecRunnerThread;
 	
 	/**
 	 * An interface wich has to be implemented by FECJob submitters
@@ -429,7 +433,8 @@ public class StandardOnionFECCodec extends FECCodec {
 	 *
 	 *	TODO: maybe it ought to start more than one thread on SMP system ? (take care, it's memory consumpsive)
 	 */
-	private class FECRunner implements Runnable {		
+	private static class FECRunner implements Runnable {
+		
 		public void run(){
 			while(true){
 				FECJob job = null;
@@ -441,10 +446,12 @@ public class StandardOnionFECCodec extends FECCodec {
 				
 					// Encode it
 					try {
+						// FIXME refactor to eliminate casting and have a single FECRunner for all codecs
+						StandardOnionFECCodec codec = (StandardOnionFECCodec) job.codec;
 						if(job.isADecodingJob) {
-							realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength, job.bucketFactory);
+							codec.realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength, job.bucketFactory);
 						} else {
-							realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
+							codec.realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
 							// Update SplitFileBlocks from buckets if necessary
 							if((job.dataBlockStatus != null) || (job.checkBlockStatus != null)){
 								for(int i=0;i<job.dataBlocks.length;i++)

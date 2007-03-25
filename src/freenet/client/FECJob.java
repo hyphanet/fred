@@ -14,6 +14,7 @@ import freenet.support.api.BucketFactory;
  */
 public class FECJob {
 	
+	final FECCodec codec;
 	final Bucket[] dataBlocks, checkBlocks;
 	final SplitfileBlock[] dataBlockStatus, checkBlockStatus;
 	final BucketFactory bucketFactory;
@@ -21,7 +22,8 @@ public class FECJob {
 	final StandardOnionFECCodecEncoderCallback callback;
 	final boolean isADecodingJob;
 	
-	public FECJob(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus,  int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback, boolean isADecodingJob) {
+	public FECJob(FECCodec codec, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus,  int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback, boolean isADecodingJob) {
+		this.codec = codec;
 		this.dataBlockStatus = dataBlockStatus;
 		this.checkBlockStatus = checkBlockStatus;
 		
@@ -38,7 +40,8 @@ public class FECJob {
 		this.isADecodingJob = isADecodingJob;			
 	}
 	
-	public FECJob(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback, boolean isADecodingJob) {
+	public FECJob(FECCodec codec, Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback, boolean isADecodingJob) {
+		this.codec = codec;
 		this.dataBlocks = dataBlocks;
 		this.checkBlocks = checkBlocks;
 		this.dataBlockStatus = null;
