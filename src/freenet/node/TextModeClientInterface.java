@@ -581,7 +581,7 @@ public class TextModeClientInterface implements Runnable {
             	}
             	
             	// Guess MIME type
-                outsb.append("Using MIME type: ").append(mimeType).append("\r\n");
+                outsb.append(" using MIME type: ").append(mimeType).append("\r\n");
             	if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
             		mimeType = ""; // don't need to override it
             	
