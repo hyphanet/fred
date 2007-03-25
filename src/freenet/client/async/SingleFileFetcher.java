@@ -406,7 +406,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
 						decompressors, clientMetadata, actx, recursionLevel, returnBucket, token);
 				parent.onTransition(this, sf);
-				sf.schedule();
+				sf.scheduleOffThread();
 				rcb.onBlockSetFinished(this);
 				// SplitFile will now run.
 				// Then it will return data to rcd.

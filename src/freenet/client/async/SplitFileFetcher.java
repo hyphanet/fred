@@ -282,4 +282,14 @@ public class SplitFileFetcher implements ClientGetState {
 		return token;
 	}
 
+	public void scheduleOffThread() {
+		Thread t = new Thread(new Runnable() {
+			public void run() {
+				schedule();
+			}
+		}, "Splitfile scheduler thread for "+this);
+		t.setDaemon(true);
+		t.start();
+	}
+
 }
