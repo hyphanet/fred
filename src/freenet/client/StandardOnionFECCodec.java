@@ -108,7 +108,6 @@ public class StandardOnionFECCodec extends FECCodec {
 		// fec = new PureCode(k,n);
 		// Crashes are caused by bugs which cause to use 320/128 etc. - n > 256, k < 256.
 
-		fecRunnerThread = null;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
