@@ -235,8 +235,8 @@ public class NodeStats implements Persistable {
 		freeHeapPercentThreshold = statsConfig.getInt("freeHeapPercentThreshold");
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 
-				"File to store node statistics in", "File to store node statistics in (not client statistics, and these are used to decide whether to accept requests so please don't delete)");
-		
+				"File to store node statistics in", "File to store node statistics in (not client statistics, and these are used to decide whether to accept requests so please don't delete)", node.ps);
+
 		SimpleFieldSet throttleFS = persister.read();
 		
 		if(throttleFS == null)

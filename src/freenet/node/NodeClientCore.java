@@ -122,7 +122,7 @@ public class NodeClientCore implements Persistable {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false, 
-				"File to store client statistics in", "File to store client throttling statistics in (used to decide how often to send requests)");
+				"File to store client statistics in", "File to store client throttling statistics in (used to decide how often to send requests)", node.ps);
 		
 		SimpleFieldSet throttleFS = persister.read();
 		

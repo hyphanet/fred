@@ -16,7 +16,6 @@ import freenet.client.FetchException;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
-import freenet.client.StandardOnionFECCodec;
 import freenet.client.StandardOnionFECCodec.StandardOnionFECCodecEncoderCallback;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;

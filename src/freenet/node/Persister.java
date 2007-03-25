@@ -15,18 +15,21 @@ import freenet.support.SimpleFieldSet;
 
 class Persister implements Runnable {
 
-	Persister(Persistable t, File persistTemp, File persistTarget) {
+	Persister(Persistable t, File persistTemp, File persistTarget, PacketSender ps) {
 		this.persistable = t;
 		this.persistTemp = persistTemp;
 		this.persistTarget = persistTarget;
+		this.ps = ps;
 	}
 	
 	// Subclass must set the others later
-	protected Persister(Persistable t) {
+	protected Persister(Persistable t, PacketSender ps) {
 		this.persistable = t;
+		this.ps = ps;
 	}
 	
 	final Persistable persistable;
+	private final PacketSender ps;
 	File persistTemp;
 	File persistTarget;
 	
@@ -37,26 +40,18 @@ class Persister implements Runnable {
 	}
 	
 	public void run() {
-		while(true) {
-			try {
-				persistThrottle();
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Will restart ThrottlePersister...");
-			} catch (Throwable t) {
-				Logger.error(this, "Caught in ThrottlePersister: "+t, t);
-				System.err.println("Caught in ThrottlePersister: "+t);
-				t.printStackTrace();
-				System.err.println("Will restart ThrottlePersister...");
-			}
-			try {
-				synchronized(this) {
-					wait(60*1000);
-				}
-			} catch (InterruptedException e) {
-				// Maybe it's time to wake up?
-			}
+		try {
+			persistThrottle();
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
+			System.err.println("Will restart ThrottlePersister...");
+		} catch (Throwable t) {
+			Logger.error(this, "Caught in ThrottlePersister: "+t, t);
+			System.err.println("Caught in ThrottlePersister: "+t);
+			t.printStackTrace();
+			System.err.println("Will restart ThrottlePersister...");
 		}
+		ps.queueTimedJob(this, 60*1000);
 	}
 	
 	public void persistThrottle() {
@@ -125,9 +120,7 @@ class Persister implements Runnable {
 	}
 
 	public void start() {
-		Thread t = new Thread(this, "Persister for "+persistable);
-		t.setDaemon(true);
-		t.start();
+		run();
 	}
 
 }
