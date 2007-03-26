@@ -536,6 +536,9 @@ public class FProxyToadlet extends Toadlet {
 				referer = "/" + furi.toString();
 				if(type != null && type.length() > 0)
 					referer += "?type=" + type;
+			} catch (MalformedURLException e) {
+				referer = "/";
+				Logger.normal(this, "Caught MalformedURLException on the referer : "+e.getMessage());
 			} catch (Throwable t) {
 				Logger.error(this, "Caught handling referrer: "+t+" for "+referer, t);
 				referer = null;
