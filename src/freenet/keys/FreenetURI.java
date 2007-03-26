@@ -217,7 +217,8 @@ public class FreenetURI implements Cloneable{
 	public FreenetURI(String URI) throws MalformedURLException {
 		if (URI == null) {
 			throw new MalformedURLException("No URI specified");
-		}
+		} else
+			URI = URI.trim();
 		
 		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0) {
 			// Encoded URL?
