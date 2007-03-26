@@ -332,21 +332,19 @@ public class SplitFileInserterSegment implements PutCompletionCallback,
 			if (data == null && finished) {
 				// Ignore
 				if (logMINOR)
-					Logger.minor(this, "Could not save to disk: null");
+					Logger.minor(this, "Could not save to disk bucket: null");
 			} else if (data instanceof SerializableToFieldSetBucket) {
-				SimpleFieldSet tmp = ((SerializableToFieldSetBucket) data)
-						.toFieldSet();
+				SimpleFieldSet tmp = ((SerializableToFieldSetBucket) data).toFieldSet();
 				if (tmp == null) {
 					if (logMINOR)
-						Logger.minor(this, "Could not save to disk: " + data);
+						Logger.minor(this, "Could not save to disk data: " + data);
 					return null;
 				}
 				block.put("Data", tmp);
 			} else {
 				if (logMINOR)
 					Logger.minor(this,
-							"Could not save to disk (not serializable to fieldset): "
-									+ data);
+							"Could not save to disk (not serializable to fieldset): " + data);
 				return null;
 			}
 			if (!block.isEmpty())
