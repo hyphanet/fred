@@ -7,8 +7,8 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -171,7 +171,7 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
 			HTMLNode overviewTableRow = overviewTable.addChild("tr");
 			HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
-
+			
 			/* node status overview box */
 			if(advancedModeEnabled) {
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -585,7 +585,7 @@ public class StatisticsToadlet extends Toadlet {
 				nodeCircleInfobox.addChild("div", "class", "infobox-header", "Node\u00a0Location\u00a0Distribution (w/Swap\u00a0Age)");
 				HTMLNode nodeCircleTable = nodeCircleInfobox.addChild("table");
 				addNodeCircle(nodeCircleTable);
-				nextTableCell = overviewTableRow.addChild("td");
+				nextTableCell = overviewTableRow.addChild("td");	
 				
 				// thread usage box
 				HTMLNode threadUsageInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -593,7 +593,7 @@ public class StatisticsToadlet extends Toadlet {
 				HTMLNode threadUsageContent = threadUsageInfobox.addChild("div", "class", "infobox-content");
 				HTMLNode threadUsageList = threadUsageContent.addChild("ul");
 				getThreadNames(threadUsageList);
-					   	
+				
 			}
 		}
 
@@ -610,7 +610,7 @@ public class StatisticsToadlet extends Toadlet {
 			stats.rootThreadGroup.enumerate(threads);
 			if(threads[threads.length-1] == null) break;
 		}
-		HashMap map = new HashMap();
+		LinkedHashMap map = new LinkedHashMap();
 		int totalCount = 0;
 		for(int i=0;i<threads.length;i++) {
 			if(threads[i] == null) break;
@@ -640,8 +640,7 @@ public class StatisticsToadlet extends Toadlet {
 			
 		});
 		double thisThreadPercentOfTotal;
-		int bunchesLength = bunches.length;
-		for(int i=0;i<14 && i<bunches.length;i++) { // TODO: maybe find something smarter or reorganize the /stats page
+		for(int i=0; i<bunches.length; i++) {
 			thisThreadPercentOfTotal = ((double) bunches[i].count) / ((double) totalCount);
 			threadUsageList.addChild("li", "" + bunches[i].name + ":\u00a0" + Integer.toString(bunches[i].count) + "\u00a0(" + fix3p1pct.format(thisThreadPercentOfTotal) + ')');
 		}
