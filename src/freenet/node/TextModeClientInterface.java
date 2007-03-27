@@ -216,11 +216,7 @@ public class TextModeClientInterface implements Runnable {
         	Logger.minor(this, "Command: "+line);
         if(uline.startsWith("GET:")) {
             // Should have a key next
-            String key = line.substring("GET:".length());
-            while((key.length() > 0) && (key.charAt(0) == ' '))
-                key = key.substring(1);
-            while((key.length() > 0) && (key.charAt(key.length()-1) == ' '))
-                key = key.substring(0, key.length()-2);
+            String key = line.substring("GET:".length()).trim();
             Logger.normal(this, "Key: "+key);
             FreenetURI uri;
             try {
@@ -275,11 +271,7 @@ public class TextModeClientInterface implements Runnable {
 			}
         } else if(uline.startsWith("GETFILE:")) {
             // Should have a key next
-            String key = line.substring("GETFILE:".length());
-            while((key.length() > 0) && (key.charAt(0) == ' '))
-                key = key.substring(1);
-            while((key.length() > 0) && (key.charAt(key.length()-1) == ' '))
-                key = key.substring(0, key.length()-2);
+            String key = line.substring("GETFILE:".length()).trim();
             Logger.normal(this, "Key: "+key);
             FreenetURI uri;
             try {
@@ -352,11 +344,7 @@ public class TextModeClientInterface implements Runnable {
     	out.flush();
     	return false;
     }else if(uline.startsWith("FILTER:")) {
-    	line = line.substring("FILTER:".length());
-        while((line.length() > 0) && (line.charAt(0) == ' '))
-            line = line.substring(1);
-        while((line.length() > 0) && (line.charAt(line.length()-1) == ' '))
-            line = line.substring(0, line.length()-2);
+    	line = line.substring("FILTER:".length()).trim();
     	outsb.append("Here is the result:\r\n");
     	
     	final String content = readLines(reader, false);
@@ -447,13 +435,9 @@ public class TextModeClientInterface implements Runnable {
 		return false;
         } else if(uline.startsWith("PUT:") || (getCHKOnly = uline.startsWith("GETCHK:"))) {
         	if(getCHKOnly)
-        		line = line.substring(("GETCHK:").length());
+        		line = line.substring(("GETCHK:").length()).trim();
         	else
-        		line = line.substring("PUT:".length());
-            while((line.length() > 0) && (line.charAt(0) == ' '))
-                line = line.substring(1);
-            while((line.length() > 0) && (line.charAt(line.length()-1) == ' '))
-                line = line.substring(0, line.length()-2);
+        		line = line.substring("PUT:".length()).trim();
             String content;
             if(line.length() > 0) {
                 // Single line insert
@@ -567,14 +551,10 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PUTFILE:") || (getCHKOnly = uline.startsWith("GETCHKFILE:"))) {
             // Just insert to local store
         	if(getCHKOnly) {
-        		line = line.substring(("GETCHKFILE:").length());
+        		line = line.substring(("GETCHKFILE:").length()).trim();
         	} else {
-        		line = line.substring("PUTFILE:".length());
+        		line = line.substring("PUTFILE:".length()).trim();
         	}
-            while((line.length() > 0) && (line.charAt(0) == ' '))
-                line = line.substring(1);
-            while((line.length() > 0) && (line.charAt(line.length()-1) == ' '))
-                line = line.substring(0, line.length()-2);
             String mimeType = DefaultMIMETypes.guessMIMEType(line, false);
             if (line.indexOf('#') > -1) {
             	String[] splittedLine = line.split("#");
@@ -675,14 +655,10 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("ADDPEER:") || uline.startsWith("CONNECT:")) {
             String key = null;
             if(uline.startsWith("CONNECT:")) {
-                key = line.substring("CONNECT:".length());
+                key = line.substring("CONNECT:".length()).trim();
             } else {
-                key = line.substring("ADDPEER:".length());
+                key = line.substring("ADDPEER:".length()).trim();
             }
-            while((key.length() > 0) && (key.charAt(0) == ' '))
-                key = key.substring(1);
-            while((key.length() > 0) && (key.charAt(key.length()-1) == ' '))
-                key = key.substring(0, key.length()-2);
             
             String content = null;
             if(key.length() > 0) {
@@ -711,11 +687,7 @@ public class TextModeClientInterface implements Runnable {
         
         } else if(uline.startsWith("NAME:")) {
             outsb.append("Node name currently: ").append(n.getMyName());
-            String key = line.substring("NAME:".length());
-            while((key.length() > 0) && (key.charAt(0) == ' '))
-                key = key.substring(1);
-            while((key.length() > 0) && (key.charAt(key.length()-1) == ' '))
-                key = key.substring(0, key.length()-2);
+            String key = line.substring("NAME:".length()).trim();
             outsb.append("New name: ").append(key);
             
             try{
