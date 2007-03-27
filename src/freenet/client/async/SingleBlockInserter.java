@@ -64,6 +64,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		this.uri = uri;
 		this.compressionCodec = compressionCodec;
 		this.sourceData = data;
+		if(sourceData == null) throw new NullPointerException();
 		this.isMetadata = isMetadata;
 		this.sourceLength = sourceLength;
 		this.getCHKOnly = getCHKOnly;
