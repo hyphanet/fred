@@ -643,4 +643,18 @@ public class SimpleFieldSet {
 			putAppend(key, Integer.toString(value[i]));
 	}
 
+	public int[] getIntArray(String key) {
+		String[] strings = getAll(key);
+		int[] ret = new int[strings.length];
+		for(int i=0;i<strings.length;i++) {
+			try {
+				ret[i] = Integer.parseInt(strings[i]);
+			} catch (NumberFormatException e) {
+				Logger.error(this, "Cannot parse "+strings[i]+" : "+e, e);
+				return null;
+			}
+		}
+		return ret;
+	}
+
 }

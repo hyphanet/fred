@@ -169,6 +169,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /** Hash of node identity. Used as setup key. */
     final byte[] identityHash;
     
+    /** Negotiation types supported */
+    int[] negTypes;
+    
     /** Integer hash of node identity. Used as hashCode(). */
     final int hashCode;
     
@@ -399,6 +402,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         } else {
         	detectedPeer = (Peer) nominalPeer.firstElement();
         }
+        
+        negTypes = fs.getIntArray("auth.negTypes");
+        if(negTypes == null)
+        	negTypes = new int[] { 0 };
         
         /* Read the DSA key material for the peer */
         try {
@@ -1776,6 +1783,14 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         
         if(logMINOR) Logger.minor(this, "Parsed successfully; changedAnything = "+changedAnything);
         
+        int[] newNegTypes = fs.getIntArray("auth.negTypes");
+        if(newNegTypes == null)
+        	newNegTypes = new int[] { 0 };
+        if(!Arrays.equals(negTypes, newNegTypes)) {
+        	changedAnything = true;
+        	negTypes = newNegTypes;
+        }
+        
         if(parseARK(fs, false))
         	changedAnything = true;
         if(name != null && !name.equals(myName)) {
@@ -1946,6 +1961,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		for(int i=0;i<nominalPeer.size();i++) {
 			fs.putAppend("physical.udp", nominalPeer.get(i).toString());
 		}
+		fs.put("auth.negTypes", negTypes);
         fs.putSingle("identity", getIdentityString());
         fs.putSingle("location", Double.toString(currentLocation.getValue()));
         fs.putSingle("testnet", Boolean.toString(testnetEnabled));
