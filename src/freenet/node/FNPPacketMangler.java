@@ -1559,4 +1559,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	public void resend(ResendPacketItem item) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {
 		processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks, 0);
 	}
+
+	public static int[] supportedNegTypes() {
+		return new int[] { 0 };
+	}
 }

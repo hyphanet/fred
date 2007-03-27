@@ -1603,11 +1603,15 @@ public class Node {
 	 */
 	SimpleFieldSet exportPublicFieldSet(boolean forSetup) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
+		// IP addresses
 		Peer[] ips = ipDetector.getPrimaryIPAddress();
 		if(ips != null) {
 			for(int i=0;i<ips.length;i++)
 				fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
 		}
+		// Negotiation types
+		int[] negTypes = FNPPacketMangler.supportedNegTypes();
+		fs.put("auth.negTypes", negTypes);
 		fs.putSingle("identity", Base64.encode(myIdentity)); // FIXME !forSetup after 11104 is mandatory
 		fs.put("location", lm.getLocation().getValue()); // FIXME maybe !forSetup; see #943
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
