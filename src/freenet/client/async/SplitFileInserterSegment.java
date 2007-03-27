@@ -464,6 +464,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback,
 		// Start the inserts
 		try {
 			for (int i = 0; i < checkBlockInserters.length; i++) {
+				if(checkBlocks[i] == null) continue;
 				checkBlockInserters[i] = new SingleBlockInserter(parent.parent,
 						checkBlocks[i], (short) -1, FreenetURI.EMPTY_CHK_URI,
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
