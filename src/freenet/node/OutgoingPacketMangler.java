@@ -72,5 +72,10 @@ public interface OutgoingPacketMangler {
 	 * Is a peer disconnected?
 	 */
 	public boolean isDisconnected(PeerContext context);
+	
+	/**
+	 * List of supported negotiation types in preference order (best last)
+	 */
+	public int[] supportedNegTypes();
 
 }

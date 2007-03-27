@@ -1560,7 +1560,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks, 0);
 	}
 
-	public static int[] supportedNegTypes() {
+	public int[] supportedNegTypes() {
 		return new int[] { 0 };
 	}
 }

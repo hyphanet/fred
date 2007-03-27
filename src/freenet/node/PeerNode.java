@@ -3078,4 +3078,21 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			return previousTracker.getThrottle();
 		return null;
 	}
+	
+	
+	public int bestNegType(OutgoingPacketMangler mangler) {
+		int[] hisNegTypes = negTypes;
+		int[] myNegTypes = mangler.supportedNegTypes();
+		int bestNegType = -1;
+		for(int i=0;i<myNegTypes.length;i++) {
+			int negType = myNegTypes[i];
+			for(int j=0;j<hisNegTypes.length;j++) {
+				if(hisNegTypes[j] == negType) {
+					bestNegType = negType;
+					break;
+				}
+			}
+		}
+		return bestNegType;
+	}
 }

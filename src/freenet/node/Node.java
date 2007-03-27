@@ -1610,7 +1610,7 @@ public class Node {
 				fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
 		}
 		// Negotiation types
-		int[] negTypes = FNPPacketMangler.supportedNegTypes();
+		int[] negTypes = packetMangler.supportedNegTypes();
 		fs.put("auth.negTypes", negTypes);
 		fs.putSingle("identity", Base64.encode(myIdentity)); // FIXME !forSetup after 11104 is mandatory
 		fs.put("location", lm.getLocation().getValue()); // FIXME maybe !forSetup; see #943
