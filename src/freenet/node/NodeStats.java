@@ -49,6 +49,9 @@ public class NodeStats implements Persistable {
 	 * block send time.
 	 */
 	public static final int MAX_INTERREQUEST_TIME = 10*1000;
+	
+	/** Fudge factor for high level bandwidth limiting. FIXME should be a long term running average */
+	public static final double FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS = 0.8;
 
 	private final Node node;
 	private MemoryChecker myMemoryChecker;
@@ -828,7 +831,7 @@ public class NodeStats implements Persistable {
 	}
 
 	public void setOutputLimit(int obwLimit) {
-		obwLimit = (obwLimit * 4) / 5; // fudge factor; take into account non-request activity
+		obwLimit *= FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS; // fudge factor; take into account non-request activity
 		requestOutputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  obwLimit, Math.max(obwLimit*60, 32768*20));
 		if(node.inputLimitDefault) {
 			int ibwLimit = obwLimit * 4;
@@ -837,6 +840,7 @@ public class NodeStats implements Persistable {
 	}
 
 	public void setInputLimit(int ibwLimit) {
+		ibwLimit *= FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
 		requestInputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  ibwLimit, Math.max(ibwLimit*60, 32768*20));
 	}
 

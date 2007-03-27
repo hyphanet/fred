@@ -875,7 +875,6 @@ public class Node {
 							} else {
 								if(ibwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
 								inputLimitDefault = false;
-								ibwLimit = ibwLimit * 4 / 5; // fudge factor; take into account non-request activity
 							}
 						}
 						nodeStats.setInputLimit(ibwLimit);
