@@ -1784,7 +1784,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         if(logMINOR) Logger.minor(this, "Parsed successfully; changedAnything = "+changedAnything);
         
         int[] newNegTypes = fs.getIntArray("auth.negTypes");
-        if(newNegTypes == null || negTypes.length == 0)
+        if(newNegTypes == null || newNegTypes.length == 0)
         	newNegTypes = new int[] { 0 };
         if(!Arrays.equals(negTypes, newNegTypes)) {
         	changedAnything = true;
