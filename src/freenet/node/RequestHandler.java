@@ -21,7 +21,7 @@ import freenet.support.Logger;
  * is separated off into RequestSender so we get transfer coalescing
  * and both ends for free. 
  */
-public class RequestHandler implements Runnable, ByteCounter, StatusChangeCallback {
+public class RequestHandler implements ByteCounter, StatusChangeCallback {
 
 	private final static short INITIALIZE = 1;
 	private final static short WAIT_FOR_FIRST_REPLY = 2;
