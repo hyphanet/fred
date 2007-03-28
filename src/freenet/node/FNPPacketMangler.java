@@ -580,6 +580,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * May decrypt in place.
      */
     private DiffieHellmanContext processSignedDHTwoOrThree(int phase, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion) {
+    	if(logMINOR) Logger.minor(this, "Handling signed stage "+phase+" auth packet");
     	// Get context, cipher, IV
         DiffieHellmanContext ctx = (DiffieHellmanContext) pn.getKeyAgreementSchemeContext();
         if((ctx == null) || !ctx.canGetCipher()) {
@@ -646,6 +647,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         	if(sendCompletion)
         		sendSignedDHCompletion(3, ctx.getCipher(), pn, replyTo, ctx);
         	pn.maybeSendInitialMessages();
+        } else {
+        	Logger.error(this, "Handshake not completed");
         }
         return ctx;
     }
