@@ -388,7 +388,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         
-        Logger.minor(this, "Sending DH completion: "+pn+" hash "+HexUtil.bytesToHex(hash)+" r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+sig.getS().toByteArray());
+        Logger.minor(this, "Sending DH completion: "+pn+" hash "+HexUtil.bytesToHex(hash)+" r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
         
         int outputLength = iv.length + data.length + r.length + s.length + 2;
         
@@ -633,7 +633,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         md.update(data);
         byte[] hash = md.digest();
         if(!node.verify(hash, sig)) {
-        	Logger.error(this, "Signature verification failed for "+pn+" hash "+HexUtil.bytesToHex(hash)+" r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+sig.getS().toByteArray());
+        	Logger.error(this, "Signature verification failed for "+pn+" hash "+HexUtil.bytesToHex(hash)+" r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
         	return null;
         }
         
