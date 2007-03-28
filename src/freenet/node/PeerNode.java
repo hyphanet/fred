@@ -3081,8 +3081,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	
 	public int bestNegType(OutgoingPacketMangler mangler) {
-		int[] hisNegTypes = negTypes;
-		int[] myNegTypes = mangler.supportedNegTypes();
+		int[] hisNegTypes, myNegTypes;
+		synchronized(this) {
+			hisNegTypes = negTypes;
+			myNegTypes = mangler.supportedNegTypes();
+		}
 		int bestNegType = -1;
 		for(int i=0;i<myNegTypes.length;i++) {
 			int negType = myNegTypes[i];
