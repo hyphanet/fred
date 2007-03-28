@@ -519,53 +519,6 @@ public final class RequestSender implements Runnable, ByteCounter {
         }
     }
     
-
-    /**
-     * Same as waitUntilStatusChange but non blocking
-     * @see waitUntilStatusChange(short mask)
-     */
-    public void callbackWhenStatusChange(final StatusChangeCallback cb, final short mask) {
-    	
-    	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
-    	
-    	final Runnable whenStatusChange = new Runnable(){
-    		private boolean isRunning = false;
-    		
-    		public void run(){
-    			synchronized (this) {
-					if(isRunning) return;
-					isRunning = true;
-				}
-    			_realRun();
-    			synchronized (this) {
-        			isRunning = false;	
-				}
-    		}
-    		
-    		private void _realRun() {
-    			short current;
-    			synchronized (cb) {
-        			current = mask; // If any bits are set already, we ignore those states.
-        			
-    				if(hasForwardedRejectedOverload)
-               			current |= WAIT_REJECTED_OVERLOAD;
-                	
-               		if(prb != null)
-               			current |= WAIT_TRANSFERRING_DATA;
-                	
-                	if(status != NOT_FINISHED)
-                		current |= WAIT_FINISHED;
-
-                	if(current == mask)
-                		node.ps.queueTimedJob(this, 10000);
-    			}
-            	cb.onStatusChange(current);
-    		}
-    	};
-    	
-    	whenStatusChange.run();
-    }
-        
     /**
      * Wait until we have a terminal status code.
      */
