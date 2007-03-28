@@ -25,6 +25,8 @@ import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
+import net.i2p.util.NativeBigInteger;
+
 import freenet.client.FetchResult;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
@@ -3096,5 +3098,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 		return bestNegType;
+	}
+	
+	/** Verify a hash */
+	public boolean verify(byte[] hash, DSASignature sig) {
+		return DSA.verify(peerPubKey, sig, new NativeBigInteger(1, hash), false);
 	}
 }

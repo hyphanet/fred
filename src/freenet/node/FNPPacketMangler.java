@@ -632,7 +632,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         md.update(ctx.getOurExponential().toByteArray());
         md.update(data);
         byte[] hash = md.digest();
-        if(!node.verify(hash, sig)) {
+        if(!pn.verify(hash, sig)) {
         	Logger.error(this, "Signature verification failed for "+pn+" hash "+HexUtil.bytesToHex(hash)+" r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
         	return null;
         }

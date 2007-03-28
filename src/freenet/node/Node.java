@@ -2787,8 +2787,4 @@ public class Node {
 		return DSA.sign(myCryptoGroup, myPrivKey, new NativeBigInteger(1, hash), random);
 	}
 
-	/** Verify a hash */
-	public boolean verify(byte[] hash, DSASignature sig) {
-		return DSA.verify(this.myPubKey, sig, new NativeBigInteger(1, hash), false);
-	}
 }
