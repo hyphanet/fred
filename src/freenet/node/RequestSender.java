@@ -528,8 +528,8 @@ public final class RequestSender implements Runnable, ByteCounter {
     	
     	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
     	
-    	Runnable whenStatusChange = new Runnable(){
-    		boolean isRunning = false;
+    	final Runnable whenStatusChange = new Runnable(){
+    		private boolean isRunning = false;
     		
     		public void run(){
     			synchronized (this) {
@@ -537,7 +537,9 @@ public final class RequestSender implements Runnable, ByteCounter {
 					isRunning = true;
 				}
     			_realRun();
-    			isRunning = false;
+    			synchronized (this) {
+        			isRunning = false;	
+				}
     		}
     		
     		private void _realRun() {
