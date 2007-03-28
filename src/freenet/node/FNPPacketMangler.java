@@ -609,14 +609,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         byte[] rBytes = new byte[rLen];
         System.arraycopy(payload, count, rBytes, 0, rLen);
         count += rLen;
-        NativeBigInteger r = new NativeBigInteger(rBytes);
+        NativeBigInteger r = new NativeBigInteger(1, rBytes);
         
         // S
         int sLen = payload[count++] & 0xFF;
         byte[] sBytes = new byte[sLen];
         System.arraycopy(payload, count, sBytes, 0, sLen);
         count += sLen;
-        NativeBigInteger s = new NativeBigInteger(sBytes);
+        NativeBigInteger s = new NativeBigInteger(1, sBytes);
         
         DSASignature sig = new DSASignature(r, s);
         
