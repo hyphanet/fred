@@ -212,7 +212,7 @@ public class NodeClientCore implements Persistable {
 
 		// Downloads allowed, uploads allowed
 		
-		nodeConfig.register("downloadAllowedDirs", new String[] {"downloads"}, sortOrder++, true, true, "Directories downloading is allowed to", 
+		nodeConfig.register("downloadAllowedDirs", new String[] {"all"}, sortOrder++, true, true, "Directories downloading is allowed to", 
 				"Semicolon separated list of directories to which downloads are allowed. \"downloads\" means downloadsDir, empty means no downloads to disk allowed, \"all\" means downloads allowed from anywhere. "+
 				"WARNING! If this is set to \"all\" any user can download any file to anywhere on your computer!",
 				new StringArrCallback() {
