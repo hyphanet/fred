@@ -1646,6 +1646,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public int[] supportedNegTypes() {
-		return new int[] { 0 };
+		return new int[] { 0, 1 };
 	}
 }
