@@ -9,6 +9,8 @@ import java.util.Arrays;
 import net.i2p.util.NativeBigInteger;
 
 import freenet.crypt.BlockCipher;
+import freenet.crypt.DSA;
+import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.EntropySource;
@@ -250,8 +252,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         if((negType < 0) || (negType > 1)) {
             Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
             return;
-        }else if (negType == 0){
-        	// We are gonna do unauthenticated DH FIXME: disable when StS is deployed.
+        }else if (negType == 0 || negType == 1){
+        	// Four stage Diffie-Hellman. 0 = ephemeral, 1 = payload stages are signed (not quite STS)
+        	// FIXME reduce to 3 stages and implement STS properly (we have a separate validation mechanism in PeerNode)
+        	// AFAICS this (with negType=1) is equivalent in security to STS; it expands the second phase into a second and a fourth phase.
+        	// A -> B g^x
+        	// B -> A g^y
+        	// A -> B E^k ( ... )
+        	// B -> A E^k ( ... )
         
         	if((packetType < 0) || (packetType > 3)) {
         		Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
@@ -281,14 +289,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         			processDHZeroOrOne(0, payload, pn);
         		if(ctx == null) return;
         		// Send reply
-        		sendFirstHalfDHPacket(1, ctx.getOurExponential(), pn, replyTo);
+        		sendFirstHalfDHPacket(negType, 1, ctx.getOurExponential(), pn, replyTo);
         		// Send a type 1, they will reply with a type 2
         	} else if(packetType == 1) {
         		// We are Alice
         		DiffieHellmanContext ctx = 
         			processDHZeroOrOne(1, payload, pn);
         		if(ctx == null) return;
-        		sendDHCompletion(2, ctx.getCipher(), pn, replyTo);
+        		if(negType == 0)
+        			sendDHCompletion(2, ctx.getCipher(), pn, replyTo);
+        		else //if(negType == 1)
+        			sendSignedDHCompletion(2, ctx.getCipher(), pn, replyTo, ctx);
         		// Send a type 2
         	} else if(packetType == 2) {
         		// We are Bob
@@ -296,79 +307,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         		// Verify the packet, then complete
         		// Format: IV E_K ( H(data) data )
         		// Where data = [ long: bob's startup number ]
-        		processDHTwoOrThree(2, payload, pn, replyTo, true);
+        		processDHTwoOrThree(2, payload, pn, replyTo, true, negType == 1);
         	} else if(packetType == 3) {
         		// We are Alice
-        		processDHTwoOrThree(3, payload, pn, replyTo, false);
+        		processDHTwoOrThree(3, payload, pn, replyTo, false, negType == 1);
         	}
-        }else if (negType == 1){
-        	// We are gonna do simple StS
-        
-        	if((packetType < 0) || (packetType > 3)) {
-        		Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
-        		return;
-        	}
-        	//  We keep one StationToStationContext per node ONLY
-        	/*
-        	 * Now, to the real meat
-        	 * 
-        	 *  1a. Alice generates a random number x and computes and sends the exponential g^x to Bob.
-        	 *  
-        	 *	2a. Bob generates a random number y and computes the exponential g^y.    
-        	 *	2b. Bob computes the shared secret key K = (g^x)^y.
-        	 *	2c. Bob concatenates the exponentials (g^y, g^x) (order is important),
-        	 * 	  signs them using his asymmetric key B, and then encrypts them with K.
-        	 *  2d. He sends the ciphertext along with his own exponential g^y to Alice.
-        	 *  
-        	 *  3a. Alice computes the shared secret key K = (gy)x.
-        	 *  3b. Alice decrypts and verifies Bob's signature.
-        	 *  3c. Alice concatenates the exponentials (g^x, g^y) (order is important),
-        	 *    signs them using her asymmetric key A, and then encrypts them with K.
-        	 *  3d. She sends the ciphertext to Bob.
-        	 *  
-        	 *  4. Bob decrypts and verifies Alice's signature.
-        	 * 
-        	 * 	Alice and Bob are now mutually authenticated and have a shared secret.
-        	 *  This secret, K, can then be used to encrypt further communication.
-        	 *  
-        	 *  I suggest we add one more phase to simplify the code : 2d is splited up
-        	 *  into two packets so that both alice and bob send the same kind of packets. 
-        	 */
-        	
-        	// be carefull with StationToStationContext constructors ; it will be expensive in terms of cpu and can be DoSed, on the other hand, when shall we reset the context ? maybe creating a new packetType ... with a time based restriction 
-        	if(packetType == 0) { // 0 won't be received, but we need to initialize the exchange
-        		StationToStationContext ctx = pn.getKeyAgreementSchemeContext()== null ? new StationToStationContext(node.getMyPrivKey(), pn.peerCryptoGroup, pn.peerPubKey, node.random) : (StationToStationContext)pn.getKeyAgreementSchemeContext();
-        		if(ctx == null) return;
-        		pn.setKeyAgreementSchemeContext(ctx);
-        		// We send g^x
-        		sendFirstStSPacket(1, ctx.getOurExponential(), pn, replyTo);
-        	} else if(packetType == 2) {
-        		StationToStationContext ctx = pn.getKeyAgreementSchemeContext()== null ? new StationToStationContext(node.getMyPrivKey(), pn.peerCryptoGroup, pn.peerPubKey, node.random) : (StationToStationContext)pn.getKeyAgreementSchemeContext();
-        		if(ctx == null) return;
-        		pn.setKeyAgreementSchemeContext(ctx);
-        		// We got g^y
-        		ctx.setOtherSideExponential(new NativeBigInteger(1, payload));
-        		// We send E(S(H( our exponential, his exponential)))
-        		sendSecondStSPacket(3, ctx, pn, replyTo, payload);
-        	} else if(packetType == 1) {
-        		StationToStationContext ctx = (StationToStationContext) pn.getKeyAgreementSchemeContext();
-        		if(ctx == null) return;
-        		// We got g^x
-        		ctx.setOtherSideExponential(new NativeBigInteger(payload));
-        		// We send g^y
-        		sendFirstStSPacket(2, ctx.getOurExponential(), pn, replyTo);
-        		// We send E(S(H( our exponential, his exponential)))
-        		sendSecondStSPacket(3, ctx, pn, replyTo, payload);
-        	} else if(packetType == 3) {
-        		StationToStationContext ctx = (StationToStationContext) pn.getKeyAgreementSchemeContext();
-        		if(ctx == null) return;
-        		if(!ctx.isAuthentificationSuccessfull(payload)) return;
-        		// we are done if the above test is sucessfull!
-        	}
-        	
-        	/*
-        	 * We need some kind of locking above... and maybe some DoS protection
-        	 */
         }
     }
 
@@ -411,12 +354,69 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     }
 
     /**
+     * Send a signed DH completion message.
+     * Format:
+     * IV
+     * Signature on { My exponential, his exponential, data }
+     * Data
+     * @param phase The packet phase number. Either 2 or 3.
+     * @param cipher The negotiated cipher.
+     * @param pn The PeerNode which we are talking to.
+     * @param replyTo The Peer to which to send the packet (not necessarily the same
+     * as the one on pn as the IP may have changed).
+     */
+    private void sendSignedDHCompletion(int phase, BlockCipher cipher, PeerNode pn, Peer replyTo, DiffieHellmanContext ctx) {
+        PCFBMode pcfb = PCFBMode.create(cipher);
+        byte[] iv = new byte[pcfb.lengthIV()];
+        
+        byte[] myRef = node.myCompressedSetupRef();
+        byte[] data = new byte[myRef.length + 8];
+        System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
+        System.arraycopy(myRef, 0, data, 8, myRef.length);
+        
+        byte[] myExp = ctx.getOurExponential().toByteArray();
+        byte[] hisExp = ctx.getHisExponential().toByteArray();
+        
+        MessageDigest md = SHA256.getMessageDigest();
+        md.update(myExp);
+        md.update(hisExp);
+        md.update(data);
+        byte[] hash = md.digest();
+        
+        DSASignature sig = node.sign(hash);
+        
+        byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+        byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+        
+        int outputLength = iv.length + data.length + r.length + s.length + 2;
+        
+        byte[] output = new byte[outputLength];
+        
+        System.arraycopy(iv, 0, output, 0, iv.length);
+        int count = iv.length;
+        if(r.length > 255 || s.length > 255)
+        	throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
+        output[count++] = (byte) r.length;
+        System.arraycopy(r, 0, output, count, r.length);
+        count += r.length;
+        output[count++] = (byte) s.length;
+        System.arraycopy(s, 0, output, count, s.length);
+        count += s.length;
+        System.arraycopy(data, 0, output, count, data.length);
+        
+        pcfb.blockEncipher(output, 0, output.length);
+        
+        sendAuthPacket(1, 1, phase, output, pn, replyTo);
+    }
+
+    /**
      * Send a first-half (phase 0 or 1) DH negotiation packet to the node.
      * @param phase The phase of the message to be sent (0 or 1).
-     * @param integer
-     * @param replyTo
+     * @param negType The negotiation type.
+     * @param integer Our exponential
+     * @param replyTo The peer to reply to
      */
-    private void sendFirstHalfDHPacket(int phase, NativeBigInteger integer, PeerNode pn, Peer replyTo) {
+    private void sendFirstHalfDHPacket(int phase, int negType, NativeBigInteger integer, PeerNode pn, Peer replyTo) {
         long time1 = System.currentTimeMillis();
         if(logMINOR) Logger.minor(this, "Sending ("+phase+") "+integer.toHexString()+" to "+pn.getPeer());
         byte[] data = integer.toByteArray();
@@ -438,7 +438,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         if((time2 - time1) > 200) {
           Logger.error(this, "sendFirstHalfDHPacket: time2 is more than 200ms after time1 ("+(time2 - time1)+") working on "+replyTo+" of "+pn.getName());
         }
-        sendAuthPacket(1, 0, phase, data, pn, replyTo);
+        sendAuthPacket(1, negType, phase, data, pn, replyTo);
         long time3 = System.currentTimeMillis();
         if((time3 - time2) > 500) {
           Logger.error(this, "sendFirstHalfDHPacket:sendAuthPacket() time3 is more than half a second after time2 ("+(time3 - time2)+") working on "+replyTo+" of "+pn.getName());
@@ -511,14 +511,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     	node.outputThrottle.forceGrab(data.length - alreadyReportedBytes);
 	}
 
-	/**
-     * @param i
-     * @param payload
-     * @param pn
-     * @param replyTo
-     * @return
-     */
-    private DiffieHellmanContext processDHTwoOrThree(int i, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion) {
+    private DiffieHellmanContext processDHTwoOrThree(int phase, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion, boolean signed) {
+    	if(signed)
+    		return processSignedDHTwoOrThree(phase, payload, pn, replyTo, sendCompletion);
+    	else
+    		return processDHTwoOrThree(phase, payload, pn, replyTo, sendCompletion);
+    }
+    
+    private DiffieHellmanContext processDHTwoOrThree(int phase, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion) {
         DiffieHellmanContext ctx = (DiffieHellmanContext) pn.getKeyAgreementSchemeContext();
         if((ctx == null) || !ctx.canGetCipher()) {
             if(shouldLogErrorInHandshake()) {
@@ -531,7 +531,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         PCFBMode pcfb = PCFBMode.create(cipher);
         int ivLength = pcfb.lengthIV();
         if(payload.length-3 < HASH_LENGTH + ivLength + 8) {
-            Logger.error(this, "Too short phase "+i+" packet from "+replyTo+" probably from "+pn);
+            Logger.error(this, "Too short phase "+phase+" packet from "+replyTo+" probably from "+pn);
             return null;
         }
         pcfb.reset(payload, 3); // IV
@@ -557,7 +557,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             // But this should be extremely rare.
             // REDFLAG?
             // We need to send the completion before the PN sends any packets, that's all...
-            if(pn.completedHandshake(bootID, data, 8, data.length-8, cipher, encKey, replyTo, i == 2)) {
+            if(pn.completedHandshake(bootID, data, 8, data.length-8, cipher, encKey, replyTo, phase == 2)) {
                 if(sendCompletion)
                     sendDHCompletion(3, ctx.getCipher(), pn, replyTo);
                 pn.maybeSendInitialMessages();
@@ -567,6 +567,87 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             Logger.error(this, "Failed to complete handshake (2) on "+pn+" for "+replyTo);
             return null;
         }
+    }
+
+    /**
+     * Process a stage 2 or stage 3 auth packet.
+     * Send a signed DH completion message.
+     * Format:
+     * IV
+     * Signature on { My exponential, his exponential, data }
+     * Data
+     * 
+     * May decrypt in place.
+     */
+    private DiffieHellmanContext processSignedDHTwoOrThree(int phase, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion) {
+    	// Get context, cipher, IV
+        DiffieHellmanContext ctx = (DiffieHellmanContext) pn.getKeyAgreementSchemeContext();
+        if((ctx == null) || !ctx.canGetCipher()) {
+            if(shouldLogErrorInHandshake()) {
+                Logger.error(this, "Cannot get cipher");
+            }
+            return null;
+        }
+        byte[] encKey = ctx.getKey();
+        BlockCipher cipher = ctx.getCipher();
+        PCFBMode pcfb = PCFBMode.create(cipher);
+        int ivLength = pcfb.lengthIV();
+        if(payload.length-3 < HASH_LENGTH + ivLength + 8) {
+            Logger.error(this, "Too short phase "+phase+" packet from "+replyTo+" probably from "+pn);
+            return null;
+        }
+        pcfb.reset(payload, 3); // IV
+        
+        // Decrypt the rest
+        pcfb.blockDecipher(payload, 3, payload.length - 3);
+        
+        int count = 3 + ivLength;
+        
+        // R
+        int rLen = payload[count++] & 0xFF;
+        byte[] rBytes = new byte[rLen];
+        System.arraycopy(payload, count, rBytes, 0, rLen);
+        count += rLen;
+        NativeBigInteger r = new NativeBigInteger(rBytes);
+        
+        // S
+        int sLen = payload[count++] & 0xFF;
+        byte[] sBytes = new byte[sLen];
+        System.arraycopy(payload, count, sBytes, 0, sLen);
+        count += sLen;
+        NativeBigInteger s = new NativeBigInteger(sBytes);
+        
+        DSASignature sig = new DSASignature(r, s);
+        
+        // Data
+        byte[] data = new byte[payload.length - count];
+        System.arraycopy(payload, count, data, 0, payload.length - data.length);
+        
+        // Now verify
+        MessageDigest md = SHA256.getMessageDigest();
+        md.update(ctx.getHisExponential().toByteArray());
+        md.update(ctx.getOurExponential().toByteArray());
+        md.update(data);
+        byte[] hash = md.digest();
+        if(!node.verify(hash, sig)) {
+        	Logger.error(this, "Signature verification failed");
+        	return null;
+        }
+        
+        // Success!
+        long bootID = Fields.bytesToLong(data);
+        // Send the completion before parsing the data, because this is easiest
+        // Doesn't really matter - if it fails, we get loads of errors anyway...
+        // Only downside is that the other side might still think we are connected for a while.
+        // But this should be extremely rare.
+        // REDFLAG?
+        // We need to send the completion before the PN sends any packets, that's all...
+        if(pn.completedHandshake(bootID, data, 8, data.length-8, cipher, encKey, replyTo, phase == 2)) {
+        	if(sendCompletion)
+        		sendSignedDHCompletion(3, ctx.getCipher(), pn, replyTo, ctx);
+        	pn.maybeSendInitialMessages();
+        }
+        return ctx;
     }
 
     /**
@@ -1466,7 +1547,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
 	 */
     public void sendHandshake(PeerNode pn) {
-    	if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn);
+    	int negType = pn.bestNegType(this);
+    	if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn+" negotiation type "+negType);
         DiffieHellmanContext ctx;
         Peer[] handshakeIPs;
         if(!pn.shouldSendHandshake()) {
@@ -1510,7 +1592,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         	long innerLoopTime2 = System.currentTimeMillis();
         	if((innerLoopTime2 - innerLoopTime1) > 500)
         		Logger.normal(this, "innerLoopTime2 is more than half a second after innerLoopTime1 ("+(innerLoopTime2 - innerLoopTime1)+") working on "+handshakeIPs[i]+" of "+pn.getName());
-        	sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, handshakeIPs[i]);
+        	sendFirstHalfDHPacket(negType, 0, ctx.getOurExponential(), pn, handshakeIPs[i]);
         	long innerLoopTime3 = System.currentTimeMillis();
         	if((innerLoopTime3 - innerLoopTime2) > 500)
         		Logger.normal(this, "innerLoopTime3 is more than half a second after innerLoopTime2 ("+(innerLoopTime3 - innerLoopTime2)+") working on "+handshakeIPs[i]+" of "+pn.getName());

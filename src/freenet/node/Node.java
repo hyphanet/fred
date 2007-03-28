@@ -28,6 +28,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.zip.DeflaterOutputStream;
 
+import net.i2p.util.NativeBigInteger;
+
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.sleepycat.je.DatabaseException;
@@ -2275,6 +2277,8 @@ public class Node {
 	final LRUQueue recentlyCompletedIDs;
 
 	static final int MAX_RECENTLY_COMPLETED_IDS = 10*1000;
+	/** Length of signature parameters R and S */
+	static final int SIGNATURE_PARAMETER_LENGTH = 32;
 
 	/**
 	 * Has a request completed with this ID recently?
@@ -2776,5 +2780,15 @@ public class Node {
 		if(inputLimitDefault)
 			return outputBandwidthLimit * 4;
 		return inputBandwidthLimit;
+	}
+
+	/** Sign a hash */
+	DSASignature sign(byte[] hash) {
+		return DSA.sign(myCryptoGroup, myPrivKey, new NativeBigInteger(1, hash), random);
+	}
+
+	/** Verify a hash */
+	public boolean verify(byte[] hash, DSASignature sig) {
+		return DSA.verify(this.myPubKey, sig, new NativeBigInteger(1, hash), false);
 	}
 }

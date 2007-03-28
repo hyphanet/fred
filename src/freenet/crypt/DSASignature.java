@@ -69,5 +69,31 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 			toStringCached = HexUtil.biToHex(r) + ',' + HexUtil.biToHex(s);
         return toStringCached;
     }
+
+	public byte[] getRBytes(int length) {
+		return getParamBytes(r, length);
+	}
+
+	public byte[] getSBytes(int length) {
+		return getParamBytes(s, length);
+	}
+
+	private static byte[] getParamBytes(BigInteger param, int length) {
+		byte[] data = param.toByteArray();
+		if(data.length < length) {
+			byte[] out = new byte[length];
+			System.arraycopy(data, 0, out, out.length - data.length, data.length);
+			return out;
+		} else if(data.length == length+1) {
+			if(data[0] == 0) {
+				byte[] out = new byte[length];
+				System.arraycopy(data, 1, out, 0, length);
+				return out;
+			} else
+				throw new IllegalArgumentException("Parameter longer than "+length+" bytes : "+param.bitLength());
+		} else if(data.length == length) {
+			return data;
+		} else throw new IllegalArgumentException("Length is much shorter: "+data.length+" but target length = "+length);
+	}
 		  
 }

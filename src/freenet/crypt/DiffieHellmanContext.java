@@ -82,4 +82,8 @@ public class DiffieHellmanContext extends KeyAgreementSchemeContext {
     public boolean canGetCipher() {
         return peerExponential != null;
     }
+
+	public NativeBigInteger getHisExponential() {
+		return peerExponential;
+	}
 }
