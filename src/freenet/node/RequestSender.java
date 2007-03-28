@@ -541,9 +541,10 @@ public final class RequestSender implements Runnable, ByteCounter {
     		}
     		
     		private void _realRun() {
-    			short current = mask; // If any bits are set already, we ignore those states.
-            	
+    			short current;
     			synchronized (cb) {
+        			current = mask; // If any bits are set already, we ignore those states.
+        			
     				if(hasForwardedRejectedOverload)
                			current |= WAIT_REJECTED_OVERLOAD;
                 	
@@ -552,13 +553,11 @@ public final class RequestSender implements Runnable, ByteCounter {
                 	
                 	if(status != NOT_FINISHED)
                 		current |= WAIT_FINISHED;
-	
-				}
-    			
-            	if(current != mask)
-            		cb.onStatusChange(current);
-            	else
-            		node.ps.queueTimedJob(this, 10000);
+
+                	if(current == mask)
+                		node.ps.queueTimedJob(this, 10000);
+    			}
+            	cb.onStatusChange(current);
     		}
     	};
     	
