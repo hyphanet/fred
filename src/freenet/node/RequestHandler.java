@@ -219,6 +219,8 @@ public class RequestHandler implements Runnable, ByteCounter, StatusChangeCallba
     }
 
 	private synchronized void _finally() {
+		if(logMINOR && (currentState != WAIT_FOR_FIRST_REPLY))
+			Logger.minor(this, "Hmm, wtf ?");
 		currentState = FINISHED;
 		node.removeTransferringRequestHandler(uid);
         node.unlockUID(uid, key instanceof NodeSSK, false);
