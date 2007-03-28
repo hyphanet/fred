@@ -624,7 +624,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         
         // Data
         byte[] data = new byte[payload.length - count];
-        System.arraycopy(payload, count, data, 0, payload.length - data.length);
+        System.arraycopy(payload, count, data, 0, payload.length - count);
         
         // Now verify
         MessageDigest md = SHA256.getMessageDigest();
