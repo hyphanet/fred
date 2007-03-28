@@ -168,10 +168,8 @@ public class NodeDispatcher implements Dispatcher {
 			return true;
 		}
 		//if(!node.lockUID(id)) return false;
-		RequestHandler rh = new RequestHandler(m, id, node);
-		Thread t = new Thread(rh, "RequestHandler for UID "+id);
-		t.setDaemon(true);
-		t.start();
+		RequestHandler rh = new RequestHandler(m, id, node); // Do we need to keep a record of in flight RHs?
+		rh.run();
 		return true;
 	}
 
