@@ -168,7 +168,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      */
     private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode opn, Peer peer) {
         BlockCipher authKey = opn.incomingSetupCipher;
-        if(logMINOR) Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(opn.incomingSetupKey)+" for "+peer+" : "+opn);
+        if(logMINOR) Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(opn.incomingSetupKey)+" for "+peer+" : "+opn+" in tryProcessAuth");
         // Does the packet match IV E( H(data) data ) ?
         PCFBMode pcfb = PCFBMode.create(authKey);
         int ivLength = pcfb.lengthIV();
@@ -289,7 +289,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         			processDHZeroOrOne(0, payload, pn);
         		if(ctx == null) return;
         		// Send reply
-        		sendFirstHalfDHPacket(negType, 1, ctx.getOurExponential(), pn, replyTo);
+        		sendFirstHalfDHPacket(1, negType, ctx.getOurExponential(), pn, replyTo);
         		// Send a type 1, they will reply with a type 2
         	} else if(packetType == 1) {
         		// We are Alice
