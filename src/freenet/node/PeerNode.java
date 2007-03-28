@@ -1825,8 +1825,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
                 } catch (KeyChangedException e) {
                     // Ignore
 				} catch (WouldBlockException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					// Impossible, ignore
 				}
             }
         }
