@@ -388,6 +388,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         
+        Logger.minor(this, "Sending DH completion: "+pn+" hash "+HexUtil.bytesToHex(hash)+" r="+((NativeBigInteger)sig.getR()).toHexString()+" s="+((NativeBigInteger)sig.getS()).toHexString());
+        
         int outputLength = iv.length + data.length + r.length + s.length + 2;
         
         byte[] output = new byte[outputLength];
@@ -631,7 +633,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         md.update(data);
         byte[] hash = md.digest();
         if(!node.verify(hash, sig)) {
-        	Logger.error(this, "Signature verification failed");
+        	Logger.error(this, "Signature verification failed for "+pn+" hash "+HexUtil.bytesToHex(hash)+" r="+r.toHexString()+" s="+s.toHexString());
         	return null;
         }
         
