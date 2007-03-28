@@ -1595,7 +1595,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         	long innerLoopTime2 = System.currentTimeMillis();
         	if((innerLoopTime2 - innerLoopTime1) > 500)
         		Logger.normal(this, "innerLoopTime2 is more than half a second after innerLoopTime1 ("+(innerLoopTime2 - innerLoopTime1)+") working on "+handshakeIPs[i]+" of "+pn.getName());
-        	sendFirstHalfDHPacket(negType, 0, ctx.getOurExponential(), pn, handshakeIPs[i]);
+        	sendFirstHalfDHPacket(0, negType, ctx.getOurExponential(), pn, handshakeIPs[i]);
         	long innerLoopTime3 = System.currentTimeMillis();
         	if((innerLoopTime3 - innerLoopTime2) > 500)
         		Logger.normal(this, "innerLoopTime3 is more than half a second after innerLoopTime2 ("+(innerLoopTime3 - innerLoopTime2)+") working on "+handshakeIPs[i]+" of "+pn.getName());
