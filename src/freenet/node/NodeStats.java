@@ -283,7 +283,7 @@ public class NodeStats implements Persistable {
 		successfulSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesReceivedAverage"));
 		
 		requestOutputThrottle = 
-			new TokenBucket(Math.max(obwLimit*60, 32768*20), (1000L*1000L*1000L) /  obwLimit, 0);
+			new TokenBucket(Math.max(obwLimit*60, 32768*20), (1000L*1000L*1000L) / obwLimit, 0);
 		requestInputThrottle = 
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (1000L*1000L*1000L) / ibwLimit, 0);
 	}
