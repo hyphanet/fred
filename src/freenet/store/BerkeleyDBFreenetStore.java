@@ -464,12 +464,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.fixSecondaryFile = fixSecondaryFile;
 		if(fixSecondaryFile.exists()) {
 			fixSecondaryFile.delete();
-			Logger.error(this, "Recreating secondary database");
+			Logger.error(this, "Recreating secondary databases");
 			Logger.error(this, "This may take some time...");
-			System.err.println("Recreating secondary database");
+			System.err.println("Recreating secondary databases");
 			System.err.println("This may take some time...");
+			WrapperManager.signalStarting((int)(Math.max(Integer.MAX_VALUE, 5*60*1000 + chkDB.count() * 100)));
 			try {
 				environment.truncateDatabase(null, prefix+"CHK_accessTime", false);
+				environment.truncateDatabase(null, prefix+"CHK_blockNum", false);
 			} catch (DatabaseException e) {
 				close(false);
 				throw e;
@@ -477,31 +479,43 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 		
 		// Initialize secondary CHK database sorted on accesstime
+		SecondaryDatabase atime;
 		SecondaryConfig secDbConfig = new SecondaryConfig();
-		secDbConfig.setAllowCreate(true);
+		secDbConfig.setAllowCreate(chkDB.count() == 0);
 		secDbConfig.setSortedDuplicates(true);
 		secDbConfig.setTransactional(true);
-		secDbConfig.setAllowPopulate(true);
+		secDbConfig.setAllowPopulate(false);
 		storeBlockTupleBinding = new StoreBlockTupleBinding();
 		AccessTimeKeyCreator accessTimeKeyCreator = 
 			new AccessTimeKeyCreator(storeBlockTupleBinding);
 		secDbConfig.setKeyCreator(accessTimeKeyCreator);
 		try {
-			chkDB_accessTime = environment.openSecondaryDatabase
+		try {
+			atime = environment.openSecondaryDatabase
 								(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
+		} catch (DatabaseException e) {
+			WrapperManager.signalStarting((int)(Math.max(Integer.MAX_VALUE, 5*60*1000 + chkDB.count() * 100)));
+			System.err.println("Reconstructing access times index...");
+			Logger.error(this, "Reconstructing access times index...");
+			secDbConfig.setAllowCreate(true);
+			secDbConfig.setAllowPopulate(true);
+			atime = environment.openSecondaryDatabase
+								(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
+		}
 		} catch (DatabaseException e1) {
 			close(false);
 			throw e1;
 		}
+		chkDB_accessTime = atime;
 		
 		// Initialize other secondary database sorted on block number
 //		try {
 //			environment.removeDatabase(null, "CHK_blockNum");
 //		} catch (DatabaseNotFoundException e) { };
 		SecondaryConfig blockNoDbConfig = new SecondaryConfig();
-		blockNoDbConfig.setAllowCreate(false);
+		blockNoDbConfig.setAllowCreate(chkDB.count() == 0);
 		blockNoDbConfig.setSortedDuplicates(false);
-		blockNoDbConfig.setAllowPopulate(true);
+		blockNoDbConfig.setAllowPopulate(false);
 		blockNoDbConfig.setTransactional(true);
 		
 		BlockNumberKeyCreator bnkc = 
@@ -509,19 +523,24 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		blockNoDbConfig.setKeyCreator(bnkc);
 		SecondaryDatabase blockNums;
 		try {
+		try {
 			System.err.println("Opening block db index");
 			blockNums = environment.openSecondaryDatabase
 				(null, prefix+"CHK_blockNum", chkDB, blockNoDbConfig);
-		} catch (DatabaseNotFoundException e) {
+		} catch (DatabaseException e) {
+			WrapperManager.signalStarting((int)(Math.max(Integer.MAX_VALUE, 5*60*1000 + chkDB.count() * 100)));
+			System.err.println("Reconstructing block numbers index...");
+			Logger.error(this, "Reconstructing block numbers index...");
 			System.err.println("Creating new block DB index");
 			blockNoDbConfig.setSortedDuplicates(false);
 			blockNoDbConfig.setAllowCreate(true);
 			blockNoDbConfig.setAllowPopulate(true);
 			blockNums = environment.openSecondaryDatabase
 				(null, prefix+"CHK_blockNum", chkDB, blockNoDbConfig);
-		} catch (DatabaseException e) {
+		}
+		} catch (DatabaseException e1) {
 			close(false);
-			throw e;
+			throw e1;
 		}
 		
 		chkDB_blockNum = blockNums;
