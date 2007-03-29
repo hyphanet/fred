@@ -53,6 +53,8 @@ public class ToadletContextImpl implements ToadletContext {
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();
 		remoteAddr = sock.getInetAddress();
+		if(Logger.shouldLog(Logger.DEBUG, this))
+			Logger.debug(this, "Connection from "+remoteAddr);
 		this.bf = bf;
 		this.pagemaker = pageMaker;
 		this.container = container;
