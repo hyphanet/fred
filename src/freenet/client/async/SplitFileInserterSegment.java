@@ -277,7 +277,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback,
 							bucketFS, ctx.random, ctx.persistentFileTracker);
 					if (logMINOR)
 						Logger.minor(this, "Data block " + i + " : "
-								+ checkBlocks[i]);
+								+ dataBlocks[i]);
 				} catch (CannotCreateFromFieldSetException e) {
 					throw new ResumeException("Failed to deserialize block "
 							+ i + " of " + segNo + " : " + e, e);
