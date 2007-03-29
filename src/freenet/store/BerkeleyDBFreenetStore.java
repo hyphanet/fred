@@ -479,7 +479,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 		
 		// Initialize secondary CHK database sorted on accesstime
-		SecondaryDatabase atime;
+		SecondaryDatabase atime = null;
 		SecondaryConfig secDbConfig = new SecondaryConfig();
 		secDbConfig.setAllowCreate(chkDB.count() == 0);
 		secDbConfig.setSortedDuplicates(true);
@@ -493,8 +493,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		try {
 			atime = environment.openSecondaryDatabase
 								(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
+			if(atime.count() < chkDB.count())
+				throw new DatabaseException("Needs repopulation");
 		} catch (DatabaseException e) {
 			WrapperManager.signalStarting((int)(Math.max(Integer.MAX_VALUE, 5*60*1000 + chkDB.count() * 100)));
+			if(atime != null) atime.close();
+			environment.truncateDatabase(null, prefix+"CHK_accessTime", false);
 			System.err.println("Reconstructing access times index...");
 			Logger.error(this, "Reconstructing access times index...");
 			secDbConfig.setAllowCreate(true);
@@ -521,7 +525,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		BlockNumberKeyCreator bnkc = 
 			new BlockNumberKeyCreator(storeBlockTupleBinding);
 		blockNoDbConfig.setKeyCreator(bnkc);
-		SecondaryDatabase blockNums;
+		SecondaryDatabase blockNums = null;
 		try {
 		try {
 			System.err.println("Opening block db index");
@@ -529,6 +533,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				(null, prefix+"CHK_blockNum", chkDB, blockNoDbConfig);
 		} catch (DatabaseException e) {
 			WrapperManager.signalStarting((int)(Math.max(Integer.MAX_VALUE, 5*60*1000 + chkDB.count() * 100)));
+			if(blockNums != null) blockNums.close();
+			environment.truncateDatabase(null, prefix+"CHK_blockNum", false);
 			System.err.println("Reconstructing block numbers index...");
 			Logger.error(this, "Reconstructing block numbers index...");
 			System.err.println("Creating new block DB index");
