@@ -113,6 +113,9 @@ public class ClientGetMessage extends FCPMessage {
 			if(diskFile.exists())
 				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, null, identifier, global);
 			try {
+				// Check whether we can create it, so that we return an error early on.
+				// Then delete it, as we have to rename over it anyway (atomic creation of a file does not guarantee
+				// that it won't be replaced with a symlink).
 				if(!(tempFile.createNewFile() || (tempFile.exists() && tempFile.canRead() && tempFile.canWrite())))
 					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, "Could not create temp file "+tempFile, identifier, global);
 				tempFile.delete();
