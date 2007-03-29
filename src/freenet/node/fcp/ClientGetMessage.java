@@ -108,11 +108,14 @@ public class ClientGetMessage extends FCPMessage {
 			tempFile = new File(tempFilename);
 			if(!diskFile.getAbsoluteFile().getParentFile().equals(tempFile.getAbsoluteFile().getParentFile()))
 				throw new MessageInvalidException(ProtocolErrorMessage.FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR, null, identifier, global);
+			if(tempFile.exists())
+				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, "Temp file exists", identifier, global);
 			if(diskFile.exists())
 				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, null, identifier, global);
 			try {
 				if(!(tempFile.createNewFile() || (tempFile.exists() && tempFile.canRead() && tempFile.canWrite())))
 					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, "Could not create temp file "+tempFile, identifier, global);
+				tempFile.delete();
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, e.getMessage(), identifier, global);
 			}
