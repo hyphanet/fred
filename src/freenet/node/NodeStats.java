@@ -283,9 +283,9 @@ public class NodeStats implements Persistable {
 		successfulSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesReceivedAverage"));
 		
 		requestOutputThrottle = 
-			new TokenBucket(Math.max(obwLimit*60, 32768*20), (1000L*1000L*1000L) / obwLimit, 0);
+			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), 0);
 		requestInputThrottle = 
-			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (1000L*1000L*1000L) / ibwLimit, 0);
+			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), 0);
 	}
 	
 	public void start() throws NodeInitException {
@@ -831,21 +831,14 @@ public class NodeStats implements Persistable {
 	}
 
 	public void setOutputLimit(int obwLimit) {
-		obwLimit *= FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS; // fudge factor; take into account non-request activity
-		requestOutputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  obwLimit, Math.max(obwLimit*60, 32768*20));
+		requestOutputThrottle.changeNanosAndBucketSize((int)((1000L*1000L*1000L) / (obwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), Math.max(obwLimit*60, 32768*20));
 		if(node.inputLimitDefault) {
-			int ibwLimit = obwLimit * 4;
-			requestInputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  ibwLimit, Math.max(ibwLimit*60, 32768*20));
+			setInputLimit(obwLimit * 4);
 		}
 	}
 
 	public void setInputLimit(int ibwLimit) {
-		ibwLimit *= FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
-		requestInputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  ibwLimit, Math.max(ibwLimit*60, 32768*20));
-	}
-
-	public int getInputLimit() {
-		return ((int) ((1000L * 1000L * 1000L) / requestInputThrottle.getNanosPerTick()));
+		requestInputThrottle.changeNanosAndBucketSize((int)((1000L*1000L*1000L) / (ibwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), Math.max(ibwLimit*60, 32768*20));
 	}
 
 	public boolean isTestnetEnabled() {
