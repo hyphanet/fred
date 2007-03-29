@@ -335,25 +335,17 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				// Write to temp file, then rename over filename
 				FileOutputStream fos = null;
 				boolean closed = false;
-				try {
+					// Caller guarantees that data == returnBucket
 					if(data != returnBucket) {
-						fos = new FileOutputStream(tempFile);
-						BucketTools.copyTo(data, fos, data.size());
-						if(fos != null) {
-							fos.close(); // must be closed before rename
-							closed = true;
-						}
+						Logger.error(this, "Data != returnBucket for "+this);
+						onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null);
+						return;
 					}
 					if(!tempFile.renameTo(targetFile)) {
 						postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
 						// Don't delete temp file, user might want it.
 					}
 					returnBucket = new FileBucket(targetFile, false, true, false, false, false);
-				} catch (FileNotFoundException e) {
-					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier, global);
-				} catch (IOException e) {
-					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier, global);
-				}
 				try {
 					if((fos != null) && !closed)
 						fos.close();
