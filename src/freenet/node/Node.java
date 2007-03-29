@@ -848,7 +848,7 @@ public class Node {
 						return outputBandwidthLimit;
 					}
 					public void set(int obwLimit) throws InvalidConfigValueException {
-						if(obwLimit <= 1) throw new InvalidConfigValueException("Bandwidth limit must be positive");
+						if(obwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive");
 						synchronized(Node.this) {
 							outputBandwidthLimit = obwLimit;
 						}
@@ -858,11 +858,10 @@ public class Node {
 		});
 		
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
-		if(obwLimit <= 1)
+		if(obwLimit <= 0)
 			throw new NodeInitException(EXIT_BAD_BWLIMIT, "Invalid outputBandwidthLimit");
 		outputBandwidthLimit = obwLimit;
 		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) /  obwLimit, obwLimit, (obwLimit * 2) / 5);
-		obwLimit = (obwLimit * 4) / 5;  // fudge factor; take into account non-request activity
 		
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true,
 				"Input bandwidth limit (bytes per second)", "Input bandwidth limit (bytes/sec); the node will try not to exceed this; -1 = 4x set outputBandwidthLimit",
@@ -887,7 +886,7 @@ public class Node {
 		});
 		
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
-		if(obwLimit <= 1)
+		if(obwLimit <= 0)
 			throw new NodeInitException(EXIT_BAD_BWLIMIT, "Invalid inputBandwidthLimit");
 		inputBandwidthLimit = ibwLimit;
 		if(ibwLimit == -1) {
