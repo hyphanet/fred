@@ -154,6 +154,14 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		length = 0;
 	}
 
+	/**
+	 * Internal OutputStream impl.
+	 * If createFileOnly is set, we won't overwrite an existing file, and we write to a temp file
+	 * then rename over the target. Note that we can't use createNewFile then new FOS() because while
+	 * createNewFile is atomic, the combination is not, so if we do it we are vulnerable to symlink
+	 * attacks.
+	 * @author toad
+	 */
 	class FileBucketOutputStream extends FileOutputStream {
 
 		private long restartCount;
