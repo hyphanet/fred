@@ -20,6 +20,9 @@
 	<property name="CSSTokenizerFilter.java" value="${src}/freenet/clients/http/filter/CSSTokenizerFilter.java"/>
 	<property name="junit.location" value="/usr/share/java/junit.jar"/>
 
+	<assertions>
+		<enable/>
+	</assertions>
 
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
@@ -74,6 +77,7 @@
 				<pathelement location="javax-security.jar"/>
 				<pathelement location="javax-crypto.jar"/>
 			</classpath>
+
 			<!-- following a very temporary list of files to be build -->
 			<include name="org/**/*.java"/>
 			<include name="freenet/**/*.java"/>
