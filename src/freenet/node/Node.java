@@ -887,7 +887,7 @@ public class Node {
 		inputBandwidthLimit = ibwLimit;
 		if(ibwLimit == -1) {
 			inputLimitDefault = true;
-			ibwLimit = (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick()) * 4;
+			ibwLimit = obwLimit * 4;
 		} else {
 			ibwLimit = ibwLimit * 4 / 5;
 		}
