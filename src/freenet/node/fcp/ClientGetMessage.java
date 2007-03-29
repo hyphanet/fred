@@ -86,7 +86,7 @@ public class ClientGetMessage extends FCPMessage {
 			}
 		}
 		String returnTypeString = fs.get("ReturnType");
-		returnType = parseReturnType(returnTypeString);
+		returnType = parseReturnTypeFCP(returnTypeString);
 		if(returnType == RETURN_TYPE_DIRECT) {
 			diskFile = null;
 			tempFile = null;
@@ -231,6 +231,14 @@ public class ClientGetMessage extends FCPMessage {
 		}
 	}
 
+	short parseReturnTypeFCP(String string) throws MessageInvalidException {
+		try {
+			return parseReturnType(string);
+		} catch (NumberFormatException e) {
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unable to parse ReturnType "+string+" : "+e, identifier, global);
+		}
+	}
+	
 	public static short parseReturnType(String string) {
 		if(string == null)
 			return RETURN_TYPE_DIRECT;
