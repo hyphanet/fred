@@ -378,6 +378,7 @@ public class Node {
 	public static final int EXIT_THROTTLE_FILE_ERROR = 23;
 	public static final int EXIT_RESTART_FAILED = 24;
 	public static final int EXIT_TEST_ERROR = 25;
+	public static final int EXIT_BAD_BWLIMIT = 26;
 	
 	public static final int N2N_MESSAGE_TYPE_FPROXY_USERALERT = 1;
 	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = N2N_MESSAGE_TYPE_FPROXY_USERALERT;  // **FIXME** For backwards-compatibility, remove when removing DMT.nodeToNodeTextMessage
@@ -847,7 +848,7 @@ public class Node {
 						return outputBandwidthLimit;
 					}
 					public void set(int obwLimit) throws InvalidConfigValueException {
-						if(obwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive");
+						if(obwLimit <= 1) throw new InvalidConfigValueException("Bandwidth limit must be positive");
 						synchronized(Node.this) {
 							outputBandwidthLimit = obwLimit;
 						}
@@ -857,6 +858,8 @@ public class Node {
 		});
 		
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
+		if(obwLimit <= 0)
+			throw new NodeInitException(this.EXIT_BAD_BWLIMIT, "Invalid outputBandwidthLimit");
 		outputBandwidthLimit = obwLimit;
 		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) /  obwLimit, obwLimit, (obwLimit * 2) / 5);
 		obwLimit = (obwLimit * 4) / 5;  // fudge factor; take into account non-request activity
@@ -875,7 +878,7 @@ public class Node {
 								inputLimitDefault = true;
 								ibwLimit = outputBandwidthLimit * 4;
 							} else {
-								if(ibwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
+								if(ibwLimit <= 1) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
 								inputLimitDefault = false;
 							}
 						}
@@ -884,14 +887,13 @@ public class Node {
 		});
 		
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
+		if(obwLimit <= 0)
+			throw new NodeInitException(this.EXIT_BAD_BWLIMIT, "Invalid inputBandwidthLimit");
 		inputBandwidthLimit = ibwLimit;
 		if(ibwLimit == -1) {
 			inputLimitDefault = true;
 			ibwLimit = obwLimit * 4;
-		} else {
-			ibwLimit = ibwLimit * 4 / 5;
 		}
-		
 		
 		// SwapRequestInterval
 		
