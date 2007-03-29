@@ -176,10 +176,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(logMINOR) Logger.minor(this, "Failed: "+e);
 		retries++;
 		if((retries > ctx.maxInsertRetries) && (ctx.maxInsertRetries != -1)) {
-			if(errors.isOneCodeOnly())
-				fail(new InserterException(errors.getFirstCode()));
-			else
-				fail(new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, errors, getURI()));
+			fail(InserterException.construct(errors));
 			return;
 		}
 		getScheduler().register(this);
