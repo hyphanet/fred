@@ -194,7 +194,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				if(throwOnTooFewKeys && tmp.shouldReconstruct()) {
 					tmp.close(false);
 					System.err.println("Attempting to reconstruct after migration...");
-					WrapperManager.signalStarting(5*60*60*1000);
 					
 					// Reconstruct
 					
@@ -468,7 +467,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			Logger.error(this, "This may take some time...");
 			System.err.println("Recreating secondary databases");
 			System.err.println("This may take some time...");
-			WrapperManager.signalStarting(5*60*60*1000); 
+			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+chkDB.count()*100))); 
 			// Of course it's not a solution but a quick fix
 			// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
 			// Either we find out what the maximum value is and we do a static method somewhere ensuring
@@ -501,7 +500,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(atime.count() < chkDB.count())
 				throw new DatabaseException("Needs repopulation");
 		} catch (DatabaseException e) {
-			WrapperManager.signalStarting(5*60*60*1000); 
+			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+chkDB.count()*100))); 
 			// Of course it's not a solution but a quick fix
 			// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
 			// Either we find out what the maximum value is and we do a static method somewhere ensuring
@@ -542,7 +541,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			blockNums = environment.openSecondaryDatabase
 				(null, prefix+"CHK_blockNum", chkDB, blockNoDbConfig);
 		} catch (DatabaseException e) {
-			WrapperManager.signalStarting(5*60*60*1000); 
+			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+chkDB.count()*100))); 
 			// Of course it's not a solution but a quick fix
 			// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
 			// Either we find out what the maximum value is and we do a static method somewhere ensuring
@@ -857,7 +856,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	// Now move all the wantedMove blocks onto the corresponding unwantedMove's.
     	
-    	WrapperManager.signalStarting(5*60*1000 + wantedMoveNums.length*1000 + alreadyDropped.size() * 100); // 1 per second
+    	WrapperManager.signalStarting(Math.min(Integer.MAX_VALUE, (5*60*1000 + wantedMoveNums.length*1000 + alreadyDropped.size() * 100))); // 1 per second
     	
     	byte[] buf = new byte[headerBlockSize + dataBlockSize];
     	t = null;
@@ -952,7 +951,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	System.out.println("Completing shrink"); // FIXME remove
     	
     	int totalUnwantedBlocks = unwantedMoveNums.length+freeEarlySlots.length;
-    	WrapperManager.signalStarting(5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100);
+    	WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, 5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100));
     	// If there are any slots left over, they must be free.
     	freeBlocks.clear();
 		t = environment.beginTransaction(null,null);
@@ -1034,7 +1033,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		try {
 			String msg = "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+chkDB.count()+", highest "+highestBlockNumberInDatabase()+", from file "+countCHKBlocksFromFile()+ ')';
 			System.err.println(msg); Logger.normal(this, msg);
-	    	WrapperManager.signalStarting((int)Math.max(0,(curBlocks-maxBlocks)*100)+5*60*1000); // 0.1s per block plus 5 minutes
+			WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, (5*60*1000 + 100 * (Math.max(0, curBlocks-maxBlocks)))));
 			while(true) {
 				t = environment.beginTransaction(null,null);
 				long deleted = 0;
@@ -1114,6 +1113,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.environment = env;
 		
 		// Delete old database(s).
+		WrapperManager.signalStarting(5*60*60*1000);
 		try {
 			environment.removeDatabase(null, prefix+"CHK");
 		} catch (DatabaseException e) {
