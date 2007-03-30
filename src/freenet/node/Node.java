@@ -1191,6 +1191,8 @@ public class Node {
 			public void set(long val) throws InvalidConfigValueException {
 				if(val < 0)
 					throw new InvalidConfigValueException("Negative or zero values not supported");
+				else if(val > (80 * Runtime.getRuntime().maxMemory() / 100))
+					throw new InvalidConfigValueException("Giving more than 80% of your ram to BDB is probably not what you want to do!");
 				envMutableConfig.setCacheSize(val);
 				try{
 					storeEnvironment.setMutableConfig(envMutableConfig);
