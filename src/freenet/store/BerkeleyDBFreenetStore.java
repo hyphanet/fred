@@ -496,7 +496,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(atime.count() < chkDB.count())
 				throw new DatabaseException("Needs repopulation");
 		} catch (DatabaseException e) {
-			WrapperManager.signalStarting(Integer.MAX_VALUE-1);
+			WrapperManager.signalStarting(5*60*60*1000); 
+			// Of course it's not a solution but a quick fix
+			// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
+			// Either we find out what the maximum value is and we do a static method somewhere ensuring
+			// it won't overflow ... or we debug the wrapper.
+			// NB: it might be a wrapper-version-missmatch problem (nextgens)
 			if(atime != null) atime.close();
 			environment.truncateDatabase(null, prefix+"CHK_accessTime", false);
 			System.err.println("Reconstructing access times index...");
