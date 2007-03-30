@@ -497,8 +497,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		try {
 			atime = environment.openSecondaryDatabase
 								(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
-			if(atime.count() < chkDB.count())
+			if(atime.count() < chkDB.count()) {
+				System.err.println("Access times database: "+atime.count()+" but main database: "+chkDB.count());
 				throw new DatabaseException("Needs repopulation");
+			}
 		} catch (DatabaseException e) {
 			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+chkDB.count()*100))); 
 			// Of course it's not a solution but a quick fix
@@ -540,6 +542,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			System.err.println("Opening block db index");
 			blockNums = environment.openSecondaryDatabase
 				(null, prefix+"CHK_blockNum", chkDB, blockNoDbConfig);
+			if(blockNums.count() < chkDB.count()) {
+				System.err.println("Block nums database: "+atime.count()+" but main database: "+chkDB.count());
+				throw new DatabaseException("Needs repopulation");
+			}
 		} catch (DatabaseException e) {
 			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+chkDB.count()*100))); 
 			// Of course it's not a solution but a quick fix
