@@ -234,6 +234,8 @@ public class NodeClientCore implements Persistable {
 					}
 			
 		});
+		if(node.lastVersion <= 1022)
+			nodeConfig.fixOldDefault("downloadAllowedDirs", "downloads");
 		setDownloadAllowedDirs(nodeConfig.getStringArr("downloadAllowedDirs"));
 		
 		nodeConfig.register("uploadAllowedDirs", new String[] {"all"}, sortOrder++, true, true, "Directories uploading is allowed from", 
