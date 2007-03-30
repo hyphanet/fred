@@ -1181,29 +1181,24 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 	
 	private void wipeOldDatabases(String prefix) {
-		WrapperManager.signalStarting(5*60*60*1000);
-		try {
-			environment.removeDatabase(null, prefix+"CHK");
-		} catch (DatabaseException e) {
-			Logger.error(this, "Could not remove old database: "+(prefix+"CHK")+": "+e, e);
-			System.err.println("Could not remove old database: "+(prefix+"CHK")+": "+e);
-			e.printStackTrace();
-		}
-		try {
-			environment.removeDatabase(null, prefix+"CHK_accessTime");
-		} catch (DatabaseException e) {
-			Logger.error(this, "Could not remove old database accesstime: "+e, e);
-			System.err.println("Could not remove old database: "+(prefix+"CHK_accessTime")+": "+e);
-			e.printStackTrace();
-		}
-		try {
-			environment.removeDatabase(null, prefix+"CHK_blockNum");
-		} catch (DatabaseException e) {
-			Logger.error(this, "Could not remove old database blocknum: "+e, e);
-			System.err.println("Could not remove old database: "+(prefix+"CHK_blockNum")+": "+e);
-			e.printStackTrace();
-		}
+		wipeDatabase(prefix+"CHK");
+		wipeDatabase(prefix+"CHK_accessTime");
+		wipeDatabase(prefix+"CHK_blockNum");
 		System.err.println("Removed old database "+prefix);
+	}
+
+	private void wipeDatabase(String name) {
+		WrapperManager.signalStarting(5*60*60*1000);
+		Logger.normal(this, "Wiping database "+name);
+		try {
+			environment.removeDatabase(null, name);
+		} catch (DatabaseNotFoundException e) {
+			System.err.println("Database "+name+" does not exist deleting it");
+		} catch (DatabaseException e) {
+			Logger.error(this, "Could not remove old database: "+name+": "+e, e);
+			System.err.println("Could not remove old database: "+name+": "+e);
+			e.printStackTrace();
+		}
 	}
 
 	private void reconstruct(short type) throws DatabaseException, IOException {
