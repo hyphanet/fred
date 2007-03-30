@@ -1115,6 +1115,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		chkDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
 		
+		if(chkDB.count() > 0)
+			throw new IllegalStateException("Wiped old store but it still contains "+chkDB.count()+" keys!");
+		
 		this.fixSecondaryFile = fixSecondaryFile;
 		fixSecondaryFile.delete();
 		
