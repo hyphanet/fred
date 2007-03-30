@@ -856,7 +856,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	// Now move all the wantedMove blocks onto the corresponding unwantedMove's.
     	
-    	WrapperManager.signalStarting(Math.min(Integer.MAX_VALUE, (5*60*1000 + wantedMoveNums.length*1000 + alreadyDropped.size() * 100))); // 1 per second
+    	WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, (5*60*1000 + wantedMoveNums.length*1000L + alreadyDropped.size() * 100L))); // 1 per second
     	
     	byte[] buf = new byte[headerBlockSize + dataBlockSize];
     	t = null;
