@@ -442,21 +442,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		dbConfig.setAllowCreate(true);
 		dbConfig.setTransactional(true);
 		if(wipe) {
-			try {
-				environment.removeDatabase(null,prefix+"CHK");
-			} catch (DatabaseException e) {
-				Logger.error(this, "Could not remove "+prefix+"CHK", e);
-			}
-			try {
-				environment.removeDatabase(null,prefix+"CHK_accessTime");
-			} catch (DatabaseException e) {
-				Logger.error(this, "Could not remove "+prefix+"CHK_accessTime", e);
-			}
-			try {
-				environment.removeDatabase(null,prefix+"CHK_blockNum");
-			} catch (DatabaseException e) {
-				Logger.error(this, "Could not remove "+prefix+"CHK_blockNum", e);
-			}
+			wipeOldDatabases(prefix);
 		}
 		chkDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
 
@@ -1118,30 +1104,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.maxChkBlocks=maxChkBlocks;
 		this.environment = env;
 		
+		wipeOldDatabases(prefix);
+		
 		// Delete old database(s).
-		WrapperManager.signalStarting(5*60*60*1000);
-		try {
-			environment.removeDatabase(null, prefix+"CHK");
-		} catch (DatabaseException e) {
-			Logger.error(this, "Could not remove old database: "+(prefix+"CHK")+": "+e, e);
-			System.err.println("Could not remove old database: "+(prefix+"CHK")+": "+e);
-			e.printStackTrace();
-		}
-		try {
-			environment.removeDatabase(null, prefix+"CHK_accessTime");
-		} catch (DatabaseException e) {
-			Logger.error(this, "Could not remove old database accesstime: "+e, e);
-			System.err.println("Could not remove old database: "+(prefix+"CHK_accessTime")+": "+e);
-			e.printStackTrace();
-		}
-		try {
-			environment.removeDatabase(null, prefix+"CHK_blockNum");
-		} catch (DatabaseException e) {
-			Logger.error(this, "Could not remove old database blocknum: "+e, e);
-			System.err.println("Could not remove old database: "+(prefix+"CHK_blockNum")+": "+e);
-			e.printStackTrace();
-		}
-		System.err.println("Removed old database "+prefix);
 		
 		// Initialize CHK database
 		DatabaseConfig dbConfig = new DatabaseConfig();
@@ -1206,6 +1171,32 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		storeShutdownHook.addEarlyJob(new ShutdownHook());
 	}
 	
+	private void wipeOldDatabases(String prefix) {
+		WrapperManager.signalStarting(5*60*60*1000);
+		try {
+			environment.removeDatabase(null, prefix+"CHK");
+		} catch (DatabaseException e) {
+			Logger.error(this, "Could not remove old database: "+(prefix+"CHK")+": "+e, e);
+			System.err.println("Could not remove old database: "+(prefix+"CHK")+": "+e);
+			e.printStackTrace();
+		}
+		try {
+			environment.removeDatabase(null, prefix+"CHK_accessTime");
+		} catch (DatabaseException e) {
+			Logger.error(this, "Could not remove old database accesstime: "+e, e);
+			System.err.println("Could not remove old database: "+(prefix+"CHK_accessTime")+": "+e);
+			e.printStackTrace();
+		}
+		try {
+			environment.removeDatabase(null, prefix+"CHK_blockNum");
+		} catch (DatabaseException e) {
+			Logger.error(this, "Could not remove old database blocknum: "+e, e);
+			System.err.println("Could not remove old database: "+(prefix+"CHK_blockNum")+": "+e);
+			e.printStackTrace();
+		}
+		System.err.println("Removed old database "+prefix);
+	}
+
 	private void reconstruct(short type) throws DatabaseException, IOException {
 		if(chkDB.count() != 0)
 			throw new IllegalStateException("Store must be empty before reconstruction!");
