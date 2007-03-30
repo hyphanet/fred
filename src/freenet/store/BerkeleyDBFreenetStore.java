@@ -496,7 +496,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(atime.count() < chkDB.count())
 				throw new DatabaseException("Needs repopulation");
 		} catch (DatabaseException e) {
-			WrapperManager.signalStarting(Math.max(Integer.MAX_VALUE, (int)(5*60*1000 + chkDB.count() * 100)));
+			WrapperManager.signalStarting(Integer.MAX_VALUE);
 			if(atime != null) atime.close();
 			environment.truncateDatabase(null, prefix+"CHK_accessTime", false);
 			System.err.println("Reconstructing access times index...");
