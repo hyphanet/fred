@@ -444,6 +444,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		if(wipe) {
 			wipeOldDatabases(prefix);
 		}
+		
 		chkDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
 
 		this.fixSecondaryFile = fixSecondaryFile;
@@ -460,8 +461,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// it won't overflow ... or we debug the wrapper.
 			// NB: it might be a wrapper-version-missmatch problem (nextgens)
 			try {
-				environment.truncateDatabase(null, prefix+"CHK_accessTime", false);
-				environment.truncateDatabase(null, prefix+"CHK_blockNum", false);
+				try {
+					environment.truncateDatabase(null, prefix+"CHK_accessTime", false);
+				} catch (DatabaseNotFoundException e) {
+					// Cool!
+				}
+				try {
+					environment.truncateDatabase(null, prefix+"CHK_blockNum", false);
+				} catch (DatabaseNotFoundException e) {
+					// Cool!
+				}
 			} catch (DatabaseException e) {
 				close(false);
 				throw e;
@@ -1135,9 +1144,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 							(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
 		
 		// Initialize other secondary database sorted on block number
-		try {
-			environment.removeDatabase(null, prefix+"CHK_blockNum");
-		} catch (DatabaseNotFoundException e) { };
 		SecondaryConfig blockNoDbConfig = new SecondaryConfig();
 		blockNoDbConfig.setAllowCreate(true);
 		blockNoDbConfig.setSortedDuplicates(false);
