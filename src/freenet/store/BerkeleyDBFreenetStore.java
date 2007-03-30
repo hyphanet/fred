@@ -468,7 +468,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			Logger.error(this, "This may take some time...");
 			System.err.println("Recreating secondary databases");
 			System.err.println("This may take some time...");
-			WrapperManager.signalStarting((int)(Math.max(Integer.MAX_VALUE, 5*60*1000 + chkDB.count() * 100)));
+			WrapperManager.signalStarting(5*60*60*1000); 
+			// Of course it's not a solution but a quick fix
+			// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
+			// Either we find out what the maximum value is and we do a static method somewhere ensuring
+			// it won't overflow ... or we debug the wrapper.
+			// NB: it might be a wrapper-version-missmatch problem (nextgens)
 			try {
 				environment.truncateDatabase(null, prefix+"CHK_accessTime", false);
 				environment.truncateDatabase(null, prefix+"CHK_blockNum", false);
@@ -537,7 +542,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			blockNums = environment.openSecondaryDatabase
 				(null, prefix+"CHK_blockNum", chkDB, blockNoDbConfig);
 		} catch (DatabaseException e) {
-			WrapperManager.signalStarting((int)(Math.max(Integer.MAX_VALUE, 5*60*1000 + chkDB.count() * 100)));
+			WrapperManager.signalStarting(5*60*60*1000); 
+			// Of course it's not a solution but a quick fix
+			// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
+			// Either we find out what the maximum value is and we do a static method somewhere ensuring
+			// it won't overflow ... or we debug the wrapper.
+			// NB: it might be a wrapper-version-missmatch problem (nextgens)
 			if(blockNums != null) blockNums.close();
 			environment.truncateDatabase(null, prefix+"CHK_blockNum", false);
 			System.err.println("Reconstructing block numbers index...");
