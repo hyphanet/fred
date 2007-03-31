@@ -89,6 +89,12 @@
 		<copy todir="${build}/freenet/clients/http/staticfiles">
 			<fileset dir="${src}/freenet/clients/http/staticfiles"/>
 		</copy>
+		<!-- Copy translation files to the build dir -->
+		<copy todir="${build}/freenet/l10n">
+			<fileset dir="${src}/freenet/l10n">
+				<include name="freenet.l10n.*.properties"/>
+			</fileset>
+		</copy>
 	</target>
 
 
