@@ -220,7 +220,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     		int curPort = port;
     		String tempBindTo = this.bindTo;
     		try {
-    			networkInterface = new NetworkInterface(curPort, tempBindTo, allowedHosts);
+    			networkInterface = NetworkInterface.create(curPort, tempBindTo, allowedHosts);
     		} catch (IOException e) {
     			Logger.error(this, "Could not bind to TMCI port: "+tempBindTo+ ':' +port);
     			System.err.println("Could not bind to TMCI port: "+tempBindTo+ ':' +port);

@@ -294,7 +294,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		toadlets = new LinkedList();
 		core.setToadletContainer(this); // even if not enabled, because of config
 		
-		this.networkInterface = new NetworkInterface(port, this.bindTo, fproxyConfig.getString("allowedHosts"));
+		this.networkInterface = NetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"));
 		if(!enabled) {
 			Logger.normal(core, "Not starting FProxy as it's disabled");
 			System.out.println("Not starting FProxy as it's disabled");
@@ -309,7 +309,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.bindTo = newbindTo;
 		allowedFullAccess = new AllowedHosts(allowedHosts);
 		this.bf = bf;
-		this.networkInterface = new NetworkInterface(port, this.bindTo, allowedHosts);
+		this.networkInterface = NetworkInterface.create(port, this.bindTo, allowedHosts);
 		toadlets = new LinkedList();
 		this.cssName = cssName;
 		pageMaker = new PageMaker(cssName);

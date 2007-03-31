@@ -61,6 +61,22 @@ public class NetworkInterface {
 	/** The number of running acceptors. */
 	private int runningAcceptors = 0;
 
+	public static NetworkInterface create(int port, String bindTo, String allowedHosts) throws IOException {
+		NetworkInterface iface = new NetworkInterface(port, allowedHosts);
+		try {
+			iface.setBindTo(bindTo);
+		} catch (IOException e) {
+			try {
+				iface.close();
+			} catch (IOException e1) {
+				Logger.error(NetworkInterface.class, "Caught "+e1+" closing after catching "+e+" binding while constructing", e1);
+				// Ignore
+			}
+			throw e;
+		}
+		return iface;
+	}
+	
 	/**
 	 * Creates a new network interface that can bind to several addresses and
 	 * allows connection filtering on IP address level.
@@ -70,9 +86,8 @@ public class NetworkInterface {
 	 * @param allowedHosts
 	 *            A comma-separated list of allowed addresses
 	 */
-	public NetworkInterface(int port, String bindTo, String allowedHosts) throws IOException {
+	private NetworkInterface(int port, String allowedHosts) throws IOException {
 		this.port = port;
-		setBindTo(bindTo);
 		this.allowedHosts = new AllowedHosts(allowedHosts);
 	}
 

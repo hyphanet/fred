@@ -124,7 +124,7 @@ public class FCPServer implements Runnable {
 			System.out.println("Starting FCP server on "+bindTo+ ':' +port+ '.');
 			NetworkInterface tempNetworkInterface = null;
 			try {
-				tempNetworkInterface = new NetworkInterface(port, bindTo, allowedHosts);
+				tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts);
 			} catch (BindException be) {
 				Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
 				System.out.println("Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
