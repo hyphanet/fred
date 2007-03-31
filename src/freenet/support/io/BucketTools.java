@@ -16,6 +16,7 @@ import java.util.List;
 import org.spaceroots.mantissa.random.MersenneTwister;
 
 import freenet.crypt.SHA256;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -199,9 +200,10 @@ public class BucketTools {
 			dis = new DataInputStream(is);
 			dis.readFully(data);
 		} finally {
-			is.close();
 			if(dis != null)
 				dis.close();
+			else
+				is.close();
 		}
 		return data;
 	}
@@ -210,13 +212,18 @@ public class BucketTools {
 		long size = bucket.size();
 		if(size > output.length)
 			throw new IllegalArgumentException("Data does not fit in provided buffer");
-		InputStream is = bucket.getInputStream();
+		InputStream is = null;
+		try {
+		is = bucket.getInputStream();
 		int moved = 0;
 		while(true) {
 			if(moved == size) return moved;
 			int x = is.read(output, moved, (int)(size - moved));
 			if(x == -1) return moved;
 			moved += x;
+		}
+		} finally {
+			if(is != null) is.close();
 		}
 	}
 	
@@ -234,10 +241,9 @@ public class BucketTools {
 	}
 
 	public static byte[] hash(Bucket data) throws IOException {
-		InputStream is = null;
+		InputStream is = data.getInputStream();
 		try {
 			MessageDigest md = SHA256.getMessageDigest();
-			is = data.getInputStream();
 			long bucketLength = data.size();
 			long bytesRead = 0;
 			byte[] buf = new byte[4096];
@@ -318,10 +324,10 @@ public class BucketTools {
 	 * Split the data into a series of read-only Bucket's.
 	 * @param origData The original data Bucket.
 	 * @param splitSize The number of bytes to put into each bucket.
-	 * 
-	 * FIXME This could be made many orders of magnitude more efficient on
-	 * time and space if the underlying Bucket happens to be a passed-in
-	 * plaintext file!
+	 *
+	 * If the passed-in Bucket is a FileBucket, will be efficiently
+	 * split into ReadOnlyFileSliceBuckets, otherwise new buckets are created
+	 * and the data written to them.
 	 * 
 	 * Note that this method will allocate a buffer of size splitSize.
 	 * @throws IOException If there is an error creating buckets, reading from
@@ -357,9 +363,10 @@ public class BucketTools {
 				}
 			}
 		} finally {
-			is.close();
 			if(dis != null)
 				dis.close();
+			else
+				is.close();
 		}
 		return buckets;
 	}
@@ -379,6 +386,7 @@ public class BucketTools {
 		Bucket b = bf.makeBucket(blockLength);
 		MersenneTwister mt = new MersenneTwister(hash);
 		OutputStream os = b.getOutputStream();
+		try {
 		BucketTools.copyTo(oldBucket, os, length);
 		byte[] buf = new byte[4096];
 		for(int x=length;x<blockLength;) {
@@ -388,9 +396,9 @@ public class BucketTools {
 			os.write(buf, 0, thisCycle);
 			x += thisCycle;
 		}
-		os.close();
 		if(b.size() != blockLength)
 			throw new IllegalStateException();
 		return b;
+		} finally { os.close(); }
 	}
 }
