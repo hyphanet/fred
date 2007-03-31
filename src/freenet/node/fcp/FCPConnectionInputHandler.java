@@ -96,6 +96,10 @@ public class FCPConnectionInputHandler implements Runnable {
 				continue;
 			}
 			try {
+				if(Logger.shouldLog(Logger.DEBUG, this)) {
+					Logger.debug(this, "Incoming FCP message:\n"+fs.toString());
+					Logger.debug(this, "Being handled by "+msg+" on "+handler);
+				}
 				msg.run(handler, handler.server.node);
 			} catch (MessageInvalidException e) {
 				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
