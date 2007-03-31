@@ -17,6 +17,7 @@ import java.util.List;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.node.fcp.ClientGet;
@@ -40,7 +41,15 @@ import freenet.support.io.FileBucket;
 
 public class QueueToadlet extends Toadlet {
 
-	private static final String[] priorityClasses = new String[] { "emergency", "very high", "high", "medium", "low", "very low", "will never finish" };
+	private static final String[] priorityClasses = new String[] { 
+		L10n.getString("QueueToadlet.emergency"),
+		L10n.getString("QueueToadlet.veryhigh"),
+		L10n.getString("QueueToadlet.high"),
+		L10n.getString("QueueToadlet.medium"),
+		L10n.getString("QueueToadlet.low"),
+		L10n.getString("QueueToadlet.verylow"),
+		L10n.getString("QueueToadlet.willneverfinish")
+	};
 
 	private static final int LIST_IDENTIFIER = 1;
 	private static final int LIST_SIZE = 2;
@@ -100,7 +109,12 @@ public class QueueToadlet extends Toadlet {
 				try {
 					fcp.removeGlobalRequest(identifier);
 				} catch (MessageInvalidException e) {
-					this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove " + identifier + ": " + e.getMessage());
+					this.sendErrorPage(ctx, 200, 
+							L10n.getString("QueueToadlet.failedToRemoveRequest"),
+							L10n.getString("QueueToadlet.failedToRemove",
+									new String[]{ "id", "message" },
+									new String[]{ identifier, e.getMessage()}
+							));
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
@@ -112,7 +126,12 @@ public class QueueToadlet extends Toadlet {
 					ClientRequest clientRequest = clientRequests[requestIndex];
 					if (clientRequest.getIdentifier().equals(identifier)) {
 						if(!clientRequest.restart()) {
-							sendErrorPage(ctx, 200, "Failed to restart request", "Failed to restart "+identifier);
+							sendErrorPage(ctx, 200, 
+									L10n.getString("QueueToadlet.failedToRestartRequest"),
+									L10n.getString("QueueToadlet.failedToRestart", 
+											new String[]{ "id" },
+											new String[] { identifier}
+							));
 						}
 					}
 				}
@@ -139,7 +158,12 @@ public class QueueToadlet extends Toadlet {
 				}
 				
 				if(failedIdentifiers.length() > 0)
-					this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove " + failedIdentifiers);
+					this.sendErrorPage(ctx, 200, 
+							L10n.getString("QueueToadlet.failedToRemoveRequest"),
+							L10n.getString("QueueToadlet.failedToRemoveId",
+									new String[]{ "id" },
+									new String[]{ failedIdentifiers.toString() }
+							));
 				else
 					writePermanentRedirect(ctx, "Done", "/queue/");
 				fcp.forceStorePersistentRequests();
