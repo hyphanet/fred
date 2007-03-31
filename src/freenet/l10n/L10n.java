@@ -125,6 +125,10 @@ public class L10n {
         return result;
     }
 	
+	public static String getSelectedLanguage() {
+		return selectedLanguage;
+	}
+	
 	public static void main(String[] args) {
 		L10n.setLanguage("fr");
 		System.out.println(L10n.getString("testing.test"));

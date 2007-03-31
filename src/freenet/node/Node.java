@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.MissingResourceException;
 import java.util.zip.DeflaterOutputStream;
 
 import net.i2p.util.NativeBigInteger;
@@ -79,6 +80,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.l10n.L10n;
 import freenet.node.updater.NodeUpdaterManager;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
@@ -1305,6 +1307,29 @@ public class Node {
 		});
 		
 		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
+		
+		// l10n stuffs
+		nodeConfig.register("l10n", "en", sortOrder++, false, true, "The language the node will use", "This setting ",
+				new StringCallback(){
+			public String get() {
+				return L10n.getSelectedLanguage();
+			}
+			
+			public void set(String val) throws InvalidConfigValueException {
+				if(get().equalsIgnoreCase(val)) return;
+				try {
+					L10n.setLanguage(val);
+				} catch (MissingResourceException e) {
+					throw new InvalidConfigValueException(e.getMessage());
+				}
+			}
+		});
+		
+		try {
+			L10n.setLanguage(nodeConfig.getString("l10n"));
+		} catch (MissingResourceException e) {
+			L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
+		}
 		
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
