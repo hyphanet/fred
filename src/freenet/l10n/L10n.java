@@ -23,13 +23,14 @@ public class L10n {
 	
 	// English has to remain the first one!
 	public static final String[] availableLanguages = { "en", "fr" };
-	private static String selectedLanguage = availableLanguages[0];
+	private String selectedLanguage = availableLanguages[0];
 	
-	private static Properties currentProperties = loadProperties(selectedLanguage);
+	private static Properties currentProperties = null;
 	private static Properties fallbackProperties = null;
-	
-	private static void loadDefaultProperties() {
-		selectedLanguage = availableLanguages[0];
+	private static L10n currentClass = null;
+
+	L10n(String selected) {
+		selectedLanguage = selected;
 		currentProperties = loadProperties(selectedLanguage);
 	}
 	
@@ -44,14 +45,14 @@ public class L10n {
 			if(selectedLanguage.equalsIgnoreCase(availableLanguages[i])){
 				selectedLanguage = availableLanguages[i];
 				Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
-				currentProperties = loadProperties(selectedLanguage);
+				currentClass = new L10n(selectedLanguage);
 				if(currentProperties == null)
-					loadDefaultProperties();
+					currentClass = new L10n(availableLanguages[0]);
 				return;
 			}
 		}
 		
-		loadDefaultProperties();
+		currentClass = new L10n(availableLanguages[0]);
 		Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
 		throw new MissingResourceException("The requested translation ("+selectedLanguage+") hasn't been found!", CLASS_NAME, selectedLanguage);
 	}
@@ -108,28 +109,30 @@ public class L10n {
         Properties result = null;
         InputStream in = null;
         try {
-        	ClassLoader loader = ClassLoader.getSystemClassLoader ();
+        	ClassLoader loader = ClassLoader.getSystemClassLoader();
         	
         	// Returns null on lookup failures:
         	in = loader.getResourceAsStream(name);
-        	if(in != null)	{
-        		result = new Properties ();
-        		result.load (in); // Can throw IOException
+        	if(in != null) {
+        		result = new Properties();
+        		result.load(in); // Can throw IOException
         	}
         } catch (Exception e) {
             result = null;
         } finally {
-            if (in != null) try { in.close (); } catch (Throwable ignore) {}
+            if (in != null) try { in.close(); } catch (Throwable ignore) {}
         }
         
         return result;
     }
 	
 	public static String getSelectedLanguage() {
-		return selectedLanguage;
+		return currentClass.selectedLanguage;
 	}
 	
 	public static void main(String[] args) {
+		L10n.setLanguage("en");
+		System.out.println(L10n.getString("testing.test"));
 		L10n.setLanguage("fr");
 		System.out.println(L10n.getString("testing.test"));
 		System.out.println(L10n.getString("testing.test", new String[]{ "test1", "test2" }, new String[] { "a", "b" }));
