@@ -104,6 +104,7 @@ import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.StringArray;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -1308,9 +1309,14 @@ public class Node {
 		
 		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
 		
-		// l10n stuffs
-		nodeConfig.register("l10n", "en", sortOrder++, false, true, "The language the node will use", "This setting ",
+		// l10n stuffs		
+		nodeConfig.register("l10n", "en", sortOrder++, false, true, 
+				"The language the node will use to display messages",
+				"This setting will change the language used to display messages. " +
+				"Choose from " + StringArray.toString(L10n.availableLanguages) + ". " +
+				"Keep in mind that some strings won't be translated until next node startup though.",
 				new StringCallback(){
+			
 			public String get() {
 				return L10n.getSelectedLanguage();
 			}

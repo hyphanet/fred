@@ -27,6 +27,21 @@ public class StringArray {
 	}
 	
 	/**
+	 * This method implements the equivalent of Arrays.valueOf() (java 1.5)
+	 * @param array
+	 * @return string
+	 */
+	public static String toString(String[] array){
+		if((array != null) && (array.length > 0)){
+			StringBuffer sb = new StringBuffer();
+			for(int i=0; i<array.length; i++)
+				sb.append(array[i]+'|');
+			return '[' + sb.substring(0, sb.length() - 1).toString() + ']';
+		}else
+			return "";
+	}
+	
+	/**
 	 * This methods returns a String[] from Object[]
 	 * @param array
 	 * @return string[]
