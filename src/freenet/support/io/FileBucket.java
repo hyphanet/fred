@@ -166,6 +166,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 
 		private long restartCount;
 		private File tempfile;
+		private boolean closed;
 		
 		protected FileBucketOutputStream(
 			File tempfile, String s, long restartCount)
@@ -176,6 +177,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 			this.tempfile = tempfile;
 			resetLength();
 			this.restartCount = restartCount;
+			closed = false;
 		}
 		
 		protected void confirmWriteSynchronized() throws IOException {
@@ -210,6 +212,10 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		}
 		
 		public void close() throws IOException {
+			synchronized(this) {
+				if(closed) return;
+				closed = true;
+			}
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR)
 				Logger.minor(this, "Closing "+FileBucket.this);
