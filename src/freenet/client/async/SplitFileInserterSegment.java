@@ -440,7 +440,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback,
 					parent.parent.completedBlock(true);
 			}
 			onEncodedSegment();
-			parent.encodedSegment(this);
 		}
 		if (hasURIs) {
 			parent.segmentHasURIs(this);
@@ -465,6 +464,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback,
 		try {
 			for (int i = 0; i < checkBlockInserters.length; i++) {
 				if(checkBlocks[i] == null) continue;
+				if(checkBlockInserters[i] != null) continue;
 				checkBlockInserters[i] = new SingleBlockInserter(parent.parent,
 						checkBlocks[i], (short) -1, FreenetURI.EMPTY_CHK_URI,
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
@@ -477,6 +477,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback,
 			InserterException ex = new InserterException(
 					InserterException.INTERNAL_ERROR, t, null);
 			finish(ex);
+			return;
 		}
 
 		synchronized (this) {
