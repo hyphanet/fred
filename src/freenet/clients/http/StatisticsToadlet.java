@@ -427,6 +427,9 @@ public class StatisticsToadlet extends Toadlet {
 				long storeAccesses = storeHits + storeMisses;
 				long overallAccesses = storeAccesses + cacheAccesses;
 				
+				// REDFLAG Don't show database version because it's not possible to get it accurately.
+				// (It's a public static constant, so it will use the version from compile time of freenet.jar)
+				
 				storeSizeList.addChild("li", 
 						"Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
 						" (" + SizeUtil.formatSize(cachedSize, true) + ')');
