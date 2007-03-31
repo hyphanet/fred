@@ -50,8 +50,6 @@ public class BucketTools {
 
 		writeChannel.close();
 		readChannel.close();
-		out.close();
-		in.close();
 	}
 
 	public final static void zeroPad(Bucket b, long size) throws IOException {
