@@ -214,14 +214,14 @@ public class BucketTools {
 			throw new IllegalArgumentException("Data does not fit in provided buffer");
 		InputStream is = null;
 		try {
-		is = bucket.getInputStream();
-		int moved = 0;
-		while(true) {
-			if(moved == size) return moved;
-			int x = is.read(output, moved, (int)(size - moved));
-			if(x == -1) return moved;
-			moved += x;
-		}
+			is = bucket.getInputStream();
+			int moved = 0;
+			while(true) {
+				if(moved == size) return moved;
+				int x = is.read(output, moved, (int)(size - moved));
+				if(x == -1) return moved;
+				moved += x;
+			}
 		} finally {
 			if(is != null) is.close();
 		}
@@ -387,18 +387,18 @@ public class BucketTools {
 		MersenneTwister mt = new MersenneTwister(hash);
 		OutputStream os = b.getOutputStream();
 		try {
-		BucketTools.copyTo(oldBucket, os, length);
-		byte[] buf = new byte[4096];
-		for(int x=length;x<blockLength;) {
-			int remaining = blockLength - x;
-			int thisCycle = Math.min(remaining, buf.length);
-			mt.nextBytes(buf); // FIXME??
-			os.write(buf, 0, thisCycle);
-			x += thisCycle;
-		}
-		if(b.size() != blockLength)
-			throw new IllegalStateException();
-		return b;
+			BucketTools.copyTo(oldBucket, os, length);
+			byte[] buf = new byte[4096];
+			for(int x=length;x<blockLength;) {
+				int remaining = blockLength - x;
+				int thisCycle = Math.min(remaining, buf.length);
+				mt.nextBytes(buf); // FIXME??
+				os.write(buf, 0, thisCycle);
+				x += thisCycle;
+			}
+			if(b.size() != blockLength)
+				throw new IllegalStateException();
+			return b;
 		} finally { os.close(); }
 	}
 }
