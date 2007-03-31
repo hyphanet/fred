@@ -142,6 +142,9 @@ public class RevocationChecker implements ClientCallback {
 			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString());
 			return;
 		}
+		if(e.newURI != null) {
+			manager.blow("Revocation URI redirecting to "+e.newURI+" - maybe you set the revocation URI to the update URI?");
+		}
 		synchronized(this) {
 			if(errorCode == FetchException.DATA_NOT_FOUND){
 				revocationDNFCounter++;
