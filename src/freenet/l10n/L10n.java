@@ -78,6 +78,25 @@ public class L10n {
 	}
 	
 	/**
+	 * Allows things like :
+	 * L10n.getString("testing.test", new String[]{ "test1", "test2" }, new String[] { "a", "b" })
+	 * 
+	 * @param key
+	 * @param patterns : a list of patterns wich are matchable from the translation
+	 * @param values : the values corresponding to the list
+	 * @return the translated string or the default value from the default language or the key if nothing is found
+	 */
+	public static String getString(String key, String[] patterns, String[] values) {
+		assert(patterns.length == values.length);
+		String result = getString(key);
+
+		for(int i=0; i<patterns.length; i++)
+			result = result.replaceAll("\\$\\("+patterns[i]+"\\)", values[i]);
+		
+		return result;
+	}
+	
+	/**
 	 * Load a property file depending on the given name and using the prefix
 	 * 
 	 * @param name
@@ -109,5 +128,6 @@ public class L10n {
 	public static void main(String[] args) {
 		L10n.setLanguage("fr");
 		System.out.println(L10n.getString("testing.test"));
+		System.out.println(L10n.getString("testing.test", new String[]{ "test1", "test2" }, new String[] { "a", "b" }));
 	}
 }
