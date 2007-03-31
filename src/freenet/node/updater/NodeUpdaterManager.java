@@ -115,8 +115,8 @@ public class NodeUpdaterManager {
 		}
 		
         updaterConfig.register("revocationURI",	REVOCATION_URI,4,
-        		true, false, "Where should the node look for revocation ?",
-        		"Where should the node look for revocation ?",
+        		true, false, "Where should the node look for the revocation key ?",
+        		"URI for the revocation key. If this is found the node will display its contents and disable the auto-updater.",
         		new UpdateRevocationURICallback());
         
         // FIXME remove
