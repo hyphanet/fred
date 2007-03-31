@@ -234,7 +234,7 @@ public class NodeClientCore implements Persistable {
 					}
 			
 		});
-		if(node.lastVersion <= 1022)
+		if(node.lastVersion <= 1024)
 			nodeConfig.fixOldDefault("downloadAllowedDirs", "downloads");
 		setDownloadAllowedDirs(nodeConfig.getStringArr("downloadAllowedDirs"));
 		
