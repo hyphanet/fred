@@ -141,7 +141,8 @@ public class StatisticsToadlet extends Toadlet {
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
 	
-		contentNode.addChild(core.alerts.createSummary());
+		if(ctx.isAllowedFullAccess())
+			contentNode.addChild(core.alerts.createSummary());
 
 		double swaps = (double)node.getSwaps();
 		double noSwaps = (double)node.getNoSwaps();

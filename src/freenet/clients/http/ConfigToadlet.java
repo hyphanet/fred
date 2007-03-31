@@ -117,7 +117,8 @@ public class ConfigToadlet extends Toadlet {
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet Node Configuration of " + node.getMyName(), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
-		contentNode.addChild(core.alerts.createSummary());
+		if(ctx.isAllowedFullAccess())
+			contentNode.addChild(core.alerts.createSummary());
 		if(advancedModeEnabled){
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", "Configuration Navigation");
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");

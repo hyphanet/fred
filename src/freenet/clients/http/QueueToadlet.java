@@ -302,7 +302,8 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		PageMaker pageMaker = context.getPageMaker();
 		HTMLNode pageNode = pageMaker.getPageNode(header, context);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
-		contentNode.addChild(core.alerts.createSummary());
+		if(context.isAllowedFullAccess())
+			contentNode.addChild(core.alerts.createSummary());
 		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-error", header));
 		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 		infoboxContent.addChild("#", message);
@@ -371,7 +372,8 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode pageNode = pageMaker.getPageNode("Global queue of " + core.getMyName(), ctx);
 			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 			/* add alert summary box */
-			contentNode.addChild(core.alerts.createSummary());
+			if(ctx.isAllowedFullAccess())
+				contentNode.addChild(core.alerts.createSummary());
 			HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", "Global queue is empty"));
 			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 			infoboxContent.addChild("#", "There is no task queued on the global queue at the moment.");

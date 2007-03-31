@@ -150,7 +150,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
 	
-		contentNode.addChild(core.alerts.createSummary());
+		if(ctx.isAllowedFullAccess())
+			contentNode.addChild(core.alerts.createSummary());
 		
 		if(peerNodeStatuses.length>0){
 
