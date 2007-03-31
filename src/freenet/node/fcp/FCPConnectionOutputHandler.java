@@ -66,6 +66,8 @@ public class FCPConnectionOutputHandler implements Runnable {
 	}
 
 	public void queue(FCPMessage msg) {
+		if(Logger.shouldLog(Logger.DEBUG, this))
+			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
 		if(msg == null) throw new NullPointerException();
 		synchronized(outQueue) {
 			outQueue.add(msg);

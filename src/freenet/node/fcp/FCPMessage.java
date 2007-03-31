@@ -18,7 +18,7 @@ public abstract class FCPMessage {
 		os.write((getName()+ '\n').getBytes("UTF-8"));
 		os.write(msg.getBytes("UTF-8"));
 		if(Logger.shouldLog(Logger.DEBUG, this)) {
-			Logger.debug(this, "Outgoing FCP message:\n"+sfs.toString());
+			Logger.debug(this, "Outgoing FCP message:\n"+getName()+'\n'+sfs.toString());
 			Logger.debug(this, "Being handled by "+this);
 		}
 	}

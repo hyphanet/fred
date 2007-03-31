@@ -67,6 +67,8 @@ public class FCPConnectionInputHandler implements Runnable {
 			
 			FCPMessage msg;
 			try {
+				if(Logger.shouldLog(Logger.DEBUG, this))
+					Logger.debug(this, "Incoming FCP message:\n"+messageType+'\n'+fs.toString());
 				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.core.persistentTempBucketFactory);
 				if(msg == null) continue;
 			} catch (MessageInvalidException e) {
@@ -96,10 +98,8 @@ public class FCPConnectionInputHandler implements Runnable {
 				continue;
 			}
 			try {
-				if(Logger.shouldLog(Logger.DEBUG, this)) {
-					Logger.debug(this, "Incoming FCP message:\n"+fs.toString());
-					Logger.debug(this, "Being handled by "+msg+" on "+handler);
-				}
+				if(Logger.shouldLog(Logger.DEBUG, this))
+					Logger.debug(this, "Parsed message: "+msg+" for "+handler);
 				msg.run(handler, handler.server.node);
 			} catch (MessageInvalidException e) {
 				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
