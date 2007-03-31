@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import freenet.node.Node;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
@@ -16,6 +17,10 @@ public abstract class FCPMessage {
 		String msg = sfs.toString();
 		os.write((getName()+ '\n').getBytes("UTF-8"));
 		os.write(msg.getBytes("UTF-8"));
+		if(Logger.shouldLog(Logger.DEBUG, this)) {
+			Logger.debug(this, "Outgoing FCP message:\n"+sfs.toString());
+			Logger.debug(this, "Being handled by "+this);
+		}
 	}
 
 	String getEndString() {
