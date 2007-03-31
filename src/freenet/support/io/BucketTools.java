@@ -16,7 +16,6 @@ import java.util.List;
 import org.spaceroots.mantissa.random.MersenneTwister;
 
 import freenet.crypt.SHA256;
-import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
