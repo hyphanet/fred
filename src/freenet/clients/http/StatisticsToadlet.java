@@ -428,9 +428,6 @@ public class StatisticsToadlet extends Toadlet {
 				long overallAccesses = storeAccesses + cacheAccesses;
 				
 				storeSizeList.addChild("li", 
-						"Database version:\u00a0" + JEVersion.CURRENT_VERSION);
-				
-				storeSizeList.addChild("li", 
 						"Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
 						" (" + SizeUtil.formatSize(cachedSize, true) + ')');
 
