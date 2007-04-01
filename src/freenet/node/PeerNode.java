@@ -1933,7 +1933,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			fs.putSingle("averagePingTime", Double.toString(averagePingTime()));
 			long idle = now - lastReceivedPacketTime();
-			if(idle > (60 * 1000)) {  // 1 minute
+			if(idle > (60 * 1000) && -1 != lastReceivedPacketTime()) {  // 1 minute
 				fs.putSingle("idle", Long.toString(idle));
 			}
 			if(peerAddedTime > 1) {
