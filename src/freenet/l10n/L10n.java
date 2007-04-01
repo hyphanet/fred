@@ -15,6 +15,10 @@ import freenet.support.Logger;
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  * 
  * TODO: Maybe we ought to use the locale to set the default language.
+ * 
+ * comment(mario): for www interface we might detect locale from http requests?
+ * for other access (telnet) using system locale would probably be good, but
+ * it would be nice to have a command to switch locale on the fly.
  */
 
 public class L10n {
@@ -22,7 +26,7 @@ public class L10n {
 	private static String prefix = "freenet.l10n.";
 	
 	// English has to remain the first one!
-	public static final String[] availableLanguages = { "en", "fr" };
+	public static final String[] availableLanguages = { "en", "fr", "pl"};
 	private String selectedLanguage = availableLanguages[0];
 	
 	private static Properties currentProperties = null;
