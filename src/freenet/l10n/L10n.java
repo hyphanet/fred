@@ -4,6 +4,7 @@
 package freenet.l10n;
 
 import java.io.InputStream;
+import java.util.Enumeration;
 import java.util.MissingResourceException;
 import java.util.Properties;
 
@@ -69,11 +70,19 @@ public class L10n {
 	 */
 	public static String getString(String key) {
 		String result = currentProperties.getProperty(key);
-		if(result != null) return result;
-		
+		if(result != null) 
+			return result;
+		else
+			return getDefaultString(key);
+	}
+	
+	public static String getDefaultString(String key) {
+		String result = null;
 		// We instanciate it only if necessary
 		if(fallbackProperties == null) fallbackProperties = loadProperties(availableLanguages[0]);
+		
 		result = fallbackProperties.getProperty(key);
+		
 		if(result != null) {
 			Logger.normal(CLASS_NAME, "The translation for " + key + " hasn't been found! please tell the maintainer.");
 			return result; 
@@ -107,7 +116,7 @@ public class L10n {
 	 * @param name
 	 * @return the Properties object or null if not found
 	 */
-	private static Properties loadProperties (String name) {
+	public static Properties loadProperties (String name) {
         name = prefix.replace ('.', '/').concat(prefix.concat(name.concat(".properties")));
             
         Properties result = null;
@@ -132,6 +141,10 @@ public class L10n {
 	
 	public static String getSelectedLanguage() {
 		return currentClass.selectedLanguage;
+	}
+	
+	public static Enumeration getKeys() {
+		return currentProperties.propertyNames();
 	}
 	
 	public static void main(String[] args) {
