@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.support.HexUtil;
 import freenet.support.SimpleFieldSet;
 
@@ -22,19 +23,10 @@ import freenet.support.SimpleFieldSet;
  * Identifier=indent123unique	[mandatory]
  * DirToTest=/path/to/dir       [mandatory]			the dir to test
  * TestList=true 		[default: false]  			can we list the dir?
- * ReadFilename=fileindir.ext		the filename for read test
- * 									readtest skipped if missing or empty
- *              the read test file needs to be an existing regular file 
- *              and must have size != 0!
- * WriteFilename=hallo.test			the filename for write test
- * WriteFilename=					the node will generate an unique filename (recommended)
- *									writetest skipped on missing
- * 				if a name is given, the client have to make sure the file doesn't exist!
- * 
- * DeleteTestFile=		[default: true]
- * 				the testfile is only left if the read test was ok. 
- * 
- * 
+ * TestRead=fileindir.ext			the filename for read test
+ * 									readtest skipped if missing
+ * TestWrite=true					the node will generate an unique filename
+ *									writetest skipped if missing or not true
  * 
  */
 public class TestDDAMessage extends FCPMessage {
@@ -43,41 +35,48 @@ public class TestDDAMessage extends FCPMessage {
 	
 	static final String name = "TestDDA";
 	
+	private static final String FN_IDENTIFIER = "Identifier";
+	private static final String FN_TEST2DIR = "DirToTest";
+	private static final String FN_TESTLIST = "TestList";
+	private static final String FN_TESTREAD = "TestRead";
+	private static final String FN_TESTWRITE = "TestWrite";
+	
 	private boolean resultList = false;
 	private boolean resultWrite = false;
 	
-	private String writeTestFilename = null; // set if it is generated
 	private String readResult = null;
 	private String writeResult = null;
-	final boolean testlist;
-	final String identifier;
-	final String dir2test;
-	final String readfilename;
-	final String writefilename;
-	
-	private final boolean deleteFile;
+	private final boolean _testlist;
+	private final boolean _testwrite;
+	private final String identifier; // unique id
+	private final String dir2test;   // the dir to test
+	private final String _readfilename;
 
+	private String writefilename;
+	
 	/** 
 	 * @throws MessageInvalidException 
 	 */
 	public TestDDAMessage(SimpleFieldSet fs) throws MessageInvalidException {
-		identifier = fs.get("Identifier");
+		identifier = fs.get(FN_IDENTIFIER);
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, false);
 	
-		dir2test = fs.get("DirToTest");
+		dir2test = fs.get(FN_TEST2DIR);
 		if(dir2test == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", identifier, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Dir to test given", identifier, false);
 		if(dir2test.trim().length() == 0)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "DirToTest can't be empty!", identifier, false);
 	
-		String rfn = fs.get("ReadFilename");
+		String rfn = fs.get(FN_TESTREAD);
 		if(rfn != null)
 			if (rfn.trim().length() > 0)
-				readfilename = rfn;
+				_readfilename = rfn;
 			else
 				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Read test filename can't be empty!", identifier, false);
-		else readfilename = null;
+		else _readfilename = null;
+		
+		_testwrite = fs.getBoolean(FN_TESTWRITE, false);
 		
 		String wfn = fs.get("WriteFilename");
 		
@@ -86,9 +85,7 @@ public class TestDDAMessage extends FCPMessage {
 		else 
 			writefilename = wfn;
 		
-		deleteFile = fs.getBoolean("DeleteTestFile", true);
-	
-		testlist = fs.getBoolean("TestList", false);
+		_testlist = fs.getBoolean(FN_TESTLIST, false);
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -97,12 +94,12 @@ public class TestDDAMessage extends FCPMessage {
 		fs.putSingle("TestedDir", dir2test);
 		fs.putSingle("Status", getStatus());
 		if (status == 0) { 
-			if (testlist)
+			if (_testlist)
 				fs.putSingle("ListTest", getResultName(resultList));
 			else
 				fs.putSingle("ListTest", "Skipped");
 			
-			if (readfilename != null) {
+			if (_readfilename != null) {
 				if (readResult == null) { 
 					fs.putSingle("ReadTest", getResultName(false));
 				} else {
@@ -113,11 +110,11 @@ public class TestDDAMessage extends FCPMessage {
 				fs.putSingle("ReadTest", "Skipped");
 			
 			if (writefilename != null) {
-				if (writeTestFilename != null) {
-					fs.putSingle("WriteFileName", writeTestFilename);
-				} else {
+//				if (writeTestFilename != null) {
+//					fs.putSingle("WriteFileName", writeTestFilename);
+//				} else {
 					fs.putSingle("WriteFileName", writefilename);
-				}
+//				}
 				fs.putSingle("WriteData", writeResult);
 				fs.putSingle("WriteTest", getResultName(resultWrite));
 			} else
@@ -137,6 +134,8 @@ public class TestDDAMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
+		handler.getClientName();
+		NodeClientCore core = node.clientCore;
 		realTest();
 		handler.outputHandler.queue(this);
 	}
@@ -167,9 +166,9 @@ public class TestDDAMessage extends FCPMessage {
 		resultList = (t_dirList != null);
 
 		// read
-		if (readfilename != null) {
+		if (_readfilename != null) {
 		
-			File t_read = new File(dir, readfilename);
+			File t_read = new File(dir, _readfilename);
 			
 			if (!t_read.isFile())
 				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Read test filename must be an existing regular file!", identifier, false);
@@ -206,7 +205,7 @@ public class TestDDAMessage extends FCPMessage {
 				if (writefilename.trim().length() == 0) {
 					//generate one
 					f = File.createTempFile("NodeDDAtest", ".dat", dir);
-					writeTestFilename = f.getName();
+				//	writeTestFilename = f.getName();
 				} else { 
 					f = new File(dir, writefilename);
 					if (f.exists()) {
@@ -229,10 +228,7 @@ public class TestDDAMessage extends FCPMessage {
 			
 				writeResult= HexUtil.bytesToHex(bb, 0 ,8);
 				resultWrite = Arrays.equals(b, bb);
-				
-				if (deleteFile) 
-					f.delete();
-				
+			
 			} catch (IOException ioe) {
 			}
 		}
