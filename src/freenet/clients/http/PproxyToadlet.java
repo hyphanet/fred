@@ -77,7 +77,8 @@ public class PproxyToadlet extends Toadlet {
 				if(ex.getHeaders() != null) {
 					String data = ex.getReply();
 					ctx.sendReplyHeaders(ex.getCode(), "Found", ex.getHeaders(), ex.getMimeType(), (data == null ? 0 : data.length()));
-					ctx.writeData(data.getBytes());
+					if(data != null)
+						ctx.writeData(data.getBytes());
 				}else
 					writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getReply());
 			}
@@ -212,7 +213,8 @@ public class PproxyToadlet extends Toadlet {
 			if(ex.getHeaders() != null) {
 				String data = ex.getReply();
 				ctx.sendReplyHeaders(ex.getCode(), "Found", ex.getHeaders(), ex.getMimeType(), (data == null ? 0 : data.length()));
-				ctx.writeData(data.getBytes());
+				if(data != null)
+					ctx.writeData(data.getBytes());
 			}else
 				writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getReply());
 		} catch (Throwable t) {
