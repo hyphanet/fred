@@ -378,28 +378,30 @@ public class WelcomeToadlet extends Toadlet {
 				redirectToRoot(ctx);
 				return;
 			}
-			// Tell the user that the node is shutting down
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", false, ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet node has been successfully shut down."));
-			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
-			infoboxContent.addChild("#", "Thank you for using Freenet.");
-			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
-			this.node.exit("Shutdown from fproxy");
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/?terminated&formPassword=" + core.formPassword);
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			node.ps.queueTimedJob(new Runnable(){
+				public void run() {
+					node.exit("Shutdown from fproxy");					
+				}
+			}, 1);
+			return;
 		}else if(request.isPartSet("restartconfirm")){
 			if(noPassword) {
 				redirectToRoot(ctx);
 				return;
 			}
-			// Tell the user that the node is restarting
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", false, ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet is being restarted."));
-			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
-			infoboxContent.addChild("#", "Please wait while the node is being restarted. This might take up to 3 minutes. Thank you for using Freenet.");
-			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
-			Logger.normal(this, "Node is restarting");
-			node.getNodeStarter().restart();
+
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/?restarted&formPassword=" + core.formPassword);
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			node.ps.queueTimedJob(new Runnable(){
+				public void run() {
+					node.getNodeStarter().restart();					
+				}
+			}, 1);
+			return;
 		}else {
 			redirectToRoot(ctx);
 		}
@@ -447,6 +449,33 @@ public class WelcomeToadlet extends Toadlet {
 					sw.write(buffer, 0, read);
 
 				this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
+				return;
+			} else if (request.isParameterSet("terminated")) {
+				if((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(core.formPassword)) {
+					redirectToRoot(ctx);
+					return;
+				}
+				// Tell the user that the node is shutting down
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", false, ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet node has been successfully shut down."));
+				HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+				infoboxContent.addChild("#", "Thank you for using Freenet.");
+				this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+				return;
+			} else if (request.isParameterSet("restarted")) {
+				if((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(core.formPassword)) {
+					redirectToRoot(ctx);
+					return;
+				}
+				// Tell the user that the node is restarting
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", false, ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet is being restarted."));
+				HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+				infoboxContent.addChild("#", "Please wait while the node is being restarted. This might take up to 3 minutes. Thank you for using Freenet.");
+				writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+				Logger.normal(this, "Node is restarting");
 				return;
 			}else if (request.getParam("newbookmark").length() > 0) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark", ctx);
