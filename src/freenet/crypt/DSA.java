@@ -49,22 +49,6 @@ public class DSA {
 	}
 
 	/**
-	 * Precalculates a number of r, kInv pairs given a random source
-	 */
-	public static BigInteger[][] signaturePrecalculate(DSAGroup g,
-			int count, Random r) {
-		BigInteger[][] result=new BigInteger[count][2];
-
-		for (int i=0; i<count; i++) {
-			BigInteger k = DSA.generateK(g, r);
-
-			result[i][0] = g.getG().modPow(k, g.getP()); // r 
-			result[i][1] = k.modInverse(g.getQ()); // k^-1 
-		}
-		return result;
-	}
-
-	/**
 	 * Returns a DSA signature given a group, private key (x), 
 	 * the precalculated values of r and k^-1, and the hash
 	 * of the message (m)
