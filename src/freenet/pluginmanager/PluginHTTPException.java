@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import freenet.support.MultiValueTable;
+
 public class PluginHTTPException extends Exception {
 	private static final long serialVersionUID = -1;
 	
@@ -10,7 +12,7 @@ public class PluginHTTPException extends Exception {
 	private String mimeType;
 	private String desc;
 	private String reply;
-	
+	private MultiValueTable headers = null;
 
 	public PluginHTTPException () {
 		this(404, "text/html", "FAIL", "Page not found");
@@ -19,6 +21,14 @@ public class PluginHTTPException extends Exception {
 		this.code = code;
 		this.mimeType = mimeType;
 		this.desc = desc;
+		this.reply = reply;
+	}
+
+	public PluginHTTPException (int code, String desc, MultiValueTable headers, String mimeType, String reply) {
+		this.code = code;
+		this.desc = desc;
+		this.headers = headers;
+		this.mimeType = mimeType;
 		this.reply = reply;
 	}
 	
@@ -47,5 +57,7 @@ public class PluginHTTPException extends Exception {
 	public String getReply() {
 		return reply;
 	}
-
+	public MultiValueTable getHeaders() {
+		return headers;
+	}
 }

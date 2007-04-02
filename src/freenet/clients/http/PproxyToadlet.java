@@ -74,10 +74,10 @@ public class PproxyToadlet extends Toadlet {
 			catch(PluginHTTPException ex)
 			{
 				// TODO: make it into html
-				if((ex.getCode() < 400) && (ex.getCode() >= 300)) {
-					headers = new MultiValueTable();
-					headers.put("Location", ex.getReply());
-					ctx.sendReplyHeaders(ex.getCode(), "Found", headers, null, 0);
+				if(ex.getHeaders() != null) {
+					String data = ex.getReply();
+					ctx.sendReplyHeaders(ex.getCode(), "Found", ex.getHeaders(), ex.getMimeType(), (data == null ? 0 : data.length()));
+					ctx.writeData(data.getBytes());
 				}else
 					writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getReply());
 			}
@@ -209,10 +209,10 @@ public class PproxyToadlet extends Toadlet {
 			
 		} catch (PluginHTTPException ex) {
 			// TODO: make it into html
-			if((ex.getCode() < 400) && (ex.getCode() >= 300)) {
-				MultiValueTable headers = new MultiValueTable();
-				headers.put("Location", ex.getReply());
-				ctx.sendReplyHeaders(ex.getCode(), "Found", headers, null, 0);
+			if(ex.getHeaders() != null) {
+				String data = ex.getReply();
+				ctx.sendReplyHeaders(ex.getCode(), "Found", ex.getHeaders(), ex.getMimeType(), (data == null ? 0 : data.length()));
+				ctx.writeData(data.getBytes());
 			}else
 				writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getReply());
 		} catch (Throwable t) {
