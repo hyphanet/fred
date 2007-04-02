@@ -140,6 +140,7 @@
 				<pathelement path="${build}"/>
 				<pathelement path="${build-test}"/>
 				<pathelement location="${freenet-ext.location}"/>
+				<pathelement location="${junit.location}"/>
 			</classpath>
 
 			<formatter type="plain" usefile="false"/>
