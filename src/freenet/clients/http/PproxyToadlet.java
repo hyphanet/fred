@@ -71,10 +71,15 @@ public class PproxyToadlet extends Toadlet {
 
 				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPPost(plugin, request));
 			}
-			catch(PluginHTTPException e)
+			catch(PluginHTTPException ex)
 			{
 				// TODO: make it into html
-				writeReply(ctx, e.getCode(), e.getMimeType(), e.getDesc(), e.getReply());
+				if((ex.getCode() < 400) && (ex.getCode() >= 300)) {
+					headers = new MultiValueTable();
+					headers.put("Location", ex.getReply());
+					ctx.sendReplyHeaders(ex.getCode(), "Found", headers, null, 0);
+				}else
+					writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getReply());
 			}
 			catch(Throwable t)
 			{
@@ -196,9 +201,7 @@ public class PproxyToadlet extends Toadlet {
 				
 				// Plugin may need to know where it was accessed from, so it can e.g. produce relative URLs.
 				//writeReply(ctx, 200, "text/html", "OK", mkPage("plugin", pm.handleHTTPGet(plugin, data)));
-				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPGet(plugin, request));
-
-				
+				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPGet(plugin, request));				
 			}
 			
 			//FetchResult result = fetch(key);
@@ -206,7 +209,12 @@ public class PproxyToadlet extends Toadlet {
 			
 		} catch (PluginHTTPException ex) {
 			// TODO: make it into html
-			writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getReply());
+			if((ex.getCode() < 400) && (ex.getCode() >= 300)) {
+				MultiValueTable headers = new MultiValueTable();
+				headers.put("Location", ex.getReply());
+				ctx.sendReplyHeaders(ex.getCode(), "Found", headers, null, 0);
+			}else
+				writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getReply());
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			String msg = "<html><head><title>Internal Error</title></head><body><h1>Internal Error: please report</h1><pre>";
