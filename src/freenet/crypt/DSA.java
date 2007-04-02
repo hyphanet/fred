@@ -66,7 +66,8 @@ public class DSA {
 	}
 
 	private static BigInteger generateK(DSAGroup g, Random r){
-            assert g.getQ().bitLength() >= DSAGroup.Q_BIT_LENGTH;
+            if(g.getQ().bitLength() < DSAGroup.Q_BIT_LENGTH)
+		    throw new IllegalArgumentException("Q is too short! (" + g.getQ().bitLength() + '<' + DSAGroup.Q_BIT_LENGTH + ')');
 		
             BigInteger k;
 		do {
