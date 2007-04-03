@@ -515,6 +515,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 								(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
 		}
 		} catch (DatabaseException e1) {
+			// Log this now because close() will probably throw too
+			System.err.println("Error opening access times db: "+e1);
+			e1.printStackTrace();
+			Logger.error(this, "Error opening access times db: "+e1, e1);
 			close(false);
 			throw e1;
 		}
@@ -564,6 +568,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				(null, prefix+"CHK_blockNum", chkDB, blockNoDbConfig);
 		}
 		} catch (DatabaseException e1) {
+			// Log this now because close() will probably throw too
+			System.err.println("Error opening block nums db: "+e1);
+			e1.printStackTrace();
+			Logger.error(this, "Error opening block nums db: "+e1, e1);
 			close(false);
 			throw e1;
 		}
@@ -2201,8 +2209,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				reallyClosed = true;
 			}
 		}catch(Throwable ex){
-			Logger.error(this,"Error while closing database.",ex);
-			ex.printStackTrace();
+			try {
+				Logger.error(this,"Error while closing database.",ex);
+				ex.printStackTrace();
+			} catch (Throwable t) {
+				// Return anyway
+			}
 		}
     }
     
