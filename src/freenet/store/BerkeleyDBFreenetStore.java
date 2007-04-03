@@ -546,7 +546,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			long blockNumsCount = blockNums.count();
 			long chkDBCount = chkDB.count();
 			if(blockNumsCount < chkDBCount) {
-				System.err.println("Block nums database: "+atime.count()+" but main database: "+chkDB.count());
+				System.err.println("Block nums database: "+blockNumsCount+" but main database: "+chkDBCount);
 				throw new DatabaseException("Needs repopulation");
 			}
 		} catch (DatabaseException e) {
