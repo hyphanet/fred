@@ -2200,7 +2200,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				System.err.println("Closed database");
 				reallyClosed = true;
 			}
-		}catch(Exception ex){
+		}catch(Throwable ex){
 			Logger.error(this,"Error while closing database.",ex);
 			ex.printStackTrace();
 		}
