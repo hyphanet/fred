@@ -596,9 +596,11 @@ public class WelcomeToadlet extends Toadlet {
 		HTMLNode bookmarkBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode bookmarkBoxHeader = bookmarkBox.addChild("div", "class", "infobox-header");
 		bookmarkBoxHeader.addChild("#", "My Bookmarks");
-		bookmarkBoxHeader.addChild("#", " [");
-		bookmarkBoxHeader.addChild("span", "id", "bookmarkedit").addChild("a", new String[] { "href", "class" }, new String[] { "?managebookmarks", "interfacelink" }, (bookmarks.getSize() == 0) ? "Add" : "Edit");
-		bookmarkBoxHeader.addChild("#", "]");
+		if(ctx.isAllowedFullAccess()){
+			bookmarkBoxHeader.addChild("#", " [");
+			bookmarkBoxHeader.addChild("span", "id", "bookmarkedit").addChild("a", new String[] { "href", "class" }, new String[] { "?managebookmarks", "interfacelink" }, (bookmarks.getSize() == 0) ? "Add" : "Edit");
+			bookmarkBoxHeader.addChild("#", "]");
+		}
 
 		HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
 
