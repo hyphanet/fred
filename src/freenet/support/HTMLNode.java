@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,7 +40,7 @@ public class HTMLNode {
 	}
 
 	public HTMLNode(String name, String[] attributeNames, String[] attributeValues, String content) {
-		this.name = name;
+		this.name = name.toLowerCase(Locale.ENGLISH);
 		if ((attributeNames != null) && (attributeValues != null)) {
 			if (attributeNames.length != attributeValues.length) {
 				throw new IllegalArgumentException("attribute names and values differ");
