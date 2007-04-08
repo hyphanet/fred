@@ -30,14 +30,22 @@ public class PersistentConfig extends Config {
 		}
 		origConfigFileContents = null;
 	}
+
+	public SimpleFieldSet exportFieldSet() {
+		return exportFieldSet(false);
+	}
 	
-	public synchronized SimpleFieldSet exportFieldSet(boolean withDefaults) {
+	public SimpleFieldSet exportFieldSet(boolean withDefaults) {
+		return exportFieldSet(Config.CONFIG_REQUEST_TYPE_CURRENT_SETTINGS, withDefaults);
+	}
+	
+	public synchronized SimpleFieldSet exportFieldSet(int configRequestType, boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		Iterator configsIterator = configsByPrefix.keySet().iterator();
 		SubConfig current;
 		while (configsIterator.hasNext()) {
 			current = (SubConfig) configsByPrefix.get(configsIterator.next());
-			SimpleFieldSet scfs = current.exportFieldSet(withDefaults);
+			SimpleFieldSet scfs = current.exportFieldSet(configRequestType, withDefaults);
 			fs.tput(current.prefix, scfs);
 		}
 		return fs; 

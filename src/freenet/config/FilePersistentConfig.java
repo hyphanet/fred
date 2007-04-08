@@ -161,9 +161,4 @@ public class FilePersistentConfig extends PersistentConfig {
 			System.err.println("Written "+filename);
 		}
 	}
-
-	private SimpleFieldSet exportFieldSet() {
-		return exportFieldSet(false);
-	}
-
 }
