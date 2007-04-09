@@ -9,14 +9,12 @@ import java.util.Arrays;
 import net.i2p.util.NativeBigInteger;
 
 import freenet.crypt.BlockCipher;
-import freenet.crypt.DSA;
 import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.EntropySource;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
-import freenet.crypt.StationToStationContext;
 import freenet.io.comm.*;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Fields;
@@ -1621,26 +1619,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     public boolean isDisconnected(PeerContext context) {
         if(context == null) return false;
         return !((PeerNode)context).isConnected();
-    }
-    
-    /**
-     * Send a first-half (phase 0 or 1) StS negotiation packet to the node.
-     * @param phase The phase of the message to be sent (0 or 1).
-     * @param integer
-     * @param replyTo
-     */
-    private void sendFirstStSPacket(int phase, NativeBigInteger integer, PeerNode pn, Peer replyTo) {
-        if(logMINOR) Logger.minor(this, "Sending ("+phase+") "+integer.toHexString()+" to "+pn.getPeer());
-        byte[] data = integer.toByteArray();
-
-        sendAuthPacket(1, 1, phase, data, pn, replyTo);
-    }
-    
-    private void sendSecondStSPacket(int phase, StationToStationContext ctx, PeerNode pn, Peer replyTo, byte[] data) {
-    	NativeBigInteger hisExponent = new NativeBigInteger(1, data);
-    	ctx.setOtherSideExponential(hisExponent);
-    	
-        sendAuthPacket(1, 1, phase, ctx.concatAndSignAndCrypt(), pn, replyTo);
     }
 
 	public void resend(ResendPacketItem item) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {

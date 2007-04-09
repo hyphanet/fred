@@ -203,7 +203,6 @@ public class SubConfig implements Comparable {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Prefix="+prefix);
-		String valueString;
 		while(i.hasNext()) {
 			Map.Entry entry = (Map.Entry) i.next();
 			String key = (String) entry.getKey();

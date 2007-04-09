@@ -12,8 +12,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import com.sleepycat.je.JEVersion;
-
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
 import freenet.io.comm.IOStatisticCollector;
