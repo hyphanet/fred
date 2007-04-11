@@ -63,4 +63,8 @@ public class ThrottleWindowManager {
 		fs.put("SimulatedWindowSize", _simulatedWindowSize);
 		return fs;
 	}
+
+	public double realCurrentValue() {
+		return _simulatedWindowSize;
+	}
 }
