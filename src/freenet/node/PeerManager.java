@@ -769,7 +769,7 @@ public class PeerManager {
 		for(int i=0;i<peers.length;i++) {
 			if(peers[i].isRoutable()) {
 				count++;
-				if(peers[i].isRoutingBackedOff()) countNoBackoff++;
+				if(!peers[i].isRoutingBackedOff()) countNoBackoff++;
 			}
 		}
 		if(countNoBackoff == 0) return count;
