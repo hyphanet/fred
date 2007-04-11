@@ -219,5 +219,9 @@ public class RequestStarterGroup {
 		}
 		return sb.toString();
 	}
+
+	public double getRealWindow() {
+		return throttleWindow.realCurrentValue();
+	}
 	
 }
