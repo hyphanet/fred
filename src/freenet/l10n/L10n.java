@@ -106,7 +106,7 @@ public class L10n {
 		String result = getString(key);
 
 		for(int i=0; i<patterns.length; i++)
-				result = result.replaceAll("\\${"+patterns[i]+"}", quoteReplacement(values[i]));
+				result = result.replaceAll("\\$\\{"+patterns[i]+"\\}", quoteReplacement(values[i]));
 		
 		return result;
 	}
