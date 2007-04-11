@@ -105,11 +105,30 @@ public class L10n {
 		String result = getString(key);
 
 		for(int i=0; i<patterns.length; i++)
-			result = result.replaceAll("\\$\\("+patterns[i]+"\\)", values[i]);
+				result = result.replaceAll("\\${"+patterns[i]+"}", quoteReplacement(values[i]));
 		
 		return result;
 	}
 	
+	private static String quoteReplacement(String s) {
+		if ((s.indexOf('\\') == -1) && (s.indexOf('$') == -1))
+			return s;
+		StringBuffer sb = new StringBuffer();
+		for (int i=0; i<s.length(); i++) {
+			char c = s.charAt(i);
+			if (c == '\\') {
+				sb.append('\\');
+				sb.append('\\');
+			} else if (c == '$') {
+				sb.append('\\');
+				sb.append('$');
+			} else {
+				sb.append(c);
+			}
+		}
+		return sb.toString();
+	}
+
 	/**
 	 * Load a property file depending on the given name and using the prefix
 	 * 
@@ -131,6 +150,7 @@ public class L10n {
         		result.load(in); // Can throw IOException
         	}
         } catch (Exception e) {
+        	Logger.error("L10n", "Error while loading the l10n file from " + name + " :" + e.getMessage());
             result = null;
         } finally {
             if (in != null) try { in.close(); } catch (Throwable ignore) {}
@@ -138,6 +158,41 @@ public class L10n {
         
         return result;
     }
+
+	public static String convert(String line) {
+		final StringBuffer sb = new StringBuffer();
+		int pos = 0;
+		while (pos < line.length())	{
+			char c = line.charAt(pos++);
+			if (c == '\\') {
+				c = line.charAt(pos++);
+				switch (c) {
+					case 'n':
+						sb.append('\n');
+						break;
+					case 't':
+						sb.append('\t');
+						break;
+					case 'r':
+						sb.append('\r');
+						break;
+					case 'u':
+						if (pos + 4 <= line.length()) {
+							char uni = (char) Integer.parseInt(line.substring(pos, pos + 4), 16);
+							sb.append(uni);
+							pos += 4;
+						}// else throw something ?
+						break;
+					default:
+						sb.append(c);
+					break;
+				}
+			}
+			else
+				sb.append(c);
+		}
+		return sb.toString();
+	}
 	
 	public static String getSelectedLanguage() {
 		return currentClass.selectedLanguage;
@@ -149,9 +204,9 @@ public class L10n {
 	
 	public static void main(String[] args) {
 		L10n.setLanguage("en");
-		System.out.println(L10n.getString("testing.test"));
+		System.out.println(L10n.getString("QueueToadlet.failedToRestart"));
 		L10n.setLanguage("fr");
-		System.out.println(L10n.getString("testing.test"));
-		System.out.println(L10n.getString("testing.test", new String[]{ "test1", "test2" }, new String[] { "a", "b" }));
+		System.out.println(L10n.getString("QueueToadlet.failedToRestart"));
+		//System.out.println(L10n.getString("testing.test", new String[]{ "test1", "test2" }, new String[] { "a", "b" }));
 	}
 }
