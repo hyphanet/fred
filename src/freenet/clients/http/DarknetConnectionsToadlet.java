@@ -65,6 +65,17 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			SimpleFieldSet fs = node.exportPublicFieldSet();
 			StringWriter sw = new StringWriter();
 			fs.writeTo(sw);
+			MultiValueTable extraHeaders = new MultiValueTable();
+			// Force download to disk
+			extraHeaders.put("Content-Disposition", "attachment; filename=myref.fref");
+			this.writeReply(ctx, 200, "application/x-freenet-reference", "OK", extraHeaders, sw.toString());
+			return;
+		}
+
+		if(path.endsWith("myref.txt")) {
+			SimpleFieldSet fs = node.exportPublicFieldSet();
+			StringWriter sw = new StringWriter();
+			fs.writeTo(sw);
 			this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
 			return;
 		}
@@ -588,6 +599,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
 		headerReferenceInfobox.addChild("a", "href", "myref.fref", "My reference");
+		headerReferenceInfobox.addChild("#", " (");
+		headerReferenceInfobox.addChild("a", "href", "myref.txt", "as text");
+		headerReferenceInfobox.addChild("#", ")");
 		HTMLNode warningSentence = headerReferenceInfobox.addChild("pre");
 		warningSentence.addChild("#", "Node reference must be copied ");
 		warningSentence.addChild("big").addChild("b", "AS IS. ");
