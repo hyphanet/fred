@@ -514,43 +514,43 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode navigationContent = pageMaker.getContentNode(navigationBar).addChild("ul");
 		boolean includeNavigationBar = false;
 		if (!completedDownloadToTemp.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#completedDownloadToTemp", L10n.getString("QueueToadlet.completedDtoTemp"));
+			navigationContent.addChild("li").addChild("a", "href", "#completedDownloadToTemp", L10n.getString("QueueToadlet.completedDtoTemp", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToTemp.size()) }));
 			includeNavigationBar = true;
 		}
 		if (!completedDownloadToDisk.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#completedDownloadToDisk", L10n.getString("QueueToadlet.completedDtoDisk"));
+			navigationContent.addChild("li").addChild("a", "href", "#completedDownloadToDisk", L10n.getString("QueueToadlet.completedDtoDisk", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToDisk.size()) }));
 			includeNavigationBar = true;
 		}
 		if (!completedUpload.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#completedUpload", L10n.getString("QueueToadlet.completedU"));
+			navigationContent.addChild("li").addChild("a", "href", "#completedUpload", L10n.getString("QueueToadlet.completedU", new String[]{ "size" }, new String[]{ String.valueOf(completedUpload.size()) }));
 			includeNavigationBar = true;
 		}
 		if (!completedDirUpload.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#completeDirUpload", L10n.getString("QueueToadlet.completedDU"));
+			navigationContent.addChild("li").addChild("a", "href", "#completeDirUpload", L10n.getString("QueueToadlet.completedDU", new String[]{ "size" }, new String[]{ String.valueOf(completedDirUpload.size()) }));
 			includeNavigationBar = true;
 		}
 		if (!failedDownload.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#failedDownload", L10n.getString("QueueToadlet.failedD"));
+			navigationContent.addChild("li").addChild("a", "href", "#failedDownload", L10n.getString("QueueToadlet.failedD", new String[]{ "size" }, new String[]{ String.valueOf(failedDownload.size()) }));
 			includeNavigationBar = true;
 		}
 		if (!failedUpload.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#failedUpload", L10n.getString("QueueToadlet.failedU"));
+			navigationContent.addChild("li").addChild("a", "href", "#failedUpload", L10n.getString("QueueToadlet.failedU", new String[]{ "size" }, new String[]{ String.valueOf(failedUpload.size()) }));
 			includeNavigationBar = true;
 		}
 		if (!failedDirUpload.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#failedDirUpload", L10n.getString("QueueToadlet.failedDU"));
+			navigationContent.addChild("li").addChild("a", "href", "#failedDirUpload", L10n.getString("QueueToadlet.failedDU", new String[]{ "size" }, new String[]{ String.valueOf(failedDirUpload.size()) }));
 			includeNavigationBar = true;
 		}
 		if (!uncompletedDownload.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#uncompletedDownload", L10n.getString("QueueToadlet.DinProgress"));
+			navigationContent.addChild("li").addChild("a", "href", "#uncompletedDownload", L10n.getString("QueueToadlet.DinProgress", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDownload.size()) }));
 			includeNavigationBar = true;
 		}
 		if (!uncompletedUpload.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#uncompletedUpload", L10n.getString("QueueToadlet.UinProgress"));
+			navigationContent.addChild("li").addChild("a", "href", "#uncompletedUpload", L10n.getString("QueueToadlet.UinProgress", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedUpload.size()) }));
 			includeNavigationBar = true;
 		}
 		if (!uncompletedDirUpload.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#uncompletedDirUpload", L10n.getString("QueueToadlet.DUinProgress"));
+			navigationContent.addChild("li").addChild("a", "href", "#uncompletedDirUpload", L10n.getString("QueueToadlet.DUinProgress", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDirUpload.size()) }));
 			includeNavigationBar = true;
 		}
 
