@@ -48,6 +48,7 @@ import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.io.PersistentEncryptedTempBucketFactory;
@@ -974,10 +975,10 @@ public class NodeClientCore implements Persistable {
 	public boolean allowDownloadTo(File filename) {
 		if(downloadAllowedEverywhere) return true;
 		if(includeDownloadDir) {
-			if(isParent(downloadDir, filename)) return true;
+			if(FileUtil.isParent(downloadDir, filename)) return true;
 		}
 		for(int i=0;i<downloadAllowedDirs.length;i++) {
-			if(isParent(downloadAllowedDirs[i], filename)) return true;
+			if(FileUtil.isParent(downloadAllowedDirs[i], filename)) return true;
 		}
 		return false;
 	}
@@ -985,40 +986,9 @@ public class NodeClientCore implements Persistable {
 	public boolean allowUploadFrom(File filename) {
 		if(uploadAllowedEverywhere) return true;
 		for(int i=0;i<uploadAllowedDirs.length;i++) {
-			if(isParent(uploadAllowedDirs[i], filename)) return true;
+			if(FileUtil.isParent(uploadAllowedDirs[i], filename)) return true;
 		}
 		return false;
-	}
-
-	/** Is possParent a parent of filename?
-	 * FIXME Move somewhere generic. 
-	 * Why doesn't java provide this? :( */
-	private boolean isParent(File possParent, File filename) {
-		File canonParent;
-		File canonFile;
-		try {
-			canonParent = possParent.getCanonicalFile();
-		} catch (IOException e) {
-			canonParent = possParent.getAbsoluteFile();
-		}
-		try {
-			canonFile = filename.getCanonicalFile();
-		} catch (IOException e) {
-			canonFile = filename.getAbsoluteFile();
-		}
-		if(isParentInner(possParent, filename)) return true;
-		if(isParentInner(possParent, canonFile)) return true;
-		if(isParentInner(canonParent, filename)) return true;
-		if(isParentInner(canonParent, canonFile)) return true;
-		return false;
-	}
-
-	private boolean isParentInner(File possParent, File filename) {
-		while(true) {
-			if(filename.equals(possParent)) return true;
-			filename = filename.getParentFile();
-			if(filename == null) return false;
-		}
 	}
 
 	public SimpleFieldSet persistThrottlesToFieldSet() {

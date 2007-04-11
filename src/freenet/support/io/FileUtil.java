@@ -4,6 +4,7 @@
 package freenet.support.io;
 
 import java.io.File;
+import java.io.IOException;
 
 final public class FileUtil {
 
@@ -12,7 +13,7 @@ final public class FileUtil {
 		int mask=blocksize-1;
 		return (val+mask)&~mask;
 	}
-	
+
 	/**
 	 * Guesstimate real disk usage for a file with a given filename, of a given length.
 	 */
@@ -30,5 +31,36 @@ final public class FileUtil {
 		// Assume 50 bytes per block tree overhead with 1kB blocks (reiser3 worst case)
 		long extra = (roundup_2n(flen, 1024) / 1024) * 50;
 		return blockUsage + filenameUsage + extra;
+	}
+
+	/** Is possParent a parent of filename?
+	 * FIXME Move somewhere generic. 
+	 * Why doesn't java provide this? :( */
+	public static boolean isParent(File possParent, File filename) {
+		File canonParent;
+		File canonFile;
+		try {
+			canonParent = possParent.getCanonicalFile();
+		} catch (IOException e) {
+			canonParent = possParent.getAbsoluteFile();
+		}
+		try {
+			canonFile = filename.getCanonicalFile();
+		} catch (IOException e) {
+			canonFile = filename.getAbsoluteFile();
+		}
+		if(isParentInner(possParent, filename)) return true;
+		if(isParentInner(possParent, canonFile)) return true;
+		if(isParentInner(canonParent, filename)) return true;
+		if(isParentInner(canonParent, canonFile)) return true;
+		return false;
+	}
+
+	private static boolean isParentInner(File possParent, File filename) {
+		while(true) {
+			if(filename.equals(possParent)) return true;
+			filename = filename.getParentFile();
+			if(filename == null) return false;
+		}
 	}
 }
