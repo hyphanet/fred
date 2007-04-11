@@ -393,7 +393,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			Logger.minor(this, "Request count: "+reqs.length);
 		
 		if(reqs.length < 1){
-			HTMLNode pageNode = pageMaker.getPageNode(L10n.getString("QueueToadlet.title"), ctx);
+			HTMLNode pageNode = pageMaker.getPageNode(L10n.getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 			/* add alert summary box */
 			if(ctx.isAllowedFullAccess())
@@ -501,7 +501,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				+ uncompletedUpload.size()) + '/' + (failedDirUpload.size() + failedDownload.size() + failedUpload.size()) + '/'
                 + (completedDirUpload.size() + completedDownloadToDisk.size() + completedDownloadToTemp.size()
 				+ completedUpload.size()) + ") " +
-				L10n.getString("QueueToadlet.title"), ctx);
+				L10n.getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 
 		/* add alert summary box */
