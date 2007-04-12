@@ -360,7 +360,10 @@ public class FCPConnectionHandler {
 			inTestDirectories.put(directory, result);
 		}
 		
-		if(read){
+		if(read){ 
+			// We don't want to attempt to write before: in case an IOException is raised, we want to inform the
+			// client somehow that the node can't write there... And setting readFile to null means we won't inform
+			// it on the status (as if it hasn't requested us to do the test).
 			try {
 				FileWriter fw = new FileWriter(result.readFilename);
 				fw.write(result.readContent);
