@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Random;
 
 import freenet.support.HexUtil;
@@ -383,6 +384,18 @@ public class FCPConnectionHandler {
 		
 		synchronized (inTestDirectories) {
 			return (DDACheckJob)inTestDirectories.remove(directory);
+		}
+	}
+	
+	/**
+	 * Delete the files we have created using DDATest
+	 * called by FCPClient.onDisconnect(handler)
+	 */
+	protected void freeDDAJobs(){
+		synchronized (inTestDirectories) {
+			Iterator it = inTestDirectories.entrySet().iterator();
+			while(it.hasNext())
+				((DDACheckJob)it.next()).readFilename.delete();
 		}
 	}
 }

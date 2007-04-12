@@ -88,6 +88,7 @@ public class FCPClient {
 	}
 
 	public synchronized void onLostConnection(FCPConnectionHandler handler) {
+		handler.freeDDAJobs();
 		if(currentConnection == handler)
 			currentConnection = null;
 	}
