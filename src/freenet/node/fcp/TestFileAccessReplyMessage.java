@@ -19,11 +19,15 @@ public class TestFileAccessReplyMessage extends FCPMessage {
 	public static final String name = "TestFileAccessReply";
 	public static final String CAN_READ = "CanRead";
 	public static final String CAN_WRITE = "CanWrite";
+	public static final String IS_DDA_READ_ALLOWED = "IsDDAReadAllowed";
+	public static final String IS_DDA_WRITE_ALLOWED = "IsDDAWriteAllowed";
 	
 	private final File file;
+	private final FCPConnectionHandler handler;
 
-	public TestFileAccessReplyMessage(File filename) {
+	public TestFileAccessReplyMessage(FCPConnectionHandler handler, File filename) {
 		this.file = FileUtil.getCanonicalFile(filename);
+		this.handler = handler;
 	}
 	
 	public SimpleFieldSet getFieldSet() {
@@ -32,6 +36,8 @@ public class TestFileAccessReplyMessage extends FCPMessage {
 		sfs.putSingle(TestFileAccessQueryMessage.FILENAME, file.toString());
 		sfs.putSingle(CAN_READ, String.valueOf(file.canRead()));
 		sfs.putSingle(CAN_WRITE, String.valueOf(file.canWrite()));
+		sfs.putSingle(IS_DDA_READ_ALLOWED, String.valueOf(handler.allowDDAFrom(file, false)));
+		sfs.putSingle(IS_DDA_WRITE_ALLOWED, String.valueOf(handler.allowDDAFrom(file, true)));
 		
 		return sfs;
 	}

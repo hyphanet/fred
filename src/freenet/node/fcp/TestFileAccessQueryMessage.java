@@ -40,7 +40,7 @@ public class TestFileAccessQueryMessage extends FCPMessage {
 		File file = new File(filename);
 		if(!file.exists())
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "The node isn't aware that \"" + filename + "\" exists!", filename, false);
-		TestFileAccessReplyMessage reply = new TestFileAccessReplyMessage(file);
+		TestFileAccessReplyMessage reply = new TestFileAccessReplyMessage(handler, file);
 		handler.outputHandler.queue(reply);
 	}
 
