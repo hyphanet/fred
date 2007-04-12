@@ -288,22 +288,14 @@ public class FCPConnectionHandler {
 	public boolean hasFullAccess() {
 		return server.allowedHostsFullAccess.allowed(sock.getInetAddress());
 	}
-	
-	protected boolean allowDownloadTo(File filename) {
-		String parentDirectory = FileUtil.getCanonicalFile(filename).getPath();
-		DirectoryAccess da = null;
-		
-		synchronized (checkedDirectories) {
-				da = (DirectoryAccess) checkedDirectories.get(parentDirectory);
-		}
-		
-		if(da == null)
-			return ASSUME_DOWNLOAD_DDA_IS_ALLOWED;
-		else
-			return da.canWrite;
-	}
 
-	protected boolean allowUploadFrom(File filename) {
+	/**
+	 * That method ought to be called before any DirectDiskAccess operation is performed by the node
+	 * @param filename
+	 * @param writeRequest : Are willing to write or to read ?
+	 * @return boolean : allowed or not
+	 */
+	protected boolean allowUploadFrom(File filename, boolean writeRequest) {
 		String parentDirectory = FileUtil.getCanonicalFile(filename).getPath();
 		DirectoryAccess da = null;
 		
@@ -311,10 +303,10 @@ public class FCPConnectionHandler {
 				da = (DirectoryAccess) checkedDirectories.get(parentDirectory);
 		}
 		
-		if(da == null)
-			return ASSUME_UPLOAD_DDA_IS_ALLOWED;
+		if(writeRequest)
+			return (da == null ? ASSUME_UPLOAD_DDA_IS_ALLOWED : da.canWrite);
 		else
-			return da.canRead;
+			return (da == null ? ASSUME_DOWNLOAD_DDA_IS_ALLOWED : da.canRead);
 	}
 	
 	/**
