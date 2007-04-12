@@ -34,6 +34,7 @@ import freenet.config.SubConfig;
 import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -357,42 +358,27 @@ public class FCPServer implements Runnable {
 	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException, InvalidConfigValueException {
 		SubConfig fcpConfig = new SubConfig("fcp", config);
 		short sortOrder = 0;
-		fcpConfig.register("enabled", true, sortOrder++, true, false, "Is FCP server enabled ?", "Is FCP server enabled ?", new FCPEnabledCallback(core));
-		fcpConfig.register("port", FCPServer.DEFAULT_FCP_PORT /* anagram of 1984, and 1000 up from old number */,
-				2, true, true, "FCP port number", "FCP port number", new FCPPortNumberCallback(core));
-		fcpConfig.register("bindTo", "127.0.0.1", sortOrder++, false, true, "IP address to bind to", "IP address to bind the FCP server to", new FCPBindtoCallback(core));
-		fcpConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", sortOrder++, false, true, "Allowed hosts (read the warning!)", 
-				"IP addresses that are allowed to connect to the FCP server. " +
-				"May be a comma-separated list of single IPs and CIDR masked IPs like 192.168.0.0/24. "+
-				"WARNING! Anyone who has access to FCP can upload any file the node has access to, or download files to disk " +
-				"(but the node will try not to overwrite existing files).", new FCPAllowedHostsCallback(core));
-		fcpConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", sortOrder++, false, true, "Hosts allowed full access",
-				"IP addresses which are allowed full access to the node. Clients on these IPs may restart the node, reconfigure it, etc. " +
-				"Note that ALL clients are allowed to do direct disk I/O!", new FCPAllowedHostsFullAccessCallback(core));
+		fcpConfig.register("enabled", true, sortOrder++, true, false, L10n.getString("FcpServer.isEnabled"), L10n.getString("FcpServer.isEnabledLong"), new FCPEnabledCallback(core));
+		fcpConfig.register("port", FCPServer.DEFAULT_FCP_PORT /* anagram of 1984, and 1000 up from old number */, 2, true, true, L10n.getString("FcpServer.portNumber"), L10n.getString("FcpServer.portNumberLong"), new FCPPortNumberCallback(core));
+		fcpConfig.register("bindTo", "127.0.0.1", sortOrder++, false, true, L10n.getString("FcpServer.bindTo"), L10n.getString("FcpServer.bindToLong"), new FCPBindtoCallback(core));
+		fcpConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", sortOrder++, false, true, L10n.getString("FcpServer.allowedHosts"), L10n.getString("FcpServer.allowedHostsLong"), new FCPAllowedHostsCallback(core));
+		fcpConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", sortOrder++, false, true, L10n.getString("FcpServer.allowedHostsFullAccess"), L10n.getString("FcpServer.allowedHostsFullAccessLong"), new FCPAllowedHostsFullAccessCallback(core));
 		PersistentDownloadsEnabledCallback cb1;
 		PersistentDownloadsFileCallback cb2;
 		PersistentDownloadsIntervalCallback cb3;
-		fcpConfig.register("persistentDownloadsEnabled", true, sortOrder++, true, true, "Enable persistent downloads?", "Whether to enable Persistence=forever for FCP requests. Meaning whether to support requests which persist over node restarts; they must be written to disk and this may constitute a security risk for some people.",
-				cb1 = new PersistentDownloadsEnabledCallback());
-		boolean persistentDownloadsEnabled = fcpConfig.getBoolean("persistentDownloadsEnabled");
-		fcpConfig.register("persistentDownloadsFile", "downloads.dat", sortOrder++, true, false, "Filename to store persistent downloads in", "Filename to store details of persistent downloads to",
-				cb2 = new PersistentDownloadsFileCallback());
-		String persistentDownloadsDir = 
-			fcpConfig.getString("persistentDownloadsFile");
-		
-		fcpConfig.register("persistentDownloadsInterval", (5*60*1000), sortOrder++, true, false, "Interval between writing persistent downloads to disk", "Interval between writing persistent downloads to disk",
-				cb3 = new PersistentDownloadsIntervalCallback());
-		
+		fcpConfig.register("persistentDownloadsEnabled", true, sortOrder++, true, true, L10n.getString("FcpServer.enablePersistentDownload"), L10n.getString("FcpServer.enablePersistentDownloadLong"), cb1 = new PersistentDownloadsEnabledCallback());
+		fcpConfig.register("persistentDownloadsFile", "downloads.dat", sortOrder++, true, false, L10n.getString("FcpServer.filenameToStorePData"), L10n.getString("FcpServer.filenameToStorePDataLong"), cb2 = new PersistentDownloadsFileCallback());
+		fcpConfig.register("persistentDownloadsInterval", (5*60*1000), sortOrder++, true, false, L10n.getString("FcpServer.intervalBetweenWrites"), L10n.getString("FcpServer.intervalBetweenWritesLong"), cb3 = new PersistentDownloadsIntervalCallback());
+		String persistentDownloadsDir = fcpConfig.getString("persistentDownloadsFile");
+		boolean persistentDownloadsEnabled = fcpConfig.getBoolean("persistentDownloadsEnabled");		
 		long persistentDownloadsInterval = fcpConfig.getLong("persistentDownloadsInterval");
 		
 		AssumeDDADownloadIsAllowedCallback cb4;
 		AssumeDDAUploadIsAllowedCallback cb5;
-		fcpConfig.register("assumeDownloadDDAIsAllowed", true, sortOrder++, true, false, "Assume that download DDA is allowed ?", "Assume that download DDA is allowed ? if false, you have to issue a TestDDARequest before making any DDA access.", cb4 = new AssumeDDADownloadIsAllowedCallback());
-		fcpConfig.register("assumeUploadDDAIsAllowed", true, sortOrder++, true, false, "Assume that upload DDA is allowed ?", "Assume that upload DDA is allowed ? if false, you have to issue a TestDDARequest before making any DDA access.", cb5 = new AssumeDDAUploadIsAllowedCallback());
+		fcpConfig.register("assumeDownloadDDAIsAllowed", true, sortOrder++, true, false, L10n.getString("FcpServer.assumeDownloadDDAIsAllowed"), L10n.getString("FcpServer.assumeDownloadDDAIsAllowedLong"), cb4 = new AssumeDDADownloadIsAllowedCallback());
+		fcpConfig.register("assumeUploadDDAIsAllowed", true, sortOrder++, true, false, L10n.getString("FcpServer.assumeUploadDDAIsAllowed"), L10n.getString("FcpServer.assumeUploadDDAIsAllowedLong"), cb5 = new AssumeDDAUploadIsAllowedCallback());
 		
-		FCPServer fcp;
-		
-		fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"));
+		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"));
 		core.setFCPServer(fcp);	
 		
 		if(fcp != null) {
