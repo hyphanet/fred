@@ -37,14 +37,14 @@ final public class FileUtil {
 	 *  Is possParent a parent of filename?
 	 * Why doesn't java provide this? :(
 	 * */
-	public static boolean isParent(File possParent, File filename) {
-		File canonParent = FileUtil.getCanonicalFile(possParent);
+	public static boolean isParent(File poss, File filename) {
+		File canon = FileUtil.getCanonicalFile(poss);
 		File canonFile = FileUtil.getCanonicalFile(filename);
 
-		if(isParentInner(possParent, filename)) return true;
-		if(isParentInner(possParent, canonFile)) return true;
-		if(isParentInner(canonParent, filename)) return true;
-		if(isParentInner(canonParent, canonFile)) return true;
+		if(isParentInner(poss, filename)) return true;
+		if(isParentInner(poss, canonFile)) return true;
+		if(isParentInner(canon, filename)) return true;
+		if(isParentInner(canon, canonFile)) return true;
 		return false;
 	}
 
@@ -57,12 +57,12 @@ final public class FileUtil {
 	}
 	
 	public static File getCanonicalFile(File file){
-		File parentDirectory;
+		File result;
 		try {
-			parentDirectory = file.getCanonicalFile();
+			result = file.getCanonicalFile();
 		} catch (IOException e) {
-			parentDirectory = file.getAbsoluteFile();
+			result = file.getAbsoluteFile();
 		}
-		return parentDirectory;
+		return result;
 	}
 }
