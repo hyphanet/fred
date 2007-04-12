@@ -13,7 +13,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.FileUtil;
 
 public class FCPConnectionHandler {
-	static final private class DirectoryAccess {
+	private static final class DirectoryAccess {
 		final boolean canWrite;
 		final boolean canRead;
 		
@@ -57,9 +57,13 @@ public class FCPConnectionHandler {
 	private FCPClient client;
 	final BucketFactory bf;
 	final HashMap requestsByIdentifier;
+
 	// We are confident that the given client can access those
 	private final HashMap checkedDirectories = new HashMap();
+	// DDACheckJobs in flight
 	private final HashMap inTestDirectories = new HashMap();
+	private static final boolean ASSUME_DOWNLOAD_DDA_IS_ALLOWED = false;
+	private static final boolean ASSUME_UPLOAD_DDA_IS_ALLOWED = false;
 	
 	public FCPConnectionHandler(Socket s, FCPServer server) {
 		this.sock = s;
@@ -294,7 +298,7 @@ public class FCPConnectionHandler {
 		}
 		
 		if(da == null)
-			return false;
+			return ASSUME_DOWNLOAD_DDA_IS_ALLOWED;
 		else
 			return da.canWrite;
 	}
@@ -308,7 +312,7 @@ public class FCPConnectionHandler {
 		}
 		
 		if(da == null)
-			return false;
+			return ASSUME_UPLOAD_DDA_IS_ALLOWED;
 		else
 			return da.canRead;
 	}
