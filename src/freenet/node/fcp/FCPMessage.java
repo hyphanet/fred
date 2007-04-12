@@ -77,9 +77,10 @@ public abstract class FCPMessage {
 			return new ShutdownMessage();
 		if(name.equals(SubscribeUSKMessage.name))
 			return new SubscribeUSKMessage(fs);
-		// Removed until security issues sorted out
-//		if(name.equals(TestDDAMessage.name))
-//			return new TestDDAMessage(fs);
+		if(name.equals(TestDDARequest.NAME))
+			return new TestDDARequest(fs);
+		if(name.equals(TestDDAResponse.NAME))
+			return new TestDDAResponse(fs);
 		if(name.equals(WatchGlobal.name))
 			return new WatchGlobal(fs);
 		if(name.equals("Void"))
@@ -87,9 +88,6 @@ public abstract class FCPMessage {
 		if(name.equals(NodeHelloMessage.name))
 			return new NodeHelloMessage(fs);
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null, false);
-//		if(name.equals("ClientPut"))
-//			return new ClientPutFCPMessage(fs);
-		// TODO Auto-generated method stub
 	}
 	
 	/**

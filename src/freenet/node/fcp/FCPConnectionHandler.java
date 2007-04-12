@@ -1,13 +1,50 @@
 package freenet.node.fcp;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.Random;
 
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.FileUtil;
 
 public class FCPConnectionHandler {
+	static final private class DirectoryAccess {
+		final boolean canWrite;
+		final boolean canRead;
+		
+		public DirectoryAccess(boolean canRead, boolean canWrite) {
+			this.canRead = canRead;
+			this.canWrite = canWrite;
+		}
+	}
+	
+	public class DDACheckJob {
+		final File directory, readFilename, writeFilename;
+		final String readContent, writeContent; 
+		
+		/**
+		 * null if not requested.
+		 */
+		DDACheckJob(File directory, File readFilename, File writeFilename) {
+			this.directory = directory;
+			this.readFilename = readFilename;
+			this.writeFilename = writeFilename;
+			
+			Random r = new Random();
+			byte[] random = new byte[512];
+			
+			r.nextBytes(random);
+			this.readContent = new String(HexUtil.bytesToHex(random));
+
+			r.nextBytes(random);
+			this.writeContent = new String(HexUtil.bytesToHex(random));
+		}
+	}
 
 	final FCPServer server;
 	final Socket sock;
@@ -20,6 +57,9 @@ public class FCPConnectionHandler {
 	private FCPClient client;
 	final BucketFactory bf;
 	final HashMap requestsByIdentifier;
+	// We are confident that the given client can access those
+	private final HashMap checkedDirectories = new HashMap();
+	private final HashMap inTestDirectories = new HashMap();
 	
 	public FCPConnectionHandler(Socket s, FCPServer server) {
 		this.sock = s;
@@ -244,5 +284,108 @@ public class FCPConnectionHandler {
 	public boolean hasFullAccess() {
 		return server.allowedHostsFullAccess.allowed(sock.getInetAddress());
 	}
+	
+	protected boolean allowDownloadTo(File filename) {
+		String parentDirectory = FileUtil.getCanonicalFile(filename).getPath();
+		DirectoryAccess da = null;
+		
+		synchronized (checkedDirectories) {
+				da = (DirectoryAccess) checkedDirectories.get(parentDirectory);
+		}
+		
+		if(da == null)
+			return false;
+		else
+			return da.canWrite;
+	}
 
+	protected boolean allowUploadFrom(File filename) {
+		String parentDirectory = FileUtil.getCanonicalFile(filename).getPath();
+		DirectoryAccess da = null;
+		
+		synchronized (checkedDirectories) {
+				da = (DirectoryAccess) checkedDirectories.get(parentDirectory);
+		}
+		
+		if(da == null)
+			return false;
+		else
+			return da.canRead;
+	}
+	
+	/**
+	 * SHOULD BE CALLED ONLY FROM TestDDAComplete!
+	 * @param path
+	 * @param read
+	 * @param write
+	 */
+	protected void registerTestDDAResult(String path, boolean read, boolean write) {
+		DirectoryAccess da = new DirectoryAccess(read, write);
+		
+		synchronized (checkedDirectories) {
+				checkedDirectories.put(path, da);
+		}
+	}
+	
+	/**
+	 * Return a DDACheckJob : the one we created and have enqueued
+	 * @param path
+	 * @param read : is Read access requested ?
+	 * @param write : is Write access requested ?
+	 * @return
+	 * @throws IllegalArgumentException
+	 * 
+	 * FIXME: Maybe we need to enqueue a PS job to delete the created file after something like ... 5 mins ?
+	 */
+	protected DDACheckJob enqueueDDACheck(String path, boolean read, boolean write) throws IllegalArgumentException {
+		File directory = FileUtil.getCanonicalFile(new File(path));
+		if(!directory.isDirectory())
+			throw new IllegalArgumentException("The specified path isn't a directory!");
+		
+		File writeFile = (write ? new File(path, "DDACheck-" + new Random().nextInt() + ".tmp") : null);
+		
+		File readFile = null;
+		if(read) {
+			try {
+				readFile = File.createTempFile("DDACheck-", ".tmp", directory);
+				readFile.deleteOnExit();
+			} catch (IOException e) {
+				// Now we know it: we can't write there ;)
+				readFile = null;
+			}
+		}
+		
+		DDACheckJob result = new DDACheckJob(directory, readFile, writeFile);
+		synchronized (inTestDirectories) {
+			inTestDirectories.put(directory, result);
+		}
+		
+		if(read){
+			try {
+				FileWriter fw = new FileWriter(result.readFilename);
+				fw.write(result.readContent);
+				fw.close();
+			} catch (IOException e) {
+				Logger.error(this, "Got a IOE while creating the file (" + readFile.toString() + " ! " + e.getMessage());
+			}
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * Return a DDACheckJob or null if not found
+	 * @param path
+	 * @return the DDACheckJob
+	 * @throws IllegalArgumentException
+	 */
+	protected DDACheckJob popDDACheck(String path) throws IllegalArgumentException {
+		File directory = FileUtil.getCanonicalFile(new File(path));
+		if(!directory.isDirectory())
+			throw new IllegalArgumentException("The specified path isn't a directory!");
+		
+		synchronized (inTestDirectories) {
+			return (DDACheckJob)inTestDirectories.get(directory);
+		}
+	}
 }
