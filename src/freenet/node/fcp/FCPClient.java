@@ -54,7 +54,7 @@ public class FCPClient {
 	/** The FCPServer */
 	final FCPServer server;
 	/** The current connection handler, if any. */
-	private FCPConnectionHandler currentConnection;
+	protected FCPConnectionHandler currentConnection;
 	/** Currently running persistent requests */
 	private final HashSet runningPersistentRequests;
 	/** Completed unacknowledged persistent requests */

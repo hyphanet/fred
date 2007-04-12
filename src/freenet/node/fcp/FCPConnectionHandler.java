@@ -295,7 +295,7 @@ public class FCPConnectionHandler {
 	 * @param writeRequest : Are willing to write or to read ?
 	 * @return boolean : allowed or not
 	 */
-	protected boolean allowUploadFrom(File filename, boolean writeRequest) {
+	protected boolean allowDDAFrom(File filename, boolean writeRequest) {
 		String parentDirectory = FileUtil.getCanonicalFile(filename).getPath();
 		DirectoryAccess da = null;
 		

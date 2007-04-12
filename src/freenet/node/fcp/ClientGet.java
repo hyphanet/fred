@@ -90,7 +90,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			this.targetFile = returnFilename;
 			this.tempFile = returnTempFilename;
 			if(!(client.core.allowDownloadTo(returnTempFilename) && client.core.allowDownloadTo(returnFilename)))
-				throw new NotAllowedException(); 
+				throw new NotAllowedException();
+			else if(!(client.getConnection().allowDDAFrom(returnTempFilename, true) && client.getConnection().allowDDAFrom(returnFilename, true)))
+				throw new NotAllowedException();
 			ret = new FileBucket(returnTempFilename, false, true, false, false, false);
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
@@ -149,7 +151,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			this.targetFile = message.diskFile;
 			this.tempFile = message.tempFile;
 			if(!(client.core.allowDownloadTo(tempFile) && client.core.allowDownloadTo(targetFile)))
-				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile, identifier, global); 
+				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile, identifier, global);
+			else if(!(client.getConnection().allowDDAFrom(tempFile, true) && client.getConnection().allowDDAFrom(targetFile, true)))
+				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile + ". You might need to do a " + TestDDARequestMessage.name + " first.", identifier, global);
 			ret = new FileBucket(message.tempFile, false, true, false, false, false);
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
