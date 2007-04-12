@@ -11,12 +11,14 @@ import freenet.support.io.FileUtil;
  *
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  * @see TestFileAccessQueryMessage
+ * 
+ * Shall we provide a salted hash of the content ? 
+ * It's probably not necessary as a client can generate a random filename...
  */
 public class TestFileAccessReplyMessage extends FCPMessage {
 	public static final String name = "TestFileAccessReply";
 	public static final String CAN_READ = "CanRead";
 	public static final String CAN_WRITE = "CanWrite";
-	public static final String CAN_EXEC = "CanExecute";
 	
 	private final File file;
 
@@ -30,7 +32,6 @@ public class TestFileAccessReplyMessage extends FCPMessage {
 		sfs.putSingle(TestFileAccessQueryMessage.FILENAME, file.toString());
 		sfs.putSingle(CAN_READ, String.valueOf(file.canRead()));
 		sfs.putSingle(CAN_WRITE, String.valueOf(file.canWrite()));
-		sfs.putSingle(CAN_EXEC, String.valueOf(file.canExecute()));
 		
 		return sfs;
 	}
