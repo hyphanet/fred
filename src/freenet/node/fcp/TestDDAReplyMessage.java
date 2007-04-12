@@ -17,7 +17,7 @@ import freenet.support.SimpleFieldSet;
  *
  */
 public class TestDDAReplyMessage extends FCPMessage {
-	public static final String NAME = "TestDDAReply";
+	public static final String name = "TestDDAReply";
 	public static final String READ_FILENAME = "ReadFilename";
 	public static final String WRITE_FILENAME = "WriteFilename";
 	public static final String CONTENT_TO_WRITE = "ContentToWrite";
@@ -45,10 +45,10 @@ public class TestDDAReplyMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return NAME;
+		return name;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, NAME + " goes from server to client not the other way around", NAME, false);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, name + " goes from server to client not the other way around", name, false);
 	}
 }

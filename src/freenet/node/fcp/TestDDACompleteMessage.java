@@ -22,7 +22,7 @@ import freenet.support.SimpleFieldSet;
  *
  */
 public class TestDDACompleteMessage extends FCPMessage {
-	public static String NAME = "TestDDAComplete";
+	public static String name = "TestDDAComplete";
 	public static String READ_ALLOWED = "ReadAllowed";
 	public static String WRITE_ALLOWED = "WriteAllowed";
 
@@ -79,10 +79,10 @@ public class TestDDACompleteMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return NAME;
+		return name;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, NAME + " goes from server to client not the other way around", NAME, false);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, name + " goes from server to client not the other way around", name, false);
 	}
 }
