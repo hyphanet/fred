@@ -91,8 +91,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			this.tempFile = returnTempFilename;
 			if(!(client.core.allowDownloadTo(returnTempFilename) && client.core.allowDownloadTo(returnFilename)))
 				throw new NotAllowedException();
-			else if(!(client.getConnection().allowDDAFrom(returnTempFilename, true) && client.getConnection().allowDDAFrom(returnFilename, true)))
-				throw new NotAllowedException();
 			ret = new FileBucket(returnTempFilename, false, true, false, false, false);
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
