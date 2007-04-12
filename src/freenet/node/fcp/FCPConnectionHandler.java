@@ -335,8 +335,8 @@ public class FCPConnectionHandler {
 	 */
 	protected DDACheckJob enqueueDDACheck(String path, boolean read, boolean write) throws IllegalArgumentException {
 		File directory = FileUtil.getCanonicalFile(new File(path));
-		if(!directory.isDirectory())
-			throw new IllegalArgumentException("The specified path isn't a directory!");
+		if(!directory.exists() || !directory.isDirectory())
+			throw new IllegalArgumentException("The specified path isn't a directory! or doesn't exist or the node doesn't have access to it!");
 		
 		File writeFile = (write ? new File(path, "DDACheck-" + new Random().nextInt() + ".tmp") : null);
 		
@@ -380,8 +380,8 @@ public class FCPConnectionHandler {
 	 */
 	protected DDACheckJob popDDACheck(String path) throws IllegalArgumentException {
 		File directory = FileUtil.getCanonicalFile(new File(path));
-		if(!directory.isDirectory())
-			throw new IllegalArgumentException("The specified path isn't a directory!");
+		if(!directory.exists() || !directory.isDirectory())
+			throw new IllegalArgumentException("The specified path isn't a directory! or doesn't exist or the node doesn't have access to it!");
 		
 		synchronized (inTestDirectories) {
 			return (DDACheckJob)inTestDirectories.remove(directory);
