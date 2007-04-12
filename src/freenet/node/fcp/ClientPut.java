@@ -89,6 +89,8 @@ public class ClientPut extends ClientPutBase {
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!globalClient.core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
+			else if(!globalClient.getConnection().allowDDAFrom(origFilename, false))
+				throw new NotAllowedException();
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.targetFilename = targetFilename;
@@ -143,6 +145,8 @@ public class ClientPut extends ClientPutBase {
 		if(message.uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!handler.server.core.allowUploadFrom(message.origFilename))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
+			else if(!handler.allowDDAFrom(message.origFilename, false))
+				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename+". Have you done a testDDA previously ?", identifier, global);
 		}
 		this.targetFilename = message.targetFilename;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
