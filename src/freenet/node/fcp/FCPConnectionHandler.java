@@ -385,7 +385,7 @@ public class FCPConnectionHandler {
 			throw new IllegalArgumentException("The specified path isn't a directory!");
 		
 		synchronized (inTestDirectories) {
-			return (DDACheckJob)inTestDirectories.get(directory);
+			return (DDACheckJob)inTestDirectories.remove(directory);
 		}
 	}
 }
