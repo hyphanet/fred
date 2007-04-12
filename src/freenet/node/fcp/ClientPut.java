@@ -89,8 +89,6 @@ public class ClientPut extends ClientPutBase {
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!globalClient.core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
-			else if(!globalClient.getConnection().allowDDAFrom(origFilename, false))
-				throw new NotAllowedException();
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.targetFilename = targetFilename;
