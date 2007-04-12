@@ -81,8 +81,6 @@ public abstract class FCPMessage {
 			return new TestDDARequestMessage(fs);
 		if(name.equals(TestDDAResponseMessage.name))
 			return new TestDDAResponseMessage(fs);
-		if(name.equals(TestFileAccessQueryMessage.name))
-			return new TestFileAccessQueryMessage(fs);
 		if(name.equals(WatchGlobal.name))
 			return new WatchGlobal(fs);
 		if(name.equals("Void"))
