@@ -46,6 +46,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int FILE_PARSE_ERROR = 22;
 	static final int NOT_A_FILE_ERROR = 23;
 	static final int ACCESS_DENIED = 24;
+	static final int DIRECT_DISK_ACCESS_DENIED = 25;
 	
 	final int code;
 	final String extra;

@@ -144,7 +144,7 @@ public class ClientPut extends ClientPutBase {
 			if(!handler.server.core.allowUploadFrom(message.origFilename))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
 			else if(!handler.allowDDAFrom(message.origFilename, false))
-				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename+". Have you done a testDDA previously ?", identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to upload from "+message.origFilename+". Have you done a testDDA previously ?", identifier, global);
 		}
 		this.targetFilename = message.targetFilename;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
