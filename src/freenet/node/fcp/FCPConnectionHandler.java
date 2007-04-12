@@ -62,8 +62,6 @@ public class FCPConnectionHandler {
 	private final HashMap checkedDirectories = new HashMap();
 	// DDACheckJobs in flight
 	private final HashMap inTestDirectories = new HashMap();
-	private static final boolean ASSUME_DOWNLOAD_DDA_IS_ALLOWED = false;
-	private static final boolean ASSUME_UPLOAD_DDA_IS_ALLOWED = false;
 	
 	public FCPConnectionHandler(Socket s, FCPServer server) {
 		this.sock = s;
@@ -304,9 +302,9 @@ public class FCPConnectionHandler {
 		}
 		
 		if(writeRequest)
-			return (da == null ? ASSUME_UPLOAD_DDA_IS_ALLOWED : da.canWrite);
+			return (da == null ? server.isDownloadDDAAlwaysAllowed() : da.canWrite);
 		else
-			return (da == null ? ASSUME_DOWNLOAD_DDA_IS_ALLOWED : da.canRead);
+			return (da == null ? server.isUploadDDAAlwaysAllowed() : da.canRead);
 	}
 	
 	/**
