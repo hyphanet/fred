@@ -9,9 +9,13 @@ import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.node.NodeClientCore;
+import freenet.pluginmanager.AccessDeniedPluginHTTPException;
+import freenet.pluginmanager.DownloadPluginHTTPException;
+import freenet.pluginmanager.NotFoundPluginHTTPException;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginManager;
+import freenet.pluginmanager.RedirectPluginHTTPException;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -71,16 +75,26 @@ public class PproxyToadlet extends Toadlet {
 
 				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPPost(plugin, request));
 			}
-			catch(PluginHTTPException ex)
+			catch (RedirectPluginHTTPException e) {
+				writeTemporaryRedirect(ctx, e.message, e.location);
+			}
+			catch (NotFoundPluginHTTPException e) {
+				sendErrorPage(ctx, e.code, e.message, e.location);
+			}
+			catch (AccessDeniedPluginHTTPException e) {
+				sendErrorPage(ctx, e.code, e.message, e.location);
+			}
+			catch (DownloadPluginHTTPException e) {
+				// FIXME: maybe it ought to be defined like sendErrorPage : in toadlets
+				
+				MultiValueTable head = new MultiValueTable();
+				head.put("Content-Disposition", "attachment; filename=\"" + e.filename + '"');
+				ctx.sendReplyHeaders(e.code, "Found", head, e.mimeType, e.data.length);
+				ctx.writeData(e.data);
+			}
+			catch(PluginHTTPException e)
 			{
-				// TODO: make it into html
-				if(ex.getHeaders() != null) {
-					String data = ex.getReply();
-					ctx.sendReplyHeaders(ex.getCode(), "Found", ex.getHeaders(), ex.getMimeType(), (data == null ? 0 : data.length()));
-					if(data != null)
-						ctx.writeData(data.getBytes("UTF-8"));
-				}else
-					writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getReply());
+				sendErrorPage(ctx, e.code, e.message, e.location);
 			}
 			catch(Throwable t)
 			{
@@ -207,16 +221,21 @@ public class PproxyToadlet extends Toadlet {
 			
 			//FetchResult result = fetch(key);
 			//writeReply(ctx, 200, result.getMimeType(), "OK", result.asBucket());
-			
-		} catch (PluginHTTPException ex) {
-			// TODO: make it into html
-			if(ex.getHeaders() != null) {
-				String data = ex.getReply();
-				ctx.sendReplyHeaders(ex.getCode(), "Found", ex.getHeaders(), ex.getMimeType(), (data == null ? 0 : data.length()));
-				if(data != null)
-					ctx.writeData(data.getBytes("UTF-8"));
-			}else
-				writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getReply());
+		} catch (RedirectPluginHTTPException e) {
+			writeTemporaryRedirect(ctx, e.message, e.location);
+		} catch (NotFoundPluginHTTPException e) {
+			sendErrorPage(ctx, e.code, e.message, e.location);
+		} catch (AccessDeniedPluginHTTPException e) {
+			sendErrorPage(ctx, e.code, e.message, e.location);
+		} catch (DownloadPluginHTTPException e) {
+			// FIXME: maybe it ought to be defined like sendErrorPage : in toadlets
+
+			MultiValueTable head = new MultiValueTable();
+			head.put("Content-Disposition", "attachment; filename=\"" + e.filename + '"');
+			ctx.sendReplyHeaders(e.code, "Found", head, e.mimeType, e.data.length);
+			ctx.writeData(e.data);
+		} catch(PluginHTTPException e) {
+			sendErrorPage(ctx, e.code, e.message, e.location);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			String msg = "<html><head><title>Internal Error</title></head><body><h1>Internal Error: please report</h1><pre>";

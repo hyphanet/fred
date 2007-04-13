@@ -4,19 +4,18 @@
 package freenet.pluginmanager;
 
 /**
- * A basic, Plugin exception intended for generic error displaying.
+ * 302 error code.
  * 
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
-public class PluginHTTPException extends Exception {
+public class RedirectPluginHTTPException extends PluginHTTPException {
 	private static final long serialVersionUID = -1;
 	
-	public final short code = 400; // Bad Request
-	public final String message;
-	public final String location;
+	public final short code = 302; // Found
+	public final String newLocation;
 
-	public PluginHTTPException(String errorMessage, String location) {
-		this.message = errorMessage;
-		this.location = location;
+	public RedirectPluginHTTPException(String message, String location, String newLocation) {
+		super(message, location);
+		this.newLocation = newLocation;
 	}
 }

@@ -166,21 +166,30 @@ public abstract class Toadlet {
 		ctx.writeData(buf, 0, buf.length);
 	}
 	
+	protected void writeTemporaryRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
+		MultiValueTable mvt = new MultiValueTable();
+		mvt.put("Location", location);
+		if(msg == null) msg = "";
+		else msg = HTMLEncoder.encode(msg);
+		String redirDoc =
+			"<html><head><title>"+msg+"</title></head><body><h1>Temporary redirect: "+
+			msg+"</h1><a href=\""+HTMLEncoder.encode(location)+"\">Click here</a></body></html>";
+		byte[] buf;
+		try {
+			buf = redirDoc.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// No way!
+			throw new Error(e);
+		}
+		ctx.sendReplyHeaders(302, "Found", mvt, "text/html; charset=UTF-8", buf.length);
+		ctx.writeData(buf, 0, buf.length);
+	}
+	
 	/**
 	 * Send a simple error page.
 	 */
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, String message) throws ToadletContextClosedException, IOException {
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-		
-		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
-		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
-		infoboxContent.addChild("#", message);
-		infoboxContent.addChild("br");
-		infoboxContent.addChild("a", "href", ".", "Return to the previous page.");
-		infoboxContent.addChild("a", "href", "/", "Return to the main page.");
-		
-		writeReply(ctx, code, "text/html; charset=UTF-8", desc, pageNode.generate());
+		sendErrorPage(ctx, code, desc, new HTMLNode("#", message));
 	}
 
 	/**

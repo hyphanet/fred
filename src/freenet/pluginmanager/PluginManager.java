@@ -257,10 +257,7 @@ public class PluginManager {
 		if (handler instanceof FredPluginHTTP)
 			return ((FredPluginHTTP)handler).handleHTTPGet(request);
 		
-		// no plugin found
-		PluginHTTPException t = new PluginHTTPException();
-		t.setReply("Plugin not found: " + plugin);
-		throw t;
+		throw new NotFoundPluginHTTPException("Plugin not found!", "/plugins");
 	}
 	
 	public String handleHTTPPost(String plugin, HTTPRequest request) throws PluginHTTPException {
@@ -275,10 +272,7 @@ public class PluginManager {
 		if (handler instanceof FredPluginHTTP)
 			return ((FredPluginHTTP)handler).handleHTTPPost(request);
 		
-		// no plugin found
-		PluginHTTPException t = new PluginHTTPException();
-		t.setReply("Plugin not found: " + plugin);
-		throw t;
+		throw new NotFoundPluginHTTPException("Plugin not found!", "/plugins");
 	}
 	
 	public void killPlugin(String name) {

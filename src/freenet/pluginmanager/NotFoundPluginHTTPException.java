@@ -4,19 +4,16 @@
 package freenet.pluginmanager;
 
 /**
- * A basic, Plugin exception intended for generic error displaying.
+ * 404 error code.
  * 
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
-public class PluginHTTPException extends Exception {
+public class NotFoundPluginHTTPException extends PluginHTTPException {
 	private static final long serialVersionUID = -1;
 	
-	public final short code = 400; // Bad Request
-	public final String message;
-	public final String location;
+	public final short code = 404; // Not Found
 
-	public PluginHTTPException(String errorMessage, String location) {
-		this.message = errorMessage;
-		this.location = location;
+	public NotFoundPluginHTTPException(String errorMessage, String location) {
+		super(errorMessage, location);
 	}
 }
