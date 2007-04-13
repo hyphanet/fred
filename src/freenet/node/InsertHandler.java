@@ -62,6 +62,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             htl = node.maxHTL();
         }
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
+        receivedBytes(req.receivedByteCount());
     }
     
     public String toString() {

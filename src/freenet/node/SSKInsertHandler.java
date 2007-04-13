@@ -43,6 +43,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
     private byte[] data;
     private byte[] headers;
     private boolean canCommit;
+    
     SSKInsertHandler(Message req, long id, Node node, long startTime) {
         this.req = req;
         this.node = node;
@@ -65,6 +66,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         headers = ((ShortBuffer) req.getObject(DMT.BLOCK_HEADERS)).getData();
         canCommit = false;
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
+        receivedBytes(req.receivedByteCount());
     }
     
     public String toString() {

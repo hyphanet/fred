@@ -234,4 +234,8 @@ public class Message {
         set(DMT.TARGET_LOCATION, targetLocation);
         set(DMT.HTL, htl);
     }
+
+	public int receivedByteCount() {
+		return _receivedByteCount;
+	}
 }
