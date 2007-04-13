@@ -1275,11 +1275,17 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					// Ignore
 				}
 			}
-			Logger.error(this, "Waited too long for a blocking send on "+PeerNode.this, new Exception("error"));
+			Logger.error(this, "Waited too long for a blocking send on "+this+" for "+PeerNode.this, new Exception("error"));
 		}
 		
 		public void acknowledged() {
-			// Ignore, we only wait for it to be sent
+			synchronized(this) {
+				if(!done) {
+					Logger.error(this, "Acknowledged but not sent?! on "+this+" for "+PeerNode.this);
+				} else return;
+				done = true;
+				notifyAll();
+			}
 		}
 
 		public void disconnected() {
