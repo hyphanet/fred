@@ -75,7 +75,7 @@ public class AddRef {
 			
 			try{
 				sfs = SimpleFieldSet.readFrom(reference, false, true);
-				fcpm = FCPMessage.create(AddPeer.name, sfs);
+				fcpm = FCPMessage.create(AddPeer.NAME, sfs);
 				fcpm.send(os);
 				os.flush();
 
