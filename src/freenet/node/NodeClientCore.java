@@ -326,6 +326,8 @@ public class NodeClientCore implements Persistable {
 			
 		});
 		
+		Key.ALLOW_INSECURE_CLIENT_CHKS = nodeConfig.getBoolean("allowInsecureCHKs");
+		
 		nodeConfig.register("allowInsecureSSKs", true, sortOrder++, true, false, "Allow insecure SSKs?", "Before 1010, all SSKs were insecure (only half encrypted). Allow old SSKs?",
 				new BooleanCallback() {
 
@@ -338,6 +340,8 @@ public class NodeClientCore implements Persistable {
 					}
 			
 		});
+		
+		Key.ALLOW_INSECURE_CLIENT_SSKS = nodeConfig.getBoolean("allowInsecureSSKs");
 		
 	}
 
