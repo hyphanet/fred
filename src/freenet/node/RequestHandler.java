@@ -62,6 +62,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     public void run() {
     	int status = RequestSender.NOT_FINISHED;
     	RequestSender rs = null;
+    	boolean thrown = false;
         try {
         if(logMINOR) Logger.minor(this, "Handling a request: "+uid);
         htl = source.decrementHTL(htl);
@@ -191,11 +192,12 @@ public class RequestHandler implements Runnable, ByteCounter {
         }
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
+            thrown = true;
         } finally {
         	node.removeTransferringRequestHandler(uid);
             node.unlockUID(uid, key instanceof NodeSSK, false);
             if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD 
-            		&& status != RequestSender.INTERNAL_ERROR) {
+            		&& status != RequestSender.INTERNAL_ERROR && !thrown) {
             	int sent = rs.getTotalSentBytes() + sentBytes;
             	int rcvd = rs.getTotalReceivedBytes() + receivedBytes;
             	if(key instanceof NodeSSK) {
