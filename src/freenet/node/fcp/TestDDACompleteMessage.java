@@ -7,6 +7,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import freenet.node.Node;
 import freenet.node.fcp.FCPConnectionHandler.DDACheckJob;
@@ -58,14 +59,16 @@ public class TestDDACompleteMessage extends FCPMessage {
 				try {
 					FileInputStream fis = new FileInputStream(maybeWrittenFile);
 					BufferedInputStream bis = new BufferedInputStream(fis);
+					InputStreamReader isr = new InputStreamReader(bis);
 					StringBuffer sb = new StringBuffer();
-
-					int current = bis.read(); 
-					while(current != -1) {
-						sb.append((char)current);
-						current = bis.read();
-					}
 					
+					char[] buf = new char[1024];
+					
+					while(isr.ready()) {
+						isr.read(buf);
+						sb.append(buf);
+					}
+					isr.close();
 					bis.close();
 					fis.close();
 					isWriteAllowed = checkJob.writeContent.equals(sb.toString().trim());
