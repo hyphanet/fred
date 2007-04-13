@@ -1254,7 +1254,55 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
                 throw new NotConnectedException();
             }
 		}
-        node.usm.send(this, req, ctr);
+    	SyncMessageCallback cb = new SyncMessageCallback();
+    	this.sendAsync(req, cb, 0, ctr);
+    	cb.waitForSend(60*1000);
+    }
+    
+    private class SyncMessageCallback implements AsyncMessageCallback {
+
+    	private boolean done = false;
+    	
+		public synchronized void waitForSend(long maxWaitInterval) {
+			long now = System.currentTimeMillis();
+			long end = now + maxWaitInterval;
+			while((now = System.currentTimeMillis()) < end) {
+				if(done) return;
+				int waitTime = (int)(Math.min(end - now, Integer.MAX_VALUE));
+				try {
+					wait(waitTime);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+			Logger.error(this, "Waited too long for a blocking send on "+PeerNode.this, new Exception("error"));
+		}
+		
+		public void acknowledged() {
+			// Ignore, we only wait for it to be sent
+		}
+
+		public void disconnected() {
+			synchronized(this) {
+				done = true;
+				notifyAll();
+			}
+		}
+
+		public void fatalError() {
+			synchronized(this) {
+				done = true;
+				notifyAll();
+			}
+		}
+
+		public void sent() {
+			synchronized(this) {
+				done = true;
+				notifyAll();
+			}
+		}
+    	
     }
 
     /**
