@@ -315,6 +315,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         	node.nodeStats.remoteSskInsertBytesSentAverage.report(totalSent);
         	node.nodeStats.remoteSskInsertBytesReceivedAverage.report(totalReceived);
         	if(code == SSKInsertSender.SUCCESS) {
+        		// Can report both sides
         		node.nodeStats.successfulSskInsertBytesSentAverage.report(totalSent);
         		node.nodeStats.successfulSskInsertBytesReceivedAverage.report(totalReceived);
         	}

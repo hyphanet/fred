@@ -95,7 +95,17 @@ public class NodeStats implements Persistable {
 	final TimeDecayingRunningAverage localChkInsertBytesReceivedAverage;
 	final TimeDecayingRunningAverage localSskInsertBytesReceivedAverage;
 	
-	// Bytes used by successful chk/ssk request/insert
+	// Bytes used by successful chk/ssk request/insert.
+	// Note: These are used to determine whether to accept a request,
+	// hence they should be roughly representative of incoming - NOT LOCAL -
+	// requests. Therefore, while we DO report local successful requests,
+	// we only report the portion which will be consistent with a remote
+	// request. If there is both a Handler and a Sender, it's a remote 
+	// request, report both. If there is only a Sender, report only the
+	// received bytes (for a request). Etc.
+	
+	// Note that these are always reported in the Handler or the NodeClientCore
+	// call taking its place.
 	final TimeDecayingRunningAverage successfulChkFetchBytesSentAverage;
 	final TimeDecayingRunningAverage successfulSskFetchBytesSentAverage;
 	final TimeDecayingRunningAverage successfulChkInsertBytesSentAverage;

@@ -484,7 +484,8 @@ public class NodeClientCore implements Persistable {
             	nodeStats.localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
             	nodeStats.localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
             	if(status == RequestSender.SUCCESS) {
-            		nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+            		// See comments above declaration of successful* : We don't report sent bytes here.
+            		//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
             		nodeStats.successfulChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
             	}
 	        }
@@ -591,7 +592,9 @@ public class NodeClientCore implements Persistable {
             	nodeStats.localSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
             	nodeStats.localSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
             	if(status == RequestSender.SUCCESS) {
-            		nodeStats.successfulSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
+            		// See comments above successfulSskFetchBytesSentAverage : we don't relay the data, so
+            		// reporting the sent bytes would be inaccurate.
+            		//nodeStats.successfulSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
             		nodeStats.successfulSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
             	}
 	        }
@@ -742,8 +745,9 @@ public class NodeClientCore implements Persistable {
         	nodeStats.localChkInsertBytesSentAverage.report(sent);
         	nodeStats.localChkInsertBytesReceivedAverage.report(received);
         	if(status == CHKInsertSender.SUCCESS) {
+        		// Only report Sent bytes because we did not receive the data.
         		nodeStats.successfulChkInsertBytesSentAverage.report(sent);
-        		nodeStats.successfulChkInsertBytesReceivedAverage.report(received);
+        		//nodeStats.successfulChkInsertBytesReceivedAverage.report(received);
         	}
         }
         
@@ -857,8 +861,9 @@ public class NodeClientCore implements Persistable {
         	nodeStats.localSskInsertBytesSentAverage.report(sent);
         	nodeStats.localSskInsertBytesReceivedAverage.report(received);
         	if(status == SSKInsertSender.SUCCESS) {
+        		// Only report Sent bytes as we haven't received anything.
         		nodeStats.successfulSskInsertBytesSentAverage.report(sent);
-        		nodeStats.successfulSskInsertBytesReceivedAverage.report(received);
+        		//nodeStats.successfulSskInsertBytesReceivedAverage.report(received);
         	}
         }
         
