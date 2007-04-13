@@ -57,6 +57,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         	resetClosestLoc = false;
         if(key instanceof NodeSSK)
         	needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
+        receivedBytes(m.receivedByteCount());
     }
 
     public void run() {
