@@ -352,8 +352,8 @@ public class FCPConnectionHandler {
 				readFile = null;
 			}
 		}
-		
-		DDACheckJob result = new DDACheckJob(client.core.random, directory, readFile, writeFile);
+
+		DDACheckJob result = new DDACheckJob(server.core.random, directory, readFile, writeFile);
 		synchronized (inTestDirectories) {
 			inTestDirectories.put(directory, result);
 		}
