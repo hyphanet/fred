@@ -96,9 +96,9 @@ public class L10n {
 	public static HTMLNode getHTMLNode(String key) {
 		String value = getString(key, true);
 		if(value != null)
-			return new HTMLNode("#", value);
+			return new HTMLNode("#", getDefaultString(value));
 		else
-			return new HTMLNode("#", value).addChild("span", "id", "translate_it").addChild("a", "href", "/?translate=" + key).addChild("small", " (translate it in your native language!)");
+			return new HTMLNode("#", getDefaultString(value)).addChild("span", "id", "translate_it").addChild("a", "href", "/?translate=" + key).addChild("small", " (translate it in your native language!)");
 	}
 	
 	public static String getDefaultString(String key) {
