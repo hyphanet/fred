@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.MissingResourceException;
 import java.util.Properties;
 
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
 /**
@@ -65,15 +66,39 @@ public class L10n {
 	/**
 	 * The real meat
 	 * 
+	 * Same thing as getString(key, false);
+	 * Ensure it will *always* return a String value.
+	 * 
 	 * @param key
 	 * @return the translated string or the default value from the default language or the key if nothing is found
 	 */
 	public static String getString(String key) {
+		return getString(key, false);
+	}
+	
+	/**
+	 * You probably don't want to use that one directly
+	 * @see getString(String)
+	 */
+	public static String getString(String key, boolean returnNullIfNotFound) {
 		String result = currentProperties.getProperty(key);
-		if(result != null) 
+		if(result != null)
 			return result;
 		else
-			return getDefaultString(key);
+			return (returnNullIfNotFound ? null : getDefaultString(key));
+	}
+	
+	/**
+	 * Almost the same as getString(String) ... but it returns a HTMLNode and gives the user the ability to contribute to the translation
+	 * @param key
+	 * @return HTMLNode
+	 */
+	public static HTMLNode getHTMLNode(String key) {
+		String value = getString(key, true);
+		if(value != null)
+			return new HTMLNode("#", value);
+		else
+			return new HTMLNode("#", value).addChild("span", "id", "translate_it").addChild("a", "href", "/?translate=" + key).addChild("small", " (translate it in your native language!)");
 	}
 	
 	public static String getDefaultString(String key) {
