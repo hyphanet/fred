@@ -126,7 +126,6 @@ public class L10n {
 	 * @return the translated string or the default value from the default language or the key if nothing is found
 	 */
 	public static String getString(String key, String[] patterns, String[] values) {
-		if((patterns == null) || (values == null)) throw new IllegalArgumentException();
 		assert(patterns.length == values.length);
 		String result = getString(key);
 
