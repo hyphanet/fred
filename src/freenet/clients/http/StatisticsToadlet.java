@@ -188,11 +188,13 @@ public class StatisticsToadlet extends Toadlet {
 				// Include overall window, and RTTs for each
 				RequestStarterGroup starters = core.requestStarters;
 				double window = starters.getWindow();
+				double realWindow = starters.getRealWindow();
 				HTMLNode loadStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
 				loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting");
 				HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
 				HTMLNode loadStatsList = loadStatsContent.addChild("ul");
 				loadStatsList.addChild("li", "Global window: "+window);
+				loadStatsList.addChild("li", "Real global window: "+realWindow);
 				loadStatsList.addChild("li", starters.statsPageLine(false, false));
 				loadStatsList.addChild("li", starters.statsPageLine(true, false));
 				loadStatsList.addChild("li", starters.statsPageLine(false, true));
