@@ -1544,6 +1544,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Tried to send data packet to local address: "+kt.pn.getPeer()+" for "+kt.pn.allowLocalAddresses());
 		}
         kt.pn.sentPacket();
+        for(int i=0;i<callbacks.length;i++) {
+        	callbacks[i].sent();
+        }
     }
 
     /* (non-Javadoc)
