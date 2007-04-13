@@ -272,7 +272,9 @@ public class NodeClientCore implements Persistable {
 						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
 						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, backgroundBlockEncoder), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
-		nodeConfig.register("ignoreTooManyPathComponents", true, sortOrder++, true, false, "Ignore too many path components", 
+		// FIXME remove this code, the new behaviour should be handled by all clients
+		
+		nodeConfig.register("ignoreTooManyPathComponents", false, sortOrder++, true, false, "Ignore too many path components", 
 				"If true, the node won't generate TOO_MANY_PATH_COMPONENTS errors when a URI is fed to it which has extra, meaningless subdirs (/blah/blah) on the end beyond what is needed to fetch the key (for example, old CHKs will often have filenames stuck on the end which weren't part of the original insert; this is obsolete because we can now include the filename, and it is confusing to be able to add arbitrary strings to a URI, and it makes them hard to compare). Only enable this option if you need it for compatibility with older apps; it will be removed soon.", new BooleanCallback() {
 
 					public boolean get() {
