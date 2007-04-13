@@ -8,7 +8,7 @@ import freenet.support.SimpleFieldSet;
 
 public class ListPersistentRequestsMessage extends FCPMessage {
 
-	static final String name = "ListPersistentRequests";
+	static final String NAME = "ListPersistentRequests";
 	
 	public ListPersistentRequestsMessage(SimpleFieldSet fs) {
 		// Do nothing
@@ -19,7 +19,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 	}
 	
 	public String getName() {
-		return name;
+		return NAME;
 	}
 	
 	public void run(FCPConnectionHandler handler, Node node)

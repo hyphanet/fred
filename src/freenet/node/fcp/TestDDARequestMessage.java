@@ -16,7 +16,7 @@ import freenet.support.SimpleFieldSet;
  *  @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class TestDDARequestMessage extends FCPMessage {
-	public static final String name = "TestDDARequest";
+	public static final String NAME = "TestDDARequest";
 	public static final String DIRECTORY = "Directory";
 	public static final String WANT_READ = "WantRead";
 	public static final String WANT_WRITE = "WantWrite";
@@ -46,7 +46,7 @@ public class TestDDARequestMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {

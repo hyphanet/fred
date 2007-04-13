@@ -12,7 +12,7 @@ import freenet.support.SimpleFieldSet;
 
 public class ModifyConfig extends FCPMessage {
 
-	static final String name = "ModifyConfig";
+	static final String NAME = "ModifyConfig";
 	
 	final SimpleFieldSet fs;
 	
@@ -25,7 +25,7 @@ public class ModifyConfig extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {

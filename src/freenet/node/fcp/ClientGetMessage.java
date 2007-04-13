@@ -38,7 +38,7 @@ import freenet.support.SimpleFieldSet;
  */
 public class ClientGetMessage extends FCPMessage {
 
-	public final static String name = "ClientGet";
+	public final static String NAME = "ClientGet";
 	final boolean ignoreDS;
 	final boolean dsOnly;
 	final FreenetURI uri;
@@ -209,7 +209,7 @@ public class ClientGetMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) {

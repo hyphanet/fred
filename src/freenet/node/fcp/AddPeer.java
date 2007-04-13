@@ -22,7 +22,7 @@ import freenet.support.SimpleFieldSet;
 
 public class AddPeer extends FCPMessage {
 
-	public static final String name = "AddPeer";
+	public static final String NAME = "AddPeer";
 	
 	SimpleFieldSet fs;
 	
@@ -35,7 +35,7 @@ public class AddPeer extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {

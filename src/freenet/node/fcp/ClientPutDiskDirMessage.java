@@ -29,7 +29,7 @@ import freenet.support.io.FileBucket;
  */
 public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 
-	public static String name = "ClientPutDiskDir";
+	public static String NAME = "ClientPutDiskDir";
 	
 	final File dirname;
 	final boolean allowUnreadableFiles;
@@ -44,7 +44,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node)

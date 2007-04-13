@@ -151,7 +151,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(!(client.core.allowDownloadTo(tempFile) && client.core.allowDownloadTo(targetFile)))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile, identifier, global);
 			else if(!(handler.allowDDAFrom(tempFile, true) && handler.allowDDAFrom(targetFile, true)))
-				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile + ". You might need to do a " + TestDDARequestMessage.name + " first.", identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile + ". You might need to do a " + TestDDARequestMessage.NAME + " first.", identifier, global);
 			ret = new FileBucket(message.tempFile, false, true, false, false, false);
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;

@@ -20,7 +20,7 @@ import freenet.support.compress.Compressor;
  * EndMessage
  */
 public class NodeHelloMessage extends FCPMessage {
-	public static final String name = "NodeHello";
+	public static final String NAME = "NodeHello";
 	String nodeVersion;
 	String nodeFCPVersion;
 	String nodeNode;
@@ -75,7 +75,7 @@ public class NodeHelloMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return NodeHelloMessage.name;
+		return NodeHelloMessage.NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {

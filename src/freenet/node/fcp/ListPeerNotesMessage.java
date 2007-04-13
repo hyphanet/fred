@@ -9,7 +9,7 @@ import freenet.support.SimpleFieldSet;
 
 public class ListPeerNotesMessage extends FCPMessage {
 
-	static final String name = "ListPeerNotes";
+	static final String NAME = "ListPeerNotes";
 	final SimpleFieldSet fs;
 	
 	public ListPeerNotesMessage(SimpleFieldSet fs) {
@@ -21,7 +21,7 @@ public class ListPeerNotesMessage extends FCPMessage {
 	}
 	
 	public String getName() {
-		return name;
+		return NAME;
 	}
 	
 	public void run(FCPConnectionHandler handler, Node node)

@@ -37,7 +37,7 @@ import freenet.support.io.FileBucket;
  */
 public class ClientPutMessage extends DataCarryingMessage {
 
-	public final static String name = "ClientPut";
+	public final static String NAME = "ClientPut";
 	
 	final FreenetURI uri;
 	final String contentType;
@@ -221,7 +221,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node)

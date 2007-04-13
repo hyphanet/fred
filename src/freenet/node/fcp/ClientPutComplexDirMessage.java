@@ -107,10 +107,10 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		}
 	}
 
-	static final String name = "ClientPutComplexDir";
+	static final String NAME = "ClientPutComplexDir";
 	
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	long dataLength() {

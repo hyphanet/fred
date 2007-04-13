@@ -13,7 +13,7 @@ import freenet.support.SimpleFieldSet;
 
 public class ModifyPeerNote extends FCPMessage {
 
-	static final String name = "ModifyPeerNote";
+	static final String NAME = "ModifyPeerNote";
 	
 	final SimpleFieldSet fs;
 	
@@ -26,7 +26,7 @@ public class ModifyPeerNote extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {

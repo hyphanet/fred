@@ -10,7 +10,7 @@ import freenet.support.SimpleFieldSet;
 
 public class GenerateSSKMessage extends FCPMessage {
 
-	static final String name = "GenerateSSK";
+	static final String NAME = "GenerateSSK";
 	final String identifier;
 	
 	GenerateSSKMessage(SimpleFieldSet fs) {
@@ -22,7 +22,7 @@ public class GenerateSSKMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node)

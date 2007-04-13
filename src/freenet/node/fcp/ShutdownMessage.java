@@ -8,7 +8,7 @@ import freenet.node.fcp.FCPMessage;
 import freenet.support.SimpleFieldSet;
 
 public class ShutdownMessage extends FCPMessage{
-	public final static String name = "Shutdown";
+	public final static String NAME = "Shutdown";
 	
 	public ShutdownMessage() throws MessageInvalidException {
 	}
@@ -18,7 +18,7 @@ public class ShutdownMessage extends FCPMessage{
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {

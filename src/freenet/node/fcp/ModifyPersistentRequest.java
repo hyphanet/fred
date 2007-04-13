@@ -23,7 +23,7 @@ import freenet.support.SimpleFieldSet;
  */
 public class ModifyPersistentRequest extends FCPMessage {
 
-	static final String name = "ModifyPersistentRequest";
+	static final String NAME = "ModifyPersistentRequest";
 	
 	final String identifier;
 	final boolean global;
@@ -61,7 +61,7 @@ public class ModifyPersistentRequest extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node)

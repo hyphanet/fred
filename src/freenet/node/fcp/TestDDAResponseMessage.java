@@ -17,7 +17,7 @@ import freenet.support.SimpleFieldSet;
  *
  */
 public class TestDDAResponseMessage extends FCPMessage {
-	public static final String name = "TestDDAResponse";
+	public static final String NAME = "TestDDAResponse";
 	public static final String READ_CONTENT = "ReadContent";
 	
 	final String identifier;
@@ -38,7 +38,7 @@ public class TestDDAResponseMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
@@ -51,7 +51,7 @@ public class TestDDAResponseMessage extends FCPMessage {
 		if(job == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "The node doesn't know that testDDA identifier! double check it! (" + identifier + ").", identifier, false);
 		else if((job.readFilename != null) && (readContent == null))
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "You need to send " + READ_CONTENT + " back to the node if you specify " + TestDDARequestMessage.WANT_READ + " in " + TestDDARequestMessage.name + '.', identifier, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "You need to send " + READ_CONTENT + " back to the node if you specify " + TestDDARequestMessage.WANT_READ + " in " + TestDDARequestMessage.NAME + '.', identifier, false);
 		
 		TestDDACompleteMessage reply = new TestDDACompleteMessage(handler, job, readContent);
 		handler.outputHandler.queue(reply);

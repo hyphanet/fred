@@ -11,7 +11,7 @@ public class WatchGlobal extends FCPMessage {
 
 	final boolean enabled;
 	final int verbosityMask;
-	static final String name = "WatchGlobal";
+	static final String NAME = "WatchGlobal";
 
 	public WatchGlobal(SimpleFieldSet fs) throws MessageInvalidException {
 		enabled = Fields.stringToBool(fs.get("Enabled"), true);
@@ -34,7 +34,7 @@ public class WatchGlobal extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node)

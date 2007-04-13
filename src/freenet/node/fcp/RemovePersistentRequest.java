@@ -11,7 +11,7 @@ import freenet.support.*;
  */
 public class RemovePersistentRequest extends FCPMessage {
 
-	final static String name = "RemovePersistentRequest";
+	final static String NAME = "RemovePersistentRequest";
 	
 	final String identifier;
 	final boolean global;
@@ -30,7 +30,7 @@ public class RemovePersistentRequest extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node)

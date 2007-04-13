@@ -9,7 +9,7 @@ import freenet.support.SimpleFieldSet;
 
 public class RemovePeer extends FCPMessage {
 
-	static final String name = "RemovePeer";
+	static final String NAME = "RemovePeer";
 	
 	final SimpleFieldSet fs;
 	
@@ -22,12 +22,12 @@ public class RemovePeer extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, name + " requires full access", null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, NAME + " requires full access", null, false);
 		}
 		String nodeIdentifier = fs.get("NodeIdentifier");
 		PeerNode pn = node.getPeerNode(nodeIdentifier);

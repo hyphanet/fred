@@ -23,7 +23,7 @@ import freenet.support.SimpleFieldSet;
  */
 public class SubscribeUSKMessage extends FCPMessage {
 
-	public static final String name = "SubscribeUSK";
+	public static final String NAME = "SubscribeUSK";
 
 	final USK key;
 	final boolean dontPoll;
@@ -54,7 +54,7 @@ public class SubscribeUSKMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node)

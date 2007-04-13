@@ -12,7 +12,7 @@ public class GetRequestStatusMessage extends FCPMessage {
 	final String identifier;
 	final boolean global;
 	final boolean onlyData;
-	final static String name = "GetRequestStatus";
+	final static String NAME = "GetRequestStatus";
 	
 	public GetRequestStatusMessage(SimpleFieldSet fs) {
 		this.identifier = fs.get("Identifier");
@@ -27,7 +27,7 @@ public class GetRequestStatusMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node)

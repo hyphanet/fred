@@ -11,7 +11,7 @@ public class GetNode extends FCPMessage {
 
 	final boolean withPrivate;
 	final boolean withVolatile;
-	static final String name = "GetNode";
+	static final String NAME = "GetNode";
 	
 	public GetNode(SimpleFieldSet fs) {
 		withPrivate = Fields.stringToBool(fs.get("WithPrivate"), false);
@@ -23,7 +23,7 @@ public class GetNode extends FCPMessage {
 	}
 	
 	public String getName() {
-		return name;
+		return NAME;
 	}
 	
 	public void run(FCPConnectionHandler handler, Node node)

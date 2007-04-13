@@ -12,7 +12,7 @@ public class ListPeersMessage extends FCPMessage {
 
 	final boolean withMetadata;
 	final boolean withVolatile;
-	static final String name = "ListPeers";
+	static final String NAME = "ListPeers";
 	
 	public ListPeersMessage(SimpleFieldSet fs) {
 		withMetadata = Fields.stringToBool(fs.get("WithMetadata"), false);
@@ -24,7 +24,7 @@ public class ListPeersMessage extends FCPMessage {
 	}
 	
 	public String getName() {
-		return name;
+		return NAME;
 	}
 	
 	public void run(FCPConnectionHandler handler, Node node)

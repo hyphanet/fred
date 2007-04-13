@@ -16,7 +16,7 @@ public class GetConfig extends FCPMessage {
 	final boolean withForceWriteFlag;
 	final boolean withShortDescription;
 	final boolean withLongDescription;
-	static final String name = "GetConfig";
+	static final String NAME = "GetConfig";
 	
 	public GetConfig(SimpleFieldSet fs) {
 		withCurrent = Fields.stringToBool(fs.get("WithCurrent"), false);
@@ -33,7 +33,7 @@ public class GetConfig extends FCPMessage {
 	}
 	
 	public String getName() {
-		return name;
+		return NAME;
 	}
 	
 	public void run(FCPConnectionHandler handler, Node node)

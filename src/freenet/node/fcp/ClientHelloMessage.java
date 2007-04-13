@@ -14,7 +14,7 @@ import freenet.support.SimpleFieldSet;
  */
 public class ClientHelloMessage extends FCPMessage {
 
-	public final static String name = "ClientHello";
+	public final static String NAME = "ClientHello";
 	String clientName;
 	String clientExpectedVersion;
 	
@@ -36,7 +36,7 @@ public class ClientHelloMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return name;
+		return NAME;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) {
