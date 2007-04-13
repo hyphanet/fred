@@ -202,15 +202,6 @@ public class StatisticsToadlet extends Toadlet {
 				loadStatsList.addChild("li", starters.diagnosticThrottlesLine(false));
 				loadStatsList.addChild("li", starters.diagnosticThrottlesLine(true));
 			}
-
-			nextTableCell = overviewTableRow.addChild("td");
-
-			// thread usage box
-			HTMLNode threadUsageInfobox = nextTableCell.addChild("div", "class", "infobox");
-			threadUsageInfobox.addChild("div", "class", "infobox-header", "Thread usage");
-			HTMLNode threadUsageContent = threadUsageInfobox.addChild("div", "class", "infobox-content");
-			HTMLNode threadUsageList = threadUsageContent.addChild("ul");
-			getThreadNames(threadUsageList);
 		}
 
 		if(numberOfConnected + numberOfRoutingBackedOff > 0) {			
@@ -238,54 +229,62 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode bandwidthInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
 			drawBandwidthBox(bandwidthInfobox, nodeUptimeSeconds);
+		}
 
-			if(advancedModeEnabled) {
+		if(advancedModeEnabled) {
 
-				// Peer routing backoff reason box
-				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
-				backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
-				HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
-				String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
-				if(routingBackoffReasons.length == 0) {
-					backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
-				} else {
-					HTMLNode reasonList = backoffReasonContent.addChild("ul");
-					for(int i=0;i<routingBackoffReasons.length;i++) {
-						int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
-						if(reasonCount > 0) {
-							reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
-						}
+			// Peer routing backoff reason box
+			HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
+			backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
+			HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
+			String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
+			if(routingBackoffReasons.length == 0) {
+				backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
+			} else {
+				HTMLNode reasonList = backoffReasonContent.addChild("ul");
+				for(int i=0;i<routingBackoffReasons.length;i++) {
+					int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
+					if(reasonCount > 0) {
+						reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
 					}
 				}
-
-				//Swap statistics box
-				HTMLNode locationSwapInfobox = nextTableCell.addChild("div", "class", "infobox");
-				drawSwapStatsBox(locationSwapInfobox, nodeUptimeSeconds, swaps, noSwaps);
-
-				// unclaimedFIFOMessageCounts box
-				HTMLNode unclaimedFIFOMessageCountsInfobox = nextTableCell.addChild("div", "class", "infobox");
-				drawUnclaimedFIFOMessageCountsBox(unclaimedFIFOMessageCountsInfobox);
-
-				// peer distribution box
-				overviewTableRow = overviewTable.addChild("tr");
-				nextTableCell = overviewTableRow.addChild("td", "class", "first");
-				HTMLNode peerCircleInfobox = nextTableCell.addChild("div", "class", "infobox");
-				peerCircleInfobox.addChild("div", "class", "infobox-header", "Peer\u00a0Location\u00a0Distribution (w/pReject)");
-				HTMLNode peerCircleTable = peerCircleInfobox.addChild("table");
-				addPeerCircle(peerCircleTable);
-				nextTableCell = overviewTableRow.addChild("td");
-
-				// node distribution box
-				HTMLNode nodeCircleInfobox = nextTableCell.addChild("div", "class", "infobox");
-				nodeCircleInfobox.addChild("div", "class", "infobox-header", "Node\u00a0Location\u00a0Distribution (w/Swap\u00a0Age)");
-				HTMLNode nodeCircleTable = nodeCircleInfobox.addChild("table");
-				addNodeCircle(nodeCircleTable);
-				
-				// rejection reasons box
-				HTMLNode rejectReasonsInfobox = nextTableCell.addChild("div", "class", "infobox");
-				drawRejectReasonsBox(rejectReasonsInfobox);
-				
 			}
+
+			//Swap statistics box
+			HTMLNode locationSwapInfobox = nextTableCell.addChild("div", "class", "infobox");
+			drawSwapStatsBox(locationSwapInfobox, nodeUptimeSeconds, swaps, noSwaps);
+
+			// unclaimedFIFOMessageCounts box
+			HTMLNode unclaimedFIFOMessageCountsInfobox = nextTableCell.addChild("div", "class", "infobox");
+			drawUnclaimedFIFOMessageCountsBox(unclaimedFIFOMessageCountsInfobox);
+
+			nextTableCell = overviewTableRow.addChild("td");
+
+			// thread usage box
+			HTMLNode threadUsageInfobox = nextTableCell.addChild("div", "class", "infobox");
+			threadUsageInfobox.addChild("div", "class", "infobox-header", "Thread usage");
+			HTMLNode threadUsageContent = threadUsageInfobox.addChild("div", "class", "infobox-content");
+			HTMLNode threadUsageList = threadUsageContent.addChild("ul");
+			getThreadNames(threadUsageList);
+			
+			// rejection reasons box
+			HTMLNode rejectReasonsInfobox = nextTableCell.addChild("div", "class", "infobox");
+			drawRejectReasonsBox(rejectReasonsInfobox);
+
+			// peer distribution box
+			overviewTableRow = overviewTable.addChild("tr");
+			nextTableCell = overviewTableRow.addChild("td", "class", "first");
+			HTMLNode peerCircleInfobox = nextTableCell.addChild("div", "class", "infobox");
+			peerCircleInfobox.addChild("div", "class", "infobox-header", "Peer\u00a0Location\u00a0Distribution (w/pReject)");
+			HTMLNode peerCircleTable = peerCircleInfobox.addChild("table");
+			addPeerCircle(peerCircleTable);
+			nextTableCell = overviewTableRow.addChild("td");
+
+			// node distribution box
+			HTMLNode nodeCircleInfobox = nextTableCell.addChild("div", "class", "infobox");
+			nodeCircleInfobox.addChild("div", "class", "infobox-header", "Node\u00a0Location\u00a0Distribution (w/Swap\u00a0Age)");
+			HTMLNode nodeCircleTable = nodeCircleInfobox.addChild("table");
+			addNodeCircle(nodeCircleTable);
 		}
 
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
