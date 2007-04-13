@@ -343,7 +343,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         	if(code == CHKInsertSender.SUCCESS) {
         		// Report both sent and received because we have both a Handler and a Sender
         		node.nodeStats.successfulChkInsertBytesSentAverage.report(totalSent);
-        		node.nodeStats.successfulChkInsertBytesReceivedAverage.report(totalSent);
+        		node.nodeStats.successfulChkInsertBytesReceivedAverage.report(totalReceived);
         	}
         }
     }
