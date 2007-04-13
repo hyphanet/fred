@@ -4,6 +4,7 @@
 package freenet.node.fcp;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import freenet.client.ClientMetadata;
@@ -80,15 +81,18 @@ public class ClientPut extends ClientPutBase {
 	 *            UPLOAD_FROM_REDIRECT)
 	 * @throws IdentifierCollisionException
 	 * @throws NotAllowedException 
+	 * @throws FileNotFoundException 
 	 */
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly,
 			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
-			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode) throws IdentifierCollisionException, NotAllowedException {
+			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException {
 		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!globalClient.core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
+			if(!(origFilename.exists() && origFilename.canRead()))
+				throw new FileNotFoundException();
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.targetFilename = targetFilename;

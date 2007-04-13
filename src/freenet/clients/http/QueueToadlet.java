@@ -4,6 +4,7 @@
 package freenet.clients.http;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -248,6 +249,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					e.printStackTrace();
 				} catch (NotAllowedException e) {
 					this.writeError(L10n.getString("QueueToadlet.errorAccessDenied"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx);
+					return;
+				} catch (FileNotFoundException e) {
+					this.writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx);
 					return;
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
