@@ -9,7 +9,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 
-import freenet.crypt.DummyRandomSource;
+import org.spaceroots.mantissa.random.MersenneTwister;
+
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.api.BucketFactory;
@@ -33,18 +34,18 @@ public class FCPConnectionHandler {
 		/**
 		 * null if not requested.
 		 */
-		DDACheckJob(File directory, File readFilename, File writeFilename) {
+		DDACheckJob(Random r, File directory, File readFilename, File writeFilename) {
 			this.directory = directory;
 			this.readFilename = readFilename;
 			this.writeFilename = writeFilename;
 			
-			Random r = new DummyRandomSource();
+			MersenneTwister mt = new MersenneTwister(r.nextInt());
 			byte[] random = new byte[128];
 			
-			r.nextBytes(random);
+			mt.nextBytes(random);
 			this.readContent = new String(HexUtil.bytesToHex(random));
 
-			r.nextBytes(random);
+			mt.nextBytes(random);
 			this.writeContent = new String(HexUtil.bytesToHex(random));
 		}
 	}
@@ -352,7 +353,7 @@ public class FCPConnectionHandler {
 			}
 		}
 		
-		DDACheckJob result = new DDACheckJob(directory, readFile, writeFile);
+		DDACheckJob result = new DDACheckJob(client.core.random, directory, readFile, writeFile);
 		synchronized (inTestDirectories) {
 			inTestDirectories.put(directory, result);
 		}
