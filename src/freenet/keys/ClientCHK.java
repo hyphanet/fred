@@ -72,7 +72,7 @@ public class ClientCHK extends ClientKey {
         // byte 0 is reserved, for now
         cryptoAlgorithm = extra[1];
 		if((!(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 ||
-				cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256)))
+				(Key.ALLOW_INSECURE_CLIENT_CHKS && cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256))))
 			throw new MalformedURLException("Invalid crypto algorithm");
         controlDocument = (extra[2] & 0x02) != 0;
         compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
@@ -89,7 +89,7 @@ public class ClientCHK extends ClientKey {
 		// byte 0 is reserved, for now
         cryptoAlgorithm = extra[1];
 		if((!(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 ||
-				cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256)))
+				(Key.ALLOW_INSECURE_CLIENT_CHKS && cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256))))
 			throw new MalformedURLException("Invalid crypto algorithm");
         compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
         controlDocument = (extra[2] & 0x02) != 0;
