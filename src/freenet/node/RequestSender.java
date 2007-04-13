@@ -153,7 +153,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             Message req = createDataRequest();
             
             
-            next.send(req, this);
+            next.sendSync(req, this);
             
             synchronized(this) {
             	hasForwarded = true;

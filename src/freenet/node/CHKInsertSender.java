@@ -288,7 +288,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             // Send to next node
             
             try {
-				next.send(req, this);
+				next.sendSync(req, this);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
 				continue;
@@ -390,7 +390,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             if(logMINOR) Logger.minor(this, "Sending DataInsert");
             if(receiveFailed) return;
             try {
-				next.send(dataInsert, this);
+				next.sendSync(dataInsert, this);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
 				continue;

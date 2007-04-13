@@ -68,19 +68,19 @@ public class RequestHandler implements Runnable, ByteCounter {
         htl = source.decrementHTL(htl);
         
         Message accepted = DMT.createFNPAccepted(uid);
-        source.send(accepted, null);
+        source.sendSync(accepted, null);
         
         Object o = node.makeRequestSender(key, htl, uid, source, closestLoc, resetClosestLoc, false, true, false);
         if(o instanceof KeyBlock) {
             KeyBlock block = (KeyBlock) o;
             Message df = createDataFound(block);
-            source.send(df, null);
+            source.sendSync(df, null);
             if(key instanceof NodeSSK) {
                 if(needsPubKey) {
                 	DSAPublicKey key = ((NodeSSK)block.getKey()).getPubKey();
                 	Message pk = DMT.createFNPSSKPubKey(uid, key.asBytes());
                 	if(logMINOR) Logger.minor(this, "Sending PK: "+key+ ' ' +key.toLongString());
-                	source.send(pk, null);
+                	source.sendSync(pk, null);
                 }
                 status = RequestSender.SUCCESS; // for byte logging
             }
@@ -99,7 +99,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         
         if(rs == null) { // ran out of htl?
             Message dnf = DMT.createFNPDataNotFound(uid);
-            source.send(dnf, null);
+            source.sendSync(dnf, null);
             status = RequestSender.DATA_NOT_FOUND; // for byte logging
             return;
         }
@@ -120,7 +120,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             if((waitStatus & RequestSender.WAIT_TRANSFERRING_DATA) != 0) {
             	// Is a CHK.
                 Message df = DMT.createFNPCHKDataFound(uid, rs.getHeaders());
-                source.send(df, null);
+                source.sendSync(df, null);
                 PartiallyReceivedBlock prb = rs.getPRB();
             	BlockTransmitter bt =
             	    new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
@@ -139,7 +139,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             	case RequestSender.NOT_FINISHED:
             	case RequestSender.DATA_NOT_FOUND:
                     Message dnf = DMT.createFNPDataNotFound(uid);
-            		source.send(dnf, this);
+            		source.sendSync(dnf, this);
             		return;
             	case RequestSender.GENERATED_REJECTED_OVERLOAD:
             	case RequestSender.TIMED_OUT:
@@ -147,21 +147,21 @@ public class RequestHandler implements Runnable, ByteCounter {
             		// Locally generated.
             	    // Propagate back to source who needs to reduce send rate
             	    Message reject = DMT.createFNPRejectedOverload(uid, true);
-            		source.send(reject, this);
+            		source.sendSync(reject, this);
             		return;
             	case RequestSender.ROUTE_NOT_FOUND:
             	    // Tell source
             	    Message rnf = DMT.createFNPRouteNotFound(uid, rs.getHTL());
-            		source.send(rnf, this);
+            		source.sendSync(rnf, this);
             		return;
             	case RequestSender.SUCCESS:
             		if(key instanceof NodeSSK) {
                         Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
-                        source.send(df, this);
+                        source.sendSync(df, this);
                         node.sentPayload(rs.getSSKData().length);
                         if(needsPubKey) {
                         	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey().asBytes());
-                        	source.send(pk, this);
+                        	source.sendSync(pk, this);
                         }
             		} else if(!rs.transferStarted()) {
             			Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
@@ -175,7 +175,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             			continue; // should have started transfer
             		}
             	    reject = DMT.createFNPRejectedOverload(uid, true);
-            		source.send(reject, this);
+            		source.sendSync(reject, this);
             		return;
             	case RequestSender.TRANSFER_FAILED:
             		if(key instanceof NodeCHK) {

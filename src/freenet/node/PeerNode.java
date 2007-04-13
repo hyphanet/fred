@@ -1247,7 +1247,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /**
      * Send a message, right now, on this thread, to this node.
      */
-    public void send(Message req, ByteCounter ctr) throws NotConnectedException {
+    public void sendSync(Message req, ByteCounter ctr) throws NotConnectedException {
     	synchronized(this) {
             if(!isConnected()) {
                 Logger.error(this, "Tried to send "+req+" but not connected to "+this, new Exception("debug"));

@@ -89,7 +89,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         Message accepted = DMT.createFNPSSKAccepted(uid, pubKey == null);
         
         try {
-			source.send(accepted, this);
+			source.sendSync(accepted, this);
 		} catch (NotConnectedException e1) {
 			if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
@@ -122,7 +122,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 					Logger.error(this, "Invalid pubkey from "+source+" on "+uid);
 					Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_SSK_ERROR);
 					try {
-						source.send(msg, this);
+						source.sendSync(msg, this);
 					} catch (NotConnectedException ee) {
 						// Ignore
 					}
@@ -141,7 +141,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 			Logger.error(this, "Invalid SSK from "+source, e1);
 			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_SSK_ERROR);
 			try {
-				source.send(msg, this);
+				source.sendSync(msg, this);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}
@@ -153,7 +153,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 		if((storedBlock != null) && !storedBlock.equals(block)) {
 			Message msg = DMT.createFNPSSKDataFound(uid, storedBlock.getRawHeaders(), storedBlock.getRawData());
 			try {
-				source.send(msg, this);
+				source.sendSync(msg, this);
 				node.sentPayload(storedBlock.getRawData().length);
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
@@ -166,7 +166,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         if(htl == 0) {
         	Message msg = DMT.createFNPInsertReply(uid);
         	try {
-				source.send(msg, this);
+				source.sendSync(msg, this);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}
@@ -195,7 +195,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             	// Forward it
             	Message m = DMT.createFNPRejectedOverload(uid, false);
             	try {
-					source.send(m, this);
+					source.sendSync(m, this);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -214,7 +214,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 				}
             	Message msg = DMT.createFNPSSKDataFound(uid, headers, data);
             	try {
-            		source.send(msg, this);
+            		source.sendSync(msg, this);
     				node.sentPayload(data.length);
             	} catch (NotConnectedException e) {
             		if(logMINOR) Logger.minor(this, "Lost connection to source");
@@ -236,7 +236,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             		(status == SSKInsertSender.INTERNAL_ERROR)) {
                 Message msg = DMT.createFNPRejectedOverload(uid, true);
                 try {
-					source.send(msg, this);
+					source.sendSync(msg, this);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -252,7 +252,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             if((status == SSKInsertSender.ROUTE_NOT_FOUND) || (status == SSKInsertSender.ROUTE_REALLY_NOT_FOUND)) {
                 Message msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 try {
-					source.send(msg, null);
+					source.sendSync(msg, null);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -265,7 +265,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             if(status == SSKInsertSender.SUCCESS) {
             	Message msg = DMT.createFNPInsertReply(uid);
             	try {
-					source.send(msg, null);
+					source.sendSync(msg, null);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -279,7 +279,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
             Message msg = DMT.createFNPRejectedOverload(uid, true);
             try {
-				source.send(msg, null);
+				source.sendSync(msg, null);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}

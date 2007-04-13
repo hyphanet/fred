@@ -88,7 +88,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         // Send Accepted
         Message accepted = DMT.createFNPAccepted(uid);
         try {
-			source.send(accepted, this);
+			source.sendSync(accepted, this);
 		} catch (NotConnectedException e1) {
 			if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
@@ -153,7 +153,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             canCommit = true;
         	msg = DMT.createFNPInsertReply(uid);
         	try {
-				source.send(msg, this);
+				source.sendSync(msg, this);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}
@@ -202,7 +202,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             	// Forward it
             	Message m = DMT.createFNPRejectedOverload(uid, false);
             	try {
-					source.send(m, this);
+					source.sendSync(m, this);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -232,7 +232,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             		(status == CHKInsertSender.INTERNAL_ERROR)) {
                 msg = DMT.createFNPRejectedOverload(uid, true);
                 try {
-					source.send(msg, this);
+					source.sendSync(msg, this);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -248,7 +248,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             if((status == CHKInsertSender.ROUTE_NOT_FOUND) || (status == CHKInsertSender.ROUTE_REALLY_NOT_FOUND)) {
                 msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 try {
-					source.send(msg, this);
+					source.sendSync(msg, this);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -261,7 +261,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             if(status == CHKInsertSender.SUCCESS) {
             	msg = DMT.createFNPInsertReply(uid);
             	try {
-					source.send(msg, this);
+					source.sendSync(msg, this);
 				} catch (NotConnectedException e) {
 					Logger.minor(this, "Lost connection to source");
 					return;
@@ -275,7 +275,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
             msg = DMT.createFNPRejectedOverload(uid, true);
             try {
-				source.send(msg, this);
+				source.sendSync(msg, this);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}
@@ -320,7 +320,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         	boolean failed = sender.anyTransfersFailed();
         	Message m = DMT.createFNPInsertTransfersCompleted(uid, failed);
         	try {
-        		source.send(m, this);
+        		source.sendSync(m, this);
         		if(logMINOR) Logger.minor(this, "Sent completion: "+failed+" for "+this);
         	} catch (NotConnectedException e1) {
         		if(logMINOR) Logger.minor(this, "Not connected: "+source+" for "+this);
@@ -396,7 +396,7 @@ public class InsertHandler implements Runnable, ByteCounter {
                 runThread.interrupt();
                 Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
                 try {
-                    source.send(msg, InsertHandler.this);
+                    source.sendSync(msg, InsertHandler.this);
                 } catch (NotConnectedException ex) {
                     Logger.error(this, "Can't send "+msg+" to "+source+": "+ex);
                 }
