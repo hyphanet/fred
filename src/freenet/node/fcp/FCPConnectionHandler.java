@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 
+import freenet.crypt.DummyRandomSource;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.api.BucketFactory;
@@ -36,8 +37,8 @@ public class FCPConnectionHandler {
 			this.readFilename = readFilename;
 			this.writeFilename = writeFilename;
 			
-			Random r = new Random();
-			byte[] random = new byte[512];
+			Random r = new DummyRandomSource();
+			byte[] random = new byte[128];
 			
 			r.nextBytes(random);
 			this.readContent = new String(HexUtil.bytesToHex(random));
