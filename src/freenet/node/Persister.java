@@ -54,7 +54,7 @@ class Persister implements Runnable {
 		ps.queueTimedJob(this, 60*1000);
 	}
 	
-	public void persistThrottle() {
+	private void persistThrottle() {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Trying to persist throttles...");
 		SimpleFieldSet fs = persistable.persistThrottlesToFieldSet();
