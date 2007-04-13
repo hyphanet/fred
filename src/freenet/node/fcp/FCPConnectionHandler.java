@@ -365,7 +365,7 @@ public class FCPConnectionHandler {
 			try {
 				FileOutputStream fos = new FileOutputStream(result.readFilename);
 				BufferedOutputStream bos = new BufferedOutputStream(fos);
-				bos.write(result.readContent.getBytes());
+				bos.write(result.readContent.getBytes("UTF-8"));
 				bos.flush();
 				bos.close();
 				fos.close();
