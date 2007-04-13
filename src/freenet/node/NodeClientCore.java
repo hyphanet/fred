@@ -33,6 +33,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
+import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.SSKBlock;
@@ -305,6 +306,36 @@ public class NodeClientCore implements Persistable {
 		});
 		
 		lazyResume = nodeConfig.getBoolean("lazyResume");
+		
+		// FIXME remove and remove related code when we can just block them.
+		// REDFLAG normally we wouldn't use static variables to carry important non-final data, but in this
+		// case it's temporary code which will be removed before 0.7.0.
+		
+		nodeConfig.register("allowInsecureCHKs", true, sortOrder++, true, false, "Allow insecure CHKs?", "Before 1010, all CHKs were insecure (only half encrypted). Allow old CHKs?",
+				new BooleanCallback() {
+
+					public boolean get() {
+						return Key.ALLOW_INSECURE_CLIENT_CHKS;
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						Key.ALLOW_INSECURE_CLIENT_CHKS = val;
+					}
+			
+		});
+		
+		nodeConfig.register("allowInsecureSSKs", true, sortOrder++, true, false, "Allow insecure SSKs?", "Before 1010, all SSKs were insecure (only half encrypted). Allow old SSKs?",
+				new BooleanCallback() {
+
+					public boolean get() {
+						return Key.ALLOW_INSECURE_CLIENT_SSKS;
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						Key.ALLOW_INSECURE_CLIENT_SSKS = val;
+					}
+			
+		});
 		
 	}
 
