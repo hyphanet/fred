@@ -3,8 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 
 import freenet.node.Node;
@@ -55,16 +56,18 @@ public class TestDDACompleteMessage extends FCPMessage {
 			File maybeWrittenFile = checkJob.writeFilename;
 			if (maybeWrittenFile.exists() && maybeWrittenFile.isFile() && maybeWrittenFile.canRead()) {
 				try {
-					FileReader fr = new FileReader(maybeWrittenFile);
+					FileInputStream fis = new FileInputStream(maybeWrittenFile);
+					BufferedInputStream bis = new BufferedInputStream(fis);
 					StringBuffer sb = new StringBuffer();
-					
-					int current = fr.read();					
+
+					int current = bis.read(); 
 					while(current != -1) {
 						sb.append((char)current);
-						current = fr.read();
+						current = bis.read();
 					}
 					
-					fr.close();
+					bis.close();
+					fis.close();
 					isWriteAllowed = checkJob.writeContent.equals(sb.toString().trim());
 				} catch (IOException e) {
 					Logger.error(this, "Caught an IOE trying to read the file (" + maybeWrittenFile + ")! " + e.getMessage());
