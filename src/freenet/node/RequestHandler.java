@@ -200,8 +200,13 @@ public class RequestHandler implements Runnable, ByteCounter {
             node.unlockUID(uid, key instanceof NodeSSK, false);
             if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD 
             		&& status != RequestSender.INTERNAL_ERROR && !thrown) {
-            	int sent = rs.getTotalSentBytes() + sentBytes;
-            	int rcvd = rs.getTotalReceivedBytes() + receivedBytes;
+            	int sent, rcvd;
+            	synchronized(this) {
+            		sent = sentBytes;
+            		rcvd = receivedBytes;
+            	}
+            	sent += rs.getTotalSentBytes();
+            	rcvd += rs.getTotalReceivedBytes();
             	if(key instanceof NodeSSK) {
             		if(logMINOR) Logger.minor(this, "Remote SSK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
                 	node.nodeStats.remoteSskFetchBytesSentAverage.report(sent);
