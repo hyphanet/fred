@@ -402,6 +402,7 @@ public class NodeStats implements Persistable {
 		bandwidthLiabilityOutput += getSuccessfulBytes(isSSK, isInsert, false).currentValue();
 		double bandwidthAvailableOutput =
 			node.getOutputBandwidthLimit() * 90; // 90 seconds at full power; we have to leave some time for the search as well
+		bandwidthAvailableOutput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutput) {
 			preemptiveRejectReasons.inc("Output bandwidth liability");
 			return "Output bandwidth liability";
