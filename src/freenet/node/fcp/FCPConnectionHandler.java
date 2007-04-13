@@ -1,7 +1,8 @@
 package freenet.node.fcp;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
@@ -361,9 +362,12 @@ public class FCPConnectionHandler {
 			// client somehow that the node can't write there... And setting readFile to null means we won't inform
 			// it on the status (as if it hasn't requested us to do the test).
 			try {
-				FileWriter fw = new FileWriter(result.readFilename);
-				fw.write(result.readContent);
-				fw.close();
+				FileOutputStream fos = new FileOutputStream(result.readFilename);
+				BufferedOutputStream bos = new BufferedOutputStream(fos);
+				bos.write(result.readContent.getBytes());
+				bos.flush();
+				bos.close();
+				fos.close();
 			} catch (IOException e) {
 				Logger.error(this, "Got a IOE while creating the file (" + readFile.toString() + " ! " + e.getMessage());
 			}
