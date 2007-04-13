@@ -11,9 +11,11 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.DMT;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.node.Node.NodeInitException;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
+import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
@@ -102,7 +104,7 @@ public class NodeStats implements Persistable {
 	final TimeDecayingRunningAverage successfulSskFetchBytesReceivedAverage;
 	final TimeDecayingRunningAverage successfulChkInsertBytesReceivedAverage;
 	final TimeDecayingRunningAverage successfulSskInsertBytesReceivedAverage;
-
+	
 	File persistTarget; 
 	File persistTemp;
 	private long previous_input_stat;
@@ -136,6 +138,8 @@ public class NodeStats implements Persistable {
 	private int freeHeapPercentThreshold;
 	
 	final NodePinger nodePinger;
+	
+	final StringCounter preemptiveRejectReasons;
 
 	// Enable this if you run into hard to debug OOMs.
 	// Disabled to prevent long pauses every 30 seconds.
@@ -152,6 +156,7 @@ public class NodeStats implements Persistable {
 		this.node = node;
 		this.peers = node.peers;
 		this.hardRandom = node.random;
+		preemptiveRejectReasons = new StringCounter();
 		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0);
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
@@ -306,8 +311,10 @@ public class NodeStats implements Persistable {
 		if(logMINOR) dumpByteCostAverages();
 		
 		int threadCount = getActiveThreadCount();
-		if(threadLimit < threadCount)
+		if(threadLimit < threadCount) {
+			preemptiveRejectReasons.inc(">threadLimit");
 			return ">threadLimit ("+threadCount+'/'+threadLimit+')';
+		}
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		
@@ -342,12 +349,14 @@ public class NodeStats implements Persistable {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
 					pInstantRejectIncoming.report(1.0);
+					preemptiveRejectReasons.inc(">MAX_PING_TIME");
 					return ">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
 				}
 			} else if(pingTime > SUB_MAX_PING_TIME) {
 				double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
 				if(hardRandom.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
+					preemptiveRejectReasons.inc(">SUB_MAX_PING_TIME");
 					return ">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
 				}
 			}
@@ -358,12 +367,14 @@ public class NodeStats implements Persistable {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
 					pInstantRejectIncoming.report(1.0);
+					preemptiveRejectReasons.inc(">MAX_THROTTLE_DELAY");
 					return ">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
 				}
 			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
 				double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
 				if(hardRandom.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
+					preemptiveRejectReasons.inc(">SUB_MAX_THROTTLE_DELAY");
 					return ">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
 				}
 			}
@@ -381,8 +392,10 @@ public class NodeStats implements Persistable {
 		bandwidthLiabilityOutput += getSuccessfulBytes(isSSK, isInsert, false).currentValue();
 		double bandwidthAvailableOutput =
 			node.getOutputBandwidthLimit() * 90; // 90 seconds at full power; we have to leave some time for the search as well
-		if(bandwidthLiabilityOutput > bandwidthAvailableOutput)
+		if(bandwidthLiabilityOutput > bandwidthAvailableOutput) {
+			preemptiveRejectReasons.inc("Output bandwidth liability");
 			return "Output bandwidth liability";
+		}
 		
 		double bandwidthLiabilityInput =
 			successfulChkFetchBytesReceivedAverage.currentValue() * node.getNumCHKRequests() +
@@ -392,8 +405,10 @@ public class NodeStats implements Persistable {
 		bandwidthLiabilityInput += getSuccessfulBytes(isSSK, isInsert, true).currentValue();
 		double bandwidthAvailableInput =
 			node.getInputBandwidthLimit() * 90; // 90 seconds at full power
-		if(bandwidthLiabilityInput > bandwidthAvailableInput)
+		if(bandwidthLiabilityInput > bandwidthAvailableInput) {
+			preemptiveRejectReasons.inc("Input bandwidth liability");
 			return "Input bandwidth liability";
+		}
 		
 		
 		// Do we have the bandwidth?
@@ -403,6 +418,7 @@ public class NodeStats implements Persistable {
 		int expectedSent = (int)Math.max(expected, 0);
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
 			pInstantRejectIncoming.report(1.0);
+			preemptiveRejectReasons.inc("Insufficient output bandwidth");
 			return "Insufficient output bandwidth";
 		}
 		expected = 
@@ -412,6 +428,7 @@ public class NodeStats implements Persistable {
 		if(!requestInputThrottle.instantGrab(expectedReceived)) {
 			requestOutputThrottle.recycle(expectedSent);
 			pInstantRejectIncoming.report(1.0);
+			preemptiveRejectReasons.inc("Insufficient input bandwidth");
 			return "Insufficient input bandwidth";
 		}
 
@@ -424,6 +441,7 @@ public class NodeStats implements Persistable {
 		}
 		if(freeHeapMemory < freeHeapBytesThreshold) {
 			pInstantRejectIncoming.report(1.0);
+			preemptiveRejectReasons.inc("<freeHeapBytesThreshold");
 			return "<freeHeapBytesThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+')';
 		}
 		double percentFreeHeapMemoryOfMax = ((double) freeHeapMemory) / ((double) maxHeapMemory);
@@ -431,6 +449,7 @@ public class NodeStats implements Persistable {
 		if(percentFreeHeapMemoryOfMax < freeHeapPercentThresholdDouble) {
 			pInstantRejectIncoming.report(1.0);
 			DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
+			preemptiveRejectReasons.inc("<freeHeapPercentThreshold");
 			return "<freeHeapPercentThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+" ("+fix3p1pct.format(percentFreeHeapMemoryOfMax)+"))";
 		}
 
@@ -844,6 +863,9 @@ public class NodeStats implements Persistable {
 	public boolean isTestnetEnabled() {
 		return node.isTestnetEnabled();
 	}
-	
+
+	public void getRejectReasonsTable(HTMLNode table) {
+		preemptiveRejectReasons.toTableRows(table);
+	}
 
 }

@@ -279,11 +279,22 @@ public class StatisticsToadlet extends Toadlet {
 				HTMLNode nodeCircleInfobox = nextTableCell.addChild("div", "class", "infobox");
 				nodeCircleInfobox.addChild("div", "class", "infobox-header", "Node\u00a0Location\u00a0Distribution (w/Swap\u00a0Age)");
 				HTMLNode nodeCircleTable = nodeCircleInfobox.addChild("table");
-				addNodeCircle(nodeCircleTable);			
+				addNodeCircle(nodeCircleTable);
+				
+				// rejection reasons box
+				HTMLNode rejectReasonsInfobox = nextTableCell.addChild("div", "class", "infobox");
+				drawRejectReasonsBox(rejectReasonsInfobox);
+				
 			}
 		}
 
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+	}
+
+	private void drawRejectReasonsBox(HTMLNode rejectReasonsInfobox) {
+		rejectReasonsInfobox.addChild("div", "class", "infobox-header", "Preemptive Rejection Reasons");
+		HTMLNode table = rejectReasonsInfobox.addChild("table");
+		node.nodeStats.getRejectReasonsTable(table);
 	}
 
 	private void drawNodeVersionBox(HTMLNode versionInfobox) {
