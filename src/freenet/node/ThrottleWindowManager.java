@@ -31,7 +31,7 @@ public class ThrottleWindowManager {
 		if (_simulatedWindowSize < 1.0) {
 			_simulatedWindowSize = 1.0F;
 		}
-		return _simulatedWindowSize * Math.max(1, node.peers.countRoutablePeers());
+		return _simulatedWindowSize * Math.max(1, node.peers.countNonBackedOffPeers());
 	}
 
 	public synchronized void rejectedOverload() {
