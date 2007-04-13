@@ -205,7 +205,7 @@ public class RequestHandler implements Runnable, ByteCounter {
                 	if(status == RequestSender.SUCCESS) {
                 		// Can report both parts, because we had both a Handler and a Sender
                 		node.nodeStats.successfulSskFetchBytesSentAverage.report(sent);
-                		node.nodeStats.successfulSskFetchBytesReceivedAverage.report(sent);
+                		node.nodeStats.successfulSskFetchBytesReceivedAverage.report(rcvd);
                 	}
             	} else {
             		if(logMINOR) Logger.minor(this, "Remote CHK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
