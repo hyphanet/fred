@@ -8,6 +8,7 @@ import freenet.client.FetchException;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyDecodeException;
+import freenet.keys.TooBigException;
 import freenet.node.LowLevelGetException;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
@@ -183,6 +184,9 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Decode failure: "+e1, e1);
 			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), token);
+			return null;
+		} catch (TooBigException e) {
+			onFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), token);
 			return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);

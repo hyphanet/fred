@@ -119,13 +119,13 @@ public abstract class Key implements WritableToDataOutputStream {
             	len = ((((((output[0] & 0xff) << 8) + (output[1] & 0xff)) << 8) + (output[2] & 0xff)) << 8) +
             		(output[3] & 0xff);
             if(len > maxLength)
-                throw new CHKDecodeException("Invalid precompressed size: "+len);
+                throw new TooBigException("Invalid precompressed size: "+len);
             Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(compressionAlgorithm);
             Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, shortLength?2:4, outputLength-(shortLength?2:4));
             try {
 				return decompressor.decompress(inputBucket, bf, maxLength, -1, null);
 			} catch (CompressionOutputSizeException e) {
-				throw new CHKDecodeException("Too big");
+				throw new TooBigException("Too big");
 			}
         } else {
         	return BucketTools.makeImmutableBucket(bf, output, outputLength);
@@ -155,11 +155,11 @@ public abstract class Key implements WritableToDataOutputStream {
         	byte[] cbuf = null;
         	if(alreadyCompressedCodec >= 0) {
            		if(sourceData.size() > maxCompressedDataLength)
-        			throw new KeyEncodeException("Too big (precompressed)");
+        			throw new TooBigException("Too big (precompressed)");
         		compressionAlgorithm = alreadyCompressedCodec;
         		cbuf = BucketTools.toByteArray(sourceData);
         		if(sourceLength > MAX_LENGTH_BEFORE_COMPRESSION)
-        			throw new CHKEncodeException("Too big");
+        			throw new TooBigException("Too big");
         	} else {
         		if (sourceData.size() > maxCompressedDataLength) {
 					// Determine the best algorithm

@@ -12,6 +12,7 @@ import freenet.client.FetchResult;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyDecodeException;
+import freenet.keys.TooBigException;
 import freenet.node.LowLevelGetException;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -130,6 +131,9 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Decode failure: "+e1, e1);
 			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()));
+			return null;
+		} catch (TooBigException e) {
+			onFailure(new FetchException(FetchException.TOO_BIG, e));
 			return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
