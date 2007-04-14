@@ -7,6 +7,7 @@ import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.support.Fields;
+import freenet.support.HexUtil;
 import freenet.support.SimpleFieldSet;
 import freenet.support.compress.Compressor;
 
@@ -71,6 +72,9 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.putSingle("ExtRevision", NodeStarter.extRevisionNumber);
 		sfs.putSingle("Testnet", Boolean.toString(node == null ? false : node.isTestnetEnabled()));
 		sfs.putSingle("CompressionCodecs", Integer.toString(Compressor.countCompressAlgorithms()));
+		byte[] identifier = new byte[16];
+		node.random.nextBytes(identifier);
+		sfs.putSingle("ConnectionIdentifier", HexUtil.bytesToHex(identifier));
 		return sfs;
 	}
 
