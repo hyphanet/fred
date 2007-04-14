@@ -627,6 +627,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	}
 	
 	private void makeCompletionWaiter() {
+		if(logMINOR)
+			Logger.minor(this, "Creating completion waiter for "+uid);
 		Thread t;
 		synchronized (this) {
 			if(cw == null)
