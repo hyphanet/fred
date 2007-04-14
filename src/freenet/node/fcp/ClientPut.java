@@ -221,6 +221,11 @@ public class ClientPut extends ClientPutBase {
 			targetURI = null;
 		this.data = tempData;
 		this.clientMetadata = cm;
+		
+		// Check the hash : allow it to be null for backward compatibility
+		if((salt != null) && !isHashVerified(salt))
+			throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "The hash doesn't match!", identifier, global);
+		
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
@@ -282,20 +287,8 @@ public class ClientPut extends ClientPutBase {
 			targetURI = null;
 			
 			if(salt != null) {
-				if (logMINOR) Logger.minor(this, "Found a hash : let's verify it");
-				MessageDigest sha = SHA256.getMessageDigest();
-				sha.reset();
-				sha.update(salt.getBytes("UTF-8"));
-				BufferedInputStream bis = new BufferedInputStream(data.getInputStream());
-				byte[] buf = new byte[4096];
-				while(bis.read(buf) > 0)
-					sha.update(buf);
-				
-				byte[] foundHash = sha.digest();
-				SHA256.returnMessageDigest(sha);
-				
-				if(!foundHash.equals(saltedHash))
-					throw new PersistenceParseException("The hash doesn't match !");	
+				if(!isHashVerified(salt)) // We trust the given salt
+					throw new PersistenceParseException("The hash doesn't match! or an error has occured.");
 			} else // should probably be a higher level 
 				Logger.normal(this, "Hash not found!");
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
@@ -492,4 +485,26 @@ public class ClientPut extends ClientPutBase {
 	public void onFailure(FetchException e, ClientGetter state) {}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {}
+	
+	private boolean isHashVerified(String trustedSalt) {
+		if (logMINOR) Logger.minor(this, "Found a hash : let's verify it");
+		if(!trustedSalt.equals(salt)) return false;
+		byte[] foundHash = null;
+		MessageDigest md = SHA256.getMessageDigest();
+		try {
+			md.reset();
+			md.update(trustedSalt.getBytes("UTF-8"));
+			BufferedInputStream bis = new BufferedInputStream(data.getInputStream());
+			byte[] buf = new byte[4096];
+			while(bis.read(buf) > 0)
+				md.update(buf);
+			foundHash = md.digest();
+		} catch (IOException e) {
+			return false;
+		} finally {
+			SHA256.returnMessageDigest(md);	
+		}
+		
+		return foundHash.equals(saltedHash); 
+	}
 }

@@ -126,7 +126,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			}
 		}
 		// We do *NOT* check that FileHash is valid here for backward compatibility... and to make the override work
-		this.fileHash = fs.get(ClientPutBase.SALT);
+		this.fileHash = fs.get(ClientPutBase.FILE_HASH);
 		String uploadFrom = fs.get("UploadFrom");
 		if((uploadFrom == null) || uploadFrom.equalsIgnoreCase("direct")) {
 			uploadFromType = UPLOAD_FROM_DIRECT;
