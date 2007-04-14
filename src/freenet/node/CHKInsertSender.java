@@ -164,7 +164,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     private boolean sentRequest;
     
     /** List of nodes we are waiting for either a transfer completion
-     * notice or a transfer completion from. */
+     * notice or a transfer completion from. Also used as a sync object for waiting for transfer completion. */
     private Vector nodesWaitingForCompletion;
     
     /** Have all transfers completed and all nodes reported completion status? */
@@ -645,6 +645,16 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		
 		public void run() {
 			if(logMINOR) Logger.minor(this, "Starting "+this);
+			synchronized(CHKInsertSender.this) {
+				while(status == NOT_FINISHED || setStatusTime == -1) {
+					try {
+						CHKInsertSender.this.wait(100*1000);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+			}
+			
 			while(true) {
 			AwaitingCompletion[] waiters;
 			synchronized(nodesWaitingForCompletion) {
@@ -658,7 +668,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			boolean noTimeLeft = false;
 
 			long now = System.currentTimeMillis();
-			if((status == NOT_FINISHED) || (setStatusTime == -1) || transfersCompletedTime == -1) {
+			
+			if(transfersCompletedTime == -1) {
 				// Wait 5 seconds, then try again
 				timeout = 5000;
 			} else {
