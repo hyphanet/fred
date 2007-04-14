@@ -190,9 +190,7 @@ public class InsertHandler implements Runnable, ByteCounter {
                     // Cool, probably this is because the receive failed...
                 }
             }
-            if(receiveFailed) {
-                // Cancel the sender
-                sender.receiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
+            if(receiveFailed()) {
                 // Nothing else we can do
                 finish(CHKInsertSender.RECEIVE_FAILED);
                 return;
@@ -331,14 +329,14 @@ public class InsertHandler implements Runnable, ByteCounter {
         
         if(code != CHKInsertSender.TIMED_OUT && code != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && 
         		code != CHKInsertSender.INTERNAL_ERROR && code != CHKInsertSender.ROUTE_REALLY_NOT_FOUND &&
-        		code != CHKInsertSender.RECEIVE_FAILED && !receiveFailed) {
+        		code != CHKInsertSender.RECEIVE_FAILED && !receiveFailed()) {
         	int totalSent = getTotalSentBytes();
         	int totalReceived = getTotalReceivedBytes();
         	if(sender != null) {
         		totalSent += sender.getTotalSentBytes();
         		totalReceived += sender.getTotalReceivedBytes();
         	}
-        	if(logMINOR) Logger.minor(this, "Remote CHK insert cost "+totalSent+ '/' +totalReceived+" bytes ("+code+ ") receive failed = "+sender.failedReceive());
+        	if(logMINOR) Logger.minor(this, "Remote CHK insert cost "+totalSent+ '/' +totalReceived+" bytes ("+code+ ") receive failed = "+receiveFailed());
         	node.nodeStats.remoteChkInsertBytesSentAverage.report(totalSent);
         	node.nodeStats.remoteChkInsertBytesReceivedAverage.report(totalReceived);
         	if(code == CHKInsertSender.SUCCESS) {
@@ -393,7 +391,11 @@ public class InsertHandler implements Runnable, ByteCounter {
                 if(logMINOR) Logger.minor(this, "Received data for "+InsertHandler.this);
                 maybeCommit();
             } catch (RetrievalException e) {
-                receiveFailed = true;
+            	synchronized(InsertHandler.this) {
+            		receiveFailed = true;
+            	}
+                // Cancel the sender
+                sender.receiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
                 runThread.interrupt();
                 Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
                 try {
@@ -414,6 +416,10 @@ public class InsertHandler implements Runnable, ByteCounter {
         
     }
 
+    private synchronized boolean receiveFailed() {
+    	return receiveFailed;
+    }
+    
     private final Object totalSync = new Object();
     private int totalSentBytes;
     private int totalReceivedBytes;

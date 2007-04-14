@@ -591,8 +591,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
      * Called by InsertHandler to notify that the receive has
      * failed.
      */
-    public void receiveFailed() {
+    public synchronized void receiveFailed() {
         receiveFailed = true;
+        notifyAll();
     }
 
     /**
