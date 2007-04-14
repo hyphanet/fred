@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.io.comm.Message;
+import freenet.support.Logger;
 
 /** A queued Message or byte[], and a callback, which may be null. */
 public class MessageItem {
@@ -49,4 +50,23 @@ public class MessageItem {
             buf = msg.encodeToPacket(pn);
         return buf;
     }
+
+	public void onSent(int length) {
+		if(ctrCallback != null) {
+			try {
+				ctrCallback.sentBytes(length);
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t+" reporting "+length+" sent bytes on "+this);
+			}
+		}
+		if(cb != null) {
+			for(int i=0;i<cb.length;i++) {
+				try {
+					cb[i].sent();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this);
+				}
+			}
+		}
+	}
 }

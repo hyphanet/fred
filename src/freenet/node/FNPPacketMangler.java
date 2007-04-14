@@ -1027,11 +1027,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                     }
                     int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
                     this.processOutgoingPreformatted(buf, 0, buf.length, pn.getCurrentKeyTracker(), packetNumber, mi.cb, mi.alreadyReportedBytes);
-                    if(mi.ctrCallback != null)
-                    	mi.ctrCallback.sentBytes(buf.length + HEADERS_LENGTH_ONE_MESSAGE);
-                    if(mi.cb != null) {
-                    	for(int j=0;j<mi.cb.length;j++) mi.cb[j].sent();
-                    }
+                    mi.onSent(buf.length + HEADERS_LENGTH_ONE_MESSAGE);
                 } catch (NotConnectedException e) {
                     Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
                     // Requeue
@@ -1110,14 +1106,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 for(int i=0;i<messageData.length;i++) {
                 	MessageItem mi = newMsgs[i];
 					mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
-                	if(mi.ctrCallback != null) {
-                		mi.ctrCallback.sentBytes(messageData[i].length + 
-                				1 + (HEADERS_LENGTH_MINIMUM / messageData.length));
-                		// FIXME rounding issues
-                	}
-                    if(mi.cb != null) {
-                    	for(int j=0;j<mi.cb.length;j++) mi.cb[j].sent();
-                    }
+					mi.onSent(messageData[i].length + 1 + (HEADERS_LENGTH_MINIMUM / messageData.length));
                 }
             } catch (NotConnectedException e) {
                 Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
@@ -1164,14 +1153,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                             for(int j=lastIndex;j<i;j++) {
                             	MessageItem mi = newMsgs[j];
 								mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
-                            	if(mi.ctrCallback != null) {
-                            		mi.ctrCallback.sentBytes(messageData[j].length + 
-                            				1 + (HEADERS_LENGTH_MINIMUM / (i-lastIndex)));
-                            		// FIXME rounding issues
-                            	}
-                                if(mi.cb != null) {
-                                	for(int k=0;k<mi.cb.length;k++) mi.cb[k].sent();
-                                }
+								mi.onSent(messageData[j].length + 1 + (HEADERS_LENGTH_MINIMUM / (i-lastIndex)));
                             }
                         } catch (NotConnectedException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
