@@ -597,7 +597,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     public void receiveFailed() {
     	synchronized(nodesWaitingForCompletion) {
     		receiveFailed = true;
-    		notifyAll();
+    		nodesWaitingForCompletion.notifyAll();
     	}
     }
 
