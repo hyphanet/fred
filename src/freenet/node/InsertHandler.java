@@ -331,7 +331,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         
         if(code != CHKInsertSender.TIMED_OUT && code != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && 
         		code != CHKInsertSender.INTERNAL_ERROR && code != CHKInsertSender.ROUTE_REALLY_NOT_FOUND &&
-        		code != CHKInsertSender.RECEIVE_FAILED) {
+        		code != CHKInsertSender.RECEIVE_FAILED && !receiveFailed) {
         	int totalSent = getTotalSentBytes();
         	int totalReceived = getTotalReceivedBytes();
         	if(sender != null) {
@@ -341,7 +341,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         	if(logMINOR) Logger.minor(this, "Remote CHK insert cost "+totalSent+ '/' +totalReceived+" bytes ("+code+ ") receive failed = "+sender.failedReceive());
         	node.nodeStats.remoteChkInsertBytesSentAverage.report(totalSent);
         	node.nodeStats.remoteChkInsertBytesReceivedAverage.report(totalReceived);
-        	if(code == CHKInsertSender.SUCCESS && !(sender != null && sender.failedReceive())) {
+        	if(code == CHKInsertSender.SUCCESS) {
         		// Report both sent and received because we have both a Handler and a Sender
         		node.nodeStats.successfulChkInsertBytesSentAverage.report(totalSent);
         		node.nodeStats.successfulChkInsertBytesReceivedAverage.report(totalReceived);
