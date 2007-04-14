@@ -596,8 +596,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			if(chkBlocksInDatabase > chkBlocksFromFile) {
 				System.out.println("More keys in database than in store!");
+				
 				//throw new DatabaseException("More keys in database than in store!");
 				// FIXME reinstate if handling code doesn't work
+				// FIXME we can do a cleverer recovery: Find all keys whose block number is > chkBlocksFromFile and delete them
 			}
 			
 			if(((chkBlocksInStore == 0) && (chkBlocksFromFile != 0)) ||
