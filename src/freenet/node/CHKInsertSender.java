@@ -695,6 +695,24 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			}
 			
 			if(mf == null) {
+				
+				if(!waitingForAny) {
+					// All are disconnected
+					allTransfersCompleted = true;
+					return;
+				}
+				
+				if(!anyNotCompleted) {
+					// All have completed transferring, AND all have received completion notices!
+					// All done!
+					if(logMINOR) Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for for "+uid+" .");
+					synchronized(CHKInsertSender.this) {
+						allTransfersCompleted = true;
+						CHKInsertSender.this.notifyAll();
+					}
+					return;
+				}
+				
 				if(status != NOT_FINISHED) {
 					if(nodesWaitingForCompletion.size() != waiters.length) {
 						// Added another one
@@ -711,23 +729,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 						}
 					}
 				} else {
-					
-					if(!waitingForAny) {
-						// All are disconnected
-						allTransfersCompleted = true;
-						return;
-					}
-					
-					if(!anyNotCompleted) {
-						// All have completed transferring, AND all have received completion notices!
-						// All done!
-						if(logMINOR) Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for for "+uid+" .");
-						synchronized(CHKInsertSender.this) {
-							allTransfersCompleted = true;
-							CHKInsertSender.this.notifyAll();
-						}
-						return;
-					}
 					
 					// Still waiting for request completion, so more may be added
 					synchronized(nodesWaitingForCompletion) {
