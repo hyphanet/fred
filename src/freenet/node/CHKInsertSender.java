@@ -845,4 +845,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	public boolean failedReceive() {
 		return receiveFailed;
 	}
+
+	public synchronized boolean startedSendingData() {
+		return cw != null;
+	}
 }
