@@ -25,8 +25,8 @@ import freenet.support.SimpleFieldSet;
  */
 public class TestDDACompleteMessage extends FCPMessage {
 	public static String name = "TestDDAComplete";
-	public static String READ_ALLOWED = "ReadAllowed";
-	public static String WRITE_ALLOWED = "WriteAllowed";
+	public static String READ_ALLOWED = "ReadDirectoryAllowed";
+	public static String WRITE_ALLOWED = "WriteDirectoryAllowed";
 
 	final DDACheckJob checkJob;
 	final String readContentFromClient;

@@ -18,8 +18,8 @@ import freenet.support.SimpleFieldSet;
 public class TestDDARequestMessage extends FCPMessage {
 	public static final String NAME = "TestDDARequest";
 	public static final String DIRECTORY = "Directory";
-	public static final String WANT_READ = "WantRead";
-	public static final String WANT_WRITE = "WantWrite";
+	public static final String WANT_READ = "WantReadDirectory";
+	public static final String WANT_WRITE = "WantWriteDirectory";
 	
 	final String identifier;
 	final boolean wantRead, wantWrite;
