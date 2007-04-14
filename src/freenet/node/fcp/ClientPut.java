@@ -147,7 +147,7 @@ public class ClientPut extends ClientPutBase {
 
 		this.data = tempData;
 		this.clientMetadata = cm;
-		this.salt = globalClient.name;
+		this.salt = identifier;
 		this.saltedHash = comptuteHash(salt, data);
 
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
@@ -280,16 +280,15 @@ public class ClientPut extends ClientPutBase {
 		this.salt = fs.get(ClientPutBase.SALT);
 		String hash = fs.get(ClientPutBase.FILE_HASH);
 		if(hash != null) {
-			String mySaltedHash = null;
+			byte[] mySaltedHash = null;
 			try {
-				mySaltedHash = new String(Base64.decode(hash));
+				mySaltedHash = Base64.decode(hash);
 			} catch (IllegalBase64Exception e) {
 				throw new PersistenceParseException("Could not read FileHash for "+identifier+" : "+e, e);
 			}
-			this.saltedHash = mySaltedHash.getBytes("UTF-8");
+			this.saltedHash = mySaltedHash;
 		} else
 			this.saltedHash = null;
-		
 		
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			origFilename = new File(fs.get("Filename"));
@@ -298,10 +297,8 @@ public class ClientPut extends ClientPutBase {
 			data = new FileBucket(origFilename, true, false, false, false, false);
 			targetURI = null;
 			
-			if(salt != null) {
-				if(!isHashVerified())
-					throw new PersistenceParseException("The hash doesn't match! or an error has occured.");
-			}
+			if((hash != null) && !isHashVerified())
+				throw new PersistenceParseException("The hash doesn't match! or an error has occured.");
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			origFilename = null;
 			if(logMINOR)
@@ -412,9 +409,9 @@ public class ClientPut extends ClientPutBase {
 			fs.putSingle("TargetFilename", targetFilename);
 		fs.putSingle("EarlyEncode", Boolean.toString(earlyEncode));
 		
-		if(salt != null) {
-			fs.putSingle(ClientPutBase.SALT, salt);
-			fs.putSingle(ClientPutBase.FILE_HASH, Base64.encode(saltedHash));
+		if(persistenceType > PERSIST_REBOOT) {
+			fs.putSingle(ClientPutBase.SALT, (salt == null ? identifier : salt));
+			fs.putSingle(ClientPutBase.FILE_HASH, Base64.encode((salt == null ? comptuteHash(identifier, data) : saltedHash)));			
 		}
 		
 		return fs;
@@ -503,20 +500,22 @@ public class ClientPut extends ClientPutBase {
 	
 	private byte[] comptuteHash(String mySalt, Bucket content) {
 		MessageDigest md = SHA256.getMessageDigest();
-		byte[] foundHash = null;
+		byte[] foundHash = new byte[SHA256.getDigestLength()];
 		
 		try {
-			md.reset();
-			md.update(mySalt.getBytes("UTF-8"));
 			BufferedInputStream bis = new BufferedInputStream(data.getInputStream());
-			byte[] buf = new byte[4096];
-			while(bis.read(buf) > 0)
-				md.update(buf);
+			bis.read(foundHash);
+			bis.close();
+			
+			md.reset();
+			md.update(mySalt.getBytes("UTF-8"));	
+			md.update(foundHash);
+			
 			foundHash = md.digest();
 		} catch (IOException e) {
 			return null;
 		} finally {
-			SHA256.returnMessageDigest(md);	
+			SHA256.returnMessageDigest(md);
 		}
 		
 		return foundHash;
