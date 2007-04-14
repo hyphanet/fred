@@ -326,6 +326,18 @@ public class InsertHandler implements Runnable, ByteCounter {
         		// May need to commit anyway...
         	}
         }
+
+    	synchronized(this) {
+    		if(receiveStarted) {
+    			while(!receiveCompleted) {
+    				try {
+						wait(100*1000);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+    			}
+    		}
+    	}
         
         if(code != CHKInsertSender.TIMED_OUT && code != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && 
         		code != CHKInsertSender.INTERNAL_ERROR && code != CHKInsertSender.ROUTE_REALLY_NOT_FOUND &&
@@ -381,18 +393,30 @@ public class InsertHandler implements Runnable, ByteCounter {
 
 	/** Has the receive failed? If so, there's not much more that can be done... */
     private boolean receiveFailed;
+    
+    private boolean receiveStarted;
+    private boolean receiveCompleted;
 
     public class DataReceiver implements Runnable {
 
         public void run() {
+        	synchronized(this) {
+        		receiveStarted = true;
+        	}
         	if(logMINOR) Logger.minor(this, "Receiving data for "+InsertHandler.this);
             try {
                 br.receive();
                 if(logMINOR) Logger.minor(this, "Received data for "+InsertHandler.this);
+            	synchronized(InsertHandler.this) {
+            		receiveCompleted = true;
+            		InsertHandler.this.notifyAll();
+            	}
                 maybeCommit();
             } catch (RetrievalException e) {
             	synchronized(InsertHandler.this) {
+            		receiveCompleted = true;
             		receiveFailed = true;
+            		InsertHandler.this.notifyAll();
             	}
                 // Cancel the sender
                 sender.receiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
