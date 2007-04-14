@@ -885,4 +885,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	public void sentPayload(int x) {
 		node.sentPayload(x);
 	}
+
+	public boolean failedReceive() {
+		return receiveFailed;
+	}
 }
