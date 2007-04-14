@@ -279,13 +279,17 @@ public class ClientPut extends ClientPutBase {
 		targetFilename = fs.get("TargetFilename");
 		this.salt = fs.get(ClientPutBase.SALT);
 		String hash = fs.get(ClientPutBase.FILE_HASH);
-		String mySaltedHash = null;
-		try {
-			mySaltedHash = new String(Base64.decode(hash));
-		} catch (IllegalBase64Exception e) {
-			throw new PersistenceParseException("Could not read FileHash for "+identifier+" : "+e, e);
-		}
-		this.saltedHash = mySaltedHash.getBytes("UTF-8");
+		if(hash != null) {
+			String mySaltedHash = null;
+			try {
+				mySaltedHash = new String(Base64.decode(hash));
+			} catch (IllegalBase64Exception e) {
+				throw new PersistenceParseException("Could not read FileHash for "+identifier+" : "+e, e);
+			}
+			this.saltedHash = mySaltedHash.getBytes("UTF-8");
+		} else
+			this.saltedHash = null;
+		
 		
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			origFilename = new File(fs.get("Filename"));
