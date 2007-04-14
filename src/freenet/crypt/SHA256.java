@@ -309,16 +309,11 @@ public class SHA256 implements Digest {
      */
 	public static void hash(InputStream is, MessageDigest md) throws IOException {
 		try {
-			long length = is.available();
-			long bytesRead = 0;
 			byte[] buf = new byte[4096];
-			while(length > -1) {
-				int readBytes = is.read(buf);
-				if(readBytes < 0) break;
-				bytesRead += readBytes;
-				if(readBytes > 0)
+			int readBytes = is.read(buf);
+			while(readBytes > -1) {
 					md.update(buf, 0, readBytes);
-				length = is.available();
+					readBytes = is.read(buf);
 			}
 		} finally {
 			if(is != null) is.close();
