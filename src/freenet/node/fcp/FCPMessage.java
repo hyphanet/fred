@@ -85,8 +85,6 @@ public abstract class FCPMessage {
 			return new WatchGlobal(fs);
 		if(name.equals("Void"))
 			return null;
-		if(name.equals(NodeHelloMessage.NAME))
-			return new NodeHelloMessage(fs);
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null, false);
 	}
 	
