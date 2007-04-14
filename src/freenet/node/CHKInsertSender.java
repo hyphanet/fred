@@ -656,165 +656,165 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			}
 			
 			while(true) {
-			AwaitingCompletion[] waiters;
-			synchronized(nodesWaitingForCompletion) {
-				waiters = new AwaitingCompletion[nodesWaitingForCompletion.size()];
-				waiters = (AwaitingCompletion[]) nodesWaitingForCompletion.toArray(waiters);
-			}
-			
-			// First calculate the timeout
-			
-			int timeout;
-			boolean noTimeLeft = false;
-
-			long now = System.currentTimeMillis();
-			
-			if(transfersCompletedTime == -1) {
-				// Wait 5 seconds, then try again
-				timeout = 5000;
-			} else {
-				// Completed, wait for everything
-				timeout = (int)Math.min(Integer.MAX_VALUE, (transfersCompletedTime + TRANSFER_COMPLETION_ACK_TIMEOUT) - now);
-			}
-			if(timeout <= 0) {
-				noTimeLeft = true;
-				timeout = 1;
-			}
-
-			
-			MessageFilter mf = null;
-			boolean waitingForAny = false;
-			boolean anyNotCompleted = false;
-			for(int i=0;i<waiters.length;i++) {
-				AwaitingCompletion awc = waiters[i];
-				if(!awc.pn.isRoutable()) {
-					Logger.normal(this, "Disconnected: "+awc.pn+" in "+CHKInsertSender.this);
-					continue;
-				}
-				waitingForAny = true;
-				if(!awc.completedTransfer) {
-					anyNotCompleted = true;
-					continue;
-				}
-				if(!awc.receivedCompletionNotice) {
-					MessageFilter m =
-						MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(awc.pn).setTimeout(timeout);
-					if(mf == null)
-						mf = m;
-					else
-						mf = m.or(mf);
-					if(logMINOR) Logger.minor(this, "Waiting for "+awc.pn.getPeer());
-				}
-			}
-			
-			if(mf == null) {
-				
-				if(!waitingForAny) {
-					// All are disconnected
-					synchronized(CHKInsertSender.this) {
-						allTransfersCompleted = true;
-						CHKInsertSender.this.notifyAll();
-					}
-					return;
+				AwaitingCompletion[] waiters;
+				synchronized(nodesWaitingForCompletion) {
+					waiters = new AwaitingCompletion[nodesWaitingForCompletion.size()];
+					waiters = (AwaitingCompletion[]) nodesWaitingForCompletion.toArray(waiters);
 				}
 				
-				if(!anyNotCompleted) {
-					// All have completed transferring, AND all have received completion notices!
-					// All done!
-					if(logMINOR) Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for for "+uid+" .");
-					synchronized(CHKInsertSender.this) {
-						allTransfersCompleted = true;
-						CHKInsertSender.this.notifyAll();
-					}
-					return;
+				// First calculate the timeout
+				
+				int timeout;
+				boolean noTimeLeft = false;
+				
+				long now = System.currentTimeMillis();
+				
+				if(transfersCompletedTime == -1) {
+					// Wait 5 seconds, then try again
+					timeout = 5000;
+				} else {
+					// Completed, wait for everything
+					timeout = (int)Math.min(Integer.MAX_VALUE, (transfersCompletedTime + TRANSFER_COMPLETION_ACK_TIMEOUT) - now);
+				}
+				if(timeout <= 0) {
+					noTimeLeft = true;
+					timeout = 1;
 				}
 				
-				if(status != NOT_FINISHED) {
-					if(nodesWaitingForCompletion.size() != waiters.length) {
-						// Added another one
-						if(logMINOR) Logger.minor(this, "Looping (mf==null): waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
+				
+				MessageFilter mf = null;
+				boolean waitingForAny = false;
+				boolean anyNotCompleted = false;
+				for(int i=0;i<waiters.length;i++) {
+					AwaitingCompletion awc = waiters[i];
+					if(!awc.pn.isRoutable()) {
+						Logger.normal(this, "Disconnected: "+awc.pn+" in "+CHKInsertSender.this);
 						continue;
 					}
-					if(waitForCompletedTransfers(waiters, timeout, noTimeLeft)) {
-						synchronized(CHKInsertSender.this) {
-							if(logMINOR) Logger.minor(this, "All transfers completed (1) on "+uid);
-							allTransfersCompleted = true;
-							transfersCompletedTime = System.currentTimeMillis();
-							CHKInsertSender.this.notifyAll();
-							// Now wait for the acknowledgements
-						}
+					waitingForAny = true;
+					if(!awc.completedTransfer) {
+						anyNotCompleted = true;
+						continue;
 					}
-				} else {
+					if(!awc.receivedCompletionNotice) {
+						MessageFilter m =
+							MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(awc.pn).setTimeout(timeout);
+						if(mf == null)
+							mf = m;
+						else
+							mf = m.or(mf);
+						if(logMINOR) Logger.minor(this, "Waiting for "+awc.pn.getPeer());
+					}
+				}
+				
+				if(mf == null) {
 					
-					// Still waiting for request completion, so more may be added
-					synchronized(nodesWaitingForCompletion) {
-						try {
-							nodesWaitingForCompletion.wait(timeout);
-						} catch (InterruptedException e) {
-							// Go back around the loop
-						}
-					}
-				}
-				continue;
-			} else {
-				Message m;
-				try {
-					m = node.usm.waitFor(mf, CHKInsertSender.this);
-				} catch (DisconnectedException e) {
-					// Which one? I have no idea.
-					// Go around the loop again.
-					continue;
-				}
-				if(m != null) {
-					// Process message
-					PeerNode pn = (PeerNode) m.getSource();
-					boolean processed = false;
-					for(int i=0;i<waiters.length;i++) {
-						PeerNode p = waiters[i].pn;
-						if(p == pn) {
-							boolean anyTimedOut = m.getBoolean(DMT.ANY_TIMED_OUT);
-							waiters[i].completed(false, !anyTimedOut);
-							if(anyTimedOut) {
-								synchronized(CHKInsertSender.this) {
-									if(!transferTimedOut) {
-										transferTimedOut = true;
-										CHKInsertSender.this.notifyAll();
-									}
-								}
-							}
-							processed = true;
-							break;
-						}
-					}
-					if(!processed) {
-						Logger.error(this, "Did not process message: "+m+" on "+this);
-					}
-				} else {
-					if(nodesWaitingForCompletion.size() > waiters.length) {
-						// Added another one
-						if(logMINOR) Logger.minor(this, "Looping: waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
-						continue;
-					}
-					if(noTimeLeft) {
-						if(logMINOR) Logger.minor(this, "Overall timeout on "+CHKInsertSender.this);
-						for(int i=0;i<waiters.length;i++) {
-							if(!waiters[i].pn.isRoutable()) continue;
-							if(!waiters[i].receivedCompletionNotice)
-								waiters[i].completed(false, false);
-							if(!waiters[i].completedTransfer)
-								waiters[i].completedTransfer(false);
-						}
+					if(!waitingForAny) {
+						// All are disconnected
 						synchronized(CHKInsertSender.this) {
-							if(logMINOR) Logger.minor(this, "All transfers completed (2) on "+uid);
-							transferTimedOut = true;
 							allTransfersCompleted = true;
 							CHKInsertSender.this.notifyAll();
 						}
 						return;
 					}
+					
+					if(!anyNotCompleted) {
+						// All have completed transferring, AND all have received completion notices!
+						// All done!
+						if(logMINOR) Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for for "+uid+" .");
+						synchronized(CHKInsertSender.this) {
+							allTransfersCompleted = true;
+							CHKInsertSender.this.notifyAll();
+						}
+						return;
+					}
+					
+					if(status != NOT_FINISHED) {
+						if(nodesWaitingForCompletion.size() != waiters.length) {
+							// Added another one
+							if(logMINOR) Logger.minor(this, "Looping (mf==null): waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
+							continue;
+						}
+						if(waitForCompletedTransfers(waiters, timeout, noTimeLeft)) {
+							synchronized(CHKInsertSender.this) {
+								if(logMINOR) Logger.minor(this, "All transfers completed (1) on "+uid);
+								allTransfersCompleted = true;
+								transfersCompletedTime = System.currentTimeMillis();
+								CHKInsertSender.this.notifyAll();
+								// Now wait for the acknowledgements
+							}
+						}
+					} else {
+						
+						// Still waiting for request completion, so more may be added
+						synchronized(nodesWaitingForCompletion) {
+							try {
+								nodesWaitingForCompletion.wait(timeout);
+							} catch (InterruptedException e) {
+								// Go back around the loop
+							}
+						}
+					}
+					continue;
+				} else {
+					Message m;
+					try {
+						m = node.usm.waitFor(mf, CHKInsertSender.this);
+					} catch (DisconnectedException e) {
+						// Which one? I have no idea.
+						// Go around the loop again.
+						continue;
+					}
+					if(m != null) {
+						// Process message
+						PeerNode pn = (PeerNode) m.getSource();
+						boolean processed = false;
+						for(int i=0;i<waiters.length;i++) {
+							PeerNode p = waiters[i].pn;
+							if(p == pn) {
+								boolean anyTimedOut = m.getBoolean(DMT.ANY_TIMED_OUT);
+								waiters[i].completed(false, !anyTimedOut);
+								if(anyTimedOut) {
+									synchronized(CHKInsertSender.this) {
+										if(!transferTimedOut) {
+											transferTimedOut = true;
+											CHKInsertSender.this.notifyAll();
+										}
+									}
+								}
+								processed = true;
+								break;
+							}
+						}
+						if(!processed) {
+							Logger.error(this, "Did not process message: "+m+" on "+this);
+						}
+					} else {
+						if(nodesWaitingForCompletion.size() > waiters.length) {
+							// Added another one
+							if(logMINOR) Logger.minor(this, "Looping: waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
+							continue;
+						}
+						if(noTimeLeft) {
+							if(logMINOR) Logger.minor(this, "Overall timeout on "+CHKInsertSender.this);
+							for(int i=0;i<waiters.length;i++) {
+								if(!waiters[i].pn.isRoutable()) continue;
+								if(!waiters[i].receivedCompletionNotice)
+									waiters[i].completed(false, false);
+								if(!waiters[i].completedTransfer)
+									waiters[i].completedTransfer(false);
+							}
+							synchronized(CHKInsertSender.this) {
+								if(logMINOR) Logger.minor(this, "All transfers completed (2) on "+uid);
+								transferTimedOut = true;
+								allTransfersCompleted = true;
+								CHKInsertSender.this.notifyAll();
+							}
+							return;
+						}
+					}
 				}
 			}
-		}
 		}
 
 		/** @return True if all transfers have completed, false otherwise. */
