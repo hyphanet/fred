@@ -711,6 +711,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			
 			try {
 				fs = new SimpleFieldSet(ref.toString(), false, true);
+				if(!fs.getEndMarker().endsWith("End")) {
+					sendErrorPage(ctx, 200, "Failed to Add Node", "Unable to parse the node reference: It should end with End on a line by itself, but it ends with "+fs.getEndMarker());
+				}
 				fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
 			} catch (IOException e) {
 				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference ("+e+"). Please try again.");
