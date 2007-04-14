@@ -47,6 +47,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int NOT_A_FILE_ERROR = 23;
 	static final int ACCESS_DENIED = 24;
 	static final int DIRECT_DISK_ACCESS_DENIED = 25;
+	static final int COULD_NOT_READ_FILE = 26;
 	
 	final int code;
 	final String extra;
@@ -104,6 +105,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Filepath is not a file";
 		case ACCESS_DENIED:
 			return "Access denied";
+		case COULD_NOT_READ_FILE:
+			return "Could not read file";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";
