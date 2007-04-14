@@ -194,7 +194,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.core = core;
 		int configItemOrder = 0;
 		
-		fproxyConfig.register("enabled", true, configItemOrder++, true, true, "Enable FProxy?", "Whether to enable FProxy and related HTTP services",
+		fproxyConfig.register("enabled", true, configItemOrder++, true, true, "SimpleToadletServer.enabled", "SimpleToadletServer.enabledLong",
 				new FProxyEnabledCallback());
 		
 		boolean enabled = fproxyConfig.getBoolean("enabled");
@@ -240,17 +240,17 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 		}
 		
-		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, configItemOrder++, true, true, "FProxy port number", "FProxy port number",
+		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, configItemOrder++, true, true, "SimpleToadletServer.port", "SimpleToadletServer.portLong",
 				new FProxyPortCallback());
-		fproxyConfig.register("bindTo", "127.0.0.1", configItemOrder++, true, true, "IP address to bind to", "IP address to bind to",
+		fproxyConfig.register("bindTo", "127.0.0.1", configItemOrder++, true, true, "SimpleToadletServer.bindTo", "SimpleToadletServer.bindToLong",
 				new FProxyBindtoCallback());
-		fproxyConfig.register("css", "clean", configItemOrder++, false, false, "CSS Name", "Name of the CSS FProxy should use "+themes.toString(),
+		fproxyConfig.register("css", "clean", configItemOrder++, false, false, "SimpleToadletServer.cssName", "SimpleToadletServer.cssNameLong",
 				new FProxyCSSNameCallback());
-		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, false, false, "Enable Advanced Mode?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
+		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, false, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
-		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, false, false, "Enable FProxy use of Javascript?", "Whether or not FProxy should use Javascript \"helpers\". This setting should be turned to false in most cases. Note that freesites may not use javascript even if this is enabled.",
+		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, false, false, "SimpleToadletServer.enableJS", "SimpleToadletServer.enableJSLong",
 				new FProxyJavascriptEnabledCallback(this));
-		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "Show the panic button?", "Whether to show or not the panic button on the /queue/ page.",
+		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "SimpleToadletServer.panicButton", "SimpleToadletServer.panicButtonLong",
 				new BooleanCallback(){
 				public boolean get(){
 					return SimpleToadletServer.isPanicButtonToBeShown;
@@ -261,13 +261,10 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 					else	SimpleToadletServer.isPanicButtonToBeShown = value;
 				}
 		});
-		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "Allowed hosts", 
-				"Hostnames or IP addresses that are allowed to connect to FProxy. " +
-				"May be a comma-separated list of single IPs and CIDR masked IPs like 192.168.0.0/24. ",
+		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
 				new FProxyAllowedHostsCallback());
-		fproxyConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "Hosts having a full access to Fproxy (read warning)", 
-				"Hosts granted full access (i.e. change config settings, restart, access hard disk, etc) to the node" +
- 				"WARNING: Be very careful who you give full fproxy access to!",
+		fproxyConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedFullAccess", 
+				"SimpleToadletServer.allowedFullAccessLong",
 				new StringCallback() {
 
 					public String get() {

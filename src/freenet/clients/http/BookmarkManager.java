@@ -78,7 +78,7 @@ public class BookmarkManager {
 		this.bookmarks = new Vector();
 		this.node = n;
 		this.uskcb = new USKUpdatedCallback();
-		sc.register("bookmarks", n.isTestnetEnabled() ? DEFAULT_TESTNET_BOOKMARKS : DEFAULT_DARKNET_BOOKMARKS, 0, true, false, "List of bookmarks", "A list of bookmarked freesites", makeCB());
+		sc.register("bookmarks", n.isTestnetEnabled() ? DEFAULT_TESTNET_BOOKMARKS : DEFAULT_DARKNET_BOOKMARKS, 0, true, false, "BookmarkManager.list", "BookmarkManager.listLong", makeCB());
 		
 		String[] initialbookmarks = sc.getStringArr("bookmarks");
 		for (int i = 0; i < initialbookmarks.length; i++) {

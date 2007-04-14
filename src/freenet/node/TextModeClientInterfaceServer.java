@@ -61,16 +61,11 @@ public class TextModeClientInterfaceServer implements Runnable {
 		
 		NodeClientCore core = node.clientCore;
 		
-		TMCIConfig.register("enabled", true, 1, true, false, "Enable TMCI", "Whether to enable the TMCI",
-				new TMCIEnabledCallback(core));
-		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, false, "IP address to bind to", "IP address to bind to",
-				new TMCIBindtoCallback(core));
-		TMCIConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", 2, true, false, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the TMCI. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
-				new TMCIAllowedHostsCallback(core));
-		TMCIConfig.register("port", 2323, 1, true, false, "Telnet port", "Telnet port number",
-        		new TCMIPortNumberCallback(core));
-		TMCIConfig.register("directEnabled", false, 1, true, false, "Enable on stdout/stdin?", "Enable text mode client interface on standard input/output? (.enabled refers to providing a telnet-style server, this runs it over a socket)",
-				new TMCIDirectEnabledCallback(core));
+		TMCIConfig.register("enabled", true, 1, true, false, "TextModeClientInterfaceServer.enabled", "TextModeClientInterfaceServer.enabledLong", new TMCIEnabledCallback(core));
+		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, false, "TextModeClientInterfaceServer.bindTo", "TextModeClientInterfaceServer.bindToLong", new TMCIBindtoCallback(core));
+		TMCIConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", 2, true, false, "TextModeClientInterfaceServer.allowedHosts", "TextModeClientInterfaceServer.allowedHostsLong", new TMCIAllowedHostsCallback(core));
+		TMCIConfig.register("port", 2323, 1, true, false, "TextModeClientInterfaceServer.telnetPortNumber", "TextModeClientInterfaceServer.telnetPortNumberLong", new TCMIPortNumberCallback(core));
+		TMCIConfig.register("directEnabled", false, 1, true, false, "TextModeClientInterfaceServer.enableInputOutput", "TextModeClientInterfaceServer.enableInputOutputLong", new TMCIDirectEnabledCallback(core));
 		
 		boolean TMCIEnabled = TMCIConfig.getBoolean("enabled");
 		int port =  TMCIConfig.getInt("port");

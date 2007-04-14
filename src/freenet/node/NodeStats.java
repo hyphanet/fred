@@ -182,7 +182,7 @@ public class NodeStats implements Persistable {
 		last_output_stat = 0;
 		last_io_stat_time = 3;
 
-		statsConfig.register("threadLimit", 500, sortOrder++, true, true, "Thread limit", "The node will try to limit its thread usage to the specified value, refusing new requests",
+		statsConfig.register("threadLimit", 500, sortOrder++, true, true, "NodeStat.threadLimit", "NodeStat.threadLimitLong",
 				new IntCallback() {
 					public int get() {
 						return threadLimit;
@@ -197,7 +197,7 @@ public class NodeStats implements Persistable {
 		threadLimit = statsConfig.getInt("threadLimit");
 		
 		// Yes it could be in seconds insteed of multiples of 0.12, but we don't want people to play with it :)
-		statsConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, false, "AggressiveGC modificator", "Enables the user to tweak the time in between GC and forced finalization. SHOULD NOT BE CHANGED unless you know what you're doing! -1 means : disable forced call to System.gc() and System.runFinalization()",
+		statsConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, false, "NodeStat.aggressiveGC", "NodeStat.aggressiveGCLong",
 				new IntCallback() {
 					public int get() {
 						return aggressiveGCModificator;
@@ -211,7 +211,7 @@ public class NodeStats implements Persistable {
 		aggressiveGCModificator = statsConfig.getInt("aggressiveGC");
 		
 		myMemoryChecker = new MemoryChecker(node.ps, aggressiveGCModificator);
-		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "Enable the Memory check", "Enable the memory check (writes a message in logfile, mandatory for aggressiveGCModificator to have any effect!)", 
+		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "NodeStat.memCheck", "NodeStat.memCheckLong", 
 				new BooleanCallback(){
 					public boolean get() {
 						return myMemoryChecker.isRunning();
@@ -229,7 +229,7 @@ public class NodeStats implements Persistable {
 		if(statsConfig.getBoolean("memoryChecker"))
 			myMemoryChecker.start();
 
-		statsConfig.register("freeHeapBytesThreshold", "5M", sortOrder++, true, true, "Free heap bytes threshold", "The node will try to keep it's free heap bytes above the threshold by refusing new requests",
+		statsConfig.register("freeHeapBytesThreshold", "5M", sortOrder++, true, true, "NodeStat.freeHeapBytesThreshold", "NodeStat.freeHeapBytesThresholdLong",
 				new LongCallback() {
 					public long get() {
 						return freeHeapBytesThreshold;
@@ -243,7 +243,7 @@ public class NodeStats implements Persistable {
 		});
 		freeHeapBytesThreshold = statsConfig.getLong("freeHeapBytesThreshold");
 
-		statsConfig.register("freeHeapPercentThreshold", "5", sortOrder++, true, true, "Free heap precent threshold", "The node will try to keep it's free heap precentage (of max heap bytes allowed) above the threshold by refusing new requests",
+		statsConfig.register("freeHeapPercentThreshold", "5", sortOrder++, true, true, "NodeStat.freeHeapPercentThreshold", "NodeStat.freeHeapPercentThresholdLong",
 				new IntCallback() {
 					public int get() {
 						return freeHeapPercentThreshold;
@@ -260,7 +260,7 @@ public class NodeStats implements Persistable {
 		freeHeapPercentThreshold = statsConfig.getInt("freeHeapPercentThreshold");
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 
-				"File to store node statistics in", "File to store node statistics in (not client statistics, and these are used to decide whether to accept requests so please don't delete)", node.ps);
+				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ps);
 
 		SimpleFieldSet throttleFS = persister.read();
 		

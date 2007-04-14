@@ -297,8 +297,8 @@ public class NodeIPDetector {
 
 	public int registerConfigs(SubConfig nodeConfig, int sortOrder) {
 		// IP address override
-		nodeConfig.register("ipAddressOverride", "", sortOrder++, false, false, "IP address override", 
-				"IP address override (not usually needed) - set this if you have a static IP address or a domain name (e.g. dyndns), and you are behind a firewall", 
+		nodeConfig.register("ipAddressOverride", "", sortOrder++, false, false, "NodeIPDectector.ipOverride", 
+				"NodeIPDectector.ipOverrideLong", 
 				new StringCallback() {
 
 			public String get() {
@@ -344,7 +344,7 @@ public class NodeIPDetector {
 		
 		// Temporary IP address hint
 		
-		nodeConfig.register("tempIPAddressHint", "", sortOrder++, false, false, "Temporary IP address hint", "Temporary hint to what our IP might be; deleted after use", new StringCallback() {
+		nodeConfig.register("tempIPAddressHint", "", sortOrder++, false, false, "NodeIPDectector.tempAddressHint", "NodeIPDectector.tempAddressHintLong", new StringCallback() {
 
 			public String get() {
 				return "";
@@ -379,7 +379,7 @@ public class NodeIPDetector {
 		
 		// Include local IPs in noderef file
 		
-		nodeConfig.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, false, "Include local addresses in noderef", "Whether to include local addresses (LAN and localhost) in node references. This will not be useful unless the both sides set allowLocalAddresses=true for the respective references (use the Darknet page in advanced mode to set this flag).", new BooleanCallback() {
+		nodeConfig.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, false, "NodeIPDectector.inclLocalAddress", "NodeIPDectector.inclLocalAddressLong", new BooleanCallback() {
 
 			public boolean get() {
 				return includeLocalAddressesInNoderefs;

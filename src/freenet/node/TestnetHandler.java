@@ -248,17 +248,14 @@ public class TestnetHandler implements Runnable {
 	public static TestnetHandler maybeCreate(Node node, Config config) throws NodeInitException {
         SubConfig testnetConfig = new SubConfig("node.testnet", config);
         
-        testnetConfig.register("enabled", false, 1, true /*Switch it to false if we want large-scale testing */, true,
-        		"Enable testnet mode? (DANGEROUS)",
-        		"Whether to enable testnet mode (DANGEROUS!). Testnet mode eliminates your anonymity in exchange for greatly assisting the developers in debugging the node.",
-        		new TestnetEnabledCallback(node));
+        testnetConfig.register("enabled", false, 1, true /*Switch it to false if we want large-scale testing */, true, "TestnetHandler.enable", "TestnetHandler.enableLong", new TestnetEnabledCallback(node));
         
         boolean enabled = testnetConfig.getBoolean("enabled");
 
         if(enabled) {
         	// Get the testnet port
 
-        	testnetConfig.register("port", node.portNumber+1000, 2, true, false, "Testnet port", "Testnet port number (-1 = listenPort+1000)",
+        	testnetConfig.register("port", node.portNumber+1000, 2, true, false, "TestnetHandler.port", "TestnetHandler.portLong",
         			new TestnetPortNumberCallback(node));
 
         	int port = testnetConfig.getInt("port");

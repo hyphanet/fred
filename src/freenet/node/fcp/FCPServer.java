@@ -34,7 +34,6 @@ import freenet.config.SubConfig;
 import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -358,25 +357,25 @@ public class FCPServer implements Runnable {
 	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException, InvalidConfigValueException {
 		SubConfig fcpConfig = new SubConfig("fcp", config);
 		short sortOrder = 0;
-		fcpConfig.register("enabled", true, sortOrder++, true, false, L10n.getString("FcpServer.isEnabled"), L10n.getString("FcpServer.isEnabledLong"), new FCPEnabledCallback(core));
-		fcpConfig.register("port", FCPServer.DEFAULT_FCP_PORT /* anagram of 1984, and 1000 up from old number */, 2, true, true, L10n.getString("FcpServer.portNumber"), L10n.getString("FcpServer.portNumberLong"), new FCPPortNumberCallback(core));
-		fcpConfig.register("bindTo", "127.0.0.1", sortOrder++, false, true, L10n.getString("FcpServer.bindTo"), L10n.getString("FcpServer.bindToLong"), new FCPBindtoCallback(core));
-		fcpConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", sortOrder++, false, true, L10n.getString("FcpServer.allowedHosts"), L10n.getString("FcpServer.allowedHostsLong"), new FCPAllowedHostsCallback(core));
-		fcpConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", sortOrder++, false, true, L10n.getString("FcpServer.allowedHostsFullAccess"), L10n.getString("FcpServer.allowedHostsFullAccessLong"), new FCPAllowedHostsFullAccessCallback(core));
+		fcpConfig.register("enabled", true, sortOrder++, true, false, "FcpServer.isEnabled", "FcpServer.isEnabledLong", new FCPEnabledCallback(core));
+		fcpConfig.register("port", FCPServer.DEFAULT_FCP_PORT /* anagram of 1984, and 1000 up from old number */, 2, true, true, "FcpServer.portNumber", "FcpServer.portNumberLong", new FCPPortNumberCallback(core));
+		fcpConfig.register("bindTo", "127.0.0.1", sortOrder++, false, true, "FcpServer.bindTo", "FcpServer.bindToLong", new FCPBindtoCallback(core));
+		fcpConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", sortOrder++, false, true, "FcpServer.allowedHosts", "FcpServer.allowedHostsLong", new FCPAllowedHostsCallback(core));
+		fcpConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", sortOrder++, false, true, "FcpServer.allowedHostsFullAccess", "FcpServer.allowedHostsFullAccessLong", new FCPAllowedHostsFullAccessCallback(core));
 		PersistentDownloadsEnabledCallback cb1;
 		PersistentDownloadsFileCallback cb2;
 		PersistentDownloadsIntervalCallback cb3;
-		fcpConfig.register("persistentDownloadsEnabled", true, sortOrder++, true, true, L10n.getString("FcpServer.enablePersistentDownload"), L10n.getString("FcpServer.enablePersistentDownloadLong"), cb1 = new PersistentDownloadsEnabledCallback());
-		fcpConfig.register("persistentDownloadsFile", "downloads.dat", sortOrder++, true, false, L10n.getString("FcpServer.filenameToStorePData"), L10n.getString("FcpServer.filenameToStorePDataLong"), cb2 = new PersistentDownloadsFileCallback());
-		fcpConfig.register("persistentDownloadsInterval", (5*60*1000), sortOrder++, true, false, L10n.getString("FcpServer.intervalBetweenWrites"), L10n.getString("FcpServer.intervalBetweenWritesLong"), cb3 = new PersistentDownloadsIntervalCallback());
+		fcpConfig.register("persistentDownloadsEnabled", true, sortOrder++, true, true, "FcpServer.enablePersistentDownload", "FcpServer.enablePersistentDownloadLong", cb1 = new PersistentDownloadsEnabledCallback());
+		fcpConfig.register("persistentDownloadsFile", "downloads.dat", sortOrder++, true, false, "FcpServer.filenameToStorePData", "FcpServer.filenameToStorePDataLong", cb2 = new PersistentDownloadsFileCallback());
+		fcpConfig.register("persistentDownloadsInterval", (5*60*1000), sortOrder++, true, false, "FcpServer.intervalBetweenWrites", "FcpServer.intervalBetweenWritesLong", cb3 = new PersistentDownloadsIntervalCallback());
 		String persistentDownloadsDir = fcpConfig.getString("persistentDownloadsFile");
 		boolean persistentDownloadsEnabled = fcpConfig.getBoolean("persistentDownloadsEnabled");		
 		long persistentDownloadsInterval = fcpConfig.getLong("persistentDownloadsInterval");
 		
 		AssumeDDADownloadIsAllowedCallback cb4;
 		AssumeDDAUploadIsAllowedCallback cb5;
-		fcpConfig.register("assumeDownloadDDAIsAllowed", true, sortOrder++, true, false, L10n.getString("FcpServer.assumeDownloadDDAIsAllowed"), L10n.getString("FcpServer.assumeDownloadDDAIsAllowedLong"), cb4 = new AssumeDDADownloadIsAllowedCallback());
-		fcpConfig.register("assumeUploadDDAIsAllowed", true, sortOrder++, true, false, L10n.getString("FcpServer.assumeUploadDDAIsAllowed"), L10n.getString("FcpServer.assumeUploadDDAIsAllowedLong"), cb5 = new AssumeDDAUploadIsAllowedCallback());
+		fcpConfig.register("assumeDownloadDDAIsAllowed", true, sortOrder++, true, false, "FcpServer.assumeDownloadDDAIsAllowed", "FcpServer.assumeDownloadDDAIsAllowedLong", cb4 = new AssumeDDADownloadIsAllowedCallback());
+		fcpConfig.register("assumeUploadDDAIsAllowed", true, sortOrder++, true, false, "FcpServer.assumeUploadDDAIsAllowed", "FcpServer.assumeUploadDDAIsAllowedLong", cb5 = new AssumeDDAUploadIsAllowedCallback());
 		
 		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"));
 		core.setFCPServer(fcp);	

@@ -47,7 +47,7 @@ public class PluginManager {
 		this.node = node;
 
 		config = new SubConfig("pluginmanager2", node.config);
-		config.register("loadedPlugins", new String[0], 9, true, true, "Plugins to load on start up", "A list of plugins that are started when the node starts", new StringArrCallback() {
+		config.register("loadedPlugins", new String[0], 9, true, true, "PluginManager.loadedPlugins", "PluginManager.loadedPluginsLong", new StringArrCallback() {
 
 			/**
 			 * Returns the current value of this option.

@@ -64,6 +64,15 @@ public class L10n {
 	}
 	
 	/**
+	 * Set the default language used by the framework. (called from the TranslationHelper plugin)
+	 * 
+	 * @param a property file
+	 */
+	public static void setLanguage(Properties customLanguage) {
+		currentProperties = customLanguage;
+	}
+	
+	/**
 	 * The real meat
 	 * 
 	 * Same thing as getString(key, false);
@@ -97,8 +106,11 @@ public class L10n {
 		String value = getString(key, true);
 		if(value != null)
 			return new HTMLNode("#", value);
-		else
-			return new HTMLNode("#", getDefaultString(value)).addChild("span", "id", "translate_it").addChild("a", "href", "/?translate=" + key).addChild("small", " (translate it in your native language!)");
+		HTMLNode translationField = new HTMLNode("span", "class", "translate_it") ;
+		translationField.addChild("#", getDefaultString(key));
+		translationField.addChild("a", "href", "/?translate=" + key).addChild("small", " (translate it in your native language!)");
+			
+		return translationField;
 	}
 	
 	public static String getDefaultString(String key) {

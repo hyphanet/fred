@@ -104,7 +104,6 @@ import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
-import freenet.support.StringArray;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -718,7 +717,7 @@ public class Node {
 		// Setup node-specific configuration
 		SubConfig nodeConfig = new SubConfig("node", config);
 		
-		nodeConfig.register("disableProbabilisticHTLs", false, sortOrder++, true, false, "Disable probabilistic HTL", "Disable probabilistic HTL (don't touch this unless you know what you are doing)", 
+		nodeConfig.register("disableProbabilisticHTLs", false, sortOrder++, true, false, "Node.disablePHTLS", "Node.disablePHTLSLong", 
 				new BooleanCallback() {
 
 					public boolean get() {
@@ -733,8 +732,7 @@ public class Node {
 		
 		disableProbabilisticHTLs = nodeConfig.getBoolean("disableProbabilisticHTLs");
 		
-		nodeConfig.register("maxHTL", DEFAULT_MAX_HTL, sortOrder++, true, false, "Maximum HTL", "Maximum HTL (FOR DEVELOPER USE ONLY!)",
-				new ShortCallback() {
+		nodeConfig.register("maxHTL", DEFAULT_MAX_HTL, sortOrder++, true, false, "Node.maxHTL", "Node.maxHTLLong", new ShortCallback() {
 
 					public short get() {
 						return maxHTL;
@@ -758,15 +756,13 @@ public class Node {
 		
 		// Determine where to bind to
 		
-		nodeConfig.register("bindTo", "0.0.0.0", sortOrder++, true, true, "IP address to bind to", "IP address to bind to",
-				new NodeBindtoCallback(this));
+		nodeConfig.register("bindTo", "0.0.0.0", sortOrder++, true, true, "Node.bindTo", "Node.bindToLong", new NodeBindtoCallback(this));
 		
 		this.bindto = nodeConfig.getString("bindTo");
 		
 		// Determine the port number
 		
-		nodeConfig.register("listenPort", -1 /* means random */, sortOrder++, true, true, "FNP port number (UDP)", "UDP port for node-to-node communications (Freenet Node Protocol)",
-				new IntCallback() {
+		nodeConfig.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
 					public int get() {
 						return portNumber;
 					}
@@ -823,7 +819,7 @@ public class Node {
 		System.out.println("FNP port created on "+bindto+ ':' +port);
 		portNumber = port;
 
-		nodeConfig.register("testingDropPacketsEvery", 0, sortOrder++, true, false, "Testing packet drop frequency", "Frequency of dropping packets. Testing option used by devs to simulate packet loss. 0 means never artificially drop a packet. Don't touch this!",
+		nodeConfig.register("testingDropPacketsEvery", 0, sortOrder++, true, false, "Node.dropPacketEvery", "Node.dropPacketEveryLong",
 				new IntCallback() {
 
 					public int get() {
@@ -843,9 +839,7 @@ public class Node {
 
 		// Bandwidth limit
 
-		nodeConfig.register("outputBandwidthLimit", "15K", sortOrder++, false, true,
-				"Output bandwidth limit (bytes per second)", "Hard output bandwidth limit (bytes/sec); the node should almost never exceed this", 
-				new IntCallback() {
+		nodeConfig.register("outputBandwidthLimit", "15K", sortOrder++, false, true, "Node.outBWLimit", "Node.outBWLimitLong", new IntCallback() {
 					public int get() {
 						//return BlockTransmitter.getHardBandwidthLimit();
 						return outputBandwidthLimit;
@@ -866,9 +860,7 @@ public class Node {
 		outputBandwidthLimit = obwLimit;
 		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) /  obwLimit, obwLimit, (obwLimit * 2) / 5);
 		
-		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true,
-				"Input bandwidth limit (bytes per second)", "Input bandwidth limit (bytes/sec); the node will try not to exceed this; -1 = 4x set outputBandwidthLimit",
-				new IntCallback() {
+		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
 					public int get() {
 						if(inputLimitDefault) return -1;
 						return inputBandwidthLimit;
@@ -900,7 +892,7 @@ public class Node {
 		// SwapRequestInterval
 		
 		nodeConfig.register("swapRequestSendInterval", DEFAULT_SWAP_INTERVAL, sortOrder++, true, false,
-				"Swap request send interval (ms)", "Interval between swap attempting to send swap requests in milliseconds. Leave this alone!",
+				"Node.swapRInterval", "Node.swapRIntervalLong",
 				new IntCallback() {
 					public int get() {
 						return swapInterval.fixedInterval;
@@ -953,7 +945,7 @@ public class Node {
 		
 		// Directory for node-related files other than store
 		
-		nodeConfig.register("nodeDir", ".", sortOrder++, true, false, "Node directory", "Name of directory to put node-related files e.g. peers list in", 
+		nodeConfig.register("nodeDir", ".", sortOrder++, true, false, "Node.nodeDir", "Node.nodeDirLong", 
 				new StringCallback() {
 					public String get() {
 						return nodeDir.getPath();
@@ -999,7 +991,7 @@ public class Node {
 		usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
 		
 		// Extra Peer Data Directory
-		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+portNumber).toString(), sortOrder++, true, false, "Extra peer data directory", "Name of directory to put extra peer data in",
+		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+portNumber).toString(), sortOrder++, true, false, "Node.extraPeerDir", "Node.extraPeerDirLong",
 				new StringCallback() {
 					public String get() {
 						return extraPeerDataDir.getPath();
@@ -1017,13 +1009,13 @@ public class Node {
 		}
 		
 		// Name 	 
-		nodeConfig.register("name", myName, sortOrder++, false, true, "Nickname for this Freenet node", "Node nickname. This will be visible to your friend peers (but will not be visible to opennet peers). E.g. Fred Blogg's.", 	 
+		nodeConfig.register("name", myName, sortOrder++, false, true, "Node.nodeName", "Node.nodeNameLong", 	 
 						new NodeNameCallback(this)); 	 
 		myName = nodeConfig.getString("name"); 	 
 
 		// Datastore
 		
-		nodeConfig.register("storeForceBigShrinks", false, sortOrder++, true, false, "Do large store shrinks immediately", "Whether to do large store shrinks (over 10%) immediately (rather than waiting for the next node restart). Online shrinks do not preserve the most recently used data, so this is not recommended; use it only if you must have an immediate result.",
+		nodeConfig.register("storeForceBigShrinks", false, sortOrder++, true, false, "Node.forceBigShrink", "Node.forceBigShrinkLong",
 				new BooleanCallback() {
 
 					public boolean get() {
@@ -1040,7 +1032,7 @@ public class Node {
 			
 		});
 		
-		nodeConfig.register("storeSize", "1G", sortOrder++, false, true, "Store size in bytes", "Store size in bytes", 
+		nodeConfig.register("storeSize", "1G", sortOrder++, false, true, "Node.storeSize", "Node.storeSizeLong", 
 				new LongCallback() {
 
 					public long get() {
@@ -1087,7 +1079,7 @@ public class Node {
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
 		
-		nodeConfig.register("storeDir", ".", sortOrder++, true, false, "Store directory", "Name of directory to put store files in", 
+		nodeConfig.register("storeDir", ".", sortOrder++, true, false, "Node.storeDirectory", "Node.storeDirectoryLong", 
 				new StringCallback() {
 					public String get() {
 						return storeDir.getPath();
@@ -1184,7 +1176,7 @@ public class Node {
 			}
 		});
 		
-		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Datastore maximum memory usage", "Maximum memory usage of the database backing the datastore indexes. 0 means no limit (limited to ~ 30% of maximum memory)", 
+		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
 				new LongCallback() {
 
 			public long get() {
@@ -1295,7 +1287,7 @@ public class Node {
 		
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"));
 
-		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Disable all hang checkers", "Disable all hang checkers/watchdog functions. Set this if you are profiling Fred.", new BooleanCallback() {
+		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
 			public boolean get() {
 				return disableHangCheckers;
@@ -1311,10 +1303,8 @@ public class Node {
 		
 		// l10n stuffs		
 		nodeConfig.register("l10n", "en", sortOrder++, false, true, 
-				"The language the node will use to display messages",
-				"This setting will change the language used to display messages. " +
-				"Choose from " + StringArray.toString(L10n.availableLanguages) + ". " +
-				"Keep in mind that some strings won't be translated until next node startup though.",
+				"Node.l10nLanguage",
+				"Node.l10nLanguageLong",
 				new StringCallback(){
 			
 			public String get() {

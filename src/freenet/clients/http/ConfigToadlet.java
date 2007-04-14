@@ -11,6 +11,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.Option;
 import freenet.config.SubConfig;
+import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
@@ -147,7 +148,7 @@ public class ConfigToadlet extends Toadlet {
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
 							new String[]{ "configshortdesc", "The default for that configuration option is : '" +
-							o[j].getDefault() + '\'', "cursor: help;" }, o[j].getShortDesc());
+							o[j].getDefault() + '\'', "cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc()));
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
 						Logger.error(this, sc[i].getPrefix() + configName + "has returned null from config!);");
@@ -165,7 +166,8 @@ public class ConfigToadlet extends Toadlet {
 					}else{
 						configItemValueNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o[j].getShortDesc(), sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
 					}
-					configItemNode.addChild("span", "class", "configlongdesc", o[j].getLongDesc());
+
+					configItemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o[j].getLongDesc()));
 				}
 			}
 			

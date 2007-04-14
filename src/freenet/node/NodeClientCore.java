@@ -124,7 +124,7 @@ public class NodeClientCore implements Persistable {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false, 
-				"File to store client statistics in", "File to store client throttling statistics in (used to decide how often to send requests)", node.ps);
+				"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ps);
 		
 		SimpleFieldSet throttleFS = persister.read();
 		
@@ -138,7 +138,7 @@ public class NodeClientCore implements Persistable {
 		
 		// Temp files
 		
-		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, false, "Temp files directory", "Name of directory to put temporary files in", 
+		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, false, "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", 
 				new StringCallback() {
 					public String get() {
 						return tempDir.getPath();
@@ -164,7 +164,7 @@ public class NodeClientCore implements Persistable {
 		}
 
 		// Persistent temp files
-		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), sortOrder++, true, false, "Persistent temp files directory", "Name of directory to put persistent temp files in",
+		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), sortOrder++, true, false, "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong",
 				new StringCallback() {
 					public String get() {
 						return persistentTempBucketFactory.getDir().toString();
@@ -188,7 +188,7 @@ public class NodeClientCore implements Persistable {
 		
 		// Downloads directory
 		
-		nodeConfig.register("downloadsDir", "downloads", sortOrder++, true, true, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
+		nodeConfig.register("downloadsDir", "downloads", sortOrder++, true, true, "NodeClientCore.downloadDir", "NodeClientCore.downloadDirLong", new StringCallback() {
 
 			public String get() {
 				return downloadDir.getPath();
@@ -214,9 +214,8 @@ public class NodeClientCore implements Persistable {
 
 		// Downloads allowed, uploads allowed
 		
-		nodeConfig.register("downloadAllowedDirs", new String[] {"all"}, sortOrder++, true, true, "Directories downloading is allowed to", 
-				"Semicolon separated list of directories to which downloads are allowed. \"downloads\" means downloadsDir, empty means no downloads to disk allowed, \"all\" means downloads allowed from anywhere. "+
-				"WARNING! If this is set to \"all\" any user can download any file to anywhere on your computer!",
+		nodeConfig.register("downloadAllowedDirs", new String[] {"all"}, sortOrder++, true, true, "NodeClientCore.downloadAllowedDirs", 
+				"NodeClientCore.downloadAllowedDirsLong",
 				new StringArrCallback() {
 
 					public String[] get() {
@@ -240,9 +239,8 @@ public class NodeClientCore implements Persistable {
 			nodeConfig.fixOldDefault("downloadAllowedDirs", "downloads");
 		setDownloadAllowedDirs(nodeConfig.getStringArr("downloadAllowedDirs"));
 		
-		nodeConfig.register("uploadAllowedDirs", new String[] {"all"}, sortOrder++, true, true, "Directories uploading is allowed from", 
-				"Semicolon separated list of directories from which uploads are allowed. Empty means no uploads from disk allowed, \"all\" means uploads allowed from anywhere (including system files etc!)."+
-				"WARNING! If this is set to \"all\" any file on your computer can be uploaded by any user.",
+		nodeConfig.register("uploadAllowedDirs", new String[] {"all"}, sortOrder++, true, true, "NodeClientCore.uploadAllowedDirs", 
+				"NodeClientCore.uploadAllowedDirsLong",
 				new StringArrCallback() {
 
 					public String[] get() {
@@ -274,8 +272,8 @@ public class NodeClientCore implements Persistable {
 		
 		// FIXME remove this code, the new behaviour should be handled by all clients
 		
-		nodeConfig.register("ignoreTooManyPathComponents", false, sortOrder++, true, false, "Ignore too many path components", 
-				"If true, the node won't generate TOO_MANY_PATH_COMPONENTS errors when a URI is fed to it which has extra, meaningless subdirs (/blah/blah) on the end beyond what is needed to fetch the key (for example, old CHKs will often have filenames stuck on the end which weren't part of the original insert; this is obsolete because we can now include the filename, and it is confusing to be able to add arbitrary strings to a URI, and it makes them hard to compare). Only enable this option if you need it for compatibility with older apps; it will be removed soon.", new BooleanCallback() {
+		nodeConfig.register("ignoreTooManyPathComponents", false, sortOrder++, true, false, "NodeClientCore.ignoreTooManyPathComponents", 
+				"NodeClientCore.ignoreTooManyPathComponentsLong", new BooleanCallback() {
 
 					public boolean get() {
 						return ignoreTooManyPathComponents;
@@ -291,9 +289,8 @@ public class NodeClientCore implements Persistable {
 		
 		ignoreTooManyPathComponents = nodeConfig.getBoolean("ignoreTooManyPathComponents");
 		
-		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "Complete loading of persistent requests after startup? (Uses more memory)",
-				"The node can load persistent queued requests during startup, or it can read the data into memory and then complete the request resuming process after the node has started up. "+
-				"Shorter start-up times, but uses more memory.", new BooleanCallback() {
+		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
+				"NodeClientCore.lazyResumeLong", new BooleanCallback() {
 
 					public boolean get() {
 						return lazyResume;
@@ -313,7 +310,7 @@ public class NodeClientCore implements Persistable {
 		// REDFLAG normally we wouldn't use static variables to carry important non-final data, but in this
 		// case it's temporary code which will be removed before 0.7.0.
 		
-		nodeConfig.register("allowInsecureCHKs", true, sortOrder++, true, false, "Allow insecure CHKs?", "Before 1010, all CHKs were insecure (only half encrypted). Allow old CHKs?",
+		nodeConfig.register("allowInsecureCHKs", true, sortOrder++, true, false, "NodeClientCore.allowInsecureCHK", "NodeClientCore.allowInsecureCHKLong",
 				new BooleanCallback() {
 
 					public boolean get() {
@@ -328,7 +325,7 @@ public class NodeClientCore implements Persistable {
 		
 		Key.ALLOW_INSECURE_CLIENT_CHKS = nodeConfig.getBoolean("allowInsecureCHKs");
 		
-		nodeConfig.register("allowInsecureSSKs", true, sortOrder++, true, false, "Allow insecure SSKs?", "Before 1010, all SSKs were insecure (only half encrypted). Allow old SSKs?",
+		nodeConfig.register("allowInsecureSSKs", true, sortOrder++, true, false, "NodeClientCore.allowInsecureSSK", "NodeClientCore.allowInsecureSSKLong",
 				new BooleanCallback() {
 
 					public boolean get() {

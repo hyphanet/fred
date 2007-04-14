@@ -34,7 +34,7 @@ public class LoggingConfigHandler {
 	public LoggingConfigHandler(SubConfig loggingConfig) throws InvalidConfigValueException {
 		this.config = loggingConfig;
     	
-    	loggingConfig.register("enabled", true, 1, true, false, "Enable logging?", "Set to false to completely disable logging",
+    	loggingConfig.register("enabled", true, 1, true, false, "LogConfigHandler.enabled", "LogConfigHandler.enabledLong",
     			new BooleanCallback() {
 					public boolean get() {
 						return fileLoggerHook != null;
@@ -50,7 +50,7 @@ public class LoggingConfigHandler {
     	
     	boolean loggingEnabled = loggingConfig.getBoolean("enabled");
     	
-    	loggingConfig.register("dirname", "logs", 2, true, false, "Logging directory", "Directory into which to put log files", 
+    	loggingConfig.register("dirname", "logs", 2, true, false, "LogConfigHandler.dirName", "LogConfigHandler.dirNameLong", 
     			new StringCallback() {
 
 					public String get() {
@@ -80,7 +80,7 @@ public class LoggingConfigHandler {
     	
     	// max space used by zipped logs
     	
-    	config.register("maxZippedLogsSize", "128M", 3, true, true, "Maximum disk space used by old logs", "Maximum disk space used by old logs",
+    	config.register("maxZippedLogsSize", "128M", 3, true, true, "LogConfigHandler.maxZippedLogsSize", "LogConfigHandler.maxZippedLogsSizeLong",
     			new LongCallback() {
 					public long get() {
 						return maxZippedLogsSize;
@@ -101,7 +101,7 @@ public class LoggingConfigHandler {
     	// priority
     	
     	// Node must override this to minor on testnet.
-    	config.register("priority", "normal", 4, false, false, "Minimum priority to log messages at", "Minimum priority at which messages are logged. options are debug, minor, normal, error, in order of diminishing verbosity",
+    	config.register("priority", "normal", 4, false, false, "LogConfigHandler.minLoggingPriority", "LogConfigHandler.minLoggingPriorityLong",
     			new StringCallback() {
 					public String get() {
 						LoggerHookChain chain = Logger.getChain();
@@ -119,7 +119,7 @@ public class LoggingConfigHandler {
     	
     	// detailed priority
     	
-    	config.register("priorityDetail", "", 5, true, false, "Detailed priority thresholds", "Detailed priority thresholds, example freenet:normal,freenet.node:minor",
+    	config.register("priorityDetail", "", 5, true, false, "LogConfigHandler.detaildPriorityThreshold", "LogConfigHandler.detaildPriorityThresholdLong",
     			new StringCallback() {
 
 					public String get() {
@@ -141,7 +141,7 @@ public class LoggingConfigHandler {
     	
     	// interval
     	
-    	config.register("interval", "1HOUR", 5, true, false, "Log rotation interval", "Log rotation interval - period after which logs are rotated. We keep the last two log files (current and prev), plus lots of compressed logfiles up to maxZippedLogsSize",
+    	config.register("interval", "1HOUR", 5, true, false, "LogConfigHandler.rotationInterval", "LogConfigHandler.rotationIntervalLong",
     			new StringCallback() {
 					public String get() {
 						return logRotateInterval;
@@ -163,7 +163,7 @@ public class LoggingConfigHandler {
     	logRotateInterval = config.getString("interval");
     	
     	// max cached bytes in RAM
-    	config.register("maxCachedBytes", "10M", 6, true, false, "Max cached log bytes in RAM", "Maximum number of bytes of logging cached in RAM", 
+    	config.register("maxCachedBytes", "10M", 6, true, false, "LogConfigHandler.maxCachedBytes", "LogConfigHandler.maxCachedBytesLong", 
     			new LongCallback() {
 					public long get() {
 						return maxCachedLogBytes;
@@ -180,7 +180,7 @@ public class LoggingConfigHandler {
     	maxCachedLogBytes = config.getLong("maxCachedBytes");
     	
     	// max cached lines in RAM
-    	config.register("maxCachedLines", "100k", 7, true, false, "Max cached log lines in RAM", "Maximum number of lines of logging cached in RAM",
+    	config.register("maxCachedLines", "100k", 7, true, false, "LogConfigHandler.maxCachedLines", "LogConfigHandler.maxCachedLinesLong",
     			new IntCallback() {
 					public int get() {
 						return maxCachedLogLines;

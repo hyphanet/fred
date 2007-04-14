@@ -83,20 +83,20 @@ public class NodeUpdaterManager {
 		
         SubConfig updaterConfig = new SubConfig("node.updater", config);
         
-        updaterConfig.register("enabled", WrapperManager.isControlledByNativeWrapper(), 1, true, false, "Check for, and download new versions",
-        		"Should your node automatically check for new versions of Freenet. If yes, new versions will be automatically detected and downloaded, but not necessarily installed. This setting resets itself always back to false unless the node runs within the wrapper.",
+        updaterConfig.register("enabled", WrapperManager.isControlledByNativeWrapper(), 1, true, false, "NodeUpdateManager.enabled",
+        		"NodeUpdateManager.enabledLong",
         		new UpdaterEnabledCallback());
         
         wasEnabledOnStartup = updaterConfig.getBoolean("enabled");
 
         // is the auto-update allowed ?
-        updaterConfig.register("autoupdate", false, 2, false, true, "Automatically install new versions", "Should your node automatically update to the newest version of Freenet, without asking?",
+        updaterConfig.register("autoupdate", false, 2, false, true, "NodeUpdateManager.installNewVersions", "NodeUpdateManager.installNewVersionsLong",
         		new AutoUpdateAllowedCallback());
         isAutoUpdateAllowed = updaterConfig.getBoolean("autoupdate");
 
         updaterConfig.register("URI", UPDATE_URI, 3,
-        		true, false, "Where should the node look for updates?",
-        		"Where should the node look for updates?",
+        		true, false, "NodeUpdateManager.updateURI",
+        		"NodeUpdateManager.updateURILong",
         		new UpdateURICallback(false));
 
         // FIXME remove when 101X is long gone
@@ -115,8 +115,8 @@ public class NodeUpdaterManager {
 		}
 		
         updaterConfig.register("revocationURI",	REVOCATION_URI,4,
-        		true, false, "Where should the node look for the revocation key ?",
-        		"URI for the revocation key. If this is found the node will display its contents and disable the auto-updater.",
+        		true, false, "NodeUpdateManager.revocationURI",
+        		"NodeUpdateManager.revocationURILong",
         		new UpdateRevocationURICallback());
         
         // FIXME remove
@@ -135,10 +135,7 @@ public class NodeUpdaterManager {
 			revocationURI = revocationURI.popMetaString();
 		}
 		
-        updaterConfig.register("extURI", EXT_URI, 5,
-        		true, false, "Where should the node look for updates to freenet-ext.jar?",
-        		"Where should the node look for updates to freenet-ext.jar?",
-        		new UpdateURICallback(true));
+        updaterConfig.register("extURI", EXT_URI, 5, true, false, "NodeUpdateManager.extURI", "NodeUpdateManager.extURILong", new UpdateURICallback(true));
         
         // FIXME remove
 		updaterConfig.fixOldDefaultRegex("extURI", "USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/ext/[0-9]++");
