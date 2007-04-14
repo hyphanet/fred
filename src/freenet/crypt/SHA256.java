@@ -39,6 +39,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 package freenet.crypt;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Vector;
@@ -297,6 +299,42 @@ public class SHA256 implements Digest {
         privateDigest(tmp, 0, HASH_SIZE, true);
         return tmp;
     }
+    
+    /**
+     * It won't reset the Message Digest for you!
+     * @param InputStream
+     * @param MessageDigest
+     * @return
+     * @throws IOException
+     */
+	public static void hash(InputStream is, MessageDigest md) throws IOException {
+		try {
+			long length = is.available();
+			long bytesRead = 0;
+			byte[] buf = new byte[4096];
+			while(length > -1) {
+				int readBytes = is.read(buf);
+				if(readBytes < 0) break;
+				bytesRead += readBytes;
+				if(readBytes > 0)
+					md.update(buf, 0, readBytes);
+				length = is.available();
+			}
+		} finally {
+			if(is != null) is.close();
+		}
+	}
+	
+	public static byte[] hash(InputStream is) throws IOException {
+		MessageDigest md = SHA256.getMessageDigest();
+		md.reset();
+		hash(is, md);
+		byte[] result = md.digest();
+		SHA256.returnMessageDigest(md);
+		
+		return result;
+	}
+
 
     /**
      * Write the completed digest into the given buffer.
