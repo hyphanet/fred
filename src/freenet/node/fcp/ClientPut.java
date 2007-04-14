@@ -106,10 +106,12 @@ public class ClientPut extends ClientPutBase {
 				throw new NotAllowedException();
 			if(!(origFilename.exists() && origFilename.canRead()))
 				throw new FileNotFoundException();
+			this.salt = globalClient.name;
+			this.saltedHash = comptuteHash(salt, data);
+		} else {
+			this.salt = null;
+			this.saltedHash = null;
 		}
-		// We don't want to break insert resuming: don't enforce it
-		this.salt = null;
-		this.saltedHash = null;
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.targetFilename = targetFilename;
@@ -145,8 +147,10 @@ public class ClientPut extends ClientPutBase {
 			isMetadata = true;
 		} else
 			targetURI = null;
+		
 		this.data = tempData;
 		this.clientMetadata = cm;
+		
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
@@ -223,7 +227,7 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 		
 		// Check the hash : allow it to be null for backward compatibility
-		if((salt != null) && !isHashVerified(salt))
+		if((salt != null) && !isHashVerified())
 			throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "The hash doesn't match!", identifier, global);
 		
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
@@ -274,7 +278,6 @@ public class ClientPut extends ClientPutBase {
 		boolean isMetadata = false;
 		
 		targetFilename = fs.get("TargetFilename");
-		
 		this.salt = fs.get(ClientPutBase.SALT);
 		String hash = fs.get(ClientPutBase.FILE_HASH);
 		this.saltedHash = (hash == null ? null : hash.getBytes("UTF-8"));
@@ -287,10 +290,9 @@ public class ClientPut extends ClientPutBase {
 			targetURI = null;
 			
 			if(salt != null) {
-				if(!isHashVerified(salt)) // We trust the given salt
+				if(!isHashVerified())
 					throw new PersistenceParseException("The hash doesn't match! or an error has occured.");
-			} else // should probably be a higher level 
-				Logger.normal(this, "Hash not found!");
+			}
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			origFilename = null;
 			if(logMINOR)
@@ -486,25 +488,29 @@ public class ClientPut extends ClientPutBase {
 
 	public void onSuccess(FetchResult result, ClientGetter state) {}
 	
-	private boolean isHashVerified(String trustedSalt) {
+	private boolean isHashVerified() {
 		if (logMINOR) Logger.minor(this, "Found a hash : let's verify it");
-		if(!trustedSalt.equals(salt)) return false;
-		byte[] foundHash = null;
+		return saltedHash.equals(comptuteHash(salt, data)); 
+	}
+	
+	private byte[] comptuteHash(String mySalt, Bucket content) {
 		MessageDigest md = SHA256.getMessageDigest();
+		byte[] foundHash = null;
+		
 		try {
 			md.reset();
-			md.update(trustedSalt.getBytes("UTF-8"));
+			md.update(mySalt.getBytes("UTF-8"));
 			BufferedInputStream bis = new BufferedInputStream(data.getInputStream());
 			byte[] buf = new byte[4096];
 			while(bis.read(buf) > 0)
 				md.update(buf);
 			foundHash = md.digest();
 		} catch (IOException e) {
-			return false;
+			return null;
 		} finally {
 			SHA256.returnMessageDigest(md);	
 		}
 		
-		return foundHash.equals(saltedHash); 
+		return foundHash;
 	}
 }
