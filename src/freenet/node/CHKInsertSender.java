@@ -645,8 +645,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		
 		public void run() {
 			if(logMINOR) Logger.minor(this, "Starting "+this);
+			
 			synchronized(CHKInsertSender.this) {
-				while(status == NOT_FINISHED || setStatusTime == -1) {
+				while(status == NOT_FINISHED) {
 					try {
 						CHKInsertSender.this.wait(100*1000);
 					} catch (InterruptedException e) {
