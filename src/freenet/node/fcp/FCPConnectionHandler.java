@@ -404,9 +404,8 @@ public class FCPConnectionHandler {
 	 */
 	protected void freeDDAJobs(){
 		synchronized (inTestDirectories) {
-			Iterator it = inTestDirectories.entrySet().iterator();
-			while(it.hasNext())
-				((DDACheckJob)it.next()).readFilename.delete();
+			Iterator it = inTestDirectories.keySet().iterator();
+				((DDACheckJob)inTestDirectories.get(it.next())).readFilename.delete();
 		}
 	}
 }
