@@ -146,7 +146,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
     static final int SEARCH_TIMEOUT = 120000;
-    static final int TRANSFER_COMPLETION_TIMEOUT = 120000;
+    static final int TRANSFER_COMPLETION_ACK_TIMEOUT = 120000;
 
     // Basics
     final NodeCHK myKey;
@@ -178,6 +178,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 
     /** Time at which we set status to a value other than NOT_FINISHED */
     private long setStatusTime = -1;
+    
+    /** Time when all transfers were completed */
+    private long transfersCompletedTime = -1;
     
     
     private int status = -1;
@@ -653,12 +656,12 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			boolean noTimeLeft = false;
 
 			long now = System.currentTimeMillis();
-			if((status == NOT_FINISHED) || (setStatusTime == -1)) {
+			if((status == NOT_FINISHED) || (setStatusTime == -1) || transfersCompletedTime == -1) {
 				// Wait 5 seconds, then try again
 				timeout = 5000;
 			} else {
 				// Completed, wait for everything
-				timeout = (int)Math.min(Integer.MAX_VALUE, (setStatusTime + TRANSFER_COMPLETION_TIMEOUT) - now);
+				timeout = (int)Math.min(Integer.MAX_VALUE, (transfersCompletedTime + TRANSFER_COMPLETION_ACK_TIMEOUT) - now);
 			}
 			if(timeout <= 0) {
 				noTimeLeft = true;
@@ -667,14 +670,19 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 
 			
 			MessageFilter mf = null;
+			boolean waitingForAny = false;
+			boolean anyNotCompleted = false;
 			for(int i=0;i<waiters.length;i++) {
 				AwaitingCompletion awc = waiters[i];
 				if(!awc.pn.isRoutable()) {
 					Logger.normal(this, "Disconnected: "+awc.pn+" in "+CHKInsertSender.this);
 					continue;
 				}
-				if(!awc.completedTransfer)
+				waitingForAny = true;
+				if(!awc.completedTransfer) {
+					anyNotCompleted = true;
 					continue;
+				}
 				if(!awc.receivedCompletionNotice) {
 					MessageFilter m =
 						MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(awc.pn).setTimeout(timeout);
@@ -697,27 +705,30 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 						synchronized(CHKInsertSender.this) {
 							if(logMINOR) Logger.minor(this, "All transfers completed (1) on "+uid);
 							allTransfersCompleted = true;
+							transfersCompletedTime = System.currentTimeMillis();
 							CHKInsertSender.this.notifyAll();
+							// Now wait for the acknowledgements
 						}
+					}
+				} else {
+					
+					if(!waitingForAny) {
+						// All are disconnected
+						allTransfersCompleted = true;
 						return;
 					}
-					if(noTimeLeft) {
-						for(int i=0;i<waiters.length;i++) {
-							if(!waiters[i].pn.isRoutable()) continue;
-							if(!waiters[i].completedTransfer) {
-								waiters[i].completedTransfer(false);
-							}
-						}
+					
+					if(!anyNotCompleted) {
+						// All have completed transferring, AND all have received completion notices!
+						// All done!
+						if(logMINOR) Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for for "+uid+" .");
 						synchronized(CHKInsertSender.this) {
-							if(logMINOR) Logger.minor(this, "All transfers completed (2) on "+uid);
 							allTransfersCompleted = true;
 							CHKInsertSender.this.notifyAll();
 						}
 						return;
 					}
-					// Otherwise, not finished, go back around loop
-					continue;
-				} else {
+					
 					// Still waiting for request completion, so more may be added
 					synchronized(nodesWaitingForCompletion) {
 						try {
@@ -822,15 +833,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					}
 				}
 			}
-			if(completedTransfers) {
-				// All done!
-				if(logMINOR) Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for for "+uid+" .");
-				synchronized(CHKInsertSender.this) {
-					allTransfersCompleted = true;
-					CHKInsertSender.this.notifyAll();
-				}
-				return true;
-			} else return false;
+			return completedTransfers;
 		}
 
 		public String toString() {
