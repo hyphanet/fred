@@ -650,6 +650,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					waiters = new AwaitingCompletion[nodesWaitingForCompletion.size()];
 					waiters = (AwaitingCompletion[]) nodesWaitingForCompletion.toArray(waiters);
 				}
+				// Because we have completed, no more waiters will be added.
 				
 				// First calculate the timeout
 				
@@ -658,18 +659,11 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				
 				long now = System.currentTimeMillis();
 				
-				if(transfersCompletedTime == -1) {
-					// Wait 5 seconds, then try again
-					timeout = 5000;
-				} else {
-					// Completed, wait for everything
-					timeout = (int)Math.min(Integer.MAX_VALUE, (transfersCompletedTime + TRANSFER_COMPLETION_ACK_TIMEOUT) - now);
-				}
+				timeout = (int)Math.min(Integer.MAX_VALUE, (transfersCompletedTime + TRANSFER_COMPLETION_ACK_TIMEOUT) - now);
 				if(timeout <= 0) {
 					noTimeLeft = true;
 					timeout = 1;
 				}
-				
 				
 				MessageFilter mf = null;
 				boolean waitingForAny = false;
