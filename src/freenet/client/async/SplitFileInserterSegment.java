@@ -8,7 +8,7 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
-import freenet.client.StandardOnionFECCodec.StandardOnionFECCodecEncoderCallback;
+import freenet.client.FECCodec.StandardOnionFECCodecEncoderCallback;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
@@ -22,8 +22,7 @@ import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.SerializableToFieldSetBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
-public class SplitFileInserterSegment implements PutCompletionCallback,
-		StandardOnionFECCodecEncoderCallback {
+public class SplitFileInserterSegment implements PutCompletionCallback, StandardOnionFECCodecEncoderCallback {
 
 	private static boolean logMINOR;
 

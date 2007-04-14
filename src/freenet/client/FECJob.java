@@ -3,7 +3,7 @@
  */
 package freenet.client;
 
-import freenet.client.StandardOnionFECCodec.StandardOnionFECCodecEncoderCallback;
+import freenet.client.FECCodec.StandardOnionFECCodecEncoderCallback;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
