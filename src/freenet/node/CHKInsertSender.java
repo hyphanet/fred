@@ -176,9 +176,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     /** Runnable which waits for completion of all transfers */
     private CompletionWaiter cw;
 
-    /** Time at which we set status to a value other than NOT_FINISHED */
-    private long setStatusTime = -1;
-    
     /** Time when all transfers were completed */
     private long transfersCompletedTime = -1;
     
@@ -547,7 +544,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
-        setStatusTime = System.currentTimeMillis();
      
         synchronized(this) {   
         	if(status != NOT_FINISHED)
@@ -646,15 +642,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		public void run() {
 			if(logMINOR) Logger.minor(this, "Starting "+this);
 			
-			synchronized(CHKInsertSender.this) {
-				while(status == NOT_FINISHED) {
-					try {
-						CHKInsertSender.this.wait(100*1000);
-					} catch (InterruptedException e) {
-						// Ignore
-					}
-				}
-			}
+			waitForStatus();
 			
 			while(true) {
 				AwaitingCompletion[] waiters;
@@ -730,30 +718,13 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 						return;
 					}
 					
-					if(status != NOT_FINISHED) {
-						if(nodesWaitingForCompletion.size() != waiters.length) {
-							// Added another one
-							if(logMINOR) Logger.minor(this, "Looping (mf==null): waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
-							continue;
-						}
-						if(waitForCompletedTransfers(waiters, timeout, noTimeLeft)) {
-							synchronized(CHKInsertSender.this) {
-								if(logMINOR) Logger.minor(this, "All transfers completed (1) on "+uid);
-								allTransfersCompleted = true;
-								transfersCompletedTime = System.currentTimeMillis();
-								CHKInsertSender.this.notifyAll();
-								// Now wait for the acknowledgements
-							}
-						}
-					} else {
-						
-						// Still waiting for request completion, so more may be added
-						synchronized(nodesWaitingForCompletion) {
-							try {
-								nodesWaitingForCompletion.wait(timeout);
-							} catch (InterruptedException e) {
-								// Go back around the loop
-							}
+					if(waitForCompletedTransfers(waiters, timeout, noTimeLeft)) {
+						synchronized(CHKInsertSender.this) {
+							if(logMINOR) Logger.minor(this, "All transfers completed (1) on "+uid);
+							allTransfersCompleted = true;
+							transfersCompletedTime = System.currentTimeMillis();
+							CHKInsertSender.this.notifyAll();
+							// Now wait for the acknowledgements
 						}
 					}
 					continue;
@@ -861,6 +832,17 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 
 	public synchronized boolean completed() {
 		return allTransfersCompleted;
+	}
+
+	/** Block until status has been set to something other than NOT_FINISHED */
+	public synchronized void waitForStatus() {
+		while(status == NOT_FINISHED) {
+			try {
+				CHKInsertSender.this.wait(100*1000);
+			} catch (InterruptedException e) {
+				// Ignore
+			}
+		}
 	}
 
 	public boolean anyTransfersFailed() {
