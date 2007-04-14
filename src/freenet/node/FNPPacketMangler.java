@@ -1029,6 +1029,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                     this.processOutgoingPreformatted(buf, 0, buf.length, pn.getCurrentKeyTracker(), packetNumber, mi.cb, mi.alreadyReportedBytes);
                     if(mi.ctrCallback != null)
                     	mi.ctrCallback.sentBytes(buf.length + HEADERS_LENGTH_ONE_MESSAGE);
+                    if(mi.cb != null) {
+                    	for(int j=0;j<mi.cb.length;j++) mi.cb[j].sent();
+                    }
                 } catch (NotConnectedException e) {
                     Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
                     // Requeue
@@ -1112,6 +1115,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 				1 + (HEADERS_LENGTH_MINIMUM / messageData.length));
                 		// FIXME rounding issues
                 	}
+                    if(mi.cb != null) {
+                    	for(int j=0;j<mi.cb.length;j++) mi.cb[j].sent();
+                    }
                 }
             } catch (NotConnectedException e) {
                 Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
@@ -1163,6 +1169,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                             				1 + (HEADERS_LENGTH_MINIMUM / (i-lastIndex)));
                             		// FIXME rounding issues
                             	}
+                                if(mi.cb != null) {
+                                	for(int k=0;k<mi.cb.length;k++) mi.cb[k].sent();
+                                }
                             }
                         } catch (NotConnectedException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
@@ -1475,7 +1484,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         
         if(logMINOR) Logger.minor(this, "Sending... "+seqNumber);
 
-        processOutgoingFullyFormatted(plaintext, tracker, callbacks, alreadyReportedBytes);
+        processOutgoingFullyFormatted(plaintext, tracker, alreadyReportedBytes);
         if(logMINOR) Logger.minor(this, "Sent packet "+seqNumber);
     }
 
@@ -1484,7 +1493,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param plaintext The packet's plaintext, including all formatting,
      * including acks and resend requests. Is clobbered.
      */
-    private void processOutgoingFullyFormatted(byte[] plaintext, KeyTracker kt, AsyncMessageCallback[] callbacks, int alreadyReportedBytes) {
+    private void processOutgoingFullyFormatted(byte[] plaintext, KeyTracker kt, int alreadyReportedBytes) {
         BlockCipher sessionCipher = kt.sessionCipher;
         if(logMINOR) Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));
         if(sessionCipher == null) {
@@ -1544,11 +1553,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Tried to send data packet to local address: "+kt.pn.getPeer()+" for "+kt.pn.allowLocalAddresses());
 		}
         kt.pn.sentPacket();
-        if(callbacks != null) {
-        	for(int i=0;i<callbacks.length;i++) {
-        		callbacks[i].sent();
-        	}
-        }
     }
 
     /* (non-Javadoc)
