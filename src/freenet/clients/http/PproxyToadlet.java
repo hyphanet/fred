@@ -76,7 +76,7 @@ public class PproxyToadlet extends Toadlet {
 				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPPost(plugin, request));
 			}
 			catch (RedirectPluginHTTPException e) {
-				writeTemporaryRedirect(ctx, e.message, e.location);
+				writeTemporaryRedirect(ctx, e.message, e.newLocation);
 			}
 			catch (NotFoundPluginHTTPException e) {
 				sendErrorPage(ctx, e.code, e.message, e.location);
@@ -222,7 +222,7 @@ public class PproxyToadlet extends Toadlet {
 			//FetchResult result = fetch(key);
 			//writeReply(ctx, 200, result.getMimeType(), "OK", result.asBucket());
 		} catch (RedirectPluginHTTPException e) {
-			writeTemporaryRedirect(ctx, e.message, e.location);
+			writeTemporaryRedirect(ctx, e.message, e.newLocation);
 		} catch (NotFoundPluginHTTPException e) {
 			sendErrorPage(ctx, e.code, e.message, e.location);
 		} catch (AccessDeniedPluginHTTPException e) {
