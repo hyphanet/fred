@@ -368,7 +368,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						v.remove(req);
 						if(v.isEmpty())
 							allRequestsByClientRequest.remove(cr);
-						if(logMINOR) Logger.minor(this, "Removed from "+v);
+						if(logMINOR) Logger.minor(this, "Removed from HashSet for "+cr+" which now has "+v.size()+" elements");
 					}
 				}
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req);
