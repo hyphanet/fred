@@ -6,7 +6,6 @@ package freenet.node.fcp;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
-import freenet.support.HexUtil;
 import freenet.support.SimpleFieldSet;
 import freenet.support.compress.Compressor;
 
@@ -28,11 +27,11 @@ public class NodeHelloMessage extends FCPMessage {
 	boolean isTestnet;
 	
 	private final Node node;
-	private final FCPConnectionHandler handler;
+	private final String id;
 		
-	public NodeHelloMessage(final Node node, FCPConnectionHandler handler) {
+	public NodeHelloMessage(final Node node, String id) {
 		this.node = node;
-		this.handler = handler;
+		this.id = id;
 	}
 	
 	public SimpleFieldSet getFieldSet() {
@@ -47,10 +46,7 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.putSingle("ExtRevision", NodeStarter.extRevisionNumber);
 		sfs.putSingle("Testnet", Boolean.toString(node == null ? false : node.isTestnetEnabled()));
 		sfs.putSingle("CompressionCodecs", Integer.toString(Compressor.countCompressAlgorithms()));
-		byte[] identifier = new byte[16];
-		node.random.nextBytes(identifier);
-		handler.setConnectionIdentifier(HexUtil.bytesToHex(identifier));
-		sfs.putSingle("ConnectionIdentifier", handler.getConnectionIdentifier());
+		sfs.putSingle("ConnectionIdentifier", id);
 		return sfs;
 	}
 

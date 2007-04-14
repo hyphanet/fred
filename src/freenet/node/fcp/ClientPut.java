@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 
 import freenet.client.ClientMetadata;
@@ -49,10 +49,6 @@ public class ClientPut extends ClientPutBase {
 	/** Filename if the file has one */
 	private final String targetFilename;
 	private boolean logMINOR;
-	
-	// FIXME: should be in ClientPutBase ... but we don't want to break insert resuming, do we ?
-	protected final String salt;
-	protected final byte[] saltedHash;
 	
 	/**
 	 * Creates a new persistent insert.
@@ -136,8 +132,6 @@ public class ClientPut extends ClientPutBase {
 				this.data = null;
 				clientMetadata = null;
 				putter = null;
-				this.salt = null;
-				this.saltedHash = null;
 				return;
 			}
 			tempData = new SimpleReadOnlyArrayBucket(d);
@@ -147,8 +141,6 @@ public class ClientPut extends ClientPutBase {
 
 		this.data = tempData;
 		this.clientMetadata = cm;
-		this.salt = identifier;
-		this.saltedHash = comptuteHash(salt, data);
 
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, uri, cm, 
@@ -164,23 +156,22 @@ public class ClientPut extends ClientPutBase {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
-		if((message.fileHash != null) && (message.fileHash.length() > 0)) {
-			try {
-				this.salt = handler.getConnectionIdentifier() + message.clientToken;
-				this.saltedHash = Base64.decode(message.fileHash);
-			} catch (IllegalBase64Exception e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Can't base64 decode " + ClientPutBase.FILE_HASH, identifier, global);
-			}
-		} else {
-			this.salt = null;
-			this.saltedHash = null;
-		}
+		String salt = null;
+		byte[] saltedHash = null;
 		
 		if(message.uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!handler.server.core.allowUploadFrom(message.origFilename))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
-			else if(!handler.allowDDAFrom(message.origFilename, false))
-				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to upload from "+message.origFilename+". Have you done a testDDA previously ?", identifier, global); 
+
+			if(message.fileHash != null) {
+				try {
+					salt = handler.connectionIdentifier + message.clientToken;
+					saltedHash = Base64.decode(message.fileHash);
+				} catch (IllegalBase64Exception e) {
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Can't base64 decode " + ClientPutBase.FILE_HASH, identifier, global);
+				}
+			} else if(!handler.allowDDAFrom(message.origFilename, false))
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to upload from "+message.origFilename+". Have you done a testDDA previously ?", identifier, global);		
 		}
 			
 		this.targetFilename = message.targetFilename;
@@ -225,9 +216,26 @@ public class ClientPut extends ClientPutBase {
 		this.data = tempData;
 		this.clientMetadata = cm;
 		
-		// Check the hash : allow it to be null for backward compatibility
-		if((salt != null) && !isHashVerified())
-			throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "The hash doesn't match!", identifier, global);
+		// Check the hash : allow it to be null for backward compatibility and if testDDA is allowed
+		if(salt != null) {
+			MessageDigest md = SHA256.getMessageDigest();
+			md.reset();
+			try {
+				md.update(salt.getBytes("UTF-8"));
+			} catch (UnsupportedEncodingException e) {}
+			try {
+				SHA256.hash(data.getInputStream(), md);
+			} catch (IOException e) {
+				SHA256.returnMessageDigest(md);
+				Logger.error(this, "Got IOE: " +e.getMessage(), e);
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Got an IOException error!", identifier, global);
+			}
+			final byte[] foundHash = md.digest();
+			SHA256.returnMessageDigest(md);
+			
+			if(!foundHash.equals(saltedHash))
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "The hash doesn't match!", identifier, global);
+		}
 		
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, uri, cm, 
@@ -277,18 +285,6 @@ public class ClientPut extends ClientPutBase {
 		boolean isMetadata = false;
 		
 		targetFilename = fs.get("TargetFilename");
-		this.salt = fs.get(ClientPutBase.SALT);
-		String hash = fs.get(ClientPutBase.FILE_HASH);
-		if(hash != null) {
-			byte[] mySaltedHash = null;
-			try {
-				mySaltedHash = Base64.decode(hash);
-			} catch (IllegalBase64Exception e) {
-				throw new PersistenceParseException("Could not read FileHash for "+identifier+" : "+e, e);
-			}
-			this.saltedHash = mySaltedHash;
-		} else
-			this.saltedHash = null;
 		
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			origFilename = new File(fs.get("Filename"));
@@ -296,9 +292,6 @@ public class ClientPut extends ClientPutBase {
 				Logger.minor(this, "Uploading from disk: "+origFilename+" for "+this);
 			data = new FileBucket(origFilename, true, false, false, false, false);
 			targetURI = null;
-			
-			if((hash != null) && !isHashVerified())
-				throw new PersistenceParseException("The hash doesn't match! or an error has occured.");
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			origFilename = null;
 			if(logMINOR)
@@ -409,11 +402,6 @@ public class ClientPut extends ClientPutBase {
 			fs.putSingle("TargetFilename", targetFilename);
 		fs.putSingle("EarlyEncode", Boolean.toString(earlyEncode));
 		
-		if(persistenceType > PERSIST_REBOOT) {
-			fs.putSingle(ClientPutBase.SALT, (salt == null ? identifier : salt));
-			fs.putSingle(ClientPutBase.FILE_HASH, Base64.encode((salt == null ? comptuteHash(identifier, data) : saltedHash)));			
-		}
-		
 		return fs;
 	}
 
@@ -492,32 +480,4 @@ public class ClientPut extends ClientPutBase {
 	public void onFailure(FetchException e, ClientGetter state) {}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {}
-	
-	private boolean isHashVerified() {
-		if (logMINOR) Logger.minor(this, "Found a hash : let's verify it");
-		return saltedHash.equals(comptuteHash(salt, data)); 
-	}
-	
-	private byte[] comptuteHash(String mySalt, Bucket content) {
-		MessageDigest md = SHA256.getMessageDigest();
-		byte[] foundHash = new byte[SHA256.getDigestLength()];
-		
-		try {
-			BufferedInputStream bis = new BufferedInputStream(content.getInputStream());
-			bis.read(foundHash); 
-			bis.close();
-			
-			md.reset();
-			md.update(mySalt.getBytes("UTF-8"));	
-			md.update(foundHash);
-			
-			foundHash = md.digest();
-		} catch (IOException e) {
-			return null;
-		} finally {
-			SHA256.returnMessageDigest(md);
-		}
-		
-		return foundHash;
-	}
 }

@@ -61,7 +61,7 @@ public class FCPConnectionHandler {
 	private FCPClient client;
 	final BucketFactory bf;
 	final HashMap requestsByIdentifier;
-	private String connectionIdentifier;
+	protected final String connectionIdentifier;
 
 	// We are confident that the given client can access those
 	private final HashMap checkedDirectories = new HashMap();
@@ -76,6 +76,10 @@ public class FCPConnectionHandler {
 		requestsByIdentifier = new HashMap();
 		this.inputHandler = new FCPConnectionInputHandler(this);
 		this.outputHandler = new FCPConnectionOutputHandler(this);
+		
+		byte[] identifier = new byte[16];
+		server.node.random.nextBytes(identifier);
+		this.connectionIdentifier = HexUtil.bytesToHex(identifier);
 	}
 	
 	void start() {
@@ -404,22 +408,5 @@ public class FCPConnectionHandler {
 			while(it.hasNext())
 				((DDACheckJob)it.next()).readFilename.delete();
 		}
-	}
-
-	/**
-	 * Used in ClientPut as part of the hash of a DDA request
-	 * @return the given identifier
-	 */
-	protected String getConnectionIdentifier() {
-		return connectionIdentifier;
-	}
-
-	/**
-	 * Should be set only once! and called from NodeHelloMessage
-	 * @param connectionIdentifier
-	 */
-	protected void setConnectionIdentifier(String connectionIdentifier) {
-		assert(connectionIdentifier == null);
-		this.connectionIdentifier = connectionIdentifier;
 	}
 }
