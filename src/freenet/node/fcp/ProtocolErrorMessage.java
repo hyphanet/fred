@@ -107,6 +107,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Access denied";
 		case COULD_NOT_READ_FILE:
 			return "Could not read file";
+		case DIRECT_DISK_ACCESS_DENIED:
+			return "Direct Disk Access operation denied: did you send a FileHash field ? Did you use TestDDA?";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";
