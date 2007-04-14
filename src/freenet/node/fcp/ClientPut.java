@@ -503,8 +503,8 @@ public class ClientPut extends ClientPutBase {
 		byte[] foundHash = new byte[SHA256.getDigestLength()];
 		
 		try {
-			BufferedInputStream bis = new BufferedInputStream(data.getInputStream());
-			bis.read(foundHash);
+			BufferedInputStream bis = new BufferedInputStream(content.getInputStream());
+			bis.read(foundHash); 
 			bis.close();
 			
 			md.reset();
