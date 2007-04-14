@@ -405,6 +405,7 @@ public class FCPConnectionHandler {
 	protected void freeDDAJobs(){
 		synchronized (inTestDirectories) {
 			Iterator it = inTestDirectories.keySet().iterator();
+			while(it.hasNext())
 				((DDACheckJob)inTestDirectories.get(it.next())).readFilename.delete();
 		}
 	}
