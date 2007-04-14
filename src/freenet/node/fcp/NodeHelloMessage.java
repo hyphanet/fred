@@ -6,7 +6,6 @@ package freenet.node.fcp;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
-import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.SimpleFieldSet;
 import freenet.support.compress.Compressor;
@@ -28,36 +27,12 @@ public class NodeHelloMessage extends FCPMessage {
 	String nodeCompressionCodecs;
 	boolean isTestnet;
 	
-	private Node node;
-	
-	public NodeHelloMessage(SimpleFieldSet fs) throws MessageInvalidException {	
-		this.nodeNode = fs.get("Node");
-		if(nodeNode == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Node!", null, false);
-		else if(!nodeNode.equals("Fred"))
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Not talking to Fred!", null, false);
+	private final Node node;
+	private final FCPConnectionHandler handler;
 		
-		this.nodeFCPVersion = fs.get("FCPVersion");
-		if(nodeFCPVersion == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No FCPVersion!", null, false);
-		else if(!nodeFCPVersion.equals("2.0"))
-			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "FCPVersion is incompatible!", null, false);
-		
-		this.nodeVersion = fs.get("Version");
-		if(nodeVersion == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Version!", null, false);
-		else if(!nodeVersion.startsWith("Fred,0.7,1.0,"))
-			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Fred Version is incompatible!", null, false);
-		
-		this.nodeCompressionCodecs = fs.get("CompressionCodecs");
-		if(nodeCompressionCodecs == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No CompressionCodecs!", null, false);
-		
-		this.isTestnet = Fields.stringToBool(fs.get("Testnet"), false);
-	}
-	
-	public NodeHelloMessage(final Node node) {
+	public NodeHelloMessage(final Node node, FCPConnectionHandler handler) {
 		this.node = node;
+		this.handler = handler;
 	}
 	
 	public SimpleFieldSet getFieldSet() {
@@ -74,7 +49,8 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.putSingle("CompressionCodecs", Integer.toString(Compressor.countCompressAlgorithms()));
 		byte[] identifier = new byte[16];
 		node.random.nextBytes(identifier);
-		sfs.putSingle("ConnectionIdentifier", HexUtil.bytesToHex(identifier));
+		handler.setConnectionIdentifier(HexUtil.bytesToHex(identifier));
+		sfs.putSingle("ConnectionIdentifier", handler.getConnectionIdentifier());
 		return sfs;
 	}
 
