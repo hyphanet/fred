@@ -165,7 +165,7 @@ public class ClientPut extends ClientPutBase {
 
 			if(message.fileHash != null) {
 				try {
-					salt = handler.connectionIdentifier + message.clientToken;
+					salt = handler.connectionIdentifier + '-' + message.clientToken + '-';
 					saltedHash = Base64.decode(message.fileHash);
 				} catch (IllegalBase64Exception e) {
 					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Can't base64 decode " + ClientPutBase.FILE_HASH, identifier, global);
