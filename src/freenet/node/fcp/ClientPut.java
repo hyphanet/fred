@@ -228,7 +228,7 @@ public class ClientPut extends ClientPutBase {
 			} catch (IOException e) {
 				SHA256.returnMessageDigest(md);
 				Logger.error(this, "Got IOE: " +e.getMessage(), e);
-				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE, "Unable to access file: "+e, identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Unable to access file: "+e, identifier, global);
 			}
 			final byte[] foundHash = md.digest();
 			SHA256.returnMessageDigest(md);
