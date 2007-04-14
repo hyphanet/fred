@@ -41,7 +41,7 @@ public class ClientHelloMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node) {
 		// We know the Hello is valid.
-		FCPMessage msg = new NodeHelloMessage(node);
+		FCPMessage msg = new NodeHelloMessage(node, handler);
 		handler.outputHandler.queue(msg);
 		handler.setClientName(clientName);
 	}
