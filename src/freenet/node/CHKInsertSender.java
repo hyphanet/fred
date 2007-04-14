@@ -563,20 +563,20 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         // Now wait for transfers, or for downstream transfer notifications.
         if(cw != null) {
         	synchronized(this) {
-        	while(!allTransfersCompleted) {
-        		try {
-           			wait(10*1000);
-        		} catch (InterruptedException e) {
-        			// Try again
+        		while(!allTransfersCompleted) {
+        			try {
+        				wait(10*1000);
+        			} catch (InterruptedException e) {
+        				// Try again
+        			}
         		}
-        	}
         	}
         } else {
         	if(logMINOR) Logger.minor(this, "No completion waiter");
         	// There weren't any transfers
         	synchronized(this) {
-        	allTransfersCompleted = true;
-        	notifyAll();
+        		allTransfersCompleted = true;
+        		notifyAll();
         	}
         }
         if(logMINOR) Logger.minor(this, "Returning from finish()");
