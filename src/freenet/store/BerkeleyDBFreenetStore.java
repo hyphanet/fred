@@ -595,9 +595,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			System.out.println("Keys in store: db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+" / max "+maxChkBlocks);
 			
 			if(chkBlocksInDatabase > chkBlocksFromFile) {
-				System.out.println("More keys in database than in store, checking for holes...");
-				dontCheckForHolesShrinking = true;
-				checkForHoles(chkBlocksFromFile, false);
+				System.out.println("More keys in database than in store!");
+				//throw new DatabaseException("More keys in database than in store!");
+				// FIXME reinstate if handling code doesn't work
 			}
 			
 			if(((chkBlocksInStore == 0) && (chkBlocksFromFile != 0)) ||
@@ -612,7 +612,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					}
 					throw new DatabaseException("Keys in database: "+chkBlocksInStore+" but keys in file: "+chkBlocksFromFile);
 				} else if(!noCheck) {
-					long len = checkForHoles(chkBlocksFromFile, false);
+					long len = checkForHoles(chkBlocksFromFile, true);
 					dontCheckForHolesShrinking = true;
 					if(len < chkBlocksFromFile) {
 						System.err.println("Truncating to "+len+" from "+chkBlocksFromFile+" as no non-holes after that point");
@@ -1339,11 +1339,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    	try{
 	    		byte[] header = new byte[headerBlockSize];
 	    		byte[] data = new byte[dataBlockSize];
+    			try {
 	    		synchronized(chkStore) {
 	    			long seekTarget = storeBlock.offset*(long)(dataBlockSize+headerBlockSize);
 	    			try {
-		    			chkStore.seek(seekTarget);
-		    		} catch (IOException ioe) {
+	    				chkStore.seek(seekTarget);
+	    			} catch (IOException ioe) {
 	    				if(seekTarget > (2l*1024*1024*1024)) {
 	    					Logger.error(this, "Environment does not support files bigger than 2 GB?");
 	    					System.out.println("Environment does not support files bigger than 2 GB? (exception to follow)");
@@ -1354,6 +1355,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		    		chkStore.readFully(header);
 		    		chkStore.readFully(data);
 	    		}
+    			} catch (EOFException e) {
+    				Logger.error(this, "No block");
+    	    		c.close();
+    	    		c = null;
+    	    		chkDB.delete(t, routingkeyDBE);
+    	    		t.commit();
+    	    		t = null;
+    	    		addFreeBlock(storeBlock.offset, true, "Data off end of store file");
+    	    		return null;
+    			}
 	    		
 	    		
 	    		block = new CHKBlock(data,header,chk);
@@ -1456,10 +1467,21 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    	try{
 	    		byte[] header = new byte[headerBlockSize];
 	    		byte[] data = new byte[dataBlockSize];
+	    		try {
 	    		synchronized(chkStore) {
 		    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
 		    		chkStore.readFully(header);
 		    		chkStore.readFully(data);
+	    		}
+	    		} catch (EOFException e) {
+    				Logger.error(this, "No block");
+    	    		c.close();
+    	    		c = null;
+    	    		chkDB.delete(t, routingkeyDBE);
+    	    		t.commit();
+    	    		t = null;
+    	    		addFreeBlock(storeBlock.offset, true, "Data off end of store file");
+    	    		return null;
 	    		}
 	    		
 	    		
@@ -1580,10 +1602,21 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		byte[] data = new byte[dataBlockSize];
     		if(logMINOR) Logger.minor(this, "Reading from store... "+storeBlock.offset+" ("+storeBlock.recentlyUsed+ ')');
     		// When will java have pread/pwrite? :(
+    		try {
     		synchronized(chkStore) {
-	    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+    			chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
 	    		chkStore.readFully(data);
     		}
+			} catch (EOFException e) {
+				Logger.error(this, "No block");
+	    		c.close();
+	    		c = null;
+	    		chkDB.delete(t, routingkeyDBE);
+	    		t.commit();
+	    		t = null;
+	    		addFreeBlock(storeBlock.offset, true, "Data off end of store file");
+	    		return null;
+			}
     		if(logMINOR) Logger.minor(this, "Read");
     		
     		try {
