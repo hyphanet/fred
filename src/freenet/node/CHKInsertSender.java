@@ -591,9 +591,11 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
      * Called by InsertHandler to notify that the receive has
      * failed.
      */
-    public synchronized void receiveFailed() {
-        receiveFailed = true;
-        notifyAll();
+    public void receiveFailed() {
+    	synchronized(nodesWaitingForCompletion) {
+    		receiveFailed = true;
+    		notifyAll();
+    	}
     }
 
     /**
@@ -671,6 +673,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					Logger.normal(this, "Disconnected: "+awc.pn+" in "+CHKInsertSender.this);
 					continue;
 				}
+				if(!awc.completedTransfer)
+					continue;
 				if(!awc.receivedCompletionNotice) {
 					MessageFilter m =
 						MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(awc.pn).setTimeout(timeout);
