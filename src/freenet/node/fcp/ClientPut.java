@@ -106,13 +106,8 @@ public class ClientPut extends ClientPutBase {
 				throw new NotAllowedException();
 			if(!(origFilename.exists() && origFilename.canRead()))
 				throw new FileNotFoundException();
-			this.salt = globalClient.name;
-			this.saltedHash = comptuteHash(salt, data);
-		} else {
-			this.salt = null;
-			this.saltedHash = null;
 		}
-		
+
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.targetFilename = targetFilename;
 		this.uploadFrom = uploadFromType;
@@ -141,16 +136,20 @@ public class ClientPut extends ClientPutBase {
 				this.data = null;
 				clientMetadata = null;
 				putter = null;
+				this.salt = null;
+				this.saltedHash = null;
 				return;
 			}
 			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
 		} else
 			targetURI = null;
-		
+
 		this.data = tempData;
 		this.clientMetadata = cm;
-		
+		this.salt = globalClient.name;
+		this.saltedHash = comptuteHash(salt, data);
+
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
@@ -280,7 +279,13 @@ public class ClientPut extends ClientPutBase {
 		targetFilename = fs.get("TargetFilename");
 		this.salt = fs.get(ClientPutBase.SALT);
 		String hash = fs.get(ClientPutBase.FILE_HASH);
-		this.saltedHash = (hash == null ? null : hash.getBytes("UTF-8"));
+		String mySaltedHash = null;
+		try {
+			mySaltedHash = new String(Base64.decode(hash));
+		} catch (IllegalBase64Exception e) {
+			throw new PersistenceParseException("Could not read FileHash for "+identifier+" : "+e, e);
+		}
+		this.saltedHash = mySaltedHash.getBytes("UTF-8");
 		
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			origFilename = new File(fs.get("Filename"));
@@ -405,8 +410,7 @@ public class ClientPut extends ClientPutBase {
 		
 		if(salt != null) {
 			fs.putSingle(ClientPutBase.SALT, salt);
-			fs.putSingle(ClientPutBase.FILE_HASH, new String(saltedHash));
-			// FIXME: shall it be base64 encoded like on FCP ?
+			fs.putSingle(ClientPutBase.FILE_HASH, Base64.encode(saltedHash));
 		}
 		
 		return fs;
