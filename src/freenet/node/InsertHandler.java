@@ -420,7 +420,8 @@ public class InsertHandler implements Runnable, ByteCounter {
             		InsertHandler.this.notifyAll();
             	}
                 // Cancel the sender
-                sender.receiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
+            	if(sender != null)
+            		sender.receiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
                 runThread.interrupt();
                 Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
                 try {
