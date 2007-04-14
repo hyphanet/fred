@@ -615,7 +615,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					long len = checkForHoles(chkBlocksFromFile, false);
 					dontCheckForHolesShrinking = true;
 					if(len < chkBlocksFromFile) {
-						System.err.println("Truncating to "+len+" as no non-holes after that point");
+						System.err.println("Truncating to "+len+" from "+chkBlocksFromFile+" as no non-holes after that point");
 						chkStore.setLength(len * (dataBlockSize + headerBlockSize));
 						chkBlocksInStore = len;
 					}
@@ -666,7 +666,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(i % 1024 == 0)
 			System.err.println("Checked "+i+" blocks, found "+holes+" holes");
 		}
-		System.err.println("Checked database, found "+holes+" holes");
+		System.err.println("Checked database of "+blocksInFile+" blocks, found "+holes+" holes, maximum non-hole block: "+maxPresent);
 		long bound = maxPresent+1;
 		if(!dontTruncate) {
 			if(bound < chkBlocksInStore) {
