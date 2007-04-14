@@ -562,23 +562,23 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         }
         // Now wait for transfers, or for downstream transfer notifications.
         if(cw != null) {
+        	synchronized(this) {
         	while(!allTransfersCompleted) {
         		try {
-        			synchronized (this) {
-            			wait(10*1000);
-					}
+           			wait(10*1000);
         		} catch (InterruptedException e) {
         			// Try again
         		}
         	}
+        	}
         } else {
         	if(logMINOR) Logger.minor(this, "No completion waiter");
         	// There weren't any transfers
+        	synchronized(this) {
         	allTransfersCompleted = true;
+        	notifyAll();
+        	}
         }
-        synchronized (this) {
-            notifyAll();	
-		}
         if(logMINOR) Logger.minor(this, "Returning from finish()");
     }
 
@@ -700,7 +700,10 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				
 				if(!waitingForAny) {
 					// All are disconnected
-					allTransfersCompleted = true;
+					synchronized(CHKInsertSender.this) {
+						allTransfersCompleted = true;
+						CHKInsertSender.this.notifyAll();
+					}
 					return;
 				}
 				
@@ -844,7 +847,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 	}
 
-	public boolean completed() {
+	public synchronized boolean completed() {
 		return allTransfersCompleted;
 	}
 
