@@ -31,6 +31,7 @@ import freenet.support.io.FileBucket;
  * or
  * UploadFrom=disk // upload a file from disk
  * Filename=/home/toad/something.html
+ * FileHash=021349568329403123
  * Data
  * 
  * Neither IgnoreDS nor DSOnly make sense for inserts.
@@ -49,6 +50,12 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final short priorityClass;
 	final short persistenceType;
 	final short uploadFromType;
+	/** The hash of the file you want the node to deal with.
+	 *  it is MANDATORY to do DDA operations and should be computed like that:
+	 *  
+	 *  Base64Encode(SHA256( Handler.connectionIdentifer + ClientPutMessage.identifier + content)) 
+	 */
+	final String fileHash;
 	final boolean dontCompress;
 	final String clientToken;
 	final File origFilename;
@@ -118,6 +125,8 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier, global);
 			}
 		}
+		// We do *NOT* check that FileHash is valid here for backward compatibility... and to make the override work
+		this.fileHash = fs.get(ClientPutBase.SALT);
 		String uploadFrom = fs.get("UploadFrom");
 		if((uploadFrom == null) || uploadFrom.equalsIgnoreCase("direct")) {
 			uploadFromType = UPLOAD_FROM_DIRECT;

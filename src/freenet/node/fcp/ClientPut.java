@@ -3,9 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.MessageDigest;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
@@ -16,7 +18,10 @@ import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
+import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.support.Base64;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
@@ -25,6 +30,10 @@ import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
+/**
+ * 
+ * TODO: move hash stuffs into ClientPutBase ... and enforce hash verification at a lower level
+ */
 public class ClientPut extends ClientPutBase {
 
 	final ClientPutter putter;
@@ -40,6 +49,10 @@ public class ClientPut extends ClientPutBase {
 	/** Filename if the file has one */
 	private final String targetFilename;
 	private boolean logMINOR;
+	
+	// FIXME: should be in ClientPutBase ... but we don't want to break insert resuming, do we ?
+	protected final String salt;
+	protected final byte[] saltedHash;
 	
 	/**
 	 * Creates a new persistent insert.
@@ -94,6 +107,10 @@ public class ClientPut extends ClientPutBase {
 			if(!(origFilename.exists() && origFilename.canRead()))
 				throw new FileNotFoundException();
 		}
+		// We don't want to break insert resuming: don't enforce it
+		this.salt = null;
+		this.saltedHash = null;
+		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.targetFilename = targetFilename;
 		this.uploadFrom = uploadFromType;
@@ -144,12 +161,25 @@ public class ClientPut extends ClientPutBase {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
+		if((message.fileHash != null) && (message.fileHash.length() > 0)) {
+			try {
+				this.salt = handler.getConnectionIdentifier() + message.clientToken;
+				this.saltedHash = Base64.decode(message.fileHash);
+			} catch (IllegalBase64Exception e) {
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Can't base64 decode " + ClientPutBase.FILE_HASH, identifier, global);
+			}
+		} else {
+			this.salt = null;
+			this.saltedHash = null;
+		}
+		
 		if(message.uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!handler.server.core.allowUploadFrom(message.origFilename))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
 			else if(!handler.allowDDAFrom(message.origFilename, false))
-				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to upload from "+message.origFilename+". Have you done a testDDA previously ?", identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to upload from "+message.origFilename+". Have you done a testDDA previously ?", identifier, global); 
 		}
+			
 		this.targetFilename = message.targetFilename;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.uploadFrom = message.uploadFromType;
@@ -240,12 +270,34 @@ public class ClientPut extends ClientPutBase {
 		
 		targetFilename = fs.get("TargetFilename");
 		
+		this.salt = fs.get(ClientPutBase.SALT);
+		String hash = fs.get(ClientPutBase.FILE_HASH);
+		this.saltedHash = (hash == null ? null : hash.getBytes("UTF-8"));
+		
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			origFilename = new File(fs.get("Filename"));
 			if(logMINOR)
 				Logger.minor(this, "Uploading from disk: "+origFilename+" for "+this);
 			data = new FileBucket(origFilename, true, false, false, false, false);
 			targetURI = null;
+			
+			if(salt != null) {
+				if (logMINOR) Logger.minor(this, "Found a hash : let's verify it");
+				MessageDigest sha = SHA256.getMessageDigest();
+				sha.reset();
+				sha.update(salt.getBytes("UTF-8"));
+				BufferedInputStream bis = new BufferedInputStream(data.getInputStream());
+				byte[] buf = new byte[4096];
+				while(bis.read(buf) > 0)
+					sha.update(buf);
+				
+				byte[] foundHash = sha.digest();
+				SHA256.returnMessageDigest(sha);
+				
+				if(!foundHash.equals(saltedHash))
+					throw new PersistenceParseException("The hash doesn't match !");	
+			} else // should probably be a higher level 
+				Logger.normal(this, "Hash not found!");
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			origFilename = null;
 			if(logMINOR)
@@ -355,6 +407,13 @@ public class ClientPut extends ClientPutBase {
 		if(targetFilename != null)
 			fs.putSingle("TargetFilename", targetFilename);
 		fs.putSingle("EarlyEncode", Boolean.toString(earlyEncode));
+		
+		if(salt != null) {
+			fs.putSingle(ClientPutBase.SALT, salt);
+			fs.putSingle(ClientPutBase.FILE_HASH, new String(saltedHash));
+			// FIXME: shall it be base64 encoded like on FCP ?
+		}
+		
 		return fs;
 	}
 

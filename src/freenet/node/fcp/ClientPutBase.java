@@ -48,6 +48,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	/** Whether to force an early generation of the CHK */
 	protected final boolean earlyEncode;
 	
+	public final static String SALT = "Salt";
+	public final static String FILE_HASH = "FileHash";
+	
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler, 
 			short priorityClass, short persistenceType, String clientToken, boolean global, boolean getCHKOnly,
 			boolean dontCompress, int maxRetries, boolean earlyEncode) {
