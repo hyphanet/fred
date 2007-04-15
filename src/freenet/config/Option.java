@@ -91,4 +91,8 @@ public abstract class Option {
 	public abstract void setDefault();
 	
 	public abstract String getDefault();
+	
+	public boolean isEnumerable() {
+		return false;
+	}
 }

@@ -5,11 +5,12 @@ package freenet.config;
 
 import freenet.support.api.StringCallback;
 
-public class StringOption extends Option {
+public class StringOption extends Option implements EnumerableOption {
 
 	final String defaultValue;
 	final StringCallback cb;
 	private String currentValue;
+	private String[] possibleValues;
 	
 	public StringOption(SubConfig conf, String optionName, String defaultValue, int sortOrder, 
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringCallback cb) {
@@ -29,7 +30,7 @@ public class StringOption extends Option {
 
 	public void setValue(String val) throws InvalidConfigValueException {
 		cb.set(val);
-		this.currentValue = val;
+		this.currentValue = val; // Callbacks are in charge of ensuring it matches with possibleValues
 	}
 	
 	public String getValueString() {
@@ -53,4 +54,15 @@ public class StringOption extends Option {
 		return defaultValue;
 	}
 	
+	public void setPossibleValues(String[] val) {
+		possibleValues = val;
+	}
+	
+	public String[] getPossibleValues() {
+		return possibleValues;
+	}
+	
+	public boolean isEnumerable() {
+		return (possibleValues != null);
+	}
 }

@@ -5,7 +5,7 @@ package freenet.config;
 
 import freenet.support.api.BooleanCallback;
 
-public class BooleanOption extends Option {
+public class BooleanOption extends Option implements EnumerableOption {
 	
 	final boolean defaultValue;
 	final BooleanCallback cb;
@@ -67,4 +67,13 @@ public class BooleanOption extends Option {
 		currentValue = defaultValue;
 	}
 	
+	public String[] getPossibleValues() {
+		return new String[] { "true", "false" };
+	}
+	
+	public void setPossibleValues(String[] val) {}
+	
+	public boolean isEnumerable() {
+		return true;
+	}
 }
