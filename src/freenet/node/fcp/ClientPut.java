@@ -30,10 +30,6 @@ import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
-/**
- * 
- * TODO: move hash stuffs into ClientPutBase ... and enforce hash verification at a lower level
- */
 public class ClientPut extends ClientPutBase {
 
 	final ClientPutter putter;
@@ -228,13 +224,13 @@ public class ClientPut extends ClientPutBase {
 			} catch (IOException e) {
 				SHA256.returnMessageDigest(md);
 				Logger.error(this, "Got IOE: " +e.getMessage(), e);
-				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Unable to access file: "+e, identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE, "Unable to access file: "+e, identifier, global);
 			}
 			final byte[] foundHash = md.digest();
 			SHA256.returnMessageDigest(md);
 			
 			if(!foundHash.equals(saltedHash))
-				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "The hash doesn't match!", identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "The hash doesn't match! (salt used : \""+salt+"\")", identifier, global);
 		}
 		
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
