@@ -33,12 +33,11 @@ public class ListPeersMessage extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ListPeers requires full access", null, false);
 		}
 		PeerNode[] nodes = node.getPeerNodes();
-		if(nodes != null) {
-			for(int i = 0; i < nodes.length; i++) {
-				PeerNode pn = nodes[i];
-				handler.outputHandler.queue(new Peer(pn, withMetadata, withVolatile));
-			}
+		for(int i = 0; i < nodes.length; i++) {
+			PeerNode pn = nodes[i];
+			handler.outputHandler.queue(new Peer(pn, withMetadata, withVolatile));
 		}
+		
 		handler.outputHandler.queue(new EndListPeersMessage());
 	}
 	
