@@ -44,6 +44,7 @@ import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.LongOption;
 import freenet.config.PersistentConfig;
+import freenet.config.StringOption;
 import freenet.config.SubConfig;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
@@ -1320,6 +1321,7 @@ public class Node {
 				}
 			}
 		});
+		((StringOption)nodeConfig.getOption("l10n")).setPossibleValues(L10n.availableLanguages);
 		
 		try {
 			L10n.setLanguage(nodeConfig.getString("l10n"));

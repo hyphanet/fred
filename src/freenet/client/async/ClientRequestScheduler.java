@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 import freenet.config.InvalidConfigValueException;
+import freenet.config.StringOption;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
@@ -155,6 +156,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				"RequestStarterGroup.scheduler",
 				"RequestStarterGroup.schedulerLong",
 				new PrioritySchedulerCallback(this));
+		((StringOption)sc.getOption(name + "_priority_policy")).setPossibleValues(new String[]{ ClientRequestScheduler.PRIORITY_HARD, ClientRequestScheduler.PRIORITY_SOFT });
+		
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}

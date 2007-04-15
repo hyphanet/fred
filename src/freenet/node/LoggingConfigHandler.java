@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.OptionFormatException;
+import freenet.config.StringOption;
 import freenet.config.SubConfig;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
@@ -116,6 +117,7 @@ public class LoggingConfigHandler {
 						}
 					}
     	});
+    	((StringOption)config.getOption("priority")).setPossibleValues(new String[]{ "ERROR", "NORMAL", "MINOR", "DEBUG" });
     	
     	// detailed priority
     	
@@ -137,7 +139,6 @@ public class LoggingConfigHandler {
 					}
     		
     	});
-    	
     	
     	// interval
     	

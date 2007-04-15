@@ -9,6 +9,7 @@ import java.util.Arrays;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
+import freenet.config.EnumerableOption;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -154,18 +155,11 @@ public class ConfigToadlet extends Toadlet {
 						Logger.error(this, sc[i].getPrefix() + configName + "has returned null from config!);");
 						continue; 
 					}
-					if(o[j].getValueString().equals("true") || o[j].getValueString().equals("false")){
-						HTMLNode selectNode = configItemValueNode.addChild("select", "name", sc[i].getPrefix() + '.' + configName);
-						if(o[j].getValueString().equals("true")){
-							selectNode.addChild("option", new String[] { "value", "selected" }, new String[] { "true", "selected" }, "true");
-							selectNode.addChild("option", "value", "false", "false");
-						}else{
-							selectNode.addChild("option", "value", "true", "true");
-							selectNode.addChild("option", new String[] { "value", "selected" }, new String[] { "false", "selected" }, "false");
-						}
-					}else{
+					
+					if((o[j] instanceof EnumerableOption) && (o[j].isEnumerable()))
+						configItemValueNode.addChild(addComboBox((EnumerableOption)o[j], sc[i], configName));
+					else
 						configItemValueNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o[j].getShortDesc(), sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
-					}
 
 					configItemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o[j].getLongDesc()));
 				}
@@ -186,5 +180,18 @@ public class ConfigToadlet extends Toadlet {
 	
 	public String supportedMethods() {
 		return "GET, POST";
+	}
+	
+	private HTMLNode addComboBox(EnumerableOption o, SubConfig sc, String name) {
+		HTMLNode result = new HTMLNode("select", "name", sc.getPrefix() + '.' + name);
+		String[] possibleValues = o.getPossibleValues();
+		for(int i=0; i<possibleValues.length; i++) {
+			if(possibleValues[i].equals(o.getValueString()))
+				result.addChild("option", new String[] { "value", "selected" }, new String[] { possibleValues[i], "selected" }, possibleValues[i]);
+			else
+				result.addChild("option", "value", possibleValues[i], possibleValues[i]);
+		}
+		
+		return result;
 	}
 }

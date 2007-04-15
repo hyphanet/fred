@@ -23,12 +23,14 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import freenet.config.InvalidConfigValueException;
+import freenet.config.StringOption;
 import freenet.config.SubConfig;
 import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.StringArray;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
@@ -304,8 +306,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		cssName = fproxyConfig.getString("css");
 		if((cssName.indexOf(':') != -1) || (cssName.indexOf('/') != -1))
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
-		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");
-		pageMaker = new PageMaker(cssName);
+		pageMaker = new PageMaker(cssName);		
+		// Set possible values
+		((StringOption) fproxyConfig.getOption("css")).setPossibleValues(StringArray.toArray(pageMaker.getThemes().toArray()));
 		
 		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
 			cssOverride = new File(fproxyConfig.getString("CSSOverride"));			
@@ -313,6 +316,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		} else
 			cssOverride = null;
 		
+		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");		
 		toadlets = new LinkedList();
 		core.setToadletContainer(this); // even if not enabled, because of config
 		
