@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import freenet.l10n.L10n;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
@@ -231,10 +232,10 @@ public class SubConfig implements Comparable {
 					fs.put(key, o.isForcedWrite());
 					break;
 				case Config.CONFIG_REQUEST_TYPE_SHORT_DESCRIPTION:
-					fs.putSingle(key, o.getShortDesc());
+					fs.putSingle(key, L10n.getString(o.getShortDesc()));
 					break;
 				case Config.CONFIG_REQUEST_TYPE_LONG_DESCRIPTION:
-					fs.putSingle(key, o.getLongDesc());
+					fs.putSingle(key, L10n.getString(o.getLongDesc()));
 					break;
 				default:
 					Logger.error(this, "Unknown config request type value: "+configRequestType);
