@@ -1,6 +1,9 @@
 package freenet.clients.http;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
@@ -15,6 +18,7 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
@@ -24,6 +28,7 @@ public class PageMaker {
 	
 	private static final String DEFAULT_THEME = "clean";
 	private String theme;
+	private File override;
 	private final List navigationLinkTexts = new ArrayList();
 	private final List navigationLinkTextsNonFull = new ArrayList();
 	private final Map navigationLinkTitles = new HashMap();
@@ -35,6 +40,10 @@ public class PageMaker {
 	
 	public PageMaker(String t) {
 		setTheme(t);
+	}
+	
+	void setOverride(File f) {
+		this.override = f;
 	}
 	
 	void setTheme(String theme) {
@@ -79,16 +88,20 @@ public class PageMaker {
 	public HTMLNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
 		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
-		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", "en");
+		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", L10n.getSelectedLanguage());
 		HTMLNode headNode = htmlNode.addChild("head");
 		headNode.addChild("title", title + " - Freenet");
 		headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "Content-Type", "text/html; charset=utf-8" });
-		headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme + "/theme.css", "text/css", theme });
+		if(override == null)
+			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme + "/theme.css", "text/css", theme });
+		else
+			headNode.addChild(getOverrideContent());
 		List themes = getThemes();
 		for (Iterator themesIterator = themes.iterator(); themesIterator.hasNext();) {
 			String themeName = (String) themesIterator.next();
 			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 		}
+		
 		HTMLNode bodyNode = htmlNode.addChild("body");
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
@@ -201,4 +214,22 @@ public class PageMaker {
 		return themes;
 	}
 	
+	private HTMLNode getOverrideContent() {
+		HTMLNode result = new HTMLNode("style", "type", "text/css");
+		try {
+			FileInputStream fis = new FileInputStream(override);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			DataInputStream dis = new DataInputStream(bis);
+			
+			result.addChild("#", DataInputStream.readUTF(dis));
+			
+			dis.close();
+			bis.close();
+			fis.close();
+		} catch (IOException e) {
+			Logger.error(this, "Got an IOE: " + e.getMessage(), e);
+		}
+		
+		return result;
+	}
 }

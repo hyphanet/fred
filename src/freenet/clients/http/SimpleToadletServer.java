@@ -24,20 +24,15 @@ import java.util.jar.JarFile;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
-import freenet.crypt.DummyRandomSource;
 import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
 import freenet.node.NodeClientCore;
-import freenet.support.FileLoggerHook;
-import freenet.support.FileLoggerHook.IntervalParseException;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;
-import freenet.support.io.FilenameGenerator;
-import freenet.support.io.TempBucketFactory;
 
 public class SimpleToadletServer implements ToadletContainer, Runnable {
 	
@@ -57,6 +52,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	final NetworkInterface networkInterface;
 	private final LinkedList toadlets;
 	private String cssName;
+	private File cssOverride;
 	private Thread myThread;
 	private boolean advancedModeEnabled;
 	private boolean fProxyJavascriptEnabled;
@@ -122,6 +118,27 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 			cssName = CSSName;
 			pageMaker.setTheme(cssName);
+		}
+	}
+	
+	class FProxyCSSOverrideCallback implements StringCallback {
+
+		public String get() {
+			return (cssOverride == null ? "" : cssOverride.toString());
+		}
+
+		public void set(String val) throws InvalidConfigValueException {
+			if(val.equals(get()) || val.equals(""))
+				cssOverride = null;
+			else {
+				File tmp = new File(val.trim());
+				if(!core.allowUploadFrom(tmp))
+					throw new InvalidConfigValueException("We can't let you set that setting: \"" + tmp + "\" isn't in a directory from which uploads are allowed!");				
+				else if(!tmp.canRead() || !tmp.isFile())
+					throw new InvalidConfigValueException("We can't read the given file! (" + val + ')');
+				cssOverride = tmp.getAbsoluteFile();
+			}
+			pageMaker.setOverride(cssOverride);
 		}
 	}
 	
@@ -246,6 +263,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyBindtoCallback());
 		fproxyConfig.register("css", "clean", configItemOrder++, false, false, "SimpleToadletServer.cssName", "SimpleToadletServer.cssNameLong",
 				new FProxyCSSNameCallback());
+		fproxyConfig.register("CSSOverride", "", configItemOrder++, true, false, "SimpleToadletServer.cssOverride", "SimpleToadletServer.cssOverrideLong",
+				new FProxyCSSOverrideCallback());
 		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, false, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
 		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, false, false, "SimpleToadletServer.enableJS", "SimpleToadletServer.enableJSLong",
@@ -288,6 +307,12 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");
 		pageMaker = new PageMaker(cssName);
 		
+		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
+			cssOverride = new File(fproxyConfig.getString("CSSOverride"));			
+			pageMaker.setOverride(cssOverride);
+		} else
+			cssOverride = null;
+		
 		toadlets = new LinkedList();
 		core.setToadletContainer(this); // even if not enabled, because of config
 		
@@ -299,18 +324,6 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			myThread = new Thread(this, "SimpleToadletServer");
 			myThread.setDaemon(true);
 		}
-	}
-	
-	public SimpleToadletServer(int i, String newbindTo, String allowedHosts, BucketFactory bf, String cssName, NodeClientCore core) throws IOException {
-		this.port = i;
-		this.bindTo = newbindTo;
-		allowedFullAccess = new AllowedHosts(allowedHosts);
-		this.bf = bf;
-		this.networkInterface = NetworkInterface.create(port, this.bindTo, allowedHosts);
-		toadlets = new LinkedList();
-		this.cssName = cssName;
-		pageMaker = new PageMaker(cssName);
-		this.core = core;
 	}
 
 	public void start() {
@@ -344,30 +357,6 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				return te.t;
 		}
 		return null;
-	}
-	
-	public static void main(String[] args) throws IOException, IntervalParseException {
-        File logDir = new File("logs-toadlettest");
-        logDir.mkdir();
-        FileLoggerHook logger = new FileLoggerHook(true, new File(logDir, "test-1111").getAbsolutePath(), 
-        		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.MINOR, false, true, 
-        		1024*1024*1024 /* 1GB of old compressed logfiles */);
-        logger.setInterval("5MINUTES");
-        Logger.setupChain();
-        Logger.globalSetThreshold(Logger.MINOR);
-        Logger.globalAddHook(logger);
-        logger.start();
-		SimpleToadletServer server = new SimpleToadletServer(1111, "127.0.0.1", "127.0.0.1", new TempBucketFactory(new FilenameGenerator(new DummyRandomSource(), true, new File("temp-test"), "test-temp-")), "aqua", null);
-		server.register(new TrivialToadlet(null), "", true, false);
-		server.start();
-		System.out.println("Bound to port 1111.");
-		while(true) {
-			try {
-				Thread.sleep(100000);
-			} catch (InterruptedException e) {
-				// Ignore
-			}
-		}
 	}
 
 	public void run() {
