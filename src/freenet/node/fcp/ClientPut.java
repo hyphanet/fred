@@ -25,6 +25,7 @@ import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.Fields.ByteArrayComparator;
 import freenet.support.api.Bucket;
 import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
@@ -229,7 +230,9 @@ public class ClientPut extends ClientPutBase {
 			final byte[] foundHash = md.digest();
 			SHA256.returnMessageDigest(md);
 			
-			if(!foundHash.equals(saltedHash))
+			if(logMINOR) Logger.minor(this, "FileHash result : we found " + Base64.encode(foundHash) + " and were given " + Base64.encode(saltedHash) + '.');
+			
+			if(ByteArrayComparator.compare(saltedHash, foundHash) != 0)
 				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "The hash doesn't match! (salt used : \""+salt+"\")", identifier, global);
 		}
 		
