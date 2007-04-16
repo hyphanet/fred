@@ -75,7 +75,7 @@ public class InsertHandler implements Runnable, ByteCounter {
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
         } catch (Throwable t) {
-            Logger.error(this, "Caught "+t, t);
+            Logger.error(this, "Caught in run() "+t, t);
         } finally {
         	if(logMINOR) Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
             node.unlockUID(uid, false, true);
