@@ -215,7 +215,7 @@ public class SplitFileFetcher implements ClientGetState {
 				}
 			if(allDone) {
 				if(allSegmentsFinished) {
-					Logger.error(this, "Was already finished! (segmentFinished("+segment+ ')');
+					Logger.error(this, "Was already finished! (segmentFinished("+segment+ ')', new Exception("debug"));
 				} else {
 					allSegmentsFinished = true;
 					finish = true;
