@@ -9,7 +9,7 @@ import java.util.Arrays;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
-import freenet.config.EnumerableOption;
+import freenet.config.EnumerableOptionCallback;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -156,8 +156,8 @@ public class ConfigToadlet extends Toadlet {
 						continue; 
 					}
 					
-					if((o[j] instanceof EnumerableOption) && (o[j].isEnumerable()))
-						configItemValueNode.addChild(addComboBox((EnumerableOption)o[j], sc[i], configName));
+					if(o[j].getCallback() instanceof EnumerableOptionCallback)
+						configItemValueNode.addChild(addComboBox((EnumerableOptionCallback)o[j].getCallback(), sc[i], configName));
 					else
 						configItemValueNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o[j].getShortDesc(), sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
 
@@ -182,11 +182,11 @@ public class ConfigToadlet extends Toadlet {
 		return "GET, POST";
 	}
 	
-	private HTMLNode addComboBox(EnumerableOption o, SubConfig sc, String name) {
+	private HTMLNode addComboBox(EnumerableOptionCallback o, SubConfig sc, String name) {
 		HTMLNode result = new HTMLNode("select", "name", sc.getPrefix() + '.' + name);
 		String[] possibleValues = o.getPossibleValues();
 		for(int i=0; i<possibleValues.length; i++) {
-			if(possibleValues[i].equals(o.getValueString()))
+			if(possibleValues[i].equals(o.get()))
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { possibleValues[i], "selected" }, possibleValues[i]);
 			else
 				result.addChild("option", "value", possibleValues[i], possibleValues[i]);

@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringOption;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
@@ -38,8 +38,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private static boolean logMINOR;
 	
-	public class PrioritySchedulerCallback implements StringCallback{
+	public class PrioritySchedulerCallback implements StringCallback, EnumerableOptionCallback {
 		final ClientRequestScheduler cs;
+		private final String[] possibleValues = new String[]{ ClientRequestScheduler.PRIORITY_HARD, ClientRequestScheduler.PRIORITY_SOFT };
 		
 		PrioritySchedulerCallback(ClientRequestScheduler cs){
 			this.cs = cs;
@@ -63,6 +64,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 				throw new InvalidConfigValueException("Invalid priority scheme");
 			}
 			cs.setPriorityScheduler(value);
+		}
+		
+		public String[] getPossibleValues() {
+			return possibleValues;
+		}
+		
+		public void setPossibleValues(String[] val) {
+			throw new NullPointerException("Should not happen!");
 		}
 	}
 	
@@ -156,7 +165,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				"RequestStarterGroup.scheduler",
 				"RequestStarterGroup.schedulerLong",
 				new PrioritySchedulerCallback(this));
-		((StringOption)sc.getOption(name + "_priority_policy")).setPossibleValues(new String[]{ ClientRequestScheduler.PRIORITY_HARD, ClientRequestScheduler.PRIORITY_SOFT });
 		
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);

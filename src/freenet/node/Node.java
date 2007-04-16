@@ -40,11 +40,11 @@ import com.sleepycat.je.EnvironmentMutableConfig;
 import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FetchContext;
+import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.LongOption;
 import freenet.config.PersistentConfig;
-import freenet.config.StringOption;
 import freenet.config.SubConfig;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
@@ -165,6 +165,30 @@ public class Node {
 					clientCore.alerts.unregister(nodeNameUserAlert);
 				}
 			}
+	}
+	
+	private class L10nCallback implements StringCallback, EnumerableOptionCallback{
+		
+		public String get() {
+			return L10n.getSelectedLanguage();
+		}
+		
+		public void set(String val) throws InvalidConfigValueException {
+			if(get().equalsIgnoreCase(val)) return;
+			try {
+				L10n.setLanguage(val);
+			} catch (MissingResourceException e) {
+				throw new InvalidConfigValueException(e.getMessage());
+			}
+		}
+		
+		public void setPossibleValues(String[] val) {
+			throw new NullPointerException("Should not happen!");
+		}
+		
+		public String[] getPossibleValues() {
+			return L10n.availableLanguages;
+		}
 	}
 	
 	/** Stats */
@@ -1306,22 +1330,7 @@ public class Node {
 		nodeConfig.register("l10n", "en", sortOrder++, false, true, 
 				"Node.l10nLanguage",
 				"Node.l10nLanguageLong",
-				new StringCallback(){
-			
-			public String get() {
-				return L10n.getSelectedLanguage();
-			}
-			
-			public void set(String val) throws InvalidConfigValueException {
-				if(get().equalsIgnoreCase(val)) return;
-				try {
-					L10n.setLanguage(val);
-				} catch (MissingResourceException e) {
-					throw new InvalidConfigValueException(e.getMessage());
-				}
-			}
-		});
-		((StringOption)nodeConfig.getOption("l10n")).setPossibleValues(L10n.availableLanguages);
+				new L10nCallback());
 		
 		try {
 			L10n.setLanguage(nodeConfig.getString("l10n"));

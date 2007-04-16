@@ -6,9 +6,9 @@ package freenet.node;
 import java.io.File;
 import java.io.IOException;
 
+import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.OptionFormatException;
-import freenet.config.StringOption;
 import freenet.config.SubConfig;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
@@ -22,6 +22,30 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 
 public class LoggingConfigHandler {
+	private class PriorityCallback implements StringCallback, EnumerableOptionCallback {
+		private final String[] possibleValues = new String[]{ "ERROR", "NORMAL", "MINOR", "DEBUG" };
+
+		public String get() {
+			LoggerHookChain chain = Logger.getChain();
+			return LoggerHook.priorityOf(chain.getThreshold());
+		}
+		public void set(String val) throws InvalidConfigValueException {
+			LoggerHookChain chain = Logger.getChain();
+			try {
+				chain.setThreshold(val);
+			} catch (LoggerHook.InvalidThresholdException e) {
+				throw new OptionFormatException(e.getMessage());
+			}
+		}
+
+		public String[] getPossibleValues() {
+			return possibleValues;
+		}
+
+		public void setPossibleValues(String[] val) {
+			throw new NullPointerException("Should not happen!");
+		}
+	}
 
 	protected static final String LOG_PREFIX = "freenet";
 	private final SubConfig config;
@@ -103,21 +127,7 @@ public class LoggingConfigHandler {
     	
     	// Node must override this to minor on testnet.
     	config.register("priority", "normal", 4, false, false, "LogConfigHandler.minLoggingPriority", "LogConfigHandler.minLoggingPriorityLong",
-    			new StringCallback() {
-					public String get() {
-						LoggerHookChain chain = Logger.getChain();
-						return LoggerHook.priorityOf(chain.getThreshold());
-					}
-					public void set(String val) throws InvalidConfigValueException {
-						LoggerHookChain chain = Logger.getChain();
-						try {
-							chain.setThreshold(val);
-						} catch (LoggerHook.InvalidThresholdException e) {
-							throw new OptionFormatException(e.getMessage());
-						}
-					}
-    	});
-    	((StringOption)config.getOption("priority")).setPossibleValues(new String[]{ "ERROR", "NORMAL", "MINOR", "DEBUG" });
+    			new PriorityCallback());
     	
     	// detailed priority
     	

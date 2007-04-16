@@ -3,13 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.api;
 
+import freenet.config.ConfigCallback;
 import freenet.config.InvalidConfigValueException;
 
 /**
  * A callback to be called when a config value of integer type changes.
  * Also reports the current value.
  */
-public interface IntCallback {
+public interface IntCallback extends ConfigCallback {
 
 	/**
 	 * Get the current, used value of the config variable.

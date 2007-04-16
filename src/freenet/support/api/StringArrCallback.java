@@ -3,10 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.api;
 
+import freenet.config.ConfigCallback;
 import freenet.config.InvalidConfigValueException;
 
 /** Callback (getter/setter) for a string config variable */
-public interface StringArrCallback {
+public interface StringArrCallback extends ConfigCallback {
 	
 	/**
 	 * Get the current, used value of the config variable.

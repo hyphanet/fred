@@ -17,7 +17,7 @@ public class StringArrOption extends Option {
 	
 	public StringArrOption(SubConfig conf, String optionName, String[] defaultValue, int sortOrder, 
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringArrCallback cb) {
-		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
+		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc);
 		this.defaultValue = (defaultValue==null)?new String[0]:defaultValue;
 		this.cb = cb;
 		this.currentValue = (defaultValue==null)?new String[0]:defaultValue;

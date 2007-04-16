@@ -22,10 +22,13 @@ public abstract class Option {
 	final String shortDesc;
 	/** Long description of value e.g. "The TCP port to listen for FCP connections on" */
 	final String longDesc;
+	/** The configCallback associated to the Option */
+	final ConfigCallback cb;
 	
-	Option(SubConfig config, String name, int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc) {
+	Option(SubConfig config, String name, ConfigCallback cb, int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc) {
 		this.config = config;
 		this.name = name;
+		this.cb = cb;
 		this.sortOrder = sortOrder;
 		this.expert = expert;
 		this.shortDesc = shortDesc;
@@ -91,8 +94,8 @@ public abstract class Option {
 	public abstract void setDefault();
 	
 	public abstract String getDefault();
-	
-	public boolean isEnumerable() {
-		return false;
+
+	public ConfigCallback getCallback() {
+		return cb;
 	}
 }

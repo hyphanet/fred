@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.StringOption;
 import freenet.config.SubConfig;
 import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
@@ -109,7 +109,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 	}
 	
-	class FProxyCSSNameCallback implements StringCallback {
+	class FProxyCSSNameCallback implements StringCallback, EnumerableOptionCallback {
 		
 		public String get() {
 			return cssName;
@@ -120,6 +120,14 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 			cssName = CSSName;
 			pageMaker.setTheme(cssName);
+		}
+		
+		public void setPossibleValues(String[] val) {
+			throw new NullPointerException("Should not happen!");
+		}
+		
+		public String[] getPossibleValues() {
+			return StringArray.toArray(pageMaker.getThemes().toArray());
 		}
 	}
 	
@@ -306,10 +314,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		cssName = fproxyConfig.getString("css");
 		if((cssName.indexOf(':') != -1) || (cssName.indexOf('/') != -1))
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
-		pageMaker = new PageMaker(cssName);		
-		// Set possible values
-		((StringOption) fproxyConfig.getOption("css")).setPossibleValues(StringArray.toArray(pageMaker.getThemes().toArray()));
-		
+		pageMaker = new PageMaker(cssName);
+	
 		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
 			cssOverride = new File(fproxyConfig.getString("CSSOverride"));			
 			pageMaker.setOverride(cssOverride);

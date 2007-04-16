@@ -11,7 +11,7 @@ public class ShortOption extends Option {
 	
 	public ShortOption(SubConfig conf, String optionName, short defaultValue, int sortOrder, 
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, ShortCallback cb) {
-		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
+		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc);
 		this.defaultValue = defaultValue;
 		this.cb = cb;
 		this.currentValue = defaultValue;

@@ -5,7 +5,7 @@ package freenet.config;
 
 import freenet.support.api.BooleanCallback;
 
-public class BooleanOption extends Option implements EnumerableOption {
+public class BooleanOption extends Option {
 	
 	final boolean defaultValue;
 	final BooleanCallback cb;
@@ -13,7 +13,7 @@ public class BooleanOption extends Option implements EnumerableOption {
 	
 	public BooleanOption(SubConfig conf, String optionName, boolean defaultValue, int sortOrder, 
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, BooleanCallback cb) {
-		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
+		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc);
 		this.defaultValue = defaultValue;
 		this.cb = cb;
 		this.currentValue = defaultValue;
@@ -65,15 +65,5 @@ public class BooleanOption extends Option implements EnumerableOption {
 
 	public void setDefault() {
 		currentValue = defaultValue;
-	}
-	
-	public String[] getPossibleValues() {
-		return new String[] { "true", "false" };
-	}
-	
-	public void setPossibleValues(String[] val) {}
-	
-	public boolean isEnumerable() {
-		return true;
 	}
 }
