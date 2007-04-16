@@ -8,6 +8,7 @@ import java.net.URI;
 import java.util.Arrays;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.config.BooleanOption;
 import freenet.config.Config;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.Option;
@@ -18,6 +19,7 @@ import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 
 
@@ -158,6 +160,8 @@ public class ConfigToadlet extends Toadlet {
 					
 					if(o[j].getCallback() instanceof EnumerableOptionCallback)
 						configItemValueNode.addChild(addComboBox((EnumerableOptionCallback)o[j].getCallback(), sc[i], configName));
+					else if(o[j].getCallback() instanceof BooleanCallback)
+						configItemValueNode.addChild(addBooleanComboBox(((BooleanOption)o[j]).getValue(), sc[i], configName));
 					else
 						configItemValueNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o[j].getShortDesc(), sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
 
@@ -190,6 +194,22 @@ public class ConfigToadlet extends Toadlet {
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { possibleValues[i], "selected" }, possibleValues[i]);
 			else
 				result.addChild("option", "value", possibleValues[i], possibleValues[i]);
+		}
+		
+		return result;
+	}
+	
+	private HTMLNode addBooleanComboBox(boolean value, SubConfig sc, String name) {
+		HTMLNode result = new HTMLNode("select", "name", sc.getPrefix() + '.' + name);
+		
+		if(value) {
+			result.addChild("option", new String[] { "value", "selected" }, new String[] {
+					"true", "selected" }, "true");
+			result.addChild("option", "value", "false", "false");
+		} else {
+			result.addChild("option", "value", "true", "true");
+			result.addChild("option", new String[] { "value", "selected" }, new String[] {
+					"false", "selected" }, "false");
 		}
 		
 		return result;
