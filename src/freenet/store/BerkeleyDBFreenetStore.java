@@ -494,13 +494,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		try {
 			atime = environment.openSecondaryDatabase
 								(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
-			long chkDBCount = chkDB.count();
-			System.err.println("Counting size of access times database...");
-			long atimeCount = atime.count();
-			if(atimeCount < chkDBCount) {
-				System.err.println("Access times database: "+atimeCount+" but main database: "+chkDBCount);
-				throw new DatabaseException("Needs repopulation");
-			}
+			// The below is too slow to be useful, because SecondaryDatabase.count() isn't optimised.
+//			long chkDBCount = chkDB.count();
+//			System.err.println("Counting size of access times database...");
+//			long atimeCount = atime.count();
+//			if(atimeCount < chkDBCount) {
+//				System.err.println("Access times database: "+atimeCount+" but main database: "+chkDBCount);
+//				throw new DatabaseException("Needs repopulation");
+//			}
 		} catch (DatabaseException e) {
 			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+chkDB.count()*100))); 
 			// Of course it's not a solution but a quick fix
@@ -547,12 +548,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			System.err.println("Opening block db index");
 			blockNums = environment.openSecondaryDatabase
 				(null, prefix+"CHK_blockNum", chkDB, blockNoDbConfig);
-			long blockNumsCount = blockNums.count();
-			long chkDBCount = chkDB.count();
-			if(blockNumsCount < chkDBCount) {
-				System.err.println("Block nums database: "+blockNumsCount+" but main database: "+chkDBCount);
-				throw new DatabaseException("Needs repopulation");
-			}
+			// The below is too slow to be useful, because SecondaryDatabase.count() isn't optimised.
+//			long blockNumsCount = blockNums.count();
+//			long chkDBCount = chkDB.count();
+//			if(blockNumsCount < chkDBCount) {
+//				System.err.println("Block nums database: "+blockNumsCount+" but main database: "+chkDBCount);
+//				throw new DatabaseException("Needs repopulation");
+//			}
 		} catch (DatabaseException e) {
 			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+chkDB.count()*100))); 
 			// Of course it's not a solution but a quick fix
