@@ -200,7 +200,8 @@ public class Message {
 			}
 			dos.flush();
 		} catch (IOException e) {
-			throw new IllegalStateException(e);
+			e.printStackTrace();
+			throw new IllegalStateException(e.getMessage());
 		}
 		
 		if(_subMessages != null && includeSubMessages) {
@@ -210,7 +211,8 @@ public class Message {
 					dos.writeShort(temp.length);
 					dos.write(temp);
 				} catch (IOException e) {
-					throw new IllegalStateException(e);
+					e.printStackTrace();
+					throw new IllegalStateException(e.getMessage());
 				}
 			}
 		}
