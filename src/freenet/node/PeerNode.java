@@ -458,8 +458,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         	throw new FSParseException(e);
         }
 
-        /* FIXME: All the following is useless once we have definitely switched to STS! */
-        
         // Setup incoming and outgoing setup ciphers
         byte[] nodeKey = node.identityHash;
         byte[] nodeKeyHash = node.identityHashHash;
