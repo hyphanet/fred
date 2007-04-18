@@ -330,7 +330,11 @@ public class LocationManager {
             
             node.usm.send(pn, confirm, null);
             
-            if(shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom)) {
+            boolean shouldSwap = shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom);
+            
+            spyOnLocations(commit, true, shouldSwap, myLoc);
+            
+            if(shouldSwap) {
                 timeLastSuccessfullySwapped = System.currentTimeMillis();
                 // Swap
                 updateLocationChangeSession(hisLoc);
@@ -506,7 +510,11 @@ public class LocationManager {
                 
                 numberOfRemotePeerLocationsSeenInSwaps += hisFriendLocs.length;
                 
-                if(shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom)) {
+                boolean shouldSwap = shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom);
+                
+                spyOnLocations(reply, true, shouldSwap, myLoc);
+                
+                if(shouldSwap) {
                     timeLastSuccessfullySwapped = System.currentTimeMillis();
                     // Swap
                     updateLocationChangeSession(hisLoc);
@@ -903,7 +911,7 @@ public class LocationManager {
         } catch (NotConnectedException e) {
         	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapCommit "+uid+" to "+item.routedTo);
         }
-        spyOnLocations(m);
+        spyOnLocations(m, false);
         return true;
     }
 
@@ -943,14 +951,27 @@ public class LocationManager {
         }
         item.lastMessageTime = System.currentTimeMillis();
         removeRecentlyForwardedItem(item);
-        spyOnLocations(m);
+        spyOnLocations(m, false);
         return true;
     }
 
+    private void spyOnLocations(Message m, boolean ignoreIfOld) {
+    	spyOnLocations(m, ignoreIfOld, false, -1.0);
+    }
+    
     /** Spy on locations in somebody else's swap request. Greatly increases the
      * speed at which we can gather location data to estimate the network's size.
+     * @param swappingWithMe 
      */
-    private void spyOnLocations(Message m) {
+    private void spyOnLocations(Message m, boolean ignoreIfOld, boolean swappingWithMe, double myLoc) {
+    	
+    	long[] uids = null;
+    	
+    	Message uidsMessage = m.getSubMessage(DMT.FNPSwapNodeUIDs);
+    	if(uidsMessage != null) {
+    		uids = Fields.bytesToLongs(((ShortBuffer) uidsMessage.getObject(DMT.NODE_UIDS)).getData());
+    	}
+    	
         byte[] data = ((ShortBuffer)m.getObject(DMT.DATA)).getData();
         
         if(data.length < 16 || data.length % 8 != 0) {
@@ -966,12 +987,22 @@ public class LocationManager {
         	return;
         }
         
-        registerKnownLocation(hisLoc);
+        if(uids != null) {
+        	registerKnownLocation(hisLoc, uids[0]);
+        	if(swappingWithMe)
+        		registerKnownLocation(myLoc, uids[0]);
+        } else if (!ignoreIfOld)
+        	registerKnownLocation(hisLoc);
         
         for(int i=1;i<locations.length;i++) {
         	double loc = locations[i];
-        	registerKnownLocation(loc);
-        	registerLocationLink(hisLoc, loc);
+        	if(uids != null) {
+        		registerKnownLocation(loc, uids[i-1]);
+        		registerLink(uids[0], uids[i-1]);
+        	} else if(!ignoreIfOld) {
+        		registerKnownLocation(loc);
+        		registerLocationLink(hisLoc, loc);
+        	}
         }
         
 	}
@@ -1037,6 +1068,11 @@ public class LocationManager {
     	if(logMINOR) Logger.minor(this, "Known Link: "+d+ ' ' +t);
     }
     
+    void registerKnownLocation(double d, long uid) {
+    	if(logMINOR) Logger.minor(this, "LOCATION: "+d+" UID: "+uid);
+    	registerKnownLocation(d);
+    }
+    
     void registerKnownLocation(double d) {
     	if(logMINOR) Logger.minor(this, "Known Location: "+d);
         Double dd = new Double(d);
@@ -1050,6 +1086,10 @@ public class LocationManager {
         	Logger.minor(this, "Added and pruned location "+dd+" knownLocs size "+knownLocs.size());
         }
 		if(logMINOR) Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
+    }
+    
+    void registerLink(long uid1, long uid2) {
+    	if(logMINOR) Logger.minor(this, "UID LINK: "+uid1+" , "+uid2);
     }
     
     //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
