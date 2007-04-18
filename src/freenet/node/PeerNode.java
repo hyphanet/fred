@@ -174,6 +174,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /** Hash of hash of node identity. Used in setup key. */
     final byte[] identityHashHash;
     
+    /** Semi-unique ID used to help in mapping the network (see the code that uses it). Note this is for diagnostic
+     * purposes only and should be removed along with the code that uses it eventually - FIXME */
+    final long swapIdentifier;
+    
     /** Negotiation types supported */
     int[] negTypes;
     
@@ -361,6 +365,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         if(identity == null) throw new FSParseException("No identity");
         identityHash = SHA256.digest(identity);
         identityHashHash = SHA256.digest(identityHash);
+		swapIdentifier = Fields.bytesToLong(identityHashHash);
         hashCode = Fields.hashCode(identityHash);
         version = fs.get("version");
         Version.seenVersion(version);
