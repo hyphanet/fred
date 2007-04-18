@@ -345,7 +345,10 @@ public class Node {
 	/** Hash of identity. Used as setup key. */
 	byte[] identityHash;
 	/** Hash of hash of identity i.e. hash of setup key. */
-	byte[] identityHashHash; 	
+	byte[] identityHashHash;
+	/** Semi-unique ID for swap requests. Used to identify us so that the
+	 * topology can be reconstructed. */
+	public long swapIdentifier;
 	/** The signature of the above fieldset */
 	private DSASignature myReferenceSignature = null;
 	/** A synchronization object used while signing the reference fiedlset */
@@ -487,6 +490,7 @@ public class Node {
 		}
 		identityHash = SHA256.digest(myIdentity);
 		identityHashHash = SHA256.digest(identityHash);
+		swapIdentifier = Fields.bytesToLong(identityHashHash);
 		String loc = fs.get("location");
 		Location l;
 		try {
