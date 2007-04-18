@@ -268,8 +268,7 @@ public class StatisticsToadlet extends Toadlet {
 			getThreadNames(threadUsageList);
 			
 			// rejection reasons box
-			HTMLNode rejectReasonsInfobox = nextTableCell.addChild("div", "class", "infobox");
-			drawRejectReasonsBox(rejectReasonsInfobox);
+			drawRejectReasonsBox(nextTableCell);
 
 			// peer distribution box
 			overviewTableRow = overviewTable.addChild("tr");
@@ -290,7 +289,8 @@ public class StatisticsToadlet extends Toadlet {
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 
-	private void drawRejectReasonsBox(HTMLNode rejectReasonsInfobox) {
+	private void drawRejectReasonsBox(HTMLNode nextTableCell) {
+		HTMLNode rejectReasonsInfobox = nextTableCell.addChild("div", "class", "infobox");
 		rejectReasonsInfobox.addChild("div", "class", "infobox-header", "Preemptive Rejection Reasons");
 		HTMLNode table = rejectReasonsInfobox.addChild("table");
 		node.nodeStats.getRejectReasonsTable(table);
