@@ -15,6 +15,7 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.node.PeerManager.LocationUIDPair;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
@@ -246,7 +247,8 @@ public class LocationManager {
             
             long random = r.nextLong();
             double myLoc = loc.getValue();
-            double[] friendLocs = node.peers.getPeerLocationDoubles();
+            LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
+            double[] friendLocs = extractLocs(friendLocsAndUIDs);
             long[] myValueLong = new long[1+1+friendLocs.length];
             myValueLong[0] = random;
             myValueLong[1] = Double.doubleToLongBits(myLoc);
@@ -324,6 +326,7 @@ public class LocationManager {
             // Send our SwapComplete
             
             Message confirm = DMT.createFNPSwapComplete(uid, myValue);
+            confirm.addSubMessage(DMT.createFNPSwapLocations(Fields.longsToBytes(extractUIDs(friendLocsAndUIDs))));
             
             node.usm.send(pn, confirm, null);
             
@@ -348,6 +351,7 @@ public class LocationManager {
             removeRecentlyForwardedItem(item);
         }
         }
+
     }
     
     /**
@@ -369,7 +373,8 @@ public class LocationManager {
                 // pretend that they're locked
                 long random = r.nextLong();
                 double myLoc = loc.getValue();
-                double[] friendLocs = node.peers.getPeerLocationDoubles();
+                LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
+                double[] friendLocs = extractLocs(friendLocsAndUIDs);
                 long[] myValueLong = new long[1+1+friendLocs.length];
                 myValueLong[0] = random;
                 myValueLong[1] = Double.doubleToLongBits(myLoc);
@@ -429,6 +434,7 @@ public class LocationManager {
                 byte[] hisHash = ((ShortBuffer)reply.getObject(DMT.HASH)).getData();
                 
                 Message confirm = DMT.createFNPSwapCommit(uid, myValue);
+                confirm.addSubMessage(DMT.createFNPSwapLocations(Fields.longsToBytes(extractUIDs(friendLocsAndUIDs))));
 
                 filter1.clearOr();
                 MessageFilter filter3 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPSwapComplete).setTimeout(TIMEOUT).setSource(pn);
@@ -1058,5 +1064,19 @@ public class LocationManager {
     	synchronized (knownLocs) {
     		return knownLocs.pairsAfter(timestamp, new Double[knownLocs.size()]);
     	}
+	}
+    
+	private static double[] extractLocs(LocationUIDPair[] pairs) {
+		double[] locs = new double[pairs.length];
+		for(int i=0;i<pairs.length;i++)
+			locs[i] = pairs[i].location;
+		return locs;
+	}
+
+	private static long[] extractUIDs(LocationUIDPair[] pairs) {
+		long[] uids = new long[pairs.length];
+		for(int i=0;i<pairs.length;i++)
+			uids[i] = pairs[i].uid;
+		return uids;
 	}
 }

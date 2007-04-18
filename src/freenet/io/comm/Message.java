@@ -286,7 +286,7 @@ public class Message {
 		return _receivedByteCount;
 	}
 	
-	private void addSubMessage(Message subMessage) {
+	public void addSubMessage(Message subMessage) {
 		if(_subMessages == null) _subMessages = new Vector();
 		_subMessages.add(subMessage);
 	}

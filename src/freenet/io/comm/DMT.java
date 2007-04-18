@@ -90,6 +90,7 @@ public class DMT {
 	public static final String NODE_TO_NODE_MESSAGE_TYPE = "nodeToNodeMessageType";
 	public static final String NODE_TO_NODE_MESSAGE_TEXT = "nodeToNodeMessageText";
 	public static final String NODE_TO_NODE_MESSAGE_DATA = "nodeToNodeMessageData";
+	public static final String NODE_UIDS = "nodeUIDs";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -872,6 +873,18 @@ public class DMT {
 	
 	public static final Message createFNPVoid() {
 		Message msg = new Message(FNPVoid);
+		return msg;
+	}
+	
+	// Secondary messages (debug messages attached to primary messages)
+	
+	public static final MessageType FNPSwapNodeUIDs = new MessageType("FNPSwapNodeUIDs") {{
+		addField(NODE_UIDS, ShortBuffer.class);
+	}};
+	
+	public static final Message createFNPSwapLocations(byte[] uids) {
+		Message msg = new Message(FNPSwapNodeUIDs);
+		msg.set(NODE_UIDS, new ShortBuffer(uids));
 		return msg;
 	}
 	
