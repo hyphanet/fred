@@ -442,10 +442,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		dbConfig.setAllowCreate(true);
 		dbConfig.setTransactional(true);
 		if(wipe) {
+			System.err.println("Wiping old database for "+prefix);
 			wipeOldDatabases(prefix);
 		}
 		
 		chkDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
+		System.err.println("Opened main database for "+prefix);
 
 		this.fixSecondaryFile = fixSecondaryFile;
 		if(fixSecondaryFile.exists()) {
@@ -523,6 +525,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			throw e1;
 		}
 		chkDB_accessTime = atime;
+		System.err.println("Opened access times database for "+prefix);
 		
 		// Initialize other secondary database sorted on block number
 //		try {
@@ -575,6 +578,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			close(false);
 			throw e1;
 		}
+		System.err.println("Opened block number database for "+prefix);
 		
 		chkDB_blockNum = blockNums;
 		
