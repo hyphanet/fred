@@ -464,12 +464,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// NB: it might be a wrapper-version-missmatch problem (nextgens)
 			try {
 				try {
-					environment.truncateDatabase(null, prefix+"CHK_accessTime", false);
+					environment.removeDatabase(null, prefix+"CHK_accessTime");
 				} catch (DatabaseNotFoundException e) {
 					// Cool!
 				}
 				try {
-					environment.truncateDatabase(null, prefix+"CHK_blockNum", false);
+					environment.removeDatabase(null, prefix+"CHK_blockNum");
 				} catch (DatabaseNotFoundException e) {
 					// Cool!
 				}
@@ -512,7 +512,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			System.err.println("Reconstructing access times index...");
 			Logger.error(this, "Reconstructing access times index...");
 			if(atime != null) atime.close();
-			environment.truncateDatabase(null, prefix+"CHK_accessTime", false);
+			environment.removeDatabase(null, prefix+"CHK_accessTime");
 			secDbConfig.setAllowCreate(true);
 			secDbConfig.setAllowPopulate(true);
 			atime = environment.openSecondaryDatabase
@@ -563,7 +563,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// it won't overflow ... or we debug the wrapper.
 			// NB: it might be a wrapper-version-missmatch problem (nextgens)
 			if(blockNums != null) blockNums.close();
-			environment.truncateDatabase(null, prefix+"CHK_blockNum", false);
+			environment.removeDatabase(null, prefix+"CHK_blockNum");
 			System.err.println("Reconstructing block numbers index...");
 			Logger.error(this, "Reconstructing block numbers index...");
 			System.err.println("Creating new block DB index");
