@@ -495,6 +495,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			atime = environment.openSecondaryDatabase
 								(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
 			long chkDBCount = chkDB.count();
+			System.err.println("Counting size of access times database...");
 			long atimeCount = atime.count();
 			if(atimeCount < chkDBCount) {
 				System.err.println("Access times database: "+atimeCount+" but main database: "+chkDBCount);
