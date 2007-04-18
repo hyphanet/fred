@@ -184,7 +184,7 @@ public class Message {
 		_payload.put(key, value);
 	}
 
-	public byte[] encodeToPacket(PeerContext destination) {
+	public byte[] encodeToPacket(PeerContext destination, boolean includeSubMessages, boolean isSubMessage) {
 //		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
 //		Logger.logMinor("<<<<< Send message : " + this);
 
@@ -200,8 +200,21 @@ public class Message {
 			}
 			dos.flush();
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new IllegalStateException(e);
 		}
+		
+		if(_subMessages != null && includeSubMessages) {
+			for(int i=0;i<_subMessages.size();i++) {
+				byte[] temp = ((Message)_subMessages.get(i)).encodeToPacket(destination, false, true);
+				try {
+					dos.writeShort(temp.length);
+					dos.write(temp);
+				} catch (IOException e) {
+					throw new IllegalStateException(e);
+				}
+			}
+		}
+		
 		byte[] buf = baos.toByteArray();
     	if(Logger.shouldLog(Logger.DEBUG, Message.class))
     		Logger.minor(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
