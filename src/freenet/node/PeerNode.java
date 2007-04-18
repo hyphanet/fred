@@ -168,8 +168,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     final byte[] identity;
     
-    /** Hash of node identity. Used as setup key. */
+    /** Hash of node identity. Used in setup key. */
     final byte[] identityHash;
+    
+    /** Hash of hash of node identity. Used in setup key. */
+    final byte[] identityHashHash;
     
     /** Negotiation types supported */
     int[] negTypes;
@@ -357,6 +360,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         
         if(identity == null) throw new FSParseException("No identity");
         identityHash = SHA256.digest(identity);
+        identityHashHash = SHA256.digest(identityHash);
         hashCode = Fields.hashCode(identityHash);
         version = fs.get("version");
         Version.seenVersion(version);
@@ -461,12 +465,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         // Setup incoming and outgoing setup ciphers
         byte[] nodeKey = node.identityHash;
         byte[] nodeKeyHash = node.identityHashHash;
-        byte[] setupKeyHash = SHA256.digest(identityHash);
         
         int digestLength = SHA256.getDigestLength();
         incomingSetupKey = new byte[digestLength];
         for(int i=0;i<incomingSetupKey.length;i++)
-            incomingSetupKey[i] = (byte) (nodeKey[i] ^ setupKeyHash[i]);
+            incomingSetupKey[i] = (byte) (nodeKey[i] ^ identityHashHash[i]);
         outgoingSetupKey = new byte[digestLength];
         for(int i=0;i<outgoingSetupKey.length;i++)
             outgoingSetupKey[i] = (byte) (nodeKeyHash[i] ^ identityHash[i]);
@@ -476,7 +479,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         			"\nNode:      "+HexUtil.bytesToHex(nodeKey)+
         			"\nNode hash: "+HexUtil.bytesToHex(nodeKeyHash)+
         			"\nThis:      "+HexUtil.bytesToHex(identityHash)+
-        			"\nThis hash: "+HexUtil.bytesToHex(setupKeyHash)+
+        			"\nThis hash: "+HexUtil.bytesToHex(identityHashHash)+
         			"\nFor:       "+getPeer());
         
         try {
