@@ -76,14 +76,15 @@ public class Message {
 		    }
 		    if(mayHaveSubMessages) {
 		    	while(true) {
-		    		int size = dis.readUnsignedShort();
-		    		byte[] buf = new byte[size];
+		    		DataInputStream dis2;
 		    		try {
+			    		int size = dis.readUnsignedShort();
+			    		byte[] buf = new byte[size];
 		    			dis.readFully(buf);
+			    		dis2 = new DataInputStream(new ByteArrayInputStream(buf));
 		    		} catch (EOFException e) {
 		    			return m;
 		    		}
-		    		DataInputStream dis2 = new DataInputStream(new ByteArrayInputStream(buf));
 		    		try {
 		    			Message subMessage = decodeMessage(dis2, peer, 0, false, true);
 		    			if(subMessage == null) return m;
