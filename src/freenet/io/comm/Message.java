@@ -76,9 +76,21 @@ public class Message {
 		    }
 		    if(mayHaveSubMessages) {
 		    	while(true) {
-	    			Message subMessage = decodeMessage(dis, peer, 0, false, true);
-	    			if(subMessage == null) return m;
-	    			m.addSubMessage(subMessage);
+		    		int size = dis.readUnsignedShort();
+		    		byte[] buf = new byte[size];
+		    		try {
+		    			dis.readFully(buf);
+		    		} catch (EOFException e) {
+		    			return m;
+		    		}
+		    		DataInputStream dis2 = new DataInputStream(new ByteArrayInputStream(buf));
+		    		try {
+		    			Message subMessage = decodeMessage(dis2, peer, 0, false, true);
+		    			if(subMessage == null) return m;
+		    			m.addSubMessage(subMessage);
+		    		} catch (Throwable t) {
+		    			Logger.error(Message.class, "Failed to read sub-message: "+t, t);
+		    		}
 		    	}
 		    }
 		} catch (EOFException e) {
