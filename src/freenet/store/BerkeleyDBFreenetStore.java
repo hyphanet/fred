@@ -507,10 +507,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Either we find out what the maximum value is and we do a static method somewhere ensuring
 			// it won't overflow ... or we debug the wrapper.
 			// NB: it might be a wrapper-version-missmatch problem (nextgens)
-			if(atime != null) atime.close();
-			environment.truncateDatabase(null, prefix+"CHK_accessTime", false);
 			System.err.println("Reconstructing access times index...");
 			Logger.error(this, "Reconstructing access times index...");
+			if(atime != null) atime.close();
+			environment.truncateDatabase(null, prefix+"CHK_accessTime", false);
 			secDbConfig.setAllowCreate(true);
 			secDbConfig.setAllowPopulate(true);
 			atime = environment.openSecondaryDatabase
