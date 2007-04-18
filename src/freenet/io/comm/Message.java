@@ -38,6 +38,7 @@ public class Message {
 	private final MessageType _spec;
 	private final PeerContext _source;
 	private final HashMap _payload = new HashMap(8, 1.0F); // REDFLAG at the moment memory is more of an issue than CPU so we use a high load factor
+	private Vector _subMessages;
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
 
@@ -45,10 +46,10 @@ public class Message {
 		DataInputStream dis
 	    = new DataInputStream(new ByteArrayInputStream(buf,
 	        offset, length));
-		return decodeMessage(dis, peer, length + overhead);
+		return decodeMessage(dis, peer, length + overhead, true, false);
 	}
 	
-	public static Message decodeMessage(DataInputStream dis, PeerContext peer, int recvByteCount) {
+	public static Message decodeMessage(DataInputStream dis, PeerContext peer, int recvByteCount, boolean mayHaveSubMessages, boolean inSubMessage) {
 		MessageType mspec;
         try {
             mspec = MessageType.getSpec(new Integer(dis.readInt()));
@@ -73,11 +74,22 @@ public class Message {
 		            m.set(name, Serializer.readFromDataInputStream(type, dis));
 		        }
 		    }
+		    if(mayHaveSubMessages) {
+		    	while(true) {
+	    			Message subMessage = decodeMessage(dis, peer, 0, false, true);
+	    			if(subMessage == null) return m;
+	    			m.addSubMessage(subMessage);
+		    	}
+		    }
 		} catch (EOFException e) {
-		    Logger.normal(Message.class,peer.getPeer()+" sent a message packet that ends prematurely while deserialising "+mspec.getName(), e);
+			String msg = peer.getPeer()+" sent a message packet that ends prematurely while deserialising "+mspec.getName();
+			if(inSubMessage)
+				Logger.minor(Message.class, msg+" in sub-message", e);
+			else
+				Logger.error(Message.class, msg, e);
 		    return null;
 		} catch (IOException e) {
-		    Logger.error(Message.class, "WTF?: "+e+" reading from buffer stream", e);
+		    Logger.error(Message.class, "Unexpected IOException: "+e+" reading from buffer stream", e);
 		    return null;
 		}
 		return m;
@@ -242,4 +254,31 @@ public class Message {
 	public int receivedByteCount() {
 		return _receivedByteCount;
 	}
+	
+	private void addSubMessage(Message subMessage) {
+		if(_subMessages == null) _subMessages = new Vector();
+		_subMessages.add(subMessage);
+	}
+	
+	public Message getSubMessage(MessageType t) {
+		if(_subMessages == null) return null;
+		for(int i=0;i<_subMessages.size();i++) {
+			Message m = (Message) _subMessages.get(i);
+			if(m.getSpec() == t) return m;
+		}
+		return null;
+	}
+
+	public Message grabSubMessage(MessageType t) {
+		if(_subMessages == null) return null;
+		for(int i=0;i<_subMessages.size();i++) {
+			Message m = (Message) _subMessages.get(i);
+			if(m.getSpec() == t) {
+				_subMessages.remove(i);
+				return m;
+			}
+		}
+		return null;
+	}
+
 }
