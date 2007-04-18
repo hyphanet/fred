@@ -184,7 +184,11 @@ public class Message {
 		_payload.put(key, value);
 	}
 
-	public byte[] encodeToPacket(PeerContext destination, boolean includeSubMessages, boolean isSubMessage) {
+	public byte[] encodeToPacket(PeerContext destination) {
+		return encodeToPacket(destination, true, false);
+	}
+	
+	private byte[] encodeToPacket(PeerContext destination, boolean includeSubMessages, boolean isSubMessage) {
 //		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
 //		Logger.logMinor("<<<<< Send message : " + this);
 
