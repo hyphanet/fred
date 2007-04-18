@@ -45,6 +45,10 @@ public class Message {
 		DataInputStream dis
 	    = new DataInputStream(new ByteArrayInputStream(buf,
 	        offset, length));
+		return decodeMessage(dis, peer, length + overhead);
+	}
+	
+	public static Message decodeMessage(DataInputStream dis, PeerContext peer, int recvByteCount) {
 		MessageType mspec;
         try {
             mspec = MessageType.getSpec(new Integer(dis.readInt()));
@@ -58,7 +62,7 @@ public class Message {
 		}
 		if(mspec.isInternalOnly())
 		    return null; // silently discard internal-only messages
-		Message m = new Message(mspec, peer, length + overhead);
+		Message m = new Message(mspec, peer, recvByteCount);
 		try {
 		    for (Iterator i = mspec.getOrderedFields().iterator(); i.hasNext();) {
 		        String name = (String) i.next();
