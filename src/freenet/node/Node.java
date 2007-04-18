@@ -654,6 +654,7 @@ public class Node {
 		MessageDigest md = SHA256.getMessageDigest();
 		identityHash = md.digest(myIdentity);
 		identityHashHash = md.digest(identityHash);
+		swapIdentifier = Fields.bytesToLong(identityHashHash);
 		myName = newName();
 		this.myCryptoGroup = Global.DSAgroupBigA;
 		this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
