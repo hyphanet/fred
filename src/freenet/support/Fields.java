@@ -459,16 +459,25 @@ public abstract class Fields {
     
     /**
      * Convert an array of bytes to an array of longs.
-     * @param buf
-     * @return
      */
     public static long[] bytesToLongs(byte[] buf) {
-        if(buf.length % 8 != 0) throw new IllegalArgumentException();
-        long[] longs = new long[buf.length/8];
+    	return bytesToLongs(buf, 0, buf.length);
+    }
+    
+    /**
+     * Convert an array of bytes to an array of longs.
+     * @param buf
+     * @param length 
+     * @param offset 
+     * @return
+     */
+    public static long[] bytesToLongs(byte[] buf, int offset, int length) {
+        if(length % 8 != 0) throw new IllegalArgumentException();
+        long[] longs = new long[length/8];
         for(int i=0;i<longs.length;i++) {
             long x = 0;
             for(int j=7;j>=0;j--) {
-                long y = (buf[i*8+j] & 0xff);
+                long y = (buf[offset+i*8+j] & 0xff);
                 x = (x << 8) + y;
             }
             longs[i] = x;
@@ -623,6 +632,14 @@ public abstract class Fields {
 			throw new NumberFormatException(e.getMessage());
 		}
 		return res;
+	}
+
+	public static double[] bytesToDoubles(byte[] data, int offset, int length) {
+		long[] longs = bytesToLongs(data, offset, length);
+		double[] doubles = new double[longs.length];
+		for(int i=0;i<longs.length;i++)
+			doubles[i] = Double.longBitsToDouble(longs[i]);
+		return doubles;
 	}
 
 }

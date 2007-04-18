@@ -952,26 +952,28 @@ public class LocationManager {
      */
     private void spyOnLocations(Message m) {
         byte[] data = ((ShortBuffer)m.getObject(DMT.DATA)).getData();
+        
         if(data.length < 16 || data.length % 8 != 0) {
         	Logger.error(this, "Data invalid length in swap commit: "+data.length, new Exception("error"));
         	return;
         }
         
-        long[] longs = Fields.bytesToLongs(data);
-        // First field is his random
-        // Second field is his loc
-        double hisLoc = Double.longBitsToDouble(longs[1]);
+        double[] locations = Fields.bytesToDoubles(data, 8, data.length-8);
+        
+        double hisLoc = locations[0];
         if(hisLoc < 0.0 || hisLoc > 1.0) {
         	Logger.error(this, "Invalid hisLoc in swap commit: "+hisLoc, new Exception("error"));
         	return;
         }
+        
         registerKnownLocation(hisLoc);
-        // Third etc are locs of peers
-        for(int i=2;i<longs.length;i++) {
-        	double loc = Double.longBitsToDouble(longs[i]);
+        
+        for(int i=1;i<locations.length;i++) {
+        	double loc = locations[i];
         	registerKnownLocation(loc);
         	registerLocationLink(hisLoc, loc);
         }
+        
 	}
 
     public void clearOldSwapChains() {
