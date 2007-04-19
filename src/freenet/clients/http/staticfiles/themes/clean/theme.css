@@ -220,6 +220,10 @@ table.plugins form {
 
 /* configuration page */
 
+td.config_navigation {
+	border-style: none;
+}
+
 ul.config {
 	margin: 0 0 5px 0;
 	padding: 0;

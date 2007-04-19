@@ -126,8 +126,12 @@ public class ConfigToadlet extends Toadlet {
 		if(advancedModeEnabled){
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", "Configuration Navigation");
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
+			HTMLNode navigationTable = navigationContent.addChild("table", "class", "config_navigation");
+			HTMLNode navigationTableRow = navigationTable.addChild("tr");
+			HTMLNode nextTableCell = navigationTableRow;
+			
 			for(int i=0; i<sc.length;i++){
-				navigationContent.addChild("li").addChild("a", "href", '#' +sc[i].getPrefix(), sc[i].getPrefix());
+				nextTableCell.addChild("td", "class", "config_navigation").addChild("li").addChild("a", "href", '#' +sc[i].getPrefix(), sc[i].getPrefix());
 			}
 			contentNode.addChild(navigationBar);
 		}
