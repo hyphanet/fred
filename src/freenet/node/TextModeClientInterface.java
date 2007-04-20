@@ -828,6 +828,11 @@ public class TextModeClientInterface implements Runnable {
 						TextModeClientInterface.this.notifyAll();
 					}
 				}
+
+				public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs) {
+					String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+"node UID="+nodeUID+" peer locs="+peerLocs+" peer UIDs="+peerUIDs;
+					System.err.println(msg);
+				}
         	};
         	n.dispatcher.startProbe(d, cb);
         	synchronized(this) {

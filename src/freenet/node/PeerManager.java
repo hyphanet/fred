@@ -383,7 +383,7 @@ public class PeerManager {
         PeerNode[] conns;
         LocationUIDPair[] locPairs;
         synchronized (this) {
-			conns = connectedPeers;
+			conns = myPeers;
 		}
         locPairs = new LocationUIDPair[conns.length];
         int x = 0;

@@ -1,5 +1,6 @@
 package freenet.support;
 
+import java.io.DataInputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -640,6 +641,17 @@ public abstract class Fields {
 		for(int i=0;i<longs.length;i++)
 			doubles[i] = Double.longBitsToDouble(longs[i]);
 		return doubles;
+	}
+
+	public static byte[] doublesToBytes(double[] doubles) {
+		long[] longs = new long[doubles.length];
+		for(int i=0;i<longs.length;i++)
+			longs[i] = Double.doubleToLongBits(doubles[i]);
+		return longsToBytes(longs);
+	}
+
+	public static double[] bytesToDoubles(byte[] data) {
+		return bytesToDoubles(data, 0, data.length);
 	}
 
 }

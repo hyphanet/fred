@@ -1108,17 +1108,31 @@ public class LocationManager {
     	}
 	}
     
-	private static double[] extractLocs(LocationUIDPair[] pairs) {
+	static double[] extractLocs(LocationUIDPair[] pairs) {
 		double[] locs = new double[pairs.length];
 		for(int i=0;i<pairs.length;i++)
 			locs[i] = pairs[i].location;
 		return locs;
 	}
 
-	private static long[] extractUIDs(LocationUIDPair[] pairs) {
+	static long[] extractUIDs(LocationUIDPair[] pairs) {
 		long[] uids = new long[pairs.length];
 		for(int i=0;i<pairs.length;i++)
 			uids[i] = pairs[i].uid;
+		return uids;
+	}
+
+	public static double[] extractLocs(PeerNode[] peers) {
+		double[] locs = new double[peers.length];
+		for(int i=0;i<peers.length;i++)
+			locs[i] = peers[i].getLocation().getValue();
+		return locs;
+	}
+
+	public static long[] extractUIDs(PeerNode[] peers) {
+		long[] uids = new long[peers.length];
+		for(int i=0;i<peers.length;i++)
+			uids[i] = peers[i].swapIdentifier;
 		return uids;
 	}
 }

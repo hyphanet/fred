@@ -12,9 +12,11 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
+import freenet.support.Fields;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.ShortBuffer;
 
 /**
  * @author amphibian
@@ -549,7 +551,7 @@ public class NodeDispatcher implements Dispatcher {
 		}
 		Logger.minor(this, "htl="+htl+", nearest="+nearest+", ctx.htl="+ctx.htl+", ctx.nearest="+ctx.nearest);
 
-		PeerNode[] peers = node.peers.myPeers;
+		PeerNode[] peers = node.peers.connectedPeers;
 
 		double myLoc = node.getLocation();
 		// Update best
@@ -561,11 +563,6 @@ public class NodeDispatcher implements Dispatcher {
 			best = ctx.best;
 
 		for(int i=0;i<peers.length;i++) {
-			if(!peers[i].isConnected()) {
-				if(logMINOR)
-					Logger.minor(this, "Not connected: "+peers[i]);
-				continue;
-			}
 			double loc = peers[i].getLocation().getValue();
 			if(logMINOR) Logger.minor(this, "Location: "+loc);
 			// We are only interested in locations greater than the target
@@ -639,6 +636,15 @@ public class NodeDispatcher implements Dispatcher {
 
 			visited.add(pn);
 
+			Message trace =
+				DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers), LocationManager.extractUIDs(peers));
+			if(src != null)
+				try {
+					src.sendAsync(trace, null, 0, null);
+				} catch (NotConnectedException e1) {
+					// Ignore
+				}
+			
 			Message forwarded =
 				DMT.createFNPProbeRequest(id, target, nearest, best, htl, counter++);
 			try {
@@ -655,6 +661,20 @@ public class NodeDispatcher implements Dispatcher {
 	private void complete(String msg, double target, double best, double nearest, long id, ProbeContext ctx, short counter) {
 		Logger.normal(this, "Completed Probe request # "+id+" - RNF - "+msg+": "+best);
 		ctx.cb.onCompleted(msg, target, best, nearest, id, counter);
+	}
+
+	private void reportTrace(ProbeContext ctx, Message msg) {
+		long uid = msg.getLong(DMT.UID);
+		double target = msg.getDouble(DMT.TARGET_LOCATION);
+		double nearest = msg.getDouble(DMT.NEAREST_LOCATION);
+		double best = msg.getDouble(DMT.BEST_LOCATION);
+		short htl = msg.getShort(DMT.HTL);
+		short counter = msg.getShort(DMT.COUNTER);
+		double location = msg.getDouble(DMT.LOCATION);
+		long nodeUID = msg.getLong(DMT.MY_UID);
+		double[] peerLocs = Fields.bytesToDoubles(((ShortBuffer)msg.getObject(DMT.PEER_LOCATIONS)).getData());
+		long[] peerUIDs = Fields.bytesToLongs(((ShortBuffer)msg.getObject(DMT.PEER_UIDS)).getData());
+		ctx.cb.onTrace(uid, target, nearest, best, htl, counter, location, nodeUID, peerLocs, peerUIDs);
 	}
 
 	private boolean handleProbeReply(Message m, PeerNode src) {
@@ -689,6 +709,41 @@ public class NodeDispatcher implements Dispatcher {
 		} else {
 			if(ctx.cb != null)
 				complete("Completed", target, best, nearest, id, ctx, counter);
+		}
+		return true;
+	}
+
+	private boolean handleProbeTrace(Message m, PeerNode src) {
+		long id = m.getLong(DMT.UID);
+		Long lid = new Long(id);
+		double target = m.getDouble(DMT.TARGET_LOCATION);
+		double best = m.getDouble(DMT.BEST_LOCATION);
+		double nearest = m.getDouble(DMT.NEAREST_LOCATION);
+		short counter = m.getShort(DMT.COUNTER);
+		if(logMINOR)
+			Logger.minor(this, "Probe trace: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest);
+		// Just propagate back to source
+		ProbeContext ctx;
+		synchronized(recentProbeContexts) {
+			ctx = (ProbeContext) recentProbeContexts.get(lid);
+			if(ctx == null) {
+				Logger.normal(this, "Could not forward probe reply back to source for ID "+id);
+				return false;
+			}
+			recentProbeContexts.push(lid, ctx); // promote or add
+			while(recentProbeContexts.size() > MAX_PROBE_CONTEXTS)
+				recentProbeContexts.popValue();
+		}
+
+		if(ctx.src != null) {
+			try {
+				ctx.src.sendAsync(m, null, 0, null);
+			} catch (NotConnectedException e) {
+				Logger.error(this, "Not connected forwarding trace to "+ctx.src+" (from "+src+ ')');
+			}
+		} else {
+			if(ctx.cb != null)
+				reportTrace(ctx, m);
 		}
 		return true;
 	}

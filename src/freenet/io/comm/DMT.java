@@ -26,6 +26,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
+import freenet.support.Fields;
 import freenet.support.ShortBuffer;
 
 
@@ -91,6 +92,9 @@ public class DMT {
 	public static final String NODE_TO_NODE_MESSAGE_TEXT = "nodeToNodeMessageText";
 	public static final String NODE_TO_NODE_MESSAGE_DATA = "nodeToNodeMessageData";
 	public static final String NODE_UIDS = "nodeUIDs";
+	public static final String MY_UID = "myUID";
+	public static final String PEER_LOCATIONS = "peerLocations";
+	public static final String PEER_UIDS = "peerUIDs";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -703,6 +707,34 @@ public class DMT {
 		msg.set(BEST_LOCATION, best);
 		msg.set(HTL, htl);
 		msg.set(COUNTER, counter);
+		return msg;
+	}
+
+	public static final MessageType FNPProbeTrace = new MessageType("FNPProbeTrace") {{
+		addField(UID, Long.class);
+		addField(TARGET_LOCATION, Double.class);
+		addField(NEAREST_LOCATION, Double.class);
+		addField(BEST_LOCATION, Double.class);
+		addField(HTL, Short.class);
+		addField(COUNTER, Short.class);
+		addField(LOCATION, Double.class);
+		addField(MY_UID, Long.class);
+		addField(PEER_LOCATIONS, ShortBuffer.class);
+		addField(PEER_UIDS, ShortBuffer.class);
+	}};
+	
+	public static Message createFNPProbeTrace(long uid, double target, double nearest, double best, short htl, short counter, double myLoc, long swapIdentifier, double[] peerLocs, long[] peerUIDs) {
+		Message msg = new Message(FNPProbeRequest);
+		msg.set(UID, uid);
+		msg.set(TARGET_LOCATION, target);
+		msg.set(NEAREST_LOCATION, nearest);
+		msg.set(BEST_LOCATION, best);
+		msg.set(HTL, htl);
+		msg.set(COUNTER, counter);
+		msg.set(LOCATION, myLoc);
+		msg.set(MY_UID, swapIdentifier);
+		msg.set(PEER_LOCATIONS, new ShortBuffer(Fields.doublesToBytes(peerLocs)));
+		msg.set(PEER_UIDS, new ShortBuffer(Fields.longsToBytes(peerUIDs)));
 		return msg;
 	}
 
