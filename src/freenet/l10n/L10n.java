@@ -4,12 +4,11 @@
 package freenet.l10n;
 
 import java.io.InputStream;
-import java.util.Enumeration;
 import java.util.MissingResourceException;
-import java.util.Properties;
 
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * This class provides a trivial internationalization framework to a freenet node.
@@ -31,13 +30,13 @@ public class L10n {
 	public static final String[] availableLanguages = { "en", "fr", "pl"};
 	private String selectedLanguage = availableLanguages[0];
 	
-	private static Properties currentProperties = null;
-	private static Properties fallbackProperties = null;
+	private static SimpleFieldSet currentProperties = null;
+	private static SimpleFieldSet fallbackProperties = null;
 	private static L10n currentClass = null;
 
 	L10n(String selected) {
 		selectedLanguage = selected;
-		currentProperties = loadProperties(selectedLanguage);
+		currentProperties = loadTranslation(selectedLanguage);
 	}
 	
 	/**
@@ -52,8 +51,10 @@ public class L10n {
 				selectedLanguage = availableLanguages[i];
 				Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
 				currentClass = new L10n(selectedLanguage);
-				if(currentProperties == null)
+				if(currentProperties == null) {
 					currentClass = new L10n(availableLanguages[0]);
+					throw new MissingResourceException("Unable to load the translation file for "+selectedLanguage, "l10n", selectedLanguage);
+				}
 				return;
 			}
 		}
@@ -68,7 +69,7 @@ public class L10n {
 	 * 
 	 * @param a property file
 	 */
-	public static void setLanguage(Properties customLanguage) {
+	public static void setLanguage(SimpleFieldSet customLanguage) {
 		currentProperties = customLanguage;
 	}
 	
@@ -90,7 +91,7 @@ public class L10n {
 	 * @see getString(String)
 	 */
 	public static String getString(String key, boolean returnNullIfNotFound) {
-		String result = currentProperties.getProperty(key);
+		String result = currentProperties.get(key);
 		if(result != null)
 			return result;
 		else
@@ -116,9 +117,9 @@ public class L10n {
 	public static String getDefaultString(String key) {
 		String result = null;
 		// We instanciate it only if necessary
-		if(fallbackProperties == null) fallbackProperties = loadProperties(availableLanguages[0]);
+		if(fallbackProperties == null) fallbackProperties = loadTranslation(availableLanguages[0]);
 		
-		result = fallbackProperties.getProperty(key);
+		result = fallbackProperties.get(key);
 		
 		if(result != null) {
 			Logger.normal(CLASS_NAME, "The translation for " + key + " hasn't been found! please tell the maintainer.");
@@ -165,27 +166,29 @@ public class L10n {
 		}
 		return sb.toString();
 	}
-
+	
+	public static String getSelectedLanguage() {
+		return currentClass.selectedLanguage;
+	}
+	
 	/**
-	 * Load a property file depending on the given name and using the prefix
+	 * Load a translation file depending on the given name and using the prefix
 	 * 
 	 * @param name
 	 * @return the Properties object or null if not found
 	 */
-	public static Properties loadProperties (String name) {
+	public static SimpleFieldSet loadTranslation(String name) {
         name = prefix.replace ('.', '/').concat(prefix.concat(name.concat(".properties")));
-            
-        Properties result = null;
+        
+        SimpleFieldSet result = null;
         InputStream in = null;
         try {
         	ClassLoader loader = ClassLoader.getSystemClassLoader();
         	
         	// Returns null on lookup failures:
         	in = loader.getResourceAsStream(name);
-        	if(in != null) {
-        		result = new Properties();
-        		result.load(in); // Can throw IOException
-        	}
+        	if(in != null)
+        		result = SimpleFieldSet.readFrom(in, false, false);
         } catch (Exception e) {
         	Logger.error("L10n", "Error while loading the l10n file from " + name + " :" + e.getMessage());
             result = null;
@@ -195,50 +198,7 @@ public class L10n {
         
         return result;
     }
-
-	public static String convert(String line) {
-		final StringBuffer sb = new StringBuffer();
-		int pos = 0;
-		while (pos < line.length())	{
-			char c = line.charAt(pos++);
-			if (c == '\\') {
-				c = line.charAt(pos++);
-				switch (c) {
-					case 'n':
-						sb.append('\n');
-						break;
-					case 't':
-						sb.append('\t');
-						break;
-					case 'r':
-						sb.append('\r');
-						break;
-					case 'u':
-						if (pos + 4 <= line.length()) {
-							char uni = (char) Integer.parseInt(line.substring(pos, pos + 4), 16);
-							sb.append(uni);
-							pos += 4;
-						}// else throw something ?
-						break;
-					default:
-						sb.append(c);
-					break;
-				}
-			}
-			else
-				sb.append(c);
-		}
-		return sb.toString();
-	}
-	
-	public static String getSelectedLanguage() {
-		return currentClass.selectedLanguage;
-	}
-	
-	public static Enumeration getKeys() {
-		return currentProperties.propertyNames();
-	}
-	
+		
 	public static void main(String[] args) {
 		L10n.setLanguage("en");
 		System.out.println(L10n.getString("QueueToadlet.failedToRestart"));
