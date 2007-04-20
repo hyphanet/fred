@@ -392,7 +392,7 @@ public class PeerManager {
             	locPairs[x++] = new LocationUIDPair(conns[i]);
         }
         // Sort it
-        Arrays.sort(locPairs);
+        Arrays.sort(locPairs, 0, x);
         if(x != locPairs.length) {
             LocationUIDPair[] newLocs = new LocationUIDPair[x];
             System.arraycopy(locPairs, 0, newLocs, 0, x);
