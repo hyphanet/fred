@@ -30,13 +30,13 @@ public class L10n {
 	public static final String[] availableLanguages = { "en", "fr", "pl"};
 	private String selectedLanguage = availableLanguages[0];
 	
-	private static SimpleFieldSet currentProperties = null;
-	private static SimpleFieldSet fallbackProperties = null;
+	private static SimpleFieldSet currentTranslation = null;
+	private static SimpleFieldSet fallbackTranslation = null;
 	private static L10n currentClass = null;
 
 	L10n(String selected) {
 		selectedLanguage = selected;
-		currentProperties = loadTranslation(selectedLanguage);
+		currentTranslation = loadTranslation(selectedLanguage);
 	}
 	
 	/**
@@ -51,7 +51,7 @@ public class L10n {
 				selectedLanguage = availableLanguages[i];
 				Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
 				currentClass = new L10n(selectedLanguage);
-				if(currentProperties == null) {
+				if(currentTranslation == null) {
 					currentClass = new L10n(availableLanguages[0]);
 					throw new MissingResourceException("Unable to load the translation file for "+selectedLanguage, "l10n", selectedLanguage);
 				}
@@ -70,7 +70,11 @@ public class L10n {
 	 * @param a property file
 	 */
 	public static void setLanguage(SimpleFieldSet customLanguage) {
-		currentProperties = customLanguage;
+		currentTranslation = customLanguage;
+	}
+	
+	public static SimpleFieldSet getLanguage() {
+		return currentTranslation;
 	}
 	
 	/**
@@ -91,7 +95,7 @@ public class L10n {
 	 * @see getString(String)
 	 */
 	public static String getString(String key, boolean returnNullIfNotFound) {
-		String result = currentProperties.get(key);
+		String result = currentTranslation.get(key);
 		if(result != null)
 			return result;
 		else
@@ -117,9 +121,9 @@ public class L10n {
 	public static String getDefaultString(String key) {
 		String result = null;
 		// We instanciate it only if necessary
-		if(fallbackProperties == null) fallbackProperties = loadTranslation(availableLanguages[0]);
+		if(fallbackTranslation == null) fallbackTranslation = loadTranslation(availableLanguages[0]);
 		
-		result = fallbackProperties.get(key);
+		result = fallbackTranslation.get(key);
 		
 		if(result != null) {
 			Logger.normal(CLASS_NAME, "The translation for " + key + " hasn't been found! please tell the maintainer.");
