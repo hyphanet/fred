@@ -68,7 +68,7 @@ public class BlockTransmitter {
 		_ctr = ctr;
 		_masterThrottle = masterThrottle;
 		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets)
-			+ FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
+			+ FNPPacketMangler.FULL_HEADERS_LENGTH_ONE_MESSAGE;
 		try {
 			_sentPackets = new BitArray(_prb.getNumPackets());
 		} catch (AbortedException e) {

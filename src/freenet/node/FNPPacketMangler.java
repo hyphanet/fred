@@ -63,6 +63,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/** Headers overhead if there is one message and no acks. */
 	static public final int HEADERS_LENGTH_ONE_MESSAGE = 
 		HEADERS_LENGTH_MINIMUM + 2; // 2 bytes = length of message. rest is the same.
+	
+	static public final int FULL_HEADERS_LENGTH_MINIMUM = 
+		HEADERS_LENGTH_MINIMUM + UdpSocketManager.UDP_HEADERS_LENGTH;
+	static public final int FULL_HEADERS_LENGTH_ONE_MESSAGE =
+		HEADERS_LENGTH_ONE_MESSAGE + UdpSocketManager.UDP_HEADERS_LENGTH;
     
     public FNPPacketMangler(Node node) {
         this.node = node;
@@ -1027,7 +1032,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                     }
                     int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
                     this.processOutgoingPreformatted(buf, 0, buf.length, pn.getCurrentKeyTracker(), packetNumber, mi.cb, mi.alreadyReportedBytes);
-                    mi.onSent(buf.length + HEADERS_LENGTH_ONE_MESSAGE);
+                    mi.onSent(buf.length + FULL_HEADERS_LENGTH_ONE_MESSAGE);
                 } catch (NotConnectedException e) {
                     Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
                     // Requeue
@@ -1106,7 +1111,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 for(int i=0;i<messageData.length;i++) {
                 	MessageItem mi = newMsgs[i];
 					mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
-					mi.onSent(messageData[i].length + 2 + (HEADERS_LENGTH_MINIMUM / messageData.length));
+					mi.onSent(messageData[i].length + 2 + (FULL_HEADERS_LENGTH_MINIMUM / messageData.length));
                 }
             } catch (NotConnectedException e) {
                 Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
@@ -1153,7 +1158,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                             for(int j=lastIndex;j<i;j++) {
                             	MessageItem mi = newMsgs[j];
 								mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
-								mi.onSent(messageData[j].length + 2 + (HEADERS_LENGTH_MINIMUM / (i-lastIndex)));
+								mi.onSent(messageData[j].length + 2 + (FULL_HEADERS_LENGTH_MINIMUM / (i-lastIndex)));
                             }
                         } catch (NotConnectedException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);

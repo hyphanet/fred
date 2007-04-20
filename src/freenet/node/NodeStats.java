@@ -314,7 +314,7 @@ public class NodeStats implements Persistable {
 	
 	static final int ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET = 
 		1024 + DMT.packetTransmitSize(1024, 32)
-		+ FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
+		+ FNPPacketMangler.FULL_HEADERS_LENGTH_ONE_MESSAGE;
 	
 	/* return reject reason as string if should reject, otherwise return null */
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {

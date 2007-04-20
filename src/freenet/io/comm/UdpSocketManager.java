@@ -692,10 +692,10 @@ public class UdpSocketManager extends Thread {
 	// unofficially, PPPoE is often 1472 (seen in the wild). Also PPPoATM is sometimes 1472.
     static final int MAX_ALLOWED_MTU = 1400;
     // FIXME this is different for IPv6 (check all uses of constant when fixing)
-    static final int UDP_HEADERS_LENGTH = 28;
+    public static final int UDP_HEADERS_LENGTH = 28;
     
     /**
-     * @return The maximum packet size supported by this SocketManager.
+     * @return The maximum packet size supported by this SocketManager, not including transport (UDP/IP) headers.
      */
     public int getMaxPacketSize() { //FIXME: what about passing a peerNode though and doing it on a per-peer basis?
     	final int minAdvertisedMTU = node.ipDetector.getMinimumDetectedMTU();
