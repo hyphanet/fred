@@ -59,7 +59,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			fs = new SimpleFieldSet(lis, 4096, 128, true, true, true, true);
 			
 			// check for valid endmarker
-			if ((!fs.getEndMarker().startsWith("End")) && (!"Data".equals(fs.getEndMarker()))) {
+			if (fs.getEndMarker() != null && (!fs.getEndMarker().startsWith("End")) && (!"Data".equals(fs.getEndMarker()))) {
 				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "Invalid end marker: "+fs.getEndMarker(), fs.get("Identifer"), false);
 				handler.outputHandler.queue(err);
 				continue;
