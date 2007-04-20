@@ -567,9 +567,12 @@ public class SimpleFieldSet {
 	}
 
 	public static SimpleFieldSet readFrom(InputStream is, boolean allowMultiple, boolean shortLived) throws IOException {
+		BufferedInputStream bis = null;
+		InputStreamReader isr = null;
+		BufferedReader br = null;
+		
 		try {
-			BufferedInputStream bis = new BufferedInputStream(is);
-			InputStreamReader isr;
+			bis = new BufferedInputStream(is);
 			try {
 				isr = new InputStreamReader(bis, "UTF-8");
 			} catch (UnsupportedEncodingException e) {
@@ -577,14 +580,14 @@ public class SimpleFieldSet {
 				is.close();
 				return null;
 			}
-			BufferedReader br = new BufferedReader(isr);
+			br = new BufferedReader(isr);
 			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived);
-			br.close();
-			bis.close();
-			is = null;
 			return fs;
 		} finally {
 			try {
+				if(br != null) br.close();
+				if(isr != null) isr.close();
+				if(bis != null) bis.close();
 				if(is != null) is.close();
 			} catch (IOException e) {}			
 		}
