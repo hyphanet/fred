@@ -1106,7 +1106,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 for(int i=0;i<messageData.length;i++) {
                 	MessageItem mi = newMsgs[i];
 					mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
-					mi.onSent(messageData[i].length + 1 + (HEADERS_LENGTH_MINIMUM / messageData.length));
+					mi.onSent(messageData[i].length + 2 + (HEADERS_LENGTH_MINIMUM / messageData.length));
                 }
             } catch (NotConnectedException e) {
                 Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
@@ -1153,7 +1153,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                             for(int j=lastIndex;j<i;j++) {
                             	MessageItem mi = newMsgs[j];
 								mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
-								mi.onSent(messageData[j].length + 1 + (HEADERS_LENGTH_MINIMUM / (i-lastIndex)));
+								mi.onSent(messageData[j].length + 2 + (HEADERS_LENGTH_MINIMUM / (i-lastIndex)));
                             }
                         } catch (NotConnectedException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
