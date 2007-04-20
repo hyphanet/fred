@@ -108,7 +108,7 @@ public class SimpleFieldSet {
             String line = br.readLine();
             if(line == null) {
                 if(firstLine) throw new EOFException();
-                return;
+                throw new IOException(); // No end marker!
             }
             firstLine = false;
             int index = line.indexOf('=');
