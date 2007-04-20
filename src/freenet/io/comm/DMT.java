@@ -724,7 +724,7 @@ public class DMT {
 	}};
 	
 	public static Message createFNPProbeTrace(long uid, double target, double nearest, double best, short htl, short counter, double myLoc, long swapIdentifier, double[] peerLocs, long[] peerUIDs) {
-		Message msg = new Message(FNPProbeRequest);
+		Message msg = new Message(FNPProbeTrace);
 		msg.set(UID, uid);
 		msg.set(TARGET_LOCATION, target);
 		msg.set(NEAREST_LOCATION, nearest);
