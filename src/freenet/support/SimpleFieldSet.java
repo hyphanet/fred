@@ -425,7 +425,7 @@ public class SimpleFieldSet {
 		return new KeyIterator("");
 	}
 
-	KeyIterator keyIterator(String prefix) {
+	public KeyIterator keyIterator(String prefix) {
 		return new KeyIterator(prefix);
 	}
 	
