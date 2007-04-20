@@ -44,6 +44,7 @@ import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
+import freenet.support.StringArray;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
@@ -830,7 +831,7 @@ public class TextModeClientInterface implements Runnable {
 				}
 
 				public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs) {
-					String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+"node UID="+nodeUID+" peer locs="+peerLocs+" peer UIDs="+peerUIDs;
+					String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+"node UID="+nodeUID+" peer locs="+StringArray.toString(peerLocs)+" peer UIDs="+StringArray.toString(peerUIDs);
 					System.err.println(msg);
 				}
         	};

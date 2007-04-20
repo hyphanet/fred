@@ -55,4 +55,33 @@ public class StringArray {
 		}else
 			return null;
 	}
+
+	public static String[] toArray(double[] array) {
+		if((array != null) && (array.length > 0)){
+			String[] result = new String[array.length];
+			for(int i=0; i<array.length; i++)
+				result[i] = Double.toString(array[i]);
+			return result;
+		}else
+			return null;
+	}
+	
+	public static String toString(double[] array) {
+		return toString(toArray(array));
+	}
+	
+	public static String[] toArray(long[] array) {
+		if((array != null) && (array.length > 0)){
+			String[] result = new String[array.length];
+			for(int i=0; i<array.length; i++)
+				result[i] = Long.toString(array[i]);
+			return result;
+		}else
+			return null;
+	}
+	
+	public static String toString(long[] array) {
+		return toString(toArray(array));
+	}
+	
 }
