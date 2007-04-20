@@ -6,6 +6,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -107,7 +108,7 @@ public class SimpleFieldSet {
             String line = br.readLine();
             if(line == null) {
                 if(firstLine) throw new EOFException();
-                throw new IOException();
+                return;
             }
             firstLine = false;
             int index = line.indexOf('=');
@@ -565,31 +566,32 @@ public class SimpleFieldSet {
 		return (String[]) subsets.keySet().toArray(new String[subsets.size()]);
 	}
 
-	public static SimpleFieldSet readFrom(File f, boolean allowMultiple, boolean shortLived) throws IOException {
-		FileInputStream fis = null;
+	public static SimpleFieldSet readFrom(InputStream is, boolean allowMultiple, boolean shortLived) throws IOException {
 		try {
-			fis = new FileInputStream(f);
-			BufferedInputStream bis = new BufferedInputStream(fis);
+			BufferedInputStream bis = new BufferedInputStream(is);
 			InputStreamReader isr;
 			try {
 				isr = new InputStreamReader(bis, "UTF-8");
 			} catch (UnsupportedEncodingException e) {
 				Logger.error(SimpleFieldSet.class, "Impossible: "+e, e);
-				fis.close();
+				is.close();
 				return null;
 			}
 			BufferedReader br = new BufferedReader(isr);
 			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived);
 			br.close();
-			fis = null;
+			bis.close();
+			is = null;
 			return fs;
 		} finally {
 			try {
-				if(fis != null) fis.close();
-			} catch (IOException e) {
-				// Ignore
-			}
+				if(is != null) is.close();
+			} catch (IOException e) {}			
 		}
+	}
+	
+	public static SimpleFieldSet readFrom(File f, boolean allowMultiple, boolean shortLived) throws IOException {
+		return readFrom(new FileInputStream(f), allowMultiple, shortLived);
 	}
 
 	public int getInt(String key, int def) {
