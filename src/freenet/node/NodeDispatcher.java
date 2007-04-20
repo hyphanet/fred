@@ -126,6 +126,8 @@ public class NodeDispatcher implements Dispatcher {
 			return handleProbeReply(m, source);
 		} else if(spec == DMT.FNPProbeRejected) {
 			return handleProbeRejected(m, source);
+		} else if(spec == DMT.FNPProbeTrace) {
+			return handleProbeTrace(m, source);
 		}
 		return false;
 	}
@@ -636,14 +638,15 @@ public class NodeDispatcher implements Dispatcher {
 
 			visited.add(pn);
 
-			Message trace =
-				DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers), LocationManager.extractUIDs(peers));
-			if(src != null)
+			if(src != null) {
+				Message trace =
+					DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers), LocationManager.extractUIDs(peers));
 				try {
 					src.sendAsync(trace, null, 0, null);
 				} catch (NotConnectedException e1) {
 					// Ignore
 				}
+			}
 			
 			Message forwarded =
 				DMT.createFNPProbeRequest(id, target, nearest, best, htl, counter++);
