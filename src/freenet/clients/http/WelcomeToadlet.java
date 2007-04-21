@@ -21,6 +21,7 @@ import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
@@ -79,7 +80,19 @@ public class WelcomeToadlet extends Toadlet {
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "No password ("+passwd+" should be "+core.formPassword+ ')');
 		}
 		
-		if(request.getPartAsString("updateconfirm", 32).length() > 0){
+		if(request.getPartAsString("trupdate", 32).length() > 0){
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
+			String key = request.getPartAsString("key", 256);
+			L10n.getLanguage().putOverwrite(key, request.getPartAsString("trans", 256));
+			
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/?transupdated="+key);
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if(request.getPartAsString("updateconfirm", 32).length() > 0){
 			if(noPassword) {
 				redirectToRoot(ctx);
 				return;
@@ -449,6 +462,86 @@ public class WelcomeToadlet extends Toadlet {
 					sw.write(buffer, 0, read);
 
 				this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
+				return;
+			} else if (request.isParameterSet("getTranlationFile")) {
+				byte[] data = L10n.getLanguage().toOrderedString().getBytes("UTF-8");
+				MultiValueTable head = new MultiValueTable();
+				head.put("Content-Disposition", "attachment; filename=\"freenet.l10n."+L10n.getSelectedLanguage()+".properties");
+				ctx.sendReplyHeaders(200, "Found", head, "text/plain", data.length);
+				ctx.writeData(data);
+				return;
+			} else if (request.isParameterSet("transupdated")) {
+				String key = request.getParam("transupdated");
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Translation updated!", true, ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+
+				HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
+				HTMLNode legendTable = translationNode.addChild("table", "class", "translation");
+				
+				HTMLNode legendRow = legendTable.addChild("tr").addChild("b");
+				legendRow.addChild("td", "class", "translation-key", "Translation key");
+				legendRow.addChild("td", "class", "translation-key", "Original (english version)");
+				legendRow.addChild("td", "class", "translation-key", "Current translation");
+				
+				HTMLNode contentRow = legendTable.addChild("tr");
+				contentRow.addChild("td", "class", "translation-key",
+						key
+				);
+				contentRow.addChild("td", "class", "translation-orig",
+						L10n.getDefaultString(key)
+				);
+				contentRow.addChild("td", "class", "translation-new",
+						L10n.getString(key)
+				);
+				
+				HTMLNode footer = translationNode.addChild("div", "class", "warning");
+				footer.addChild("#", "Be careful: all your changes will be lost on reboot: donwload, backup and send us the translation file!");
+				footer.addChild("a", "href", "/?getTranlationFile").addChild("#", "Download the translation file");
+				footer.addChild("%", "&nbsp;&nbsp;");			
+				footer.addChild("a", "href", "/").addChild("#", "Return to the main page");
+
+				this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+				return;				
+			} else if (request.isParameterSet("translate")) {
+				String key = request.getParam("translate");
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Translation update", true, ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+
+				HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
+				HTMLNode updateForm =  ctx.addFormChild(translationNode, "/", "trans_update");
+				HTMLNode legendTable = updateForm.addChild("table", "class", "translation");
+				
+				HTMLNode legendRow = legendTable.addChild("tr").addChild("b");
+				legendRow.addChild("td", "class", "translation-key", "Translation key");
+				legendRow.addChild("td", "class", "translation-key", "Original (english version)");
+				legendRow.addChild("td", "class", "translation-key", "Current translation");
+				
+				HTMLNode contentRow = legendTable.addChild("tr");
+				contentRow.addChild("td", "class", "translation-key",
+						key
+				);
+				contentRow.addChild("td", "class", "translation-orig",
+						L10n.getDefaultString(key)
+				);
+				
+				contentRow.addChild("td", "class", "translation-new").addChild(
+						"input",
+						new String[] { "type", "name", "value" },
+						new String[] { "text", "trans",  L10n.getString(key)
+						});
+				
+				contentRow.addChild("input", 
+						new String[] { "type", "name", "value" }, 
+						new String[] { "hidden", "key", key
+				});
+
+				contentRow = legendTable.addChild("tr");
+				contentRow.addChild("input", 
+						new String[] { "type", "name", "value" }, 
+						new String[] { "submit", "trupdate", "Update the translation!"
+				});
+				contentRow.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+				this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 				return;
 			} else if (request.isParameterSet("terminated")) {
 				if((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(core.formPassword)) {
