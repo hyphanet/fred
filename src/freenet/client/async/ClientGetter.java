@@ -23,7 +23,7 @@ import freenet.support.io.BucketTools;
 public class ClientGetter extends BaseClientGetter {
 
 	final ClientCallback client;
-	final FreenetURI uri;
+	FreenetURI uri;
 	final FetchContext ctx;
 	final ArchiveContext actx;
 	private ClientGetState currentState;
@@ -57,10 +57,10 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public void start() throws FetchException {
-		start(false);
+		start(false, null);
 	}
 
-	public boolean start(boolean restart) throws FetchException {
+	public boolean start(boolean restart, FreenetURI overrideURI) throws FetchException {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this);
 		try {
@@ -68,6 +68,7 @@ public class ClientGetter extends BaseClientGetter {
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
 			// which can call onSuccess and thereby almost anything.
 			synchronized(this) {
+				if(overrideURI != null) uri = overrideURI;
 				if(finished) {
 					if(!restart) return false;
 					currentState = null;
@@ -205,8 +206,8 @@ public class ClientGetter extends BaseClientGetter {
 		return true;
 	}
 
-	public boolean restart() throws FetchException {
-		return start(true);
+	public boolean restart(FreenetURI redirect) throws FetchException {
+		return start(true, redirect);
 	}
 
 	public String toString() {

@@ -784,8 +784,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		
 		if(clientRequest.hasFinished() && !clientRequest.hasSucceeded() && clientRequest.canRestart()) {
 			HTMLNode retryForm = ctx.addFormChild(deleteNode, "/queue/", "queueRestartForm");
+			String restartName = L10n.getString(clientRequest instanceof ClientGet && ((ClientGet)clientRequest).hasPermRedirect() ? "QueueToadlet.follow" : "QueueToadlet.restart");
 			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
-			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", L10n.getString("QueueToadlet.restart") });
+			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", restartName });
 		}
 		
 		return deleteNode;

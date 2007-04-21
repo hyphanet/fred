@@ -665,8 +665,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	public boolean restart() {
 		if(!canRestart()) return false;
+		FreenetURI redirect;
 		synchronized(this) {
 			finished = false;
+			redirect = 
+				getFailedMessage == null ? null : getFailedMessage.redirectURI;
 			this.getFailedMessage = null;
 			this.allDataPending = null;
 			this.postFetchProtocolErrorMessage = null;
@@ -674,8 +677,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			started = false;
 		}
 		try {
-			if(getter.restart()) {
+			if(getter.restart(redirect)) {
 				synchronized(this) {
+					if(redirect != null) this.uri = redirect;
 					started = true;
 				}
 			}
@@ -684,5 +688,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			onFailure(e, null);
 			return false;
 		}
+	}
+
+	public synchronized boolean hasPermRedirect() {
+		return getFailedMessage != null && getFailedMessage.redirectURI != null;
 	}
 }

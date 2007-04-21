@@ -16,7 +16,7 @@ import freenet.support.io.*;
 public abstract class ClientRequest {
 
 	/** URI to fetch, or target URI to insert to */
-	protected final FreenetURI uri;
+	protected FreenetURI uri;
 	/** Unique request identifier */
 	protected final String identifier;
 	/** Verbosity level. Relevant to all ClientRequests, although they interpret it
