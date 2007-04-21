@@ -588,7 +588,6 @@ public class SimpleFieldSet {
 				if(br != null) br.close();
 				if(isr != null) isr.close();
 				if(bis != null) bis.close();
-				if(is != null) is.close();
 			} catch (IOException e) {}			
 		}
 	}
