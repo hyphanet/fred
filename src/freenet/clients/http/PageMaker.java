@@ -1,10 +1,10 @@
 package freenet.clients.http;
 
 import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -216,20 +216,34 @@ public class PageMaker {
 	
 	private HTMLNode getOverrideContent() {
 		HTMLNode result = new HTMLNode("style", "type", "text/css");
+		FileInputStream fis = null;
+		BufferedInputStream bis = null;
+		InputStreamReader isr = null;
+		
 		try {
-			FileInputStream fis = new FileInputStream(override);
-			BufferedInputStream bis = new BufferedInputStream(fis);
-			DataInputStream dis = new DataInputStream(bis);
+			fis = new FileInputStream(override);
+			bis = new BufferedInputStream(fis);
+			isr = new InputStreamReader(bis);
+			StringBuffer sb = new StringBuffer();
 			
-			result.addChild("#", DataInputStream.readUTF(dis));
+			char[] buf = new char[4096];
 			
-			dis.close();
-			bis.close();
-			fis.close();
+			while(isr.ready()) {
+				isr.read(buf);
+				sb.append(buf);
+			}
+			
+			result.addChild("#", sb.toString());
+			
 		} catch (IOException e) {
 			Logger.error(this, "Got an IOE: " + e.getMessage(), e);
+		} finally {
+			try {
+				if(isr != null) isr.close();
+				if(bis != null) bis.close();
+				if(fis != null) fis.close();
+			} catch (IOException e) {}
 		}
-		
 		return result;
 	}
 }
