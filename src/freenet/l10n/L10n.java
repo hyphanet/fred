@@ -130,10 +130,10 @@ public class L10n {
 	/**
 	 * Return a new copy of the current translation file 
 	 * 
-	 * @return SimpleFieldSet
+	 * @return SimpleFieldSet or null
 	 */
 	public static SimpleFieldSet getCurrentLanguageTranslation() {
-		return new SimpleFieldSet(currentTranslation);
+		return (currentTranslation == null ? null : new SimpleFieldSet(currentTranslation));
 	}
 	
 	/**
