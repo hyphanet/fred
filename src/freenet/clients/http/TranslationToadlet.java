@@ -145,29 +145,31 @@ public class TranslationToadlet extends Toadlet {
 		legendRow.addChild("td", "class", "translation-key", "Current translation");
 		
 		SimpleFieldSet sfs = L10n.getCurrentLanguageTranslation();
-		KeyIterator it = sfs.keyIterator("");
-		
-		while(it.hasNext()) {
-			String key = it.nextKey();
+		if(sfs != null) {
+			KeyIterator it = sfs.keyIterator("");
 
-			HTMLNode contentRow = legendTable.addChild("tr");
-			contentRow.addChild("td", "class", "translation-key",
-					key
-			);
-			contentRow.addChild("td", "class", "translation-orig",
-					L10n.getDefaultString(key)
-			);
+			while(it.hasNext()) {
+				String key = it.nextKey();
 
-			contentRow.addChild("td", "class", "translation-new").addChild(
-					"input",
-					new String[] { "type", "name", "value" },
-					new String[] { "text", "trans",  L10n.getString(key)
-					});
+				HTMLNode contentRow = legendTable.addChild("tr");
+				contentRow.addChild("td", "class", "translation-key",
+						key
+				);
+				contentRow.addChild("td", "class", "translation-orig",
+						L10n.getDefaultString(key)
+				);
 
-			contentRow.addChild("td", 
-					new String[] { "type", "name", "value" }, 
-					new String[] { "text", "key", key
-			});
+				contentRow.addChild("td", "class", "translation-new").addChild(
+						"input",
+						new String[] { "type", "name", "value" },
+						new String[] { "text", "trans",  L10n.getString(key)
+						});
+
+				contentRow.addChild("td", 
+						new String[] { "type", "name", "value" }, 
+						new String[] { "text", "key", key
+				});
+			}
 		}
 		this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 	}
