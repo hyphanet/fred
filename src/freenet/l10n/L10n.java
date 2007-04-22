@@ -124,12 +124,22 @@ public class L10n {
 		}
 	}
 	
+	/**
+	 * Return a new copy of the current translation file 
+	 * 
+	 * @return SimpleFieldSet
+	 */
 	public static SimpleFieldSet getCurrentLanguageTranslation() {
-		return currentTranslation;
+		return new SimpleFieldSet(currentTranslation);
 	}
 	
+	/**
+	 * Return a copy of the current translation override if it exists or null
+	 * 
+	 * @return SimpleFieldSet or null
+	 */
 	public static SimpleFieldSet getOverrideForCurrentLanguageTranslation() {
-		return translationOverride;
+		return (translationOverride == null ? null : new SimpleFieldSet(translationOverride));
 	}
 	
 	/**
