@@ -88,7 +88,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Could not write file";
 		case COULD_NOT_RENAME_FILE:
 			return "Could not rename file";
-		case NO_SUCH_IDENTIFIER:  // Unused
+		case NO_SUCH_IDENTIFIER:
 			return "No such identifier";
 		case NOT_SUPPORTED:
 			return "Not supported";
@@ -96,7 +96,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Internal error";
 		case SHUTTING_DOWN:
 			return "Shutting down";
-		case NO_SUCH_NODE_IDENTIFIER:
+		case NO_SUCH_NODE_IDENTIFIER:  // Unused
 			return "No such nodeIdentifier";
 		case URL_PARSE_ERROR:
 			return "Error parsing URL";
