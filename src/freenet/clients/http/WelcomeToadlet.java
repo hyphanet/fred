@@ -86,7 +86,7 @@ public class WelcomeToadlet extends Toadlet {
 				return;
 			}
 			String key = request.getPartAsString("key", 256);
-			L10n.getLanguage().putOverwrite(key, request.getPartAsString("trans", 256));
+			L10n.setOverride(key, request.getPartAsString("trans", 256));
 			
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/?transupdated="+key);
@@ -464,12 +464,20 @@ public class WelcomeToadlet extends Toadlet {
 				this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
 				return;
 			} else if (request.isParameterSet("getTranlationFile")) {
-				byte[] data = L10n.getLanguage().toOrderedString().getBytes("UTF-8");
+				byte[] data = L10n.getCurrentLanguageTranslation().toOrderedString().getBytes("UTF-8");
 				MultiValueTable head = new MultiValueTable();
-				head.put("Content-Disposition", "attachment; filename=\"freenet.l10n."+L10n.getSelectedLanguage()+".properties");
+				head.put("Content-Disposition", "attachment; filename=\"" + L10n.PREFIX +L10n.getSelectedLanguage()+ L10n.SUFFIX + '"');
 				ctx.sendReplyHeaders(200, "Found", head, "text/plain", data.length);
 				ctx.writeData(data);
 				return;
+			} else if (request.isParameterSet("getOverrideTranlationFile")) {
+				byte[] data = L10n.getOverrideForCurrentLanguageTranslation().toOrderedString().getBytes("UTF-8");
+				MultiValueTable head = new MultiValueTable();
+				head.put("Content-Disposition", "attachment; filename=\"" + L10n.PREFIX +L10n.getSelectedLanguage()+ L10n.OVERRIDE_SUFFIX + '"');
+				ctx.sendReplyHeaders(200, "Found", head, "text/plain", data.length);
+				ctx.writeData(data);
+				return;
+				
 			} else if (request.isParameterSet("transupdated")) {
 				String key = request.getParam("transupdated");
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Translation updated!", true, ctx);
@@ -495,9 +503,10 @@ public class WelcomeToadlet extends Toadlet {
 				);
 				
 				HTMLNode footer = translationNode.addChild("div", "class", "warning");
-				footer.addChild("#", "Be careful: all your changes will be lost on reboot: donwload, backup and send us the translation file!");
-				footer.addChild("a", "href", "/?getTranlationFile").addChild("#", "Download the translation file");
-				footer.addChild("%", "&nbsp;&nbsp;");			
+				footer.addChild("a", "href", "/?getOverrideTranlationFile").addChild("#", "Download the override translation file");
+				footer.addChild("%", "&nbsp;&nbsp;");
+				footer.addChild("a", "href", "/?getTranlationFile").addChild("#", "Download the full translation file");
+				footer.addChild("%", "&nbsp;&nbsp;");
 				footer.addChild("a", "href", "/").addChild("#", "Return to the main page");
 
 				this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());

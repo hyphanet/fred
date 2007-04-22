@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.l10n;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.MissingResourceException;
 
@@ -16,6 +20,7 @@ import freenet.support.SimpleFieldSet;
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  * 
  * TODO: Maybe we ought to use the locale to set the default language.
+ * TODO: Maybe base64 the override file ?
  * 
  * comment(mario): for www interface we might detect locale from http requests?
  * for other access (telnet) using system locale would probably be good, but
@@ -23,19 +28,34 @@ import freenet.support.SimpleFieldSet;
  */
 
 public class L10n {
-	private static final String CLASS_NAME = "L10n";
-	private static String prefix = "freenet.l10n.";
+	public static final String CLASS_NAME = "L10n";
+	public static final String PREFIX = "freenet.l10n.";
+	public static final String SUFFIX = ".properties";
+	public static final String OVERRIDE_SUFFIX = ".override" + SUFFIX;
 	
 	// English has to remain the first one!
-	public static final String[] availableLanguages = { "en", "fr", "pl"};
-	private String selectedLanguage = availableLanguages[0];
+	public static final String[] AVAILABLE_LANGUAGES = { "en", "fr", "pl"};
+	private String selectedLanguage = AVAILABLE_LANGUAGES[0];
 	
 	private static SimpleFieldSet currentTranslation = null;
 	private static SimpleFieldSet fallbackTranslation = null;
 	private static L10n currentClass = null;
+	
+	private static SimpleFieldSet translationOverride = null;
 
 	L10n(String selected) {
 		selectedLanguage = selected;
+		File tmpFile = new File(L10n.PREFIX + selected + L10n.OVERRIDE_SUFFIX);
+		
+		try {
+			if(tmpFile.exists() && tmpFile.canRead()) {
+				Logger.normal(this, "Override file detected : let's try to load it");
+				translationOverride = SimpleFieldSet.readFrom(tmpFile, true, false);
+			}
+		} catch (IOException e) {
+			translationOverride = null;
+			Logger.error(this, "IOError while accessing the file!" + e.getMessage(), e);
+		}
 		currentTranslation = loadTranslation(selectedLanguage);
 	}
 	
@@ -46,35 +66,62 @@ public class L10n {
 	 * @throws MissingResourceException
 	 */
 	public static void setLanguage(String selectedLanguage) throws MissingResourceException {
-		for(int i=0; i<availableLanguages.length; i++){
-			if(selectedLanguage.equalsIgnoreCase(availableLanguages[i])){
-				selectedLanguage = availableLanguages[i];
+		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++){
+			if(selectedLanguage.equalsIgnoreCase(AVAILABLE_LANGUAGES[i])){
+				selectedLanguage = AVAILABLE_LANGUAGES[i];
 				Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
 				currentClass = new L10n(selectedLanguage);
 				if(currentTranslation == null) {
-					currentClass = new L10n(availableLanguages[0]);
+					currentClass = new L10n(AVAILABLE_LANGUAGES[0]);
 					throw new MissingResourceException("Unable to load the translation file for "+selectedLanguage, "l10n", selectedLanguage);
 				}
 				return;
 			}
 		}
 		
-		currentClass = new L10n(availableLanguages[0]);
+		currentClass = new L10n(AVAILABLE_LANGUAGES[0]);
 		Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
 		throw new MissingResourceException("The requested translation ("+selectedLanguage+") hasn't been found!", CLASS_NAME, selectedLanguage);
 	}
 	
-	/**
-	 * Set the default language used by the framework. (called from the TranslationHelper plugin)
-	 * 
-	 * @param a property file
-	 */
-	public static void setLanguage(SimpleFieldSet customLanguage) {
-		currentTranslation = customLanguage;
+	public static void setOverride(String key, String value) {
+		if(L10n.getString(key).equals(value)) {
+			translationOverride.removeValue(key);
+			return;
+		} else if(translationOverride == null) 
+			translationOverride = new SimpleFieldSet(false);
+		
+		translationOverride.putOverwrite(key, value);
+		Logger.normal("L10n", "Got a new translation key: set the Override!");
+		_saveTranslationFile();
 	}
 	
-	public static SimpleFieldSet getLanguage() {
+	private synchronized static void _saveTranslationFile() {
+		FileOutputStream fos = null;
+		BufferedOutputStream bos = null;
+		
+		try {
+			fos = new FileOutputStream(new File(L10n.PREFIX + L10n.getSelectedLanguage() + L10n.OVERRIDE_SUFFIX));
+			bos = new BufferedOutputStream(fos);			
+			
+			bos.write(L10n.translationOverride.toOrderedString().getBytes("UTF-8"));
+			Logger.normal("L10n", "Override file saved successfully!");
+		} catch (IOException e) {
+			Logger.error("L10n", "Error while saving the translation override: "+ e.getMessage(), e);
+		} finally {
+			try {
+				if(bos != null) bos.close();
+				if(fos != null) fos.close();
+			} catch (IOException e) {}
+		}
+	}
+	
+	public static SimpleFieldSet getCurrentLanguageTranslation() {
 		return currentTranslation;
+	}
+	
+	public static SimpleFieldSet getOverrideForCurrentLanguageTranslation() {
+		return translationOverride;
 	}
 	
 	/**
@@ -95,7 +142,10 @@ public class L10n {
 	 * @see getString(String)
 	 */
 	public static String getString(String key, boolean returnNullIfNotFound) {
-		String result = currentTranslation.get(key);
+		String result = (translationOverride == null ? null : translationOverride.get(key));
+		if(result != null) return result;
+		
+		result = currentTranslation.get(key);
 		if(result != null)
 			return result;
 		else
@@ -121,7 +171,7 @@ public class L10n {
 	public static String getDefaultString(String key) {
 		String result = null;
 		// We instanciate it only if necessary
-		if(fallbackTranslation == null) fallbackTranslation = loadTranslation(availableLanguages[0]);
+		if(fallbackTranslation == null) fallbackTranslation = loadTranslation(AVAILABLE_LANGUAGES[0]);
 		
 		result = fallbackTranslation.get(key);
 		
@@ -182,7 +232,7 @@ public class L10n {
 	 * @return the Properties object or null if not found
 	 */
 	public static SimpleFieldSet loadTranslation(String name) {
-        name = prefix.replace ('.', '/').concat(prefix.concat(name.concat(".properties")));
+        name = PREFIX.replace ('.', '/').concat(PREFIX.concat(name.concat(SUFFIX)));
         
         SimpleFieldSet result = null;
         InputStream in = null;

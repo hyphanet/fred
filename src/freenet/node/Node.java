@@ -187,7 +187,7 @@ public class Node {
 		}
 		
 		public String[] getPossibleValues() {
-			return L10n.availableLanguages;
+			return L10n.AVAILABLE_LANGUAGES;
 		}
 	}
 	
