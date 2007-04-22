@@ -43,6 +43,7 @@ public class L10n {
 	private static L10n currentClass = null;
 	
 	private static SimpleFieldSet translationOverride;
+	private static final Object sync = new Object();
 
 	L10n(String selected) {
 		selectedLanguage = selected;
@@ -68,47 +69,50 @@ public class L10n {
 	 * @param selectedLanguage (2 letter code)
 	 * @throws MissingResourceException
 	 */
-	public static void setLanguage(String selectedLanguage) throws MissingResourceException {		
-		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++){
-			if(selectedLanguage.equalsIgnoreCase(AVAILABLE_LANGUAGES[i])){
-				synchronized (currentClass) {
+	public static void setLanguage(String selectedLanguage) throws MissingResourceException {
+		synchronized (sync) {
+			for(int i=0; i<AVAILABLE_LANGUAGES.length; i++){
+				if(selectedLanguage.equalsIgnoreCase(AVAILABLE_LANGUAGES[i])){		
 					selectedLanguage = AVAILABLE_LANGUAGES[i];
 					Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
-					
+
 					currentClass = new L10n(selectedLanguage);	
-					
+
 					if(currentTranslation == null) {
 						currentClass = new L10n(AVAILABLE_LANGUAGES[0]);	
 						throw new MissingResourceException("Unable to load the translation file for "+selectedLanguage, "l10n", selectedLanguage);
 					}
+
+					return;
 				}
-				return;
 			}
+
+			currentClass = new L10n(AVAILABLE_LANGUAGES[0]);
+			Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
+			throw new MissingResourceException("The requested translation ("+selectedLanguage+") hasn't been found!", CLASS_NAME, selectedLanguage);
 		}
-		
-		currentClass = new L10n(AVAILABLE_LANGUAGES[0]);
-		Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
-		throw new MissingResourceException("The requested translation ("+selectedLanguage+") hasn't been found!", CLASS_NAME, selectedLanguage);
 	}
 	
 	public static void setOverride(String key, String value) {
 		key = key.trim();
 		value = value.trim();
-		
-		// If there is no need to keep it in the override, remove it
-		if("".equals(value) || L10n.getString(key).equals(value)) {
-			translationOverride.removeValue(key);
-		} else {
-			// Is the override already declared ? if not, create it.
-			if(translationOverride == null)
-				translationOverride = new SimpleFieldSet(false);
-			
-			// Set the value of the override
-			translationOverride.putOverwrite(key, value);
-			Logger.normal("L10n", "Got a new translation key: set the Override!");
+		synchronized (sync) {
+			// If there is no need to keep it in the override, remove it
+			if("".equals(value) || L10n.getString(key).equals(value)) {
+				translationOverride.removeValue(key);
+			} else {
+				// Is the override already declared ? if not, create it.
+				if(translationOverride == null)
+					translationOverride = new SimpleFieldSet(false);
+
+				// Set the value of the override
+				translationOverride.putOverwrite(key, value);
+				Logger.normal("L10n", "Got a new translation key: set the Override!");
+			}
+
+			// Save the file to disk
+			_saveTranslationFile();
 		}
-		// Save the file to disk
-		_saveTranslationFile();
 	}
 	
 	private static void _saveTranslationFile() {
@@ -119,9 +123,7 @@ public class L10n {
 			fos = new FileOutputStream(new File(L10n.PREFIX + L10n.getSelectedLanguage() + L10n.OVERRIDE_SUFFIX));
 			bos = new BufferedOutputStream(fos);
 			
-			synchronized (translationOverride) {
-				bos.write(L10n.translationOverride.toOrderedString().getBytes("UTF-8"));	
-			}
+			bos.write(L10n.translationOverride.toOrderedString().getBytes("UTF-8"));	
 			
 			Logger.normal("L10n", "Override file saved successfully!");
 		} catch (IOException e) {
@@ -140,7 +142,7 @@ public class L10n {
 	 * @return SimpleFieldSet or null
 	 */
 	public static SimpleFieldSet getCurrentLanguageTranslation() {
-		synchronized (currentTranslation) {
+		synchronized (sync) {
 			return (currentTranslation == null ? null : new SimpleFieldSet(currentTranslation));	
 		}
 	}
@@ -151,7 +153,7 @@ public class L10n {
 	 * @return SimpleFieldSet or null
 	 */
 	public static SimpleFieldSet getOverrideForCurrentLanguageTranslation() {
-		synchronized (translationOverride) {
+		synchronized (sync) {
 			return (translationOverride == null ? null : new SimpleFieldSet(translationOverride));	
 		}
 	}
@@ -175,13 +177,15 @@ public class L10n {
 	 */
 	public static String getString(String key, boolean returnNullIfNotFound) {
 		String result = null;
-		synchronized (translationOverride) {
-			result = translationOverride.get(key);
+		synchronized (sync) {
+			if(translationOverride != null)
+				result = translationOverride.get(key);
 		}
 		if(result != null) return result;
 		 
-		synchronized (currentTranslation) {
-			result = currentTranslation.get(key);	
+		synchronized (sync) {
+			if(currentTranslation != null)
+				result = currentTranslation.get(key);	
 		}
 		if(result != null)
 			return result;
@@ -216,7 +220,7 @@ public class L10n {
 	public static String getDefaultString(String key) {
 		String result = null;
 		// We instanciate it only if necessary
-		synchronized (fallbackTranslation) {
+		synchronized (sync) {
 			if(fallbackTranslation == null)
 				fallbackTranslation = loadTranslation(AVAILABLE_LANGUAGES[0]);
 			
@@ -275,7 +279,7 @@ public class L10n {
 	 * @return String
 	 */
 	public static String getSelectedLanguage() {
-		synchronized (currentClass) {
+		synchronized (sync) {
 			return currentClass.selectedLanguage;	
 		}
 	}
