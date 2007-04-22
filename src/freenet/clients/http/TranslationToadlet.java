@@ -113,11 +113,11 @@ public class TranslationToadlet extends Toadlet {
 			
 			contentRow.addChild("td", "class", "translation-new").addChild(
 					"input",
-					new String[] { "type", "name", "value" },
-					new String[] { "text", "trans",  L10n.getString(key)
+					new String[] { "type", "name", "size", "value" },
+					new String[] { "text", "trans", "120", L10n.getString(key)
 					});
 			
-			contentRow.addChild("input", 
+			updateForm.addChild("input", 
 					new String[] { "type", "name", "value" }, 
 					new String[] { "hidden", "key", key
 			});
@@ -162,10 +162,10 @@ public class TranslationToadlet extends Toadlet {
 				contentRow.addChild("td", "class", "translation-new").addChild(
 						"input",
 						new String[] { "type", "name", "value" },
-						new String[] { "text", "trans",  L10n.getString(key)
+						new String[] { "text", "trans", L10n.getString(key)
 						});
 
-				contentRow.addChild("td", 
+				legendTable.addChild("td", 
 						new String[] { "type", "name", "value" }, 
 						new String[] { "text", "key", key
 				});
