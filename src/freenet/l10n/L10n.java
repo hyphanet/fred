@@ -63,7 +63,8 @@ public class L10n {
 		currentTranslation = loadTranslation(selectedLanguage);
 		if(currentTranslation == null) {
 			Logger.error(this, "The translation file for " + selectedLanguage + " is invalid. The node will load an empty template.");
-			currentTranslation = new SimpleFieldSet(false);
+			currentTranslation = null;
+			translationOverride = new SimpleFieldSet(false);
 		}
 	}
 	
@@ -305,7 +306,7 @@ public class L10n {
         	// Returns null on lookup failures:
         	in = loader.getResourceAsStream(name);
         	if(in != null)
-        		result = SimpleFieldSet.readFrom(in, false, false);
+        		result = SimpleFieldSet.readFrom(in, true, false);
         } catch (Exception e) {
         	Logger.error("L10n", "Error while loading the l10n file from " + name + " :" + e.getMessage());
             result = null;
