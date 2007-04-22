@@ -30,6 +30,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
@@ -471,7 +472,12 @@ public class WelcomeToadlet extends Toadlet {
 				ctx.writeData(data);
 				return;
 			} else if (request.isParameterSet("getOverrideTranlationFile")) {
-				byte[] data = L10n.getOverrideForCurrentLanguageTranslation().toOrderedString().getBytes("UTF-8");
+				SimpleFieldSet sfs = L10n.getOverrideForCurrentLanguageTranslation();
+				if(sfs == null) {
+					super.sendErrorPage(ctx, 503 /* Service Unavailable */, "Service Unavailable", "There is no custom translation available.");
+					return;
+				}
+				byte[] data = sfs.toOrderedString().getBytes("UTF-8");
 				MultiValueTable head = new MultiValueTable();
 				head.put("Content-Disposition", "attachment; filename=\"" + L10n.PREFIX +L10n.getSelectedLanguage()+ L10n.OVERRIDE_SUFFIX + '"');
 				ctx.sendReplyHeaders(200, "Found", head, "text/plain", data.length);
