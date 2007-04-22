@@ -42,7 +42,7 @@ public class L10n {
 	private static SimpleFieldSet fallbackTranslation = null;
 	private static L10n currentClass = null;
 	
-	private static SimpleFieldSet translationOverride = null;
+	private static SimpleFieldSet translationOverride;
 
 	L10n(String selected) {
 		selectedLanguage = selected;
@@ -52,7 +52,9 @@ public class L10n {
 			if(tmpFile.exists() && tmpFile.canRead()) {
 				Logger.normal(this, "Override file detected : let's try to load it");
 				translationOverride = SimpleFieldSet.readFrom(tmpFile, true, false);
-			}
+			} else
+				translationOverride = null;
+			
 		} catch (IOException e) {
 			translationOverride = null;
 			Logger.error(this, "IOError while accessing the file!" + e.getMessage(), e);
@@ -67,6 +69,12 @@ public class L10n {
 	 * @throws MissingResourceException
 	 */
 	public synchronized static void setLanguage(String selectedLanguage) throws MissingResourceException {
+		// Save the current override if needed before switching
+		if(translationOverride != null) {
+			_saveTranslationFile();
+			translationOverride = null;
+		}
+		
 		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++){
 			if(selectedLanguage.equalsIgnoreCase(AVAILABLE_LANGUAGES[i])){
 				selectedLanguage = AVAILABLE_LANGUAGES[i];
