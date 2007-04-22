@@ -68,15 +68,19 @@ public class L10n {
 	 * @param selectedLanguage (2 letter code)
 	 * @throws MissingResourceException
 	 */
-	public synchronized static void setLanguage(String selectedLanguage) throws MissingResourceException {		
+	public static void setLanguage(String selectedLanguage) throws MissingResourceException {		
 		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++){
 			if(selectedLanguage.equalsIgnoreCase(AVAILABLE_LANGUAGES[i])){
-				selectedLanguage = AVAILABLE_LANGUAGES[i];
-				Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
-				currentClass = new L10n(selectedLanguage);
-				if(currentTranslation == null) {
-					currentClass = new L10n(AVAILABLE_LANGUAGES[0]);
-					throw new MissingResourceException("Unable to load the translation file for "+selectedLanguage, "l10n", selectedLanguage);
+				synchronized (currentClass) {
+					selectedLanguage = AVAILABLE_LANGUAGES[i];
+					Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
+					
+					currentClass = new L10n(selectedLanguage);	
+					
+					if(currentTranslation == null) {
+						currentClass = new L10n(AVAILABLE_LANGUAGES[0]);	
+						throw new MissingResourceException("Unable to load the translation file for "+selectedLanguage, "l10n", selectedLanguage);
+					}
 				}
 				return;
 			}
@@ -107,15 +111,18 @@ public class L10n {
 		_saveTranslationFile();
 	}
 	
-	private synchronized static void _saveTranslationFile() {
+	private static void _saveTranslationFile() {
 		FileOutputStream fos = null;
 		BufferedOutputStream bos = null;
 		
 		try {
 			fos = new FileOutputStream(new File(L10n.PREFIX + L10n.getSelectedLanguage() + L10n.OVERRIDE_SUFFIX));
-			bos = new BufferedOutputStream(fos);			
+			bos = new BufferedOutputStream(fos);
 			
-			bos.write(L10n.translationOverride.toOrderedString().getBytes("UTF-8"));
+			synchronized (translationOverride) {
+				bos.write(L10n.translationOverride.toOrderedString().getBytes("UTF-8"));	
+			}
+			
 			Logger.normal("L10n", "Override file saved successfully!");
 		} catch (IOException e) {
 			Logger.error("L10n", "Error while saving the translation override: "+ e.getMessage(), e);
@@ -133,7 +140,9 @@ public class L10n {
 	 * @return SimpleFieldSet or null
 	 */
 	public static SimpleFieldSet getCurrentLanguageTranslation() {
-		return (currentTranslation == null ? null : new SimpleFieldSet(currentTranslation));
+		synchronized (currentTranslation) {
+			return (currentTranslation == null ? null : new SimpleFieldSet(currentTranslation));	
+		}
 	}
 	
 	/**
@@ -142,7 +151,9 @@ public class L10n {
 	 * @return SimpleFieldSet or null
 	 */
 	public static SimpleFieldSet getOverrideForCurrentLanguageTranslation() {
-		return (translationOverride == null ? null : new SimpleFieldSet(translationOverride));
+		synchronized (translationOverride) {
+			return (translationOverride == null ? null : new SimpleFieldSet(translationOverride));	
+		}
 	}
 	
 	/**
@@ -163,10 +174,15 @@ public class L10n {
 	 * @see getString(String)
 	 */
 	public static String getString(String key, boolean returnNullIfNotFound) {
-		String result = (translationOverride == null ? null : translationOverride.get(key));
+		String result = null;
+		synchronized (translationOverride) {
+			result = translationOverride.get(key);
+		}
 		if(result != null) return result;
-		
-		result = currentTranslation.get(key);
+		 
+		synchronized (currentTranslation) {
+			result = currentTranslation.get(key);	
+		}
 		if(result != null)
 			return result;
 		else
@@ -200,10 +216,12 @@ public class L10n {
 	public static String getDefaultString(String key) {
 		String result = null;
 		// We instanciate it only if necessary
-		if(fallbackTranslation == null)
-			fallbackTranslation = loadTranslation(AVAILABLE_LANGUAGES[0]);
-		
-		result = fallbackTranslation.get(key);
+		synchronized (fallbackTranslation) {
+			if(fallbackTranslation == null)
+				fallbackTranslation = loadTranslation(AVAILABLE_LANGUAGES[0]);
+			
+			result = fallbackTranslation.get(key);	
+		}
 		
 		if(result != null) {
 			Logger.normal(CLASS_NAME, "The translation for " + key + " hasn't been found! please tell the maintainer.");
@@ -257,7 +275,9 @@ public class L10n {
 	 * @return String
 	 */
 	public static String getSelectedLanguage() {
-		return currentClass.selectedLanguage;
+		synchronized (currentClass) {
+			return currentClass.selectedLanguage;	
+		}
 	}
 	
 	/**
