@@ -68,13 +68,7 @@ public class L10n {
 	 * @param selectedLanguage (2 letter code)
 	 * @throws MissingResourceException
 	 */
-	public synchronized static void setLanguage(String selectedLanguage) throws MissingResourceException {
-		// Save the current override if needed before switching
-		if(translationOverride != null) {
-			_saveTranslationFile();
-			translationOverride = null;
-		}
-		
+	public synchronized static void setLanguage(String selectedLanguage) throws MissingResourceException {		
 		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++){
 			if(selectedLanguage.equalsIgnoreCase(AVAILABLE_LANGUAGES[i])){
 				selectedLanguage = AVAILABLE_LANGUAGES[i];
