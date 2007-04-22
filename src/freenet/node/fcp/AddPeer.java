@@ -112,16 +112,19 @@ public class AddPeer extends FCPMessage {
 		try {
 			pn = new PeerNode(fs, node, node.peers, false);
 		} catch (FSParseException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), null, false);
 		} catch (PeerParseException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), null, false);
 		} catch (ReferenceSignatureVerificationException e) {
-			// TODO: maybe a special ProtocolErrorMessage ?
-			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.REF_SIGNATURE_INVALID, "Error adding ref: "+e.getMessage(), null, false);
 		}
-		// **FIXME** Handle duplicates somehow maybe?  What about when node.addDarknetConnection() fails for some reason?
-		if(node.addDarknetConnection(pn))
-			System.out.println("Added peer: "+pn);
+		if(pn.getIdentityHash()==node.getIdentityHash()) {
+			throw new MessageInvalidException(ProtocolErrorMessage.CANNOT_PEER_WITH_SELF, "Node cannot peer with itself", null, false);
+		}
+		if(!node.addDarknetConnection(pn)) {
+			throw new MessageInvalidException(ProtocolErrorMessage.DUPLICATE_PEER_REF, "Node already has a peer with that identity", null, false);
+		}
+		System.out.println("Added peer: "+pn);
 		handler.outputHandler.queue(new Peer(pn, true, true));
 	}
 

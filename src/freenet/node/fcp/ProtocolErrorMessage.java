@@ -48,6 +48,9 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int ACCESS_DENIED = 24;
 	static final int DIRECT_DISK_ACCESS_DENIED = 25;
 	static final int COULD_NOT_READ_FILE = 26;
+	static final int REF_SIGNATURE_INVALID = 27;
+	static final int CANNOT_PEER_WITH_SELF = 28;
+	static final int DUPLICATE_PEER_REF = 29;
 	
 	final int code;
 	final String extra;
