@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.MissingResourceException;
 
+import freenet.clients.http.TranslationToadlet;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -27,7 +28,6 @@ import freenet.support.SimpleFieldSet;
  * for other access (telnet) using system locale would probably be good, but
  * it would be nice to have a command to switch locale on the fly.
  */
-
 public class L10n {
 	public static final String CLASS_NAME = "L10n";
 	public static final String PREFIX = "freenet.l10n.";
@@ -184,7 +184,7 @@ public class L10n {
 			return new HTMLNode("#", value);
 		HTMLNode translationField = new HTMLNode("span", "class", "translate_it") ;
 		translationField.addChild("#", getDefaultString(key));
-		translationField.addChild("a", "href", "/?translate=" + key).addChild("small", " (translate it in your native language!)");
+		translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?translate=" + key).addChild("small", " (translate it in your native language!)");
 			
 		return translationField;
 	}

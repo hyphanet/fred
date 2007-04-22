@@ -176,8 +176,8 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode logsList = statGatheringBox.addChild("ul");
 		if(nodeConfig.config.get("logger").getBoolean("enabled"))
 			logsList.addChild("li").addChild("a", new String[]{ "href", "target"}, new String[]{ "/?latestlog", "_new"}, "Get latest node's logfile");
-		logsList.addChild("li").addChild("a", "href", "/?getOverrideTranlationFile").addChild("#", "Download the override translation file");
-		logsList.addChild("li").addChild("a", "href", "/?getTranlationFile").addChild("#", "Download the full translation file");
+		logsList.addChild("li").addChild("a", "href", TranslationToadlet.TOADLET_URL+"?getOverrideTranlationFile").addChild("#", "Download the override translation file");
+		logsList.addChild("li").addChild("a", "href", TranslationToadlet.TOADLET_URL+"?getTranlationFile").addChild("#", "Download the full translation file");
 		
 		if(advancedModeEnabled) {
 			// store size box

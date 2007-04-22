@@ -613,6 +613,10 @@ public class FProxyToadlet extends Toadlet {
 			BrowserTestToadlet browsertTestToadlet = new BrowserTestToadlet(client, core);
 			server.register(browsertTestToadlet, "/test/", true, false);
 			
+			TranslationToadlet translationToadlet = new TranslationToadlet(client, core);
+			server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, "Translation", "helper" +
+					" to translate the node's interface into your native language", true);
+			
 			// Now start the server.
 			server.start();
 			
