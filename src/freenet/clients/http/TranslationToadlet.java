@@ -112,9 +112,9 @@ public class TranslationToadlet extends Toadlet {
 			);
 			
 			contentRow.addChild("td", "class", "translation-new").addChild(
-					"input",
-					new String[] { "type", "name", "size", "value" },
-					new String[] { "text", "trans", "120", L10n.getString(key)
+					"textarea",
+					new String[] { "name", "rows", "cols", "value" },
+					new String[] { "trans", "3", "80", L10n.getString(key)
 					});
 			
 			updateForm.addChild("input", 
