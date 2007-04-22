@@ -85,14 +85,22 @@ public class L10n {
 	}
 	
 	public static void setOverride(String key, String value) {
-		if(L10n.getString(key).equals(value)) {
-			translationOverride.removeValue(key);
-			return;
-		} else if(translationOverride == null) 
-			translationOverride = new SimpleFieldSet(false);
+		key = key.trim();
+		value = value.trim();
 		
-		translationOverride.putOverwrite(key, value);
-		Logger.normal("L10n", "Got a new translation key: set the Override!");
+		// If there is no need to keep it in the override, remove it
+		if("".equals(value) || L10n.getString(key).equals(value)) {
+			translationOverride.removeValue(key);
+		} else {
+			// Is the override already declared ? if not, create it.
+			if(translationOverride == null)
+				translationOverride = new SimpleFieldSet(false);
+			
+			// Set the value of the override
+			translationOverride.putOverwrite(key, value);
+			Logger.normal("L10n", "Got a new translation key: set the Override!");
+		}
+		// Save the file to disk
 		_saveTranslationFile();
 	}
 	

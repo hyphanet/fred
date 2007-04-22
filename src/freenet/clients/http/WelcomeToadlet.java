@@ -33,6 +33,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.BucketTools;
 
 import freenet.frost.message.*;
 
@@ -87,7 +88,7 @@ public class WelcomeToadlet extends Toadlet {
 				return;
 			}
 			String key = request.getPartAsString("key", 256);
-			L10n.setOverride(key, request.getPartAsString("trans", 256));
+			L10n.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), "UTF-8"));
 			
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/?transupdated="+key);
