@@ -5,7 +5,6 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.L10n;
@@ -14,6 +13,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SimpleFieldSet.KeyIterator;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.BucketTools;
 
@@ -145,10 +145,10 @@ public class TranslationToadlet extends Toadlet {
 		legendRow.addChild("td", "class", "translation-key", "Current translation");
 		
 		SimpleFieldSet sfs = L10n.getCurrentLanguageTranslation();
-		Iterator it = sfs.keyIterator();
+		KeyIterator it = sfs.keyIterator("");
 		
 		while(it.hasNext()) {
-			String key = (String)it.next();
+			String key = it.nextKey();
 
 			HTMLNode contentRow = legendTable.addChild("tr");
 			contentRow.addChild("td", "class", "translation-key",
