@@ -21,6 +21,7 @@ import freenet.support.SimpleFieldSet;
  * 
  * TODO: Maybe we ought to use the locale to set the default language.
  * TODO: Maybe base64 the override file ?
+ * TODO: Add support for "custom", unknown languages ?
  * 
  * comment(mario): for www interface we might detect locale from http requests?
  * for other access (telnet) using system locale would probably be good, but
@@ -35,7 +36,7 @@ public class L10n {
 	
 	// English has to remain the first one!
 	public static final String[] AVAILABLE_LANGUAGES = { "en", "fr", "pl"};
-	private String selectedLanguage = AVAILABLE_LANGUAGES[0];
+	private final String selectedLanguage;
 	
 	private static SimpleFieldSet currentTranslation = null;
 	private static SimpleFieldSet fallbackTranslation = null;
@@ -65,7 +66,7 @@ public class L10n {
 	 * @param selectedLanguage (2 letter code)
 	 * @throws MissingResourceException
 	 */
-	public static void setLanguage(String selectedLanguage) throws MissingResourceException {
+	public synchronized static void setLanguage(String selectedLanguage) throws MissingResourceException {
 		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++){
 			if(selectedLanguage.equalsIgnoreCase(AVAILABLE_LANGUAGES[i])){
 				selectedLanguage = AVAILABLE_LANGUAGES[i];
@@ -171,7 +172,9 @@ public class L10n {
 	}
 	
 	/**
-	 * Almost the same as getString(String) ... but it returns a HTMLNode and gives the user the ability to contribute to the translation
+	 * Almost the same as getString(String) ... but it returns a HTMLNode and gives the user the ability
+	 *  to contribute to the translation though the translation toadlet
+	 * 
 	 * @param key
 	 * @return HTMLNode
 	 */
@@ -186,10 +189,17 @@ public class L10n {
 		return translationField;
 	}
 	
+	/**
+	 * Return the english translation of the key or the key itself if it doesn't exist.
+	 * 
+	 * @param key
+	 * @return String
+	 */
 	public static String getDefaultString(String key) {
 		String result = null;
 		// We instanciate it only if necessary
-		if(fallbackTranslation == null) fallbackTranslation = loadTranslation(AVAILABLE_LANGUAGES[0]);
+		if(fallbackTranslation == null)
+			fallbackTranslation = loadTranslation(AVAILABLE_LANGUAGES[0]);
 		
 		result = fallbackTranslation.get(key);
 		
@@ -239,6 +249,11 @@ public class L10n {
 		return sb.toString();
 	}
 	
+	/**
+	 * Return the ISO code of the language used by the framework
+	 * 
+	 * @return String
+	 */
 	public static String getSelectedLanguage() {
 		return currentClass.selectedLanguage;
 	}
@@ -270,12 +285,4 @@ public class L10n {
         
         return result;
     }
-		
-	public static void main(String[] args) {
-		L10n.setLanguage("en");
-		System.out.println(L10n.getString("QueueToadlet.failedToRestart"));
-		L10n.setLanguage("fr");
-		System.out.println(L10n.getString("QueueToadlet.failedToRestart"));
-		//System.out.println(L10n.getString("testing.test", new String[]{ "test1", "test2" }, new String[] { "a", "b" }));
-	}
 }
