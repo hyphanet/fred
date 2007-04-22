@@ -61,6 +61,10 @@ public class L10n {
 			Logger.error(this, "IOError while accessing the file!" + e.getMessage(), e);
 		}
 		currentTranslation = loadTranslation(selectedLanguage);
+		if(currentTranslation == null) {
+			Logger.error(this, "The translation file for " + selectedLanguage + " is invalid. The node will load an empty template.");
+			currentTranslation = new SimpleFieldSet(false);
+		}
 	}
 	
 	/**
