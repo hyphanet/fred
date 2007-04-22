@@ -108,10 +108,16 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Filepath is not a file";
 		case ACCESS_DENIED:
 			return "Access denied";
-		case COULD_NOT_READ_FILE:
-			return "Could not read file";
 		case DIRECT_DISK_ACCESS_DENIED:
 			return "Direct Disk Access operation denied: did you send a FileHash field ? Did you use TestDDA?";
+		case COULD_NOT_READ_FILE:
+			return "Could not read file";
+		case REF_SIGNATURE_INVALID:
+			return "Reference signature failed to verify";
+		case CANNOT_PEER_WITH_SELF:
+			return "Node cannot peer with itself";
+		case DUPLICATE_PEER_REF:
+			return "Node already a peer with that ref";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";
