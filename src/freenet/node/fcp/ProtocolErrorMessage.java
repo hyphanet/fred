@@ -117,7 +117,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 		case CANNOT_PEER_WITH_SELF:
 			return "Node cannot peer with itself";
 		case DUPLICATE_PEER_REF:
-			return "Node already a peer with that ref";
+			return "Node already has a peer with that ref";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";
