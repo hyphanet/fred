@@ -1,3 +1,6 @@
+/* Bookmarks & bookmark editor */
+@import url(/static/bookmark.css);
+
 body {
 	font-family: tahoma;
 	font-size: 11px;

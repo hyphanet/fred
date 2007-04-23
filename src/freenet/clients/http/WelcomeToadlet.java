@@ -20,6 +20,11 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.clients.http.filter.GenericReadFilterCallback;
+import freenet.clients.http.bookmark.BookmarkItem;
+import freenet.clients.http.bookmark.BookmarkItems;
+import freenet.clients.http.bookmark.BookmarkCategory;
+import freenet.clients.http.bookmark.BookmarkCategories;
+import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -32,7 +37,10 @@ import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
+
 import freenet.frost.message.*;
+
+
 
 
 public class WelcomeToadlet extends Toadlet {
@@ -43,13 +51,13 @@ public class WelcomeToadlet extends Toadlet {
 	private static final int MAX_NAME_LENGTH = 1024 * 1024;
 	final NodeClientCore core;
 	final Node node;
-	final BookmarkManager bookmarks;
+	final BookmarkManager bookmarkManager;
 	
 	WelcomeToadlet(HighLevelSimpleClient client, Node node) {
 		super(client);
 		this.node = node;
 		this.core = node.clientCore;
-		this.bookmarks = core.bookmarkManager;
+		this.bookmarkManager = core.bookmarkManager;
 		try {
 			manageBookmarksURI = new URI("/welcome/?managebookmarks");
 		} catch (URISyntaxException e) {
@@ -65,6 +73,22 @@ public class WelcomeToadlet extends Toadlet {
 	}
 
 	URI manageBookmarksURI;
+	
+	
+	private void addCategoryToList(BookmarkCategory cat, HTMLNode list)
+	{
+		BookmarkItems items = cat.getItems();
+		for(int i = 0; i < items.size(); i++) {
+			HTMLNode li = list.addChild("li", "class","item");
+			li.addChild("a", "href", "/" + items.get(i).getKey(), items.get(i).getName());
+		}
+
+		BookmarkCategories cats = cat.getSubCategories();
+		for (int i = 0; i < cats.size(); i++) {			
+			HTMLNode subCat = list.addChild("li", "class", "cat", cats.get(i).getName());
+			addCategoryToList(cats.get(i), list.addChild("li").addChild("ul"));
+		}
+	}
 	
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
@@ -147,58 +171,6 @@ public class WelcomeToadlet extends Toadlet {
 
 			ctx.getPageMaker().getContentNode(infobox).addChild("#", "Runtime database statistics have been written to the wrapper logfile");
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-		}else if (request.isPartSet("addbookmark")) {
-			if(noPassword) {
-				redirectToRoot(ctx);
-				return;
-			}
-			String key = request.getPartAsString("key", MAX_KEY_LENGTH);
-			String name = request.getPartAsString("name", MAX_NAME_LENGTH);
-			try {
-				bookmarks.addBookmark(new Bookmark(key, name, core.alerts), true);
-			} catch (MalformedURLException mue) {
-				this.sendBookmarkEditPage(ctx, MODE_ADD, null, key, name, "Given key does not appear to be a valid Freenet key.");
-				return;
-			}
-			
-			this.handleGet(manageBookmarksURI, new HTTPRequestImpl(manageBookmarksURI), ctx);
-		} else if (request.isPartSet("managebookmarks")) {
-			if(noPassword) {
-				redirectToRoot(ctx);
-				return;
-			}
-			Enumeration e = bookmarks.getBookmarks();
-			while (e.hasMoreElements()) {
-				Bookmark b = (Bookmark)e.nextElement();
-			
-				if (request.isPartSet("delete_"+b.hashCode())) {
-					bookmarks.removeBookmark(b, true);
-					break;
-				} else if (request.isPartSet("movedown_"+b.hashCode())) {
-					bookmarks.moveBookmarkDown(b, true);
-					break;
-				} else if (request.isPartSet("moveup_"+b.hashCode())) {
-					bookmarks.moveBookmarkUp(b, true);
-					break;
-				} else if (request.isPartSet("edit_"+b.hashCode())) {
-					this.sendBookmarkEditPage(ctx, b);
-					return;
-				} else if (request.isPartSet("update_"+b.hashCode())) {
-					// removing it and adding means that any USK subscriptions are updated properly
-					String key = request.getPartAsString("key", MAX_KEY_LENGTH);
-					String name = request.getPartAsString("name", MAX_NAME_LENGTH);
-					try {
-						Bookmark newbkmk = new Bookmark(key, name, core.alerts);
-						bookmarks.removeBookmark(b, false);
-						bookmarks.addBookmark(newbkmk, true);
-					} catch (MalformedURLException mue) {
-						this.sendBookmarkEditPage(ctx, MODE_EDIT, b, key, name, "Given key does not appear to be a valid freenet key.");
-						return;
-					}
-					this.handleGet(manageBookmarksURI, new HTTPRequestImpl(manageBookmarksURI), ctx);
-				}
-			}
-			this.handleGet(manageBookmarksURI, new HTTPRequestImpl(manageBookmarksURI), ctx);
 		}else if(request.isPartSet("disable")){
 			if(noPassword) {
 				redirectToRoot(ctx);
@@ -477,19 +449,7 @@ public class WelcomeToadlet extends Toadlet {
 				writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 				Logger.normal(this, "Node is restarting");
 				return;
-			}else if (request.getParam("newbookmark").length() > 0) {
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark", ctx);
-				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Confirm Bookmark Addition"));
-				HTMLNode addForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(infobox), "/", "bookmarkAddForm");
-				addForm.addChild("#", "Please confirm that you want to add the key " + request.getParam("newbookmark") + " to your bookmarks and enter the description that you would prefer:");
-				addForm.addChild("br");
-				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", request.getParam("newbookmark") });
-				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", request.getParam("desc") });
-				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addbookmark", "Add bookmark" });
-				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-				return;
-			} else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
+			}else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Link to external resources", ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				HTMLNode warnbox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "External link"));
@@ -503,38 +463,7 @@ public class WelcomeToadlet extends Toadlet {
 				externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Go", "Go to the specified link" });
 				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 				return;
-			} else if (request.isParameterSet("managebookmarks")) {
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Bookmark Manager", ctx);
-				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "My Bookmarks"));
-				HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
-
-				Enumeration e = bookmarks.getBookmarks();
-				boolean moveButtonsEnabled = (bookmarks.getSize() > 1); // activate move{up|down} buttons
-
-				if (!e.hasMoreElements()) {
-					infoboxContent.addChild("#", "You currently do not have any bookmarks defined.");
-				} else {
-					HTMLNode manageForm = ctx.addFormChild(infoboxContent, ".", "manageBookmarksForm");
-					HTMLNode bookmarkList = manageForm.addChild("ul", "id", "bookmarks");
-					while (e.hasMoreElements()) {
-						Bookmark b = (Bookmark)e.nextElement();
-
-						HTMLNode bookmark = bookmarkList.addChild("li", "style", "clear: right;"); /* TODO */
-						bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "delete_" + b.hashCode(), "Delete", "float: right;" });
-						bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "edit_" + b.hashCode(), "Edit", "float: right;" });
-						if (moveButtonsEnabled) {
-							bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "movedown_" + b.hashCode(), "Down", "float: right;" });
-							bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "moveup_" + b.hashCode(), "Up", "float: right;" });
-						}
-						bookmark.addChild("a", "href", '/' + b.getKey(), b.getDesc());
-					}
-					manageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
-				}
-				contentNode.addChild(createBookmarkEditForm(ctx, MODE_ADD, null, "", ""));
-				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-				return;
-			}else if (request.isParameterSet("exit")) {
+			} else if (request.isParameterSet("exit")) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Shutdown"));
@@ -598,22 +527,13 @@ public class WelcomeToadlet extends Toadlet {
 		bookmarkBoxHeader.addChild("#", "My Bookmarks");
 		if(ctx.isAllowedFullAccess()){
 			bookmarkBoxHeader.addChild("#", " [");
-			bookmarkBoxHeader.addChild("span", "id", "bookmarkedit").addChild("a", new String[] { "href", "class" }, new String[] { "?managebookmarks", "interfacelink" }, (bookmarks.getSize() == 0) ? "Add" : "Edit");
+			bookmarkBoxHeader.addChild("span", "id", "bookmarkedit").addChild("a", new String[] { "href", "class" }, new String[] { "/bookmarkEditor/", "interfacelink" },"Edit");
 			bookmarkBoxHeader.addChild("#", "]");
 		}
 
 		HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
-
-		Enumeration e = bookmarks.getBookmarks();
-		if (!e.hasMoreElements()) {
-			bookmarkBoxContent.addChild("#", "You currently do not have any bookmarks defined.");
-		} else {
-			HTMLNode bookmarkList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
-			while (e.hasMoreElements()) {
-				Bookmark b = (Bookmark)e.nextElement();
-				bookmarkList.addChild("li").addChild("a", "href", '/' + b.getKey(), b.getDesc());
-			}
-		}
+		HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
+		addCategoryToList(bookmarkManager.getMainCategory(), bookmarksList);
 
 		// Version info and Quit Form
 		HTMLNode versionBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "Version Information & Node Control"));
@@ -649,45 +569,6 @@ public class WelcomeToadlet extends Toadlet {
 		}
 
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-	}
-	
-	private void sendBookmarkEditPage(ToadletContext ctx, Bookmark b) throws ToadletContextClosedException, IOException {
-		this.sendBookmarkEditPage(ctx, MODE_EDIT, b, b.getKey(), b.getDesc(), null);
-	}
-	
-	private void sendBookmarkEditPage(ToadletContext ctx, int mode, Bookmark b, String origKey, String origDesc, String message) throws ToadletContextClosedException, IOException {
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode((mode == MODE_ADD) ? "Add a Bookmark" : "Edit a Bookmark", ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-		
-		if (message != null) {  // only used for error messages so far...
-			HTMLNode errorBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", "An Error Occured"));
-			ctx.getPageMaker().getContentNode(errorBox).addChild("#", message);
-		}
-		
-		contentNode.addChild(createBookmarkEditForm(ctx, mode, b, origKey, origDesc));
-		
-		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-	}
-	
-	private HTMLNode createBookmarkEditForm(ToadletContext ctx, int mode, Bookmark b, String origKey, String origDesc) {
-		PageMaker pageMaker = ctx.getPageMaker();
-		HTMLNode infobox = pageMaker.getInfobox("infobox-normal bookmark-edit", (mode == MODE_ADD) ? "New Bookmark" : "Update Bookmark");
-		HTMLNode content = pageMaker.getContentNode(infobox);
-		HTMLNode editForm = ctx.addFormChild(content, ".", mode == MODE_ADD ? "addBookmarkForm" : "editBookmarkForm");
-		editForm.addChild("#", "Key: ");
-		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "key", origKey });
-		editForm.addChild("br");
-		editForm.addChild("#", "Description: ");
-		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", origDesc });
-		editForm.addChild("br");
-		if (mode == MODE_ADD) {
-			editForm.addChild("input", new String[] { "type", "name", "value", "class" }, new String[] { "submit", "addbookmark", "Add bookmark", "confirm" });
-		} else {
-			editForm.addChild("input", new String[] { "type", "name", "value", "class" }, new String[] { "submit", "update_" + b.hashCode(), "Update bookmark", "confirm" });
-                        editForm.addChild("input", new String[] { "type", "value", "class" }, new String[] { "submit", "Cancel", "cancel" });
-		}
-		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
-		return infobox;
 	}
 	
 	public String supportedMethods() {

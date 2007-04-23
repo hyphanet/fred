@@ -609,6 +609,9 @@ public class FProxyToadlet extends Toadlet {
 			
 			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
 			server.register(localFileInsertToadlet, "/files/", true, false);
+			
+			BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, node);
+			server.register(bookmarkEditorToadlet, "/bookmarkEditor/", true, false);
 
 			BrowserTestToadlet browsertTestToadlet = new BrowserTestToadlet(client, core);
 			server.register(browsertTestToadlet, "/test/", true, false);

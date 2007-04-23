@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.clients.http;
+package freenet.clients.http.bookmark;
 
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -12,14 +12,30 @@ import freenet.support.HTMLNode;
 
 import java.net.MalformedURLException;
 
-public class Bookmark {
+public class BookmarkItem extends Bookmark{
 	
 	private FreenetURI key;
-	private String desc;
 	private boolean updated;
 	private final BookmarkUpdatedUserAlert alert;
 	private UserAlertManager alerts;
+	
+	
+	public BookmarkItem(FreenetURI k, String n, UserAlertManager uam) throws MalformedURLException {
+		this.key = k;
+		this.name = n;
+		this.alerts = uam;
+		alert = new BookmarkUpdatedUserAlert();
+	}
 
+	public BookmarkItem(FreenetURI k, String n, String d,  UserAlertManager uam) throws MalformedURLException {
+	
+		this.key = k;
+		this.name = n;
+		this.desc = d;
+		this.alerts = uam;
+		alert = new BookmarkUpdatedUserAlert();
+	}
+	
 	private class BookmarkUpdatedUserAlert implements UserAlert {
 
 		public boolean userCanDismiss() {
@@ -27,17 +43,17 @@ public class Bookmark {
 		}
 
 		public String getTitle() {
-			return "Bookmark updated: "+desc;
+			return "Bookmark updated: "+ name;
 		}
 
 		public String getText() {
-			return "The bookmarked site "+desc+" has been updated to edition "+key.getSuggestedEdition();
+			return "The bookmarked site "+ name +" has been updated to edition "+key.getSuggestedEdition();
 		}
 
 		public HTMLNode getHTMLText() {
 			HTMLNode n = new HTMLNode("div");
 			n.addChild("#", "The bookmarked site ");
-			n.addChild("a", "href", '/'+key.toString()).addChild("#", desc);
+			n.addChild("a", "href", '/'+key.toString()).addChild("#", name);
 			n.addChild("#", " has been updated to edition "+key.getSuggestedEdition()+".");
 			return n;
 		}
@@ -47,7 +63,7 @@ public class Bookmark {
 		}
 
 		public boolean isValid() {
-			synchronized(Bookmark.this) {
+			synchronized(BookmarkItem.this) {
 				return updated;
 			}
 		}
@@ -81,28 +97,7 @@ public class Bookmark {
 		updated = true;
 		alerts.register(alert);
 	}
-
-	Bookmark(String k, String d, UserAlertManager uam) throws MalformedURLException {
-		this.key = new FreenetURI(k);
-		this.desc = d;
-		alert = new BookmarkUpdatedUserAlert();
-		this.alerts = uam;
-	}
-
-	Bookmark(String from, UserAlertManager uam) throws MalformedURLException {
-		int eqpos = from.indexOf("=");
-
-		if (eqpos < 0) {
-			this.key = new FreenetURI(from);
-			this.desc = from;
-		} else {
-			this.key = new FreenetURI(from.substring(0, eqpos));
-			this.desc = from.substring(eqpos + 1);
-		}
-		alert = new BookmarkUpdatedUserAlert();
-		this.alerts = uam;
-	}
-
+	
 	public String getKey() {
 		return key.toString();
 	}
@@ -119,16 +114,21 @@ public class Bookmark {
 		return key.getKeyType();
 	}
 
-	public String getDesc() {
-		if (desc.equals("")) {
+	public String getName() {
+		if (name.equals("")) {
 			return "Unnamed Bookmark";
 		} else {
-			return desc;
+			return name;
 		}
 	}
-
+	
+	public void setPrivate(boolean bool)
+	{
+		privateBookmark = bool;
+	}
+	
 	public String toString() {
-		return this.key.toString() + '=' + this.desc;
+		return this.name + "=" + this.key.toString();
 	}
 
 	public synchronized void setEdition(long ed, NodeClientCore node) {

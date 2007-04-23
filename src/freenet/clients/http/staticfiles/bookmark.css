@@ -1,0 +1,19 @@
+ul#bookmarks ul {
+	padding-left: 20px;
+}
+
+ul#bookmarks li {
+	list-style-type: none;
+	margin-top: 1px;
+	margin-bottom: 1px;
+}
+
+ul#bookmarks li.cat {
+	font-weight: bold;
+	margin-top: 7px;
+}
+
+ul#bookmarks span.actions img {
+	border: 0;
+	margin-left: 3px;
+}
