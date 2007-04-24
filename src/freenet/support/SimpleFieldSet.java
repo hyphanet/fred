@@ -442,6 +442,18 @@ public class SimpleFieldSet {
     			subsetIterator = subsets.keySet().iterator();
     		else
     			subsetIterator = null;
+    		while(true) {
+    			if(valuesIterator.hasNext()) break;
+    			if(!subsetIterator.hasNext()) break;
+    			String name = (String) subsetIterator.next();
+    			if(name == null) continue;
+    			SimpleFieldSet fs = (SimpleFieldSet) subsets.get(name);
+    			if(fs == null) continue;
+    			String newPrefix = prefix + name + MULTI_LEVEL_CHAR;
+    			subIterator = fs.keyIterator(newPrefix);
+    			if(subIterator.hasNext()) break;
+    			subIterator = null;
+    		}
     		this.prefix = prefix;
     	}
 
