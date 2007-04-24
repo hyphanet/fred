@@ -1,10 +1,7 @@
 package freenet.clients.http;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -21,6 +18,7 @@ import java.util.jar.JarFile;
 import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.io.FileUtil;
 
 /** Simple class to output standard heads and tail for web interface pages. 
 */
@@ -216,34 +214,13 @@ public class PageMaker {
 	
 	private HTMLNode getOverrideContent() {
 		HTMLNode result = new HTMLNode("style", "type", "text/css");
-		FileInputStream fis = null;
-		BufferedInputStream bis = null;
-		InputStreamReader isr = null;
 		
 		try {
-			fis = new FileInputStream(override);
-			bis = new BufferedInputStream(fis);
-			isr = new InputStreamReader(bis);
-			StringBuffer sb = new StringBuffer();
-			
-			char[] buf = new char[4096];
-			
-			while(isr.ready()) {
-				isr.read(buf);
-				sb.append(buf);
-			}
-			
-			result.addChild("#", sb.toString());
-			
+			result.addChild("#", FileUtil.readUTF(override));
 		} catch (IOException e) {
 			Logger.error(this, "Got an IOE: " + e.getMessage(), e);
-		} finally {
-			try {
-				if(isr != null) isr.close();
-				if(bis != null) bis.close();
-				if(fis != null) fis.close();
-			} catch (IOException e) {}
 		}
+		
 		return result;
 	}
 }

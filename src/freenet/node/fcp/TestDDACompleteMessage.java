@@ -3,16 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 import freenet.node.Node;
 import freenet.node.fcp.FCPConnectionHandler.DDACheckJob;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileUtil;
 
 /**
  * client -> node: DDARequest { WantRead=true, WantWrite=true, Dir=/tmp/blah }
@@ -57,21 +55,7 @@ public class TestDDACompleteMessage extends FCPMessage {
 			File maybeWrittenFile = checkJob.writeFilename;
 			if (maybeWrittenFile.exists() && maybeWrittenFile.isFile() && maybeWrittenFile.canRead()) {
 				try {
-					FileInputStream fis = new FileInputStream(maybeWrittenFile);
-					BufferedInputStream bis = new BufferedInputStream(fis);
-					InputStreamReader isr = new InputStreamReader(bis);
-					StringBuffer sb = new StringBuffer();
-					
-					char[] buf = new char[1024];
-					
-					while(isr.ready()) {
-						isr.read(buf);
-						sb.append(buf);
-					}
-					isr.close();
-					bis.close();
-					fis.close();
-					isWriteAllowed = checkJob.writeContent.equals(sb.toString().trim());
+					isWriteAllowed = checkJob.writeContent.equals(FileUtil.readUTF(maybeWrittenFile).trim());
 				} catch (IOException e) {
 					Logger.error(this, "Caught an IOE trying to read the file (" + maybeWrittenFile + ")! " + e.getMessage());
 				}

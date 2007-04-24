@@ -129,7 +129,8 @@ public class L10n {
 			fos = new FileOutputStream(new File(L10n.PREFIX + L10n.getSelectedLanguage() + L10n.OVERRIDE_SUFFIX));
 			bos = new BufferedOutputStream(fos);
 			
-			bos.write(L10n.translationOverride.toOrderedString().getBytes("UTF-8"));	
+			bos.write(L10n.translationOverride.toOrderedString().getBytes("UTF-8"));
+			bos.flush();
 			
 			Logger.normal("L10n", "Override file saved successfully!");
 		} catch (IOException e) {
