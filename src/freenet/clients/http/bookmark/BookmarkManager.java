@@ -25,6 +25,7 @@ public class BookmarkManager {
   private boolean started;
   private BookmarkCategory mainCategory;
   private HashMap bookmarks;
+  private SubConfig sc;
 
   public BookmarkManager (NodeClientCore n, SubConfig sc) {
 
@@ -34,6 +35,7 @@ public class BookmarkManager {
 
     this.uskcb = new USKUpdatedCallback ();
     this.node = n;
+    this.sc = sc;
 
     try {
 
@@ -85,14 +87,18 @@ public class BookmarkManager {
 		     "List of bookmarks", "A list of bookmarked freesites",
 		     makeCB ());
 
-        makeCB ().
-	set ((sc.getStringArr ("bookmarks").length ==
-	      0 ? defaultRoot.toStrings () : sc.getStringArr ("bookmarks")));
+      if (!importOldBookmarks ())
+	  makeCB ().
+	  set ((sc.getStringArr ("bookmarks").length ==
+		0 ? defaultRoot.toStrings () : sc.
+		getStringArr ("bookmarks")));
 
 
-    } catch (MalformedURLException mue) {
+    }
+    catch (MalformedURLException mue) {
       // just ignore that one
-    } catch (InvalidConfigValueException icve) {
+    }
+    catch (InvalidConfigValueException icve) {
       //TODO
       icve.printStackTrace ();
     }
@@ -103,16 +109,16 @@ public class BookmarkManager {
   }
 
   public class BookmarkCallback implements StringArrCallback {
-	  private final Pattern pattern = Pattern.compile ("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
+    private final Pattern pattern =
+      Pattern.compile ("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
     public String[] get () {
 
       synchronized (BookmarkManager.this) {
 
 	return mainCategory.toStrings ();
 
-    }}
-    
-    public void set (String[]newVals) throws InvalidConfigValueException {
+      }
+    } public void set (String[]newVals) throws InvalidConfigValueException {
       clear ();
 
       FreenetURI key;
@@ -155,12 +161,36 @@ public class BookmarkManager {
 	  if (usk.equals (key, false)) {
 	    items.get (i).setEdition (key.suggestedEdition, node);
 	    break;
-	}}
-	catch (MalformedURLException mue) {
+	  }
+	} catch (MalformedURLException mue) {
 	}
       }
       node.storeConfig ();
     }
+  }
+
+  private boolean importOldBookmarks () {
+    String[]strs = sc.getStringArr ("bookmarks");
+
+    final Pattern pattern = Pattern.compile ("([A-Z]{3}@.*)=(.*)");
+    for (int i = 0; i < strs.length; i++) {
+      Matcher matcher = pattern.matcher (strs[i]);
+      if (matcher.matches () && matcher.groupCount () == 2) {
+	try {
+	  addBookmark ("/",
+		       new BookmarkItem (new FreenetURI (matcher.group (1)),
+					 matcher.group (2), node.alerts),
+		       false);
+	}
+	catch (MalformedURLException mue) {
+	}
+      }
+      else
+	return false;
+    }
+
+    node.storeConfig ();
+    return true;
   }
 
   public BookmarkCallback makeCB () {
@@ -208,7 +238,8 @@ public class BookmarkManager {
       parent.addBookmark (b);
       bookmarks.put (parentPath + b.getName () +
 		     ((b instanceof BookmarkCategory) ? "/" : ""), b);
-    } if (store)
+    }
+    if (store)
         node.storeConfig ();
   }
 
