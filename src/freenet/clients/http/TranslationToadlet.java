@@ -25,7 +25,7 @@ import freenet.support.io.BucketTools;
 public class TranslationToadlet extends Toadlet {
 	public static final String TOADLET_URL = "/translation/";
 	private final NodeClientCore core;
-	private final SimpleFieldSet defaultTranslation = L10n.getDefaultLanguageTranslation();
+	private static final SimpleFieldSet DEFAULT_TRANSLATION = L10n.getDefaultLanguageTranslation();
 	
 	TranslationToadlet(HighLevelSimpleClient client, NodeClientCore core) {
 		super(client);
@@ -161,7 +161,7 @@ public class TranslationToadlet extends Toadlet {
 		
 		SimpleFieldSet sfs = L10n.getCurrentLanguageTranslation();
 		if(sfs != null) {
-			KeyIterator it = defaultTranslation.keyIterator("");
+			KeyIterator it = DEFAULT_TRANSLATION.keyIterator("");
 
 			while(it.hasNext()) {
 				String key = it.nextKey();
