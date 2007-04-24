@@ -52,7 +52,7 @@ public class L10n {
 		try {
 			if(tmpFile.exists() && tmpFile.canRead()) {
 				Logger.normal(this, "Override file detected : let's try to load it");
-				translationOverride = SimpleFieldSet.readFrom(tmpFile, true, false);
+				translationOverride = SimpleFieldSet.readFrom(tmpFile, false, false);
 			} else
 				translationOverride = null;
 			
@@ -307,7 +307,7 @@ public class L10n {
         	// Returns null on lookup failures:
         	in = loader.getResourceAsStream(name);
         	if(in != null)
-        		result = SimpleFieldSet.readFrom(in, true, false);
+        		result = SimpleFieldSet.readFrom(in, false, false);
         } catch (Exception e) {
         	Logger.error("L10n", "Error while loading the l10n file from " + name + " :" + e.getMessage());
             result = null;
