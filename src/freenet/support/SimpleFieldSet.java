@@ -444,8 +444,8 @@ public class SimpleFieldSet {
     			else
     				subsetIterator = null;
     			while(true) {
-    				if(valuesIterator.hasNext()) break;
-    				if(!subsetIterator.hasNext()) break;
+    				if(valuesIterator != null && valuesIterator.hasNext()) break;
+    				if(subsetIterator == null || !subsetIterator.hasNext()) break;
     				String name = (String) subsetIterator.next();
     				if(name == null) continue;
     				SimpleFieldSet fs = (SimpleFieldSet) subsets.get(name);
