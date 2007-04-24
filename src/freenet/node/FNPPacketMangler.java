@@ -154,10 +154,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 if(tryProcessAuth(buf, offset, length, pn, peer)) return;
             }
         }
-        if((opn != null) && !opn.isConnected()) {
-            if(logMINOR) Logger.minor(this,"Unmatchable packet from "+peer);
-        } else
-            Logger.error(this,"Unmatchable packet from "+peer);
+        Logger.normal(this,"Unmatchable packet from "+peer);
     }
 
     /**
