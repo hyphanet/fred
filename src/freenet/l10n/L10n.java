@@ -166,6 +166,20 @@ public class L10n {
 	}
 	
 	/**
+	 * Return a copy of the default translation file (english one)
+	 * 
+	 * @return SimpleFieldSet
+	 */
+	public static SimpleFieldSet getDefaultLanguageTranslation() {
+		synchronized (sync) {
+			if(fallbackTranslation == null)
+				fallbackTranslation = loadTranslation(AVAILABLE_LANGUAGES[0]);
+				
+			return new SimpleFieldSet(fallbackTranslation);	
+		}
+	}
+	
+	/**
 	 * The real meat
 	 * 
 	 * Same thing as getString(key, false);

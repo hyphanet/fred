@@ -25,6 +25,7 @@ import freenet.support.io.BucketTools;
 public class TranslationToadlet extends Toadlet {
 	public static final String TOADLET_URL = "/translation/";
 	private final NodeClientCore core;
+	private final SimpleFieldSet defaultTranslation = L10n.getDefaultLanguageTranslation();
 	
 	TranslationToadlet(HighLevelSimpleClient client, NodeClientCore core) {
 		super(client);
@@ -56,8 +57,8 @@ public class TranslationToadlet extends Toadlet {
 			ctx.sendReplyHeaders(200, "Found", head, "text/plain", data.length);
 			ctx.writeData(data);
 			return;
-		} else if (request.isParameterSet("transupdated")) {
-			String key = request.getParam("transupdated");
+		} else if (request.isParameterSet("translation_updated")) {
+			String key = request.getParam("translation_updated");
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Translation updated!", true, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
@@ -85,7 +86,7 @@ public class TranslationToadlet extends Toadlet {
 			footer.addChild("%", "&nbsp;&nbsp;");
 			footer.addChild("a", "href", TOADLET_URL+"?getTranlationFile").addChild("#", "Download the full translation file");
 			footer.addChild("%", "&nbsp;&nbsp;");
-			footer.addChild("a", "href", "/").addChild("#", "Return to the main page");
+			footer.addChild("a", "href", TOADLET_URL).addChild("#", "Return to the translation page");
 
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;				
@@ -98,7 +99,7 @@ public class TranslationToadlet extends Toadlet {
 			HTMLNode updateForm =  ctx.addFormChild(translationNode, TOADLET_URL, "trans_update");
 			HTMLNode legendTable = updateForm.addChild("table", "class", "translation");
 			
-			HTMLNode legendRow = legendTable.addChild("tr").addChild("b");
+			HTMLNode legendRow = legendTable.addChild("tr");
 			legendRow.addChild("td", "class", "translation-key", "Translation key");
 			legendRow.addChild("td", "class", "translation-key", "Original (english version)");
 			legendRow.addChild("td", "class", "translation-key", "Current translation");
@@ -113,21 +114,35 @@ public class TranslationToadlet extends Toadlet {
 			
 			contentRow.addChild("td", "class", "translation-new").addChild(
 					"textarea",
-					new String[] { "name", "rows", "cols", "value" },
-					new String[] { "trans", "3", "80", L10n.getString(key)
-					});
+					new String[] { "name", "rows", "cols" },
+					new String[] { "trans", "3", "80" },
+					L10n.getString(key));
 			
-			updateForm.addChild("input", 
+			contentRow.addChild("input", 
 					new String[] { "type", "name", "value" }, 
 					new String[] { "hidden", "key", key
 			});
 
-			contentRow = legendTable.addChild("tr");
-			contentRow.addChild("input", 
+			updateForm.addChild("input", 
 					new String[] { "type", "name", "value" }, 
-					new String[] { "submit", "trupdate", "Update the translation!"
+					new String[] { "submit", "translation_update", "Update the translation!"
 			});
-			contentRow.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			return;
+		} else if (request.isParameterSet("remove")) {
+			String key = request.getParam("remove");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Remove a translation override key", true, ctx);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "You are about to remove a translation override key!"));
+			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+			content.addChild("p").addChild("#", "Are you sure that you want to remove the following translation key : (" + key + " - " + L10n.getString(key) + ") ?");
+			HTMLNode removeForm = ctx.addFormChild(content.addChild("p"), TOADLET_URL, "remove-confirm");
+			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "remove-confirm", key });
+			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Remove" });
+			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+			
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
 		}
@@ -136,17 +151,17 @@ public class TranslationToadlet extends Toadlet {
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 		HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
-		HTMLNode updateForm =  ctx.addFormChild(translationNode, TOADLET_URL, "trans_update");
-		HTMLNode legendTable = updateForm.addChild("table", "class", "translation");
+		translationNode.addChild("#", "You are currently contributing to the " + L10n.getSelectedLanguage() + " translation :");
+		HTMLNode legendTable = translationNode.addChild("table", "class", "translation");
 		
-		HTMLNode legendRow = legendTable.addChild("tr").addChild("b");
+		HTMLNode legendRow = legendTable.addChild("tr");
 		legendRow.addChild("td", "class", "translation-key", "Translation key");
 		legendRow.addChild("td", "class", "translation-key", "Original (english version)");
 		legendRow.addChild("td", "class", "translation-key", "Current translation");
 		
 		SimpleFieldSet sfs = L10n.getCurrentLanguageTranslation();
 		if(sfs != null) {
-			KeyIterator it = sfs.keyIterator("");
+			KeyIterator it = defaultTranslation.keyIterator("");
 
 			while(it.hasNext()) {
 				String key = it.nextKey();
@@ -159,18 +174,10 @@ public class TranslationToadlet extends Toadlet {
 						L10n.getDefaultString(key)
 				);
 
-				contentRow.addChild("td", "class", "translation-new").addChild(
-						"input",
-						new String[] { "type", "name", "value" },
-						new String[] { "text", "trans", L10n.getString(key)
-						});
-
-				legendTable.addChild("td", 
-						new String[] { "type", "name", "value" }, 
-						new String[] { "text", "key", key
-				});
+				contentRow.addChild("td", "class", "translation-new").addChild(_setOrRemoveOverride(key));
 			}
 		}
+		
 		this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 	}
 	
@@ -189,13 +196,19 @@ public class TranslationToadlet extends Toadlet {
 			return;
 		}
 		
-		if(request.getPartAsString("trupdate", 32).length() > 0){
+		if(request.getPartAsString("translation_update", 32).length() > 0){
 			String key = request.getPartAsString("key", 256);
 			L10n.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), "UTF-8"));
 			
-			redirectTo(ctx, TOADLET_URL+"?transupdated="+key);
+			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key);
 			return;
-		} else // Shouldn't reach that point!
+		} else if(request.getPartAsString("remove-confirm", 32).length() > 0) {
+			String key = request.getPartAsString("remove-confirm", 256);
+			L10n.setOverride(key, "");
+			
+			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key);
+			return;
+		}else // Shouldn't reach that point!
 			redirectTo(ctx, "/");
 	}
 	
@@ -209,5 +222,19 @@ public class TranslationToadlet extends Toadlet {
 	public String supportedMethods() {
 		return "GET, POST";
 	}
-
+	
+	private HTMLNode _setOrRemoveOverride(String key) {
+		String value = L10n.getString(key, true);
+		
+		HTMLNode translationField = new HTMLNode("span", "class", "translate_it");
+		if(value == null) {
+			translationField.addChild("#", L10n.getDefaultString(key));
+			translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?translate=" + key).addChild("small", " (translate it in your native language!)");
+		} else {
+			translationField.addChild("#", L10n.getString(key));
+			translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?remove=" + key).addChild("small", " (Remove the translation override!)");
+		}
+		
+		return translationField;
+	}
 }
