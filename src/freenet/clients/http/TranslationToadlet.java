@@ -232,6 +232,7 @@ public class TranslationToadlet extends Toadlet {
 			translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?translate=" + key).addChild("small", " (translate it in your native language!)");
 		} else {
 			translationField.addChild("#", L10n.getString(key));
+			translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?translate=" + key).addChild("small", " (update the translation)");
 			translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?remove=" + key).addChild("small", " (Remove the translation override!)");
 		}
 		
