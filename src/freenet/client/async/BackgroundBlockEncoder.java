@@ -32,11 +32,12 @@ public class BackgroundBlockEncoder implements Runnable {
 	public void queue(SingleBlockInserter[] sbis) {
 		synchronized(this) {
 			for(int i=0;i<sbis.length;i++) {
-				if(sbis[i] == null) continue;
-				if(sbis[i].isCancelled()) continue;
-				if(sbis[i].resultingURI != null) continue;
-				Logger.minor(this, "Queueing encode of "+sbis[i]);
-				SoftReference ref = new SoftReference(sbis[i]);
+				SingleBlockInserter inserter = sbis[i];
+				if(inserter == null) continue;
+				if(inserter.isCancelled()) continue;
+				if(inserter.resultingURI != null) continue;
+				Logger.minor(this, "Queueing encode of "+inserter);
+				SoftReference ref = new SoftReference(inserter);
 				queue.add(ref);
 			}
 			notifyAll();
