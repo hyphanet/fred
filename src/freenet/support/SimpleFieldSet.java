@@ -481,6 +481,7 @@ public class SimpleFieldSet {
 				while(true) {
 					// Iterate subsets.
 					if(subIterator != null && subIterator.hasNext()) {
+						if(ret != null) return ret;
 						ret = (String) subIterator.next();
 						if(subIterator.hasNext())
 							if(ret != null) return ret;
@@ -491,6 +492,10 @@ public class SimpleFieldSet {
 						SimpleFieldSet fs = (SimpleFieldSet) subsets.get(key);
 						String newPrefix = prefix + key + MULTI_LEVEL_CHAR;
 						subIterator = fs.keyIterator(newPrefix);
+					} else {
+						if(ret == null)
+							Logger.error(this, "Returning null from KeyIterator.nextKey() - should never happen!");
+						return ret;
 					}
 				}
 			}
