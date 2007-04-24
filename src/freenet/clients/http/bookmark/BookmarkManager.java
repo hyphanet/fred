@@ -49,14 +49,21 @@ public class BookmarkManager {
 		     BookmarkItem (new
 				   FreenetURI
 				   ("USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/20/full/page1.html"),
-				   "Entry point", node.alerts));
+				   "Entry point (freesites with descriptions but no categories)", node.alerts));
         indexes.
 	addBookmark (new
 		     BookmarkItem (new
 				   FreenetURI
 				   ("USK@BPZppy07RyID~NGihHgs4AAw3fUXxgtKIrwRu5rtpWE,k5yjkAFJC93JkydKl6vpY0Zy9D8ec1ymv2XP4Tx5Io0,AQABAAE/FreeHoo/6/"),
-				   "Free Hoo", node.alerts));
+				   "Free Hoo (very old freesite reviews site)", node.alerts));
 
+        indexes.
+    	addBookmark (new
+    		     BookmarkItem (new
+    				   FreenetURI
+    				   ("USK@e4TEIN5l1nkn6kjl63XBgYTYobmwGvtnyK2YW0b0ajo,hv-2~OfetXkb0FhDuPxorWIf0wXeZKPEfdIhwyh-mhk,AQABAAE/AnotherIndex/106/"),
+    				   "Another Index (freesites with categories but no descriptions)", node.alerts));
+        
       BookmarkCategory flog =
 	(BookmarkCategory) defaultRoot.
 	addBookmark (new BookmarkCategory ("Freenet devel's flogs"));
