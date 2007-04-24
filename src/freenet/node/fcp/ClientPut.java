@@ -379,7 +379,8 @@ public class ClientPut extends ClientPutBase {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
 		// This is all fixed, so no need for synchronization.
-		fs.putSingle("Metadata.ContentType", clientMetadata.getMIMEType());
+		if(clientMetadata.getMIMEType() != null)
+			fs.putSingle("Metadata.ContentType", clientMetadata.getMIMEType());
 		fs.putSingle("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			fs.putSingle("Filename", origFilename.getPath());
