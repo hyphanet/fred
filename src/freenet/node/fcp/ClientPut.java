@@ -119,7 +119,6 @@ public class ClientPut extends ClientPutBase {
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
-			cm = null;
 			byte[] d;
 			try {
 				d = m.writeToByteArray();
@@ -128,7 +127,7 @@ public class ClientPut extends ClientPutBase {
 				Logger.error(this, "Impossible: "+e, e);
 				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
-				clientMetadata = null;
+				clientMetadata = cm;
 				putter = null;
 				return;
 			}
@@ -194,7 +193,6 @@ public class ClientPut extends ClientPutBase {
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = message.redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
-			cm = null;
 			byte[] d;
 			try {
 				d = m.writeToByteArray();
@@ -203,7 +201,7 @@ public class ClientPut extends ClientPutBase {
 				Logger.error(this, "Impossible: "+e, e);
 				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
-				clientMetadata = null;
+				clientMetadata = cm;
 				putter = null;
 				return;
 			}
@@ -314,7 +312,6 @@ public class ClientPut extends ClientPutBase {
 			if(logMINOR)
 				Logger.minor(this, "Uploading from redirect for "+this+" : "+targetURI);
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
-			cm = null;
 			byte[] d;
 			try {
 				d = m.writeToByteArray();
@@ -323,7 +320,7 @@ public class ClientPut extends ClientPutBase {
 				Logger.error(this, "Impossible: "+e, e);
 				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
-				clientMetadata = null;
+				clientMetadata = cm;
 				origFilename = null;
 				putter = null;
 				return;
