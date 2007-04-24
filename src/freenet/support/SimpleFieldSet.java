@@ -479,17 +479,11 @@ public class SimpleFieldSet {
 				while(true) {
 					// Iterate subsets.
 					if(subIterator != null && subIterator.hasNext()) {
-						if(ret != null)
-							// Found next but one, can return next
-							return ret;
 						ret = (String) subIterator.next();
-						if(subIterator.hasNext()) {
+						if(subIterator.hasNext())
 							if(ret != null) return ret;
-						} else {
-							subIterator = null;
-						}
-					} else
-						subIterator = null;
+					}
+					subIterator = null;
 					if(subsetIterator != null && subsetIterator.hasNext()) {
 						String key = (String) subsetIterator.next();
 						SimpleFieldSet fs = (SimpleFieldSet) subsets.get(key);
