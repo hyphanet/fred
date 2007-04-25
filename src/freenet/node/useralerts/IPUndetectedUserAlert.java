@@ -36,7 +36,8 @@ public class IPUndetectedUserAlert implements UserAlert {
 				"user is not behind a NAT or Firewall. As soon as you have connected to " +
 				"one other user in this way, Freenet will be able to determine your " +
 				"external IP address. You can determine your current IP address and tell " +
-				"your node with the 'Temporary IP address hint' configuration parameter.";
+				"your node with the 'Temporary IP address hint' configuration parameter. "+
+				"Also, it would be a good idea to forward the port "+node.getPortNumber()+" on your router for UDP to make it easy to connect to your node.";
 	}
 
 	public HTMLNode getHTMLText() {
@@ -47,7 +48,7 @@ public class IPUndetectedUserAlert implements UserAlert {
 		if(node.ipDetector.isDetecting())
 			textNode.addChild("#", "Freenet is currently attempting to detect your external IP address. If this takes more than a few minutes there is something wrong and you can use the Temporary IP Address Hint ");
 		else
-			textNode.addChild("#", "Freenet was unable to determine your external IP address (or the IP address of your NAT-device or firewall). You can still exchange references with other people, however this will only work if the other user is not behind a NAT-device or firewall. As soon as you have connected to one other user in this way, Freenet will be able to determine your external IP address. You can determine your current IP address and tell your node with the \u201cTemporary IP Address Hint\u201d ");
+			textNode.addChild("#", "Freenet was unable to determine your external IP address (or the IP address of your NAT-device or firewall). You can still exchange references with other people, however this will only work if the other user is not behind a NAT-device or firewall. As soon as you have connected to one other user in this way, Freenet will be able to determine your external IP address. You can determine your current IP address and tell your node with the \u201cTemporary IP Address Hint\u201d. Also, it would be a good idea to forward the port "+node.getPortNumber()+" on your router for UDP to make it easy to connect to your node.");
 		textNode.addChild("a", "href", "/config/", "configuration parameter");
 		textNode.addChild("#", ".");
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
