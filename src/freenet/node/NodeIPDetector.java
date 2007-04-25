@@ -264,8 +264,9 @@ public class NodeIPDetector {
 	public void processDetectedIPs(DetectedIP[] list) {
 		pluginDetectedIPs = list;
 		for(int i=0; i<pluginDetectedIPs.length; i++){
-			if(minimumMTU > pluginDetectedIPs[i].mtu){
-				minimumMTU = pluginDetectedIPs[i].mtu;
+			int mtu = pluginDetectedIPs[i].mtu;
+			if(minimumMTU > mtu && mtu > 0){
+				minimumMTU = mtu;
 				Logger.normal(this, "Reducing the MTU to "+minimumMTU);
 			}
 		}
