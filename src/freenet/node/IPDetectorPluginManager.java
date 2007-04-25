@@ -42,14 +42,14 @@ public class IPDetectorPluginManager {
 		}
 
 		public HTMLNode getHTMLText() {
-			HTMLNode node = new HTMLNode("div");
-			node.addChild("#", text);
+			HTMLNode div = new HTMLNode("div");
+			div.addChild("#", text);
 			if(suggestPortForward) {
-				node.addChild("#", " You may want to ");
-				node.addChild("a", "href", "/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues", "forward the port");
-				node.addChild("#", " manually (or you may already have done so, Freenet cannot easily detect this).");
+				div.addChild("#", " You may want to ");
+				div.addChild("a", "href", "/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues", "forward the port");
+				div.addChild("#", " (UDP port number "+node.portNumber+") manually (or you may already have done so, Freenet cannot easily detect this).");
 			}
-			return node;
+			return div;
 		}
 
 		public short getPriorityClass() {
@@ -60,7 +60,7 @@ public class IPDetectorPluginManager {
 			if(!suggestPortForward) return text;
 			StringBuffer sb = new StringBuffer();
 			sb.append(text);
-			sb.append(" You may want to forward the port manually. (See http://wiki.freenetproject.org/FirewallAndRouterIssues ).");
+			sb.append(" You may want to forward the port (UDP port number "+node.portNumber+") manually. (See http://wiki.freenetproject.org/FirewallAndRouterIssues ).");
 			return sb.toString();
 		}
 
