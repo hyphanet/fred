@@ -55,8 +55,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 			actions.addChild("a", "href", "?action=edit&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/edit.png", "edit", "Edit"});
 			
 			actions.addChild("a", "href", "?action=del&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/delete.png", "delete", "Delete"});
-
-			actions.addChild("a", "href", "?action=cut&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", "cut", "Cut"});
+			
+			if("".equals(cutedPath))
+				actions.addChild("a", "href", "?action=cut&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", "cut", "Cut"});
 			
 			if(i != 0)
 				actions.addChild("a", "href", "?action=up&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-up.png", "up", "Go up"});
@@ -84,8 +85,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 			actions.addChild("a", "href", "?action=addItem&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/bookmark-new.png", "add bookmark", "Add bookmark"});
 			
 			actions.addChild("a", "href", "?action=addCat&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/folder-new.png", "add category", "Add category"});
-
-			actions.addChild("a", "href", "?action=cut&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", "cut", "Cut"});
+			
+			if("".equals(cutedPath))
+				actions.addChild("a", "href", "?action=cut&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", "cut", "Cut"});
 			
 			if(i != 0)
 				actions.addChild("a", "href", "?action=up&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-up.png", "up", "Go up"});
