@@ -88,7 +88,8 @@ public class BookmarkEditorToadlet extends Toadlet {
 				actions.addChild("a", "href", "?action=down&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-down.png", "down", "Go down"});
 			
 			subCat.addChild(actions);
-			addCategoryToList(cats.get(i), catPath, list.addChild("li").addChild("ul"));
+			if(cats.get(i).size() != 0)
+				addCategoryToList(cats.get(i), catPath, list.addChild("li").addChild("ul"));
 		}
 	}
 
