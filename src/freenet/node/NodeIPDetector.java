@@ -145,7 +145,7 @@ public class NodeIPDetector {
 				}
 			}
 		}
-		if((detectedAddrs.length == 0) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
+		if(addresses.isEmpty() && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
 			addresses.add(new Peer(oldIPAddress, node.portNumber));
 		// Try to pick it up from our connections
 		if(node.peers != null) {
@@ -227,7 +227,9 @@ public class NodeIPDetector {
 										node.clientCore.alerts.unregister(maybeSymmetricAlert);
 								}
 								
-								addresses.add(new Peer(best.getFreenetAddress(), node.portNumber));
+								Peer p = new Peer(best.getFreenetAddress(), node.portNumber);
+								if(!addresses.contains(p))
+									addresses.add(p);
 							}
 						}
 					}
