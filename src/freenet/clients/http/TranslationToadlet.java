@@ -38,14 +38,7 @@ public class TranslationToadlet extends Toadlet {
 			return;
 		}
 		
-		if (request.isParameterSet("getTranlationFile")) {
-			byte[] data = L10n.getCurrentLanguageTranslation().toOrderedString().getBytes("UTF-8");
-			MultiValueTable head = new MultiValueTable();
-			head.put("Content-Disposition", "attachment; filename=\"" + L10n.PREFIX +L10n.getSelectedLanguage()+ L10n.SUFFIX + '"');
-			ctx.sendReplyHeaders(200, "Found", head, "text/plain", data.length);
-			ctx.writeData(data);
-			return;
-		} else if (request.isParameterSet("getOverrideTranlationFile")) {
+		if (request.isParameterSet("getOverrideTranlationFile")) {
 			SimpleFieldSet sfs = L10n.getOverrideForCurrentLanguageTranslation();
 			if(sfs == null) {
 				super.sendErrorPage(ctx, 503 /* Service Unavailable */, "Service Unavailable", "There is no custom translation available.");
@@ -83,8 +76,6 @@ public class TranslationToadlet extends Toadlet {
 			
 			HTMLNode footer = translationNode.addChild("div", "class", "warning");
 			footer.addChild("a", "href", TOADLET_URL+"?getOverrideTranlationFile").addChild("#", "Download the override translation file");
-			footer.addChild("%", "&nbsp;&nbsp;");
-			footer.addChild("a", "href", TOADLET_URL+"?getTranlationFile").addChild("#", "Download the full translation file");
 			footer.addChild("%", "&nbsp;&nbsp;");
 			footer.addChild("a", "href", TOADLET_URL).addChild("#", "Return to the translation page");
 
