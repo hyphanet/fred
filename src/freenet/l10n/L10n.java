@@ -124,13 +124,22 @@ public class L10n {
 	private static void _saveTranslationFile() {
 		FileOutputStream fos = null;
 		BufferedOutputStream bos = null;
+		File finalFile = new File(L10n.PREFIX + L10n.getSelectedLanguage() + L10n.OVERRIDE_SUFFIX);
 		
 		try {
-			fos = new FileOutputStream(new File(L10n.PREFIX + L10n.getSelectedLanguage() + L10n.OVERRIDE_SUFFIX));
+			// We don't set deleteOnExit on it : if the save operation fails, we want a backup
+			File tempFile = new File(finalFile.getPath() + "-" + System.currentTimeMillis() + ".tmp");
+			Logger.minor("L10n", "The temporary filename is : " + tempFile);
+			
+			fos = new FileOutputStream(tempFile);
 			bos = new BufferedOutputStream(fos);
 			
 			bos.write(L10n.translationOverride.toOrderedString().getBytes("UTF-8"));
 			bos.flush();
+			
+			
+			tempFile.renameTo(finalFile);
+			tempFile.delete();
 			
 			Logger.normal("L10n", "Override file saved successfully!");
 		} catch (IOException e) {
