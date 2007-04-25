@@ -241,6 +241,7 @@ public class IPDetectorPluginManager {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(plugins.length == 0) {
+				if(logMINOR) Logger.minor(this, "No IP detection plugins");
 				detector.hasDetectedPM();
 				return;
 			}
