@@ -184,14 +184,15 @@ public class BookmarkManager {
     for (int i = 0; i < strs.length; i++) {
       Matcher matcher = pattern.matcher (strs[i]);
       if (matcher.matches () && matcher.groupCount () == 2) {
+	      if(getCategoryByPath("/Imported/") == null)
+		       addBookmark ("/",new BookmarkCategory("Imported"), false);
 	try {
-	  addBookmark ("/",
+	  addBookmark ("/Imported/",
 		       new BookmarkItem (new FreenetURI (matcher.group (1)),
 					 matcher.group (2), node.alerts),
 		       false);
 	}
-	catch (MalformedURLException mue) {
-	}
+	catch (MalformedURLException mue) {	}
       }
       else
 	return false;
