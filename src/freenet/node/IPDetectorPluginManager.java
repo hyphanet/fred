@@ -485,27 +485,31 @@ public class IPDetectorPluginManager {
 						return;
 					}
 				}
-				// Now tell the node
-				HashMap map = new LinkedHashMap();
-				for(int i=0;i<v.size();i++) {
-					DetectedIP d = (DetectedIP) v.get(i);
-					InetAddress addr = d.publicAddress;
-					if(!map.containsKey(addr)) {
-						map.put(addr, d);
-					} else {
-						DetectedIP oldD = (DetectedIP) map.get(addr);
-						if(!oldD.equals(d)) {
-							if(d.natType != DetectedIP.NOT_SUPPORTED) {
-								if(oldD.natType < d.natType) {
-									// Higher value = more restrictive.
-									// Assume the worst.
-									map.put(addr, d);
-								}
-							}
-						}
-					}
-				}
-				DetectedIP[] list = (DetectedIP[]) map.values().toArray(new DetectedIP[map.size()]);
+				
+				// Node does not know about individual interfaces, so just process the lot.
+				
+//				// Now tell the node
+//				HashMap map = new LinkedHashMap();
+//				for(int i=0;i<v.size();i++) {
+//					DetectedIP d = (DetectedIP) v.get(i);
+//					InetAddress addr = d.publicAddress;
+//					if(!map.containsKey(addr)) {
+//						map.put(addr, d);
+//					} else {
+//						DetectedIP oldD = (DetectedIP) map.get(addr);
+//						if(!oldD.equals(d)) {
+//							if(d.natType != DetectedIP.NOT_SUPPORTED) {
+//								if(oldD.natType < d.natType) {
+//									// Higher value = more restrictive.
+//									// Assume the worst.
+//									map.put(addr, d);
+//								}
+//							}
+//						}
+//					}
+//				}
+//				DetectedIP[] list = (DetectedIP[]) map.values().toArray(new DetectedIP[map.size()]);
+				DetectedIP[] list = (DetectedIP[]) v.toArray(new DetectedIP[v.size()]);
 				int countOpen = 0;
 				int countFullCone = 0;
 				int countRestricted = 0;
