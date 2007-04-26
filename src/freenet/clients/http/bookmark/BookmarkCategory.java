@@ -5,132 +5,131 @@ import java.util.Iterator;
 
 import freenet.support.StringArray;
 
-
-public class BookmarkCategory extends Bookmark	// implements Iterator
+public class BookmarkCategory extends Bookmark // implements Iterator
 {
 
-  private final Vector bookmarks;
+	private final Vector bookmarks;
 
-  public BookmarkCategory (String name) {
-    bookmarks = new Vector ();
-    setName (name);
-  } public BookmarkCategory (String name, String desc) {
-    bookmarks = new Vector ();
-    setName (name);
-    setDesc (desc);
-  }
+	public BookmarkCategory(String name) {
+		bookmarks = new Vector();
+		setName(name);
+	}
 
-  protected Bookmark addBookmark (Bookmark b) {
-    bookmarks.add (b);
-    return b;
-  }
+	public BookmarkCategory(String name, String desc) {
+		bookmarks = new Vector();
+		setName(name);
+		setDesc(desc);
+	}
 
-  protected void removeBookmark (Bookmark b) {
-    bookmarks.remove (b);
-  }
+	protected Bookmark addBookmark(Bookmark b) {
+		bookmarks.add(b);
+		return b;
+	}
 
-  public Bookmark get (int i) {
-    return (Bookmark) bookmarks.get (i);
-  }
+	protected void removeBookmark(Bookmark b) {
+		bookmarks.remove(b);
+	}
 
-  protected void moveBookmarkUp (Bookmark b) {
-    int index = bookmarks.indexOf (b);
-    if (index == -1)
-      return;
+	public Bookmark get(int i) {
+		return (Bookmark) bookmarks.get(i);
+	}
 
-    Bookmark bk = get (index);
-    bookmarks.remove (index);
-    bookmarks.add ((--index < 0) ? 0 : index, bk);
-  }
+	protected void moveBookmarkUp(Bookmark b) {
+		int index = bookmarks.indexOf(b);
+		if (index == -1)
+			return;
 
-  protected void moveBookmarkDown (Bookmark b) {
-    int index = bookmarks.indexOf (b);
-    if (index == -1)
-      return;
+		Bookmark bk = get(index);
+		bookmarks.remove(index);
+		bookmarks.add((--index < 0) ? 0 : index, bk);
+	}
 
-    Bookmark bk = get (index);
-    bookmarks.remove (index);
-    bookmarks.add ((++index > size ())? size () : index, bk);
-  }
+	protected void moveBookmarkDown(Bookmark b) {
+		int index = bookmarks.indexOf(b);
+		if (index == -1)
+			return;
 
-  public int size () {
-    return bookmarks.size ();
-  }
+		Bookmark bk = get(index);
+		bookmarks.remove(index);
+		bookmarks.add((++index > size()) ? size() : index, bk);
+	}
 
-  public BookmarkItems getItems () {
-    BookmarkItems items = new BookmarkItems ();
-    for (int i = 0; i < size (); i++) {
-      if (get (i) instanceof BookmarkItem)
-	items.add ((BookmarkItem) get (i));
-    }
+	public int size() {
+		return bookmarks.size();
+	}
 
-    return items;
-  }
+	public BookmarkItems getItems() {
+		BookmarkItems items = new BookmarkItems();
+		for (int i = 0; i < size(); i++) {
+			if (get(i) instanceof BookmarkItem)
+				items.add((BookmarkItem) get(i));
+		}
 
-  public BookmarkItems getAllItems () {
-    BookmarkItems items = getItems ();
-    BookmarkCategories subCategories = getSubCategories ();
+		return items;
+	}
 
-    for (int i = 0; i < subCategories.size (); i++) {
-      items.extend (subCategories.get (i).getAllItems ());
-    }
-    return items;
-  }
+	public BookmarkItems getAllItems() {
+		BookmarkItems items = getItems();
+		BookmarkCategories subCategories = getSubCategories();
 
+		for (int i = 0; i < subCategories.size(); i++) {
+			items.extend(subCategories.get(i).getAllItems());
+		}
+		return items;
+	}
 
-  public BookmarkCategories getSubCategories () {
-    BookmarkCategories categories = new BookmarkCategories ();
-    for (int i = 0; i < size (); i++) {
-      if (get (i) instanceof BookmarkCategory)
-	categories.add ((BookmarkCategory) get (i));
-    }
+	public BookmarkCategories getSubCategories() {
+		BookmarkCategories categories = new BookmarkCategories();
+		for (int i = 0; i < size(); i++) {
+			if (get(i) instanceof BookmarkCategory)
+				categories.add((BookmarkCategory) get(i));
+		}
 
-    return categories;
-  }
+		return categories;
+	}
 
-  public BookmarkCategories getAllSubCategories () {
-    BookmarkCategories categories = getSubCategories ();
-    BookmarkCategories subCategories = getSubCategories ();
+	public BookmarkCategories getAllSubCategories() {
+		BookmarkCategories categories = getSubCategories();
+		BookmarkCategories subCategories = getSubCategories();
 
-    for (int i = 0; i < subCategories.size (); i++) {
-      categories.extend (subCategories.get (i).getAllSubCategories ());
-    }
+		for (int i = 0; i < subCategories.size(); i++) {
+			categories.extend(subCategories.get(i).getAllSubCategories());
+		}
 
-    return categories;
-  }
+		return categories;
+	}
 
+	public String[] toStrings() {
+		return StringArray.toArray(toStrings("").toArray());
+	}
 
-  public String[] toStrings () {
-    return StringArray.toArray (toStrings ("").toArray ());
-  }
+	// Iternal use only
+	private Vector toStrings(String prefix) {
+		Vector strings = new Vector();
+		BookmarkItems items = getItems();
+		BookmarkCategories subCategories = getSubCategories();
+		prefix += this.name + "/";
 
-  // Iternal use only
-  private Vector toStrings (String prefix) {
-    Vector strings = new Vector ();
-    BookmarkItems items = getItems ();
-    BookmarkCategories subCategories = getSubCategories ();
-    prefix += this.name + "/";
+		for (int i = 0; i < items.size(); i++)
+			strings.add(prefix + items.get(i).toString());
 
-    for (int i = 0; i < items.size (); i++)
-      strings.add (prefix + items.get (i).toString ());
+		for (int i = 0; i < subCategories.size(); i++)
+			strings.addAll(subCategories.get(i).toStrings(prefix));
 
-    for (int i = 0; i < subCategories.size (); i++)
-      strings.addAll (subCategories.get (i).toStrings (prefix));
+		return strings;
 
-    return strings;
+	}
 
-  }
+	public void setPrivate(boolean bool) {
+		privateBookmark = bool;
 
-  public void setPrivate (boolean bool) {
-    privateBookmark = bool;
+		BookmarkCategories subCategories = getSubCategories();
+		for (int i = 0; i < size(); i++)
+			subCategories.get(i).setPrivate(bool);
+	}
 
-    BookmarkCategories subCategories = getSubCategories ();
-    for (int i = 0; i < size (); i++)
-      subCategories.get (i).setPrivate (bool);
-  }
-
-  public Iterator iterator () {
-    return bookmarks.iterator ();
-  }
+	public Iterator iterator() {
+		return bookmarks.iterator();
+	}
 
 }

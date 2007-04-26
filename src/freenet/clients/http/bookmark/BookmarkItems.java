@@ -3,33 +3,33 @@ package freenet.clients.http.bookmark;
 import java.util.Vector;
 import java.util.Iterator;
 
-
-public class BookmarkItems	//implements Iterator
+public class BookmarkItems // implements Iterator
 {
 
-  Vector items;
+	Vector items;
 
+	public BookmarkItems() {
+		items = new Vector();
+	}
 
-  public BookmarkItems () {
-    items = new Vector ();
-  } public BookmarkItem get (int i) {
-    return (BookmarkItem) items.get (i);
-  }
+	public BookmarkItem get(int i) {
+		return (BookmarkItem) items.get(i);
+	}
 
-  public void add (BookmarkItem bi) {
-    items.add (bi);
-  }
+	public void add(BookmarkItem bi) {
+		items.add(bi);
+	}
 
-  protected void extend (BookmarkItems bi) {
-    for (int i = 0; i < bi.size (); i++)
-      add (bi.get (i));
-  }
+	protected void extend(BookmarkItems bi) {
+		for (int i = 0; i < bi.size(); i++)
+			add(bi.get(i));
+	}
 
-  public int size () {
-    return items.size ();
-  }
+	public int size() {
+		return items.size();
+	}
 
-  public Iterator iterator () {
-    return (items).iterator ();
-  }
+	public Iterator iterator() {
+		return (items).iterator();
+	}
 }

@@ -1,27 +1,31 @@
 package freenet.clients.http.bookmark;
 
 public abstract class Bookmark {
-  protected boolean privateBookmark;
-  protected String name;
-  protected String desc;
+	protected boolean privateBookmark;
 
-  public boolean isPrivate () {
-    return privateBookmark;
-  } public abstract void setPrivate (boolean bool);
+	protected String name;
 
-  public String getName () {
-    return name;
-  }
+	protected String desc;
 
-  protected void setName (String s) {
-    name = s;
-  }
+	public boolean isPrivate() {
+		return privateBookmark;
+	}
 
-  public String getDesc () {
-    return desc;
-  }
+	public abstract void setPrivate(boolean bool);
 
-  public void setDesc (String s) {
-    desc = s;
-  }
+	public String getName() {
+		return name;
+	}
+
+	protected void setName(String s) {
+		name = s;
+	}
+
+	public String getDesc() {
+		return desc;
+	}
+
+	public void setDesc(String s) {
+		desc = s;
+	}
 }
