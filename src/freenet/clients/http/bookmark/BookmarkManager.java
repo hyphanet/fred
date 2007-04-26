@@ -48,7 +48,7 @@ public class BookmarkManager {
 	addBookmark (new
 		     BookmarkItem (new
 				   FreenetURI
-				   ("USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/20/full/page1.html"),
+				   ("USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/21/full/page1.html"),
 				   "Entry point (freesites with descriptions but no categories)", node.alerts));
 
         indexes.
@@ -88,7 +88,7 @@ public class BookmarkManager {
 	addBookmark (new
 		     BookmarkItem (new
 				   FreenetURI
-				   ("USK@XeMBryjuEaxqazEuxwnn~G7wCUOXFOZlVWbscdCOUFs,209eycYVidlZvhgL5V2a3INFxrofxzQctEZvyJaFL7I,AQABAAE/frost/2/"),
+				   ("USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/1"),
 				   "Frost", node.alerts));
 
         sc.register ("bookmarks", defaultRoot.toStrings (), 0, true, false,
