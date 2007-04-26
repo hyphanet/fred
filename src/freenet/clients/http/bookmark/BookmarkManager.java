@@ -240,7 +240,7 @@ public class BookmarkManager {
 					+ ((bookmark instanceof BookmarkCategory) ? "/" : ""),
 					bookmark);
 
-			if (((BookmarkItem) bookmark).getKeyType().equals("USK")) {
+			if (bookmark instanceof BookmarkItem && ((BookmarkItem) bookmark).getKeyType().equals("USK")) {
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
 					this.node.uskManager.subscribe(u, this.uskcb, true, this);
