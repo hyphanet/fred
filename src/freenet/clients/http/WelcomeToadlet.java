@@ -4,10 +4,8 @@
 package freenet.clients.http;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Enumeration;
 
 import java.io.File;
 import java.io.FileReader;
@@ -20,7 +18,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.clients.http.filter.GenericReadFilterCallback;
-import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkItems;
 import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkCategories;
@@ -44,11 +41,7 @@ import freenet.frost.message.*;
 
 
 public class WelcomeToadlet extends Toadlet {
-	private final static int MODE_ADD = 1;
-	private final static int MODE_EDIT = 2;
 	private static final int MAX_URL_LENGTH = 1024 * 1024;
-	private static final int MAX_KEY_LENGTH = QueueToadlet.MAX_KEY_LENGTH;
-	private static final int MAX_NAME_LENGTH = 1024 * 1024;
 	final NodeClientCore core;
 	final Node node;
 	final BookmarkManager bookmarkManager;
@@ -85,7 +78,7 @@ public class WelcomeToadlet extends Toadlet {
 
 		BookmarkCategories cats = cat.getSubCategories();
 		for (int i = 0; i < cats.size(); i++) {			
-			HTMLNode subCat = list.addChild("li", "class", "cat", cats.get(i).getName());
+			list.addChild("li", "class", "cat", cats.get(i).getName());
 			addCategoryToList(cats.get(i), list.addChild("li").addChild("ul"));
 		}
 	}

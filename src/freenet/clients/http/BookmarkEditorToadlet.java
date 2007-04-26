@@ -3,7 +3,6 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import freenet.node.Node;
 
 import freenet.clients.http.bookmark.Bookmark;
 import freenet.clients.http.bookmark.BookmarkItem;
@@ -12,11 +11,9 @@ import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkCategories;
 import freenet.clients.http.bookmark.BookmarkManager;
 
-import freenet.node.useralerts.UserAlertManager;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.client.HighLevelSimpleClient;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -27,17 +24,15 @@ public class BookmarkEditorToadlet extends Toadlet {
 	private static final int MAX_NAME_LENGTH = 500;
 	private static final int MAX_BOOKMARK_PATH_LENGTH = 10 * MAX_NAME_LENGTH;
 
-	private final Node node;
 	private final NodeClientCore core;
 	private final BookmarkManager bookmarkManager;
 	private String cutedPath;
 
 	
-	BookmarkEditorToadlet(HighLevelSimpleClient client, Node node)
+	BookmarkEditorToadlet(HighLevelSimpleClient client, NodeClientCore core)
 	{
 		super(client);
-		this.node = node;
-		this.core = node.clientCore;
+		this.core = core;
 		this.bookmarkManager = core.bookmarkManager;
 		this.cutedPath = "";
 	}
