@@ -296,10 +296,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         		DiffieHellmanContext ctx = 
         			processDHZeroOrOne(1, payload, pn);
         		if(ctx == null) return;
-        		if(negType == 0)
-        			sendDHCompletion(2, ctx.getCipher(), pn, replyTo);
-        		else //if(negType == 1)
-        			sendSignedDHCompletion(2, ctx.getCipher(), pn, replyTo, ctx);
+       			sendSignedDHCompletion(2, ctx.getCipher(), pn, replyTo, ctx);
         		// Send a type 2
         	} else if(packetType == 2) {
         		// We are Bob
@@ -307,50 +304,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         		// Verify the packet, then complete
         		// Format: IV E_K ( H(data) data )
         		// Where data = [ long: bob's startup number ]
-        		processDHTwoOrThree(2, payload, pn, replyTo, true, negType == 1);
+        		processSignedDHTwoOrThree(2, payload, pn, replyTo, true);
         	} else if(packetType == 3) {
         		// We are Alice
-        		processDHTwoOrThree(3, payload, pn, replyTo, false, negType == 1);
+        		processSignedDHTwoOrThree(3, payload, pn, replyTo, false);
         	}
         }
-    }
-
-    /**
-     * Send a DH completion message.
-     * @param phase The packet phase number. Either 2 or 3.
-     * @param cipher The negotiated cipher.
-     * @param pn The PeerNode which we are talking to.
-     * @param replyTo The Peer to which to send the packet (not necessarily the same
-     * as the one on pn as the IP may have changed).
-     */
-    private void sendDHCompletion(int phase, BlockCipher cipher, PeerNode pn, Peer replyTo) {
-        /** Format:
-         * IV
-         * Hash
-         * Data
-         * 
-         * Where Data = our bootID
-         * Very similar to the surrounding wrapper in fact.
-         */
-        PCFBMode pcfb = PCFBMode.create(cipher);
-        byte[] iv = new byte[pcfb.lengthIV()];
-        
-        byte[] myRef = node.myCompressedSetupRef();
-        byte[] data = new byte[myRef.length + 8];
-        System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
-        System.arraycopy(myRef, 0, data, 8, myRef.length);
-        
-        byte[] hash = SHA256.digest(data);
-        
-        pcfb.blockEncipher(hash, 0, hash.length);
-        pcfb.blockEncipher(data, 0, data.length);
-        
-        byte[] output = new byte[iv.length+hash.length+data.length];
-        System.arraycopy(iv, 0, output, 0, iv.length);
-        System.arraycopy(hash, 0, output, iv.length, hash.length);
-        System.arraycopy(data, 0, output, iv.length + hash.length, data.length);
-        
-        sendAuthPacket(1, 0, phase, output, pn, replyTo);
     }
 
     /**
@@ -512,64 +471,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     	pn.reportOutgoingBytes(data.length);
     	node.outputThrottle.forceGrab(data.length - alreadyReportedBytes);
 	}
-
-    private DiffieHellmanContext processDHTwoOrThree(int phase, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion, boolean signed) {
-    	if(signed)
-    		return processSignedDHTwoOrThree(phase, payload, pn, replyTo, sendCompletion);
-    	else
-    		return processDHTwoOrThree(phase, payload, pn, replyTo, sendCompletion);
-    }
-    
-    private DiffieHellmanContext processDHTwoOrThree(int phase, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion) {
-        DiffieHellmanContext ctx = (DiffieHellmanContext) pn.getKeyAgreementSchemeContext();
-        if((ctx == null) || !ctx.canGetCipher()) {
-            if(shouldLogErrorInHandshake()) {
-                Logger.error(this, "Cannot get cipher");
-            }
-            return null;
-        }
-        byte[] encKey = ctx.getKey();
-        BlockCipher cipher = ctx.getCipher();
-        PCFBMode pcfb = PCFBMode.create(cipher);
-        int ivLength = pcfb.lengthIV();
-        if(payload.length-3 < HASH_LENGTH + ivLength + 8) {
-            Logger.error(this, "Too short phase "+phase+" packet from "+replyTo+" probably from "+pn);
-            return null;
-        }
-        pcfb.reset(payload, 3); // IV
-        byte[] hash = new byte[HASH_LENGTH];
-        System.arraycopy(payload, 3+ivLength, hash, 0, HASH_LENGTH);
-        pcfb.blockDecipher(hash, 0, HASH_LENGTH);
-        int dataLength = payload.length - (ivLength + HASH_LENGTH + 3);
-        if(dataLength < 0) {
-            Logger.error(this, "Decrypted data length: "+dataLength+" but payload.length "+payload.length+" (others: "+(ivLength + HASH_LENGTH+3)+ ')');
-            return null;
-        }
-        byte[] data = new byte[dataLength];
-        System.arraycopy(payload, 3+ivLength+HASH_LENGTH, data, 0, dataLength);
-        pcfb.blockDecipher(data, 0, dataLength);
-        // Check the hash
-        byte[] realHash = SHA256.digest(data);
-        if(Arrays.equals(realHash, hash)) {
-            // Success!
-            long bootID = Fields.bytesToLong(data);
-            // Send the completion before parsing the data, because this is easiest
-            // Doesn't really matter - if it fails, we get loads of errors anyway...
-            // Only downside is that the other side might still think we are connected for a while.
-            // But this should be extremely rare.
-            // REDFLAG?
-            // We need to send the completion before the PN sends any packets, that's all...
-            if(pn.completedHandshake(bootID, data, 8, data.length-8, cipher, encKey, replyTo, phase == 2)) {
-                if(sendCompletion)
-                    sendDHCompletion(3, ctx.getCipher(), pn, replyTo);
-                pn.maybeSendInitialMessages();
-            }
-            return ctx;
-        } else {
-            Logger.error(this, "Failed to complete handshake (2) on "+pn+" for "+replyTo);
-            return null;
-        }
-    }
 
     /**
      * Process a stage 2 or stage 3 auth packet.
