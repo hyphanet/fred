@@ -131,9 +131,9 @@ public class TranslationToadlet extends Toadlet {
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "You are about to remove a translation override key!"));
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 			content.addChild("p").addChild("#", "Are you sure that you want to remove the following translation key : (" + key + " - " + L10n.getString(key) + ") ?");
-			HTMLNode removeForm = ctx.addFormChild(content.addChild("p"), TOADLET_URL, "remove-confirm");
-			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "remove-confirm", key });
-			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Remove" });
+			HTMLNode removeForm = ctx.addFormChild(content.addChild("p"), TOADLET_URL, "remove_confirmed");
+			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "remove_confirm", key });
+			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_confirmed", "Remove" });
 			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 			
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
@@ -195,8 +195,8 @@ public class TranslationToadlet extends Toadlet {
 			
 			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key);
 			return;
-		} else if(request.getPartAsString("remove-confirm", 32).length() > 0) {
-			String key = request.getPartAsString("remove-confirm", 256);
+		} else if(request.getPartAsString("remove_confirmed", 32).length() > 0) {
+			String key = request.getPartAsString("remove_confirm", 256).trim();
 			L10n.setOverride(key, "");
 			
 			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key);
