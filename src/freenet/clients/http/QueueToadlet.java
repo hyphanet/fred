@@ -42,16 +42,6 @@ import freenet.support.io.FileBucket;
 
 public class QueueToadlet extends Toadlet {
 
-	private static final String[] priorityClasses = new String[] { 
-		L10n.getString("QueueToadlet.emergency"),
-		L10n.getString("QueueToadlet.veryhigh"),
-		L10n.getString("QueueToadlet.high"),
-		L10n.getString("QueueToadlet.medium"),
-		L10n.getString("QueueToadlet.low"),
-		L10n.getString("QueueToadlet.verylow"),
-		L10n.getString("QueueToadlet.willneverfinish")
-	};
-
 	private static final int LIST_IDENTIFIER = 1;
 	private static final int LIST_SIZE = 2;
 	private static final int LIST_MIME_TYPE = 3;
@@ -759,6 +749,17 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	}
 
 	private HTMLNode createPriorityCell(PageMaker pageMaker, String identifier, short priorityClass, ToadletContext ctx) {
+		
+		final String[] priorityClasses = new String[] { 
+			L10n.getString("QueueToadlet.emergency"),
+			L10n.getString("QueueToadlet.veryhigh"),
+			L10n.getString("QueueToadlet.high"),
+			L10n.getString("QueueToadlet.medium"),
+			L10n.getString("QueueToadlet.low"),
+			L10n.getString("QueueToadlet.verylow"),
+			L10n.getString("QueueToadlet.willneverfinish")
+		};
+
 		HTMLNode priorityCell = new HTMLNode("td", "class", "request-priority nowrap");
 		HTMLNode priorityForm = ctx.addFormChild(priorityCell, "/queue/", "queueChangePriorityCell");
 		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
