@@ -341,4 +341,11 @@ public class L10n {
         
         return result;
     }
+
+	public static boolean isOverridden(String key) {
+		synchronized(sync) {
+			if(translationOverride == null) return false;
+			return translationOverride.get(key) != null; 
+		}
+	}
 }
