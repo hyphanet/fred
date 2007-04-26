@@ -27,6 +27,8 @@ public class DSAPublicKey extends CryptoKey {
     	if(y.signum() != 1) throw new IllegalArgumentException();
 		this.y=y;
 		this.group=g;
+		if(y.compareTo(g.getP()) > 0)
+			throw new IllegalArgumentException("y must be < p but y="+y+" p="+g.getP());
 		if(g == null) throw new NullPointerException();
     }
 	
@@ -48,7 +50,8 @@ public class DSAPublicKey extends CryptoKey {
     public DSAPublicKey(InputStream is) throws IOException, CryptFormatException {
 		group=(DSAGroup) DSAGroup.read(is);
 		y=Util.readMPI(is);
-		// FIXME should check y < group.something?
+		if(y.compareTo(group.getP()) > 0)
+			throw new IllegalArgumentException("y must be < p but y="+y+" p="+group.getP());
     }
     
     public static DSAPublicKey create(byte[] pubkeyAsBytes) throws CryptFormatException {
