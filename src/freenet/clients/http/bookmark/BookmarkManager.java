@@ -245,8 +245,9 @@ public class BookmarkManager {
       throw new NullPointerException ();
     else {
       parent.addBookmark (b);
-      bookmarks.put (parentPath + b.getName () +
-		     ((b instanceof BookmarkCategory) ? "/" : ""), b);
+      putPaths(parentPath + b.getName () + ((b instanceof BookmarkCategory) ? "/" : ""), b);
+      
+  
     }
     if (store)
         node.storeConfig ();
@@ -266,7 +267,19 @@ public class BookmarkManager {
     }
 
   }
-
+  
+  public void moveBookmark(String bookmarkPath, String newParentPath, boolean store) {
+	Bookmark b = getBookmarkByPath(bookmarkPath);
+  	addBookmark(newParentPath, b, false);
+	
+	getCategoryByPath(parentPath(bookmarkPath)).removeBookmark(b);
+	removePaths(bookmarkPath);
+	
+	if (store)
+		node.storeConfig ();
+	
+  }
+  
   public void removeBookmark (String path, boolean store) {
     Bookmark bookmark = getBookmarkByPath (path);
     if (bookmark == null)
@@ -331,6 +344,29 @@ public class BookmarkManager {
 
       return cat;
     }
+  }
+  
+    private void putPaths(String path, Bookmark b) {
+
+    bookmarks.put(path , b);
+    System.out.println("PUT " + path);
+    if(b instanceof BookmarkCategory) {  
+	  for(int i=0; i < ((BookmarkCategory) b).size(); i++) {
+                Bookmark child = ((BookmarkCategory) b).get(i);
+                putPaths(path + child.getName () + (child instanceof BookmarkItem ? "" : "/"), child);
+	  }
+      }
+
+  }
+  
+    private void removePaths(String path) {
+	if(getBookmarkByPath(path) instanceof BookmarkCategory){
+		BookmarkCategory cat = getCategoryByPath(path);
+  		for (int i=0; i < cat.size(); i++) {
+			removePaths(path +cat.get(i).getName() + (cat.get(i) instanceof BookmarkCategory ? "/" : ""));
+		}
+	}
+	bookmarks.remove(path);
   }
 
   public void clear () {

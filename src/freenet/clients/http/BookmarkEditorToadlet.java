@@ -34,7 +34,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		super(client);
 		this.core = core;
 		this.bookmarkManager = core.bookmarkManager;
-		this.cutedPath = "";
+		this.cutedPath = null;
 	}
 	
 	private void addCategoryToList(BookmarkCategory cat, String path, HTMLNode list)
@@ -51,7 +51,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			
 			actions.addChild("a", "href", "?action=del&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/delete.png", "delete", "Delete"});
 			
-			if("".equals(cutedPath))
+			if(cutedPath == null)
 				actions.addChild("a", "href", "?action=cut&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", "cut", "Cut"});
 			
 			if(i != 0)
@@ -81,7 +81,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			
 			actions.addChild("a", "href", "?action=addCat&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/folder-new.png", "add category", "Add category"});
 			
-			if("".equals(cutedPath))
+			if(cutedPath == null)
 				actions.addChild("a", "href", "?action=cut&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", "cut", "Cut"});
 			
 			if(i != 0)
@@ -90,7 +90,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			if(i != cats.size() -1)
 				actions.addChild("a", "href", "?action=down&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-down.png", "down", "Go down"});
 
-			if(! "".equals(cutedPath) && ! catPath.equals(cutedPath))
+			if(cutedPath != null && ! catPath.startsWith(cutedPath) && ! catPath.equals(bookmarkManager.parentPath(cutedPath)))
 				actions.addChild("a", "href", "?action=paste&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/paste.png", "paste", "Paste"});
 			
 			subCat.addChild(actions);
@@ -108,7 +108,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		actions.addChild("a", "href", "?action=addItem&bookmark=/").addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/bookmark-new.png", "add bookmark", "Add bookmark"});
 		actions.addChild("a", "href", "?action=addCat&bookmark=/").addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/folder-new.png", "add category", "Add category"});
 		
-		if(! "".equals(cutedPath))
+		if(cutedPath != null && ! "/".equals(bookmarkManager.parentPath(cutedPath)))
 			actions.addChild("a", "href", "?action=paste&bookmark=/").addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/paste.png", "paste", "Paste"});
 		
 		root.addChild(actions);
@@ -158,11 +158,10 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 				cutedPath = bookmarkPath;
 
-			} else if ("paste".equals(action) && ! "".equals(cutedPath)) {
-				bookmarkManager.addBookmark(bookmarkPath, bookmarkManager.getBookmarkByPath(cutedPath), false);
-				bookmarkManager.removeBookmark(cutedPath, true);
+			} else if ("paste".equals(action) && cutedPath != null) {
 				
-				cutedPath = "";
+				bookmarkManager.moveBookmark(cutedPath, bookmarkPath, true);
+				cutedPath = null;
 				
 			} else if (action.equals("edit") || action.equals("addItem") || action.equals("addCat")) {
 				
@@ -204,7 +203,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			
 		}
 
-		if(! "".equals(cutedPath)) {
+		if(cutedPath != null) {
 			HTMLNode infoBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "Cut/Paste"));
 			infoBox.addChild("#","Click on a paste icon or cancel.");
 			HTMLNode cancelForm = ctx.addFormChild(infoBox.addChild("p"), "", "cancelCutForm");
@@ -247,7 +246,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 				successBox.addChild("p", "The bookmark has been deleted successfully");
 				
 			} else if (req.isPartSet("cancelCut")) {
-				cutedPath = "";
+				cutedPath = null;
 			
 			} else if (action.equals("edit") || action.equals("addItem") || action.equals("addCat")) {
 				
