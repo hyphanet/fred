@@ -238,16 +238,23 @@ public class BookmarkManager {
     return null;
   }
 
-  public void addBookmark (String parentPath, Bookmark b,
+  public void addBookmark (String parentPath, Bookmark bookmark,
 			   boolean store) throws NullPointerException {
     BookmarkCategory parent = getCategoryByPath (parentPath);
     if (parent == null)
       throw new NullPointerException ();
     else {
-      parent.addBookmark (b);
-      putPaths(parentPath + b.getName () + ((b instanceof BookmarkCategory) ? "/" : ""), b);
+      parent.addBookmark (bookmark);
+      putPaths(parentPath + bookmark.getName () + ((bookmark instanceof BookmarkCategory) ? "/" : ""), bookmark);
       
-  
+      if (((BookmarkItem) bookmark).getKeyType ().equals ("USK")) {
+    		try {
+    		  USK u = ((BookmarkItem) bookmark).getUSK ();
+    		  this.node.uskManager.subscribe (u, this.uskcb, true, this);
+    		}
+    		catch (MalformedURLException mue) {
+    		}
+    	    }
     }
     if (store)
         node.storeConfig ();
