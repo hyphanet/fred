@@ -488,6 +488,8 @@ public class IPDetectorPluginManager {
 				
 				// Node does not know about individual interfaces, so just process the lot.
 				
+				// FIXME if we use the interfaces we should simply take the most popular conclusion for each one.
+				
 //				// Now tell the node
 //				HashMap map = new LinkedHashMap();
 //				for(int i=0;i<v.size();i++) {
