@@ -66,7 +66,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			        	Logger.minor(this, "Ignoring "+name);
 					continue;
 				}
-				f = f.getAbsoluteFile();
+				f = FileUtil.getCanonicalFile(f);
 				if(logMINOR)
 					Logger.minor(this, "Found "+f);
 				originalFiles.add(f);
@@ -77,7 +77,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	public void register(File file) {
 		synchronized(this) {
-			file = file.getAbsoluteFile();
+			file = FileUtil.getCanonicalFile(file);
 			if(!originalFiles.remove(file))
 				Logger.error(this, "Preserving "+file+" but it wasn't found!", new Exception("error"));
 		}
