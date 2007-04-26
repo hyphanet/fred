@@ -54,7 +54,8 @@ public class SimpleFieldSet {
 
     public SimpleFieldSet(SimpleFieldSet sfs){
     	values = new HashMap(sfs.values);
-    	subsets = new HashMap(sfs.subsets);
+    	if(sfs.subsets != null)
+    		subsets = new HashMap(sfs.subsets);
     	this.shortLived = false; // it's been copied!
     	endMarker = sfs.endMarker;
     }
