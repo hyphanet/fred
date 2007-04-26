@@ -92,7 +92,7 @@ public class BookmarkManager {
 				   "Frost", node.alerts));
 
         sc.register ("bookmarks", defaultRoot.toStrings (), 0, true, false,
-		     "List of bookmarks", "A list of bookmarked freesites",
+		     "BookmarkManager.list", "BookmarkManager.listLong",
 		     makeCB ());
 
       if (!importOldBookmarks ())
