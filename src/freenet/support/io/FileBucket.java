@@ -106,7 +106,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		deleteOnExit = false;
 		String tmp = fs.get("Filename");
 		if(tmp == null) throw new CannotCreateFromFieldSetException("No filename");
-		this.file = new File(tmp).getAbsoluteFile();
+		this.file = FileUtil.getCanonicalFile(new File(tmp));
 		tmp = fs.get("Length");
 		if(tmp == null) throw new CannotCreateFromFieldSetException("No length");
 		try {
