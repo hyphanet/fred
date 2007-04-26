@@ -116,7 +116,8 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		} catch (NumberFormatException e) {
 			throw new CannotCreateFromFieldSetException("Corrupt length "+tmp, e);
 		}
-		f.register(file);
+		if(file.exists()) // no point otherwise!
+			f.register(file);
 	}
 
 	public OutputStream getOutputStream() throws IOException {
