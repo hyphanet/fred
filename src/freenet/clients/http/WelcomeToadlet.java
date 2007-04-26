@@ -442,7 +442,24 @@ public class WelcomeToadlet extends Toadlet {
 				writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 				Logger.normal(this, "Node is restarting");
 				return;
-			}else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
+                        } else if (request.getParam("newbookmark").length() > 0) {
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark", ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Confirm Bookmark Addition"));
+				HTMLNode addForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(infobox), "/bookmarkEditor/", "editBookmarkForm");
+				addForm.addChild("#", "Please confirm that you want to add the key " + request.getParam("newbookmark") + " to your bookmarks and enter the description that you would prefer:");
+				addForm.addChild("br");
+                                String key  = request.getParam("newbookmark");
+                                if(key.startsWith("freenet:"))
+                                    key = key.substring(8);
+				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key});
+				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", request.getParam("desc") });
+                                addForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "bookmark", "/"});
+				addForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "action", "addItem"});
+				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addbookmark", "Add bookmark" });
+				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				return;
+			} else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Link to external resources", ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				HTMLNode warnbox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "External link"));
