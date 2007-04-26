@@ -74,7 +74,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public void register(File file) {
 		synchronized(this) {
 			if(!originalFiles.remove(file.getAbsoluteFile()))
-				Logger.error(this, "Preserving "+file+" but it wasn't found!");
+				Logger.error(this, "Preserving "+file+" but it wasn't found!", new Exception("error"));
 		}
 	}
 	
