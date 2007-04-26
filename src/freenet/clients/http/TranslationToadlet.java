@@ -144,7 +144,9 @@ public class TranslationToadlet extends Toadlet {
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 		HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
-		translationNode.addChild("#", "You are currently contributing to the " + L10n.getSelectedLanguage() + " translation :");
+		HTMLNode translationHeaderNode = translationNode.addChild("p");
+		translationHeaderNode.addChild("#", "You are currently contributing to the " + L10n.getSelectedLanguage() + " translation :");
+		translationHeaderNode.addChild("a", "href", TOADLET_URL+"?getOverrideTranlationFile").addChild("#", " Download the override translation file");
 		HTMLNode legendTable = translationNode.addChild("table", "class", "translation");
 		
 		HTMLNode legendRow = legendTable.addChild("tr");
