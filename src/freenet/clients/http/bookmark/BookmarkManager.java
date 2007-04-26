@@ -349,7 +349,6 @@ public class BookmarkManager {
     private void putPaths(String path, Bookmark b) {
 
     bookmarks.put(path , b);
-    System.out.println("PUT " + path);
     if(b instanceof BookmarkCategory) {  
 	  for(int i=0; i < ((BookmarkCategory) b).size(); i++) {
                 Bookmark child = ((BookmarkCategory) b).get(i);
