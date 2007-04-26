@@ -298,7 +298,7 @@ public class BookmarkManager {
       if (((BookmarkItem) bookmark).getKeyType ().equals ("USK")) {
 	try {
 	  USK u = ((BookmarkItem) bookmark).getUSK ();
-	  this.node.uskManager.subscribe (u, this.uskcb, true, this);
+	  this.node.uskManager.unsubscribe (u, this.uskcb, true);
 	}
 	catch (MalformedURLException mue) {
 	}
