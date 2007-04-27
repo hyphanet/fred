@@ -120,7 +120,7 @@ public class FProxyToadlet extends Toadlet {
 					
 					L10n.addL10nSubstitution(option, "FProxyToadlet.openPossRSSAsPlainText", new String[] { "link", "/link", "bold", "/bold" },
 							new String[] { 
-								"<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?type=text/plain&force="+getForceValue(key,now)+extras)+"\">",
+								"<a href=\""+basePath+key.toString()+"?type=text/plain&force="+getForceValue(key,now)+extras+"\">",
 								"</a>",
 								"<b>",
 								"</b>" });
@@ -128,7 +128,7 @@ public class FProxyToadlet extends Toadlet {
 					option = optionList.addChild("li");
 					L10n.addL10nSubstitution(option, "FProxyToadlet.openPossRSSForceDisk", new String[] { "link", "/link", "bold", "/bold" },
 							new String[] { 
-								"<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?forcedownload"+extras)+"\">",
+								"<a href=\""+basePath+key.toString()+"?forcedownload"+extras+"\">",
 								"</a>",
 								"<b>",
 								"</b>" });
@@ -137,7 +137,7 @@ public class FProxyToadlet extends Toadlet {
 						option = optionList.addChild("li");
 						L10n.addL10nSubstitution(option, "FProxyToadlet.openRSSForce", new String[] { "link", "/link", "bold", "/bold", "mime" },
 								new String[] { 
-									"<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?force="+getForceValue(key, now)+extras)+"\">",
+									"<a href=\""+basePath+key.toString()+"?force="+getForceValue(key, now)+extras+"\">",
 									"</a>",
 									"<b>",
 									"</b>",
@@ -146,7 +146,7 @@ public class FProxyToadlet extends Toadlet {
 					option = optionList.addChild("li");
 					L10n.addL10nSubstitution(option, "FProxyToadlet.openRSSAsRSS", new String[] { "link", "/link", "bold", "/bold" },
 							new String[] {
-								"<a href=\""+HTMLEncoder.encode(basePath + key.toString() + "?type=application/xml+rss&force=" + getForceValue(key, now)+extras)+"\">",
+								"<a href=\""+basePath + key.toString() + "?type=application/xml+rss&force=" + getForceValue(key, now)+extras+"\">",
 								"</a>",
 								"<b>",
 								"</b>" });
@@ -191,14 +191,14 @@ public class FProxyToadlet extends Toadlet {
 			infoboxContent.addChild("p", l10n("options"));
 			HTMLNode optionList = infoboxContent.addChild("ul");
 			HTMLNode option = optionList.addChild("li");
-			L10n.addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?type=text/plain"+extras+"\">"), "</a>" });
+			L10n.addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath+key.toString()+"?type=text/plain"+extras+"\">", "</a>" });
 			// FIXME: is this safe? See bug #131
 			option = optionList.addChild("li");
-			L10n.addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?forcedownload"+extras+"\">"), "</a>" });
+			L10n.addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath+key.toString()+"?forcedownload"+extras+"\">", "</a>" });
 			if(!(mimeType.equals("application/octet-stream") || mimeType.equals("application/x-msdownload"))) {
 				option = optionList.addChild("li");
 				
-				L10n.addL10nSubstitution(option, "FProxyToadlet.openForce", new String[] { "link", "/link", "mime" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath + key.toString() + "?force=" + getForceValue(key, now)+extras)+"\">", "</a>", HTMLEncoder.encode(mimeType)});
+				L10n.addL10nSubstitution(option, "FProxyToadlet.openForce", new String[] { "link", "/link", "mime" }, new String[] { "<a href=\""+basePath + key.toString() + "?force=" + getForceValue(key, now)+extras+"\">", "</a>", HTMLEncoder.encode(mimeType)});
 			}
 			if(referrer != null) {
 				option = optionList.addChild("li");
