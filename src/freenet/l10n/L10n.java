@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.util.MissingResourceException;
 
 import freenet.clients.http.TranslationToadlet;
+import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -348,4 +349,19 @@ public class L10n {
 			return translationOverride.get(key) != null; 
 		}
 	}
+	
+	/**
+	 * Add a localised string with some raw HTML substitutions
+	 * @param key The L10n key.
+	 * @param patterns The strings to search for.
+	 * @param values The strings to substitute in.
+	 */
+	public static void addL10nSubstitution(HTMLNode node, String key, String[] patterns, String[] values) {
+		String result = HTMLEncoder.encode(getString(key));
+		assert(patterns.length == values.length);
+		for(int i=0; i<patterns.length; i++)
+			result = result.replaceAll("\\$\\{"+patterns[i]+"\\}", quoteReplacement(values[i]));
+		node.addChild("%", result);
+	}
+
 }

@@ -605,13 +605,13 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
 		// FIXME better way to deal with this sort of thing???
-		headerReferenceInfobox.addChild("%", L10n.getString("DarknetConnectionsToadlet.myReferenceHeader", 
+		L10n.addL10nSubstitution(headerReferenceInfobox, "DarknetConnectionsToadlet.myReferenceHeader",
 				new String[] { "linkref", "/linkref", "linktext", "/linktext" },
-				new String[] { "<a href=\"myref.fref\">", "</a>", "<a href=\"myref.txt\">", "</a>" }));
+				new String[] { "<a href=\"myref.fref\">", "</a>", "<a href=\"myref.txt\">", "</a>" });
 		HTMLNode warningSentence = headerReferenceInfobox.addChild("pre");
-		warningSentence.addChild("%", L10n.getString("DarknetConnectionsToadlet.referenceCopyWarning",
+		L10n.addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
 				new String[] { "bold", "/bold" },
-				new String[] { "<b>", "</b>" }));
+				new String[] { "<b>", "</b>" });
 		referenceInfobox.addChild("div", "class", "infobox-content").addChild("pre", "id", "reference", node.exportPublicFieldSet().toString());
 		
 		// our ports
