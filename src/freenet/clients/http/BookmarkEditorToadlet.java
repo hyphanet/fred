@@ -12,6 +12,7 @@ import freenet.clients.http.bookmark.BookmarkCategories;
 import freenet.clients.http.bookmark.BookmarkManager;
 
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.client.HighLevelSimpleClient;
 import freenet.support.HTMLNode;
@@ -41,24 +42,33 @@ public class BookmarkEditorToadlet extends Toadlet {
 	{
 		BookmarkItems items = cat.getItems();
 		
+		String edit = L10n.getString("BookmarkEditorToadlet.edit");
+		String delete = L10n.getString("BookmarkEditorToadlet.delete");
+		String cut = L10n.getString("BookmarkEditorToadlet.cut");
+		String moveUp = L10n.getString("BookmarkEditorToadlet.moveUp");
+		String moveDown = L10n.getString("BookmarkEditorToadlet.moveDown");
+		String paste = L10n.getString("BookmarkEditorToadlet.paste");
+		String addBookmark = L10n.getString("BookmarkEditorToadlet.addBookmark");
+		String addCategory = L10n.getString("BookmarkEditorToadlet.addCategory");
+		
 		for(int i = 0; i < items.size(); i++) {
 
 			String itemPath = path + items.get(i).getName();
 			HTMLNode li = new HTMLNode("li", "class","item" , items.get(i).getName());
 
 			HTMLNode actions = new HTMLNode("span", "class", "actions");
-			actions.addChild("a", "href", "?action=edit&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/edit.png", "edit", "Edit"});
+			actions.addChild("a", "href", "?action=edit&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/edit.png", edit, edit});
 			
-			actions.addChild("a", "href", "?action=del&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/delete.png", "delete", "Delete"});
+			actions.addChild("a", "href", "?action=del&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/delete.png", delete, delete});
 			
 			if(cutedPath == null)
-				actions.addChild("a", "href", "?action=cut&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", "cut", "Cut"});
+				actions.addChild("a", "href", "?action=cut&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", cut, cut});
 			
 			if(i != 0)
-				actions.addChild("a", "href", "?action=up&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-up.png", "up", "Go up"});
+				actions.addChild("a", "href", "?action=up&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-up.png", moveUp, moveUp});
 			
 			if(i != items.size()-1)
-				actions.addChild("a", "href", "?action=down&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-down.png", "down", "Go down"});
+				actions.addChild("a", "href", "?action=down&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-down.png", moveDown, moveDown});
 			
 			li.addChild(actions);
 			list.addChild(li);
@@ -73,25 +83,25 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 			HTMLNode actions = new HTMLNode("span", "class", "actions");
 			
-			actions.addChild("a", "href", "?action=edit&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/edit.png", "edit", "Edit"});
+			actions.addChild("a", "href", "?action=edit&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/edit.png", edit, edit});
 			
-			actions.addChild("a", "href", "?action=del&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/delete.png", "delete", "Delete"});
+			actions.addChild("a", "href", "?action=del&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/delete.png", delete, delete});
 			
-			actions.addChild("a", "href", "?action=addItem&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/bookmark-new.png", "add bookmark", "Add bookmark"});
+			actions.addChild("a", "href", "?action=addItem&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/bookmark-new.png", addBookmark, addBookmark});
 			
-			actions.addChild("a", "href", "?action=addCat&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/folder-new.png", "add category", "Add category"});
+			actions.addChild("a", "href", "?action=addCat&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/folder-new.png", addCategory, addCategory});
 			
 			if(cutedPath == null)
-				actions.addChild("a", "href", "?action=cut&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", "cut", "Cut"});
+				actions.addChild("a", "href", "?action=cut&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", "cut", cut, cut});
 			
 			if(i != 0)
-				actions.addChild("a", "href", "?action=up&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-up.png", "up", "Go up"});
+				actions.addChild("a", "href", "?action=up&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-up.png", "up", moveUp, moveUp});
 			
 			if(i != cats.size() -1)
-				actions.addChild("a", "href", "?action=down&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-down.png", "down", "Go down"});
+				actions.addChild("a", "href", "?action=down&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-down.png", moveDown, moveDown});
 
 			if(cutedPath != null && ! catPath.startsWith(cutedPath) && ! catPath.equals(bookmarkManager.parentPath(cutedPath)))
-				actions.addChild("a", "href", "?action=paste&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/paste.png", "paste", "Paste"});
+				actions.addChild("a", "href", "?action=paste&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/paste.png", paste, paste});
 			
 			subCat.addChild(actions);
 			if(cats.get(i).size() != 0)
@@ -105,11 +115,14 @@ public class BookmarkEditorToadlet extends Toadlet {
 		
 		HTMLNode root = bookmarks.addChild("li", "class", "cat,root", "/");
 		HTMLNode actions = new HTMLNode("span", "class", "actions");
-		actions.addChild("a", "href", "?action=addItem&bookmark=/").addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/bookmark-new.png", "add bookmark", "Add bookmark"});
-		actions.addChild("a", "href", "?action=addCat&bookmark=/").addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/folder-new.png", "add category", "Add category"});
+		String addBookmark = L10n.getString("BookmarkEditorToadlet.addBookmark");
+		String addCategory = L10n.getString("BookmarkEditorToadlet.addCategory");
+		String paste = L10n.getString("BookmarkEditorToadlet.paste");
+		actions.addChild("a", "href", "?action=addItem&bookmark=/").addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/bookmark-new.png", addBookmark, addBookmark});
+		actions.addChild("a", "href", "?action=addCat&bookmark=/").addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/folder-new.png", addCategory, addCategory});
 		
 		if(cutedPath != null && ! "/".equals(bookmarkManager.parentPath(cutedPath)))
-			actions.addChild("a", "href", "?action=paste&bookmark=/").addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/paste.png", "paste", "Paste"});
+			actions.addChild("a", "href", "?action=paste&bookmark=/").addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/paste.png", paste, paste});
 		
 		root.addChild(actions);
 		addCategoryToList(bookmarkManager.getMainCategory(), "/", root.addChild("li").addChild("ul"));
@@ -121,7 +134,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 			throws ToadletContextClosedException, IOException 
 	{
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Bookmark Editor", ctx);
+		String editorTitle = L10n.getString("BookmarkEditorToadlet.title");
+		String error = L10n.getString("BookmarkEditorToadlet.error");
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(editorTitle, ctx);
 		HTMLNode content = ctx.getPageMaker().getContentNode(pageNode);
 		
 		if (req.getParam("action").length() > 0 && req.getParam("bookmark").length() > 0) {
@@ -135,24 +150,24 @@ public class BookmarkEditorToadlet extends Toadlet {
 				bookmark = bookmarkManager.getItemByPath(bookmarkPath);
 				
 			if(bookmark == null) {
-				HTMLNode errorBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-error", "Error"));
-				errorBox.addChild("#", "Bookmark \""+ bookmarkPath + "\" does not exists.");
+				HTMLNode errorBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-error", error));
+				errorBox.addChild("#", L10n.getString("BookmarkEditorToadlet.bookmarkDoesNotExist", new String[] { "bookmark" }, new String[] { bookmarkPath }));
 			} else {
 			
 			if(action.equals("del")){
 				
-				HTMLNode infoBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Delete " + (bookmark instanceof BookmarkItem ? "bookmark" : "category")));
-				
-				String query = "Are you sure you wish to delete " + bookmarkPath;
-				if(bookmark instanceof BookmarkCategory)
-					query+= " and all its children";
-				query+= " ?";
+				String[] bm = new String[] { "bookmark" };
+				String[] path = new String[] { bookmarkPath };
+				String queryTitle = L10n.getString("BookmarkEditorToadlet." + ((bookmark instanceof BookmarkItem) ? "deleteBookmark" : "deleteCategory"));
+				HTMLNode infoBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-query", queryTitle));
+
+				String query = L10n.getString("BookmarkEditorToadlet." + ((bookmark instanceof BookmarkItem) ? "deleteBookmarkConfirm" : "deleteCategoryConfirm"), bm, path);
 				infoBox.addChild("p").addChild("#", query);
 				
 				HTMLNode confirmForm = ctx.addFormChild(infoBox.addChild("p"), "", "confirmDeleteForm");
 				confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "bookmark", bookmarkPath});
-				confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
-				confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirmdelete", "Delete" });
+				confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("BookmarkEditorToadlet.cancelDelete") });
+				confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirmdelete", L10n.getString("BookmarkEditorToadlet.confirmDelete") });
 			
 			} else if (action.equals("cut")) {
 
@@ -166,24 +181,25 @@ public class BookmarkEditorToadlet extends Toadlet {
 			} else if (action.equals("edit") || action.equals("addItem") || action.equals("addCat")) {
 				
 				String header;
-				if(action.equals("edit"))
-					header = "Edit "+(bookmark instanceof BookmarkItem ? "bookmark" : "category");
-				else if(action.equals("addItem"))
-					header = "Add a new bookmark";
-				else
-					header = "Add a new category";
+				if(action.equals("edit")) {
+					header = L10n.getString("BookmarkEditorToadlet.edit" + ((bookmark instanceof BookmarkItem) ? "Bookmark" : "Category") + "Title");
+				} else if(action.equals("addItem")) {
+					header = L10n.getString("addNewBookmark");
+				} else {
+					header = L10n.getString("addNewCategory");
+				}
 				
 				HTMLNode actionBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-query", header));
 				
 				HTMLNode form = ctx.addFormChild(actionBox, "", "editBookmarkForm");
 				
-				form.addChild("label", "for", "name", "Name : ");
+				form.addChild("label", "for", "name", L10n.getString("BookmarkEditorToadlet.nameLabel"));
 				form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String []{"text", "name", "name", "20", action.equals("edit")?bookmark.getName():""});
 				
 				form.addChild("br");
 				if ((action.equals("edit") && bookmark instanceof BookmarkItem) || action.equals("addItem")) {
 					String key = (action.equals("edit") ? ((BookmarkItem) bookmark).getKey() : "");
-					form.addChild("label", "for", "key", "Key : ");
+					form.addChild("label", "for", "key", L10n.getString("BookmarkEditorToadlet.keyLabel"));
 					form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String []{"text", "key", "key", "50", key});
 				}
 				
@@ -192,7 +208,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 				form.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "action",req.getParam("action")});
 				
 				form.addChild("br");
-				form.addChild("input", new String[]{"type", "value"}, new String[]{"submit", "Save"});
+				form.addChild("input", new String[]{"type", "value"}, new String[]{"submit", L10n.getString("BookmarkEditorToadlet.save")});
 			} else if (action.equals("up") || action.equals("down")) {
 				if(action.equals("up"))
 					bookmarkManager.moveBookmarkUp(bookmarkPath, true);
@@ -204,13 +220,13 @@ public class BookmarkEditorToadlet extends Toadlet {
 		}
 
 		if(cutedPath != null) {
-			HTMLNode infoBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "Cut/Paste"));
-			infoBox.addChild("#","Click on a paste icon or cancel.");
+			HTMLNode infoBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-normal", L10n.getString("BookmarkEditorToadlet.pasteTitle")));
+			infoBox.addChild("#",L10n.getString("BookmarkEditorToadlet.pasteOrCancel"));
 			HTMLNode cancelForm = ctx.addFormChild(infoBox.addChild("p"), "", "cancelCutForm");
-			cancelForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancelCut", "Cancel cut" });
+			cancelForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancelCut", L10n.getString("BookmarkEditorToadlet.cancelCut") });
 		}
 		
-		HTMLNode bookmarksBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "My Bookmarks"));
+		HTMLNode bookmarksBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-normal", L10n.getString("BookmarkEditorToadlet.myBookmarksTitle")));
 		bookmarksBox.addChild(getBookmarksList());
 
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
@@ -220,7 +236,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx) 
 		throws ToadletContextClosedException, IOException 
 	{
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Bookmark Editor", ctx);
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("BookmarkEditorToadlet.title"), ctx);
 		HTMLNode content = ctx.getPageMaker().getContentNode(pageNode);
 		
 		String passwd = req.getPartAsString("formPassword", 32);
@@ -242,8 +258,8 @@ public class BookmarkEditorToadlet extends Toadlet {
 			
 			if (req.isPartSet("confirmdelete")) {
 				bookmarkManager.removeBookmark(bookmarkPath, true);
-				HTMLNode successBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Delete succeeded"));
-				successBox.addChild("p", "The bookmark has been deleted successfully");
+				HTMLNode successBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-success", L10n.getString("BookmarkEditorToadlet.deleteSucceededTitle")));
+				successBox.addChild("p", L10n.getString("BookmarkEditorToadlet.deleteSucceeded"));
 				
 			} else if (req.isPartSet("cancelCut")) {
 				cutedPath = null;
@@ -259,8 +275,8 @@ public class BookmarkEditorToadlet extends Toadlet {
 					if(bookmark instanceof BookmarkItem)
 						((BookmarkItem) bookmark).setKey(new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH)));
 					
-					HTMLNode successBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Modifications saved"));
-					successBox.addChild("p", "The changes has been saved successfully");
+					HTMLNode successBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-success", L10n.getString("BookmarkEditorToadlet.changesSavedTitle")));
+					successBox.addChild("p", L10n.getString("BookmarkEditorToadlet.changesSaved"));
 						
 				} else if (action.equals("addItem") || action.equals("addCat")) {
 					
@@ -273,21 +289,21 @@ public class BookmarkEditorToadlet extends Toadlet {
 					
 					bookmarkManager.addBookmark(bookmarkPath, newBookmark, true);
 					
-					HTMLNode successBox =  content.addChild(ctx.getPageMaker().getInfobox("infobox-success", "New bookmark added"));
-					successBox.addChild("p", "The new bookmark has been added successfully");
+					HTMLNode successBox =  content.addChild(ctx.getPageMaker().getInfobox("infobox-success", L10n.getString("BookmarkEditorToadlet.addedNewBookmarkTitle")));
+					successBox.addChild("p", L10n.getString("BookmarkEditorToadlet.addedNewBookmark"));
 					
 				}
 				
 			}
 
 		} catch (NullPointerException npo) {
-			HTMLNode errorBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-error", "Error"));
-			errorBox.addChild("#", "Bookmark \""+ bookmarkPath + "\" does not exists.");
+			HTMLNode errorBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-error", L10n.getString("BookmarkEditorToadlet.error")));
+			errorBox.addChild("#", L10n.getString("BookmarkEditorToadlet.bookmarkDoesNotExist", new String[] { "bookmark" } , new String[] { bookmarkPath }));
 		} catch (MalformedURLException mue) {
-			HTMLNode errorBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-error", "Invalid key"));
-			errorBox.addChild("#", "Invalid Freenet Key");
+			HTMLNode errorBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-error", L10n.getString("BookmarkEditorToadlet.invalidKeyTitle")));
+			errorBox.addChild("#", L10n.getString("BookmarkEditorToadlet.invalidKey"));
 		}
-		HTMLNode bookmarksBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "My Bookmarks"));
+		HTMLNode bookmarksBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-normal", L10n.getString("BookmarkEditorToadlet.myBookmarksTitle")));
 		bookmarksBox.addChild(getBookmarksList());
 		
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
