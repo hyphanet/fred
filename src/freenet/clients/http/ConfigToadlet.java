@@ -101,7 +101,7 @@ public class ConfigToadlet extends Toadlet {
 		HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 		content.addChild("a", new String[]{"href", "title"}, new String[]{".", l10n("shortTitle")}, l10n("returnToNodeConfig"));
 		content.addChild("br");
-		content.addChild("a", new String[]{"href", "title"}, new String[]{"/", l10n("homepage")}, l10n("returnToNodeHomePage"));
+		content.addChild("a", new String[]{"href", "title"}, new String[]{"/", l10n("homepage")}, l10n("returnToNodeHomepage"));
 
 		writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 		
