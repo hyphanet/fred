@@ -118,7 +118,7 @@ public class FProxyToadlet extends Toadlet {
 					HTMLNode optionList = infoboxContent.addChild("ul");
 					HTMLNode option = optionList.addChild("li");
 					
-					L10n.addL10nSubstitution(option, "openPossRSSAsPlainText", new String[] { "link", "/link", "bold", "/bold" },
+					L10n.addL10nSubstitution(option, "FProxyToadlet.openPossRSSAsPlainText", new String[] { "link", "/link", "bold", "/bold" },
 							new String[] { 
 								"<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?type=text/plain&force="+getForceValue(key,now)+extras)+"\">",
 								"</a>",
@@ -126,7 +126,7 @@ public class FProxyToadlet extends Toadlet {
 								"</b>" });
 					// 	FIXME: is this safe? See bug #131
 					option = optionList.addChild("li");
-					L10n.addL10nSubstitution(option, "openPossRSSForceDisk", new String[] { "link", "/link", "bold", "/bold" },
+					L10n.addL10nSubstitution(option, "FProxyToadlet.openPossRSSForceDisk", new String[] { "link", "/link", "bold", "/bold" },
 							new String[] { 
 								"<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?forcedownload"+extras)+"\">",
 								"</a>",
@@ -135,7 +135,7 @@ public class FProxyToadlet extends Toadlet {
 					boolean mimeRSS = mimeType.startsWith("application/xml+rss") || mimeType.startsWith("text/xml"); /* blergh! */
 					if(!(mimeRSS || mimeType.startsWith("text/plain"))) {
 						option = optionList.addChild("li");
-						L10n.addL10nSubstitution(option, "openRSSForce", new String[] { "link", "/link", "bold", "/bold", "mime" },
+						L10n.addL10nSubstitution(option, "FProxyToadlet.openRSSForce", new String[] { "link", "/link", "bold", "/bold", "mime" },
 								new String[] { 
 									"<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?force="+getForceValue(key, now)+extras)+"\">",
 									"</a>",
@@ -144,7 +144,7 @@ public class FProxyToadlet extends Toadlet {
 									HTMLEncoder.encode(mimeType) /* these are not encoded because mostly they are tags, so we have to encode it */ });
 					}
 					option = optionList.addChild("li");
-					L10n.addL10nSubstitution(option, "openRSSAsRSS", new String[] { "link", "/link", "bold", "/bold" },
+					L10n.addL10nSubstitution(option, "FProxyToadlet.openRSSAsRSS", new String[] { "link", "/link", "bold", "/bold" },
 							new String[] {
 								"<a href=\""+HTMLEncoder.encode(basePath + key.toString() + "?type=application/xml+rss&force=" + getForceValue(key, now)+extras)+"\">",
 								"</a>",
@@ -152,11 +152,11 @@ public class FProxyToadlet extends Toadlet {
 								"</b>" });
 					if(referrer != null) {
 						option = optionList.addChild("li");
-						L10n.addL10nSubstitution(option, "backToReferrer", new String[] { "link", "/link" },
+						L10n.addL10nSubstitution(option, "FProxyToadlet.backToReferrer", new String[] { "link", "/link" },
 								new String[] { "<a href=\""+HTMLEncoder.encode(referrer)+"\">", "</a>" });
 					}
 					option = optionList.addChild("li");
-					L10n.addL10nSubstitution(option, "backToFProxy", new String[] { "link", "/link" },
+					L10n.addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link", "/link" },
 							new String[] { "<a href=\"/\">", "</a>" });
 					
 					byte[] pageBytes = pageNode.generate().getBytes();
@@ -191,22 +191,22 @@ public class FProxyToadlet extends Toadlet {
 			infoboxContent.addChild("p", l10n("options"));
 			HTMLNode optionList = infoboxContent.addChild("ul");
 			HTMLNode option = optionList.addChild("li");
-			L10n.addL10nSubstitution(option, "openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?type=text/plain"+extras+"\">"), "</a>" });
+			L10n.addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?type=text/plain"+extras+"\">"), "</a>" });
 			// FIXME: is this safe? See bug #131
 			option = optionList.addChild("li");
-			L10n.addL10nSubstitution(option, "openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?forcedownload"+extras+"\">"), "</a>" });
+			L10n.addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?forcedownload"+extras+"\">"), "</a>" });
 			if(!(mimeType.equals("application/octet-stream") || mimeType.equals("application/x-msdownload"))) {
 				option = optionList.addChild("li");
 				
-				L10n.addL10nSubstitution(option, "openForce", new String[] { "link", "/link", "mime" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath + key.toString() + "?force=" + getForceValue(key, now)+extras)+"\">", "</a>", HTMLEncoder.encode(mimeType)});
+				L10n.addL10nSubstitution(option, "FProxyToadlet.openForce", new String[] { "link", "/link", "mime" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath + key.toString() + "?force=" + getForceValue(key, now)+extras)+"\">", "</a>", HTMLEncoder.encode(mimeType)});
 			}
 			if(referrer != null) {
 				option = optionList.addChild("li");
-				L10n.addL10nSubstitution(option, "backToReferrer", new String[] { "link", "/link" },
+				L10n.addL10nSubstitution(option, "FProxyToadlet.backToReferrer", new String[] { "link", "/link" },
 						new String[] { "<a href=\""+HTMLEncoder.encode(referrer)+"\">", "</a>" });
 			}
 			option = optionList.addChild("li");
-			L10n.addL10nSubstitution(option, "backToFProxy", new String[] { "link", "/link" },
+			L10n.addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link", "/link" },
 					new String[] { "<a href=\"/\">", "</a>" });
 
 			byte[] pageBytes = pageNode.generate().getBytes();
@@ -279,7 +279,7 @@ public class FProxyToadlet extends Toadlet {
 					newURI = new FreenetURI(k);
 				} catch (MalformedURLException e) {
 					Logger.normal(this, "Invalid key: "+e+" for "+k, e);
-					sendErrorPage(ctx, 404, l10n("notFoundTitle"), L10n.getString("invalidKeyWithReason", new String[] { "reason" }, new String[] { e.toString() }));
+					sendErrorPage(ctx, 404, l10n("notFoundTitle"), L10n.getString("FProxyToadlet.invalidKeyWithReason", new String[] { "reason" }, new String[] { e.toString() }));
 					return;
 				}
 				
@@ -329,11 +329,11 @@ public class FProxyToadlet extends Toadlet {
 		try {
 			key = new FreenetURI(ks);
 		} catch (MalformedURLException e) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("invalidKey"), ctx);
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("invalidKeyTitle"), ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 			HTMLNode errorInfobox = contentNode.addChild("div", "class", "infobox infobox-error");
-			errorInfobox.addChild("div", "class", "infobox-header", L10n.getString("invalidKeyWithReason", new String[] { "reason" }, new String[] { e.toString() }));
+			errorInfobox.addChild("div", "class", "infobox-header", L10n.getString("FProxyToadlet.invalidKeyWithReason", new String[] { "reason" }, new String[] { e.toString() }));
 			HTMLNode errorContent = errorInfobox.addChild("div", "class", "infobox-content");
 			errorContent.addChild("#", l10n("expectedKeyButGot"));
 			errorContent.addChild("code", ks);
