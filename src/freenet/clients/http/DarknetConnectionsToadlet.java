@@ -23,6 +23,7 @@ import freenet.io.comm.IOStatisticCollector;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
+import freenet.l10n.L10n;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -81,7 +82,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 		
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			super.sendErrorPage(ctx, 403, "Unauthorized", l10n("unauthorized"));
 			return;
 		}
 		
@@ -155,7 +156,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(titleCountString + " Friends of " + node.getMyName(), ctx);
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("DarknetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } ), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		// FIXME! We need some nice images
@@ -217,20 +218,25 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			int numARKFetchers = node.getNumARKFetchers();
 
 			HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
-			activityInfobox.addChild("div", "class", "infobox-header", "Current activity");
+			activityInfobox.addChild("div", "class", "infobox-header", l10n("activityTitle"));
 			HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
 			if ((numInserts == 0) && (numRequests == 0) && (numTransferringRequests == 0) && (numARKFetchers == 0)) {
-				activityInfoboxContent.addChild("#", "Your node is not processing any requests right now.");
+				activityInfoboxContent.addChild("#", l10n("noRequests"));
 			} else {
 				HTMLNode activityList = activityInfoboxContent.addChild("ul");
 				if (numInserts > 0) {
-					activityList.addChild("li", "Inserts:\u00a0" + numInserts + "\u00a0senders\u00a0(locked\u00a0CHK:\u00a0" + numCHKInserts+"\u00a0SSK:\u00a0" + numSSKInserts+")");
+					activityList.addChild("li", L10n.getString("DarknetConnectionsToadlet.activityInserts", 
+							new String[] { "totalSenders", "CHKhandlers", "SSKhandlers" } , 
+							new String[] { Integer.toString(numInserts), Integer.toString(numCHKInserts), Integer.toString(numSSKInserts)}));
 				}
 				if (numRequests > 0) {
-					activityList.addChild("li", "Requests:\u00a0" + numRequests + "\u00a0senders\u00a0(locked\u00a0CHK:\u00a0" + numCHKRequests+"\u00a0SSK:\u00a0" + numSSKRequests+")");
+					activityList.addChild("li", L10n.getString("DarknetConnectionsToadlet.activityRequests", 
+							new String[] { "totalSenders", "CHKhandlers", "SSKhandlers" } , 
+							new String[] { Integer.toString(numRequests), Integer.toString(numCHKRequests), Integer.toString(numSSKRequests)}));
 				}
 				if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0) {
-					activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests+"\u00a0senders\u00a0" + numTransferringRequestHandlers+"\u00a0handlers");
+					activityList.addChild("li", L10n.getString("DarknetConnectionsToadlet.transferringRequests", 
+							new String[] { "senders", "receivers" }, new String[] { Integer.toString(numTransferringRequests), Integer.toString(numTransferringRequestHandlers)}));
 				}
 				if (advancedModeEnabled) {
 					if (numARKFetchers > 0) {
@@ -271,52 +277,52 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			HTMLNode peerStatsList = peerStatsContent.addChild("ul");
 			if (numberOfConnected > 0) {
 				HTMLNode peerStatsConnectedListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsConnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_connected", "Connected: We're successfully connected to these nodes", "border-bottom: 1px dotted; cursor: help;" }, "Connected");
+				peerStatsConnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_connected", l10n("connected"), "border-bottom: 1px dotted; cursor: help;" }, l10n("connectedShort"));
 				peerStatsConnectedListItem.addChild("span", ":\u00a0" + numberOfConnected);
 			}
 			if (numberOfRoutingBackedOff > 0) {
 				HTMLNode peerStatsRoutingBackedOffListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsRoutingBackedOffListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_backed_off", (advancedModeEnabled ? "Connected but backed off: These peers are connected but we're backed off of them" : "Busy: These peers are connected but they're busy") + ", so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, advancedModeEnabled ? "Backed off" : "Busy");
+				peerStatsRoutingBackedOffListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_backed_off", (advancedModeEnabled ? l10n("backedOff") : l10n("busy")), "border-bottom: 1px dotted; cursor: help;" }, advancedModeEnabled ? l10n("backedOffShort") : l10n("busyShort"));
 				peerStatsRoutingBackedOffListItem.addChild("span", ":\u00a0" + numberOfRoutingBackedOff);
 			}
 			if (numberOfTooNew > 0) {
 				HTMLNode peerStatsTooNewListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsTooNewListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_too_new", "Connected but too new: These peers' minimum mandatory build is higher than this node's build. This node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, "Too New");
+				peerStatsTooNewListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_too_new", l10n("tooNew"), "border-bottom: 1px dotted; cursor: help;" }, l10n("tooNewShort"));
 				peerStatsTooNewListItem.addChild("span", ":\u00a0" + numberOfTooNew);
 			}
 			if (numberOfTooOld > 0) {
 				HTMLNode peerStatsTooOldListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsTooOldListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_too_old", "Connected but too old: This node's minimum mandatory build is higher than these peers' build. This node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, "Too Old");
+				peerStatsTooOldListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_too_old", l10n("tooOld"), "border-bottom: 1px dotted; cursor: help;" }, l10n("tooOldShort"));
 				peerStatsTooOldListItem.addChild("span", ":\u00a0" + numberOfTooOld);
 			}
 			if (numberOfDisconnected > 0) {
 				HTMLNode peerStatsDisconnectedListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsDisconnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnected", "Not connected: No connection so far but this node is continuously trying to connect", "border-bottom: 1px dotted; cursor: help;" }, "Disconnected");
+				peerStatsDisconnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnected", l10n("notConnected"), "border-bottom: 1px dotted; cursor: help;" }, l10n("notConnectedShort"));
 				peerStatsDisconnectedListItem.addChild("span", ":\u00a0" + numberOfDisconnected);
 			}
 			if (numberOfNeverConnected > 0) {
 				HTMLNode peerStatsNeverConnectedListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsNeverConnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_never_connected", "Never Connected: The node has never connected with these peers", "border-bottom: 1px dotted; cursor: help;" }, "Never Connected");
+				peerStatsNeverConnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_never_connected", l10n("neverConnected"), "border-bottom: 1px dotted; cursor: help;" }, l10n("neverConnectedShort"));
 				peerStatsNeverConnectedListItem.addChild("span", ":\u00a0" + numberOfNeverConnected);
 			}
 			if (numberOfDisabled > 0) {
 				HTMLNode peerStatsDisabledListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsDisabledListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disabled", "Not connected and disabled: because the user has instructed to not connect to peers ", "border-bottom: 1px dotted; cursor: help;" }, "Disabled");
+				peerStatsDisabledListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disabled", l10n("disabled"), "border-bottom: 1px dotted; cursor: help;" }, l10n("disabledShort"));
 				peerStatsDisabledListItem.addChild("span", ":\u00a0" + numberOfDisabled);
 			}
 			if (numberOfBursting > 0) {
 				HTMLNode peerStatsBurstingListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsBurstingListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_bursting", "Not connected and bursting: this node is, for a short period, trying to connect to these peers because the user has set BurstOnly on them", "border-bottom: 1px dotted; cursor: help;" }, "Bursting");
+				peerStatsBurstingListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_bursting", l10n("bursting"), "border-bottom: 1px dotted; cursor: help;" }, l10n("burstingShort"));
 				peerStatsBurstingListItem.addChild("span", ":\u00a0" + numberOfBursting);
 			}
 			if (numberOfListening > 0) {
 				HTMLNode peerStatsListeningListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsListeningListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_listening", "Not connected but listening: this node won't try to connect to these peers very often because the user has set BurstOnly on them", "border-bottom: 1px dotted; cursor: help;" }, "Listening");
+				peerStatsListeningListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_listening", l10n("listening"), "border-bottom: 1px dotted; cursor: help;" }, l10n("listeningShort"));
 				peerStatsListeningListItem.addChild("span", ":\u00a0" + numberOfListening);
 			}
 			if (numberOfListenOnly > 0) {
 				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_listen_only", "Not connected and listen only: this node won't try to connect to these peers at all because the user has set ListenOnly on them", "border-bottom: 1px dotted; cursor: help;" }, "Listen Only");
+				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_listen_only", l10n("listenOnly"), "border-bottom: 1px dotted; cursor: help;" }, l10n("listenOnlyShort"));
 				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
 			}
 
@@ -375,7 +381,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
-			peerTableInfoboxHeader.addChild("#", "My friends");
+			peerTableInfoboxHeader.addChild("#", l10n("myFriends"));
 			if (advancedModeEnabled) {
 				if (!path.endsWith("displaymessagetypes.html")) {
 					peerTableInfoboxHeader.addChild("#", " ");
@@ -385,28 +391,28 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
 
 			if (peerNodeStatuses.length == 0) {
-				peerTableInfoboxContent.addChild("#", "Freenet can not work as you have not added any peers so far. Please go to the ");
-				peerTableInfoboxContent.addChild("a", "href", "/", "node homepage");
-				peerTableInfoboxContent.addChild("#", " and read the top infobox to see how it is done.");
+				peerTableInfoboxContent.addChild("#", l10n("noPeersFirstHalf"));
+				peerTableInfoboxContent.addChild("a", "href", "/", l10n("nodeHomepage"));
+				peerTableInfoboxContent.addChild("#", l10n("noPeersSecondHalf"));
 			} else {
 				HTMLNode peerForm = ctx.addFormChild(peerTableInfoboxContent, ".", "peersForm");
 				HTMLNode peerTable = peerForm.addChild("table", "class", "darknet_connections");
 				HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
 				peerTableHeaderRow.addChild("th");
-				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "status")).addChild("#", "Status");
-				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "name")).addChild("span", new String[] { "title", "style" }, new String[] { "The node's name. Click on the name link to send the node a N2NTM (Node To Node Text Message)", "border-bottom: 1px dotted; cursor: help;" }, "Name");
+				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "status")).addChild("#", l10n("statusTitle"));
+				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "name")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("nameClickToMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("nameTitle"));
 				if (advancedModeEnabled) {
-					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "address")).addChild("span", new String[] { "title", "style" }, new String[] { "The node's network address as IP:Port", "border-bottom: 1px dotted; cursor: help;" }, "Address");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "address")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("ipAddress"), "border-bottom: 1px dotted; cursor: help;" }, l10n("ipAddressTitle"));
 				}
-				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "version")).addChild("#", "Version");
+				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "version")).addChild("#", l10n("versionTitle"));
 				if (advancedModeEnabled) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "location")).addChild("#", "Location");
 					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
 
 					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Probability of the node rejecting a request due to overload or causing a timeout.", "border-bottom: 1px dotted; cursor: help;" }, "Overload Probability");
 				}
-				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How long since the node was connected or last seen", "border-bottom: 1px dotted; cursor: help;" }, "Connected\u00a0/\u00a0Idle");
-				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "privnote")).addChild("span", new String[] { "title", "style" }, new String[] { "A private note concerning this peer", "border-bottom: 1px dotted; cursor: help;" }, "Private Note");
+				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { l10n("idleTime"), "border-bottom: 1px dotted; cursor: help;" }, l10n("idleTimeTitle"));
+				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "privnote")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("privateNote"), "border-bottom: 1px dotted; cursor: help;" }, l10n("privateNoteTitle"));
 
 				if(advancedModeEnabled) {
 					peerTableHeaderRow.addChild("th", "%\u00a0Time Routable");
@@ -437,7 +443,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						if (peerNodeStatus.isConnected()) {
 							pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms)";
 						}
-						peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : ("(unknown address)")) + pingTime);
+						peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);
 					}
 
 					// version column
@@ -552,9 +558,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 
 				HTMLNode actionSelect = peerForm.addChild("select", new String[] { "id", "name" }, new String[] { "action", "action" });
-				actionSelect.addChild("option", "value", "", "-- Select action --");
-				actionSelect.addChild("option", "value", "send_n2ntm", "Send N2NTM to selected peers");
-				actionSelect.addChild("option", "value", "update_notes", "Update changed private notes");
+				actionSelect.addChild("option", "value", "", l10n("selectAction"));
+				actionSelect.addChild("option", "value", "send_n2ntm", l10n("sendMessageToPeers"));
+				actionSelect.addChild("option", "value", "update_notes", l10n("updateChangedPrivnotes"));
 				if(advancedModeEnabled) {
 					actionSelect.addChild("option", "value", "enable", "Enable selected peers");
 					actionSelect.addChild("option", "value", "disable", "Disable selected peers");
@@ -567,9 +573,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					actionSelect.addChild("option", "value", "set_ignore_source_port", "On selected peers, set ignoreSourcePort (try this if behind an evil corporate firewall; otherwise not recommended)");
 					actionSelect.addChild("option", "value", "clear_ignore_source_port", "On selected peers, clear ignoreSourcePort");
 				}
-				actionSelect.addChild("option", "value", "", "-- -- --");
-				actionSelect.addChild("option", "value", "remove", "Remove selected peers");
-				peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doAction", "Go" });
+				actionSelect.addChild("option", "value", "", l10n("separator"));
+				actionSelect.addChild("option", "value", "remove", l10n("removePeers"));
+				peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doAction", l10n("go") });
 				
 			}
 			// END PEER TABLE
@@ -577,62 +583,61 @@ public class DarknetConnectionsToadlet extends Toadlet {
 
 		// BEGIN PEER ADDITION BOX
 		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		peerAdditionInfobox.addChild("div", "class", "infobox-header", "Add another peer");
+		peerAdditionInfobox.addChild("div", "class", "infobox-header", l10n("addPeerTitle"));
 		HTMLNode peerAdditionContent = peerAdditionInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, ".", "addPeerForm");
-		peerAdditionForm.addChild("#", "Paste the reference here:");
+		peerAdditionForm.addChild("#", l10n("pasteReference"));
 		peerAdditionForm.addChild("br");
 		peerAdditionForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "reftext", "ref", "8", "74" });
 		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("#", "Enter the URL of the reference here: ");
+		peerAdditionForm.addChild("#", l10n("urlReference"));
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "refurl", "text", "url" });
 		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("#", "Choose the file containing the reference here: ");
+		peerAdditionForm.addChild("#", l10n("fileReference"));
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
 		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("#", "Enter a node description: ");
+		peerAdditionForm.addChild("#", l10n("enterDescription"));
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
 		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", "Add" });
+		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", l10n("add") });
 		
 		// our reference
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
-		headerReferenceInfobox.addChild("a", "href", "myref.fref", "My reference");
-		headerReferenceInfobox.addChild("#", " (");
-		headerReferenceInfobox.addChild("a", "href", "myref.txt", "as text");
-		headerReferenceInfobox.addChild("#", ")");
+		// FIXME better way to deal with this sort of thing???
+		headerReferenceInfobox.addChild("%", L10n.getString("DarknetConnectionsToadlet.myReferenceHeader", 
+				new String[] { "linkref", "/linkref", "linktext", "/linktext" },
+				new String[] { "<a href=\"myref.fref\">", "</a>", "<a href=\"myref.txt\">", "</a>" }));
 		HTMLNode warningSentence = headerReferenceInfobox.addChild("pre");
-		warningSentence.addChild("#", "Node reference must be copied ");
-		warningSentence.addChild("big").addChild("b", "AS IS. ");
-		warningSentence.addChild("#", "Modifying it will render it ");
-		warningSentence.addChild("big").addChild("b", "useless.");
+		warningSentence.addChild("%", L10n.getString("DarknetConnectionsToadlet.referenceCopyWarning",
+				new String[] { "bold", "/bold" },
+				new String[] { "<b>", "</b>" }));
 		referenceInfobox.addChild("div", "class", "infobox-content").addChild("pre", "id", "reference", node.exportPublicFieldSet().toString());
 		
 		// our ports
 		HTMLNode portInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		portInfobox.addChild("div", "class", "infobox-header", "Node's Ports");
+		portInfobox.addChild("div", "class", "infobox-header", l10n("nodePortsTitle"));
 		HTMLNode portInfoboxContent = portInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode portInfoList = portInfoboxContent.addChild("ul");
 		SimpleFieldSet fproxyConfig = node.config.get("fproxy").exportFieldSet(true);
 		SimpleFieldSet fcpConfig = node.config.get("fcp").exportFieldSet(true);
 		SimpleFieldSet tmciConfig = node.config.get("console").exportFieldSet(true);
-		portInfoList.addChild("li", "FNP:\u00a0" + node.getFNPPort() + "/udp\u00a0\u00a0\u00a0(between nodes; this is usually the only port that you might want to port forward)");
+		portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.fnpPort", new String[] { "port" }, new String[] { Integer.toString(node.getFNPPort()) }));
 		try {
 			if(fproxyConfig.getBoolean("enabled", false)) {
-				portInfoList.addChild("li", "FProxy:\u00a0" + fproxyConfig.getInt("port") + "/tcp\u00a0\u00a0\u00a0(this web interface)");
+				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.fproxyPort", new String[] { "port" }, new String[] { Integer.toString(fproxyConfig.getInt("port")) }));
 			} else {
-				portInfoList.addChild("li", "FProxy:\u00a0disabled/tcp\u00a0\u00a0\u00a0(this web interface)");
+				portInfoList.addChild("li", l10n("fproxyDisabled"));
 			}
 			if(fcpConfig.getBoolean("enabled", false)) {
-				portInfoList.addChild("li", "FCP:\u00a0" + fcpConfig.getInt("port") + "/tcp\u00a0\u00a0\u00a0(for Freenet clients such as Frost and Thaw)");
+				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.fcpPort", new String[] { "port" }, new String[] { Integer.toString(fcpConfig.getInt("port")) }));
 			} else {
-				portInfoList.addChild("li", "FCP:\u00a0disabled/tcp\u00a0\u00a0\u00a0(for Freenet clients such as Frost and Thaw)");
+				portInfoList.addChild("li", l10n("fcpDisabled"));
 			}
 			if(tmciConfig.getBoolean("enabled", false)) {
-				portInfoList.addChild("li", "TMCI:\u00a0" + tmciConfig.getInt("port") + "/tcp\u00a0\u00a0\u00a0(simple telnet-based command-line interface)");
+				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.tmciPort", new String[] { "port" }, new String[] { Integer.toString(tmciConfig.getInt("port")) }));
 			} else {
-				portInfoList.addChild("li", "TMCI:\u00a0disabled/tcp\u00a0\u00a0\u00a0(simple telnet-based command-line interface)");
+				portInfoList.addChild("li", l10n("tmciDisabled"));
 			}
 		} catch (FSParseException e) {
 			// ignore
@@ -641,6 +646,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 	
+	private String l10n(String string) {
+		return L10n.getString("DarknetConnectionsToadlet."+string);
+	}
+
 	private String sortString(boolean isReversed, String type) {
 		return (isReversed ? ("?sortBy="+type) : ("?sortBy="+type+"&reversed"));
 	}
@@ -649,7 +658,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			super.sendErrorPage(ctx, 403, "Unauthorized", l10n("unauthorized"));
 			return;
 		}
 		
@@ -687,7 +696,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						ref.append( line ).append('\n');
 					}
 				} catch (IOException e) {
-					this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to retrieve node reference from " + urltext + ". Please try again.");
+					this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), L10n.getString("DarknetConnectionsToadlet.cantFetchNoderefURL", new String[] { "url" }, new String[] { urltext }));
 					return;
 				} finally {
 					if( in != null ){
@@ -699,7 +708,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
 				ref = new StringBuffer(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
 			} else {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Could not detect either a node reference or a URL. Please try again.");
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("noRefOrURL"));
 				request.freeParts();
 				return;
 			}
@@ -712,14 +721,17 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			try {
 				fs = new SimpleFieldSet(ref.toString(), false, true);
 				if(!fs.getEndMarker().endsWith("End")) {
-					sendErrorPage(ctx, 200, "Failed to Add Node", "Unable to parse the node reference: It should end with End on a line by itself, but it ends with:\n"+fs.getEndMarker());
+					sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),
+							L10n.getString("cantParseWrongEnding", new String[] { "end" }, new String[] { fs.getEndMarker() }));
+					return;
 				}
 				fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
 			} catch (IOException e) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference ("+e+"). Please try again.");
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), 
+						L10n.getString("cantParseTryAgain", new String[] { "error" }, new String[] { e.toString() }));
 				return;
 			} catch (Throwable t) {
-				this.sendErrorPage(ctx, "Failed to Add Node: Internal Error", "Unable to parse the given text as a node reference. Please report the following to the developers:", t);
+				this.sendErrorPage(ctx, l10n("failedToAddNodeInternalErrorTitle"), l10n("failedToAddNodeInternalError"), t);
 				return;
 			}
 			PeerNode pn;
@@ -727,27 +739,29 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				pn = new PeerNode(fs, node, node.peers, false);
 				pn.setPrivateDarknetCommentNote(privateComment);
 			} catch (FSParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference ("+e1+"). Please try again.");
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),
+						L10n.getString("cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
 				return;
 			} catch (PeerParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference ("+e1+"). Please try again.");
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), 
+						L10n.getString("cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
 				return;
 			} catch (ReferenceSignatureVerificationException e1){
 				HTMLNode node = new HTMLNode("div");
-				node.addChild("#", "Unable to verify the signature of the given reference ("+e1+").");
+				node.addChild("#", L10n.getString("invalidSignature", new String[] { "error" }, new String[] { e1.toString() }));
 				node.addChild("br");
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", node);
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), node);
 				return;
 			} catch (Throwable t) {
-				this.sendErrorPage(ctx, "Failed to Add Node: Internal Error", "Unable to add the node reference. Please report the following to the developers:", t);
+				this.sendErrorPage(ctx, l10n("failedToAddNodeInternalErrorTitle"), l10n("failedToAddNodeInternalError"), t);
 				return;
 			}
 			if(pn.getIdentityHash()==node.getIdentityHash()) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "You can\u2019t add your own node to the list of remote peers.");
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("triedToAddSelf"));
 				return;
 			}
 			if(!this.node.addDarknetConnection(pn)) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "We already have the given reference.");
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("alreadyInReferences"));
 				return;
 			}
 			
@@ -756,7 +770,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("send_n2ntm")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message", ctx);
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			HashMap peers = new HashMap();
@@ -933,16 +947,17 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
 					}else{
 						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn) : let's display the warning message.");
-						HTMLNode pageNode = ctx.getPageMaker().getPageNode("Please confirm", ctx);
+						HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("Please confirm"), ctx);
 						HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-						HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "Node removal"));
+						HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle")));
 						HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
-						content.addChild("p").addChild("#", "Are you sure you wish to remove "+peerNodes[i].getName()+" ? Before it has at least one week downtime, it's not recommended to do so, as it may be down only temporarily, and many users cannot run their nodes 24x7.");
+						content.addChild("p").addChild("#",
+								L10n.getString("confirmRemoveNode", new String[] { "name" }, new String[] { peerNodes[i].getName() }));
 						HTMLNode removeForm = ctx.addFormChild(content, "/darknet/", "removeConfirmForm");
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
-						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
-						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", "Remove it!" });
-						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceit", "Force" });
+						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", l10n("cancel") });
+						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", l10n("remove") });
+						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceit", l10n("forceRemove") });
 
 						writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 						return; // FIXME: maybe it breaks multi-node removing
