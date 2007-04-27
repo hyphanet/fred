@@ -92,7 +92,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			actions.addChild("a", "href", "?action=addCat&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/folder-new.png", addCategory, addCategory});
 			
 			if(cutedPath == null)
-				actions.addChild("a", "href", "?action=cut&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", "cut", cut, cut});
+				actions.addChild("a", "href", "?action=cut&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/cut.png", "cut", cut});
 			
 			if(i != 0)
 				actions.addChild("a", "href", "?action=up&bookmark=" + catPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/go-up.png", "up", moveUp, moveUp});
