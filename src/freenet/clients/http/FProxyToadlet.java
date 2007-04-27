@@ -23,6 +23,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -106,43 +107,57 @@ public class FProxyToadlet extends Toadlet {
 				mimeType = fo.type;
 				
 				if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
-					HTMLNode pageNode = context.getPageMaker().getPageNode("Potentially Dangerous Content (RSS)", context);
+					HTMLNode pageNode = context.getPageMaker().getPageNode(l10n("dangerousRSSTitle"), context);
 					HTMLNode contentNode = context.getPageMaker().getContentNode(pageNode);
 					
 					HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
-					infobox.addChild("div", "class", "infobox-header", "RSS feed may be dangerous");
+					infobox.addChild("div", "class", "infobox-header", l10n("dangerousRSSSubtitle"));
 					HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-					infoboxContent.addChild("#", "Freenet has detected that the file you are trying to fetch might be RSS. "+
-							"RSS cannot be properly filtered by Freenet, and may contain web-bugs (inline images etc which may "+
-							"expose your IP address to a malicious site author and therefore break your anonymity). "+
-							"Firefox 2.0 and Internet Explorer 7.0 will open the file as RSS even though its content type is \""+HTMLEncoder.encode(mimeType)+"\".");
-					infoboxContent.addChild("p", "Your options are:");
+					infoboxContent.addChild("#", L10n.getString("FProxyToadlet.dangerousRSS", new String[] { "type" }, new String[] { mimeType }));
+					infoboxContent.addChild("p", l10n("options"));
 					HTMLNode optionList = infoboxContent.addChild("ul");
 					HTMLNode option = optionList.addChild("li");
 					
-					option.addChild("a", "href", basePath + key.toString() + "?type=text/plain&force=" + getForceValue(key, now)+extras, "Click here");
-					option.addChild("%", " to open the file as plain text (this <b>may be dangerous</b> if you are running IE7 or FF2).");
+					L10n.addL10nSubstitution(option, "openPossRSSAsPlainText", new String[] { "link", "/link", "bold", "/bold" },
+							new String[] { 
+								"<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?type=text/plain&force="+getForceValue(key,now)+extras)+"\">",
+								"</a>",
+								"<b>",
+								"</b>" });
 					// 	FIXME: is this safe? See bug #131
 					option = optionList.addChild("li");
-					option.addChild("a", "href", basePath + key.toString() + "?forcedownload"+extras, "Click here");
-					option.addChild("%", " to try to force your browser to download the file to disk (<b>this may also be dangerous if you run Firefox 2.0.0 (2.0.1 should fix this)</b>).");
-					if(!mimeType.startsWith("text/plain")) {
+					L10n.addL10nSubstitution(option, "openPossRSSForceDisk", new String[] { "link", "/link", "bold", "/bold" },
+							new String[] { 
+								"<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?forcedownload"+extras)+"\">",
+								"</a>",
+								"<b>",
+								"</b>" });
+					boolean mimeRSS = mimeType.startsWith("application/xml+rss") || mimeType.startsWith("text/xml"); /* blergh! */
+					if(!(mimeRSS || mimeType.startsWith("text/plain"))) {
 						option = optionList.addChild("li");
-						option.addChild("a", "href", basePath + key.toString() + "?force=" + getForceValue(key, now)+extras, "Click here");
-						option.addChild("#", " to open the file as " + mimeType);
-						option.addChild("%", " (<b>this may also be dangerous</b>).");
+						L10n.addL10nSubstitution(option, "openRSSForce", new String[] { "link", "/link", "bold", "/bold", "mime" },
+								new String[] { 
+									"<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?force="+getForceValue(key, now)+extras)+"\">",
+									"</a>",
+									"<b>",
+									"</b>",
+									HTMLEncoder.encode(mimeType) /* these are not encoded because mostly they are tags, so we have to encode it */ });
 					}
 					option = optionList.addChild("li");
-					option.addChild("a", "href", basePath + key.toString() + "?type=application/xml+rss&force=" + getForceValue(key, now)+extras, "Click here");
-					option.addChild("%", " to open the file as RSS (<b>this is dangerous if the site author is malicious</b>).");
+					L10n.addL10nSubstitution(option, "openRSSAsRSS", new String[] { "link", "/link", "bold", "/bold" },
+							new String[] {
+								"<a href=\""+HTMLEncoder.encode(basePath + key.toString() + "?type=application/xml+rss&force=" + getForceValue(key, now)+extras)+"\">",
+								"</a>",
+								"<b>",
+								"</b>" });
 					if(referrer != null) {
 						option = optionList.addChild("li");
-						option.addChild("a", "href", referrer, "Click here");
-						option.addChild("#", " to go back to the referring page.");
+						L10n.addL10nSubstitution(option, "backToReferrer", new String[] { "link", "/link" },
+								new String[] { "<a href=\""+HTMLEncoder.encode(referrer)+"\">", "</a>" });
 					}
 					option = optionList.addChild("li");
-					option.addChild("a", "href", "/", "Click here");
-					option.addChild("#", " to go to the FProxy home page.");
+					L10n.addL10nSubstitution(option, "backToFProxy", new String[] { "link", "/link" },
+							new String[] { "<a href=\"/\">", "</a>" });
 					
 					byte[] pageBytes = pageNode.generate().getBytes();
 					context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", pageBytes.length);
@@ -166,35 +181,33 @@ public class FProxyToadlet extends Toadlet {
 			use1.printStackTrace();
 			Logger.error(FProxyToadlet.class, "could not create URI", use1);
 		} catch (UnsafeContentTypeException e) {
-			HTMLNode pageNode = context.getPageMaker().getPageNode("Potentially Dangerous Content", context);
+			HTMLNode pageNode = context.getPageMaker().getPageNode(l10n("dangerousContentTitle"), context);
 			HTMLNode contentNode = context.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
 			infobox.addChild("div", "class", "infobox-header", e.getRawTitle());
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 			infoboxContent.addChild(e.getHTMLExplanation());
-			infoboxContent.addChild("p", "Your options are:");
+			infoboxContent.addChild("p", l10n("options"));
 			HTMLNode optionList = infoboxContent.addChild("ul");
 			HTMLNode option = optionList.addChild("li");
-			option.addChild("a", "href", basePath + key.toString() + "?type=text/plain"+extras, "Click here");
-			option.addChild("#", " to open the file as plain text (this should not be dangerous but it may be garbled).");
+			L10n.addL10nSubstitution(option, "openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?type=text/plain"+extras+"\">"), "</a>" });
 			// FIXME: is this safe? See bug #131
 			option = optionList.addChild("li");
-			option.addChild("a", "href", basePath + key.toString() + "?forcedownload"+extras, "Click here");
-			option.addChild("#", " to force your browser to download the file to disk.");
+			L10n.addL10nSubstitution(option, "openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath+key.toString()+"?forcedownload"+extras+"\">"), "</a>" });
 			if(!(mimeType.equals("application/octet-stream") || mimeType.equals("application/x-msdownload"))) {
 				option = optionList.addChild("li");
-				option.addChild("a", "href", basePath + key.toString() + "?force=" + getForceValue(key, now)+extras, "Click here");
-				option.addChild("#", " to open the file as " + mimeType + '.');
+				
+				L10n.addL10nSubstitution(option, "openForce", new String[] { "link", "/link", "mime" }, new String[] { "<a href=\""+HTMLEncoder.encode(basePath + key.toString() + "?force=" + getForceValue(key, now)+extras)+"\">", "</a>", HTMLEncoder.encode(mimeType)});
 			}
 			if(referrer != null) {
 				option = optionList.addChild("li");
-				option.addChild("a", "href", referrer, "Click here");
-				option.addChild("#", " to go back to the referring page.");
+				L10n.addL10nSubstitution(option, "backToReferrer", new String[] { "link", "/link" },
+						new String[] { "<a href=\""+HTMLEncoder.encode(referrer)+"\">", "</a>" });
 			}
 			option = optionList.addChild("li");
-			option.addChild("a", "href", "/", "Click here");
-			option.addChild("#", " to go to the FProxy home page.");
+			L10n.addL10nSubstitution(option, "backToFProxy", new String[] { "link", "/link" },
+					new String[] { "<a href=\"/\">", "</a>" });
 
 			byte[] pageBytes = pageNode.generate().getBytes();
 			context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", pageBytes.length);
@@ -202,6 +215,10 @@ public class FProxyToadlet extends Toadlet {
 		}
 	}
 	
+	private static String l10n(String msg) {
+		return L10n.getString("FProxyToadlet."+msg);
+	}
+
 	/** Does the first 512 bytes of the data contain anything that Firefox might regard as RSS?
 	 * This is a horrible evil hack; we shouldn't be doing blacklisting, we should be doing whitelisting.
 	 * REDFLAG Expect future security issues! 
@@ -262,7 +279,7 @@ public class FProxyToadlet extends Toadlet {
 					newURI = new FreenetURI(k);
 				} catch (MalformedURLException e) {
 					Logger.normal(this, "Invalid key: "+e+" for "+k, e);
-					sendErrorPage(ctx, 404, "Not found", "Invalid key: "+e);
+					sendErrorPage(ctx, 404, l10n("notFoundTitle"), L10n.getString("invalidKeyWithReason", new String[] { "reason" }, new String[] { e.toString() }));
 					return;
 				}
 				
@@ -292,7 +309,7 @@ public class FProxyToadlet extends Toadlet {
 			InputStream strm = getClass().getResourceAsStream("staticfiles/favicon.ico");
 			
 			if (strm == null) {
-				this.sendErrorPage(ctx, 404, "Path not found", "The specified path does not exist.");
+				this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathNotFound"));
 				return;
 			}
 			ctx.sendReplyHeaders(200, "OK", null, "image/x-icon", strm.available());
@@ -312,20 +329,20 @@ public class FProxyToadlet extends Toadlet {
 		try {
 			key = new FreenetURI(ks);
 		} catch (MalformedURLException e) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Invalid key", ctx);
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("invalidKey"), ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 			HTMLNode errorInfobox = contentNode.addChild("div", "class", "infobox infobox-error");
-			errorInfobox.addChild("div", "class", "infobox-header", "Invalid key: "+e);
+			errorInfobox.addChild("div", "class", "infobox-header", L10n.getString("invalidKeyWithReason", new String[] { "reason" }, new String[] { e.toString() }));
 			HTMLNode errorContent = errorInfobox.addChild("div", "class", "infobox-content");
-			errorContent.addChild("#", "Expected a freenet key, but got ");
+			errorContent.addChild("#", l10n("expectedKeyButGot"));
 			errorContent.addChild("code", ks);
 			errorContent.addChild("br");
-			errorContent.addChild(ctx.getPageMaker().createBackLink(ctx, "Go back"));
+			errorContent.addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBack")));
 			errorContent.addChild("br");
-			errorContent.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node homepage" }, "Homepage");
+			errorContent.addChild("a", new String[] { "href", "title" }, new String[] { "/", l10n("homepageTitle") }, l10n("homepage"));
 
-			this.writeReply(ctx, 400, "text/html", "Invalid key", pageNode.generate());
+			this.writeReply(ctx, 400, "text/html", l10n("invalidKeyTitle"), pageNode.generate());
 			return;
 		}
 		String requestedMimeType = httprequest.getParam("type", null);
@@ -349,51 +366,32 @@ public class FProxyToadlet extends Toadlet {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Failed to fetch "+uri+" : "+e);
 			if(e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) {
-				this.writePermanentRedirect(ctx, "Not enough meta-strings", '/' + key.toString() + '/' + override);
+				this.writePermanentRedirect(ctx, l10n("notEnoughMetaStrings"), '/' + key.toString() + '/' + override);
 			} else if(e.newURI != null) {
 				this.writePermanentRedirect(ctx, msg, '/' +e.newURI.toString() + override);
 			} else if(e.mode == FetchException.TOO_BIG) {
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode("File information", ctx);
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fileInformationTitle"), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
-				infobox.addChild("div", "class", "infobox-header", "Large file");
+				infobox.addChild("div", "class", "infobox-header", l10n("largeFile"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				HTMLNode fileInformationList = infoboxContent.addChild("ul");
 				HTMLNode option = fileInformationList.addChild("li");
-				option.addChild("#", "Filename: ");
+				option.addChild("#", l10n("filenameLabel"));
 				option.addChild("a", "href", '/' + key.toString(), getFilename(e, key, e.getExpectedMimeType()));
 
-				boolean finalized = e.finalizedSize();
-				if(e.expectedSize > 0) {
-					if (finalized) {
-						fileInformationList.addChild("li", "Size: " + SizeUtil.formatSize(e.expectedSize));
-					} else {
-						fileInformationList.addChild("li", "Size: " + SizeUtil.formatSize(e.expectedSize) + " (may change)");
-					}
-				} else {
-					fileInformationList.addChild("li", "Size: unknown");
-				}
-				String mime = e.getExpectedMimeType();
-				if(mime != null) {
-					if (finalized) {
-						fileInformationList.addChild("li", "MIME type: " + mime);
-					} else {
-						fileInformationList.addChild("li", "Expected MIME type: " + mime);
-					}
-				} else {
-					fileInformationList.addChild("li", "MIME type: unknown");
-				}
+				String mime = writeSizeAndMIME(fileInformationList, e);
 				
 				infobox = contentNode.addChild("div", "class", "infobox infobox-information");
-				infobox.addChild("div", "class", "infobox-header", "Explanation");
+				infobox.addChild("div", "class", "infobox-header", l10n("explanationTitle"));
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addChild("#", "The Freenet key you requested refers to a large file. Files of this size cannot generally be sent directly to your browser since they take too long for your Freenet node to retrieve. The following options are available:");
+				infoboxContent.addChild("#", l10n("largeFileExplanationAndOptions"));
 				HTMLNode optionList = infoboxContent.addChild("ul");
 				option = optionList.addChild("li");
 				HTMLNode optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] {'/' + key.toString(), "get" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", "Fetch anyway and display file in browser" });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", l10n("fetchLargeFileAnywayAndDisplay") });
 				if(ctx.isAllowedFullAccess()) {
 					option = optionList.addChild("li");
 					optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
@@ -403,9 +401,9 @@ public class FProxyToadlet extends Toadlet {
 					if (mime != null) {
 						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
 					}
-					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", "Download in background and store in downloads directory" });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk") });
 				}
-				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, "Abort and return to the FProxy home page");
+				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, l10n("abortToHomepage"));
 
 				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			} else {
@@ -413,45 +411,25 @@ public class FProxyToadlet extends Toadlet {
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
-				infobox.addChild("div", "class", "infobox-header", "Error: "+FetchException.getShortMessage(e.mode));
+				infobox.addChild("div", "class", "infobox-header", l10n("errorWithReason", "error", FetchException.getShortMessage(e.mode)));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				HTMLNode fileInformationList = infoboxContent.addChild("ul");
 				HTMLNode option = fileInformationList.addChild("li");
-				option.addChild("#", "Filename: ");
+				option.addChild("#", l10n("filenameLabel"));
 				option.addChild("a", "href", '/' + key.toString(), getFilename(e, key, e.getExpectedMimeType()));
 
-				boolean finalized = e.finalizedSize();
-				if(e.expectedSize > 0) {
-					if (finalized) {
-						fileInformationList.addChild("li", "Size: " + SizeUtil.formatSize(e.expectedSize));
-					} else {
-						fileInformationList.addChild("li", "Size: " + SizeUtil.formatSize(e.expectedSize) + " (may change)");
-					}
-				} else {
-					fileInformationList.addChild("li", "Size: unknown");
-				}
-				String mime = e.getExpectedMimeType();
-				if(mime != null) {
-					if (finalized) {
-						fileInformationList.addChild("li", "MIME type: " + mime);
-					} else {
-						fileInformationList.addChild("li", "Expected MIME type: " + mime);
-					}
-				} else {
-					fileInformationList.addChild("li", "MIME type: unknown");
-				}
-				
-				infobox.addChild("div", "class", "infobox-header", "Explanation");
+				String mime = writeSizeAndMIME(fileInformationList, e);
+				infobox.addChild("div", "class", "infobox-header", l10n("explanationTitle"));
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addChild("p", "Freenet was unable to retrieve this file. ");
+				infoboxContent.addChild("p", l10n("unableToRetrieve"));
 				if(e.isFatal())
-					infoboxContent.addChild("p", "This is a fatal error. It is unlikely that retrying will solve the problem.");
+					infoboxContent.addChild("p", l10n("errorIsFatal"));
 				infoboxContent.addChild("p", msg);
 				if(e.errorCodes != null) {
 					infoboxContent.addChild("p").addChild("pre").addChild("#", e.errorCodes.toVerboseString());
 				}
 				
-				infobox.addChild("div", "class", "infobox-header", "You can:");
+				infobox.addChild("div", "class", "infobox-header", l10n("options"));
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				
 				HTMLNode optionList = infoboxContent.addChild("ul");
@@ -464,18 +442,16 @@ public class FProxyToadlet extends Toadlet {
 					if (mime != null) {
 						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
 					}
-					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", "Download it in the background to the downloads directory" });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk")});
 					
 					optionList.addChild("li").
-						addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"))).addChild("#", "Retry now");
+						addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"))).addChild("#", l10n("retryNow"));
 				}
 				
-				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, "Abort and return to the FProxy home page");
+				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", l10n("homepageTitle") }, l10n("abortToHomepage"));
 				
 				option = optionList.addChild("li");
-				option.addChild(ctx.getPageMaker().createBackLink(ctx, "Go back to the previous page"));
-				option = optionList.addChild("li");
-				option.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node homepage" }, "Return to the node homepage");
+				option.addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
 				
 				this.writeReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
 						"text/html", FetchException.getShortMessage(e.mode), pageNode.generate());
@@ -491,14 +467,38 @@ public class FProxyToadlet extends Toadlet {
 			throw e;
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			String msg = "<html><head><title>Internal Error</title></head><body><h1>Internal Error: please report</h1><pre>";
+			String msg = "<html><head><title>"+l10n("internalErrorTitle")+"</title></head><body><h1>"+l10n("internalErrorReportIt")+"</h1><pre>";
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			t.printStackTrace(pw);
 			pw.flush();
 			msg = msg + HTMLEncoder.encode(sw.toString()) + "</pre></body></html>";
-			this.writeReply(ctx, 500, "text/html", "Internal Error", msg);
+			this.writeReply(ctx, 500, "text/html", l10n("internalErrorTitle"), msg);
 		}
+	}
+
+	private String writeSizeAndMIME(HTMLNode fileInformationList, FetchException e) {
+		boolean finalized = e.finalizedSize();
+		if(e.expectedSize > 0) {
+			if (finalized) {
+				fileInformationList.addChild("li", l10n("sizeLabel") + SizeUtil.formatSize(e.expectedSize));
+			} else {
+				fileInformationList.addChild("li", l10n("sizeLabel") + SizeUtil.formatSize(e.expectedSize) + l10n("mayChange"));
+			}
+		} else {
+			fileInformationList.addChild("li", l10n("sizeUnknown"));
+		}
+		String mime = e.getExpectedMimeType();
+		if(mime != null) {
+			fileInformationList.addChild("li", L10n.getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { mime }));;
+		} else {
+			fileInformationList.addChild("li", l10n("unknownMIMEType"));
+		}
+		return mime;
+	}
+
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("FProxyToadlet."+key, new String[] { pattern }, new String[] { value });
 	}
 
 	private String getLink(FreenetURI uri, String requestedMimeType, long maxSize, String force, 
@@ -564,6 +564,8 @@ public class FProxyToadlet extends Toadlet {
 
 	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SubConfig fproxyConfig) throws IOException, InvalidConfigValueException {
 		
+		// FIXME how to change these on the fly when the interface language is changed?
+		
 		try {
 			
 			SimpleToadletServer server = new SimpleToadletServer(fproxyConfig, core);
@@ -575,10 +577,10 @@ public class FProxyToadlet extends Toadlet {
 			core.random.nextBytes(random);
 			FProxyToadlet fproxy = new FProxyToadlet(client, core);
 			core.setFProxy(fproxy);
-			server.register(fproxy, "/", false, "Home", "homepage", false);
+			server.register(fproxy, "/", false, l10n("welcomeTitle"), l10n("welcome"), false);
 			
 			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager, core);
-			server.register(pproxy, "/plugins/", true, "Plugins", "configure and manage plugins", true);
+			server.register(pproxy, "/plugins/", true, l10n("pluginsTitle"), l10n("plugins"), true);
 			
 			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node);
 			server.register(welcometoadlet, "/welcome/", true, false);
@@ -587,7 +589,7 @@ public class FProxyToadlet extends Toadlet {
 			server.register(pluginToadlet, "/plugin/", true, true);
 			
 			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
-			server.register(configtoadlet, "/config/", true, "Configuration", "configure your node", true);
+			server.register(configtoadlet, "/config/", true, l10n("configTitle"), l10n("config"), true);
 			
 			StaticToadlet statictoadlet = new StaticToadlet(client);
 			server.register(statictoadlet, "/static/", true, false);
@@ -596,16 +598,16 @@ public class FProxyToadlet extends Toadlet {
 			server.register(symlinkToadlet, "/sl/", true, false);
 			
 			DarknetConnectionsToadlet darknetToadlet = new DarknetConnectionsToadlet(node, core, client);
-			server.register(darknetToadlet, "/darknet/", true, "Friends", "manage f2f connections", true);
+			server.register(darknetToadlet, "/darknet/", true, l10n("friendsTitle"), l10n("friends"), true);
 			
 			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 			server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
 			
 			QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
-			server.register(queueToadlet, "/queue/", true, "Queue", "manage queued requests", false);
+			server.register(queueToadlet, "/queue/", true, l10n("queueTitle"), l10n("queue"), false);
 			
 			StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
-			server.register(statisticsToadlet, "/stats/", true, "Statistics", "view statistics", true);
+			server.register(statisticsToadlet, "/stats/", true, l10n("statsTitle"), l10n("stats"), true);
 			
 			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
 			server.register(localFileInsertToadlet, "/files/", true, false);
@@ -617,8 +619,7 @@ public class FProxyToadlet extends Toadlet {
 			server.register(browsertTestToadlet, "/test/", true, false);
 			
 			TranslationToadlet translationToadlet = new TranslationToadlet(client, core);
-			server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, "Translation", "helper" +
-					" to translate the node's interface into your native language", true);
+			server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, l10n("translationTitle"), l10n("translation"), true);
 			
 			// Now start the server.
 			server.start();
