@@ -84,6 +84,7 @@ public class FProxyToadlet extends Toadlet {
 	}
 
 	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer) throws ToadletContextClosedException, IOException {
+		String extrasNoMime = extras; // extras will not include MIME type to start with - REDFLAG maybe it should be an array
 		if(requestedMimeType != null) {
 			if(mimeType == null || !requestedMimeType.equals(mimeType)) {
 				if(extras == null) extras = "";
@@ -120,7 +121,7 @@ public class FProxyToadlet extends Toadlet {
 					
 					L10n.addL10nSubstitution(option, "FProxyToadlet.openPossRSSAsPlainText", new String[] { "link", "/link", "bold", "/bold" },
 							new String[] { 
-								"<a href=\""+basePath+key.toString()+"?type=text/plain&force="+getForceValue(key,now)+extras+"\">",
+								"<a href=\""+basePath+key.toString()+"?type=text/plain&force="+getForceValue(key,now)+extrasNoMime+"\">",
 								"</a>",
 								"<b>",
 								"</b>" });
@@ -146,7 +147,7 @@ public class FProxyToadlet extends Toadlet {
 					option = optionList.addChild("li");
 					L10n.addL10nSubstitution(option, "FProxyToadlet.openRSSAsRSS", new String[] { "link", "/link", "bold", "/bold" },
 							new String[] {
-								"<a href=\""+basePath + key.toString() + "?type=application/xml+rss&force=" + getForceValue(key, now)+extras+"\">",
+								"<a href=\""+basePath + key.toString() + "?type=application/xml+rss&force=" + getForceValue(key, now)+extrasNoMime+"\">",
 								"</a>",
 								"<b>",
 								"</b>" });
@@ -191,7 +192,7 @@ public class FProxyToadlet extends Toadlet {
 			infoboxContent.addChild("p", l10n("options"));
 			HTMLNode optionList = infoboxContent.addChild("ul");
 			HTMLNode option = optionList.addChild("li");
-			L10n.addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath+key.toString()+"?type=text/plain"+extras+"\">", "</a>" });
+			L10n.addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath+key.toString()+"?type=text/plain"+extrasNoMime+"\">", "</a>" });
 			// FIXME: is this safe? See bug #131
 			option = optionList.addChild("li");
 			L10n.addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath+key.toString()+"?forcedownload"+extras+"\">", "</a>" });
