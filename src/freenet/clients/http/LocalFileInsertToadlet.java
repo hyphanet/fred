@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.URLEncoder;
@@ -50,19 +51,19 @@ public class LocalFileInsertToadlet extends Toadlet {
 		currentPath = new File(path).getCanonicalFile();
 		
 		if(!core.allowUploadFrom(currentPath)) {
-			this.sendErrorPage(toadletContext, 403, "Forbidden", "You cannot browse this directory");
+			sendErrorPage(toadletContext, 403, "Forbidden", l10n("dirAccessDenied"));
 			return;
 		}
 		
 		PageMaker pageMaker = toadletContext.getPageMaker();
 
-		HTMLNode pageNode = pageMaker.getPageNode("Listing of " + currentPath.getAbsolutePath(), toadletContext);
+		HTMLNode pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		if(toadletContext.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 		
 		HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
-		infoboxDiv.addChild("div", "class", "infobox-header", "Directory Listing: " + currentPath.getAbsolutePath());
+		infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",  currentPath.getAbsolutePath()));
 		HTMLNode listingDiv = infoboxDiv.addChild("div", "class", "infobox-content");
 
 		if (currentPath.exists() && currentPath.isDirectory() && currentPath.canRead()) {
@@ -84,8 +85,8 @@ public class LocalFileInsertToadlet extends Toadlet {
 			HTMLNode listingTable = listingDiv.addChild("table");
 			HTMLNode headerRow = listingTable.addChild("tr");
 			headerRow.addChild("th");
-			headerRow.addChild("th", "File");
-			headerRow.addChild("th", "Size");
+			headerRow.addChild("th", l10n("fileHeader"));
+			headerRow.addChild("th", l10n("sizeHeader"));
 			/* add filesystem roots (fsck windows) */
 			File[] roots = File.listRoots();
 			for (int rootIndex = 0, rootCount = roots.length; rootIndex < rootCount; rootIndex++) {
@@ -121,7 +122,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 						HTMLNode cellNode = fileRow.addChild("td");
 						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/queue/", "insertLocalFileForm"); 
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
-						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-file", "Insert" });
+						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-file", l10n("insert")});
 						fileRow.addChild("td", currentFile.getName());
 						fileRow.addChild("td", "class", "right-align", String.valueOf(currentFile.length()));
 					} else {
@@ -132,14 +133,22 @@ public class LocalFileInsertToadlet extends Toadlet {
 				}
 			}
 		} else {
-			listingDiv.addChild("#", "The directory \u201c" + currentPath.getAbsolutePath() + "\u201d can not be read.");
+			listingDiv.addChild("#", l10n("dirCannotBeRead", "path", currentPath.getAbsolutePath()));
 			HTMLNode ulNode = listingDiv.addChild("ul");
-			ulNode.addChild("li", "Check that the specified path does exist.");
-			ulNode.addChild("li", "Check that the specified path is a directory.");
-			ulNode.addChild("li", "Check that the specified path is readable by the user running the node.");
+			ulNode.addChild("li", l10n("checkPathExist"));
+			ulNode.addChild("li", l10n("checkPathIsDir"));
+			ulNode.addChild("li", l10n("checkPathReadable"));
 		}
 
 		writeReply(toadletContext, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+	}
+
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString(key, new String[] { pattern }, new String[] { value });
+	}
+
+	private String l10n(String msg) {
+		return L10n.getString("LocalFileInsertToadlet."+msg);
 	}
 
 	/**
