@@ -351,7 +351,8 @@ public class L10n {
 	}
 	
 	/**
-	 * Add a localised string with some raw HTML substitutions
+	 * Add a localised string with some raw HTML substitutions.
+	 * Useful when some part of a sentence needs to be bold e.g.
 	 * @param key The L10n key.
 	 * @param patterns The strings to search for.
 	 * @param values The strings to substitute in.
