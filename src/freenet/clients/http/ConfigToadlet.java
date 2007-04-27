@@ -51,7 +51,7 @@ public class ConfigToadlet extends Toadlet {
 		}
 		
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			super.sendErrorPage(ctx, 403, "Unauthorized", l10n("unauthorized"));
 			return;
 		}
 		
@@ -83,34 +83,38 @@ public class ConfigToadlet extends Toadlet {
 		}
 		core.storeConfig();
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Configuration Applied", ctx);
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("appliedTitle"), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		if (errbuf.length() == 0) {
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Configuration Applied"));
-			ctx.getPageMaker().getContentNode(infobox).addChild("#", "Your configuration changes were applied successfully.");
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", l10n("appliedTitle")));
+			ctx.getPageMaker().getContentNode(infobox).addChild("#", l10n("appliedSuccess"));
 		} else {
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", "Configuration Not Applied"));
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle")));
 			HTMLNode content = infobox.addChild("div", "class", "infobox-content");
-			content.addChild("#", "Your configuration changes were applied with the following exceptions:");
+			content.addChild("#", l10n("appliedFailureExceptions"));
 			content.addChild("br");
 			content.addChild("#", errbuf.toString());
 		}
 		
-		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "Your Possibilities"));
+		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("possibilitiesTitle")));
 		HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
-		content.addChild("a", new String[]{"href", "title"}, new String[]{".", "Configuration"}, "Return to node configuration");
+		content.addChild("a", new String[]{"href", "title"}, new String[]{".", l10n("shortTitle")}, l10n("returnToNodeConfig"));
 		content.addChild("br");
-		content.addChild("a", new String[]{"href", "title"}, new String[]{"/", "Node homepage"}, "Return to node homepage");
+		content.addChild("a", new String[]{"href", "title"}, new String[]{"/", l10n("homepage")}, l10n("returnToNodeHomePage"));
 
 		writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 		
 	}
 	
+	private static final String l10n(String string) {
+		return L10n.getString("ConfigToadlet." + string);
+	}
+
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			super.sendErrorPage(ctx, 403, "Unauthorized", l10n("unauthorized"));
 			return;
 		}
 		
@@ -118,13 +122,13 @@ public class ConfigToadlet extends Toadlet {
 		Arrays.sort(sc);
 		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet Node Configuration of " + node.getMyName(), ctx);
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 		if(advancedModeEnabled){
-			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", "Configuration Navigation");
+			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
 			HTMLNode navigationTable = navigationContent.addChild("table", "class", "config_navigation");
 			HTMLNode navigationTableRow = navigationTable.addChild("tr");
@@ -137,7 +141,7 @@ public class ConfigToadlet extends Toadlet {
 		}
 
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		infobox.addChild("div", "class", "infobox-header", "Freenet node configuration");
+		infobox.addChild("div", "class", "infobox-header", l10n("title"));
 		HTMLNode configNode = infobox.addChild("div", "class", "infobox-content");
 		HTMLNode formNode = ctx.addFormChild(configNode, ".", "configForm");
 		
@@ -154,8 +158,8 @@ public class ConfigToadlet extends Toadlet {
 					
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
-							new String[]{ "configshortdesc", "The default for that configuration option is : '" +
-							o[j].getDefault() + '\'', "cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc()));
+							new String[]{ "configshortdesc", L10n.getString("defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }), 
+							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc()));
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
 						Logger.error(this, sc[i].getPrefix() + configName + "has returned null from config!);");
@@ -180,8 +184,8 @@ public class ConfigToadlet extends Toadlet {
 			}
 		}
 		
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Apply" });
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", "Reset" });
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
 		
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
