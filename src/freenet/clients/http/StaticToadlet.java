@@ -7,6 +7,7 @@ import java.net.URI;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
+import freenet.l10n.L10n;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
@@ -32,19 +33,19 @@ public class StaticToadlet extends Toadlet {
 		try {
 			path = path.substring(ROOT_URL.length());
 		} catch (IndexOutOfBoundsException ioobe) {
-			this.sendErrorPage(ctx, 404, "Path not found", "The path you specified doesn't exist");
+			this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathNotFound"));
 			return;
 		}
 		
 		// be very strict about what characters we allow in the path, since
 		if (!path.matches("^[A-Za-z0-9\\._\\/\\-]*$") || (path.indexOf("..") != -1)) {
-			this.sendErrorPage(ctx, 404, "Path not found", "The given URI contains disallowed characters.");
+			this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathInvalidChars"));
 			return;
 		}
 		
 		InputStream strm = getClass().getResourceAsStream(ROOT_PATH+path);
 		if (strm == null) {
-			this.sendErrorPage(ctx, 404, "Path not found", "The specified path does not exist.");
+			this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathNotFound"));
 			return;
 		}
 		Bucket data = ctx.getBucketFactory().makeBucket(strm.available());
@@ -64,6 +65,10 @@ public class StaticToadlet extends Toadlet {
 		data.free();
 	}
 	
+	private String l10n(String key) {
+		return L10n.getString("StaticToadlet."+key);
+	}
+
 	public String supportedMethods() {
 		return "GET";
 	}
