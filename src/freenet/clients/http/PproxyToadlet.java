@@ -1,8 +1,6 @@
 package freenet.clients.http;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.URI;
 import java.util.Date;
 import java.util.Iterator;
@@ -249,7 +247,7 @@ public class PproxyToadlet extends Toadlet {
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			infobox.addChild("div", "class", "infobox-header", L10n.getString("PproxyToadlet.pluginListTitle"));
+			infobox.addChild("div", "class", "infobox-header", L10n.getString("PluginToadlet.pluginListTitle"));
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 			HTMLNode pluginTable = infoboxContent.addChild("table", "class", "plugins");
 			HTMLNode headerRow = pluginTable.addChild("tr");
