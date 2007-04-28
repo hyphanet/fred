@@ -98,14 +98,7 @@ public class PproxyToadlet extends Toadlet {
 			}
 			catch(Throwable t)
 			{
-				Logger.error(this, "Caught "+t, t);
-				String msg = "<html><head><title>Internal Error</title></head><body><h1>Internal Error: please report</h1><pre>";
-				StringWriter sw = new StringWriter();
-				PrintWriter pw = new PrintWriter(sw);
-				t.printStackTrace(pw);
-				pw.flush();
-				msg = msg + sw.toString() + "</pre></body></html>";
-				this.writeReply(ctx, 500, "text/html", "Internal Error", msg);
+				writeInternalError(t, ctx);
 			}
 		}
 		else

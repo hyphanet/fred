@@ -15,8 +15,10 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
@@ -240,7 +242,17 @@ public abstract class Toadlet {
 		writeReply(ctx, 500, "text/html; charset=UTF-8", desc, pageNode.generate());
 	}
 
-
+	protected void writeInternalError(Throwable t, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		Logger.error(this, "Caught "+t, t);
+		String msg = "<html><head><title>"+L10n.getString("Toadlet.internalErrorTitle")+
+				"Internal Error</title></head><body><h1>"+L10n.getString("Toadlet.internalErrorPleaseReport")+"</h1><pre>";
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		t.printStackTrace(pw);
+		pw.flush();
+		msg = msg + sw.toString() + "</pre></body></html>";
+		writeReply(ctx, 500, "text/html", "Internal Error", msg);
+	}
 	
 	/**
 	 * Get the client impl. DO NOT call the blocking methods on it!!

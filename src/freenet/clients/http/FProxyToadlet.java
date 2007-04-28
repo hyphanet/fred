@@ -467,15 +467,7 @@ public class FProxyToadlet extends Toadlet {
 			}
 			throw e;
 		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t, t);
-			String msg = "<html><head><title>"+L10n.getString("Toadlet.internalErrorTitle")+"</title></head><body><h1>"+
-				L10n.getString("Toadlet.internalErrorPleaseReport")+"</h1><pre>";
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			t.printStackTrace(pw);
-			pw.flush();
-			msg = msg + HTMLEncoder.encode(sw.toString()) + "</pre></body></html>";
-			this.writeReply(ctx, 500, "text/html", l10n("internalErrorTitle"), msg);
+			writeInternalError(t, ctx);
 		}
 	}
 
