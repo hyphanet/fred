@@ -567,7 +567,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode legendTable = legendContent.addChild("table", "class", "queue");
 		HTMLNode legendRow = legendTable.addChild("tr");
 		for(int i=0; i<7; i++){
-			legendRow.addChild("td", "class", "priority" + i, priorityClass[i]);
+			legendRow.addChild("td", "class", "priority" + i, priorityClasses[i]);
 		}
 
 		if (reqs.length > 1 && SimpleToadletServer.isPanicButtonToBeShown) {
