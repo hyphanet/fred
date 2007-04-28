@@ -38,6 +38,8 @@ public class TranslationToadlet extends Toadlet {
 			return;
 		}
 		
+		boolean showEverything = !request.isParameterSet("toTranslateOnly");
+		
 		if (request.isParameterSet("getOverrideTranlationFile")) {
 			SimpleFieldSet sfs = L10n.getOverrideForCurrentLanguageTranslation();
 			if(sfs == null) {
@@ -77,9 +79,9 @@ public class TranslationToadlet extends Toadlet {
 			HTMLNode footer = translationNode.addChild("div", "class", "warning");
 			footer.addChild("a", "href", TOADLET_URL+"?getOverrideTranlationFile").addChild("#", "Download the override translation file");
 			footer.addChild("%", "&nbsp;&nbsp;");
-			footer.addChild("a", "href", TOADLET_URL+"?translate="+key).addChild("#", "Re-edit the translation");
+			footer.addChild("a", "href", TOADLET_URL+"?translate="+key+ (showEverything ? "" : "&toTranslateOnly")).addChild("#", "Re-edit the translation");
 			footer.addChild("%", "&nbsp;&nbsp;");
-			footer.addChild("a", "href", TOADLET_URL).addChild("#", "Return to the translation page");
+			footer.addChild("a", "href", TOADLET_URL + (showEverything ? "" : "?toTranslateOnly")).addChild("#", "Return to the translation page");
 
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;				
@@ -120,6 +122,9 @@ public class TranslationToadlet extends Toadlet {
 					new String[] { "type", "name", "value" }, 
 					new String[] { "submit", "translation_update", "Update the translation!"
 			});
+			if(!showEverything)
+				updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "toTranslateOnly", key });
+			
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
@@ -132,6 +137,8 @@ public class TranslationToadlet extends Toadlet {
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 			content.addChild("p").addChild("#", "Are you sure that you want to remove the following translation key : (" + key + " - " + L10n.getString(key) + ") ?");
 			HTMLNode removeForm = ctx.addFormChild(content.addChild("p"), TOADLET_URL, "remove_confirmed");
+			if(!showEverything)
+				removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "toTranslateOnly", key });
 			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "remove_confirm", key });
 			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_confirmed", "Remove" });
 			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
@@ -147,6 +154,10 @@ public class TranslationToadlet extends Toadlet {
 		HTMLNode translationHeaderNode = translationNode.addChild("p");
 		translationHeaderNode.addChild("#", "You are currently contributing to the " + L10n.getSelectedLanguage() + " translation :");
 		translationHeaderNode.addChild("a", "href", TOADLET_URL+"?getOverrideTranlationFile").addChild("#", " Download the override translation file");
+		if(showEverything)
+			translationHeaderNode.addChild("a", "href", TOADLET_URL+"?toTranslateOnly").addChild("#", " Hide already translated strings");
+		else
+			translationHeaderNode.addChild("a", "href", TOADLET_URL).addChild("#", " Show everything, including already translated strings");
 		HTMLNode legendTable = translationNode.addChild("table", "class", "translation");
 		
 		HTMLNode legendRow = legendTable.addChild("tr");
@@ -160,7 +171,8 @@ public class TranslationToadlet extends Toadlet {
 
 			while(it.hasNext()) {
 				String key = it.nextKey();
-
+				boolean isOverriden = L10n.isOverridden(key);
+				if(!showEverything && isOverriden) continue;
 				HTMLNode contentRow = legendTable.addChild("tr");
 				contentRow.addChild("td", "class", "translation-key",
 						key
@@ -169,7 +181,7 @@ public class TranslationToadlet extends Toadlet {
 						L10n.getDefaultString(key)
 				);
 
-				contentRow.addChild("td", "class", "translation-new").addChild(_setOrRemoveOverride(key));
+				contentRow.addChild("td", "class", "translation-new").addChild(_setOrRemoveOverride(key, isOverriden, showEverything));
 			}
 		}
 		
@@ -195,13 +207,13 @@ public class TranslationToadlet extends Toadlet {
 			String key = request.getPartAsString("key", 256);
 			L10n.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), "UTF-8"));
 			
-			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key);
+			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key+ (request.isPartSet("toTranslateOnly") ? "&toTranslateOnly" : ""));
 			return;
 		} else if(request.getPartAsString("remove_confirmed", 32).length() > 0) {
 			String key = request.getPartAsString("remove_confirm", 256).trim();
 			L10n.setOverride(key, "");
 			
-			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key);
+			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key+ (request.isPartSet("toTranslateOnly") ? "&toTranslateOnly" : ""));
 			return;
 		}else // Shouldn't reach that point!
 			redirectTo(ctx, "/");
@@ -218,18 +230,18 @@ public class TranslationToadlet extends Toadlet {
 		return "GET, POST";
 	}
 	
-	private HTMLNode _setOrRemoveOverride(String key) {
+	private HTMLNode _setOrRemoveOverride(String key, boolean isOverriden, boolean showEverything) {
 		String value = L10n.getString(key, true);
 		
 		HTMLNode translationField = new HTMLNode("span", "class", "translate_it");
 		if(value == null) {
 			translationField.addChild("#", L10n.getDefaultString(key));
-			translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?translate=" + key).addChild("small", " (translate it in your native language!)");
+			translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?translate=" + key + (showEverything ? "" : "&toTranslateOnly")).addChild("small", " (translate it in your native language!)");
 		} else {
 			translationField.addChild("#", L10n.getString(key));
-			translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?translate=" + key).addChild("small", " (update the translation)");
-			if(L10n.isOverridden(key))
-				translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?remove=" + key).addChild("small", " (Remove the translation override!)");
+			translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?translate=" + key + (showEverything ? "" : "&toTranslateOnly")).addChild("small", " (update the translation)");
+			if(isOverriden)
+				translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?remove=" + key + (showEverything ? "" : "&toTranslateOnly")).addChild("small", " (Remove the translation override!)");
 		}
 		
 		return translationField;
