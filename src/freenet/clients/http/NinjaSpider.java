@@ -55,6 +55,10 @@ import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
 /**
+ * FIXME move to a proper plugin.
+ * 
+ * FIXME localise - and how to do that for plugins? Should they use the main L10n?
+ * 
  * NinjaSpider. Produces a ninj^W err ... an XML index.
  *
  *
