@@ -558,7 +558,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode legendTable = legendContent.addChild("table", "class", "queue");
 		HTMLNode legendRow = legendTable.addChild("tr");
 		for(int i=0; i<7; i++){
-			legendRow.addChild("td", "class", "priority" + i, L10n.getString("QueueToadlet.priority") + ' ' + i);
+			legendRow.addChild("td", "class", "priority" + i, L10n.getString("QueueToadlet.priority") + i);
 		}
 
 		if (reqs.length > 1 && SimpleToadletServer.isPanicButtonToBeShown) {
@@ -568,13 +568,13 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
 
 		final String[] priorityClasses = new String[] { 
-				L10n.getString("QueueToadlet.emergency"),
-				L10n.getString("QueueToadlet.veryhigh"),
-				L10n.getString("QueueToadlet.high"),
-				L10n.getString("QueueToadlet.medium"),
-				L10n.getString("QueueToadlet.low"),
-				L10n.getString("QueueToadlet.verylow"),
-				L10n.getString("QueueToadlet.willneverfinish")
+				L10n.getString("QueueToadlet.priority0"),
+				L10n.getString("QueueToadlet.priority1"),
+				L10n.getString("QueueToadlet.priority2"),
+				L10n.getString("QueueToadlet.priority3"),
+				L10n.getString("QueueToadlet.priority4"),
+				L10n.getString("QueueToadlet.priority5"),
+				L10n.getString("QueueToadlet.priority6")
 			};
 
 		if (!completedDownloadToTemp.isEmpty()) {
