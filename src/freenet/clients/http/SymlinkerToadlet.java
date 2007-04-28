@@ -9,6 +9,7 @@ import java.util.Iterator;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -117,7 +118,8 @@ public class SymlinkerToadlet extends Toadlet {
 		
 		// TODO redirect to errorpage
 		if ((foundtarget == null) || (foundkey == null)) {
-			writeReply(ctx, 404, "text/html", "Path not found", "Page not found");
+			writeReply(ctx, 404, "text/html", L10n.getString("StaticToadlet.pathNotFoundTitle"), 
+					L10n.getString("StaticToadlet.pathNotFound"));
 			return;
 		}
 		
