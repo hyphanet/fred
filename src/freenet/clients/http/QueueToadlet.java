@@ -552,21 +552,6 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			contentNode.addChild(navigationBar);
 		}
 
-		
-		HTMLNode legendBox = contentNode.addChild(pageMaker.getInfobox("legend", L10n.getString("QueueToadlet.legend")));
-		HTMLNode legendContent = pageMaker.getContentNode(legendBox);
-		HTMLNode legendTable = legendContent.addChild("table", "class", "queue");
-		HTMLNode legendRow = legendTable.addChild("tr");
-		for(int i=0; i<7; i++){
-			legendRow.addChild("td", "class", "priority" + i, L10n.getString("QueueToadlet.priority") + i);
-		}
-
-		if (reqs.length > 1 && SimpleToadletServer.isPanicButtonToBeShown) {
-			contentNode.addChild(createPanicBox(pageMaker, ctx));
-		}
-
-		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
-
 		final String[] priorityClasses = new String[] { 
 				L10n.getString("QueueToadlet.priority0"),
 				L10n.getString("QueueToadlet.priority1"),
@@ -575,7 +560,21 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				L10n.getString("QueueToadlet.priority4"),
 				L10n.getString("QueueToadlet.priority5"),
 				L10n.getString("QueueToadlet.priority6")
-			};
+		};
+
+		HTMLNode legendBox = contentNode.addChild(pageMaker.getInfobox("legend", L10n.getString("QueueToadlet.legend")));
+		HTMLNode legendContent = pageMaker.getContentNode(legendBox);
+		HTMLNode legendTable = legendContent.addChild("table", "class", "queue");
+		HTMLNode legendRow = legendTable.addChild("tr");
+		for(int i=0; i<7; i++){
+			legendRow.addChild("td", "class", "priority" + i, priorityClass[i]);
+		}
+
+		if (reqs.length > 1 && SimpleToadletServer.isPanicButtonToBeShown) {
+			contentNode.addChild(createPanicBox(pageMaker, ctx));
+		}
+
+		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
 
 		if (!completedDownloadToTemp.isEmpty()) {
 			contentNode.addChild("a", "name", "completedDownloadToTemp");
