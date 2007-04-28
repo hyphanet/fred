@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.oldplugins.plugin.HttpPlugin;
 import freenet.oldplugins.plugin.Plugin;
@@ -72,16 +73,16 @@ public class PluginToadlet extends Toadlet {
 				if (plugin instanceof HttpPlugin) {
 					((HttpPlugin) plugin).handleGet(httpRequest, ctx);
 				} else {
-					writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, "Plugin has no web interface", "The plugin does not have a web interface, so there is nothing to show.").toString());
+					writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, l10n("noWebInterfaceTitle"), l10n("noWebInterface")).toString());
 				}
 				return;
 			}
-			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, "Plugin not found", "The requested plugin could not be found.").toString());
+			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, l10n("pluginNotFoundTitle"), l10n("pluginNotFound")).toString());
 			return;
 		}
 
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			super.sendErrorPage(ctx, 403, "Unauthorized", l10n("unauthorized"));
 			return;
 		}
 		
@@ -95,12 +96,16 @@ public class PluginToadlet extends Toadlet {
 		if ("list".equals(action)) {
 			replyBuffer.append(listPlugins(ctx));
 		} else {
-			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, "Unsupported method", "Unsupported method.").toString());
+			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, l10n("unsupportedMethodTitle"), l10n("unsupportedMethod")).toString());
 			return;
 		}
 		writeReply(ctx, 220, "text/html; charset=utf-8", "OK", replyBuffer.toString());
 	}
 	
+	private String l10n(String key) {
+		return L10n.getString("PluginToadlet."+key);
+	}
+
 	/**
 	 * @see freenet.clients.http.Toadlet#handlePost(java.net.URI, freenet.support.api.Bucket, freenet.clients.http.ToadletContext)
 	 */
@@ -114,16 +119,16 @@ public class PluginToadlet extends Toadlet {
 				if (plugin instanceof HttpPlugin) {
 					((HttpPlugin) plugin).handlePost(httpRequest, ctx);
 				} else {
-					writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, "Plugin has no web interface", "The plugin does not have a web interface, so there is nothing to show.").toString());
+					writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, l10n("noWebInterfaceTitle"), l10n("noWebInterface")).toString());
 				}
 				return;
 			}
-			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, "Plugin not found", "The requested plugin could not be found.").toString());
+			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, l10n("pluginNotFoundTitle") , l10n("pluginNotFound")).toString());
 			return;
 		}
 		
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
+			super.sendErrorPage(ctx, 403, "Unauthorized", l10n("unauthorized"));
 			return;
 		}
 		
@@ -137,7 +142,7 @@ public class PluginToadlet extends Toadlet {
 		
 		String action = httpRequest.getPartAsString("action", 32);
 		if (action.length() == 0) {
-			writePermanentRedirect(ctx, "Plugin list", "?action=list");
+			writePermanentRedirect(ctx, l10n("pluginList"), "?action=list");
 			return;
 		}
 
@@ -149,26 +154,26 @@ public class PluginToadlet extends Toadlet {
 				pluginManager.addPlugin(pluginName, true);
 				added = true;
 			} catch (IllegalArgumentException iae1) {
-				super.sendErrorPage(ctx, "Failed to load plugin", "Failed to load plugin", iae1);
+				super.sendErrorPage(ctx, l10n("failedToLoadPluginTitle"), l10n("failedToLoadPlugin"), iae1);
 				return;
 			}
 			if (added) {
-				writePermanentRedirect(ctx, "Plugin list", "?action=list");
+				writePermanentRedirect(ctx, l10n("pluginList"), "?action=list");
 				return;
 			}
-			replyBuffer.append(createBox(ctx, "Plugin was not loaded", "The plugin you requested could not be loaded. Please verify the name of the plugin\u2019s class and the URL, if you gave one."));
+			replyBuffer.append(createBox(ctx, l10n("failedToLoadPluginTitle"), l10n("failedToLoadPluginCheckClass")));
 		} else if ("reload".equals(action)) {
 			pluginName = httpRequest.getPartAsString("pluginName", MAX_PLUGIN_NAME_LENGTH);
 			Plugin plugin = findPlugin(pluginName);
 			pluginManager.removePlugin(plugin, false);
 			pluginManager.addPlugin(plugin.getClass().getName(), false);
-			writePermanentRedirect(ctx, "Plugin list", "?action=list");
+			writePermanentRedirect(ctx, l10n("pluginList"), "?action=list");
 			return;
 		} else if ("unload".equals(action)) {
 			pluginName = httpRequest.getPartAsString("pluginName", MAX_PLUGIN_NAME_LENGTH);
 			Plugin plugin = findPlugin(pluginName);
 			pluginManager.removePlugin(plugin, true);
-			writePermanentRedirect(ctx, "Plugin list", "?action=list");
+			writePermanentRedirect(ctx, l10n("pluginList"), "?action=list");
 			return;
 		}
 		writeReply(ctx, 220, "text/html; charset=utf-8", "OK", replyBuffer.toString());
@@ -205,15 +210,15 @@ public class PluginToadlet extends Toadlet {
 	private String listPlugins(ToadletContext context) {
 		Plugin[] plugins = pluginManager.getPlugins();
 		PageMaker pageMaker = context.getPageMaker();
-		HTMLNode pageNode = pageMaker.getPageNode("List of Plugins", context);
+		HTMLNode pageNode = pageMaker.getPageNode( l10n("pluginListTitle"), context);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox");
-		infobox.addChild("div", "class", "infobox-header", "Plugin list");
+		infobox.addChild("div", "class", "infobox-header", l10n("pluginList"));
 		HTMLNode table = infobox.addChild("div", "class", "infobox-content").addChild("table", "class", "plugintable");
 		HTMLNode headerRow = table.addChild("tr");
-		headerRow.addChild("th", "Plugin Name");
-		headerRow.addChild("th", "Internal Name");
+		headerRow.addChild("th", l10n("pluginNameTitle"));
+		headerRow.addChild("th", l10n("internalNameTitle"));
 		headerRow.addChild("th", "colspan", "3");
 		for (int pluginIndex = 0, pluginCount = plugins.length; pluginIndex < pluginCount; pluginIndex++) {
 			Plugin plugin = plugins[pluginIndex];
@@ -222,7 +227,7 @@ public class PluginToadlet extends Toadlet {
 			tableRow.addChild("td", plugin.getPluginName());
 			tableRow.addChild("td", internalName);
 			if (plugin instanceof HttpPlugin) {
-				tableRow.addChild("td").addChild("form", new String[] { "action", "method", "target" }, new String[] { internalName, "get", "_new" }).addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Visit" });
+				tableRow.addChild("td").addChild("form", new String[] { "action", "method", "target" }, new String[] { internalName, "get", "_new" }).addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("visit") });
 			} else {
 				tableRow.addChild("td");
 			}
@@ -262,9 +267,8 @@ public class PluginToadlet extends Toadlet {
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 		infoboxContent.addChild("#", message);
 		infoboxContent.addChild("br");
-		infoboxContent.addChild("#", "Please ");
-		infoboxContent.addChild("a", "href", "?action=list", "return");
-		infoboxContent.addChild("#", " to the list of plugins.");
+		L10n.addL10nSubstitution(infoboxContent, "returnToPluginsWithLinks", new String[] { "link", "/link" }, 
+				new String[] { "<a href=\"?action=list\">", "</a>" });
 		StringBuffer pageBuffer = new StringBuffer();
 		pageNode.generate(pageBuffer);
 		return pageBuffer;
@@ -279,11 +283,11 @@ public class PluginToadlet extends Toadlet {
 	 */
 	private HTMLNode createAddPluginBox(ToadletContext ctx) {
 		HTMLNode addPluginBox = new HTMLNode("div", "class", "infobox");
-		addPluginBox.addChild("div", "class", "infobox-header", "Add a plugin");
+		addPluginBox.addChild("div", "class", "infobox-header", l10n("addPluginTitle"));
 		HTMLNode addForm = ctx.addFormChild(addPluginBox.addChild("div", "class", "infobox-content"), ".", "addPluginBox");
 		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "action", "add" });
 		addForm.addChild("input", new String[] { "type", "name", "value", "size" }, new String[] { "text", "pluginName", "", "40" });
-		addForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Load plugin" });
+		addForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("loadPluginCommand")});
 		return addPluginBox;
 	}
 
