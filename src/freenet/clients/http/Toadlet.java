@@ -72,12 +72,12 @@ public abstract class Toadlet {
 	}
 	
 	private void handleUnhandledRequest(URI uri, Bucket data, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
-		HTMLNode pageNode = toadletContext.getPageMaker().getPageNode("Not supported", toadletContext);
+		HTMLNode pageNode = toadletContext.getPageMaker().getPageNode(l10n("notSupportedTitle"), toadletContext);
 		HTMLNode contentNode = toadletContext.getPageMaker().getContentNode(pageNode);
 
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
-		infobox.addChild("div", "class", "infobox-header", "Not supported");
-		infobox.addChild("div", "class", "infobox-content", "Your browser sent a request that Freenet ("+getClass().getName()+") could not understand.");
+		infobox.addChild("div", "class", "infobox-header", l10n("notSupportedTitle"));
+		infobox.addChild("div", "class", "infobox-content", l10n("notSupportedWithClass", "class", getClass().getName()));
 
 		MultiValueTable hdrtbl = new MultiValueTable();
 		hdrtbl.put("Allow", this.supportedMethods());
@@ -88,6 +88,14 @@ public abstract class Toadlet {
 		toadletContext.writeData(pageBuffer.toString().getBytes());
 	}
 	
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("Toadlet."+key, new String[] { pattern }, new String[] { value });
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("Toadlet."+key);
+	}
+
 	/**
 	 * Which methods are supported by this Toadlet.
 	 * Should return a string containing the methods supported, separated by commas
@@ -155,8 +163,9 @@ public abstract class Toadlet {
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
-			"<html><head><title>"+msg+"</title></head><body><h1>Permanent redirect: "+
-			msg+"</h1><a href=\""+HTMLEncoder.encode(location)+"\">Click here</a></body></html>";
+			"<html><head><title>"+msg+"</title></head><body><h1>" +
+			l10n("permRedirectWithReason", "reason", msg)+
+			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">"+l10n("clickHere")+"</a></body></html>";
 		byte[] buf;
 		try {
 			buf = redirDoc.getBytes("UTF-8");
@@ -174,8 +183,10 @@ public abstract class Toadlet {
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
-			"<html><head><title>"+msg+"</title></head><body><h1>Temporary redirect: "+
-			msg+"</h1><a href=\""+HTMLEncoder.encode(location)+"\">Click here</a></body></html>";
+			"<html><head><title>"+msg+"</title></head><body><h1>" +
+			l10n("tempRedirectWithReason", "reason", msg)+
+			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">" +
+			l10n("clickHere") + "</a></body></html>";
 		byte[] buf;
 		try {
 			buf = redirDoc.getBytes("UTF-8");
@@ -205,8 +216,8 @@ public abstract class Toadlet {
 		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
 		infoboxContent.addChild(message);
 		infoboxContent.addChild("br");
-		infoboxContent.addChild("a", "href", ".", "Return to the previous page.");
-		infoboxContent.addChild("a", "href", "/", "Return to the main page.");
+		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
+		infoboxContent.addChild("a", "href", "/", l10n("returnToNodeHomepage"));
 		
 		writeReply(ctx, code, "text/html; charset=UTF-8", desc, pageNode.generate());
 	}
@@ -236,8 +247,8 @@ public abstract class Toadlet {
 		// FIXME what is the modern (CSS/XHTML) equivalent of <pre>?
 		infoboxContent.addChild("pre", sw.toString());
 		infoboxContent.addChild("br");
-		infoboxContent.addChild("a", "href", ".", "Return to the previous page.");
-		infoboxContent.addChild("a", "href", "/", "Return to the main page.");
+		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
+		infoboxContent.addChild("a", "href", "/", l10n("returnToNodeHomepage"));
 		
 		writeReply(ctx, 500, "text/html; charset=UTF-8", desc, pageNode.generate());
 	}
@@ -245,7 +256,7 @@ public abstract class Toadlet {
 	protected void writeInternalError(Throwable t, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		Logger.error(this, "Caught "+t, t);
 		String msg = "<html><head><title>"+L10n.getString("Toadlet.internalErrorTitle")+
-				"Internal Error</title></head><body><h1>"+L10n.getString("Toadlet.internalErrorPleaseReport")+"</h1><pre>";
+				"</title></head><body><h1>"+L10n.getString("Toadlet.internalErrorPleaseReport")+"</h1><pre>";
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
 		t.printStackTrace(pw);
