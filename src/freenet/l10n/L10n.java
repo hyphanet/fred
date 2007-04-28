@@ -112,6 +112,8 @@ public class L10n {
 			if(("".equals(value) || L10n.getString(key).equals(value)) && !L10n.getDefaultString(key).equals(value)) {
 				translationOverride.removeValue(key);
 			} else {
+				value = value.replaceAll("(\r|\n|\t)+", "");
+				
 				// Set the value of the override
 				translationOverride.putOverwrite(key, value);
 				Logger.normal("L10n", "Got a new translation key: set the Override!");

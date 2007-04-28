@@ -205,7 +205,7 @@ public class TranslationToadlet extends Toadlet {
 		
 		if(request.getPartAsString("translation_update", 32).length() > 0){
 			String key = request.getPartAsString("key", 256);
-			L10n.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), "UTF-8"));
+			L10n.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), "UTF-8").trim());
 			
 			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key+ (request.isPartSet("toTranslateOnly") ? "&toTranslateOnly" : ""));
 			return;
