@@ -77,7 +77,7 @@ public class TranslationToadlet extends Toadlet {
 			);
 			
 			HTMLNode footer = translationNode.addChild("div", "class", "warning");
-			footer.addChild("a", "href", TOADLET_URL+"?getOverrideTranlationFile").addChild("#", "Download the override translation file");
+			footer.addChild("a", "href", TOADLET_URL+"?getOverrideTranlationFile").addChild("#", "Download your translations");
 			footer.addChild("%", "&nbsp;&nbsp;");
 			footer.addChild("a", "href", TOADLET_URL+"?translate="+key+ (showEverything ? "" : "&toTranslateOnly")).addChild("#", "Re-edit the translation");
 			footer.addChild("%", "&nbsp;&nbsp;");
