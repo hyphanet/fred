@@ -228,9 +228,9 @@ public class FreenetURI implements Cloneable{
 				throw new MalformedURLException("Invalid URI: no @ or /, or @ or / is escaped but there are invalid escapes");
 			}
 		}
-
+		
 		// Strip http:// prefix
-		URI = URI.replaceFirst("http://(.)*(/)+","");
+		URI = URI.replaceFirst("^http://[^/]+/+","");
 		
 		// check scheme
 		int colon = URI.indexOf(':');
