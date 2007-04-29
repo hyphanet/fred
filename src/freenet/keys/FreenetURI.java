@@ -242,7 +242,7 @@ public class FreenetURI implements Cloneable{
 		// decode keyType
 		int atchar = URI.indexOf('@');
 		if (atchar == -1) {
-			throw new MalformedURLException("There is no @ in that URI!");
+			throw new MalformedURLException("There is no @ in that URI! ("+URI.toString()+')');
 		} else {
 			keyType = URI.substring(colon + 1, atchar).toUpperCase().trim();
 		}
