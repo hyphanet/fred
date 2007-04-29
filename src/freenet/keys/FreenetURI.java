@@ -218,7 +218,7 @@ public class FreenetURI implements Cloneable{
 		if (URI == null) {
 			throw new MalformedURLException("No URI specified");
 		} else
-			URI = URI.trim().replaceAll("^http://.*/+", "");
+			URI = URI.trim();
 		
 		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0) {
 			// Encoded URL?
@@ -228,6 +228,9 @@ public class FreenetURI implements Cloneable{
 				throw new MalformedURLException("Invalid URI: no @ or /, or @ or / is escaped but there are invalid escapes");
 			}
 		}
+
+		// Strip http:// prefix
+		URI = URI.replaceAll("^http://.*/+", "");
 		
 		// check scheme
 		int colon = URI.indexOf(':');
