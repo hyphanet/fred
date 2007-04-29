@@ -63,7 +63,7 @@ public class TranslationToadlet extends Toadlet {
 			HTMLNode legendRow = legendTable.addChild("tr").addChild("b");
 			legendRow.addChild("td", "class", "translation-key", l10n("translationKeyLabel"));
 			legendRow.addChild("td", "class", "translation-key", l10n("originalVersionLabel"));
-			legendRow.addChild("td", "class", "translation-key", l10n("currentTranslation"));
+			legendRow.addChild("td", "class", "translation-key", l10n("currentTranslationLabel"));
 			
 			HTMLNode contentRow = legendTable.addChild("tr");
 			contentRow.addChild("td", "class", "translation-key",
@@ -97,7 +97,7 @@ public class TranslationToadlet extends Toadlet {
 			HTMLNode legendRow = legendTable.addChild("tr");
 			legendRow.addChild("td", "class", "translation-key", l10n("translationKeyLabel"));
 			legendRow.addChild("td", "class", "translation-key", l10n("originalVersionLabel"));
-			legendRow.addChild("td", "class", "translation-key", l10n("currentTranslation"));
+			legendRow.addChild("td", "class", "translation-key", l10n("currentTranslationLabel"));
 			
 			HTMLNode contentRow = legendTable.addChild("tr");
 			contentRow.addChild("td", "class", "translation-key",
@@ -166,7 +166,7 @@ public class TranslationToadlet extends Toadlet {
 		HTMLNode legendRow = legendTable.addChild("tr");
 		legendRow.addChild("td", "class", "translation-key", l10n("translationKeyLabel"));
 		legendRow.addChild("td", "class", "translation-key", l10n("originalVersionLabel"));
-		legendRow.addChild("td", "class", "translation-key", l10n("currentTranslation"));
+		legendRow.addChild("td", "class", "translation-key", l10n("currentTranslationLabel"));
 		
 		SimpleFieldSet sfs = L10n.getCurrentLanguageTranslation();
 		if(sfs != null) {
