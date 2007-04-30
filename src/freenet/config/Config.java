@@ -55,5 +55,4 @@ public class Config {
 	public synchronized SubConfig get(String subConfig){
 		return (SubConfig)configsByPrefix.get(subConfig);
 	}
-	
 }
