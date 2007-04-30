@@ -394,11 +394,15 @@ public class NodeStats implements Persistable {
 		// Successful cluster timeout protection.
 		// Reject request if the result of all our current requests completing simultaneously would be that
 		// some of them timeout.
+		
+		// Increment each running count unless it is the one we are currently processing.
+		// Purpose: Don't allow an SSK request (e.g.) unless there is space for a CHK insert *as well*.
+		
 		double bandwidthLiabilityOutput =
-			successfulChkFetchBytesSentAverage.currentValue() * node.getNumCHKRequests() +
-			successfulSskFetchBytesSentAverage.currentValue() * node.getNumSSKRequests() +
-			successfulChkInsertBytesSentAverage.currentValue() * node.getNumCHKInserts() +
-			successfulSskInsertBytesSentAverage.currentValue() * node.getNumSSKInserts();
+			successfulChkFetchBytesSentAverage.currentValue() * (node.getNumCHKRequests() + ((!isInsert) && (!isSSK) ? 0 : 1)) +
+			successfulSskFetchBytesSentAverage.currentValue() * (node.getNumSSKRequests() + ((!isInsert) && isSSK ? 0 : 1)) +
+			successfulChkInsertBytesSentAverage.currentValue() * (node.getNumCHKInserts() + (isInsert && (!isSSK) ? 0 : 1)) +
+			successfulSskInsertBytesSentAverage.currentValue() * (node.getNumSSKInserts() + (isInsert && isSSK ? 0 : 1));
 		bandwidthLiabilityOutput += getSuccessfulBytes(isSSK, isInsert, false).currentValue();
 		double bandwidthAvailableOutput =
 			node.getOutputBandwidthLimit() * 90; // 90 seconds at full power; we have to leave some time for the search as well
