@@ -236,7 +236,7 @@ public class TranslationToadlet extends Toadlet {
 	private HTMLNode _setOrRemoveOverride(String key, boolean isOverriden, boolean showEverything) {
 		String value = L10n.getString(key, true);
 		
-		HTMLNode translationField = new HTMLNode("span", "class", "translate_it");
+		HTMLNode translationField = new HTMLNode("span", "class", isOverriden ? "translate_d" : "translate_it");
 		if(value == null) {
 			translationField.addChild("#", L10n.getDefaultString(key));
 			translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?translate=" + key + (showEverything ? "" : "&toTranslateOnly")).addChild("small", l10n("bracketTranslateIt"));
