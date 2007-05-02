@@ -474,7 +474,7 @@ public class WelcomeToadlet extends Toadlet {
 				externalLinkForm.addChild("br");
 				externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", GenericReadFilterCallback.magicHTTPEscapeString, target });
 				externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
-				externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Go", L10n.getString("goToExternalLink") });
+				externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Go", l10n("goToExternalLink") });
 				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 				return;
 			} else if (request.isParameterSet("exit")) {
