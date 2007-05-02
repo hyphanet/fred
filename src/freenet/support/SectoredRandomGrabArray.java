@@ -67,11 +67,11 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getClient());
 			RandomGrabArrayItem item = rga.removeRandom();
 			if(logMINOR)
-				Logger.minor(this, "RGA has picked "+item+
+				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
 						(item==null ? "" : (" cancelled="+item.isCancelled()+")"))+" rga.isEmpty="+rga.isEmpty());
 			if(rga.isEmpty() || (item == null) || item.isCancelled()) {
 				if(logMINOR)
-					Logger.minor(this, "Removing "+x);
+					Logger.minor(this, "Removing grab array "+x+" : "+rga+" for "+rga.getClient()+" (is empty)");
 				Object client = rga.getClient();
 				grabArraysByClient.remove(client);
 				RemoveRandomWithClient[] newArray = new RemoveRandomWithClient[grabArrays.length-1];
