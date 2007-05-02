@@ -144,7 +144,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString(key, new String[] { pattern }, new String[] { value });
+		return L10n.getString("LocalFileInsertToadlet."+key, new String[] { pattern }, new String[] { value });
 	}
 
 	private String l10n(String msg) {
