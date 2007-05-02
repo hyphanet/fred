@@ -30,14 +30,17 @@ public class RandomGrabArray {
 	}
 	
 	public void add(RandomGrabArrayItem req) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(req.isCancelled()) {
-			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "Is finished already: "+req);
+			if(logMINOR) Logger.minor(this, "Is finished already: "+req);
 			return;
 		}
 		req.setParentGrabArray(this);
 		synchronized(this) {
-			if(contents.contains(req)) return;
+			if(contents.contains(req)) {
+				if(logMINOR) Logger.minor(this, "Already contains "+req+" : "+this+" size now "+index);
+				return;
+			}
 			contents.add(req);
 			if(index >= reqs.length) {
 				RandomGrabArrayItem[] r = new RandomGrabArrayItem[reqs.length*2];
@@ -45,6 +48,7 @@ public class RandomGrabArray {
 				reqs = r;
 			}
 			reqs[index++] = req;
+			if(logMINOR) Logger.minor(this, "Added: "+req+" to "+this+" size now "+index);
 		}
 	}
 	

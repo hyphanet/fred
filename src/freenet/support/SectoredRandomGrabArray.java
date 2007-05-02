@@ -23,8 +23,11 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	/**
 	 * Add directly to a RandomGrabArrayWithClient under us. */
 	public synchronized void add(Object client, RandomGrabArrayItem item) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		RandomGrabArrayWithClient rga;
 		if(!grabArraysByClient.containsKey(client)) {
+			if(logMINOR)
+				Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
 			rga = new RandomGrabArrayWithClient(client, rand);
 			RemoveRandomWithClient[] newArrays = new RemoveRandomWithClient[grabArrays.length+1];
 			System.arraycopy(grabArrays, 0, newArrays, 0, grabArrays.length);
@@ -34,6 +37,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		} else {
 			rga = (RandomGrabArrayWithClient) grabArraysByClient.get(client);
 		}
+		if(logMINOR)
+			Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
 		rga.add(item);
 	}
 
