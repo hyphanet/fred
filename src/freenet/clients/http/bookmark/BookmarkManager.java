@@ -49,7 +49,7 @@ public class BookmarkManager {
 			indexes
 					.addBookmark(new BookmarkItem(
 							new FreenetURI(
-									"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/21/"),
+									"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/22/"),
 							"Entry point (freesites with descriptions but no categories)",
 							node.alerts));
 
@@ -72,12 +72,12 @@ public class BookmarkManager {
 			flog
 					.addBookmark(new BookmarkItem(
 							new FreenetURI(
-									"USK@J585KtAJ7UN2~4i17hf7C9XbufMnticJeUDYLcB0dvo,lxZhX2snsExxemocIlI~ZJRFVdVLBLIFZhqV3yswR9U,AQABAAE/toad/10/"),
+									"USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/2/"),
 							"Toad", node.alerts));
 			flog
 					.addBookmark(new BookmarkItem(
 							new FreenetURI(
-									"USK@hM9XRwjXIzU8xTSBXNZvTn2KuvTSRFnVn4EER9FQnpM,gsth24O7ud4gL4NwNuYJDUqfaWASOG2zxZY~ChtgPxc,AQACAAE/Flog/2/"),
+									"USK@hM9XRwjXIzU8xTSBXNZvTn2KuvTSRFnVn4EER9FQnpM,gsth24O7ud4gL4NwNuYJDUqfaWASOG2zxZY~ChtgPxc,AQACAAE/Flog/4/"),
 							"Nextgen$", node.alerts));
 
 			BookmarkCategory apps = (BookmarkCategory) defaultRoot
