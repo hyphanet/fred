@@ -36,7 +36,7 @@ public class L10n {
 	public static final String OVERRIDE_SUFFIX = ".override" + SUFFIX;
 	
 	// English has to remain the first one!
-	public static final String[] AVAILABLE_LANGUAGES = { "en", "fr", "pl", "unlisted" };
+	public static final String[] AVAILABLE_LANGUAGES = { "en", "fr", "pl", "it", "se", "unlisted" };
 	private final String selectedLanguage;
 	
 	private static SimpleFieldSet currentTranslation = null;
