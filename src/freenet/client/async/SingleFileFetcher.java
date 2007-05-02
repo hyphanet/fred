@@ -117,11 +117,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, int token) {
 		parent.completedBlock(fromStore);
 		// Extract data
+		
+		if(block == null) {
+			Logger.error(this, "block is null! fromStore="+fromStore+", token="+token, new Exception("error"));
+			return;
+		}
 		Bucket data = extract(block);
 		if(data == null) {
-			Logger.error(this, "onSuccess(null, "+fromStore+", "+token+")", new Exception("error"));
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, "onSuccess(null) in "+this));
-			return; // failed
+			// Already failed: if extract returns null it will call onFailure first.
+			return;
 		}
 		if(logMINOR)
 			Logger.minor(this, "Block "+(block.isMetadata() ? "is metadata" : "is not metadata")+" on "+this);
