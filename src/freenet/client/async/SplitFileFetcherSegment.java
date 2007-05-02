@@ -140,7 +140,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		return fatallyFailedBlocks;
 	}
 
-	public void onSuccess(Bucket data, int blockNo, boolean dontNotify) {
+	public void onSuccess(Bucket data, int blockNo, boolean dontNotify, SplitFileFetcherSubSegment seg) {
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
@@ -175,6 +175,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			}
 		}
 		parentFetcher.parent.completedBlock(dontNotify);
+		seg.possiblyRemoveFromParent();
 		if(decodeNow) {
 			decode();
 		}
@@ -271,9 +272,10 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal */
-	public synchronized void onFatalFailure(FetchException e, int blockNo) {
+	public synchronized void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
+		boolean allFailed;
 		synchronized(this) {
 			if(isFinishing()) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
 			if(blockNo < dataKeys.length) {
@@ -298,14 +300,15 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				failedBlocks++;
 				parentFetcher.parent.failedBlock();
 			}
-			if(failedBlocks + fatallyFailedBlocks <= (dataKeys.length + checkKeys.length - minFetched))
-				return;
+			allFailed = failedBlocks + fatallyFailedBlocks <= (dataKeys.length + checkKeys.length - minFetched);
 		}
-		fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
+		if(allFailed)
+			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
+		seg.possiblyRemoveFromParent();
 	}
 	
 	/** A request has failed non-fatally, so the block may be retried */
-	public void onNonFatalFailure(FetchException e, int blockNo) {
+	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg) {
 		int tries;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		synchronized(this) {
@@ -313,13 +316,13 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			if(blockNo < dataKeys.length) {
 				tries = ++dataRetries[blockNo];
 				if(tries > maxTries && maxTries >= 0) {
-					onFatalFailure(e, blockNo);
+					onFatalFailure(e, blockNo, seg);
 					return;
 				}
 			} else {
 				tries = ++checkRetries[blockNo-dataKeys.length];
 				if(tries > maxTries && maxTries >= 0) {
-					onFatalFailure(e, blockNo);
+					onFatalFailure(e, blockNo, seg);
 					return;
 				}
 			}

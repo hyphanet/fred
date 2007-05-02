@@ -135,9 +135,9 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		segment.errors.inc(e.getMode());
 		if(e.isFatal() || forceFatal) {
-			segment.onFatalFailure(e, token);
+			segment.onFatalFailure(e, token, this);
 		} else {
-			segment.onNonFatalFailure(e, token);
+			segment.onNonFatalFailure(e, token, this);
 		}
 	}
 	
@@ -170,7 +170,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			onFailure(new FetchException(FetchException.CANCELLED), blockNo);
 			return;
 		}
-		segment.onSuccess(data, blockNo, fromStore);
+		segment.onSuccess(data, blockNo, fromStore, this);
 	}
 
 	/** Convert a ClientKeyBlock to a Bucket. If an error occurs, report it via onFailure
@@ -251,6 +251,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public String toString() {
 		return super.toString()+":"+retryCount+"/"+segment;
+	}
+
+	public synchronized void possiblyRemoveFromParent() {
+		if(blockNums.isEmpty())
+			segment.removeSeg(this);
 	}
 	
 }
