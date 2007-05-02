@@ -418,6 +418,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public void succeeded(RandomGrabArray parentGrabArray) {
 		synchronized(this) {
+			if(logMINOR)
+				Logger.minor(this, "Recording successful fetch from "+parentGrabArray);
 			recentSuccesses.addFirst(new WeakReference(parentGrabArray));
 			while(recentSuccesses.size() > 8)
 				recentSuccesses.removeLast();
