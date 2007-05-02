@@ -219,7 +219,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			// Can be removed, if the one key is processed.
 			// Once it has been processed, we may need to be reinstated.
 			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "Removing "+this+" in canRemove()");
+				Logger.minor(this, "Can remove "+this+" in canRemove()");
 			return true;
 		} else return false;
 	}
