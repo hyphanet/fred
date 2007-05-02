@@ -63,6 +63,7 @@ public class RandomGrabArray {
 				}
 				int i = rand.nextInt(index);
 				ret = reqs[i];
+				if(ret.isCancelled()) ret = null;
 				if(ret != null && !ret.canRemove()) {
 					ret.setParentGrabArray(null);
 					return ret;
