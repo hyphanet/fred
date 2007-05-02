@@ -353,8 +353,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(altRGA != null) {
 					SendableRequest altReq = (SendableRequest) (altRGA.removeRandom());
 					if(altReq != null && altReq.getPriorityClass() <= choosenPriorityClass && 
-							altReq.getRetryCount() <= rga.getNumber()) {
+							fixRetryCount(altReq.getRetryCount()) <= rga.getNumber()) {
 						// Use the recent one instead
+						if(logMINOR)
+							Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
 						innerRegister(req);
 						req = altReq;
 					} else {
@@ -362,6 +364,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 							synchronized(this) {
 								recentSuccesses.addLast(new WeakReference(altRGA));
 							}
+							if(logMINOR)
+								Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
 							innerRegister(altReq);
 						}
 					}
