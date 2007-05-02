@@ -184,9 +184,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 				if(action.equals("edit")) {
 					header = L10n.getString("BookmarkEditorToadlet.edit" + ((bookmark instanceof BookmarkItem) ? "Bookmark" : "Category") + "Title");
 				} else if(action.equals("addItem")) {
-					header = L10n.getString("addNewBookmark");
+					header = L10n.getString("BookmarkEditorToadlet.addNewBookmark");
 				} else {
-					header = L10n.getString("addNewCategory");
+					header = L10n.getString("BookmarkEditorToadlet.addNewCategory");
 				}
 				
 				HTMLNode actionBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-query", header));
