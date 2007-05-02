@@ -250,7 +250,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public String toString() {
-		return super.toString()+":"+retryCount+"/"+segment;
+		return super.toString()+":"+retryCount+"/"+segment+'('+blockNums.size()+')';
 	}
 
 	public synchronized void possiblyRemoveFromParent() {
