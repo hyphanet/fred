@@ -3,8 +3,6 @@ package freenet.clients.http;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.SocketException;
@@ -341,7 +339,7 @@ public class FProxyToadlet extends Toadlet {
 			errorContent.addChild("br");
 			errorContent.addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBack")));
 			errorContent.addChild("br");
-			errorContent.addChild("a", new String[] { "href", "title" }, new String[] { "/", l10n("homepageTitle") }, l10n("homepage"));
+			addHomepageLink(errorContent);
 
 			this.writeReply(ctx, 400, "text/html", l10n("invalidKeyTitle"), pageNode.generate());
 			return;
