@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.oldplugins.plugin;
 
+
 /**
  * Test plugin. Does absolutely nothing.
  * 
