@@ -105,7 +105,7 @@ private static HTMLNode createPeerInfobox(String infoboxType, String header, Str
 	  HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 	  infoboxContent.addChild("#", message);
 	  HTMLNode list = infoboxContent.addChild("ul");
-	  list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", l10n("returnToNodeHomepage") }, l10n("homepage"));
+	  Toadlet.addHomepageLink(list);
 	  list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/darknet/", l10n("returnToFriends") }, l10n("friends"));
 	  return infobox;
   }
@@ -189,7 +189,7 @@ private static HTMLNode createPeerInfobox(String infoboxType, String header, Str
 			HTMLNode infoboxContent = peerTableInfobox.addChild("div", "class", "n2ntm-message-text");
 			infoboxContent.addChild("#", message);
 			HTMLNode list = peerTableInfobox.addChild("ul");
-			list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", l10n("returnToNodeHomepage") }, l10n("homepage"));
+			Toadlet.addHomepageLink(list);
 			list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/darknet/", l10n("returnToFriends") }, l10n("friends"));
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;

@@ -92,7 +92,7 @@ public abstract class Toadlet {
 		return L10n.getString("Toadlet."+key, new String[] { pattern }, new String[] { value });
 	}
 
-	private String l10n(String key) {
+	private static String l10n(String key) {
 		return L10n.getString("Toadlet."+key);
 	}
 
@@ -217,7 +217,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild(message);
 		infoboxContent.addChild("br");
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
-		infoboxContent.addChild("a", "href", "/", l10n("returnToNodeHomepage"));
+		addHomepageLink(infoboxContent);
 		
 		writeReply(ctx, code, "text/html; charset=UTF-8", desc, pageNode.generate());
 	}
@@ -248,7 +248,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("pre", sw.toString());
 		infoboxContent.addChild("br");
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
-		infoboxContent.addChild("a", "href", "/", l10n("returnToNodeHomepage"));
+		addHomepageLink(infoboxContent);
 		
 		writeReply(ctx, 500, "text/html; charset=UTF-8", desc, pageNode.generate());
 	}
@@ -265,6 +265,10 @@ public abstract class Toadlet {
 		writeReply(ctx, 500, "text/html", "Internal Error", msg);
 	}
 	
+	protected static void addHomepageLink(HTMLNode content) {
+		content.addChild("a", new String[]{"href", "title"}, new String[]{"/", l10n("homepage")}, l10n("returnToNodeHomepage"));
+	}
+
 	/**
 	 * Get the client impl. DO NOT call the blocking methods on it!!
 	 * Just use it for configuration etc.

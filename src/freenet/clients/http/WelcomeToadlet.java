@@ -372,10 +372,6 @@ public class WelcomeToadlet extends Toadlet {
 		}
 	}
 	
-	private void addHomepageLink(HTMLNode content) {
-		content.addChild("a", new String[] { "href", "title" }, new String[] { "/", L10n.getString("Toadlet.returnToNodeHomepage") }, L10n.getString("Toadlet.nodeHomepage"));
-	}
-
 	private void finInputBoxRow(HTMLNode table, String name, String label, String message) {
 		HTMLNode row = table.addChild("tr");
 		HTMLNode cell = row.addChild("td");
