@@ -188,6 +188,12 @@ public class PproxyToadlet extends Toadlet {
 
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx)
 		throws ToadletContextClosedException, IOException {
+
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
+			return;
+		}
+
 		//String basepath = "/plugins/";
 		String path = request.getPath();
 
@@ -199,10 +205,6 @@ public class PproxyToadlet extends Toadlet {
 			Logger.minor(this, "Pproxy fetching "+path);
 		try {
 			if (path.equals("")) {
-				if(!ctx.isAllowedFullAccess()) {
-					super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
-					return;
-				}
 				this.showPluginList(ctx, request);
 			} else {
 				// split path into plugin class name and 'data' path for plugin
@@ -242,6 +244,11 @@ public class PproxyToadlet extends Toadlet {
 	}
 
 	private void showPluginList(ToadletContext ctx, HTTPRequest request) throws ToadletContextClosedException, IOException {
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
+			return;
+		}
+
 		if (!request.hasParameters()) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
