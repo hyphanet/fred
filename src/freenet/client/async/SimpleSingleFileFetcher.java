@@ -24,13 +24,15 @@ import freenet.support.api.Bucket;
 public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState {
 
 	SimpleSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, 
-			GetCompletionCallback rcb, boolean isEssential, long l) {
+			GetCompletionCallback rcb, boolean isEssential, boolean dontAdd, long l) {
 		super(key, maxRetries, ctx, parent);
 		this.rcb = rcb;
 		this.token = l;
-		parent.addBlock();
-		if(isEssential)
-			parent.addMustSucceedBlocks(1);
+		if(!dontAdd) {
+			parent.addBlock();
+			if(isEssential)
+				parent.addMustSucceedBlocks(1);
+		}
 	}
 
 	final GetCompletionCallback rcb;

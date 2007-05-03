@@ -64,7 +64,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			ArchiveContext actx, ArchiveStoreContext ah, int maxRetries, int recursionLevel,
 			boolean dontTellClientGet, long l, boolean isEssential,
 			Bucket returnBucket, boolean isFinal) throws FetchException {
-		super(key, maxRetries, ctx, parent, cb, isEssential, l);
+		super(key, maxRetries, ctx, parent, cb, isEssential, false, l);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key+" from "+origURI+" meta="+metaStrings.toString(), new Exception("debug"));
 		this.isFinal = isFinal;
@@ -91,7 +91,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	 * Used for things like slave fetchers for MultiLevelMetadata, therefore does not remember returnBucket,
 	 * metaStrings etc. */
 	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetchContext ctx2) throws FetchException {
-		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent, callback, false, fetcher.token);
+		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent, callback, false, true, fetcher.token);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key+" meta="+fetcher.metaStrings.toString(), new Exception("debug"));
 		this.returnBucket = null;
@@ -552,7 +552,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if((clientMetadata == null || clientMetadata.isTrivial()) && (!uri.hasMetaStrings()) &&
 				ctx.allowSplitfiles == false && ctx.followRedirects == false && 
 				returnBucket == null && key instanceof ClientKey)
-			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, requester, cb, isEssential, l);
+			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, requester, cb, isEssential, false, l);
 		if(key instanceof ClientKey)
 			return new SingleFileFetcher(requester, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal);
 		else {
