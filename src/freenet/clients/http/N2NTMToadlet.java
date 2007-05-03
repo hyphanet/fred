@@ -45,7 +45,7 @@ public class N2NTMToadlet extends Toadlet {
   public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 	  
 	  if(!ctx.isAllowedFullAccess()) {
-		  super.sendErrorPage(ctx, 403, "Unauthorized", l10n("unauthorized"));
+		  super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
 		  return;
 	  }
 		
@@ -120,7 +120,7 @@ private static HTMLNode createPeerInfobox(String infoboxType, String header, Str
 	  }
 	  
 	  if(!ctx.isAllowedFullAccess()) {
-		  super.sendErrorPage(ctx, 403, "Unauthorized", l10n("unauthorized"));
+		  super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
 		  return;
 	  }
 		
