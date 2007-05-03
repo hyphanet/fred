@@ -15,6 +15,7 @@ import java.util.Enumeration;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import freenet.l10n.L10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -68,9 +69,17 @@ public class ToadletContextImpl implements ToadletContext {
 		if(closed) throw new ToadletContextClosedException();
 		MultiValueTable mvt = new MultiValueTable();
 		mvt.put("Allow", "GET, PUT");
-		sendError(sockOutputStream, 405, "Method Not Allowed", "Method Not Allowed", shouldDisconnect, mvt);
+		sendError(sockOutputStream, 405, "Method Not Allowed", l10n("methodNotAllowed"), shouldDisconnect, mvt);
 	}
 	
+	private static String l10n(String key) {
+		return L10n.getString("ToadletContextImpl."+key);
+	}
+
+	private static String l10n(String key, String pattern, String value) {
+		return L10n.getString("ToadletContextImpl."+key, new String[] { pattern }, new String[] { value });
+	}
+
 	/**
 	 * Send an error message. Caller provides the HTTP code, reason string, and a message, which
 	 * will become the title and the h1'ed contents of the error page. 
@@ -99,7 +108,7 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	private void sendNoToadletError(boolean shouldDisconnect) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
-		sendError(sockOutputStream, 404, "Not Found", "No Toadlet of that name", shouldDisconnect, null);
+		sendError(sockOutputStream, 404, "Not Found", l10n("noSuchToadlet"), shouldDisconnect, null);
 	}
 	
 	private static void sendURIParseError(OutputStream os, boolean shouldDisconnect, Throwable e) throws IOException {
@@ -107,7 +116,7 @@ public class ToadletContextImpl implements ToadletContext {
 		PrintWriter pw = new PrintWriter(sw);
 		e.printStackTrace(pw);
 		pw.close();
-		String message = "<html><head><title>URI parse error</title></head><body><p>"+HTMLEncoder.encode(e.getMessage())+"</p><pre>\n"+sw.toString();
+		String message = "<html><head><title>"+l10n("uriParseErrorTitle")+"</title></head><body><p>"+HTMLEncoder.encode(e.getMessage())+"</p><pre>\n"+sw.toString();
 		sendHTMLError(os, 400, "Bad Request", message, shouldDisconnect, null);
 	}
 	
@@ -275,7 +284,7 @@ public class ToadletContextImpl implements ToadletContext {
 				if(method.equals("POST")) {
 					String slen = (String) headers.get("content-length");
 					if(slen == null) {
-						sendError(sock.getOutputStream(), 400, "Bad Request", "No content-length in POST", true, null);
+						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("noContentLengthInPOST"), true, null);
 						return;
 					}
 					long len;
@@ -283,7 +292,7 @@ public class ToadletContextImpl implements ToadletContext {
 						len = Integer.parseInt(slen);
 						if(len < 0) throw new NumberFormatException("content-length less than 0");
 					} catch (NumberFormatException e) {
-						sendError(sock.getOutputStream(), 400, "Bad Request", "content-length parse error: "+e, true, null);
+						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("cannotParseContentLengthWithError", "error", e.toString()), true, null);
 						return;
 					}
 					data = bf.makeBucket(len);
@@ -348,13 +357,13 @@ public class ToadletContextImpl implements ToadletContext {
 			
 		} catch (ParseException e) {
 			try {
-				sendError(sock.getOutputStream(), 400, "Bad Request", "Parse error: "+e.getMessage(), true, null);
+				sendError(sock.getOutputStream(), 400, "Bad Request", l10n("parseErrorWithError", "error", e.getMessage()), true, null);
 			} catch (IOException e1) {
 				// Ignore
 			}
 		} catch (TooLongException e) {
 			try {
-				sendError(sock.getOutputStream(), 400, "Bad Request", "Line too long parsing headers", true, null);
+				sendError(sock.getOutputStream(), 400, "Bad Request", l10n("headersLineTooLong"), true, null);
 			} catch (IOException e1) {
 				// Ignore
 			}
