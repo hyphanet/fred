@@ -53,6 +53,11 @@ public class FileLoggerHook extends LoggerHook {
 	private static String uname;
 	static {
 		uname = "unknown";
+	}
+
+	static synchronized final void getUName() {
+		if(!uname.equals("unknown")) return;
+		System.out.println("Getting uname for logging");
 		try {
 			InetAddress addr = InetAddress.getLocalHost();
 			if (addr != null) {
@@ -63,7 +68,7 @@ public class FileLoggerHook extends LoggerHook {
 			// Ignored.
 		}
 	}
-
+	
 	private DateFormat df;
 	private int[] fmt;
 	private String[] str;
@@ -708,16 +713,12 @@ public class FileLoggerHook extends LoggerHook {
 		super(threshold);
 		this.maxOldLogfilesDiskUsage = maxOldLogfilesDiskUsage;
 		this.logOverwrite = overwrite;
-		if ((dfmt != null) && (dfmt.length() != 0)) {
-			try {
-				df = new SimpleDateFormat(dfmt);
-			} catch (RuntimeException e) {
-				df = DateFormat.getDateTimeInstance();
-			}
-		} else
-			df = DateFormat.getDateTimeInstance();
+		
+		setDateFormat(dfmt);
+		setLogFormat(fmt);
+	}
 
-		df.setTimeZone(TimeZone.getTimeZone("UTC"));
+	private void setLogFormat(String fmt) {
 		if ((fmt == null) || (fmt.length() == 0))
 			fmt = "d:c:h:t:p:m";
 		char[] f = fmt.toCharArray();
@@ -728,13 +729,16 @@ public class FileLoggerHook extends LoggerHook {
 
 		boolean comment = false;
 		for (int i = 0; i < f.length; ++i) {
-			if (!comment && (numberOf(f[i]) != 0)) {
+			int type = numberOf(f[i]);
+			if(type == UNAME)
+				getUName();
+			if (!comment && (type != 0)) {
 				if (sb.length() > 0) {
 					strVec.addElement(sb.toString());
 					fmtVec.addElement(new Integer(0));
 					sb = new StringBuffer();
 				}
-				fmtVec.addElement(new Integer(numberOf(f[i])));
+				fmtVec.addElement(new Integer(type));
 			} else if (f[i] == '\\') {
 				comment = true;
 			} else {
@@ -754,6 +758,19 @@ public class FileLoggerHook extends LoggerHook {
 
 		this.str = new String[strVec.size()];
 		str = (String[]) strVec.toArray(str);
+	}
+
+	private void setDateFormat(String dfmt) {
+		if ((dfmt != null) && (dfmt.length() != 0)) {
+			try {
+				df = new SimpleDateFormat(dfmt);
+			} catch (RuntimeException e) {
+				df = DateFormat.getDateTimeInstance();
+			}
+		} else
+			df = DateFormat.getDateTimeInstance();
+
+		df.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
 	public void log(Object o, Class c, String msg, Throwable e, int priority) {
