@@ -391,9 +391,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
 
 			if (peerNodeStatuses.length == 0) {
-				peerTableInfoboxContent.addChild("#", l10n("noPeersFirstHalf"));
-				peerTableInfoboxContent.addChild("a", "href", "/", l10n("nodeHomepage"));
-				peerTableInfoboxContent.addChild("#", l10n("noPeersSecondHalf"));
+				L10n.addL10nSubstitution(peerTableInfoboxContent, "noPeersWithHomepageLink", 
+						new String[] { "link", "/link" }, new String[] { "<a href=\"/\">", "</a>" });
 			} else {
 				HTMLNode peerForm = ctx.addFormChild(peerTableInfoboxContent, ".", "peersForm");
 				HTMLNode peerTable = peerForm.addChild("table", "class", "darknet_connections");
