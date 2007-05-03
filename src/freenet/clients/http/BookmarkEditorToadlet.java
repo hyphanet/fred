@@ -166,7 +166,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 				
 				HTMLNode confirmForm = ctx.addFormChild(infoBox.addChild("p"), "", "confirmDeleteForm");
 				confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "bookmark", bookmarkPath});
-				confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("BookmarkEditorToadlet.cancelDelete") });
+				confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 				confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirmdelete", L10n.getString("BookmarkEditorToadlet.confirmDelete") });
 			
 			} else if (action.equals("cut")) {
