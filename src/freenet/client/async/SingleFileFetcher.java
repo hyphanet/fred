@@ -581,7 +581,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					SingleFileFetcher sf = 
 						new SingleFileFetcher(requester, myCB, clientMetadata, usk.getSSK(), metaStrings, 
 								usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, null, maxRetries, recursionLevel, 
-								dontTellClientGet, l, false, returnBucket, isFinal);
+								dontTellClientGet, l, isEssential, returnBucket, isFinal);
 					return sf;
 				}
 			} else {
