@@ -56,7 +56,7 @@ public class BookmarkManager {
 			indexes
 					.addBookmark(new BookmarkItem(
 							new FreenetURI(
-									"USK@e4TEIN5l1nkn6kjl63XBgYTYobmwGvtnyK2YW0b0ajo,hv-2~OfetXkb0FhDuPxorWIf0wXeZKPEfdIhwyh-mhk,AQABAAE/AnotherIndex/106/"),
+									"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/1/"),
 							"Another Index (freesites with categories but no descriptions)",
 							node.alerts));
 
