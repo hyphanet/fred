@@ -53,7 +53,7 @@ public class RandomGrabArray {
 	}
 	
 	public RandomGrabArrayItem removeRandom() {
-		RandomGrabArrayItem ret;
+		RandomGrabArrayItem ret, oret;
 		synchronized(this) {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			while(true) {
@@ -63,6 +63,7 @@ public class RandomGrabArray {
 				}
 				int i = rand.nextInt(index);
 				ret = reqs[i];
+				oret = ret;
 				if(ret.isCancelled()) ret = null;
 				if(ret != null && !ret.canRemove()) {
 					ret.setParentGrabArray(null);
@@ -70,8 +71,8 @@ public class RandomGrabArray {
 				}
 				reqs[i] = reqs[--index];
 				reqs[index] = null;
-				if(ret != null)
-					contents.remove(ret);
+				if(oret != null)
+					contents.remove(oret);
 				// Shrink array
 				if((index < reqs.length / 4) && (reqs.length > MIN_SIZE)) {
 					// Shrink array
