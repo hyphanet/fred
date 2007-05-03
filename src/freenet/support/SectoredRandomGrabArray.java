@@ -76,7 +76,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						(item==null ? "" : (" cancelled="+item.isCancelled()+")"))+" rga.isEmpty="+rga.isEmpty());
 			// Just because the item is cancelled does not necessarily mean the whole client is.
 			// E.g. a segment may return cancelled because it is decoding, that doesn't mean
-			// other segements are cancelled. So just go around the loop in that case.
+			// other segments are cancelled. So just go around the loop in that case.
 			if(rga.isEmpty() || (item == null)) {
 				if(logMINOR)
 					Logger.minor(this, "Removing grab array "+x+" : "+rga+" for "+rga.getObject()+" (is empty)");
