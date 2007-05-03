@@ -189,11 +189,6 @@ public class PproxyToadlet extends Toadlet {
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx)
 		throws ToadletContextClosedException, IOException {
 
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
-			return;
-		}
-
 		//String basepath = "/plugins/";
 		String path = request.getPath();
 
