@@ -333,8 +333,10 @@ public class ClientPut extends ClientPutBase {
 		}
 		if(logMINOR) Logger.minor(this, "data = "+data);
 		this.clientMetadata = cm;
+		SimpleFieldSet oldProgress = fs.subset("progress");
+		if(finished) oldProgress = null; // Not useful any more
 		putter = new ClientPutter(this, data, uri, cm, ctx, client.core.requestStarters.chkPutScheduler, 
-				client.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client.lowLevelClient, fs.subset("progress"), targetFilename);
+				client.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client.lowLevelClient, oldProgress, targetFilename);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
