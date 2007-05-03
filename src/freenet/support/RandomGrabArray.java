@@ -75,6 +75,7 @@ public class RandomGrabArray {
 					if(oret != null)
 						contents.remove(oret);
 					oret = reqs[i];
+					// May as well check whether that is cancelled too.
 				} while (index > i && (oret == null || oret.isCancelled()));
 				// Shrink array
 				if((index < reqs.length / 4) && (reqs.length > MIN_SIZE)) {
