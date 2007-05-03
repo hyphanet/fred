@@ -2,7 +2,7 @@ package freenet.support;
 
 import freenet.crypt.RandomSource;
 
-public class RandomGrabArrayWithClient extends RandomGrabArray implements RemoveRandomWithClient {
+public class RandomGrabArrayWithClient extends RandomGrabArray implements RemoveRandomWithObject {
 
 	final Object client;
 	
@@ -11,7 +11,7 @@ public class RandomGrabArrayWithClient extends RandomGrabArray implements Remove
 		this.client = client;
 	}
 
-	public final Object getClient() {
+	public final Object getObject() {
 		return client;
 	}
 }

@@ -24,7 +24,7 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
-import freenet.support.SectoredRandomGrabArrayWithClient;
+import freenet.support.SectoredRandomGrabArrayWithContextObject;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SortedVectorByNumber;
 import freenet.support.api.StringCallback;
@@ -253,9 +253,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass);
 		}
 		// Request
-		SectoredRandomGrabArrayWithClient requestGrabber = (SectoredRandomGrabArrayWithClient) clientGrabber.getGrabber(client);
+		SectoredRandomGrabArrayWithContextObject requestGrabber = (SectoredRandomGrabArrayWithContextObject) clientGrabber.getGrabber(client);
 		if(requestGrabber == null) {
-			requestGrabber = new SectoredRandomGrabArrayWithClient(client, random);
+			requestGrabber = new SectoredRandomGrabArrayWithContextObject(client, random);
 			clientGrabber.addGrabber(client, requestGrabber);
 		}
 		requestGrabber.add(cr, req);

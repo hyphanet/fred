@@ -11,13 +11,13 @@ import freenet.crypt.RandomSource;
 public class SectoredRandomGrabArray implements RemoveRandom {
 
 	private final HashMap grabArraysByClient;
-	private RemoveRandomWithClient[] grabArrays;
+	private RemoveRandomWithObject[] grabArrays;
 	private final RandomSource rand;
 	
 	public SectoredRandomGrabArray(RandomSource rand) {
 		this.rand = rand;
 		this.grabArraysByClient = new HashMap();
-		grabArrays = new RemoveRandomWithClient[0];
+		grabArrays = new RemoveRandomWithObject[0];
 	}
 
 	/**
@@ -29,7 +29,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			if(logMINOR)
 				Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
 			rga = new RandomGrabArrayWithClient(client, rand);
-			RemoveRandomWithClient[] newArrays = new RemoveRandomWithClient[grabArrays.length+1];
+			RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[grabArrays.length+1];
 			System.arraycopy(grabArrays, 0, newArrays, 0, grabArrays.length);
 			newArrays[grabArrays.length] = rga;
 			grabArrays = newArrays;
@@ -46,17 +46,17 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	 * Get a grabber. This lets us use things other than RandomGrabArrayWithClient's, so don't mix calls
 	 * to add() with calls to getGrabber/addGrabber!
 	 */
-	public synchronized RemoveRandomWithClient getGrabber(Object client) {
-		return (RemoveRandomWithClient) grabArraysByClient.get(client);
+	public synchronized RemoveRandomWithObject getGrabber(Object client) {
+		return (RemoveRandomWithObject) grabArraysByClient.get(client);
 	}
 
 	/**
 	 * Put a grabber. This lets us use things other than RandomGrabArrayWithClient's, so don't mix calls
 	 * to add() with calls to getGrabber/addGrabber!
 	 */
-	public synchronized void addGrabber(Object client, RemoveRandomWithClient requestGrabber) {
+	public synchronized void addGrabber(Object client, RemoveRandomWithObject requestGrabber) {
 		grabArraysByClient.put(client, requestGrabber);
-		RemoveRandomWithClient[] newArrays = new RemoveRandomWithClient[grabArrays.length+1];
+		RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[grabArrays.length+1];
 		System.arraycopy(grabArrays, 0, newArrays, 0, grabArrays.length);
 		newArrays[grabArrays.length] = requestGrabber;
 		grabArrays = newArrays;
@@ -67,9 +67,9 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		while(true) {
 			if(grabArrays.length == 0) return null;
 			int x = rand.nextInt(grabArrays.length);
-			RemoveRandomWithClient rga = grabArrays[x];
+			RemoveRandomWithObject rga = grabArrays[x];
 			if(logMINOR)
-				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getClient());
+				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getObject());
 			RandomGrabArrayItem item = rga.removeRandom();
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
@@ -79,10 +79,10 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			// other segements are cancelled. So just go around the loop in that case.
 			if(rga.isEmpty() || (item == null)) {
 				if(logMINOR)
-					Logger.minor(this, "Removing grab array "+x+" : "+rga+" for "+rga.getClient()+" (is empty)");
-				Object client = rga.getClient();
+					Logger.minor(this, "Removing grab array "+x+" : "+rga+" for "+rga.getObject()+" (is empty)");
+				Object client = rga.getObject();
 				grabArraysByClient.remove(client);
-				RemoveRandomWithClient[] newArray = new RemoveRandomWithClient[grabArrays.length-1];
+				RemoveRandomWithObject[] newArray = new RemoveRandomWithObject[grabArrays.length-1];
 				if(x > 0)
 					System.arraycopy(grabArrays, 0, newArray, 0, x);
 				if(x < grabArrays.length-1)
