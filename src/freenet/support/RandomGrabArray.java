@@ -69,10 +69,13 @@ public class RandomGrabArray {
 					ret.setParentGrabArray(null);
 					return ret;
 				}
-				reqs[i] = reqs[--index];
-				reqs[index] = null;
-				if(oret != null)
-					contents.remove(oret);
+				do {
+					reqs[i] = reqs[--index];
+					reqs[index] = null;
+					if(oret != null)
+						contents.remove(oret);
+					oret = reqs[i];
+				} while (index > i && (oret == null || oret.isCancelled()));
 				// Shrink array
 				if((index < reqs.length / 4) && (reqs.length > MIN_SIZE)) {
 					// Shrink array
