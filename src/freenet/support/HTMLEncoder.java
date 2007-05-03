@@ -18,6 +18,15 @@ public class HTMLEncoder {
 	public static String encode(String s) {
 		int n = s.length();
 		StringBuffer sb = new StringBuffer(n);
+		encodeToBuffer(n, s, sb);
+		return sb.toString();
+	}
+
+	public static void encodeToBuffer(String s, StringBuffer sb) {
+		encodeToBuffer(s.length(), s, sb);
+	}
+	
+	private static void encodeToBuffer(int n, String s, StringBuffer sb) {
 		for (int i = 0; i < n; i++) {
 			char c = s.charAt(i);
 			if(Character.isLetterOrDigit(c)){ //only special characters need checking
@@ -30,7 +39,7 @@ public class HTMLEncoder {
 				sb.append(c);
 		}
 		}
-		return sb.toString();
+		
 	}
 	
 	static {

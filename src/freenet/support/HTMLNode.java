@@ -136,7 +136,7 @@ public class HTMLNode {
 
 	public StringBuffer generate(StringBuffer tagBuffer) {
 		if (name.equals("#")) {
-			tagBuffer.append(HTMLEncoder.encode(content));
+			HTMLEncoder.encodeToBuffer(content, tagBuffer);
 			return tagBuffer;
 		}
 		// Perhaps this should be something else, but since I don't know if '#' was not just arbitrary chosen, I'll just pick '%'
@@ -151,7 +151,11 @@ public class HTMLNode {
 			Map.Entry attributeEntry = (Map.Entry) attributeIterator.next();
 			String attributeName = (String) attributeEntry.getKey();
 			String attributeValue = (String) attributeEntry.getValue();
-			tagBuffer.append(' ').append(HTMLEncoder.encode(attributeName)).append("=\"").append(HTMLEncoder.encode(attributeValue)).append('"');
+			tagBuffer.append(' ');
+			HTMLEncoder.encodeToBuffer(attributeName, tagBuffer);
+			tagBuffer.append("=\"");
+			HTMLEncoder.encodeToBuffer(attributeValue, tagBuffer);
+			tagBuffer.append('"');;
 		}
 		if (children.size() == 0) {
 			if (name.equals("textarea") || name.equals("div") || name.equals("a")) {
