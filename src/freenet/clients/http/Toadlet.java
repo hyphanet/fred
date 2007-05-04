@@ -13,7 +13,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.support.HTMLEncoder;
@@ -117,7 +117,7 @@ public abstract class Toadlet {
 		return client.fetch(uri, maxSize, clientContext);
 	}
 
-	FreenetURI insert(InsertBlock insert, String filenameHint, boolean getCHKOnly) throws InserterException {
+	FreenetURI insert(InsertBlock insert, String filenameHint, boolean getCHKOnly) throws InsertException {
 		// For now, just run it blocking.
 		insert.desiredURI.checkInsertURI();
 		return client.insert(insert, getCHKOnly, filenameHint);

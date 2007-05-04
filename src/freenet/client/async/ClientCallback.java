@@ -5,7 +5,7 @@ package freenet.client.async;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.keys.FreenetURI;
 
 /**
@@ -21,7 +21,7 @@ public interface ClientCallback {
 
 	public void onSuccess(BaseClientPutter state);
 	
-	public void onFailure(InserterException e, BaseClientPutter state);
+	public void onFailure(InsertException e, BaseClientPutter state);
 	
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state);
 	

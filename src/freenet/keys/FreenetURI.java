@@ -24,7 +24,7 @@ import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 
 /**
  * Note that the metadata pairs below are not presently supported. They are supported
@@ -799,12 +799,12 @@ public class FreenetURI implements Cloneable{
 				suggestedEdition);
 	}
 	
-	public void checkInsertURI() throws InserterException {
+	public void checkInsertURI() throws InsertException {
 		if(metaStr != null && metaStr.length > 0)
-			throw new InserterException(InserterException.META_STRINGS_NOT_SUPPORTED,this);
+			throw new InsertException(InsertException.META_STRINGS_NOT_SUPPORTED,this);
 	}
 	
-	public static void checkInsertURI(FreenetURI uri) throws InserterException { uri.checkInsertURI(); }
+	public static void checkInsertURI(FreenetURI uri) throws InsertException { uri.checkInsertURI(); }
 
 	public URI toRelativeURI() throws URISyntaxException {
 		// Single-argument constructor used because it preserves encoded /'es in path.

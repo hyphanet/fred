@@ -13,7 +13,7 @@ import freenet.support.io.NullPersistentFileTracker;
 import freenet.support.io.PersistentFileTracker;
 
 /** Context object for an insert operation, including both simple and multi-file inserts */
-public class InserterContext {
+public class InsertContext {
 
 	public final BucketFactory bf;
 	public final BucketFactory persistentBucketFactory;
@@ -33,7 +33,7 @@ public class InserterContext {
 	public final USKManager uskManager;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
 	
-	public InserterContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker, RandomSource random,
+	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker, RandomSource random,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
 			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager, BackgroundBlockEncoder blockEncoder) {
 		this.bf = bf;
@@ -53,7 +53,7 @@ public class InserterContext {
 		this.backgroundBlockEncoder = blockEncoder;
 	}
 
-	public InserterContext(InserterContext ctx, SimpleEventProducer producer, boolean forceNonPersistent) {
+	public InsertContext(InsertContext ctx, SimpleEventProducer producer, boolean forceNonPersistent) {
 		this.persistentFileTracker = forceNonPersistent ? new NullPersistentFileTracker() : ctx.persistentFileTracker;
 		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;
@@ -71,7 +71,7 @@ public class InserterContext {
 		this.backgroundBlockEncoder = ctx.backgroundBlockEncoder;
 	}
 
-	public InserterContext(InserterContext ctx, SimpleEventProducer producer) {
+	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
 		this.persistentFileTracker = ctx.persistentFileTracker;
 		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;

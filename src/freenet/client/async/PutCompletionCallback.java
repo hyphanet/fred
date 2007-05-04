@@ -1,6 +1,6 @@
 package freenet.client.async;
 
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 
@@ -11,7 +11,7 @@ public interface PutCompletionCallback {
 
 	public void onSuccess(ClientPutState state);
 	
-	public void onFailure(InserterException e, ClientPutState state);
+	public void onFailure(InsertException e, ClientPutState state);
 
 	public void onEncode(BaseClientKey usk, ClientPutState state);
 	

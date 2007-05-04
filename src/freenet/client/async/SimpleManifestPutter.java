@@ -14,8 +14,8 @@ import java.util.zip.ZipOutputStream;
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertBlock;
-import freenet.client.InserterContext;
-import freenet.client.InserterException;
+import freenet.client.InsertContext;
+import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.events.SplitfileProgressEvent;
@@ -30,7 +30,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 		
-		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) throws InserterException {
+		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) throws InsertException {
 			super(smp.priorityClass, smp.chkScheduler, smp.sskScheduler, smp.client);
 			this.cm = cm;
 			this.data = data;
@@ -67,7 +67,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private String targetInZip;
 		private final Bucket data;
 		
-		public void start() throws InserterException {
+		public void start() throws InsertException {
 			if((origSFI == null) && (metadata != null)) return;
 			origSFI.start(null);
 			origSFI = null;
@@ -94,7 +94,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			insertedAllFiles();
 		}
 
-		public void onFailure(InserterException e, ClientPutState state) {
+		public void onFailure(InsertException e, ClientPutState state) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Failed: "+this+" - "+e, e);
 			fail(e);
@@ -188,7 +188,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private FreenetURI finalURI;
 	private FreenetURI targetURI;
 	private boolean finished;
-	private final InserterContext ctx;
+	private final InsertContext ctx;
 	private final ClientCallback cb;
 	private final boolean getCHKOnly;
 	private boolean insertedAllFiles;
@@ -210,7 +210,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	
 	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler chkSched,
 			ClientRequestScheduler sskSched, HashMap manifestElements, short prioClass, FreenetURI target, 
-			String defaultName, InserterContext ctx, boolean getCHKOnly, Object clientContext, boolean earlyEncode) throws InserterException {
+			String defaultName, InsertContext ctx, boolean getCHKOnly, Object clientContext, boolean earlyEncode) throws InsertException {
 		super(prioClass, chkSched, sskSched, clientContext);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.defaultName = defaultName;
@@ -236,7 +236,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// FIXME do something.
 	}
 
-	public void start() throws InserterException {
+	public void start() throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Starting "+this);
 		PutHandler[] running;
@@ -257,7 +257,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 						insertedAllFiles = true;
 						gotAllMetadata();
 					}
-				} catch (InserterException e) {
+				} catch (InsertException e) {
 					cancelAndFinish();
 					throw e;
 				}
@@ -266,11 +266,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(cancel) cancel();
 	}
 	
-	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) throws InserterException {
+	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) throws InsertException {
 		makePutHandlers(manifestElements, putHandlersByName, "/");
 	}
 	
-	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName, String ZipPrefix) throws InserterException {
+	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName, String ZipPrefix) throws InsertException {
 		Iterator it = manifestElements.keySet().iterator();
 		while(it.hasNext()) {
 			String name = (String) it.next();
@@ -310,7 +310,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					} else {
 						try {
 							ph = new PutHandler(this,name, data, cm, getCHKOnly);
-						} catch (InserterException e) {
+						} catch (InsertException e) {
 							cancelAndFinish();
 							throw e;
 						}
@@ -341,7 +341,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(defaultName != null) {
 			Metadata meta = (Metadata) namesToByteArrays.get(defaultName);
 			if(meta == null) {
-				fail(new InserterException(InserterException.INVALID_URI, "Default name "+defaultName+" does not exist", null));
+				fail(new InsertException(InsertException.INVALID_URI, "Default name "+defaultName+" does not exist", null));
 				return;
 			}
 			namesToByteArrays.put("", meta);
@@ -371,15 +371,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				bucket = BucketTools.makeImmutableBucket(ctx.bf, baseMetadata.writeToByteArray());
 				break;
 			} catch (IOException e) {
-				fail(new InserterException(InserterException.BUCKET_ERROR, e, null));
+				fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
 				return;
 			} catch (MetadataUnresolvedException e) {
 				try {
 					resolve(e);
 				} catch (IOException e1) {
-					fail(new InserterException(InserterException.BUCKET_ERROR, e, null));
+					fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
 					return;
-				} catch (InserterException e2) {
+				} catch (InsertException e2) {
 					fail(e2);
 				}
 			}
@@ -435,10 +435,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				isMetadata = false;
 				insertAsArchiveManifest = true;
 			} catch (ZipException e) {
-				fail(new InserterException(InserterException.INTERNAL_ERROR, e, null));
+				fail(new InsertException(InsertException.INTERNAL_ERROR, e, null));
 				return;
 			} catch (IOException e) {
-				fail(new InserterException(InserterException.BUCKET_ERROR, e, null));
+				fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
 				return;
 			}
 		} else
@@ -450,12 +450,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
 			metadataInserter.start(null);
-		} catch (InserterException e) {
+		} catch (InsertException e) {
 			fail(e);
 		}
 	}
 
-	private boolean resolve(MetadataUnresolvedException e) throws InserterException, IOException {
+	private boolean resolve(MetadataUnresolvedException e) throws InsertException, IOException {
 		Metadata[] metas = e.mustResolve;
 		boolean mustWait = false;
 		for(int i=0;i<metas.length;i++) {
@@ -522,7 +522,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		cb.onSuccess(this);
 	}
 
-	private void fail(InserterException e) {
+	private void fail(InsertException e) {
 		// Cancel all, then call the callback
 		cancelAndFinish();
 		
@@ -543,7 +543,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	public void cancel() {
-		fail(new InserterException(InserterException.CANCELLED));
+		fail(new InsertException(InsertException.CANCELLED));
 	}
 	
 	public void onSuccess(ClientPutState state) {
@@ -569,7 +569,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		complete();
 	}
 	
-	public void onFailure(InserterException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		fail(e);
 	}

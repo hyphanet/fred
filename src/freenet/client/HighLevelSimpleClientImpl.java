@@ -129,12 +129,12 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return fw.waitForCompletion();
 	}
 	
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InserterException {
+	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InsertException {
 		return insert(insert, getCHKOnly, filenameHint, false);
 	}
 	
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata) throws InserterException {
-		InserterContext context = getInserterContext(true);
+	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata) throws InsertException {
+		InsertContext context = getInserterContext(true);
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata, 
 				context, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this, null, filenameHint);
@@ -142,24 +142,24 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return pw.waitForCompletion();
 	}
 
-	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InserterException {
+	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InsertException {
 		Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, new ClientMetadata());
 		Bucket b;
 		try {
 			b = BucketTools.makeImmutableBucket(bucketFactory, m.writeToByteArray());
 		} catch (IOException e) {
 			Logger.error(this, "Bucket error: "+e, e);
-			throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
+			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
 		} catch (MetadataUnresolvedException e) {
 			Logger.error(this, "Impossible error: "+e, e);
-			throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
+			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
 		}
 		
 		InsertBlock block = new InsertBlock(b, null, insertURI);
 		return insert(block, false, null, true);
 	}
 
-	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException {
+	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InsertException {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
 			new SimpleManifestPutter(pw, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(true), false, this, false);
@@ -193,8 +193,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				forceDontIgnoreTooManyPathComponents ? false : core.ignoreTooManyPathComponents);
 	}
 
-	public InserterContext getInserterContext(boolean forceNonPersistent) {
-		return new InserterContext(bucketFactory, forceNonPersistent ? bucketFactory : persistentBucketFactory,
+	public InsertContext getInserterContext(boolean forceNonPersistent) {
+		return new InsertContext(bucketFactory, forceNonPersistent ? bucketFactory : persistentBucketFactory,
 				forceNonPersistent ? new NullPersistentFileTracker() : persistentFileTracker,
 				random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 

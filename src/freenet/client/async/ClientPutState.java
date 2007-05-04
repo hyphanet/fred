@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -20,7 +20,7 @@ public interface ClientPutState {
 	public abstract void cancel();
 
 	/** Schedule the request. */
-	public abstract void schedule() throws InserterException;
+	public abstract void schedule() throws InsertException;
 	
 	/**
 	 * Get the token, an object which is passed around with the insert and may be

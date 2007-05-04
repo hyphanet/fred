@@ -13,7 +13,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientGetter;
@@ -125,7 +125,7 @@ public class ClientPut extends ClientPutBase {
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
 				Logger.error(this, "Impossible: "+e, e);
-				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
+				onFailure(new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
 				clientMetadata = cm;
 				putter = null;
@@ -199,7 +199,7 @@ public class ClientPut extends ClientPutBase {
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
 				Logger.error(this, "Impossible: "+e, e);
-				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
+				onFailure(new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
 				clientMetadata = cm;
 				putter = null;
@@ -318,7 +318,7 @@ public class ClientPut extends ClientPutBase {
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
 				Logger.error(this, "Impossible: "+e, e);
-				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
+				onFailure(new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
 				clientMetadata = cm;
 				origFilename = null;
@@ -359,7 +359,7 @@ public class ClientPut extends ClientPutBase {
 			synchronized(this) {
 				started = true;
 			}
-		} catch (InserterException e) {
+		} catch (InsertException e) {
 			synchronized(this) {
 				started = true;
 			}
@@ -368,7 +368,7 @@ public class ClientPut extends ClientPutBase {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(new InserterException(InserterException.INTERNAL_ERROR, t, null), null);
+			onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null);
 		}
 	}
 
@@ -471,7 +471,7 @@ public class ClientPut extends ClientPutBase {
 				}
 			}
 			return true;
-		} catch (InserterException e) {
+		} catch (InsertException e) {
 			onFailure(e, null);
 			return false;
 		}

@@ -8,7 +8,7 @@ import java.util.Vector;
 
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.InserterContext;
+import freenet.client.InsertContext;
 import freenet.node.NodeClientCore;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
@@ -64,7 +64,7 @@ public class FCPClient {
 	/** Client (one FCPClient = one HighLevelSimpleClient = one round-robin slot) */
 	private final HighLevelSimpleClient client;
 	public final FetchContext defaultFetchContext;
-	public final InserterContext defaultInsertContext;
+	public final InsertContext defaultInsertContext;
 	public final NodeClientCore core;
 	/** Are we the global queue? */
 	public final boolean isGlobalQueue;

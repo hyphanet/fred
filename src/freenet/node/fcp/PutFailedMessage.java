@@ -6,7 +6,7 @@ package freenet.node.fcp;
 import java.net.MalformedURLException;
 
 import freenet.client.FailureCodeTracker;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.Fields;
@@ -24,16 +24,16 @@ public class PutFailedMessage extends FCPMessage {
 	final boolean global;
 	final boolean isFatal;
 	
-	public PutFailedMessage(InserterException e, String identifier, boolean global) {
+	public PutFailedMessage(InsertException e, String identifier, boolean global) {
 		this.code = e.getMode();
-		this.codeDescription = InserterException.getMessage(code);
-		this.shortCodeDescription = InserterException.getShortMessage(code);
+		this.codeDescription = InsertException.getMessage(code);
+		this.shortCodeDescription = InsertException.getShortMessage(code);
 		this.extraDescription = e.extra;
 		this.tracker = e.errorCodes;
 		this.expectedURI = e.uri;
 		this.identifier = identifier;
 		this.global = global;
-		this.isFatal = InserterException.isFatal(code);
+		this.isFatal = InsertException.isFatal(code);
 	}
 
 	/**
@@ -55,9 +55,9 @@ public class PutFailedMessage extends FCPMessage {
 			isFatal = Fields.stringToBool(fs.get("Fatal"), false);
 			shortCodeDescription = fs.get("ShortCodeDescription");
 		} else {
-			codeDescription = InserterException.getMessage(code);
-			isFatal = InserterException.isFatal(code);
-			shortCodeDescription = InserterException.getShortMessage(code);
+			codeDescription = InsertException.getMessage(code);
+			isFatal = InsertException.isFatal(code);
+			shortCodeDescription = InsertException.getShortMessage(code);
 		}
 		
 		extraDescription = fs.get("ExtraDescription");

@@ -32,7 +32,7 @@ public class FetchWaiter implements ClientCallback {
 		throw new UnsupportedOperationException();
 	}
 
-	public void onFailure(InserterException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state) {
 		throw new UnsupportedOperationException();
 	}
 

@@ -3,17 +3,17 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.keys.FreenetURI;
 
 public class BlockInsertErrorEvent implements ClientEvent {
 
 	public static final int code = 0x05;
-	public final InserterException e;
+	public final InsertException e;
 	public final FreenetURI key;
 	public final int retryNumber;
 
-	public BlockInsertErrorEvent(InserterException e, FreenetURI key, int retryNumber) {
+	public BlockInsertErrorEvent(InsertException e, FreenetURI key, int retryNumber) {
 		this.e = e;
 		this.key = key;
 		this.retryNumber = retryNumber;

@@ -2,7 +2,7 @@ package freenet.client.async;
 
 import java.util.Vector;
 
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.support.Logger;
@@ -19,7 +19,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private final PutCompletionCallback cb;
 	private ClientPutState generator;
 	private final BaseClientPutter parent;
-	private InserterException e;
+	private InsertException e;
 	private boolean finished;
 	private boolean started;
 	public final Object token;
@@ -46,7 +46,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		complete(null);
 	}
 
-	public void onFailure(InserterException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state) {
 		synchronized(this) {
 			if(finished) return;
 			waitingFor.remove(state);
@@ -60,7 +60,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		complete(e);
 	}
 
-	private void complete(InserterException e) {
+	private void complete(InsertException e) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -156,7 +156,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		cb.onBlockSetFinished(this);
 	}
 
-	public void schedule() throws InserterException {
+	public void schedule() throws InsertException {
 		// Do nothing
 	}
 

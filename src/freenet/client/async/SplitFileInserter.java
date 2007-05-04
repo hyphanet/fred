@@ -9,8 +9,8 @@ import java.util.Vector;
 import freenet.client.ClientMetadata;
 import freenet.client.FECCodec;
 import freenet.client.FailureCodeTracker;
-import freenet.client.InserterContext;
-import freenet.client.InserterException;
+import freenet.client.InsertContext;
+import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
@@ -24,7 +24,7 @@ public class SplitFileInserter implements ClientPutState {
 
 	private static boolean logMINOR;
 	final BaseClientPutter parent;
-	final InserterContext ctx;
+	final InsertContext ctx;
 	final PutCompletionCallback cb;
 	final long dataLength;
 	final short compressionCodec;
@@ -66,7 +66,7 @@ public class SplitFileInserter implements ClientPutState {
 		return fs;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, long decompressedLength, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData) throws InserterException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData) throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = put;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
@@ -82,7 +82,7 @@ public class SplitFileInserter implements ClientPutState {
 		try {
 			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, ctx.persistentBucketFactory);
 		} catch (IOException e) {
-			throw new InserterException(InserterException.BUCKET_ERROR, e, null);
+			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 		}
 		if(freeData) data.free();
 		countDataBlocks = dataBuckets.length;
@@ -104,7 +104,7 @@ public class SplitFileInserter implements ClientPutState {
 		countCheckBlocks = count;
 	}
 
-	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs) throws ResumeException {
+	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs) throws ResumeException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = parent;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
@@ -230,7 +230,7 @@ public class SplitFileInserter implements ClientPutState {
 		return (SplitFileInserterSegment[]) segs.toArray(new SplitFileInserterSegment[segs.size()]);
 	}
 	
-	public void start() throws InserterException {
+	public void start() throws InsertException {
 		for(int i=0;i<segments.length;i++)
 			segments[i].start();
 		
@@ -300,13 +300,13 @@ public class SplitFileInserter implements ClientPutState {
 		if(missingURIs) {
 			if(logMINOR) Logger.minor(this, "Missing URIs");
 			// Error
-			fail(new InserterException(InserterException.INTERNAL_ERROR, "Missing URIs after encoding", null));
+			fail(new InsertException(InsertException.INTERNAL_ERROR, "Missing URIs after encoding", null));
 			return;
 		} else
 			cb.onMetadata(m, this);
 	}
 	
-	private void fail(InserterException e) {
+	private void fail(InsertException e) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -379,7 +379,7 @@ public class SplitFileInserter implements ClientPutState {
 				}
 			}
 			
-			InserterException e = segment.getException();
+			InsertException e = segment.getException();
 			if((e != null) && e.isFatal()) {
 				cancel();
 			} else {
@@ -413,7 +413,7 @@ public class SplitFileInserter implements ClientPutState {
 			FailureCodeTracker tracker = new FailureCodeTracker(true);
 			boolean allSucceeded = true;
 			for(int i=0;i<segments.length;i++) {
-				InserterException e = segments[i].getException();
+				InsertException e = segments[i].getException();
 				if(e == null) continue;
 				if(logMINOR) Logger.minor(this, "Failure on segment "+i+" : "+segments[i]+" : "+e, e);
 				allSucceeded = false;
@@ -424,12 +424,12 @@ public class SplitFileInserter implements ClientPutState {
 			if(allSucceeded)
 				cb.onSuccess(this);
 			else {
-				cb.onFailure(InserterException.construct(tracker), this);
+				cb.onFailure(InsertException.construct(tracker), this);
 			}
 		} catch (Throwable t) {
 			// We MUST tell the parent *something*!
 			Logger.error(this, "Caught "+t, t);
-			cb.onFailure(new InserterException(InserterException.INTERNAL_ERROR), this);
+			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR), this);
 		}
 	}
 
@@ -442,7 +442,7 @@ public class SplitFileInserter implements ClientPutState {
 			segments[i].cancel();
 	}
 
-	public void schedule() throws InserterException {
+	public void schedule() throws InsertException {
 		start();
 	}
 

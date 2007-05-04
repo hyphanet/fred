@@ -22,7 +22,7 @@ import freenet.support.SimpleFieldSet;
  */
 public abstract class ClientPutBase extends ClientRequest implements ClientCallback, ClientEventListener {
 
-	final InserterContext ctx;
+	final InsertContext ctx;
 	final boolean getCHKOnly;
 
 	// Verbosity bitmasks
@@ -34,7 +34,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	/** Has the request succeeded? */
 	protected boolean succeeded;
 	/** If the request failed, how did it fail? PutFailedMessage is the most
-	 * convenient way to store this (InserterException has a stack trace!).
+	 * convenient way to store this (InsertException has a stack trace!).
 	 */
 	private PutFailedMessage putFailedMessage;
 	/** URI generated for the insert. */
@@ -56,7 +56,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			boolean dontCompress, int maxRetries, boolean earlyEncode) {
 		super(uri, identifier, verbosity, handler, priorityClass, persistenceType, clientToken, global);
 		this.getCHKOnly = getCHKOnly;
-		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer(), persistenceType == ClientRequest.PERSIST_CONNECTION);
+		ctx = new InsertContext(client.defaultInsertContext, new SimpleEventProducer(), persistenceType == ClientRequest.PERSIST_CONNECTION);
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
@@ -68,7 +68,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode) {
 		super(uri, identifier, verbosity, handler, client, priorityClass, persistenceType, clientToken, global);
 		this.getCHKOnly = getCHKOnly;
-		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer(), persistenceType == ClientRequest.PERSIST_CONNECTION);
+		ctx = new InsertContext(client.defaultInsertContext, new SimpleEventProducer(), persistenceType == ClientRequest.PERSIST_CONNECTION);
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
@@ -84,7 +84,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		finished = Fields.stringToBool(fs.get("Finished"), false);
 		//finished = false;
 		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
-		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer());
+		ctx = new InsertContext(client.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
@@ -116,7 +116,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			client.server.forceStorePersistentRequests();
 	}
 
-	public void onFailure(InserterException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state) {
         if(finished) return;
 		synchronized(this) {
 			finished = true;
@@ -143,7 +143,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
         if( !finished ) {
             synchronized(this) {
                 finished = true;
-                InserterException cancelled = new InserterException(InserterException.CANCELLED);
+                InsertException cancelled = new InsertException(InsertException.CANCELLED);
                 putFailedMessage = new PutFailedMessage(cancelled, identifier, global);
             }
             trySendFinalMessage(null);

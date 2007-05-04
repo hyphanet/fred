@@ -5,8 +5,8 @@ import java.net.MalformedURLException;
 import freenet.client.FECCodec;
 import freenet.client.FECJob;
 import freenet.client.FailureCodeTracker;
-import freenet.client.InserterContext;
-import freenet.client.InserterException;
+import freenet.client.InsertContext;
+import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.FECCodec.StandardOnionFECCodecEncoderCallback;
 import freenet.keys.BaseClientKey;
@@ -42,7 +42,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 
 	final SingleBlockInserter[] checkBlockInserters;
 
-	final InserterContext blockInsertContext;
+	final InsertContext blockInsertContext;
 
 	final int segNo;
 
@@ -54,7 +54,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 
 	private boolean hasURIs;
 
-	private InserterException toThrow;
+	private InsertException toThrow;
 
 	private final FailureCodeTracker errors;
 
@@ -66,7 +66,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 
 	public SplitFileInserterSegment(SplitFileInserter parent,
 			FECCodec splitfileAlgo, Bucket[] origDataBlocks,
-			InserterContext blockInsertContext, boolean getCHKOnly, int segNo) {
+			InsertContext blockInsertContext, boolean getCHKOnly, int segNo) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
@@ -92,7 +92,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 	 * @throws ResumeException
 	 */
 	public SplitFileInserterSegment(SplitFileInserter parent,
-			SimpleFieldSet fs, short splitfileAlgorithm, InserterContext ctx,
+			SimpleFieldSet fs, short splitfileAlgorithm, InsertContext ctx,
 			boolean getCHKOnly, int segNo) throws ResumeException {
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
@@ -109,7 +109,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 		else
 			this.errors = new FailureCodeTracker(true);
 		if (finished && !errors.isEmpty())
-			toThrow = InserterException.construct(errors);
+			toThrow = InsertException.construct(errors);
 		blocksGotURI = 0;
 		blocksCompleted = 0;
 		SimpleFieldSet dataFS = fs.subset("DataBlocks");
@@ -387,7 +387,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 		return fs;
 	}
 
-	public void start() throws InserterException {
+	public void start() throws InsertException {
 		if (logMINOR)
 			Logger.minor(this, "Starting segment " + segNo + " of " + parent
 					+ " (" + parent.dataLength + "): " + this + " ( finished="
@@ -473,8 +473,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 			}
 		} catch (Throwable t) {
 			Logger.error(this, "Caught " + t + " while encoding " + this, t);
-			InserterException ex = new InserterException(
-					InserterException.INTERNAL_ERROR, t, null);
+			InsertException ex = new InsertException(
+					InsertException.INTERNAL_ERROR, t, null);
 			finish(ex);
 			return;
 		}
@@ -497,7 +497,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 		}
 	}
 
-	private void finish(InserterException ex) {
+	private void finish(InsertException ex) {
 		if (logMINOR)
 			Logger.minor(this, "Finishing " + this + " with " + ex, ex);
 		synchronized (this) {
@@ -514,7 +514,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 			if (finished)
 				return;
 			finished = true;
-			toThrow = InserterException.construct(errors);
+			toThrow = InsertException.construct(errors);
 		}
 		parent.segmentFinished(this);
 	}
@@ -568,7 +568,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 		completed(x);
 	}
 
-	public void onFailure(InserterException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state) {
 		if (parent.parent.isCancelled()) {
 			parent.cancel();
 			return;
@@ -657,7 +657,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 		return dataURIs;
 	}
 
-	InserterException getException() {
+	InsertException getException() {
 		synchronized (this) {
 			return toThrow;
 		}
@@ -669,7 +669,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 				return;
 			finished = true;
 			if (toThrow != null)
-				toThrow = new InserterException(InserterException.CANCELLED);
+				toThrow = new InsertException(InsertException.CANCELLED);
 		}
 		for (int i = 0; i < dataBlockInserters.length; i++) {
 			SingleBlockInserter sbi = dataBlockInserters[i];

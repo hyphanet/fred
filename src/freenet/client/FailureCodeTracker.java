@@ -81,7 +81,7 @@ public class FailureCodeTracker {
 		while(i.hasNext()) {
 			Integer x = (Integer) i.next();
 			Item val = (Item) map.get(x);
-			String s = insert ? InserterException.getMessage(x.intValue()) : FetchException.getMessage(x.intValue());
+			String s = insert ? InsertException.getMessage(x.intValue()) : FetchException.getMessage(x.intValue());
 			sb.append(val.x);
 			sb.append('\t');
 			sb.append(s);
@@ -144,7 +144,7 @@ public class FailureCodeTracker {
 			// prefix.num.Count=<count>
 			if(verbose)
 				sfs.putSingle(Integer.toString(code)+".Description", 
-						insert ? InserterException.getMessage(code) : FetchException.getMessage(code));
+						insert ? InsertException.getMessage(code) : FetchException.getMessage(code));
 			sfs.put(Integer.toString(code)+".Count", item.x);
 		}
 		return sfs;
@@ -164,7 +164,7 @@ public class FailureCodeTracker {
 			Integer code = (Integer) i.next();
 			if(((Item)map.get(code)).x == 0) continue;
 			if(insert) {
-				if(InserterException.isFatal(code.intValue())) return true;
+				if(InsertException.isFatal(code.intValue())) return true;
 			} else {
 				if(FetchException.isFatal(code.intValue())) return true;
 			}
@@ -172,7 +172,7 @@ public class FailureCodeTracker {
 		return false;
 	}
 
-	public void merge(InserterException e) {
+	public void merge(InsertException e) {
 		if(!insert) throw new IllegalArgumentException("This is not an insert yet merge("+e+") called!");
 		if(e.errorCodes != null)
 			merge(e.errorCodes);

@@ -27,7 +27,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.InserterContext;
+import freenet.client.InsertContext;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -73,7 +73,7 @@ public class FCPServer implements Runnable {
 	private boolean haveLoadedPersistentRequests;
 	private long persistenceInterval;
 	final FetchContext defaultFetchContext;
-	public InserterContext defaultInsertContext;
+	public InsertContext defaultInsertContext;
 	public static final int QUEUE_MAX_RETRIES = -1;
 	public static final long QUEUE_MAX_DATA_SIZE = Long.MAX_VALUE;
 	private boolean canStartPersister = false;

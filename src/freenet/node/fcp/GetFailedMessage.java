@@ -96,7 +96,7 @@ public class GetFailedMessage extends FCPMessage {
 	/**
 	 * Write to a SimpleFieldSet for storage or transmission.
 	 * @param verbose If true, include fields which derive directly from static
-	 * stuff on InserterException (and therefore can be omitted if talking to self
+	 * stuff on InsertException (and therefore can be omitted if talking to self
 	 * or another node).
 	 */
 	public SimpleFieldSet getFieldSet(boolean verbose) {

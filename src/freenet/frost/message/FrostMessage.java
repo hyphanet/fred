@@ -8,7 +8,7 @@ import freenet.client.InsertBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.io.ArrayBucket;
 import java.net.MalformedURLException;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 
 
 public final class FrostMessage {
@@ -270,7 +270,7 @@ public final class FrostMessage {
         return key;
     }
     
-    public final FreenetURI insertMessage(HighLevelSimpleClient client, int innitialIndex) throws InserterException, MalformedURLException
+    public final FreenetURI insertMessage(HighLevelSimpleClient client, int innitialIndex) throws InsertException, MalformedURLException
     {
     	boolean keepgoing;
     	FreenetURI key = null;
@@ -293,7 +293,7 @@ public final class FrostMessage {
             try {
             	returnKey = client.insert(block, false, null); // I don't know what that 'false' is
             }
-            catch (InserterException e)
+            catch (InsertException e)
             {
             	System.err.println("FIN -> insert failed with the message" + e.getMessage());
         		if(moreTries--==0) throw e;

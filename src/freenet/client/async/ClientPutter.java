@@ -5,8 +5,8 @@ package freenet.client.async;
 
 import freenet.client.ClientMetadata;
 import freenet.client.InsertBlock;
-import freenet.client.InserterContext;
-import freenet.client.InserterException;
+import freenet.client.InsertContext;
+import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
@@ -21,7 +21,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	final Bucket data;
 	final FreenetURI targetURI;
 	final ClientMetadata cm;
-	final InserterContext ctx;
+	final InsertContext ctx;
 	final String targetFilename;
 	private ClientPutState currentState;
 	private boolean finished;
@@ -48,7 +48,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * is an error reading this in, we will restart from scratch.
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 */
-	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InserterContext ctx,
+	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, short priorityClass, boolean getCHKOnly, 
 			boolean isMetadata, Object clientContext, SimpleFieldSet stored, String targetFilename) {
 		super(priorityClass, chkScheduler, sskScheduler, clientContext);
@@ -65,18 +65,18 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.targetFilename = targetFilename;
 	}
 
-	public void start(boolean earlyEncode) throws InserterException {
+	public void start(boolean earlyEncode) throws InsertException {
 		start(earlyEncode, false);
 	}
 	
-	public boolean start(boolean earlyEncode, boolean restart) throws InserterException {
+	public boolean start(boolean earlyEncode, boolean restart) throws InsertException {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this);
 		try {
 			this.targetURI.checkInsertURI();
 			
 			if(data == null)
-				throw new InserterException(InserterException.BUCKET_ERROR, "No data to insert", null);
+				throw new InsertException(InsertException.BUCKET_ERROR, "No data to insert", null);
 			
 			boolean cancel = false;
 			synchronized(this) {
@@ -94,7 +94,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				}
 			}
 			if(cancel) {
-				onFailure(new InserterException(InserterException.CANCELLED), null);
+				onFailure(new InsertException(InsertException.CANCELLED), null);
 				oldProgress = null;
 				return false;
 			}
@@ -102,7 +102,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cancel = cancelled;
 			}
 			if(cancel) {
-				onFailure(new InserterException(InserterException.CANCELLED), null);
+				onFailure(new InsertException(InsertException.CANCELLED), null);
 				oldProgress = null;
 				return false;
 			}
@@ -112,10 +112,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cancel = cancelled;
 			}
 			if(cancel) {
-				onFailure(new InserterException(InserterException.CANCELLED), null);
+				onFailure(new InsertException(InsertException.CANCELLED), null);
 				return false;
 			}
-		} catch (InserterException e) {
+		} catch (InsertException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
 			synchronized(this) {
 				finished = true;
@@ -146,7 +146,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onSuccess(this);
 	}
 
-	public void onFailure(InserterException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state) {
 		synchronized(this) {
 			finished = true;
 			currentState = null;
@@ -178,7 +178,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			startedStarting = true;
 		}
 		if(oldState != null) oldState.cancel();
-		onFailure(new InserterException(InserterException.CANCELLED), null);
+		onFailure(new InsertException(InsertException.CANCELLED), null);
 	}
 	
 	public synchronized boolean isFinished() {
@@ -229,7 +229,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return true;
 	}
 
-	public boolean restart(boolean earlyEncode) throws InserterException {
+	public boolean restart(boolean earlyEncode) throws InsertException {
 		return start(earlyEncode, true);
 	}
 

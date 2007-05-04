@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
-import freenet.client.InserterContext;
-import freenet.client.InserterException;
+import freenet.client.InsertContext;
+import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
@@ -30,7 +30,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	final BaseClientPutter parent;
 	final Bucket data;
 	final short compressionCodec;
-	final InserterContext ctx;
+	final InsertContext ctx;
 	final PutCompletionCallback cb;
 	final boolean isMetadata;
 	final int sourceLength;
@@ -51,7 +51,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	/** After attempting inserts on this many slots, go back to the Fetcher */
 	private static final long MAX_TRIED_SLOTS = 10;
 	
-	public void schedule() throws InserterException {
+	public void schedule() throws InsertException {
 		// Caller calls schedule()
 		// schedule() calls scheduleFetcher()
 		// scheduleFetcher() creates a Fetcher (set up to tell us about author-errors as well as valid inserts)
@@ -114,7 +114,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		}
 		try {
 			sbi.schedule();
-		} catch (InserterException e) {
+		} catch (InsertException e) {
 			cb.onFailure(e, this);
 		}
 	}
@@ -136,9 +136,9 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		// FINISHED!!!! Yay!!!
 	}
 
-	public synchronized void onFailure(InserterException e, ClientPutState state) {
+	public synchronized void onFailure(InsertException e, ClientPutState state) {
 		sbi = null;
-		if(e.getMode() == InserterException.COLLISION) {
+		if(e.getMode() == InsertException.COLLISION) {
 			// Try the next slot
 			edition++;
 			if(consecutiveCollisions++ > MAX_TRIED_SLOTS)
@@ -151,7 +151,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	public USKInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
-			InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, 
+			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, 
 			boolean getCHKOnly, boolean addToParent, Object tokenObject) throws MalformedURLException {
 		this.tokenObject = tokenObject;
 		this.parent = parent;
@@ -185,7 +185,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		synchronized(this) {
 			finished = true;
 		}
-		cb.onFailure(new InserterException(InserterException.CANCELLED), this);
+		cb.onFailure(new InsertException(InsertException.CANCELLED), this);
 	}
 
 	public void onFailure() {

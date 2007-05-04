@@ -6,7 +6,7 @@ package freenet.client;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
-public class InserterException extends Exception {
+public class InsertException extends Exception {
 	private static final long serialVersionUID = -1106716067841151962L;
 	
 	private final int mode;
@@ -22,48 +22,48 @@ public class InserterException extends Exception {
 		return mode;
 	}
 	
-	public InserterException(int m, String msg, FreenetURI expectedURI) {
+	public InsertException(int m, String msg, FreenetURI expectedURI) {
 		super(getMessage(m)+": "+msg);
 		extra = msg;
 		mode = m;
 		if(Logger.shouldLog(Logger.MINOR, getClass()))
-			Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+msg, this);
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+msg, this);
 		errorCodes = null;
 		this.uri = expectedURI;
 	}
 	
-	public InserterException(int m, FreenetURI expectedURI) {
+	public InsertException(int m, FreenetURI expectedURI) {
 		super(getMessage(m));
 		extra = null;
 		mode = m;
 		if(Logger.shouldLog(Logger.MINOR, getClass()))
-			Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 		errorCodes = null;
 		this.uri = expectedURI;
 	}
 
-	public InserterException(int mode, Throwable e, FreenetURI expectedURI) {
+	public InsertException(int mode, Throwable e, FreenetURI expectedURI) {
 		super(getMessage(mode)+": "+e.getMessage());
 		extra = e.getMessage();
 		if(Logger.shouldLog(Logger.MINOR, getClass()))
-			Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+e, e);
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+e, e);
 		this.mode = mode;
 		errorCodes = null;
 		initCause(e);
 		this.uri = expectedURI;
 	}
 
-	public InserterException(int mode, FailureCodeTracker errorCodes, FreenetURI expectedURI) {
+	public InsertException(int mode, FailureCodeTracker errorCodes, FreenetURI expectedURI) {
 		super(getMessage(mode));
 		extra = null;
 		this.mode = mode;
 		if(Logger.shouldLog(Logger.MINOR, getClass()))
-			Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 		this.errorCodes = errorCodes;
 		this.uri = expectedURI;
 	}
 
-	public InserterException(int mode) {
+	public InsertException(int mode) {
 		super(getMessage(mode));
 		extra = null;
 		this.mode = mode;
@@ -175,22 +175,22 @@ public class InserterException extends Exception {
 		case ROUTE_REALLY_NOT_FOUND:
 			return false;
 		default:
-			Logger.error(InserterException.class, "Error unknown to isFatal(): "+getMessage(mode));
+			Logger.error(InsertException.class, "Error unknown to isFatal(): "+getMessage(mode));
 			return false;
 		}
 	}
 
-	public static InserterException construct(FailureCodeTracker errors) {
+	public static InsertException construct(FailureCodeTracker errors) {
 		if(errors == null) return null;
 		if(errors.isEmpty()) return null;
 		if(errors.isOneCodeOnly()) {
-			return new InserterException(errors.getFirstCode());
+			return new InsertException(errors.getFirstCode());
 		}
 		int mode;
 		if(errors.isFatal(true))
 			mode = FATAL_ERRORS_IN_BLOCKS;
 		else
 			mode = TOO_MANY_RETRIES_IN_BLOCKS;
-		return new InserterException(mode, errors, null);
+		return new InsertException(mode, errors, null);
 	}
 }

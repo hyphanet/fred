@@ -11,7 +11,7 @@ public class PutWaiter implements ClientCallback {
 	private boolean finished;
 	private boolean succeeded;
 	private FreenetURI uri;
-	private InserterException error;
+	private InsertException error;
 	
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		// Ignore
@@ -27,7 +27,7 @@ public class PutWaiter implements ClientCallback {
 		notifyAll();
 	}
 
-	public synchronized void onFailure(InserterException e, BaseClientPutter state) {
+	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
 		error = e;
 		finished = true;
 		notifyAll();
@@ -42,7 +42,7 @@ public class PutWaiter implements ClientCallback {
 		Logger.error(this, "URI already set: "+this.uri+" but new URI: "+uri, new Exception("error"));
 	}
 
-	public synchronized FreenetURI waitForCompletion() throws InserterException {
+	public synchronized FreenetURI waitForCompletion() throws InsertException {
 		while(!finished) {
 			try {
 				wait();
@@ -56,7 +56,7 @@ public class PutWaiter implements ClientCallback {
 		}
 		if(succeeded) return uri;
 		Logger.error(this, "Did not succeed but no error");
-		throw new InserterException(InserterException.INTERNAL_ERROR, "Did not succeed but no error", uri);
+		throw new InsertException(InsertException.INTERNAL_ERROR, "Did not succeed but no error", uri);
 	}
 
 	public void onMajorProgress() {

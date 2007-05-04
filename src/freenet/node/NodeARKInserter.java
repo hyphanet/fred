@@ -9,7 +9,7 @@ import java.net.UnknownHostException;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
@@ -163,7 +163,7 @@ public class NodeARKInserter implements ClientCallback {
 					}
 				}
 			}
-		} catch (InserterException e) {
+		} catch (InsertException e) {
 			onFailure(e, inserter);	
 		}
 	}
@@ -192,7 +192,7 @@ public class NodeARKInserter implements ClientCallback {
 			}
 	}
 
-	public void onFailure(InserterException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state) {
 		if(logMINOR) Logger.minor(this, "ARK insert failed: "+e);
 		synchronized(this) {
 			lastInsertedPeers = null;

@@ -29,7 +29,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.client.events.EventDumper;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
@@ -455,12 +455,12 @@ public class TextModeClientInterface implements Runnable {
             FreenetURI uri;
             try {
             	uri = client.insert(block, getCHKOnly, null);
-            } catch (InserterException e) {
+            } catch (InsertException e) {
                 outsb.append("Error: ").append(e.getMessage());
             	if(e.uri != null)
                     outsb.append("URI would have been: ").append(e.uri);
             	int mode = e.getMode();
-            	if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
+            	if((mode == InsertException.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertException.TOO_MANY_RETRIES_IN_BLOCKS)) {
                     outsb.append("Splitfile-specific error:\n").append(e.errorCodes.toVerboseString());
             	}
 		outsb.append("\r\n");
@@ -535,7 +535,7 @@ public class TextModeClientInterface implements Runnable {
 	        	outsb.append("=======================================================");
                 outsb.append("URI: ").append(uri);
 	        	outsb.append("=======================================================");
-			} catch (InserterException e) {
+			} catch (InsertException e) {
                 outsb.append("Finished insert but: ").append(e.getMessage());
             	if(e.uri != null) {
             		uri = e.uri;
@@ -591,7 +591,7 @@ public class TextModeClientInterface implements Runnable {
                 outsb.append("Upload rate: ").append(rate).append(" bytes / second\r\n");
             } catch (FileNotFoundException e1) {
                 outsb.append("File not found");
-            } catch (InserterException e) {
+            } catch (InsertException e) {
                 outsb.append("Finished insert but: ").append(e.getMessage());
             	if(e.uri != null) {
                     outsb.append("URI would have been: ").append(e.uri);
@@ -638,7 +638,7 @@ public class TextModeClientInterface implements Runnable {
         	try {
 				FreenetURI result = client.insertRedirect(insert, target);
                 outsb.append("Successfully inserted to fetch URI: ").append(result);
-			} catch (InserterException e) {
+			} catch (InsertException e) {
                 outsb.append("Finished insert but: ").append(e.getMessage());
             	Logger.normal(this, "Error: "+e, e);
             	if(e.uri != null) {

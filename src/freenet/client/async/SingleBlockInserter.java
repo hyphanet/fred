@@ -8,8 +8,8 @@ import java.lang.ref.SoftReference;
 import java.net.MalformedURLException;
 
 import freenet.client.FailureCodeTracker;
-import freenet.client.InserterContext;
-import freenet.client.InserterException;
+import freenet.client.InsertContext;
+import freenet.client.InsertException;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKeyBlock;
@@ -37,7 +37,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	FreenetURI resultingURI;
 	final PutCompletionCallback cb;
 	final BaseClientPutter parent;
-	final InserterContext ctx;
+	final InsertContext ctx;
 	private int retries;
 	private final FailureCodeTracker errors;
 	private boolean finished;
@@ -50,7 +50,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	final int sourceLength;
 	private int consecutiveRNFs;
 	
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject) {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject) {
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
 		this.token = token;
@@ -76,37 +76,37 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
-	protected ClientKeyBlock innerEncode() throws InserterException {
+	protected ClientKeyBlock innerEncode() throws InsertException {
 		String uriType = uri.getKeyType().toUpperCase();
 		if(uriType.equals("CHK")) {
 			try {
 				return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength);
 			} catch (CHKEncodeException e) {
 				Logger.error(this, "Caught "+e, e);
-				throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
+				throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
 			} catch (IOException e) {
 				Logger.error(this, "Caught "+e+" encoding data "+sourceData, e);
-				throw new InserterException(InserterException.BUCKET_ERROR, e, null);
+				throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 			}
 		} else if(uriType.equals("SSK") || uriType.equals("KSK")) {
 			try {
 				InsertableClientSSK ik = InsertableClientSSK.create(uri);
 				return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, ctx.random);
 			} catch (MalformedURLException e) {
-				throw new InserterException(InserterException.INVALID_URI, e, null);
+				throw new InsertException(InsertException.INVALID_URI, e, null);
 			} catch (SSKEncodeException e) {
 				Logger.error(this, "Caught "+e, e);
-				throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
+				throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
 			} catch (IOException e) {
 				Logger.error(this, "Caught "+e, e);
-				throw new InserterException(InserterException.BUCKET_ERROR, e, null);
+				throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 			}
 		} else {
-			throw new InserterException(InserterException.INVALID_URI, "Unknown keytype "+uriType, null);
+			throw new InsertException(InsertException.INVALID_URI, "Unknown keytype "+uriType, null);
 		}
 	}
 
-	protected ClientKeyBlock encode() throws InserterException {
+	protected ClientKeyBlock encode() throws InsertException {
 		ClientKeyBlock block;
 		boolean shouldSend;
 		synchronized(this) {
@@ -139,29 +139,29 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	public void onFailure(LowLevelPutException e) {
 		if(parent.isCancelled()) {
-			fail(new InserterException(InserterException.CANCELLED));
+			fail(new InsertException(InsertException.CANCELLED));
 			return;
 		}
 		
 		switch(e.code) {
 		case LowLevelPutException.COLLISION:
-			fail(new InserterException(InserterException.COLLISION));
+			fail(new InsertException(InsertException.COLLISION));
 			break;
 		case LowLevelPutException.INTERNAL_ERROR:
-			errors.inc(InserterException.INTERNAL_ERROR);
+			errors.inc(InsertException.INTERNAL_ERROR);
 			break;
 		case LowLevelPutException.REJECTED_OVERLOAD:
-			errors.inc(InserterException.REJECTED_OVERLOAD);
+			errors.inc(InsertException.REJECTED_OVERLOAD);
 			break;
 		case LowLevelPutException.ROUTE_NOT_FOUND:
-			errors.inc(InserterException.ROUTE_NOT_FOUND);
+			errors.inc(InsertException.ROUTE_NOT_FOUND);
 			break;
 		case LowLevelPutException.ROUTE_REALLY_NOT_FOUND:
-			errors.inc(InserterException.ROUTE_REALLY_NOT_FOUND);
+			errors.inc(InsertException.ROUTE_REALLY_NOT_FOUND);
 			break;
 		default:
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code);
-			errors.inc(InserterException.INTERNAL_ERROR);
+			errors.inc(InsertException.INTERNAL_ERROR);
 		}
 		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND) {
 			consecutiveRNFs++;
@@ -176,17 +176,17 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(logMINOR) Logger.minor(this, "Failed: "+e);
 		retries++;
 		if((retries > ctx.maxInsertRetries) && (ctx.maxInsertRetries != -1)) {
-			fail(InserterException.construct(errors));
+			fail(InsertException.construct(errors));
 			return;
 		}
 		getScheduler().register(this);
 	}
 
-	private void fail(InserterException e) {
+	private void fail(InsertException e) {
 		fail(e, false);
 	}
 	
-	private void fail(InserterException e, boolean forceFatal) {
+	private void fail(InsertException e, boolean forceFatal) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -204,17 +204,17 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				if(finished) return null;
 			}
 			return encode();				
-		} catch (InserterException e) {
+		} catch (InsertException e) {
 			cb.onFailure(e, this);
 			return null;
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			cb.onFailure(new InserterException(InserterException.INTERNAL_ERROR, t, null), this);
+			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), this);
 			return null;
 		}
 	}
 
-	public void schedule() throws InserterException {
+	public void schedule() throws InsertException {
 		synchronized(this) {
 			if(finished) return;
 		}
@@ -257,7 +257,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	public void onSuccess() {
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		if(parent.isCancelled()) {
-			fail(new InserterException(InserterException.CANCELLED));
+			fail(new InsertException(InsertException.CANCELLED));
 			return;
 		}
 		synchronized(this) {
@@ -278,7 +278,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		RandomGrabArray arr = getParentGrabArray();
 		if(arr != null) arr.remove(this);
-		cb.onFailure(new InserterException(InserterException.CANCELLED), this);
+		cb.onFailure(new InsertException(InsertException.CANCELLED), this);
 	}
 
 	public synchronized boolean isCancelled() {
@@ -293,9 +293,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				core.realPut(b, ctx.cacheLocalRequests);
 			else {
 				if(parent.isCancelled())
-					fail(new InserterException(InserterException.CANCELLED));
+					fail(new InsertException(InsertException.CANCELLED));
 				else
-					fail(new InserterException(InserterException.BUCKET_ERROR));
+					fail(new InsertException(InsertException.BUCKET_ERROR));
 				return false;
 			}
 		} catch (LowLevelPutException e) {
@@ -328,7 +328,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	public void tryEncode() {
 		try {
 			encode();
-		} catch (InserterException e) {
+		} catch (InsertException e) {
 			fail(e);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);

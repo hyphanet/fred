@@ -11,7 +11,7 @@ import java.util.Vector;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.ManifestElement;
@@ -65,7 +65,7 @@ public class ClientPutDir extends ClientPutBase {
 		try {
 			p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client.lowLevelClient, earlyEncode);
-		} catch (InserterException e) {
+		} catch (InsertException e) {
 			onFailure(e, null);
 			p = null;
 		}
@@ -137,7 +137,7 @@ public class ClientPutDir extends ClientPutBase {
 			if(!finished)
 				p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
 						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client, earlyEncode);
-		} catch (InserterException e) {
+		} catch (InsertException e) {
 			onFailure(e, null);
 			p = null;
 		}
@@ -162,7 +162,7 @@ public class ClientPutDir extends ClientPutBase {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
 			}
-		} catch (InserterException e) {
+		} catch (InsertException e) {
 			started = true;
 			onFailure(e, null);
 		}

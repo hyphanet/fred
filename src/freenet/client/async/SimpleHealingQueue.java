@@ -5,8 +5,8 @@ package freenet.client.async;
 
 import java.util.HashMap;
 
-import freenet.client.InserterContext;
-import freenet.client.InserterException;
+import freenet.client.InsertContext;
+import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
@@ -18,10 +18,10 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 
 	final int maxRunning;
 	int counter;
-	InserterContext ctx;
+	InsertContext ctx;
 	final HashMap runningInserters;
 	
-	public SimpleHealingQueue(ClientRequestScheduler scheduler, InserterContext context, short prio, int maxRunning) {
+	public SimpleHealingQueue(ClientRequestScheduler scheduler, InsertContext context, short prio, int maxRunning) {
 		super(prio, scheduler, null, context);
 		this.ctx = context;
 		this.runningInserters = new HashMap();
@@ -87,7 +87,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		data.free();
 	}
 
-	public void onFailure(InserterException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		Bucket data = (Bucket) sbi.getToken();
 		synchronized(this) {

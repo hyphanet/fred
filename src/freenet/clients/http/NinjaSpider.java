@@ -36,7 +36,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.FetchContext;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
@@ -221,7 +221,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		// Ignore
 	}
 
-	public void onFailure(InserterException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state) {
 		// Ignore
 	}
 

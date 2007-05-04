@@ -39,28 +39,28 @@ public interface HighLevelSimpleClient {
 	/**
 	 * Blocking insert.
 	 * @param filenameHint If set, insert a single-file manifest containing only this file, under the given filename.
-	 * @throws InserterException If there is an error inserting the data
+	 * @throws InsertException If there is an error inserting the data
 	 */
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InserterException;
+	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InsertException;
 
 	/**
 	 * Blocking insert of a redirect.
 	 */
-	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI target) throws InserterException;
+	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI target) throws InsertException;
 	
 	/**
 	 * Blocking insert of multiple files as a manifest (or zip manifest, etc).
 	 */
-	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException;
+	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InsertException;
 	
 	public FetchContext getFetcherContext();
 
 	/**
-	 * Get an InserterContext.
+	 * Get an InsertContext.
 	 * @param forceNonPersistent If true, force the request to use the non-persistent
 	 * bucket pool.
 	 */
-	public InserterContext getInserterContext(boolean forceNonPersistent);
+	public InsertContext getInserterContext(boolean forceNonPersistent);
 	
 	/**
 	 * Add a ClientEventListener.

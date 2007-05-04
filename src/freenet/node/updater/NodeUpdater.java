@@ -8,7 +8,7 @@ import java.net.MalformedURLException;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.FetchContext;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
@@ -227,7 +227,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		// Impossible
 	}
 
-	public void onFailure(InserterException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state) {
 		// Impossible
 	}
 

@@ -16,7 +16,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
-import freenet.client.InserterException;
+import freenet.client.InsertException;
 import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.clients.http.bookmark.BookmarkItems;
 import freenet.clients.http.bookmark.BookmarkCategory;
@@ -264,7 +264,7 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", l10n("insertSucceededTitle")));
 				content = ctx.getPageMaker().getContentNode(infobox);
 				content.addChild("#", l10n("finInsertSuccessWithKey", "key", finalKey.toString()));
-			} catch (InserterException e) {
+			} catch (InsertException e) {
 				HTMLNode infobox = ctx.getPageMaker().getInfobox("infobox-error", l10n("insertFailedTitle"));
 				content = ctx.getPageMaker().getContentNode(infobox);
 				content.addChild("#", l10n("insertFailedWithMessage", "message", e.getMessage()));
@@ -273,7 +273,7 @@ public class WelcomeToadlet extends Toadlet {
 					content.addChild("#", l10n("uriWouldHaveBeen", "uri", e.uri.toString()));
 				}
 				int mode = e.getMode();
-				if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
+				if((mode == InsertException.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertException.TOO_MANY_RETRIES_IN_BLOCKS)) {
 					content.addChild("br"); /* TODO */
 					content.addChild("#", l10n("splitfileErrorLabel"));
 					content.addChild("pre", e.errorCodes.toVerboseString());
@@ -316,7 +316,7 @@ public class WelcomeToadlet extends Toadlet {
 				L10n.addL10nSubstitution(content, "keyInsertedSuccessfullyWithKeyAndName",
 						new String[] { "link", "/link", "name" },
 						new String[] { "<a href=\"/"+u+"\">", "</a>", u });
-			} catch (InserterException e) {
+			} catch (InsertException e) {
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", l10n("insertFailedTitle")));
 				content = ctx.getPageMaker().getContentNode(infobox);
 				content.addChild("#", l10n("insertFailedWithMessage", "message", e.getMessage()));
@@ -325,7 +325,7 @@ public class WelcomeToadlet extends Toadlet {
 					content.addChild("#", l10n("uriWouldHaveBeen", "uri", e.uri.toString()));
 				}
 				int mode = e.getMode();
-				if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
+				if((mode == InsertException.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertException.TOO_MANY_RETRIES_IN_BLOCKS)) {
 					content.addChild("br"); /* TODO */
 					content.addChild("#", l10n("splitfileErrorLabel"));
 					content.addChild("pre", e.errorCodes.toVerboseString());
