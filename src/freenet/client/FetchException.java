@@ -4,6 +4,7 @@
 package freenet.client;
 
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.support.Logger;
 
 /**
@@ -182,66 +183,10 @@ public class FetchException extends Exception {
 	}
 
 	public static String getShortMessage(int mode) {
-		switch(mode) {
-		case TOO_DEEP_ARCHIVE_RECURSION:
-			return "Too deep archive recursion";
-		case UNKNOWN_SPLITFILE_METADATA:
-			return "Unknown splitfile metadata";
-		case TOO_MANY_REDIRECTS:
-			return "Too many redirects";
-		case UNKNOWN_METADATA:
-			return "Unknown metadata";
-		case INVALID_METADATA:
-			return "Invalid metadata";
-		case ARCHIVE_FAILURE:
-			return "Archive failure";
-		case BLOCK_DECODE_ERROR:
-			return "Block decode error";
-		case TOO_MANY_METADATA_LEVELS:
-			return "Too many metadata levels";
-		case TOO_MANY_ARCHIVE_RESTARTS:
-			return "Too many archive restarts";
-		case TOO_MUCH_RECURSION:
-			return "Too much recursion";
-		case NOT_IN_ARCHIVE:
-			return "Not in archive";
-		case TOO_MANY_PATH_COMPONENTS:
-			return "Too many path components";
-		case BUCKET_ERROR:
-			return "Temporary files error";
-		case DATA_NOT_FOUND:
-			return "Data not found";
-		case ALL_DATA_NOT_FOUND:
-			return "All data not found";
-		case ROUTE_NOT_FOUND:
-			return "Route not found";
-		case REJECTED_OVERLOAD:
-			return "Timeout or overload";
-		case INTERNAL_ERROR:
-			return "Internal error";
-		case TRANSFER_FAILED:
-			return "Transfer failed";
-		case SPLITFILE_ERROR:
-			return "Splitfile error";
-		case INVALID_URI:
-			return "Invalid URI";
-		case TOO_BIG:
-			return "Too big";
-		case TOO_BIG_METADATA:
-			return "Metadata too big";
-		case TOO_MANY_BLOCKS_PER_SEGMENT:
-			return "Too many blocks per segment";
-		case NOT_ENOUGH_PATH_COMPONENTS:
-			return "Not enough meta-strings"; // FIXME better description
-		case CANCELLED:
-			return "Cancelled";
-		case ARCHIVE_RESTART:
-			return "Archive restarted";
-		case PERMANENT_REDIRECT:
-			return "New URI";
-		default:
+		String ret = L10n.getString("FetchException.shortError."+mode);
+		if(ret == null)
 			return "Unknown code "+mode;
-		}
+		else return ret;
 	}
 	
 	public String toString() {
@@ -264,67 +209,10 @@ public class FetchException extends Exception {
 	}
 	
 	public static String getMessage(int mode) {
-		switch(mode) {
-		case TOO_DEEP_ARCHIVE_RECURSION:
-			return "Too many levels of recursion into archives";
-		case UNKNOWN_SPLITFILE_METADATA:
-			return "Don't know what to do with splitfile";
-		case TOO_MANY_REDIRECTS:
-			return "Too many redirects - loop?";
-		case UNKNOWN_METADATA:
-			return "Don't know what to do with metadata";
-		case INVALID_METADATA:
-			return "Failed to parse metadata";
-		case ARCHIVE_FAILURE:
-			return "Failure in extracting files from an archive";
-		case BLOCK_DECODE_ERROR:
-			return "Failed to decode a block";
-		case TOO_MANY_METADATA_LEVELS:
-			return "Too many levels of split metadata";
-		case TOO_MANY_ARCHIVE_RESTARTS:
-			return "Request was restarted too many times due to archives changing";
-		case TOO_MUCH_RECURSION:
-			return "Too many redirects (too much recursion)"; // FIXME: ???
-		case NOT_IN_ARCHIVE:
-			return "File not in archive";
-		case TOO_MANY_PATH_COMPONENTS:
-			return "Too many path components - not a manifest? Try removing one";
-		case BUCKET_ERROR:
-			return "Internal temp files error, maybe disk full or permissions problem?";
-		case DATA_NOT_FOUND:
-			return "Data not found";
-		case ALL_DATA_NOT_FOUND:
-			return "Not enough data found; some data was fetched but redirect may point to nowhere";
-		case ROUTE_NOT_FOUND:
-			return "Route not found - could not find enough nodes to be sure the data doesn't exist";
-		case REJECTED_OVERLOAD:
-			return "A node was overloaded or timed out";
-		case INTERNAL_ERROR:
-			return "Internal error, probably a bug";
-		case TRANSFER_FAILED:
-			return "Found the file, but lost it while receiving the data";
-		case SPLITFILE_ERROR:
-			return "Splitfile error";
-		case INVALID_URI:
-			return "Invalid URI";
-		case TOO_BIG:
-			return "Too big";
-		case TOO_BIG_METADATA:
-			return "Metadata too big";
-		case TOO_MANY_BLOCKS_PER_SEGMENT:
-			return "Too many blocks per segment";
-		case NOT_ENOUGH_PATH_COMPONENTS:
-			return "Give more metastrings (path components) in URI";
-			// FIXME better description for above
-		case CANCELLED:
-			return "Cancelled by caller";
-		case ARCHIVE_RESTART:
-			return "Archive restarted";
-		case PERMANENT_REDIRECT:
-			return "Permanent redirect: use the new URI";
-		default:
+		String ret = L10n.getString("FetchException.longError."+mode);
+		if(ret == null)
 			return "Unknown fetch error code: "+mode;
-		}
+		else return ret;
 	}
 	
 	// FIXME many of these are not used any more
