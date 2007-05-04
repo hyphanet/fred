@@ -207,37 +207,12 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 
 			// Activity box
-			int numInserts = node.getNumInsertSenders();
-			int numCHKInserts = node.getNumCHKInserts();
-			int numSSKInserts = node.getNumSSKInserts();
-			int numRequests = node.getNumRequestSenders();
-			int numCHKRequests = node.getNumCHKRequests();
-			int numSSKRequests = node.getNumSSKRequests();
-			int numTransferringRequests = node.getNumTransferringRequestSenders();
-			int numTransferringRequestHandlers = node.getNumTransferringRequestHandlers();
 			int numARKFetchers = node.getNumARKFetchers();
 
 			HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
 			activityInfobox.addChild("div", "class", "infobox-header", l10n("activityTitle"));
 			HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
-			if ((numInserts == 0) && (numRequests == 0) && (numTransferringRequests == 0) && (numARKFetchers == 0)) {
-				activityInfoboxContent.addChild("#", l10n("noRequests"));
-			} else {
-				HTMLNode activityList = activityInfoboxContent.addChild("ul");
-				if (numInserts > 0) {
-					activityList.addChild("li", L10n.getString("DarknetConnectionsToadlet.activityInserts", 
-							new String[] { "totalSenders", "CHKhandlers", "SSKhandlers" } , 
-							new String[] { Integer.toString(numInserts), Integer.toString(numCHKInserts), Integer.toString(numSSKInserts)}));
-				}
-				if (numRequests > 0) {
-					activityList.addChild("li", L10n.getString("DarknetConnectionsToadlet.activityRequests", 
-							new String[] { "totalSenders", "CHKhandlers", "SSKhandlers" } , 
-							new String[] { Integer.toString(numRequests), Integer.toString(numCHKRequests), Integer.toString(numSSKRequests)}));
-				}
-				if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0) {
-					activityList.addChild("li", L10n.getString("DarknetConnectionsToadlet.transferringRequests", 
-							new String[] { "senders", "receivers" }, new String[] { Integer.toString(numTransferringRequests), Integer.toString(numTransferringRequestHandlers)}));
-				}
+			HTMLNode activityList = drawActivity(activityInfoboxContent, node);
 				if (advancedModeEnabled) {
 					if (numARKFetchers > 0) {
 						activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
@@ -266,7 +241,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						activityList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate, true) + "ps (of\u00a0"+SizeUtil.formatSize(inputBandwidthLimit, true)+"ps)");
 					}
 				}
-			}
 
 			nextTableCell = advancedModeEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 
@@ -645,7 +619,39 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 	
-	private String l10n(String string) {
+	private static HTMLNode drawActivity(HTMLNode activityInfoboxContent, Node node) {
+		int numInserts = node.getNumInsertSenders();
+		int numCHKInserts = node.getNumCHKInserts();
+		int numSSKInserts = node.getNumSSKInserts();
+		int numRequests = node.getNumRequestSenders();
+		int numCHKRequests = node.getNumCHKRequests();
+		int numSSKRequests = node.getNumSSKRequests();
+		int numTransferringRequests = node.getNumTransferringRequestSenders();
+		int numTransferringRequestHandlers = node.getNumTransferringRequestHandlers();
+		if ((numInserts == 0) && (numRequests == 0) && (numTransferringRequests == 0)) {
+			activityInfoboxContent.addChild("#", l10n("noRequests"));
+			return null;
+		} else {
+			HTMLNode activityList = activityInfoboxContent.addChild("ul");
+			if (numInserts > 0) {
+				activityList.addChild("li", L10n.getString("DarknetConnectionsToadlet.activityInserts", 
+						new String[] { "totalSenders", "CHKhandlers", "SSKhandlers" } , 
+						new String[] { Integer.toString(numInserts), Integer.toString(numCHKInserts), Integer.toString(numSSKInserts)}));
+			}
+			if (numRequests > 0) {
+				activityList.addChild("li", L10n.getString("DarknetConnectionsToadlet.activityRequests", 
+						new String[] { "totalSenders", "CHKhandlers", "SSKhandlers" } , 
+						new String[] { Integer.toString(numRequests), Integer.toString(numCHKRequests), Integer.toString(numSSKRequests)}));
+			}
+			if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0) {
+				activityList.addChild("li", L10n.getString("DarknetConnectionsToadlet.transferringRequests", 
+						new String[] { "senders", "receivers" }, new String[] { Integer.toString(numTransferringRequests), Integer.toString(numTransferringRequestHandlers)}));
+			}
+			return activityList;
+		}
+	}
+
+	private static String l10n(String string) {
 		return L10n.getString("DarknetConnectionsToadlet."+string);
 	}
 
