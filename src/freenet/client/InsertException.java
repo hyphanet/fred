@@ -4,6 +4,7 @@
 package freenet.client;
 
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.support.Logger;
 
 public class InsertException extends Exception {
@@ -95,61 +96,17 @@ public class InsertException extends Exception {
 	public static final int META_STRINGS_NOT_SUPPORTED = 11;
 	
 	public static String getMessage(int mode) {
-		switch(mode) {
-		case INVALID_URI:
-			return "Caller supplied a URI we cannot use";
-		case BUCKET_ERROR:
-			return "Internal bucket error: out of disk space/permissions problem?";
-		case INTERNAL_ERROR:
-			return "Internal error";
-		case REJECTED_OVERLOAD:
-			return "A downstream node timed out or was severely overloaded";
-		case FATAL_ERRORS_IN_BLOCKS:
-			return "Fatal errors in a splitfile insert";
-		case TOO_MANY_RETRIES_IN_BLOCKS:
-			return "Could not insert splitfile: ran out of retries (nonfatal errors)";
-		case ROUTE_NOT_FOUND:
-			return "Could not propagate the insert to enough nodes (normal on small networks, try fetching it anyway)";
-		case ROUTE_REALLY_NOT_FOUND:
-			return "Insert could not leave the node at all";
-		case COLLISION:
-			return "Insert collided with different, pre-existing data at the same key";
-		case META_STRINGS_NOT_SUPPORTED:
-			return "Meta string (most likely a '/') used in the URI";
-		case CANCELLED:
-			return "Cancelled by user";
-		default:
+		String ret = L10n.getString("InsertException.longError."+mode);
+		if(ret == null)
 			return "Unknown error "+mode;
-		}
+		else return ret;
 	}
 
 	public static String getShortMessage(int mode) {
-		switch(mode) {
-		case INVALID_URI:
-			return "Invalid URI";
-		case BUCKET_ERROR:
-			return "Temp files error";
-		case INTERNAL_ERROR:
-			return "Internal error";
-		case REJECTED_OVERLOAD:
-			return "Timeout or overload";
-		case FATAL_ERRORS_IN_BLOCKS:
-			return "Some blocks failed fatally";
-		case TOO_MANY_RETRIES_IN_BLOCKS:
-			return "Some blocks ran out of retries";
-		case ROUTE_NOT_FOUND:
-			return "Route not found";
-		case ROUTE_REALLY_NOT_FOUND:
-			return "Request could not leave the node";
-		case COLLISION:
-			return "Collided with existing data";
-		case META_STRINGS_NOT_SUPPORTED:
-			return "Meta string used in the key";
-		case CANCELLED:
-			return "Cancelled";
-		default:
+		String ret = L10n.getString("InsertException.shortError."+mode);
+		if(ret == null)
 			return "Unknown error "+mode;
-		}
+		else return ret;
 	}
 	
 	/** Is this error fatal? Non-fatal errors are errors which are likely to go away with
