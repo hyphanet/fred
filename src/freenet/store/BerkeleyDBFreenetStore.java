@@ -76,6 +76,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final SecondaryDatabase chkDB_blockNum;
 	private final RandomAccessFile chkStore;
 	private final SortedLongSet freeBlocks;
+	private final String name;
 	
 	private long lastRecentlyUsed;
 	private final Object lastRecentlyUsedSync = new Object();
@@ -432,6 +433,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.dataBlockSize = blockSize;
 		this.headerBlockSize = headerSize;
 		this.freeBlocks = new SortedLongSet();
+		name = prefix;
 		
 		this.maxChkBlocks=maxChkBlocks;
 		
@@ -1141,6 +1143,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.freeBlocks = new SortedLongSet();
 		this.maxChkBlocks=maxChkBlocks;
 		this.environment = env;
+		name = prefix;
 		
 		wipeOldDatabases(prefix);
 		
@@ -1936,8 +1939,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				chkDB_blockNum.get(t, blockNumEntry, found, LockMode.DEFAULT);
 
 			if(success == OperationStatus.KEYEXIST || success == OperationStatus.SUCCESS) {
-				System.err.println("Trying to overwrite block "+blockNum+" but already used");
-				Logger.error(this, "Trying to overwrite block "+blockNum+" but already used");
+				System.err.println("Trying to overwrite block "+blockNum+" but already used: "+getName());
+				Logger.error(this, "Trying to overwrite block "+blockNum+" but already used: "+getName());
 				return false;
 			} else {
 				Logger.minor(this, "Key doesn't exist for block num "+blockNum+" but caught "+e, e);
@@ -1961,6 +1964,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		return true;
 	}
 
+	public final String getName() {
+		return name;
+	}
+
 	private void checkSecondaryDatabaseError(Throwable ex) {
 		String msg = ex.getMessage();
     	if((ex instanceof DatabaseException) && (msg != null && (msg.indexOf("missing key in the primary database") > -1) ||
@@ -1968,12 +1975,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		try {
 				fixSecondaryFile.createNewFile();
 			} catch (IOException e) {
-				Logger.error(this, "Corrupt secondary database but could not create flag file "+fixSecondaryFile);
-				System.err.println("Corrupt secondary database but could not create flag file "+fixSecondaryFile);
+				Logger.error(this, "Corrupt secondary database ("+getName()+") but could not create flag file "+fixSecondaryFile);
+				System.err.println("Corrupt secondary database ("+getName()+") but could not create flag file "+fixSecondaryFile);
 				return; // Not sure what else we can do
 			}
-    		Logger.error(this, "Corrupt secondary database. Should be cleaned up on restart.");
-    		System.err.println("Corrupt secondary database. Should be cleaned up on restart.");
+    		Logger.error(this, "Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
+    		System.err.println("Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
     		System.exit(freenet.node.Node.EXIT_DATABASE_REQUIRES_RESTART);
     	}
 	}
