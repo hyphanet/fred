@@ -317,6 +317,7 @@ public class FetchException extends Exception {
 		// Wierd ones
 		case CANCELLED:
 		case ARCHIVE_RESTART:
+		case PERMANENT_REDIRECT:
 			// Fatal
 			return true;
 			
