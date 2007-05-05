@@ -6,6 +6,7 @@ package freenet.node.useralerts;
 import java.text.DateFormat;
 import java.util.Date;
 
+import freenet.l10n.L10n;
 import freenet.node.PeerNode;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
@@ -39,34 +40,29 @@ public class N2NTMUserAlert implements UserAlert {
 	}
 
 	public String getTitle() {
-		return "Node To Node Text Message "+fileNumber+" from "+sourcePeerNode.getName()+" ("+sourcePeerNode.getPeer()+ ')';
+		return l10n("title", new String[] { "number", "peername", "peer" },
+				new String[] { Integer.toString(fileNumber), sourcePeerNode.getName(), sourcePeerNode.getPeer().toString() });
 	}
 	
 	public String getText() {
-	  String messageTextBuf = HTMLEncoder.encode(messageText);
-	  int j = messageTextBuf.length();
-		StringBuffer messageTextBuf2 = new StringBuffer(j);
-		for (int i = 0; i < j; i++) {
-		  char ch = messageTextBuf.charAt(i);
-		  if(ch == '\n')
-		    messageTextBuf2.append("<br />");
-		  else
-		    messageTextBuf2.append(ch);
-		}
-		String replyString = "<a href=\"/send_n2ntm/?peernode_hashcode="+sourcePeerNode.hashCode()+"\">Reply</a><br /><br />";
-		String s;
-		s = "From: &lt;"+HTMLEncoder.encode(sourceNodename)+"&gt;<br />To: &lt;"+HTMLEncoder.encode(targetNodename)+"&gt;<hr /><br /><br />"+messageTextBuf2+"<br /><br />"+replyString;
-		return s;
+		return 
+			l10n("header", new String[] { "from", "composed", "sent", "received" },
+					new String[] { sourceNodename, DateFormat.getInstance().format(new Date(composedTime)), 
+					DateFormat.getInstance().format(new Date(sentTime)), DateFormat.getInstance().format(new Date(receivedTime)) }) + "\n" +
+			messageText;
 	}
 
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
-		alertNode.addChild("p", "From: " + sourceNodename + " (composed: " + DateFormat.getInstance().format(new Date(composedTime)) + " | sent: " + DateFormat.getInstance().format(new Date(sentTime)) + " | received: " + DateFormat.getInstance().format(new Date(receivedTime)) + ')');
+		alertNode.addChild("p",
+				l10n("header", new String[] { "from", "composed", "sent", "received" },
+						new String[] { sourceNodename, DateFormat.getInstance().format(new Date(composedTime)), 
+						DateFormat.getInstance().format(new Date(sentTime)), DateFormat.getInstance().format(new Date(receivedTime)) }));
 		String[] lines = messageText.split("\n");
 		for (int i = 0, c = lines.length; i < c; i++) {
 			alertNode.addChild("div", lines[i]);
 		}
-		alertNode.addChild("p").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + sourcePeerNode.hashCode(), "Reply");
+		alertNode.addChild("p").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + sourcePeerNode.hashCode(), l10n("reply"));
 		return alertNode;
 	}
 
@@ -83,9 +79,17 @@ public class N2NTMUserAlert implements UserAlert {
 	}
 	
 	public String dismissButtonText(){
-		return "Delete";
+		return l10n("delete");
 	}
 	
+	private String l10n(String key) {
+		return L10n.getString("N2NTMUserAlert."+key);
+	}
+
+	private String l10n(String key, String[] patterns, String[] values) {
+		return L10n.getString("N2NTMUserAlert."+key, patterns, values);
+	}
+
 	public boolean shouldUnregisterOnDismiss() {
 		return true;
 	}

@@ -65,7 +65,7 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 	}
 	
 	public String dismissButtonText(){
-		return "Hide";
+		return L10n.getString("UserAlert.hide");
 	}
 	
 	public boolean shouldUnregisterOnDismiss() {
