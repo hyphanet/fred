@@ -1,5 +1,6 @@
 package freenet.node.useralerts;
 
+import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 
 public class ExtOldAgeUserAlert implements UserAlert {
@@ -10,17 +11,19 @@ public class ExtOldAgeUserAlert implements UserAlert {
 	}
 
 	public String getTitle() {
-		return "Freenet-ext too old";
+		return l10n("extTooOldTitle");
 	}
 	
 	public String getText() {
-		String s;
-		s = "Your freenet-ext.jar file seems to be outdated : we strongly advise you to update it using http://downloads.freenetproject.org/alpha/freenet-ext.jar.";
-		return s;
+		return l10n("extTooOld");
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("ExtOldAgeUserAlert."+key);
 	}
 
 	public HTMLNode getHTMLText() {
-		return new HTMLNode("div", "Your freenet-ext.jar file seems to be outdated: we strongly advise you to update it using http://downloads.freenetproject.org/alpha/freenet-ext.jar.");
+		return new HTMLNode("div", getText());
 	}
 
 	public short getPriorityClass() {
@@ -36,7 +39,7 @@ public class ExtOldAgeUserAlert implements UserAlert {
 	}
 	
 	public String dismissButtonText(){
-		return "Hide";
+		return L10n.getString("UserAlert.hide");
 	}
 	
 	public boolean shouldUnregisterOnDismiss() {

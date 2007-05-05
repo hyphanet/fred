@@ -96,6 +96,7 @@ import freenet.support.Base64;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
+import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
@@ -1368,16 +1369,6 @@ public class Node {
 		System.out.println("Node constructor completed");
 	}
 	
-	static final String ERROR_SUN_NPTL = 
-		"WARNING: Your system appears to be running a Sun JVM with NPTL. " +
-		"This has been known to cause the node to freeze up due to the JVM losing a lock. " +
-		"Please disable NPTL if possible by setting the environment variable LD_ASSUME_KERNEL=2.4.1. " +
-		"Recent versions of the freenet installer should have this already; either reinstall, or edit " +
-		"run.sh (https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/run.sh). " +
-		"On some systems you may need to install the pthreads libraries to make this work. " +
-		"Note that the node will try to automatically restart the node in the event of such a deadlock, " +
-		"but this will cause some disruption, and may not be 100% reliable.";
-	
 	public void start(boolean noSwaps) throws NodeInitException {
 		
 		if(!noSwaps)
@@ -1505,9 +1496,10 @@ public class Node {
 
 					public HTMLNode getHTMLText() {
 						HTMLNode n = new HTMLNode("div");
-						n.addChild("#", "The JVM you are using ("+System.getProperty("java.vm.version")+") is known to be ");
-						n.addChild("a", "href", "/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795").addChild("#", "buggy");
-						n.addChild("#", ". It may produce OutOfMemoryError's when there is plenty of memory available. Please upgrade to at least Sun Java 1.4.2_13, 1.5.0_10 or 1.6 (recommended).");
+						L10n.addL10nSubstitution(n, "buggyJVMWithLink", 
+								new String[] { "link", "/link", "version" },
+								new String[] { "<a href=\"/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795\">", 
+								"</a>", HTMLEncoder.encode(System.getProperty("java.vm.version")) });
 						return n;
 					}
 
@@ -1516,12 +1508,11 @@ public class Node {
 					}
 
 					public String getText() {
-						return "The JVM you are using ("+System.getProperty("java.vm.version")+") is known to be " +
-						"buggy. It may produce OutOfMemoryError's when there is plenty of memory available. Please upgrade to at least Sun Java 1.4.2_13, 1.5.0_10 or 1.6 (recommended). See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795 .";
+						return l10n("buggyJVM", "version", System.getProperty("java.vm.version"));
 					}
 
 					public String getTitle() {
-						return "Buggy JVM Warning";
+						return l10n("buggyJVMTitle");
 					}
 
 					public boolean isValid() {
@@ -1550,6 +1541,9 @@ public class Node {
 			
 			// If we are using the wrapper, we ignore:
 			// Any problem should be detected by the watchdog and the node will be restarted
+			// FIXME we should only check this on x86 (x86-64 doesn't have pthreads)
+			// FIXME why only if not running the wrapper? It's worse with the wrapper of course... but if that's
+			// the issue we should tell the user.
 			if(osName.equals("Linux") && jvmVendor.startsWith("Sun ") && 
 					((osVersion.indexOf("nptl")!=-1) || osVersion.startsWith("2.6") || 
 							osVersion.startsWith("2.7") || osVersion.startsWith("3."))
@@ -1566,8 +1560,8 @@ public class Node {
 					assumeKernel = WrapperManager.getProperties().getProperty("set.LD_ASSUME_KERNEL");
 				}
 				if((assumeKernel == null) || (assumeKernel.length() == 0) || (!(assumeKernel.startsWith("2.2") || assumeKernel.startsWith("2.4")))) {
-					System.err.println(ERROR_SUN_NPTL);
-					Logger.error(this, ERROR_SUN_NPTL);
+					System.err.println(l10n("deadlockWarning"));
+					Logger.error(this, l10n("deadlockWarning"));
 					clientCore.alerts.register(new UserAlert() {
 						
 						public boolean userCanDismiss() {
@@ -1575,15 +1569,15 @@ public class Node {
 						}
 						
 						public String getTitle() {
-							return "Deadlocking likely due to buggy JVM/kernel combination";
+							return l10n("deadlockTitle");
 						}
 						
 						public String getText() {
-							return ERROR_SUN_NPTL;
+							return l10n("deadlockWarning");
 						}
 						
 						public HTMLNode getHTMLText() {
-							return new HTMLNode("div", ERROR_SUN_NPTL);
+							return new HTMLNode("div", l10n("deadlockWarning"));
 						}
 						
 						public short getPriorityClass() {
@@ -1616,6 +1610,14 @@ public class Node {
 			}
 		}
 		
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("Node."+key);
+	}
+
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("Node."+key, pattern, value);
 	}
 
 	public SimpleFieldSet exportPrivateFieldSet() {

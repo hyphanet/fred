@@ -12,6 +12,7 @@ import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketManager;
+import freenet.l10n.L10n;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -215,10 +216,8 @@ public class NodeIPDetector {
 								
 								if(ipDetectorManager != null && ipDetectorManager.isEmpty()) {
 									if(maybeSymmetricAlert == null) {
-										maybeSymmetricAlert = new SimpleUserAlert(true, "Connection problems", 
-												"It looks like your node may be behind a symmetric NAT. You may have connection " +
-												"problems; if you are behind a symmetric NAT you will probably only be able to " +
-												"connect to peers which are open to the internet.", UserAlert.ERROR);
+										maybeSymmetricAlert = new SimpleUserAlert(true, l10n("maybeSymmetricTitle"), 
+												l10n("maybeSymmetric"), UserAlert.ERROR);
 									}
 									if(node.clientCore != null && node.clientCore.alerts != null)
 										node.clientCore.alerts.register(maybeSymmetricAlert);
@@ -238,6 +237,10 @@ public class NodeIPDetector {
 		}
 	   	this.maybeSymmetric = setMaybeSymmetric;
 	   	return addedValidIP;
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("NodeIPDetector."+key);
 	}
 
 	Peer[] getPrimaryIPAddress() {

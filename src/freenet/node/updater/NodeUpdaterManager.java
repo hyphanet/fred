@@ -10,6 +10,7 @@ import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
@@ -478,7 +479,7 @@ public class NodeUpdaterManager {
 			return false;
 		} catch (UpdateCatastropheException e) {
 			failUpdate(e.getMessage());
-			node.clientCore.alerts.register(new SimpleUserAlert(false, "Catastrophic update failure", e.getMessage(), UserAlert.CRITICAL_ERROR));
+			node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("updateCatastropheTitle"), e.getMessage(), UserAlert.CRITICAL_ERROR));
 			return false;
 		}
 		
@@ -501,7 +502,15 @@ public class NodeUpdaterManager {
 		Logger.error(this, "Update failed: "+reason);
 		System.err.println("Update failed: "+reason);
 		this.killUpdateAlerts();
-		node.clientCore.alerts.register(new SimpleUserAlert(true, "Update Failed!", "Update Failed: "+reason, UserAlert.ERROR));
+		node.clientCore.alerts.register(new SimpleUserAlert(true, l10n("updateFailedTitle"), l10n("updateFailed", "reason", reason), UserAlert.ERROR));
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("NodeUpdateManager."+key);
+	}
+
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("NodeUpdateManager."+key, pattern, value);
 	}
 
 	/**

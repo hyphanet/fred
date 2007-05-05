@@ -367,4 +367,8 @@ public class L10n {
 		node.addChild("%", result);
 	}
 
+	public static String getString(String key, String pattern, String value) {
+		return getString(key, new String[] { pattern }, new String[] { value }); // FIXME code efficiently!
+	}
+
 }

@@ -5,9 +5,11 @@ package freenet.clients.http.bookmark;
 
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 
 import java.net.MalformedURLException;
@@ -47,21 +49,18 @@ public class BookmarkItem extends Bookmark {
 		}
 
 		public String getTitle() {
-			return "Bookmark updated: " + name;
+			return l10n("bookmarkUpdatedTitle", "name", name);
 		}
 
 		public String getText() {
-			return "The bookmarked site " + name
-					+ " has been updated to edition "
-					+ key.getSuggestedEdition();
+			return l10n("bookmarkUpdated", new String[] { "name", "edition" },
+					new String[] { name, Long.toString(key.getSuggestedEdition()) });
 		}
 
 		public HTMLNode getHTMLText() {
 			HTMLNode n = new HTMLNode("div");
-			n.addChild("#", "The bookmarked site ");
-			n.addChild("a", "href", '/' + key.toString()).addChild("#", name);
-			n.addChild("#", " has been updated to edition "
-					+ key.getSuggestedEdition() + ".");
+			L10n.addL10nSubstitution(n, "bookmarkUpdatedWithLink", new String[] { "link", "/link", "name", "edition" },
+					new String[] { "<a href=\""+key.toString()+"\">", "</a>", HTMLEncoder.encode(name), Long.toString(key.getSuggestedEdition()) });
 			return n;
 		}
 
@@ -82,7 +81,7 @@ public class BookmarkItem extends Bookmark {
 		}
 
 		public String dismissButtonText() {
-			return "Delete notification";
+			return l10n("deleteBookmarkUpdateNotification");
 		}
 
 		public boolean shouldUnregisterOnDismiss() {
@@ -98,6 +97,18 @@ public class BookmarkItem extends Bookmark {
 	private synchronized void disableBookmark() {
 		updated = false;
 		alerts.unregister(alert);
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("BookmarkItem."+key);
+	}
+
+	private  String l10n(String key, String pattern, String value) {
+		return L10n.getString("BookmarkItem."+key, new String[] { pattern }, new String[] { value });
+	}
+
+	private String l10n(String key, String[] patterns, String[] values) {
+		return L10n.getString("BookmarkItem."+key, patterns, values);
 	}
 
 	private synchronized void enableBookmark() {

@@ -5,6 +5,7 @@ package freenet.node.useralerts;
 
 import freenet.config.Option;
 import freenet.config.SubConfig;
+import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.support.HTMLNode;
 
@@ -22,22 +23,22 @@ public class IPUndetectedUserAlert implements UserAlert {
 	}
 
 	public String getTitle() {
-		return "Unknown external address";
+		return l10n("unknownAddressTitle");
 	}
 
 	public String getText() {
 		if(node.ipDetector.isDetecting())
-			return "Freenet is currently attempting to detect your external IP address. " +
-					"If this takes more than a few minutes there is something wrong...";
+			return l10n("detecting");
 		else
-			return "Freenet was unable to determine your external IP address " +
-				"(or the IP address of your NAT or Firewall). You can still exchange " +
-				"references with other people, however this will only work if the other " +
-				"user is not behind a NAT or Firewall. As soon as you have connected to " +
-				"one other user in this way, Freenet will be able to determine your " +
-				"external IP address. You can determine your current IP address and tell " +
-				"your node with the 'Temporary IP address hint' configuration parameter. "+
-				"Also, it would be a good idea to forward the port "+node.getPortNumber()+" on your router for UDP to make it easy to connect to your node.";
+			return l10n("unknownAddress", "port", Integer.toString(node.getPortNumber()));
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("IPUndetectedUserAlert."+key);
+	}
+
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("IPUndetectedUserAlert."+key, pattern, value);
 	}
 
 	public HTMLNode getHTMLText() {
@@ -45,20 +46,17 @@ public class IPUndetectedUserAlert implements UserAlert {
 		Option o = sc.getOption("tempIPAddressHint");
 		
 		HTMLNode textNode = new HTMLNode("div");
-		if(node.ipDetector.isDetecting())
-			textNode.addChild("#", "Freenet is currently attempting to detect your external IP address. If this takes more than a few minutes there is something wrong and you can use the Temporary IP Address Hint ");
-		else
-			textNode.addChild("#", "Freenet was unable to determine your external IP address (or the IP address of your NAT-device or firewall). You can still exchange references with other people, however this will only work if the other user is not behind a NAT-device or firewall. As soon as you have connected to one other user in this way, Freenet will be able to determine your external IP address. You can determine your current IP address and tell your node with the \u201cTemporary IP Address Hint\u201d. Also, it would be a good idea to forward the port "+node.getPortNumber()+" on your router for UDP to make it easy to connect to your node.");
-		textNode.addChild("a", "href", "/config/", "configuration parameter");
-		textNode.addChild("#", ".");
+		L10n.addL10nSubstitution(textNode, node.ipDetector.isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink", 
+				new String[] { "link", "/link", "port" }, 
+				new String[] { "<a href=\"/config/\">", "</a>", Integer.toString(node.getPortNumber()) });
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
 		HTMLNode itemNode = listNode.addChild("li");
 		itemNode.addChild("span", "class", "configshortdesc", o.getShortDesc()).addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", sc.getPrefix() + ".tempIPAddressHint", o.getValueString() });
 		itemNode.addChild("span", "class", "configlongdesc", o.getLongDesc());
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Apply" });
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", "Reset" });
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("UserAlert.apply") });
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", L10n.getString("UserAlert.apply") });
 		return textNode;
 	}
 
@@ -78,7 +76,7 @@ public class IPUndetectedUserAlert implements UserAlert {
 	}
 	
 	public String dismissButtonText(){
-		return "Hide";
+		return L10n.getString("UserAlert.hide");
 	}
 	
 	public boolean shouldUnregisterOnDismiss() {

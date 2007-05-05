@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 
 public class BuildOldAgeUserAlert implements UserAlert {
@@ -14,22 +15,26 @@ public class BuildOldAgeUserAlert implements UserAlert {
 	}
 
 	public String getTitle() {
-		return "Build too old";
+		return l10n("tooOldTitle");
 	}
 	
+	private String l10n(String key) {
+		return L10n.getString("BuildOldAgeUserAlert."+key);
+	}
+
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("BuildOldAgeUserAlert."+key, pattern, value);
+	}
+
 	public String getText() {
 	  if(lastGoodVersion == 0)
 		  throw new IllegalArgumentException("Not valid");
-		String s;
-		s = "This node's software is older than the oldest version (Build #"+lastGoodVersion+") allowed by the newest peers we " +
-				"try to connect to.  Please update your node as soon as possible as you will not be " +
-				"able to connect to peers labeled \"TOO NEW\" until you do.  " +
-				"(Freenet may leave your node in the dust of the past if you don't upgrade.)";
+		String s = l10n("tooOld", "lastgood", Integer.toString(lastGoodVersion));
 		return s;
 	}
 
 	public HTMLNode getHTMLText() {
-		return new HTMLNode("div", "This node\u2019s software is older than the oldest version (Build #" + lastGoodVersion + ") allowed by the newest peers we try to connect to. Please update your node as soon as possible because you will not be able to connect to peers labelled \u201cTOO NEW\u201d until you do. (Freenet may leave your node in the dust of the past if you don\u2019t upgrade.");
+		return new HTMLNode("div", getText());
 	}
 
 	public short getPriorityClass() {
@@ -47,7 +52,7 @@ public class BuildOldAgeUserAlert implements UserAlert {
 	}
 	
 	public String dismissButtonText(){
-		return "Hide";
+		return L10n.getString("UserAlert.hide");
 	}
 	
 	public boolean shouldUnregisterOnDismiss() {

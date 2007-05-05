@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Vector;
 
 import freenet.io.comm.Peer;
+import freenet.l10n.L10n;
 import freenet.node.useralerts.ProxyUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
@@ -45,9 +46,8 @@ public class IPDetectorPluginManager {
 			HTMLNode div = new HTMLNode("div");
 			div.addChild("#", text);
 			if(suggestPortForward) {
-				div.addChild("#", " You may want to ");
-				div.addChild("a", "href", "/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues", "forward the port");
-				div.addChild("#", " (UDP port number "+node.portNumber+") manually (or you may already have done so, Freenet cannot easily detect this).");
+				L10n.addL10nSubstitution(div, "suggestForwardPortWithLink", new String[] { "link", "/link", "port" },
+						new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(node.portNumber) });
 			}
 			return div;
 		}
@@ -60,7 +60,7 @@ public class IPDetectorPluginManager {
 			if(!suggestPortForward) return text;
 			StringBuffer sb = new StringBuffer();
 			sb.append(text);
-			sb.append(" You may want to forward the port (UDP port number "+node.portNumber+") manually. (See http://wiki.freenetproject.org/FirewallAndRouterIssues ).");
+			sb.append(l10n("suggestForwardPort", "port", Integer.toString(node.portNumber)));
 			return sb.toString();
 		}
 
@@ -109,27 +109,30 @@ public class IPDetectorPluginManager {
 		this.node = node;
 		this.ticker = node.ps;
 		this.detector = detector;
-		noConnectionAlert = new MyUserAlert("No UDP connectivity",
-				"Your internet connection does not appear to support UDP. " +
-				"Unless this detection is wrong, it is unlikely that Freenet will work on your computer at present.",
+		noConnectionAlert = new MyUserAlert( l10n("noConnectivityTitle"), l10n("noConnectivity"), 
 				true, UserAlert.ERROR);
-		symmetricAlert = new MyUserAlert("Symmetric firewall detected",
-				"Your internet connection appears to be behind a symmetric NAT or firewall. " +
-				"You will probably only be able to connect to users directly connected to the internet or behind " +
-				"restricted cone NATs.", true, UserAlert.ERROR);				
-		portRestrictedAlert = new MyUserAlert("Port restricted cone NAT detected",
-				"Your internet connection appears to be behind a port-restricted NAT (router). "+
-				"You will be able to connect to most other users, but not those behind symmetric NATs.", 
+		symmetricAlert = new MyUserAlert(l10n("symmetricTitle"), l10n("symmetric"), 
+				true, UserAlert.ERROR);				
+		portRestrictedAlert = new MyUserAlert(l10n("portRestrictedTitle"), l10n("portRestricted"), 
 				true, UserAlert.WARNING);
-		restrictedAlert = new MyUserAlert("Restricted cone NAT detected",
-				"Your internet connection appears to be behind a \"restricted cone\" NAT (router). "+
-				"You should be able to connect to most other users.", false, UserAlert.MINOR);
-		fullConeAlert = new MyUserAlert("Full cone NAT detected",
-				"Your internet connection appears to be behind a \"full cone\" NAT (router). Congratulations, your node " +
-				"should be able to connect to any other Freenet node.", false, UserAlert.MINOR);
-		connectedAlert = new MyUserAlert("Direct internet connection detected",
-				"You appear to be directly connected to the internet. Congratulations, you should be able to connect "+
-				"to any other freenet node.", false, UserAlert.MINOR);
+		restrictedAlert = new MyUserAlert(l10n("restrictedTitle"), l10n("restricted"), 
+				false, UserAlert.MINOR);
+		fullConeAlert = new MyUserAlert(l10n("fullConeTitle"), l10n("fullCone"),
+				false, UserAlert.MINOR);
+		connectedAlert = new MyUserAlert(l10n("directTitle"), l10n("direct"),
+				false, UserAlert.MINOR);
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("IPDetectorPluginManager."+key);
+	}
+
+	public String l10n(String key, String pattern, String value) {
+		return L10n.getString("IPDetectorPluginManager."+key, new String[] { pattern }, new String[] { value });
+	}
+
+	public String l10n(String key, String[] patterns, String[] values) {
+		return L10n.getString("IPDetectorPluginManager."+key, patterns, values);
 	}
 
 	/** Start the detector plugin manager. This includes running the plugin, if there
