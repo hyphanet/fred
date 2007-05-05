@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.config.SubConfig;
-import freenet.io.comm.IOStatisticCollector;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
@@ -343,7 +341,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
 
 			if (peerNodeStatuses.length == 0) {
-				L10n.addL10nSubstitution(peerTableInfoboxContent, "noPeersWithHomepageLink", 
+				L10n.addL10nSubstitution(peerTableInfoboxContent, "DarknetConnectionsToadlet.noPeersWithHomepageLink", 
 						new String[] { "link", "/link" }, new String[] { "<a href=\"/\">", "</a>" });
 			} else {
 				HTMLNode peerForm = ctx.addFormChild(peerTableInfoboxContent, ".", "peersForm");
@@ -673,13 +671,13 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				fs = new SimpleFieldSet(ref.toString(), false, true);
 				if(!fs.getEndMarker().endsWith("End")) {
 					sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),
-							L10n.getString("cantParseWrongEnding", new String[] { "end" }, new String[] { fs.getEndMarker() }));
+							L10n.getString("DarknetConnectionsToadlet.cantParseWrongEnding", new String[] { "end" }, new String[] { fs.getEndMarker() }));
 					return;
 				}
 				fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
 			} catch (IOException e) {
 				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), 
-						L10n.getString("cantParseTryAgain", new String[] { "error" }, new String[] { e.toString() }));
+						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e.toString() }));
 				return;
 			} catch (Throwable t) {
 				this.sendErrorPage(ctx, l10n("failedToAddNodeInternalErrorTitle"), l10n("failedToAddNodeInternalError"), t);
@@ -691,15 +689,15 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				pn.setPrivateDarknetCommentNote(privateComment);
 			} catch (FSParseException e1) {
 				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),
-						L10n.getString("cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
+						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
 				return;
 			} catch (PeerParseException e1) {
 				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), 
-						L10n.getString("cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
+						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
 				return;
 			} catch (ReferenceSignatureVerificationException e1){
 				HTMLNode node = new HTMLNode("div");
-				node.addChild("#", L10n.getString("invalidSignature", new String[] { "error" }, new String[] { e1.toString() }));
+				node.addChild("#", L10n.getString("DarknetConnectionsToadlet.invalidSignature", new String[] { "error" }, new String[] { e1.toString() }));
 				node.addChild("br");
 				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), node);
 				return;
@@ -903,7 +901,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle")));
 						HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 						content.addChild("p").addChild("#",
-								L10n.getString("confirmRemoveNode", new String[] { "name" }, new String[] { peerNodes[i].getName() }));
+								L10n.getString("DarknetConnectionsToadlet.confirmRemoveNode", new String[] { "name" }, new String[] { peerNodes[i].getName() }));
 						HTMLNode removeForm = ctx.addFormChild(content, "/darknet/", "removeConfirmForm");
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
