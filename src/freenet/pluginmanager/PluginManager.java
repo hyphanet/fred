@@ -1,6 +1,6 @@
 /* This code is part of Freenet. It is distributed under the GNU General
- * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+* Public License, version 2 (or at your option any later version). See
+* http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
 import java.io.BufferedReader;
@@ -33,14 +33,14 @@ import freenet.support.api.StringArrCallback;
 public class PluginManager {
 
 	/*
-	 * 
-	 * TODO: Synchronize
-	 * TODO: Synchronize
-	 * TODO: Synchronize
-	 * TODO: Synchronize
-	 * TODO: Synchronize
-	 * 
-	 */
+	*
+	* TODO: Synchronize
+	* TODO: Synchronize
+	* TODO: Synchronize
+	* TODO: Synchronize
+	* TODO: Synchronize
+	*
+	*/
 	
 	private HashMap toadletList;
 	private HashMap pluginInfo;
@@ -60,8 +60,8 @@ public class PluginManager {
 		
 		pmconfig = new SubConfig("pluginmanager", node.config);
 		// Start plugins in the config
-		pmconfig.register("loadplugin", null, 9, true, false, "PluginManager.loadedOnStartup", "PluginManager.loadedOnStartupLong", 
-        		new StringArrCallback() {
+		pmconfig.register("loadplugin", null, 9, true, false, "PluginManager.loadedOnStartup", "PluginManager.loadedOnStartupLong",
+				new StringArrCallback() {
 					public String[] get() {
 						return getConfigLoadString();
 					}
@@ -70,7 +70,7 @@ public class PluginManager {
 						// FIXME
 						throw new InvalidConfigValueException("Cannot set the plugins that's loaded.");
 					}
-        });
+		});
 		
 		String fns[] = pmconfig.getStringArr("loadplugin");
 		if (fns != null) {
@@ -295,148 +295,148 @@ public class PluginManager {
 	
 	
 	/**
-	 * Method to load a plugin from the given path and return is as an object.
-	 * Will accept filename to be of one of the following forms:
-	 * "classname" to load a class from the current classpath
-	 * "classame@file:/path/to/jarfile.jar" to load class from an other jarfile.
-	 * 
-	 * @param filename 	The filename to load from
-	 * @return			An instanciated object of the plugin
-	 * @throws PluginNotFoundException	If anything goes wrong.
-	 */
+	* Method to load a plugin from the given path and return is as an object.
+	* Will accept filename to be of one of the following forms:
+	* "classname" to load a class from the current classpath
+	* "classame@file:/path/to/jarfile.jar" to load class from an other jarfile.
+	*
+	* @param filename 	The filename to load from
+	* @return			An instanciated object of the plugin
+	* @throws PluginNotFoundException	If anything goes wrong.
+	*/
 	private FredPlugin LoadPlugin(String filename) throws PluginNotFoundException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-        Class cls = null;
-        if (filename.endsWith("*")) {
-        	filename = "*@http://downloads.freenetproject.org/alpha/plugins/" + 
-        		filename.substring(filename.lastIndexOf(".")+1, filename.length()-1) +
-        		".jar.url";
-        	//System.out.println(filename);
-        	if(logMINOR) Logger.minor(this, "Rewritten to "+filename);
-        }
-        
-        BufferedReader in = null;
-        InputStream is = null;
-        if ((filename.indexOf("@") >= 0)) {
-        	boolean assumeURLRedirect = true;
-        	// Open from external file
-        	for (int tries = 0 ; (tries <= 5) && (cls == null) ; tries++)
-        		try {
-        			String realURL = null;
-        			String realClass = null;
-        			
-        			// Load the jar-file
-        			String[] parts = filename.split("@");
-        			if (parts.length != 2) {
-        				throw new PluginNotFoundException("Could not split at \"@\".");
-        			}
-        			realClass = parts[0];
-        			realURL = parts[1];
-        			if(logMINOR) Logger.minor(this, "Class: "+realClass+" URL: "+realURL);
-        			
-        			if (filename.endsWith(".url")) {
-        				if(!assumeURLRedirect) {
-        					// Load the txt-file
-        					URL url = new URL(parts[1]);
-        					URLConnection uc = url.openConnection();
-        					in = new BufferedReader(
-        							new InputStreamReader(uc.getInputStream()));
-        					
-        					realURL = in.readLine();
-        					if(realURL == null)
-        						throw new PluginNotFoundException("Initialization error: " + url +
-        								" isn't a plugin loading url!");
-        					realURL = realURL.trim();
-        					if(logMINOR) Logger.minor(this, "Loaded new URL: "+realURL+" from .url file");
-        					in.close();
-        				}
-        				assumeURLRedirect = !assumeURLRedirect;
-        			}
-        			
-        			// Load the class inside file
-        			URL[] serverURLs = new URL[]{new URL(realURL)};
-        			ClassLoader cl = new URLClassLoader(serverURLs);
-        			
-        			
-        			// Handle automatic fetching of pluginclassname
-        			if (realClass.equals("*")) {
-        				
-        				// Clean URL
-        				URI liburi = URIPreEncoder.encodeURI(realURL);
-       					if(logMINOR) 
-       						Logger.minor(this, "cleaned url: "+realURL+" -> "+liburi.toString());
-        				realURL = liburi.toString();
-        				
-        				URL url = new URL("jar:"+realURL+"!/");
-        				JarURLConnection jarConnection = (JarURLConnection)url.openConnection();
-        				// Java seems to cache even file: urls...
-        				jarConnection.setUseCaches(false);
-        				JarFile jf = jarConnection.getJarFile();
-        				//URLJarFile jf = new URLJarFile(new File(liburi));
-        				//is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
-        				
-        				//BufferedReader manifest = new BufferedReader(new InputStreamReader(cl.getResourceAsStream("/META-INF/MANIFEST.MF")));
-        				
-        				//URL url = new URL(parts[1]);
-        				//URLConnection uc = cl.getResource("/META-INF/MANIFEST.MF").openConnection();
-        				
-        				is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
-        				in = new BufferedReader(new InputStreamReader(is));	
-        				String line;
-        				while ((line = in.readLine())!=null) {
-        					//	System.err.println(line + "\t\t\t" + realClass);
-        					if (line.startsWith("Plugin-Main-Class: ")) {
-        						realClass = line.substring("Plugin-Main-Class: ".length()).trim();
-        						if(logMINOR) Logger.minor(this, "Found plugin main class "+realClass+" from manifest");
-        					}
-        				}
-        				//System.err.println("Real classname: " + realClass);
-        			}
-        			
-        			cls = cl.loadClass(realClass);
-        			
-        		} catch (Exception e) {
-        			if (tries >= 5)
-        				throw new PluginNotFoundException("Initialization error:"
-        						+ filename, e);
-        			
-        			try {
-        				Thread.sleep(100);
-        			} catch (Exception ee) {}
-        		} finally {
-        			try {
-        				if(is != null)
-        					is.close();
-        				if(in != null)
-        					in.close();
-        			} catch (IOException ioe){}
-        		}
-        } else {
-        	// Load class
-        	try {
-        		cls = Class.forName(filename);
-            } catch (ClassNotFoundException e) {
-            	throw new PluginNotFoundException(filename);
-            }
-        }
-        
-        if(cls == null)
-        	throw new PluginNotFoundException("Unknown error");
-        
-        // Class loaded... Objectize it!
-        Object o = null;
-        try {
-            o = cls.newInstance();
-        } catch (Exception e) {
-        	throw new PluginNotFoundException("Could not re-create plugin:" +
-        			filename, e);
-        }
-        
-        // See if we have the right type
-        if (!(o instanceof FredPlugin)) {
-        	throw new PluginNotFoundException("Not a plugin: " + filename);
-        }
-        
-        return (FredPlugin)o;
+		Class cls = null;
+		if (filename.endsWith("*")) {
+			filename = "*@http://downloads.freenetproject.org/alpha/plugins/" +
+				filename.substring(filename.lastIndexOf(".")+1, filename.length()-1) +
+				".jar.url";
+			//System.out.println(filename);
+			if(logMINOR) Logger.minor(this, "Rewritten to "+filename);
+		}
+		
+		BufferedReader in = null;
+		InputStream is = null;
+		if ((filename.indexOf("@") >= 0)) {
+			boolean assumeURLRedirect = true;
+			// Open from external file
+			for (int tries = 0 ; (tries <= 5) && (cls == null) ; tries++)
+				try {
+					String realURL = null;
+					String realClass = null;
+					
+					// Load the jar-file
+					String[] parts = filename.split("@");
+					if (parts.length != 2) {
+						throw new PluginNotFoundException("Could not split at \"@\".");
+					}
+					realClass = parts[0];
+					realURL = parts[1];
+					if(logMINOR) Logger.minor(this, "Class: "+realClass+" URL: "+realURL);
+					
+					if (filename.endsWith(".url")) {
+						if(!assumeURLRedirect) {
+							// Load the txt-file
+							URL url = new URL(parts[1]);
+							URLConnection uc = url.openConnection();
+							in = new BufferedReader(
+									new InputStreamReader(uc.getInputStream()));
+							
+							realURL = in.readLine();
+							if(realURL == null)
+								throw new PluginNotFoundException("Initialization error: " + url +
+										" isn't a plugin loading url!");
+							realURL = realURL.trim();
+							if(logMINOR) Logger.minor(this, "Loaded new URL: "+realURL+" from .url file");
+							in.close();
+						}
+						assumeURLRedirect = !assumeURLRedirect;
+					}
+					
+					// Load the class inside file
+					URL[] serverURLs = new URL[]{new URL(realURL)};
+					ClassLoader cl = new URLClassLoader(serverURLs);
+					
+					
+					// Handle automatic fetching of pluginclassname
+					if (realClass.equals("*")) {
+						
+						// Clean URL
+						URI liburi = URIPreEncoder.encodeURI(realURL);
+						if(logMINOR)
+							Logger.minor(this, "cleaned url: "+realURL+" -> "+liburi.toString());
+						realURL = liburi.toString();
+						
+						URL url = new URL("jar:"+realURL+"!/");
+						JarURLConnection jarConnection = (JarURLConnection)url.openConnection();
+						// Java seems to cache even file: urls...
+						jarConnection.setUseCaches(false);
+						JarFile jf = jarConnection.getJarFile();
+						//URLJarFile jf = new URLJarFile(new File(liburi));
+						//is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
+						
+						//BufferedReader manifest = new BufferedReader(new InputStreamReader(cl.getResourceAsStream("/META-INF/MANIFEST.MF")));
+						
+						//URL url = new URL(parts[1]);
+						//URLConnection uc = cl.getResource("/META-INF/MANIFEST.MF").openConnection();
+						
+						is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
+						in = new BufferedReader(new InputStreamReader(is));	
+						String line;
+						while ((line = in.readLine())!=null) {
+							//	System.err.println(line + "\t\t\t" + realClass);
+							if (line.startsWith("Plugin-Main-Class: ")) {
+								realClass = line.substring("Plugin-Main-Class: ".length()).trim();
+								if(logMINOR) Logger.minor(this, "Found plugin main class "+realClass+" from manifest");
+							}
+						}
+						//System.err.println("Real classname: " + realClass);
+					}
+					
+					cls = cl.loadClass(realClass);
+					
+				} catch (Exception e) {
+					if (tries >= 5)
+						throw new PluginNotFoundException("Initialization error:"
+								+ filename, e);
+					
+					try {
+						Thread.sleep(100);
+					} catch (Exception ee) {}
+				} finally {
+					try {
+						if(is != null)
+							is.close();
+						if(in != null)
+							in.close();
+					} catch (IOException ioe){}
+				}
+		} else {
+			// Load class
+			try {
+				cls = Class.forName(filename);
+			} catch (ClassNotFoundException e) {
+				throw new PluginNotFoundException(filename);
+			}
+		}
+		
+		if(cls == null)
+			throw new PluginNotFoundException("Unknown error");
+		
+		// Class loaded... Objectize it!
+		Object o = null;
+		try {
+			o = cls.newInstance();
+		} catch (Exception e) {
+			throw new PluginNotFoundException("Could not re-create plugin:" +
+					filename, e);
+		}
+		
+		// See if we have the right type
+		if (!(o instanceof FredPlugin)) {
+			throw new PluginNotFoundException("Not a plugin: " + filename);
+		}
+		
+		return (FredPlugin)o;
 	}
 }
