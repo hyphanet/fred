@@ -1,6 +1,6 @@
 /* This code is part of Freenet. It is distributed under the GNU General
- * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+* Public License, version 2 (or at your option any later version). See
+* http://www.gnu.org/ for further details of the GPL. */
 package freenet.l10n;
 
 import java.io.BufferedOutputStream;
@@ -17,18 +17,18 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**
- * This class provides a trivial internationalization framework to a Freenet node.
- * 
- * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
- * 
- * TODO: Maybe we ought to use the locale to set the default language.
- * TODO: Maybe base64 the override file ?
- * TODO: Add support for "custom", unknown languages ?
- * 
- * comment(mario): for www interface we might detect locale from http requests?
- * for other access (telnet) using system locale would probably be good, but
- * it would be nice to have a command to switch locale on the fly.
- */
+* This class provides a trivial internationalization framework to a Freenet node.
+*
+* @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
+*
+* TODO: Maybe we ought to use the locale to set the default language.
+* TODO: Maybe base64 the override file ?
+* TODO: Add support for "custom", unknown languages ?
+*
+* comment(mario): for www interface we might detect locale from http requests?
+* for other access (telnet) using system locale would probably be good, but
+* it would be nice to have a command to switch locale on the fly.
+*/
 public class L10n {
 	public static final String CLASS_NAME = "L10n";
 	public static final String PREFIX = "freenet.l10n.";
@@ -70,11 +70,11 @@ public class L10n {
 	}
 	
 	/**
-	 * Set the default language used by the framework.
-	 * 
-	 * @param selectedLanguage (2 letter code)
-	 * @throws MissingResourceException
-	 */
+	* Set the default language used by the framework.
+	*
+	* @param selectedLanguage (2 letter code)
+	* @throws MissingResourceException
+	*/
 	public static void setLanguage(String selectedLanguage) throws MissingResourceException {
 		synchronized (sync) {
 			for(int i=0; i<AVAILABLE_LANGUAGES.length; i++){
@@ -156,10 +156,10 @@ public class L10n {
 	}
 	
 	/**
-	 * Return a new copy of the current translation file 
-	 * 
-	 * @return SimpleFieldSet or null
-	 */
+	* Return a new copy of the current translation file
+	*
+	* @return SimpleFieldSet or null
+	*/
 	public static SimpleFieldSet getCurrentLanguageTranslation() {
 		synchronized (sync) {
 			return (currentTranslation == null ? null : new SimpleFieldSet(currentTranslation));	
@@ -167,10 +167,10 @@ public class L10n {
 	}
 	
 	/**
-	 * Return a copy of the current translation override if it exists or null
-	 * 
-	 * @return SimpleFieldSet or null
-	 */
+	* Return a copy of the current translation override if it exists or null
+	*
+	* @return SimpleFieldSet or null
+	*/
 	public static SimpleFieldSet getOverrideForCurrentLanguageTranslation() {
 		synchronized (sync) {
 			return (translationOverride == null ? null : new SimpleFieldSet(translationOverride));	
@@ -178,10 +178,10 @@ public class L10n {
 	}
 	
 	/**
-	 * Return a copy of the default translation file (english one)
-	 * 
-	 * @return SimpleFieldSet
-	 */
+	* Return a copy of the default translation file (english one)
+	*
+	* @return SimpleFieldSet
+	*/
 	public static SimpleFieldSet getDefaultLanguageTranslation() {
 		synchronized (sync) {
 			if(fallbackTranslation == null)
@@ -192,22 +192,22 @@ public class L10n {
 	}
 	
 	/**
-	 * The real meat
-	 * 
-	 * Same thing as getString(key, false);
-	 * Ensure it will *always* return a String value.
-	 * 
-	 * @param key
-	 * @return the translated string or the default value from the default language or the key if nothing is found
-	 */
+	* The real meat
+	*
+	* Same thing as getString(key, false);
+	* Ensure it will *always* return a String value.
+	*
+	* @param key
+	* @return the translated string or the default value from the default language or the key if nothing is found
+	*/
 	public static String getString(String key) {
 		return getString(key, false);
 	}
 	
 	/**
-	 * You probably don't want to use that one directly
-	 * @see getString(String)
-	 */
+	* You probably don't want to use that one directly
+	* @see getString(String)
+	*/
 	public static String getString(String key, boolean returnNullIfNotFound) {
 		String result = null;
 		synchronized (sync) {
@@ -215,7 +215,7 @@ public class L10n {
 				result = translationOverride.get(key);
 		}
 		if(result != null) return result;
-		 
+		
 		synchronized (sync) {
 			if(currentTranslation != null)
 				result = currentTranslation.get(key);	
@@ -227,12 +227,12 @@ public class L10n {
 	}
 	
 	/**
-	 * Almost the same as getString(String) ... but it returns a HTMLNode and gives the user the ability
-	 *  to contribute to the translation though the translation toadlet
-	 * 
-	 * @param key
-	 * @return HTMLNode
-	 */
+	* Almost the same as getString(String) ... but it returns a HTMLNode and gives the user the ability
+	*  to contribute to the translation though the translation toadlet
+	*
+	* @param key
+	* @return HTMLNode
+	*/
 	public static HTMLNode getHTMLNode(String key) {
 		String value = getString(key, true);
 		if(value != null)
@@ -245,11 +245,11 @@ public class L10n {
 	}
 	
 	/**
-	 * Return the english translation of the key or the key itself if it doesn't exist.
-	 * 
-	 * @param key
-	 * @return String
-	 */
+	* Return the english translation of the key or the key itself if it doesn't exist.
+	*
+	* @param key
+	* @return String
+	*/
 	public static String getDefaultString(String key) {
 		String result = null;
 		// We instanciate it only if necessary
@@ -262,21 +262,21 @@ public class L10n {
 		
 		if(result != null) {
 			Logger.normal(CLASS_NAME, "The translation for " + key + " hasn't been found! please tell the maintainer.");
-			return result; 
+			return result;
 		}
 		Logger.error(CLASS_NAME, "The translation for " + key + " hasn't been found!");
 		return key;
 	}
 	
 	/**
-	 * Allows things like :
-	 * L10n.getString("testing.test", new String[]{ "test1", "test2" }, new String[] { "a", "b" })
-	 * 
-	 * @param key
-	 * @param patterns : a list of patterns wich are matchable from the translation
-	 * @param values : the values corresponding to the list
-	 * @return the translated string or the default value from the default language or the key if nothing is found
-	 */
+	* Allows things like :
+	* L10n.getString("testing.test", new String[]{ "test1", "test2" }, new String[] { "a", "b" })
+	*
+	* @param key
+	* @param patterns : a list of patterns wich are matchable from the translation
+	* @param values : the values corresponding to the list
+	* @return the translated string or the default value from the default language or the key if nothing is found
+	*/
 	public static String getString(String key, String[] patterns, String[] values) {
 		assert(patterns.length == values.length);
 		String result = getString(key);
@@ -307,10 +307,10 @@ public class L10n {
 	}
 	
 	/**
-	 * Return the ISO code of the language used by the framework
-	 * 
-	 * @return String
-	 */
+	* Return the ISO code of the language used by the framework
+	*
+	* @return String
+	*/
 	public static String getSelectedLanguage() {
 		synchronized (sync) {
 			return currentClass.selectedLanguage;	
@@ -318,47 +318,47 @@ public class L10n {
 	}
 	
 	/**
-	 * Load a translation file depending on the given name and using the prefix
-	 * 
-	 * @param name
-	 * @return the Properties object or null if not found
-	 */
+	* Load a translation file depending on the given name and using the prefix
+	*
+	* @param name
+	* @return the Properties object or null if not found
+	*/
 	public static SimpleFieldSet loadTranslation(String name) {
-        name = PREFIX.replace ('.', '/').concat(PREFIX.concat(name.concat(SUFFIX)));
-        
-        SimpleFieldSet result = null;
-        InputStream in = null;
-        try {
-        	ClassLoader loader = ClassLoader.getSystemClassLoader();
-        	
-        	// Returns null on lookup failures:
-        	in = loader.getResourceAsStream(name);
-        	if(in != null)
-        		result = SimpleFieldSet.readFrom(in, false, false);
-        } catch (Exception e) {
-        	Logger.error("L10n", "Error while loading the l10n file from " + name + " :" + e.getMessage());
-            result = null;
-        } finally {
-            if (in != null) try { in.close(); } catch (Throwable ignore) {}
-        }
-        
-        return result;
-    }
+		name = PREFIX.replace ('.', '/').concat(PREFIX.concat(name.concat(SUFFIX)));
+		
+		SimpleFieldSet result = null;
+		InputStream in = null;
+		try {
+			ClassLoader loader = ClassLoader.getSystemClassLoader();
+			
+			// Returns null on lookup failures:
+			in = loader.getResourceAsStream(name);
+			if(in != null)
+				result = SimpleFieldSet.readFrom(in, false, false);
+		} catch (Exception e) {
+			Logger.error("L10n", "Error while loading the l10n file from " + name + " :" + e.getMessage());
+			result = null;
+		} finally {
+			if (in != null) try { in.close(); } catch (Throwable ignore) {}
+		}
+		
+		return result;
+	}
 
 	public static boolean isOverridden(String key) {
 		synchronized(sync) {
 			if(translationOverride == null) return false;
-			return translationOverride.get(key) != null; 
+			return translationOverride.get(key) != null;
 		}
 	}
 	
 	/**
-	 * Add a localised string with some raw HTML substitutions.
-	 * Useful when some part of a sentence needs to be bold e.g.
-	 * @param key The L10n key.
-	 * @param patterns The strings to search for.
-	 * @param values The strings to substitute in.
-	 */
+	* Add a localised string with some raw HTML substitutions.
+	* Useful when some part of a sentence needs to be bold e.g.
+	* @param key The L10n key.
+	* @param patterns The strings to search for.
+	* @param values The strings to substitute in.
+	*/
 	public static void addL10nSubstitution(HTMLNode node, String key, String[] patterns, String[] values) {
 		String result = HTMLEncoder.encode(getString(key));
 		assert(patterns.length == values.length);
