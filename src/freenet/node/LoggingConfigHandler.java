@@ -305,7 +305,7 @@ public class LoggingConfigHandler {
 			delete(logDir);
 		}
 
-		/** @return true if we can't delete due to presence of non-freenet files */
+		/** @return true if we can't delete due to presence of non-Freenet files */
 		private boolean delete(File dir) {
 			boolean failed = false;
 			File[] files = dir.listFiles();

@@ -146,7 +146,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+ '=' +uri;
 		else {
 			if(uri.getScheme() == null) {
-				throw new CommentException("Invalid freenet URL: "+reason);
+				throw new CommentException("Invalid Freenet URL: "+reason);
 			}
 			throw new CommentException("Not an escaped protocol: "+uri.getScheme());
 		}
@@ -185,7 +185,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 	}
 
 	private String processURI(FreenetURI furi, URI uri, String overrideType, boolean noRelative) {
-		// Valid freenet URI, allow it
+		// Valid Freenet URI, allow it
 		// Now what about the queries?
 		HTTPRequest req = new HTTPRequestImpl(uri);
 		if(cb != null) cb.foundURI(furi);

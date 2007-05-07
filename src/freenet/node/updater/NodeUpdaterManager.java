@@ -446,7 +446,7 @@ public class NodeUpdaterManager {
 					}
 					// Try the hard way
 				} else {
-					System.err.println("Written new freenet jar: "+mainUpdater.getWrittenVersion());
+					System.err.println("Written new Freenet jar: "+mainUpdater.getWrittenVersion());
 					return true;
 				}
 			}

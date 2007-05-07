@@ -123,9 +123,9 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 				}
 				if(updater.hasNewExtJar()) {
 					if(b) {
-						sb.append("Your node has also downloaded a new version of the freenet extra jar, version ");
+						sb.append("Your node has also downloaded a new version of the Freenet extra jar, version ");
 					} else {
-						sb.append("Your node has downloaded a new version of the freenet extra jar, version ");
+						sb.append("Your node has downloaded a new version of the Freenet extra jar, version ");
 					}
 					sb.append(updater.newExtJarVersion());
 					sb.append(". ");

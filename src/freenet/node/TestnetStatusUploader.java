@@ -30,7 +30,7 @@ public class TestnetStatusUploader implements Runnable {
 		System.err.println("ANONYMITY MODE: OFF");
 		System.err.println("You have no anonymity. Thank you for running a testnet node, this will help the developers to efficiently debug Freenet, by letting them (and anyone else who knows how!!) automatically fetch your log files.");
 		System.err.println("We repeat: YOU HAVE NO ANONYMITY WHATSOEVER. DO NOT POST ANYTHING YOU DO NOT WANT TO BE ASSOCIATED WITH.");
-		System.err.println("If you want a real freenet node, with anonymity, turn off testnet mode.");
+		System.err.println("If you want a real Freenet node, with anonymity, turn off testnet mode.");
 	}
 
 	void start() {

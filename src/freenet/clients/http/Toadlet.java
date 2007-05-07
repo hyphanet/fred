@@ -105,7 +105,7 @@ public abstract class Toadlet {
 	abstract public String supportedMethods();
 	
 	/**
-	 * Client calls from the above messages to run a freenet request.
+	 * Client calls from the above messages to run a Freenet request.
 	 * This method may block (or suspend).
 	 * @param maxSize Maximum length of returned content.
 	 * @param clientContext Client context object. This should be the same for any group of related requests, but different

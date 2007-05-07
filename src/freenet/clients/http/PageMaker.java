@@ -157,7 +157,7 @@ public class PageMaker {
 	
 	/**
 	 * Returns an {@link ArrayList} containing the names of all available
-	 * themes. If freenet was started from a JAR file the list is cached
+	 * themes. If Freenet was started from a JAR file the list is cached
 	 * (because the JAR file only changes between invocations), otherwise the
 	 * filesystem is read on every page access.
 	 * 

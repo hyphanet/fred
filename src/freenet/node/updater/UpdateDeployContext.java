@@ -87,7 +87,7 @@ class UpdateDeployContext {
 		}
 		
 		if(mainJar == null && extJar == null)
-			throw new UpdaterParserException("Could not find freenet jars in wrapper.conf");
+			throw new UpdaterParserException("Could not find Freenet jars in wrapper.conf");
 		if(mainJar == null)
 			throw new UpdaterParserException("Could not find freenet.jar in wrapper.conf (did find freenet-ext.jar: "+extJar+')');
 		if(extJar == null)

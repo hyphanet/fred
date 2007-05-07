@@ -17,7 +17,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**
- * This class provides a trivial internationalization framework to a freenet node.
+ * This class provides a trivial internationalization framework to a Freenet node.
  * 
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  * 
