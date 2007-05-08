@@ -136,10 +136,14 @@ public class ArchiveManager {
 	public synchronized Bucket getCached(FreenetURI key, String filename) throws ArchiveFailureException {
 		if(logMINOR) Logger.minor(this, "Fetch cached: "+key+ ' ' +filename);
 		ArchiveKey k = new ArchiveKey(key, filename);
-		ArchiveStoreItem asi = (ArchiveStoreItem) storedData.get(k);
-		if(asi == null) return null;
-		// Promote to top of LRU
-		storedData.push(k, asi);
+		ArchiveStoreItem asi = null;
+		synchronized (storedData) {
+			asi = (ArchiveStoreItem) storedData.get(k);	
+		
+			if(asi == null) return null;
+			// Promote to top of LRU
+			storedData.push(k, asi);
+		}
 		if(logMINOR) Logger.minor(this, "Found data");
 		return asi.getDataOrThrow();
 	}
@@ -149,7 +153,9 @@ public class ArchiveManager {
 	 * @param item The ArchiveStoreItem to remove.
 	 */
 	synchronized void removeCachedItem(ArchiveStoreItem item) {
-		storedData.removeKey(item.key);
+		synchronized (storedData) {
+			storedData.removeKey(item.key);	
+		}
 	}
 	
 	/**
@@ -369,7 +375,9 @@ outer:		while(true) {
 	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error) {
 		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error);
 		if(logMINOR) Logger.minor(this, "Adding error element: "+element+" for "+key+ ' ' +name);
-		storedData.push(element.key, element);
+		synchronized (storedData) {
+			storedData.push(element.key, element);	
+		}
 	}
 
 	/**
@@ -378,8 +386,10 @@ outer:		while(true) {
 	private void addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp) {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(this, ctx, key, name, temp);
 		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
-		storedData.push(element.key, element);
-		trimStoredData();
+		synchronized (storedData) {
+			storedData.push(element.key, element);
+			trimStoredData();
+		}
 	}
 
 	/**
@@ -391,7 +401,7 @@ outer:		while(true) {
 			synchronized(this) {
 				if(cachedData <= maxCachedData && storedData.size() <= maxCachedElements) return;
 			}
-			ArchiveStoreItem e = (ArchiveStoreItem) storedData.popValue();
+			ArchiveStoreItem e = (ArchiveStoreItem) storedData.popValue();	
 			if(logMINOR)
 				Logger.minor(this, "Dropping "+e+" : cachedData="+cachedData+" of "+maxCachedData);
 			e.close();
