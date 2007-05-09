@@ -28,7 +28,7 @@ import freenet.support.api.StringCallback;
  * change the URI's on the fly, eliminates some messy code in the 
  * callbacks etc.
  */
-public class NodeUpdaterManager {
+public class NodeUpdateManager {
 
 	public final static String UPDATE_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/update/"+Version.buildNumber();
 	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
@@ -74,7 +74,7 @@ public class NodeUpdaterManager {
 
 	private boolean logMINOR;
 	
-	public NodeUpdaterManager(Node node, Config config) throws InvalidConfigValueException {
+	public NodeUpdateManager(Node node, Config config) throws InvalidConfigValueException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.node = node;
 		this.hasBeenBlown = false;
@@ -218,14 +218,14 @@ public class NodeUpdaterManager {
 	}
 	
 	/**
-	 * Create a NodeUpdaterManager. Called by node constructor.
+	 * Create a NodeUpdateManager. Called by node constructor.
 	 * @param node The node object.
 	 * @param config The global config object. Options will be added to a subconfig called node.updater.
-	 * @return A new NodeUpdaterManager
+	 * @return A new NodeUpdateManager
 	 * @throws InvalidConfigValueException If there is an error in the config.
 	 */
-	public static NodeUpdaterManager maybeCreate(Node node, Config config) throws InvalidConfigValueException {
-		return new NodeUpdaterManager(node, config);
+	public static NodeUpdateManager maybeCreate(Node node, Config config) throws InvalidConfigValueException {
+		return new NodeUpdateManager(node, config);
 	}
 
 	/**

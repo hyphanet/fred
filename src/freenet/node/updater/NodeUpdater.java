@@ -33,7 +33,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private final Ticker ticker;
 	public final NodeClientCore core;
 	private final Node node;
-	public final NodeUpdaterManager manager;
+	public final NodeUpdateManager manager;
 	
 	private final int currentVersion;
 	private int availableVersion;
@@ -46,7 +46,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	
 	public final boolean extUpdate;
 	
-	NodeUpdater(NodeUpdaterManager manager, FreenetURI URI, boolean extUpdate, int current) {
+	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manager = manager;
 		this.node = manager.node;

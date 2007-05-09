@@ -4,14 +4,14 @@
 package freenet.node.useralerts;
 
 import freenet.l10n.L10n;
-import freenet.node.updater.NodeUpdaterManager;
+import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.RevocationChecker;
 import freenet.support.HTMLNode;
 
 public class UpdatedVersionAvailableUserAlert implements UserAlert {
-	private final NodeUpdaterManager updater;
+	private final NodeUpdateManager updater;
 
-	public UpdatedVersionAvailableUserAlert(NodeUpdaterManager updater){
+	public UpdatedVersionAvailableUserAlert(NodeUpdateManager updater){
 		this.updater = updater;
 	}
 	

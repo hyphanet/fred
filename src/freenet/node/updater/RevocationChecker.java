@@ -14,7 +14,7 @@ import freenet.support.Logger;
 
 /**
  * Fetches the revocation key. Each time it starts, it will try to fetch it until it has 3 DNFs. If it ever finds it, it will
- * be immediately fed to the NodeUpdaterManager.
+ * be immediately fed to the NodeUpdateManager.
  */
 public class RevocationChecker implements ClientCallback {
 
@@ -22,7 +22,7 @@ public class RevocationChecker implements ClientCallback {
 	
 	private boolean logMINOR;
 
-	private NodeUpdaterManager manager;
+	private NodeUpdateManager manager;
 	private NodeClientCore core;
 	private int revocationDNFCounter;
 	private FetchContext ctxRevocation;
@@ -31,7 +31,7 @@ public class RevocationChecker implements ClientCallback {
 	/** Last time at which we got 3 DNFs on the revocation key */
 	private long lastSucceeded;
 
-	public RevocationChecker(NodeUpdaterManager manager) {
+	public RevocationChecker(NodeUpdateManager manager) {
 		this.manager = manager;
 		core = manager.node.clientCore;
 		this.revocationDNFCounter = 0;

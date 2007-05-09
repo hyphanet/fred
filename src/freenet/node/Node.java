@@ -82,7 +82,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
-import freenet.node.updater.NodeUpdaterManager;
+import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
@@ -428,7 +428,7 @@ public class Node {
 	public int lastVersion;
 	
 	/** NodeUpdater **/
-	public NodeUpdaterManager nodeUpdater;
+	public NodeUpdateManager nodeUpdater;
 	
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
@@ -1400,7 +1400,7 @@ public class Node {
 
 		// Node Updater
 		try{
-			nodeUpdater = NodeUpdaterManager.maybeCreate(this, config);
+			nodeUpdater = NodeUpdateManager.maybeCreate(this, config);
 			Logger.normal(this, "Starting the node updater");
 			nodeUpdater.start();
 		}catch (Exception e) {
@@ -2480,7 +2480,7 @@ public class Node {
 		config.store();
 	}
 
-	public NodeUpdaterManager getNodeUpdater(){
+	public NodeUpdateManager getNodeUpdater(){
 		return nodeUpdater;
 	}
 	
