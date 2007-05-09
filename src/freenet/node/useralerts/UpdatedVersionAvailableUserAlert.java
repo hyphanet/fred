@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import freenet.l10n.L10n;
 import freenet.node.updater.NodeUpdaterManager;
 import freenet.node.updater.RevocationChecker;
 import freenet.support.HTMLNode;
@@ -19,43 +20,19 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	}
 
 	public String getTitle() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("A new stable version of Freenet is available (");
-		appendVersionSummary(sb);
-		sb.append(')');
-		return sb.toString();
+		return l10n("title");
 	}
 
-	private void appendVersionSummary(StringBuffer sb) {
-		boolean b = false;
-		boolean main = false;
-		boolean ext = false;
-		if(updater.hasNewMainJar()) {
-			sb.append("main jar ").append(updater.newMainJarVersion());
-			b = true;
-			main = true;
-		}
-		if(updater.fetchingNewMainJar()) {
-			if(b) sb.append(", ");
-			sb.append("fetching main jar ").append(updater.fetchingNewMainJarVersion());
-			b = true;
-			main = true;
-		}
-		if(main)
-			sb.append(" from ").append(updater.getMainVersion());
-		if(updater.hasNewExtJar()) {
-			if(b) sb.append(", ");
-			sb.append("extra jar ").append(updater.newExtJarVersion());
-			b = true;
-			ext = true;
-		}
-		if(updater.fetchingNewExtJar()) {
-			if(b) sb.append(", ");
-			sb.append("fetching extra jar ").append(updater.fetchingNewExtJarVersion());
-			ext = true;
-		}
-		if(ext)
-			sb.append(" from ").append(updater.getExtVersion());
+	private String l10n(String key) {
+		return L10n.getString("UpdatedVersionAvailableUserAlert."+key);
+	}
+
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("UpdatedVersionAvailableUserAlert."+key, pattern, value);
+	}
+
+	private String l10n(String key, String[] patterns, String[] values) {
+		return L10n.getString("UpdatedVersionAvailableUserAlert."+key, patterns, values);
 	}
 
 	public String getText() {
@@ -101,65 +78,51 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	
 	private UpdateThingy createUpdateThingy() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("It seems that your node isn't running the latest version of the software. ");
+		sb.append(l10n("notLatest"));
+		sb.append(' ');
 		
 		if(updater.isArmed() && updater.inFinalCheck()) {
-			sb.append("Your node is currently doing a final check to verify the security of the update (");
-			sb.append(updater.getRevocationDNFCounter());
-			sb.append('/');
-			sb.append(RevocationChecker.REVOCATION_DNF_MIN);
-			sb.append("). ");
+			sb.append(l10n("finalCheck", new String[] { "count", "max" }, 
+					new String[] { Integer.toString(updater.getRevocationDNFCounter()), 
+						Integer.toString(RevocationChecker.REVOCATION_DNF_MIN) }));
+			sb.append(' ');
 		} else if(updater.isArmed()) {
-			sb.append("Your node will automatically restart as soon as it has finished downloading and verifying the new version of Freenet.");
+			sb.append(l10n("armed"));
 		} else {
 			String formText;
 			if(updater.canUpdateNow()) {
 				boolean b = false;
 				if(updater.hasNewMainJar()) {
-					sb.append("Your node has downloaded a new version of Freenet, version ");
-					sb.append(updater.newMainJarVersion());
-					sb.append(". ");
+					sb.append(l10n("downloadedNewJar", "version", Integer.toString(updater.newMainJarVersion())));
+					sb.append(' ');
 					b = true;
 				}
 				if(updater.hasNewExtJar()) {
-					if(b) {
-						sb.append("Your node has also downloaded a new version of the Freenet extra jar, version ");
-					} else {
-						sb.append("Your node has downloaded a new version of the Freenet extra jar, version ");
-					}
-					sb.append(updater.newExtJarVersion());
-					sb.append(". ");
+					sb.append(l10n(b ? "alsoDownloadedNewExtJar" : "downloadedNewExtJar", "version", Integer.toString(updater.newExtJarVersion())));
+					sb.append(' ');
 				}
-				sb.append("Click below to update your node");
 				if(updater.canUpdateImmediately()) {
-					sb.append(" immediately");
-					formText = "Update Now!";
-				} else { 
-					sb.append(" as soon as the update has been verified");
-					formText = "Update ASAP";
+					sb.append(l10n("clickToUpdateNow"));
+					formText = l10n("updateNowButton");
+				} else {
+					sb.append(l10n("clickToUpdateASAP"));
+					formText = l10n("updateASAPButton");
 				}
-				sb.append('.');
 			} else {
-				sb.append("Your node is currently downloading a new version of Freenet");
 				boolean fetchingNew = updater.fetchingNewMainJar();
 				boolean fetchingNewExt = updater.fetchingNewExtJar();
-				if(fetchingNew || fetchingNewExt)
-					sb.append(" (");
 				if(fetchingNew) {
-					sb.append("node version ");
-					sb.append(updater.fetchingNewMainJarVersion());
+					if(fetchingNewExt)
+						sb.append(l10n("fetchingNewBoth", new String[] { "nodeVersion", "extVersion" },
+								new String[] { Integer.toString(updater.fetchingNewMainJarVersion()), Integer.toString(updater.fetchingNewExtJarVersion()) }));
+					else
+						sb.append(l10n("fetchingNewNode", "nodeVersion", Integer.toString(updater.fetchingNewMainJarVersion())));
+				} else {
+					if(fetchingNewExt)
+						sb.append(l10n("fetchingNewExt", "extVersion", Integer.toString(updater.fetchingNewMainJarVersion())));
 				}
-				if(fetchingNewExt) {
-					if(fetchingNew)
-						sb.append(", ");
-					sb.append("ext version ");
-					sb.append(updater.fetchingNewExtJarVersion());
-				}
-				if(fetchingNew)
-					sb.append(')');
-				sb.append(". ");
-				sb.append("Would you like the node to automatically restart as soon as it has downloaded the update?");
-				formText = "Update ASAP";
+				sb.append(l10n("updateASAPQuestion"));
+				formText = l10n("updateASAPButton");
 			}
 			
 			return new UpdateThingy(sb.toString(), formText);
@@ -185,7 +148,7 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	}
 	
 	public String dismissButtonText(){
-		return "Hide";
+		return L10n.getString("UserAlert.hide");
 	}
 	
 	public boolean shouldUnregisterOnDismiss() {
