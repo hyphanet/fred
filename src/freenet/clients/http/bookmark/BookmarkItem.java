@@ -59,7 +59,7 @@ public class BookmarkItem extends Bookmark {
 
 		public HTMLNode getHTMLText() {
 			HTMLNode n = new HTMLNode("div");
-			L10n.addL10nSubstitution(n, "bookmarkUpdatedWithLink", new String[] { "link", "/link", "name", "edition" },
+			L10n.addL10nSubstitution(n, "BookmarkItem.bookmarkUpdatedWithLink", new String[] { "link", "/link", "name", "edition" },
 					new String[] { "<a href=\""+key.toString()+"\">", "</a>", HTMLEncoder.encode(name), Long.toString(key.getSuggestedEdition()) });
 			return n;
 		}
@@ -136,7 +136,7 @@ public class BookmarkItem extends Bookmark {
 
 	public String getName() {
 		if (name.equals("")) {
-			return "Unnamed Bookmark";
+			return l10n("unnamedBookmark");
 		} else {
 			return name;
 		}
