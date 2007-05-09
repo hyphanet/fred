@@ -13,6 +13,8 @@ import java.util.Properties;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.l10n.L10n;
+
 /**
  * Handles the wrapper.conf, essentially.
  */
@@ -20,16 +22,13 @@ class UpdateDeployContext {
 
 	public class UpdateCatastropheException extends Exception {
 
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 1L;
 		File oldConfig;
 		File newConfig;
 		
 		UpdateCatastropheException(File oldConfig, File newConfig) {
-			super("CATASTROPHIC ERROR: Deleted "+oldConfig+" but cannot rename "+newConfig+" to "+oldConfig+
-					" THEREFORE THE NODE WILL NOT START! Please resolve the problem by renaming "+newConfig+" to "+oldConfig);
+			super(l10n("updateCatastrophe", new String[] { "old", "new" },
+					new String[] { oldConfig.toString(), newConfig.toString() }));
 			this.oldConfig = oldConfig;
 			this.newConfig = newConfig;
 		}
@@ -87,11 +86,23 @@ class UpdateDeployContext {
 		}
 		
 		if(mainJar == null && extJar == null)
-			throw new UpdaterParserException("Could not find Freenet jars in wrapper.conf");
+			throw new UpdaterParserException(l10n("cannotUpdateNoJars"));
 		if(mainJar == null)
-			throw new UpdaterParserException("Could not find freenet.jar in wrapper.conf (did find freenet-ext.jar: "+extJar+')');
+			throw new UpdaterParserException(l10n("cannotUpdateNoMainJar", "extFilename", extJar.toString()));
 		if(extJar == null)
-			throw new UpdaterParserException("Could not find freenet-ext.jar in wrapper.conf (did find freenet.jar: "+mainJar+')');
+			throw new UpdaterParserException(l10n("cannotUpdateNoExtJar", "mainFilename", mainJar.toString()));
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("UpdateDeployContext."+key);
+	}
+
+	public static String l10n(String key, String[] patterns, String[] values) {
+		return L10n.getString("UpdateDeployContext."+key, patterns, values);
+	}
+
+	public static String l10n(String key, String pattern, String value) {
+		return L10n.getString("UpdateDeployContext."+key, pattern, value);
 	}
 
 	File getMainJar() {
@@ -110,7 +121,7 @@ class UpdateDeployContext {
 		return newExtJar;
 	}
 
-	void rewriteWrapperConf(boolean writtenNewJar, boolean writtenNewExt) throws IOException, UpdateCatastropheException {
+	void rewriteWrapperConf(boolean writtenNewJar, boolean writtenNewExt) throws IOException, UpdateCatastropheException, UpdaterParserException {
 		
 		// Rewrite wrapper.conf
 		// Don't just write it out from properties; we want to keep it as close to what it was as possible.
@@ -157,7 +168,8 @@ class UpdateDeployContext {
 		br.close();
 		
 		if(!((writtenMain || !writtenNewJar) && (writtenExt || !writtenNewExt))) {
-			throw new IOException("Not able to update because of non-standard config: written main="+writtenMain+" ext="+writtenExt+" - should not happen! Report this to the devs, include your wrapper.conf");
+			throw new UpdaterParserException(l10n("updateFailedNonStandardConfig", 
+					new String[] { "main", "ext" }, new String[] { Boolean.toString(writtenMain), Boolean.toString(writtenExt) } ));
 		}
 
 		if(!writtenReload) {
@@ -169,7 +181,7 @@ class UpdateDeployContext {
 
 		if(!newConfig.renameTo(oldConfig)) {
 			if(!oldConfig.delete()) {
-				throw new IOException("Cannot delete "+oldConfig+" so cannot rename over it. Update failed.");
+				throw new UpdaterParserException(l10n("updateFailedCannotDeleteOldConfig", "old", oldConfig.toString()));
 			}
 			if(!newConfig.renameTo(oldConfig)) {
 				throw new UpdateCatastropheException(oldConfig, newConfig);

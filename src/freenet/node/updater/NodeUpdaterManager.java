@@ -481,6 +481,9 @@ public class NodeUpdaterManager {
 			failUpdate(e.getMessage());
 			node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("updateCatastropheTitle"), e.getMessage(), UserAlert.CRITICAL_ERROR));
 			return false;
+		} catch (UpdaterParserException e) {
+			node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("updateFailedTitle"), e.getMessage(), UserAlert.CRITICAL_ERROR));
+			return false;
 		}
 		
 		return true;
