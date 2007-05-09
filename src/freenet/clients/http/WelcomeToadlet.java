@@ -108,7 +108,7 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", l10n("updatingTitle")));
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 			content.addChild("p").addChild("#", l10n("updating"));
-			content.addChild("p").addChild("#", l10n("updatingThanks"));
+			content.addChild("p").addChild("#", l10n("thanks"));
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			Logger.normal(this, "Node is updating/restarting");
 			node.getNodeUpdater().arm();
