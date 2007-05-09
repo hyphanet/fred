@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 
 import freenet.support.HTMLNode;
+import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 
 /**
@@ -137,30 +138,30 @@ public class UserAlertManager implements Comparator {
 		boolean separatorNeeded = false;
 		StringBuffer alertSummaryString = new StringBuffer(1024);
 		if (numberOfCriticalError != 0) {
-			alertSummaryString.append("Critical Error: ").append(numberOfCriticalError);
+			alertSummaryString.append(l10n("criticalErrorCountLabel")).append(' ').append(numberOfCriticalError);
 			separatorNeeded = true;
 		}
 		if (numberOfError != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(" | ");
-			alertSummaryString.append("Error: ").append(numberOfError);
+			alertSummaryString.append(l10n("errorCountLabel")).append(' ').append(numberOfError);
 			separatorNeeded = true;
 		}
 		if (numberOfWarning != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(" | ");
-			alertSummaryString.append("Warning: ").append(numberOfWarning);
+			alertSummaryString.append(l10n("warningLabel")).append(' ').append(numberOfWarning);
 			separatorNeeded = true;
 		}
 		if (numberOfMinor != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(" | ");
-			alertSummaryString.append("Minor: ").append(numberOfMinor);
+			alertSummaryString.append(l10n("minorLabel")).append(' ').append(numberOfMinor);
 			separatorNeeded = true;
 		}
 		if (separatorNeeded)
 			alertSummaryString.append(" | ");
-		alertSummaryString.append("Total: ").append(totalNumber);
+		alertSummaryString.append(l10n("totalLabel")).append(totalNumber);
 
 		HTMLNode summaryBox = null;
 
@@ -172,12 +173,16 @@ public class UserAlertManager implements Comparator {
 			summaryBox = new HTMLNode("div", "class", "infobox infobox-warning");
 		else if (highestLevel <= UserAlert.MINOR)
 			summaryBox = new HTMLNode("div", "class", "infobox infobox-information");
-		summaryBox.addChild("div", "class", "infobox-header", "Outstanding alerts");
+		summaryBox.addChild("div", "class", "infobox-header", l10n("alerts"));
 		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content", alertSummaryString.toString());
-		summaryContent.addChild("#", " | See them on ");
-		summaryContent.addChild("a", "href", "/", "the Freenet FProxy Homepage");
-		summaryContent.addChild("#", ".");
+		L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnHomepage",
+				new String[] { "link", "/link" },
+				new String[] { "<a href=\"/\">", "</a>" });
 		return summaryBox;
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("UserAlertManager."+key);
 	}
 
 }

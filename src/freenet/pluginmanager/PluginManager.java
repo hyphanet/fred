@@ -21,6 +21,7 @@ import java.util.jar.JarFile;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.useralerts.SimpleUserAlert;
@@ -137,14 +138,19 @@ public class PluginManager {
 			if(jvmVersion.startsWith("1.4.") || jvmVersion.equals("1.4")) {
 				System.err.println("Plugin "+filename+" appears to require a later JVM");
 				Logger.error(this, "Plugin "+filename+" appears to require a later JVM");
-				core.alerts.register(new SimpleUserAlert(true, "Later JVM required by plugin "+filename,
-						"The plugin "+filename+" seems to require a later JVM. Please install at least Sun java 1.5, or remove the plugin.",
+				core.alerts.register(new SimpleUserAlert(true, 
+						l10n("pluginReqNewerJVMTitle", "name", filename),
+						l10n("pluginReqNewerJVM", "name", filename),
 						UserAlert.ERROR));
 			}
 		}
 		if(store) core.storeConfig();
 	}
 	
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("PluginManager."+key, pattern, value);
+	}
+
 	private void registerToadlet(FredPlugin pl){
 		//toadletList.put(e.getStackTrace()[1].getClass().toString(), pl);
 		synchronized (toadletList) {
