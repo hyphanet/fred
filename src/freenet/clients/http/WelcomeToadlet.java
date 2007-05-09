@@ -221,7 +221,7 @@ public class WelcomeToadlet extends Toadlet {
 			}
 			
 			if(noPassword) {
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Frost Instant Note insert", ctx);
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("finTitle"), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", l10n("finTitle")));
 				HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
@@ -423,9 +423,9 @@ public class WelcomeToadlet extends Toadlet {
 				// Tell the user that the node is shutting down
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", false, ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet node has been successfully shut down."));
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", l10n("shutdownDone")));
 				HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
-				infoboxContent.addChild("#", "Thank you for using Freenet.");
+				infoboxContent.addChild("#", l10n("thanks"));
 				this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 				return;
 			} else if (request.isParameterSet("restarted")) {
@@ -478,7 +478,7 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", l10n("shutdownConfirmTitle")));
 				HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
-				content.addChild("p").addChild("#", "Are you sure you wish to shut down your Freenet node?");
+				content.addChild("p").addChild("#", l10n("shutdownConfirm"));
 				HTMLNode shutdownForm = ctx.addFormChild(content.addChild("p"), "/", "confirmShutdownForm");
 				shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 				shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "shutdownconfirm", l10n("shutdown") });
