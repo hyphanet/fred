@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 
 public class SimpleUserAlert implements UserAlert {
@@ -48,7 +49,7 @@ public class SimpleUserAlert implements UserAlert {
 	}
 
 	public String dismissButtonText() {
-		return "Hide";
+		return L10n.getString("UserAlert.hide");
 	}
 
 	public boolean shouldUnregisterOnDismiss() {

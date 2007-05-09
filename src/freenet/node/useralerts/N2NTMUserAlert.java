@@ -8,7 +8,6 @@ import java.util.Date;
 
 import freenet.l10n.L10n;
 import freenet.node.PeerNode;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 
 // Node To Node Text Message User Alert
