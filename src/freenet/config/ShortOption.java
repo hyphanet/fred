@@ -1,5 +1,6 @@
 package freenet.config;
 
+import freenet.l10n.L10n;
 import freenet.support.Fields;
 import freenet.support.api.ShortCallback;
 
@@ -30,7 +31,7 @@ public class ShortOption extends Option {
 		try{
 			x= Fields.parseShort(val);
 		} catch (NumberFormatException e) {
-			throw new InvalidConfigValueException("The value specified can't be parsed : "+val);
+			throw new InvalidConfigValueException(l10n("unrecognisedShort", "val", val));
 		}
 		cb.set(x);
 		currentValue = x;
@@ -45,9 +46,13 @@ public class ShortOption extends Option {
 		try{
 			x = Fields.parseShort(val);
 		} catch (NumberFormatException e) {
-			throw new InvalidConfigValueException("The value specified can't be parsed : "+val);
+			throw new InvalidConfigValueException(l10n("unrecognisedShort", "val", val));
 		}
 		currentValue = x;
+	}
+
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("ShortOption."+key, pattern, value);
 	}
 
 	public boolean isDefault() {

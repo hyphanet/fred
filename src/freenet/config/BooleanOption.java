@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
+import freenet.l10n.L10n;
 import freenet.support.api.BooleanCallback;
 
 public class BooleanOption extends Option {
@@ -33,7 +34,7 @@ public class BooleanOption extends Option {
 		} else if(val.equalsIgnoreCase("false") || val.equalsIgnoreCase("no")) {
 			set(false);
 		} else
-			throw new OptionFormatException("Unrecognized boolean: "+val);
+			throw new OptionFormatException(L10n.getString("BooleanOption.parseError", "val", val));
 	}
 	
 	public void set(boolean b) throws InvalidConfigValueException {
@@ -51,7 +52,7 @@ public class BooleanOption extends Option {
 		} else if(val.equalsIgnoreCase("false") || val.equalsIgnoreCase("no")) {
 			currentValue = false;
 		} else
-			throw new OptionFormatException("Unrecognized boolean: "+val);
+			throw new OptionFormatException(L10n.getString("BooleanOption.parseError", "val", val));
 	}
 
 	public boolean isDefault() {

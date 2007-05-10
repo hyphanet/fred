@@ -21,6 +21,7 @@ import java.util.TimeZone;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.l10n.L10n;
 import freenet.node.Node.NodeInitException;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
@@ -220,8 +221,7 @@ public class TestnetHandler implements Runnable {
 
 		public void set(boolean val) throws InvalidConfigValueException {
 			if(node.testnetEnabled == val) return;
-			String msg = "On-line enable/disable of testnet mode impossible; restart the node and get new connections";
-			throw new InvalidConfigValueException(msg);
+			throw new InvalidConfigValueException(L10n.getString("TestnetHandler.cannotEnableDisableOnTheFly"));
 		}
 		
 	}

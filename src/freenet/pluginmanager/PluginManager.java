@@ -69,7 +69,7 @@ public class PluginManager {
 					public void set(String[] val) throws InvalidConfigValueException {
 						//if(storeDir.equals(new File(val))) return;
 						// FIXME
-						throw new InvalidConfigValueException("Cannot set the plugins that's loaded.");
+						throw new InvalidConfigValueException(L10n.getString("PluginManager.cannotSetOnceLoaded"));
 					}
 		});
 		

@@ -619,7 +619,7 @@ public class FProxyToadlet extends Toadlet {
 		}catch (BindException e){
 			Logger.error(core,"Failed to start FProxy port already bound: isn't Freenet already running ?");
 			System.err.println("Failed to start FProxy port already bound: isn't Freenet already running ?");
-			throw new InvalidConfigValueException("Can't bind fproxy on that port!");
+			throw new InvalidConfigValueException(l10n("cantBindPort"));
 		}catch (IOException ioe) {
 			Logger.error(core,"Failed to start FProxy: "+ioe, ioe);
 		}

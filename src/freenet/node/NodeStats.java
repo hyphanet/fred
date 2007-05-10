@@ -10,6 +10,7 @@ import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.DMT;
 import freenet.io.comm.IOStatisticCollector;
+import freenet.l10n.L10n;
 import freenet.node.Node.NodeInitException;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -190,7 +191,7 @@ public class NodeStats implements Persistable {
 					public void set(int val) throws InvalidConfigValueException {
 						if(val == get()) return;
 						if(val < 100)
-							throw new InvalidConfigValueException("This value is too low for that setting, increase it!");
+							throw new InvalidConfigValueException(l10n("valueTooLow"));
 						threadLimit = val;
 					}
 		});
@@ -237,7 +238,7 @@ public class NodeStats implements Persistable {
 					public void set(long val) throws InvalidConfigValueException {
 						if(val == get()) return;
 						if(val < 0)
-							throw new InvalidConfigValueException("This value is too low for that setting, increase it!");
+							throw new InvalidConfigValueException(l10n("valueTooLow"));
 						freeHeapBytesThreshold = val;
 					}
 		});
@@ -250,10 +251,8 @@ public class NodeStats implements Persistable {
 					}
 					public void set(int val) throws InvalidConfigValueException {
 						if(val == get()) return;
-						if(val < 0)
-							throw new InvalidConfigValueException("This value is too low for that setting, increase it!");
-						if(val > 100)
-							throw new InvalidConfigValueException("This value is too high for that setting, increase it!");
+						if(val < 0 || val >= 100)
+							throw new InvalidConfigValueException(l10n("mustBePercentValueNotFull"));
 						freeHeapPercentThreshold = val;
 					}
 		});
@@ -303,6 +302,10 @@ public class NodeStats implements Persistable {
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), 0);
 	}
 	
+	protected String l10n(String key) {
+		return L10n.getString("NodeStats."+key);
+	}
+
 	public void start() throws NodeInitException {
 		nodePinger.start();
 		persister.start();

@@ -38,6 +38,7 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.l10n.L10n;
 import freenet.node.Node.NodeInitException;
 import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.UserAlertManager;
@@ -146,7 +147,7 @@ public class NodeClientCore implements Persistable {
 					public void set(String val) throws InvalidConfigValueException {
 						if(tempDir.equals(new File(val))) return;
 						// FIXME
-						throw new InvalidConfigValueException("Moving temp directory on the fly not supported at present");
+						throw new InvalidConfigValueException(l10n("movingTempDirOnTheFlyNotSupported"));
 					}
 		});
 		
@@ -199,7 +200,8 @@ public class NodeClientCore implements Persistable {
 					return;
 				File f = new File(val);
 				if(!((f.exists() && f.isDirectory()) || (f.mkdir()))) {
-					throw new InvalidConfigValueException("Could not find or create directory");
+					// Relatively commonly used, despite being advanced (i.e. not something we want to show to newbies). So translate it.
+					throw new InvalidConfigValueException(l10n("couldNotFindOrCreateDir"));
 				}
 				downloadDir = new File(val);
 			}
@@ -340,6 +342,10 @@ public class NodeClientCore implements Persistable {
 		
 		Key.ALLOW_INSECURE_CLIENT_SSKS = nodeConfig.getBoolean("allowInsecureSSKs");
 		
+	}
+
+	private static String l10n(String key) {
+		return L10n.getString("NodeClientCore."+key);
 	}
 
 	protected synchronized void setDownloadAllowedDirs(String[] val) {

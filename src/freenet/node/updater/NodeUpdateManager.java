@@ -106,7 +106,7 @@ public class NodeUpdateManager {
         try {
 			updateURI = new FreenetURI(updaterConfig.getString("URI"));
 		} catch (MalformedURLException e) {
-			throw new InvalidConfigValueException("Invalid updateURI: "+e);
+			throw new InvalidConfigValueException(l10n("invalidUpdateURI", "error", e.getLocalizedMessage()));
 		}
 
 		if(updateURI.lastMetaString() != null && updateURI.lastMetaString().length() == 0) {
@@ -127,7 +127,7 @@ public class NodeUpdateManager {
         try {
 			revocationURI = new FreenetURI(updaterConfig.getString("revocationURI"));
 		} catch (MalformedURLException e) {
-			throw new InvalidConfigValueException("Invalid revocationURI: "+e);
+			throw new InvalidConfigValueException(l10n("invalidRevocationURI", "error", e.getLocalizedMessage()));
 		}
 
 		if(revocationURI.lastMetaString() != null && revocationURI.lastMetaString().length() == 0) {
@@ -144,7 +144,7 @@ public class NodeUpdateManager {
         try {
 			extURI = new FreenetURI(updaterConfig.getString("extURI"));
 		} catch (MalformedURLException e) {
-			throw new InvalidConfigValueException("Invalid extURI: "+e);
+			throw new InvalidConfigValueException(l10n("invalidExtURI", "error", e.getLocalizedMessage()));
 		}
 
         updaterConfig.finishedInitialization();
@@ -197,7 +197,7 @@ public class NodeUpdateManager {
 			} else {
 				if((!WrapperManager.isControlledByNativeWrapper()) || (NodeStarter.extBuildNumber == -1)) {
 					Logger.error(this, "Cannot update because not running under wrapper");
-					throw new InvalidConfigValueException("Cannot update because not running under wrapper");
+					throw new InvalidConfigValueException(l10n("noUpdateWithoutWrapper"));
 				}
 				// Start it
 				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber());
@@ -732,7 +732,7 @@ public class NodeUpdateManager {
 			try {
 				uri = new FreenetURI(val);
 			} catch (MalformedURLException e) {
-				throw new InvalidConfigValueException("Invalid key: "+val+" : "+e);
+				throw new InvalidConfigValueException(l10n(isExt ? "invalidExtURI" : "invalidUpdateURI", "error", e.getLocalizedMessage()));
 			}
 			setURI(isExt, uri);
 		}
@@ -750,7 +750,7 @@ public class NodeUpdateManager {
 			try {
 				uri = new FreenetURI(val);
 			} catch (MalformedURLException e) {
-				throw new InvalidConfigValueException("Invalid key: "+val+" : "+e);
+				throw new InvalidConfigValueException(l10n("invalidRevocationURI", "error", e.getLocalizedMessage()));
 			}
 			setRevocationURI(uri);
 		}

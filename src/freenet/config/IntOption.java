@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
+import freenet.l10n.L10n;
 import freenet.support.Fields;
 import freenet.support.api.IntCallback;
 
@@ -51,7 +52,7 @@ public class IntOption extends Option {
 		try{
 			x = Fields.parseInt(val);
 		} catch (NumberFormatException e) {
-			throw new InvalidConfigValueException("The value specified can't be parsed : "+val);
+			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}
 		cb.set(x);
 		cachedStringValue = val;
@@ -63,10 +64,14 @@ public class IntOption extends Option {
 		try{
 			x = Fields.parseInt(val);
 		} catch (NumberFormatException e) {
-			throw new InvalidConfigValueException("The value specified can't be parsed : "+val);
+			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}
 		cachedStringValue = val;
 		currentValue = x;
+	}
+
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("IntOption."+key, pattern, value);
 	}
 
 	public String getValueString() {

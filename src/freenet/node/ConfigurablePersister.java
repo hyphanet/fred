@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.l10n.L10n;
 import freenet.node.Node.NodeInitException;
 import freenet.support.api.StringCallback;
 
@@ -39,26 +40,26 @@ public class ConfigurablePersister extends Persister {
 		while(true) {
 			if(f.exists()) {
 				if(!(f.canRead() && f.canWrite()))
-					throw new InvalidConfigValueException("File exists and cannot read/write it");
+					throw new InvalidConfigValueException(l10n("existsCannotReadWrite"));
 				break;
 			} else {
 				try {
 					f.createNewFile();
 				} catch (IOException e) {
-					throw new InvalidConfigValueException("File does not exist and cannot be created");
+					throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate"));
 				}
 			}
 		}
 		while(true) {
 			if(tmp.exists()) {
 				if(!(tmp.canRead() && tmp.canWrite()))
-					throw new InvalidConfigValueException("File exists and cannot read/write it");
+					throw new InvalidConfigValueException(l10n("existsCannotReadWrite"));
 				break;
 			} else {
 				try {
 					tmp.createNewFile();
 				} catch (IOException e) {
-					throw new InvalidConfigValueException("File does not exist and cannot be created");
+					throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate"));
 				}
 			}
 		}
@@ -67,6 +68,10 @@ public class ConfigurablePersister extends Persister {
 			persistTarget = f;
 			persistTemp = tmp;
 		}
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("ConfigurablePersister."+key);
 	}
 
 }

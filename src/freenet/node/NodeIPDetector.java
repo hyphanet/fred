@@ -243,6 +243,10 @@ public class NodeIPDetector {
 		return L10n.getString("NodeIPDetector."+key);
 	}
 
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("NodeIPDetector."+key, pattern, value);
+	}
+
 	Peer[] getPrimaryIPAddress() {
 		if(lastIPAddress == null) return detectPrimaryIPAddress();
 		return lastIPAddress;
@@ -325,7 +329,7 @@ public class NodeIPDetector {
 				try {
 					addr = new FreenetInetAddress(val, false);
 				} catch (UnknownHostException e) {
-					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
+					throw new InvalidConfigValueException(l10n("unknownHostErrorInIPOverride", "error", e.getMessage()));
 				}
 				overrideIPAddress = addr;
 				lastIPAddress = null;

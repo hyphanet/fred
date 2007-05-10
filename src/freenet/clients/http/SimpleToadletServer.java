@@ -27,6 +27,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
+import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -72,7 +73,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		public void set(int newPort) throws InvalidConfigValueException {
 			if(port != newPort)
-				throw new InvalidConfigValueException("Cannot change FProxy port number on the fly");
+				throw new InvalidConfigValueException(L10n.getString("cannotChangePortOnTheFly"));
 			// FIXME
 		}
 	}
@@ -89,7 +90,10 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 					networkInterface.setBindTo(bindTo);
 					SimpleToadletServer.this.bindTo = bindTo;
 				} catch (IOException e) {
-					throw new InvalidConfigValueException("could not change bind to! " + e.getMessage()); 
+					// This is an advanced option for reasons of reducing clutter,
+					// but it is expected to be used by regular users, not devs.
+					// So we translate the error messages.
+					throw new InvalidConfigValueException(l10n("couldNotChangeBindTo", "error", e.getLocalizedMessage())); 
 				}
 			}
 		}
@@ -117,7 +121,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		public void set(String CSSName) throws InvalidConfigValueException {
 			if((CSSName.indexOf(':') != -1) || (CSSName.indexOf('/') != -1))
-				throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
+				throw new InvalidConfigValueException(l10n("illegalCSSName"));
 			cssName = CSSName;
 			pageMaker.setTheme(cssName);
 		}
@@ -143,9 +147,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			else {
 				File tmp = new File(val.trim());
 				if(!core.allowUploadFrom(tmp))
-					throw new InvalidConfigValueException("We can't let you set that setting: \"" + tmp + "\" isn't in a directory from which uploads are allowed!");				
+					throw new InvalidConfigValueException(l10n("cssOverrideNotInUploads", "filename", tmp.toString()));
 				else if(!tmp.canRead() || !tmp.isFile())
-					throw new InvalidConfigValueException("We can't read the given file! (" + val + ')');
+					throw new InvalidConfigValueException(l10n("cssOverrideCantRead", "filename", tmp.toString()));
 				cssOverride = tmp.getAbsoluteFile();
 			}
 			pageMaker.setOverride(cssOverride);
@@ -454,4 +458,13 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	public boolean isAllowedFullAccess(InetAddress remoteAddr) {
 		return this.allowedFullAccess.allowed(remoteAddr);
 	}
+	
+	private static String l10n(String key, String pattern, String value) {
+		return L10n.getString("SimpleToadletServer."+key, pattern, value);
+	}
+
+	private static String l10n(String key) {
+		return L10n.getString("SimpleToadletServer."+key);
+	}
+
 }

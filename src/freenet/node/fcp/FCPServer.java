@@ -34,6 +34,7 @@ import freenet.config.SubConfig;
 import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -206,7 +207,7 @@ public class FCPServer implements Runnable {
 //TODO: Allow it
 		public void set(boolean val) throws InvalidConfigValueException {
 			if(val != get()) {
-				throw new InvalidConfigValueException("Cannot change the status of the FCP server on the fly");
+				throw new InvalidConfigValueException(l10n("cannotStartOrStopOnTheFly"));
 			}
 		}
 	}
@@ -232,7 +233,10 @@ public class FCPServer implements Runnable {
 					node.getFCPServer().networkInterface.setBindTo(val);
 					node.getFCPServer().bindTo = val;
 				} catch (IOException e) {
-					throw new InvalidConfigValueException("could not change bind to!");
+					// This is an advanced option for reasons of reducing clutter,
+					// but it is expected to be used by regular users, not devs.
+					// So we translate the error messages.
+					throw new InvalidConfigValueException(l10n("couldNotChangeBindTo", "error", e.getLocalizedMessage()));
 				}
 			}
 		}
@@ -408,20 +412,43 @@ public class FCPServer implements Runnable {
 
 	private void checkFile(File f) throws InvalidConfigValueException {
 		if(f.isDirectory()) 
-			throw new InvalidConfigValueException("Invalid filename for downloads list: is a directory");
+			throw new InvalidConfigValueException(l10n("downloadsFileIsDirectory"));
 		if(f.isFile() && !(f.canRead() && f.canWrite()))
-			throw new InvalidConfigValueException("File exists but cannot be read");
+			throw new InvalidConfigValueException(l10n("downloadsFileUnreadable"));
 		File parent = f.getParentFile();
 		if((parent != null) && !parent.exists())
-			throw new InvalidConfigValueException("Parent directory does not exist");
+			throw new InvalidConfigValueException(l10n("downloadsFileParentDoesNotExist"));
 		if(!f.exists()) {
 			try {
-				if(!((f.createNewFile() || f.exists()) && (f.canRead() && f.canWrite())))
-					throw new InvalidConfigValueException("File does not exist, cannot create it and/or cannot read/write it");
+				if(!f.createNewFile()) {
+					if(f.exists()) {
+						if(!(f.canRead() && f.canWrite())) {
+							throw new InvalidConfigValueException(l10n("downloadsFileExistsCannotReadOrWrite"));
+						} // else ok
+					} else {
+						throw new InvalidConfigValueException(l10n("downloadsFileDoesNotExistCannotCreate"));
+					}
+				} else {
+					if(!(f.canRead() && f.canWrite())) {
+						throw new InvalidConfigValueException(l10n("downloadsFileCanCreateCannotReadOrWrite"));
+					}
+				}
 			} catch (IOException e) {
-				throw new InvalidConfigValueException("File does not exist and cannot be created");
+				throw new InvalidConfigValueException(l10n("downloadsFileDoesNotExistCannotCreate")+ " : "+e.getLocalizedMessage());
 			}
 		}
+	}
+
+	private static String l10n(String key) {
+		return L10n.getString("FcpServer."+key);
+	}
+	
+	private static String l10n(String key, String pattern, String value) {
+		return L10n.getString("FcpServer."+key, pattern, value);
+	}
+
+	private static String l10n(String key, String[] patterns, String[] values) {
+		return L10n.getString("FcpServer."+key, patterns, values);
 	}
 
 	public void setPersistentDownloadsEnabled(boolean set) {

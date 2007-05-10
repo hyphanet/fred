@@ -13,6 +13,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.support.api.StringArrCallback;
 
@@ -138,8 +139,7 @@ public class BookmarkManager {
 								matcher.group(2), node.alerts), false);
 
 					} else
-						throw new InvalidConfigValueException(
-								"Malformed Bookmark");
+						throw new InvalidConfigValueException(l10n("malformedBookmark"));
 
 				} catch (MalformedURLException mue) {
 					throw new InvalidConfigValueException(mue.getMessage());
@@ -192,6 +192,10 @@ public class BookmarkManager {
 
 		node.storeConfig();
 		return true;
+	}
+
+	public String l10n(String key) {
+		return L10n.getString("BookmarkManager."+key);
 	}
 
 	public BookmarkCallback makeCB() {

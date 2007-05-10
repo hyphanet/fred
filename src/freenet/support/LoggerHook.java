@@ -3,6 +3,8 @@ package freenet.support;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
+import freenet.l10n.L10n;
+
 public abstract class LoggerHook extends Logger {
 
 	protected int threshold;
@@ -166,7 +168,7 @@ public abstract class LoggerHook extends Logger {
 		else if (s.equalsIgnoreCase("debug"))
 			return Logger.DEBUG;
 		else
-			throw new InvalidThresholdException("Unrecognized priority: "+s);
+			throw new InvalidThresholdException(L10n.getString("LoggerHook.unrecognisedPriority", "name", s));
 		// return Logger.NORMAL;
 	}
 

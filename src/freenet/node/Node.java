@@ -136,6 +136,7 @@ public class Node {
 		
 		public void set(String val) throws InvalidConfigValueException {
 			if(val.equals(get())) return;
+			// FIXME why not? Can't we use freenet.io.NetworkInterface like everywhere else, just adapt it for UDP?
 			throw new InvalidConfigValueException("Cannot be updated on the fly");
 		}
 	}
@@ -179,7 +180,7 @@ public class Node {
 			try {
 				L10n.setLanguage(val);
 			} catch (MissingResourceException e) {
-				throw new InvalidConfigValueException(e.getMessage());
+				throw new InvalidConfigValueException(e.getLocalizedMessage());
 			}
 		}
 		
@@ -876,7 +877,7 @@ public class Node {
 						return outputBandwidthLimit;
 					}
 					public void set(int obwLimit) throws InvalidConfigValueException {
-						if(obwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive");
+						if(obwLimit <= 0) throw new InvalidConfigValueException(l10n("bwlimitMustBePositive"));
 						synchronized(Node.this) {
 							outputBandwidthLimit = obwLimit;
 						}
@@ -903,7 +904,7 @@ public class Node {
 								inputLimitDefault = true;
 								ibwLimit = outputBandwidthLimit * 4;
 							} else {
-								if(ibwLimit <= 1) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
+								if(ibwLimit <= 1) throw new InvalidConfigValueException(l10n("bandwidthLimitMustBePositiveOrMinusOne"));
 								inputLimitDefault = false;
 							}
 						}
@@ -983,7 +984,8 @@ public class Node {
 					}
 					public void set(String val) throws InvalidConfigValueException {
 						if(nodeDir.equals(new File(val))) return;
-						// FIXME
+						// FIXME support it
+						// Don't translate the below as very few users will use it.
 						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
 					}
 		});
@@ -1030,7 +1032,7 @@ public class Node {
 					public void set(String val) throws InvalidConfigValueException {
 						if(extraPeerDataDir.equals(new File(val))) return;
 						// FIXME
-						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
+						throw new InvalidConfigValueException("Moving extra peer data directory on the fly not supported at present");
 					}
 		});
 		extraPeerDataDir = new File(nodeConfig.getString("extraPeerDataDir"));
@@ -1072,7 +1074,7 @@ public class Node {
 
 					public void set(long storeSize) throws InvalidConfigValueException {
 						if((storeSize < 0) || (storeSize < (32 * 1024 * 1024)))
-							throw new InvalidConfigValueException("Invalid store size");
+							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
 						long newMaxStoreKeys = storeSize / sizePerKey;
 						if(newMaxStoreKeys == maxTotalKeys) return;
 						// Update each datastore
@@ -1216,14 +1218,14 @@ public class Node {
 
 			public void set(long val) throws InvalidConfigValueException {
 				if(val < 0)
-					throw new InvalidConfigValueException("Negative or zero values not supported");
+					throw new InvalidConfigValueException(l10n("mustBePositive"));
 				else if(val > (80 * Runtime.getRuntime().maxMemory() / 100))
-					throw new InvalidConfigValueException("Giving more than 80% of your ram to BDB is probably not what you want to do!");
+					throw new InvalidConfigValueException(l10n("storeMaxMemTooHigh"));
 				envMutableConfig.setCacheSize(val);
 				try{
 					storeEnvironment.setMutableConfig(envMutableConfig);
 				} catch (DatabaseException e) {
-					throw new InvalidConfigValueException("Error while applying the new config : "+e.getMessage());
+					throw new InvalidConfigValueException(l10n("errorApplyingConfig", "error", e.getLocalizedMessage()));
 				}
 				databaseMaxMemory = val;
 			}
