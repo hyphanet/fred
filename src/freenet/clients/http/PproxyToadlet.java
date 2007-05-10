@@ -48,6 +48,11 @@ public class PproxyToadlet extends Toadlet {
 			return;
 		}
 
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", l10n("unauthorized"));
+			return;
+		}
+		
 		String path=request.getPath();
 
 		// remove leading / and plugins/ from path
@@ -102,11 +107,6 @@ public class PproxyToadlet extends Toadlet {
 		}
 		else
 		{
-
-			if(!ctx.isAllowedFullAccess()) {
-				super.sendErrorPage(ctx, 403, "Unauthorized", "You are not permitted access to this page");
-				return;
-			}
 
 			if (request.isPartSet("load")) {
 				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Loading "+request.getPartAsString("load", MAX_PLUGIN_NAME_LENGTH));
