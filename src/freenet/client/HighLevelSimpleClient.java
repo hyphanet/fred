@@ -53,14 +53,14 @@ public interface HighLevelSimpleClient {
 	 */
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InsertException;
 	
-	public FetchContext getFetcherContext();
+	public FetchContext getFetchContext();
 
 	/**
 	 * Get an InsertContext.
 	 * @param forceNonPersistent If true, force the request to use the non-persistent
 	 * bucket pool.
 	 */
-	public InsertContext getInserterContext(boolean forceNonPersistent);
+	public InsertContext getInsertContext(boolean forceNonPersistent);
 	
 	/**
 	 * Add a ClientEventListener.

@@ -109,7 +109,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	 */
 	public FetchResult fetch(FreenetURI uri) throws FetchException {
 		if(uri == null) throw new NullPointerException();
-		FetchContext context = getFetcherContext();
+		FetchContext context = getFetchContext();
 		FetchWaiter fw = new FetchWaiter();
 		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, this, null);
 		get.start();
@@ -123,7 +123,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public FetchResult fetch(FreenetURI uri, long overrideMaxSize, Object clientContext) throws FetchException {
 		if(uri == null) throw new NullPointerException();
 		FetchWaiter fw = new FetchWaiter();
-		FetchContext context = getFetcherContext(overrideMaxSize);
+		FetchContext context = getFetchContext(overrideMaxSize);
 		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, clientContext, null);
 		get.start();
 		return fw.waitForCompletion();
@@ -134,7 +134,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 	
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata) throws InsertException {
-		InsertContext context = getInserterContext(true);
+		InsertContext context = getInsertContext(true);
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata, 
 				context, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this, null, filenameHint);
@@ -162,7 +162,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InsertException {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(true), false, this, false);
+			new SimpleManifestPutter(pw, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, this, false);
 		putter.start();
 		return pw.waitForCompletion();
 	}
@@ -171,11 +171,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		globalEventProducer.addEventListener(listener);
 	}
 
-	public FetchContext getFetcherContext() {
-		return getFetcherContext(-1);
+	public FetchContext getFetchContext() {
+		return getFetchContext(-1);
 	}
 	
-	public FetchContext getFetcherContext(long overrideMaxSize) {
+	public FetchContext getFetchContext(long overrideMaxSize) {
 		long maxLength = curMaxLength;
 		long maxTempLength = curMaxTempLength;
 		if(overrideMaxSize >= 0) {
@@ -193,7 +193,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				forceDontIgnoreTooManyPathComponents ? false : core.ignoreTooManyPathComponents);
 	}
 
-	public InsertContext getInserterContext(boolean forceNonPersistent) {
+	public InsertContext getInsertContext(boolean forceNonPersistent) {
 		return new InsertContext(bucketFactory, forceNonPersistent ? bucketFactory : persistentBucketFactory,
 				forceNonPersistent ? new NullPersistentFileTracker() : persistentFileTracker,
 				random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
