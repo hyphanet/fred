@@ -588,7 +588,7 @@ public class NodeDispatcher implements Dispatcher {
 			ctx.nearest = nearest;
 			ctx.htl = htl;
 		} else {
-			if(!isNew) {
+			if(isNew) { // once per hop
 				htl = node.decrementHTL(src, htl);
 				ctx.htl = htl;
 			}
