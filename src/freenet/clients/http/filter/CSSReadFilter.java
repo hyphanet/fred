@@ -15,6 +15,7 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.HashMap;
 
+import freenet.l10n.L10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -48,17 +49,28 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			os.close();
 			strm.close();
 			HTMLNode explanation = new HTMLNode("p");
-			explanation.addChild("b", "Unknown character set!");
-			explanation.addChild("#", " The page you are about to display has an unknown character set. This means that we are not able to filter the page, and it may compromize your anonymity.");
-			throw new DataFilterException("Warning: Unknown character set ("+charset+ ')', "Warning: Unknown character set ("+HTMLEncoder.encode(charset)+ ')',
-					"<p><b>Unknown character set</b> The page you are about to display has an unknown character set. "+
-					"This means that we are not able to filter the page, and it may compromize your anonymity.</p>", explanation);
+			String explTitle = l10nDF("unknownCharsetTitle");
+			String expl = l10nDF("unknownCharset");
+			explanation.addChild("b", explTitle);
+			explanation.addChild("#", " " + expl);
+			String warning = l10nDF("warningUnknownCharsetTitle", "charset", charset);
+			throw new DataFilterException(warning, warning, explTitle + " " + expl, explanation);
 		}
 		CSSParser parser = new CSSParser(r, w, false, cb);
 		parser.parse();
 		r.close();
 		w.close();
 		return temp;
+	}
+
+	private static String l10nDF(String key) {
+		// All the strings here are generic
+		return L10n.getString("ContentDataFilter."+key);
+	}
+
+	private static String l10nDF(String key, String pattern, String value) {
+		// All the strings here are generic
+		return L10n.getString("ContentDataFilter."+key, pattern, value);
 	}
 
 	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset,

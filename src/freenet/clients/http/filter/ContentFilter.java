@@ -11,6 +11,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Hashtable;
 
+import freenet.l10n.L10n;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -32,62 +33,65 @@ public class ContentFilter {
 		
 		// Plain text
 		register(new MIMEType("text/plain", "txt", new String[0], new String[] { "text", "pot" },
-				true, true, null, null, false, false, false, false, false, false, 
-				"Plain text - not dangerous unless your browser is stupid (e.g. Internet Explorer)",
-				"Plain text - not dangerous unless you include compromizing information",
+				true, true, null, null, false, false, false, false, false, false,
+				l10n("textPlainReadAdvice"),
+				l10n("textPlainWriteAdvice"),
 				true, "US-ASCII", null));
 		
 		// GIF - has a filter 
 		register(new MIMEType("image/gif", "gif", new String[0], new String[0], 
 				true, false, new GIFFilter(), null, false, false, false, false, false, false,
-				"GIF image - probably not dangerous",
-				"GIF image - probably not dangerous but you should wipe any comments",
+				l10n("imageGifReadAdvice"),
+				l10n("imageGifWriteAdvice"),
 				false, null, null));
 		
 		// JPEG - has a filter
 		register(new MIMEType("image/jpeg", "jpeg", new String[0], new String[] { "jpg" },
 				true, false, new JPEGFilter(true, true), null, false, false, false, false, false, false,
-				"JPEG image - probably not dangerous",
-				"JPEG image - probably not dangerous but can contain EXIF data", false, null, null));
+				l10n("imageJpegReadAdvice"),
+				l10n("imageJpegWriteAdvice"), false, null, null));
 		
 		// PNG - has a filter
 		register(new MIMEType("image/png", "png", new String[0], new String[0],
 				true, false, new PNGFilter(), null, false, false, false, false, true, false,
-				"PNG image - probably not dangerous",
-				"PNG image - probably not dangerous but you should wipe any comments or text blocks",
-				false, null, null));
+				l10n("imagePngReadAdvice"),
+				l10n("imagePngWriteAdvice"), false, null, null));
 		
 		// ICO - probably safe - FIXME check this out, write filters
 		register(new MIMEType("image/x-icon", "ico", new String[] { "image/vnd.microsoft.icon", "image/ico", "application/ico"}, 
 				new String[0], true, false, null, null, false, false, false, false, false, false,
-				"Icon file - probably not dangerous",
-				"Icon file - probably not dangerous (but can contain other data due to offset?)",
-				false, null, null));
+				l10n("imageIcoReadAdvice"),
+				l10n("imageIcoWriteAdvice"), false, null, null));
 		
 		// PDF - very dangerous - FIXME ideally we would have a filter, this is such a common format...
 		register(new MIMEType("application/pdf", "pdf", new String[] { "application/x-pdf" }, new String[0],
 				false, false, null, null, true, true, true, false, true, true,
-				"Adobe(R) PDF document - VERY DANGEROUS!",
-				"Adobe(R) PDF document - VERY DANGEROUS!",
+				l10n("applicationPdfReadAdvice"),
+				l10n("applicationPdfWriteAdvice"),
 				false, null, null));
 		
 		// HTML - dangerous if not filtered
 		register(new MIMEType("text/html", "html", new String[] { "text/xhtml", "text/xml+xhtml", "application/xhtml+xml" }, new String[] { "htm" },
 				false, false /* maybe? */, new HTMLFilter(), null /* FIXME */, 
-				true, true, true, true, true, true, "HTML - not dangerous if filtered",
-				"HTML - may contain dangerous metadata etc; suggest you check it by hand",
+				true, true, true, true, true, true, 
+				l10n("textHtmlReadAdvice"),
+				l10n("textHtmlWriteAdvice"),
 				true, "iso-8859-1", new HTMLFilter()));
 		
 		// CSS - danagerous if not filtered, not sure about the filter
 		register(new MIMEType("text/css", "css", new String[0], new String[0],
 				false, false /* unknown */, new CSSReadFilter(), null,
 				true, true, true, true, true, false,
-				"CSS (cascading style sheet, usually used with HTML) - probably not dangerous if filtered, but the filter is not a whitelist filter so take care",
-				"CSS (cascading style sheet, usually used with HTML) - this can probably contain metadata, check it by hand",
+				l10n("textCssReadAdvice"),
+				l10n("textCssWriteAdvice"),
 				true, "utf-8", new CSSReadFilter()));
 		
 	}
 	
+	private static String l10n(String key) {
+		return L10n.getString("ContentFilter."+key);
+	}
+
 	public static void register(MIMEType mimeType) {
 		synchronized(mimeTypesByName) {
 			mimeTypesByName.put(mimeType.primaryMimeType, mimeType);
