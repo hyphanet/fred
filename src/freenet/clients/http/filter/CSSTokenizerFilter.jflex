@@ -4,6 +4,7 @@
 package freenet.clients.http.filter;
 import java.io.*;
 import java.util.*;
+import freenet.l10n.L10n;
 /* This class tokenizes a CSS2 Reader stream, writes it out to the output Writer, and filters any URLs found */
 // WARNING: this is not as thorough as the HTML parser - new versions of the standard could lead to anonymity risks. See comments in SaferFilter.java
 // FIXME: Rewrite this as a proper whitelist filter. It's about half way there, it
@@ -76,6 +77,10 @@ import java.util.*;
 			'0' <= c && c <= '9');
 	}
 	
+	static String l10n(String key) {
+		return L10n.getString("CSSTokenizerFilter."+key);
+	}
+	
 	class DecodedStringThingy {
 		char quote; // " " means not quoted
 		boolean url; // in a url() ?
@@ -119,9 +124,10 @@ import java.util.*;
 						// Ignore one whitespace char after an escape
 						int d = Integer.parseInt(hexEscape.toString(),
 									 16);
+						// FIXME once we can use 1.5, use Characters.toChars(int).
 						if(d > 0xFFFF) {
 							String error = 
-							    "UCS-4 CHARACTERS OVER 0xFFFF NOT SUPPORTED!";
+								l10n("supplementalCharsNotSupported");
 							logError(error);
 							try {
 								w.write("/* "+error+"*/");
@@ -135,9 +141,10 @@ import java.util.*;
 					} else {
 						int d = Integer.parseInt(hexEscape.toString(),
 									 16);
+						// FIXME once we can use 1.5, use Characters.toChars(int).
 						if(d > 0xFFFF) {
 							String error = 
-							    "UCS-4 CHARACTERS OVER 0xFFFF NOT SUPPORTED!";
+								l10n("supplementalCharsNotSupported");
 							logError(error);
 							try {
 								w.write("/* "+error+"*/");
@@ -386,11 +393,11 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 }
 {UNOFFICIAL_IDENT} {
 	if(debug) log("Deleted unofficial ident: "+yytext());
-	w.write("/* Deleted unofficial ident */");
+	w.write("/* " + l10n("deletedUnofficialIdent") + " */");
 }
 {UNOFFICIAL_IDENT}{W}":"{W}{REALURL} {
 	if(debug) log("Deleted unofficial ident with url: "+yytext());
-	w.write("/* Deleted unofficial ident with url */");
+	w.write("/* " + l10n("deletedUnofficialIdentWithURL") + " */");
 }
 "@page" {
 	String s = yytext();
@@ -460,7 +467,7 @@ U\+{H}{1,6}-{H}{1,6} {
 }
 {IDENT}"(" {
 	String s = yytext();
-	if(s.startsWith("url")) throwError("Invalid contents of url()");
+	if(s.startsWith("url")) throwError(l10n("invalidURLContents"));
 	w.write(s);
 	if(debug) log("Matched function start: "+s);
 }
@@ -478,7 +485,7 @@ U\+{H}{1,6}-{H}{1,6} {
 	String s = yytext();
 	if(debug) log("Matched string: "+s);
 	if(paranoidStringCheck && s.indexOf(':') != -1) {
-		w.write("/* Deleted disallowed string */");
+		w.write("/* "+l10n("deletedDisallowedString")+" */");
 		log("Deleted disallowed string: "+s);
 	} else {
 		w.write(s);
@@ -497,7 +504,7 @@ U\+{H}{1,6}-{H}{1,6} {
 // @-directives above (@page, @media). Since these can have sub-{}'s this probably isn't possible.
 "@"{IDENT} {
 	if(!deleteErrors) {
-		throwError("Unknown @identifier "+yytext());
+		throwError(l10n("unknownAtIdentifierLabel")+" "+yytext());
 	} else {
 		String s = yytext();
 		if(debug) log("Discarded identifier: "+s);
@@ -509,5 +516,5 @@ U\+{H}{1,6}-{H}{1,6} {
 	String s = yytext();
 	char c = s.charAt(0);
 	log("Matched anything: "+yytext()+" - ignoring");
-	w.write("/* ignored unmatched char: "+c+" */"); // single char cannot break out of comment
+	w.write("/* "+l10n("deletedUnmatchedChar")+" "+c+" */"); // single char cannot break out of comment
 }

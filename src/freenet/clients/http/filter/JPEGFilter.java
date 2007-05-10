@@ -15,6 +15,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -29,7 +30,9 @@ import freenet.support.io.CountedInputStream;
  * Also the JFIF spec.
  * Also http://cs.haifa.ac.il/~nimrod/Compression/JPEG/J6sntx2005.pdf
  * http://svn.xiph.org/experimental/giles/jpegdump.c
- * 
+ *
+ * L10n: Only the overall explanation message and the "too short" messages are localised.
+ * It's probably not worth doing the others, they're way too detailed.
  */
 public class JPEGFilter implements ContentDataFilter {
 
@@ -45,11 +48,6 @@ public class JPEGFilter implements ContentDataFilter {
 		this.deleteComments = deleteComments;
 		this.deleteExif = deleteExif;
 	}
-	
-	static final String ERROR_MESSAGE = 
-		"The file you tried to fetch is not a JPEG. "+
-		"It might be some other file format, and your browser may do something dangerous with it, "+
-		"therefore we have blocked it.";
 	
 	static final byte[] soi = new byte[] {
 		(byte)0xFF, (byte)0xD8 // Start of Image
@@ -79,7 +77,7 @@ public class JPEGFilter implements ContentDataFilter {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long length = data.size();
 		if(length < 6) {
-			throwError("Too short", "The file is too short to be a JPEG.");
+			throwError(l10n("tooShortTitle"), l10n("tooShort"));
 		}
 		InputStream is = data.getInputStream();
 		BufferedInputStream bis = new BufferedInputStream(is);
@@ -297,6 +295,10 @@ public class JPEGFilter implements ContentDataFilter {
 		return data;
 	}
 
+	private static String l10n(String key) {
+		return L10n.getString("JPEGFilter."+key);
+	}
+
 	private void writeNullTerminatedString(ByteArrayOutputStream baos, String type) throws IOException {
 		try {
 			byte[] data = type.getBytes("ISO-8859-1"); // ascii, near enough
@@ -360,7 +362,7 @@ public class JPEGFilter implements ContentDataFilter {
 
 	private void throwError(String shortReason, String reason) throws DataFilterException {
 		// Throw an exception
-		String message = ERROR_MESSAGE;
+		String message = l10n("notJpeg");
 		if(reason != null) 
 			message += ' ' + reason;
 		if(shortReason != null)

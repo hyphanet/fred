@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -20,11 +21,6 @@ import freenet.support.api.BucketFactory;
  */
 public class GIFFilter implements ContentDataFilter {
 
-	static final String ERROR_MESSAGE = 
-		"The file you tried to fetch is not a GIF. "+
-		"It might be some other file format, and your browser may do something dangerous with it, "+
-		"therefore we have blocked it.";
-	
 	static final int HEADER_SIZE = 6;
 	static final byte[] gif87aHeader =
 		{ (byte)'G', (byte)'I', (byte)'F', (byte)'8', (byte)'7', (byte)'a' };
@@ -36,7 +32,7 @@ public class GIFFilter implements ContentDataFilter {
 			HashMap otherParams, FilterCallback cb) throws DataFilterException,
 			IOException {
 		if(data.size() < 6) {
-			throwHeaderError("Too short", "The file is too short to be a GIF.");
+			throwHeaderError(l10n("tooShortTitle"), l10n("tooShort"));
 		}
 		InputStream is = data.getInputStream();
 		BufferedInputStream bis = new BufferedInputStream(is);
@@ -46,7 +42,7 @@ public class GIFFilter implements ContentDataFilter {
 			byte[] headerCheck = new byte[HEADER_SIZE];
 			dis.read(headerCheck);
 			if((!Arrays.equals(headerCheck, gif87aHeader)) && (!Arrays.equals(headerCheck, gif89aHeader))) {
-				throwHeaderError("Invalid header", "The file does not contain a valid GIF header.");
+				throwHeaderError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
 			}
 		} finally {
 			dis.close();
@@ -54,9 +50,13 @@ public class GIFFilter implements ContentDataFilter {
 		return data;
 	}
 
+	private static String l10n(String key) {
+		return L10n.getString("GIFFilter."+key);
+	}
+
 	private void throwHeaderError(String shortReason, String reason) throws DataFilterException {
 		// Throw an exception
-		String message = ERROR_MESSAGE;
+		String message = l10n("notGif");
 		if(reason != null) message += ' ' + reason;
 		if(shortReason != null)
 			message += " - (" + shortReason + ')';

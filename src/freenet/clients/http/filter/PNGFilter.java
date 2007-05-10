@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -35,17 +36,19 @@ public class PNGFilter implements ContentDataFilter {
 			dis.read(headerCheck);
 			if(!Arrays.equals(headerCheck, pngHeader)) {
 				// Throw an exception
-				String message = 
-					"The file you tried to fetch is not a PNG. It does not include a valid PNG header. "+
-					"It might be some other file format, and your browser may do something dangerous with it, "+
-					"therefore we have blocked it."; 
-				throw new DataFilterException("Not a PNG - invalid header", "Not a PNG - invalid header",
+				String message = l10n("invalidHeader");
+				String title = l10n("invalidHeaderTitle");
+				throw new DataFilterException(title, title,
 						"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
 			}
 		} finally {
 			dis.close();
 		}
 		return data;
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("PNGFilter."+key);
 	}
 
 	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset,

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.filter;
 
+import freenet.l10n.L10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 
@@ -21,31 +22,27 @@ public class UnknownContentTypeException extends UnsafeContentTypeException {
 	}
 
 	public String getHTMLEncodedTitle() {
-		return "Unknown and potentially dangerous content type: "+encodedType;
+		return l10n("title", "type", encodedType);
 	}
 
 	public String getRawTitle() {
-		return "Unknown and potentially dangerous content type: "+type;
+		return l10n("title", "type", type);
 	}
 	
 	public String getExplanation() {
-		return "<p>Your Freenet node does not know anything about this MIME type. " +
-				"This means that your browser might do something dangerous in response " +
-				"to downloading this file. For example, many formats can contain embedded images " +
-				"or videos, which are downloaded from the web; this is by no means innocuous, " +
-				"because they can ruin your anonymity and expose your IP address (if the attacker " +
-				"runs the web site or has access to its logs). Hyperlinks to the Web can also be a " +
-				"threat, for much the same reason, as can scripting, for this and other reasons.</p>";
+		return l10n("explanation");
 	}
 	
 	public HTMLNode getHTMLExplanation() {
-		return new HTMLNode("div", "Your Freenet node does not know anything about this MIME type. " +
-				"This means that your browser might do something dangerous in response " +
-				"to downloading this file. For example, many formats can contain embedded images " +
-				"or videos, which are downloaded from the web; this is by no means innocuous, " +
-				"because they can ruin your anonymity and expose your IP address (if the attacker " +
-				"runs the web site or has access to its logs). Hyperlinks to the Web can also be a " +
-				"threat, for much the same reason, as can scripting, for this and other reasons.");
+		return new HTMLNode("div", l10n("explanation"));
+	}
+
+	private static String l10n(String key) {
+		return L10n.getString("UnknownContentTypeException."+key);
+	}
+	
+	private static String l10n(String key, String pattern, String value) {
+		return L10n.getString("UnknownContentTypeException."+key, pattern, value);
 	}
 	
 }

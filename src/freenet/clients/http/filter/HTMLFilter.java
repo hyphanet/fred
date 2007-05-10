@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
+import freenet.l10n.L10n;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
@@ -55,12 +56,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		} catch (UnsupportedEncodingException e) {
 			os.close();
 			strm.close();
-			HTMLNode explanation = new HTMLNode("p");
-			explanation.addChild("b", "Unknown character set!");
-			explanation.addChild("#", " The page you are about to display has an unknown character set. This means that we are not able to filter the page, and it may compromize your anonymity.");
-			throw new DataFilterException("Warning: Unknown character set ("+charset+ ')', "Warning: Unknown character set ("+HTMLEncoder.encode(charset)+ ')',
-					"<p><b>Unknown character set</b> The page you are about to display has an unknown character set. "+
-					"This means that we are not able to filter the page, and it may compromize your anonymity.", explanation);
+			throw UnknownCharsetException.create(e, charset);
 		}
 		HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb);
 		pc.run(temp);
@@ -375,7 +371,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					pc.writeStyleScriptWithTag = false;
 					String style = pc.currentStyleScriptChunk;
 					if ((style == null) || (style.length() == 0))
-						pc.writeAfterTag.append("<!-- deleted unknown style -->");
+						pc.writeAfterTag.append("<!-- "+l10n("deletedUnknownStyle")+" -->");
 					else
 						w.write(style);
 					pc.currentStyleScriptChunk = "";
@@ -431,11 +427,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		w.write(" -->");
 	}
 
-	static void throwFilterException(String s) throws DataFilterException {
+	static void throwFilterException(String msg) throws DataFilterException {
 		// FIXME
-		throw new DataFilterException(s, s,
-				"The HTML filter failed to parse the page: "+s,
-				new HTMLNode("div", "The HTML filter failed to parse the page: " + s));
+		String longer = l10n("failedToParseLabel");
+		throw new DataFilterException(longer, longer, msg, new HTMLNode("div", msg));
 	}
 
 	static class ParsedTag {
@@ -496,20 +491,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				if (deleteWierdStuff) {
 					return null;
 				} else {
-					String err = "<!-- unknown tag ";
-					boolean safe = true;
-					for (int x = 0; x < element.length(); x++) {
-						if (!Character.isLetter(element.charAt(x))) {
-							safe = false;
-							break;
-						}
-					}
-					if (safe)
-						err += element + ' ';
-					err += "-->";
+					String err = "<!-- "+HTMLEncoder.encode(l10n("unknownTag", "tag", element))+ " -->";
 					if (!deleteErrors)
-						throwFilterException(
-							"Unknown tag: " + HTMLEncoder.encode(err));
+						throwFilterException(l10n("unknownTagLabel") + ' ' + err);
 					return null;
 				}
 			}
@@ -1241,9 +1225,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (pc.styleScriptRecurseCount < 0) {
 				if (deleteErrors)
 					pc.writeAfterTag.append(
-						"<!-- Too many nested style or script tags - ambiguous or invalid parsing -->");
+						"<!-- " + l10n("tooManyNestedStyleOrScriptTags") + " -->");
 				else
-					throwFilterException("Too many nested </style> tags - ambiguous or invalid parsing, can't reliably filter so removing the inner tags - garbage may appear in browser");
+					throwFilterException(l10n("tooManyNestedStyleOrScriptTagsLong"));
 				return null;
 			}
 			if(!pc.killStyle) {
@@ -1263,10 +1247,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			pc.styleScriptRecurseCount++;
 			if (pc.styleScriptRecurseCount > 1) {
 				if (deleteErrors)
-					pc.writeAfterTag.append(
-						"<!-- Too many nested style or script tags -->");
+					pc.writeAfterTag.append("<!-- " + l10n("tooManyNestedStyleOrScriptTags") + " -->");
 				else
-					throwFilterException("Too many nested </style> tags - ambiguous or invalid parsing, can't reliably filter so removing the inner tags - garbage may appear in browser");
+					throwFilterException(l10n("tooManyNestedStyleOrScriptTagsLong"));
 				return null;
 			}
 			setStyle(true, pc);
@@ -1848,7 +1831,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					HTMLFilter.class,
 					"CSS Parse Error!",
 					e);
-				return "/* Could not match input style */";
+				return "/* "+l10n("couldNotParseStyle")+" */";
 			} else
 				throw e;
 		}
@@ -1977,6 +1960,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return (String) o;
 		else
 			return null;
+	}
+
+	private static String l10n(String key) {
+		return L10n.getString("HTMLFilter."+key);
+	}
+
+	private static String l10n(String key, String pattern, String value) {
+		return L10n.getString("HTMLFilter."+key, pattern, value);
 	}
 
 }
