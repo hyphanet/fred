@@ -1355,7 +1355,7 @@ public class Node {
 		pluginManager = new PluginManager(this);
 		pluginManager2 = new freenet.oldplugins.plugin.PluginManager(this);
 		
-		FetchContext ctx = clientCore.makeClient((short)0, true).getFetcherContext();
+		FetchContext ctx = clientCore.makeClient((short)0, true).getFetchContext();
 		
 		ctx.allowSplitfiles = false;
 		ctx.dontEnterImplicitArchives = true;

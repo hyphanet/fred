@@ -36,8 +36,8 @@ public class FCPClient {
 		this.core = server.core;
 		this.client = core.makeClient((short)0);
 		this.isGlobalQueue = isGlobalQueue;
-		defaultFetchContext = client.getFetcherContext();
-		defaultInsertContext = client.getInserterContext(false);
+		defaultFetchContext = client.getFetchContext();
+		defaultInsertContext = client.getInsertContext(false);
 		clientsWatching = new LinkedList();
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 		toStart = new LinkedList();

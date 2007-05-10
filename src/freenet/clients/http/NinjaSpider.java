@@ -684,7 +684,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	 */
 	public void setPluginManager(PluginManager pluginManager) {
 		this.core = pluginManager.getClientCore();
-		this.ctx = core.makeClient((short) 0).getFetcherContext();
+		this.ctx = core.makeClient((short) 0).getFetchContext();
 		ctx.maxSplitfileBlockRetries = 10;
 		ctx.maxNonSplitfileRetries = 10;
 		ctx.maxTempLength = 2 * 1024 * 1024;

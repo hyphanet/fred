@@ -109,8 +109,8 @@ public class FCPServer implements Runnable {
 		// This one is only used to get the default settings. Individual FCP conns
 		// will make their own.
 		HighLevelSimpleClient client = core.makeClient((short)0);
-		defaultFetchContext = client.getFetcherContext();
-		defaultInsertContext = client.getInserterContext(false);
+		defaultFetchContext = client.getFetchContext();
+		defaultInsertContext = client.getInsertContext(false);
 		
 		
 		globalClient = new FCPClient("Global Queue", this, null, true);

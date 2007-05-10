@@ -36,7 +36,7 @@ public class RevocationChecker implements ClientCallback {
 		core = manager.node.clientCore;
 		this.revocationDNFCounter = 0;
 		this.logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		ctxRevocation = core.makeClient((short)0, true).getFetcherContext();
+		ctxRevocation = core.makeClient((short)0, true).getFetchContext();
 		ctxRevocation.allowSplitfiles = false;
 		ctxRevocation.cacheLocalRequests = false;
 		ctxRevocation.maxArchiveLevels = 1;

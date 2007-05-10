@@ -45,7 +45,7 @@ public class USKManager {
 
 	
 	public USKManager(NodeClientCore core) {
-		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetcherContext();
+		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetchContext();
 		backgroundFetchContext.followRedirects = false;
 		backgroundFetchContext.uskManager = this;
 		this.chkRequestScheduler = core.requestStarters.chkFetchScheduler;

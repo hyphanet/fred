@@ -60,7 +60,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		this.isFetching = false;
 		this.extUpdate = extUpdate;
 		
-		FetchContext tempContext = core.makeClient((short)0, true).getFetcherContext();		
+		FetchContext tempContext = core.makeClient((short)0, true).getFetchContext();		
 		tempContext.allowSplitfiles = true;
 		tempContext.dontEnterImplicitArchives = false;
 		this.ctx = tempContext;
