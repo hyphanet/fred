@@ -175,7 +175,7 @@ public class TranslationToadlet extends Toadlet {
 			while(it.hasNext()) {
 				String key = it.nextKey();
 				boolean isOverriden = L10n.isOverridden(key);
-				if(!showEverything && isOverriden) continue;
+				if(!showEverything && (isOverriden || (L10n.getString(key, true) != null))) continue;
 				HTMLNode contentRow = legendTable.addChild("tr");
 				contentRow.addChild("td", "class", "translation-key",
 						key
