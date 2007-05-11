@@ -599,10 +599,14 @@ public class PeerManager {
             any = p;
             double diff = distance(p, loc);
             if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff+" for "+p.getPeer());
-            if((!ignoreSelf) && (diff > maxDiff)) continue;
+            if((!ignoreSelf) && (diff > maxDiff)) {
+            	if(logMINOR) Logger.minor(this, "Ignoring because >maxDiff="+maxDiff);
+            	continue;
+            }
             if(diff < bestDiff) {
                 best = p;
                 bestDiff = diff;
+                if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+p.getLocation().getValue()+" for "+p.getPeer());
             }
         }
         if(count == 1) return any;
