@@ -11,7 +11,7 @@ package freenet.pluginmanager;
 public class PluginHTTPException extends Exception {
 	private static final long serialVersionUID = -1;
 	
-	public short code = 400; // Bad Request
+	public final short code = 400; // Bad Request
 	public final String message;
 	public final String location;
 
