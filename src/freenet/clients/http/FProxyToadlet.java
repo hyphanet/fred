@@ -414,7 +414,7 @@ public class FProxyToadlet extends Toadlet {
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				HTMLNode fileInformationList = infoboxContent.addChild("ul");
 				HTMLNode option = fileInformationList.addChild("li");
-				option.addChild(("#", l10n("filenameLabel") + " "));
+				option.addChild("#", (l10n("filenameLabel") + " "));
 				option.addChild("a", "href", '/' + key.toString(), getFilename(e, key, e.getExpectedMimeType()));
 
 				String mime = writeSizeAndMIME(fileInformationList, e);
