@@ -349,7 +349,7 @@ public class StatisticsToadlet extends Toadlet {
 
 	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, long nodeUptimeSeconds) {
 		
-		storeSizeInfobox.addChild("div", "class", "infobox-header", "Store size");
+		storeSizeInfobox.addChild("div", "class", "infobox-header", "Datastore");
 		HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode storeSizeList = storeSizeInfoboxContent.addChild("ul");
 
