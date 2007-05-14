@@ -286,7 +286,7 @@ public class PproxyToadlet extends Toadlet {
 
 			HTMLNode addForm = ctx.addFormChild(infoboxContent, ".", "addPluginForm");
 			HTMLNode loadDiv = addForm.addChild("div");
-			loadDiv.addChild("#", l10n("loadPluginLabel"));
+			loadDiv.addChild("#", (l10n("loadPluginLabel") + " "));
 			loadDiv.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "load", "40" });
 			loadDiv.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Load" });
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());

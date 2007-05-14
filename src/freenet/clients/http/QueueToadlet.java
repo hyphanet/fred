@@ -863,7 +863,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode insertBox = pageMaker.getInfobox(L10n.getString("QueueToadlet.insertFile"));
 		HTMLNode insertContent = pageMaker.getContentNode(insertBox);
 		HTMLNode insertForm = ctx.addFormChild(insertContent, "/queue/", "queueInsertForm");
-		insertForm.addChild("#", L10n.getString("QueueToadlet.insertAs"));
+		insertForm.addChild("#", (L10n.getString("QueueToadlet.insertAs") + " "));
 		insertForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "keytype", "chk", "checked" });
 		insertForm.addChild("#", " CHK \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "ksk" });

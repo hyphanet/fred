@@ -193,13 +193,13 @@ public class BookmarkEditorToadlet extends Toadlet {
 				
 				HTMLNode form = ctx.addFormChild(actionBox, "", "editBookmarkForm");
 				
-				form.addChild("label", "for", "name", L10n.getString("BookmarkEditorToadlet.nameLabel"));
+				form.addChild("label", "for", "name", (L10n.getString("BookmarkEditorToadlet.nameLabel") + " "));
 				form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String []{"text", "name", "name", "20", action.equals("edit")?bookmark.getName():""});
 				
 				form.addChild("br");
 				if ((action.equals("edit") && bookmark instanceof BookmarkItem) || action.equals("addItem")) {
 					String key = (action.equals("edit") ? ((BookmarkItem) bookmark).getKey() : "");
-					form.addChild("label", "for", "key", L10n.getString("BookmarkEditorToadlet.keyLabel"));
+					form.addChild("label", "for", "key", (L10n.getString("BookmarkEditorToadlet.keyLabel") + " "));
 					form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String []{"text", "key", "key", "50", key});
 				}
 				
