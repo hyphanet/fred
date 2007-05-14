@@ -795,7 +795,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	private HTMLNode createPanicBox(PageMaker pageMaker, ToadletContext ctx) {
 		HTMLNode panicBox = pageMaker.getInfobox("infobox-alert", L10n.getString("QueueToadlet.panicButton"));
 		HTMLNode panicForm = ctx.addFormChild(pageMaker.getContentNode(panicBox), "/queue/", "queuePanicForm");
-		panicForm.addChild("#", L10n.getString("QueueToadlet.panicButtonConfirmation"));
+		panicForm.addChild("#", (L10n.getString("QueueToadlet.panicButtonConfirmation") + " "));
 		panicForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_AllRequests", L10n.getString("QueueToadlet.delete") });
 		return panicBox;
 	}
