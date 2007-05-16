@@ -150,13 +150,13 @@ public class UserAlertManager implements Comparator {
 		if (numberOfWarning != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(" | ");
-			alertSummaryString.append(l10n("warningLabel")).append(' ').append(numberOfWarning);
+			alertSummaryString.append(l10n("warningCountLabel")).append(' ').append(numberOfWarning);
 			separatorNeeded = true;
 		}
 		if (numberOfMinor != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(" | ");
-			alertSummaryString.append(l10n("minorLabel")).append(' ').append(numberOfMinor);
+			alertSummaryString.append(l10n("minorCountLabel")).append(' ').append(numberOfMinor);
 			separatorNeeded = true;
 		}
 		if (separatorNeeded)
@@ -173,7 +173,7 @@ public class UserAlertManager implements Comparator {
 			summaryBox = new HTMLNode("div", "class", "infobox infobox-warning");
 		else if (highestLevel <= UserAlert.MINOR)
 			summaryBox = new HTMLNode("div", "class", "infobox infobox-information");
-		summaryBox.addChild("div", "class", "infobox-header", l10n("alerts"));
+		summaryBox.addChild("div", "class", "infobox-header", l10n("alertsTitle"));
 		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content", alertSummaryString.toString());
 		L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnHomepage",
 				new String[] { "link", "/link" },
