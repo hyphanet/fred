@@ -159,7 +159,7 @@ public class PeerManagerUserAlert implements UserAlert {
 		} else if (neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
 			L10n.addL10nSubstitution(alertNode, "tooManyNeverConnectedWithLink",
 					new String[] { "link", "/link", "count" },
-					new String[] { "<a href=\"/darknet/myref.fref\">", "</a>", Integer.toString(neverConn) });
+					new String[] { "<a href=\"/friends/myref.fref\">", "</a>", Integer.toString(neverConn) });
 		} else if ((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("tooManyDisconnected", new String[] { "count", "max" }, new String[] { Integer.toString(disconnected), Integer.toString(MAX_DISCONN_PEER_ALERT_THRESHOLD)}));
 		} else if (conns > MAX_CONN_ALERT_THRESHOLD) {

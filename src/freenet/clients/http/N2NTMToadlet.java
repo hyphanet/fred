@@ -87,7 +87,7 @@ public class N2NTMToadlet extends Toadlet {
 		  return;
 	  }
 	  MultiValueTable headers = new MultiValueTable();
-	  headers.put("Location", "/darknet/");
+	  headers.put("Location", "/friends/");
 	  ctx.sendReplyHeaders(302, "Found", headers, null, 0);
   }
   
@@ -106,7 +106,7 @@ private static HTMLNode createPeerInfobox(String infoboxType, String header, Str
 	  infoboxContent.addChild("#", message);
 	  HTMLNode list = infoboxContent.addChild("ul");
 	  Toadlet.addHomepageLink(list);
-	  list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/darknet/", l10n("returnToFriends") }, l10n("friends"));
+	  list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/friends/", l10n("returnToFriends") }, l10n("friends"));
 	  return infobox;
   }
   
@@ -190,12 +190,12 @@ private static HTMLNode createPeerInfobox(String infoboxType, String header, Str
 			infoboxContent.addChild("#", message);
 			HTMLNode list = peerTableInfobox.addChild("ul");
 			Toadlet.addHomepageLink(list);
-			list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/darknet/", l10n("returnToFriends") }, l10n("friends"));
+			list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/friends/", l10n("returnToFriends") }, l10n("friends"));
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 	  }
 	  MultiValueTable headers = new MultiValueTable();
-	  headers.put("Location", "/darknet/");
+	  headers.put("Location", "/friends/");
 	  ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 	    

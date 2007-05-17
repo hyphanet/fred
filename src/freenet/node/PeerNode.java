@@ -311,10 +311,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /** Average proportion of requests which are rejected or timed out */
     private TimeDecayingRunningAverage pRejected;
     
-    /** Private comment on the peer for /darknet/ page */
+    /** Private comment on the peer for /friends/ page */
     private String privateDarknetComment;
     
-    /** Private comment on the peer for /darknet/ page's extra peer data file number */
+    /** Private comment on the peer for /friends/ page's extra peer data file number */
     private int privateDarknetCommentFileNumber;
     
     /** Queued-to-send N2NTM extra peer data file numbers */

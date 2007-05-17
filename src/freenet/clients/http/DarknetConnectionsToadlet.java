@@ -614,7 +614,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+ ')');
 			return;
@@ -715,7 +715,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("send_n2ntm")) {
@@ -752,7 +752,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("enable")) {
@@ -765,7 +765,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("disable")) {
@@ -778,7 +778,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_burst_only")) {
@@ -791,7 +791,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_burst_only")) {
@@ -804,7 +804,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_ignore_source_port")) {
@@ -817,7 +817,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_ignore_source_port")) {
@@ -830,7 +830,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_listen_only")) {
@@ -843,7 +843,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_listen_only")) {
@@ -856,7 +856,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_allow_local")) {
@@ -869,7 +869,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_allow_local")) {
@@ -882,7 +882,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("remove") || (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("remove"))) {			
@@ -902,7 +902,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 						content.addChild("p").addChild("#",
 								L10n.getString("DarknetConnectionsToadlet.confirmRemoveNode", new String[] { "name" }, new String[] { peerNodes[i].getName() }));
-						HTMLNode removeForm = ctx.addFormChild(content, "/darknet/", "removeConfirmForm");
+						HTMLNode removeForm = ctx.addFormChild(content, "/friends/", "removeConfirmForm");
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", l10n("remove") });
@@ -916,7 +916,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/darknet/");
+			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else {
