@@ -395,7 +395,8 @@ public class PacketSender implements Runnable, Ticker {
         }
 	}
 
-	protected void queuedResendPacket() {
+    /** Wake up, and send any queued packets. */
+	void wakeUp() {
         // Wake up if needed
         synchronized(this) {
             notifyAll();

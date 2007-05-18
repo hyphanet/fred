@@ -953,9 +953,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         }
         if(x > 1024) {
         	// If there is a packet's worth to send, wake up the packetsender.
-        	synchronized(node.ps) {
-        		node.ps.notifyAll();
-        	}
+        	node.ps.wakeUp();
         }
         // We DO NOT NEED to wake up the PacketSender
         // It will wake up before the maximum coalescing delay (100ms) because

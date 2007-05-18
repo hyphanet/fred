@@ -659,7 +659,7 @@ public class KeyTracker {
             synchronized(packetsToResend) {
                 packetsToResend.add(new Integer(seqNumber));
             }
-            pn.node.ps.queuedResendPacket();
+            pn.node.ps.wakeUp();
         } else {
         	synchronized(this) {
         		String msg = "Asking me to resend packet "+seqNumber+
@@ -1011,7 +1011,7 @@ public class KeyTracker {
         }
         pn.requeueMessageItems(messages, 0, messages.length, true);
         
-        pn.node.ps.queuedResendPacket();
+        pn.node.ps.wakeUp();
     }
 
     /**
