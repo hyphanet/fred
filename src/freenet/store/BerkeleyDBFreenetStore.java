@@ -24,7 +24,6 @@ import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.DatabaseNotFoundException;
 import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.SecondaryConfig;
@@ -55,9 +54,7 @@ import freenet.support.SortedLongSet;
 * More info at http://www.sleepycat.com/products/bdbje.html
 *
 * @author tubbie
-*
-* TODO: Fix ugly Exception handling
-*
+* @author amphibian
 */
 public class BerkeleyDBFreenetStore implements FreenetStore {
 
@@ -92,12 +89,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final static byte[] dummy = new byte[0];
 	
 	public static String getName(boolean isStore, short type) {
-		String newDBPrefix = newTypeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';
+		String newDBPrefix = typeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';
 		return newDBPrefix + "CHK";
 	}
 	
 	public static File getFile(boolean isStore, short type, File baseStoreDir, String suffix) {
-		String newStoreFileName = newTypeName(type) + suffix + '.' + (isStore ? "store" : "cache");
+		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		return new File(baseStoreDir, newStoreFileName);
 	}
 	
@@ -123,18 +120,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		*
 		*/
 		
-		// Location of old directory.
-		String oldDirName = oldTypeName(type) + (isStore ? "store" : "cache") + suffix;
-		File oldDir = new File(baseStoreDir, oldDirName);
-		
-		File oldDBDir = new File(oldDir, "database");
-		File oldStoreFile = new File(oldDir, "store");
-		
 		// Location of new store file
-		String newStoreFileName = newTypeName(type) + suffix + '.' + (isStore ? "store" : "cache");
+		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
 
-		String newDBPrefix = newTypeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';
+		String newDBPrefix = typeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';
 		
 		File newFixSecondaryFile = new File(baseStoreDir, "recreate_secondary_db-"+newStoreFileName);
 		
@@ -150,93 +140,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, newFixSecondaryFile, maxStoreKeys,
 					blockSize, headerSize, throwOnTooFewKeys, false, lastVersion, type, false, storeShutdownHook, tryDbLoad, reconstructFile);
 			
-		} else if(oldDir.exists() && oldStoreFile.exists()) {
-			
-			System.err.println("Old directory exists");
-			
-			File storeFile = newStoreFile;
-			
-			// Move old store file to new location.
-			
-			if(!oldStoreFile.renameTo(newStoreFile)) {
-				System.err.println("Cannot move store file from "+oldStoreFile+" to "+newStoreFile);
-				// Use old location for now.
-				storeFile = oldStoreFile;
-				// Will block deletion below.
-			} else {
-				System.err.println("Moved store file from "+oldStoreFile+" to "+newStoreFile);
-			}
-			
-			if(oldDBDir.exists()) {
-				
-				System.err.println("Old database dir exists, migrating...");
-				// Try to open old database with new store file.
-				// If database is invalid, do below.
-				// Otherwise, copy data from old database to new database.
-				
-				// Open the old store
-				
-				Environment oldEnv = null;
-				// Initialize environment
-				try {
-					EnvironmentConfig envConfig = new EnvironmentConfig();
-					envConfig.setAllowCreate(true);
-					envConfig.setTransactional(true);
-					envConfig.setTxnWriteNoSync(false);
-					oldEnv = new Environment(oldDBDir, envConfig);
-				} catch (DatabaseException e) {
-					if(oldEnv != null)
-						oldEnv.close();
-					throw e;
-				}
-				
-				// Initialize CHK database
-				DatabaseConfig dbConfig = new DatabaseConfig();
-				dbConfig.setAllowCreate(true);
-				dbConfig.setTransactional(true);
-				Database oldChkDB = oldEnv.openDatabase(null,"CHK",dbConfig);
-				
-				// Open the new store
-				// Don't reconstruct yet
-				tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, storeFile, newFixSecondaryFile, 
-						maxStoreKeys, blockSize, headerSize, false, true, lastVersion, type, true, 
-						storeShutdownHook, tryDbLoad, reconstructFile);
-				
-				// Migrate all tuples from old database to new database.
-				migrateTuples(oldEnv, oldChkDB, tmp);
-				
-				oldChkDB.close();
-				
-				oldEnv.close();
-
-				// Now do we need to reconstruct?
-				
-				if(throwOnTooFewKeys && tmp.shouldReconstruct()) {
-					tmp.close(false);
-					System.err.println("Attempting to reconstruct after migration...");
-					
-					// Reconstruct
-					
-					tmp = new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, 
-							newFixSecondaryFile, maxStoreKeys, blockSize, headerSize, type, true, 
-							storeShutdownHook, reconstructFile);
-				}
-				
-				tmp.checkForHoles(tmp.countCHKBlocksFromFile(), false);
-				
-				tmp.maybeOfflineShrink(true);
-				
-			} else {
-				
-				// No old database to worry about.
-				// Reconstruct the new database from the store file which is now in the right place.
-				
-				tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, storeFile, newFixSecondaryFile, 
-						maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, false, lastVersion, type, 
-						false, storeShutdownHook, tryDbLoad, reconstructFile);
-				
-			}
-			
 		} else {
 			
 			// No new store file, no new database.
@@ -248,107 +151,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 		}
 
-		// Delete old store directory
-		deleteOldStoreDir(baseStoreDir, oldDBDir, oldDir, oldDirName, random);
-		
 		return tmp;
-	}
-
-	private boolean shouldReconstruct() throws DatabaseException, IOException {
-		long chkBlocksInDatabase = chkDB.count();
-		long chkBlocksFromFile;
-		try {
-			chkBlocksFromFile = countCHKBlocksFromFile();
-		} catch (IOException e) {
-			System.err.println("Cannot determine number of blocks in file: "+e);
-			e.printStackTrace();
-			Logger.error(this, "Cannot determine number of blocks in file: "+e, e);
-			throw e;
-		}
-		
-		return (((chkBlocksInDatabase == 0) && (chkBlocksFromFile != 0)) ||
-				(((chkBlocksInDatabase + 10) * 1.1) < chkBlocksFromFile));
-	}
-
-	private static void migrateTuples(Environment oldEnv, Database oldChkDB, BerkeleyDBFreenetStore newStore) throws DatabaseException {
-
-		System.err.println("Migrating data from old Environment to new Environment");
-		/** Reads from old database */
-		Cursor c = null;
-		/** Writes to new store */
-		Transaction t = null;
-		try {
-			// Read from old database
-			t = newStore.environment.beginTransaction(null, null);
-			//t = oldEnv.beginTransaction(null,null);
-			c = oldChkDB.openCursor(null,null);
-			DatabaseEntry keyDBE = new DatabaseEntry();
-			DatabaseEntry blockDBE = new DatabaseEntry();
-			OperationStatus opStat;
-			opStat = c.getFirst(keyDBE, blockDBE, LockMode.DEFAULT);
-			if(opStat == OperationStatus.NOTFOUND) {
-				System.err.println("Database is empty (migrating tuples).");
-				c.close();
-				c = null;
-				return;
-			}
-			if(logMINOR) Logger.minor(BerkeleyDBFreenetStore.class, "Found first key");
-			int x = 0;
-			while(true) {
-				opStat = newStore.chkDB.putNoOverwrite(t, keyDBE, blockDBE);
-				if(opStat == OperationStatus.KEYEXIST) {
-					System.err.println("Duplicate key");
-				} else if(opStat == OperationStatus.KEYEMPTY) {
-					System.err.println("Key empty");
-				} else if(opStat == OperationStatus.NOTFOUND) {
-					System.err.println("Not found");
-				} else if(opStat == OperationStatus.SUCCESS) {
-					// It worked, cool.
-				} else {
-					throw new Error("Unknown OperationStatus: "+opStat);
-				}
-				opStat = c.getNext(keyDBE, blockDBE, LockMode.DEFAULT);
-				x++;
-				if(x % 512 == 0) {
-					t.commit();
-					t = newStore.environment.beginTransaction(null, null);
-				}
-				if(opStat == OperationStatus.NOTFOUND) {
-					System.err.println("Completed migration.");
-					return;
-				}
-			}
-		} catch (DatabaseException e) {
-			System.err.println("Caught: "+e);
-			e.printStackTrace();
-			Logger.error(BerkeleyDBFreenetStore.class, "Caught "+e, e);
-			try {
-				t.abort();
-			} catch (DatabaseException e1) {
-				System.err.println("Failed to abort: "+e1);
-				e1.printStackTrace();
-			}
-			t = null;
-			throw e;
-		} finally {
-			if(c != null) {
-				try {
-					c.close();
-				} catch (DatabaseException e) {
-					System.err.println("Cannot close cursor: "+e);
-					e.printStackTrace();
-				}
-			}
-			if(t != null) {
-				try {
-					t.commit();
-				} catch (DatabaseException e) {
-					System.err.println("Cannot close transaction: "+t);
-					e.printStackTrace();
-				}
-			}
-		}
-		
 	}
 
 	private static BerkeleyDBFreenetStore openStore(Environment storeEnvironment, File baseDir, String newDBPrefix, File newStoreFile,
@@ -403,62 +206,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
-	private static void deleteOldStoreDir(File baseStoreDir, File oldDBDir, File oldDir, String oldDirName, RandomSource random) {
-		if(!oldDir.exists()) return;
-		System.err.println("Deleting old store dir: "+oldDir);
-		// Delete
-		boolean deleteFailed = false;
-		if(oldDBDir.exists()) {
-			File[] list = oldDBDir.listFiles();
-			for(int i=0;i<list.length;i++) {
-				File f = list[i];
-				String name = f.getName();
-				if(name.equals("je.lck") || name.endsWith(".jdb")) {
-					if(!f.delete()) {
-						if(f.exists()) {
-							System.err.println("Failed to delete old database file "+f+" (no store file so old database worthless)");
-							deleteFailed = true;
-						}
-					}
-				} else {
-					System.err.println("Did not delete unknown file "+f+" - created by user?");
-					deleteFailed = true;
-				}
-			}
-			if(!deleteFailed) {
-				if(!oldDBDir.delete()) {
-					System.err.println("Unable to delete database directory: "+oldDBDir+" (no store file so old database worthless)");
-					deleteFailed = true;
-				}
-			}
-		}
-		if(deleteFailed) {
-			// Try to rename the old directory
-			File f = new File(baseStoreDir, "lost+found-"+oldDirName);
-			while(f.exists()) {
-				f = new File(baseStoreDir, "lost+found-"+oldDirName+ '-' +Long.toHexString(random.nextLong()));
-			}
-			if(!oldDir.renameTo(f)) {
-				System.err.println("Unable to rename old store directory "+oldDir+" to "+f+" (would have deleted it but it has user files or is not deletable)");
-			}
-		} else {
-			if(!oldDir.delete()) {
-				System.err.println("Unable to delete old store directory "+oldDir+" (no useful data)");
-			}
-		}
-	}
-
-	private static String oldTypeName(short type) {
-		if(type == TYPE_CHK)
-			return "";
-		else if(type == TYPE_SSK)
-			return "ssk";
-		else if(type == TYPE_PUBKEY)
-			return "pubkey";
-		else throw new Error("No such type "+type);
-	}
-
-	private static String newTypeName(short type) {
+	private static String typeName(short type) {
 		if(type == TYPE_CHK)
 			return "chk";
 		else if(type == TYPE_SSK)
