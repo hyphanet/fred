@@ -58,9 +58,9 @@ public class FilenameGenerator {
 							wipedFiles++;
 					}
 				}
+				long endWipe = System.currentTimeMillis();
+				System.err.println("Deleted "+wipedFiles+" of "+wipeableFiles+" temporary files ("+(filenames.length-wipeableFiles)+" non-temp files in temp directory) in "+TimeUtil.formatTime(endWipe-startWipe));
 			}
-			long endWipe = System.currentTimeMillis();
-			System.err.println("Deleted "+wipedFiles+" of "+wipeableFiles+" temporary files ("+(filenames.length-wipeableFiles)+" non-temp files in temp directory) in "+TimeUtil.formatTime(endWipe-startWipe));
 		}
 	}
 
