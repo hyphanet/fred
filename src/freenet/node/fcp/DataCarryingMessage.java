@@ -11,6 +11,7 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.NullBucket;
 
 
 public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
@@ -34,7 +35,10 @@ public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
 		long len = dataLength();
 		if(len < 0)
 			throw new IllegalArgumentException("Invalid length: "+len);
-		if(len == 0) return;
+		if(len == 0) {
+			bucket = new NullBucket();
+			return;
+		}
 		Bucket tempBucket;
 		try {
 			tempBucket = createBucket(bf, len, server);

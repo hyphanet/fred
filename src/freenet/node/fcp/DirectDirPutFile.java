@@ -8,6 +8,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.NullBucket;
 
 /**
  * Specialized DirPutFile for direct uploads.
@@ -28,7 +29,10 @@ public class DirectDirPutFile extends DirPutFile {
 			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Could not parse DataLength: "+e.toString(), identifier, global);
 		}
 		try {
-			data = bf.makeBucket(length);
+			if(length == 0)
+				data = new NullBucket();
+			else
+				data = bf.makeBucket(length);
 		} catch (IOException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Internal error: could not allocate temp bucket: "+e.toString(), identifier, global);
 		}
