@@ -38,6 +38,7 @@ import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentMutableConfig;
 import com.sleepycat.je.StatsConfig;
+import com.sleepycat.je.util.DbDump;
 
 import freenet.client.FetchContext;
 import freenet.config.EnumerableOptionCallback;
@@ -1152,16 +1153,27 @@ public class Node {
 		File dbDir = new File(storeDir, "database-"+portNumber);
 		dbDir.mkdirs();
 		
+		File reconstructFile = new File(dbDir, "reconstruct");
+		
 		Environment env = null;
 		EnvironmentMutableConfig mutableConfig;
+		
+		boolean tryDbLoad = false;
+		
+		String suffix = "-" + portNumber;
+		
 		// This can take some time
 		System.out.println("Starting database...");
 		try {
+			if(reconstructFile.exists()) {
+				reconstructFile.delete();
+				throw new DatabaseException();
+			}
 			env = new Environment(dbDir, envConfig);
 			mutableConfig = env.getConfig();
 		} catch (DatabaseException e) {
-			// The database is broken
-			// We will have to recover from scratch
+
+			// Close the database
 			if(env != null) {
 				try {
 					env.close();
@@ -1170,13 +1182,71 @@ public class Node {
 					t.printStackTrace();
 				}
 			}
+			
+			// First try DbDump
+			
+			boolean failed = false;
+			
+			System.err.println("Attempting DbDump-level recovery...");
+			
+			boolean[] isStores = new boolean[] { true, false, true, false, true, false };
+			short[] types = new short[] { 
+					BerkeleyDBFreenetStore.TYPE_CHK,
+					BerkeleyDBFreenetStore.TYPE_CHK,
+					BerkeleyDBFreenetStore.TYPE_PUBKEY,
+					BerkeleyDBFreenetStore.TYPE_PUBKEY,
+					BerkeleyDBFreenetStore.TYPE_SSK,
+					BerkeleyDBFreenetStore.TYPE_SSK
+			};
+			int[] lengths = new int[] {
+					CHKBlock.TOTAL_HEADERS_LENGTH + CHKBlock.DATA_LENGTH,
+					CHKBlock.TOTAL_HEADERS_LENGTH + CHKBlock.DATA_LENGTH,
+					DSAPublicKey.PADDED_SIZE,
+					DSAPublicKey.PADDED_SIZE,
+					SSKBlock.TOTAL_HEADERS_LENGTH + SSKBlock.DATA_LENGTH,
+					SSKBlock.TOTAL_HEADERS_LENGTH + SSKBlock.DATA_LENGTH
+			};
+			
+			for(int i=0;i<types.length;i++) {
+				boolean isStore = isStores[i];
+				short type = types[i];
+				String dbName = BerkeleyDBFreenetStore.getName(isStore, type);
+				File dbFile = BerkeleyDBFreenetStore.getFile(isStore, type, storeDir, suffix);
+				long keyCount = dbFile.length() / lengths[i];
+				// This is *slow* :(
+				int millis = (int)Math.min(24*60*60*1000 /* horrible hack, because of the wrapper's braindead timeout additions */, 
+						5*60*1000 + (Math.max(keyCount, 1) * 10000));
+				WrapperManager.signalStarting(millis);
+				try {
+					File target = new File(storeDir, dbName+".dump");
+					System.err.println("Dumping "+dbName+" to "+target+" ("+keyCount+" keys from file, allowing "+millis+"ms)");
+					DbDump.main(new String[] { "-r", "-h", dbDir.toString(), 
+							"-s", dbName, "-f", target.toString() });
+				} catch (DatabaseException e2) {
+					System.err.println("DbDump recovery failed for "+dbName+" : "+e2);
+					e2.printStackTrace();
+				} catch (IOException e2) {
+					System.err.println("DbDump recovery failed for "+dbName+" : "+e2);
+					e2.printStackTrace();
+				}
+				tryDbLoad = true;
+			}
+			
+			// Delete the database logs
+			
+			System.err.println("Deleting old database log files...");
+			
 			File[] files = dbDir.listFiles();
 			for(int i=0;i<files.length;i++) {
 				String name = files[i].getName().toLowerCase();
 				if(name.endsWith(".jdb") || name.equals("je.lck"))
-					files[i].delete();
+					if(!files[i].delete())
+						System.err.println("Failed to delete old database log file "+files[i]);
 			}
-			dbDir.delete();
+			
+			System.err.println("Recovering...");
+			// The database is broken
+			// We will have to recover from scratch
 			try {
 				env = new Environment(dbDir, envConfig);
 				mutableConfig = env.getConfig();
@@ -1253,34 +1323,32 @@ public class Node {
 			throw new NodeInitException(EXIT_STORE_OTHER, e.getMessage());			
 		}
 		
-		String suffix = "-" + portNumber;
-		
 		try {
 			Logger.normal(this, "Initializing CHK Datastore");
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
 			chkDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
-					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook);
+					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile);
 			Logger.normal(this, "Initializing CHK Datacache");
 			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+ ':' +maxCacheKeys+" keys)");
 			chkDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxCacheKeys, 
-					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook);
+					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile);
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
 			pubKeyDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
-					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random, storeShutdownHook);
+					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile);
 			Logger.normal(this, "Initializing pubKey Datacache");
 			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
 			pubKeyDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxCacheKeys, 
-					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random, storeShutdownHook);
+					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile);
 			// FIXME can't auto-fix SSK stores.
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
-					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook);
+					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
 			sskDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxStoreKeys, 
-					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook);
+					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
