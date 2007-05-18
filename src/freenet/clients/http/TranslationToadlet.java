@@ -87,7 +87,7 @@ public class TranslationToadlet extends Toadlet {
 			return;				
 		} else if (request.isParameterSet("translate")) {
 			String key = request.getParam("translate");
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Translation update", true, ctx);
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), true, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 			HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
