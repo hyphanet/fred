@@ -470,6 +470,7 @@ public class PeerManager {
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
             if(!p.isRoutable()) continue;
+            if(p.isRoutingBackedOff()) continue;
             double peerloc = p.getLocation().getValue();
             if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
             	continue;
@@ -483,6 +484,7 @@ public class PeerManager {
         if(!foundOne) {
             for(int i=0;i<peers.length;i++) {
                 PeerNode p = peers[i];
+                if(!p.isRoutable()) continue;
                 // Ignore backoff state
                 double peerloc = p.getLocation().getValue();
                 if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
