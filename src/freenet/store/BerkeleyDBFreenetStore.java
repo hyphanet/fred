@@ -226,7 +226,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @throws DatabaseException
 	* @throws FileNotFoundException if the dir does not exist and could not be created
 	*/
-	public BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, boolean throwOnTooFewKeys, boolean noCheck, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile) throws IOException, DatabaseException {
+	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, boolean throwOnTooFewKeys, boolean noCheck, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile) throws IOException, DatabaseException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.dataBlockSize = blockSize;
 		this.headerBlockSize = headerSize;
@@ -941,7 +941,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @throws IOException If the store cannot be opened because of a filesystem problem.
 	* @throws FileNotFoundException if the dir does not exist and could not be created
 	*/
-	public BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, short type, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile) throws DatabaseException, IOException {
+	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, short type, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile) throws DatabaseException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.dataBlockSize = blockSize;
 		this.headerBlockSize = headerSize;
