@@ -67,7 +67,8 @@ public class RequestHandler implements Runnable, ByteCounter {
     	boolean thrown = false;
         try {
         if(logMINOR) Logger.minor(this, "Handling a request: "+uid);
-        htl = source.decrementHTL(htl);
+        if(!resetClosestLoc)
+        	htl = source.decrementHTL(htl);
         
         Message accepted = DMT.createFNPAccepted(uid);
         source.sendSync(accepted, null);
