@@ -157,11 +157,7 @@ public class SplitFileInserter implements ClientPutState {
 		String scodec = fs.get("SplitfileCodec");
 		if(scodec == null) throw new ResumeException("No splitfile codec");
 		try {
-			// FIXME remove soon, backwards compat hack!
-			short t = Short.parseShort(scodec);
-			if(t == -1)
-				t = 1;
-			splitfileAlgorithm = t;
+			splitfileAlgorithm = Short.parseShort(scodec);
 		} catch (NumberFormatException e) {
 			throw new ResumeException("Corrupt SplitfileCodec: "+e+" : "+scodec);
 		}
