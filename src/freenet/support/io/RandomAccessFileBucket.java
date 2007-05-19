@@ -21,7 +21,6 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
 
     private final File file;
     private final long offset;
-    private long localOffset = 0;
     private final long len;
     private boolean readOnly = false;
     private boolean released = false;
@@ -114,17 +113,6 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
             (offset + len - 1) + ']';
     }
         
-    public synchronized void resetWrite() {
-        if (isReleased()) {
-            throw new RuntimeException("Attempt to use a released RandomAccessFileBucket: " + getName() );
-        }
-        // REDFLAG: implicit assumptions
-        // 0) Bucket is only written to at a time.
-        // 1) The output stream is closed before the
-        //    next is open. Ouch. This may cause problems...
-        localOffset = 0;
-    }
-
     public long size() { return len; }
 
     public synchronized boolean release() {
@@ -351,7 +339,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
     private class RAOutputStream extends OutputStream {
         public RAOutputStream(String pref) throws IOException {
             raf = new RandomAccessFile(file, "rw");
-            raf.seek(offset + localOffset);
+            raf.seek(offset);
             println(" -- Created new OutputStream [" + offset + ", " 
                     + (offset + len -1) + ']');
         }
@@ -411,12 +399,6 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
                     streams.removeElement(RAOutputStream.this);
                 }
                 streams.trimToSize();
-                long added = raf.getFilePointer() - offset;
-                if (added > 0) {
-                    // To get proper append behavior.
-                    localOffset = added;
-                }
-                
                 raf.close();
             }
         }
