@@ -98,6 +98,7 @@ public class SortedVectorByNumber {
 			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+length*2);
 			IntNumberedItem[] newData = new IntNumberedItem[length*2];
 			System.arraycopy(data, 0, newData, 0, data.length);
+			data = newData;
 		}
 		if(x < length)
 			System.arraycopy(data, x, data, x+1, length-x);
