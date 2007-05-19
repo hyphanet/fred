@@ -12,7 +12,7 @@ public class SortedVectorByNumber {
 	private IntNumberedItem[] data;
 	private int length;
 	private static final Comparator comparator = new SimpleIntNumberedItemComparator(true);
-	private static final int MIN_SIZE = 32;
+	private static final int MIN_SIZE = 4;
 	
 	public SortedVectorByNumber() {
 		this.data = new IntNumberedItem[MIN_SIZE];
