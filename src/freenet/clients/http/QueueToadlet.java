@@ -795,7 +795,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	private HTMLNode createPanicBox(PageMaker pageMaker, ToadletContext ctx) {
 		HTMLNode panicBox = pageMaker.getInfobox("infobox-alert", L10n.getString("QueueToadlet.panicButton"));
 		HTMLNode panicForm = ctx.addFormChild(pageMaker.getContentNode(panicBox), "/queue/", "queuePanicForm");
-		panicForm.addChild("#", (L10n.getString("QueueToadlet.panicButtonConfirmation") + " "));
+		panicForm.addChild("#", (L10n.getString("QueueToadlet.panicButtonConfirmation") + ' '));
 		panicForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_AllRequests", L10n.getString("QueueToadlet.delete") });
 		return panicBox;
 	}
@@ -863,7 +863,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode insertBox = pageMaker.getInfobox(L10n.getString("QueueToadlet.insertFile"));
 		HTMLNode insertContent = pageMaker.getContentNode(insertBox);
 		HTMLNode insertForm = ctx.addFormChild(insertContent, "/queue/", "queueInsertForm");
-		insertForm.addChild("#", (L10n.getString("QueueToadlet.insertAs") + " "));
+		insertForm.addChild("#", (L10n.getString("QueueToadlet.insertAs") + ' '));
 		insertForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "keytype", "chk", "checked" });
 		insertForm.addChild("#", " CHK \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "ksk" });
