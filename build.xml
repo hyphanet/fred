@@ -19,7 +19,10 @@
 	<property name="CSSTokenizerFilter.relative.jflex" value="freenet/clients/http/filter/CSSTokenizerFilter.jflex"/>
 	<property name="CSSTokenizerFilter.java" value="${src}/freenet/clients/http/filter/CSSTokenizerFilter.java"/>
 	<property name="junit.location" value="/usr/share/java/junit.jar"/>
-
+	<condition property="executable" value="jflex.bat" else="jflex">
+		<os family="windows"/>
+	</condition>
+		
 	<assertions>
 		<enable/>
 	</assertions>
@@ -38,7 +41,7 @@
 
 	<target name="generate-CSSTokenizerFilter" depends="env" unless="CSSTokenizerFilter.present">
 		<echo message="Generating CSSTokenizerFilter.java"/>
-		<exec dir="${src}" executable="jflex" failonerror="true" resolveexecutable="true">
+		<exec dir="${src}" executable="${executable}" failonerror="true" resolveexecutable="true">
 			<arg value="-q"/>
 			<arg value="--nobak"/>
 			<arg value="${CSSTokenizerFilter.relative.jflex}"/>
