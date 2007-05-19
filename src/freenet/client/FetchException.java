@@ -297,6 +297,8 @@ public class FetchException extends Exception {
 		case UNKNOWN_SPLITFILE_METADATA:
 		case INVALID_URI:
 		case TOO_BIG:
+		case TOO_BIG_METADATA:
+		case TOO_MANY_BLOCKS_PER_SEGMENT:
 			return true;
 
 		// Low level errors, can be retried
