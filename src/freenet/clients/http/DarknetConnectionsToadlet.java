@@ -211,7 +211,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			activityInfobox.addChild("div", "class", "infobox-header", l10n("activityTitle"));
 			HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
 			HTMLNode activityList = StatisticsToadlet.drawActivity(activityInfoboxContent, node);
-			if (advancedModeEnabled) {
+			if (advancedModeEnabled && activityList != null) {
 				if (numARKFetchers > 0) {
 					activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 				}
@@ -222,7 +222,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 
 			// Peer statistics box
 			HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
-			peerStatsInfobox.addChild("div", "class", "infobox-header", "Peer statistics");
+			peerStatsInfobox.addChild("div", "class", "infobox-header", l10nStats("peerStatsTitle"));
 			HTMLNode peerStatsContent = peerStatsInfobox.addChild("div", "class", "infobox-content");
 			HTMLNode peerStatsList = peerStatsContent.addChild("ul");
 			if (numberOfConnected > 0) {
@@ -597,6 +597,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 	
 	private static String l10n(String string) {
 		return L10n.getString("DarknetConnectionsToadlet."+string);
+	}
+	
+	private static String l10nStats(String string) {
+		return L10n.getString("StatisticsToadlet."+string);
 	}
 
 	private String sortString(boolean isReversed, String type) {

@@ -588,14 +588,14 @@ public class StatisticsToadlet extends Toadlet {
 	
 	private void drawActivityBox(HTMLNode activityInfobox, boolean advancedModeEnabled) {
 		
-		activityInfobox.addChild("div", "class", "infobox-header", "Current activity");
+		activityInfobox.addChild("div", "class", "infobox-header", l10nDark("activityTitle"));
 		HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
 		
 		HTMLNode activityList = drawActivity(activityInfoboxContent, node);
 		
 		int numARKFetchers = node.getNumARKFetchers();
 
-		if (advancedModeEnabled) {
+		if (advancedModeEnabled && activityList != null) {
 			if (numARKFetchers > 0)
 				activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 			activityList.addChild("li", "FetcherByUSKSize:\u00a0" + node.clientCore.uskManager.getFetcherByUSKSize());
