@@ -47,6 +47,7 @@ import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
+import freenet.support.api.IntCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
@@ -101,6 +102,8 @@ public class NodeClientCore implements Persistable {
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	private boolean lazyResume;
 	protected final Persister persister;
+	
+	public static int maxBackgroundUSKFetchers;
 	
 	// Client stuff that needs to be configged - FIXME
 	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -307,6 +310,21 @@ public class NodeClientCore implements Persistable {
 		});
 		
 		lazyResume = nodeConfig.getBoolean("lazyResume");
+		
+		nodeConfig.register("maxBackgroundUSKFetchers", "64", sortOrder++, true, false, "NodeClientCore.maxUSKFetchers",
+				"NodeClientCore.maxUSKFetchersLong", new IntCallback() {
+					public int get() {
+						return maxBackgroundUSKFetchers;
+					}
+					public void set(int uskFetch) throws InvalidConfigValueException {
+						if(uskFetch <= 0) throw new InvalidConfigValueException(l10n("uskFetchersMustBeGreaterThanZero"));
+							maxBackgroundUSKFetchers = uskFetch;
+						}
+					}
+		);
+		
+		maxBackgroundUSKFetchers = nodeConfig.getInt("maxBackgroundUSKFetchers");
+		
 		
 		// FIXME remove and remove related code when we can just block them.
 		// REDFLAG normally we wouldn't use static variables to carry important non-final data, but in this
@@ -1011,6 +1029,10 @@ public class NodeClientCore implements Persistable {
 	public FilterCallback createFilterCallback(URI uri, FoundURICallback cb) {
 		if(logMINOR) Logger.minor(this, "Creating filter callback: "+uri+", "+cb);
 		return new GenericReadFilterCallback(uri, cb);
+	}
+	
+	public int maxBackgroundUSKFetchers() {
+		return maxBackgroundUSKFetchers;
 	}
 	
 	public boolean lazyResume() {

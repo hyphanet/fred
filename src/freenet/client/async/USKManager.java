@@ -32,8 +32,6 @@ public class USKManager {
 	/** Backgrounded USKFetchers by USK. */
 	final HashMap backgroundFetchersByClearUSK;
 	
-	// FIXME make this configurable
-	static final int MAX_BACKGROUND_FETCHERS = 64;
 	final LRUQueue temporaryBackgroundFetchersLRU;
 	
 	/** USKChecker's by USK. Deleted immediately on completion. */
@@ -103,7 +101,7 @@ public class USKManager {
 				backgroundFetchersByClearUSK.put(clear, f);
 			}
 			temporaryBackgroundFetchersLRU.push(clear);
-			while(temporaryBackgroundFetchersLRU.size() > MAX_BACKGROUND_FETCHERS) {
+			while(temporaryBackgroundFetchersLRU.size() > NodeClientCore.maxBackgroundUSKFetchers) {
 				USK del = (USK) temporaryBackgroundFetchersLRU.pop();
 				USKFetcher fetcher = (USKFetcher) backgroundFetchersByClearUSK.get(del.clearCopy());
 				if(!fetcher.hasSubscribers()) {
