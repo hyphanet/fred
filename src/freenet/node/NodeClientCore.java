@@ -317,7 +317,7 @@ public class NodeClientCore implements Persistable {
 						return maxBackgroundUSKFetchers;
 					}
 					public void set(int uskFetch) throws InvalidConfigValueException {
-						if(uskFetch <= 0) throw new InvalidConfigValueException(l10n("uskFetchersMustBeGreaterThanZero"));
+						if(uskFetch <= 0) throw new InvalidConfigValueException(l10n("maxUSKFetchersMustBeGreaterThanZero"));
 							maxBackgroundUSKFetchers = uskFetch;
 						}
 					}
