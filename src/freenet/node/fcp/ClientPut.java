@@ -268,13 +268,6 @@ public class ClientPut extends ClientPutBase {
 		} else if(from.equals("redirect")) {
 			uploadFrom = ClientPutMessage.UPLOAD_FROM_REDIRECT;
 		} else {
-			// FIXME remove this back compatibility hack in a few builds' time
-			String s = fs.get("FromDisk");
-			if(s.equalsIgnoreCase("true"))
-				uploadFrom = ClientPutMessage.UPLOAD_FROM_DISK;
-			else if(s.equalsIgnoreCase("false"))
-				uploadFrom = ClientPutMessage.UPLOAD_FROM_DIRECT;
-			else
 				throw new PersistenceParseException("Unknown UploadFrom: "+from);
 		}
 		
