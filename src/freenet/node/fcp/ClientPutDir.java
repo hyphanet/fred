@@ -5,6 +5,7 @@ package freenet.node.fcp;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -35,7 +36,7 @@ public class ClientPutDir extends ClientPutBase {
 	private static boolean logMINOR;
 	
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
-			HashMap manifestElements) throws IdentifierCollisionException {
+			HashMap manifestElements) throws IdentifierCollisionException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
@@ -241,7 +242,7 @@ public class ClientPutDir extends ClientPutBase {
 	}
 
 	protected FCPMessage persistentTagMessage() {
-		return new PersistentPutDir(identifier, uri, verbosity, priorityClass,
+		return new PersistentPutDir(identifier, publicURI, verbosity, priorityClass,
 				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries);
 	}
 

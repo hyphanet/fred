@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.security.MessageDigest;
 
 import freenet.client.ClientMetadata;
@@ -38,7 +39,7 @@ public class ClientPut extends ClientPutBase {
 	private final short uploadFrom;
 	/** Original filename if from disk, otherwise null. Purely for PersistentPut. */
 	private final File origFilename;
-	/** If uploadFrom==UPLOAD_FROM_REDIRECT, this is the target URI */
+	/** If uploadFrom==UPLOAD_FROM_REDIRECT, this is the target of the redirect */
 	private final FreenetURI targetURI;
 	private final Bucket data;
 	private final ClientMetadata clientMetadata;
@@ -89,11 +90,12 @@ public class ClientPut extends ClientPutBase {
 	 * @throws IdentifierCollisionException
 	 * @throws NotAllowedException 
 	 * @throws FileNotFoundException 
+	 * @throws MalformedURLException 
 	 */
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly,
 			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
-			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException {
+			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException {
 		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!globalClient.core.allowUploadFrom(origFilename))
@@ -149,7 +151,7 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 	
-	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) throws IdentifierCollisionException, MessageInvalidException {
+	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
@@ -403,7 +405,7 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	protected FCPMessage persistentTagMessage() {
-		return new PersistentPut(identifier, uri, verbosity, priorityClass, uploadFrom, targetURI, 
+		return new PersistentPut(identifier, publicURI, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
 				getDataSize(), clientToken, started, ctx.maxInsertRetries, targetFilename);
 	}

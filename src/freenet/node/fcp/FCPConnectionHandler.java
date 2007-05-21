@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -197,9 +198,10 @@ public class FCPConnectionHandler {
 			Logger.minor(this, "Starting insert ID=\""+message.identifier+ '"');
 		String id = message.identifier;
 		ClientPut cp = null;
-		boolean success;
 		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
+		FCPMessage failedMessage = null;
 		synchronized(this) {
+			boolean success;
 			if(isClosed) return;
 			// We need to track non-persistent requests anyway, so we may as well check
 			if(persistent)
@@ -214,15 +216,19 @@ public class FCPConnectionHandler {
 				} catch (MessageInvalidException e) {
 					outputHandler.queue(new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, false));
 					return;
+				} catch (MalformedURLException e) {
+					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.URI_PARSE_ERROR, true, null, id, message.global);
 				}
 				if(!persistent)
 					requestsByIdentifier.put(id, cp);
 			}
+			if(!success) {
+				Logger.normal(this, "Identifier collision on "+this);
+				failedMessage = new IdentifierCollisionMessage(id, message.global);
+			}
 		}
-		if(!success) {
-			Logger.normal(this, "Identifier collision on "+this);
-			FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
-			outputHandler.queue(msg);
+		if(failedMessage != null) {
+			outputHandler.queue(failedMessage);
 			return;
 		} else {
 			Logger.minor(this, "Starting "+cp);
@@ -241,12 +247,13 @@ public class FCPConnectionHandler {
 			Logger.minor(this, "Start ClientPutDir");
 		String id = message.identifier;
 		ClientPutDir cp = null;
-		boolean success;
+		FCPMessage failedMessage = null;
 		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
 		synchronized(this) {
 			if(isClosed) return;
 			// We need to track non-persistent requests anyway, so we may as well check
-			if(persistent)
+			boolean success;
+			if(!persistent)
 				success = true;
 			else
 				success = !requestsByIdentifier.containsKey(id);
@@ -255,15 +262,20 @@ public class FCPConnectionHandler {
 					cp = new ClientPutDir(this, message, buckets);
 				} catch (IdentifierCollisionException e) {
 					success = false;
+				} catch (MalformedURLException e) {
+					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.URI_PARSE_ERROR, true, null, id, message.global);
 				}
 				if(!persistent)
 					requestsByIdentifier.put(id, cp);
+				
+			}
+			if(!success) {
+				Logger.normal(this, "Identifier collision on "+this);
+				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		}
-		if(!success) {
-			Logger.normal(this, "Identifier collision on "+this);
-			FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
-			outputHandler.queue(msg);
+		if(failedMessage != null) {
+			outputHandler.queue(failedMessage);
 			return;
 		} else {
 			// Register before starting, because it may complete immediately, and if it does,

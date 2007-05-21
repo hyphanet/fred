@@ -12,6 +12,7 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -48,12 +49,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	/** Whether to force an early generation of the CHK */
 	protected final boolean earlyEncode;
 	
+	protected final FreenetURI publicURI;
+	
 	public final static String SALT = "Salt";
 	public final static String FILE_HASH = "FileHash";
 	
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler, 
 			short priorityClass, short persistenceType, String clientToken, boolean global, boolean getCHKOnly,
-			boolean dontCompress, int maxRetries, boolean earlyEncode) {
+			boolean dontCompress, int maxRetries, boolean earlyEncode) throws MalformedURLException {
 		super(uri, identifier, verbosity, handler, priorityClass, persistenceType, clientToken, global);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(client.defaultInsertContext, new SimpleEventProducer(), persistenceType == ClientRequest.PERSIST_CONNECTION);
@@ -61,11 +64,12 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
 		this.earlyEncode = earlyEncode;
+		publicURI = getPublicURI(uri);
 	}
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler,
 			FCPClient client, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode) {
+			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode) throws MalformedURLException {
 		super(uri, identifier, verbosity, handler, client, priorityClass, persistenceType, clientToken, global);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(client.defaultInsertContext, new SimpleEventProducer(), persistenceType == ClientRequest.PERSIST_CONNECTION);
@@ -73,10 +77,12 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
 		this.earlyEncode = earlyEncode;
+		publicURI = getPublicURI(uri);
 	}
 
 	public ClientPutBase(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
 		super(fs, client2);
+		publicURI = getPublicURI(uri);
 		getCHKOnly = Fields.stringToBool(fs.get("CHKOnly"), false);
 		boolean dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
@@ -94,6 +100,24 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		if(finished && (!succeeded))
 			putFailedMessage = new PutFailedMessage(fs.subset("PutFailed"), false);
 		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
+	}
+
+	private FreenetURI getPublicURI(FreenetURI uri) throws MalformedURLException {
+		String type = uri.getKeyType();
+		if(type.equalsIgnoreCase("CHK")) {
+			return uri;
+		} else if(type.equalsIgnoreCase("SSK") || type.equalsIgnoreCase("USK")) {
+			if(type.equalsIgnoreCase("USK"))
+				uri = uri.setKeyType("SSK");
+			InsertableClientSSK issk = InsertableClientSSK.create(uri);
+			uri = uri.setRoutingKey(issk.getURI().getRoutingKey());
+			uri = uri.setKeyType(type);
+			return uri;
+		} else if(type.equalsIgnoreCase("KSK")) {
+			return uri;
+		} else {
+			throw new IllegalArgumentException();
+		}
 	}
 
 	public void onLostConnection() {

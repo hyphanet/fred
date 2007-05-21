@@ -799,6 +799,17 @@ public class FreenetURI implements Cloneable{
 				suggestedEdition);
 	}
 	
+	public FreenetURI setRoutingKey(byte[] newRoutingKey) {
+		return new FreenetURI(
+				keyType,
+				docName,
+				metaStr,
+				newRoutingKey,
+				cryptoKey,
+				extra,
+				suggestedEdition);
+	}
+
 	public void checkInsertURI() throws InsertException {
 		if(metaStr != null && metaStr.length > 0)
 			throw new InsertException(InsertException.META_STRINGS_NOT_SUPPORTED,this);
