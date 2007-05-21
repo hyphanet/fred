@@ -379,19 +379,19 @@ public class StatisticsToadlet extends Toadlet {
 		// (It's a public static constant, so it will use the version from compile time of freenet.jar)
 
 		storeSizeList.addChild("li", 
-				"Cached keys: " + thousendPoint.format(cachedKeys) + 
-				" (" + SizeUtil.formatSize(cachedSize, true) + ')' +
-				" (" + ((cachedKeys*100)/maxCachedKeys) + "%)");
+				"Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
+				"\u00a0(" + SizeUtil.formatSize(cachedSize, true) + ')' +
+				"\u00a0(" + ((cachedKeys*100)/maxCachedKeys) + "%)");
 
 		storeSizeList.addChild("li", 
 				"Stored keys:\u00a0" + thousendPoint.format(storeKeys) + 
-				" (" + SizeUtil.formatSize(storeSize, true) + ')' +
-				" (" + ((storeKeys*100)/maxStoreKeys) + "%)");
+				"\u00a0(" + SizeUtil.formatSize(storeSize, true) + ')' +
+				"\u00a0(" + ((storeKeys*100)/maxStoreKeys) + "%)");
 
 		storeSizeList.addChild("li", 
 				"Overall size:\u00a0" + thousendPoint.format(overallKeys) + 
 				"\u00a0/\u00a0" + thousendPoint.format(maxOverallKeys) +
-				" (" + SizeUtil.formatSize(overallSize, true) + 
+				"\u00a0(" + SizeUtil.formatSize(overallSize, true) + 
 				"\u00a0/\u00a0" + SizeUtil.formatSize(maxOverallSize, true) + 
 				")\u00a0(" + ((overallKeys*100)/maxOverallKeys) + "%)");
 
