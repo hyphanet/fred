@@ -317,6 +317,9 @@ public class FProxyToadlet extends Toadlet {
 				ctx.writeData(buf, 0, len);
 			}
 			return;
+		}else if(ks.equals("/robots.txt")){
+			this.writeReply(ctx, 400, "text/plain", "robots.txt", "User-agent: *\nDisallow: /");
+			return;
 		}
 		
 		if(ks.startsWith("/"))
