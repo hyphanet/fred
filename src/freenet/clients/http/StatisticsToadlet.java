@@ -362,8 +362,8 @@ public class StatisticsToadlet extends Toadlet {
 		long overallKeys = cachedKeys + storeKeys;
 		long overallSize = cachedSize + storeSize;
 
-//		long maxCachedKeys = node.getChkDatacache().getMaxKeys();
-//		long maxStoreKeys = node.getChkDatastore().getMaxKeys();
+		long maxCachedKeys = node.getChkDatacache().getMaxKeys();
+		long maxStoreKeys = node.getChkDatastore().getMaxKeys();
 		long maxOverallKeys = node.getMaxTotalKeys();
 		long maxOverallSize = maxOverallKeys * fix32kb;
 
@@ -379,12 +379,14 @@ public class StatisticsToadlet extends Toadlet {
 		// (It's a public static constant, so it will use the version from compile time of freenet.jar)
 
 		storeSizeList.addChild("li", 
-				"Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
-				" (" + SizeUtil.formatSize(cachedSize, true) + ')');
+				"Cached keys: " + thousendPoint.format(cachedKeys) + 
+				" (" + SizeUtil.formatSize(cachedSize, true) + ')' +
+				" (" + ((cachedKeys*100)/maxCachedKeys) + "%)");
 
 		storeSizeList.addChild("li", 
 				"Stored keys:\u00a0" + thousendPoint.format(storeKeys) + 
-				" (" + SizeUtil.formatSize(storeSize, true) + ')');
+				" (" + SizeUtil.formatSize(storeSize, true) + ')' +
+				" (" + ((storeKeys*100)/maxStoreKeys) + "%)");
 
 		storeSizeList.addChild("li", 
 				"Overall size:\u00a0" + thousendPoint.format(overallKeys) + 
