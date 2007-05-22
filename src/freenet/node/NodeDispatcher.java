@@ -640,7 +640,7 @@ public class NodeDispatcher implements Dispatcher {
 
 			if(src != null) {
 				Message trace =
-					DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers), LocationManager.extractUIDs(peers));
+					DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers));
 				try {
 					src.sendAsync(trace, null, 0, null);
 				} catch (NotConnectedException e1) {

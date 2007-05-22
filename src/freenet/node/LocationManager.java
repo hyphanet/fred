@@ -1122,10 +1122,17 @@ public class LocationManager {
 		return uids;
 	}
 
-	public static double[] extractLocs(PeerNode[] peers) {
+	public static double[] extractLocs(PeerNode[] peers, boolean indicateBackoff) {
 		double[] locs = new double[peers.length];
-		for(int i=0;i<peers.length;i++)
+		for(int i=0;i<peers.length;i++) {
 			locs[i] = peers[i].getLocation().getValue();
+			if(indicateBackoff) {
+				if(peers[i].isRoutingBackedOff())
+					locs[i] += 1;
+				else
+					locs[i] = -1 - locs[i];
+			}
+		}
 		return locs;
 	}
 
