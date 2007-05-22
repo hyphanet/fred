@@ -37,7 +37,9 @@ import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentMutableConfig;
+import com.sleepycat.je.RunRecoveryException;
 import com.sleepycat.je.StatsConfig;
+import com.sleepycat.je.log.DbChecksumException;
 import com.sleepycat.je.util.DbDump;
 
 import freenet.client.FetchContext;
@@ -388,6 +390,7 @@ public class Node {
 	public static final int EXIT_STORE_FILE_NOT_FOUND = 1;
 	public static final int EXIT_STORE_IOEXCEPTION = 2;
 	public static final int EXIT_STORE_OTHER = 3;
+	public static final int EXIT_STORE_RECONSTRUCT = 27;
 	public static final int EXIT_USM_DIED = 4;
 	public static final int EXIT_YARROW_INIT_FAILED = 5;
 	public static final int EXIT_TEMP_INIT_ERROR = 6;
@@ -1361,11 +1364,17 @@ public class Node {
 			e1.printStackTrace();
 			throw new NodeInitException(EXIT_STORE_IOEXCEPTION, msg);
 		} catch (DatabaseException e1) {
-			String msg = "Could not open datastore: "+e1;
+			try {
+				reconstructFile.createNewFile();
+			} catch (IOException e) {
+				System.err.println("Cannot create reconstruct file "+reconstructFile+" : "+e+" - store will not be reconstructed !!!!");
+				e.printStackTrace();
+			}
+			String msg = "Could not open datastore due to corruption, will attempt to reconstruct on next startup: "+e1;
 			Logger.error(this, msg, e1);
 			System.err.println(msg);
 			e1.printStackTrace();
-			throw new NodeInitException(EXIT_STORE_OTHER, msg);
+			throw new NodeInitException(EXIT_STORE_RECONSTRUCT, msg);
 		}
 
 		// FIXME back compatibility
