@@ -50,7 +50,7 @@ public class BookmarkManager {
 			indexes
 					.addBookmark(new BookmarkItem(
 							new FreenetURI(
-									"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/23/"),
+									"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/25/"),
 							"Entry point (freesites with descriptions but no categories)",
 							node.alerts));
 
