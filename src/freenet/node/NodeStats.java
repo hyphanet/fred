@@ -891,8 +891,7 @@ public class NodeStats implements Persistable {
 	}
 
 	public boolean getRejectReasonsTable(HTMLNode table) {
-		preemptiveRejectReasons.toTableRows(table);
-		return preemptiveRejectReasons.getSize() > 0;
+		return preemptiveRejectReasons.toTableRows(table) > 0;
 	}
 
 }

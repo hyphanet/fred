@@ -77,7 +77,7 @@ public class StringCounter {
 		return sb.toString();
 	}
 	
-	public void toTableRows(HTMLNode table) {
+	public int toTableRows(HTMLNode table) {
 		Item[] items = sortedItems(false);
 		for(int i=0;i<items.length;i++) {
 			Item it = items[i];
@@ -85,9 +85,6 @@ public class StringCounter {
 			row.addChild("td", Integer.toString(it.counter)+"\u00a0");
 			row.addChild("td", it.string);
 		}
-	}
-	
-	public int getSize() {
-		return map.size();
+		return items.length;
 	}
 }
