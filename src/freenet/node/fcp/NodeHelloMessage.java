@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
@@ -47,6 +48,7 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.putSingle("Testnet", Boolean.toString(node == null ? false : node.isTestnetEnabled()));
 		sfs.putSingle("CompressionCodecs", Integer.toString(Compressor.countCompressAlgorithms()));
 		sfs.putSingle("ConnectionIdentifier", id);
+		sfs.putSingle("NodeLanguage", L10n.getSelectedLanguage());
 		return sfs;
 	}
 
