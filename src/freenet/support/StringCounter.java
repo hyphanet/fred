@@ -13,7 +13,7 @@ import java.util.HashMap;
  */
 public class StringCounter {
 
-	private HashMap map;
+	private final HashMap map;
 	
 	private class Item {
 		public Item(String string2) {
@@ -86,5 +86,8 @@ public class StringCounter {
 			row.addChild("td", it.string);
 		}
 	}
-
+	
+	public int getSize() {
+		return map.size();
+	}
 }

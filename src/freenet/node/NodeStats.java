@@ -890,8 +890,9 @@ public class NodeStats implements Persistable {
 		return node.isTestnetEnabled();
 	}
 
-	public void getRejectReasonsTable(HTMLNode table) {
+	public boolean getRejectReasonsTable(HTMLNode table) {
 		preemptiveRejectReasons.toTableRows(table);
+		return preemptiveRejectReasons.getSize() > 0;
 	}
 
 }

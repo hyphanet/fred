@@ -292,10 +292,12 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	private void drawRejectReasonsBox(HTMLNode nextTableCell) {
+		HTMLNode rejectReasonsTable = new HTMLNode("table");
+		if(!node.nodeStats.getRejectReasonsTable(rejectReasonsTable))
+			return;
 		HTMLNode rejectReasonsInfobox = nextTableCell.addChild("div", "class", "infobox");
 		rejectReasonsInfobox.addChild("div", "class", "infobox-header", "Preemptive Rejection Reasons");
-		HTMLNode table = rejectReasonsInfobox.addChild("table");
-		node.nodeStats.getRejectReasonsTable(table);
+		rejectReasonsInfobox.addChild(rejectReasonsTable);
 	}
 
 	private void drawNodeVersionBox(HTMLNode versionInfobox) {
