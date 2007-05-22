@@ -538,12 +538,8 @@ public class PeerManager {
      * For this reason the metrics are only updated if advanced mode is enabled
      */
     public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion) {
-    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false, minVersion);
-    	if(best == null) {
-    		// Backoff is an advisory mechanism for balancing rather than limiting load.
-    		// So send a request even though everything is backed off.
-    		return _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion);
-    	}
+    	PeerNode best = closerPeerBackoff(pn, routedTo, notIgnored, loc, ignoreSelf, minVersion);
+    		
     	if (calculateMisrouting) {
     		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion);
     		if(nbo != null) {
@@ -558,7 +554,15 @@ public class PeerManager {
     	return best;
     }
 	    
-    /**
+    private PeerNode closerPeerBackoff(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, int minVersion) {
+    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false, minVersion);
+    	if(best == null) {
+    		best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion);
+    	}
+    	return best;
+	}
+
+	/**
      * Find the peer, if any, which is closer to the target location
      * than we are, and is not included in the provided set.
      */
@@ -573,7 +577,6 @@ public class PeerManager {
         if(!ignoreSelf)
             maxDiff = distance(node.lm.getLocation().getValue(), loc);
         PeerNode best = null;
-        PeerNode any = null;
         int count = 0;
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
@@ -598,7 +601,6 @@ public class PeerManager {
             	continue;
             }
             count++;
-            any = p;
             double diff = distance(p, loc);
             if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff+" for "+p.getPeer());
             if((!ignoreSelf) && (diff > maxDiff)) {
@@ -611,7 +613,6 @@ public class PeerManager {
                 if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+p.getLocation().getValue()+" for "+p.getPeer());
             }
         }
-        if(count == 1) return any;
         return best;
     }
 
