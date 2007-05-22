@@ -125,8 +125,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			synchronized(SimpleManifestPutter.this) {
 				putHandlersWaitingForMetadata.remove(this);
 				if(!putHandlersWaitingForMetadata.isEmpty()) return;
-				gotAllMetadata();
 			}
+			gotAllMetadata();
 		}
 
 		public void addBlock() {
@@ -381,6 +381,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					return;
 				} catch (InsertException e2) {
 					fail(e2);
+					return;
 				}
 			}
 		}
