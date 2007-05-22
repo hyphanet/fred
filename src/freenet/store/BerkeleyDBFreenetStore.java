@@ -1168,6 +1168,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				byte[] data = new byte[dataBlockSize];
 				try {
 					synchronized(chkStore) {
+						if(logMINOR) Logger.minor(this, "Reading data from store...");
 						long seekTarget = storeBlock.offset*(long)(dataBlockSize+headerBlockSize);
 						try {
 							chkStore.seek(seekTarget);
@@ -1198,6 +1199,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 				if(!dontPromote)
 				{
+					if(logMINOR) Logger.minor(this, "Promoting...");
 					storeBlock.updateRecentlyUsed();
 					DatabaseEntry updateDBE = new DatabaseEntry();
 					storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
