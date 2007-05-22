@@ -244,7 +244,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	long dataLength() {
 		if(uploadFromType == UPLOAD_FROM_DIRECT)
 			return dataLength;
-		else return 0;
+		else return -1;
 	}
 
 	String getIdentifier() {
