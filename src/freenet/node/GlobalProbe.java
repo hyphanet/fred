@@ -31,7 +31,7 @@ public class GlobalProbe implements Runnable {
 			}
 
 			public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs) {
-				String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+"node UID="+nodeUID+" peer locs="+StringArray.toString(peerLocs)+" peer UIDs="+StringArray.toString(peerUIDs);
+				String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+" node UID="+nodeUID+" peer locs="+StringArray.toString(peerLocs)+" peer UIDs="+StringArray.toString(peerUIDs);
 				Logger.error(this, msg);
 			}
     	};
