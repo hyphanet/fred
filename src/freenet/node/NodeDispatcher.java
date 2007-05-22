@@ -588,10 +588,8 @@ public class NodeDispatcher implements Dispatcher {
 			ctx.nearest = nearest;
 			ctx.htl = htl;
 		} else {
-			if(isNew) { // once per hop
-				htl = node.decrementHTL(src, htl);
-				ctx.htl = htl;
-			}
+			htl = node.decrementHTL(src, htl);
+			ctx.htl = htl;
 			if(logMINOR)
 				Logger.minor(this, "Updated htl to "+htl+" - myLoc="+myLoc+", target="+target+", nearest="+nearest);
 		}
