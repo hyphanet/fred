@@ -100,29 +100,16 @@ public class NodeUpdateManager {
         		"NodeUpdateManager.updateURILong",
         		new UpdateURICallback(false));
 
-        // FIXME remove when 101X is long gone
-        updaterConfig.fixOldDefaultRegex("URI", "USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/update/[0-9]++");
-        
         try {
 			updateURI = new FreenetURI(updaterConfig.getString("URI"));
 		} catch (MalformedURLException e) {
 			throw new InvalidConfigValueException(l10n("invalidUpdateURI", "error", e.getLocalizedMessage()));
 		}
 
-		if(updateURI.lastMetaString() != null && updateURI.lastMetaString().length() == 0) {
-			// FIXME remove this hack, put in because of bad default
-			System.err.println("Correcting auto-update URI: Removing extra /");
-			updateURI = updateURI.popMetaString();
-		}
-		
         updaterConfig.register("revocationURI",	REVOCATION_URI,4,
         		true, false, "NodeUpdateManager.revocationURI",
         		"NodeUpdateManager.revocationURILong",
         		new UpdateRevocationURICallback());
-        
-        // FIXME remove
-        updaterConfig.fixOldDefault("revocationURI", "freenet:SSK@VOfCZVTYPaatJ~eB~4lu2cPrWEmGyt4bfbB1v15Z6qQ,B6EynLhm7QE0se~rMgWWhl7wh3rFWjxJsEUcyohAm8A,AQABAAE/revoked");
-        updaterConfig.fixOldDefault("revocationURI", "freenet:SSK@i1F0GnBgMHNLZC~KrI8IiMCnDZeIy2YaLGsX~C0Mgv0,NlgBgblPys8YINj8CXabLW6AtUlWvZYNpYfNV08aoPo,AQACAAE/revoked");
         
         try {
 			revocationURI = new FreenetURI(updaterConfig.getString("revocationURI"));
@@ -130,17 +117,8 @@ public class NodeUpdateManager {
 			throw new InvalidConfigValueException(l10n("invalidRevocationURI", "error", e.getLocalizedMessage()));
 		}
 
-		if(revocationURI.lastMetaString() != null && revocationURI.lastMetaString().length() == 0) {
-			// FIXME remove this hack, put in because of bad default
-			System.err.println("Correcting auto-update revocation URI: Removing extra /");
-			revocationURI = revocationURI.popMetaString();
-		}
-		
         updaterConfig.register("extURI", EXT_URI, 5, true, false, "NodeUpdateManager.extURI", "NodeUpdateManager.extURILong", new UpdateURICallback(true));
         
-        // FIXME remove
-		updaterConfig.fixOldDefaultRegex("extURI", "USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/ext/[0-9]++");
-		
         try {
 			extURI = new FreenetURI(updaterConfig.getString("extURI"));
 		} catch (MalformedURLException e) {
