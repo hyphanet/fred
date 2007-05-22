@@ -61,13 +61,6 @@ public class BookmarkManager {
 							"Another Index (freesites with categories but no descriptions)",
 							node.alerts));
 
-			indexes
-					.addBookmark(new BookmarkItem(
-							new FreenetURI(
-									"USK@BPZppy07RyID~NGihHgs4AAw3fUXxgtKIrwRu5rtpWE,k5yjkAFJC93JkydKl6vpY0Zy9D8ec1ymv2XP4Tx5Io0,AQABAAE/FreeHoo/6/"),
-							"Free Hoo (very old freesite reviews site)",
-							node.alerts));
-
 			BookmarkCategory flog = (BookmarkCategory) defaultRoot
 					.addBookmark(new BookmarkCategory("Freenet devel's flogs"));
 			flog
