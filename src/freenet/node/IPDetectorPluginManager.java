@@ -1,9 +1,7 @@
 package freenet.node;
 
 import java.net.InetAddress;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Vector;
 
 import freenet.io.comm.Peer;
