@@ -1225,6 +1225,7 @@ public class Node {
 					System.err.println("Dumping "+dbName+" to "+target+" ("+keyCount+" keys from file, allowing "+millis+"ms)");
 					DbDump.main(new String[] { "-r", "-h", dbDir.toString(), 
 							"-s", dbName, "-f", target.toString() });
+					tryDbLoad = true;
 				} catch (DatabaseException e2) {
 					System.err.println("DbDump recovery failed for "+dbName+" : "+e2);
 					e2.printStackTrace();
@@ -1232,7 +1233,6 @@ public class Node {
 					System.err.println("DbDump recovery failed for "+dbName+" : "+e2);
 					e2.printStackTrace();
 				}
-				tryDbLoad = true;
 			}
 			
 			// Delete the database logs
