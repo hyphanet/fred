@@ -7,6 +7,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.security.MessageDigest;
+import java.util.Arrays;
 
 import freenet.crypt.SHA256;
 import freenet.io.WritableToDataOutputStream;
@@ -102,7 +103,7 @@ public abstract class Key implements WritableToDataOutputStream {
     
     public boolean equals(Object o){
     	if(o == null || !(o instanceof Key)) return false;
-    	return this.hash == o.hashCode();
+    	return Arrays.equals(routingKey, ((Key)o).routingKey);
     }
     
     static Bucket decompress(boolean isCompressed, byte[] output, int outputLength, BucketFactory bf, int maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
