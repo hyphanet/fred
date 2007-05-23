@@ -26,10 +26,12 @@ import com.sleepycat.je.DatabaseNotFoundException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
+import com.sleepycat.je.RunRecoveryException;
 import com.sleepycat.je.SecondaryConfig;
 import com.sleepycat.je.SecondaryDatabase;
 import com.sleepycat.je.SecondaryKeyCreator;
 import com.sleepycat.je.Transaction;
+import com.sleepycat.je.log.DbChecksumException;
 import com.sleepycat.je.util.DbLoad;
 
 import freenet.crypt.CryptFormatException;
@@ -1778,9 +1780,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	private void checkSecondaryDatabaseError(Throwable ex) {
 		String msg = ex.getMessage();
-		if((ex instanceof DatabaseException) && (msg != null && 
-				((msg.indexOf("missing key in the primary database") > -1) ||
-				msg.indexOf("the primary record contains a key that is not present in the secondary") > -1))) {
+		if(ex instanceof DatabaseException) {
+		if(msg != null && (msg.indexOf("missing key in the primary database") > -1) ||
+				msg.indexOf("the primary record contains a key that is not present in the secondary") > -1) {
 			try {
 				fixSecondaryFile.createNewFile();
 			} catch (IOException e) {
@@ -1791,6 +1793,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			Logger.error(this, "Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
 			System.err.println("Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
 			System.exit(freenet.node.Node.EXIT_DATABASE_REQUIRES_RESTART);
+		} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException) {
+			System.err.println("Corrupt database! Will be reconstructed on restart");
+			try {
+				reconstructFile.createNewFile();
+			} catch (IOException e) {
+				Logger.error(this, "Corrupt database ("+getName()+") but could not create flag file "+reconstructFile);
+				System.err.println("Corrupt database ("+getName()+") but could not create flag file "+reconstructFile);
+				return; // Not sure what else we can do
+			}
+		}
 		}
 	}
 
