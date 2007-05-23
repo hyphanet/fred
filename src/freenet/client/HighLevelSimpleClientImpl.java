@@ -111,7 +111,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		if(uri == null) throw new NullPointerException();
 		FetchContext context = getFetchContext();
 		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, this, null);
+		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, this, null, null);
 		get.start();
 		return fw.waitForCompletion();
 	}
@@ -124,7 +124,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		if(uri == null) throw new NullPointerException();
 		FetchWaiter fw = new FetchWaiter();
 		FetchContext context = getFetchContext(overrideMaxSize);
-		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, clientContext, null);
+		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, clientContext, null, null);
 		get.start();
 		return fw.waitForCompletion();
 	}

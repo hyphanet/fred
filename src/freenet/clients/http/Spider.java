@@ -122,7 +122,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	}
 
 	private ClientGetter makeGetter(FreenetURI uri) {
-		ClientGetter g = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, ctx, PRIORITY_CLASS, this, null);
+		ClientGetter g = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, ctx, PRIORITY_CLASS, this, null, null);
 		return g;
 	}
 

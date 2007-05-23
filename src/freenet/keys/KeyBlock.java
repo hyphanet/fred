@@ -13,5 +13,6 @@ public interface KeyBlock {
     public Key getKey();
     public byte[] getRawHeaders();
     public byte[] getRawData();
+	public byte[] getPubkeyBytes();
 
 }

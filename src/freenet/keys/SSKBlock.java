@@ -163,4 +163,8 @@ public class SSKBlock implements KeyBlock {
 		return pubKey;
 	}
 
+	public byte[] getPubkeyBytes() {
+		return pubKey.asBytes();
+	}
+
 }

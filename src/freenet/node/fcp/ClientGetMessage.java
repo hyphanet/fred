@@ -54,6 +54,7 @@ public class ClientGetMessage extends FCPMessage {
 	final File tempFile;
 	final String clientToken;
 	final boolean global;
+	final boolean binaryBlob;
 	
 	// FIXME move these to the actual getter process
 	static final short RETURN_TYPE_DIRECT = 0; // over FCP
@@ -189,6 +190,7 @@ public class ClientGetMessage extends FCPMessage {
 		if(global && (persistenceType == ClientRequest.PERSIST_CONNECTION)) {
 			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Global requests must be persistent", identifier, global);
 		}
+		binaryBlob = Fields.stringToBool(fs.get("BinaryBlob"), false);
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -201,6 +203,7 @@ public class ClientGetMessage extends FCPMessage {
 		fs.putSingle("MaxSize", Long.toString(maxSize));
 		fs.putSingle("MaxTempSize", Long.toString(maxTempSize));
 		fs.putSingle("MaxRetries", Integer.toString(maxRetries));
+		fs.put("BinaryBlob", binaryBlob);
 		return fs;
 	}
 

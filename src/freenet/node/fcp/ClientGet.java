@@ -41,6 +41,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private final File tempFile;
 	/** Bucket passed in to the ClientGetter to return data in. Null unless returntype=disk */
 	private Bucket returnBucket;
+	private final boolean binaryBlob;
 
 	// Verbosity bitmasks
 	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
@@ -86,6 +87,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fctx.maxTempLength = maxOutputLength;
 		Bucket ret = null;
 		this.returnType = returnType;
+		binaryBlob = false;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = returnFilename;
 			this.tempFile = returnTempFilename;
@@ -119,13 +121,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ret.free();
 				throw e;
 			}
-		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket);
+		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket, null);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
 		}
 	}
-
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException, MessageInvalidException {
 		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
@@ -144,6 +145,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fctx.maxOutputLength = message.maxSize;
 		fctx.maxTempLength = message.maxTempSize;
 		this.returnType = message.returnType;
+		this.binaryBlob = message.binaryBlob;
 		Bucket ret = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = message.diskFile;
@@ -180,7 +182,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ret.free();
 				throw e;
 			}
-		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket);
+		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
+				client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
+				client.lowLevelClient, binaryBlob ? new NullBucket() : returnBucket, 
+						binaryBlob ? returnBucket : null);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
@@ -219,6 +224,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fctx.ignoreStore = ignoreDS;
 		fctx.maxNonSplitfileRetries = maxRetries;
 		fctx.maxSplitfileBlockRetries = maxRetries;
+		binaryBlob = Fields.stringToBool(fs.get("BinaryBlob"), false);
 		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
 		if(finished) {
 			if(succeeded) {
@@ -260,7 +266,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		returnBucket = ret;
 
-		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket);
+		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
+				client.core.requestStarters.sskFetchScheduler, uri, 
+				fctx, priorityClass, client.lowLevelClient, 
+				binaryBlob ? new NullBucket() : returnBucket, 
+				binaryBlob ? returnBucket : null);
 
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
@@ -310,8 +320,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.minor(this, "Succeeded: "+identifier);
 		Bucket data = result.asBucket();
-		if(returnBucket != data)
+		if(returnBucket != data && !binaryBlob) {
 			Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data);
+			// Caller guarantees that data == returnBucket
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null);
+			return;
+		}
 		boolean dontFree = false;
 		// FIXME I don't think this is a problem in this case...? (Disk write while locked..)
 		AllDataMessage adm = null;
@@ -323,7 +337,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 				// Send all the data at once
 				// FIXME there should be other options
-				adm = new AllDataMessage(data, identifier, global);
+				adm = new AllDataMessage(returnBucket, identifier, global);
 				if(persistenceType == PERSIST_CONNECTION)
 					adm.setFreeOnSent();
 				dontFree = true;
@@ -335,17 +349,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				// Write to temp file, then rename over filename
 				FileOutputStream fos = null;
 				boolean closed = false;
-					// Caller guarantees that data == returnBucket
-					if(data != returnBucket) {
-						Logger.error(this, "Data != returnBucket for "+this);
-						onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null);
-						return;
-					}
-					if(!tempFile.renameTo(targetFile)) {
-						postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
-						// Don't delete temp file, user might want it.
-					}
-					returnBucket = new FileBucket(targetFile, false, true, false, false, false);
+				if(!tempFile.renameTo(targetFile)) {
+					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
+					// Don't delete temp file, user might want it.
+				}
+				returnBucket = new FileBucket(targetFile, false, true, false, false, false);
 				try {
 					if((fos != null) && !closed)
 						fos.close();
@@ -354,8 +362,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				}
 			}
 			progressPending = null;
-			this.foundDataLength = data.size();
-			this.foundDataMimeType = result.getMimeType();
+			this.foundDataLength = returnBucket.size();
+			if(!binaryBlob)
+				this.foundDataMimeType = result.getMimeType();
+			else
+				this.foundDataMimeType = "application/x-freenet-binary-blob";
 			this.succeeded = true;
 			finished = true;
 		}
@@ -533,6 +544,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			bucketToFS(fs, "ReturnBucket", false, returnBucket);
 		}
 		fs.putSingle("Global", Boolean.toString(client.isGlobalQueue));
+		fs.put("BinaryBlob", binaryBlob);
 		return fs;
 	}
 

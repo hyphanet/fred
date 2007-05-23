@@ -85,7 +85,7 @@ public class RevocationChecker implements ClientCallback {
 					cg = revocationGetter = new ClientGetter(this, core.requestStarters.chkFetchScheduler, 
 							core.requestStarters.sskFetchScheduler, manager.revocationURI, ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-							this, null);
+							this, null, null);
 					if(logMINOR) Logger.minor(this, "Queued another revocation fetcher");
 				}
 			}

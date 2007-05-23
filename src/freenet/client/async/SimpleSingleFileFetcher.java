@@ -113,6 +113,8 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, int reqTokenIgnored) {
+		if(parent instanceof ClientGetter)
+			((ClientGetter)parent).addKeyToBinaryBlob(block);
 		Bucket data = extract(block);
 		if(data == null) return; // failed
 		if(!block.isMetadata()) {

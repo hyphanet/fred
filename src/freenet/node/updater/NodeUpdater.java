@@ -117,7 +117,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					System.err.println("Starting "+(extUpdate?"freenet-ext.jar ":"")+"fetch for "+availableVersion);
 					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, 
 							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.UPDATE_PRIORITY_CLASS, 
-							this, new ArrayBucket());
+							this, new ArrayBucket(), null);
 					toStart = cg;
 				}
 				isFetching = true;

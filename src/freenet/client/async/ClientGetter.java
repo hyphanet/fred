@@ -3,8 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.HashSet;
 
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
@@ -13,6 +15,8 @@ import freenet.client.FetchResult;
 import freenet.client.FetchContext;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
+import freenet.keys.Key;
+import freenet.keys.KeyBlock;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -31,6 +35,11 @@ public class ClientGetter extends BaseClientGetter {
 	private int archiveRestarts;
 	/** If not null, Bucket to return the data in */
 	final Bucket returnBucket;
+	/** If not null, Bucket to return a binary blob in */
+	final Bucket binaryBlobBucket;
+	/** If not null, HashSet to track keys already added for a binary blob */
+	final HashSet binaryBlobKeysAddedAlready;
+	private DataOutputStream binaryBlobStream;
 
 	/**
 	 * Fetch a key.
@@ -45,7 +54,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * former, obviously!
 	 */
 	public ClientGetter(ClientCallback client, ClientRequestScheduler chkSched, ClientRequestScheduler sskSched,
-			    FreenetURI uri, FetchContext ctx, short priorityClass, Object clientContext, Bucket returnBucket) {
+			    FreenetURI uri, FetchContext ctx, short priorityClass, Object clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
 		super(priorityClass, chkSched, sskSched, clientContext);
 		this.client = client;
 		this.returnBucket = returnBucket;
@@ -53,6 +62,11 @@ public class ClientGetter extends BaseClientGetter {
 		this.ctx = ctx;
 		this.finished = false;
 		this.actx = new ArchiveContext(ctx.maxArchiveLevels);
+		this.binaryBlobBucket = binaryBlobBucket;
+		if(binaryBlobBucket != null) {
+			binaryBlobKeysAddedAlready = new HashSet();
+		} else
+			binaryBlobKeysAddedAlready = null;
 		archiveRestarts = 0;
 	}
 
@@ -80,8 +94,17 @@ public class ClientGetter extends BaseClientGetter {
 						returnBucket, true);
 			}
 			if(cancelled) cancel();
-			if(currentState != null && !finished)
+			if(currentState != null && !finished) {
+				if(binaryBlobBucket != null) {
+					try {
+						writeBinaryBlobHeader();
+					} catch (IOException e) {
+						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket"), null);
+						return false;
+					}
+				}
 				currentState.schedule();
+			}
 			if(cancelled) cancel();
 		} catch (MalformedURLException e) {
 			throw new FetchException(FetchException.INVALID_URI, e);
@@ -90,6 +113,7 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetState state) {
+		if(!closeBinaryBlobStream()) return;
 		synchronized(this) {
 			finished = true;
 			currentState = null;
@@ -120,6 +144,7 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public void onFailure(FetchException e, ClientGetState state) {
+		closeBinaryBlobStream();
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				int ar;
@@ -212,5 +237,85 @@ public class ClientGetter extends BaseClientGetter {
 
 	public String toString() {
 		return super.toString()+ ':' +uri;
+	}
+	
+	public static final long BINARY_BLOB_MAGIC = 0x6d58249f72d67ed9L;
+	public static final short BINARY_BLOB_OVERALL_VERSION = 0;
+	
+	private void writeBinaryBlobHeader() throws IOException {
+		binaryBlobStream = new DataOutputStream(binaryBlobBucket.getOutputStream());
+		binaryBlobStream.writeLong(BINARY_BLOB_MAGIC);
+		binaryBlobStream.writeShort(BINARY_BLOB_OVERALL_VERSION);
+	}
+
+	static final short BLOB_BLOCK = 1;
+	static final short BLOB_BLOCK_VERSION = 0;
+	
+	static final short BLOB_END = 2;
+	static final short BLOB_END_VERSION = 0;
+	
+	void addKeyToBinaryBlob(KeyBlock block) {
+		if(binaryBlobKeysAddedAlready == null) return;
+		Key key = block.getKey();
+		synchronized(binaryBlobKeysAddedAlready) {
+			if(binaryBlobStream == null) return;
+			if(binaryBlobKeysAddedAlready.contains(key)) return;
+			binaryBlobKeysAddedAlready.add(key);
+			byte[] keyData = key.getRoutingKey();
+			byte[] headers = block.getRawHeaders();
+			byte[] data = block.getRawData();
+			byte[] pubkey = block.getPubkeyBytes();
+			try {
+				writeBlobHeader(BLOB_BLOCK, BLOB_BLOCK_VERSION, 7+keyData.length+headers.length+data.length);
+				binaryBlobStream.writeShort(block.getKey().getType());
+				binaryBlobStream.writeByte(keyData.length);
+				binaryBlobStream.writeShort(headers.length);
+				binaryBlobStream.writeShort(data.length);
+				binaryBlobStream.writeShort(pubkey == null ? 0 : pubkey.length);
+				binaryBlobStream.write(keyData);
+				binaryBlobStream.write(headers);
+				binaryBlobStream.write(data);
+				if(pubkey != null)
+					binaryBlobStream.write(pubkey);
+			} catch (IOException e) {
+				Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null);
+				binaryBlobStream = null;
+				binaryBlobKeysAddedAlready.clear();
+			}
+		}
+	}
+	
+	/**
+	 * Close the binary blob stream.
+	 * @return True unless a failure occurred, in which case we will have already
+	 * called onFailure() with an appropriate error.
+	 */
+	private boolean closeBinaryBlobStream() {
+		if(binaryBlobBucket == null) return true;
+		synchronized(binaryBlobKeysAddedAlready) {
+			try {
+				writeBlobHeader(BLOB_END, BLOB_END_VERSION, 0);
+				binaryBlobStream.close();
+				return true;
+			} catch (IOException e) {
+				Logger.error(this, "Failed to close binary blob stream: "+e, e);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+e), null);
+				return false;
+			} finally {
+				binaryBlobStream = null;
+				binaryBlobKeysAddedAlready.clear();
+			}
+		}
+	}
+
+	private void writeBlobHeader(short type, short version, int length) throws IOException {
+		binaryBlobStream.writeInt(length);
+		binaryBlobStream.writeShort(type);
+		binaryBlobStream.writeShort(version);
+	}
+	
+	boolean collectingBinaryBlob() {
+		return binaryBlobBucket != null;
 	}
 }

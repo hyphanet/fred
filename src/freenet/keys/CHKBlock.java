@@ -105,4 +105,8 @@ public class CHKBlock implements KeyBlock {
 	public byte[] getRawData() {
 		return data;
 	}
+
+	public byte[] getPubkeyBytes() {
+		return null;
+	}
 }
