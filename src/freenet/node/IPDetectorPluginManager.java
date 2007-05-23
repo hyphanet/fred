@@ -169,6 +169,7 @@ public class IPDetectorPluginManager {
 			newPlugins[plugins.length] = d;
 			plugins = newPlugins;
 		}
+		if(logMINOR) Logger.minor(this, "Registering a new plugin : " + d);
 		maybeRun();
 	}
 
@@ -352,6 +353,9 @@ public class IPDetectorPluginManager {
 				if(detector.maybeSymmetric && lastDetectAttemptEndedTime <= 0) // If it appears to be an SNAT, do a detection at least once
 					maybeUrgent = true;
 				
+				if(node.peers.myPeers.length == 0 && lastDetectAttemptEndedTime <= 0) // We don't have any peer connected yet, we want to publish a "correct" reference
+					maybeUrgent = true;
+				
 				if(maybeUrgent) {
 					if(firstTimeUrgent <= 0)
 						firstTimeUrgent = now;
@@ -448,7 +452,7 @@ public class IPDetectorPluginManager {
 		}
 		
 		public void realRun() {
-			if(logMINOR) Logger.minor(this, "Running STUN detection");
+			if(logMINOR) Logger.minor(this, "Running plugin detection");
 			try {
 				FredPluginIPDetector[] run = plugins;
 				Vector v = new Vector();
