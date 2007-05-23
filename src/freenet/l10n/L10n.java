@@ -265,6 +265,8 @@ public class L10n {
 			return result;
 		}
 		Logger.error(CLASS_NAME, "The translation for " + key + " hasn't been found!");
+		System.err.println("The translation for " + key + " hasn't been found!");
+		new Exception().printStackTrace();
 		return key;
 	}
 	
