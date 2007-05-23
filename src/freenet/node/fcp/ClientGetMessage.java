@@ -73,7 +73,7 @@ public class ClientGetMessage extends FCPMessage {
 		try {
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, e.getMessage(), identifier, global);
 		}
 		String verbosityString = fs.get("Verbosity");
 		if(verbosityString == null)

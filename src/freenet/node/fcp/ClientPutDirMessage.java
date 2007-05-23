@@ -61,7 +61,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 				uu = uu.setMetaString(null);
 			uri = uu;
 		} catch (MalformedURLException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, e.getMessage(), identifier, global);
 		}
 		String verbosityString = fs.get("Verbosity");
 		if(verbosityString == null)

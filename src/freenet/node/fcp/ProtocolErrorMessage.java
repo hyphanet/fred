@@ -25,7 +25,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int CLIENT_HELLO_MUST_BE_FIRST_MESSAGE = 1;
 	static final int NO_LATE_CLIENT_HELLOS = 2;
 	static final int MESSAGE_PARSE_ERROR = 3;
-	static final int URI_PARSE_ERROR = 4;
+	static final int FREENET_URI_PARSE_ERROR = 4;
 	static final int MISSING_FIELD = 5;
 	static final int ERROR_PARSING_NUMBER = 6;
 	static final int INVALID_MESSAGE = 7;
@@ -66,8 +66,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "No late ClientHello's accepted";
 		case MESSAGE_PARSE_ERROR:
 			return "Unknown message parsing error";
-		case URI_PARSE_ERROR:
-			return "Error parsing URI";
+		case FREENET_URI_PARSE_ERROR:
+			return "Error parsing freenet URI";
 		case MISSING_FIELD:
 			return "Missing field";
 		case ERROR_PARSING_NUMBER:
