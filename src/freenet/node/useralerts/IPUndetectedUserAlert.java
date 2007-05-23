@@ -46,7 +46,7 @@ public class IPUndetectedUserAlert implements UserAlert {
 		Option o = sc.getOption("tempIPAddressHint");
 		
 		HTMLNode textNode = new HTMLNode("div");
-		L10n.addL10nSubstitution(textNode, "IPUndetectedUserAlert"+(node.ipDetector.isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink"), 
+		L10n.addL10nSubstitution(textNode, "IPUndetectedUserAlert."+(node.ipDetector.isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink"), 
 				new String[] { "link", "/link", "port" }, 
 				new String[] { "<a href=\"/config/\">", "</a>", Integer.toString(node.getPortNumber()) });
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
