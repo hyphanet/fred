@@ -58,7 +58,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode result = languageForm.addChild("select", "name", "language");
 			
 			result.addChild("option", new String[] { "value", "selected" }, new String[] { "en", "selected" }, "English");
-			result.addChild("option", "value", "fr", "Français");
+			result.addChild("option", "value", "fr", "FranÃ§ais");
 			result.addChild("option", "value", "pl", "Polski");
 			result.addChild("option", "value", "it", "Italiano");
 			result.addChild("option", "value", "se", "Svenska");
