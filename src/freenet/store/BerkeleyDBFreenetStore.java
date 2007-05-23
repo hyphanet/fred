@@ -1781,28 +1781,28 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private void checkSecondaryDatabaseError(Throwable ex) {
 		String msg = ex.getMessage();
 		if(ex instanceof DatabaseException) {
-		if(msg != null && (msg.indexOf("missing key in the primary database") > -1) ||
-				msg.indexOf("the primary record contains a key that is not present in the secondary") > -1) {
-			try {
-				fixSecondaryFile.createNewFile();
-			} catch (IOException e) {
-				Logger.error(this, "Corrupt secondary database ("+getName()+") but could not create flag file "+fixSecondaryFile);
-				System.err.println("Corrupt secondary database ("+getName()+") but could not create flag file "+fixSecondaryFile);
-				return; // Not sure what else we can do
+			if(msg != null && (msg.indexOf("missing key in the primary database") > -1) ||
+					msg.indexOf("the primary record contains a key that is not present in the secondary") > -1) {
+				try {
+					fixSecondaryFile.createNewFile();
+				} catch (IOException e) {
+					Logger.error(this, "Corrupt secondary database ("+getName()+") but could not create flag file "+fixSecondaryFile);
+					System.err.println("Corrupt secondary database ("+getName()+") but could not create flag file "+fixSecondaryFile);
+					return; // Not sure what else we can do
+				}
+				Logger.error(this, "Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
+				System.err.println("Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
+				System.exit(freenet.node.Node.EXIT_DATABASE_REQUIRES_RESTART);
+			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException) {
+				System.err.println("Corrupt database! Will be reconstructed on restart");
+				try {
+					reconstructFile.createNewFile();
+				} catch (IOException e) {
+					Logger.error(this, "Corrupt database ("+getName()+") but could not create flag file "+reconstructFile);
+					System.err.println("Corrupt database ("+getName()+") but could not create flag file "+reconstructFile);
+					return; // Not sure what else we can do
+				}
 			}
-			Logger.error(this, "Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
-			System.err.println("Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
-			System.exit(freenet.node.Node.EXIT_DATABASE_REQUIRES_RESTART);
-		} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException) {
-			System.err.println("Corrupt database! Will be reconstructed on restart");
-			try {
-				reconstructFile.createNewFile();
-			} catch (IOException e) {
-				Logger.error(this, "Corrupt database ("+getName()+") but could not create flag file "+reconstructFile);
-				System.err.println("Corrupt database ("+getName()+") but could not create flag file "+reconstructFile);
-				return; // Not sure what else we can do
-			}
-		}
 		}
 	}
 
