@@ -139,7 +139,6 @@ public class ArchiveManager {
 		ArchiveStoreItem asi = null;
 		synchronized (storedData) {
 			asi = (ArchiveStoreItem) storedData.get(k);	
-		
 			if(asi == null) return null;
 			// Promote to top of LRU
 			storedData.push(k, asi);
@@ -388,8 +387,8 @@ outer:		while(true) {
 		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
 		synchronized (storedData) {
 			storedData.push(element.key, element);
-			trimStoredData();
 		}
+		trimStoredData();
 	}
 
 	/**
