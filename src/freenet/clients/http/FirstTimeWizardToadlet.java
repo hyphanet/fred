@@ -37,6 +37,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	public static final String TOADLET_URL = "/wizard/";
 	
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
+			return;
+		}
+		
 		int currentStep = request.getIntParam("step");
 		
 		if(currentStep == 1) {
@@ -52,17 +57,67 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode languageForm = ctx.addFormChild(languageInfoboxContent, ".", "languageForm");
 			HTMLNode result = languageForm.addChild("select", "name", "language");
 			
-			for(int i=0; i<L10n.AVAILABLE_LANGUAGES.length; i++) {
-				
-				if("en".equals(L10n.AVAILABLE_LANGUAGES[i]))
-					result.addChild("option", new String[] { "value", "selected" }, new String[] {
-							L10n.AVAILABLE_LANGUAGES[i], "selected" }, L10n.AVAILABLE_LANGUAGES[i]);
-				else
-					result.addChild("option", "value", L10n.AVAILABLE_LANGUAGES[i], L10n.AVAILABLE_LANGUAGES[i]);
-			}
+			result.addChild("option", new String[] { "value", "selected" }, new String[] { "en", "selected" }, "English");
+			result.addChild("option", "value", "fr", "Français");
+			result.addChild("option", "value", "pl", "Polski");
+			result.addChild("option", "value", "it", "Italiano");
+			result.addChild("option", "value", "se", "Svenska");
+			// We don't propose unknown languages here
 			
 			languageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "languageF", L10n.getString("Toadlet.clickHere")});
 			languageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
+			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			return;
+		} else if(currentStep == 2) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step2Title"), ctx);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			
+			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
+			HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
+			
+			bandwidthnfoboxHeader.addChild("#", l10n("bandwidthLimit"));
+			bandwidthInfoboxContent.addChild("#", l10n("bandwidthLimitLong"));
+			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
+			HTMLNode result = bandwidthForm.addChild("select", "name", "bw");
+			
+			result.addChild("option", new String[] { "value", "selected" }, new String[] { "15", "selected" }, "I don't know");
+			result.addChild("option", "value", "8K", "lower speed");
+			result.addChild("option", "value", "12K", "1024+/128 kbps");
+			result.addChild("option", "value", "24K", "1024+/256 kbps");
+			result.addChild("option", "value", "48K", "1024+/512 kbps");
+			result.addChild("option", "value", "96K", "1024+/1024 kbps");
+			result.addChild("option", "value", "1000K", "higher speed");
+			
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", L10n.getString("Toadlet.clickHere")});
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
+			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			return;
+		} else if(currentStep == 3) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), ctx);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			
+			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
+			HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
+			
+			bandwidthnfoboxHeader.addChild("#", l10n("datastoreSize"));
+			bandwidthInfoboxContent.addChild("#", l10n("datastoreSizeLong"));
+			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
+			HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
+			
+			result.addChild("option", new String[] { "value", "selected" }, new String[] { "1G", "selected" }, "1GiB");
+			result.addChild("option", "value", "2G", "2GiB");
+			result.addChild("option", "value", "3G", "3GiB");
+			result.addChild("option", "value", "5G", "5GiB");
+			result.addChild("option", "value", "10G", "10GiB");
+			result.addChild("option", "value", "20G", "20GiB");
+			result.addChild("option", "value", "30G", "30GiB");
+			result.addChild("option", "value", "50G", "50GiB");
+			result.addChild("option", "value", "100G", "100GiB");
+			
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dsF", L10n.getString("Toadlet.clickHere")});
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
 		}
@@ -105,7 +160,30 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			super.writeTemporaryRedirect(ctx, "step2", TOADLET_URL+"?step=2");
 			return;
+		} else if(request.isPartSet("bwF")) {
+			String selectedUploadSpeed =request.getPartAsString("bw", 6);
+			
+			try {
+				config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
+				Logger.normal(this, "The outputBandwidthLimit has been set to "+ selectedUploadSpeed);
+			} catch (InvalidConfigValueException e) {
+				Logger.error(this, "Should not happen, please report!" + e);
+			}
+			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=3");
+			return;
+		} else if(request.isPartSet("dsF")) {
+			String selectedStoreSize =request.getPartAsString("ds", 6);
+			
+			try {
+				config.get("node").set("storeSize", selectedStoreSize);
+				Logger.normal(this, "The storeSize has been set to "+ selectedStoreSize);
+			} catch (InvalidConfigValueException e) {
+				Logger.error(this, "Should not happen, please report!" + e);
+			}
+			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=4");
+			return;
 		}
+
 		
 		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
 	}
