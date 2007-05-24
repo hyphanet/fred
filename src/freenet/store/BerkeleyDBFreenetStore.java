@@ -459,6 +459,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 //			 Add shutdownhook
 			storeShutdownHook.addEarlyJob(new ShutdownHook());
 		} catch (DatabaseException t) {
+			System.err.println("Caught exception, closing database: "+t);
+			t.printStackTrace();
 			Logger.error(this, "Caught "+t, t);
 			close(false);
 			throw t;
