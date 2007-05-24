@@ -256,9 +256,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					continue;
 				}
 				// First we need the archive metadata.
-				// Then parse it.
-				// Then we may need to fetch something from inside the archive.
-				ah = (ArchiveStoreContext) ctx.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), false);
+				// Then parse it. Then we may need to fetch something from inside the archive.
+				// It's more efficient to keep the existing ah if we can, and it is vital in
+				// the case of binary blobs.
+				if(ah == null || !ah.getKey().equals(thisKey))
+					ah = (ArchiveStoreContext) ctx.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), false, 
+							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false));
 				archiveMetadata = metadata;
 				// ah is set. This means we are currently handling an archive.
 				Bucket metadataBucket;

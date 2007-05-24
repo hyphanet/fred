@@ -7,6 +7,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import freenet.support.Base64;
 
@@ -59,7 +60,7 @@ public class NodeCHK extends Key {
     public boolean equals(Object key) {
         if(key instanceof NodeCHK) {
             NodeCHK chk = (NodeCHK) key;
-            return java.util.Arrays.equals(chk.routingKey, routingKey);
+            return java.util.Arrays.equals(chk.routingKey, routingKey) && (cryptoAlgorithm == chk.cryptoAlgorithm);
         }
         return false;
     }
@@ -67,7 +68,7 @@ public class NodeCHK extends Key {
     public int hashCode(){
     	return super.hashCode();
     }
-
+    
 	public short getType() {
 		return (short) (0x100 + (cryptoAlgorithm & 0xFF));
 	}

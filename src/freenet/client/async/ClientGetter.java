@@ -266,7 +266,7 @@ public class ClientGetter extends BaseClientGetter {
 			byte[] data = block.getRawData();
 			byte[] pubkey = block.getPubkeyBytes();
 			try {
-				writeBlobHeader(BLOB_BLOCK, BLOB_BLOCK_VERSION, 7+keyData.length+headers.length+data.length);
+				writeBlobHeader(BLOB_BLOCK, BLOB_BLOCK_VERSION, 9+keyData.length+headers.length+data.length+(pubkey==null?0:pubkey.length));
 				binaryBlobStream.writeShort(block.getKey().getType());
 				binaryBlobStream.writeByte(keyData.length);
 				binaryBlobStream.writeShort(headers.length);

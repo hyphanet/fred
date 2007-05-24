@@ -25,12 +25,14 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	private ArchiveManager manager;
 	private FreenetURI key;
 	private short archiveType;
+	private boolean forceRefetchArchive;
 	
-	public ArchiveStoreContext(ArchiveManager manager, FreenetURI key, short archiveType) {
+	public ArchiveStoreContext(ArchiveManager manager, FreenetURI key, short archiveType, boolean forceRefetchArchive) {
 		this.manager = manager;
 		this.key = key;
 		this.archiveType = archiveType;
 		myItems = new DoublyLinkedListImpl();
+		this.forceRefetchArchive = forceRefetchArchive;
 	}
 
 	/**
@@ -50,6 +52,8 @@ public class ArchiveStoreContext implements ArchiveHandler {
 
 		// Do loop detection on the archive that we are about to fetch.
 		archiveContext.doLoopDetection(key);
+		
+		if(forceRefetchArchive) return null;
 		
 		Bucket data;
 		
@@ -137,5 +141,9 @@ public class ArchiveStoreContext implements ArchiveHandler {
 
 	public void extractToCache(Bucket bucket, ArchiveContext actx) throws ArchiveFailureException, ArchiveRestartException {
 		manager.extractToCache(key, archiveType, bucket, actx, this);
+	}
+
+	public void onExtract() {
+		forceRefetchArchive = false;
 	}
 }

@@ -117,11 +117,12 @@ public class ArchiveManager {
 	 * @param archiveType The archive type, defined in Metadata.
 	 * @return An archive handler. 
 	 */
-	public synchronized ArchiveHandler makeHandler(FreenetURI key, short archiveType, boolean returnNullIfNotFound) {
-		ArchiveHandler handler = getCached(key);
+	public synchronized ArchiveHandler makeHandler(FreenetURI key, short archiveType, boolean returnNullIfNotFound, boolean forceRefetchArchive) {
+		ArchiveHandler handler = null;
+		if(!forceRefetchArchive) handler = getCached(key);
 		if(handler != null) return handler;
 		if(returnNullIfNotFound) return null;
-		handler = new ArchiveStoreContext(this, key, archiveType);
+		handler = new ArchiveStoreContext(this, key, archiveType, forceRefetchArchive);
 		putCached(key, handler);
 		return handler;
 	}
@@ -174,7 +175,7 @@ public class ArchiveManager {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		if(logMINOR) Logger.minor(this, "Extracting "+key);
-		
+		ctx.onExtract();
 		ctx.removeAllCachedItems(); // flush cache anyway
 		long expectedSize = ctx.getLastSize();
 		long archiveSize = data.size();
