@@ -262,171 +262,210 @@ public class IPDetectorPluginManager {
 				}
 			}
 			if(detector.hasDirectlyDetectedIP()) {
-				// We might still be firewalled?
-				// First, check only once per day or startup
-				if(now - lastDetectAttemptEndedTime < 12*60*60*1000) {
-					if(logMINOR) Logger.minor(this, "Node has directly detected IP and we have checked less than 12 hours ago");
-					return;
-				}
 				
-				// Now, if we have two nodes with unique IPs which aren't ours
-				// connected, we don't need to detect.
-				HashSet addressesConnected = null;
-				boolean hasOldPeers = false;
-				for(int i=0;i<peers.length;i++) {
-					PeerNode p = peers[i];
-					if(p.isConnected() || (now - p.lastReceivedPacketTime() < 24*60*60*1000)) {
-						// Has been connected in the last 24 hours.
-						// Unique IP address?
-						Peer peer = p.getPeer();
-						if(peer != null){
-							InetAddress addr = peer.getAddress(false);
-							if(p.isConnected() && (addr != null) && IPUtil.isValidAddress(peer.getAddress(), false)) {
-								// Connected node, on a real internet IP address.
-								// Is it internal?
-								boolean internal = false;
-								for(int j=0;j<nodeAddrs.length;j++) {
-									if(addr.equals(nodeAddrs[j].getAddress())) {
-										// Internal
-										internal = true;
-										break;
-									}
-								}
-								if(!internal) {
-									// Real IP address
-									if(addressesConnected == null)
-										addressesConnected = new HashSet();
-									addressesConnected.add(addr);
-									if(addressesConnected.size() > 2) {
-										// 3 connected addresses, lets assume we have connectivity.
-										if(logMINOR) Logger.minor(this, "Node has directly detected IP and has connected to 3 real IPs");
-										return;
-									}
-								}
-							}
-						}
-						long l = p.getPeerAddedTime();
-						if((l <= 0) || (now - l > 30*60*1000)) {
-							hasOldPeers = true;
-						}
-					}
-				}
-				if(!hasOldPeers) {
-					// No peers older than 30 minutes
-					if(logMINOR) Logger.minor(this, "Not detecting as less than 30 minutes old");
-					return;
-				}
+				if(!shouldDetectDespiteRealIP(now, conns, nodeAddrs)) return;
+				
 			}
 			
 			if(peers.length == 0) {
-				if(now - lastDetectAttemptEndedTime < 6*60*60*1000) {
-					// No peers, only try every 6 hours.
-					if(logMINOR) Logger.minor(this, "No peers but detected less than 6 hours ago");
-					return;
-				} else {
-					// Must try once!
-					startDetect();
-					return;
-				}
+				
+				if(shouldDetectNoPeers(now)) startDetect();
+				
 			} else {
 				
-				boolean detect = false;
-				
-				// If we have no connections, and several disconnected but enabled 
-				// peers, then run a detection.
-				
-				boolean maybeUrgent = false;
-				
-				if(conns.length == 0) {
-					
-					// No connections.
-					for(int i=0;i<peers.length;i++) {
-						PeerNode p = peers[i];
-						if(!p.isDisabled()) {
-							maybeUrgent = true;
-							if(logMINOR) Logger.minor(this, "No connections, but have peers, may detect...");
-							break;
-						}
-					}
-				}
-				
-				if(detector.maybeSymmetric && lastDetectAttemptEndedTime <= 0) // If it appears to be an SNAT, do a detection at least once
-					maybeUrgent = true;
-				
-				if(node.peers.myPeers.length == 0 && lastDetectAttemptEndedTime <= 0) // We don't have any peer connected yet, we want to publish a "correct" reference
-					maybeUrgent = true;
-				
-				if(maybeUrgent) {
-					if(firstTimeUrgent <= 0)
-						firstTimeUrgent = now;
-					
-					if(now - firstTimeUrgent > 2*60*1000)
-						detect = true;
-					
-					if(!(detector.oldIPAddress != null && detector.oldIPAddress.isRealInternetAddress(false, false)))
-						detect = true; // else wait 2 minutes
-					
-				} else {
-					if(logMINOR) Logger.minor(this, "Not urgent; conns="+conns.length);
-					firstTimeUrgent = 0;
-				}
-				
-				// Do the possibly-fake-IPs detection.
-				// If we have one or two peers connected now, reporting real IPs, and 
-				// if there is a locally detected address they are different to it, 
-				// and other peers have been connected, then maybe we need to redetect
-				// to make sure we're not being spoofed.
-				
-				boolean maybeFake = false;
-			
-				if(!detector.hasDirectlyDetectedIP()) {
-					
-					if((conns.length > 0) && (conns.length < 3)) {
-						// No locally detected IP, only one or two connections.
-						// Have we had more relatively recently?
-						int count = 0;
-						for(int i=0;i<peers.length;i++) {
-							PeerNode p = peers[i];
-							if((!p.isConnected()) || (now - p.lastReceivedPacketTime() < 5*60*1000)) {
-								// Not connected now but has been within the past 5 minutes.
-								count++;
-							}
-						}
-						if(count > 2) {
-							if(logMINOR) Logger.minor(this, "Recently connected peers count: "+count);
-							maybeFake = true;
-						}
-					}
-				}
-				
-				if(maybeFake) {
-					if(logMINOR) Logger.minor(this, "Possible fake IPs being fed to us, may detect...");
-					if(firstTimeMaybeFakePeers <= 0)
-						firstTimeMaybeFakePeers = now;
-					
-					if((now - firstTimeMaybeFakePeers) > 2*60*1000) {
-						// MaybeFake been true for 2 minutes.
-						detect = true;
-					}
-				
-				} else {
-					if(logMINOR) Logger.minor(this, "Not fake");
-					firstTimeMaybeFakePeers = 0;
-				}
-			
-				if(detect) {
-					if(now - lastDetectAttemptEndedTime < 60*60*1000) {
-						// Only try every hour
-						if(logMINOR) Logger.minor(this, "Only trying once per hour");
-						return;
-					}
-					
-					startDetect();
-				}
+				if(shouldDetectWithPeers(now, peers, conns)) startDetect();
 				
 			}
 		}
 		
+	}
+
+	/**
+	 * Given that we have no peers, should we run the detection plugins?
+	 * Algorithm: Run the detection once every 6 hours.
+	 * @param now The time at the start of the calling method.
+	 * @return True if we should run a detection.
+	 */
+	private boolean shouldDetectNoPeers(long now) {
+		if(now - lastDetectAttemptEndedTime < 6*60*60*1000) {
+			// No peers, only try every 6 hours.
+			if(logMINOR) Logger.minor(this, "No peers but detected less than 6 hours ago");
+			return false;
+		} else {
+			// Must try once!
+			return true;
+		}
+	}
+
+	/**
+	 * Given that we have some peers, should we run the detection plugins?
+	 * @param now The time at the beginning of the calling method.
+	 * @param peers The node's peers.
+	 * @param conns The node's connected peers.
+	 * @return True if we should run a detection.
+	 */
+	private boolean shouldDetectWithPeers(long now, PeerNode[] peers, PeerNode[] conns) {
+		
+		boolean detect = false;
+		
+		// If we have no connections, and several disconnected but enabled 
+		// peers, then run a detection.
+		
+		boolean maybeUrgent = false;
+		
+		if(conns.length == 0) {
+			
+			// No connections.
+			for(int i=0;i<peers.length;i++) {
+				PeerNode p = peers[i];
+				if(!p.isDisabled()) {
+					maybeUrgent = true;
+					if(logMINOR) Logger.minor(this, "No connections, but have peers, may detect...");
+					break;
+				}
+			}
+		}
+		
+		if(detector.maybeSymmetric && lastDetectAttemptEndedTime <= 0) // If it appears to be an SNAT, do a detection at least once
+			maybeUrgent = true;
+		
+		if(node.peers.myPeers.length == 0 && lastDetectAttemptEndedTime <= 0) // We don't have any peer connected yet, we want to publish a "correct" reference
+			maybeUrgent = true;
+		
+		if(maybeUrgent) {
+			if(firstTimeUrgent <= 0)
+				firstTimeUrgent = now;
+			
+			if(now - firstTimeUrgent > 2*60*1000)
+				detect = true;
+			
+			if(!(detector.oldIPAddress != null && detector.oldIPAddress.isRealInternetAddress(false, false)))
+				detect = true; // else wait 2 minutes
+			
+		} else {
+			if(logMINOR) Logger.minor(this, "Not urgent; conns="+conns.length);
+			firstTimeUrgent = 0;
+		}
+		
+		// Do the possibly-fake-IPs detection.
+		// If we have one or two peers connected now, reporting real IPs, and 
+		// if there is a locally detected address they are different to it, 
+		// and other peers have been connected, then maybe we need to redetect
+		// to make sure we're not being spoofed.
+		
+		boolean maybeFake = false;
+	
+		if(!detector.hasDirectlyDetectedIP()) {
+			
+			if((conns.length > 0) && (conns.length < 3)) {
+				// No locally detected IP, only one or two connections.
+				// Have we had more relatively recently?
+				int count = 0;
+				for(int i=0;i<peers.length;i++) {
+					PeerNode p = peers[i];
+					if((!p.isConnected()) || (now - p.lastReceivedPacketTime() < 5*60*1000)) {
+						// Not connected now but has been within the past 5 minutes.
+						count++;
+					}
+				}
+				if(count > 2) {
+					if(logMINOR) Logger.minor(this, "Recently connected peers count: "+count);
+					maybeFake = true;
+				}
+			}
+		}
+		
+		if(maybeFake) {
+			if(logMINOR) Logger.minor(this, "Possible fake IPs being fed to us, may detect...");
+			if(firstTimeMaybeFakePeers <= 0)
+				firstTimeMaybeFakePeers = now;
+			
+			if((now - firstTimeMaybeFakePeers) > 2*60*1000) {
+				// MaybeFake been true for 2 minutes.
+				detect = true;
+			}
+		
+		} else {
+			if(logMINOR) Logger.minor(this, "Not fake");
+			firstTimeMaybeFakePeers = 0;
+		}
+	
+		if(detect) {
+			if(now - lastDetectAttemptEndedTime < 60*60*1000) {
+				// Only try every hour
+				if(logMINOR) Logger.minor(this, "Only trying once per hour");
+				return false;
+			}
+			
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Should we run the detection plugins despite having a directly detected IP address?
+	 * @param now The time at the beginning of the calling method.
+	 * @param peers The node's peers.
+	 * @param nodeAddrs Our peers' addresses.
+	 * @return True if we should run a detection.
+	 */
+	private boolean shouldDetectDespiteRealIP(long now, PeerNode[] peers, Peer[] nodeAddrs) {
+		// We might still be firewalled?
+		// First, check only once per day or startup
+		if(now - lastDetectAttemptEndedTime < 12*60*60*1000) {
+			if(logMINOR) Logger.minor(this, "Node has directly detected IP and we have checked less than 12 hours ago");
+			return false;
+		}
+		
+		// Now, if we have two nodes with unique IPs which aren't ours
+		// connected, we don't need to detect.
+		HashSet addressesConnected = null;
+		boolean hasOldPeers = false;
+		for(int i=0;i<peers.length;i++) {
+			PeerNode p = peers[i];
+			if(p.isConnected() || (now - p.lastReceivedPacketTime() < 24*60*60*1000)) {
+				// Has been connected in the last 24 hours.
+				// Unique IP address?
+				Peer peer = p.getPeer();
+				if(peer != null){
+					InetAddress addr = peer.getAddress(false);
+					if(p.isConnected() && (addr != null) && IPUtil.isValidAddress(peer.getAddress(), false)) {
+						// Connected node, on a real internet IP address.
+						// Is it internal?
+						boolean internal = false;
+						for(int j=0;j<nodeAddrs.length;j++) {
+							if(addr.equals(nodeAddrs[j].getAddress())) {
+								// Internal
+								internal = true;
+								break;
+							}
+						}
+						if(!internal) {
+							// Real IP address
+							if(addressesConnected == null)
+								addressesConnected = new HashSet();
+							addressesConnected.add(addr);
+							if(addressesConnected.size() > 2) {
+								// 3 connected addresses, lets assume we have connectivity.
+								if(logMINOR) Logger.minor(this, "Node has directly detected IP and has connected to 3 real IPs");
+								return false;
+							}
+						}
+					}
+				}
+				long l = p.getPeerAddedTime();
+				if((l <= 0) || (now - l > 30*60*1000)) {
+					hasOldPeers = true;
+				}
+			}
+		}
+		if(!hasOldPeers) {
+			// No peers older than 30 minutes
+			if(logMINOR) Logger.minor(this, "Not detecting as less than 30 minutes old");
+			return false;
+		}
+		return true;
 	}
 
 	private void startDetect() {
