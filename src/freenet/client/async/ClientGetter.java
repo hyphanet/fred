@@ -97,7 +97,8 @@ public class ClientGetter extends BaseClientGetter {
 			if(currentState != null && !finished) {
 				if(binaryBlobBucket != null) {
 					try {
-						writeBinaryBlobHeader();
+						binaryBlobStream = new DataOutputStream(binaryBlobBucket.getOutputStream());
+						BinaryBlob.writeBinaryBlobHeader(binaryBlobStream);
 					} catch (IOException e) {
 						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket"), null);
 						return false;
@@ -239,21 +240,6 @@ public class ClientGetter extends BaseClientGetter {
 		return super.toString()+ ':' +uri;
 	}
 	
-	public static final long BINARY_BLOB_MAGIC = 0x6d58249f72d67ed9L;
-	public static final short BINARY_BLOB_OVERALL_VERSION = 0;
-	
-	private void writeBinaryBlobHeader() throws IOException {
-		binaryBlobStream = new DataOutputStream(binaryBlobBucket.getOutputStream());
-		binaryBlobStream.writeLong(BINARY_BLOB_MAGIC);
-		binaryBlobStream.writeShort(BINARY_BLOB_OVERALL_VERSION);
-	}
-
-	static final short BLOB_BLOCK = 1;
-	static final short BLOB_BLOCK_VERSION = 0;
-	
-	static final short BLOB_END = 2;
-	static final short BLOB_END_VERSION = 0;
-	
 	void addKeyToBinaryBlob(KeyBlock block) {
 		if(binaryBlobKeysAddedAlready == null) return;
 		Key key = block.getKey();
@@ -261,22 +247,8 @@ public class ClientGetter extends BaseClientGetter {
 			if(binaryBlobStream == null) return;
 			if(binaryBlobKeysAddedAlready.contains(key)) return;
 			binaryBlobKeysAddedAlready.add(key);
-			byte[] keyData = key.getRoutingKey();
-			byte[] headers = block.getRawHeaders();
-			byte[] data = block.getRawData();
-			byte[] pubkey = block.getPubkeyBytes();
 			try {
-				writeBlobHeader(BLOB_BLOCK, BLOB_BLOCK_VERSION, 9+keyData.length+headers.length+data.length+(pubkey==null?0:pubkey.length));
-				binaryBlobStream.writeShort(block.getKey().getType());
-				binaryBlobStream.writeByte(keyData.length);
-				binaryBlobStream.writeShort(headers.length);
-				binaryBlobStream.writeShort(data.length);
-				binaryBlobStream.writeShort(pubkey == null ? 0 : pubkey.length);
-				binaryBlobStream.write(keyData);
-				binaryBlobStream.write(headers);
-				binaryBlobStream.write(data);
-				if(pubkey != null)
-					binaryBlobStream.write(pubkey);
+				BinaryBlob.writeKey(binaryBlobStream, block, key);
 			} catch (IOException e) {
 				Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null);
@@ -295,7 +267,7 @@ public class ClientGetter extends BaseClientGetter {
 		if(binaryBlobBucket == null) return true;
 		synchronized(binaryBlobKeysAddedAlready) {
 			try {
-				writeBlobHeader(BLOB_END, BLOB_END_VERSION, 0);
+				BinaryBlob.writeEndBlob(binaryBlobStream);
 				binaryBlobStream.close();
 				return true;
 			} catch (IOException e) {
@@ -309,12 +281,6 @@ public class ClientGetter extends BaseClientGetter {
 		}
 	}
 
-	private void writeBlobHeader(short type, short version, int length) throws IOException {
-		binaryBlobStream.writeInt(length);
-		binaryBlobStream.writeShort(type);
-		binaryBlobStream.writeShort(version);
-	}
-	
 	boolean collectingBinaryBlob() {
 		return binaryBlobBucket != null;
 	}
