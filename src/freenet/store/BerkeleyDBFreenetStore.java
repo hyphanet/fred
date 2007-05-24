@@ -383,7 +383,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			System.err.println("Reconstructing block numbers index... ("+e+")");
 			Logger.error(this, "Reconstructing block numbers index...", e);
 			System.err.println("Creating new block DB index");
-			blockNoDbConfig.setSortedDuplicates(true);
+			blockNoDbConfig.setSortedDuplicates(false);
 			blockNoDbConfig.setAllowCreate(true);
 			blockNoDbConfig.setAllowPopulate(true);
 			blockNums = environment.openSecondaryDatabase
