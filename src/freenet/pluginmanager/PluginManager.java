@@ -353,15 +353,16 @@ public class PluginManager {
                 		return null;
                 }
                 
-                // Shall we prevent overwriting ?
-                File f = new File("plugins/" + pluginname + ".jar");
-                if(f.exists()) f.delete();
+                File finalFile = new File("plugins/" + pluginname + ".jar");
+                File f = File.createTempFile(pluginname, ".tmp", finalFile);
                 os = new BufferedOutputStream(new FileOutputStream(f));
                 int b;
                 while ((b = dis.read()) != -1) {
                         os.write(b);
                 }
+                f.renameTo(finalFile);
     			filename = "*@file://" + FileUtil.getCanonicalFile(f);
+    			if(logMINOR) Logger.minor(this, "Rewritten to "+filename);
 			} catch (MalformedURLException mue) {
 				Logger.error(this, "MAlformedURLException has occured : "+ mue, mue);
 				return null;
