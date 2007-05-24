@@ -338,13 +338,16 @@ public class PluginManager {
 			URL url;
 			DataInputStream dis;
             InputStream is = null;
-            BufferedOutputStream os = null;
+            BufferedInputStream bis = null;
+            FileOutputStream fos = null;
+            BufferedOutputStream bos = null;
 			
 			try {
 				url = new URL("http://downloads.freenetproject.org/alpha/plugins/" + pluginname + ".jar.url");
 				if(logMINOR) Logger.minor(this, "Downloading "+url);
 				is = url.openStream();
-                dis = new DataInputStream(new BufferedInputStream(is));
+				bis = new BufferedInputStream(is);
+                dis = new DataInputStream(bis);
                 
                 File pluginsDirectory = new File("plugins");
                 if(!pluginsDirectory.exists()) {
@@ -355,10 +358,13 @@ public class PluginManager {
                 
                 File finalFile = new File("plugins/" + pluginname + ".jar");
                 File f = File.createTempFile(pluginname, ".tmp", finalFile);
-                os = new BufferedOutputStream(new FileOutputStream(f));
-                int b;
-                while ((b = dis.read()) != -1) {
-                        os.write(b);
+                fos = new FileOutputStream(f);
+                bos = new BufferedOutputStream(fos);
+                int len = 0, writenBytes = 0;
+                byte[] buffer = new byte[4096];
+                while ((len = dis.read(buffer)) != -1) {
+                        bos.write(buffer, writenBytes, len);
+                        writenBytes +=len;
                 }
                 f.renameTo(finalFile);
     			filename = "*@file://" + FileUtil.getCanonicalFile(f);
@@ -375,8 +381,10 @@ public class PluginManager {
 				return null;
 			} finally {
 				try {
+					if(bis != null) bis.close();
 					if(is != null) is.close();
-					if(os != null) os.close();
+					if(bos != null) bos.close();
+					if(fos != null) fos.close();
 				} catch (IOException ioe) {}
 			}
 			if(filename == null)
