@@ -329,9 +329,6 @@ public class IPDetectorPluginManager {
 		if(detector.maybeSymmetric && lastDetectAttemptEndedTime <= 0) // If it appears to be an SNAT, do a detection at least once
 			maybeUrgent = true;
 		
-		if(node.peers.myPeers.length == 0 && lastDetectAttemptEndedTime <= 0) // We don't have any peer connected yet, we want to publish a "correct" reference
-			maybeUrgent = true;
-		
 		if(maybeUrgent) {
 			if(firstTimeUrgent <= 0)
 				firstTimeUrgent = now;
