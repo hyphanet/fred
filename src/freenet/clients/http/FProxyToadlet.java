@@ -320,6 +320,11 @@ public class FProxyToadlet extends Toadlet {
 		}else if(ks.equals("/robots.txt")){
 			this.writeReply(ctx, 400, "text/plain", "robots.txt", "User-agent: *\nDisallow: /");
 			return;
+		}else if(ks.startsWith("/darknet/")) { //TODO: remove when obsolete
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/friends/");
+			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
+			return;
 		}
 		
 		if(ks.startsWith("/"))

@@ -33,7 +33,7 @@ public class SymlinkerToadlet extends Toadlet {
 			public void set(String[] val) throws InvalidConfigValueException {
 				//if(storeDir.equals(new File(val))) return;
 				// FIXME
-				throw new InvalidConfigValueException(L10n.getString("PluginManager.cannotSetOnceLoaded"));
+				throw new InvalidConfigValueException("Cannot set the plugins that's loaded.");
 			}
 		});
 		
@@ -53,7 +53,6 @@ public class SymlinkerToadlet extends Toadlet {
 		
 		addLink("/sl/search/", "/plugins/plugins.Librarian/", false);
 		addLink("/sl/gallery/", "/plugins/plugins.TestGallery/", false);
-		addLink("/darknet/", "/friends/", false);
 	}
 	
 	public boolean addLink(String alias, String target, boolean store) {
