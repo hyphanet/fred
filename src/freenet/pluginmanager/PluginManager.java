@@ -3,11 +3,18 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.JarURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -30,6 +37,7 @@ import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
+import freenet.support.io.FileUtil;
 
 public class PluginManager {
 
@@ -319,6 +327,59 @@ public class PluginManager {
 				".jar.url";
 			//System.out.println(filename);
 			if(logMINOR) Logger.minor(this, "Rewritten to "+filename);
+		} if (filename.endsWith("#")) {
+			if(filename.indexOf('@') > -1) {
+				Logger.error(this, "We don't allow downloads from anywhere else but our server");
+				return null;
+			}
+			String pluginname = filename.substring(0, filename.length()-1);
+			filename = null;
+			
+			URL url;
+			DataInputStream dis;
+            InputStream is = null;
+            BufferedOutputStream os = null;
+			
+			try {
+				url = new URL("http://downloads.freenetproject.org/alpha/plugins/" + pluginname + ".jar.url");
+				if(logMINOR) Logger.minor(this, "Downloading "+url);
+				is = url.openStream();
+                dis = new DataInputStream(new BufferedInputStream(is));
+                
+                File pluginsDirectory = new File("plugins");
+                if(!pluginsDirectory.exists()) {
+                	Logger.normal(this, "The plugin directory hasn't been found, let's create it");
+                	if(!pluginsDirectory.mkdir())
+                		return null;
+                }
+                
+                // Shall we prevent overwriting ?
+                File f = new File("plugins/" + pluginname + ".jar");
+                if(f.exists()) f.delete();
+                os = new BufferedOutputStream(new FileOutputStream(f));
+                int b;
+                while ((b = dis.read()) != -1) {
+                        os.write(b);
+                }
+    			filename = "*@file://" + FileUtil.getCanonicalFile(f);
+			} catch (MalformedURLException mue) {
+				Logger.error(this, "MAlformedURLException has occured : "+ mue, mue);
+				return null;
+			} catch (FileNotFoundException e) {
+				Logger.error(this, "FileNotFoundException has occured : "+ e, e);
+				return null;
+			} catch (IOException ioe) {
+				System.out.println("Caught :"+ioe.getMessage());
+				ioe.printStackTrace();
+				return null;
+			} finally {
+				try {
+					if(is != null) is.close();
+					if(os != null) os.close();
+				} catch (IOException ioe) {}
+			}
+			if(filename == null)
+				return null;
 		}
 		
 		BufferedReader in = null;
