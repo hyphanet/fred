@@ -318,7 +318,7 @@ public class FProxyToadlet extends Toadlet {
 			}
 			return;
 		}else if(ks.equals("/robots.txt")){
-			this.writeReply(ctx, 400, "text/plain", "robots.txt", "User-agent: *\nDisallow: /");
+			this.writeReply(ctx, 302, "text/plain", "Found", "User-agent: *\nDisallow: /");
 			return;
 		}else if(ks.startsWith("/darknet/")) { //TODO: remove when obsolete
 			MultiValueTable headers = new MultiValueTable();
