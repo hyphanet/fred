@@ -12,6 +12,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
@@ -366,7 +367,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(!binaryBlob)
 				this.foundDataMimeType = result.getMimeType();
 			else
-				this.foundDataMimeType = "application/x-freenet-binary-blob";
+				this.foundDataMimeType = BinaryBlob.MIME_TYPE;
 			this.succeeded = true;
 			finished = true;
 		}

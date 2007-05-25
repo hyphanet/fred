@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.IOException;
+
 import freenet.client.ClientMetadata;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
@@ -28,6 +30,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	private final boolean getCHKOnly;
 	private final boolean isMetadata;
 	private boolean startedStarting;
+	private final boolean binaryBlob;
 	private FreenetURI uri;
 	/** SimpleFieldSet containing progress information from last startup.
 	 * Will be progressively cleared during startup. */
@@ -50,7 +53,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, short priorityClass, boolean getCHKOnly, 
-			boolean isMetadata, Object clientContext, SimpleFieldSet stored, String targetFilename) {
+			boolean isMetadata, Object clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
 		super(priorityClass, chkScheduler, sskScheduler, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
@@ -63,6 +66,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.cancelled = false;
 		this.oldProgress = stored;
 		this.targetFilename = targetFilename;
+		this.binaryBlob = binaryBlob;
 	}
 
 	public void start(boolean earlyEncode) throws InsertException {
@@ -89,8 +93,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				if(currentState != null) return false;
 				cancel = this.cancelled;
 				if(!cancel) {
-					currentState =
-						new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false, false, targetFilename, earlyEncode);
+					if(!binaryBlob)
+						currentState =
+							new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, 
+									false, getCHKOnly, false, null, false, false, targetFilename, earlyEncode);
+					else
+						currentState =
+							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx);
 				}
 			}
 			if(cancel) {
@@ -126,7 +135,29 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if (this.client!=null) {
 				this.client.onFailure(e, this);
 			}
-		}
+		} catch (IOException e) {
+			Logger.error(this, "Failed to start insert: "+e, e);
+			synchronized(this) {
+				finished = true;
+				oldProgress = null;
+				currentState = null;
+			}
+			// notify the client that the insert could not even be started
+			if (this.client!=null) {
+				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this);
+			}
+		} catch (BinaryBlobFormatException e) {
+			Logger.error(this, "Failed to start insert: "+e, e);
+			synchronized(this) {
+				finished = true;
+				oldProgress = null;
+				currentState = null;
+			}
+			// notify the client that the insert could not even be started
+			if (this.client!=null) {
+				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this);
+			}
+		} 
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Started "+this);
 		return true;

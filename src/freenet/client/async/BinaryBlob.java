@@ -36,6 +36,7 @@ public abstract class BinaryBlob {
 	static final short BLOB_BLOCK_VERSION = 0;
 	static final short BLOB_END = 2;
 	static final short BLOB_END_VERSION = 0;
+	public static final String MIME_TYPE = "application/x-freenet-binary-blob";
 	static void writeBlobHeader(DataOutputStream binaryBlobStream, short type, short version, int length) throws IOException {
 		binaryBlobStream.writeInt(length);
 		binaryBlobStream.writeShort(type);

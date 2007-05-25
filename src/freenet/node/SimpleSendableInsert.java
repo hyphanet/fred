@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.client.InsertException;
+import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
 import freenet.keys.CHKBlock;
 import freenet.keys.KeyBlock;
@@ -18,15 +18,29 @@ import freenet.support.RandomGrabArray;
  */
 public class SimpleSendableInsert extends SendableInsert {
 
-	public final NodeClientCore node;
 	public final KeyBlock block;
 	public final short prioClass;
 	private boolean finished;
+	public final Object client;
+	public final ClientRequestScheduler scheduler;
 	
-	public SimpleSendableInsert(NodeClientCore node, KeyBlock block, short prioClass) {
-		this.node = node;
+	public SimpleSendableInsert(NodeClientCore core, KeyBlock block, short prioClass) {
 		this.block = block;
 		this.prioClass = prioClass;
+		this.client = core;
+		if(block instanceof CHKBlock)
+			scheduler = core.requestStarters.chkPutScheduler;
+		else if(block instanceof SSKBlock)
+			scheduler = core.requestStarters.sskPutScheduler;
+		else
+			throw new IllegalArgumentException("Don't know what to do with "+block, new Exception());
+	}
+	
+	public SimpleSendableInsert(KeyBlock block, short prioClass, Object client, ClientRequestScheduler scheduler) {
+		this.block = block;
+		this.prioClass = prioClass;
+		this.client = client;
+		this.scheduler = scheduler;
 	}
 	
 	public void onSuccess() {
@@ -67,7 +81,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	public Object getClient() {
-		return node;
+		return client;
 	}
 
 	public ClientRequester getClientRequest() {
@@ -84,12 +98,7 @@ public class SimpleSendableInsert extends SendableInsert {
 
 	public void schedule() {
 		finished = false; // can reschedule
-		if(block instanceof CHKBlock)
-			node.requestStarters.chkPutScheduler.register(this);
-		else if(block instanceof SSKBlock)
-			node.requestStarters.sskPutScheduler.register(this);
-		else
-			Logger.error(this, "Don't know what to do with "+block, new Exception());
+		scheduler.register(this);
 	}
 
 	public void cancel() {

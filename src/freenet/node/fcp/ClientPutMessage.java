@@ -64,6 +64,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	/** Filename (hint for the final filename) */
 	final String targetFilename;
 	final boolean earlyEncode;
+	final boolean binaryBlob;
 	
 	public static final short UPLOAD_FROM_DIRECT = 0;
 	public static final short UPLOAD_FROM_DISK = 1;
@@ -72,6 +73,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		String fnam = null;
 		identifier = fs.get("Identifier");
+		binaryBlob = fs.getBoolean("BinaryBlob", false);
 		global = Fields.stringToBool(fs.get("Global"), false);
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
@@ -226,6 +228,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		sfs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
 		sfs.putSingle("DontCompress", Boolean.toString(dontCompress));
 		sfs.putSingle("Global", Boolean.toString(global));
+		sfs.put("BinaryBlob", binaryBlob);
 		return sfs;
 	}
 

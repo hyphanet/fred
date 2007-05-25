@@ -94,6 +94,8 @@ public class InsertException extends Exception {
 	public static final int CANCELLED = 10;
 	/** Meta string used in the key (most probably '/') */
 	public static final int META_STRINGS_NOT_SUPPORTED = 11;
+	/** Invalid binary blob data supplied so cannot insert it */
+	public static final int BINARY_BLOB_FORMAT_ERROR = 12;
 	
 	public static String getMessage(int mode) {
 		String ret = L10n.getString("InsertException.longError."+mode);
@@ -123,6 +125,7 @@ public class InsertException extends Exception {
 		case COLLISION:
 		case CANCELLED:
 		case META_STRINGS_NOT_SUPPORTED:
+		case BINARY_BLOB_FORMAT_ERROR:
 			return true;
 		case BUCKET_ERROR: // maybe
 		case INTERNAL_ERROR: // maybe

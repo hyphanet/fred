@@ -17,6 +17,7 @@ import freenet.client.FetchResult;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
+import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.crypt.SHA256;
@@ -48,6 +49,8 @@ public class ClientPut extends ClientPutBase {
 	/** Filename if the file has one */
 	private final String targetFilename;
 	private boolean logMINOR;
+	/** If true, we are inserting a binary blob: No metadata, no URI is generated. */
+	private final boolean binaryBlob;
 	
 	/**
 	 * Creates a new persistent insert.
@@ -105,6 +108,7 @@ public class ClientPut extends ClientPutBase {
 		}
 
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		binaryBlob = false;
 		this.targetFilename = targetFilename;
 		this.uploadFrom = uploadFromType;
 		this.origFilename = origFilename;
@@ -144,7 +148,7 @@ public class ClientPut extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
-				getCHKOnly, isMetadata, client.lowLevelClient, null, targetFilename);
+				getCHKOnly, isMetadata, client.lowLevelClient, null, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
@@ -157,6 +161,7 @@ public class ClientPut extends ClientPutBase {
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
 		String salt = null;
 		byte[] saltedHash = null;
+		binaryBlob = message.binaryBlob;
 		
 		if(message.uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!handler.server.core.allowUploadFrom(message.origFilename))
@@ -179,6 +184,11 @@ public class ClientPut extends ClientPutBase {
 		this.origFilename = message.origFilename;
 		// Now go through the fields one at a time
 		String mimeType = message.contentType;
+		if(binaryBlob) {
+			if(mimeType != null && !mimeType.equals(BinaryBlob.MIME_TYPE)) {
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "No MIME type allowed when inserting a binary blob", identifier, global);
+			}
+		}
 		if(mimeType == null && origFilename != null) {
 			mimeType = DefaultMIMETypes.guessMIMEType(origFilename.getName(), true);
 		}
@@ -240,7 +250,7 @@ public class ClientPut extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
-				getCHKOnly, isMetadata, client.lowLevelClient, null, targetFilename);
+				getCHKOnly, isMetadata, client.lowLevelClient, null, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
@@ -277,6 +287,7 @@ public class ClientPut extends ClientPutBase {
 		
 		boolean isMetadata = false;
 		
+		binaryBlob = fs.getBoolean("BinaryBlob", false);
 		targetFilename = fs.get("TargetFilename");
 		
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
@@ -331,7 +342,8 @@ public class ClientPut extends ClientPutBase {
 		SimpleFieldSet oldProgress = fs.subset("progress");
 		if(finished) oldProgress = null; // Not useful any more
 		putter = new ClientPutter(this, data, uri, cm, ctx, client.core.requestStarters.chkPutScheduler, 
-				client.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client.lowLevelClient, oldProgress, targetFilename);
+				client.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, 
+				client.lowLevelClient, oldProgress, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
@@ -396,6 +408,7 @@ public class ClientPut extends ClientPutBase {
 		if(targetFilename != null)
 			fs.putSingle("TargetFilename", targetFilename);
 		fs.putSingle("EarlyEncode", Boolean.toString(earlyEncode));
+		fs.put("BinaryBlob", binaryBlob);
 		
 		return fs;
 	}
@@ -407,7 +420,7 @@ public class ClientPut extends ClientPutBase {
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentPut(identifier, publicURI, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
-				getDataSize(), clientToken, started, ctx.maxInsertRetries, targetFilename);
+				getDataSize(), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob);
 	}
 
 	protected String getTypeName() {

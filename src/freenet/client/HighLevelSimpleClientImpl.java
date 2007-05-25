@@ -137,7 +137,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		InsertContext context = getInsertContext(true);
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata, 
-				context, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this, null, filenameHint);
+				context, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, 
+				getCHKOnly, isMetadata, this, null, filenameHint, false);
 		put.start(false);
 		return pw.waitForCompletion();
 	}

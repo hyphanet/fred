@@ -8,17 +8,18 @@ import java.util.Vector;
 import com.onionnetworks.util.FileUtil;
 
 import freenet.client.FailureCodeTracker;
+import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
+import freenet.keys.SSKBlock;
 import freenet.node.LowLevelPutException;
-import freenet.node.NodeClientCore;
 import freenet.node.SimpleSendableInsert;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
 
 public class BinaryBlobInserter implements ClientPutState {
 
@@ -26,19 +27,18 @@ public class BinaryBlobInserter implements ClientPutState {
 	final Object clientContext;
 	final MySendableInsert[] inserters;
 	final FailureCodeTracker errors;
-	final short maxRetries;
-	final short consecutiveRNFsCountAsSuccess;
+	final int maxRetries;
+	final int consecutiveRNFsCountAsSuccess;
 	private boolean logMINOR;
 	private int completedBlocks;
 	private int succeededBlocks;
 	private boolean fatal;
 	
-	BinaryBlobInserter(Bucket blob, ClientPutter parent, BucketFactory bf, Object clientContext, boolean tolerant, NodeClientCore core, 
-			short prioClass, short maxRetries, short consecutiveRNFsCountAsSuccess) 
+	BinaryBlobInserter(Bucket blob, ClientPutter parent, Object clientContext, boolean tolerant, short prioClass, InsertContext ctx) 
 	throws IOException, BinaryBlobFormatException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		this.maxRetries = maxRetries;
-		this.consecutiveRNFsCountAsSuccess = consecutiveRNFsCountAsSuccess;
+		this.maxRetries = ctx.maxInsertRetries;
+		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
 		this.parent = parent;
 		this.clientContext = clientContext;
 		this.errors = new FailureCodeTracker(true);
@@ -96,7 +96,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				}
 				
 				MySendableInsert inserter =
-					new MySendableInsert(i, core, block, prioClass);
+					new MySendableInsert(i, block, prioClass, getScheduler(block), clientContext);
 				
 				myInserters.add(inserter);
 				
@@ -113,6 +113,14 @@ public class BinaryBlobInserter implements ClientPutState {
 		parent.addMustSucceedBlocks(inserters.length);
 	}
 	
+	private ClientRequestScheduler getScheduler(KeyBlock block) {
+		if(block instanceof CHKBlock)
+			return parent.chkScheduler;
+		else if(block instanceof SSKBlock)
+			return parent.sskScheduler;
+		else throw new IllegalArgumentException("Unknown block type "+block.getClass()+" : "+block);
+	}
+
 	public void cancel() {
 		for(int i=0;i<inserters.length;i++) {
 			if(inserters[i] != null)
@@ -146,8 +154,8 @@ public class BinaryBlobInserter implements ClientPutState {
 		private int consecutiveRNFs;
 		private int retries;
 		
-		public MySendableInsert(int i, NodeClientCore core, KeyBlock block, short prioClass) {
-			super(core, block, prioClass);
+		public MySendableInsert(int i, KeyBlock block, short prioClass, ClientRequestScheduler scheduler, Object client) {
+			super(block, prioClass, client, scheduler);
 			this.blockNum = i;
 		}
 		
