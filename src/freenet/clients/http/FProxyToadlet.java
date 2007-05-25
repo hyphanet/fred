@@ -455,7 +455,7 @@ public class FProxyToadlet extends Toadlet {
 						addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"))).addChild("#", l10n("retryNow"));
 				}
 				
-				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", l10n("homepageTitle") }, l10n("abortToHomepage"));
+				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", L10n.getString("Toadlet.homepage") }, l10n("abortToHomepage"));
 				
 				option = optionList.addChild("li");
 				option.addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
