@@ -3,9 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.client.InsertException;
 import freenet.client.async.ClientRequester;
+import freenet.keys.CHKBlock;
 import freenet.keys.KeyBlock;
+import freenet.keys.SSKBlock;
 import freenet.support.Logger;
+import freenet.support.RandomGrabArray;
 
 /**
  * Simple SendableInsert implementation. No feedback, no retries, just insert the
@@ -76,6 +80,25 @@ public class SimpleSendableInsert extends SendableInsert {
 
 	public boolean canRemove() {
 		return true;
+	}
+
+	public void schedule() {
+		finished = false; // can reschedule
+		if(block instanceof CHKBlock)
+			node.requestStarters.chkPutScheduler.register(this);
+		else if(block instanceof SSKBlock)
+			node.requestStarters.sskPutScheduler.register(this);
+		else
+			Logger.error(this, "Don't know what to do with "+block, new Exception());
+	}
+
+	public void cancel() {
+		synchronized(this) {
+			if(finished) return;
+			finished = true;
+		}
+		RandomGrabArray arr = getParentGrabArray();
+		if(arr != null) arr.remove(this);
 	}
 
 }

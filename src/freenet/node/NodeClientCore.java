@@ -995,12 +995,7 @@ public class NodeClientCore implements Persistable {
 	public void queueRandomReinsert(KeyBlock block) {
 		SimpleSendableInsert ssi = new SimpleSendableInsert(this, block, RequestStarter.MAXIMUM_PRIORITY_CLASS);
 		if(logMINOR) Logger.minor(this, "Queueing random reinsert for "+block+" : "+ssi);
-		if(block instanceof CHKBlock)
-			requestStarters.chkPutScheduler.register(ssi);
-		else if(block instanceof SSKBlock)
-			requestStarters.sskPutScheduler.register(ssi);
-		else
-			Logger.error(this, "Don't know what to do with "+block+" should be queued for reinsert");
+		ssi.schedule();
 	}
 
 	public void storeConfig() {

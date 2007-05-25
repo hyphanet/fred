@@ -157,4 +157,9 @@ public class NodeSSK extends Key {
 		return hashCode;
 	}
 	
+    // Not just the routing key, enough data to reconstruct the key (excluding any pubkey needed)
+    public byte[] getKeyBytes() {
+    	return encryptedHashedDocname;
+    }
+	
 }

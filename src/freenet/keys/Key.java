@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import freenet.crypt.CryptFormatException;
+import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.io.WritableToDataOutputStream;
 import freenet.support.Fields;
@@ -72,6 +74,26 @@ public abstract class Key implements WritableToDataOutputStream {
         throw new IOException("Unrecognized format: "+type);
     }
     
+	public static KeyBlock createBlock(short keyType, byte[] keyBytes, byte[] headersBytes, byte[] dataBytes, byte[] pubkeyBytes) throws KeyVerifyException {
+		byte type = (byte)(keyType >> 8);
+		byte subtype = (byte)(keyType & 0xFF);
+		if(type == NodeCHK.BASE_TYPE) {
+			return CHKBlock.construct(headersBytes, dataBytes);
+		} else if(type == NodeSSK.BASE_TYPE) {
+			DSAPublicKey pubKey;
+			try {
+				pubKey = new DSAPublicKey(pubkeyBytes);
+			} catch (IOException e) {
+				throw new KeyVerifyException("Failed to construct pubkey: "+e, e);
+			} catch (CryptFormatException e) {
+				throw new KeyVerifyException("Failed to construct pubkey: "+e, e);
+			}
+			NodeSSK key = new NodeSSK(pubKey.asBytesHash(), keyBytes, pubKey, subtype);
+			return new SSKBlock(dataBytes, headersBytes, key, false);
+		} else {
+			throw new KeyVerifyException("No such key type "+Integer.toHexString(type));
+		}
+	}
 
     /**
      * Convert the key to a double between 0.0 and 1.0.
@@ -222,5 +244,9 @@ public abstract class Key implements WritableToDataOutputStream {
     public byte[] getRoutingKey() {
     	return routingKey;
     }
-    
+
+    // Not just the routing key, enough data to reconstruct the key (excluding any pubkey needed)
+    public byte[] getKeyBytes() {
+    	return routingKey;
+    }
 }

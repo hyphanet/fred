@@ -15,7 +15,7 @@ public abstract class BinaryBlob {
 		binaryBlobStream.writeShort(BinaryBlob.BINARY_BLOB_OVERALL_VERSION);
 	}
 	public static void writeKey(DataOutputStream binaryBlobStream, KeyBlock block, Key key) throws IOException {
-		byte[] keyData = key.getRoutingKey();
+		byte[] keyData = key.getKeyBytes();
 		byte[] headers = block.getRawHeaders();
 		byte[] data = block.getRawData();
 		byte[] pubkey = block.getPubkeyBytes();

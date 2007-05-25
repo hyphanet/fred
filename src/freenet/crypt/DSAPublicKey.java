@@ -54,7 +54,11 @@ public class DSAPublicKey extends CryptoKey {
 			throw new IllegalArgumentException("y must be < p but y="+y+" p="+group.getP());
     }
     
-    public static DSAPublicKey create(byte[] pubkeyAsBytes) throws CryptFormatException {
+    public DSAPublicKey(byte[] pubkeyBytes) throws IOException, CryptFormatException {
+    	this(new ByteArrayInputStream(pubkeyBytes));
+	}
+
+	public static DSAPublicKey create(byte[] pubkeyAsBytes) throws CryptFormatException {
     	try {
 			return new DSAPublicKey(new ByteArrayInputStream(pubkeyAsBytes));
 		} catch (IOException e) {
