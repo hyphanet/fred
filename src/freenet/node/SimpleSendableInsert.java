@@ -33,7 +33,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		else if(block instanceof SSKBlock)
 			scheduler = core.requestStarters.sskPutScheduler;
 		else
-			throw new IllegalArgumentException("Don't know what to do with "+block, new Exception());
+			throw new IllegalArgumentException("Don't know what to do with "+block);
 	}
 	
 	public SimpleSendableInsert(KeyBlock block, short prioClass, Object client, ClientRequestScheduler scheduler) {
