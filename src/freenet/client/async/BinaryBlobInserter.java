@@ -75,11 +75,12 @@ public class BinaryBlobInserter implements ClientPutState {
 					throw new BinaryBlobFormatException("Block blob too short");
 				short keyType = dis.readShort();
 				int keyLen = dis.readUnsignedByte();
-				short headersLen = dis.readShort();
-				short dataLen = dis.readShort();
-				short pubkeyLen = dis.readShort();
-				if(blobLength != 9 + keyLen + headersLen + dataLen + pubkeyLen)
-					throw new BinaryBlobFormatException("Binary blob too short for data lengths");
+				int headersLen = dis.readUnsignedShort();
+				int dataLen = dis.readUnsignedShort();
+				int pubkeyLen = dis.readUnsignedShort();
+				int total = 9 + keyLen + headersLen + dataLen + pubkeyLen;
+				if(blobLength != total)
+					throw new BinaryBlobFormatException("Binary blob not same length as data: blobLength="+blobLength+" total="+total);
 				byte[] keyBytes = new byte[keyLen];
 				byte[] headersBytes = new byte[headersLen];
 				byte[] dataBytes = new byte[dataLen];
@@ -111,6 +112,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		}
 		inserters = (MySendableInsert[]) myInserters.toArray(new MySendableInsert[myInserters.size()]);
 		parent.addMustSucceedBlocks(inserters.length);
+		parent.notifyClients();
 	}
 	
 	private ClientRequestScheduler getScheduler(KeyBlock block) {

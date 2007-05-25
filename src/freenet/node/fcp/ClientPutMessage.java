@@ -78,16 +78,20 @@ public class ClientPutMessage extends DataCarryingMessage {
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
 		try {
-			String u = fs.get("URI");
-			if(u == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI", identifier, global);
-			FreenetURI uu = new FreenetURI(fs.get("URI"));
-			String[] metas = uu.getAllMetaStrings();
-			if(metas != null && metas.length == 1) {
-				fnam = metas[0];
-				uu = uu.setMetaString(null);
-			} // if >1, will fail later
-			uri = uu;
+			if(binaryBlob)
+				uri = new FreenetURI("CHK@");
+			else {
+				String u = fs.get("URI");
+				if(u == null)
+					throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI", identifier, global);
+				FreenetURI uu = new FreenetURI(fs.get("URI"));
+				String[] metas = uu.getAllMetaStrings();
+				if(metas != null && metas.length == 1) {
+					fnam = metas[0];
+					uu = uu.setMetaString(null);
+				} // if >1, will fail later
+				uri = uu;
+			}
 		} catch (MalformedURLException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, e.getMessage(), identifier, global);
 		}

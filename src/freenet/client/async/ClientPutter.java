@@ -115,7 +115,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				oldProgress = null;
 				return false;
 			}
-			((SingleFileInserter)currentState).start(oldProgress);
+			if(currentState instanceof SingleFileInserter)
+				((SingleFileInserter)currentState).start(oldProgress);
+			else
+				currentState.schedule();
 			synchronized(this) {
 				oldProgress = null;
 				cancel = cancelled;

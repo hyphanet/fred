@@ -78,7 +78,7 @@ public abstract class Key implements WritableToDataOutputStream {
 		byte type = (byte)(keyType >> 8);
 		byte subtype = (byte)(keyType & 0xFF);
 		if(type == NodeCHK.BASE_TYPE) {
-			return CHKBlock.construct(headersBytes, dataBytes);
+			return CHKBlock.construct(dataBytes, headersBytes);
 		} else if(type == NodeSSK.BASE_TYPE) {
 			DSAPublicKey pubKey;
 			try {
