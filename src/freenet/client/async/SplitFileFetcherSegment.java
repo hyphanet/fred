@@ -261,12 +261,12 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		}
 		for(int i=0;i<checkBuckets.length;i++) {
 			boolean heal = false;
-			Bucket data = dataBuckets[i].getData();
+			Bucket data = checkBuckets[i].getData();
 			maybeAddToBinaryBlob(data, i, true);
 			if(checkRetries[i] > 0)
 				heal = true;
 			if(heal) {
-				queueHeal(checkBuckets[i].getData());
+				queueHeal(data);
 			} else {
 				checkBuckets[i].data.free();
 			}
