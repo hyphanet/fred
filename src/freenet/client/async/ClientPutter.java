@@ -203,6 +203,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 	
 	public void cancel() {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 		ClientPutState oldState = null;
 		synchronized(this) {
 			if(cancelled) return;

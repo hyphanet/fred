@@ -14,6 +14,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.FetchContext;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
@@ -240,8 +241,10 @@ public class ClientGetter extends BaseClientGetter {
 		return super.toString()+ ':' +uri;
 	}
 	
-	void addKeyToBinaryBlob(KeyBlock block) {
+	void addKeyToBinaryBlob(ClientKeyBlock block) {
 		if(binaryBlobKeysAddedAlready == null) return;
+		if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
 		Key key = block.getKey();
 		synchronized(binaryBlobKeysAddedAlready) {
 			if(binaryBlobStream == null) return;

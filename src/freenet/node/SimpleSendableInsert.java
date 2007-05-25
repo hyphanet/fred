@@ -110,4 +110,8 @@ public class SimpleSendableInsert extends SendableInsert {
 		if(arr != null) arr.remove(this);
 	}
 
+	boolean shouldCache() {
+		// This is only used as-is by the random reinsert from a request code. Subclasses should override!
+		return false;
+	}
 }

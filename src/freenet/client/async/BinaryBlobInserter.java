@@ -33,10 +33,12 @@ public class BinaryBlobInserter implements ClientPutState {
 	private int completedBlocks;
 	private int succeededBlocks;
 	private boolean fatal;
+	final InsertContext ctx;
 	
 	BinaryBlobInserter(Bucket blob, ClientPutter parent, Object clientContext, boolean tolerant, short prioClass, InsertContext ctx) 
 	throws IOException, BinaryBlobFormatException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.ctx = ctx;
 		this.maxRetries = ctx.maxInsertRetries;
 		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
 		this.parent = parent;
@@ -234,6 +236,10 @@ public class BinaryBlobInserter implements ClientPutState {
 			else
 				parent.failedBlock();
 			maybeFinish();
+		}
+		
+		boolean shouldCache() {
+			return ctx.cacheLocalRequests;
 		}
 	}
 
