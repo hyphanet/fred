@@ -67,7 +67,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
-			core.realPut(block, false);
+			core.realPut(block, shouldCache());
 		} catch (LowLevelPutException e) {
 			onFailure(e);
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
@@ -110,7 +110,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		if(arr != null) arr.remove(this);
 	}
 
-	boolean shouldCache() {
+	public boolean shouldCache() {
 		// This is only used as-is by the random reinsert from a request code. Subclasses should override!
 		return false;
 	}
