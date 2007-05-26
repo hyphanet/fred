@@ -207,6 +207,12 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	
 	public void onDecodedSegment() {
 		try {
+			if(isCollectingBinaryBlob()) {
+				for(int i=0;i<dataBuckets.length;i++) {
+					Bucket data = dataBuckets[i].getData();
+					maybeAddToBinaryBlob(data, i, false);
+				}
+			}
 			decodedData = fetchContext.bucketFactory.makeBucket(-1);
 			if(logMINOR) Logger.minor(this, "Copying data from data blocks");
 			OutputStream os = decodedData.getOutputStream();
@@ -220,7 +226,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			// Must set finished BEFORE calling parentFetcher.
 			// Otherwise a race is possible that might result in it not seeing our finishing.
 			finished = true;
-			parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
+			if(codec == null || !isCollectingBinaryBlob())
+				parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
 		} catch (IOException e) {
 			Logger.normal(this, "Caught bucket error?: "+e, e);
 			finished = true;
@@ -247,7 +254,6 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		for(int i=0;i<dataBuckets.length;i++) {
 			boolean heal = false;
 			Bucket data = dataBuckets[i].getData();
-			maybeAddToBinaryBlob(data, i, false);
 			if(dataRetries[i] > 0)
 				heal = true;
 			if(heal) {
@@ -273,8 +279,18 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			checkBuckets[i] = null;
 			checkKeys[i] = null;
 		}
+		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
+		if(isCollectingBinaryBlob())
+			parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
 	}
 
+	boolean isCollectingBinaryBlob() {
+		if(parentFetcher.parent instanceof ClientGetter) {
+			ClientGetter getter = (ClientGetter) (parentFetcher.parent);
+			return getter.collectingBinaryBlob();
+		} else return false;
+	}
+	
 	private void maybeAddToBinaryBlob(Bucket data, int i, boolean check) {
 		if(parentFetcher.parent instanceof ClientGetter) {
 			ClientGetter getter = (ClientGetter) (parentFetcher.parent);
