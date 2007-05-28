@@ -37,9 +37,7 @@ import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentMutableConfig;
-import com.sleepycat.je.RunRecoveryException;
 import com.sleepycat.je.StatsConfig;
-import com.sleepycat.je.log.DbChecksumException;
 import com.sleepycat.je.util.DbDump;
 
 import freenet.client.FetchContext;
