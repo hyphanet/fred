@@ -345,7 +345,7 @@ public class NodeClientCore implements Persistable {
 		
 		Key.ALLOW_INSECURE_CLIENT_CHKS = nodeConfig.getBoolean("allowInsecureCHKs");
 		
-		nodeConfig.register("allowInsecureSSKs", false, sortOrder++, true, false, "NodeClientCore.allowInsecureSSK", "NodeClientCore.allowInsecureSSKLong",
+		nodeConfig.register("allowInsecureSSKs", true, sortOrder++, true, false, "NodeClientCore.allowInsecureSSK", "NodeClientCore.allowInsecureSSKLong",
 				new BooleanCallback() {
 
 					public boolean get() {
