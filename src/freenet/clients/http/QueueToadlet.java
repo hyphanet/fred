@@ -520,7 +520,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			includeNavigationBar = true;
 		}
 		if (!completedDirUpload.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#completeDirUpload", L10n.getString("QueueToadlet.completedDU", new String[]{ "size" }, new String[]{ String.valueOf(completedDirUpload.size()) }));
+			navigationContent.addChild("li").addChild("a", "href", "#completedDirUpload", L10n.getString("QueueToadlet.completedDU", new String[]{ "size" }, new String[]{ String.valueOf(completedDirUpload.size()) }));
 			includeNavigationBar = true;
 		}
 		if (!failedDownload.isEmpty()) {
