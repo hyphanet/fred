@@ -105,4 +105,9 @@ public class BitArray implements WritableToDataOutputStream {
 	public int hashCode() {
 	    return Fields.hashCode(_bits);
 	}
+
+	public void setAllOnes() {
+		for(int i=0;i<_bits.length;i++)
+			_bits[i] = (byte)0xFF;
+	}
 }
