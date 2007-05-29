@@ -267,7 +267,7 @@ public class PluginToadlet extends Toadlet {
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 		infoboxContent.addChild("#", message);
 		infoboxContent.addChild("br");
-		L10n.addL10nSubstitution(infoboxContent, "returnToPluginsWithLinks", new String[] { "link", "/link" }, 
+		L10n.addL10nSubstitution(infoboxContent, "PluginToadlet.returnToPluginsWithLinks", new String[] { "link", "/link" }, 
 				new String[] { "<a href=\"?action=list\">", "</a>" });
 		StringBuffer pageBuffer = new StringBuffer();
 		pageNode.generate(pageBuffer);

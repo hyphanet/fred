@@ -313,7 +313,7 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", l10n("insertSucceededTitle")));
 				content = ctx.getPageMaker().getContentNode(infobox);
 				String u = key.toString();
-				L10n.addL10nSubstitution(content, "keyInsertedSuccessfullyWithKeyAndName",
+				L10n.addL10nSubstitution(content, "WelcomeToadlet.keyInsertedSuccessfullyWithKeyAndName",
 						new String[] { "link", "/link", "name" },
 						new String[] { "<a href=\"/"+u+"\">", "</a>", u });
 			} catch (InsertException e) {

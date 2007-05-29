@@ -1573,7 +1573,7 @@ public class Node {
 
 					public HTMLNode getHTMLText() {
 						HTMLNode n = new HTMLNode("div");
-						L10n.addL10nSubstitution(n, "buggyJVMWithLink", 
+						L10n.addL10nSubstitution(n, "Node.buggyJVMWithLink", 
 								new String[] { "link", "/link", "version" },
 								new String[] { "<a href=\"/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795\">", 
 								"</a>", HTMLEncoder.encode(System.getProperty("java.vm.version")) });
