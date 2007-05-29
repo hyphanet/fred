@@ -62,6 +62,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			result.addChild("option", "value", "pl", "Polski");
 			result.addChild("option", "value", "it", "Italiano");
 			result.addChild("option", "value", "se", "Svenska");
+			result.addChild("option", "value", "no", "Norsk");
 			// We don't propose unknown languages here
 			
 			languageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "languageF", L10n.getString("Toadlet.clickHere")});
