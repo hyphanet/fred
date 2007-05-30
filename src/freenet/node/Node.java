@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.zip.DeflaterOutputStream;
 
@@ -1186,8 +1187,6 @@ public class Node {
 			
 			// First try DbDump
 			
-			boolean failed = false;
-			
 			System.err.println("Attempting DbDump-level recovery...");
 			
 			boolean[] isStores = new boolean[] { true, false, true, false, true, false };
@@ -1410,7 +1409,7 @@ public class Node {
 		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
 		
 		// l10n stuffs		
-		nodeConfig.register("l10n", "en", sortOrder++, false, true, 
+		nodeConfig.register("l10n", Locale.getDefault().getCountry().toLowerCase(), sortOrder++, false, true, 
 				"Node.l10nLanguage",
 				"Node.l10nLanguageLong",
 				new L10nCallback());
