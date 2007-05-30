@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.xfer;
 
+import freenet.io.comm.DMT;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 
 /**
@@ -26,9 +28,11 @@ public class BulkReceiver {
 	}
 
 	public void onAborted() {
-		peer.
-		// TODO Auto-generated method stub
-		
+		try {
+			peer.sendAsync(DMT.createFNPBulkReceiveAborted(uid), null, 0, null);
+		} catch (NotConnectedException e) {
+			// Cool
+		}
 	}
 
 }
