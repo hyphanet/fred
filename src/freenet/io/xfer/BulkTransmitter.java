@@ -49,10 +49,11 @@ public class BulkTransmitter {
 	}
 
 	/**
-	 * Called if the transfer fails because of a throwable.
-	 * @param t The throwable causing the failure.
+	 * Called when the PRB is aborted.
 	 */
-	void fail(Throwable t) {
-		// TODO Auto-generated method stub
+	public void onAborted() {
+		// TODO do something
 	}
+
+	
 }

@@ -229,6 +229,44 @@ public class DMT {
 		return msg;
 	}
 
+	public static final MessageType FNPBulkPacketSend = new MessageType("FNPBulkPacketSend") {{
+		addField(UID, Long.class);
+		addField(PACKET_NO, Integer.class);
+		addField(DATA, ShortBuffer.class);
+	}};
+	
+	public static final Message createFNPBulkPacketSend(long uid, int packetNo, ShortBuffer data) {
+		Message msg = new Message(FNPBulkPacketSend);
+		msg.set(UID, uid);
+		msg.set(PACKET_NO, packetNo);
+		msg.set(DATA, data);
+		return msg;
+	}
+	
+	public static final Message createFNPBulkPacketSend(long uid, int packetNo, byte[] data) {
+		return createFNPBulkPacketSend(uid, packetNo, new ShortBuffer(data));
+	}
+	
+	public static final MessageType FNPBulkSendAborted = new MessageType("FNPBulkSendAborted") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static final Message createFNPBulkSendAborted(long uid) {
+		Message msg = new Message(FNPBulkSendAborted);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
+	public static final MessageType FNPBulkReceiveAborted = new MessageType("FNPBulkReceiveAborted") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static final Message createFNPBulkReceiveAborted(long uid) {
+		Message msg = new Message(FNPBulkReceiveAborted);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
 	public static final MessageType testTransferSend = new MessageType("testTransferSend") {{
 		addField(UID, Long.class);
 	}};

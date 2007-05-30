@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.xfer;
 
+import freenet.io.comm.RetrievalException;
 import freenet.support.BitArray;
 import freenet.support.Logger;
 import freenet.support.io.RandomAccessThing;
@@ -27,6 +28,10 @@ public class PartiallyReceivedBulk {
 	private BulkTransmitter[] transmitters;
 	/** The one and only BulkReceiver */
 	private BulkReceiver recv;
+	// Abort status
+	boolean _aborted;
+	int _abortReason;
+	String _abortDescription;
 	
 	/**
 	 * Construct a PartiallyReceivedBulk.
@@ -92,7 +97,8 @@ public class PartiallyReceivedBulk {
 			int bs = (int) Math.max(blockSize, size - fileOffset);
 			raf.pwrite(fileOffset, data, offset, bs);
 		} catch (Throwable t) {
-			fail(t);
+			Logger.error(this, "Failed to store received block "+blockNum+" on "+this+" : "+t, t);
+			abort(RetrievalException.IO_ERROR, t.toString());
 		}
 		if(notifyBTs == null) return;
 		for(int i=0;i<notifyBTs.length;i++) {
@@ -101,21 +107,40 @@ public class PartiallyReceivedBulk {
 		}
 	}
 
-	/**
-	 * Fail the transfer because of an unrecoverable exception e.g. an error in storing the data.
-	 * @param t The throwable causing this failure.
-	 */
-	private void fail(Throwable t) {
-		Logger.error(this, "Failing transfer: "+this+" : "+t, t);
+	void abort(int errCode, String why) {
 		BulkTransmitter[] notifyBTs;
+		BulkReceiver notifyBR;
 		synchronized(this) {
+			_aborted = true;
+			_abortReason = errCode;
+			_abortDescription = why;
 			notifyBTs = transmitters;
+			notifyBR = recv;
 		}
 		if(notifyBTs != null) {
-			for(int i=0;i<notifyBTs.length;i++)
-				notifyBTs[i].fail(t);
+			for(int i=0;i<notifyBTs.length;i++) {
+				notifyBTs[i].onAborted();
+			}
 		}
-		if(recv != null)
-			recv.fail(t);
+		if(notifyBR != null)
+			notifyBR.onAborted();
 	}
+
+//	/**
+//	 * Fail the transfer because of an unrecoverable exception e.g. an error in storing the data.
+//	 * @param t The throwable causing this failure.
+//	 */
+//	private void fail(Throwable t) {
+//		Logger.error(this, "Failing transfer: "+this+" : "+t, t);
+//		BulkTransmitter[] notifyBTs;
+//		synchronized(this) {
+//			notifyBTs = transmitters;
+//		}
+//		if(notifyBTs != null) {
+//			for(int i=0;i<notifyBTs.length;i++)
+//				notifyBTs[i].fail(t);
+//		}
+//		if(recv != null)
+//			recv.fail(t);
+//	}
 }
