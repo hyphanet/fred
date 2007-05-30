@@ -134,14 +134,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 			Enumeration interfaces = NetworkInterface.getNetworkInterfaces();
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "networkForm");
-			// We always want that... don't we ?
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value"}, new String[] { "hidden", "127.0.0.1", "true" });
 			
 			short ifCount = 0;
 			HTMLNode ifList = new HTMLNode("div", "class", "interface");
 			while(interfaces.hasMoreElements()) {
 				NetworkInterface currentInterface = (NetworkInterface) interfaces.nextElement();
-				if((currentInterface == null) || (currentInterface.isLoopback())) continue;
 					
 				Enumeration ipAddresses = currentInterface.getInetAddresses();
 				while(ipAddresses.hasMoreElements()) {
