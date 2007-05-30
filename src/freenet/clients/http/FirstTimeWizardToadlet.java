@@ -8,6 +8,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.URI;
 import java.util.Enumeration;
+import java.util.Locale;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
@@ -61,7 +62,18 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode languageForm = ctx.addFormChild(languageInfoboxContent, ".", "languageForm");
 			HTMLNode result = languageForm.addChild("select", "name", "language");
 			
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { "en", "selected" }, "English");
+			Locale currentLocale = Locale.getDefault();
+			boolean isTranslationFound = false;
+			for(int i=0; i<L10n.AVAILABLE_LANGUAGES.length; i++) {
+				if(isTranslationFound = L10n.AVAILABLE_LANGUAGES[i].equals(currentLocale.getCountry().toLowerCase()))
+					break;
+			}
+			
+			if(isTranslationFound) {
+				result.addChild("option", new String[] { "value", "selected" }, new String[] { Locale.getDefault().getCountry().toLowerCase(), "selected" }, Locale.getDefault().getDisplayName());
+				result.addChild("option", "value", "en", "English");
+			} else
+				result.addChild("option", new String[] { "value", "selected" }, new String[] { "en" , "selected" }, "English");				
 			result.addChild("option", "value", "fr", "Français");
 			result.addChild("option", "value", "pl", "Polski");
 			result.addChild("option", "value", "it", "Italiano");
