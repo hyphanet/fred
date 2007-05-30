@@ -118,7 +118,7 @@ public class BlockTransmitter {
 					if(_sendComplete) break;
 					_sentPackets.setBit(packetNo, true);
 					try {
-						((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
+						_destination.sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
 						_ctr.sentPayload(PACKET_SIZE);
 					} catch (NotConnectedException e) {
 						Logger.normal(this, "Terminating send: "+e);
@@ -198,7 +198,7 @@ public class BlockTransmitter {
 
 					public void receiveAborted(int reason, String description) {
 						try {
-							((PeerNode)_destination).sendAsync(DMT.createSendAborted(_uid, reason, description), null, 0, _ctr);
+							_destination.sendAsync(DMT.createSendAborted(_uid, reason, description), null, 0, _ctr);
 						} catch (NotConnectedException e) {
 							if(Logger.shouldLog(Logger.MINOR, this))
 								Logger.minor(this, "Receive aborted and receiver is not connected");

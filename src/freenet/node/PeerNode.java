@@ -1261,7 +1261,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             }
 		}
     	SyncMessageCallback cb = new SyncMessageCallback();
-    	this.sendAsync(req, cb, 0, ctr);
+    	sendAsync(req, cb, 0, ctr);
     	cb.waitForSend(60*1000);
     }
     

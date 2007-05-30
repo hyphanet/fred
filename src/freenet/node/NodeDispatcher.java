@@ -57,7 +57,7 @@ public class NodeDispatcher implements Dispatcher {
 			// Send an FNPPong
 			Message reply = DMT.createFNPPong(m.getInt(DMT.PING_SEQNO));
 			try {
-				((PeerNode)m.getSource()).sendAsync(reply, null, 0, null); // nothing we can do if can't contact source
+				m.getSource().sendAsync(reply, null, 0, null); // nothing we can do if can't contact source
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection replying to "+m);
 			}
@@ -140,7 +140,7 @@ public class NodeDispatcher implements Dispatcher {
 		if(node.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				((PeerNode)(m.getSource())).sendAsync(rejected, null, 0, null);
+				m.getSource().sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting data request (loop, finished): "+e);
 			}
@@ -150,7 +150,7 @@ public class NodeDispatcher implements Dispatcher {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				((PeerNode)(m.getSource())).sendAsync(rejected, null, 0, null);
+				m.getSource().sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting insert request from "+m.getSource().getPeer()+": "+e);
 			}
@@ -164,7 +164,7 @@ public class NodeDispatcher implements Dispatcher {
 			Logger.normal(this, "Rejecting request from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
 			try {
-				((PeerNode)(m.getSource())).sendAsync(rejected, null, 0, null);
+				m.getSource().sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+m.getSource().getPeer()+": "+e);
 			}
@@ -184,7 +184,7 @@ public class NodeDispatcher implements Dispatcher {
 		if(node.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				((PeerNode)(m.getSource())).sendAsync(rejected, null, 0, null);
+				m.getSource().sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting insert request from "+m.getSource().getPeer()+": "+e);
 			}
@@ -194,7 +194,7 @@ public class NodeDispatcher implements Dispatcher {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				((PeerNode)(m.getSource())).sendAsync(rejected, null, 0, null);
+				m.getSource().sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting insert request from "+m.getSource().getPeer()+": "+e);
 			}
@@ -206,7 +206,7 @@ public class NodeDispatcher implements Dispatcher {
 			Logger.normal(this, "Rejecting insert from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
 			try {
-				((PeerNode)(m.getSource())).sendAsync(rejected, null, 0, null);
+				m.getSource().sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+m.getSource().getPeer()+": "+e);
 			}
@@ -296,7 +296,7 @@ public class NodeDispatcher implements Dispatcher {
 		ctx = (RoutedContext)routedContexts.get(lid);
 		if(ctx != null) {
 			try {
-				((PeerNode)m.getSource()).sendAsync(DMT.createFNPRoutedRejected(id, (short)(htl-1)), null, 0, null);
+				m.getSource().sendAsync(DMT.createFNPRoutedRejected(id, (short)(htl-1)), null, 0, null);
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection rejecting "+m);
 			}
