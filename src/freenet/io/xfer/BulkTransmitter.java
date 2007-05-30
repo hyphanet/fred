@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.xfer;
 
+import freenet.io.comm.DMT;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.support.BitArray;
 
@@ -52,8 +54,11 @@ public class BulkTransmitter {
 	 * Called when the PRB is aborted.
 	 */
 	public void onAborted() {
-		// TODO do something
+		try {
+			peer.sendAsync(DMT.createFNPBulkSendAborted(uid), null, 0, null);
+		} catch (NotConnectedException e) {
+			// Cool
+		}
 	}
-
 	
 }
