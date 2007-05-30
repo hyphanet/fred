@@ -15,6 +15,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -139,16 +140,17 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode ifList = new HTMLNode("div", "class", "interface");
 			while(interfaces.hasMoreElements()) {
 				NetworkInterface currentInterface = (NetworkInterface) interfaces.nextElement();
-					
+				if(currentInterface == null) continue;
+				
 				Enumeration ipAddresses = currentInterface.getInetAddresses();
 				while(ipAddresses.hasMoreElements()) {
 					InetAddress ip = (InetAddress) ipAddresses.nextElement();
-					if(ip == null) continue;
+					if((ip == null) || (ip.isLoopbackAddress())) continue;
 					ifCount++;
 					HTMLNode ipDiv = ifList.addChild("div", "class", "ipAddress");
 					ipDiv.addChild("#", L10n.getString("FirstTimeWizardToadlet.iDoTrust", new String[] { "interface", "ip" }, new String[] { currentInterface.getName(), ip.getHostAddress() }));
-					ipDiv.addChild("input", new String[] { "type", "name", "value"}, new String[] { "radio", ip.getHostAddress(), "true" }, L10n.getString("Toadlet.yes"));
-					ipDiv.addChild("input", new String[] { "type", "name", "value", "checked"}, new String[] { "radio", ip.getHostAddress(), "false", "checked" }, L10n.getString("Toadlet.no"));
+					ipDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", Base64.encode(ip.getAddress()), "true" }, L10n.getString("Toadlet.yes"));
+					ipDiv.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", Base64.encode(ip.getAddress()), "false", "checked" }, L10n.getString("Toadlet.no"));
 				}
 			}
 			
@@ -235,6 +237,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		} else if(request.isPartSet("networkF")) {
 			StringBuffer sb = new StringBuffer();
+			// prevent the user from locking himself out
+			sb.append("127.0.0.1,0:0:0:0:0:0:0:1");
 			short ifCount = 0;
 			
 			Enumeration interfaces = NetworkInterface.getNetworkInterfaces();
@@ -245,33 +249,34 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				Enumeration ipAddresses = currentIF.getInetAddresses();
 				while(ipAddresses.hasMoreElements()) {
 					InetAddress currentInetAddress = (InetAddress) ipAddresses.nextElement();
-					if(currentInetAddress == null) continue;
-					String isIFSelected =request.getPartAsString(currentInetAddress.getHostAddress(), 255);
+					if((currentInetAddress == null) || (currentInetAddress.isLoopbackAddress())) continue;
+					
+					String isIFSelected =request.getPartAsString(Base64.encode(currentInetAddress.getAddress()), 255);
 					if((isIFSelected != null) && (isIFSelected.equals("true"))) {
-						sb.append(currentInetAddress.getHostAddress());
 						sb.append(',');
+						sb.append(currentInetAddress.getHostAddress());
 						ifCount++;
-						// The trailling comma is going to be sanitized by the config framework anyway
 					}
 				}
 			}
 			
-			if(ifCount > 1) { // One is loopback => default
+			if(ifCount > 0) {
 				try {
 					// Java doesn't provide a way to get the netmask : workaround and bind only to trusted if
-					config.get("fcp").set("bindTo", sb.toString()); // FIXME: Would break ipv6?
+					config.get("fcp").set("bindTo", sb.toString());
 					config.get("fcp").set("allowedHosts", "*");
 					config.get("fcp").set("allowedHostsFullAccess", "*");
-					
-					config.get("fproxy").set("bindTo", sb.toString()); // FIXME: Would break ipv6?
+
+					config.get("fproxy").set("bindTo", sb.toString());
 					config.get("fproxy").set("allowedHosts", "*");
 					config.get("fproxy").set("allowedHostsFullAccess", "*");
-					
+
 					Logger.normal(this, "Network allowance list has been set to "+ sb.toString());
 				} catch (InvalidConfigValueException e) {
 					Logger.error(this, "Should not happen, please report!" + e);
 				}
 			}
+
 			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step=5");
 			return;
 		}
