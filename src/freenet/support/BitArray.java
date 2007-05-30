@@ -41,6 +41,12 @@ public class BitArray implements WritableToDataOutputStream {
 		_bits = new byte[(size / 8) + (size % 8 == 0 ? 0 : 1)];
 	}
 
+	public BitArray(BitArray src) {
+		this._size = src._size;
+		this._bits = new byte[src._size];
+		System.arraycopy(_bits, 0, src._bits, 0, _bits.length);
+	}
+	
 	public void setBit(int pos, boolean f) {
 		int b = unsignedByteToInt(_bits[pos / 8]);
 		int mask = (1 << (pos % 8));

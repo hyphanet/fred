@@ -24,4 +24,12 @@ public class BulkReceiver {
 		this.peer = peer;
 		this.uid = uid;
 	}
+
+	/**
+	 * Called when the transfer fails because of a Throwable being thrown.
+	 * @param t The throwable.
+	 */
+	public void fail(Throwable t) {
+		// TODO Auto-generated method stub
+	}
 }
