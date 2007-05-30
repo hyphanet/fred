@@ -4,7 +4,10 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.URI;
+import java.util.Enumeration;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
@@ -45,7 +48,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		int currentStep = request.getIntParam("step");
 		
 		if(currentStep == 1) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step1Title"), ctx);
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step1Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode languageInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -70,7 +73,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
 		} else if(currentStep == 2) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step2Title"), ctx);
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step2Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -95,7 +98,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
 		} else if(currentStep == 3) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), ctx);
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -121,17 +124,67 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
+		} else if(currentStep == 4) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			
+			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
+			HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
+
+			Enumeration interfaces = NetworkInterface.getNetworkInterfaces();
+			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "networkForm");
+			// We always want that... don't we ?
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value"}, new String[] { "hidden", "127.0.0.1", "true" });
+			
+			short ifCount = 0;
+			HTMLNode ifList = new HTMLNode("div", "class", "interface");
+			while(interfaces.hasMoreElements()) {
+				NetworkInterface currentInterface = (NetworkInterface) interfaces.nextElement();
+				if((currentInterface == null) || (currentInterface.isLoopback())) continue;
+					
+				Enumeration ipAddresses = currentInterface.getInetAddresses();
+				while(ipAddresses.hasMoreElements()) {
+					InetAddress ip = (InetAddress) ipAddresses.nextElement();
+					if(ip == null) continue;
+					ifCount++;
+					HTMLNode ipDiv = ifList.addChild("div", "class", "ipAddress");
+					ipDiv.addChild("#", L10n.getString("FirstTimeWizardToadlet.iDoTrust", new String[] { "interface", "ip" }, new String[] { currentInterface.getName(), ip.getHostAddress() }));
+					ipDiv.addChild("input", new String[] { "type", "name", "value"}, new String[] { "radio", ip.getHostAddress(), "true" }, L10n.getString("Toadlet.yes"));
+					ipDiv.addChild("input", new String[] { "type", "name", "value", "checked"}, new String[] { "radio", ip.getHostAddress(), "false", "checked" }, L10n.getString("Toadlet.no"));
+				}
+			}
+			
+			if(ifCount > 0) {
+				bandwidthnfoboxHeader.addChild("#", l10n("isNetworkTrusted"));
+				bandwidthInfoboxContent.addChild("#", l10n("isNetworkTrustedLong"));
+				bandwidthForm.addChild(ifList);
+			} else {
+				bandwidthnfoboxHeader.addChild("#", l10n("noNetworkIF"));
+				bandwidthInfoboxContent.addChild("#", l10n("noNetworkIFLong"));				
+			}
+			
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkF", L10n.getString("Toadlet.clickHere")});
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
+			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			return;
 		}
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("homepageTitle"), ctx);
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("homepageTitle"), false, ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		HTMLNode welcomeInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode welcomeInfoboxHeader = welcomeInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode welcomeInfoboxContent = welcomeInfobox.addChild("div", "class", "infobox-content");
 		welcomeInfoboxHeader.addChild("#", l10n("welcomeInfoboxTitle"));
-		welcomeInfoboxContent.addChild("#", l10n("welcomeInfoboxContent1"));
-		welcomeInfoboxContent.addChild("a", "href", "?step=1").addChild("#", L10n.getString("Toadlet.clickHere"));
+		
+		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
+		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1") + ' ');
+		firstParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("Toadlet.clickHere"));
+		
+		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
+		secondParagraph.addChild("a", "href", "/").addChild("#", l10n("skipWizard"));
+		
 		this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 	}
 	
@@ -183,8 +236,48 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=4");
 			return;
+		} else if(request.isPartSet("networkF")) {
+			StringBuffer sb = new StringBuffer();
+			short ifCount = 0;
+			
+			Enumeration interfaces = NetworkInterface.getNetworkInterfaces();
+			while(interfaces.hasMoreElements()) {
+				NetworkInterface currentIF = (NetworkInterface) interfaces.nextElement();
+				if(currentIF == null) continue;
+				
+				Enumeration ipAddresses = currentIF.getInetAddresses();
+				while(ipAddresses.hasMoreElements()) {
+					InetAddress currentInetAddress = (InetAddress) ipAddresses.nextElement();
+					if(currentInetAddress == null) continue;
+					String isIFSelected =request.getPartAsString(currentInetAddress.getHostAddress(), 255);
+					if((isIFSelected != null) && (isIFSelected.equals("true"))) {
+						sb.append(currentInetAddress.getHostAddress());
+						sb.append(',');
+						ifCount++;
+						// The trailling comma is going to be sanitized by the config framework anyway
+					}
+				}
+			}
+			
+			if(ifCount > 1) { // One is loopback => default
+				try {
+					// Java doesn't provide a way to get the netmask : workaround and bind only to trusted if
+					config.get("fcp").set("bindTo", sb.toString()); // FIXME: Would break ipv6?
+					config.get("fcp").set("allowedHosts", "*");
+					config.get("fcp").set("allowedHostsFullAccess", "*");
+					
+					config.get("fproxy").set("bindTo", sb.toString()); // FIXME: Would break ipv6?
+					config.get("fproxy").set("allowedHosts", "*");
+					config.get("fproxy").set("allowedHostsFullAccess", "*");
+					
+					Logger.normal(this, "Network allowance list has been set to "+ sb.toString());
+				} catch (InvalidConfigValueException e) {
+					Logger.error(this, "Should not happen, please report!" + e);
+				}
+			}
+			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step=5");
+			return;
 		}
-
 		
 		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
 	}
