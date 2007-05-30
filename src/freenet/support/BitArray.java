@@ -116,4 +116,17 @@ public class BitArray implements WritableToDataOutputStream {
 		for(int i=0;i<_bits.length;i++)
 			_bits[i] = (byte)0xFF;
 	}
+
+	public int firstOne() {
+		for(int i=0;i<_bits.length;i++) {
+			byte b = _bits[i];
+			if(b == 0) continue;
+			for(int j=0;j<8;j++) {
+				int mask = (1 << j);
+				if((b & mask) != 0)
+					return i*8+j;
+			}
+		}
+		return -1;
+	}
 }

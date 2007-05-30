@@ -1572,6 +1572,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		return true;
     }
     
+    public long getBootID() {
+    	return bootID;
+    }
+    
     private volatile Object arkFetcherSync = new Object();
     
     void startARKFetcher() {

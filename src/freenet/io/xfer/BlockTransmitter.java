@@ -75,7 +75,7 @@ public class BlockTransmitter {
 			Logger.error(this, "Aborted during setup");
 			// Will throw on running
 		}
-		throttle = PacketThrottle.getThrottle(_destination.getPeer(), _prb._packetSize);
+		throttle = _destination.getThrottle();
 		_senderThread = new Thread("_senderThread for "+_uid+ " to "+_destination.getPeer()) {
 		
 			public void run() {

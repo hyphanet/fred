@@ -3,7 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.xfer;
 
+import java.io.IOException;
+
+import freenet.io.comm.DMT;
 import freenet.io.comm.RetrievalException;
+import freenet.node.FNPPacketMangler;
 import freenet.support.BitArray;
 import freenet.support.Logger;
 import freenet.support.io.RandomAccessThing;
@@ -28,6 +32,8 @@ public class PartiallyReceivedBulk {
 	private BulkTransmitter[] transmitters;
 	/** The one and only BulkReceiver */
 	private BulkReceiver recv;
+	private int blocksReceivedCount;
+	final int packetSize;
 	// Abort status
 	boolean _aborted;
 	int _abortReason;
@@ -50,8 +56,12 @@ public class PartiallyReceivedBulk {
 			throw new IllegalArgumentException("Too big");
 		this.blocks = (int)blocks;
 		blocksReceived = new BitArray(this.blocks);
-		if(initialState)
+		if(initialState) {
 			blocksReceived.setAllOnes();
+			blocksReceivedCount = this.blocks;
+		}
+		packetSize = DMT.bulkPacketTransmitSize(blockSize) + 
+			FNPPacketMangler.FULL_HEADERS_LENGTH_ONE_MESSAGE; // FIXME generalise
 	}
 
 	/**
@@ -90,6 +100,7 @@ public class PartiallyReceivedBulk {
 		synchronized(this) {
 			if(blocksReceived.bitAt(blockNum)) return; // ignore
 			blocksReceived.setBit(blockNum, true); // assume the rest of the function succeeds
+			blocksReceivedCount++;
 			notifyBTs = transmitters;
 		}
 		try {
@@ -126,21 +137,40 @@ public class PartiallyReceivedBulk {
 			notifyBR.onAborted();
 	}
 
-//	/**
-//	 * Fail the transfer because of an unrecoverable exception e.g. an error in storing the data.
-//	 * @param t The throwable causing this failure.
-//	 */
-//	private void fail(Throwable t) {
-//		Logger.error(this, "Failing transfer: "+this+" : "+t, t);
-//		BulkTransmitter[] notifyBTs;
-//		synchronized(this) {
-//			notifyBTs = transmitters;
-//		}
-//		if(notifyBTs != null) {
-//			for(int i=0;i<notifyBTs.length;i++)
-//				notifyBTs[i].fail(t);
-//		}
-//		if(recv != null)
-//			recv.fail(t);
-//	}
+	public synchronized boolean isAborted() {
+		return _aborted;
+	}
+
+	public int getPacketSize() {
+		return packetSize;
+	}
+
+	public boolean hasWholeFile() {
+		return blocksReceivedCount >= blocks;
+	}
+
+	public byte[] getBlockData(int blockNum) {
+		long fileOffset = (long)blockNum * (long)blockSize;
+		int bs = (int) Math.max(blockSize, size - fileOffset);
+		byte[] data = new byte[bs];
+		try {
+			raf.pread(fileOffset, data, 0, bs);
+		} catch (IOException e) {
+			Logger.error(this, "Failed to read stored block "+blockNum+" on "+this+" : "+e, e);
+			abort(RetrievalException.IO_ERROR, e.toString());
+			return null;
+		}
+		return data;
+	}
+
+	public synchronized void remove(BulkTransmitter remove) {
+		BulkTransmitter[] newTrans = new BulkTransmitter[transmitters.length-1];
+		int j = 0;
+		for(int i=0;i<transmitters.length;i++) {
+			BulkTransmitter t = transmitters[i];
+			if(t == remove) continue;
+			newTrans[j++] = t;
+		}
+		transmitters = newTrans;
+	}
 }

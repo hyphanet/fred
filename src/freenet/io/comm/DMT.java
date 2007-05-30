@@ -184,6 +184,10 @@ public class DMT {
 			BitArray.serializedLength(_packets) + 4 /* Message header */;
 	}
 	
+	public static int bulkPacketTransmitSize(int size) {
+		return size + 8 /* uid */ + 4 /* packet# */ + 4 /* Message hader */;
+	}
+	
 	public static final MessageType allSent = new MessageType("allSent") {{
 		addField(UID, Long.class);
 	}};

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
+import freenet.io.xfer.PacketThrottle;
+
 /**
  * @author amphibian
  * 
@@ -27,4 +29,11 @@ public interface PeerContext {
 	
 	/** Send a message to the node */
 	public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException;
+	
+	/** Get the current boot ID. This is a random number that changes every time the node starts up. */
+	public long getBootID();
+
+	/** Get the PacketThrottle for the node's current address for the standard packet size (if the 
+	 * address changes then we get a new throttle). */ 
+	public PacketThrottle getThrottle();
 }
