@@ -39,6 +39,8 @@ import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.io.comm.AsyncMessageCallback;
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;

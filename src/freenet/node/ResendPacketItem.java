@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.io.comm.AsyncMessageCallback;
+
 /**
  * A packet to be resent. Includes a packet number, and the 
  * message as byte[].

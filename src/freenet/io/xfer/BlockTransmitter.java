@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
@@ -29,7 +30,6 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
-import freenet.node.ByteCounter;
 import freenet.node.FNPPacketMangler;
 import freenet.node.PeerNode;
 import freenet.support.BitArray;

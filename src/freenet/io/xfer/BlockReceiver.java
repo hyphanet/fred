@@ -21,6 +21,7 @@ package freenet.io.xfer;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
@@ -29,7 +30,6 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.UdpSocketManager;
-import freenet.node.ByteCounter;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Logger;

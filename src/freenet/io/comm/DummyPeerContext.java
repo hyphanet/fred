@@ -12,13 +12,15 @@ package freenet.io.comm;
 public class DummyPeerContext implements PeerContext {
 
     private final Peer peer;
+    private final UdpSocketManager usm;
     
     public Peer getPeer() {
         return peer;
     }
     
-    DummyPeerContext(Peer p) {
+    DummyPeerContext(Peer p, UdpSocketManager usm) {
         peer = p;
+        this.usm = usm;
     }
 
 	public void forceDisconnect() {
@@ -39,5 +41,14 @@ public class DummyPeerContext implements PeerContext {
 
 	public int getVersionNumber() {
 		return -1;
+	}
+
+	public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException {
+		usm.send(this, msg, ctr);
+		try {
+			cb.sent();
+		} catch (Throwable t) {
+			// FIXME do something with it
+		}
 	}
 }

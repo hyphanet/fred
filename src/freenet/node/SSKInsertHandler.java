@@ -5,6 +5,7 @@ package freenet.node;
 
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;

@@ -3,7 +3,7 @@ package freenet.support;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import freenet.node.AsyncMessageCallback;
+import freenet.io.comm.AsyncMessageCallback;
 
 /**
  * @author amphibian

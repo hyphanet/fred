@@ -8,6 +8,7 @@ import java.util.HashSet;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;

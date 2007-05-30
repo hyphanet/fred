@@ -25,7 +25,6 @@ import java.util.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.io.comm.Peer.LocalAddressException;
-import freenet.node.ByteCounter;
 import freenet.node.LoggingConfigHandler;
 import freenet.node.Node;
 import freenet.node.PeerNode;
@@ -260,7 +259,7 @@ public class UdpSocketManager extends Thread {
 			} else {
 				// Create a bogus context since no filter
 				Message m = decodeSingleMessage(data, offset, length,
-						new DummyPeerContext(peer), 0);
+						new DummyPeerContext(peer, this), 0);
 				if (m != null) {
 					checkFilters(m);
 				}

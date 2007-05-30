@@ -6,6 +6,7 @@ package freenet.node;
 import java.util.HashSet;
 import java.util.Vector;
 
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;

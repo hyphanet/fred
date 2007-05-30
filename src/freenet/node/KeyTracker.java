@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
+import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.support.DoublyLinkedList;
