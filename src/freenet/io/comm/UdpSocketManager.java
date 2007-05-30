@@ -238,31 +238,22 @@ public class UdpSocketManager extends Thread {
 			byte[] data = packet.getData();
 			int offset = packet.getOffset();
 			int length = packet.getLength();
-			if (lowLevelFilter != null) {
-				try {
-					if(logMINOR) Logger.minor(this, "Processing packet of length "+length+" from "+peer);
-					startTime = System.currentTimeMillis();
-					lowLevelFilter.process(data, offset, length, peer);
-					endTime = System.currentTimeMillis();
-					if(endTime - startTime > 50) {
-						if(endTime-startTime > 3000)
-							Logger.error(this, "processing packet took "+(endTime-startTime)+"ms");
-						else
-							if(logMINOR) Logger.minor(this, "processing packet took "+(endTime-startTime)+"ms");
-					}
-					if(logMINOR) Logger.minor(this,
-							"Successfully handled packet length " + length);
-				} catch (Throwable t) {
-					Logger.error(this, "Caught " + t + " from "
-							+ lowLevelFilter, t);
+			try {
+				if(logMINOR) Logger.minor(this, "Processing packet of length "+length+" from "+peer);
+				startTime = System.currentTimeMillis();
+				lowLevelFilter.process(data, offset, length, peer);
+				endTime = System.currentTimeMillis();
+				if(endTime - startTime > 50) {
+					if(endTime-startTime > 3000)
+						Logger.error(this, "processing packet took "+(endTime-startTime)+"ms");
+					else
+						if(logMINOR) Logger.minor(this, "processing packet took "+(endTime-startTime)+"ms");
 				}
-			} else {
-				// Create a bogus context since no filter
-				Message m = decodeSingleMessage(data, offset, length,
-						new DummyPeerContext(peer, this), 0);
-				if (m != null) {
-					checkFilters(m);
-				}
+				if(logMINOR) Logger.minor(this,
+						"Successfully handled packet length " + length);
+			} catch (Throwable t) {
+				Logger.error(this, "Caught " + t + " from "
+						+ lowLevelFilter, t);
 			}
 		} else if(logMINOR) Logger.minor(this, "Null packet");
 	}
@@ -655,6 +646,7 @@ public class UdpSocketManager extends Thread {
 		_dispatcher = d;
 	}
 
+	/** Must be called, or we will NPE */
 	public void setLowLevelFilter(IncomingPacketFilter f) {
 	    lowLevelFilter = f;
 	}
