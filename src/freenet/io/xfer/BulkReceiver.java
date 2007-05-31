@@ -20,6 +20,7 @@ public class BulkReceiver {
 	final PeerContext peer;
 	/** Transfer UID for messages */
 	final long uid;
+	private boolean sentCancel;
 
 	public BulkReceiver(PartiallyReceivedBulk prb, PeerContext peer, long uid) {
 		this.prb = prb;
@@ -28,6 +29,10 @@ public class BulkReceiver {
 	}
 
 	public void onAborted() {
+		synchronized(this) {
+			if(sentCancel) return;
+			sentCancel = true;
+		}
 		try {
 			peer.sendAsync(DMT.createFNPBulkReceiveAborted(uid), null, 0, null);
 		} catch (NotConnectedException e) {
