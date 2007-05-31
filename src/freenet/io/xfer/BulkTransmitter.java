@@ -114,70 +114,70 @@ public class BulkTransmitter {
 		prb.remove(this);
 	}
 	
-	class Sender implements Runnable {
-
-		public void run() {
-			while(true) {
-				if(prb.isAborted()) return;
-				int blockNo;
-				if(peer.getBootID() != peerBootID) {
-					synchronized(this) {
-						cancelled = true;
-						notifyAll();
-					}
-					prb.remove(BulkTransmitter.this);
-					return;
-				}
-				boolean hasAll = prb.hasWholeFile();
+	/**
+	 * Send the file.
+	 * @return True if the file was successfully sent. False otherwise.
+	 */
+	public boolean send() {
+		while(true) {
+			if(prb.isAborted()) return false;
+			int blockNo;
+			if(peer.getBootID() != peerBootID) {
 				synchronized(this) {
-					if(cancelled) return;
-					blockNo = blocksNotSentButPresent.firstOne();
+					cancelled = true;
+					notifyAll();
 				}
-				if(blockNo < 0 && hasAll) {
-					prb.remove(BulkTransmitter.this);
-					return; // All done
-				}
-				else if(blockNo < 0) {
-					synchronized(this) {
-						try {
-							wait(60*1000);
-						} catch (InterruptedException e) {
-							// No problem
-						}
-						continue;
-					}
-				}
-				// Send a packet
-				byte[] buf = prb.getBlockData(blockNo);
-				if(buf == null) {
-					// Already cancelled, quit
-					return;
-				}
-				
-				// Congestion control and bandwidth limiting
-				long now = System.currentTimeMillis();
-				long waitUntil = peer.getThrottle().scheduleDelay(now);
-				
-				masterThrottle.blockingGrab(prb.getPacketSize());
-				
-				while((now = System.currentTimeMillis()) < waitUntil) {
-					long sleepTime = waitUntil - now;
+				prb.remove(BulkTransmitter.this);
+				return false;
+			}
+			boolean hasAll = prb.hasWholeFile();
+			synchronized(this) {
+				if(cancelled) return false;
+				blockNo = blocksNotSentButPresent.firstOne();
+			}
+			if(blockNo < 0 && hasAll) {
+				prb.remove(BulkTransmitter.this);
+				return true; // All done
+			} else if(blockNo < 0) {
+				synchronized(this) {
 					try {
-						Thread.sleep(sleepTime);
+						wait(60*1000);
 					} catch (InterruptedException e) {
-						// Ignore
+						// No problem
 					}
-				}
-				// FIXME should this be reported on bwlimitDelayTime ???
-				
-				try {
-					peer.sendAsync(DMT.createFNPBulkPacketSend(uid, blockNo, buf), null, 0, null);
-				} catch (NotConnectedException e) {
-					cancel();
-					return;
+					continue;
 				}
 			}
+			// Send a packet
+			byte[] buf = prb.getBlockData(blockNo);
+			if(buf == null) {
+				// Already cancelled, quit
+				return false;
+			}
+			
+			// Congestion control and bandwidth limiting
+			long now = System.currentTimeMillis();
+			long waitUntil = peer.getThrottle().scheduleDelay(now);
+			
+			masterThrottle.blockingGrab(prb.getPacketSize());
+			
+			while((now = System.currentTimeMillis()) < waitUntil) {
+				long sleepTime = waitUntil - now;
+				try {
+					Thread.sleep(sleepTime);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+			// FIXME should this be reported on bwlimitDelayTime ???
+			
+			try {
+				peer.sendAsync(DMT.createFNPBulkPacketSend(uid, blockNo, buf), null, 0, null);
+			} catch (NotConnectedException e) {
+				cancel();
+				return false;
+			}
 		}
-		
 	}
+	
 }
