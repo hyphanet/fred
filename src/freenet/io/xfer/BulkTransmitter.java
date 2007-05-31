@@ -3,7 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.xfer;
 
+import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
+import freenet.io.comm.Message;
+import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.support.BitArray;
@@ -31,9 +35,10 @@ public class BulkTransmitter {
 	final long peerBootID;
 	/** The overall hard bandwidth limiter */
 	final DoubleTokenBucket masterThrottle;
+	private boolean sentCancel;
+	private boolean finished;
 	
-
-	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, DoubleTokenBucket masterThrottle) {
+	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, DoubleTokenBucket masterThrottle) throws DisconnectedException {
 		this.prb = prb;
 		this.peer = peer;
 		this.uid = uid;
@@ -47,6 +52,24 @@ public class BulkTransmitter {
 			// We can just clone it.
 			blocksNotSentButPresent = prb.cloneBlocksReceived();
 			prb.add(this);
+		}
+		try {
+			prb.usm.addAsyncFilter(MessageFilter.create().setNoTimeout().setSource(peer).setType(DMT.FNPBulkReceiveAborted).setField(DMT.UID, uid),
+					new AsyncMessageFilterCallback() {
+						public void onMatched(Message m) {
+							cancel();
+						}
+						public boolean shouldTimeout() {
+							synchronized(BulkTransmitter.this) {
+								if(cancelled || finished) return true;
+							}
+							if(BulkTransmitter.this.prb.isAborted()) return true;
+							return false;
+						}
+			});
+		} catch (DisconnectedException e) {
+			cancel();
+			throw e;
 		}
 	}
 
@@ -64,22 +87,26 @@ public class BulkTransmitter {
 	 * Called when the PRB is aborted.
 	 */
 	public void onAborted() {
-		try {
-			peer.sendAsync(DMT.createFNPBulkSendAborted(uid), null, 0, null);
-		} catch (NotConnectedException e) {
-			// Cool
-		}
+		sendAbortedMessage();
 		synchronized(this) {
 			notifyAll();
 		}
 	}
 	
-	public void cancel() {
+	private void sendAbortedMessage() {
+		synchronized(this) {
+			if(sentCancel) return;
+			sentCancel = true;
+		}
 		try {
 			peer.sendAsync(DMT.createFNPBulkSendAborted(uid), null, 0, null);
 		} catch (NotConnectedException e) {
 			// Cool
 		}
+	}
+
+	public void cancel() {
+		sendAbortedMessage();
 		synchronized(this) {
 			cancelled = true;
 			notifyAll();

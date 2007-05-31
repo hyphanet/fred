@@ -471,6 +471,74 @@ public class UdpSocketManager extends Thread {
 	    }
 	}
 	
+
+	public void addAsyncFilter(MessageFilter filter, AsyncMessageFilterCallback callback) throws DisconnectedException {
+		filter.setAsyncCallback(callback);
+		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		if(logDEBUG) Logger.debug(this, "Adding async filter "+filter+" for "+callback);
+		Message ret = null;
+		if((lowLevelFilter != null) && (filter._source != null) && 
+		        filter.matchesDroppedConnection() &&
+		        lowLevelFilter.isDisconnected(filter._source))
+		    throw new DisconnectedException();
+		// Check to see whether the filter matches any of the recently _unclaimed messages
+		// Drop any _unclaimed messages that the filter doesn't match that are also older than MAX_UNCLAIMED_FIFO_ITEM_LIFETIME
+		long now = System.currentTimeMillis();
+		long messageDropTime = now - MAX_UNCLAIMED_FIFO_ITEM_LIFETIME;
+		long messageLifeTime = 0;
+		synchronized (_filters) {
+			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
+			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
+				Message m = (Message) i.next();
+				if (filter.match(m)) {
+					i.remove();
+					ret = m;
+					if(logMINOR) Logger.debug(this, "Matching from _unclaimed");
+					break;
+				} else if (m.localInstantiationTime < messageDropTime) {
+					i.remove();
+					messageLifeTime = now - m.localInstantiationTime;
+					if ((m.getSource()) instanceof PeerNode) {
+						Logger.normal(this, "Dropping unclaimed from "+m.getSource().getPeer()+", lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (age)"+": "+m);
+					} else {
+						Logger.normal(this, "Dropping unclaimed, lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (age)"+": "+m);
+					}
+				}
+			}
+			if (ret == null) {
+				if(logMINOR) Logger.minor(this, "Not in _unclaimed");
+			    // Insert filter into filter list in order of timeout
+				ListIterator i = _filters.listIterator();
+				while (true) {
+					if (!i.hasNext()) {
+						i.add(filter);
+						if(logMINOR) Logger.minor(this, "Added at end");
+						break;
+					}
+					MessageFilter mf = (MessageFilter) i.next();
+					if (mf.getTimeout() > filter.getTimeout()) {
+						i.previous();
+						i.add(filter);
+						if(logMINOR) Logger.minor(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout());
+						break;
+					}
+				}
+			}
+		}
+		if(ret != null) {
+			filter.onMatched();
+			filter.clearMatched();
+		}
+	}
+
+	/**
+	 * Wait for a filter to trigger, or timeout. Blocks until either the trigger is activated, or it times
+	 * out, or the peer is disconnected.
+	 * @param filter The filter to wait for.
+	 * @param ctr Byte counter to add bytes from the message to.
+	 * @return Either a message, or null if the filter timed out.
+	 * @throws DisconnectedException If the single peer being waited for disconnects.
+	 */
 	public Message waitFor(MessageFilter filter, ByteCounter ctr) throws DisconnectedException {
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logDEBUG) Logger.debug(this, "Waiting for "+filter);
@@ -556,6 +624,10 @@ public class UdpSocketManager extends Thread {
 				filter.clearMatched();
 			}
 			if(logDEBUG) Logger.debug(this, "Returning "+ret+" from "+filter);
+		} else {
+			// Matched an unclaimed packet
+			filter.onMatched();
+			filter.clearMatched();
 		}
 		// Probably get rid...
 //		if (Dijjer.getDijjer().getDumpMessageWaitTimes() != null) {

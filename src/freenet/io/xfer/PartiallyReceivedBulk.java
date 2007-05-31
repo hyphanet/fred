@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.RetrievalException;
+import freenet.io.comm.UdpSocketManager;
 import freenet.node.FNPPacketMangler;
 import freenet.support.BitArray;
 import freenet.support.Logger;
@@ -30,6 +31,7 @@ public class PartiallyReceivedBulk {
 	private final BitArray blocksReceived;
 	final int blocks;
 	private BulkTransmitter[] transmitters;
+	final UdpSocketManager usm;
 	/** The one and only BulkReceiver */
 	private BulkReceiver recv;
 	private int blocksReceivedCount;
@@ -47,10 +49,11 @@ public class PartiallyReceivedBulk {
 	 * @param initialState If true, assume all blocks have been received. If false, assume no blocks have
 	 * been received.
 	 */
-	public PartiallyReceivedBulk(long size, int blockSize, RandomAccessThing raf, boolean initialState) {
+	public PartiallyReceivedBulk(UdpSocketManager usm, long size, int blockSize, RandomAccessThing raf, boolean initialState) {
 		this.size = size;
 		this.blockSize = blockSize;
 		this.raf = raf;
+		this.usm = usm;
 		long blocks = size / blockSize + (size % blockSize > 0 ? 1 : 0);
 		if(blocks > Integer.MAX_VALUE)
 			throw new IllegalArgumentException("Too big");
