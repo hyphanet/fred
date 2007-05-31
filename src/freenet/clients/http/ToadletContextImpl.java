@@ -375,6 +375,12 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 	}
 	
+	/**
+	 * Should the connection be closed after handling this request?
+	 * @param isHTTP10 Did the client specify HTTP/1.0?
+	 * @param headers Client headers.
+	 * @return True if the connection should be closed.
+	 */
 	private static boolean shouldDisconnectAfterHandled(boolean isHTTP10, MultiValueTable headers) {
 		String connection = (String) headers.get("connection");
 		if(connection != null) {
@@ -385,7 +391,7 @@ public class ToadletContextImpl implements ToadletContext {
 				return false;
 		}
 		if(isHTTP10 == true)
-			return false;
+			return true;
 		return true;
 	}
 	
