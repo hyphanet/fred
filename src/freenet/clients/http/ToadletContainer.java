@@ -33,4 +33,7 @@ public interface ToadletContainer {
 
 	/** Is the given IP address allowed full access to the node? */
 	public boolean isAllowedFullAccess(InetAddress remoteAddr);
+
+	/** Whether to tell spiders to go away */
+	public boolean doRobots();
 }

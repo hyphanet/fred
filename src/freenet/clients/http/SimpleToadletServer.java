@@ -61,6 +61,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private boolean fProxyJavascriptEnabled;
 	private final PageMaker pageMaker;
 	private final NodeClientCore core;
+	private boolean doRobots;
 	
 	static boolean isPanicButtonToBeShown;
 	static final int DEFAULT_FPROXY_PORT = 8888;
@@ -310,6 +311,16 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			
 		});
 		allowedFullAccess = new AllowedHosts(fproxyConfig.getString("allowedHostsFullAccess"));
+		fproxyConfig.register("doRobots", false, configItemOrder++, true, false, "Exclude robots via robots.txt?", "Whether to serve a /robots.txt telling google, spiders, wget, etc to go away",
+				new BooleanCallback() {
+					public boolean get() {
+						return doRobots;
+					}
+					public void set(boolean val) throws InvalidConfigValueException {
+						doRobots = val;
+					}
+		});
+		doRobots = fproxyConfig.getBoolean("doRobots");
 		
 		SimpleToadletServer.isPanicButtonToBeShown = fproxyConfig.getBoolean("showPanicButton");
 		this.bf = core.tempBucketFactory;
@@ -340,6 +351,10 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 
+	public boolean doRobots() {
+		return doRobots;
+	}
+	
 	public void start() {
 		if(myThread != null) {
 			myThread.start();
