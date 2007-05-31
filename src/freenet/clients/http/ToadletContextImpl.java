@@ -384,8 +384,8 @@ public class ToadletContextImpl implements ToadletContext {
 			if(connection.equalsIgnoreCase("keep-alive"))
 				return false;
 		}
-		if(!isHTTP10) return true;
-		// WTF?
+		if(isHTTP10 == true)
+			return false;
 		return true;
 	}
 	
