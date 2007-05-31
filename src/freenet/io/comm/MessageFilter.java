@@ -200,4 +200,19 @@ public class MessageFilter {
             _droppedConnection = ctx;
         }
     }
+
+    /**
+     * Notify waiters that we have been matched.
+     * Hopefully no locks will be held at this point by the caller.
+     */
+	public synchronized void onMatched() {
+		notifyAll();
+	}
+
+	/**
+	 * Notify waiters that we have timed out.
+	 */
+	public synchronized void onTimedOut() {
+		notifyAll();
+	}
 }

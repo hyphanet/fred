@@ -155,6 +155,7 @@ public class UdpSocketManager extends Thread {
 //			}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = new Random();
+		_timedOutFilters = new Vector(32);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -294,17 +295,24 @@ public class UdpSocketManager extends Thread {
 		return true;
 	}
 
+    /** Only used by removeTimedOutFilters() - if future code uses this elsewhere, we need to
+     * reconsider its locking. */
+    private final Vector _timedOutFilters;
+    
+    /**
+     * Remove timed out filters.
+     * Only called by realRun(), so it can move timed out filters to the _timedOutFilters array,
+     * and then tell them that they are timed out without holding locks.
+     *
+     */
 	private void removeTimedOutFilters() {
 		long tStart = System.currentTimeMillis();
 		synchronized (_filters) {
 			for (ListIterator i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = (MessageFilter) i.next();
 				if (f.timedOut()) {
-					f.setMessage(null);
-					synchronized (f) {
-						i.remove();
-						f.notifyAll();
-					}
+					i.remove();
+					_timedOutFilters.add(f);
 				} else { // Because _filters are in order of timeout, we
 					// can abort the iteration as soon as we find one that
 					// doesn't timeout
@@ -312,6 +320,17 @@ public class UdpSocketManager extends Thread {
 				}
 			}
 		}
+		
+		for(int i=0;i<_timedOutFilters.size();i++) {
+			MessageFilter f = (MessageFilter) _timedOutFilters.get(i);
+			f.setMessage(null);
+			f.onTimedOut();
+			synchronized (f) {
+				f.notifyAll();
+			}
+		}
+		_timedOutFilters.clear();
+		
 		long tEnd = System.currentTimeMillis();
 		if(tEnd - tStart > 50) {
 			if(tEnd - tStart > 3000)
@@ -343,14 +362,15 @@ public class UdpSocketManager extends Thread {
 						+ m.getSource() + " : " + m);
 			}
 		}
+		MessageFilter match = null;
 		synchronized (_filters) {
 			for (ListIterator i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = (MessageFilter) i.next();
 				if (f.match(m)) {
 					matched = true;
-					f.setMessage(m);
+					i.remove();
+					match = f;
 					synchronized (f) {
-						i.remove();
 						f.notifyAll();
 					}
 					if(logMINOR) Logger.minor(this, "Matched: "+f);
@@ -358,6 +378,8 @@ public class UdpSocketManager extends Thread {
 				}
 			}
 		}
+		match.setMessage(m);
+		match.onMatched();
 		// Feed unmatched messages to the dispatcher
 		if ((!matched) && (_dispatcher != null)) {
 		    try {
@@ -397,11 +419,8 @@ public class UdpSocketManager extends Thread {
 					MessageFilter f = (MessageFilter) i.next();
 					if (f.match(m)) {
 						matched = true;
-						f.setMessage(m);
-						synchronized (f) {
-							i.remove();
-							f.notifyAll();
-						}
+						match = f;
+						i.remove();
 						if(logMINOR) Logger.minor(this, "Matched: "+f);
 						break; // Only one match permitted per message
 					}
@@ -419,6 +438,10 @@ public class UdpSocketManager extends Thread {
 				    _unclaimed.addLast(m);
 				    if(logMINOR) Logger.minor(this, "Done");
 				}
+			}
+			if(match != null) {
+				match.setMessage(m);
+				match.onMatched();
 			}
 		}
 		long tEnd = System.currentTimeMillis();
