@@ -499,7 +499,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 
 		/* add alert summary box */
-		if(context.isAllowedFullAccess())
+		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 		/* add file insert box */
 		contentNode.addChild(createInsertBox(pageMaker, ctx));
