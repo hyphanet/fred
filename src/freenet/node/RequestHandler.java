@@ -82,7 +82,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             if(key instanceof NodeSSK) {
                 if(needsPubKey) {
                 	DSAPublicKey key = ((NodeSSK)block.getKey()).getPubKey();
-                	Message pk = DMT.createFNPSSKPubKey(uid, key.asBytes());
+                	Message pk = DMT.createFNPSSKPubKey(uid, key);
                 	if(logMINOR) Logger.minor(this, "Sending PK: "+key+ ' ' +key.toLongString());
                 	source.sendSync(pk, null);
                 }
@@ -164,7 +164,7 @@ public class RequestHandler implements Runnable, ByteCounter {
                         source.sendSync(df, this);
                         node.sentPayload(rs.getSSKData().length);
                         if(needsPubKey) {
-                        	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey().asBytes());
+                        	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
                         	source.sendSync(pk, this);
                         }
             		} else if(!rs.transferStarted()) {

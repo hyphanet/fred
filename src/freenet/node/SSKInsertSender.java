@@ -244,7 +244,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             // Firstly, do we need to send them the pubkey?
             
             if(msg.getBoolean(DMT.NEED_PUB_KEY)) {
-            	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey.asBytes());
+            	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey);
             	try {
             		next.sendAsync(pkMsg, null, 0, this);
             	} catch (NotConnectedException e) {

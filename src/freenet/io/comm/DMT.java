@@ -21,6 +21,7 @@ package freenet.io.comm;
 
 import java.util.LinkedList;
 
+import freenet.crypt.DSAPublicKey;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
@@ -674,10 +675,10 @@ public class DMT {
 		addField(PUBKEY_AS_BYTES, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKPubKey(long uid, byte[] pubkey) {
+	public static Message createFNPSSKPubKey(long uid, DSAPublicKey pubkey) {
 		Message msg = new Message(FNPSSKPubKey);
 		msg.set(UID, uid);
-		msg.set(PUBKEY_AS_BYTES, new ShortBuffer(pubkey));
+		msg.set(PUBKEY_AS_BYTES, new ShortBuffer(pubkey.asPaddedBytes()));
 		return msg;
 	}
 	
