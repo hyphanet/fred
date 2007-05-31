@@ -11,7 +11,7 @@ import freenet.support.DoubleTokenBucket;
 
 /**
  * Bulk data transfer (not block). Bulk transfer is designed for files which may be much bigger than a 
- * key block, and where we have the whole file at the outset. 
+ * key block, and where we have the whole file at the outset. Do not persist across node restarts.
  * 
  * Used by update over mandatory, sending a file to our peers attached to an N2NTM etc.
  * @author toad
