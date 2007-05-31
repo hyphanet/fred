@@ -8,7 +8,6 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.URI;
 import java.util.Enumeration;
-import java.util.Locale;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
@@ -25,16 +24,16 @@ import freenet.support.api.HTTPRequest;
  * A first time wizard aimed to ease the configuration of the node.
  * 
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
+ * 
+ * TODO: a choose your CSS step ?
  */
 public class FirstTimeWizardToadlet extends Toadlet {
-	private final Node node;
 	private final NodeClientCore core;
 	private final Config config;
 	
 	
 	FirstTimeWizardToadlet(HighLevelSimpleClient client, Node node) {
 		super(client);
-		this.node = node;
 		this.core = node.clientCore;
 		this.config = node.config;
 	}
@@ -53,36 +52,17 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step1Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
-			HTMLNode languageInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode languageInfoboxHeader = languageInfobox.addChild("div", "class", "infobox-header");
-			HTMLNode languageInfoboxContent = languageInfobox.addChild("div", "class", "infobox-content");
+			HTMLNode nnameInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode nnameInfoboxHeader = nnameInfobox.addChild("div", "class", "infobox-header");
+			HTMLNode nnameInfoboxContent = nnameInfobox.addChild("div", "class", "infobox-content");
 			
-			languageInfoboxHeader.addChild("#", l10n("selectLanguage"));
-			languageInfoboxContent.addChild("#", l10n("selectLanguageLong"));
-			HTMLNode languageForm = ctx.addFormChild(languageInfoboxContent, ".", "languageForm");
-			HTMLNode result = languageForm.addChild("select", "name", "language");
+			nnameInfoboxHeader.addChild("#", l10n("chooseNodeName"));
+			nnameInfoboxContent.addChild("#", l10n("chooseNodeNameLong"));
+			HTMLNode nnameForm = ctx.addFormChild(nnameInfoboxContent, ".", "nnameForm");
+			nnameForm.addChild("input", "name", "nname");
 			
-			Locale currentLocale = Locale.getDefault();
-			boolean isTranslationFound = false;
-			for(int i=0; i<L10n.AVAILABLE_LANGUAGES.length; i++) {
-				if(isTranslationFound = L10n.AVAILABLE_LANGUAGES[i].equals(currentLocale.getCountry().toLowerCase()))
-					break;
-			}
-			
-			if(isTranslationFound) {
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { Locale.getDefault().getCountry().toLowerCase(), "selected" }, Locale.getDefault().getDisplayName());
-				result.addChild("option", "value", "en", "English");
-			} else
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { "en" , "selected" }, "English");				
-			result.addChild("option", "value", "fr", "Français");
-			result.addChild("option", "value", "pl", "Polski");
-			result.addChild("option", "value", "it", "Italiano");
-			result.addChild("option", "value", "se", "Svenska");
-			result.addChild("option", "value", "no", "Norsk");
-			// We don't propose unknown languages here
-			
-			languageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "languageF", L10n.getString("Toadlet.clickHere")});
-			languageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
+			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "nnameF", L10n.getString("Toadlet.clickHere")});
+			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
 		} else if(currentStep == 2) {
@@ -141,12 +121,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
-			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
-			HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
+			HTMLNode networkInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode networkInfoboxHeader = networkInfobox.addChild("div", "class", "infobox-header");
+			HTMLNode networkInfoboxContent = networkInfobox.addChild("div", "class", "infobox-content");
 
 			Enumeration interfaces = NetworkInterface.getNetworkInterfaces();
-			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "networkForm");
+			HTMLNode networkForm = new HTMLNode("div");
 			
 			short ifCount = 0;
 			HTMLNode ifList = new HTMLNode("div", "class", "interface");
@@ -167,16 +147,30 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			
 			if(ifCount > 0) {
-				bandwidthnfoboxHeader.addChild("#", l10n("isNetworkTrusted"));
-				bandwidthInfoboxContent.addChild("#", l10n("isNetworkTrustedLong"));
-				bandwidthForm.addChild(ifList);
+				networkInfoboxHeader.addChild("#", l10n("isNetworkTrusted"));
+				networkInfoboxContent.addChild("#", l10n("isNetworkTrustedLong"));
+				networkForm.addChild(ifList);
 			} else {
-				bandwidthnfoboxHeader.addChild("#", l10n("noNetworkIF"));
-				bandwidthInfoboxContent.addChild("#", l10n("noNetworkIFLong"));				
+				networkInfoboxHeader.addChild("#", l10n("noNetworkIF"));
+				networkInfoboxContent.addChild("#", l10n("noNetworkIFLong"));				
 			}
+			ctx.addFormChild(networkInfoboxContent, ".", "networkForm").addChild(networkForm);
 			
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkF", L10n.getString("Toadlet.clickHere")});
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
+			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkF", L10n.getString("Toadlet.clickHere")});
+			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
+			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			return;
+		}else if(currentStep == 5) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step5Title"), true, ctx);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			
+			HTMLNode congratzInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode congratzInfoboxHeader = congratzInfobox.addChild("div", "class", "infobox-header");
+			HTMLNode congratzInfoboxContent = congratzInfobox.addChild("div", "class", "infobox-content");
+
+			congratzInfoboxHeader.addChild("#", l10n("congratz"));
+			congratzInfoboxContent.addChild("#", l10n("congratzLong"));
+
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
 		}
@@ -214,12 +208,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		}
 		
-		if(request.isPartSet("languageF")) {
-			String selectedLanguage = request.getPartAsString("language", 4);
+		if(request.isPartSet("nnameF")) {
+			String selectedNName = request.getPartAsString("nname", 255);
 			
 			try {
-				config.get("node").set("l10n", selectedLanguage);
-				Logger.normal(this, "The language has been set to "+ selectedLanguage);
+				config.get("node").set("name", selectedNName);
+				Logger.normal(this, "The node name has been set to "+ selectedNName);
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e);
 			}
@@ -282,6 +276,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					config.get("fproxy").set("bindTo", sb.toString());
 					config.get("fproxy").set("allowedHosts", "*");
 					config.get("fproxy").set("allowedHostsFullAccess", "*");
+					config.store();
 
 					Logger.normal(this, "Network allowance list has been set to "+ sb.toString());
 				} catch (InvalidConfigValueException e) {
