@@ -311,7 +311,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			
 		});
 		allowedFullAccess = new AllowedHosts(fproxyConfig.getString("allowedHostsFullAccess"));
-		fproxyConfig.register("doRobots", false, configItemOrder++, true, false, "Exclude robots via robots.txt?", "Whether to serve a /robots.txt telling google, spiders, wget, etc to go away",
+		fproxyConfig.register("doRobots", false, configItemOrder++, true, false, "SimpleToadletServer.doRobots", "SimpleToadletServer.doRobotsLong",
 				new BooleanCallback() {
 					public boolean get() {
 						return doRobots;
