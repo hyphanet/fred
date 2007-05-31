@@ -45,6 +45,7 @@ public class MessageFilter {
     private MessageFilter _or;
     private Message _message;
     private boolean _matchesDroppedConnections;
+    private AsyncMessageFilterCallback _callback;
 
     private MessageFilter() {
         setTimeout(DEFAULT_TIMEOUT);
@@ -68,6 +69,11 @@ public class MessageFilter {
 		return this;
 	}
 
+	public MessageFilter setNoTimeout() {
+		_timeout = Long.MAX_VALUE;
+		return this;
+	}
+	
 	public MessageFilter setType(MessageType type) {
 		_type = type;
 		return this;
@@ -123,6 +129,11 @@ public class MessageFilter {
 	    return this;
 	}
 	
+	public MessageFilter setAsyncCallback(AsyncMessageFilterCallback cb) {
+		_callback = cb;
+		return this;
+	}
+	
 	public boolean match(Message m) {
 		if ((_or != null) && (_or.match(m))) {
 			_matched = true;
@@ -158,6 +169,8 @@ public class MessageFilter {
 	}
 	
 	public boolean timedOut() {
+		if(_callback != null && _callback.shouldTimeout())
+			_timeout = -1; // timeout immediately
 		return _timeout < System.currentTimeMillis();
 	}
 
@@ -205,8 +218,13 @@ public class MessageFilter {
      * Notify waiters that we have been matched.
      * Hopefully no locks will be held at this point by the caller.
      */
-	public synchronized void onMatched() {
-		notifyAll();
+	public void onMatched() {
+		if(_callback != null) {
+			_callback.onMatched(_message);
+		}
+		synchronized(this) {
+			notifyAll();
+		}
 	}
 
 	/**
