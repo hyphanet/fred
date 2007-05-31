@@ -134,7 +134,7 @@ public class ArchiveManager {
 	 * @return A Bucket containing the data requested, or null.
 	 * @throws ArchiveFailureException 
 	 */
-	public synchronized Bucket getCached(FreenetURI key, String filename) throws ArchiveFailureException {
+	public Bucket getCached(FreenetURI key, String filename) throws ArchiveFailureException {
 		if(logMINOR) Logger.minor(this, "Fetch cached: "+key+ ' ' +filename);
 		ArchiveKey k = new ArchiveKey(key, filename);
 		ArchiveStoreItem asi = null;
@@ -152,7 +152,7 @@ public class ArchiveManager {
 	 * Remove a file from the cache.
 	 * @param item The ArchiveStoreItem to remove.
 	 */
-	synchronized void removeCachedItem(ArchiveStoreItem item) {
+	void removeCachedItem(ArchiveStoreItem item) {
 		synchronized (storedData) {
 			storedData.removeKey(item.key);	
 		}
