@@ -17,6 +17,7 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -27,6 +28,7 @@ import java.util.zip.Inflater;
 
 import net.i2p.util.NativeBigInteger;
 
+import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchResult;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
@@ -51,10 +53,14 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.xfer.BulkReceiver;
+import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -63,6 +69,9 @@ import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.WouldBlockException;
+import freenet.support.io.FileUtil;
+import freenet.support.io.RandomAccessFileWrapper;
+import freenet.support.io.RandomAccessThing;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -2781,6 +2790,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			return false;
 		} else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM) {
 			boolean sendSuccess = false;
+			int type = fs.getInt("n2nType", 1); // FIXME remove default
+			fs.putOverwrite("n2nType", Integer.toString(type));
 			if(isConnected()) {
 				Message n2ntm;
 				if(fs.get("extraPeerDataType") != null) {
@@ -2796,7 +2807,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				fs.putOverwrite("sentTime", Long.toString(System.currentTimeMillis()));
 				
 				try {
-					n2ntm = DMT.createNodeToNodeMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, fs.toString().getBytes("UTF-8"));
+					n2ntm = DMT.createNodeToNodeMessage(type, fs.toString().getBytes("UTF-8"));
 				} catch (UnsupportedEncodingException e) {
 					Logger.error(this, "UnsupportedEncodingException processing extraPeerDataType ("+extraPeerDataTypeString+") in file "+extraPeerDataFile.getPath(), e);
 					return false;
@@ -3169,5 +3180,286 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Verify a hash */
 	public boolean verify(byte[] hash, DSASignature sig) {
 		return DSA.verify(peerPubKey, sig, new NativeBigInteger(1, hash), false);
+	}
+	
+	// File transfer offers
+	// FIXME this should probably be somewhere else, along with the N2NTM stuff... but where?
+	// FIXME this should be persistent across node restarts
+
+	/** Files I have offered to this peer */
+	private final HashMap myFileOffersByUID = new HashMap();
+	/** Files this peer has offered to me */
+	private final HashMap hisFileOffersByUID = new HashMap();
+	
+	private void storeOffers() {
+		// FIXME do something
+	}
+	
+	class FileOffer {
+		final long uid;
+		final String filename;
+		final String mimeType;
+		final String comment;
+		private RandomAccessThing data;
+		final long size;
+		/** Who is offering it? True = I am offering it, False = I am being offered it */
+		final boolean amIOffering;
+		private PartiallyReceivedBulk prb;
+		private BulkTransmitter transmitter;
+		private BulkReceiver receiver;
+		
+		FileOffer(long uid, RandomAccessThing data, String filename, String mimeType, String comment) throws IOException {
+			this.uid = uid;
+			this.data = data;
+			this.filename = filename;
+			this.mimeType = mimeType;
+			this.comment = comment;
+			size = data.size();
+			amIOffering = true;
+		}
+
+		public FileOffer(SimpleFieldSet fs, boolean amIOffering) throws FSParseException {
+			uid = fs.getLong("uid");
+			size = fs.getLong("size");
+			mimeType = fs.get("metadata.contentType");
+			filename = FileUtil.sanitize(fs.get("filename"), mimeType);
+			comment = fs.get("comment");
+			this.amIOffering = amIOffering;
+		}
+
+		public void toFieldSet(SimpleFieldSet fs) {
+			fs.put("uid", uid);
+			fs.putSingle("filename", filename);
+			fs.putSingle("metadata.contentType", mimeType);
+			fs.putSingle("comment", comment);
+			fs.put("size", size);
+		}
+
+		public void accept() {
+			File dest = new File(node.clientCore.downloadDir, "direct-"+FileUtil.sanitize(getName())+filename);
+			try {
+				data = new RandomAccessFileWrapper(dest, "rw");
+			} catch (FileNotFoundException e) {
+				// Impossible
+				throw new Error("Impossible: FileNotFoundException opening with RAF with rw! "+e, e);
+			}
+			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, false);
+			receiver = new BulkReceiver(prb, PeerNode.this, uid);
+			// FIXME make this persistent
+			Thread t = new Thread(new Runnable() {
+				public void run() {
+					if(!receiver.receive()) {
+						String err = "Failed to receive "+this;
+						Logger.error(this, err);
+						System.err.println(err);
+					}
+				}
+			}, "Receiver for bulk transfer "+uid+":"+filename);
+			t.setDaemon(true);
+			t.start();
+			sendFileOfferAccepted(uid);
+		}
+
+		public void send() throws DisconnectedException {
+			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, true);
+			transmitter = new BulkTransmitter(prb, PeerNode.this, uid, node.outputThrottle);
+			Thread t = new Thread(new Runnable() {
+				public void run() {
+					if(!transmitter.send()) {
+						String err = "Failed to send "+this;
+						Logger.error(this, err);
+						System.err.println(err);
+					}
+				}
+			}, "Sender for bulk transfer "+uid+":"+filename);
+			t.setDaemon(true);
+			t.start();
+		}
+	}
+
+	public int sendTextMessage(String message) {
+		long now = System.currentTimeMillis();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
+		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_USERALERT);
+		try {
+			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
+			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
+			fs.putSingle("text", Base64.encode(message.getBytes("UTF-8")));
+			fs.put("composedTime", now);
+			fs.put("sentTime", now);
+			Message n2ntm;
+			int status = getPeerNodeStatus();
+			if(status == PeerManager.PEER_NODE_STATUS_CONNECTED || 
+					status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+				n2ntm = DMT.createNodeToNodeMessage(
+						Node.N2N_MESSAGE_TYPE_FPROXY, fs
+								.toString().getBytes("UTF-8"));
+				try {
+					sendAsync(n2ntm, null, 0, null);
+				} catch (NotConnectedException e) {
+					fs.removeValue("sentTime");
+					queueN2NTM(fs);
+					setPeerNodeStatus(System.currentTimeMillis());
+					return getPeerNodeStatus();
+				}
+			} else {
+				fs.removeValue("sentTime");
+				queueN2NTM(fs);
+			}
+			return status;
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: "+e, e);
+		}
+	}
+
+	public int sendFileOfferAccepted(long uid) {
+		storeOffers();
+		long now = System.currentTimeMillis();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
+		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED);
+		try {
+			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
+			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
+			fs.put("composedTime", now);
+			fs.put("sentTime", now);
+			fs.put("uid", uid);
+			Message n2ntm;
+			int status = getPeerNodeStatus();
+			if(status == PeerManager.PEER_NODE_STATUS_CONNECTED || 
+					status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+				n2ntm = DMT.createNodeToNodeMessage(
+						Node.N2N_MESSAGE_TYPE_FPROXY, fs
+								.toString().getBytes("UTF-8"));
+				try {
+					sendAsync(n2ntm, null, 0, null);
+				} catch (NotConnectedException e) {
+					fs.removeValue("sentTime");
+					queueN2NTM(fs);
+					setPeerNodeStatus(System.currentTimeMillis());
+					return getPeerNodeStatus();
+				}
+			} else {
+				fs.removeValue("sentTime");
+				queueN2NTM(fs);
+			}
+			return status;
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: "+e, e);
+		}
+	}
+
+	public int sendFileOffer(File filename, String message) throws IOException {
+		String fnam = filename.getName();
+		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
+		long uid = node.random.nextLong();
+		RandomAccessThing data = new RandomAccessFileWrapper(filename, "r");
+		FileOffer fo = new FileOffer(uid, data, fnam, mime, message);
+		synchronized(this) {
+			myFileOffersByUID.put(new Long(uid), fo);
+		}
+		storeOffers();
+		long now = System.currentTimeMillis();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
+		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER);
+		try {
+			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
+			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
+			fs.put("composedTime", now);
+			fs.put("sentTime", now);
+			fo.toFieldSet(fs);
+			Message n2ntm;
+			int status = getPeerNodeStatus();
+			if(status == PeerManager.PEER_NODE_STATUS_CONNECTED || 
+					status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+				n2ntm = DMT.createNodeToNodeMessage(
+						Node.N2N_MESSAGE_TYPE_FPROXY, fs
+								.toString().getBytes("UTF-8"));
+				try {
+					sendAsync(n2ntm, null, 0, null);
+				} catch (NotConnectedException e) {
+					fs.removeValue("sentTime");
+					queueN2NTM(fs);
+					setPeerNodeStatus(System.currentTimeMillis());
+					return getPeerNodeStatus();
+				}
+			} else {
+				fs.removeValue("sentTime");
+				queueN2NTM(fs);
+			}
+			return status;
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: "+e, e);
+		}
+	}
+
+	public void handleFproxyN2NTM(SimpleFieldSet fs, int fileNumber) {
+		String source_nodename = null;
+		String target_nodename = null;
+		String text = null;
+		long composedTime;
+		long sentTime;
+		long receivedTime;
+	  	try {
+			source_nodename = new String(Base64.decode(fs.get("source_nodename")));
+			target_nodename = new String(Base64.decode(fs.get("target_nodename")));
+			text = new String(Base64.decode(fs.get("text")));
+			composedTime = fs.getLong("composedTime", -1);
+			sentTime = fs.getLong("sentTime", -1);
+			receivedTime = fs.getLong("receivedTime", -1);
+		} catch (IllegalBase64Exception e) {
+			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
+			return;
+		}
+		N2NTMUserAlert userAlert = new N2NTMUserAlert(this, source_nodename, target_nodename, text, fileNumber, composedTime, sentTime, receivedTime);
+		node.clientCore.alerts.register(userAlert);
+	}
+
+	public void handleFproxyFileOffer(SimpleFieldSet fs, int fileNumber) {
+		FileOffer offer;
+		try {
+			offer = new FileOffer(fs, false);
+		} catch (FSParseException e) {
+			Logger.error(this, "Could not parse offer: "+e+" on "+this+" :\n"+fs, e);
+			return;
+		}
+		Long u = new Long(offer.uid);
+		synchronized(this) {
+			if(hisFileOffersByUID.containsKey(u)) return; // Ignore re-advertisement
+			hisFileOffersByUID.put(u, offer);
+		}
+		// Auto-accept : FIXME
+		offer.accept();
+	}
+
+	public void handleFproxyFileOfferAccepted(SimpleFieldSet fs, int fileNumber) {
+		long uid;
+		try {
+			uid = fs.getLong("uid");
+		} catch (FSParseException e) {
+			Logger.error(this, "Could not parse offer accepted: "+e+" on "+this+" :\n"+fs, e);
+			return;
+		}
+		Long u = new Long(uid);
+		FileOffer fo;
+		synchronized(this) {
+			fo = (FileOffer) (myFileOffersByUID.get(u));
+		}
+		if(fo == null) {
+			Logger.error(this, "No such offer: "+uid);
+			try {
+				sendAsync(DMT.createFNPBulkSendAborted(uid), null, fileNumber, null);
+			} catch (NotConnectedException e) {
+				// Fine by me!
+			}
+			return;
+		}
+		try {
+			fo.send();
+		} catch (DisconnectedException e) {
+			Logger.error(this, "Cannot send because node disconnected: "+e+" for "+uid+":"+fo.filename, e);
+		}
 	}
 }

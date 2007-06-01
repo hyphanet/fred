@@ -24,6 +24,7 @@ import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
+import freenet.support.io.FileUtil;
 import freenet.client.InsertException;
 
 /**
@@ -740,7 +741,7 @@ public class FreenetURI implements Cloneable{
 		for(int i=0;i<names.size();i++) {
 			String s = (String) names.get(i);
 			if(logMINOR) Logger.minor(this, "name "+i+" = "+s);
-			s = sanitize(s);
+			s = FileUtil.sanitize(s);
 			if(logMINOR) Logger.minor(this, "Sanitized name "+i+" = "+s);
 			if(s.length() > 0) {
 				if(out.length() > 0)
@@ -757,24 +758,6 @@ public class FreenetURI implements Cloneable{
 			return "unknown";
 		}
 		return out.toString();
-	}
-
-	private String sanitize(String s) {
-		StringBuffer sb = new StringBuffer(s.length());
-		for(int i=0;i<s.length();i++) {
-			char c = s.charAt(i);
-			if((c == '/') || (c == '\\') || (c == '%') || (c == '>') || (c == '<') || (c == ':') || (c == '\'') || (c == '\"'))
-				continue;
-			if(Character.isDigit(c))
-				sb.append(c);
-			else if(Character.isLetter(c))
-				sb.append(c);
-			else if(Character.isWhitespace(c))
-				sb.append(' ');
-			else if((c == '-') || (c == '_') || (c == '.'))
-				sb.append(c);
-		}
-		return sb.toString();
 	}
 
 	public FreenetURI setSuggestedEdition(long newEdition) {

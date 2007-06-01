@@ -425,23 +425,6 @@ public class DMT {
 		return msg;
 	}
 
-	// Node-To-Node Instant Message
-	public static final MessageType nodeToNodeTextMessage = new MessageType("nodeToNodeTextMessage", false) {{
-		addField(NODE_TO_NODE_MESSAGE_TYPE, Integer.class);
-		addField(SOURCE_NODENAME, String.class);
-		addField(TARGET_NODENAME, String.class);
-		addField(NODE_TO_NODE_MESSAGE_TEXT, String.class);
-	}};
-
-	public static final Message createNodeToNodeTextMessage(int type, String source, String target, String message) {
-		Message msg = new Message(nodeToNodeTextMessage);
-		msg.set(NODE_TO_NODE_MESSAGE_TYPE, type);
-		msg.set(SOURCE_NODENAME, source);
-		msg.set(TARGET_NODENAME, target);
-		msg.set(NODE_TO_NODE_MESSAGE_TEXT, message);
-		return msg;
-	}
-
 	// FNP messages
 	public static final MessageType FNPCHKDataRequest = new MessageType("FNPCHKDataRequest") {{
 		addField(UID, Long.class);

@@ -10,6 +10,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import freenet.client.DefaultMIMETypes;
+
 final public class FileUtil {
 
 	/** Round up a value to the next multiple of a power of 2 */
@@ -98,4 +100,33 @@ final public class FileUtil {
 		}
 		return result.toString();
 	}
+
+	public static String sanitize(String s) {
+		StringBuffer sb = new StringBuffer(s.length());
+		for(int i=0;i<s.length();i++) {
+			char c = s.charAt(i);
+			if((c == '/') || (c == '\\') || (c == '%') || (c == '>') || (c == '<') || (c == ':') || (c == '\'') || (c == '\"'))
+				continue;
+			if(Character.isDigit(c))
+				sb.append(c);
+			else if(Character.isLetter(c))
+				sb.append(c);
+			else if(Character.isWhitespace(c))
+				sb.append(' ');
+			else if((c == '-') || (c == '_') || (c == '.'))
+				sb.append(c);
+		}
+		return sb.toString();
+	}
+
+	public static String sanitize(String filename, String mimeType) {
+		filename = sanitize(filename);
+		if(mimeType == null) return filename;
+		if(filename.indexOf('.') >= 0) {
+			String oldExt = filename.substring(filename.lastIndexOf('.'));
+			if(DefaultMIMETypes.isValidExt(mimeType, oldExt)) return filename;
+		} 
+		return filename + '.' + DefaultMIMETypes.getExtension(filename);
+	}
+	
 }

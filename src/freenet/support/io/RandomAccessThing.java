@@ -11,7 +11,7 @@ import java.io.IOException;
  */
 public interface RandomAccessThing {
 
-	public long size();
+	public long size() throws IOException;
 	
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException;
 	

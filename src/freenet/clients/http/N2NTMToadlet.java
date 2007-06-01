@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
@@ -154,60 +155,63 @@ public class N2NTMToadlet extends Toadlet {
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class",
 					"infobox infobox-normal");
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			String fnam = request.getPartAsString("filename", 1024);
+			File filename = null;
+			if(fnam != null) {
+				filename = new File(fnam);
+				if(!(filename.exists() && filename.canRead())) {
+					peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
+					Toadlet.addHomepageLink(peerTableInfobox);
+					this.writeReply(ctx, 400, "text/html", "OK", pageNode.generate());
+					return;
+				}
+			}
 			HTMLNode peerTable = peerTableInfobox.addChild("table", "class",
-					"n2ntm-send-statuses");
+			"n2ntm-send-statuses");
 			HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
 			peerTableHeaderRow.addChild("th", l10n("peerName"));
 			peerTableHeaderRow.addChild("th", l10n("sendStatus"));
-			PeerNode[] peerNodes = node.getDarknetConnections();
 			for (int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_" + peerNodes[i].hashCode())) {
 					PeerNode pn = peerNodes[i];
+					
+					int status;
+					
+					if(filename != null) {
+						try {
+							status = pn.sendFileOffer(filename, message);
+						} catch (IOException e) {
+							peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
+							Toadlet.addHomepageLink(peerTableInfobox);
+							this.writeReply(ctx, 400, "text/html", "OK", pageNode.generate());
+							return;
+						}
+					} else {
+						status = pn.sendTextMessage(message);
+					}
+					
 					String sendStatusShort;
 					String sendStatusLong;
 					String sendStatusClass;
-					try {
-						long now = System.currentTimeMillis();
-						SimpleFieldSet fs = new SimpleFieldSet(true);
-						fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_USERALERT);
-						fs.putSingle("source_nodename", Base64.encode(node
-								.getMyName().getBytes()));
-						fs.putSingle("target_nodename", Base64.encode(pn
-								.getName().getBytes()));
-						fs.putSingle("text", Base64.encode(message.getBytes()));
-						fs.put("composedTime", now);
-						fs.put("sentTime", now);
-						Message n2ntm;
-						n2ntm = DMT.createNodeToNodeMessage(
-								Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, fs
-										.toString().getBytes("UTF-8"));
-						if (!pn.isConnected()) {
-							sendStatusShort = l10n("queuedTitle");
-							sendStatusLong = l10n("queued");
-							sendStatusClass = "n2ntm-send-queued";
-							fs.removeValue("sentTime");
-							pn.queueN2NTM(fs);
-							Logger.normal(this, "Queued N2NTM to '"
-									+ pn.getName() + "': " + message);
-						} else if (pn.getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-							sendStatusShort = l10n("delayedTitle");
-							sendStatusLong = l10n("delayed");
-							sendStatusClass = "n2ntm-send-delayed";
-							usm.send(pn, n2ntm, null);
-							Logger.normal(this, "Sent N2NTM to '"
-									+ pn.getName() + "': " + message);
-						} else {
-							sendStatusShort = l10n("sentTitle");
-							sendStatusLong = l10n("sent");
-							sendStatusClass = "n2ntm-send-sent";
-							usm.send(pn, n2ntm, null);
-							Logger.normal(this, "Sent N2NTM to '"
-									+ pn.getName() + "': " + message);
-						}
-					} catch (NotConnectedException e) {
-						sendStatusShort = l10n("failedTitle");
-						sendStatusLong = l10n("failed");
-						sendStatusClass = "n2ntm-send-failed";
+					if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+						sendStatusShort = l10n("delayedTitle");
+						sendStatusLong = l10n("delayed");
+						sendStatusClass = "n2ntm-send-delayed";
+						Logger.normal(this, "Sent N2NTM to '"
+								+ pn.getName() + "': " + message);
+					} else if(status == PeerManager.PEER_NODE_STATUS_CONNECTED) {
+						sendStatusShort = l10n("sentTitle");
+						sendStatusLong = l10n("sent");
+						sendStatusClass = "n2ntm-send-sent";
+						Logger.normal(this, "Sent N2NTM to '"
+								+ pn.getName() + "': " + message);
+					} else {
+						sendStatusShort = l10n("queuedTitle");
+						sendStatusLong = l10n("queued");
+						sendStatusClass = "n2ntm-send-queued";
+						Logger.normal(this, "Queued N2NTM to '"
+								+ pn.getName() + "': " + message);
 					}
 					HTMLNode peerRow = peerTable.addChild("tr");
 					peerRow.addChild("td", "class", "peer-name").addChild("#",
@@ -267,6 +271,9 @@ public class N2NTMToadlet extends Toadlet {
 		messageForm.addChild("textarea", new String[] { "id", "name", "rows",
 				"cols" }, new String[] { "n2ntmtext", "message", "8", "74" });
 		messageForm.addChild("br");
+		messageForm.addChild("#", "You may attach a file:");
+		messageForm.addChild("input", new String[] { "type", "name", "value" },
+				new String[] { "text", "filename", "" });
 		messageForm.addChild("input", new String[] { "type", "name", "value" },
 				new String[] { "submit", "send", l10n("sendMessageShort") });
 	}

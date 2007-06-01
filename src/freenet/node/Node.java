@@ -415,8 +415,14 @@ public class Node {
 	public static final int EXIT_TEST_ERROR = 25;
 	public static final int EXIT_BAD_BWLIMIT = 26;
 	
-	public static final int N2N_MESSAGE_TYPE_FPROXY_USERALERT = 1;
-	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = N2N_MESSAGE_TYPE_FPROXY_USERALERT;  // **FIXME** For backwards-compatibility, remove when removing DMT.nodeToNodeTextMessage
+	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
+	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
+	/** Identifier within fproxy messages for simple, short text messages to be displayed on the homepage as useralerts */
+	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = 1;
+	/** Identifier within fproxy messages for an offer to transfer a file */
+	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER = 2;
+	/** Identifier within fproxy messages for accepting an offer to transfer a file */
+	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED = 2;
 	public static final int EXTRA_PEER_DATA_TYPE_N2NTM = 1;
 	public static final int EXTRA_PEER_DATA_TYPE_PEER_NOTE = 2;
 	public static final int EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM = 3;
@@ -2612,7 +2618,7 @@ public class Node {
 	public void receivedNodeToNodeMessage(Message m) {
 	  PeerNode source = (PeerNode)m.getSource();
 	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
-	  if(type == Node.N2N_MESSAGE_TYPE_FPROXY_USERALERT) {
+	  if(type == Node.N2N_MESSAGE_TYPE_FPROXY) {
 		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
 		Logger.normal(this, "Received N2NM from '"+source.getPeer()+"'");
 		SimpleFieldSet fs = null;
@@ -2651,68 +2657,29 @@ public class Node {
 	}
 
 	/**
-	 * Handle a received node to node text message
-	 */
-	public void receivedNodeToNodeTextMessage(Message m) {
-	  PeerNode source = (PeerNode)m.getSource();
-	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
-	  if(type == Node.N2N_TEXT_MESSAGE_TYPE_USERALERT) {
-		String source_nodename = (String) m.getObject(DMT.SOURCE_NODENAME);
-		String target_nodename = (String) m.getObject(DMT.TARGET_NODENAME);
-		String text = (String) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TEXT);
-		Logger.normal(this, "Received N2NTM from '"+source_nodename+"' to '"+target_nodename+"': "+text);
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("type", type);
-		fs.putSingle("source_nodename", Base64.encode(source_nodename.getBytes()));
-		fs.putSingle("target_nodename", Base64.encode(target_nodename.getBytes()));
-		fs.putSingle("text", Base64.encode(text.getBytes()));
-		fs.put("receivedTime", System.currentTimeMillis());
-		fs.putSingle("receivedAs", "nodeToNodeTextMessage");
-		int fileNumber = source.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
-		if( fileNumber == -1 ) {
-			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+source.getPeer());
-		}
-		// Keep track of the fileNumber so we can potentially delete the extra peer data file later, the file is authoritative
-		try {
-			handleNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
-		} catch (FSParseException e) {
-			// Shouldn't happen
-			throw new Error(e);
-		}
-	  } else {
-		Logger.error(this, "Received unknown node to node text message type '"+type+"' from "+source.getPeer());
-	  }
-	}
-
-	/**
 	 * Handle a node to node text message SimpleFieldSet
 	 * @throws FSParseException 
 	 */
 	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, PeerNode source, int fileNumber) throws FSParseException {
-	  int type = fs.getInt("type");
-	  if(type == Node.N2N_TEXT_MESSAGE_TYPE_USERALERT) {
-		String source_nodename = null;
-		String target_nodename = null;
-		String text = null;
-		long composedTime;
-		long sentTime;
-		long receivedTime;
-	  	try {
-			source_nodename = new String(Base64.decode(fs.get("source_nodename")));
-			target_nodename = new String(Base64.decode(fs.get("target_nodename")));
-			text = new String(Base64.decode(fs.get("text")));
-			composedTime = fs.getLong("composedTime", -1);
-			sentTime = fs.getLong("sentTime", -1);
-			receivedTime = fs.getLong("receivedTime", -1);
-		} catch (IllegalBase64Exception e) {
-			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
-			return;
-		}
-		N2NTMUserAlert userAlert = new N2NTMUserAlert(source, source_nodename, target_nodename, text, fileNumber, composedTime, sentTime, receivedTime);
-			clientCore.alerts.register(userAlert);
+	  int overallType = fs.getInt("n2nType", 1); // FIXME remove default
+	  if(overallType == Node.N2N_MESSAGE_TYPE_FPROXY) {
+		  handleFproxyNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
 	  } else {
-		Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
+		  Logger.error(this, "Received unknown node to node message type '"+overallType+"' from "+source.getPeer());  
 	  }
+	}
+
+	private void handleFproxyNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, PeerNode source, int fileNumber) throws FSParseException {
+		int type = fs.getInt("type");
+		if(type == Node.N2N_TEXT_MESSAGE_TYPE_USERALERT) {
+			source.handleFproxyN2NTM(fs, fileNumber);
+		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER) {
+			source.handleFproxyFileOffer(fs, fileNumber);
+		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED) {
+			source.handleFproxyFileOfferAccepted(fs, fileNumber);
+		} else {
+			Logger.error(this, "Received unknown fproxy node to node message sub-type '"+type+"' from "+source.getPeer());
+		}
 	}
 
 	public String getMyName() {

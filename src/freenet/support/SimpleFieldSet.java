@@ -655,6 +655,16 @@ public class SimpleFieldSet {
 		}
 	}
 
+	public long getLong(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No key "+key);
+		try {
+			return Long.parseLong(s);
+		} catch (NumberFormatException e) {
+			throw new FSParseException("Cannot parse "+s+" for long "+key);
+		}
+	}
+
 	public boolean getBoolean(String key, boolean def) {
 		return Fields.stringToBool(get(key), def);
 	}

@@ -85,9 +85,6 @@ public class NodeDispatcher implements Dispatcher {
 		} else if(spec == DMT.nodeToNodeMessage) {
 			node.receivedNodeToNodeMessage(m);
 			return true;
-		} else if(spec == DMT.nodeToNodeTextMessage) {
-			node.receivedNodeToNodeTextMessage(m);
-			return true;
 		}
 
 		if(!source.isRoutable()) return false;
