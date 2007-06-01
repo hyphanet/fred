@@ -568,7 +568,7 @@ public class StatisticsToadlet extends Toadlet {
 		if (numberOfListenOnly > 0) {
 			HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
 			peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, 
-					new String[] { "peer_listen_only", l10n("listenOnly"), "border-bottom: 1px dotted; cursor: help;" }, l10nDark("listenOnlyShort"));
+					new String[] { "peer_listen_only", l10nDark("listenOnly"), "border-bottom: 1px dotted; cursor: help;" }, l10nDark("listenOnlyShort"));
 			peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
 		}
 		
