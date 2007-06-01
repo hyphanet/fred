@@ -41,6 +41,9 @@ public class MessageFilter {
     private Vector _fieldList = new Vector(1,1);
     PeerContext _source;
     private long _timeout;
+    /** If true, timeouts are relative to the start of waiting, if false, they are relative to
+     * the creation of the filter */
+    private boolean _timeoutFromWait;
     private int _initialTimeout;
     private MessageFilter _or;
     private Message _message;
@@ -52,6 +55,7 @@ public class MessageFilter {
         setTimeout(DEFAULT_TIMEOUT);
         _matchesDroppedConnections = true; // on by default
         _matchesRestartedConnections = true; // also on by default
+        _timeoutFromWait = true;
     }
 
     public static MessageFilter create() {
@@ -60,11 +64,22 @@ public class MessageFilter {
 
     void onStartWaiting() {
     	synchronized(this) {
-    		if(_initialTimeout > 0)
+    		if(_initialTimeout > 0 && _timeoutFromWait)
     			_timeout = System.currentTimeMillis() + _initialTimeout;
     	}
     	if(_or != null)
     		_or.onStartWaiting();
+    }
+    
+    /**
+     * Set whether the timeout is relative to the creation of the filter, or the start of
+     * waitFor().
+     * @param b If true, the timeout is relative to the time at which setTimeout() was called,
+     * if false, it's relative to the start of waitFor().
+     */
+    public MessageFilter setTimeoutRelativeToCreation(boolean b) {
+    	_timeoutFromWait = !b;
+    	return this;
     }
     
     /**
