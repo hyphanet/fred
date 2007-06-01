@@ -392,7 +392,9 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 		if(isHTTP10 == true)
 			return true;
-		return true;
+		else
+			// HTTP 1.1
+			return false;
 	}
 	
 	static class ParseException extends Exception {
