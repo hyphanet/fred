@@ -96,10 +96,18 @@ public class PartiallyReceivedBulk {
 	 * Called when a block has been received. Will copy the data from the provided buffer and store it.
 	 * @param blockNum The block number.
 	 * @param data The byte array from which to read the data.
-	 * @param offset The start of the 
+	 * @param offset The start of the data in the buffer.
 	 */
-	void received(int blockNum, byte[] data, int offset) {
+	void received(int blockNum, byte[] data, int offset, int length) {
 		BulkTransmitter[] notifyBTs;
+		long fileOffset = (long)blockNum * (long)blockSize;
+		int bs = (int) Math.max(blockSize, size - fileOffset);
+		if(length < bs) {
+			String err = "Data too short! Should be "+bs+" actually "+length;
+			Logger.error(this, err+" for "+this);
+			abort(RetrievalException.PREMATURE_EOF, err);
+			return;
+		}
 		synchronized(this) {
 			if(blocksReceived.bitAt(blockNum)) return; // ignore
 			blocksReceived.setBit(blockNum, true); // assume the rest of the function succeeds
@@ -107,8 +115,6 @@ public class PartiallyReceivedBulk {
 			notifyBTs = transmitters;
 		}
 		try {
-			long fileOffset = (long)blockNum * (long)blockSize;
-			int bs = (int) Math.max(blockSize, size - fileOffset);
 			raf.pwrite(fileOffset, data, offset, bs);
 		} catch (Throwable t) {
 			Logger.error(this, "Failed to store received block "+blockNum+" on "+this+" : "+t, t);
