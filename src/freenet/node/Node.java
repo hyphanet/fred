@@ -1408,7 +1408,7 @@ public class Node {
 		
 		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
 		
-		// l10n stuffs		
+		// l10n stuffs
 		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true, 
 				"Node.l10nLanguage",
 				"Node.l10nLanguageLong",
@@ -1417,7 +1417,11 @@ public class Node {
 		try {
 			L10n.setLanguage(nodeConfig.getString("l10n"));
 		} catch (MissingResourceException e) {
-			L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
+			try {
+				L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
+			} catch (MissingResourceException e1) {
+				L10n.setLanguage(L10n.FALLBACK_DEFAULT);
+			}
 		}
 		
 		nodeConfig.finishedInitialization();
