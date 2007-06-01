@@ -497,6 +497,7 @@ public class UdpSocketManager extends Thread {
 
 	public void addAsyncFilter(MessageFilter filter, AsyncMessageFilterCallback callback) throws DisconnectedException {
 		filter.setAsyncCallback(callback);
+		filter.onStartWaiting();
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logDEBUG) Logger.debug(this, "Adding async filter "+filter+" for "+callback);
 		Message ret = null;
@@ -566,6 +567,7 @@ public class UdpSocketManager extends Thread {
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logDEBUG) Logger.debug(this, "Waiting for "+filter);
 		long startTime = System.currentTimeMillis();
+		filter.onStartWaiting();
 		Message ret = null;
 		if((lowLevelFilter != null) && (filter._source != null) && 
 		        filter.matchesDroppedConnection(filter._source) &&

@@ -58,6 +58,15 @@ public class MessageFilter {
         return new MessageFilter();
     }
 
+    void onStartWaiting() {
+    	synchronized(this) {
+    		if(_initialTimeout > 0)
+    			_timeout = System.currentTimeMillis() + _initialTimeout;
+    	}
+    	if(_or != null)
+    		_or.onStartWaiting();
+    }
+    
     /**
      * This filter will expire after the specificed amount of time. Note also that where two or more filters match the
      * same message, the one with the nearer expiry time will get priority
