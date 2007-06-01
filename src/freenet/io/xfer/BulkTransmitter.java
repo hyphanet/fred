@@ -12,6 +12,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.support.BitArray;
 import freenet.support.DoubleTokenBucket;
+import freenet.support.Logger;
 
 /**
  * Bulk data transfer (not block). Bulk transfer is designed for files which may be much bigger than a 
@@ -22,6 +23,8 @@ import freenet.support.DoubleTokenBucket;
  */
 public class BulkTransmitter {
 
+	/** If no packets sent in this period, and no completion acknowledgement / cancellation, assume failure. */
+	static final int TIMEOUT = 5*60*1000;
 	/** Available blocks */
 	final PartiallyReceivedBulk prb;
 	/** Peer who we are sending the data to */
@@ -58,6 +61,19 @@ public class BulkTransmitter {
 					new AsyncMessageFilterCallback() {
 						public void onMatched(Message m) {
 							cancel();
+						}
+						public boolean shouldTimeout() {
+							synchronized(BulkTransmitter.this) {
+								if(cancelled || finished) return true;
+							}
+							if(BulkTransmitter.this.prb.isAborted()) return true;
+							return false;
+						}
+			});
+			prb.usm.addAsyncFilter(MessageFilter.create().setNoTimeout().setSource(peer).setType(DMT.FNPBulkReceivedAll).setField(DMT.UID, uid),
+					new AsyncMessageFilterCallback() {
+						public void onMatched(Message m) {
+							completed();
 						}
 						public boolean shouldTimeout() {
 							synchronized(BulkTransmitter.this) {
@@ -113,12 +129,24 @@ public class BulkTransmitter {
 		}
 		prb.remove(this);
 	}
+
+	/** Like cancel(), but without the negative overtones: The client says it's got everything,
+	 * we believe them (even if we haven't sent everything; maybe they had a partial). */
+	public void completed() {
+		synchronized(this) {
+			finished = true;
+			notifyAll();
+		}
+		prb.remove(this);
+	}
 	
 	/**
 	 * Send the file.
 	 * @return True if the file was successfully sent. False otherwise.
 	 */
 	public boolean send() {
+		int packetSize = prb.getPacketSize();
+		long lastSentPacket = System.currentTimeMillis();
 		while(true) {
 			if(prb.isAborted()) return false;
 			int blockNo;
@@ -130,22 +158,26 @@ public class BulkTransmitter {
 				prb.remove(BulkTransmitter.this);
 				return false;
 			}
-			boolean hasAll = prb.hasWholeFile();
 			synchronized(this) {
+				if(finished) return true;
 				if(cancelled) return false;
 				blockNo = blocksNotSentButPresent.firstOne();
 			}
-			if(blockNo < 0 && hasAll) {
-				prb.remove(BulkTransmitter.this);
-				return true; // All done
-			} else if(blockNo < 0) {
+			if(blockNo < 0) {
+				// Wait for a packet, BulkReceivedAll or BulkReceiveAborted
 				synchronized(this) {
 					try {
 						wait(60*1000);
 					} catch (InterruptedException e) {
 						// No problem
+						continue;
 					}
-					continue;
+				}
+				long end = System.currentTimeMillis();
+				if(end - lastSentPacket > TIMEOUT) {
+					Logger.error(this, "Send timed out on "+this);
+					cancel();
+					return false;
 				}
 			}
 			// Send a packet
@@ -159,12 +191,22 @@ public class BulkTransmitter {
 			long now = System.currentTimeMillis();
 			long waitUntil = peer.getThrottle().scheduleDelay(now);
 			
-			masterThrottle.blockingGrab(prb.getPacketSize());
+			masterThrottle.blockingGrab(packetSize);
 			
 			while((now = System.currentTimeMillis()) < waitUntil) {
 				long sleepTime = waitUntil - now;
 				try {
-					Thread.sleep(sleepTime);
+					synchronized(this) {
+						wait(sleepTime);
+						if(finished) {
+							masterThrottle.recycle(packetSize);
+							return true;
+						}
+						if(cancelled) {
+							masterThrottle.recycle(packetSize);
+							return false;
+						}
+					}
 				} catch (InterruptedException e) {
 					// Ignore
 				}
@@ -173,6 +215,10 @@ public class BulkTransmitter {
 			
 			try {
 				peer.sendAsync(DMT.createFNPBulkPacketSend(uid, blockNo, buf), null, 0, null);
+				synchronized(this) {
+					blocksNotSentButPresent.setBit(blockNo, false);
+				}
+				lastSentPacket = System.currentTimeMillis();
 			} catch (NotConnectedException e) {
 				cancel();
 				return false;

@@ -272,6 +272,16 @@ public class DMT {
 		return msg;
 	}
 	
+	public static final MessageType FNPBulkReceivedAll = new MessageType("FNPBulkReceivedAll") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static final Message createFNPBulkReceivedAll(long uid) {
+		Message msg = new Message(FNPBulkReceivedAll);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
 	public static final MessageType testTransferSend = new MessageType("testTransferSend") {{
 		addField(UID, Long.class);
 	}};
