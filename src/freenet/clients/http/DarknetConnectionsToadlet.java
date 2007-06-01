@@ -737,11 +737,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}
 				}
 			}
-			String resultString = N2NTMToadlet.createN2NTMSendForm( pageNode, contentNode, ctx, peers);
-			if(resultString != null) {  // was there an error in createN2NTMSendForm()?
-				this.writeReply(ctx, 200, "text/html", "OK", resultString);
-				return;
-			}
+			N2NTMToadlet.createN2NTMSendForm( pageNode, contentNode, ctx, peers);
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("update_notes")) {
