@@ -99,6 +99,8 @@ public class PartiallyReceivedBulk {
 	 * @param offset The start of the data in the buffer.
 	 */
 	void received(int blockNum, byte[] data, int offset, int length) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Received block "+blockNum);
 		BulkTransmitter[] notifyBTs;
 		long fileOffset = (long)blockNum * (long)blockSize;
 		int bs = (int) Math.min(blockSize, size - fileOffset);
