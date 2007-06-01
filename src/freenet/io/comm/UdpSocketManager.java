@@ -370,16 +370,15 @@ public class UdpSocketManager extends Thread {
 					matched = true;
 					i.remove();
 					match = f;
-					synchronized (f) {
-						f.notifyAll();
-					}
 					if(logMINOR) Logger.minor(this, "Matched: "+f);
 					break; // Only one match permitted per message
 				}
 			}
 		}
-		match.setMessage(m);
-		match.onMatched();
+		if(match != null) {
+			match.setMessage(m);
+			match.onMatched();
+		}
 		// Feed unmatched messages to the dispatcher
 		if ((!matched) && (_dispatcher != null)) {
 		    try {
