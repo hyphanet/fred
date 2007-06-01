@@ -10,20 +10,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.io.comm.DMT;
-import freenet.io.comm.Message;
-import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.UdpSocketManager;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.PeerManager;
 import freenet.node.PeerNode;
-import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
-import freenet.support.SimpleFieldSet;
 import freenet.support.api.HTTPRequest;
 
 public class N2NTMToadlet extends Toadlet {
@@ -158,7 +153,7 @@ public class N2NTMToadlet extends Toadlet {
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			String fnam = request.getPartAsString("filename", 1024);
 			File filename = null;
-			if(fnam != null) {
+			if(fnam != null && fnam.length() > 0) {
 				filename = new File(fnam);
 				if(!(filename.exists() && filename.canRead())) {
 					peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));

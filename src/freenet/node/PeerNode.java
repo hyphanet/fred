@@ -3289,25 +3289,19 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.put("composedTime", now);
 			fs.put("sentTime", now);
 			Message n2ntm;
-			int status = getPeerNodeStatus();
-			if(status == PeerManager.PEER_NODE_STATUS_CONNECTED || 
-					status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-				n2ntm = DMT.createNodeToNodeMessage(
-						Node.N2N_MESSAGE_TYPE_FPROXY, fs
-								.toString().getBytes("UTF-8"));
-				try {
-					sendAsync(n2ntm, null, 0, null);
-				} catch (NotConnectedException e) {
-					fs.removeValue("sentTime");
-					queueN2NTM(fs);
-					setPeerNodeStatus(System.currentTimeMillis());
-					return getPeerNodeStatus();
-				}
-			} else {
+			n2ntm = DMT.createNodeToNodeMessage(
+					Node.N2N_MESSAGE_TYPE_FPROXY, fs
+							.toString().getBytes("UTF-8"));
+			try {
+				sendAsync(n2ntm, null, 0, null);
+			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
 				queueN2NTM(fs);
+				setPeerNodeStatus(System.currentTimeMillis());
+				return getPeerNodeStatus();
 			}
-			return status;
+			this.setPeerNodeStatus(System.currentTimeMillis());
+			return getPeerNodeStatus();
 		} catch (UnsupportedEncodingException e) {
 			throw new Error("Impossible: "+e, e);
 		}
@@ -3326,25 +3320,19 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.put("sentTime", now);
 			fs.put("uid", uid);
 			Message n2ntm;
-			int status = getPeerNodeStatus();
-			if(status == PeerManager.PEER_NODE_STATUS_CONNECTED || 
-					status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-				n2ntm = DMT.createNodeToNodeMessage(
-						Node.N2N_MESSAGE_TYPE_FPROXY, fs
-								.toString().getBytes("UTF-8"));
-				try {
-					sendAsync(n2ntm, null, 0, null);
-				} catch (NotConnectedException e) {
-					fs.removeValue("sentTime");
-					queueN2NTM(fs);
-					setPeerNodeStatus(System.currentTimeMillis());
-					return getPeerNodeStatus();
-				}
-			} else {
+			n2ntm = DMT.createNodeToNodeMessage(
+					Node.N2N_MESSAGE_TYPE_FPROXY, fs
+							.toString().getBytes("UTF-8"));
+			try {
+				sendAsync(n2ntm, null, 0, null);
+			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
 				queueN2NTM(fs);
+				setPeerNodeStatus(System.currentTimeMillis());
+				return getPeerNodeStatus();
 			}
-			return status;
+			this.setPeerNodeStatus(System.currentTimeMillis());
+			return getPeerNodeStatus();
 		} catch (UnsupportedEncodingException e) {
 			throw new Error("Impossible: "+e, e);
 		}
@@ -3372,22 +3360,16 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			fo.toFieldSet(fs);
 			Message n2ntm;
 			int status = getPeerNodeStatus();
-			if(status == PeerManager.PEER_NODE_STATUS_CONNECTED || 
-					status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-				n2ntm = DMT.createNodeToNodeMessage(
-						Node.N2N_MESSAGE_TYPE_FPROXY, fs
-								.toString().getBytes("UTF-8"));
-				try {
-					sendAsync(n2ntm, null, 0, null);
-				} catch (NotConnectedException e) {
-					fs.removeValue("sentTime");
-					queueN2NTM(fs);
-					setPeerNodeStatus(System.currentTimeMillis());
-					return getPeerNodeStatus();
-				}
-			} else {
+			n2ntm = DMT.createNodeToNodeMessage(
+					Node.N2N_MESSAGE_TYPE_FPROXY, fs
+							.toString().getBytes("UTF-8"));
+			try {
+				sendAsync(n2ntm, null, 0, null);
+			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
 				queueN2NTM(fs);
+				setPeerNodeStatus(System.currentTimeMillis());
+				return getPeerNodeStatus();
 			}
 			return status;
 		} catch (UnsupportedEncodingException e) {
