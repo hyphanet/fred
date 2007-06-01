@@ -54,9 +54,9 @@ public class BulkReceiver {
 	 * @return True if the whole file was received, false otherwise.
 	 */
 	public boolean receive() {
-		MessageFilter mfSendKilled = MessageFilter.create().setSource(peer).setType(DMT.FNPBulkSendAborted) .setField(DMT.UID, uid).setTimeout(TIMEOUT);
-		MessageFilter mfPacket = MessageFilter.create().setSource(peer).setType(DMT.FNPBulkPacketSend) .setField(DMT.UID, uid).setTimeout(TIMEOUT);
 		while(true) {
+			MessageFilter mfSendKilled = MessageFilter.create().setSource(peer).setType(DMT.FNPBulkSendAborted) .setField(DMT.UID, uid).setTimeout(TIMEOUT);
+			MessageFilter mfPacket = MessageFilter.create().setSource(peer).setType(DMT.FNPBulkPacketSend) .setField(DMT.UID, uid).setTimeout(TIMEOUT);
 			if(prb.hasWholeFile()) {
 				try {
 					peer.sendAsync(DMT.createFNPBulkReceivedAll(uid), null, 0, null);
