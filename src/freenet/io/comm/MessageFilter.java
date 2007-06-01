@@ -42,7 +42,7 @@ public class MessageFilter {
     PeerContext _source;
     private long _timeout;
     /** If true, timeouts are relative to the start of waiting, if false, they are relative to
-     * the creation of the filter */
+     * the time of calling setTimeout() */
     private boolean _timeoutFromWait;
     private int _initialTimeout;
     private MessageFilter _or;
