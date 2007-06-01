@@ -88,7 +88,7 @@ import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
-import freenet.node.useralerts.N2NTMUserAlert;
+import freenet.node.useralerts.TimeSkewDetectedUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
@@ -145,6 +145,7 @@ public class Node {
 	
 	private static MeaningfulNodeNameUserAlert nodeNameUserAlert;
 	private static BuildOldAgeUserAlert buildOldAgeUserAlert;
+	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
 	
 	public class NodeNameCallback implements StringCallback{
 			Node node;
@@ -2878,5 +2879,11 @@ public class Node {
 	DSASignature sign(byte[] hash) {
 		return DSA.sign(myCryptoGroup, myPrivKey, new NativeBigInteger(1, hash), random);
 	}
-
+	
+	public synchronized void setTimeSkewDetectedUserAlert() {
+		if(timeSkewDetectedUserAlert == null) {
+			timeSkewDetectedUserAlert = new TimeSkewDetectedUserAlert();
+			clientCore.alerts.register(timeSkewDetectedUserAlert);
+		}
+	}
 }

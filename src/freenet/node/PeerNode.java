@@ -362,6 +362,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
         this.node = node2;
         this.peers = peers;
+        this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
         String identityString = fs.get("identity");
     	if(identityString == null)
     		throw new PeerParseException("No identity!");
@@ -535,11 +536,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         // A SimpleRunningAverage would be a bad choice because it would cause oscillations.
         // So go for a filter.
         pingAverage = 
-        	new TimeDecayingRunningAverage(1, 600*1000 /* should be significantly longer than a typical transfer */, 0, NodePinger.CRAZY_MAX_PING_TIME);
+        	new TimeDecayingRunningAverage(1, 600*1000 /* should be significantly longer than a typical transfer */, 0, NodePinger.CRAZY_MAX_PING_TIME, node);
 
         // TDRA for probability of rejection
         pRejected =
-        	new TimeDecayingRunningAverage(0, 600*1000, 0.0, 1.0);
+        	new TimeDecayingRunningAverage(0, 600*1000, 0.0, 1.0, node);
         
         // ARK stuff.
 
@@ -2139,7 +2140,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Previous backoff reason (used by setPeerNodeStatus)*/
 	String previousRoutingBackoffReason;
 	/* percent of time this peer is backed off */
-	public RunningAverage backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
+	public final RunningAverage backedOffPercent;
 	/* time of last sample */
 	private long lastSampleTime = Long.MAX_VALUE;
     
