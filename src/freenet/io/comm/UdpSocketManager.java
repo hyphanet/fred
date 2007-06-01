@@ -472,6 +472,28 @@ public class UdpSocketManager extends Thread {
 	    }
 	}
 	
+	/** IncomingPacketFilter should call this when a node connects with a new boot ID */
+	public void onRestart(PeerContext ctx) {
+		Vector droppedFilters = null; // rare operation, we can waste objects for better locking
+	    synchronized(_filters) {
+			ListIterator i = _filters.listIterator();
+			while (i.hasNext()) {
+			    MessageFilter f = (MessageFilter) i.next();
+			    if(f.matchesRestartedConnection(ctx)) {
+			    	if(droppedFilters == null)
+			    		droppedFilters = new Vector();
+			    	droppedFilters.add(f);
+			    	i.remove();
+			    }
+			}
+	    }
+	    if(droppedFilters != null) {
+	    	for(int i=0;i<droppedFilters.size();i++) {
+	    		MessageFilter mf = (MessageFilter) droppedFilters.get(i);
+		        mf.onRestartedConnection(ctx);
+	    	}
+	    }
+	}
 
 	public void addAsyncFilter(MessageFilter filter, AsyncMessageFilterCallback callback) throws DisconnectedException {
 		filter.setAsyncCallback(callback);

@@ -45,11 +45,13 @@ public class MessageFilter {
     private MessageFilter _or;
     private Message _message;
     private boolean _matchesDroppedConnections;
+    private boolean _matchesRestartedConnections;
     private AsyncMessageFilterCallback _callback;
 
     private MessageFilter() {
         setTimeout(DEFAULT_TIMEOUT);
         _matchesDroppedConnections = true; // on by default
+        _matchesRestartedConnections = true; // also on by default
     }
 
     public static MessageFilter create() {
@@ -127,6 +129,11 @@ public class MessageFilter {
 	public MessageFilter setMatchesDroppedConnection(boolean m) {
 	    _matchesDroppedConnections = m;
 	    return this;
+	}
+	
+	public MessageFilter setMatchesRestartedConnections(boolean m) {
+		_matchesRestartedConnections = m;
+		return this;
 	}
 	
 	public MessageFilter setAsyncCallback(AsyncMessageFilterCallback cb) {
@@ -208,12 +215,25 @@ public class MessageFilter {
         return _matchesDroppedConnections && _source == ctx;
     }
     
+    public boolean matchesRestartedConnection(PeerContext ctx) {
+    	return _matchesRestartedConnections && _source == ctx;
+    }
+    
     /**
      * Notify because of a dropped connection.
      * Caller must verify _matchesDroppedConnection and _source.
      * @param ctx
      */
     public synchronized void onDroppedConnection(PeerContext ctx) {
+   		notifyAll();
+    }
+
+    /**
+     * Notify because of a restarted connection.
+     * Caller must verify _matchesDroppedConnection and _source.
+     * @param ctx
+     */
+    public synchronized void onRestartedConnection(PeerContext ctx) {
    		notifyAll();
     }
 

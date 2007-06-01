@@ -1550,8 +1550,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			sentInitialMessages = false;
 		}
 
-    	if(bootIDChanged)
+    	if(bootIDChanged) {
 			node.lm.lostOrRestartedNode(this);
+			node.usm.onRestart(this);
+    	}
 		if(oldPrev != null) oldPrev.completelyDeprecated(newTracker);
 		if(oldCur != null) oldCur.completelyDeprecated(newTracker);
 		if(prev != null) prev.deprecated();
