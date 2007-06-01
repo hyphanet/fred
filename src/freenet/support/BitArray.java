@@ -43,8 +43,8 @@ public class BitArray implements WritableToDataOutputStream {
 
 	public BitArray(BitArray src) {
 		this._size = src._size;
-		this._bits = new byte[src._size];
-		System.arraycopy(_bits, 0, src._bits, 0, _bits.length);
+		this._bits = new byte[src._bits.length];
+		System.arraycopy(src._bits, 0, _bits, 0, src._bits.length);
 	}
 	
 	public void setBit(int pos, boolean f) {

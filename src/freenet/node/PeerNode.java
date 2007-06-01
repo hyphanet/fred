@@ -3236,7 +3236,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 
 		public void accept() {
-			File dest = new File(node.clientCore.downloadDir, "direct-"+FileUtil.sanitize(getName())+filename);
+			File dest = new File(node.clientCore.downloadDir, "direct-"+FileUtil.sanitize(getName())+"-"+filename);
 			try {
 				data = new RandomAccessFileWrapper(dest, "rw");
 			} catch (FileNotFoundException e) {
@@ -3248,11 +3248,19 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			// FIXME make this persistent
 			Thread t = new Thread(new Runnable() {
 				public void run() {
-					if(!receiver.receive()) {
-						String err = "Failed to receive "+this;
-						Logger.error(this, err);
-						System.err.println(err);
+					if(logMINOR)
+						Logger.minor(this, "Received file");
+					try {
+						if(!receiver.receive()) {
+							String err = "Failed to receive "+this;
+							Logger.error(this, err);
+							System.err.println(err);
+						}
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t+" receiving file", t);
 					}
+					if(logMINOR)
+						Logger.minor(this, "Received file");
 				}
 			}, "Receiver for bulk transfer "+uid+":"+filename);
 			t.setDaemon(true);
@@ -3263,13 +3271,23 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		public void send() throws DisconnectedException {
 			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, true);
 			transmitter = new BulkTransmitter(prb, PeerNode.this, uid, node.outputThrottle);
+			if(logMINOR)
+				Logger.minor(this, "Sending "+uid);
 			Thread t = new Thread(new Runnable() {
 				public void run() {
-					if(!transmitter.send()) {
-						String err = "Failed to send "+this;
-						Logger.error(this, err);
-						System.err.println(err);
+					if(logMINOR)
+						Logger.minor(this, "Sending file");
+					try {
+						if(!transmitter.send()) {
+							String err = "Failed to send "+this;
+							Logger.error(this, err);
+							System.err.println(err);
+						}
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t+" sending file", t);
 					}
+					if(logMINOR)
+						Logger.minor(this, "Sent file");
 				}
 			}, "Sender for bulk transfer "+uid+":"+filename);
 			t.setDaemon(true);
@@ -3428,6 +3446,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			Logger.error(this, "Could not parse offer accepted: "+e+" on "+this+" :\n"+fs, e);
 			return;
 		}
+		if(logMINOR)
+			Logger.minor(this, "Offer accepted for "+uid);
 		Long u = new Long(uid);
 		FileOffer fo;
 		synchronized(this) {

@@ -160,7 +160,7 @@ public class PartiallyReceivedBulk {
 
 	public byte[] getBlockData(int blockNum) {
 		long fileOffset = (long)blockNum * (long)blockSize;
-		int bs = (int) Math.max(blockSize, size - fileOffset);
+		int bs = (int) Math.min(blockSize, size - fileOffset);
 		byte[] data = new byte[bs];
 		try {
 			raf.pread(fileOffset, data, 0, bs);

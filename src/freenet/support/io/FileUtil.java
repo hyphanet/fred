@@ -125,8 +125,10 @@ final public class FileUtil {
 		if(filename.indexOf('.') >= 0) {
 			String oldExt = filename.substring(filename.lastIndexOf('.'));
 			if(DefaultMIMETypes.isValidExt(mimeType, oldExt)) return filename;
-		} 
-		return filename + '.' + DefaultMIMETypes.getExtension(filename);
+		}
+		String defaultExt = DefaultMIMETypes.getExtension(filename);
+		if(defaultExt == null) return filename;
+		else return filename + '.' + defaultExt;
 	}
 	
 }
