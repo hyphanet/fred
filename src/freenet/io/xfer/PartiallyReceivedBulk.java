@@ -101,7 +101,7 @@ public class PartiallyReceivedBulk {
 	void received(int blockNum, byte[] data, int offset, int length) {
 		BulkTransmitter[] notifyBTs;
 		long fileOffset = (long)blockNum * (long)blockSize;
-		int bs = (int) Math.max(blockSize, size - fileOffset);
+		int bs = (int) Math.min(blockSize, size - fileOffset);
 		if(length < bs) {
 			String err = "Data too short! Should be "+bs+" actually "+length;
 			Logger.error(this, err+" for "+this);

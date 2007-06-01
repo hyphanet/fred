@@ -3279,7 +3279,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 						Logger.minor(this, "Sending file");
 					try {
 						if(!transmitter.send()) {
-							String err = "Failed to send "+this;
+							String err = "Failed to send "+uid+" for "+FileOffer.this;
 							Logger.error(this, err);
 							System.err.println(err);
 						}

@@ -118,7 +118,7 @@ public class MessageFilter {
 	}
 
 	public MessageFilter or(MessageFilter or) {
-		if((or != null) && (_or != null)) {
+		if((or != null) && (_or != null) && or != _or) {
 			// FIXME maybe throw? this is almost certainly a bug, and a nasty one too!
 			Logger.error(this, "or() replacement: "+_or+" -> "+or, new Exception("error"));
 		}
