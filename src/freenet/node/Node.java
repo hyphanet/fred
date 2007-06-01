@@ -1409,7 +1409,7 @@ public class Node {
 		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
 		
 		// l10n stuffs		
-		nodeConfig.register("l10n", Locale.getDefault().getCountry().toLowerCase(), sortOrder++, false, true, 
+		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true, 
 				"Node.l10nLanguage",
 				"Node.l10nLanguageLong",
 				new L10nCallback());
