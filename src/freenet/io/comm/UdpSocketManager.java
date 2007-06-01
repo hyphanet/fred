@@ -325,9 +325,6 @@ public class UdpSocketManager extends Thread {
 			MessageFilter f = (MessageFilter) _timedOutFilters.get(i);
 			f.setMessage(null);
 			f.onTimedOut();
-			synchronized (f) {
-				f.notifyAll();
-			}
 		}
 		_timedOutFilters.clear();
 		
@@ -454,19 +451,24 @@ public class UdpSocketManager extends Thread {
 	
 	/** IncomingPacketFilter should call this when a node is disconnected. */
 	public void onDisconnect(PeerContext ctx) {
+		Vector droppedFilters = null; // rare operation, we can waste objects for better locking
 	    synchronized(_filters) {
 			ListIterator i = _filters.listIterator();
 			while (i.hasNext()) {
 			    MessageFilter f = (MessageFilter) i.next();
-			    if(f.matchesDroppedConnection() && (f._source == ctx)) {
-			        f.onDroppedConnection(ctx);
-			        if(f.droppedConnection() != null) {
-			            synchronized(f) {
-			                f.notifyAll();
-			            }
-			        }
+			    if(f.matchesDroppedConnection(ctx)) {
+			    	if(droppedFilters == null)
+			    		droppedFilters = new Vector();
+			    	droppedFilters.add(f);
+			    	i.remove();
 			    }
 			}
+	    }
+	    if(droppedFilters != null) {
+	    	for(int i=0;i<droppedFilters.size();i++) {
+	    		MessageFilter mf = (MessageFilter) droppedFilters.get(i);
+		        mf.onDroppedConnection(ctx);
+	    	}
 	    }
 	}
 	
@@ -477,7 +479,7 @@ public class UdpSocketManager extends Thread {
 		if(logDEBUG) Logger.debug(this, "Adding async filter "+filter+" for "+callback);
 		Message ret = null;
 		if((lowLevelFilter != null) && (filter._source != null) && 
-		        filter.matchesDroppedConnection() &&
+		        filter.matchesDroppedConnection(filter._source) &&
 		        lowLevelFilter.isDisconnected(filter._source))
 		    throw new DisconnectedException();
 		// Check to see whether the filter matches any of the recently _unclaimed messages
@@ -544,7 +546,7 @@ public class UdpSocketManager extends Thread {
 		long startTime = System.currentTimeMillis();
 		Message ret = null;
 		if((lowLevelFilter != null) && (filter._source != null) && 
-		        filter.matchesDroppedConnection() &&
+		        filter.matchesDroppedConnection(filter._source) &&
 		        lowLevelFilter.isDisconnected(filter._source))
 		    throw new DisconnectedException();
 		// Check to see whether the filter matches any of the recently _unclaimed messages

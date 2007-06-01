@@ -204,14 +204,17 @@ public class MessageFilter {
         _or = null;
     }
     
-    public boolean matchesDroppedConnection() {
-        return _matchesDroppedConnections;
+    public boolean matchesDroppedConnection(PeerContext ctx) {
+        return _matchesDroppedConnections && _source == ctx;
     }
     
-    public void onDroppedConnection(PeerContext ctx) {
-        if(_matchesDroppedConnections && (_source == ctx)) {
-            _droppedConnection = ctx;
-        }
+    /**
+     * Notify because of a dropped connection.
+     * Caller must verify _matchesDroppedConnection and _source.
+     * @param ctx
+     */
+    public synchronized void onDroppedConnection(PeerContext ctx) {
+   		notifyAll();
     }
 
     /**
