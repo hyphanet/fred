@@ -357,7 +357,7 @@ public class PluginManager {
                 }
                 
                 File finalFile = new File("plugins/" + pluginname + ".jar");
-                File f = File.createTempFile(pluginname, ".tmp", finalFile);
+                File f = File.createTempFile(pluginname, ".tmp", pluginsDirectory);
                 fos = new FileOutputStream(f);
                 bos = new BufferedOutputStream(fos);
                 int len = 0, writenBytes = 0;
