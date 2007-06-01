@@ -422,7 +422,7 @@ public class Node {
 	/** Identifier within fproxy messages for an offer to transfer a file */
 	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER = 2;
 	/** Identifier within fproxy messages for accepting an offer to transfer a file */
-	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED = 2;
+	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED = 3;
 	public static final int EXTRA_PEER_DATA_TYPE_N2NTM = 1;
 	public static final int EXTRA_PEER_DATA_TYPE_PEER_NOTE = 2;
 	public static final int EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM = 3;
@@ -2628,10 +2628,10 @@ public class Node {
 			Logger.error(this, "IOException while parsing node to node message data", e);
 			return;
 		}
-		if(fs.get("type") != null) {
-			fs.removeValue("type");
+		if(fs.get("n2nType") != null) {
+			fs.removeValue("n2nType");
 		}
-		fs.putOverwrite("type", Integer.toString(type));
+		fs.putOverwrite("n2nType", Integer.toString(type));
 		if(fs.get("receivedTime") != null) {
 			fs.removeValue("receivedTime");
 		}
@@ -2661,7 +2661,10 @@ public class Node {
 	 * @throws FSParseException 
 	 */
 	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, PeerNode source, int fileNumber) throws FSParseException {
+	  if(logMINOR)
+		  Logger.minor(this, "Got node to node message: \n"+fs);
 	  int overallType = fs.getInt("n2nType", 1); // FIXME remove default
+	  fs.removeValue("n2nType");
 	  if(overallType == Node.N2N_MESSAGE_TYPE_FPROXY) {
 		  handleFproxyNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
 	  } else {

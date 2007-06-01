@@ -3319,6 +3319,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.put("composedTime", now);
 			fs.put("sentTime", now);
 			fs.put("uid", uid);
+			if(logMINOR)
+				Logger.minor(this, "Sending node to node message (file offer accepted):\n"+fs);
 			Message n2ntm;
 			n2ntm = DMT.createNodeToNodeMessage(
 					Node.N2N_MESSAGE_TYPE_FPROXY, fs
@@ -3358,6 +3360,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.put("composedTime", now);
 			fs.put("sentTime", now);
 			fo.toFieldSet(fs);
+			if(logMINOR)
+				Logger.minor(this, "Sending node to node message (file offer):\n"+fs);
 			Message n2ntm;
 			int status = getPeerNodeStatus();
 			n2ntm = DMT.createNodeToNodeMessage(
