@@ -271,7 +271,6 @@ public class PacketSender implements Runnable, Ticker {
                 		}
                 		// Send packets, right now, blocking, including any active notifications
                 		node.packetMangler.processOutgoingOrRequeue(messages, pn, true, false);
-                		mustSend = false;
                 		continue;
                 	}
                 }
