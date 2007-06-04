@@ -198,19 +198,15 @@ public class PacketSender implements Runnable, Ticker {
                     continue;
                 }
                 
+                boolean mustSend = false;
+                
                 // Any urgent notifications to send?
                 long urgentTime = pn.getNextUrgentTime();
                 // Should spam the logs, unless there is a deadlock
                 if(urgentTime < Long.MAX_VALUE && logMINOR)
                 	Logger.minor(this, "Next urgent time: "+urgentTime+" for "+pn.getPeer());
                 if(urgentTime <= now) {
-                    // Send them
-                    try {
-						pn.sendAnyUrgentNotifications();
-					} catch (PacketSequenceException e) {
-                    	Logger.error(this, "Caught "+e+" - while sending urgent notifications : disconnecting", e);
-                    	pn.forceDisconnect();
-					}
+                	mustSend = true;
                 } else {
                     nextActionTime = Math.min(nextActionTime, urgentTime);
                 }
@@ -231,6 +227,7 @@ public class PacketSender implements Runnable, Ticker {
                         try {
                             if(logMINOR) Logger.minor(this, "Resending "+item.packetNumber+" to "+item.kt);
                             node.packetMangler.resend(item);
+                            mustSend = false;
                         } catch (KeyChangedException e) {
                             Logger.error(this, "Caught "+e+" resending packets to "+kt);
                             pn.requeueResendItems(rpiTemp);
@@ -274,8 +271,19 @@ public class PacketSender implements Runnable, Ticker {
                 		}
                 		// Send packets, right now, blocking, including any active notifications
                 		node.packetMangler.processOutgoingOrRequeue(messages, pn, true, false);
+                		mustSend = false;
                 		continue;
                 	}
+                }
+                
+                if(mustSend) {
+                    // Send them
+                    try {
+						pn.sendAnyUrgentNotifications();
+					} catch (PacketSequenceException e) {
+                    	Logger.error(this, "Caught "+e+" - while sending urgent notifications : disconnecting", e);
+                    	pn.forceDisconnect();
+					}
                 }
                 
                 // Need to send a keepalive packet?
