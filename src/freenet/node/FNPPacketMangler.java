@@ -1245,6 +1245,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         	1 + // no forgotten packets
         	length; // the payload !
         
+        // Padding
+        // This will do an adequate job of disguising the contents, and a poor (but not totally
+        // worthless) job of disguising the traffic. FIXME!!!!!
+        // Ideally we'd mimic the size profile - and the session bytes! - of a common protocol.
+        
+        int paddedLen = ((packetLength + 63) / 64) * 64;
+        paddedLen += node.random.nextInt(64);
+        if(packetLength <= 1280 && paddedLen > 1280) paddedLen = 1280;
+
+        byte[] padding = new byte[paddedLen - packetLength];
+        node.random.nextBytes(padding);
+        
+        packetLength = paddedLen;
+        
         if(logMINOR) Logger.minor(this, "Packet length: "+packetLength+" ("+length+")");
 
         byte[] plaintext = new byte[packetLength];
@@ -1353,6 +1367,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         
         System.arraycopy(buf, offset, plaintext, ptr, length);
         ptr += length;
+        
+        System.arraycopy(padding, 0, plaintext, ptr, padding.length);
+        ptr += padding.length;
         
         if(ptr != plaintext.length) {
         	Logger.error(this, "Inconsistent length: "+plaintext.length+" buffer but "+(ptr)+" actual");
