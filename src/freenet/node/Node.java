@@ -117,7 +117,7 @@ import freenet.support.api.StringCallback;
 /**
  * @author amphibian
  */
-public class Node {
+public class Node implements TimeSkewDetectorCallback {
 
 	private static boolean logMINOR;
 	

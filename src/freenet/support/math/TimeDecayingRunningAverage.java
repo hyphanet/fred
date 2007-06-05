@@ -7,7 +7,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import freenet.node.Node;
+import freenet.node.TimeSkewDetectorCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -41,7 +41,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     double minReport;
     double maxReport;
     boolean logDEBUG;
-    private final Node node;
+    private final TimeSkewDetectorCallback timeSkewCallback;
     
     public String toString() {
 		long now = System.currentTimeMillis();
@@ -55,7 +55,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     }
     
     public TimeDecayingRunningAverage(double defaultValue, long halfLife,
-            double min, double max, final Node node) {
+            double min, double max, TimeSkewDetectorCallback callback) {
     	curValue = defaultValue;
         this.defaultValue = defaultValue;
         started = false;
@@ -68,11 +68,11 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         if(logDEBUG)
         	Logger.debug(this, "Created "+this,
         			new Exception("debug"));
-        this.node = node;
+        this.timeSkewCallback = callback;
     }
     
     public TimeDecayingRunningAverage(double defaultValue, long halfLife,
-            double min, double max, SimpleFieldSet fs, final Node node) {
+            double min, double max, SimpleFieldSet fs, TimeSkewDetectorCallback callback) {
     	curValue = defaultValue;
         this.defaultValue = defaultValue;
         started = false;
@@ -101,10 +101,10 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         		}
         	}
         }
-        this.node = node;
+        this.timeSkewCallback = callback;
     }
     
-    public TimeDecayingRunningAverage(double defaultValue, double halfLife, double min, double max, DataInputStream dis, final Node node) throws IOException {
+    public TimeDecayingRunningAverage(double defaultValue, double halfLife, double min, double max, DataInputStream dis, TimeSkewDetectorCallback callback) throws IOException {
         int m = dis.readInt();
         if(m != MAGIC) throw new IOException("Invalid magic "+m);
         int v = dis.readInt();
@@ -124,7 +124,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         lastReportTime = -1;
         createdTime = System.currentTimeMillis() - priorExperienceTime;
         totalReports = dis.readLong();
-        this.node = node;
+        this.timeSkewCallback = callback;
     }
 
     public TimeDecayingRunningAverage(TimeDecayingRunningAverage a) {
@@ -137,7 +137,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         this.started = a.started;
         this.totalReports = a.totalReports;
         this.curValue = a.curValue;
-        this.node = a.node;
+        this.timeSkewCallback = a.timeSkewCallback;
     }
 
     public synchronized double currentValue() {
@@ -173,15 +173,15 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 				if(thisInterval < 0) {
 					Logger.error(this, "Clock (reporting) went back in time, ignoring report: "+now+" was "+lastReportTime+" (back "+(-thisInterval)+"ms)");
 					lastReportTime = now;
-					if(node != null)
-						node.setTimeSkewDetectedUserAlert();
+					if(timeSkewCallback != null)
+						timeSkewCallback.setTimeSkewDetectedUserAlert();
 					return;
 				}
 				double thisHalfLife = halfLife;
 				if(uptime < 0) {
 					Logger.error(this, "Clock (uptime) went back in time, ignoring report: "+now+" was "+createdTime+" (back "+(-uptime)+"ms)");
-					if(node != null)
-						node.setTimeSkewDetectedUserAlert();
+					if(timeSkewCallback != null)
+						timeSkewCallback.setTimeSkewDetectedUserAlert();
 					return;
 				} else {
 					if((uptime / 4) < thisHalfLife) thisHalfLife = (uptime / 4);
