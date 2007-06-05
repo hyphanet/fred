@@ -1060,7 +1060,7 @@ public class LocationManager {
         recentlyForwardedIDs.remove(new Long(item.outgoingID));
     }
     
-    private final long MAX_AGE = 7*24*60*60*1000;
+    private static final long MAX_AGE = 7*24*60*60*1000;
     
     private final TimeSortedHashtable knownLocs = new TimeSortedHashtable();
     
