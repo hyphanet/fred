@@ -4,6 +4,7 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.URI;
@@ -244,8 +245,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		} else if(request.isPartSet("networkF")) {
 			StringBuffer sb = new StringBuffer();
 			// prevent the user from locking himself out
-			sb.append("127.0.0.1,0:0:0:0:0:0:0:1");
+			sb.append("127.0.0.1");
 			short ifCount = 0;
+			boolean hasIPV6 = false;
 			
 			Enumeration interfaces = NetworkInterface.getNetworkInterfaces();
 			while(interfaces.hasMoreElements()) {
@@ -255,6 +257,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				Enumeration ipAddresses = currentIF.getInetAddresses();
 				while(ipAddresses.hasMoreElements()) {
 					InetAddress currentInetAddress = (InetAddress) ipAddresses.nextElement();
+					if(currentInetAddress instanceof Inet6Address)
+						hasIPV6 = true;
+					
 					if((currentInetAddress == null) || (currentInetAddress.isLoopbackAddress())) continue;
 					
 					String isIFSelected =request.getPartAsString(Base64.encode(currentInetAddress.getAddress()), 255);
@@ -265,6 +270,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					}
 				}
 			}
+			
+			if(hasIPV6)
+				sb.append(",0:0:0:0:0:0:0:1");
 			
 			if(ifCount > 0) {
 				try {
