@@ -6,7 +6,7 @@ import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 
 public class UnknownCharsetException extends DataFilterException {
-
+	private static final long serialVersionUID = 1L;
 	public final String charset;
 	
 	private UnknownCharsetException(String warning, String warning2, String string, HTMLNode explanation, String charset) {
