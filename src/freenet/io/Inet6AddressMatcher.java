@@ -94,7 +94,7 @@ public class Inet6AddressMatcher implements AddressMatcher {
 	}
 
 	public String getHumanRepresentation() {
-		if(netmask == FULL_MASK)
+		if(netmask.equals(FULL_MASK))
 			return convertToString(address);
 		else
 			return convertToString(address)+'/'+convertToString(netmask);
