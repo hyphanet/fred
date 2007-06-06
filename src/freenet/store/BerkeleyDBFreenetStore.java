@@ -161,8 +161,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			boolean noCheck, int lastVersion, short type, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, 
 			boolean tryDbLoad, File reconstructFile) throws DatabaseException, IOException {
 		
-		boolean loadedDB = false;
-		
 		if(tryDbLoad) {
 			String dbName = newDBPrefix+"CHK";
 			File dumpFilename = new File(baseDir, dbName+".dump");
@@ -186,7 +184,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			}
 			
 			// Should just open now, although it will need to reconstruct the secondary indexes.
-			loadedDB = true;
 		}
 		
 		try {
