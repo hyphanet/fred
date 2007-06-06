@@ -200,7 +200,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			if(type == TYPE_SSK) {
 				System.err.println("Cannot reconstruct SSK store/cache! Sorry, your SSK store will now be deleted...");
-				wipeDatabase(storeEnvironment, newDBPrefix);
+				BerkeleyDBFreenetStore.wipeOldDatabases(storeEnvironment, newDBPrefix);
 				newStoreFile.delete();
 				return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile,
 						maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
