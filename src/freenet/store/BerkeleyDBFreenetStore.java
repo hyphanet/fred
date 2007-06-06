@@ -161,6 +161,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			boolean noCheck, int lastVersion, short type, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, 
 			boolean tryDbLoad, File reconstructFile) throws DatabaseException, IOException {
 		
+		boolean loadedDB = false;
+		
 		if(tryDbLoad) {
 			String dbName = newDBPrefix+"CHK";
 			File dumpFilename = new File(baseDir, dbName+".dump");
@@ -182,23 +184,33 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				System.err.println("Failed to reload database "+dbName+": "+e);
 				e.printStackTrace();
 			}
+			
+			// Should just open now, although it will need to reconstruct the secondary indexes.
+			loadedDB = true;
 		}
 		
 		try {
+			// First try just opening it.
 			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile,
 					maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
 					reconstructFile);
 		} catch (DatabaseException e) {
 			
+			// Try a reconstruct
+			
 			System.err.println("Could not open store: "+e);
 			e.printStackTrace();
 			
 			if(type == TYPE_SSK) {
-				System.err.println("Cannot reconstruct SSK store/cache. Move the old store/cache out of the way, and report to developers.");
-				throw e;
+				System.err.println("Cannot reconstruct SSK store/cache! Sorry, your SSK store will now be deleted...");
+				wipeDatabase(storeEnvironment, newDBPrefix);
+				newStoreFile.delete();
+				return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile,
+						maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
+						reconstructFile);
 			}
 			
-			System.err.println("Attempting to reconstruct...");
+			System.err.println("Attempting to reconstruct index...");
 			WrapperManager.signalStarting(5*60*60*1000);
 			
 			// Reconstruct
@@ -246,7 +258,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		dbConfig.setTransactional(true);
 		if(wipe) {
 			System.err.println("Wiping old database for "+prefix);
-			wipeOldDatabases(prefix);
+			wipeOldDatabases(environment, prefix);
 		}
 		
 		chkDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
@@ -955,7 +967,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.reconstructFile = reconstructFile;
 		name = prefix;
 		
-		wipeOldDatabases(prefix);
+		wipeOldDatabases(environment, prefix);
 		
 		// Delete old database(s).
 		
@@ -1022,22 +1034,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		storeShutdownHook.addEarlyJob(new ShutdownHook());
 	}
 	
-	private void wipeOldDatabases(String prefix) {
-		wipeDatabase(prefix+"CHK");
-		wipeDatabase(prefix+"CHK_accessTime");
-		wipeDatabase(prefix+"CHK_blockNum");
+	private static void wipeOldDatabases(Environment env, String prefix) {
+		wipeDatabase(env, prefix+"CHK");
+		wipeDatabase(env, prefix+"CHK_accessTime");
+		wipeDatabase(env, prefix+"CHK_blockNum");
 		System.err.println("Removed old database "+prefix);
 	}
 
-	private void wipeDatabase(String name) {
+	private static void wipeDatabase(Environment env, String name) {
 		WrapperManager.signalStarting(5*60*60*1000);
-		Logger.normal(this, "Wiping database "+name);
+		Logger.normal(BerkeleyDBFreenetStore.class, "Wiping database "+name);
 		try {
-			environment.removeDatabase(null, name);
+			env.removeDatabase(null, name);
 		} catch (DatabaseNotFoundException e) {
 			System.err.println("Database "+name+" does not exist deleting it");
 		} catch (DatabaseException e) {
-			Logger.error(this, "Could not remove old database: "+name+": "+e, e);
+			Logger.error(BerkeleyDBFreenetStore.class, "Could not remove old database: "+name+": "+e, e);
 			System.err.println("Could not remove old database: "+name+": "+e);
 			e.printStackTrace();
 		}
