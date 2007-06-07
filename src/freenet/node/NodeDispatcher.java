@@ -478,6 +478,21 @@ public class NodeDispatcher implements Dispatcher {
 		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, null);
 	}
 
+	/**
+	 * 
+	 * @param src
+	 * @param id
+	 * @param lid
+	 * @param target
+	 * @param best
+	 * @param nearest Best-so-far for normal routing purposes.
+	 * @param htl
+	 * @param counter
+	 * @param checkRecent
+	 * @param canReject
+	 * @param cb
+	 * @return
+	 */
 	private boolean innerHandleProbeRequest(PeerNode src, long id, Long lid, double target, double best, 
 			double nearest, short htl, short counter, boolean checkRecent, boolean canReject, ProbeCallback cb) {
 		short max = node.maxHTL();
