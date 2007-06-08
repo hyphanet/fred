@@ -484,7 +484,7 @@ public class NodeDispatcher implements Dispatcher {
 		double[] locsNotVisited = null;
 		Vector notVisitedList = new Vector();
 		if(notVisited != null) {
-			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)m.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
+			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
@@ -834,7 +834,7 @@ public class NodeDispatcher implements Dispatcher {
 		double[] locsNotVisited = null;
 		Vector notVisitedList = new Vector();
 		if(notVisited != null) {
-			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)m.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
+			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
