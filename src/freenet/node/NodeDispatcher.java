@@ -534,34 +534,12 @@ public class NodeDispatcher implements Dispatcher {
 			}
 			return true;
 		}
-		// FIXME Update any important values on ctx
 		if(ctx.counter < counter) ctx.counter = counter;
-		double oldDist = Math.abs(PeerManager.distance(ctx.nearest, target));
-		double newDist = Math.abs(PeerManager.distance(nearest, target));
-		// FIXME use this elsewhere? Does it make sense?
 		if(logMINOR)
-			Logger.minor(this, "ctx.nearest="+ctx.nearest+", nearest="+nearest+", target="+target+", oldDist="+oldDist+", newDist="+newDist+", htl="+htl+", ctx.htl="+ctx.htl);
-		if(oldDist > newDist) {
+			Logger.minor(this, "ctx.nearest="+ctx.nearest+", nearest="+nearest+", target="+target+", htl="+htl+", ctx.htl="+ctx.htl);
+		if(ctx.htl > htl) {
+			// Rejected can reduce HTL
 			ctx.htl = htl;
-			ctx.nearest = nearest;
-			if(logMINOR)
-				Logger.minor(this, "oldDist ("+oldDist+") > newDist ("+newDist+ ')');
-		} else if(Math.abs(oldDist - newDist) < Double.MIN_VALUE*2) {
-			// oldDist == newDist
-			if(!isNew) {
-				// Rejected. DO NOT DECREMENT: Will be decremented later.
-				// A rejector cannot increase the HTL unless it moves us closer to the target.
-				if(htl > ctx.htl)
-					htl = ctx.htl;
-				else
-					ctx.htl = htl;
-			}
-			if(logMINOR)
-				Logger.minor(this, "Rejected (or new): htl="+htl);
-		} else {
-			Logger.error(this, "Distance increased: "+oldDist+" -> "+newDist+" htl: "+ctx.htl+" -> "+htl+" , using old HTL and dist");
-			htl = ctx.htl;
-			nearest = ctx.nearest;
 		}
 		Logger.minor(this, "htl="+htl+", nearest="+nearest+", ctx.htl="+ctx.htl+", ctx.nearest="+ctx.nearest);
 
@@ -734,7 +712,7 @@ public class NodeDispatcher implements Dispatcher {
 		double nearest = m.getDouble(DMT.NEAREST_LOCATION);
 		short counter = m.getShort(DMT.COUNTER);
 		if(logMINOR)
-			Logger.minor(this, "Probe trace: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest);
+			Logger.minor(this, "Probe trace: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest+' '+counter);
 		// Just propagate back to source
 		ProbeContext ctx;
 		synchronized(recentProbeContexts) {
