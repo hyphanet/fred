@@ -590,7 +590,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"u",
 				"noframes",
 				"fieldset",
-				"noscript",
+// Delete <noscript> / </noscript>. So we can at least see the non-scripting code.
+//				"noscript",
 				"xmp",
 				"listing",
 				"plaintext",
