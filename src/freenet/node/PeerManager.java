@@ -568,7 +568,7 @@ public class PeerManager {
 	 * @param addUnpickedLocsTo Add all locations we didn't choose which we could have routed to to 
 	 * this array. Remove the location of the peer we pick from it.
      */
-    private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion, Vector addUnpickedLocsTo) {
+    private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double target, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion, Vector addUnpickedLocsTo) {
         PeerNode[] peers;  
         synchronized (this) {
 			peers = connectedPeers;
@@ -577,7 +577,7 @@ public class PeerManager {
         double bestDiff = Double.MAX_VALUE;
         double maxDiff = 0.0;
         if(!ignoreSelf)
-            maxDiff = distance(node.lm.getLocation().getValue(), loc);
+            maxDiff = distance(node.lm.getLocation().getValue(), target);
         PeerNode best = null;
         double bestLoc = -2;
         int count = 0;
@@ -604,8 +604,8 @@ public class PeerManager {
             	continue;
             }
             count++;
-            double diff = distance(p, loc);
-            if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff+" for "+p.getPeer());
+            double diff = distance(p, target);
+            if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation().getValue()+", target="+target+", d="+distance(p.getLocation().getValue(), target)+" usedD="+diff+" for "+p.getPeer());
             if((!ignoreSelf) && (diff > maxDiff)) {
             	if(logMINOR) Logger.minor(this, "Ignoring because >maxDiff="+maxDiff);
             	continue;
@@ -618,7 +618,7 @@ public class PeerManager {
             		if(!addUnpickedLocsTo.contains(d))
             			addUnpickedLocsTo.add(d);
             	}
-            	bestLoc = loc;
+            	bestLoc = target;
                 best = p;
                 bestDiff = diff;
                 if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+p.getLocation().getValue()+" for "+p.getPeer());
