@@ -961,7 +961,8 @@ public class LocationManager {
     
     /** Spy on locations in somebody else's swap request. Greatly increases the
      * speed at which we can gather location data to estimate the network's size.
-     * @param swappingWithMe 
+     * @param swappingWithMe True if this node is participating in the swap, false if it is
+     * merely spying on somebody else's swap.
      */
     private void spyOnLocations(Message m, boolean ignoreIfOld, boolean swappingWithMe, double myLoc) {
     	
