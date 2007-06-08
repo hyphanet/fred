@@ -428,6 +428,7 @@ public class NodeDispatcher implements Dispatcher {
 		double nearest;
 		double best;
 		Vector notVisitedList; // List of best locations not yet visited by this request
+		int forkCount;
 
 		public ProbeContext(long id, double target, double best, double nearest, short htl, short counter, PeerNode src, ProbeCallback cb) {
 			visitedPeers = new HashSet();
@@ -488,10 +489,12 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
-		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, false, null, notVisitedList);
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, false, null, notVisitedList);
+		return true;
 	}
 
 	final int MAX_LOCS_NOT_VISITED = 3;
+	final int MAX_FORKS = 2;
 	
 	/**
 	 * 
@@ -509,7 +512,7 @@ public class NodeDispatcher implements Dispatcher {
 	 * @param locsNotVisited 
 	 * @return
 	 */
-	private boolean innerHandleProbeRequest(PeerNode src, long id, Long lid, final double target, double best, 
+	private void innerHandleProbeRequest(PeerNode src, long id, Long lid, final double target, double best, 
 			double nearest, short htl, short counter, boolean checkRecent, boolean canReject, 
 			boolean fromRejection, ProbeCallback cb, Vector locsNotVisited) {
 		short max = node.maxHTL();
@@ -554,7 +557,7 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.error(this, "Not connected rejecting a probe request from "+src);
 			}
-			return true;
+			return;
 		}
 		if(ctx.counter < counter) ctx.counter = counter;
 		if(logMINOR)
@@ -625,7 +628,7 @@ public class NodeDispatcher implements Dispatcher {
 				} catch (NotConnectedException e) {
 					Logger.error(this, "Not connected completing a probe request from "+src);
 				}
-				return true;
+				return;
 			} else {
 				complete("success", target, best, nearest, id, ctx, counter);
 			}
@@ -681,7 +684,7 @@ public class NodeDispatcher implements Dispatcher {
 				} else {
 					complete("RNF", target, best, nearest, id, ctx, counter);
 				}
-				return true;
+				return;
 			}
 
 			visited.add(pn);
@@ -702,7 +705,7 @@ public class NodeDispatcher implements Dispatcher {
 			forwarded.addSubMessage(sub);
 			try {
 				pn.sendAsync(forwarded, null, 0, null);
-				return true;
+				return;
 			} catch (NotConnectedException e) {
 				Logger.error(this, "Could not forward message: disconnected: "+pn+" : "+e, e);
 				// Try another one
@@ -739,7 +742,23 @@ public class NodeDispatcher implements Dispatcher {
 		short counter = m.getShort(DMT.COUNTER);
 		if(logMINOR)
 			Logger.minor(this, "Probe reply: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest);
-		// Just propagate back to source
+		
+		// New backtracking algorithm
+		
+		// Allow forking on the way home - but only if the location we'd fork to would be at least as good as the third best location seen but not visited so far.
+		
+		// First get the list of not visited so far nodes
+		
+		Message notVisited = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
+		double[] locsNotVisited = null;
+		Vector notVisitedList = new Vector();
+		if(notVisited != null) {
+			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
+			for(int i=0;i<locsNotVisited.length;i++)
+				notVisitedList.add(new Double(locsNotVisited[i]));
+		}
+
+		// Find it
 		ProbeContext ctx;
 		synchronized(recentProbeContexts) {
 			ctx = (ProbeContext) recentProbeContexts.get(lid);
@@ -747,11 +766,22 @@ public class NodeDispatcher implements Dispatcher {
 				Logger.normal(this, "Could not forward probe reply back to source for ID "+id);
 				return false;
 			}
-			recentProbeContexts.push(lid, ctx); // promote or add
+			recentProbeContexts.push(lid, ctx); // promote
 			while(recentProbeContexts.size() > MAX_PROBE_CONTEXTS)
 				recentProbeContexts.popValue();
 		}
 
+		// Maybe fork
+		
+		if(notVisitedList.size() > 0) {
+			if(ctx.forkCount < MAX_FORKS) {
+				ctx.forkCount++;
+				innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, null, notVisitedList);
+				return true;
+			}
+		}
+		
+		// Just propagate back to source
 		if(ctx.src != null) {
 			Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++);
 			Message sub = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
@@ -844,7 +874,8 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
-		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, null, notVisitedList);
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, null, notVisitedList);
+		return true;
 	}
 
 	public void startProbe(double d, ProbeCallback cb) {
