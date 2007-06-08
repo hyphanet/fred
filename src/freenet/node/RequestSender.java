@@ -132,7 +132,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             // Route it
             PeerNode next;
             double nextValue;
-            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1);
+            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
             if(next != null)
                 nextValue = next.getLocation().getValue();
             else

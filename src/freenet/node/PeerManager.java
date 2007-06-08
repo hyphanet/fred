@@ -537,11 +537,11 @@ public class PeerManager {
      * This scans the same array 4 times.  It would be better to scan once and execute 4 callbacks...
      * For this reason the metrics are only updated if advanced mode is enabled
      */
-    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion) {
-    	PeerNode best = closerPeerBackoff(pn, routedTo, notIgnored, loc, ignoreSelf, minVersion);
+    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo) {
+    	PeerNode best = closerPeerBackoff(pn, routedTo, notIgnored, loc, ignoreSelf, minVersion, addUnpickedLocsTo);
     		
     	if (calculateMisrouting) {
-    		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion);
+    		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, null);
     		if(nbo != null) {
     			node.nodeStats.routingMissDistance.report(distance(best, nbo.getLocation().getValue()));
     			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
@@ -554,10 +554,10 @@ public class PeerManager {
     	return best;
     }
 	    
-    private PeerNode closerPeerBackoff(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, int minVersion) {
-    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false, minVersion);
+    private PeerNode closerPeerBackoff(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, int minVersion, Vector addUnpickedLocsTo) {
+    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false, minVersion, addUnpickedLocsTo);
     	if(best == null) {
-    		best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion);
+    		best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, addUnpickedLocsTo);
     	}
     	return best;
 	}
@@ -565,8 +565,10 @@ public class PeerManager {
 	/**
      * Find the peer, if any, which is closer to the target location
      * than we are, and is not included in the provided set.
+	 * @param addUnpickedLocsTo Add all locations we didn't choose which we could have routed to to 
+	 * this array. Remove the location of the peer we pick from it.
      */
-    private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion) {
+    private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion, Vector addUnpickedLocsTo) {
         PeerNode[] peers;  
         synchronized (this) {
 			peers = connectedPeers;
@@ -577,6 +579,7 @@ public class PeerManager {
         if(!ignoreSelf)
             maxDiff = distance(node.lm.getLocation().getValue(), loc);
         PeerNode best = null;
+        double bestLoc = -2;
         int count = 0;
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
@@ -608,11 +611,20 @@ public class PeerManager {
             	continue;
             }
             if(diff < bestDiff) {
+            	if(bestLoc > 0 && addUnpickedLocsTo != null) {
+            		Double d = new Double(bestLoc);
+            		// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
+            		if(!addUnpickedLocsTo.contains(d))
+            			addUnpickedLocsTo.add(d);
+            	}
+            	bestLoc = loc;
                 best = p;
                 bestDiff = diff;
                 if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+p.getLocation().getValue()+" for "+p.getPeer());
             }
         }
+        if(addUnpickedLocsTo != null)
+        	addUnpickedLocsTo.remove(new Double(bestLoc));
         return best;
     }
 

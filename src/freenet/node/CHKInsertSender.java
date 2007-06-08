@@ -247,7 +247,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             PeerNode next;
             // Can backtrack, so only route to nodes closer than we are to target.
             double nextValue;
-            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1);
+            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
             if(next != null)
                 nextValue = next.getLocation().getValue();
             else

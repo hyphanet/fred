@@ -326,7 +326,7 @@ public class LocationManager {
             // Send our SwapComplete
             
             Message confirm = DMT.createFNPSwapComplete(uid, myValue);
-            confirm.addSubMessage(DMT.createFNPSwapLocations(Fields.longsToBytes(extractUIDs(friendLocsAndUIDs))));
+            confirm.addSubMessage(DMT.createFNPSwapLocations(extractUIDs(friendLocsAndUIDs)));
             
             node.usm.send(pn, confirm, null);
             
@@ -438,7 +438,7 @@ public class LocationManager {
                 byte[] hisHash = ((ShortBuffer)reply.getObject(DMT.HASH)).getData();
                 
                 Message confirm = DMT.createFNPSwapCommit(uid, myValue);
-                confirm.addSubMessage(DMT.createFNPSwapLocations(Fields.longsToBytes(extractUIDs(friendLocsAndUIDs))));
+                confirm.addSubMessage(DMT.createFNPSwapLocations(extractUIDs(friendLocsAndUIDs)));
 
                 filter1.clearOr();
                 MessageFilter filter3 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPSwapComplete).setTimeout(TIMEOUT).setSource(pn);

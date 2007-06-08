@@ -96,6 +96,7 @@ public class DMT {
 	public static final String MY_UID = "myUID";
 	public static final String PEER_LOCATIONS = "peerLocations";
 	public static final String PEER_UIDS = "peerUIDs";
+	public static final String BEST_LOCATIONS_NOT_VISITED = "bestLocationsNotVisited";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -956,6 +957,36 @@ public class DMT {
 		return msg;
 	}
 	
+	public static final Message createFNPSwapLocations(long[] uids) {
+		Message msg = new Message(FNPSwapNodeUIDs);
+		msg.set(NODE_UIDS, new ShortBuffer(Fields.longsToBytes(uids)));
+		return msg;
+	}
+	
+	// More permanent secondary messages (should perhaps be replaced by new main messages when stable)
+	
+	public static final MessageType FNPBestRoutesNotTaken = new MessageType("FNPBestRoutesNotTaken") {{
+		// Maybe this should be some sort of typed array?
+		// It's just a bunch of double's anyway.
+		addField(BEST_LOCATIONS_NOT_VISITED, ShortBuffer.class);
+	}};
+	
+	public static final Message createFNPBestRoutesNotTaken(byte[] locs) {
+		Message msg = new Message(FNPBestRoutesNotTaken);
+		msg.set(BEST_LOCATIONS_NOT_VISITED, new ShortBuffer(locs));
+		return msg;
+	}
+	
+	public static final Message createFNPBestRoutesNotTaken(double[] locs) {
+		return createFNPBestRoutesNotTaken(Fields.doublesToBytes(locs));
+	}
+	
+	public static Message createFNPBestRoutesNotTaken(Double[] doubles) {
+		double[] locs = new double[doubles.length];
+		for(int i=0;i<locs.length;i++) locs[i] = doubles[i].doubleValue();
+		return createFNPBestRoutesNotTaken(locs);
+	}
+
 	public static void init() { }
 
 }
