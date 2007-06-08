@@ -772,7 +772,7 @@ public class NodeDispatcher implements Dispatcher {
 		Message notVisited = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
 		double[] locsNotVisited = null;
 		if(notVisited != null) {
-			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)m.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
+			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
 		}
 		if(logMINOR)
 			Logger.minor(this, "Probe trace: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest+' '+counter);
