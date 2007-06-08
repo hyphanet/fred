@@ -614,6 +614,7 @@ public class PeerManager {
             	if(bestLoc > 0 && addUnpickedLocsTo != null) {
             		Double d = new Double(bestLoc);
             		// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
+            		if(logMINOR) Logger.minor(this, "Adding: "+bestLoc);
             		if(!addUnpickedLocsTo.contains(d))
             			addUnpickedLocsTo.add(d);
             	}
@@ -623,7 +624,7 @@ public class PeerManager {
                 if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+p.getLocation().getValue()+" for "+p.getPeer());
             }
         }
-        if(addUnpickedLocsTo != null)
+        if(addUnpickedLocsTo != null && bestLoc > 0)
         	addUnpickedLocsTo.remove(new Double(bestLoc));
         return best;
     }

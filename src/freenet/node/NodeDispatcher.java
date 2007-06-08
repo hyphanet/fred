@@ -641,6 +641,9 @@ public class NodeDispatcher implements Dispatcher {
 			newBestLocs.addAll(locsNotVisited);
 			PeerNode pn = node.peers.closerPeer(src, visited, null, target, true, false, 965, newBestLocs);
 			
+			if(logMINOR)
+				Logger.minor(this, "newBestLocs (unsorted): "+newBestLocs);
+			
 			Double[] locs = (Double[]) newBestLocs.toArray(new Double[newBestLocs.size()]);
 			Arrays.sort(locs, new Comparator() {
 				public int compare(Object arg0, Object arg1) {
@@ -656,6 +659,9 @@ public class NodeDispatcher implements Dispatcher {
 			locsNotVisited.clear();
 			for(int i=0;i<Math.min(MAX_LOCS_NOT_VISITED, locs.length);i++)
 				locsNotVisited.add(locs[i]);
+			
+			if(logMINOR)
+				Logger.minor(this, "newBestLocs: "+locsNotVisited);
 			
 			Message sub = DMT.createFNPBestRoutesNotTaken((Double[])locsNotVisited.toArray(new Double[locsNotVisited.size()]));
 			
