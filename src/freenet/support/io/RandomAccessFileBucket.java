@@ -210,9 +210,13 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
     private final static boolean vociferous = false;
 
     class RAInputStream extends InputStream  {
+    	
+    	long pos;
+    	
         public RAInputStream(String prefix) throws IOException {
             raf = new RandomAccessFile(file, "r");
             raf.seek(offset);
+            pos = offset;
             println(" -- Created new InputStream [" + offset + 
                     ", " + (offset + len -1) + ']');
         }
@@ -222,7 +226,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
 
         private final int bytesLeft() throws IOException {
 			synchronized (RandomAccessFileBucket.this) {
-				return (int)(offset + len - raf.getFilePointer());
+				return (int)(offset + len - pos);
 			}
         }
 
@@ -232,8 +236,13 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
                 checkValid();
                 if (bytesLeft() < 1) {
                     return -1; // EOF
-                } 
-                return raf.read();
+                }
+                raf.seek(pos);
+                int ret = raf.read();
+                if(ret == -1)
+                	return -1;
+                pos++;
+                return ret;
             }
         }
         
@@ -248,7 +257,11 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
                 if (nAvailable > bytes.length) {
                     nAvailable = bytes.length;
                 }
-                return raf.read(bytes, 0, nAvailable);
+                raf.seek(pos);
+                int ret = raf.read(bytes, 0, nAvailable);
+                if(ret <= 0) return ret;
+                pos += ret;
+                return ret;
             }
         }
         
@@ -263,7 +276,11 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
                 if (nAvailable > b) {
                     nAvailable = b;
                 }
-                return raf.read(bytes, a, nAvailable);
+                raf.seek(pos);
+                int ret = raf.read(bytes, a, nAvailable);
+                if(ret <= 0) return ret;
+                pos += ret;
+                return ret;
             }
         }
         
@@ -279,7 +296,10 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
                     nAvailable = (int)a;
                 }
 
-                return raf.skipBytes(nAvailable);
+                int ret = raf.skipBytes(nAvailable);
+                if(ret <= 0) return ret;
+                pos += ret;
+                return ret;
             }
         }
         
@@ -337,11 +357,15 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
     }
 
     private class RAOutputStream extends OutputStream {
+    	
+    	long pos;
+    	
         public RAOutputStream(String pref) throws IOException {
             raf = new RandomAccessFile(file, "rw");
             raf.seek(offset);
             println(" -- Created new OutputStream [" + offset + ", " 
                     + (offset + len -1) + ']');
+            pos = offset;
         }
     
         ////////////////////////////////////////////////////////////
@@ -354,7 +378,9 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
                 if (nAvailable < 1) {
                     throw new IOException("Attempt to write past end of Bucket.");
                 }
+                raf.seek(pos);
                 raf.write(b);
+                pos++;
             }
         }
     
@@ -366,7 +392,9 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
                 if (nAvailable < buf.length) {
                     throw new IOException("Attempt to write past end of Bucket.");
                 }
+                raf.seek(pos);
                 raf.write(buf);
+                pos += buf.length;
             }
         }
     
@@ -378,7 +406,9 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
                 if (nAvailable < len) {
                     throw new IOException("Attempt to write past end of Bucket.");
                 }
+                raf.seek(pos);
                 raf.write(buf, off, len);
+                pos += len;
             }
         }
     
@@ -420,7 +450,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
         private final int bytesLeft() throws IOException {
 			synchronized (RandomAccessFileBucket.this) {
-				return (int)(offset + len - raf.getFilePointer());
+				return (int)(offset + len - pos);
 			}
         }
 
