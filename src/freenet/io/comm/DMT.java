@@ -97,7 +97,18 @@ public class DMT {
 	public static final String PEER_LOCATIONS = "peerLocations";
 	public static final String PEER_UIDS = "peerUIDs";
 	public static final String BEST_LOCATIONS_NOT_VISITED = "bestLocationsNotVisited";
-
+	public static final String MAIN_JAR_KEY = "mainJarKey";
+	public static final String EXTRA_JAR_KEY = "extraJarKey";
+	public static final String REVOCATION_KEY = "revocationKey";
+	public static final String HAVE_REVOCATION_KEY = "haveRevocationKey";
+	public static final String MAIN_JAR_VERSION = "mainJarVersion";
+	public static final String EXTRA_JAR_VERSION = "extJarVersion";
+	public static final String REVOCATION_KEY_TIME_LAST_TRIED = "revocationKeyTimeLastTried";
+	public static final String REVOCATION_KEY_DNF_COUNT = "revocationKeyDNFCount";
+	public static final String REVOCATION_KEY_FILE_LENGTH = "revocationKeyFileLength";
+	public static final String MAIN_JAR_FILE_LENGTH = "mainJarFileLength";
+	public static final String EXTRA_JAR_FILE_LENGTH = "extraJarFileLength";
+	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
 		addField(SEND_TIME, Long.class);
@@ -942,6 +953,110 @@ public class DMT {
 	
 	public static final Message createFNPVoid() {
 		Message msg = new Message(FNPVoid);
+		return msg;
+	}
+	
+	// Update over mandatory. Not strictly part of FNP. Only goes between nodes at the link
+	// level, and will be sent, and parsed, even if the node is out of date. Should be stable 
+	// long-term.
+	
+	// Sent on connect
+	public static final MessageType UOMAnnounce = new MessageType("UOMAnnounce") {{
+		addField(MAIN_JAR_KEY, String.class);
+		addField(EXTRA_JAR_KEY, String.class);
+		addField(REVOCATION_KEY, String.class);
+		addField(HAVE_REVOCATION_KEY, Boolean.class);
+		addField(MAIN_JAR_VERSION, Long.class);
+		addField(EXTRA_JAR_VERSION, Long.class);
+		// Last time (ms ago) we had 3 DNFs in a row on the revocation checker.
+		addField(REVOCATION_KEY_TIME_LAST_TRIED, Long.class);
+		// Number of DNFs so far this time.
+		addField(REVOCATION_KEY_DNF_COUNT, Integer.class);
+		// For convenience, may change
+		addField(REVOCATION_KEY_FILE_LENGTH, Long.class);
+		addField(MAIN_JAR_FILE_LENGTH, Long.class);
+		addField(EXTRA_JAR_FILE_LENGTH, Long.class);
+	}};
+
+	public static final Message createUOMAnnounce(String mainKey, String extraKey, String revocationKey,
+			boolean haveRevocation, long mainJarVersion, long extraJarVersion, long timeLastTriedRevocationFetch,
+			int revocationDNFCount, long revocationKeyLength, long mainJarLength, long extraJarLength) {
+		Message msg = new Message(UOMAnnounce);
+		
+		msg.set(MAIN_JAR_KEY, mainKey);
+		msg.set(EXTRA_JAR_KEY, extraKey);
+		msg.set(REVOCATION_KEY, revocationKey);
+		msg.set(HAVE_REVOCATION_KEY, haveRevocation);
+		msg.set(MAIN_JAR_VERSION, mainJarVersion);
+		msg.set(EXTRA_JAR_VERSION, extraJarVersion);
+		msg.set(REVOCATION_KEY_TIME_LAST_TRIED, timeLastTriedRevocationFetch);
+		msg.set(REVOCATION_KEY_DNF_COUNT, revocationDNFCount);
+		msg.set(REVOCATION_KEY_FILE_LENGTH, revocationKeyLength);
+		msg.set(MAIN_JAR_FILE_LENGTH, mainJarLength);
+		msg.set(EXTRA_JAR_FILE_LENGTH, extraJarLength);
+		
+		return msg;
+	}
+	
+	public static final MessageType UOMRequestRevocation = new MessageType("UOMRequestRevocation") {{
+		
+	}};
+	
+	public static final Message createUOMRequestRevocation() {
+		return new Message(UOMRequestRevocation);
+	}
+	
+	public static final MessageType UOMRequestMain = new MessageType("UOMRequestMain") {{
+		
+	}};
+	
+	public static final Message createUOMRequestMain() {
+		return new Message(UOMRequestMain);
+	}
+	
+	public static final MessageType UOMRequestExtra = new MessageType("UOMRequestExtra") {{
+		
+	}};
+	
+	public static final Message createUOMRequestExtra() {
+		return new Message(UOMRequestExtra);
+	}
+	
+	public static final MessageType UOMSendingRevocation = new MessageType("UOMSendingRevocation") {{
+		addField(UID, Long.class);
+		// Probably excessive, but lengths are always long's, and wasting a few bytes here
+		// doesn't matter in the least, as it's very rarely called.
+		addField(FILE_LENGTH, Long.class);
+	}};
+	
+	public static final Message createUOMSendingRevocation(long uid, long length) {
+		Message msg = new Message(UOMSendingRevocation);
+		msg.set(UID, uid);
+		msg.set(FILE_LENGTH, length);
+		return msg;
+	}
+	
+	public static final MessageType UOMSendingMain = new MessageType("UOMSendingMain") {{
+		addField(UID, Long.class);
+		addField(FILE_LENGTH, Long.class);
+	}};
+	
+	public static final Message createUOMSendingMain(long uid, long length) {
+		Message msg = new Message(UOMSendingMain);
+		msg.set(UID, uid);
+		msg.set(FILE_LENGTH, length);
+		return msg;
+	}
+	
+	public static final MessageType UOMSendingExtra = new MessageType("UOMSendingExtra") {{
+		addField(UID, Long.class);
+		addField(FILE_LENGTH, Long.class);
+	}};
+	
+	public static final Message createUOMSendingExtra(long uid, long length) {
+		Message msg = new Message(UOMSendingExtra);
+		msg.set(UID, uid);
+		msg.set(FILE_LENGTH, length);
 		return msg;
 	}
 	
