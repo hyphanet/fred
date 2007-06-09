@@ -129,7 +129,7 @@ public class PartiallyReceivedBulk {
 		}
 	}
 
-	void abort(int errCode, String why) {
+	public void abort(int errCode, String why) {
 		BulkTransmitter[] notifyBTs;
 		BulkReceiver notifyBR;
 		synchronized(this) {
@@ -146,6 +146,7 @@ public class PartiallyReceivedBulk {
 		}
 		if(notifyBR != null)
 			notifyBR.onAborted();
+		raf.close();
 	}
 
 	public synchronized boolean isAborted() {

@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import freenet.support.Logger;
+
 public class RandomAccessFileWrapper implements RandomAccessThing {
 
 	// FIXME maybe we should avoid opening these until we are ready to use them
@@ -36,6 +38,14 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
 
 	public long size() throws IOException {
 		return raf.length();
+	}
+
+	public void close() {
+		try {
+			raf.close();
+		} catch (IOException e) {
+			Logger.error(this, "Could not close "+raf+" : "+e+" for "+this, e);
+		}
 	}
 
 }

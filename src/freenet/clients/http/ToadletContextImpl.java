@@ -372,6 +372,8 @@ public class ToadletContextImpl implements ToadletContext {
 		} catch (ToadletContextClosedException e) {
 			Logger.error(ToadletContextImpl.class, "ToadletContextClosedException while handling connection!");
 			return;
+		} catch (Throwable t) {
+			Logger.error(ToadletContextImpl.class, "Caught error: "+t+" handling socket", t);
 		}
 	}
 	
@@ -425,13 +427,7 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 
 	public HTMLNode addFormChild(HTMLNode parentNode, String target, String name) {
-		HTMLNode formNode =
-			parentNode.addChild("form", new String[] { "action", "method", "enctype", "id", "name", "accept-charset" }, 
-					new String[] { target, "post", "multipart/form-data", name, name, "utf-8"} );
-		formNode.addChild("input", new String[] { "type", "name", "value" }, 
-				new String[] { "hidden", "formPassword", container.getFormPassword() });
-		
-		return formNode;
+		return container.addFormChild(parentNode, target, name);
 	}
 
 	public boolean isAllowedFullAccess() {

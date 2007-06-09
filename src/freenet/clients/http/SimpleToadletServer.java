@@ -29,6 +29,7 @@ import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.StringArray;
@@ -419,7 +420,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 
 		void start() {
-			Thread t = new Thread(this, "SimpleToadletServer$SocketHandler");
+			Thread t = new Thread(this, "SimpleToadletServer$SocketHandler@"+hashCode());
 			t.setDaemon(true);
 			t.start();
 		}
@@ -480,6 +481,16 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	private static String l10n(String key) {
 		return L10n.getString("SimpleToadletServer."+key);
+	}
+
+	public HTMLNode addFormChild(HTMLNode parentNode, String target, String name) {
+		HTMLNode formNode =
+			parentNode.addChild("form", new String[] { "action", "method", "enctype", "id", "name", "accept-charset" }, 
+					new String[] { target, "post", "multipart/form-data", name, name, "utf-8"} );
+		formNode.addChild("input", new String[] { "type", "name", "value" }, 
+				new String[] { "hidden", "formPassword", getFormPassword() });
+		
+		return formNode;
 	}
 
 }

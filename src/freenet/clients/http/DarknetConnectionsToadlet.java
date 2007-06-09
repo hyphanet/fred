@@ -919,6 +919,34 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
+		} else if (request.isPartSet("acceptTransfer")) {
+			// FIXME this is ugly, should probably move both this code and the PeerNode code somewhere.
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					long id = Long.parseLong(request.getPartAsString("id", 32)); // FIXME handle NumberFormatException
+					peerNodes[i].acceptTransfer(id);
+					break;
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/friends/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("rejectTransfer")) {
+			// FIXME this is ugly, should probably move both this code and the PeerNode code somewhere.
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					long id = Long.parseLong(request.getPartAsString("id", 32)); // FIXME handle NumberFormatException
+					peerNodes[i].rejectTransfer(id);
+					break;
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/friends/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
 		} else {
 			this.handleGet(uri, new HTTPRequestImpl(uri), ctx);
 		}

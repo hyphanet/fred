@@ -16,5 +16,7 @@ public interface RandomAccessThing {
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException;
 	
 	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException;
+
+	public void close();
 	
 }

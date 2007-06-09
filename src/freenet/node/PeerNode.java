@@ -53,6 +53,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PacketThrottle;
@@ -60,14 +61,18 @@ import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.l10n.L10n;
 import freenet.node.useralerts.N2NTMUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.Base64;
 import freenet.support.Fields;
+import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SizeUtil;
 import freenet.support.WouldBlockException;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
@@ -3208,6 +3213,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		private PartiallyReceivedBulk prb;
 		private BulkTransmitter transmitter;
 		private BulkReceiver receiver;
+		/** True if the offer has either been accepted or rejected */
+		private boolean acceptedOrRejected;
 		
 		FileOffer(long uid, RandomAccessThing data, String filename, String mimeType, String comment) throws IOException {
 			this.uid = uid;
@@ -3237,6 +3244,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 
 		public void accept() {
+			acceptedOrRejected = true;
 			File dest = new File(node.clientCore.downloadDir, "direct-"+FileUtil.sanitize(getName())+"-"+filename);
 			try {
 				data = new RandomAccessFileWrapper(dest, "rw");
@@ -3266,6 +3274,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			}, "Receiver for bulk transfer "+uid+":"+filename);
 			t.setDaemon(true);
 			t.start();
+			if(logMINOR) Logger.minor(this, "Receiving on "+t);
 			sendFileOfferAccepted(uid);
 		}
 
@@ -3293,6 +3302,17 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			}, "Sender for bulk transfer "+uid+":"+filename);
 			t.setDaemon(true);
 			t.start();
+		}
+
+		public void reject() {
+			acceptedOrRejected = true;
+			sendFileOfferRejected(uid);
+		}
+
+		public void onRejected() {
+			transmitter.cancel();
+			// FIXME prb's can't be shared, right? Well they aren't here...
+			prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cancelled by receiver");
 		}
 	}
 
@@ -3332,6 +3352,39 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED);
+		try {
+			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
+			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
+			fs.put("composedTime", now);
+			fs.put("sentTime", now);
+			fs.put("uid", uid);
+			if(logMINOR)
+				Logger.minor(this, "Sending node to node message (file offer accepted):\n"+fs);
+			Message n2ntm;
+			n2ntm = DMT.createNodeToNodeMessage(
+					Node.N2N_MESSAGE_TYPE_FPROXY, fs
+							.toString().getBytes("UTF-8"));
+			try {
+				sendAsync(n2ntm, null, 0, null);
+			} catch (NotConnectedException e) {
+				fs.removeValue("sentTime");
+				queueN2NTM(fs);
+				setPeerNodeStatus(System.currentTimeMillis());
+				return getPeerNodeStatus();
+			}
+			this.setPeerNodeStatus(System.currentTimeMillis());
+			return getPeerNodeStatus();
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: "+e, e);
+		}
+	}
+
+	public int sendFileOfferRejected(long uid) {
+		storeOffers();
+		long now = System.currentTimeMillis();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
+		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED);
 		try {
 			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
 			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
@@ -3423,7 +3476,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public void handleFproxyFileOffer(SimpleFieldSet fs, int fileNumber) {
-		FileOffer offer;
+		final FileOffer offer;
 		try {
 			offer = new FileOffer(fs, false);
 		} catch (FSParseException e) {
@@ -3435,11 +3488,149 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(hisFileOffersByUID.containsKey(u)) return; // Ignore re-advertisement
 			hisFileOffersByUID.put(u, offer);
 		}
-		// Auto-accept : FIXME
-		offer.accept();
+		
+		// Don't persist for now - FIXME
+		this.deleteExtraPeerDataFile(fileNumber);
+		
+		UserAlert alert = new UserAlert() {
+			public String dismissButtonText() {
+				return null; // Cannot hide, but can reject
+			}
+			public HTMLNode getHTMLText() {
+				HTMLNode div = new HTMLNode("div");
+				
+				// FIXME localise!!!
+				
+				div.addChild("p", l10n("offeredFileHeader", "name", getName()));
+				
+				// Descriptive table
+				
+				HTMLNode table = div.addChild("table", "border", "0");
+				HTMLNode row = table.addChild("tr");
+				row.addChild("td").addChild("#", l10n("fileLabel"));
+				row.addChild("td").addChild("#", offer.filename);
+				row = table.addChild("tr");
+				row.addChild("td").addChild("#", l10n("sizeLabel"));
+				row.addChild("td").addChild("#", SizeUtil.formatSize(offer.size));
+				row = table.addChild("tr");
+				row.addChild("td").addChild("#", l10n("mimeLabel"));
+				row.addChild("td").addChild("#", offer.mimeType);
+				row = table.addChild("tr");
+				row.addChild("td").addChild("#", l10n("senderLabel"));
+				row.addChild("td").addChild("#", getName());
+				row = table.addChild("tr");
+				if(offer.comment != null && offer.comment.length() > 0) {
+					row.addChild("td").addChild("#", l10n("commentLabel"));
+					row.addChild("td").addChild("#", offer.comment);
+				}
+				
+				// Accept/reject form
+				
+				// Hopefully we will have a container when this function is called!
+				HTMLNode form = node.clientCore.getToadletContainer().addFormChild(div, "/friends/", "f2fFileOfferAcceptForm");
+				
+				// FIXME node_ is inefficient
+				form.addChild("input", new String[] { "type", "name" },
+						new String[] { "hidden", "node_"+PeerNode.this.hashCode() });
+
+				form.addChild("input", new String[] { "type", "name", "value" },
+						new String[] { "hidden", "id", Long.toString(offer.uid) });
+				
+				form.addChild("input", new String[] { "type", "name", "value" }, 
+						new String[] { "submit", "acceptTransfer", l10n("acceptTransferButton") });
+
+				form.addChild("input", new String[] { "type", "name", "value" }, 
+						new String[] { "submit", "rejectTransfer", l10n("rejectTransferButton") });
+				
+				return div;
+			}
+			public short getPriorityClass() {
+				return UserAlert.MINOR;
+			}
+			public String getText() {
+				StringBuffer sb = new StringBuffer();
+				sb.append(l10n("offeredFileHeader", "name", getName()));
+				sb.append('\n');
+				sb.append(l10n("fileLabel"));
+				sb.append(' ');
+				sb.append(offer.filename);
+				sb.append('\n');
+				sb.append(l10n("sizeLabel"));
+				sb.append(' ');
+				sb.append(SizeUtil.formatSize(offer.size));
+				sb.append('\n');
+				sb.append(l10n("mimeLabel"));
+				sb.append(' ');
+				sb.append(offer.mimeType);
+				sb.append('\n');
+				sb.append(l10n("senderLabel"));
+				sb.append(' ');
+				sb.append(getName());
+				sb.append('\n');
+				if(offer.comment != null && offer.comment.length() > 0) {
+					sb.append(l10n("commentLabel"));
+					sb.append(' ');
+					sb.append(offer.comment);
+				}
+				return sb.toString();
+			}
+			public String getTitle() {
+				return l10n("title");
+			}
+
+			private String l10n(String key) {
+				return L10n.getString("FileOfferUserAlert."+key);
+			}
+			private String l10n(String key, String pattern, String value) {
+				return L10n.getString("FileOfferUserAlert."+key, pattern, value);
+			}
+			public boolean isValid() {
+				if(offer.acceptedOrRejected) {
+					node.clientCore.alerts.unregister(this);
+					return false;
+				}
+				return true;
+			}
+			public void isValid(boolean validity) {
+				// Ignore
+			}
+			public void onDismiss() {
+				// Ignore
+			}
+			public boolean shouldUnregisterOnDismiss() {
+				return false;
+			}
+
+			public boolean userCanDismiss() {
+				return false; // should accept or reject
+			}
+		};
+		
+		node.clientCore.alerts.register(alert);
 	}
 
+	public void acceptTransfer(long id) {
+		if(logMINOR)
+			Logger.minor(this, "Accepting transfer "+id+" on "+this);
+		FileOffer fo;
+		synchronized(this) {
+			fo = (FileOffer) hisFileOffersByUID.get(new Long(id));
+		}
+		fo.accept();
+	}
+	
+	public void rejectTransfer(long id) {
+		FileOffer fo;
+		synchronized(this) {
+			fo = (FileOffer) hisFileOffersByUID.remove(new Long(id));
+		}
+		fo.reject();
+	}
+	
 	public void handleFproxyFileOfferAccepted(SimpleFieldSet fs, int fileNumber) {
+		// Don't persist for now - FIXME
+		this.deleteExtraPeerDataFile(fileNumber);
+		
 		long uid;
 		try {
 			uid = fs.getLong("uid");
@@ -3468,5 +3659,24 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		} catch (DisconnectedException e) {
 			Logger.error(this, "Cannot send because node disconnected: "+e+" for "+uid+":"+fo.filename, e);
 		}
+	}
+
+	public void handleFproxyFileOfferRejected(SimpleFieldSet fs, int fileNumber) {
+		// Don't persist for now - FIXME
+		this.deleteExtraPeerDataFile(fileNumber);
+		
+		long uid;
+		try {
+			uid = fs.getLong("uid");
+		} catch (FSParseException e) {
+			Logger.error(this, "Could not parse offer rejected: "+e+" on "+this+" :\n"+fs, e);
+			return;
+		}
+		
+		FileOffer fo;
+		synchronized(this) {
+			fo = (FileOffer) myFileOffersByUID.remove(new Long(uid));
+		}
+		fo.onRejected();
 	}
 }

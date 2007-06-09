@@ -6,6 +6,8 @@ package freenet.clients.http;
 import java.net.InetAddress;
 import java.net.URI;
 
+import freenet.support.HTMLNode;
+
 /** Interface for toadlet containers. Toadlets should register here. */
 public interface ToadletContainer {
 	
@@ -36,4 +38,6 @@ public interface ToadletContainer {
 
 	/** Whether to tell spiders to go away */
 	public boolean doRobots();
+
+	public HTMLNode addFormChild(HTMLNode parentNode, String target, String name);
 }

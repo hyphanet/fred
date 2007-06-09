@@ -424,6 +424,8 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER = 2;
 	/** Identifier within fproxy messages for accepting an offer to transfer a file */
 	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED = 3;
+	/** Identifier within fproxy messages for rejecting an offer to transfer a file */
+	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED = 4;
 	public static final int EXTRA_PEER_DATA_TYPE_N2NTM = 1;
 	public static final int EXTRA_PEER_DATA_TYPE_PEER_NOTE = 2;
 	public static final int EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM = 3;
@@ -2681,6 +2683,8 @@ public class Node implements TimeSkewDetectorCallback {
 			source.handleFproxyFileOffer(fs, fileNumber);
 		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED) {
 			source.handleFproxyFileOfferAccepted(fs, fileNumber);
+		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED) {
+			source.handleFproxyFileOfferRejected(fs, fileNumber);
 		} else {
 			Logger.error(this, "Received unknown fproxy node to node message sub-type '"+type+"' from "+source.getPeer());
 		}
