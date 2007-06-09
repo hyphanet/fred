@@ -441,13 +441,18 @@ public class PeerManager {
     /**
      * Asynchronously send this message to every connected peer.
      */
-    public void localBroadcast(Message msg) {
+    public void localBroadcast(Message msg, boolean ignoreRoutability) {
         PeerNode[] peers;
         synchronized (this) {
 			peers = connectedPeers;
 		}
         for(int i=0;i<peers.length;i++) {
-            if(peers[i].isRoutable()) try {
+        	if(ignoreRoutability) {
+        		if(!peers[i].isConnected()) continue;
+        	} else {
+        		if(!peers[i].isRoutable()) continue;
+        	}
+        	try {
                 peers[i].sendAsync(msg, null, 0, null);
             } catch (NotConnectedException e) {
                 // Ignore

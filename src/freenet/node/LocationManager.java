@@ -543,7 +543,7 @@ public class LocationManager {
      */
     private void announceLocChange() {
         Message msg = DMT.createFNPLocChangeNotification(loc.getValue());
-        node.peers.localBroadcast(msg);
+        node.peers.localBroadcast(msg, false);
     }
     
     private boolean locked;

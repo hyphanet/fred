@@ -127,6 +127,18 @@ public class FetchException extends Exception {
 			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+t.getMessage(),t);
 	}
 
+	public FetchException(int mode, String reason, Throwable t) {
+		super(reason+" : "+getMessage(mode)+": "+t.getMessage());
+		extraMessage = t.getMessage();
+		this.mode = mode;
+		errorCodes = null;
+		initCause(t);
+		newURI = null;
+		expectedSize = -1;
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+t.getMessage(),t);
+	}
+
 	public FetchException(int mode, FailureCodeTracker errorCodes) {
 		super(getMessage(mode));
 		extraMessage = null;

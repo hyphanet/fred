@@ -22,6 +22,7 @@ import freenet.node.Ticker;
 import freenet.node.Version;
 import freenet.support.Logger;
 import freenet.support.io.ArrayBucket;
+import freenet.support.io.FileBucket;
 
 public class NodeUpdater implements ClientCallback, USKCallback {
 	static private boolean logMINOR;
@@ -45,8 +46,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private boolean isFetching;
 	
 	public final boolean extUpdate;
+	private final String blobFilenamePrefix;
+	private File tempBlobFile;
 	
-	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current) {
+	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current, String blobFilenamePrefix) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manager = manager;
 		this.node = manager.node;
@@ -54,11 +57,12 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		this.ticker = node.ps;
 		this.core = node.clientCore;
 		this.currentVersion = current;
-		this.availableVersion = current;
+		this.availableVersion = -1;
 		this.isRunning = true;
 		this.cg = null;
 		this.isFetching = false;
 		this.extUpdate = extUpdate;
+		this.blobFilenamePrefix = blobFilenamePrefix;
 		
 		FetchContext tempContext = core.makeClient((short)0, true).getFetchContext();		
 		tempContext.allowSplitfiles = true;
@@ -108,16 +112,23 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			if(availableVersion == fetchedVersion) return;
 			fetchingVersion = availableVersion;
 			
-			Logger.normal(this,"Starting the update process ("+availableVersion+ ')');
-			System.err.println("Starting the update process: found the update ("+availableVersion+"), now fetching it.");
+			if(availableVersion > currentVersion) {
+				Logger.normal(this,"Starting the update process ("+availableVersion+ ')');
+				System.err.println("Starting the update process: found the update ("+availableVersion+"), now fetching it.");
+			}
+			if(logMINOR)
+				Logger.minor(this,"Starting the update process ("+availableVersion+ ')');
 			// We fetch it
 			try{
 				if((cg==null)||cg.isCancelled()){
 					if(logMINOR) Logger.minor(this, "Scheduling request for "+URI.setSuggestedEdition(availableVersion));
-					System.err.println("Starting "+(extUpdate?"freenet-ext.jar ":"")+"fetch for "+availableVersion);
+					if(availableVersion > currentVersion)
+						System.err.println("Starting "+(extUpdate?"freenet-ext.jar ":"")+"fetch for "+availableVersion);
+					tempBlobFile = 
+						File.createTempFile(blobFilenamePrefix+"-"+availableVersion, ".fblob.tmp", manager.node.getNodeDir());
 					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, 
 							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.UPDATE_PRIORITY_CLASS, 
-							this, new ArrayBucket(), null);
+							this, new ArrayBucket(), new FileBucket(tempBlobFile, false, false, false, false, false));
 					toStart = cg;
 				}
 				isFetching = true;
@@ -137,6 +148,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}
 	}
 	
+	private File getBlobFile(int availableVersion) {
+		return new File(node.getNodeDir(), blobFilenamePrefix+availableVersion+".fblob");
+	}
+
 	private final Object writeJarSync = new Object();
 	
 	public void writeJarTo(File fNew) throws IOException {
@@ -165,6 +180,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
 			if(result == null || result.asBucket() == null || result.asBucket().size() == 0) {
+				tempBlobFile.delete();
 				Logger.error(this, "Cannot update: result either null or empty for "+availableVersion);
 				System.err.println("Cannot update: result either null or empty for "+availableVersion);
 				// Try again
@@ -174,6 +190,13 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					}, 0);
 				}
 				return;
+			}
+			File blobFile = getBlobFile(fetchingVersion);
+			if(!tempBlobFile.renameTo(blobFile)) {
+				blobFile.delete();
+				if(!tempBlobFile.renameTo(blobFile)) {
+					Logger.error(this, "Not able to rename binary blob for node updater: "+tempBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this build");
+				}
 			}
 			this.fetchedVersion = fetchingVersion;
 			if(fetchedVersion > currentVersion) {
@@ -192,6 +215,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(!isRunning) return;
 		int errorCode = e.getMode();
+		tempBlobFile.delete();
 		
 		if(logMINOR) Logger.minor(this, "onFailure("+e+ ',' +state+ ')');
 		synchronized(this) {
@@ -305,5 +329,9 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public int fetchingVersion() {
 		if(fetchingVersion == 0) return availableVersion;
 		else return fetchingVersion;
+	}
+
+	public long getBlobSize() {
+		return getBlobFile(getFetchedVersion()).length();
 	}
 }

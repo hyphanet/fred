@@ -2890,4 +2890,8 @@ public class Node implements TimeSkewDetectorCallback {
 			clientCore.alerts.register(timeSkewDetectedUserAlert);
 		}
 	}
+
+	public File getNodeDir() {
+		return nodeDir;
+	}
 }

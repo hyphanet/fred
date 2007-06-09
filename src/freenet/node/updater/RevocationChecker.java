@@ -1,5 +1,8 @@
 package freenet.node.updater;
 
+import java.io.File;
+import java.io.IOException;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.FetchContext;
@@ -11,6 +14,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
+import freenet.support.io.FileBucket;
 
 /**
  * Fetches the revocation key. Each time it starts, it will try to fetch it until it has 3 DNFs. If it ever finds it, it will
@@ -30,11 +34,15 @@ public class RevocationChecker implements ClientCallback {
 	private boolean wasAggressive;
 	/** Last time at which we got 3 DNFs on the revocation key */
 	private long lastSucceeded;
+	
+	private File blobFile;
+	private File tmpBlobFile;
 
-	public RevocationChecker(NodeUpdateManager manager) {
+	public RevocationChecker(NodeUpdateManager manager, File blobFile) {
 		this.manager = manager;
 		core = manager.node.clientCore;
 		this.revocationDNFCounter = 0;
+		this.blobFile = blobFile;
 		this.logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		ctxRevocation = core.makeClient((short)0, true).getFetchContext();
 		ctxRevocation.allowSplitfiles = false;
@@ -61,6 +69,10 @@ public class RevocationChecker implements ClientCallback {
 	 * */
 	public void start(boolean aggressive, boolean reset) {
 		
+		if(manager.isBlown()) {
+			Logger.error(this, "Not starting revocation checker: key already blown!");
+			return;
+		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
 			ClientGetter cg = null;
@@ -82,10 +94,15 @@ public class RevocationChecker implements ClientCallback {
 					if(logMINOR) Logger.minor(this, "fetcher="+revocationGetter);
 					if(revocationGetter != null)
 						Logger.minor(this, "revocation fetcher: cancelled="+revocationGetter.isCancelled()+", finished="+revocationGetter.isFinished());
+					try {
+						tmpBlobFile = File.createTempFile("revocation-", ".fblob.tmp", manager.node.getNodeDir());
+					} catch (IOException e) {
+						Logger.error(this, "Cannot record revocation fetch (therefore cannot pass it on to peers)!: "+e, e);
+					}
 					cg = revocationGetter = new ClientGetter(this, core.requestStarters.chkFetchScheduler, 
 							core.requestStarters.sskFetchScheduler, manager.revocationURI, ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-							this, null, null);
+							this, null, tmpBlobFile == null ? null : new FileBucket(tmpBlobFile, false, false, false, false, false));
 					if(logMINOR) Logger.minor(this, "Queued another revocation fetcher");
 				}
 			}
@@ -114,6 +131,15 @@ public class RevocationChecker implements ClientCallback {
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		// The key has been blown !
 		// FIXME: maybe we need a bigger warning message.
+		if(!tmpBlobFile.renameTo(blobFile)) {
+			blobFile.delete();
+			if(!tmpBlobFile.renameTo(blobFile)) {
+				Logger.error(this, "Not able to rename binary blob for revocation fetcher: "+tmpBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this revocation");
+				System.err.println("Not able to rename binary blob for revocation fetcher: "+tmpBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this revocation");
+			}
+		}
+		if(tmpBlobFile != null)
+			tmpBlobFile.renameTo(blobFile);
 		String msg = null;
 		try {
 			byte[] buf = result.asByteArray();
@@ -133,6 +159,7 @@ public class RevocationChecker implements ClientCallback {
 
 	public void onFailure(FetchException e, ClientGetter state) {
 		Logger.minor(this, "Revocation fetch failed: "+e);
+		if(tmpBlobFile != null) tmpBlobFile.delete();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		int errorCode = e.getMode();
 		boolean completed = false;
@@ -191,6 +218,10 @@ public class RevocationChecker implements ClientCallback {
 	public void kill() {
 		if(revocationGetter != null)
 			revocationGetter.cancel();
+	}
+
+	public long getBlobSize() {
+		return blobFile.length();
 	}
 
 }

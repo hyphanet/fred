@@ -9,6 +9,8 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.Node;
@@ -51,6 +53,7 @@ public class NodeUpdateManager {
 	final boolean shouldUpdateExt;
 	/** Currently deploying an update? */
 	boolean isDeployingUpdate;
+	boolean started;
 	
 	Node node;
 	
@@ -71,7 +74,7 @@ public class NodeUpdateManager {
 	private RevocationKeyFoundUserAlert revocationAlert;
 	// Update alert
 	private final UpdatedVersionAvailableUserAlert alert;
-
+	
 	private boolean logMINOR;
 	
 	public NodeUpdateManager(Node node, Config config) throws InvalidConfigValueException {
@@ -127,18 +130,34 @@ public class NodeUpdateManager {
 
         updaterConfig.finishedInitialization();
         
-        this.revocationChecker = new RevocationChecker(this);
+        this.revocationChecker = new RevocationChecker(this, new File(node.getNodeDir(), "revocation-key.fblob"));
         
 	}
 
 	public void start() throws InvalidConfigValueException {
 		
+		Message msg = getUOMAnnouncement();
+		node.peers.localBroadcast(msg, true);
+		
+		synchronized(this) {
+			started = true;
+		}
+		
 		node.clientCore.alerts.register(alert);
         
         enable(wasEnabledOnStartup);
-		
 	}
 	
+	private Message getUOMAnnouncement() {
+		return DMT.createUOMAnnounce(updateURI.toString(), extURI.toString(), revocationURI.toString(), hasBeenBlown, 
+				mainUpdater == null ? -1 : mainUpdater.getFetchedVersion(),
+				extUpdater == null ? -1 : extUpdater.getFetchedVersion(),
+				revocationChecker.lastSucceeded(), revocationChecker.getRevocationDNFCounter(), 
+				revocationChecker.getBlobSize(), 
+				mainUpdater == null ? -1 : mainUpdater.getBlobSize(),
+				extUpdater == null ? -1 : extUpdater.getBlobSize());
+	}
+
 	/**
 	 * Is auto-update enabled?
 	 */
@@ -178,9 +197,9 @@ public class NodeUpdateManager {
 					throw new InvalidConfigValueException(l10n("noUpdateWithoutWrapper"));
 				}
 				// Start it
-				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber());
+				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber(), "main-jar-");
 				if(shouldUpdateExt)
-					extUpdater = new NodeUpdater(this, extURI, true, NodeStarter.extBuildNumber);
+					extUpdater = new NodeUpdater(this, extURI, true, NodeStarter.extBuildNumber, "ext-jar-");
 			}
 		}
 		if(!enable) {

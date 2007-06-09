@@ -41,7 +41,7 @@ public class ClientGetter extends BaseClientGetter {
 	/** If not null, HashSet to track keys already added for a binary blob */
 	final HashSet binaryBlobKeysAddedAlready;
 	private DataOutputStream binaryBlobStream;
-
+	
 	/**
 	 * Fetch a key.
 	 * @param client
@@ -101,7 +101,7 @@ public class ClientGetter extends BaseClientGetter {
 						binaryBlobStream = new DataOutputStream(binaryBlobBucket.getOutputStream());
 						BinaryBlob.writeBinaryBlobHeader(binaryBlobStream);
 					} catch (IOException e) {
-						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket"), null);
+						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e), null);
 						return false;
 					}
 				}
@@ -267,8 +267,9 @@ public class ClientGetter extends BaseClientGetter {
 	 * called onFailure() with an appropriate error.
 	 */
 	private boolean closeBinaryBlobStream() {
-		if(binaryBlobBucket == null) return true;
+		if(binaryBlobKeysAddedAlready == null) return true;
 		synchronized(binaryBlobKeysAddedAlready) {
+			if(binaryBlobStream == null) return true;
 			try {
 				BinaryBlob.writeEndBlob(binaryBlobStream);
 				binaryBlobStream.close();
