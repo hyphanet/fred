@@ -61,8 +61,6 @@ public class SerializableToFieldSetBucketUtil {
 			return new PaddedEphemerallyEncryptedBucket(fs, random, f);
 		} else if(type.equals("NullBucket")) {
 			return new NullBucket();
-		} else if(type.equals("RandomAccessFileBucket")) {
-			return new RandomAccessFileBucket(fs, f);
 		} else if(type.equals("ReadOnlyFileSliceBucket")) {
 			return new ReadOnlyFileSliceBucket(fs);
 		} else if(type.equals("DelayedFreeBucket")) {
