@@ -3264,9 +3264,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 							String err = "Failed to receive "+this;
 							Logger.error(this, err);
 							System.err.println(err);
+							onReceiveFailure();
+						} else {
+							onReceiveSuccess();
 						}
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" receiving file", t);
+						onReceiveFailure();
 					}
 					if(logMINOR)
 						Logger.minor(this, "Received file");
@@ -3292,9 +3296,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 							String err = "Failed to send "+uid+" for "+FileOffer.this;
 							Logger.error(this, err);
 							System.err.println(err);
-							onReceiveFailure();
-						} else {
-							onReceiveSuccess();
 						}
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" sending file", t);
