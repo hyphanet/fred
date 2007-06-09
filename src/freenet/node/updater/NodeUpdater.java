@@ -69,8 +69,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 	void start() {
 		try{
-			// start at next version, not interested in this version
-			USK myUsk=USK.create(URI.setSuggestedEdition(currentVersion+1));
+			// because of UoM, this version is actually worth having as well
+			USK myUsk=USK.create(URI.setSuggestedEdition(currentVersion));
 			ctx.uskManager.subscribe(myUsk, this, true, this);
 		}catch(MalformedURLException e){
 			Logger.error(this,"The auto-update URI isn't valid and can't be used");
@@ -176,11 +176,14 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				return;
 			}
 			this.fetchedVersion = fetchingVersion;
-			System.out.println("Found "+fetchingVersion);
-			Logger.normal(this, "Found a new version! (" + fetchingVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
+			if(fetchedVersion > currentVersion) {
+				System.out.println("Found "+fetchingVersion);
+				Logger.normal(this, "Found a new version! (" + fetchingVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
+			}
 			this.cg = null;
 			if(this.result != null) this.result.asBucket().free();
 			this.result = result;
+			if(fetchedVersion <= currentVersion) return;
 		}
 		manager.onDownloadedNewJar(extUpdate);
 	}
