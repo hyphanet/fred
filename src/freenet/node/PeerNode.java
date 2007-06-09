@@ -3314,6 +3314,124 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			// FIXME prb's can't be shared, right? Well they aren't here...
 			prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cancelled by receiver");
 		}
+
+		/** Ask the user whether (s)he wants to download a file from a direct peer */
+		public UserAlert askUserUserAlert() {
+			return new UserAlert() {
+				public String dismissButtonText() {
+					return null; // Cannot hide, but can reject
+				}
+				public HTMLNode getHTMLText() {
+					HTMLNode div = new HTMLNode("div");
+					
+					// FIXME localise!!!
+					
+					div.addChild("p", l10n("offeredFileHeader", "name", getName()));
+					
+					// Descriptive table
+					
+					HTMLNode table = div.addChild("table", "border", "0");
+					HTMLNode row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("fileLabel"));
+					row.addChild("td").addChild("#", filename);
+					row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("sizeLabel"));
+					row.addChild("td").addChild("#", SizeUtil.formatSize(size));
+					row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("mimeLabel"));
+					row.addChild("td").addChild("#", mimeType);
+					row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("senderLabel"));
+					row.addChild("td").addChild("#", getName());
+					row = table.addChild("tr");
+					if(comment != null && comment.length() > 0) {
+						row.addChild("td").addChild("#", l10n("commentLabel"));
+						row.addChild("td").addChild("#", comment);
+					}
+					
+					// Accept/reject form
+					
+					// Hopefully we will have a container when this function is called!
+					HTMLNode form = node.clientCore.getToadletContainer().addFormChild(div, "/friends/", "f2fFileOfferAcceptForm");
+					
+					// FIXME node_ is inefficient
+					form.addChild("input", new String[] { "type", "name" },
+							new String[] { "hidden", "node_"+PeerNode.this.hashCode() });
+
+					form.addChild("input", new String[] { "type", "name", "value" },
+							new String[] { "hidden", "id", Long.toString(uid) });
+					
+					form.addChild("input", new String[] { "type", "name", "value" }, 
+							new String[] { "submit", "acceptTransfer", l10n("acceptTransferButton") });
+
+					form.addChild("input", new String[] { "type", "name", "value" }, 
+							new String[] { "submit", "rejectTransfer", l10n("rejectTransferButton") });
+					
+					return div;
+				}
+				public short getPriorityClass() {
+					return UserAlert.MINOR;
+				}
+				public String getText() {
+					StringBuffer sb = new StringBuffer();
+					sb.append(l10n("offeredFileHeader", "name", getName()));
+					sb.append('\n');
+					sb.append(l10n("fileLabel"));
+					sb.append(' ');
+					sb.append(filename);
+					sb.append('\n');
+					sb.append(l10n("sizeLabel"));
+					sb.append(' ');
+					sb.append(SizeUtil.formatSize(size));
+					sb.append('\n');
+					sb.append(l10n("mimeLabel"));
+					sb.append(' ');
+					sb.append(mimeType);
+					sb.append('\n');
+					sb.append(l10n("senderLabel"));
+					sb.append(' ');
+					sb.append(getName());
+					sb.append('\n');
+					if(comment != null && comment.length() > 0) {
+						sb.append(l10n("commentLabel"));
+						sb.append(' ');
+						sb.append(comment);
+					}
+					return sb.toString();
+				}
+				public String getTitle() {
+					return l10n("title");
+				}
+
+				private String l10n(String key) {
+					return L10n.getString("FileOfferUserAlert."+key);
+				}
+				private String l10n(String key, String pattern, String value) {
+					return L10n.getString("FileOfferUserAlert."+key, pattern, value);
+				}
+				public boolean isValid() {
+					if(acceptedOrRejected) {
+						node.clientCore.alerts.unregister(this);
+						return false;
+					}
+					return true;
+				}
+				public void isValid(boolean validity) {
+					// Ignore
+				}
+				public void onDismiss() {
+					// Ignore
+				}
+				public boolean shouldUnregisterOnDismiss() {
+					return false;
+				}
+
+				public boolean userCanDismiss() {
+					return false; // should accept or reject
+				}
+			};
+			
+		}
 	}
 
 	public int sendTextMessage(String message) {
@@ -3492,120 +3610,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		// Don't persist for now - FIXME
 		this.deleteExtraPeerDataFile(fileNumber);
 		
-		UserAlert alert = new UserAlert() {
-			public String dismissButtonText() {
-				return null; // Cannot hide, but can reject
-			}
-			public HTMLNode getHTMLText() {
-				HTMLNode div = new HTMLNode("div");
-				
-				// FIXME localise!!!
-				
-				div.addChild("p", l10n("offeredFileHeader", "name", getName()));
-				
-				// Descriptive table
-				
-				HTMLNode table = div.addChild("table", "border", "0");
-				HTMLNode row = table.addChild("tr");
-				row.addChild("td").addChild("#", l10n("fileLabel"));
-				row.addChild("td").addChild("#", offer.filename);
-				row = table.addChild("tr");
-				row.addChild("td").addChild("#", l10n("sizeLabel"));
-				row.addChild("td").addChild("#", SizeUtil.formatSize(offer.size));
-				row = table.addChild("tr");
-				row.addChild("td").addChild("#", l10n("mimeLabel"));
-				row.addChild("td").addChild("#", offer.mimeType);
-				row = table.addChild("tr");
-				row.addChild("td").addChild("#", l10n("senderLabel"));
-				row.addChild("td").addChild("#", getName());
-				row = table.addChild("tr");
-				if(offer.comment != null && offer.comment.length() > 0) {
-					row.addChild("td").addChild("#", l10n("commentLabel"));
-					row.addChild("td").addChild("#", offer.comment);
-				}
-				
-				// Accept/reject form
-				
-				// Hopefully we will have a container when this function is called!
-				HTMLNode form = node.clientCore.getToadletContainer().addFormChild(div, "/friends/", "f2fFileOfferAcceptForm");
-				
-				// FIXME node_ is inefficient
-				form.addChild("input", new String[] { "type", "name" },
-						new String[] { "hidden", "node_"+PeerNode.this.hashCode() });
-
-				form.addChild("input", new String[] { "type", "name", "value" },
-						new String[] { "hidden", "id", Long.toString(offer.uid) });
-				
-				form.addChild("input", new String[] { "type", "name", "value" }, 
-						new String[] { "submit", "acceptTransfer", l10n("acceptTransferButton") });
-
-				form.addChild("input", new String[] { "type", "name", "value" }, 
-						new String[] { "submit", "rejectTransfer", l10n("rejectTransferButton") });
-				
-				return div;
-			}
-			public short getPriorityClass() {
-				return UserAlert.MINOR;
-			}
-			public String getText() {
-				StringBuffer sb = new StringBuffer();
-				sb.append(l10n("offeredFileHeader", "name", getName()));
-				sb.append('\n');
-				sb.append(l10n("fileLabel"));
-				sb.append(' ');
-				sb.append(offer.filename);
-				sb.append('\n');
-				sb.append(l10n("sizeLabel"));
-				sb.append(' ');
-				sb.append(SizeUtil.formatSize(offer.size));
-				sb.append('\n');
-				sb.append(l10n("mimeLabel"));
-				sb.append(' ');
-				sb.append(offer.mimeType);
-				sb.append('\n');
-				sb.append(l10n("senderLabel"));
-				sb.append(' ');
-				sb.append(getName());
-				sb.append('\n');
-				if(offer.comment != null && offer.comment.length() > 0) {
-					sb.append(l10n("commentLabel"));
-					sb.append(' ');
-					sb.append(offer.comment);
-				}
-				return sb.toString();
-			}
-			public String getTitle() {
-				return l10n("title");
-			}
-
-			private String l10n(String key) {
-				return L10n.getString("FileOfferUserAlert."+key);
-			}
-			private String l10n(String key, String pattern, String value) {
-				return L10n.getString("FileOfferUserAlert."+key, pattern, value);
-			}
-			public boolean isValid() {
-				if(offer.acceptedOrRejected) {
-					node.clientCore.alerts.unregister(this);
-					return false;
-				}
-				return true;
-			}
-			public void isValid(boolean validity) {
-				// Ignore
-			}
-			public void onDismiss() {
-				// Ignore
-			}
-			public boolean shouldUnregisterOnDismiss() {
-				return false;
-			}
-
-			public boolean userCanDismiss() {
-				return false; // should accept or reject
-			}
-		};
-		
+		UserAlert alert = offer.askUserUserAlert();
+			
 		node.clientCore.alerts.register(alert);
 	}
 
