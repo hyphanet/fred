@@ -3330,7 +3330,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					
 					// FIXME localise!!!
 					
-					div.addChild("p", l10n("failedFileHeader", new String[] { "filename", "node" },
+					div.addChild("p", l10n("failedReceiveHeader", new String[] { "filename", "node" },
 							new String[] { filename, getName() }));
 					
 					// Descriptive table
@@ -3363,7 +3363,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
 				public String getText() {
 					StringBuffer sb = new StringBuffer();
-					sb.append(l10n("failedFileHeader", new String[] { "filename", "node" },
+					sb.append(l10n("failedReceiveHeader", new String[] { "filename", "node" },
 							new String[] { filename, getName() }));
 					sb.append('\n');
 					sb.append(l10n("fileLabel"));
@@ -3428,7 +3428,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					
 					// FIXME localise!!!
 					
-					div.addChild("p", l10n("succeededFileHeader", new String[] { "filename", "node" },
+					div.addChild("p", l10n("succeededReceiveHeader", new String[] { "filename", "node" },
 							new String[] { filename, getName() }));
 					
 					// Descriptive table
@@ -3461,7 +3461,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
 				public String getText() {
 					StringBuffer sb = new StringBuffer();
-					sb.append(l10n("succeededFileHeader", new String[] { "filename", "node" },
+					sb.append(l10n("succeededReceiveHeader", new String[] { "filename", "node" },
 							new String[] { filename, getName() }));
 					sb.append('\n');
 					sb.append(l10n("fileLabel"));
