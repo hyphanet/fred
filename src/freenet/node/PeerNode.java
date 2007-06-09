@@ -3292,6 +3292,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 							String err = "Failed to send "+uid+" for "+FileOffer.this;
 							Logger.error(this, err);
 							System.err.println(err);
+							onReceiveFailure();
+						} else {
+							onReceiveSuccess();
 						}
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" sending file", t);
@@ -3299,6 +3302,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(logMINOR)
 						Logger.minor(this, "Sent file");
 				}
+
 			}, "Sender for bulk transfer "+uid+":"+filename);
 			t.setDaemon(true);
 			t.start();
@@ -3315,6 +3319,203 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cancelled by receiver");
 		}
 
+		protected void onReceiveFailure() {
+			UserAlert alert = new UserAlert() {
+				public String dismissButtonText() {
+					return L10n.getString("UserAlert.hide");
+				}
+				public HTMLNode getHTMLText() {
+					HTMLNode div = new HTMLNode("div");
+					
+					// FIXME localise!!!
+					
+					div.addChild("p", l10n("failedFileHeader", new String[] { "filename", "node" },
+							new String[] { filename, getName() }));
+					
+					// Descriptive table
+					
+					HTMLNode table = div.addChild("table", "border", "0");
+					HTMLNode row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("fileLabel"));
+					row.addChild("td").addChild("#", filename);
+					row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("sizeLabel"));
+					row.addChild("td").addChild("#", SizeUtil.formatSize(size));
+					row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("mimeLabel"));
+					row.addChild("td").addChild("#", mimeType);
+					row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("senderLabel"));
+					row.addChild("td").addChild("#", getName());
+					row = table.addChild("tr");
+					if(comment != null && comment.length() > 0) {
+						row.addChild("td").addChild("#", l10n("commentLabel"));
+						row.addChild("td").addChild("#", comment);
+					}
+					
+					return div;
+				}
+
+				public short getPriorityClass() {
+					return UserAlert.MINOR;
+				}
+
+				public String getText() {
+					StringBuffer sb = new StringBuffer();
+					sb.append(l10n("failedFileHeader", new String[] { "filename", "node" },
+							new String[] { filename, getName() }));
+					sb.append('\n');
+					sb.append(l10n("fileLabel"));
+					sb.append(' ');
+					sb.append(filename);
+					sb.append('\n');
+					sb.append(l10n("sizeLabel"));
+					sb.append(' ');
+					sb.append(SizeUtil.formatSize(size));
+					sb.append('\n');
+					sb.append(l10n("mimeLabel"));
+					sb.append(' ');
+					sb.append(mimeType);
+					sb.append('\n');
+					sb.append(l10n("senderLabel"));
+					sb.append(' ');
+					sb.append(getName());
+					sb.append('\n');
+					if(comment != null && comment.length() > 0) {
+						sb.append(l10n("commentLabel"));
+						sb.append(' ');
+						sb.append(comment);
+					}
+					return sb.toString();
+				}
+
+				public String getTitle() {
+					return l10n("failedReceiveTitle");
+				}
+
+				public boolean isValid() {
+					return true;
+				}
+
+				public void isValid(boolean validity) {
+					// Ignore
+				}
+
+				public void onDismiss() {
+					// Ignore
+				}
+
+				public boolean shouldUnregisterOnDismiss() {
+					return true;
+				}
+
+				public boolean userCanDismiss() {
+					return true;
+				}
+				
+			};
+			node.clientCore.alerts.register(alert);
+		}
+
+		private void onReceiveSuccess() {
+			UserAlert alert = new UserAlert() {
+				public String dismissButtonText() {
+					return L10n.getString("UserAlert.hide");
+				}
+				public HTMLNode getHTMLText() {
+					HTMLNode div = new HTMLNode("div");
+					
+					// FIXME localise!!!
+					
+					div.addChild("p", l10n("succeededFileHeader", new String[] { "filename", "node" },
+							new String[] { filename, getName() }));
+					
+					// Descriptive table
+					
+					HTMLNode table = div.addChild("table", "border", "0");
+					HTMLNode row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("fileLabel"));
+					row.addChild("td").addChild("#", filename);
+					row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("sizeLabel"));
+					row.addChild("td").addChild("#", SizeUtil.formatSize(size));
+					row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("mimeLabel"));
+					row.addChild("td").addChild("#", mimeType);
+					row = table.addChild("tr");
+					row.addChild("td").addChild("#", l10n("senderLabel"));
+					row.addChild("td").addChild("#", getName());
+					row = table.addChild("tr");
+					if(comment != null && comment.length() > 0) {
+						row.addChild("td").addChild("#", l10n("commentLabel"));
+						row.addChild("td").addChild("#", comment);
+					}
+					
+					return div;
+				}
+
+				public short getPriorityClass() {
+					return UserAlert.MINOR;
+				}
+
+				public String getText() {
+					StringBuffer sb = new StringBuffer();
+					sb.append(l10n("succeededFileHeader", new String[] { "filename", "node" },
+							new String[] { filename, getName() }));
+					sb.append('\n');
+					sb.append(l10n("fileLabel"));
+					sb.append(' ');
+					sb.append(filename);
+					sb.append('\n');
+					sb.append(l10n("sizeLabel"));
+					sb.append(' ');
+					sb.append(SizeUtil.formatSize(size));
+					sb.append('\n');
+					sb.append(l10n("mimeLabel"));
+					sb.append(' ');
+					sb.append(mimeType);
+					sb.append('\n');
+					sb.append(l10n("senderLabel"));
+					sb.append(' ');
+					sb.append(getName());
+					sb.append('\n');
+					if(comment != null && comment.length() > 0) {
+						sb.append(l10n("commentLabel"));
+						sb.append(' ');
+						sb.append(comment);
+					}
+					return sb.toString();
+				}
+
+				public String getTitle() {
+					return l10n("succeededReceiveTitle");
+				}
+
+				public boolean isValid() {
+					return true;
+				}
+
+				public void isValid(boolean validity) {
+					// Ignore
+				}
+
+				public void onDismiss() {
+					// Ignore
+				}
+
+				public boolean shouldUnregisterOnDismiss() {
+					return true;
+				}
+
+				public boolean userCanDismiss() {
+					return true;
+				}
+				
+			};
+			node.clientCore.alerts.register(alert);
+		}
+
+		
 		/** Ask the user whether (s)he wants to download a file from a direct peer */
 		public UserAlert askUserUserAlert() {
 			return new UserAlert() {
@@ -3400,15 +3601,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					return sb.toString();
 				}
 				public String getTitle() {
-					return l10n("title");
+					return l10n("askUserTitle");
 				}
 
-				private String l10n(String key) {
-					return L10n.getString("FileOfferUserAlert."+key);
-				}
-				private String l10n(String key, String pattern, String value) {
-					return L10n.getString("FileOfferUserAlert."+key, pattern, value);
-				}
 				public boolean isValid() {
 					if(acceptedOrRejected) {
 						node.clientCore.alerts.unregister(this);
@@ -3431,6 +3626,15 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				}
 			};
 			
+		}
+		private String l10n(String key) {
+			return L10n.getString("FileOffer."+key);
+		}
+		private String l10n(String key, String pattern, String value) {
+			return L10n.getString("FileOffer."+key, pattern, value);
+		}
+		private String l10n(String key, String[] pattern, String[] value) {
+			return L10n.getString("FileOffer."+key, pattern, value);
 		}
 	}
 
