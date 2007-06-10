@@ -116,7 +116,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 	{
 		HTMLNode bookmarks = new HTMLNode("ul", "id", "bookmarks");
 		
-		HTMLNode root = bookmarks.addChild("li", "class", "cat,root", "/");
+		HTMLNode root = bookmarks.addChild("li", "class", "cat root", "/");
 		HTMLNode actions = new HTMLNode("span", "class", "actions");
 		String addBookmark = L10n.getString("BookmarkEditorToadlet.addBookmark");
 		String addCategory = L10n.getString("BookmarkEditorToadlet.addCategory");
@@ -128,7 +128,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			actions.addChild("a", "href", "?action=paste&bookmark=/").addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/paste.png", paste, paste});
 		
 		root.addChild(actions);
-		addCategoryToList(bookmarkManager.getMainCategory(), "/", root.addChild("li").addChild("ul"));
+		addCategoryToList(bookmarkManager.getMainCategory(), "/", root.addChild("ul"));
 		
 		return bookmarks;
 	}

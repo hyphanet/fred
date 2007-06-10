@@ -526,7 +526,7 @@ public class WelcomeToadlet extends Toadlet {
 		HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel")));
 		HTMLNode fetchKeyContent = ctx.getPageMaker().getContentNode(fetchKeyBox);
 		fetchKeyContent.addAttribute("id", "keyfetchbox");
-		HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[] { "action", "method" }, new String[] { "/", "get" });
+		HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[] { "action", "method" }, new String[] { "/", "get" }).addChild("div");
 		fetchKeyForm.addChild("#", "Key: ");
 		fetchKeyForm.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "key" });
 		fetchKeyForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("fetch") });
@@ -563,11 +563,11 @@ public class WelcomeToadlet extends Toadlet {
 		}
 		versionContent.addChild("br");
 		if(ctx.isAllowedFullAccess()){
-			HTMLNode shutdownForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "get" });
+			HTMLNode shutdownForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "get" }).addChild("div");
 			shutdownForm.addChild("input", new String[] { "type", "name" }, new String[] { "hidden", "exit" });
 			shutdownForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("shutdownNode") });
 			if(node.isUsingWrapper()){
-				HTMLNode restartForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "get" });
+				HTMLNode restartForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "get" }).addChild("div");
 				restartForm.addChild("input", new String[] { "type", "name" }, new String[] { "hidden", "restart" });
 				restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart2", l10n("restartNode") });
 			}

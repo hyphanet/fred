@@ -483,10 +483,10 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		return L10n.getString("SimpleToadletServer."+key);
 	}
 
-	public HTMLNode addFormChild(HTMLNode parentNode, String target, String name) {
+	public HTMLNode addFormChild(HTMLNode parentNode, String target, String id) {
 		HTMLNode formNode =
-			parentNode.addChild("form", new String[] { "action", "method", "enctype", "id", "name", "accept-charset" }, 
-					new String[] { target, "post", "multipart/form-data", name, name, "utf-8"} );
+			parentNode.addChild("form", new String[] { "action", "method", "enctype", "id",  "accept-charset" }, 
+					new String[] { target, "post", "multipart/form-data", id, "utf-8"} ).addChild("div");
 		formNode.addChild("input", new String[] { "type", "name", "value" }, 
 				new String[] { "hidden", "formPassword", getFormPassword() });
 		

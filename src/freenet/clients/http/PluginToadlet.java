@@ -227,7 +227,7 @@ public class PluginToadlet extends Toadlet {
 			tableRow.addChild("td", plugin.getPluginName());
 			tableRow.addChild("td", internalName);
 			if (plugin instanceof HttpPlugin) {
-				tableRow.addChild("td").addChild("form", new String[] { "action", "method", "target" }, new String[] { internalName, "get", "_new" }).addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("visit") });
+				tableRow.addChild("td").addChild("form", new String[] { "action", "method", "target" }, new String[] { internalName, "get", "_new" }).addChild("div").addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("visit") });
 			} else {
 				tableRow.addChild("td");
 			}

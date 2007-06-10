@@ -91,7 +91,7 @@ public class UserAlertManager implements Comparator {
 			HTMLNode alertContentNode = alertNode.addChild("div", "class", "infobox-content");
 			alertContentNode.addChild(alert.getHTMLText());
 			if (alert.userCanDismiss()) {
-				HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+				HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" }).addChild("div");
 				dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(alert.hashCode()) });
 				dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 				dismissFormNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", alert.dismissButtonText() });

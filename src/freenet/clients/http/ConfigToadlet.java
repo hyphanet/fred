@@ -179,7 +179,7 @@ public class ConfigToadlet extends Toadlet {
 			
 			if(displayedConfigElements>0) {
 				formNode.addChild("div", "class", "configprefix", sc[i].getPrefix());
-				formNode.addChild("a", "name", sc[i].getPrefix());
+				formNode.addChild("a", "id", sc[i].getPrefix());
 				formNode.addChild(configGroupUlNode);
 			}
 		}
