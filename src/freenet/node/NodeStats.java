@@ -733,86 +733,85 @@ public class NodeStats implements Persistable {
 		fs.put("numberOfTransferringRequestSenders", node.getNumTransferringRequestSenders());
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
 
+		long[] total = IOStatisticCollector.getTotalIO();
+		long total_output_rate = (total[0]) / nodeUptimeSeconds;
+		long total_input_rate = (total[1]) / nodeUptimeSeconds;
+		long totalPayloadOutput = node.getTotalPayloadSent();
+		long total_payload_output_rate = totalPayloadOutput / nodeUptimeSeconds;
+		int total_payload_output_percent = (int) (100 * totalPayloadOutput / total[0]);
+		fs.put("totalOutputBytes", total[0]);
+		fs.put("totalOutputRate", total_output_rate);
+		fs.put("totalPayloadOutputBytes", totalPayloadOutput);
+		fs.put("totalPayloadOutputRate", total_payload_output_rate);
+		fs.put("totalPayloadOutputPercent", total_payload_output_percent);
+		fs.put("totalInputBytes", total[1]);
+		fs.put("totalInputRate", total_input_rate);
 
-			long[] total = IOStatisticCollector.getTotalIO();
-			long total_output_rate = (total[0]) / nodeUptimeSeconds;
-			long total_input_rate = (total[1]) / nodeUptimeSeconds;
-			long totalPayloadOutput = node.getTotalPayloadSent();
-			long total_payload_output_rate = totalPayloadOutput / nodeUptimeSeconds;
-			int total_payload_output_percent = (int) (100 * totalPayloadOutput / total[0]);
-			fs.put("totalOutputBytes", total[0]);
-			fs.put("totalOutputRate", total_output_rate);
-			fs.put("totalPayloadOutputBytes", totalPayloadOutput);
-			fs.put("totalPayloadOutputRate", total_payload_output_rate);
-			fs.put("totalPayloadOutputPercent", total_payload_output_percent);
-			fs.put("totalInputBytes", total[1]);
-			fs.put("totalInputRate", total_input_rate);
+		long[] rate = getNodeIOStats();
+		long deltaMS = (rate[5] - rate[2]);
+		double recent_output_rate = 1000.0 * (rate[3] - rate[0]) / deltaMS;
+		double recent_input_rate = 1000.0 * (rate[4] - rate[1]) / deltaMS;
+		fs.put("recentOutputRate", recent_output_rate);
+		fs.put("recentInputRate", recent_input_rate);
 
-			long[] rate = getNodeIOStats();
-			long deltaMS = (rate[5] - rate[2]);
-			double recent_output_rate = 1000.0 * (rate[3] - rate[0]) / deltaMS;
-			double recent_input_rate = 1000.0 * (rate[4] - rate[1]) / deltaMS;
-			fs.put("recentOutputRate", recent_output_rate);
-			fs.put("recentInputRate", recent_input_rate);
+		String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
+		if(routingBackoffReasons.length != 0) {
+			for(int i=0;i<routingBackoffReasons.length;i++) {
+				fs.put("numberWithRoutingBackoffReasons." + routingBackoffReasons[i], peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]));
+			}
+		}
 
-			String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
-			if(routingBackoffReasons.length != 0) {
-				for(int i=0;i<routingBackoffReasons.length;i++) {
-					fs.put("numberWithRoutingBackoffReasons." + routingBackoffReasons[i], peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]));
-				}
-			}
+		double swaps = (double)node.getSwaps();
+		double noSwaps = (double)node.getNoSwaps();
+		double numberOfRemotePeerLocationsSeenInSwaps = (double)node.getNumberOfRemotePeerLocationsSeenInSwaps();
+		fs.putSingle("numberOfRemotePeerLocationsSeenInSwaps", Double.toString(numberOfRemotePeerLocationsSeenInSwaps));
+		double avgConnectedPeersPerNode = 0.0;
+		if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
+			avgConnectedPeersPerNode = numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps);
+		}
+		fs.putSingle("avgConnectedPeersPerNode", Double.toString(avgConnectedPeersPerNode));
 
-			double swaps = (double)node.getSwaps();
-			double noSwaps = (double)node.getNoSwaps();
-			double numberOfRemotePeerLocationsSeenInSwaps = (double)node.getNumberOfRemotePeerLocationsSeenInSwaps();
-			fs.putSingle("numberOfRemotePeerLocationsSeenInSwaps", Double.toString(numberOfRemotePeerLocationsSeenInSwaps));
-			double avgConnectedPeersPerNode = 0.0;
-			if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
-				avgConnectedPeersPerNode = numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps);
-			}
-			fs.putSingle("avgConnectedPeersPerNode", Double.toString(avgConnectedPeersPerNode));
-
-			int startedSwaps = node.getStartedSwaps();
-			int swapsRejectedAlreadyLocked = node.getSwapsRejectedAlreadyLocked();
-			int swapsRejectedNowhereToGo = node.getSwapsRejectedNowhereToGo();
-			int swapsRejectedRateLimit = node.getSwapsRejectedRateLimit();
-			int swapsRejectedLoop = node.getSwapsRejectedLoop();
-			int swapsRejectedRecognizedID = node.getSwapsRejectedRecognizedID();
-			double locationChangePerSession = node.getLocationChangeSession();
-			double locationChangePerSwap = 0.0;
-			double locationChangePerMinute = 0.0;
-			double swapsPerMinute = 0.0;
-			double noSwapsPerMinute = 0.0;
-			double swapsPerNoSwaps = 0.0;
-			if (swaps > 0) {
-				locationChangePerSwap = locationChangePerSession/swaps;
-			}
-			if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-				locationChangePerMinute = locationChangePerSession/(double)(nodeUptimeSeconds/60.0);
-			}
-			if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-				swapsPerMinute = swaps/(double)(nodeUptimeSeconds/60.0);
-			}
-			if ((noSwaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-				noSwapsPerMinute = noSwaps/(double)(nodeUptimeSeconds/60.0);
-			}
-			if ((swaps > 0.0) && (noSwaps > 0.0)) {
-				swapsPerNoSwaps = swaps/noSwaps;
-			}
-			fs.put("locationChangePerSession", locationChangePerSession);
-			fs.put("locationChangePerSwap", locationChangePerSwap);
-			fs.put("locationChangePerMinute", locationChangePerMinute);
-			fs.put("swapsPerMinute", swapsPerMinute);
-			fs.put("noSwapsPerMinute", noSwapsPerMinute);
-			fs.put("swapsPerNoSwaps", swapsPerNoSwaps);
-			fs.put("swaps", swaps);
-			fs.put("noSwaps", noSwaps);
-			fs.put("startedSwaps", startedSwaps);
-			fs.put("swapsRejectedAlreadyLocked", swapsRejectedAlreadyLocked);
-			fs.put("swapsRejectedNowhereToGo", swapsRejectedNowhereToGo);
-			fs.put("swapsRejectedRateLimit", swapsRejectedRateLimit);
-			fs.put("swapsRejectedLoop", swapsRejectedLoop);
-			fs.put("swapsRejectedRecognizedID", swapsRejectedRecognizedID);
+		int startedSwaps = node.getStartedSwaps();
+		int swapsRejectedAlreadyLocked = node.getSwapsRejectedAlreadyLocked();
+		int swapsRejectedNowhereToGo = node.getSwapsRejectedNowhereToGo();
+		int swapsRejectedRateLimit = node.getSwapsRejectedRateLimit();
+		int swapsRejectedLoop = node.getSwapsRejectedLoop();
+		int swapsRejectedRecognizedID = node.getSwapsRejectedRecognizedID();
+		double locationChangePerSession = node.getLocationChangeSession();
+		double locationChangePerSwap = 0.0;
+		double locationChangePerMinute = 0.0;
+		double swapsPerMinute = 0.0;
+		double noSwapsPerMinute = 0.0;
+		double swapsPerNoSwaps = 0.0;
+		if (swaps > 0) {
+			locationChangePerSwap = locationChangePerSession/swaps;
+		}
+		if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
+			locationChangePerMinute = locationChangePerSession/(double)(nodeUptimeSeconds/60.0);
+		}
+		if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
+			swapsPerMinute = swaps/(double)(nodeUptimeSeconds/60.0);
+		}
+		if ((noSwaps > 0.0) && (nodeUptimeSeconds >= 60)) {
+			noSwapsPerMinute = noSwaps/(double)(nodeUptimeSeconds/60.0);
+		}
+		if ((swaps > 0.0) && (noSwaps > 0.0)) {
+			swapsPerNoSwaps = swaps/noSwaps;
+		}
+		fs.put("locationChangePerSession", locationChangePerSession);
+		fs.put("locationChangePerSwap", locationChangePerSwap);
+		fs.put("locationChangePerMinute", locationChangePerMinute);
+		fs.put("swapsPerMinute", swapsPerMinute);
+		fs.put("noSwapsPerMinute", noSwapsPerMinute);
+		fs.put("swapsPerNoSwaps", swapsPerNoSwaps);
+		fs.put("swaps", swaps);
+		fs.put("noSwaps", noSwaps);
+		fs.put("startedSwaps", startedSwaps);
+		fs.put("swapsRejectedAlreadyLocked", swapsRejectedAlreadyLocked);
+		fs.put("swapsRejectedNowhereToGo", swapsRejectedNowhereToGo);
+		fs.put("swapsRejectedRateLimit", swapsRejectedRateLimit);
+		fs.put("swapsRejectedLoop", swapsRejectedLoop);
+		fs.put("swapsRejectedRecognizedID", swapsRejectedRecognizedID);
 		long fix32kb = 32 * 1024;
 		long cachedKeys = node.getChkDatacache().keyCount();
 		long cachedSize = cachedKeys * fix32kb;
