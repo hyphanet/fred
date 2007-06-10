@@ -734,7 +734,6 @@ public class NodeStats implements Persistable {
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
 
 
-		if(numberOfConnected > 0) { // it clashes if there is no peer )> no traffic
 			long[] total = IOStatisticCollector.getTotalIO();
 			long total_output_rate = (total[0]) / nodeUptimeSeconds;
 			long total_input_rate = (total[1]) / nodeUptimeSeconds;
@@ -814,7 +813,6 @@ public class NodeStats implements Persistable {
 			fs.put("swapsRejectedRateLimit", swapsRejectedRateLimit);
 			fs.put("swapsRejectedLoop", swapsRejectedLoop);
 			fs.put("swapsRejectedRecognizedID", swapsRejectedRecognizedID);
-		}
 		long fix32kb = 32 * 1024;
 		long cachedKeys = node.getChkDatacache().keyCount();
 		long cachedSize = cachedKeys * fix32kb;
