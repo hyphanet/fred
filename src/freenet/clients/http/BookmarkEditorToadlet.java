@@ -16,6 +16,9 @@ import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.client.HighLevelSimpleClient;
 import freenet.support.HTMLNode;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
+import freenet.support.URLEncoder;
 import freenet.support.api.HTTPRequest;
 
 public class BookmarkEditorToadlet extends Toadlet {
@@ -53,8 +56,8 @@ public class BookmarkEditorToadlet extends Toadlet {
 		
 		for(int i = 0; i < items.size(); i++) {
 
-			String itemPath = path + items.get(i).getName();
-			HTMLNode li = new HTMLNode("li", "class","item" , items.get(i).getName());
+			String itemPath = URLEncoder.encode(path + items.get(i).getName());
+			HTMLNode li = new HTMLNode("li", "class", "item" , items.get(i).getName());
 
 			HTMLNode actions = new HTMLNode("span", "class", "actions");
 			actions.addChild("a", "href", "?action=edit&bookmark=" + itemPath).addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/edit.png", edit, edit});
@@ -77,7 +80,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		BookmarkCategories cats = cat.getSubCategories();
 		for(int i = 0; i < cats.size(); i++) {
 
-			String catPath = path + cats.get(i).getName() + "/";
+			String catPath = URLEncoder.encode(path + cats.get(i).getName() + "/");
 			
 			HTMLNode subCat = list.addChild("li", "class", "cat", cats.get(i).getName());
 
@@ -141,7 +144,15 @@ public class BookmarkEditorToadlet extends Toadlet {
 		
 		if (req.getParam("action").length() > 0 && req.getParam("bookmark").length() > 0) {
 			String action = req.getParam("action");
-			String bookmarkPath = req.getParam("bookmark");
+			String bookmarkPath;
+			try {
+				bookmarkPath = URLDecoder.decode(req.getParam("bookmark"), false);
+			} catch (URLEncodedFormatException e) {
+				HTMLNode errorBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-error", error));
+				errorBox.addChild("#", L10n.getString("BookmarkEditorToadlet.urlDecodeError"));
+				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				return;
+			}
 			Bookmark bookmark;
 			
 			if (bookmarkPath.endsWith("/"))
