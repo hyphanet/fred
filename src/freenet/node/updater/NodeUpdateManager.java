@@ -543,13 +543,15 @@ public class NodeUpdateManager {
 	void onDownloadedNewJar(boolean isExt, boolean isNew) {
 		synchronized(this) {
 			if(isExt) {
-				if(extUpdater.getFetchedVersion() <= ExtVersion.buildNumber) return;
-				hasNewExtJar = true;
-				startedFetchingNextExtJar = -1;
+				if(extUpdater.getFetchedVersion() > ExtVersion.buildNumber) {
+					hasNewExtJar = true;
+					startedFetchingNextExtJar = -1;
+				}
 			} else {
-				if(mainUpdater.getFetchedVersion() <= Version.buildNumber()) return;
-				hasNewMainJar = true;
-				startedFetchingNextMainJar = -1;
+				if(mainUpdater.getFetchedVersion() > Version.buildNumber()) {
+					hasNewMainJar = true;
+					startedFetchingNextMainJar = -1;
+				}
 			}
 		}
 		revocationChecker.start(true);
