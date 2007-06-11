@@ -249,7 +249,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             return;
         }
 
-        if((negType < 0) || (negType > 1)) {
+        if(negType == 0) {
+        	Logger.error(this, "Old ephemeral Diffie-Hellman (negType 0) not supported.");
+        	return;
+        }
+        
+        if(negType != 1) {
             Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
             return;
         }else if (negType == 0 || negType == 1){
