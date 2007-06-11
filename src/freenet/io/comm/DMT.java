@@ -1033,36 +1033,42 @@ public class DMT {
 		// Probably excessive, but lengths are always long's, and wasting a few bytes here
 		// doesn't matter in the least, as it's very rarely called.
 		addField(FILE_LENGTH, Long.class);
+		addField(REVOCATION_KEY, String.class);
 	}};
 	
-	public static final Message createUOMSendingRevocation(long uid, long length) {
+	public static final Message createUOMSendingRevocation(long uid, long length, String key) {
 		Message msg = new Message(UOMSendingRevocation);
 		msg.set(UID, uid);
 		msg.set(FILE_LENGTH, length);
+		msg.set(REVOCATION_KEY, key);
 		return msg;
 	}
 	
 	public static final MessageType UOMSendingMain = new MessageType("UOMSendingMain") {{
 		addField(UID, Long.class);
 		addField(FILE_LENGTH, Long.class);
+		addField(MAIN_JAR_KEY, String.class);
 	}};
 	
-	public static final Message createUOMSendingMain(long uid, long length) {
+	public static final Message createUOMSendingMain(long uid, long length, String key) {
 		Message msg = new Message(UOMSendingMain);
 		msg.set(UID, uid);
 		msg.set(FILE_LENGTH, length);
+		msg.set(MAIN_JAR_KEY, key);
 		return msg;
 	}
 	
 	public static final MessageType UOMSendingExtra = new MessageType("UOMSendingExtra") {{
 		addField(UID, Long.class);
 		addField(FILE_LENGTH, Long.class);
+		addField(EXTRA_JAR_KEY, String.class);
 	}};
 	
-	public static final Message createUOMSendingExtra(long uid, long length) {
+	public static final Message createUOMSendingExtra(long uid, long length, String key) {
 		Message msg = new Message(UOMSendingExtra);
 		msg.set(UID, uid);
 		msg.set(FILE_LENGTH, length);
+		msg.set(EXTRA_JAR_KEY, key);
 		return msg;
 	}
 	
