@@ -155,7 +155,8 @@ public class NodeUpdateManager {
 				revocationChecker.lastSucceeded(), revocationChecker.getRevocationDNFCounter(), 
 				revocationChecker.getBlobSize(), 
 				mainUpdater == null ? -1 : mainUpdater.getBlobSize(),
-				extUpdater == null ? -1 : extUpdater.getBlobSize());
+				extUpdater == null ? -1 : extUpdater.getBlobSize(), 
+				(int)node.nodeStats.getNodeAveragePingTime(), (int)node.nodeStats.getBwlimitDelayTime());
 	}
 
 	/**

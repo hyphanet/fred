@@ -108,6 +108,8 @@ public class DMT {
 	public static final String REVOCATION_KEY_FILE_LENGTH = "revocationKeyFileLength";
 	public static final String MAIN_JAR_FILE_LENGTH = "mainJarFileLength";
 	public static final String EXTRA_JAR_FILE_LENGTH = "extraJarFileLength";
+	public static final String PING_TIME = "pingTime";
+	public static final String BWLIMIT_DELAY_TIME = "bwlimitDelayTime";
 	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -976,11 +978,13 @@ public class DMT {
 		addField(REVOCATION_KEY_FILE_LENGTH, Long.class);
 		addField(MAIN_JAR_FILE_LENGTH, Long.class);
 		addField(EXTRA_JAR_FILE_LENGTH, Long.class);
+		addField(PING_TIME, Integer.class);
+		addField(BWLIMIT_DELAY_TIME, Integer.class);
 	}};
 
 	public static final Message createUOMAnnounce(String mainKey, String extraKey, String revocationKey,
 			boolean haveRevocation, long mainJarVersion, long extraJarVersion, long timeLastTriedRevocationFetch,
-			int revocationDNFCount, long revocationKeyLength, long mainJarLength, long extraJarLength) {
+			int revocationDNFCount, long revocationKeyLength, long mainJarLength, long extraJarLength, int pingTime, int bwlimitDelayTime) {
 		Message msg = new Message(UOMAnnounce);
 		
 		msg.set(MAIN_JAR_KEY, mainKey);
@@ -994,6 +998,8 @@ public class DMT {
 		msg.set(REVOCATION_KEY_FILE_LENGTH, revocationKeyLength);
 		msg.set(MAIN_JAR_FILE_LENGTH, mainJarLength);
 		msg.set(EXTRA_JAR_FILE_LENGTH, extraJarLength);
+		msg.set(PING_TIME, pingTime);
+		msg.set(BWLIMIT_DELAY_TIME, bwlimitDelayTime);
 		
 		return msg;
 	}
