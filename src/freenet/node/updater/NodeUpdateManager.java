@@ -11,10 +11,12 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
+import freenet.io.comm.NotConnectedException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
+import freenet.node.PeerNode;
 import freenet.node.Version;
 import freenet.node.updater.UpdateDeployContext.UpdateCatastropheException;
 import freenet.node.useralerts.RevocationKeyFoundUserAlert;
@@ -53,7 +55,8 @@ public class NodeUpdateManager {
 	final boolean shouldUpdateExt;
 	/** Currently deploying an update? */
 	boolean isDeployingUpdate;
-	boolean started;
+	final Object broadcastUOMAnnouncesSync = new Object();
+	boolean broadcastUOMAnnounces = false;
 	
 	Node node;
 	
@@ -136,18 +139,19 @@ public class NodeUpdateManager {
 
 	public void start() throws InvalidConfigValueException {
 		
-		Message msg = getUOMAnnouncement();
-		node.peers.localBroadcast(msg, true);
-		
-		synchronized(this) {
-			started = true;
-		}
-		
 		node.clientCore.alerts.register(alert);
         
         enable(wasEnabledOnStartup);
 	}
 	
+	void broadcastUOMAnnounces() {
+		synchronized(broadcastUOMAnnouncesSync) {
+			Message msg = getUOMAnnouncement();
+			node.peers.localBroadcast(msg, true);
+			broadcastUOMAnnounces = true;
+		}
+	}
+
 	private Message getUOMAnnouncement() {
 		return DMT.createUOMAnnounce(updateURI.toString(), extURI.toString(), revocationURI.toString(), hasBeenBlown, 
 				mainUpdater == null ? -1 : mainUpdater.getFetchedVersion(),
@@ -159,6 +163,20 @@ public class NodeUpdateManager {
 				(int)node.nodeStats.getNodeAveragePingTime(), (int)node.nodeStats.getBwlimitDelayTime());
 	}
 
+	public void maybeSendUOMAnnounce(PeerNode peer) {
+		synchronized(broadcastUOMAnnouncesSync) {
+			if(!broadcastUOMAnnounces) return; // because of sync object, haven't entered block yet, so will send to this peer
+		}
+		synchronized(this) {
+			if((!hasBeenBlown) && (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0)) return;
+		}
+		try {
+			peer.sendAsync(getUOMAnnouncement(), null, 0, null);
+		} catch (NotConnectedException e) {
+			// Sad, but ignore it
+		}
+	}
+	
 	/**
 	 * Is auto-update enabled?
 	 */
@@ -518,7 +536,7 @@ public class NodeUpdateManager {
 	 * Called when a new jar has been downloaded.
 	 * @param isExt If true, the new jar is the ext jar; if false, it is the main jar.
 	 */
-	void onDownloadedNewJar(boolean isExt) {
+	void onDownloadedNewJar(boolean isExt, boolean isNew) {
 		synchronized(this) {
 			if(isExt) {
 				hasNewExtJar = true;
@@ -529,6 +547,8 @@ public class NodeUpdateManager {
 			}
 		}
 		revocationChecker.start(true);
+		if(!isAutoUpdateAllowed)
+			broadcastUOMAnnounces();
 	}
 
 	/**
@@ -580,6 +600,7 @@ public class NodeUpdateManager {
 			// we don't need to advertize updates : we are not going to do them
 			killUpdateAlerts();
 		}
+		broadcastUOMAnnounces();
 	}
 
 	/**
@@ -593,6 +614,7 @@ public class NodeUpdateManager {
 	public void noRevocationFound() {
 		deployUpdate(); // May have been waiting for the revocation.
 		// If we're still here, we didn't update.
+		broadcastUOMAnnounces();
 		node.ps.queueTimedJob(new Runnable() {
 			public void run() {
 				revocationChecker.start(false);

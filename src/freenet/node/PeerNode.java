@@ -1650,6 +1650,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected ("+isConnected+ ':' +currentTracker+"!!!: "+e, e);
         }
+        
+        if(node.nodeUpdater != null)
+        	node.nodeUpdater.maybeSendUOMAnnounce(this);
     }
     
     private void sendIPAddressMessage() {

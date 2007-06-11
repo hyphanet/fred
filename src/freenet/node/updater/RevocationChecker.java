@@ -131,15 +131,7 @@ public class RevocationChecker implements ClientCallback {
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		// The key has been blown !
 		// FIXME: maybe we need a bigger warning message.
-		if(!tmpBlobFile.renameTo(blobFile)) {
-			blobFile.delete();
-			if(!tmpBlobFile.renameTo(blobFile)) {
-				Logger.error(this, "Not able to rename binary blob for revocation fetcher: "+tmpBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this revocation");
-				System.err.println("Not able to rename binary blob for revocation fetcher: "+tmpBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this revocation");
-			}
-		}
-		if(tmpBlobFile != null)
-			tmpBlobFile.renameTo(blobFile);
+		moveBlob();
 		String msg = null;
 		try {
 			byte[] buf = result.asByteArray();
@@ -157,6 +149,18 @@ public class RevocationChecker implements ClientCallback {
 		manager.blow(msg);
 	}
 
+	private void moveBlob() {
+		if(!tmpBlobFile.renameTo(blobFile)) {
+			blobFile.delete();
+			if(!tmpBlobFile.renameTo(blobFile)) {
+				Logger.error(this, "Not able to rename binary blob for revocation fetcher: "+tmpBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this revocation");
+				System.err.println("Not able to rename binary blob for revocation fetcher: "+tmpBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this revocation");
+			}
+		}
+		if(tmpBlobFile != null)
+			tmpBlobFile.renameTo(blobFile);
+	}
+
 	public void onFailure(FetchException e, ClientGetter state) {
 		Logger.minor(this, "Revocation fetch failed: "+e);
 		if(tmpBlobFile != null) tmpBlobFile.delete();
@@ -167,6 +171,7 @@ public class RevocationChecker implements ClientCallback {
 		if(errorCode == FetchException.CANCELLED) return; // cancelled by us above, or killed; either way irrelevant and doesn't need to be restarted
 		if(e.isFatal()) {
 			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString());
+			moveBlob(); // other peers need to know
 			return;
 		}
 		if(e.newURI != null) {
