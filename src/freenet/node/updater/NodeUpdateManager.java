@@ -14,6 +14,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.node.ExtVersion;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
@@ -542,9 +543,11 @@ public class NodeUpdateManager {
 	void onDownloadedNewJar(boolean isExt, boolean isNew) {
 		synchronized(this) {
 			if(isExt) {
+				if(extUpdater.getFetchedVersion() <= ExtVersion.buildNumber) return;
 				hasNewExtJar = true;
 				startedFetchingNextExtJar = -1;
 			} else {
+				if(mainUpdater.getFetchedVersion() <= Version.buildNumber()) return;
 				hasNewMainJar = true;
 				startedFetchingNextMainJar = -1;
 			}
