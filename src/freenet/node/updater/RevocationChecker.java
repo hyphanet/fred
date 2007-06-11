@@ -122,6 +122,11 @@ public class RevocationChecker implements ClientCallback {
 		return lastSucceeded;
 	}
 	
+	long lastSucceededDelta() {
+		if(lastSucceeded <= 0) return -1;
+		return System.currentTimeMillis() - lastSucceeded;
+	}
+	
 	/** Called when the revocation URI changes. */
 	public void onChangeRevocationURI() {
 		kill();

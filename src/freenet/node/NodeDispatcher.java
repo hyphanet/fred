@@ -129,6 +129,8 @@ public class NodeDispatcher implements Dispatcher {
 			return handleProbeRejected(m, source);
 		} else if(spec == DMT.FNPProbeTrace) {
 			return handleProbeTrace(m, source);
+		} else if(spec == DMT.UOMAnnounce) {
+			return node.nodeUpdater.uom.handleAnnounce(m, source);
 		}
 		return false;
 	}

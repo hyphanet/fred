@@ -78,6 +78,8 @@ public class NodeUpdateManager {
 	// Update alert
 	private final UpdatedVersionAvailableUserAlert alert;
 	
+	public final UpdateOverMandatoryManager uom;
+	
 	private boolean logMINOR;
 	
 	public NodeUpdateManager(Node node, Config config) throws InvalidConfigValueException {
@@ -135,6 +137,7 @@ public class NodeUpdateManager {
         
         this.revocationChecker = new RevocationChecker(this, new File(node.getNodeDir(), "revocation-key.fblob"));
         
+        this.uom = new UpdateOverMandatoryManager(this);
 	}
 
 	public void start() throws InvalidConfigValueException {
@@ -156,7 +159,7 @@ public class NodeUpdateManager {
 		return DMT.createUOMAnnounce(updateURI.toString(), extURI.toString(), revocationURI.toString(), hasBeenBlown, 
 				mainUpdater == null ? -1 : mainUpdater.getFetchedVersion(),
 				extUpdater == null ? -1 : extUpdater.getFetchedVersion(),
-				revocationChecker.lastSucceeded(), revocationChecker.getRevocationDNFCounter(), 
+				revocationChecker.lastSucceededDelta(), revocationChecker.getRevocationDNFCounter(), 
 				revocationChecker.getBlobSize(), 
 				mainUpdater == null ? -1 : mainUpdater.getBlobSize(),
 				extUpdater == null ? -1 : extUpdater.getBlobSize(), 
