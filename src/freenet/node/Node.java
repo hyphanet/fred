@@ -441,7 +441,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public int lastVersion;
 	
 	/** NodeUpdater **/
-	public NodeUpdateManager nodeUpdater;
+	public final NodeUpdateManager nodeUpdater;
 	
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
@@ -1436,7 +1436,7 @@ public class Node implements TimeSkewDetectorCallback {
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
 		
-		// And finally, Initialize the plugin manager
+		// Initialize the plugin manager
 		Logger.normal(this, "Initializing Plugin Manager");
 		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this);
@@ -1454,6 +1454,16 @@ public class Node implements TimeSkewDetectorCallback {
 		ctx.maxTempLength = 4096;
 		
 		this.arkFetcherContext = ctx;
+		
+		// Node updater support
+		
+		try {
+			nodeUpdater = NodeUpdateManager.maybeCreate(this, config);
+		} catch (InvalidConfigValueException e) {
+			e.printStackTrace();
+			throw new NodeInitException(EXIT_COULD_NOT_START_UPDATER, "Could not create Updater: "+e);
+		}
+		
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
 	}
@@ -1489,7 +1499,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Node Updater
 		try{
-			nodeUpdater = NodeUpdateManager.maybeCreate(this, config);
 			Logger.normal(this, "Starting the node updater");
 			nodeUpdater.start();
 		}catch (Exception e) {
