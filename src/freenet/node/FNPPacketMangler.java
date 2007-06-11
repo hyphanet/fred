@@ -1467,6 +1467,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
     public void sendHandshake(PeerNode pn) {
     	int negType = pn.bestNegType(this);
+    	if(negType == -1) {
+    		Logger.error(this, "Could not negotiate with "+pn+" : no common negTypes available!: his negTypes: "+pn.negTypes+" my negTypes: "+supportedNegTypes());
+    		return;
+    	}
     	if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn+" negotiation type "+negType);
         DiffieHellmanContext ctx;
         Peer[] handshakeIPs;
