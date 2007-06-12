@@ -1468,8 +1468,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     public void sendHandshake(PeerNode pn) {
     	int negType = pn.bestNegType(this);
     	if(negType == -1) {
-    		if(pn.getPeerNodeStatus() != PeerManager.PEER_NODE_STATUS_TOO_OLD)
-    			Logger.error(this, "Could not negotiate with "+pn+" : no common negTypes available!: his negTypes: "+pn.negTypes+" my negTypes: "+supportedNegTypes()+" despite being up to date!!");
+    		if(pn.isRoutingCompatible())
+    			Logger.error(this, "Could not negotiate with "+pn+" : no common negTypes available!: his negTypes: "+StringArray.toString(pn.negTypes)+" my negTypes: "+StringArray.toString(supportedNegTypes())+" despite being up to date!!");
     		else
     			Logger.normal(this, "Could not negotiate with "+pn+" : no common negTypes available!: his negTypes: "+pn.negTypes+" my negTypes: "+supportedNegTypes()+" (probably just too old)");
     		return;
