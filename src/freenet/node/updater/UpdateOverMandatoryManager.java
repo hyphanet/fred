@@ -110,6 +110,9 @@ public class UpdateOverMandatoryManager {
 		// 3) if the download fails, move the notification; if the download succeeds, process it
 		
 		if(haveRevocationKey) {
+			
+			if(updateManager.isBlown()) return true; // We already know
+			
 			// First, is the key the same as ours?
 			try {
 				FreenetURI revocationURI = new FreenetURI(revocationKey);
