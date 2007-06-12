@@ -3,9 +3,9 @@ package freenet.node.updater;
 import java.io.File;
 import java.io.IOException;
 
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetchContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
@@ -134,9 +134,13 @@ public class RevocationChecker implements ClientCallback {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
+		onSuccess(result, state, tmpBlobFile);
+	}
+	
+	void onSuccess(FetchResult result, ClientGetter state, File blob) {
 		// The key has been blown !
 		// FIXME: maybe we need a bigger warning message.
-		moveBlob();
+		moveBlob(blob);
 		String msg = null;
 		try {
 			byte[] buf = result.asByteArray();
@@ -154,7 +158,7 @@ public class RevocationChecker implements ClientCallback {
 		manager.blow(msg);
 	}
 
-	private void moveBlob() {
+	private void moveBlob(File tmpBlobFile) {
 		if(tmpBlobFile == null) {
 			Logger.error(this, "No temporary binary blob file moving it: may not be able to propagate revocation, bug???");
 			return;
@@ -169,6 +173,10 @@ public class RevocationChecker implements ClientCallback {
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {
+		onFailure(e, state, tmpBlobFile);
+	}
+	
+	void onFailure(FetchException e, ClientGetter state, File tmpBlobFile) {
 		Logger.minor(this, "Revocation fetch failed: "+e);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		int errorCode = e.getMode();
@@ -180,7 +188,7 @@ public class RevocationChecker implements ClientCallback {
 		}
 		if(e.isFatal()) {
 			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString());
-			moveBlob(); // other peers need to know
+			moveBlob(tmpBlobFile); // other peers need to know
 			return;
 		}
 		if(tmpBlobFile != null) tmpBlobFile.delete();
@@ -237,6 +245,13 @@ public class RevocationChecker implements ClientCallback {
 
 	public long getBlobSize() {
 		return blobFile.length();
+	}
+
+	/** Get the binary blob, if we have fetched it. */
+	public File getBlobFile() {
+		if(!manager.isBlown()) return null;
+		if(blobFile.exists()) return blobFile;
+		return null;
 	}
 
 }

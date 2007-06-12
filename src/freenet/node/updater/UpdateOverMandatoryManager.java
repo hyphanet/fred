@@ -3,20 +3,46 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.updater;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.Vector;
 
+import freenet.client.FetchContext;
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
+import freenet.client.InsertException;
+import freenet.client.async.BaseClientPutter;
+import freenet.client.async.BinaryBlob;
+import freenet.client.async.BinaryBlobFormatException;
+import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.SimpleBlockSet;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.xfer.BulkReceiver;
+import freenet.io.xfer.BulkTransmitter;
+import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.SizeUtil;
+import freenet.support.api.Bucket;
+import freenet.support.io.FileBucket;
+import freenet.support.io.RandomAccessFileWrapper;
 
 /**
  * Co-ordinates update over mandatory. Update over mandatory = updating from your peers, even
@@ -87,7 +113,7 @@ public class UpdateOverMandatoryManager {
 			// First, is the key the same as ours?
 			try {
 				FreenetURI revocationURI = new FreenetURI(revocationKey);
-				if(/*revocationURI.equals(updateManager.revocationURI)*/true) {
+				if(revocationURI.equals(updateManager.revocationURI)) {
 					
 					// Uh oh...
 					
@@ -107,7 +133,7 @@ public class UpdateOverMandatoryManager {
 					
 					// Try to transfer it.
 					
-					Message msg = DMT.createUOMRequestRevocation();
+					Message msg = DMT.createUOMRequestRevocation(updateManager.node.random.nextLong());
 					source.sendAsync(msg, new AsyncMessageCallback() {
 						public void acknowledged() {
 							// Ok
@@ -322,6 +348,328 @@ public class UpdateOverMandatoryManager {
 				(PeerNode[]) nodesDisconnectedSayRevoked.toArray(new PeerNode[nodesDisconnectedSayRevoked.size()]),
 				(PeerNode[]) nodesFailedSayRevoked.toArray(new PeerNode[nodesFailedSayRevoked.size()]),
 		};
+	}
+
+	/**
+	 * A peer node requests us to send the binary blob of the revocation key.
+	 * @param m The message requesting the transfer.
+	 * @param source The node requesting the transfer.
+	 * @return True if we handled the message (i.e. always).
+	 */
+	public boolean handleRequestRevocation(Message m, final PeerNode source) {
+		// Do we have the data?
+		
+		File data = updateManager.revocationChecker.getBlobFile();
+		
+		if(data == null) {
+			Logger.normal(this, "Peer "+source+" asked us for the blob file for the revocation key but we don't have it!");
+			// Probably a race condition on reconnect, hopefully we'll be asked again
+			return true;
+		}
+		
+		final long uid = m.getLong(DMT.UID);
+		
+		RandomAccessFileWrapper raf; 
+		try {
+			raf = new RandomAccessFileWrapper(data, "r");
+		} catch (FileNotFoundException e) {
+			Logger.error(this, "Peer "+source+" asked us for the blob file for the revocation key, we have downloaded it but don't have the file even though we did have it when we checked!: "+e, e);
+			return true;
+		}
+		
+		final PartiallyReceivedBulk prb;
+		long length;
+		try {
+			length = raf.size();
+			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length, 
+					Node.PACKET_SIZE, raf, true);
+		} catch (IOException e) {
+			Logger.error(this, "Peer "+source+" asked us for the blob file for the revocation key, we have downloaded it but we can't determine the file size: "+e, e);
+			return true;
+		}
+		
+		final BulkTransmitter bt;
+		try {
+			bt = new BulkTransmitter(prb, source, uid, updateManager.node.outputThrottle);
+		} catch (DisconnectedException e) {
+			Logger.error(this, "Peer "+source+" asked us for the blob file for the revocation key, then disconnected: "+e, e);
+			return true;
+		}
+		
+		final Runnable r = new Runnable() {
+			public void run() {
+				if(!bt.send()) {
+					Logger.error(this, "Failed to send revocation key blob to "+source.getPeer()+" : "+source.getName());
+				} else {
+					Logger.normal(this, "Sent revocation key blob to "+source.getPeer()+" : "+source.getName());
+				}
+			}
+			
+		};
+		
+		Message msg = DMT.createUOMSendingRevocation(uid, length, updateManager.revocationURI.toString());
+		
+		try {
+			source.sendAsync(msg, new AsyncMessageCallback() {
+				public void acknowledged() {
+					if(Logger.shouldLog(Logger.MINOR, this))
+						Logger.minor(this, "Sending data...");
+					// Send the data
+					Thread t = new Thread(r, "Revocation key send for "+uid+" to "+source.getPeer()+" : "+source.getName());
+					t.setDaemon(true);
+					t.start();
+				}
+				public void disconnected() {
+					// Argh
+					Logger.error(this, "Peer "+source+" asked us for the blob file for the revocation key, then disconnected when we tried to send the UOMSendingRevocation");				
+				}
+
+				public void fatalError() {
+					// Argh
+					Logger.error(this, "Peer "+source+" asked us for the blob file for the revocation key, then got a fatal error when we tried to send the UOMSendingRevocation");				
+				}
+
+				public void sent() {
+					if(Logger.shouldLog(Logger.MINOR, this))
+						Logger.minor(this, "Message sent, data soon");
+				}
+				
+				public String toString() {
+					return super.toString() + "("+uid+":"+source.getPeer()+")";
+				}
+				
+			}, 0, null);
+		} catch (NotConnectedException e) {
+			Logger.error(this, "Peer "+source+" asked us for the blob file for the revocation key, then disconnected when we tried to send the UOMSendingRevocation: "+e, e);
+			return true;
+		}
+		
+		return true;
+	}
+
+	public boolean handleSendingRevocation(Message m, final PeerNode source) {
+		final long uid = m.getLong(DMT.UID);
+		final long length = m.getLong(DMT.FILE_LENGTH);
+		String key = m.getString(DMT.REVOCATION_KEY);
+		FreenetURI revocationURI;
+		try {
+			revocationURI = new FreenetURI(key);
+		} catch (MalformedURLException e) {
+			Logger.error(this, "Failed receiving recovation because URI not parsable: "+e+" for "+key, e);
+			System.err.println("Failed receiving recovation because URI not parsable: "+e+" for "+key);
+			e.printStackTrace();
+			cancelSend(source, uid);
+			return true;
+		}
+		
+		if(!revocationURI.equals(updateManager.revocationURI)) {
+			System.err.println("Node sending us a revocation certificate from the wrong URI:\n"+
+					"Node: "+source.getPeer()+" : "+source.getName()+"\n"+
+					"Our   URI: "+updateManager.revocationURI+"\n"+
+					"Their URI: "+revocationURI);
+			cancelSend(source, uid);
+			return true;
+		}
+		
+		if(updateManager.isBlown()) {
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Already blown, so not receiving from "+source+ "("+uid+")");
+			cancelSend(source, uid);
+			return true;
+		}
+		
+		if(length > NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH) {
+			System.err.println("Node "+source.getPeer()+" : "+source.getName()+" offered us a revocation certificate "+SizeUtil.formatSize(length)+" long. This is unacceptably long so we have refused the transfer.");
+			Logger.error(this, "Node "+source.getPeer()+" : "+source.getName()+" offered us a revocation certificate "+SizeUtil.formatSize(length)+" long. This is unacceptably long so we have refused the transfer.");
+			synchronized(UpdateOverMandatoryManager.this) {
+				nodesSayKeyRevokedFailedTransfer.add(source);
+			}
+			cancelSend(source, uid);
+			return true;
+		}
+		
+		// Okay, we can receive it
+		
+		final File temp;
+		
+		try {
+			temp = File.createTempFile("revocation-", ".fblob.tmp", updateManager.node.getNodeDir());
+			temp.deleteOnExit();
+		} catch (IOException e) {
+			System.err.println("Cannot save revocation certificate to disk and therefore cannot fetch it from our peer!: "+e);
+			e.printStackTrace();
+			updateManager.blow("Cannot fetch the revocation certificate from our peer because we cannot write it to disk: "+e);
+			cancelSend(source, uid);
+			return true;
+		}
+		
+		RandomAccessFileWrapper raf; 
+		try {
+			raf = new RandomAccessFileWrapper(temp, "rw");
+		} catch (FileNotFoundException e) {
+			Logger.error(this, "Peer "+source+" asked us for the blob file for the revocation key, we have downloaded it but don't have the file even though we did have it when we checked!: "+e, e);
+			return true;
+		}
+		
+		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length, 
+				Node.PACKET_SIZE, raf, false);
+		
+		final BulkReceiver br = new BulkReceiver(prb, source, uid);
+		
+		Thread t = new Thread(new Runnable() {
+
+			public void run() {
+				if(br.receive()) {
+					// Success!
+					processRevocationBlob(temp, source);
+				} else {
+					Logger.error(this, "Failed to transfer revocation certificate from "+source);
+					System.err.println("Failed to transfer revocation certificate from "+source);
+					synchronized(UpdateOverMandatoryManager.this) {
+						nodesSayKeyRevokedFailedTransfer.add(source);
+					}
+				}
+			}
+			
+		}, "Revocation key receive for "+uid+" from "+source.getPeer()+" : "+source.getName());
+		
+		t.setDaemon(true);
+		t.start();
+		
+		return true;
+	}
+
+	/**
+	 * Process a binary blob for a revocation certificate (the revocation key).
+	 * @param temp The file it was written to.
+	 */
+	protected void processRevocationBlob(final File temp, final PeerNode source) {
+		
+		SimpleBlockSet blocks = new SimpleBlockSet();
+		
+		DataInputStream dis = null;
+		try {
+			dis = new DataInputStream(new BufferedInputStream(new FileInputStream(temp)));
+			BinaryBlob.readBinaryBlob(dis, blocks, true);
+		} catch (FileNotFoundException e) {
+			Logger.error(this, "Somebody deleted "+temp+" ? We lost the revocation certificate from "+source.userToString()+"!");
+			System.err.println("Somebody deleted "+temp+" ? We lost the revocation certificate from "+source.userToString()+"!");
+			return;
+		} catch (IOException e) {
+			Logger.error(this, "Could not read revocation cert from temp file "+temp+" from node "+source.userToString()+" !");
+			System.err.println("Could not read revocation cert from temp file "+temp+" from node "+source.userToString()+" !");
+			// FIXME will be kept until exit for debugging purposes
+			return;
+		} catch (BinaryBlobFormatException e) {
+			Logger.error(this, "Peer "+source.userToString()+" sent us an invalid revocation certificate!: "+e, e);
+			System.err.println("Peer "+source.userToString()+" sent us an invalid revocation certificate!: "+e);
+			e.printStackTrace();
+			synchronized(UpdateOverMandatoryManager.this) {
+				nodesSayKeyRevokedFailedTransfer.add(source);
+			}
+			// FIXME will be kept until exit for debugging purposes
+			return;
+		} finally {
+			if(dis != null)
+				try {
+					dis.close();
+				} catch (IOException e) {
+					// Ignore
+				}
+		}
+		
+		// Fetch our revocation key from the datastore plus the binary blob
+		
+		FetchContext tempContext = updateManager.node.clientCore.makeClient((short)0, true).getFetchContext();		
+		tempContext.localRequestOnly = true;
+		tempContext.blocks = blocks;
+		
+		File f;
+		FileBucket b = null;
+		try {
+			f = File.createTempFile("revocation-", ".fblob.tmp", updateManager.node.getNodeDir());
+			b = new FileBucket(f, false, false, true, true, true);
+		} catch (IOException e) {
+			Logger.error(this, "Cannot share revocation key from "+source.userToString()+" with our peers because cannot write the cleaned version to disk: "+e, e);
+			System.err.println("Cannot share revocation key from "+source.userToString()+" with our peers because cannot write the cleaned version to disk: "+e);
+			e.printStackTrace();
+			b = null;
+			f = null;
+		}
+		final FileBucket cleanedBlob = b;
+		final File cleanedBlobFile = f;
+		
+		ClientCallback myCallback = new ClientCallback() {
+
+			public void onFailure(FetchException e, ClientGetter state) {
+				if(e.mode == FetchException.CANCELLED) {
+					// Eh?
+					Logger.error(this, "Cancelled fetch from store/blob of revocation certificate from "+source.userToString());
+					System.err.println("Cancelled fetch from store/blob of revocation certificate from "+source.userToString()+" to "+temp+" - please report to developers");
+					// Probably best to keep files around for now.
+				} else if(e.isFatal()) {
+					// Blown: somebody inserted a revocation message, but it was corrupt as inserted
+					// However it had valid signatures etc.
+					
+					// Blow the update, and propagate the revocation certificate.
+					updateManager.revocationChecker.onFailure(e, state, cleanedBlobFile);
+					temp.delete();
+				} else {
+					Logger.error(this, "Failed to fetch revocation certificate from blob from "+source.userToString());
+					System.err.println("Failed to fetch revocation certificate from blob from "+source.userToString());
+					synchronized(UpdateOverMandatoryManager.this) {
+						nodesSayKeyRevokedFailedTransfer.add(source);
+					}
+				}
+			}
+
+			public void onFailure(InsertException e, BaseClientPutter state) {
+				// Ignore, not possible
+			}
+
+			public void onFetchable(BaseClientPutter state) {
+				// Irrelevant
+			}
+
+			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+				// Ignore, not possible
+			}
+
+			public void onMajorProgress() {
+				// Ignore
+			}
+
+			public void onSuccess(FetchResult result, ClientGetter state) {
+				updateManager.revocationChecker.onSuccess(result, state, cleanedBlobFile);
+				temp.delete();
+			}
+
+			public void onSuccess(BaseClientPutter state) {
+				// Ignore, not possible
+			}
+			
+		};
+		
+		ClientGetter cg = new ClientGetter(myCallback, 
+				updateManager.node.clientCore.requestStarters.chkFetchScheduler,
+				updateManager.node.clientCore.requestStarters.sskFetchScheduler, 
+				updateManager.revocationURI, tempContext, (short)0, this, null, cleanedBlob); 
+		
+		try {
+			cg.start();
+		} catch (FetchException e1) {
+			myCallback.onFailure(e1, cg);
+		}
+		
+	}
+
+	private void cancelSend(PeerNode source, long uid) {
+		Message msg = DMT.createFNPBulkReceiveAborted(uid);
+		try {
+			source.sendAsync(msg, null, 0, null);
+		} catch (NotConnectedException e1) {
+			// Ignore
+		}
 	}
 	
 }

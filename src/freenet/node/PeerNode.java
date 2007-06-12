@@ -3893,4 +3893,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		fo.onRejected();
 	}
+
+	public String userToString() {
+		return ""+getPeer()+" : "+getName();
+	}
 }

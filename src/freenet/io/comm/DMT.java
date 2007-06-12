@@ -1005,11 +1005,13 @@ public class DMT {
 	}
 	
 	public static final MessageType UOMRequestRevocation = new MessageType("UOMRequestRevocation") {{
-		
+		addField(UID, Long.class);
 	}};
 	
-	public static final Message createUOMRequestRevocation() {
-		return new Message(UOMRequestRevocation);
+	public static final Message createUOMRequestRevocation(long uid) {
+		Message msg = new Message(UOMRequestRevocation);
+		msg.set(UID, uid);
+		return msg;
 	}
 	
 	public static final MessageType UOMRequestMain = new MessageType("UOMRequestMain") {{

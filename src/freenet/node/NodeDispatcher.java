@@ -131,6 +131,10 @@ public class NodeDispatcher implements Dispatcher {
 			return handleProbeTrace(m, source);
 		} else if(spec == DMT.UOMAnnounce) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
+		} else if(spec == DMT.UOMRequestRevocation) {
+			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
+		} else if(spec == DMT.UOMSendingRevocation) {
+			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
 		}
 		return false;
 	}
