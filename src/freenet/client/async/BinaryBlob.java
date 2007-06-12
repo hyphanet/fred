@@ -1,10 +1,15 @@
 package freenet.client.async;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
+
+import com.onionnetworks.util.FileUtil;
 
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
+import freenet.keys.KeyVerifyException;
 
 public abstract class BinaryBlob {
 
@@ -46,4 +51,70 @@ public abstract class BinaryBlob {
 		writeBlobHeader(binaryBlobStream, BinaryBlob.BLOB_END, BinaryBlob.BLOB_END_VERSION, 0);
 	}
 
+	public static void readBinaryBlob(DataInputStream dis, BlockSet blocks, boolean tolerant) throws IOException, BinaryBlobFormatException {
+		long magic = dis.readLong();
+		if(magic != BinaryBlob.BINARY_BLOB_MAGIC)
+			throw new BinaryBlobFormatException("Bad magic");
+		short version = dis.readShort();
+		if(version != BinaryBlob.BINARY_BLOB_OVERALL_VERSION)
+			throw new BinaryBlobFormatException("Unknown overall version");
+		
+		int i=0;
+		while(true) {
+			long blobLength;
+			try {
+				blobLength = dis.readInt() & 0xFFFFFFFFL;
+			} catch (EOFException e) {
+				// End of file
+				dis.close();
+				break;
+			}
+			short blobType = dis.readShort();
+			short blobVer = dis.readShort();
+			
+			if(blobType == BinaryBlob.BLOB_END) {
+				dis.close();
+				break;
+			} else if(blobType == BinaryBlob.BLOB_BLOCK) {
+				if(blobVer != BinaryBlob.BLOB_BLOCK_VERSION)
+					// Even if tolerant, if we can't read a blob there probably isn't much we can do.
+					throw new BinaryBlobFormatException("Unknown block blob version");
+				if(blobLength < 9)
+					throw new BinaryBlobFormatException("Block blob too short");
+				short keyType = dis.readShort();
+				int keyLen = dis.readUnsignedByte();
+				int headersLen = dis.readUnsignedShort();
+				int dataLen = dis.readUnsignedShort();
+				int pubkeyLen = dis.readUnsignedShort();
+				int total = 9 + keyLen + headersLen + dataLen + pubkeyLen;
+				if(blobLength != total)
+					throw new BinaryBlobFormatException("Binary blob not same length as data: blobLength="+blobLength+" total="+total);
+				byte[] keyBytes = new byte[keyLen];
+				byte[] headersBytes = new byte[headersLen];
+				byte[] dataBytes = new byte[dataLen];
+				byte[] pubkeyBytes = new byte[pubkeyLen];
+				dis.readFully(keyBytes);
+				dis.readFully(headersBytes);
+				dis.readFully(dataBytes);
+				dis.readFully(pubkeyBytes);
+				KeyBlock block;
+				try {
+					block = Key.createBlock(keyType, keyBytes, headersBytes, dataBytes, pubkeyBytes);
+				} catch (KeyVerifyException e) {
+					throw new BinaryBlobFormatException("Invalid key: "+e.getMessage(), e);
+				}
+				
+				blocks.add(block);
+				
+			} else {
+				if(tolerant) {
+					FileUtil.skipFully(dis, blobLength);
+				} else {
+					throw new BinaryBlobFormatException("Unknown blob type: "+blobType);
+				}
+			}
+			i++;
+		}
+
+	}
 }

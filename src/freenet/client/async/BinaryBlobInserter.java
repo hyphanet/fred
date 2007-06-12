@@ -1,11 +1,9 @@
 package freenet.client.async;
 
 import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Vector;
-
-import com.onionnetworks.util.FileUtil;
 
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
@@ -13,7 +11,6 @@ import freenet.client.InsertException;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
-import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
 import freenet.node.LowLevelPutException;
 import freenet.node.SimpleSendableInsert;
@@ -44,74 +41,24 @@ public class BinaryBlobInserter implements ClientPutState {
 		this.parent = parent;
 		this.clientContext = clientContext;
 		this.errors = new FailureCodeTracker(true);
-		Vector myInserters = new Vector();
 		DataInputStream dis = new DataInputStream(blob.getInputStream());
-		long magic = dis.readLong();
-		if(magic != BinaryBlob.BINARY_BLOB_MAGIC)
-			throw new BinaryBlobFormatException("Bad magic");
-		short version = dis.readShort();
-		if(version != BinaryBlob.BINARY_BLOB_OVERALL_VERSION)
-			throw new BinaryBlobFormatException("Unknown overall version");
 		
-		int i=0;
-		while(true) {
-			long blobLength;
-			try {
-				blobLength = dis.readInt() & 0xFFFFFFFFL;
-			} catch (EOFException e) {
-				// End of file
-				dis.close();
-				break;
-			}
-			short blobType = dis.readShort();
-			short blobVer = dis.readShort();
-			
-			if(blobType == BinaryBlob.BLOB_END) {
-				dis.close();
-				break;
-			} else if(blobType == BinaryBlob.BLOB_BLOCK) {
-				if(blobVer != BinaryBlob.BLOB_BLOCK_VERSION)
-					// Even if tolerant, if we can't read a blob there probably isn't much we can do.
-					throw new BinaryBlobFormatException("Unknown block blob version");
-				if(blobLength < 9)
-					throw new BinaryBlobFormatException("Block blob too short");
-				short keyType = dis.readShort();
-				int keyLen = dis.readUnsignedByte();
-				int headersLen = dis.readUnsignedShort();
-				int dataLen = dis.readUnsignedShort();
-				int pubkeyLen = dis.readUnsignedShort();
-				int total = 9 + keyLen + headersLen + dataLen + pubkeyLen;
-				if(blobLength != total)
-					throw new BinaryBlobFormatException("Binary blob not same length as data: blobLength="+blobLength+" total="+total);
-				byte[] keyBytes = new byte[keyLen];
-				byte[] headersBytes = new byte[headersLen];
-				byte[] dataBytes = new byte[dataLen];
-				byte[] pubkeyBytes = new byte[pubkeyLen];
-				dis.readFully(keyBytes);
-				dis.readFully(headersBytes);
-				dis.readFully(dataBytes);
-				dis.readFully(pubkeyBytes);
-				KeyBlock block;
-				try {
-					block = Key.createBlock(keyType, keyBytes, headersBytes, dataBytes, pubkeyBytes);
-				} catch (KeyVerifyException e) {
-					throw new BinaryBlobFormatException("Invalid key: "+e.getMessage(), e);
-				}
-				
-				MySendableInsert inserter =
-					new MySendableInsert(i, block, prioClass, getScheduler(block), clientContext);
-				
-				myInserters.add(inserter);
-				
-			} else {
-				if(tolerant) {
-					FileUtil.skipFully(dis, blobLength);
-				} else {
-					throw new BinaryBlobFormatException("Unknown blob type: "+blobType);
-				}
-			}
-			i++;
+		BlockSet blocks = new SimpleBlockSet();
+		
+		BinaryBlob.readBinaryBlob(dis, blocks, tolerant);
+		
+		Vector myInserters = new Vector();
+		Iterator i = blocks.keys().iterator();
+		
+		int x=0;
+		while(i.hasNext()) {
+			Key key = (Key) i.next();
+			KeyBlock block = blocks.get(key);
+			MySendableInsert inserter =
+				new MySendableInsert(x++, block, prioClass, getScheduler(block), clientContext);
+			myInserters.add(inserter);
 		}
+		
 		inserters = (MySendableInsert[]) myInserters.toArray(new MySendableInsert[myInserters.size()]);
 		parent.addMustSucceedBlocks(inserters.length);
 		parent.notifyClients();
