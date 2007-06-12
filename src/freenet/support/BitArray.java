@@ -123,8 +123,11 @@ public class BitArray implements WritableToDataOutputStream {
 			if(b == 0) continue;
 			for(int j=0;j<8;j++) {
 				int mask = (1 << j);
-				if((b & mask) != 0)
-					return i*8+j;
+				if((b & mask) != 0) {
+					int x = i*8+j;
+					if(x > _size) return -1;
+					return x;
+				}
 			}
 		}
 		return -1;
