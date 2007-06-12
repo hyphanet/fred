@@ -619,6 +619,7 @@ public class NodeUpdateManager {
 			// we don't need to advertize updates : we are not going to do them
 			killUpdateAlerts();
 		}
+		uom.killAlert();
 		broadcastUOMAnnounces();
 	}
 

@@ -611,6 +611,7 @@ public class UpdateOverMandatoryManager {
 					// Blown: somebody inserted a revocation message, but it was corrupt as inserted
 					// However it had valid signatures etc.
 					
+					System.err.println("Got revocation certificate from "+source.userToString()+" (fatal error i.e. someone with the key inserted bad data)");
 					// Blow the update, and propagate the revocation certificate.
 					updateManager.revocationChecker.onFailure(e, state, cleanedBlobFile);
 					temp.delete();
@@ -640,6 +641,7 @@ public class UpdateOverMandatoryManager {
 			}
 
 			public void onSuccess(FetchResult result, ClientGetter state) {
+				System.err.println("Got revocation certificate from "+source.userToString());
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlobFile);
 				temp.delete();
 			}
@@ -670,6 +672,10 @@ public class UpdateOverMandatoryManager {
 		} catch (NotConnectedException e1) {
 			// Ignore
 		}
+	}
+
+	public void killAlert() {
+		updateManager.node.clientCore.alerts.unregister(alert);
 	}
 	
 }
