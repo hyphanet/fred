@@ -13,6 +13,7 @@ import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.Vector;
 
+import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -20,8 +21,10 @@ import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.BinaryBlobFormatException;
+import freenet.client.async.BinaryBlobInserter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientPutter;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.SimpleBlockSet;
 import freenet.io.comm.AsyncMessageCallback;
@@ -36,6 +39,8 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.PeerNode;
+import freenet.node.RequestSender;
+import freenet.node.RequestStarter;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -618,6 +623,9 @@ public class UpdateOverMandatoryManager {
 					// Blow the update, and propagate the revocation certificate.
 					updateManager.revocationChecker.onFailure(e, state, cleanedBlobFile);
 					temp.delete();
+					
+					insertBlob();
+					
 				} else {
 					Logger.error(this, "Failed to fetch revocation certificate from blob from "+source.userToString());
 					System.err.println("Failed to fetch revocation certificate from blob from "+source.userToString());
@@ -647,6 +655,7 @@ public class UpdateOverMandatoryManager {
 				System.err.println("Got revocation certificate from "+source.userToString());
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlobFile);
 				temp.delete();
+				insertBlob();
 			}
 
 			public void onSuccess(BaseClientPutter state) {
@@ -666,6 +675,44 @@ public class UpdateOverMandatoryManager {
 			myCallback.onFailure(e1, cg);
 		}
 		
+	}
+
+	protected void insertBlob() {
+		ClientCallback callback = new ClientCallback() {
+			public void onFailure(FetchException e, ClientGetter state) {
+				// Ignore, can't happen
+			}
+			public void onFailure(InsertException e, BaseClientPutter state) {
+				Logger.error(this, "Failed to insert revocation key binary blob: "+e, e);
+			}
+			public void onFetchable(BaseClientPutter state) {
+				// Ignore
+			}
+			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+				// Ignore
+			}
+			public void onMajorProgress() {
+				// Ignore
+			}
+			public void onSuccess(FetchResult result, ClientGetter state) {
+				// Ignore, can't happen
+			}
+			public void onSuccess(BaseClientPutter state) {
+				// All done. Cool.
+				Logger.normal(this, "Inserted binary blob for revocation key");
+			}
+		};
+		FileBucket bucket = new FileBucket(updateManager.revocationChecker.getBlobFile(), true, false, false, false, false);
+		ClientPutter putter = new ClientPutter(callback, bucket,
+				FreenetURI.EMPTY_CHK_URI, null, updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS).getInsertContext(true),
+				updateManager.node.clientCore.requestStarters.chkPutScheduler,
+				updateManager.node.clientCore.requestStarters.sskPutScheduler,
+				RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, null, true);
+		try {
+			putter.start(false);
+		} catch (InsertException e1) {
+			Logger.error(this, "Failed to start insert of revocation key binary blob: "+e1, e1);
+		}
 	}
 
 	private void cancelSend(PeerNode source, long uid) {
