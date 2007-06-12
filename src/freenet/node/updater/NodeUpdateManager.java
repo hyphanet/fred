@@ -39,7 +39,8 @@ public class NodeUpdateManager {
 	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
 	public final static String EXT_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/ext/"+NodeStarter.extBuildNumber;
 
-	public static final long MAX_REVOCATION_KEY_LENGTH = 16*1024*1024; // 16MB
+	public static final long MAX_REVOCATION_KEY_LENGTH = 4*1024*1024; // 4MB
+	public static final long MAX_MAIN_JAR_LENGTH = 16*1024*1024; // 16MB
 	
 	FreenetURI updateURI;
 	FreenetURI extURI;
@@ -809,6 +810,16 @@ public class NodeUpdateManager {
 			peersSayBlown = false;
 			armed = false;
 		}
+	}
+
+	public File getMainBlob(int version) {
+		NodeUpdater updater;
+		synchronized(this) {
+			if(hasBeenBlown) return null;
+			updater = mainUpdater;
+			if(updater == null) return null;
+		}
+		return updater.getBlobFile(version);
 	}
 
 }

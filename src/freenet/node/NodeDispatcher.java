@@ -135,6 +135,10 @@ public class NodeDispatcher implements Dispatcher {
 			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
 		} else if(spec == DMT.UOMSendingRevocation) {
 			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
+		} else if(spec == DMT.UOMRequestMain) {
+			return node.nodeUpdater.uom.handleRequestMain(m, source);
+		} else if(spec == DMT.UOMSendingMain) {
+			return node.nodeUpdater.uom.handleSendingMain(m, source);
 		}
 		return false;
 	}

@@ -148,7 +148,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}
 	}
 	
-	private File getBlobFile(int availableVersion) {
+	File getBlobFile(int availableVersion) {
 		return new File(node.getNodeDir(), blobFilenamePrefix+availableVersion+".fblob");
 	}
 
@@ -177,6 +177,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 	
 	public void onSuccess(FetchResult result, ClientGetter state) {
+		onSuccess(result, state, tempBlobFile);
+	}
+	
+	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean isNew;
 		synchronized(this) {
@@ -334,5 +338,9 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 	public long getBlobSize() {
 		return getBlobFile(getFetchedVersion()).length();
+	}
+
+	public File getBlobFile() {
+		return getBlobFile(getFetchedVersion());
 	}
 }
