@@ -64,6 +64,7 @@ public class NodeUpdateManager {
 	final RevocationChecker revocationChecker;
 	private String revocationMessage;
 	private boolean hasBeenBlown;
+	private boolean peersSayBlown;
 	
 	/** Is there a new main jar ready to deploy? */
 	private boolean hasNewMainJar;
@@ -329,6 +330,7 @@ public class NodeUpdateManager {
 		synchronized(this) {
 			if(!(hasNewMainJar || hasNewExtJar)) return false; // no jar
 			if(hasBeenBlown) return false; // Duh
+			if(peersSayBlown) return false;
 			// Don't immediately deploy if still fetching
 			startedMillisAgo = now - Math.max(startedFetchingNextMainJar, startedFetchingNextExtJar);
 			if(startedMillisAgo < WAIT_FOR_SECOND_FETCH_TO_COMPLETE)
@@ -350,10 +352,17 @@ public class NodeUpdateManager {
 		try {
 			synchronized(this) {
 				if(hasBeenBlown) {
-					String msg = "Trying to update but key has been blown! Message was "+revocationMessage;
+					String msg = "Trying to update but key has been blown! Not updating, message was "+revocationMessage;
 					Logger.error(this, msg);
 					System.err.println(msg);
 					return;
+				}
+				if(peersSayBlown) {
+					String msg = "Trying to update but at least one peer says the key has been blown! Not updating.";
+					Logger.error(this, msg);
+					System.err.println(msg);
+					return;
+					
 				}
 				if(!isEnabled()) return;
 				if(!(isAutoUpdateAllowed || armed)) return;
@@ -783,6 +792,20 @@ public class NodeUpdateManager {
 			setRevocationURI(uri);
 		}
 		
+	}
+
+	/** Called when a peer indicates in its UOMAnnounce that it has fetched the revocation key
+	 * (or failed to do so in a way suggesting that somebody knows the key).
+	 * @param source The node which is claiming this.
+	 */
+	void peerClaimsKeyBlown(PeerNode source) {
+		// Note that UpdateOverMandatoryManager manages the list of peers who think this.
+		// All we have to do is cancel the update.
+		
+		synchronized(this) {
+			peersSayBlown = false;
+			armed = false;
+		}
 	}
 
 }

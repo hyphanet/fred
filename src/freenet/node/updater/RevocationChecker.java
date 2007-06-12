@@ -155,6 +155,10 @@ public class RevocationChecker implements ClientCallback {
 	}
 
 	private void moveBlob() {
+		if(tmpBlobFile == null) {
+			Logger.error(this, "No temporary binary blob file moving it: may not be able to propagate revocation, bug???");
+			return;
+		}
 		if(!tmpBlobFile.renameTo(blobFile)) {
 			blobFile.delete();
 			if(!tmpBlobFile.renameTo(blobFile)) {
@@ -162,23 +166,24 @@ public class RevocationChecker implements ClientCallback {
 				System.err.println("Not able to rename binary blob for revocation fetcher: "+tmpBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this revocation");
 			}
 		}
-		if(tmpBlobFile != null)
-			tmpBlobFile.renameTo(blobFile);
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {
 		Logger.minor(this, "Revocation fetch failed: "+e);
-		if(tmpBlobFile != null) tmpBlobFile.delete();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		int errorCode = e.getMode();
 		boolean completed = false;
 		long now = System.currentTimeMillis();
-		if(errorCode == FetchException.CANCELLED) return; // cancelled by us above, or killed; either way irrelevant and doesn't need to be restarted
+		if(errorCode == FetchException.CANCELLED) {
+			if(tmpBlobFile != null) tmpBlobFile.delete();
+			return; // cancelled by us above, or killed; either way irrelevant and doesn't need to be restarted
+		}
 		if(e.isFatal()) {
 			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString());
 			moveBlob(); // other peers need to know
 			return;
 		}
+		if(tmpBlobFile != null) tmpBlobFile.delete();
 		if(e.newURI != null) {
 			manager.blow("Revocation URI redirecting to "+e.newURI+" - maybe you set the revocation URI to the update URI?");
 		}
