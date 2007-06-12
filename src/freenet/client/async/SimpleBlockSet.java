@@ -3,8 +3,12 @@ package freenet.client.async;
 import java.util.HashMap;
 import java.util.Set;
 
+import freenet.keys.ClientKey;
+import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
+import freenet.keys.KeyVerifyException;
+import freenet.support.Logger;
 
 /** 
  * Simple BlockSet implementation, keeps all keys in RAM.
@@ -19,12 +23,23 @@ public class SimpleBlockSet implements BlockSet {
 		blocksByKey.put(block.getKey(), block);
 	}
 
-	public KeyBlock get(Key key) {
+	public synchronized KeyBlock get(Key key) {
 		return (KeyBlock) blocksByKey.get(key);
 	}
 
-	public Set keys() {
+	public synchronized Set keys() {
 		return blocksByKey.keySet();
+	}
+
+	public ClientKeyBlock get(ClientKey key) {
+		KeyBlock block = get(key.getNodeKey());
+		if(block == null) return null;
+		try {
+			return Key.createKeyBlock(key, block);
+		} catch (KeyVerifyException e) {
+			Logger.error(this, "Caught decoding block with "+key+" : "+e, e);
+			return null;
+		}
 	}
 
 }

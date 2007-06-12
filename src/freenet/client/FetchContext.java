@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import freenet.client.async.BlockSet;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
@@ -45,6 +46,8 @@ public class FetchContext implements Cloneable {
 	public boolean returnZIPManifests;
 	public final HealingQueue healingQueue;
 	public final boolean ignoreTooManyPathComponents;
+	/** If set, contains a set of blocks to be consulted before checking the datastore. */
+	public BlockSet blocks;
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,

@@ -10,14 +10,13 @@ import java.util.HashSet;
 
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetchContext;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
-import freenet.keys.KeyBlock;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;

@@ -190,15 +190,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 				int[] keyTokens = getter.allKeys();
 				for(int i=0;i<keyTokens.length;i++) {
 					int tok = keyTokens[i];
-					ClientKeyBlock block;
+					ClientKeyBlock block = null;
 					try {
 						ClientKey key = getter.getKey(tok);
 						if(key == null) {
 							if(logMINOR)
 								Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
 							continue;
-						} else
-							block = node.fetchKey(key, getter.dontCache());
+						} else {
+							if(getter.getContext().blocks != null)
+								block = getter.getContext().blocks.get(key);
+							if(block == null)
+								block = node.fetchKey(key, getter.dontCache());
+						}
 					} catch (KeyVerifyException e) {
 						// Verify exception, probably bogus at source;
 						// verifies at low-level, but not at decode.

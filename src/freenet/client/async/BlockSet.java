@@ -5,6 +5,8 @@ package freenet.client.async;
 
 import java.util.Set;
 
+import freenet.keys.ClientKey;
+import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 
@@ -33,5 +35,8 @@ public interface BlockSet {
 	 * kept up to date. Read only.
 	 */
 	public Set keys();
+
+	/** Get a high level block, given a high level key */
+	public ClientKeyBlock get(ClientKey key);
 	
 }
