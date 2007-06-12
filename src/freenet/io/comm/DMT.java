@@ -1015,19 +1015,23 @@ public class DMT {
 	}
 	
 	public static final MessageType UOMRequestMain = new MessageType("UOMRequestMain") {{
-		
+		addField(UID, Long.class);
 	}};
 	
-	public static final Message createUOMRequestMain() {
-		return new Message(UOMRequestMain);
+	public static final Message createUOMRequestMain(long uid) {
+		Message msg = new Message(UOMRequestMain);
+		msg.set(UID, uid);
+		return msg;
 	}
 	
 	public static final MessageType UOMRequestExtra = new MessageType("UOMRequestExtra") {{
-		
+		addField(UID, Long.class);
 	}};
 	
-	public static final Message createUOMRequestExtra() {
-		return new Message(UOMRequestExtra);
+	public static final Message createUOMRequestExtra(long uid) {
+		Message msg = new Message(UOMRequestExtra);
+		msg.set(UID, uid);
+		return msg;
 	}
 	
 	public static final MessageType UOMSendingRevocation = new MessageType("UOMSendingRevocation") {{
@@ -1050,13 +1054,15 @@ public class DMT {
 		addField(UID, Long.class);
 		addField(FILE_LENGTH, Long.class);
 		addField(MAIN_JAR_KEY, String.class);
+		addField(MAIN_JAR_VERSION, Integer.class);
 	}};
 	
-	public static final Message createUOMSendingMain(long uid, long length, String key) {
+	public static final Message createUOMSendingMain(long uid, long length, String key, int version) {
 		Message msg = new Message(UOMSendingMain);
 		msg.set(UID, uid);
 		msg.set(FILE_LENGTH, length);
 		msg.set(MAIN_JAR_KEY, key);
+		msg.set(MAIN_JAR_VERSION, version);
 		return msg;
 	}
 	
@@ -1064,13 +1070,15 @@ public class DMT {
 		addField(UID, Long.class);
 		addField(FILE_LENGTH, Long.class);
 		addField(EXTRA_JAR_KEY, String.class);
+		addField(EXTRA_JAR_VERSION, Integer.class);
 	}};
 	
-	public static final Message createUOMSendingExtra(long uid, long length, String key) {
+	public static final Message createUOMSendingExtra(long uid, long length, String key, int version) {
 		Message msg = new Message(UOMSendingExtra);
 		msg.set(UID, uid);
 		msg.set(FILE_LENGTH, length);
 		msg.set(EXTRA_JAR_KEY, key);
+		msg.set(EXTRA_JAR_VERSION, version);
 		return msg;
 	}
 	
