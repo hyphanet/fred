@@ -200,10 +200,13 @@ public class UpdateOverMandatoryManager {
 		if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0) {
 			// Fetch it
 			try {
-				FreenetURI mainJarURI = new FreenetURI(jarKey);
-				if(mainJarURI.equals(updateManager.updateURI)) {
+				FreenetURI mainJarURI = new FreenetURI(jarKey).setSuggestedEdition(mainJarVersion);
+				if(mainJarURI.equals(updateManager.updateURI.setSuggestedEdition(mainJarVersion))) {
 					System.err.println("Fetching main jar from "+source.userToString());
 					sendUOMRequestMain(source);
+				} else {
+					System.err.println("Node "+source.userToString()+" offered us a new main jar (version "+mainJarVersion+") but his key was different to ours:\n"+
+							"our key: "+updateManager.updateURI+"\nhis key:"+mainJarURI);
 				}
 			} catch (MalformedURLException e) {
 				// Should maybe be a useralert?
