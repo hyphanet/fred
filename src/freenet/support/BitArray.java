@@ -125,7 +125,7 @@ public class BitArray implements WritableToDataOutputStream {
 				int mask = (1 << j);
 				if((b & mask) != 0) {
 					int x = i*8+j;
-					if(x > _size) return -1;
+					if(x >= _size) return -1;
 					return x;
 				}
 			}
