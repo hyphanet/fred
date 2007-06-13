@@ -177,10 +177,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 	
 	public void onSuccess(FetchResult result, ClientGetter state) {
-		onSuccess(result, state, tempBlobFile);
+		onSuccess(result, state, tempBlobFile, fetchingVersion);
 	}
 	
-	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile) {
+	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean isNew;
 		synchronized(this) {
@@ -203,7 +203,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					Logger.error(this, "Not able to rename binary blob for node updater: "+tempBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this build");
 				}
 			}
-			this.fetchedVersion = fetchingVersion;
+			this.fetchedVersion = fetchedVersion;
 			if(fetchedVersion > currentVersion) {
 				System.out.println("Found "+fetchingVersion);
 				Logger.normal(this, "Found a new version! (" + fetchingVersion + ", setting up a new UpdatedVersionAvailableUserAlert");

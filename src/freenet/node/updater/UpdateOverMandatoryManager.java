@@ -1133,7 +1133,7 @@ public class UpdateOverMandatoryManager {
 					System.err.println("Not updating because updater is disabled!");
 					return;
 				}
-				mainUpdater.onSuccess(result, state, cleanedBlobFile);
+				mainUpdater.onSuccess(result, state, cleanedBlobFile, version);
 				temp.delete();
 				insertBlob(mainUpdater.getBlobFile(version));
 			}
