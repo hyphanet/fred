@@ -329,27 +329,33 @@ public class NodeUpdateManager {
 	 * Reason: we want to be able to deploy UOM updates on nodes with all TOO NEW or leaf nodes 
 	 * whose peers are overloaded/broken. Note that with UOM, revocation certs are automatically
 	 * propagated node to node, so this should be *relatively* safe. Any better ideas, tell us. */
-	private static final int REVOCATION_FETCH_TIMEOUT = 5*60*1000;
+	private static final int REVOCATION_FETCH_TIMEOUT = 60*1000;
 	
 	/** Does the updater have an update ready to deploy? May be called synchronized(this) */
 	private boolean isReadyToDeployUpdate(boolean ignoreRevocation) {
 		long now = System.currentTimeMillis();
 		long startedMillisAgo;
 		synchronized(this) {
-			if(!(hasNewMainJar || hasNewExtJar)) return false; // no jar
+			if(!(hasNewMainJar || hasNewExtJar)) {
+				if(logMINOR) Logger.minor(this, "hasNewMainJar="+hasNewMainJar+" hasNewExtJar="+hasNewExtJar);
+				return false; // no jar
+			}
 			if(hasBeenBlown) return false; // Duh
 			if(peersSayBlown) return false;
 			// Don't immediately deploy if still fetching
 			startedMillisAgo = now - Math.max(startedFetchingNextMainJar, startedFetchingNextExtJar);
-			if(startedMillisAgo < WAIT_FOR_SECOND_FETCH_TO_COMPLETE)
+			if(startedMillisAgo < WAIT_FOR_SECOND_FETCH_TO_COMPLETE) {
+				if(logMINOR) Logger.minor(this, "Not ready: Still fetching");
 				return false; // Wait for running fetch to complete
+			}
 			if(!ignoreRevocation) {
 				if(now - revocationChecker.lastSucceeded() < RECENT_REVOCATION_INTERVAL)
 					return true;
-				if(revocationChecker.startedFetch > 0 && now - revocationChecker.startedFetch > REVOCATION_FETCH_TIMEOUT)
+				if(revocationChecker.startedFetch > 0 && now - revocationChecker.startedFetch >= REVOCATION_FETCH_TIMEOUT)
 					return true;
 			}
 		}
+		if(logMINOR) Logger.minor(this, "Still here in isReadyToDeployUpdate");
 		// Apparently everything is ready except the revocation fetch. So start it.
 		revocationChecker.start(true);
 		if(ignoreRevocation) return true;
@@ -375,10 +381,22 @@ public class NodeUpdateManager {
 					return;
 					
 				}
-				if(!isEnabled()) return;
-				if(!(isAutoUpdateAllowed || armed)) return;
-				if(!isReadyToDeployUpdate(false)) return;
-				if(isDeployingUpdate) return;
+				if(!isEnabled()) {
+					if(logMINOR) Logger.minor(this, "Not enabled");
+					return;
+				}
+				if(!(isAutoUpdateAllowed || armed)) {
+					if(logMINOR) Logger.minor(this, "Not armed");
+					return;
+				}
+				if(!isReadyToDeployUpdate(false)) {
+					if(logMINOR) Logger.minor(this, "Not ready to deploy update");
+					return;
+				}
+				if(isDeployingUpdate) {
+					if(logMINOR) Logger.minor(this, "Already deploying update");
+					return;
+				}
 				isDeployingUpdate = true;
 			}
 			

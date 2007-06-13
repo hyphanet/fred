@@ -90,9 +90,14 @@ public class RevocationChecker implements ClientCallback {
 				if(revocationGetter != null && 
 						!(revocationGetter.isCancelled() || revocationGetter.isFinished()))  {
 					if(logMINOR) Logger.minor(this, "Not queueing another revocation fetcher yet, old one still running");
+					reset = false;
 				} else {
-					if(reset)
+					if(reset) {
+						if(logMINOR) Logger.minor(this, "Resetting DNF count from "+revocationDNFCounter, new Exception("debug"));
 						revocationDNFCounter = 0;
+					} else {
+						if(logMINOR) Logger.minor(this, "Revocation count "+revocationDNFCounter);
+					}
 					if(logMINOR) Logger.minor(this, "fetcher="+revocationGetter);
 					if(revocationGetter != null)
 						Logger.minor(this, "revocation fetcher: cancelled="+revocationGetter.isCancelled()+", finished="+revocationGetter.isFinished());
@@ -105,7 +110,7 @@ public class RevocationChecker implements ClientCallback {
 							core.requestStarters.sskFetchScheduler, manager.revocationURI, ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
 							this, null, tmpBlobFile == null ? null : new FileBucket(tmpBlobFile, false, false, false, false, false));
-					if(logMINOR) Logger.minor(this, "Queued another revocation fetcher");
+					if(logMINOR) Logger.minor(this, "Queued another revocation fetcher (count="+revocationDNFCounter+")");
 				}
 			}
 			if(toCancel != null)
@@ -113,7 +118,8 @@ public class RevocationChecker implements ClientCallback {
 			if(cg != null) {
 				cg.start();
 				if(logMINOR) Logger.minor(this, "Started revocation fetcher");
-				startedFetch = System.currentTimeMillis();
+				if(reset)
+					startedFetch = System.currentTimeMillis();
 			}
 		} catch (FetchException e) {
 			Logger.error(this, "Not able to start the revocation fetcher.");

@@ -184,19 +184,24 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean isNew;
 		synchronized(this) {
+			if(fetchedVersion < this.fetchedVersion) {
+				tempBlobFile.delete();
+				result.asBucket().free();
+				return;
+			}
 			if(result == null || result.asBucket() == null || result.asBucket().size() == 0) {
 				tempBlobFile.delete();
 				Logger.error(this, "Cannot update: result either null or empty for "+availableVersion);
 				System.err.println("Cannot update: result either null or empty for "+availableVersion);
 				// Try again
-				if(result == null || result.asBucket() == null || availableVersion > fetchingVersion) {
+				if(result == null || result.asBucket() == null || availableVersion > fetchedVersion) {
 					node.ps.queueTimedJob(new Runnable() {
 						public void run() { maybeUpdate(); }
 					}, 0);
 				}
 				return;
 			}
-			File blobFile = getBlobFile(fetchingVersion);
+			File blobFile = getBlobFile(fetchedVersion);
 			if(!tempBlobFile.renameTo(blobFile)) {
 				blobFile.delete();
 				if(!tempBlobFile.renameTo(blobFile)) {
@@ -205,8 +210,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}
 			this.fetchedVersion = fetchedVersion;
 			if(fetchedVersion > currentVersion) {
-				System.out.println("Found "+fetchingVersion);
-				Logger.normal(this, "Found a new version! (" + fetchingVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
+				System.out.println("Found "+fetchedVersion);
+				Logger.normal(this, "Found a new version! (" + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
 			}
 			this.cg = null;
 			if(this.result != null) this.result.asBucket().free();
