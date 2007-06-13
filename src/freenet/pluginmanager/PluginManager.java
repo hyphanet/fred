@@ -366,7 +366,10 @@ public class PluginManager {
 					bos.write(buffer, writenBytes, len);
 					writenBytes +=len;
 				}
-				f.renameTo(finalFile);
+				bos.close();
+				fos.close();
+				if(!f.renameTo(finalFile))
+					Logger.error(this, "Failed to rename "+f+" into "+finalFile);
 				filename = "*@file://" + FileUtil.getCanonicalFile(f);
 				if(logMINOR) Logger.minor(this, "Rewritten to "+filename);
 			} catch (MalformedURLException mue) {
