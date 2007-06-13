@@ -252,12 +252,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         if(negType == 0) {
         	Logger.error(this, "Old ephemeral Diffie-Hellman (negType 0) not supported.");
         	return;
-        }
-        
-        if(negType != 1) {
-            Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
-            return;
-        }else if (negType == 0 || negType == 1){
+        }else if (negType == 1) {
         	// Four stage Diffie-Hellman. 0 = ephemeral, 1 = payload stages are signed (not quite STS)
         	// FIXME reduce to 3 stages and implement STS properly (we have a separate validation mechanism in PeerNode)
         	// AFAICS this (with negType=1) is equivalent in security to STS; it expands the second phase into a second and a fourth phase.
@@ -314,7 +309,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         		// We are Alice
         		processSignedDHTwoOrThree(3, payload, pn, replyTo, false);
         	}
-        }
+        }else {
+            Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
+            return;
+	}
     }
 
     /**
