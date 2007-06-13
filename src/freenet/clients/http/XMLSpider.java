@@ -83,7 +83,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private static final int minTimeBetweenEachIndexRewriting = 1;
 	//private static final String indexFilename = "index.xml";
 	private static final String DEFAULT_INDEX_DIR = "/home/swati/myindex/";
-	private static final int MAX_ENTRIES = 5;
+	private static final int MAX_ENTRIES = 50;
 	private static final String pluginName = "XML spider";
 	
 	private static final String indexTitle= "This is an index";
