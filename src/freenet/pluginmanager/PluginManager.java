@@ -368,6 +368,8 @@ public class PluginManager {
 				}
 				bos.close();
 				fos.close();
+				bos = null;
+				fos = null;
 				if(!f.renameTo(finalFile))
 					Logger.error(this, "Failed to rename "+f+" into "+finalFile);
 				filename = "*@file://" + FileUtil.getCanonicalFile(f);
