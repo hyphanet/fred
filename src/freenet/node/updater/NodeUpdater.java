@@ -22,6 +22,7 @@ import freenet.node.Ticker;
 import freenet.node.Version;
 import freenet.support.Logger;
 import freenet.support.io.ArrayBucket;
+import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
 public class NodeUpdater implements ClientCallback, USKCallback {
@@ -160,14 +161,13 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			fetched = fetchedVersion;
 		}
 		synchronized(writeJarSync) {
-			ArrayBucket bucket = (ArrayBucket) result.asBucket();
-			byte[] data = bucket.toByteArray();
 			fNew.delete();
 			
 			FileOutputStream fos;
 			fos = new FileOutputStream(fNew);
 			
-			fos.write(data);
+			BucketTools.copyTo(result.asBucket(), fos, -1);
+			
 			fos.flush();
 			fos.close();
 		}

@@ -77,6 +77,7 @@ public class NodeUpdateManager {
 	private long startedFetchingNextMainJar;
 	/** If another ext jar is being fetched, when did the fetch start? */
 	private long startedFetchingNextExtJar;
+	private long gotJarTime;
 
 	// Revocation alert
 	private RevocationKeyFoundUserAlert revocationAlert;
@@ -351,14 +352,17 @@ public class NodeUpdateManager {
 			if(!ignoreRevocation) {
 				if(now - revocationChecker.lastSucceeded() < RECENT_REVOCATION_INTERVAL)
 					return true;
-				if(revocationChecker.startedFetch > 0 && now - revocationChecker.startedFetch >= REVOCATION_FETCH_TIMEOUT)
+				if(gotJarTime > 0 && now - gotJarTime >= REVOCATION_FETCH_TIMEOUT)
 					return true;
 			}
 		}
 		if(logMINOR) Logger.minor(this, "Still here in isReadyToDeployUpdate");
 		// Apparently everything is ready except the revocation fetch. So start it.
 		revocationChecker.start(true);
-		if(ignoreRevocation) return true;
+		if(ignoreRevocation) {
+			if(logMINOR) Logger.minor(this, "Returning true because of ignoreRevocation");
+			return true;
+		}
 		deployOffThread(WAIT_FOR_SECOND_FETCH_TO_COMPLETE - startedMillisAgo);
 		return false;
 	}
@@ -425,6 +429,9 @@ public class NodeUpdateManager {
 
 		if(writeJars(ctx)) 
 			restart(ctx);
+		else {
+			if(logMINOR) Logger.minor(this, "Did not write jars");
+		}
 	}
 
 	/**
@@ -549,6 +556,8 @@ public class NodeUpdateManager {
 
 	/** Restart the node. Does not return. */
 	private void restart(UpdateDeployContext ctx) {
+		if(logMINOR)
+			Logger.minor(this, "Restarting...");
 		node.getNodeStarter().restart();
 		try {
 			Thread.sleep(5*60*1000);
@@ -584,11 +593,13 @@ public class NodeUpdateManager {
 				if(extUpdater.getFetchedVersion() > ExtVersion.buildNumber) {
 					hasNewExtJar = true;
 					startedFetchingNextExtJar = -1;
+					gotJarTime = System.currentTimeMillis();
 				}
 			} else {
 				if(mainUpdater.getFetchedVersion() > Version.buildNumber()) {
 					hasNewMainJar = true;
 					startedFetchingNextMainJar = -1;
+					gotJarTime = System.currentTimeMillis();
 				}
 			}
 		}
@@ -680,7 +691,13 @@ public class NodeUpdateManager {
 	void deployOffThread(long delay) {
 		node.ps.queueTimedJob(new Runnable() {
 			public void run() {
-				deployUpdate();
+				if(logMINOR) Logger.minor(this, "Running deployOffThread");
+				try {
+					deployUpdate();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t+" trying to deployOffThread", t);
+				}
+				if(logMINOR) Logger.minor(this, "Run deployOffThread");
 			}
 		}, delay);
 	}
