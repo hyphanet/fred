@@ -1471,7 +1471,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     		if(pn.isRoutingCompatible())
     			Logger.error(this, "Could not negotiate with "+pn+" : no common negTypes available!: his negTypes: "+StringArray.toString(pn.negTypes)+" my negTypes: "+StringArray.toString(supportedNegTypes())+" despite being up to date!!");
     		else
-    			Logger.normal(this, "Could not negotiate with "+pn+" : no common negTypes available!: his negTypes: "+pn.negTypes+" my negTypes: "+supportedNegTypes()+" (probably just too old)");
+    			Logger.normal(this, "Could not negotiate with "+pn+" : no common negTypes available!: his negTypes: "+StringArray.toString(pn.negTypes)+" my negTypes: "+StringArray.toString(supportedNegTypes())+" (probably just too old)");
     		return;
     	}
     	if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn+" negotiation type "+negType);
