@@ -2538,7 +2538,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Move the pubkey to the top of the LRU, and fix it if it
 		// was corrupt.
 		cacheKey(clientSSK.pubKeyHash, key, false);
-		return new ClientSSKBlock(block, clientSSK);
+		return ClientSSKBlock.construct(block, clientSSK);
 	}
 
 	private ClientKeyBlock fetch(ClientCHK clientCHK, boolean dontPromote) throws CHKVerifyException {
