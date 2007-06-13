@@ -346,7 +346,7 @@ public class NodeUpdateManager {
 			if(!ignoreRevocation) {
 				if(now - revocationChecker.lastSucceeded() < RECENT_REVOCATION_INTERVAL)
 					return true;
-				if(now - revocationChecker.startedFetch > REVOCATION_FETCH_TIMEOUT)
+				if(revocationChecker.startedFetch > 0 && now - revocationChecker.startedFetch > REVOCATION_FETCH_TIMEOUT)
 					return true;
 			}
 		}
