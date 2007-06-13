@@ -85,7 +85,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public synchronized void onFoundEdition(long l, USK key){
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Found edition "+l);
-		System.err.println("Found new "+(extUpdate?"freenet-ext.jar " : "")+"update edition "+l);
+		System.err.println("Found "+(extUpdate?"freenet-ext.jar " : "")+"update edition "+l);
 		if(!isRunning) return;
 		int found = (int)key.suggestedEdition;
 		
@@ -211,7 +211,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			this.fetchedVersion = fetchedVersion;
 			if(fetchedVersion > currentVersion) {
 				System.out.println("Found "+fetchedVersion);
-				Logger.normal(this, "Found a new version! (" + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
+				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
 			}
 			this.cg = null;
 			if(this.result != null) this.result.asBucket().free();
