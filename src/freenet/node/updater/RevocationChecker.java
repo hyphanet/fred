@@ -32,6 +32,8 @@ public class RevocationChecker implements ClientCallback {
 	private FetchContext ctxRevocation;
 	private ClientGetter revocationGetter;
 	private boolean wasAggressive;
+	/** Last time we started a fetch, or restarted it aggressively */
+	long startedFetch;
 	/** Last time at which we got 3 DNFs on the revocation key */
 	private long lastSucceeded;
 	
@@ -111,6 +113,7 @@ public class RevocationChecker implements ClientCallback {
 			if(cg != null) {
 				cg.start();
 				if(logMINOR) Logger.minor(this, "Started revocation fetcher");
+				startedFetch = System.currentTimeMillis();
 			}
 		} catch (FetchException e) {
 			Logger.error(this, "Not able to start the revocation fetcher.");

@@ -325,6 +325,11 @@ public class NodeUpdateManager {
 
 	private static final int WAIT_FOR_SECOND_FETCH_TO_COMPLETE = 240*1000;
 	private static final int RECENT_REVOCATION_INTERVAL = 120*1000;
+	/** After 5 minutes, deploy the update even if we haven't got 3 DNFs on the revocation key yet.
+	 * Reason: we want to be able to deploy UOM updates on nodes with all TOO NEW or leaf nodes 
+	 * whose peers are overloaded/broken. Note that with UOM, revocation certs are automatically
+	 * propagated node to node, so this should be *relatively* safe. Any better ideas, tell us. */
+	private static final int REVOCATION_FETCH_TIMEOUT = 5*60*1000;
 	
 	/** Does the updater have an update ready to deploy? May be called synchronized(this) */
 	private boolean isReadyToDeployUpdate(boolean ignoreRevocation) {
@@ -341,8 +346,11 @@ public class NodeUpdateManager {
 			if(!ignoreRevocation) {
 				if(now - revocationChecker.lastSucceeded() < RECENT_REVOCATION_INTERVAL)
 					return true;
+				if(now - revocationChecker.startedFetch > REVOCATION_FETCH_TIMEOUT)
+					return true;
 			}
 		}
+		// Apparently everything is ready except the revocation fetch. So start it.
 		revocationChecker.start(true);
 		if(ignoreRevocation) return true;
 		deployOffThread(WAIT_FOR_SECOND_FETCH_TO_COMPLETE - startedMillisAgo);
@@ -567,6 +575,7 @@ public class NodeUpdateManager {
 			}
 		}
 		revocationChecker.start(true);
+		deployOffThread(REVOCATION_FETCH_TIMEOUT);
 		if(!isAutoUpdateAllowed)
 			broadcastUOMAnnounces();
 	}
