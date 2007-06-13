@@ -227,6 +227,7 @@ public class UpdateOverMandatoryManager {
 					nodesOfferedMainJar.add(source);
 					return;
 				} else {
+					if(nodesSendingMainJar.contains(source)) return;
 					nodesAskedSendMainJar.add(source);
 				}
 			}
@@ -931,6 +932,9 @@ public class UpdateOverMandatoryManager {
 			System.err.println("Failed receiving main jar "+version+" because URI not parsable: "+e+" for "+key);
 			e.printStackTrace();
 			cancelSend(source, uid);
+			synchronized(this) {
+				this.nodesAskedSendMainJar.remove(source);
+			}
 			return true;
 		}
 		
@@ -940,6 +944,9 @@ public class UpdateOverMandatoryManager {
 					"Our   URI: "+updateManager.updateURI+"\n"+
 					"Their URI: "+jarURI);
 			cancelSend(source, uid);
+			synchronized(this) {
+				this.nodesAskedSendMainJar.remove(source);
+			}
 			return true;
 		}
 		
@@ -947,6 +954,9 @@ public class UpdateOverMandatoryManager {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Key blown, so not receiving main jar from "+source+ "("+uid+")");
 			cancelSend(source, uid);
+			synchronized(this) {
+				this.nodesAskedSendMainJar.remove(source);
+			}
 			return true;
 		}
 		
@@ -955,6 +965,9 @@ public class UpdateOverMandatoryManager {
 			Logger.error(this, "Node "+source.getPeer()+" : "+source.getName()+" offered us a main jar ("+version+") "+SizeUtil.formatSize(length)+" long. This is unacceptably long so we have refused the transfer.");
 			// If the transfer fails, we don't try again.
 			cancelSend(source, uid);
+			synchronized(this) {
+				this.nodesAskedSendMainJar.remove(source);
+			}
 			return true;
 		}
 		
@@ -969,6 +982,9 @@ public class UpdateOverMandatoryManager {
 			System.err.println("Cannot save new main jar to disk and therefore cannot fetch it from our peer!: "+e);
 			e.printStackTrace();
 			cancelSend(source, uid);
+			synchronized(this) {
+				this.nodesAskedSendMainJar.remove(source);
+			}
 			return true;
 		}
 		
@@ -977,6 +993,9 @@ public class UpdateOverMandatoryManager {
 			raf = new RandomAccessFileWrapper(temp, "rw");
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Peer "+source+" sending us a main jar binary blob, but we lost the temp file "+temp+" : "+e, e);
+			synchronized(this) {
+				this.nodesAskedSendMainJar.remove(source);
+			}
 			return true;
 		}
 		
@@ -988,12 +1007,22 @@ public class UpdateOverMandatoryManager {
 		Thread t = new Thread(new Runnable() {
 
 			public void run() {
-				if(br.receive()) {
-					// Success!
-					processMainJarBlob(temp, source, version, jarURI);
-				} else {
-					Logger.error(this, "Failed to transfer main jar "+version+" from "+source);
-					System.err.println("Failed to transfer main jar "+version+" from "+source);
+				try {
+					synchronized(UpdateOverMandatoryManager.class) {
+						nodesAskedSendMainJar.remove(source);
+						nodesSendingMainJar.add(source);
+					}
+					if(br.receive()) {
+						// Success!
+						processMainJarBlob(temp, source, version, jarURI);
+					} else {
+						Logger.error(this, "Failed to transfer main jar "+version+" from "+source);
+						System.err.println("Failed to transfer main jar "+version+" from "+source);
+					}
+				} finally {
+					synchronized(UpdateOverMandatoryManager.class) {
+						nodesSendingMainJar.remove(source);
+					}
 				}
 			}
 			
