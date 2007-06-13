@@ -90,6 +90,7 @@ public class FetchContext implements Cloneable {
 			this.eventProducer = new SimpleEventProducer();
 		this.uskManager = ctx.uskManager;
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
+		this.blocks = ctx.blocks;
 		if(maskID == IDENTICAL_MASK) {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
