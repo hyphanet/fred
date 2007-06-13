@@ -176,6 +176,11 @@ public class PartiallyReceivedBulk {
 	}
 
 	public synchronized void remove(BulkTransmitter remove) {
+		boolean found = false;
+		for(int i=0;i<transmitters.length;i++) {
+			if(transmitters[i] == remove) found = true;
+		}
+		if(!found) return;
 		BulkTransmitter[] newTrans = new BulkTransmitter[transmitters.length-1];
 		int j = 0;
 		for(int i=0;i<transmitters.length;i++) {
