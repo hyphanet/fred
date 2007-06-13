@@ -197,7 +197,8 @@ public class UpdateOverMandatoryManager {
 		
 		if(!updateManager.isEnabled()) return true; // Don't care if not enabled, except for the revocation URI
 		
-		if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0) {
+		if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0 &&
+				mainJarVersion > updateManager.fetchingNewMainJarVersion()) {
 			// Fetch it
 			try {
 				FreenetURI mainJarURI = new FreenetURI(jarKey).setSuggestedEdition(mainJarVersion);
