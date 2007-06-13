@@ -13,6 +13,7 @@ import freenet.io.comm.PeerContext;
 import freenet.support.BitArray;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Logger;
+import freenet.support.transport.ip.IPUtil;
 
 /**
  * Bulk data transfer (not block). Bulk transfer is designed for files which may be much bigger than a 
@@ -191,7 +192,8 @@ public class BulkTransmitter {
 			long now = System.currentTimeMillis();
 			long waitUntil = peer.getThrottle().scheduleDelay(now);
 			
-			masterThrottle.blockingGrab(packetSize);
+			if(IPUtil.isValidAddress(peer.getPeer().getAddress(), false))
+				masterThrottle.blockingGrab(packetSize);
 			
 			while((now = System.currentTimeMillis()) < waitUntil) {
 				long sleepTime = waitUntil - now;

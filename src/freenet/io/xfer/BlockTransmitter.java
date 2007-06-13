@@ -36,6 +36,7 @@ import freenet.support.BitArray;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
+import freenet.support.transport.ip.IPUtil;
 
 /**
  * @author ian
@@ -144,7 +145,8 @@ public class BlockTransmitter {
 				// Get the current inter-packet delay
 				long end = throttle.scheduleDelay(startThrottle);
 
-				_masterThrottle.blockingGrab(PACKET_SIZE);
+				if(IPUtil.isValidAddress(_destination.getPeer().getAddress(), false))
+					_masterThrottle.blockingGrab(PACKET_SIZE);
 				
 				long now = System.currentTimeMillis();
 				
