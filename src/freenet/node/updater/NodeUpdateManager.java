@@ -329,7 +329,7 @@ public class NodeUpdateManager {
 	 * Reason: we want to be able to deploy UOM updates on nodes with all TOO NEW or leaf nodes 
 	 * whose peers are overloaded/broken. Note that with UOM, revocation certs are automatically
 	 * propagated node to node, so this should be *relatively* safe. Any better ideas, tell us. */
-	private static final int REVOCATION_FETCH_TIMEOUT = 60*1000;
+	private static final int REVOCATION_FETCH_TIMEOUT = 5*60*1000;
 	
 	/** Does the updater have an update ready to deploy? May be called synchronized(this) */
 	private boolean isReadyToDeployUpdate(boolean ignoreRevocation) {
