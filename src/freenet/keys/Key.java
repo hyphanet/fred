@@ -252,7 +252,7 @@ public abstract class Key implements WritableToDataOutputStream {
 
 	public static ClientKeyBlock createKeyBlock(ClientKey key, KeyBlock block) throws KeyVerifyException {
 		if(key instanceof ClientSSK)
-			return new ClientSSKBlock((SSKBlock)block, (ClientSSK)key);
+			return ClientSSKBlock.construct((SSKBlock)block, (ClientSSK)key);
 		else //if(key instanceof ClientCHK
 			return new ClientCHKBlock((CHKBlock)block, (ClientCHK)key);
 	}

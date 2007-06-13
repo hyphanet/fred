@@ -590,7 +590,7 @@ public class NodeClientCore implements Persistable {
 				SSKBlock block = (SSKBlock)o;
 				key.setPublicKey(block.getPubKey());
 				node.unlockUID(uid, true, false);
-				return new ClientSSKBlock(block, key);
+				return ClientSSKBlock.construct(block, key);
 			} catch (SSKVerifyException e) {
 				Logger.error(this, "Does not verify: "+e, e);
 				throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
@@ -650,7 +650,7 @@ public class NodeClientCore implements Persistable {
 				try {
 					SSKBlock block = rs.getSSKBlock();
 					key.setPublicKey(block.getPubKey());
-					return new ClientSSKBlock(block, key);
+					return ClientSSKBlock.construct(block, key);
 				} catch (SSKVerifyException e) {
 					Logger.error(this, "Does not verify: "+e, e);
 					throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
