@@ -362,7 +362,7 @@ public class PluginManager {
 				bos = new BufferedOutputStream(fos);
 				int len = 0, writenBytes = 0;
 				byte[] buffer = new byte[4096];
-				while (len = dis.read(buffer) > 0) {
+				while ((len = dis.read(buffer)) > 0) {
 					bos.write(buffer, writenBytes, len);
 					writenBytes +=len;
 				}
