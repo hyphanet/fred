@@ -3481,7 +3481,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					sb.append('\n');
 					sb.append(l10n("senderLabel"));
 					sb.append(' ');
-					sb.append(getName());
+					sb.append(userToString());
 					sb.append('\n');
 					if(comment != null && comment.length() > 0) {
 						sb.append(l10n("commentLabel"));
@@ -3593,7 +3593,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					sb.append('\n');
 					sb.append(l10n("senderLabel"));
 					sb.append(' ');
-					sb.append(getName());
+					sb.append(userToString());
 					sb.append('\n');
 					if(comment != null && comment.length() > 0) {
 						sb.append(l10n("commentLabel"));
