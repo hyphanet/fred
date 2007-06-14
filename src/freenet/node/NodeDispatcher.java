@@ -89,6 +89,16 @@ public class NodeDispatcher implements Dispatcher {
 		} else if(spec == DMT.nodeToNodeMessage) {
 			node.receivedNodeToNodeMessage(m);
 			return true;
+		} else if(spec == DMT.UOMAnnounce) {
+			return node.nodeUpdater.uom.handleAnnounce(m, source);
+		} else if(spec == DMT.UOMRequestRevocation) {
+			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
+		} else if(spec == DMT.UOMSendingRevocation) {
+			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
+		} else if(spec == DMT.UOMRequestMain) {
+			return node.nodeUpdater.uom.handleRequestMain(m, source);
+		} else if(spec == DMT.UOMSendingMain) {
+			return node.nodeUpdater.uom.handleSendingMain(m, source);
 		}
 
 		if(!source.isRoutable()) return false;
@@ -129,16 +139,6 @@ public class NodeDispatcher implements Dispatcher {
 			return handleProbeRejected(m, source);
 		} else if(spec == DMT.FNPProbeTrace) {
 			return handleProbeTrace(m, source);
-		} else if(spec == DMT.UOMAnnounce) {
-			return node.nodeUpdater.uom.handleAnnounce(m, source);
-		} else if(spec == DMT.UOMRequestRevocation) {
-			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
-		} else if(spec == DMT.UOMSendingRevocation) {
-			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
-		} else if(spec == DMT.UOMRequestMain) {
-			return node.nodeUpdater.uom.handleRequestMain(m, source);
-		} else if(spec == DMT.UOMSendingMain) {
-			return node.nodeUpdater.uom.handleSendingMain(m, source);
 		}
 		return false;
 	}
