@@ -32,6 +32,8 @@ public class HexUtil {
 	 * @return the string of hex chars.
 	 */
 	public static final String bytesToHex(byte[] bs, int off, int length) {
+		if (bs.length <= off)
+			throw new IllegalArgumentException();
 		StringBuffer sb = new StringBuffer(length * 2);
 		bytesToHexAppend(bs, off, length, sb);
 		return sb.toString();
