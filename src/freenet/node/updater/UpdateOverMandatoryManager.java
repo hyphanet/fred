@@ -221,22 +221,23 @@ public class UpdateOverMandatoryManager {
 	}
 
 	protected void sendUOMRequestMain(final PeerNode source) {
+		synchronized(this) {
+			if(nodesAskedSendMainJar.size() + nodesSendingMainJar.size() >= MAX_NODES_SENDING_MAIN_JAR) {
+				nodesOfferedMainJar.add(source);
+				System.err.println("Offered main jar by "+source.userToString()+" (already fetching, but will use this offer if our current fetches fail).");
+				return;
+			} else {
+				if(nodesSendingMainJar.contains(source)) {
+					if(logMINOR) Logger.minor(this, "Not fetching main jar from "+source.userToString()+" because already fetching from that node");
+					return;
+				}
+				nodesAskedSendMainJar.add(source);
+			}
+		}
+		
 		Message msg = DMT.createUOMRequestMain(updateManager.node.random.nextLong());
 		
 		try {
-			synchronized(this) {
-				if(nodesAskedSendMainJar.size() + nodesSendingMainJar.size() >= MAX_NODES_SENDING_MAIN_JAR) {
-					nodesOfferedMainJar.add(source);
-					System.err.println("Offered main jar by "+source.userToString()+" (already fetching, but will use this offer if our current fetches fail).");
-					return;
-				} else {
-					if(nodesSendingMainJar.contains(source)) {
-						if(logMINOR) Logger.minor(this, "Not fetching main jar from "+source.userToString()+" because already fetching from that node");
-						return;
-					}
-					nodesAskedSendMainJar.add(source);
-				}
-			}
 			System.err.println("Fetching main jar from "+source.userToString());
 			source.sendAsync(msg, new AsyncMessageCallback() {
 				public void acknowledged() {
@@ -676,20 +677,23 @@ public class UpdateOverMandatoryManager {
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Somebody deleted "+temp+" ? We lost the revocation certificate from "+source.userToString()+"!");
 			System.err.println("Somebody deleted "+temp+" ? We lost the revocation certificate from "+source.userToString()+"!");
+			updateManager.blow("Somebody deleted "+temp+" ? We lost the revocation certificate from "+source.userToString()+"!");
 			return;
 		} catch (IOException e) {
 			Logger.error(this, "Could not read revocation cert from temp file "+temp+" from node "+source.userToString()+" !");
 			System.err.println("Could not read revocation cert from temp file "+temp+" from node "+source.userToString()+" !");
+			updateManager.blow("Could not read revocation cert from temp file "+temp+" from node "+source.userToString()+" !");
 			// FIXME will be kept until exit for debugging purposes
 			return;
 		} catch (BinaryBlobFormatException e) {
-			Logger.error(this, "Peer "+source.userToString()+" sent us an invalid revocation certificate!: "+e, e);
-			System.err.println("Peer "+source.userToString()+" sent us an invalid revocation certificate!: "+e);
+			Logger.error(this, "Peer "+source.userToString()+" sent us an invalid revocation certificate!: "+e+" (data in "+temp+")", e);
+			System.err.println("Peer "+source.userToString()+" sent us an invalid revocation certificate!: "+e+" (data in "+temp+")");
+			// Probably malicious, might just be buggy, either way, it's not blown
 			e.printStackTrace();
 			synchronized(UpdateOverMandatoryManager.this) {
 				nodesSayKeyRevokedFailedTransfer.add(source);
 			}
-			// FIXME will be kept until exit for debugging purposes
+			// FIXME file will be kept until exit for debugging purposes
 			return;
 		} finally {
 			if(dis != null)
