@@ -444,7 +444,9 @@ public class PeerManager {
     public void localBroadcast(Message msg, boolean ignoreRoutability) {
         PeerNode[] peers;
         synchronized (this) {
-			peers = connectedPeers;
+        	// myPeers not connectedPeers as connectedPeers only contains
+        	// ROUTABLE peers, and we may want to send to non-routable peers
+			peers = myPeers;
 		}
         for(int i=0;i<peers.length;i++) {
         	if(ignoreRoutability) {
