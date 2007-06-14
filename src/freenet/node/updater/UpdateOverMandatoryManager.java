@@ -572,6 +572,10 @@ public class UpdateOverMandatoryManager {
 			Logger.error(this, "Failed receiving recovation because URI not parsable: "+e+" for "+key, e);
 			System.err.println("Failed receiving recovation because URI not parsable: "+e+" for "+key);
 			e.printStackTrace();
+			synchronized(this) {
+				// Wierd case of a failed transfer
+				nodesSayKeyRevokedFailedTransfer.add(source);
+			}
 			cancelSend(source, uid);
 			return true;
 		}
@@ -581,6 +585,10 @@ public class UpdateOverMandatoryManager {
 					"Node: "+source.getPeer()+" : "+source.getName()+"\n"+
 					"Our   URI: "+updateManager.revocationURI+"\n"+
 					"Their URI: "+revocationURI);
+			synchronized(this) {
+				// Wierd case of a failed transfer
+				nodesSayKeyRevokedFailedTransfer.add(source);
+			}
 			cancelSend(source, uid);
 			return true;
 		}
