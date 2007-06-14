@@ -3529,8 +3529,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				public HTMLNode getHTMLText() {
 					HTMLNode div = new HTMLNode("div");
 					
-					// FIXME localise!!!
-					
 					div.addChild("p", l10n("offeredFileHeader", "name", getName()));
 					
 					// Descriptive table
