@@ -110,7 +110,7 @@ public class UpdateOverMandatoryManager {
 		
 		// Log it
 		
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) {
 			Logger.minor(this, "Update Over Mandatory offer from node "+source.getPeer()+" : "+source.getName()+":");
 			Logger.minor(this, "Main jar key: "+jarKey+" version="+mainJarVersion+" length="+mainJarFileLength);
@@ -526,7 +526,7 @@ public class UpdateOverMandatoryManager {
 		try {
 			source.sendAsync(msg, new AsyncMessageCallback() {
 				public void acknowledged() {
-					if(Logger.shouldLog(Logger.MINOR, this))
+					if(logMINOR)
 						Logger.minor(this, "Sending data...");
 					// Send the data
 					Thread t = new Thread(r, "Revocation key send for "+uid+" to "+source.getPeer()+" : "+source.getName());
@@ -544,7 +544,7 @@ public class UpdateOverMandatoryManager {
 				}
 
 				public void sent() {
-					if(Logger.shouldLog(Logger.MINOR, this))
+					if(logMINOR)
 						Logger.minor(this, "Message sent, data soon");
 				}
 				
@@ -586,7 +586,7 @@ public class UpdateOverMandatoryManager {
 		}
 		
 		if(updateManager.isBlown()) {
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Already blown, so not receiving from "+source+ "("+uid+")");
 			cancelSend(source, uid);
 			return true;
@@ -891,7 +891,7 @@ public class UpdateOverMandatoryManager {
 		try {
 			source.sendAsync(msg, new AsyncMessageCallback() {
 				public void acknowledged() {
-					if(Logger.shouldLog(Logger.MINOR, this))
+					if(logMINOR)
 						Logger.minor(this, "Sending data...");
 					// Send the data
 					Thread t = new Thread(r, "Main jar send for "+uid+" to "+source.getPeer()+" : "+source.getName());
@@ -909,7 +909,7 @@ public class UpdateOverMandatoryManager {
 				}
 
 				public void sent() {
-					if(Logger.shouldLog(Logger.MINOR, this))
+					if(logMINOR)
 						Logger.minor(this, "Message sent, data soon");
 				}
 				
@@ -958,7 +958,7 @@ public class UpdateOverMandatoryManager {
 		}
 		
 		if(updateManager.isBlown()) {
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Key blown, so not receiving main jar from "+source+ "("+uid+")");
 			cancelSend(source, uid);
 			synchronized(this) {
