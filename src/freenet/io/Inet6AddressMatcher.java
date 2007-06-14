@@ -54,6 +54,7 @@ public class Inet6AddressMatcher implements AddressMatcher {
 					bits = Math.max(bits - 8, 0);
 				}
 			}
+			if(Arrays.equals(netmask, FULL_MASK)) netmask = FULL_MASK;
 		} else {
 			address = convertToBytes(pattern);
 			netmask = FULL_MASK;
@@ -94,7 +95,7 @@ public class Inet6AddressMatcher implements AddressMatcher {
 	}
 
 	public String getHumanRepresentation() {
-		if(netmask.equals(FULL_MASK))
+		if(netmask == FULL_MASK)
 			return convertToString(address);
 		else
 			return convertToString(address)+'/'+convertToString(netmask);
