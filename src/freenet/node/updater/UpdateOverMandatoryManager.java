@@ -72,6 +72,7 @@ public class UpdateOverMandatoryManager {
 	static final int MAX_NODES_SENDING_MAIN_JAR = 2;
 	/** Maximum time between asking for the main jar and it starting to transfer */
 	static final int REQUEST_MAIN_JAR_TIMEOUT = 60*1000;
+	private boolean logMINOR;
 	
 	private UserAlert alert;
 	
@@ -82,6 +83,7 @@ public class UpdateOverMandatoryManager {
 		nodesOfferedMainJar = new HashSet();
 		nodesAskedSendMainJar = new HashSet();
 		nodesSendingMainJar = new HashSet();
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	/** 
@@ -184,8 +186,8 @@ public class UpdateOverMandatoryManager {
 				Logger.error(this, "Node "+source+" sent us a UOMAnnounce claiming that the auto-update key was blown, but it had an invalid revocation URI: "+revocationKey+" : "+e, e);
 				System.err.println("Node "+source.getPeer()+" : "+source.getName()+" sent us a UOMAnnounce claiming that the revocation key was blown, but it had an invalid revocation URI: "+revocationKey+" : "+e);
 			} catch (NotConnectedException e) {
-				System.err.println("Node "+source+" says that the auto-update key was blown, but has now gone offline! Something BAD is happening!");
-				Logger.error(this, "Node "+source+" says that the auto-update key was blown, but has now gone offline! Something BAD is happening!");
+				System.err.println("Node "+source+" says that the auto-update key was blown, but has now gone offline! Something bad may be happening!");
+				Logger.error(this, "Node "+source+" says that the auto-update key was blown, but has now gone offline! Something bad may be happening!");
 				synchronized(UpdateOverMandatoryManager.this) {
 					nodesSayKeyRevokedFailedTransfer.add(source);
 				}
@@ -203,7 +205,6 @@ public class UpdateOverMandatoryManager {
 			try {
 				FreenetURI mainJarURI = new FreenetURI(jarKey).setSuggestedEdition(mainJarVersion);
 				if(mainJarURI.equals(updateManager.updateURI.setSuggestedEdition(mainJarVersion))) {
-					System.err.println("Fetching main jar from "+source.userToString());
 					sendUOMRequestMain(source);
 				} else {
 					System.err.println("Node "+source.userToString()+" offered us a new main jar (version "+mainJarVersion+") but his key was different to ours:\n"+
@@ -226,12 +227,17 @@ public class UpdateOverMandatoryManager {
 			synchronized(this) {
 				if(nodesAskedSendMainJar.size() + nodesSendingMainJar.size() >= MAX_NODES_SENDING_MAIN_JAR) {
 					nodesOfferedMainJar.add(source);
+					System.err.println("Offered main jar by "+source.userToString()+" (already fetching, but will use this offer if our current fetches fail).");
 					return;
 				} else {
-					if(nodesSendingMainJar.contains(source)) return;
+					if(nodesSendingMainJar.contains(source)) {
+						if(logMINOR) Logger.minor(this, "Not fetching main jar from "+source.userToString()+" because already fetching from that node");
+						return;
+					}
 					nodesAskedSendMainJar.add(source);
 				}
 			}
+			System.err.println("Fetching main jar from "+source.userToString());
 			source.sendAsync(msg, new AsyncMessageCallback() {
 				public void acknowledged() {
 					// Cool! Wait for the actual transfer.
