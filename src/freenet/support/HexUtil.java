@@ -21,7 +21,7 @@ public class HexUtil {
 	
 
 	/**
-	 * Converts a byte array into a string of upper case hex chars.
+	 * Converts a byte array into a string of lower case hex chars.
 	 * 
 	 * @param bs
 	 *            A byte array
