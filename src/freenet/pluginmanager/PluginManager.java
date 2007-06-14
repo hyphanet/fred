@@ -37,6 +37,7 @@ import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
+import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 
 public class PluginManager {
@@ -360,11 +361,11 @@ public class PluginManager {
 				File f = File.createTempFile(pluginname, ".tmp", pluginsDirectory);
 				fos = new FileOutputStream(f);
 				bos = new BufferedOutputStream(fos);
-				int len = 0, writenBytes = 0;
+				
+				int len = 0;
 				byte[] buffer = new byte[4096];
 				while ((len = dis.read(buffer)) > 0) {
-					bos.write(buffer, writenBytes, len);
-					writenBytes +=len;
+					bos.write(buffer, 0, len);
 				}
 				bos.close();
 				fos.close();
