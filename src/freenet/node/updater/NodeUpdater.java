@@ -182,7 +182,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		boolean isNew;
 		synchronized(this) {
 			if(fetchedVersion < this.fetchedVersion) {
 				tempBlobFile.delete();
@@ -216,9 +215,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			this.cg = null;
 			if(this.result != null) this.result.asBucket().free();
 			this.result = result;
-			isNew = (fetchedVersion > currentVersion);
 		}
-		manager.onDownloadedNewJar(extUpdate, isNew);
+		manager.onDownloadedNewJar(extUpdate);
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {

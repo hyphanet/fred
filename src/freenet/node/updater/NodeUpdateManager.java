@@ -587,7 +587,7 @@ public class NodeUpdateManager {
 	 * Called when a new jar has been downloaded.
 	 * @param isExt If true, the new jar is the ext jar; if false, it is the main jar.
 	 */
-	void onDownloadedNewJar(boolean isExt, boolean isNew) {
+	void onDownloadedNewJar(boolean isExt) {
 		synchronized(this) {
 			if(isExt) {
 				if(extUpdater.getFetchedVersion() > ExtVersion.buildNumber) {
