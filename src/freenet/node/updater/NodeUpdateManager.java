@@ -174,7 +174,7 @@ public class NodeUpdateManager {
 
 	public void maybeSendUOMAnnounce(PeerNode peer) {
 		synchronized(broadcastUOMAnnouncesSync) {
-			if(!broadcastUOMAnnounces) return; // because of sync object, haven't entered block yet, so will send to this peer
+			if(!broadcastUOMAnnounces) return; // nothing worth announcing yet
 		}
 		synchronized(this) {
 			if((!hasBeenBlown) && (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0)) return;
