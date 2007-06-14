@@ -97,8 +97,7 @@ public class RevocationChecker implements ClientCallback {
 						if(logMINOR) Logger.minor(this, "Revocation count "+revocationDNFCounter);
 					}
 					if(logMINOR) Logger.minor(this, "fetcher="+revocationGetter);
-					if(revocationGetter != null)
-						Logger.minor(this, "revocation fetcher: cancelled="+revocationGetter.isCancelled()+", finished="+revocationGetter.isFinished());
+					if(revocationGetter != null && logMINOR) Logger.minor(this, "revocation fetcher: cancelled="+revocationGetter.isCancelled()+", finished="+revocationGetter.isFinished());
 					try {
 						tmpBlobFile = File.createTempFile("revocation-", ".fblob.tmp", manager.node.getNodeDir());
 					} catch (IOException e) {
@@ -182,8 +181,8 @@ public class RevocationChecker implements ClientCallback {
 	}
 	
 	void onFailure(FetchException e, ClientGetter state, File tmpBlobFile) {
-		Logger.minor(this, "Revocation fetch failed: "+e);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Revocation fetch failed: "+e);
 		int errorCode = e.getMode();
 		boolean completed = false;
 		long now = System.currentTimeMillis();
@@ -203,7 +202,7 @@ public class RevocationChecker implements ClientCallback {
 		synchronized(this) {
 			if(errorCode == FetchException.DATA_NOT_FOUND){
 				revocationDNFCounter++;
-				Logger.minor(this, "Incremented DNF counter to "+revocationDNFCounter);
+				if(logMINOR) Logger.minor(this, "Incremented DNF counter to "+revocationDNFCounter);
 			}
 			if(revocationDNFCounter >= 3) {
 				lastSucceeded = now;
