@@ -3718,7 +3718,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.put("sentTime", now);
 			fs.put("uid", uid);
 			if(logMINOR)
-				Logger.minor(this, "Sending node to node message (file offer accepted):\n"+fs);
+				Logger.minor(this, "Sending node to node message (file offer rejected):\n"+fs);
 			Message n2ntm;
 			n2ntm = DMT.createNodeToNodeMessage(
 					Node.N2N_MESSAGE_TYPE_FPROXY, fs
