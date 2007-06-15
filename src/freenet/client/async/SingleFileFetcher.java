@@ -471,8 +471,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				ah.extractToCache(result.asBucket(), actx);
 			} catch (ArchiveFailureException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e));
+				return;
 			} catch (ArchiveRestartException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e));
+				return;
 			}
 			try {
 				handleMetadata();
