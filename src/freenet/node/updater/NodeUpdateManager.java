@@ -866,4 +866,9 @@ public class NodeUpdateManager {
 		return updater.getBlobFile(version);
 	}
 
+	public synchronized long timeRemainingOnCheck() {
+		long now = System.currentTimeMillis();
+		return Math.max(0, REVOCATION_FETCH_TIMEOUT - (now - gotJarTime));
+	}
+
 }
