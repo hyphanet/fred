@@ -2072,29 +2072,37 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					if(chkStore != null)
 						chkStore.close();
 				} catch (Throwable t) {
-					System.err.println("Caught closing database: "+t);
-					t.printStackTrace();
+					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
+						System.err.println("Caught closing database: "+t);
+						t.printStackTrace();
+					}
 				}
 				try {
 					if(chkDB_accessTime != null)
 						chkDB_accessTime.close();
 				} catch (Throwable t) {
-					System.err.println("Caught closing database: "+t);
-					t.printStackTrace();
+					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
+						System.err.println("Caught closing database: "+t);
+						t.printStackTrace();
+					}
 				}
 				try {
 					if(chkDB_blockNum != null)
 						chkDB_blockNum.close();
 				} catch (Throwable t) {
-					System.err.println("Caught closing database: "+t);
-					t.printStackTrace();
+					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
+						System.err.println("Caught closing database: "+t);
+						t.printStackTrace();
+					}
 				}
 				try {	
 					if(chkDB != null)
 						chkDB.close();
 				} catch (Throwable t) {
-					System.err.println("Caught closing database: "+t);
-					t.printStackTrace();
+					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
+						System.err.println("Caught closing database: "+t);
+						t.printStackTrace();
+					}
 				}
 				if(logMINOR) Logger.minor(this, "Closing database finished.");
 				System.err.println("Closed database");
