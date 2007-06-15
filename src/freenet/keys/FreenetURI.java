@@ -728,9 +728,12 @@ public class FreenetURI implements Cloneable{
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Logger.minor(this, "Getting preferred filename for "+this);
 		Vector names = new Vector();
-		if(keyType != null && (keyType.equals("KSK") || keyType.equals("SSK"))) {
+		if(keyType != null && (keyType.equals("KSK") || keyType.equals("SSK") || keyType.equals("USK"))) {
 			if(logMINOR) Logger.minor(this, "Adding docName: "+docName);
 			names.add(docName);
+			if(keyType.equals("USK")) {
+				names.add(Long.toString(suggestedEdition));
+			}
 		}
 		if(metaStr != null)
 			for(int i=0;i<metaStr.length;i++) {
