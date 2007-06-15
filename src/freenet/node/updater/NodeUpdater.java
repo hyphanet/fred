@@ -126,7 +126,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					if(availableVersion > currentVersion)
 						System.err.println("Starting "+(extUpdate?"freenet-ext.jar ":"")+"fetch for "+availableVersion);
 					tempBlobFile = 
-						File.createTempFile(blobFilenamePrefix+"-"+availableVersion, ".fblob.tmp", manager.node.getNodeDir());
+						File.createTempFile(blobFilenamePrefix+"-"+availableVersion, ".fblob.tmp", manager.node.clientCore.getTempDir());
 					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, 
 							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.UPDATE_PRIORITY_CLASS, 
 							this, new ArrayBucket(), new FileBucket(tempBlobFile, false, false, false, false, false));
@@ -150,7 +150,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 	
 	File getBlobFile(int availableVersion) {
-		return new File(node.getNodeDir(), blobFilenamePrefix+availableVersion+".fblob");
+		return new File(node.clientCore.getTempDir(), blobFilenamePrefix+availableVersion+".fblob");
 	}
 
 	private final Object writeJarSync = new Object();

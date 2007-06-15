@@ -141,7 +141,7 @@ public class NodeUpdateManager {
 
         updaterConfig.finishedInitialization();
         
-        this.revocationChecker = new RevocationChecker(this, new File(node.getNodeDir(), "revocation-key.fblob"));
+        this.revocationChecker = new RevocationChecker(this, new File(node.clientCore.getTempDir(), "revocation-key.fblob"));
         
         this.uom = new UpdateOverMandatoryManager(this);
 	}

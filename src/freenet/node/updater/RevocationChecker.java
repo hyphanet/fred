@@ -99,7 +99,7 @@ public class RevocationChecker implements ClientCallback {
 					if(logMINOR) Logger.minor(this, "fetcher="+revocationGetter);
 					if(revocationGetter != null && logMINOR) Logger.minor(this, "revocation fetcher: cancelled="+revocationGetter.isCancelled()+", finished="+revocationGetter.isFinished());
 					try {
-						tmpBlobFile = File.createTempFile("revocation-", ".fblob.tmp", manager.node.getNodeDir());
+						tmpBlobFile = File.createTempFile("revocation-", ".fblob.tmp", manager.node.clientCore.getTempDir());
 					} catch (IOException e) {
 						Logger.error(this, "Cannot record revocation fetch (therefore cannot pass it on to peers)!: "+e, e);
 					}

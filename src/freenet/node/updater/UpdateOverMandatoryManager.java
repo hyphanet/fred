@@ -616,7 +616,7 @@ public class UpdateOverMandatoryManager {
 		final File temp;
 		
 		try {
-			temp = File.createTempFile("revocation-", ".fblob.tmp", updateManager.node.getNodeDir());
+			temp = File.createTempFile("revocation-", ".fblob.tmp", updateManager.node.clientCore.getTempDir());
 			temp.deleteOnExit();
 		} catch (IOException e) {
 			System.err.println("Cannot save revocation certificate to disk and therefore cannot fetch it from our peer!: "+e);
@@ -713,7 +713,7 @@ public class UpdateOverMandatoryManager {
 		File f;
 		FileBucket b = null;
 		try {
-			f = File.createTempFile("revocation-", ".fblob.tmp", updateManager.node.getNodeDir());
+			f = File.createTempFile("revocation-", ".fblob.tmp", updateManager.node.clientCore.getTempDir());
 			b = new FileBucket(f, false, false, true, true, true);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot share revocation key from "+source.userToString()+" with our peers because cannot write the cleaned version to disk: "+e, e);
@@ -995,7 +995,7 @@ public class UpdateOverMandatoryManager {
 		final File temp;
 		
 		try {
-			temp = File.createTempFile("main-", ".fblob.tmp", updateManager.node.getNodeDir());
+			temp = File.createTempFile("main-", ".fblob.tmp", updateManager.node.clientCore.getTempDir());
 			temp.deleteOnExit();
 		} catch (IOException e) {
 			System.err.println("Cannot save new main jar to disk and therefore cannot fetch it from our peer!: "+e);
@@ -1093,7 +1093,7 @@ public class UpdateOverMandatoryManager {
 		File f;
 		FileBucket b = null;
 		try {
-			f = File.createTempFile("main-", ".fblob.tmp", updateManager.node.getNodeDir());
+			f = File.createTempFile("main-", ".fblob.tmp", updateManager.node.clientCore.getTempDir());
 			b = new FileBucket(f, false, false, true, true, true);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot share main jar from "+source.userToString()+" with our peers because cannot write the cleaned version to disk: "+e, e);
