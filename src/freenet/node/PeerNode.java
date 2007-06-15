@@ -954,6 +954,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException {
     	if(logMINOR) Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
         if(!isConnected()) throw new NotConnectedException();
+		addToLocalNodeSentMessagesToStatistic(msg);
         MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb}, alreadyReportedBytes, ctr);
         item.getData(this);
         long now = System.currentTimeMillis();

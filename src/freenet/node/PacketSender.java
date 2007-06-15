@@ -265,9 +265,6 @@ public class PacketSender implements Runnable, Ticker {
                 	} else {
                 		for(int j=0;j<messages.length;j++) {
                 			if(logMINOR) Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));
-                			if (messages[j].msg != null) {
-                				pn.addToLocalNodeSentMessagesToStatistic(messages[j].msg);
-                			}
                 		}
                 		// Send packets, right now, blocking, including any active notifications
                 		node.packetMangler.processOutgoingOrRequeue(messages, pn, true, false);
