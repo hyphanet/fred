@@ -896,7 +896,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
 					}else{
 						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn) : let's display the warning message.");
-						HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("Please confirm"), ctx);
+						HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("confirmRemoveNodeTitle"), ctx);
 						HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 						HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle")));
 						HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
