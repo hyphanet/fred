@@ -1058,4 +1058,8 @@ public class NodeClientCore implements Persistable {
 	public SimpleFieldSet persistThrottlesToFieldSet() {
 		return requestStarters.persistToFieldSet();
 	}
+	
+	public Ticker getTicker() {
+		return node.ps;
+	}
 }
