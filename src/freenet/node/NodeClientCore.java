@@ -1062,4 +1062,12 @@ public class NodeClientCore implements Persistable {
 	public Ticker getTicker() {
 		return node.ps;
 	}
+
+	public File getPersistentTempDir() {
+		return persistentTempBucketFactory.getDir();
+	}
+	
+	public File getTempDir() {
+		return tempDir;
+	}
 }
