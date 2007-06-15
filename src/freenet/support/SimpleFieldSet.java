@@ -213,6 +213,7 @@ public class SimpleFieldSet {
     		String hisVal = (String) fs.values.get(key);
     		values.put(key, hisVal); // overwrite old
     	}
+    	if(fs.subsets == null) return;
     	i = fs.subsets.keySet().iterator();
     	while(i.hasNext()) {
     		String key = (String) i.next();
