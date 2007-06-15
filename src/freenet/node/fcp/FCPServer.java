@@ -585,7 +585,7 @@ public class FCPServer implements Runnable {
 					FileOutputStream fos = new FileOutputStream(compressedTemp);
 					BufferedOutputStream bos = new BufferedOutputStream(fos);
 					GZIPOutputStream gos = new GZIPOutputStream(bos);
-					OutputStreamWriter osw = new OutputStreamWriter(gos);
+					OutputStreamWriter osw = new OutputStreamWriter(gos, "UTF-8");
 					BufferedWriter w = new BufferedWriter(osw);
 					w.write(Integer.toString(persistentRequests.length)+ '\n');
 					for(int i=0;i<persistentRequests.length;i++)
@@ -657,7 +657,7 @@ public class FCPServer implements Runnable {
 	
 	private void loadPersistentRequests(InputStream is) throws IOException {
 		synchronized(persistenceSync) {
-			InputStreamReader ris = new InputStreamReader(is);
+			InputStreamReader ris = new InputStreamReader(is, "UTF-8");
 			BufferedReader br = new BufferedReader(ris);
 			String r = br.readLine();
 			int count;

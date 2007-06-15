@@ -50,6 +50,7 @@ public class AddPeer extends FCPMessage {
 			try {
 				URL url = new URL(urlString);
 				URLConnection uc = url.openConnection();
+				// FIXME get charset from uc.getContentType()
 				in = new BufferedReader( new InputStreamReader(uc.getInputStream()));
 				ref = new StringBuffer(1024);
 				String line;

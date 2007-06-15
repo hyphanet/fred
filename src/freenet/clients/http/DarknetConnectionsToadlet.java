@@ -643,6 +643,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				try {
 					URL url = new URL(urltext);
 					URLConnection uc = url.openConnection();
+					// FIXME get charset encoding from uc.getContentType()
 					in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
 					String line;
 					while ( (line = in.readLine()) != null) {

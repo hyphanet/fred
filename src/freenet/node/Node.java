@@ -470,7 +470,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private void readNodeFile(String filename, RandomSource r) throws IOException {
 		// REDFLAG: Any way to share this code with NodePeer?
 		FileInputStream fis = new FileInputStream(filename);
-		InputStreamReader isr = new InputStreamReader(fis);
+		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
 		BufferedReader br = new BufferedReader(isr);
 		SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
 		br.close();
@@ -638,7 +638,7 @@ public class Node implements TimeSkewDetectorCallback {
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(backup);
-			OutputStreamWriter osr = new OutputStreamWriter(fos);
+			OutputStreamWriter osr = new OutputStreamWriter(fos, "UTF-8");
 			BufferedWriter bw = new BufferedWriter(osr);
 			fs.writeTo(bw);
 			bw.close();

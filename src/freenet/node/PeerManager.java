@@ -13,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -133,7 +134,12 @@ public class PeerManager {
 			Logger.normal(this, "Peers file not found: "+peersFile);
 			return false;
 		}
-        InputStreamReader ris = new InputStreamReader(fis);
+        InputStreamReader ris;
+		try {
+			ris = new InputStreamReader(fis, "UTF-8");
+		} catch (UnsupportedEncodingException e4) {
+			throw new Error("UTF-8 not supported!: "+e4, e4);
+		}
         BufferedReader br = new BufferedReader(ris);
         try { // FIXME: no better way?
             while(true) {
@@ -726,7 +732,12 @@ public class PeerManager {
                         + f + " - " + e2, e2);
                 return;
             }
-            OutputStreamWriter w = new OutputStreamWriter(fos);
+            OutputStreamWriter w;
+			try {
+				w = new OutputStreamWriter(fos, "UTF-8");
+			} catch (UnsupportedEncodingException e2) {
+				throw new Error("UTF-8 unsupported!: "+e2, e2);
+			}
             BufferedWriter bw = new BufferedWriter(w);
             try {
             	boolean succeeded = writePeers(bw);

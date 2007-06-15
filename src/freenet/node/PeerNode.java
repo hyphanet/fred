@@ -2728,7 +2728,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			Logger.normal(this, "Extra peer data file not found: "+extraPeerDataFile.getPath());
 			return false;
 		}
-		InputStreamReader isr = new InputStreamReader(fis);
+		InputStreamReader isr;
+		try {
+			isr = new InputStreamReader(fis, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: JVM doesn't support UTF-8: "+e, e);
+		}
 		BufferedReader br = new BufferedReader(isr);
 		SimpleFieldSet fs = null;
 		try {
@@ -2891,7 +2896,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					+ f + " - " + e2, e2);
 			return -1;
 		}
-		OutputStreamWriter w = new OutputStreamWriter(fos);
+		OutputStreamWriter w;
+		try {
+			w = new OutputStreamWriter(fos, "UTF-8");
+		} catch (UnsupportedEncodingException e2) {
+			throw new Error("UTF-8 unsupported!: "+e2, e2);
+		}
 		BufferedWriter bw = new BufferedWriter(w);
 		try {
 			fs.writeTo(bw);
@@ -2984,7 +2994,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 					+ f + " - " + e2, e2);
 			return false;
 		}
-		OutputStreamWriter w = new OutputStreamWriter(fos);
+		OutputStreamWriter w;
+		try {
+			w = new OutputStreamWriter(fos, "UTF-8");
+		} catch (UnsupportedEncodingException e2) {
+			throw new Error("JVM doesn't support UTF-8 charset!: "+e2, e2);
+		}
 		BufferedWriter bw = new BufferedWriter(w);
 		try {
 			fs.writeTo(bw);

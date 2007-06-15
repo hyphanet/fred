@@ -675,6 +675,7 @@ public class TextModeClientInterface implements Runnable {
                     URL url = new URL(key);
                     URLConnection uc = url.openConnection();
                 	in = new BufferedReader(
+                			// FIXME get charset from uc.getContentType()
                 			new InputStreamReader(uc.getInputStream()));
                 }
                 content = readLines(in, true);
