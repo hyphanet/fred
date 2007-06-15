@@ -204,6 +204,29 @@ public class SimpleFieldSet {
 	}
 
     /**
+     * Put contents of a fieldset, overwrite old values.
+     */
+    public void putAllOverwrite(SimpleFieldSet fs) {
+    	Iterator i = fs.values.keySet().iterator();
+    	while(i.hasNext()) {
+    		String key = (String) i.next();
+    		String hisVal = (String) fs.values.get(key);
+    		values.put(key, hisVal); // overwrite old
+    	}
+    	i = fs.subsets.keySet().iterator();
+    	while(i.hasNext()) {
+    		String key = (String) i.next();
+    		SimpleFieldSet hisFS = (SimpleFieldSet) fs.subsets.get(key);
+    		SimpleFieldSet myFS = (SimpleFieldSet) subsets.get(key);
+    		if(myFS != null) {
+    			myFS.putAllOverwrite(hisFS);
+    		} else {
+    			subsets.put(key, hisFS);
+    		}
+    	}
+    }
+    
+    /**
      * Set a key to a value. If the value already exists, throw IllegalStateException.
      * @param key The key.
      * @param value The value.
