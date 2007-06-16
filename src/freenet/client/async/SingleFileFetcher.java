@@ -373,7 +373,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} else if(metadata.isSingleFileRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
-				// FIXME implement implicit archive support
+
+				String mimeType = clientMetadata.getMIMEType();
+				if(ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+					// Looks like an implicit archive, handle as such
+					metadata.setArchiveManifest();
+					continue;
+				}
 				
 				// Simple redirect
 				// Just create a new SingleFileFetcher
@@ -417,9 +423,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				return;
 			} else if(metadata.isSplitfile()) {
 				if(logMINOR) Logger.minor(this, "Fetching splitfile");
-				// FIXME implicit archive support
 				
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
+				
+				String mimeType = clientMetadata.getMIMEType();
+				if(ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+					// Looks like an implicit archive, handle as such
+					metadata.setArchiveManifest();
+					continue;
+				}
 				
 				// Splitfile (possibly compressed)
 				

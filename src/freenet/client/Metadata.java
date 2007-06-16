@@ -916,4 +916,10 @@ public class Metadata implements Cloneable {
 	public boolean isResolved() {
 		return resolvedURI != null;
 	}
+
+	public void setArchiveManifest() {
+		archiveType = ArchiveManager.getArchiveType(clientMetadata.getMIMEType());
+		clientMetadata.clear();
+		documentType = ZIP_MANIFEST;
+	}
 }

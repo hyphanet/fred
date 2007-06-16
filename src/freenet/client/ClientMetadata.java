@@ -52,4 +52,8 @@ public class ClientMetadata implements Cloneable {
 	public String toString() {
 		return getMIMEType();
 	}
+
+	public void clear() {
+		mimeType = null;
+	}
 }
