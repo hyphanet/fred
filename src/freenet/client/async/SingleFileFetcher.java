@@ -309,7 +309,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
 				if(clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
-					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE));
+					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType()));
 					return;
 				}
 				// Fetch it from the archive
@@ -388,7 +388,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				
 				if(mimeType != null && ctx.allowedMIMETypes != null && 
 						!ctx.allowedMIMETypes.contains(mimeType)) {
-					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE));
+					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType()));
 					return;
 				}
 				
@@ -446,7 +446,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				
 				if(mimeType != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(mimeType)) {
-					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE));
+					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE, metadata.uncompressedDataLength(), false, clientMetadata.getMIMEType()));
 					return;
 				}
 				
