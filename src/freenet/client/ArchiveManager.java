@@ -34,6 +34,7 @@ import freenet.support.io.PaddedEphemerallyEncryptedBucket;
  */
 public class ArchiveManager {
 
+	public static final String METADATA_NAME = ".metadata";
 	private static boolean logMINOR;
 	
 	/**
@@ -145,7 +146,7 @@ public class ArchiveManager {
 			storedData.push(k, asi);
 		}
 		if(logMINOR) Logger.minor(this, "Found data");
-		return asi.getDataOrThrow();
+		return asi.getReaderBucket();
 	}
 	
 	/**
@@ -165,15 +166,18 @@ public class ArchiveManager {
 	 * @param data The actual data fetched.
 	 * @param archiveContext The context for the whole fetch process.
 	 * @param ctx The ArchiveStoreContext for this key.
+	 * @param element A particular element that the caller is especially interested in, or null.
+	 * @param callback A callback to be called if we find that element, or if we don't.
 	 * @throws ArchiveFailureException If we could not extract the data, or it was too big, etc.
 	 * @throws ArchiveRestartException 
 	 * @throws ArchiveRestartException If the request needs to be restarted because the archive
 	 * changed.
 	 */
-	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx) throws ArchiveFailureException, ArchiveRestartException {
+	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
+		boolean gotElement = false;
 		if(logMINOR) Logger.minor(this, "Extracting "+key);
 		ctx.onExtract();
 		ctx.removeAllCachedItems(); // flush cache anyway
@@ -249,16 +253,30 @@ outer:		while(true) {
 					out.close();
 					if(name.equals(".metadata"))
 						gotMetadata = true;
-					addStoreElement(ctx, key, name, temp);
+					ArchiveStoreItem item = addStoreElement(ctx, key, name, temp);
+					if((!gotElement) && element != null && name.equals(element)) {
+						gotElement = true;
+						// Let it throw, if it does something is drastically wrong
+						callback.gotBucket(item.getReaderBucket());
+					}
 					names.add(name);
 				}
 			}
 
 			// If no metadata, generate some
 			if(!gotMetadata) {
-				generateMetadata(ctx, key, names);
+				ArchiveStoreItem item = generateMetadata(ctx, key, names);
+				if(element != null && (!gotElement) && element.equals(METADATA_NAME)) {
+					gotElement = true;
+					// Let it throw, if it does something is drastically wrong
+					callback.gotBucket(item.getReaderBucket());
+				}
 			}
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
+			
+			if((!gotElement) && element != null)
+				callback.notInArchive();
+			
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
 		} finally {
@@ -279,7 +297,7 @@ outer:		while(true) {
 	 * @param names Set of names in the archive.
 	 * @throws ArchiveFailureException 
 	 */
-	private void generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names) throws ArchiveFailureException {
+	private ArchiveStoreItem generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names) throws ArchiveFailureException {
 		/* What we have to do is to:
 		 * - Construct a filesystem tree of the names.
 		 * - Turn each level of the tree into a Metadata object, including those below it, with
@@ -304,8 +322,7 @@ outer:		while(true) {
 				OutputStream os = element.bucket.getOutputStream();
 				os.write(buf);
 				os.close();
-				addStoreElement(ctx, key, ".metadata", element);
-				break;
+				return addStoreElement(ctx, key, ".metadata", element);
 			} catch (MetadataUnresolvedException e) {
 				try {
 					x = resolve(e, x, element, ctx, key);
@@ -383,13 +400,14 @@ outer:		while(true) {
 	/**
 	 * Add a store element.
 	 */
-	private void addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp) {
+	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp) {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(this, ctx, key, name, temp);
 		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
 		synchronized (storedData) {
 			storedData.push(element.key, element);
 		}
 		trimStoredData();
+		return element;
 	}
 
 	/**

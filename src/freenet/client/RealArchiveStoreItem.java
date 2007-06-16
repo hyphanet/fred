@@ -7,16 +7,15 @@ import java.io.File;
 
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
-import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
-import freenet.support.io.PaddedEphemerallyEncryptedBucket;
+import freenet.support.io.MultiReaderBucket;
 
 class RealArchiveStoreItem extends ArchiveStoreItem {
 
 	private final ArchiveManager manager;
 	private final File myFilename;
-	private final PaddedEphemerallyEncryptedBucket bucket;
-	private final FileBucket underBucket;
+	private final MultiReaderBucket mb;
+	private final Bucket bucket;
 	private final long spaceUsed;
 	
 	/**
@@ -29,11 +28,11 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	RealArchiveStoreItem(ArchiveManager manager, ArchiveStoreContext ctx, FreenetURI key2, String realName, TempStoreElement temp) {
 		super(new ArchiveKey(key2, realName), ctx);
 		this.manager = manager;
-		this.bucket = temp.bucket;
-		this.underBucket = temp.underBucket;
-		underBucket.setReadOnly();
-		this.myFilename = underBucket.getFile();
-		spaceUsed = FileUtil.estimateUsage(myFilename, underBucket.size());
+		mb = new MultiReaderBucket(temp.bucket);
+		this.bucket = mb.getReaderBucket();
+		temp.underBucket.setReadOnly();
+		this.myFilename = temp.underBucket.getFile();
+		spaceUsed = FileUtil.estimateUsage(myFilename, temp.underBucket.size());
 		this.manager.incrementSpace(spaceUsed);
 	}
 
@@ -59,10 +58,14 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	}
 	
 	void innerClose() {
-		underBucket.free();
+		bucket.free();
 	}
 
 	Bucket getDataOrThrow() throws ArchiveFailureException {
 		return dataAsBucket();
+	}
+
+	Bucket getReaderBucket() throws ArchiveFailureException {
+		return mb.getReaderBucket();
 	}
 }

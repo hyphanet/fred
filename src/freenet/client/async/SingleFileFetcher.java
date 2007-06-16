@@ -8,7 +8,9 @@ import java.net.MalformedURLException;
 import java.util.LinkedList;
 
 import freenet.client.ArchiveContext;
+import freenet.client.ArchiveExtractCallback;
 import freenet.client.ArchiveFailureException;
+import freenet.client.ArchiveManager;
 import freenet.client.ArchiveRestartException;
 import freenet.client.ArchiveStoreContext;
 import freenet.client.ClientMetadata;
@@ -274,7 +276,31 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						throw new FetchException(FetchException.BUCKET_ERROR, e);
 					}
 				} else {
-					fetchArchive(false, archiveMetadata); // will result in this function being called again
+					fetchArchive(false, archiveMetadata, ArchiveManager.METADATA_NAME, new ArchiveExtractCallback() {
+						public void gotBucket(Bucket data) {
+							try {
+								metadata = Metadata.construct(data);
+							} catch (IOException e) {
+								// Bucket error?
+								onFailure(new FetchException(FetchException.BUCKET_ERROR, e));
+							}
+							try {
+								handleMetadata();
+							} catch (MetadataParseException e) {
+								SingleFileFetcher.this.onFailure(new FetchException(e));
+							} catch (FetchException e) {
+								e.setNotFinalizedSize();
+								SingleFileFetcher.this.onFailure(e);
+							} catch (ArchiveFailureException e) {
+								SingleFileFetcher.this.onFailure(new FetchException(e));
+							} catch (ArchiveRestartException e) {
+								SingleFileFetcher.this.onFailure(new FetchException(e));
+							}
+						}
+						public void notInArchive() {
+							onFailure(new FetchException(FetchException.INTERNAL_ERROR, "No metadata in container! Cannot happen as ArchiveManager should synthesise some!"));
+						}
+					}); // will result in this function being called again
 					return;
 				}
 				continue;
@@ -289,17 +315,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				Bucket dataBucket = ah.get(filename, actx, null, recursionLevel+1, true);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
-					// The client may free it, which is bad, or it may hang on to it for so long that it gets
-					// freed by us, which is also bad.
-					// So copy it.
-					// FIXME this is stupid, reconsider how we determine when to free buckets; refcounts maybe?
 					Bucket out;
 					try {
-						if(returnBucket != null)
+						// Data will not be freed until client is finished with it.
+						if(returnBucket != null) {
 							out = returnBucket;
-						else
-							out = ctx.bucketFactory.makeBucket(dataBucket.size());
-						BucketTools.copy(dataBucket, out);
+							BucketTools.copy(dataBucket, out);
+						} else {
+							out = dataBucket;
+						}
 					} catch (IOException e) {
 						onFailure(new FetchException(FetchException.BUCKET_ERROR));
 						return;
@@ -312,7 +336,29 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
-					fetchArchive(true, archiveMetadata);
+					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
+						public void gotBucket(Bucket data) {
+							if(logMINOR) Logger.minor(this, "Returning data");
+							Bucket out;
+							try {
+								// Data will not be freed until client is finished with it.
+								if(returnBucket != null) {
+									out = returnBucket;
+									BucketTools.copy(data, out);
+								} else {
+									out = data;
+								}
+							} catch (IOException e) {
+								onFailure(new FetchException(FetchException.BUCKET_ERROR));
+								return;
+							}
+							// Return the data
+							onSuccess(new FetchResult(clientMetadata, out));
+						}
+						public void notInArchive() {
+							onFailure(new FetchException(FetchException.NOT_IN_ARCHIVE));
+						}
+					});
 					// Will call back into this function when it has been fetched.
 					return;
 				}
@@ -440,7 +486,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		decompressors.addLast(codec);
 	}
 
-	private void fetchArchive(boolean forData, Metadata meta) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
+	private void fetchArchive(boolean forData, Metadata meta, String element, ArchiveExtractCallback callback) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
 		if(logMINOR) Logger.minor(this, "fetchArchive()");
 		// Fetch the archive
 		// How?
@@ -451,7 +497,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		Metadata newMeta = (Metadata) meta.clone();
 		newMeta.setSimpleRedirect();
 		SingleFileFetcher f;
-		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true));
+		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true));
 		f.handleMetadata();
 		// When it is done (if successful), the ArchiveCallback will re-call this function.
 		// Which will then discover that the metadata *is* available.
@@ -461,14 +507,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	class ArchiveFetcherCallback implements GetCompletionCallback {
 
 		private final boolean wasFetchingFinalData;
+		private final String element;
+		private final ArchiveExtractCallback callback;
 		
-		ArchiveFetcherCallback(boolean wasFetchingFinalData) {
+		ArchiveFetcherCallback(boolean wasFetchingFinalData, String element, ArchiveExtractCallback cb) {
 			this.wasFetchingFinalData = wasFetchingFinalData;
+			this.element = element;
+			this.callback = cb;
 		}
 		
 		public void onSuccess(FetchResult result, ClientGetState state) {
 			try {
-				ah.extractToCache(result.asBucket(), actx);
+				ah.extractToCache(result.asBucket(), actx, element, callback);
 			} catch (ArchiveFailureException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e));
 				return;

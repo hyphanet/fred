@@ -39,4 +39,10 @@ abstract class ArchiveStoreItem extends DoublyLinkedListImpl.Item {
 	 * Return the amount of cache space used by the item.
 	 */
 	abstract long spaceUsed();
+	
+	/**
+	 * Get the data as a Bucket, and guarantee that it won't be freed until the
+	 * returned object is either finalized or freed.
+	 */
+	abstract Bucket getReaderBucket() throws ArchiveFailureException;
 }

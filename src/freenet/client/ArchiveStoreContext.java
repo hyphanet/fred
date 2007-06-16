@@ -46,6 +46,8 @@ public class ArchiveStoreContext implements ArchiveHandler {
 
 	/**
 	 * Fetch a file in an archive.
+	 * @return A Bucket containing the data. This will not be freed until the 
+	 * client is finished with it i.e. calls free() or it is finalized.
 	 */
 	public Bucket get(String internalName, ArchiveContext archiveContext, ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
@@ -139,8 +141,8 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		return key;
 	}
 
-	public void extractToCache(Bucket bucket, ArchiveContext actx) throws ArchiveFailureException, ArchiveRestartException {
-		manager.extractToCache(key, archiveType, bucket, actx, this);
+	public void extractToCache(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
+		manager.extractToCache(key, archiveType, bucket, actx, this, element, callback);
 	}
 
 	public void onExtract() {
