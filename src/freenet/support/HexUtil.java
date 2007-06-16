@@ -32,7 +32,7 @@ public class HexUtil {
 	 * @return the string of hex chars.
 	 */
 	public static final String bytesToHex(byte[] bs, int off, int length) {
-		if (bs.length <= off)
+		if (bs.length <= off || bs.length < off+length)
 			throw new IllegalArgumentException();
 		StringBuffer sb = new StringBuffer(length * 2);
 		bytesToHexAppend(bs, off, length, sb);
@@ -44,8 +44,10 @@ public class HexUtil {
 		int off,
 		int length,
 		StringBuffer sb) {
+		if (bs.length <= off || bs.length < off+length)
+			throw new IllegalArgumentException();
 		sb.ensureCapacity(sb.length() + length * 2);
-		for (int i = off; (i < (off + length)) && (i < bs.length); i++) {
+		for (int i = off; i < (off + length); i++) {
 			sb.append(Character.forDigit((bs[i] >>> 4) & 0xf, 16));
 			sb.append(Character.forDigit(bs[i] & 0xf, 16));
 		}
