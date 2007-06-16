@@ -181,7 +181,9 @@ public class SimpleFieldSet {
     }
     
     public String[] getAll(String key) {
-    	return split(get(key));
+    	String k = get(key);
+    	if(k == null) return null;
+    	return split(k);
     }
 
     private static final String[] split(String string) {
@@ -203,6 +205,15 @@ public class SimpleFieldSet {
 //    	return (String[]) v.toArray();
 	}
 
+    private static final String unsplit(String[] strings) {
+    	StringBuffer sb = new StringBuffer();
+    	for(int i=0;i<strings.length;i++) {
+    		if(i != 0) sb.append(';');
+    		sb.append(strings[i]);
+    	}
+    	return sb.toString();
+    }
+    
     /**
      * Put contents of a fieldset, overwrite old values.
      */
@@ -712,6 +723,10 @@ public class SimpleFieldSet {
 			}
 		}
 		return ret;
+	}
+
+	public void putOverwrite(String key, String[] strings) {
+		putOverwrite(key, unsplit(strings));
 	}
 
 }

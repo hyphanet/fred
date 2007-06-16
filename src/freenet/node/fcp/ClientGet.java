@@ -6,6 +6,7 @@ package freenet.node.fcp;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashSet;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -267,6 +268,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		returnBucket = ret;
 
+		String[] allowed = fs.getAll("AllowedMIMETypes");
+		if(allowed != null) {
+			fctx.allowedMIMETypes = new HashSet();
+			for(int i=0;i<allowed.length;i++) fctx.allowedMIMETypes.add(allowed[i]);
+		}
+		
 		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
 				client.core.requestStarters.sskFetchScheduler, uri, 
 				fctx, priorityClass, client.lowLevelClient, 
@@ -527,6 +534,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fs.putSingle("MaxRetries", Integer.toString(fctx.maxNonSplitfileRetries));
 		fs.putSingle("Finished", Boolean.toString(finished));
 		fs.putSingle("Succeeded", Boolean.toString(succeeded));
+		if(fctx.allowedMIMETypes != null)
+			fs.putOverwrite("AllowedMIMETypes", (String[]) fctx.allowedMIMETypes.toArray(new String[fctx.allowedMIMETypes.size()]));
 		if(finished) {
 			if(succeeded) {
 				fs.putSingle("FoundDataLength", Long.toString(foundDataLength));
