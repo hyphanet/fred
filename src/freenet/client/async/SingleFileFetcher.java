@@ -307,6 +307,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} else if(metadata.isArchiveInternalRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is archive-internal redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
+				if(clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
+						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
+					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE));
+				}
 				// Fetch it from the archive
 				if(ah == null)
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
@@ -375,10 +379,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 
 				String mimeType = clientMetadata.getMIMEType();
-				if(ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					continue;
+				}
+				
+				if(mimeType != null && ctx.allowedMIMETypes != null && 
+						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
+					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE));
 				}
 				
 				// Simple redirect
@@ -427,10 +436,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 				
 				String mimeType = clientMetadata.getMIMEType();
-				if(ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					continue;
+				}
+				
+				if(mimeType != null && ctx.allowedMIMETypes != null &&
+						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
+					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE));
 				}
 				
 				// Splitfile (possibly compressed)

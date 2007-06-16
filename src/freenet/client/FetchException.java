@@ -285,6 +285,8 @@ public class FetchException extends Exception {
 	public static final int ARCHIVE_RESTART = 26;
 	/** There is a more recent version of the USK, ~= HTTP 301; FProxy will turn this into a 301 */
 	public static final int PERMANENT_REDIRECT = 27;
+	/** Requestor specified a list of allowed MIME types, and the key's type wasn't in the list */
+	public static final int WRONG_MIME_TYPE = 29;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -332,6 +334,7 @@ public class FetchException extends Exception {
 		case CANCELLED:
 		case ARCHIVE_RESTART:
 		case PERMANENT_REDIRECT:
+		case WRONG_MIME_TYPE:
 			// Fatal
 			return true;
 			

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.util.Set;
+
 import freenet.client.async.BlockSet;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.USKManager;
@@ -48,6 +50,7 @@ public class FetchContext implements Cloneable {
 	public final boolean ignoreTooManyPathComponents;
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
 	public BlockSet blocks;
+	public Set allowedMIMETypes;
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -91,6 +94,7 @@ public class FetchContext implements Cloneable {
 		this.uskManager = ctx.uskManager;
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
 		this.blocks = ctx.blocks;
+		this.allowedMIMETypes = ctx.allowedMIMETypes;
 		if(maskID == IDENTICAL_MASK) {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
