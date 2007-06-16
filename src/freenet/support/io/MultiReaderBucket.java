@@ -33,6 +33,7 @@ public class MultiReaderBucket {
 		synchronized(this) {
 			if(closed) return null;
 			Bucket d = new ReaderBucket();
+			if(readers == null) readers = new ArrayList();
 			readers.add(d);
 			return d;
 		}
@@ -44,6 +45,7 @@ public class MultiReaderBucket {
 			synchronized(MultiReaderBucket.this) {
 				readers.remove(this);
 				if(!readers.isEmpty()) return;
+				readers = null;
 				if(closed) return;
 				closed = true;
 			}
