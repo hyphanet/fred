@@ -146,6 +146,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Has already been checked
 		fctx.maxOutputLength = message.maxSize;
 		fctx.maxTempLength = message.maxTempSize;
+		
+		if(message.allowedMIMETypes != null) {
+			fctx.allowedMIMETypes = new HashSet();
+			for(int i=0;i<message.allowedMIMETypes.length;i++) fctx.allowedMIMETypes.add(message.allowedMIMETypes[i]);
+		}
+		
 		this.returnType = message.returnType;
 		this.binaryBlob = message.binaryBlob;
 		Bucket ret = null;
