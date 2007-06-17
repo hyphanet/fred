@@ -83,7 +83,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private static final int minTimeBetweenEachIndexRewriting = 1;
 	//private static final String indexFilename = "index.xml";
 	private static final String DEFAULT_INDEX_DIR = "/home/swati/myindex/";
-	private static final int MAX_ENTRIES = 50;
+	private static final int MAX_ENTRIES = 5;
 	private static final String pluginName = "XML spider";
 	
 	private static final String indexTitle= "This is an index";
@@ -112,9 +112,9 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	}
 
 	private void startSomeRequests() {
-		try{
-			Thread.sleep(30 * 1000); // Let the node start up
-		} catch (InterruptedException e){}
+//		try{
+//			Thread.sleep(30 * 1000); // Let the node start up
+//		} catch (InterruptedException e){}
 		
 		FreenetURI[] initialURIs = core.bookmarkManager.getBookmarkURIs();
 		for (int i = 0; i < initialURIs.length; i++)
@@ -420,31 +420,31 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		urisToNumbers = new HashMap();
 		Element prefixElement = xmlDoc.createElement("prefix");
 		prefixElement.setAttribute("value", prefix+"");
-		Element filesElement = xmlDoc.createElement("files"); /* filesElement != fileElement */
+	//	Element filesElement = xmlDoc.createElement("files"); /* filesElement != fileElement */
 
 		for (int i = 0; i < uris.length; i++) {
 			urisToNumbers.put(uris[i], new Integer(i));
 			
-			Element fileElement = xmlDoc.createElement("file");
-
-			fileElement.setAttribute("id", Integer.toString(i));
-			fileElement.setAttribute("key", uris[i].toString());
-			
-			Long size = (Long)sizeOfURIs.get(uris[i].toString());
-
-			if(size == null) {
-				Logger.error(this, "Spider: size is missing");
-			} else {
-				fileElement.setAttribute("size", size.toString());
-			}
-			fileElement.setAttribute("mime", ((String)mimeOfURIs.get(uris[i].toString())));
-
-			Element titleElement = xmlDoc.createElement("option");
-			titleElement.setAttribute("name", "title");
-			titleElement.setAttribute("value", (String)titlesOfURIs.get(uris[i].toString()));
-
-			fileElement.appendChild(titleElement);
-			filesElement.appendChild(fileElement);
+//			Element fileElement = xmlDoc.createElement("file");
+//
+//			fileElement.setAttribute("id", Integer.toString(i));
+//			fileElement.setAttribute("key", uris[i].toString());
+//			
+//			Long size = (Long)sizeOfURIs.get(uris[i].toString());
+//
+//			if(size == null) {
+//				Logger.error(this, "Spider: size is missing");
+//			} else {
+//				fileElement.setAttribute("size", size.toString());
+//			}
+//			fileElement.setAttribute("mime", ((String)mimeOfURIs.get(uris[i].toString())));
+//
+//			Element titleElement = xmlDoc.createElement("option");
+//			titleElement.setAttribute("name", "title");
+//			titleElement.setAttribute("value", (String)titlesOfURIs.get(uris[i].toString()));
+//
+//			fileElement.appendChild(titleElement);
+//			filesElement.appendChild(fileElement);
 		}
 
 		
@@ -469,7 +469,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		rootElement.appendChild(prefixElement);
 		rootElement.appendChild(headerElement);
 		
-		rootElement.appendChild(filesElement);
+		//rootElement.appendChild(filesElement);
 		rootElement.appendChild(keywordsElement);
 
 		/* Serialization */
@@ -512,10 +512,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private synchronized void generateIndex() throws Exception{
 		String[] words = (String[]) urisByWord.keySet().toArray(new String[urisByWord.size()]);
 		Arrays.sort(words);
-			 
-			
-				
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < words.length; i++) {
 		try{
 		
 		String prefix_match = getIndex(words[i]);
@@ -537,7 +534,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 			}
 			output2.close();
 	}
-		catch(Exception e2){ }
+		catch(Exception e2){Logger.error(this,"The Word could not be added"+ e2.toString(), e2); }
 		}	
 
 	
@@ -608,7 +605,8 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 			
 			Attr no_entries = (Attr) entry.getAttributes().getNamedItem("value");
 			
-			
+			Element filesElement = (Element) root.getElementsByTagName("files").item(0);
+			NodeList filesList = filesElement.getElementsByTagName("file");
 			if(Integer.parseInt(no_entries.getValue()) >= MAX_ENTRIES) return false;
 			else
 			{
@@ -632,8 +630,10 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 				}
 
 				Element uriElement = doc.createElement("file");
+				Element fileElement = doc.createElement("file");
 				uriElement.setAttribute("id", x.toString());
-//
+				fileElement.setAttribute("id", x.toString());
+				fileElement.setAttribute("key", uri.toString());
 //				/* Position by position */
 				HashMap positionsForGivenWord = (HashMap)positionsByWordByURI.get(uri.toString());
 				Integer[] positions = (Integer[])positionsForGivenWord.get(str);
@@ -648,8 +648,16 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 				}
 				
 				uriElement.appendChild(doc.createTextNode(positionList.toString()));
-
+				int l;
+			for(l = 0;l<filesList.getLength();l++)
+				{ Element file = (Element) filesList.item(l);
+				if(file.getAttribute("id").equals(x.toString()))
+				
+				break;
+				}
 				wordElement.appendChild(uriElement);
+				if(l>=filesList.getLength())
+				filesElement.appendChild(fileElement);
 			}
 			Element keywordsElement = (Element) root.getElementsByTagName("keywords").item(0);
 			keywordsElement.appendChild(wordElement);
@@ -686,7 +694,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 			return true;	
 		}
 		
-		catch(Exception e){}
+		catch(Exception e){Logger.error(this,"Word could not be added to the subindex"+ e.toString(), e);}
 		return false;
 	}
 	private void split(String prefix) throws Exception
@@ -928,6 +936,9 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		
 		Thread starterThread = new Thread("Spider Plugin Starter") {
 			public void run() {
+				try{
+					Thread.sleep(30 * 1000); // Let the node start up
+				} catch (InterruptedException e){}
 				startSomeRequests();
 			}
 		};
