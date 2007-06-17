@@ -373,7 +373,7 @@ public class PluginManager {
 				fos = null;
 				if(!f.renameTo(finalFile))
 					Logger.error(this, "Failed to rename "+f+" into "+finalFile);
-				filename = "*@file://" + FileUtil.getCanonicalFile(f);
+				filename = "*@file://" + FileUtil.getCanonicalFile(finalFile);
 				if(logMINOR) Logger.minor(this, "Rewritten to "+filename);
 			} catch (MalformedURLException mue) {
 				Logger.error(this, "MAlformedURLException has occured : "+ mue, mue);
