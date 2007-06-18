@@ -190,13 +190,6 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		// Now decode
 		if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
 
-		boolean[] dataBlocksSucceeded = new boolean[dataBuckets.length];
-		boolean[] checkBlocksSucceeded = new boolean[checkBuckets.length];
-		for(int i=0;i<dataBuckets.length;i++)
-			dataBlocksSucceeded[i] = dataBuckets[i].data != null;
-		for(int i=0;i<checkBuckets.length;i++)
-			checkBlocksSucceeded[i] = checkBuckets[i].data != null;
-
 		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
 		
 		if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
@@ -345,7 +338,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				failedBlocks++;
 				parentFetcher.parent.failedBlock();
 			}
-			allFailed = failedBlocks + fatallyFailedBlocks <= (dataKeys.length + checkKeys.length - minFetched);
+			// Once it is no longer possible to have a successful fetch, fail...
+			allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
 		}
 		if(allFailed)
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
