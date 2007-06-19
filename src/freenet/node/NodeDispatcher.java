@@ -737,7 +737,12 @@ public class NodeDispatcher implements Dispatcher {
 		long nodeUID = msg.getLong(DMT.MY_UID);
 		double[] peerLocs = Fields.bytesToDoubles(((ShortBuffer)msg.getObject(DMT.PEER_LOCATIONS)).getData());
 		long[] peerUIDs = Fields.bytesToLongs(((ShortBuffer)msg.getObject(DMT.PEER_UIDS)).getData());
-		ctx.cb.onTrace(uid, target, nearest, best, htl, counter, location, nodeUID, peerLocs, peerUIDs);
+		Message notVisited = msg.getSubMessage(DMT.FNPBestRoutesNotTaken);
+		double[] locsNotVisited = null;
+		if(notVisited != null) {
+			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
+		}
+		ctx.cb.onTrace(uid, target, nearest, best, htl, counter, location, nodeUID, peerLocs, peerUIDs, locsNotVisited);
 	}
 
 	private boolean handleProbeReply(Message m, PeerNode src) {

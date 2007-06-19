@@ -8,6 +8,6 @@ public interface ProbeCallback {
 
 	void onCompleted(String reason, double target, double best, double nearest, long id, short counter);
 
-	void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs);
+	void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs, double[] locsNotVisited);
 
 }
