@@ -8,6 +8,8 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 public class FileBucketFactory implements BucketFactory {
     
     private Vector files = new Vector();
@@ -20,6 +22,7 @@ public class FileBucketFactory implements BucketFactory {
     }
 
     public Bucket makeBucket(long size) throws IOException {
+	if(WrapperManager.hasShutdownHookBeenTriggered()) throw new IOException("Shutdown has been triggered; no new FileBucket will be created");
     	File f = File.createTempFile("bf_", ".freenet-tmp", rootDir);
         Bucket b = new FileBucket(f, false, true, true, false, true);
         files.addElement(f);
