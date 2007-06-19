@@ -40,7 +40,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
-import freenet.client.ClientMetadata;
+//import freenet.client.ClientMetadata;
+import freenet.client.*;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -82,7 +83,8 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	
 	private static final int minTimeBetweenEachIndexRewriting = 1;
 	//private static final String indexFilename = "index.xml";
-	private static final String DEFAULT_INDEX_DIR = "/home/swati/myindex/";
+	private static final String DEFAULT_INDEX_DIR = "myindex/";
+	public Set allowedMIMETypes;
 	private static final int MAX_ENTRIES = 5;
 	private static final String pluginName = "XML spider";
 	
@@ -112,9 +114,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	}
 
 	private void startSomeRequests() {
-//		try{
-//			Thread.sleep(30 * 1000); // Let the node start up
-//		} catch (InterruptedException e){}
+
 		
 		FreenetURI[] initialURIs = core.bookmarkManager.getBookmarkURIs();
 		for (int i = 0; i < initialURIs.length; i++)
@@ -246,14 +246,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		}
 		else type = null;
 
-//			
-//		for (int i = 0; i < words.length; i++) {
-//			String word = words[i];
-//			if ((word == null) || (word.length() == 0))
-//				continue;
-//			word = word.toLowerCase();
-//			addWord(word, uri);
-//		}
+
 		String[] words = s.split("[^A-Za-z0-9]");
 
 		Integer lastPosition = null;
@@ -348,7 +341,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 
 	private synchronized void produceIndex() throws IOException,NoSuchAlgorithmException {
 		// Produce an index file.
-		//FileOutputStream fos = new FileOutputStream("index2_new.xml");
+		
 		
 		//the number of bits to consider for matching 
 		int prefix = 1 ;
@@ -420,32 +413,11 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		urisToNumbers = new HashMap();
 		Element prefixElement = xmlDoc.createElement("prefix");
 		prefixElement.setAttribute("value", prefix+"");
-	//	Element filesElement = xmlDoc.createElement("files"); /* filesElement != fileElement */
+	
 
 		for (int i = 0; i < uris.length; i++) {
 			urisToNumbers.put(uris[i], new Integer(i));
-			
-//			Element fileElement = xmlDoc.createElement("file");
-//
-//			fileElement.setAttribute("id", Integer.toString(i));
-//			fileElement.setAttribute("key", uris[i].toString());
-//			
-//			Long size = (Long)sizeOfURIs.get(uris[i].toString());
-//
-//			if(size == null) {
-//				Logger.error(this, "Spider: size is missing");
-//			} else {
-//				fileElement.setAttribute("size", size.toString());
-//			}
-//			fileElement.setAttribute("mime", ((String)mimeOfURIs.get(uris[i].toString())));
-//
-//			Element titleElement = xmlDoc.createElement("option");
-//			titleElement.setAttribute("name", "title");
-//			titleElement.setAttribute("value", (String)titlesOfURIs.get(uris[i].toString()));
-//
-//			fileElement.appendChild(titleElement);
-//			filesElement.appendChild(fileElement);
-		}
+			}
 
 		
 		
@@ -504,8 +476,6 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	//now as each word is generated enter it into the respective subindex
 	//now the parsing will start and nodes will be added as needed 
 		
-		
-		
 
 	}
 
@@ -522,17 +492,17 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		if(addedWord == false)
 			{
 			
-			output2 = new FileWriter(DEFAULT_INDEX_DIR+"log3",true);
-			output2.write("\naddword failes at "+words[i]+" with prefix "+prefix_match);
+		
+
 			split(prefix_match);
 			regenerateIndex(prefix_match);
-			output2.write("finished splitting on prefix "+prefix_match);
+
 			prefix_match = getIndex(words[i]);
-			output2.write("the new prefix "+prefix_match);
+
 			addWord(prefix_match,words[i]);
 	
 			}
-			output2.close();
+
 	}
 		catch(Exception e2){Logger.error(this,"The Word could not be added"+ e2.toString(), e2); }
 		}	
@@ -768,11 +738,6 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		return search(str.substring(0, prefix-1),list);
 	}
 
-//		
-//		output.close();
-//		return search(str.substring(0,prefix-1),list);	
-		
-
 	
 	public void handleGet(HTTPRequest request, ToadletContext context) throws IOException, ToadletContextClosedException {
 		String action = request.getParam("action");
@@ -918,12 +883,17 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	 * @see freenet.oldplugins.plugin.Plugin#setPluginManager(freenet.oldplugins.plugin.PluginManager)
 	 */
 	public void setPluginManager(PluginManager pluginManager) {
+		
 		this.core = pluginManager.getClientCore();
 		this.ctx = core.makeClient((short) 0).getFetchContext();
 		ctx.maxSplitfileBlockRetries = 10;
 		ctx.maxNonSplitfileRetries = 10;
 		ctx.maxTempLength = 2 * 1024 * 1024;
 		ctx.maxOutputLength = 2 * 1024 * 1024;
+		allowedMIMETypes = new HashSet();
+		allowedMIMETypes.add(new String("text/html"));
+		ctx.allowedMIMETypes = new HashSet(allowedMIMETypes);
+	//	ctx.allowedMIMETypes.add("text/html"); 
 		tProducedIndex = System.currentTimeMillis();
 	}
 
