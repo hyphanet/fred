@@ -327,6 +327,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						if(returnBucket != null) {
 							out = returnBucket;
 							BucketTools.copy(dataBucket, out);
+							dataBucket.free();
 						} else {
 							out = dataBucket;
 						}
