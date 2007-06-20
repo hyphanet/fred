@@ -43,26 +43,11 @@ public class MultiReaderBucket {
 	class ReaderBucket implements Bucket {
 		
 		private boolean freed;
-		private ArrayList readerStreams;
 
 		public void free() {
-			InputStream[] streams = null;
 			synchronized(MultiReaderBucket.this) {
 				if(freed) return;
 				freed = true;
-				if(readerStreams != null)
-					streams = (InputStream[]) readerStreams.toArray(new InputStream[readerStreams.size()]);
-			}
-			if(streams != null) {
-				for(int i=0;i<streams.length;i++) {
-					try {
-						streams[i].close();
-					} catch (IOException e) {
-						// Ignore
-					}
-				}
-			}
-			synchronized(MultiReaderBucket.this) {
 				readers.remove(this);
 				if(!readers.isEmpty()) return;
 				readers = null;
@@ -73,20 +58,43 @@ public class MultiReaderBucket {
 		}
 
 		public InputStream getInputStream() throws IOException {
-			InputStream is = bucket.getInputStream();
 			synchronized(MultiReaderBucket.this) {
-				if(!(freed || closed)) {
-					if(readerStreams == null) readerStreams = new ArrayList();
-					readerStreams.add(is);
-					return is;
+				if(freed || closed) {
+					throw new IOException("Already freed");
 				}
 			}
-			try {
-				is.close();
-			} catch (IOException e) {
-				// Ignore
+			return new ReaderBucketInputStream();
+		}
+		
+		private class ReaderBucketInputStream extends InputStream {
+			
+			InputStream is;
+			
+			ReaderBucketInputStream() throws IOException {
+				is = bucket.getInputStream();
 			}
-			throw new IOException("Already freed");
+			
+			public final int read() throws IOException {
+				synchronized(MultiReaderBucket.this) {
+					if(freed || closed) throw new IOException("Already closed");
+				}
+				return is.read();
+			}
+			
+			public final int read(byte[] data, int offset, int length) throws IOException {
+				synchronized(MultiReaderBucket.this) {
+					if(freed || closed) throw new IOException("Already closed");
+				}
+				return is.read(data, offset, length);
+			}
+			
+			public final int read(byte[] data) throws IOException {
+				synchronized(MultiReaderBucket.this) {
+					if(freed || closed) throw new IOException("Already closed");
+				}
+				return is.read(data);
+			}
+			
 		}
 		
 		public String getName() {
