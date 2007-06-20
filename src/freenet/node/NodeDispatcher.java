@@ -518,7 +518,6 @@ public class NodeDispatcher implements Dispatcher {
 	 * @param cb
 	 * @param locsNotVisited 
 	 * @param maxDistance 
-	 * @param furthest 
 	 * @return
 	 */
 	private void innerHandleProbeRequest(PeerNode src, long id, Long lid, final double target, double best, 
