@@ -419,7 +419,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			boolean dontCheckForHolesShrinking = false;
 			
-			long chkBlocksInDatabase = chkDB.count();
+			long chkBlocksInDatabase = highestBlockNumberInDatabase();
 			chkBlocksInStore = chkBlocksInDatabase;
 			long chkBlocksFromFile = countCHKBlocksFromFile();
 			lastRecentlyUsed = getMaxRecentlyUsed();
