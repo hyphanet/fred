@@ -1760,8 +1760,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				chkDB_blockNum.get(t, blockNumEntry, found, LockMode.DEFAULT);
 
 			if(success == OperationStatus.KEYEXIST || success == OperationStatus.SUCCESS) {
-				System.err.println("Trying to overwrite block "+blockNum+" but already used: "+getName());
-				Logger.error(this, "Trying to overwrite block "+blockNum+" but already used: "+getName());
+				System.err.println("Trying to overwrite block "+blockNum+" but already used: "+getName()+" for "+e);
+				e.printStackTrace();
+				Logger.error(this, "Trying to overwrite block "+blockNum+" but already used: "+getName()+" for "+e);
 				return false;
 			} else {
 				Logger.minor(this, "Key doesn't exist for block num "+blockNum+" but caught "+e, e);
