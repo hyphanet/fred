@@ -283,6 +283,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							} catch (IOException e) {
 								// Bucket error?
 								onFailure(new FetchException(FetchException.BUCKET_ERROR, e));
+								return;
 							}
 							try {
 								handleMetadata();
