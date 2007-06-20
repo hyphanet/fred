@@ -536,7 +536,11 @@ public class PeerManager {
      * Both parameters must be in [0.0, 1.0].
      */
     public static double distance(double a, double b) {
-        if((a < 0.0 || a > 1.0)||(b < 0.0 || b > 1.0)) {
+    	return distance(a, b, false);
+    }
+    
+    public static double distance(double a, double b, boolean allowCrazy) {
+        if(((a < 0.0 || a > 1.0)||(b < 0.0 || b > 1.0)) && !allowCrazy) {
         	Logger.error(PeerManager.class, "Invalid Location ! a = "+a +" b = "+ b + "Please report this bug!", new Exception("error"));
         	throw new NullPointerException();
         }
@@ -545,16 +549,20 @@ public class PeerManager {
     	else return Math.min (b - a, 1.0 - b + a);
     }
 
+    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo) {
+    	return closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0);
+    }
+    
     /*
      * FIXME
      * This scans the same array 4 times.  It would be better to scan once and execute 4 callbacks...
      * For this reason the metrics are only updated if advanced mode is enabled
      */
-    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo) {
-    	PeerNode best = closerPeerBackoff(pn, routedTo, notIgnored, loc, ignoreSelf, minVersion, addUnpickedLocsTo);
+    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
+    	PeerNode best = closerPeerBackoff(pn, routedTo, notIgnored, loc, ignoreSelf, minVersion, addUnpickedLocsTo, maxDistance);
     		
     	if (calculateMisrouting) {
-    		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, null);
+    		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, null, maxDistance);
     		if(nbo != null) {
     			node.nodeStats.routingMissDistance.report(distance(best, nbo.getLocation().getValue()));
     			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
@@ -567,10 +575,10 @@ public class PeerManager {
     	return best;
     }
 	    
-    private PeerNode closerPeerBackoff(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, int minVersion, Vector addUnpickedLocsTo) {
-    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false, minVersion, addUnpickedLocsTo);
+    private PeerNode closerPeerBackoff(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
+    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false, minVersion, addUnpickedLocsTo, maxDistance);
     	if(best == null) {
-    		best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, addUnpickedLocsTo);
+    		best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, addUnpickedLocsTo, maxDistance);
     	}
     	return best;
 	}
@@ -581,7 +589,7 @@ public class PeerManager {
 	 * @param addUnpickedLocsTo Add all locations we didn't choose which we could have routed to to 
 	 * this array. Remove the location of the peer we pick from it.
      */
-    private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double target, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion, Vector addUnpickedLocsTo) {
+    private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double target, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
         PeerNode[] peers;  
         synchronized (this) {
 			peers = connectedPeers;
@@ -618,6 +626,7 @@ public class PeerManager {
             }
             count++;
             double diff = distance(p, target);
+            if(diff > maxDistance) continue;
             if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation().getValue()+", target="+target+", d="+distance(p.getLocation().getValue(), target)+" usedD="+diff+" for "+p.getPeer());
             if((!ignoreSelf) && (diff > maxDiff)) {
             	if(logMINOR) Logger.minor(this, "Ignoring because >maxDiff="+maxDiff);
