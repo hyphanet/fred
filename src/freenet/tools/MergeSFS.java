@@ -18,7 +18,9 @@ public class MergeSFS {
 		SimpleFieldSet fs1 = SimpleFieldSet.readFrom(f1, false, true);
 		SimpleFieldSet fs2 = SimpleFieldSet.readFrom(f2, false, true);
 		fs1.putAllOverwrite(fs2);
-		fs1.writeToOrdered(new PrintWriter(System.out));
+		PrintWriter pw = new PrintWriter(System.out);
+		fs1.writeToOrdered(pw);
+		pw.flush();
 	}
 
 }
