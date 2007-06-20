@@ -249,10 +249,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             return;
         }
 
-        if((negType < 0) || (negType > 1)) {
+        if((negType == 0)) {
             Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
             return;
-        }else if (negType == 0 || negType == 1){
+        }else if ( negType == 1){
         	// Four stage Diffie-Hellman. 0 = ephemeral, 1 = payload stages are signed (not quite STS)
         	// FIXME reduce to 3 stages and implement STS properly (we have a separate validation mechanism in PeerNode)
         	// AFAICS this (with negType=1) is equivalent in security to STS; it expands the second phase into a second and a fourth phase.
@@ -310,6 +310,38 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         		processSignedDHTwoOrThree(3, payload, pn, replyTo, false);
         	}
         }
+	else if (negType==2){
+		/*
+		 * We implement Just Fast Keying key management protocol with active identity     		  * protection for the initiator and no identity protection for the responder
+		 * Refer devNotes for detailed explanation of the protocol
+		 */ 
+		if(packetType<0 || packetType>3){
+			Logger.error(this,"Unknown PacketType" + packetType + "from" + replyTo + "from" +pn); 
+			return ;
+	}
+		else if(packetType==0){
+		      /*
+		       * Initiator- This is a straightforward DiffieHellman exponential. The Init                       * iator Nonce serves two purposes;it allows the initiator to use the same 			 * exponentials during different sessions while ensuring that the resulting 			  * session key will be different,can be used to differentiate between
+		       * parallel sessions
+		       */
+		}
+		else if(packetType==1){
+		      /*
+		       * Responder replies with a signed copy of his own exponential, a random
+		       * nonce and an authenticator calculated from a transient hash key private
+		       * to the responder
+		       */
+		}
+		else if(packetType==2){
+		      // Initiator echoes the data sent by the responder
+		       
+		}
+		else if(packetType==3){
+		      /*
+		       * Encrypted message of the signature on both nonces, both exponentials 
+		       * using the same keys as in the previous message
+		       */
+		}
     }
 
     /**
@@ -324,6 +356,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param replyTo The Peer to which to send the packet (not necessarily the same
      * as the one on pn as the IP may have changed).
      */
+    private void sendSignedDHCompletion(int phase, BlockCipher cipher, PeerNode pn, Peer replyTo, DiffieHellmanContext ctx) {
+        PCFBMode pcfb = PCFBMode.create(cipher);
+        byte[] iv = new byte[pcfb.lengthIV()];
+        
+        byte[] myRef = node.myCompressedSetupRef();
+        byte[] data = new byte[myRef.length + 8];
+        System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
+        System.arraycopy(myRef, 0, data, 8, myRef.length);
+        
+        byte[] myExp = ctx.getOurExponential().toByteArray();
+        byte[] hisExp = ctx.getHisExponential().toByteArray();
+        
+        MessageDigest md = SHA256.getMessageDigest();
+     
     private void sendSignedDHCompletion(int phase, BlockCipher cipher, PeerNode pn, Peer replyTo, DiffieHellmanContext ctx) {
         PCFBMode pcfb = PCFBMode.create(cipher);
         byte[] iv = new byte[pcfb.lengthIV()];
@@ -1454,20 +1500,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         }
         long firstTime = System.currentTimeMillis();
         handshakeIPs = pn.getHandshakeIPs();
-        long secondTime = System.currentTimeMillis();
-        if((secondTime - firstTime) > 1000)
-            Logger.error(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+") working on "+pn.getName());
-        if(handshakeIPs.length == 0) {
-            pn.couldNotSendHandshake();
-            long thirdTime = System.currentTimeMillis();
-            if((thirdTime - secondTime) > 1000)
-                Logger.error(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+pn.getName());
-            return;
-        } else {
-            long DHTime1 = System.currentTimeMillis();
-            ctx = DiffieHellman.generateContext();
-            long DHTime2 = System.currentTimeMillis();
-            if((DHTime2 - DHTime1) > 1000)
                 Logger.error(this, "DHTime2 is more than a second after DHTime1 ("+(DHTime2 - DHTime1)+") working on "+pn.getName());
             pn.setKeyAgreementSchemeContext(ctx);
             long DHTime3 = System.currentTimeMillis();

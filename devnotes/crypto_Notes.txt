@@ -1,0 +1,23 @@
+//////////////////////Just fast Keying//////////////////////////   
+
+   Message 1, I->R:  Ni, g^i
+
+   Message 2, R->I:  Ni, Nr, g^r, GRPINFOr, IDr,
+                     SIG{r}(g^r, GRPINFOr), HMAC{HKr}(Ni, Nr, g^i, g^r)
+
+   Message 3, I->R:  Ni, Nr, g^i, g^r, HMAC{HKr}(Ni, Nr, g^i, g^r),
+                     E{Ke}(IDi, sa, SIG{i}(Ni, Nr, g^i, g^r, IDr, sa))
+
+   Message 4, R->I:  E{Ke}(SIG{r}(Ni, Nr, g^i, g^r , IDi, sa, sa'), sa')
+
+
+   HKr: A transient hash key private to the Responder; this is a
+        global parameter for the Responder (i.e., it is not different
+        for every different protocol run), which changes periodically:
+        the Responder must pick a new g^r every time HKr changes.
+
+   Kir: A shared key derived from g^ir, Ni, and Nr, used as part of
+        the application SA 
+
+   Ke: A shared key derived from g^ir, Ni, and Nr, used to protect
+       messages 3 and 4 of the protocol.
