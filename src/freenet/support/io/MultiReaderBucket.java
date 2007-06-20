@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -40,8 +41,27 @@ public class MultiReaderBucket {
 	}
 
 	class ReaderBucket implements Bucket {
+		
+		private boolean freed;
+		private ArrayList readerStreams;
 
 		public void free() {
+			InputStream[] streams = null;
+			synchronized(MultiReaderBucket.this) {
+				if(freed) return;
+				freed = true;
+				if(readerStreams != null)
+					streams = (InputStream[]) readerStreams.toArray(new InputStream[readerStreams.size()]);
+			}
+			if(streams != null) {
+				for(int i=0;i<streams.length;i++) {
+					try {
+						streams[i].close();
+					} catch (IOException e) {
+						// Ignore
+					}
+				}
+			}
 			synchronized(MultiReaderBucket.this) {
 				readers.remove(this);
 				if(!readers.isEmpty()) return;
@@ -53,9 +73,22 @@ public class MultiReaderBucket {
 		}
 
 		public InputStream getInputStream() throws IOException {
-			return bucket.getInputStream();
+			InputStream is = bucket.getInputStream();
+			synchronized(MultiReaderBucket.this) {
+				if(!(freed || closed)) {
+					if(readerStreams == null) readerStreams = new ArrayList();
+					readerStreams.add(is);
+					return is;
+				}
+			}
+			try {
+				is.close();
+			} catch (IOException e) {
+				// Ignore
+			}
+			throw new IOException("Already freed");
 		}
-
+		
 		public String getName() {
 			return bucket.getName();
 		}
