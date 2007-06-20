@@ -526,7 +526,7 @@ public class NodeDispatcher implements Dispatcher {
 			boolean fromRejection, ProbeCallback cb, Vector locsNotVisited, double maxDistance) {
 		if(fromRejection) {
 			nearest = furthestLoc(target);
-			best = furthestGreater(target);
+			//best = furthestGreater(target); - accept best (result) from dead ends, but not nearest (affects htl)
 		}
 		short max = node.maxHTL();
 		if(htl > max) htl = max;
