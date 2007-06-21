@@ -62,6 +62,12 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.pluginmanager.FredPlugin;
+import freenet.pluginmanager.FredPluginHTTP;
+import freenet.pluginmanager.FredPluginThreadless;
+import freenet.pluginmanager.PluginHTTPException;
+import freenet.pluginmanager.PluginRespirator;
+
 /**
  * Spider. Produces an index.
  */
@@ -78,14 +84,12 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private final HashMap runningFetchesByURI = new HashMap();
 	private final HashMap urisByWord = new HashMap();
 	private final HashMap titlesOfURIs = new HashMap();
-	private FileWriter output;
-	private FileWriter output2;
 	
-	private static final int minTimeBetweenEachIndexRewriting = 1;
+	private static final int minTimeBetweenEachIndexRewriting = 10;
 	//private static final String indexFilename = "index.xml";
 	private static final String DEFAULT_INDEX_DIR = "myindex/";
 	public Set allowedMIMETypes;
-	private static final int MAX_ENTRIES = 5;
+	private static final int MAX_ENTRIES = 50;
 	private static final String pluginName = "XML spider";
 	
 	private static final String indexTitle= "This is an index";
@@ -104,6 +108,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private FetchContext ctx;
 	private final short PRIORITY_CLASS = RequestStarter.PREFETCH_PRIORITY_CLASS;
 	private boolean stopped = true;
+	PluginRespirator pr;
 
 	private synchronized void queueURI(FreenetURI uri) {
 		//not adding the html condition
@@ -142,20 +147,26 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 				queuedURISet.remove(uri);
 				ClientGetter getter = makeGetter(uri);
 				toStart.add(getter);
-				
-			}
-			
+				}
+		}
 			for (int i = 0; i < toStart.size(); i++) {
+				
 			ClientGetter g = (ClientGetter) toStart.get(i);
 			try {
 				runningFetchesByURI.put(g.getURI(), g);
 				g.start();
+				FileWriter outp = new FileWriter("logfile2",true);
+				outp.write("URI "+g.getURI().toString()+"\n");
+				outp.close();
 				} catch (FetchException e) {
 					onFailure(e, g);
 				}
+				catch (IOException e){
+					Logger.error(this, "the logfile can not be written"+e.toString(), e);
+				}
 		
 			}
-		}
+		//}
 				
 	}
 	
@@ -167,7 +178,14 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		FreenetURI uri = state.getURI();
-		
+		try{
+	    FileWriter output = new FileWriter("logfile",true);
+	    output.write(uri.toString()+"\n");
+	    output.close();
+		}
+		catch(Exception e){
+			Logger.error(this, "The uri could not be removed from running "+e.toString(), e);
+		}
 		synchronized (this) {
 			runningFetchesByURI.remove(uri);
 		}
@@ -194,16 +212,23 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 
 	public void onFailure(FetchException e, ClientGetter state) {
 		FreenetURI uri = state.getURI();
-		
+		try{
+			FileWriter outp = new FileWriter("failed",true);
+			outp.write("failed "+e.toString());
+			outp.close();
+			
+		}catch(Exception e2){
+			
+		}
 		synchronized (this) {
-			failedURIs.add(uri);
 			runningFetchesByURI.remove(uri);
+			failedURIs.add(uri);
 		}
 		if (e.newURI != null)
 			queueURI(e.newURI);
-		else
-			queueURI(uri);
-		startSomeRequests();
+//		else
+//			queueURI(uri);
+//		startSomeRequests();
 		
 		
 	}
@@ -327,7 +352,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 			newURIs[uris.length] = uri;
 			urisByWord.put(word, newURIs);
 		}
-		if (tProducedIndex + minTimeBetweenEachIndexRewriting * 10 < System.currentTimeMillis()) {
+		if (tProducedIndex + minTimeBetweenEachIndexRewriting * 1000 < System.currentTimeMillis()) {
 			try {
 				produceIndex();
 				generateIndex();
@@ -340,8 +365,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	}
 
 	private synchronized void produceIndex() throws IOException,NoSuchAlgorithmException {
-		// Produce an index file.
-		
+		// Produce the main index file.
 		
 		//the number of bits to consider for matching 
 		int prefix = 1 ;
@@ -372,11 +396,8 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 			return;
 		}
 
-
 		impl = xmlBuilder.getDOMImplementation();
-
 		/* Starting to generate index */
-
 		xmlDoc = impl.createDocument(null, "main_index", null);
 		rootElement = xmlDoc.getDocumentElement();
 
@@ -418,8 +439,6 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		for (int i = 0; i < uris.length; i++) {
 			urisToNumbers.put(uris[i], new Integer(i));
 			}
-
-		
 		
 		//all index files are ready
 		/* Adding word index */
@@ -435,7 +454,6 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 			keywordsElement.appendChild(subIndexElement);
 		}
 		
-					
 
 		// make sure that prefix is the first child of root Element
 		rootElement.appendChild(prefixElement);
@@ -455,7 +473,6 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 			Logger.error(this, "Spider: Error while serializing XML (transformFactory.newTransformer()): "+e.toString());
 			return;
 		}
-		
 
 		serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 		serializer.setOutputProperty(OutputKeys.INDENT,"yes");
@@ -470,7 +487,6 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Spider: indexes regenerated.");
-	
 	
 	//the main xml file is generated 
 	//now as each word is generated enter it into the respective subindex
@@ -491,19 +507,12 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 
 		if(addedWord == false)
 			{
-			
-		
-
 			split(prefix_match);
 			regenerateIndex(prefix_match);
-
 			prefix_match = getIndex(words[i]);
-
 			addWord(prefix_match,words[i]);
-	
 			}
-
-	}
+		}
 		catch(Exception e2){Logger.error(this,"The Word could not be added"+ e2.toString(), e2); }
 		}	
 
@@ -523,6 +532,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 			addWord(prefix_match,value);
 		}
 	}
+	
 	private String getIndex(String word) throws Exception {
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
@@ -530,42 +540,19 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		Element root = doc.getDocumentElement();
 		Attr prefix_value = (Attr) (root.getElementsByTagName("prefix").item(0)).getAttributes().getNamedItem("value");
 		int prefix = Integer.parseInt(prefix_value.getValue()); 
-		output = new FileWriter(DEFAULT_INDEX_DIR+"logfile2",true);
-		//Element prefixNode = (Element)root.getFirstChild();
-		 output.write("\nword "+word);
-		
 		String md5 = MD5(word);
-		output.write("  md5 "+md5);
-//		NodeList KeywordsList = root.getElementsByTagName("keywords");
-		
-		//Node Keyword = KeywordsList.item(0);
-	
-		
 		NodeList subindexList = root.getElementsByTagName("subIndex");
 		String str = md5.substring(0,prefix);		
-		
-		 output.write("String "+str);
-		  output.write("\n");
-		
-		  output.close();
-		  String prefix_match = search(str,subindexList);
-
-			
-		
-		output = new FileWriter(DEFAULT_INDEX_DIR+"search",true);
-		output.write("\nPrefix returned "+prefix_match+" with md5 "+str+ " and word "+word);
-		output.close();
-			
+		String prefix_match = search(str,subindexList);
 		
 		return prefix_match;
 	}
+	
 	private boolean addWord(String prefix, String str) throws Exception
 	{
 		//this word has to be added to the particular subindex
 		// modify the corresponding index
 		try{
-			
-		
 			DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
 			Document doc = docBuilder.parse(DEFAULT_INDEX_DIR+"index_"+prefix+".xml");
@@ -654,11 +641,6 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 			try {
 				serializer.transform(domSource, resultStream);
 			} catch(javax.xml.transform.TransformerException e) {}
-				
-						//i.appendChild(root);
-			//c.replaceChild(root,doc.getDocumentElement());
-			
-				
 			}
 			
 			return true;	
@@ -671,7 +653,6 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	{
 		//first we need to split the current subindex into 16 newones
 		//then read from the original one and append to the new ones
-		
 		// make the entry in the main index..
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
@@ -706,12 +687,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		DOMSource domSource = new DOMSource(doc);
 		TransformerFactory transformFactory = TransformerFactory.newInstance();
 		Transformer serializer;
-
-		
-			serializer = transformFactory.newTransformer();
-		
-			
-					
+		serializer = transformFactory.newTransformer();
 		File outputFile = new File(DEFAULT_INDEX_DIR+"index.xml");
 		StreamResult resultStream;
 		resultStream = new StreamResult(outputFile);
@@ -723,9 +699,8 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		try {
 			serializer.transform(domSource, resultStream);
 		} catch(javax.xml.transform.TransformerException e) {}
-		
-		
 	}
+	
 	public String search(String str,NodeList list) throws Exception
 	{
 		int prefix = str.length();
@@ -734,7 +709,6 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 			String key = subIndex.getAttribute("key");
 			if(key.equals(str)) return key;
 		}
-		
 		return search(str.substring(0, prefix-1),list);
 	}
 
@@ -1059,6 +1033,43 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Spider: indexes regenerated.");
 	}
+	
+public void terminate(){
+	synchronized (this) {
+		stopped = true;
+		queuedURIList.clear();
+	}
+}
+	
+public void runPlugin(PluginRespirator pr){
+	this.pr = pr;
+	this.core = pr.getNode().clientCore;
+	this.ctx = core.makeClient((short) 0).getFetchContext();
+	ctx.maxSplitfileBlockRetries = 10;
+	ctx.maxNonSplitfileRetries = 10;
+	ctx.maxTempLength = 2 * 1024 * 1024;
+	ctx.maxOutputLength = 2 * 1024 * 1024;
+	allowedMIMETypes = new HashSet();
+	allowedMIMETypes.add(new String("text/html"));
+	ctx.allowedMIMETypes = new HashSet(allowedMIMETypes);
+//	ctx.allowedMIMETypes.add("text/html"); 
+	tProducedIndex = System.currentTimeMillis();
+	
+	stopped = false;
+	
+	Thread starterThread = new Thread("Spider Plugin Starter") {
+		public void run() {
+			try{
+				Thread.sleep(30 * 1000); // Let the node start up
+			} catch (InterruptedException e){}
+			startSomeRequests();
+		}
+	};
+	starterThread.setDaemon(true);
+	starterThread.start();
+}
+
+
 
 	
 	
