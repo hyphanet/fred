@@ -386,6 +386,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
+					// Pick up MIME type from inside archive
+					clientMetadata.clear();
 					continue;
 				}
 				
@@ -444,6 +446,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
+					// Pick up MIME type from inside archive
+					clientMetadata.clear();
 					continue;
 				}
 				
