@@ -504,7 +504,7 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
-		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, false, null, notVisitedList, 2.0);
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, false, null, notVisitedList, 2.0);
 		return true;
 	}
 
@@ -522,13 +522,15 @@ public class NodeDispatcher implements Dispatcher {
 	 * @param htl
 	 * @param counter
 	 * @param checkRecent
+	 * @param canReject True if this is a new request which can be rejected due to load, false if it's an existing
+	 * request which we should handle anyway.
 	 * @param cb
 	 * @param locsNotVisited 
 	 * @param maxDistance 
 	 * @return
 	 */
 	private void innerHandleProbeRequest(PeerNode src, long id, Long lid, final double target, double best, 
-			double nearest, short htl, short counter, boolean checkRecent, 
+			double nearest, short htl, short counter, boolean checkRecent, boolean canReject, 
 			boolean fromRejection, ProbeCallback cb, Vector locsNotVisited, double maxDistance) {
 		if(fromRejection) {
 			nearest = furthestLoc(target);
@@ -543,7 +545,7 @@ public class NodeDispatcher implements Dispatcher {
 		synchronized(recentProbeContexts) {
 			if(checkRecent) {
 				long now = System.currentTimeMillis();
-				if(now - tLastReceivedProbeRequest < 500) {
+				if(now - tLastReceivedProbeRequest < 500 && canReject) {
 					rejected = true;
 				} else {
 					tLastReceivedProbeRequest = now;
@@ -809,7 +811,7 @@ public class NodeDispatcher implements Dispatcher {
 						furthestDist = dist;
 					}
 				}
-				innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, null, notVisitedList, furthestDist);
+				innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, null, notVisitedList, furthestDist);
 				return true;
 			}
 		}
@@ -907,7 +909,7 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
-		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, true, null, notVisitedList, 2.0);
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, null, notVisitedList, 2.0);
 		return true;
 	}
 
@@ -918,7 +920,7 @@ public class NodeDispatcher implements Dispatcher {
 			recentProbeRequestIDs.push(ll);
 		}
 		double nodeLoc = node.getLocation();
-		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : furthestGreater(d), nodeLoc, node.maxHTL(), (short)0, false, false, cb, new Vector(), 2.0);
+		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : furthestGreater(d), nodeLoc, node.maxHTL(), (short)0, false, false, false, cb, new Vector(), 2.0);
 	}
 	
 	private double furthestLoc(double d) {
