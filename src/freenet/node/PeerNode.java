@@ -348,6 +348,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /** Times checked for routable connection */
     private long routableConnectionCheckCount;
     
+    /** Delta between our clock and his clock (positive = his clock is fast, negative = our clock is fast) */
+    private long clockDelta;
+    
     private static boolean logMINOR;
     
     /**
@@ -1643,11 +1646,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     private void sendInitialMessages() {
         Message locMsg = DMT.createFNPLocChangeNotification(node.lm.loc.getValue());
         Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
+        Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
         
         try {
         	if(isRoutable())
         		 sendAsync(locMsg, null, 0, null);
             sendAsync(ipMsg, null, 0, null);
+            sendAsync(timeMsg, null, 0, null);
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected ("+isConnected+ ':' +currentTracker+"!!!: "+e, e);
         }
@@ -3910,5 +3915,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public String userToString() {
 		return ""+getPeer()+" : "+getName();
+	}
+
+	public synchronized void setTimeDelta(long delta) {
+		clockDelta = delta;
+	}
+
+	public long getClockDelta() {
+		return clockDelta;
 	}
 }

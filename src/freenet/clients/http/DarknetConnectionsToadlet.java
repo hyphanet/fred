@@ -367,6 +367,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th", "%\u00a0Time Routable");
 					peerTableHeaderRow.addChild("th", "Total\u00a0Traffic\u00a0(in/out)");
 					peerTableHeaderRow.addChild("th", "Congestion\u00a0Control");
+					peerTableHeaderRow.addChild("th", "Time\u00a0Delta");
 				}
 				
 				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
@@ -458,6 +459,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 							val = (int)((1000.0 / t.getDelay()) * 1024.0)+"B/sec delay "+
 								t.getDelay()+"ms (RTT "+t.getRoundTripTime()+"ms window "+t.getWindowSize();
 						peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", val);
+						// time delta
+						peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", TimeUtil.formatTime(peerNodeStatus.getClockDelta()));
 					}
 					
 					if (path.endsWith("displaymessagetypes.html")) {

@@ -110,6 +110,7 @@ public class DMT {
 	public static final String EXTRA_JAR_FILE_LENGTH = "extraJarFileLength";
 	public static final String PING_TIME = "pingTime";
 	public static final String BWLIMIT_DELAY_TIME = "bwlimitDelayTime";
+	public static final String TIME = "time";
 	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -950,6 +951,16 @@ public class DMT {
 		return msg;
 	}
 
+	public static final MessageType FNPTime = new MessageType("FNPTime") {{
+		addField(TIME, Long.class);
+	}};
+	
+	public static final Message createFNPTime(long time) {
+		Message msg = new Message(FNPTime);
+		msg.set(TIME, time);
+		return msg;
+	}
+	
 	public static final MessageType FNPVoid = new MessageType("FNPVoid") {{
 	}};
 	

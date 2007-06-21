@@ -81,6 +81,8 @@ public class NodeDispatcher implements Dispatcher {
 			source.setRemoteDetectedPeer(p);
 			node.ipDetector.redetectAddress();
 			return true;
+		} else if(spec == DMT.FNPTime) {
+			return handleTime(m, source);
 		} else if(spec == DMT.FNPVoid) {
 			return true;
 		} else if(spec == DMT.nodeToNodeMessage) {
@@ -138,6 +140,12 @@ public class NodeDispatcher implements Dispatcher {
 			return handleProbeTrace(m, source);
 		}
 		return false;
+	}
+
+	private boolean handleTime(Message m, PeerNode source) {
+		long delta = m.getLong(DMT.TIME) - System.currentTimeMillis();
+		source.setTimeDelta(delta);
+		return true;
 	}
 
 	/**

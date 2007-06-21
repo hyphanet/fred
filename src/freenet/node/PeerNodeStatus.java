@@ -87,6 +87,8 @@ public class PeerNodeStatus {
 	private double percentTimeRoutableConnection;
 	
 	private PacketThrottle throttle;
+	
+	private long clockDelta;
 
 	public PeerNodeStatus(PeerNode peerNode) {
 		this.name = peerNode.getName();
@@ -129,6 +131,7 @@ public class PeerNodeStatus {
 		this.totalBytesOut = peerNode.getTotalOutputBytes();
 		this.percentTimeRoutableConnection = peerNode.getPercentTimeRoutableConnection();
 		this.throttle = peerNode.getThrottle();
+		this.clockDelta = peerNode.getClockDelta();
 	}
 
 	/**
@@ -370,5 +373,9 @@ public class PeerNodeStatus {
 
 	public PacketThrottle getThrottle() {
 		return throttle;
+	}
+
+	public long getClockDelta() {
+		return clockDelta;
 	}
 }
