@@ -350,6 +350,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     
     /** Delta between our clock and his clock (positive = his clock is fast, negative = our clock is fast) */
     private long clockDelta;
+
+    /** If the clock delta is more than this constant, we don't talk to the node. Reason: It may not be up to date,
+     * it will have difficulty resolving date-based content etc. */
+	private static final long MAX_CLOCK_DELTA = 24L*60L*60L*1000L;
     
     private static boolean logMINOR;
     
@@ -2247,6 +2251,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	// Relatively few as we only get one every 200ms*#nodes
 	// We want to get reasonably early feedback if it's dropping all of them...
 	final static int MAX_PINGS = 5;
+
 	final LRUHashtable pingsSentTimes = new LRUHashtable();
 	long pingNumber;
 	final RunningAverage pingAverage;
@@ -2447,6 +2452,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
   		return "LISTENING";
   	if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
   		return "BURSTING";
+  	if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
+  		return "CLOCK PROBLEM";
   	return "UNKNOWN STATUS";
   }
 
@@ -2472,6 +2479,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
   		return "peer_listening";
   	if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
   		return "peer_listen_only";
+  	if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
+  		return "peer_clock_problem";
   	return "peer_unknown_status";
   }
 
@@ -2503,6 +2512,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_NEW;
 			} else if(isConnected && verifiedIncompatibleOlderVersion) {
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_OLD;
+			} else if(isConnected && Math.abs(clockDelta) > MAX_CLOCK_DELTA) {
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM;
 			} else if(neverConnected) {
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED;
 			} else if(isListenOnly) {
@@ -3919,6 +3930,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public synchronized void setTimeDelta(long delta) {
 		clockDelta = delta;
+		if(Math.abs(clockDelta) > MAX_CLOCK_DELTA)
+			isRoutable = false;
 	}
 
 	public long getClockDelta() {
