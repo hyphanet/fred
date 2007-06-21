@@ -522,7 +522,7 @@ public class NodeDispatcher implements Dispatcher {
 	 * @param htl
 	 * @param counter
 	 * @param checkRecent
-	 * @param canReject True if this is a new request which can be rejected due to load, false if it's an existing
+	 * @param loadLimitRequest True if this is a new request which can be rejected due to load, false if it's an existing
 	 * request which we should handle anyway.
 	 * @param cb
 	 * @param locsNotVisited 
@@ -530,7 +530,7 @@ public class NodeDispatcher implements Dispatcher {
 	 * @return
 	 */
 	private void innerHandleProbeRequest(PeerNode src, long id, Long lid, final double target, double best, 
-			double nearest, short htl, short counter, boolean checkRecent, boolean canReject, 
+			double nearest, short htl, short counter, boolean checkRecent, boolean loadLimitRequest, 
 			boolean fromRejection, ProbeCallback cb, Vector locsNotVisited, double maxDistance) {
 		if(fromRejection) {
 			nearest = furthestLoc(target);
@@ -545,7 +545,7 @@ public class NodeDispatcher implements Dispatcher {
 		synchronized(recentProbeContexts) {
 			if(checkRecent) {
 				long now = System.currentTimeMillis();
-				if(now - tLastReceivedProbeRequest < 500 && canReject) {
+				if(now - tLastReceivedProbeRequest < 500 && loadLimitRequest) {
 					rejected = true;
 				} else {
 					tLastReceivedProbeRequest = now;
