@@ -809,6 +809,7 @@ public class PeerManager {
 			ua.conns = conns;
 			ua.peers = peers;
 			ua.neverConn = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED);
+			ua.clockProblem = getPeerNodeStatusSize(PEER_NODE_STATUS_CLOCK_PROBLEM);
 		}
 		if(anyConnectedPeers())
 			node.onConnectedPeer();

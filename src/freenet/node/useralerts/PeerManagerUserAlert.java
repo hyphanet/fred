@@ -13,6 +13,7 @@ public class PeerManagerUserAlert implements UserAlert {
 	public int conns = 0;
 	public int peers = 0;
 	public int neverConn = 0;
+	public int clockProblem = 0;
 	boolean isValid=true;
 	int bwlimitDelayTime = 1;
 	int nodeAveragePingTime = 1;
@@ -29,6 +30,9 @@ public class PeerManagerUserAlert implements UserAlert {
 	
 	/** How many never-connected peers can we have without getting alerted about too many */
 	static final int MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD = 5;
+	
+	/** How many peers with clock problems can we have without getting alerted about too many */
+	static final int MAX_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD = 5;
 	
 	/** How many peers we can have without getting alerted about too many */
 	static final int MAX_PEER_ALERT_THRESHOLD = 100;
@@ -53,6 +57,8 @@ public class PeerManagerUserAlert implements UserAlert {
 			return l10n("onlyFewConnsTitle", "count", Integer.toString(conns));
 		if(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD)
 			return l10n("tooManyNeverConnectedTitle");
+		if(clockProblem > MAX_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD)
+			return l10n("clockProblemTitle");
 		if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD)
 			return l10n("tooManyDisconnectedTitle");
 		if(conns > MAX_CONN_ALERT_THRESHOLD)
@@ -88,6 +94,8 @@ public class PeerManagerUserAlert implements UserAlert {
 				return l10n("noPeersTestnet");
 			else
 				return l10n("noPeersDarknet"); 
+		} else if(conns < 3 && clockProblem > MAX_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) {
+			s = l10n("clockProblem", "count", Integer.toString(clockProblem));
 		} else if(conns == 0) {
 			return l10n("noConns");
 		} else if(conns == 1) {
@@ -96,6 +104,8 @@ public class PeerManagerUserAlert implements UserAlert {
 			return l10n("twoConns");
 		} else if(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
 			s = l10n("tooManyNeverConnected", "count", Integer.toString(neverConn));
+		} else if(clockProblem > MAX_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) {
+			s = l10n("clockProblem", "count", Integer.toString(clockProblem));
 		} else if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD){
 			s = l10n("tooManyDisconnected", new String[] { "count", "max" }, 
 					new String[] { Integer.toString(disconnected), Integer.toString(MAX_DISCONN_PEER_ALERT_THRESHOLD)});
@@ -150,6 +160,8 @@ public class PeerManagerUserAlert implements UserAlert {
 				alertNode.addChild("#", l10n("noPeersTestnet"));
 			else
 				alertNode.addChild("#", l10n("noPeersDarknet")); 
+		} else if(conns < 3 && clockProblem > MAX_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) {
+			alertNode.addChild("#", l10n("clockProblem", "count", Integer.toString(clockProblem)));
 		} else if (conns == 0) {
 			alertNode.addChild("#", l10n("noConns"));
 		} else if (conns == 1) {
@@ -160,6 +172,8 @@ public class PeerManagerUserAlert implements UserAlert {
 			L10n.addL10nSubstitution(alertNode, "PeerManagerUserAlert.tooManyNeverConnectedWithLink",
 					new String[] { "link", "/link", "count" },
 					new String[] { "<a href=\"/friends/myref.fref\">", "</a>", Integer.toString(neverConn) });
+		} else if (clockProblem > MAX_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) {
+			alertNode.addChild("#", l10n("clockProblem", "count", Integer.toString(clockProblem)));
 		} else if ((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("tooManyDisconnected", new String[] { "count", "max" }, new String[] { Integer.toString(disconnected), Integer.toString(MAX_DISCONN_PEER_ALERT_THRESHOLD)}));
 		} else if (conns > MAX_CONN_ALERT_THRESHOLD) {
@@ -205,6 +219,7 @@ public class PeerManagerUserAlert implements UserAlert {
 				((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
 				(peers > MAX_PEER_ALERT_THRESHOLD) ||
+				(clockProblem > MAX_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) ||
 				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
 				(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) ||
 				(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD)) &&
