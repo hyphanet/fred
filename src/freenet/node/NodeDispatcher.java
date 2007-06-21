@@ -504,7 +504,7 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
-		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, false, null, notVisitedList, 2.0);
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, false, null, notVisitedList, 2.0, false);
 		return true;
 	}
 
@@ -527,11 +527,12 @@ public class NodeDispatcher implements Dispatcher {
 	 * @param cb
 	 * @param locsNotVisited 
 	 * @param maxDistance 
-	 * @return
+	 * @param dontReject If true, don't reject the request, simply return false and the caller will handle it.
+	 * @return True unless we rejected the request (due to load, route not found etc), or would have if it weren't for dontReject.
 	 */
-	private void innerHandleProbeRequest(PeerNode src, long id, Long lid, final double target, double best, 
+	private boolean innerHandleProbeRequest(PeerNode src, long id, Long lid, final double target, double best, 
 			double nearest, short htl, short counter, boolean checkRecent, boolean loadLimitRequest, 
-			boolean fromRejection, ProbeCallback cb, Vector locsNotVisited, double maxDistance) {
+			boolean fromRejection, ProbeCallback cb, Vector locsNotVisited, double maxDistance, boolean dontReject) {
 		if(fromRejection) {
 			nearest = furthestLoc(target);
 			//best = furthestGreater(target); - accept best (result) from dead ends, but not nearest (affects htl)
@@ -571,14 +572,16 @@ public class NodeDispatcher implements Dispatcher {
 		// Add source
 		if(src != null) ctx.visitedPeers.add(src);
 		if(rejected) {
-			// Reject: rate limit
-			Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_OVERLOAD);
-			try {
-				src.sendAsync(reject, null, 0, null);
-			} catch (NotConnectedException e) {
-				Logger.error(this, "Not connected rejecting a probe request from "+src);
+			if(!dontReject) {
+				// Reject: rate limit
+				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_OVERLOAD);
+				try {
+					src.sendAsync(reject, null, 0, null);
+				} catch (NotConnectedException e) {
+					Logger.error(this, "Not connected rejecting a probe request from "+src);
+				}
 			}
-			return;
+			return false;
 		}
 		if(ctx.counter < counter) ctx.counter = counter;
 		if(logMINOR)
@@ -650,7 +653,7 @@ public class NodeDispatcher implements Dispatcher {
 				} catch (NotConnectedException e) {
 					Logger.error(this, "Not connected completing a probe request from "+src);
 				}
-				return;
+				return true; // counts as success
 			} else {
 				complete("success", target, best, nearest, id, ctx, counter);
 			}
@@ -695,18 +698,20 @@ public class NodeDispatcher implements Dispatcher {
 			if(pn == null) {
 				// Can't complete, because some HTL left
 				// Reject: RNF
-				if(src != null) {
-					Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_RNF);
-					reject.addSubMessage(sub);
-					try {
-						src.sendAsync(reject, null, 0, null);
-					} catch (NotConnectedException e) {
-						Logger.error(this, "Not connected rejecting a probe request from "+src);
+				if(!dontReject) {
+					if(src != null) {
+						Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_RNF);
+						reject.addSubMessage(sub);
+						try {
+							src.sendAsync(reject, null, 0, null);
+						} catch (NotConnectedException e) {
+							Logger.error(this, "Not connected rejecting a probe request from "+src);
+						}
+					} else {
+						complete("RNF", target, best, nearest, id, ctx, counter);
 					}
-				} else {
-					complete("RNF", target, best, nearest, id, ctx, counter);
 				}
-				return;
+				return false;
 			}
 
 			visited.add(pn);
@@ -727,7 +732,7 @@ public class NodeDispatcher implements Dispatcher {
 			forwarded.addSubMessage(sub);
 			try {
 				pn.sendAsync(forwarded, null, 0, null);
-				return;
+				return true;
 			} catch (NotConnectedException e) {
 				Logger.error(this, "Could not forward message: disconnected: "+pn+" : "+e, e);
 				// Try another one
@@ -811,8 +816,8 @@ public class NodeDispatcher implements Dispatcher {
 						furthestDist = dist;
 					}
 				}
-				innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, null, notVisitedList, furthestDist);
-				return true;
+				if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, null, notVisitedList, furthestDist, true))
+					return true;
 			}
 		}
 		
@@ -909,7 +914,7 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
-		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, null, notVisitedList, 2.0);
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, null, notVisitedList, 2.0, false);
 		return true;
 	}
 
@@ -920,7 +925,7 @@ public class NodeDispatcher implements Dispatcher {
 			recentProbeRequestIDs.push(ll);
 		}
 		double nodeLoc = node.getLocation();
-		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : furthestGreater(d), nodeLoc, node.maxHTL(), (short)0, false, false, false, cb, new Vector(), 2.0);
+		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : furthestGreater(d), nodeLoc, node.maxHTL(), (short)0, false, false, false, cb, new Vector(), 2.0, false);
 	}
 	
 	private double furthestLoc(double d) {
