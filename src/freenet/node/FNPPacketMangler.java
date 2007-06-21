@@ -438,7 +438,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         BlockCipher cipher = pn.outgoingSetupCipher;
         if(logMINOR) Logger.minor(this, "Outgoing cipher: "+HexUtil.bytesToHex(pn.outgoingSetupKey));
         PCFBMode pcfb = PCFBMode.create(cipher);
-        int paddingLength = node.random.nextInt(100);
+        int paddingLength = node.fastWeakRandom.nextInt(100);
         byte[] iv = new byte[pcfb.lengthIV()];
         node.random.nextBytes(iv);
         byte[] hash = SHA256.digest(output);
@@ -454,8 +454,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         pcfb.blockEncipher(output, 0, output.length);
         System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
         byte[] random = new byte[paddingLength];
-        // FIXME don't use node.random
-        node.random.nextBytes(random);
+        node.fastWeakRandom.nextBytes(random);
         System.arraycopy(random, 0, data, hash.length+iv.length+2+output.length, random.length);
         try {
         	sendPacket(data, replyTo, pn, 0);
@@ -1254,11 +1253,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         // Ideally we'd mimic the size profile - and the session bytes! - of a common protocol.
         
         int paddedLen = ((packetLength + 63) / 64) * 64;
-        paddedLen += node.random.nextInt(64);
+        paddedLen += node.fastWeakRandom.nextInt(64);
         if(packetLength <= 1280 && paddedLen > 1280) paddedLen = 1280;
 
         byte[] padding = new byte[paddedLen - packetLength];
-        node.random.nextBytes(padding);
+        node.fastWeakRandom.nextBytes(padding);
         
         packetLength = paddedLen;
         

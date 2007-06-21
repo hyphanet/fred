@@ -28,10 +28,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.Random;
 import java.util.zip.DeflaterOutputStream;
 
 import net.i2p.util.NativeBigInteger;
 
+import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.sleepycat.je.DatabaseException;
@@ -318,7 +320,6 @@ public class Node implements TimeSkewDetectorCallback {
 	private DSAPrivateKey myPrivKey;
 	/** My public key */
 	private DSAPublicKey myPubKey;
-	
 	/** My ARK SSK private key */
 	InsertableClientSSK myARK;
 	/** My ARK sequence number */
@@ -370,6 +371,8 @@ public class Node implements TimeSkewDetectorCallback {
 	final File extraPeerDataDir;
 	/** Strong RNG */
 	public final RandomSource random;
+	/** Weak but fast RNG */
+	public final Random fastWeakRandom;
 	final UdpSocketManager usm;
 	final FNPPacketMangler packetMangler;
 	final DNSRequester dnsr;
@@ -732,6 +735,8 @@ public class Node implements TimeSkewDetectorCallback {
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
 		this.random = random;
+		// Seeding it with anything longer than an int is useless
+		this.fastWeakRandom = new MersenneTwister(random.nextInt());
 		cachedPubKeys = new LRUHashtable();
 		lm = new LocationManager(random);
 
