@@ -223,8 +223,10 @@ public class L10n {
 		}
 		if(result != null)
 			return result;
-		else
+		else {
+			Logger.normal(CLASS_NAME, "The translation for " + key + " hasn't been found ("+currentClass.selectedLanguage+")! please tell the maintainer.");
 			return (returnNullIfNotFound ? null : getDefaultString(key));
+		}
 	}
 	
 	/**
@@ -262,11 +264,10 @@ public class L10n {
 		}
 		
 		if(result != null) {
-			Logger.normal(CLASS_NAME, "The translation for " + key + " hasn't been found! please tell the maintainer.");
 			return result;
 		}
-		Logger.error(CLASS_NAME, "The translation for " + key + " hasn't been found!");
-		System.err.println("The translation for " + key + " hasn't been found!");
+		Logger.error(CLASS_NAME, "The default translation for " + key + " hasn't been found!");
+		System.err.println("The default translation for " + key + " hasn't been found!");
 		new Exception().printStackTrace();
 		return key;
 	}
