@@ -106,7 +106,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private HashMap urisToNumbers;
 	private NodeClientCore core;
 	private FetchContext ctx;
-	private final short PRIORITY_CLASS = RequestStarter.PREFETCH_PRIORITY_CLASS;
+	private final short PRIORITY_CLASS = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 	private boolean stopped = true;
 	PluginRespirator pr;
 
@@ -214,7 +214,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		FreenetURI uri = state.getURI();
 		try{
 			FileWriter outp = new FileWriter("failed",true);
-			outp.write("failed "+e.toString());
+			outp.write("failed "+e.toString()+" for "+uri+'\n');
 			outp.close();
 			
 		}catch(Exception e2){
