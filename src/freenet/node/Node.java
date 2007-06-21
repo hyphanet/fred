@@ -735,8 +735,9 @@ public class Node implements TimeSkewDetectorCallback {
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
 		this.random = random;
-		// Seeding it with anything longer than an int is useless
-		this.fastWeakRandom = new MersenneTwister(random.nextInt());
+		byte buffer[] = new byte[128];
+		random.nextBytes(buffer);
+		this.fastWeakRandom = new MersenneTwister(buffer);
 		cachedPubKeys = new LRUHashtable();
 		lm = new LocationManager(random);
 
