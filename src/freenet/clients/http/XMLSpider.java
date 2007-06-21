@@ -101,7 +101,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 	private HashMap urisToNumbers;
 	private NodeClientCore core;
 	private FetchContext ctx;
-	private final short PRIORITY_CLASS = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
+	private final short PRIORITY_CLASS = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	private boolean stopped = true;
 	PluginRespirator pr;
 	
@@ -162,7 +162,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 				runningFetchesByURI.put(g.getURI(), g);
 				g.start();
 				FileWriter outp = new FileWriter("logfile2",true);
-				outp.write("URI "+g.getURI().toString()+g.getURI().getSuggestedEdition());
+				outp.write("URI "+g.getURI().toString()+'\n');
 				
 				outp.close();
 				} catch (FetchException e) {
@@ -1063,7 +1063,7 @@ public void runPlugin(PluginRespirator pr){
 	allowedMIMETypes.add(new String("text/html"));
 	allowedMIMETypes.add(new String("text/plain"));
 	allowedMIMETypes.add(new String("application/xhtml+xml"));
-	allowedMIMETypes.add(new String("application/zip"));
+//	allowedMIMETypes.add(new String("application/zip"));
 	ctx.allowedMIMETypes = new HashSet(allowedMIMETypes);
 //	ctx.allowedMIMETypes.add("text/html"); 
 	tProducedIndex = System.currentTimeMillis();

@@ -235,14 +235,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
 				String name;
 				if(metaStrings.isEmpty())
-					throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS);
+					throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, thisKey.addMetaStrings(new String[] { "" }));
 				else name = removeMetaString();
 				// Since metadata is a document, we just replace metadata here
 				if(logMINOR) Logger.minor(this, "Next meta-string: "+name);
 				if(name == null) {
 					metadata = metadata.getDefaultDocument();
 					if(metadata == null)
-						throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS);
+						throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, thisKey.addMetaStrings(new String[] { "" }));
 				} else {
 					metadata = metadata.getDocument(name);
 					thisKey = thisKey.pushMetaString(name);

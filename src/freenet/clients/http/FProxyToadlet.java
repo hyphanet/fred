@@ -372,9 +372,7 @@ public class FProxyToadlet extends Toadlet {
 			String msg = e.getMessage();
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Failed to fetch "+uri+" : "+e);
-			if(e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) {
-				this.writePermanentRedirect(ctx, l10n("notEnoughMetaStrings"), '/' + key.toString() + '/' + override);
-			} else if(e.newURI != null) {
+			if(e.newURI != null) {
 				this.writePermanentRedirect(ctx, msg, '/' +e.newURI.toString() + override);
 			} else if(e.mode == FetchException.TOO_BIG) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fileInformationTitle"), ctx);
