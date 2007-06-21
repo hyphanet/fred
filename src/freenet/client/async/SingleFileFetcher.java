@@ -308,7 +308,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} else if(metadata.isArchiveInternalRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is archive-internal redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
-				if(clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
+				if(metaStrings.isEmpty() && isFinal && clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
 					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType()));
 					return;
@@ -389,7 +389,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					continue;
 				}
 				
-				if(mimeType != null && ctx.allowedMIMETypes != null && 
+				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null && 
 						!ctx.allowedMIMETypes.contains(mimeType)) {
 					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType()));
 					return;
@@ -447,7 +447,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					continue;
 				}
 				
-				if(mimeType != null && ctx.allowedMIMETypes != null &&
+				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(mimeType)) {
 					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE, metadata.uncompressedDataLength(), false, clientMetadata.getMIMEType()));
 					return;
