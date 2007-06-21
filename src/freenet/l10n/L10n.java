@@ -224,7 +224,7 @@ public class L10n {
 		if(result != null)
 			return result;
 		else {
-			Logger.normal(CLASS_NAME, "The translation for " + key + " hasn't been found ("+currentClass.selectedLanguage+")! please tell the maintainer.");
+			Logger.normal(CLASS_NAME, "The translation for " + key + " hasn't been found ("+getSelectedLanguage()+")! please tell the maintainer.");
 			return (returnNullIfNotFound ? null : getDefaultString(key));
 		}
 	}
@@ -317,6 +317,7 @@ public class L10n {
 	*/
 	public static String getSelectedLanguage() {
 		synchronized (sync) {
+			if(currentClass == null) return null;
 			return currentClass.selectedLanguage;	
 		}
 	}
