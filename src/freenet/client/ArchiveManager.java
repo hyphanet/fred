@@ -367,7 +367,7 @@ outer:		while(true) {
 			} else
 				after = name.substring(x+1, name.length());
 			Object o = dir.get(before);
-			HashMap map;
+			HashMap map = (HashMap) o;
 			if(o == null) {
 				map = new HashMap();
 				dir.put(before, map);
@@ -375,7 +375,6 @@ outer:		while(true) {
 			if(o instanceof String) {
 				throw new ArchiveFailureException("Invalid archive: contains "+name+" as both file and dir");
 			}
-			map = (HashMap) o;
 			addToDirectory(map, after, prefix + before + '/');
 		}
 	}
