@@ -163,6 +163,8 @@ public class USKManager {
 			if(callbacks == null)
 				callbacks = new USKCallback[1];
 			else {
+				for(int i=0;i<callbacks.length;i++)
+					if(callbacks[i] == cb) return;
 				USKCallback[] newCallbacks = new USKCallback[callbacks.length+1];
 				System.arraycopy(callbacks, 0, newCallbacks, 0, callbacks.length);
 				callbacks = newCallbacks;
