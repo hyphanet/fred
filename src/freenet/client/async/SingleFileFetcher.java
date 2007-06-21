@@ -562,6 +562,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				SingleFileFetcher.this.onFailure(new FetchException(e));
 				return;
 			}
+			if(callback != null) return;
 			try {
 				handleMetadata();
 			} catch (MetadataParseException e) {
