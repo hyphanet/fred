@@ -35,13 +35,10 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
-//import freenet.client.ClientMetadata;
-import freenet.client.*;
+import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -49,29 +46,27 @@ import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
+import freenet.client.async.USKCallback;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.keys.FreenetURI;
+import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.oldplugins.plugin.HttpPlugin;
 import freenet.oldplugins.plugin.PluginManager;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
-import freenet.pluginmanager.FredPlugin;
-import freenet.pluginmanager.FredPluginHTTP;
-import freenet.pluginmanager.FredPluginThreadless;
-import freenet.pluginmanager.PluginHTTPException;
-import freenet.pluginmanager.PluginRespirator;
 
 /**
  * Spider. Produces an index.
  */
-public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
+public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,USKCallback{
 
 	long tProducedIndex;
 
@@ -109,6 +104,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private final short PRIORITY_CLASS = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 	private boolean stopped = true;
 	PluginRespirator pr;
+	
 
 	private synchronized void queueURI(FreenetURI uri) {
 		//not adding the html condition
@@ -145,6 +141,16 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 					break;
 				FreenetURI uri = (FreenetURI) queuedURIList.removeFirst();
 				queuedURISet.remove(uri);
+				if((uri.getKeyType()).equals("USK")){
+				if(uri.getSuggestedEdition() < 0)
+					uri = uri.setSuggestedEdition((-1)* uri.getSuggestedEdition());
+				try{
+					(ctx.uskManager).subscribe(USK.create(uri),this, false, this);	
+				}catch(Exception e){
+					
+				}
+				
+				}
 				ClientGetter getter = makeGetter(uri);
 				toStart.add(getter);
 				}
@@ -156,7 +162,8 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 				runningFetchesByURI.put(g.getURI(), g);
 				g.start();
 				FileWriter outp = new FileWriter("logfile2",true);
-				outp.write("URI "+g.getURI().toString()+"\n");
+				outp.write("URI "+g.getURI().toString()+g.getURI().getSuggestedEdition());
+				
 				outp.close();
 				} catch (FetchException e) {
 					onFailure(e, g);
@@ -228,7 +235,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 			queueURI(e.newURI);
 //		else
 //			queueURI(uri);
-//		startSomeRequests();
+		startSomeRequests();
 		
 		
 	}
@@ -866,6 +873,9 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 		ctx.maxOutputLength = 2 * 1024 * 1024;
 		allowedMIMETypes = new HashSet();
 		allowedMIMETypes.add(new String("text/html"));
+		allowedMIMETypes.add(new String("text/plain"));
+		allowedMIMETypes.add(new String("application/xhtml+xml"));
+	//	allowedMIMETypes.add(new String("application/zip"));
 		ctx.allowedMIMETypes = new HashSet(allowedMIMETypes);
 	//	ctx.allowedMIMETypes.add("text/html"); 
 		tProducedIndex = System.currentTimeMillis();
@@ -1051,6 +1061,9 @@ public void runPlugin(PluginRespirator pr){
 	ctx.maxOutputLength = 2 * 1024 * 1024;
 	allowedMIMETypes = new HashSet();
 	allowedMIMETypes.add(new String("text/html"));
+	allowedMIMETypes.add(new String("text/plain"));
+	allowedMIMETypes.add(new String("application/xhtml+xml"));
+	allowedMIMETypes.add(new String("application/zip"));
 	ctx.allowedMIMETypes = new HashSet(allowedMIMETypes);
 //	ctx.allowedMIMETypes.add("text/html"); 
 	tProducedIndex = System.currentTimeMillis();
@@ -1070,7 +1083,12 @@ public void runPlugin(PluginRespirator pr){
 }
 
 
-
+public void onFoundEdition(long l, USK key){
+	FreenetURI uri = key.getURI();
+	if(runningFetchesByURI.containsKey(uri)) runningFetchesByURI.remove(uri);
+	uri = key.getURI().setSuggestedEdition(l);
+	queueURI(uri);
+}
 	
 	
 }
