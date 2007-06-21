@@ -30,6 +30,11 @@ public class TimeUtil {
         long l = timeInterval;
         int termCount = 0;
         //
+        if(l < 0) {
+            sb.append('-');
+            l = l * -1;
+        }
+        //
         int weeks = (int)(l / ((long)7*24*60*60*1000));
         if (weeks > 0) {
             sb.append(weeks).append('w');
