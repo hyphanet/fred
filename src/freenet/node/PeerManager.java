@@ -635,24 +635,17 @@ public class PeerManager {
             }
             double loc = p.getLocation().getValue();
             if(diff < bestDiff) {
-            	if(best != null) {
-            		Double d = new Double(bestLoc);
-            		if(!addUnpickedLocsTo.contains(d))
-            			addUnpickedLocsTo.add(d);
-            	}
             	bestLoc = loc;
                 best = p;
                 bestDiff = diff;
                 if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+p.getLocation().getValue()+" for "+p.getPeer());
-            } else {
-            	if(addUnpickedLocsTo != null) {
-            		Double d = new Double(loc);
-            		// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
-            		if(!addUnpickedLocsTo.contains(d))
-            			addUnpickedLocsTo.add(d);
-            		
-            	}
             }
+           	if(addUnpickedLocsTo != null) {
+           		Double d = new Double(loc);
+           		// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
+           		if(!addUnpickedLocsTo.contains(d))
+           			addUnpickedLocsTo.add(d);
+           	}
         }
         if(addUnpickedLocsTo != null && bestLoc >= 0)
         	addUnpickedLocsTo.remove(new Double(bestLoc));
