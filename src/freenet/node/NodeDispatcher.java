@@ -453,7 +453,7 @@ public class NodeDispatcher implements Dispatcher {
 			this.htl = htl;
 			this.nearest = nearest;
 			this.best = best;
-			this.srcRef = src.myRef;
+			this.srcRef = (src == null) ? null : src.myRef;
 			this.cb = cb;
 		}
 
