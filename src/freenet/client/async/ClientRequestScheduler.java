@@ -520,6 +520,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		synchronized(pendingKeys) {
 			gets = (SendableGet[]) pendingKeys.get(key);
 		}
+		if(gets == null) return;
 		Runnable r = new Runnable() {
 			public void run() {
 				for(int i=0;i<gets.length;i++) {
