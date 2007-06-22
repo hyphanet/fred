@@ -521,6 +521,16 @@ public class DMT {
 		return msg;
 	}
 	
+	public static final MessageType FNPRecentlyFailed = new MessageType("FNPRecentlyFailed") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static final Message createFNPRecentlyFailed(long id) {
+		Message msg = new Message(FNPRecentlyFailed);
+		msg.set(UID, id);
+		return msg;
+	}
+	
 	public static final MessageType FNPCHKDataFound = new MessageType("FNPCHKDataFound") {{
 		addField(UID, Long.class);
 		addField(BLOCK_HEADERS, ShortBuffer.class);

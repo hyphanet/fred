@@ -47,6 +47,9 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
 			onFailure(new FetchException(FetchException.DATA_NOT_FOUND));
 			return;
+		case LowLevelGetException.RECENTLY_FAILED:
+			onFailure(new FetchException(FetchException.RECENTLY_FAILED));
+			return;
 		case LowLevelGetException.DECODE_FAILED:
 			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR));
 			return;

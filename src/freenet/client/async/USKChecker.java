@@ -43,6 +43,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			break;
 		case LowLevelGetException.DATA_NOT_FOUND:
 		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
+		case LowLevelGetException.RECENTLY_FAILED:
 			dnfs++;
 			canRetry = true;
 			break;

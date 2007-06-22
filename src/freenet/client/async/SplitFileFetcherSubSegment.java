@@ -99,6 +99,9 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
 			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token);
 			return;
+		case LowLevelGetException.RECENTLY_FAILED:
+			onFailure(new FetchException(FetchException.RECENTLY_FAILED), token);
+			return;
 		case LowLevelGetException.DECODE_FAILED:
 			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token);
 			return;

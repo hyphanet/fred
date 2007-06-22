@@ -77,6 +77,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     static final int TIMED_OUT = 6;
     static final int GENERATED_REJECTED_OVERLOAD = 7;
     static final int INTERNAL_ERROR = 8;
+    static final int RECENTLY_FAILED = 9;
     
     private static boolean logMINOR;
     
@@ -241,13 +242,14 @@ public final class RequestSender implements Runnable, ByteCounter {
             while(true) {
             	
                 MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPDataNotFound);
+                MessageFilter mfRF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRecentlyFailed);
                 MessageFilter mfDF = makeDataFoundFilter(next);
                 MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
                 MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
                 MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKPubKey);
             	MessageFilter mfRealDFCHK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPCHKDataFound);
             	MessageFilter mfRealDFSSK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFound);
-                MessageFilter mf = mfDNF.or(mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey.or(mfRealDFCHK.or(mfRealDFSSK))))));
+                MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey.or(mfRealDFCHK.or(mfRealDFSSK)))))));
 
                 
             	try {
@@ -270,6 +272,12 @@ public final class RequestSender implements Runnable, ByteCounter {
             	if(msg.getSpec() == DMT.FNPDataNotFound) {
             		next.successNotOverload();
             		finish(DATA_NOT_FOUND, next);
+            		return;
+            	}
+            	
+            	if(msg.getSpec() == DMT.FNPRecentlyFailed) {
+            		next.successNotOverload();
+            		finish(RECENTLY_FAILED, next);
             		return;
             	}
             	

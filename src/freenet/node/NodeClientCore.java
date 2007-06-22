@@ -526,6 +526,7 @@ public class NodeClientCore implements Persistable {
 			} else {
 				if(rs.hasForwarded() &&
 						((status == RequestSender.DATA_NOT_FOUND) ||
+						(status == RequestSender.RECENTLY_FAILED) ||
 						(status == RequestSender.SUCCESS) ||
 						(status == RequestSender.ROUTE_NOT_FOUND) ||
 						(status == RequestSender.VERIFY_FAILURE))) {
@@ -553,6 +554,8 @@ public class NodeClientCore implements Persistable {
 					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 				case RequestSender.DATA_NOT_FOUND:
 					throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
+				case RequestSender.RECENTLY_FAILED:
+					throw new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED);
 				case RequestSender.ROUTE_NOT_FOUND:
 					throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
 				case RequestSender.TRANSFER_FAILED:
@@ -635,6 +638,7 @@ public class NodeClientCore implements Persistable {
 			} else {
 				if(rs.hasForwarded() &&
 						((status == RequestSender.DATA_NOT_FOUND) ||
+						(status == RequestSender.RECENTLY_FAILED) ||
 						(status == RequestSender.SUCCESS) ||
 						(status == RequestSender.ROUTE_NOT_FOUND) ||
 						(status == RequestSender.VERIFY_FAILURE))) {
@@ -662,6 +666,8 @@ public class NodeClientCore implements Persistable {
 					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 				case RequestSender.DATA_NOT_FOUND:
 					throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
+				case RequestSender.RECENTLY_FAILED:
+					throw new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED);
 				case RequestSender.ROUTE_NOT_FOUND:
 					throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
 				case RequestSender.TRANSFER_FAILED:
