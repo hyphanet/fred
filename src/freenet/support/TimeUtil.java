@@ -34,6 +34,9 @@ public class TimeUtil {
             sb.append('-');
             l = l * -1;
         }
+        if( !withSecondFractions && l < 1000 ) {
+            return "";
+        }
         //
         int weeks = (int)(l / ((long)7*24*60*60*1000));
         if (weeks > 0) {
