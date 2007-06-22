@@ -18,6 +18,7 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
 import java.util.ArrayList;
 
@@ -550,7 +551,7 @@ public class PeerManager {
     	else return Math.min (b - a, 1.0 - b + a);
     }
 
-    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo) {
+    public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo) {
     	return closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0);
     }
     
@@ -559,7 +560,7 @@ public class PeerManager {
      * This scans the same array 4 times.  It would be better to scan once and execute 4 callbacks...
      * For this reason the metrics are only updated if advanced mode is enabled
      */
-    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
+    public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
     	PeerNode best = closerPeerBackoff(pn, routedTo, notIgnored, loc, ignoreSelf, minVersion, addUnpickedLocsTo, maxDistance);
     		
     	if (calculateMisrouting) {
@@ -576,7 +577,7 @@ public class PeerManager {
     	return best;
     }
 	    
-    private PeerNode closerPeerBackoff(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
+    private PeerNode closerPeerBackoff(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
     	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false, minVersion, addUnpickedLocsTo, maxDistance);
     	if(best == null) {
     		best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, addUnpickedLocsTo, maxDistance);
@@ -590,7 +591,7 @@ public class PeerManager {
 	 * @param addUnpickedLocsTo Add all locations we didn't choose which we could have routed to to 
 	 * this array. Remove the location of the peer we pick from it.
      */
-    private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double target, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
+    private PeerNode _closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double target, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
         PeerNode[] peers;  
         synchronized (this) {
 			peers = connectedPeers;
