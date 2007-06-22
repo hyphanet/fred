@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.StringArray;
+import freenet.support.WeakHashSet;
 
 /**
  * @author amphibian
@@ -435,8 +437,8 @@ public class NodeDispatcher implements Dispatcher {
 
 	class ProbeContext {
 
-		final PeerNode src; // FIXME make this a weak reference or something ? - Memory leak with high connection churn
-		final HashSet visitedPeers;
+		final WeakReference /* <PeerNode> */ srcRef; // FIXME make this a weak reference or something ? - Memory leak with high connection churn
+		final WeakHashSet visitedPeers;
 		final ProbeCallback cb;
 		short counter;
 		short htl;
@@ -446,12 +448,12 @@ public class NodeDispatcher implements Dispatcher {
 		short forkCount;
 
 		public ProbeContext(long id, double target, double best, double nearest, short htl, short counter, PeerNode src, ProbeCallback cb) {
-			visitedPeers = new HashSet();
+			visitedPeers = new WeakHashSet();
 			this.counter = counter;
 			this.htl = htl;
 			this.nearest = nearest;
 			this.best = best;
-			this.src = src;
+			this.srcRef = src.myRef;
 			this.cb = cb;
 		}
 
@@ -661,7 +663,7 @@ public class NodeDispatcher implements Dispatcher {
 
 		// Otherwise route it
 
-		HashSet visited = ctx.visitedPeers;
+		WeakHashSet visited = ctx.visitedPeers;
 
 		while(true) {
 
@@ -823,14 +825,15 @@ public class NodeDispatcher implements Dispatcher {
 		}
 		
 		// Just propagate back to source
-		if(ctx.src != null) {
+		PeerNode origSource = (PeerNode) ctx.srcRef.get();
+		if(src != null) {
 			Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++);
 			Message sub = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
 			if(sub != null) complete.addSubMessage(sub);
 			try {
-				ctx.src.sendAsync(complete, null, 0, null);
+				origSource.sendAsync(complete, null, 0, null);
 			} catch (NotConnectedException e) {
-				Logger.error(this, "Not connected completing a probe request from "+ctx.src+" (forwarding completion from "+src+ ')');
+				Logger.error(this, "Not connected completing a probe request from "+origSource+" (forwarding completion from "+src+ ')');
 			}
 		} else {
 			if(ctx.cb != null)
@@ -870,11 +873,12 @@ public class NodeDispatcher implements Dispatcher {
 				recentProbeContexts.popValue();
 		}
 
-		if(ctx.src != null) {
+		PeerNode origSource = (PeerNode) ctx.srcRef.get();
+		if(origSource != null) {
 			try {
-				ctx.src.sendAsync(m, null, 0, null);
+				origSource.sendAsync(m, null, 0, null);
 			} catch (NotConnectedException e) {
-				Logger.error(this, "Not connected forwarding trace to "+ctx.src+" (from "+src+ ')');
+				Logger.error(this, "Not connected forwarding trace to "+origSource+" (from "+src+ ')');
 			}
 		} else {
 			if(ctx.cb != null)
