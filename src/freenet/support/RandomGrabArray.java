@@ -66,7 +66,6 @@ public class RandomGrabArray {
 				oret = ret;
 				if(ret.isCancelled()) ret = null;
 				if(ret != null && !ret.canRemove()) {
-					ret.setParentGrabArray(null);
 					return ret;
 				}
 				do {
