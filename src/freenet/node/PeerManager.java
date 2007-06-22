@@ -635,6 +635,11 @@ public class PeerManager {
             }
             double loc = p.getLocation().getValue();
             if(diff < bestDiff) {
+            	if(best != null) {
+            		Double d = new Double(bestLoc);
+            		if(!addUnpickedLocsTo.contains(d))
+            			addUnpickedLocsTo.add(d);
+            	}
             	bestLoc = loc;
                 best = p;
                 bestDiff = diff;
