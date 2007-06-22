@@ -14,6 +14,8 @@ import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.Key;
+import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
@@ -24,8 +26,8 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
-import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SectoredRandomGrabArrayWithInt;
+import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SortedVectorByNumber;
 import freenet.support.api.StringCallback;
 
@@ -94,6 +96,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public final String name;
 	private final LinkedList /* <WeakReference <RandomGrabArray> > */ recentSuccesses = new LinkedList();
 	
+	/** All pending gets by key. Used to automatically satisfy pending requests when either the key is fetched by
+	 * an overlapping request, or it is fetched by a request from another node. Operations on this are synchronized on
+	 * itself. */
+	private final HashMap /* <Key, SendableGet[]> */ pendingKeys;
+	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
 	public static final String PRIORITY_HARD = "HARD";
@@ -159,6 +166,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.isSSKScheduler = forSSKs;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		allRequestsByClientRequest = new HashMap();
+		if(forInserts)
+			pendingKeys = null;
+		else
+			pendingKeys = new HashMap();
 		
 		this.name = name;
 		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
@@ -202,6 +213,29 @@ public class ClientRequestScheduler implements RequestScheduler {
 								block = getter.getContext().blocks.get(key);
 							if(block == null)
 								block = node.fetchKey(key, getter.dontCache());
+							if(block == null) {
+								Key nodeKey = key.getNodeKey();
+								synchronized(pendingKeys) {
+									SendableGet[] gets = (SendableGet[]) pendingKeys.get(nodeKey);
+									if(gets == null) {
+										pendingKeys.put(nodeKey, new SendableGet[] { getter });
+									} else {
+										boolean found = false;
+										for(int j=0;j<gets.length;j++) {
+											if(gets[j] == getter) {
+												found = true;
+												break;
+											}
+										}
+										if(!found) {
+											SendableGet[] newGets = new SendableGet[gets.length+1];
+											System.arraycopy(gets, 0, newGets, 0, gets.length);
+											newGets[gets.length] = getter;
+											pendingKeys.put(nodeKey, newGets);
+										}
+									}
+								}
+							}
 						}
 					} catch (KeyVerifyException e) {
 						// Verify exception, probably bogus at source;
@@ -388,6 +422,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 							allRequestsByClientRequest.remove(cr);
 						if(logMINOR) Logger.minor(this, "Removed from HashSet for "+cr+" which now has "+v.size()+" elements");
 					}
+					if(!isInsertScheduler) {
+						removePendingKeys((SendableGet) req, true);
+					}
 				}
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req);
 				return req;
@@ -397,6 +434,53 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return null;
 	}
 	
+	/**
+	 * Remove a SendableGet from the list of getters we maintain for each key, indicating that we are no longer interested
+	 * in that key.
+	 * @param getter
+	 * @param complain
+	 */
+	public void removePendingKeys(SendableGet getter, boolean complain) {
+		int[] keyTokens = getter.allKeys();
+		for(int i=0;i<keyTokens.length;i++) {
+			int tok = keyTokens[i];
+			Key key = getter.getKey(tok).getNodeKey();
+			synchronized(pendingKeys) {
+				SendableGet[] gets = (SendableGet[]) pendingKeys.get(key);
+				if(gets == null) {
+					if(complain)
+						Logger.error(this, "Not found: "+getter+" for "+key+" removing (no such key)");
+				} else if(gets.length > 1) {
+					SendableGet[] newGets = new SendableGet[gets.length-1];
+					boolean found = false;
+					int x = 0;
+					for(int j=0;j<gets.length;j++) {
+						if(j >= gets.length) {
+							if(!found) {
+								if(complain)
+									Logger.error(this, "Not found: "+getter+" for "+key+" removing ("+gets.length+" getters)");
+								return; // not here
+							}
+							if(gets[j] == getter || gets[j] == null || gets[j].isCancelled()) continue;
+							newGets[x++] = gets[j];
+						}
+					}
+					if(x != gets.length-1) {
+						SendableGet[] newNewGets = new SendableGet[x];
+						System.arraycopy(newGets, 0, newNewGets, 0, x);
+						newGets = newNewGets;
+					}
+					pendingKeys.put(key, newGets);
+				} else if(gets.length == 1 && gets[0] == getter) {
+					pendingKeys.remove(key);
+				} else if(gets.length == 1 && gets[0] != getter) {
+					if(complain)
+						Logger.error(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
+				}
+			}
+		}
+	}
+
 	public void reregisterAll(ClientRequester request) {
 		SendableRequest[] reqs;
 		synchronized(this) {
@@ -428,5 +512,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 			while(recentSuccesses.size() > 8)
 				recentSuccesses.removeLast();
 		}
+	}
+
+	public void tripPendingKey(final KeyBlock block) {
+		final Key key = block.getKey();
+		final SendableGet[] gets;
+		synchronized(pendingKeys) {
+			gets = (SendableGet[]) pendingKeys.get(key);
+		}
+		Runnable r = new Runnable() {
+			public void run() {
+				for(int i=0;i<gets.length;i++) {
+					gets[i].onGotKey(key, block);
+				}
+			}
+		};
+		node.getTicker().queueTimedJob(r, 0); // FIXME ideally these would be completed on a single thread; when we have 1.5, use a dedicated non-parallel Executor
 	}
 }

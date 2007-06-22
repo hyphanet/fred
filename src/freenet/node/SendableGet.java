@@ -4,9 +4,12 @@
 package freenet.node;
 
 import freenet.client.FetchContext;
+import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.Key;
+import freenet.keys.KeyBlock;
 import freenet.support.Logger;
 
 /**
@@ -102,10 +105,16 @@ public abstract class SendableGet extends SendableRequest {
 	public void schedule() {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Scheduling "+this);
-		if(isSSK())
-			parent.sskScheduler.register(this);
-		else
-			parent.chkScheduler.register(this);
+		getScheduler().register(this);
 	}
+	
+	public ClientRequestScheduler getScheduler() {
+		if(isSSK())
+			return parent.sskScheduler;
+		else
+			return parent.chkScheduler;
+	}
+
+	public abstract void onGotKey(Key key, KeyBlock block);
 
 }

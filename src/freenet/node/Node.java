@@ -2073,6 +2073,8 @@ public class Node implements TimeSkewDetectorCallback {
 				chkDatastore.put(block);
 			}
 			chkDatacache.put(block);
+			if(clientCore != null && clientCore.requestStarters != null)
+				clientCore.requestStarters.chkFetchScheduler.tripPendingKey(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
 		}
@@ -2096,6 +2098,9 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			sskDatacache.put(block, false);
 			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey(), deep);
+			if(clientCore != null && clientCore.requestStarters != null)
+				clientCore.requestStarters.sskFetchScheduler.tripPendingKey(block);
+			
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
 		}

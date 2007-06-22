@@ -6,6 +6,9 @@ package freenet.client.async;
 import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientSSK;
+import freenet.keys.Key;
+import freenet.keys.KeyBlock;
+import freenet.keys.KeyVerifyException;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
@@ -101,4 +104,20 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return true;
 	}
 
+	public void onGotKey(Key key, KeyBlock block) {
+		synchronized(this) {
+			if(isCancelled()) return;
+			if(!key.equals(this.key.getNodeKey())) {
+				Logger.normal(this, "Got sent key "+key+" but want "+this.key+" for "+this);
+				return;
+			}
+		}
+		try {
+			onSuccess(Key.createKeyBlock(this.key, block), false, 0);
+		} catch (KeyVerifyException e) {
+			Logger.error(this, "onGotKey("+key+","+block+") got "+e+" for "+this, e);
+			// FIXME if we get rid of the direct route this must call onFailure()
+		}
+	}
+	
 }

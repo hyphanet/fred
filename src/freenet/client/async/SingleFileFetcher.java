@@ -177,6 +177,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 
 	protected void onSuccess(FetchResult result) {
+		getScheduler().removePendingKeys(this, false);
 		if(parent.isCancelled()) {
 			if(logMINOR)
 				Logger.minor(this, "Parent is cancelled");

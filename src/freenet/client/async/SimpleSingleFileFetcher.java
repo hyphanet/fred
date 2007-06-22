@@ -95,6 +95,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			}
 		}
 		// :(
+		getScheduler().removePendingKeys(this, false);
 		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock();
 		else
@@ -109,6 +110,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			onFailure(new FetchException(FetchException.CANCELLED));
 			return;
 		}
+		getScheduler().removePendingKeys(this, false);
 		rcb.onSuccess(data, this);
 	}
 
