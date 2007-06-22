@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -355,6 +356,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * it will have difficulty resolving date-based content etc. */
 	private static final long MAX_CLOCK_DELTA = 24L*60L*60L*1000L;
     
+	/** A WeakReference to this object. Can be taken whenever a node object needs to refer to this object for a 
+	 * long time, but without preventing it from being GC'ed. */
+	final WeakReference myRef;
+	
     private static boolean logMINOR;
     
     /**
@@ -372,6 +377,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     public PeerNode(SimpleFieldSet fs, Node node2, PeerManager peers, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
+    	myRef = new WeakReference(this);
         this.node = node2;
         this.peers = peers;
         this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
