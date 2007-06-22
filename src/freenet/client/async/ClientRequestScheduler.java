@@ -444,7 +444,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		int[] keyTokens = getter.allKeys();
 		for(int i=0;i<keyTokens.length;i++) {
 			int tok = keyTokens[i];
-			Key key = getter.getKey(tok).getNodeKey();
+			ClientKey ckey = getter.getKey(tok);
+			if(ckey == null) {
+				Logger.error(this, "Key "+tok+" is null for "+getter);
+				continue;
+			}
+			Key key = ckey.getNodeKey();
 			synchronized(pendingKeys) {
 				SendableGet[] gets = (SendableGet[]) pendingKeys.get(key);
 				if(gets == null) {
