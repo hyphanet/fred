@@ -258,9 +258,9 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public void possiblyRemoveFromParent() {
 		synchronized(this) {
-			if(blockNums.isEmpty())
-				segment.removeSeg(this);
+			if(!blockNums.isEmpty()) return;
 		}
+		segment.removeSeg(this);
 		getScheduler().removePendingKeys(this, false);
 	}
 
