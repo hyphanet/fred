@@ -443,7 +443,7 @@ public class NodeDispatcher implements Dispatcher {
 		double nearest;
 		double best;
 		Vector notVisitedList; // List of best locations not yet visited by this request
-		int forkCount;
+		short forkCount;
 
 		public ProbeContext(long id, double target, double best, double nearest, short htl, short counter, PeerNode src, ProbeCallback cb) {
 			visitedPeers = new HashSet();
@@ -718,7 +718,7 @@ public class NodeDispatcher implements Dispatcher {
 
 			if(src != null) {
 				Message trace =
-					DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers));
+					DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), ctx.forkCount);
 				trace.addSubMessage(sub);
 				try {
 					src.sendAsync(trace, null, 0, null);
@@ -762,7 +762,8 @@ public class NodeDispatcher implements Dispatcher {
 		if(notVisited != null) {
 			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
 		}
-		ctx.cb.onTrace(uid, target, nearest, best, htl, counter, location, nodeUID, peerLocs, peerUIDs, locsNotVisited);
+		short forkCount = msg.getShort(DMT.FORK_COUNT);
+		ctx.cb.onTrace(uid, target, nearest, best, htl, counter, location, nodeUID, peerLocs, peerUIDs, locsNotVisited, forkCount);
 	}
 
 	private boolean handleProbeReply(Message m, PeerNode src) {

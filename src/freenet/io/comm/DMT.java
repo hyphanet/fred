@@ -111,6 +111,7 @@ public class DMT {
 	public static final String PING_TIME = "pingTime";
 	public static final String BWLIMIT_DELAY_TIME = "bwlimitDelayTime";
 	public static final String TIME = "time";
+	public static final String FORK_COUNT = "forkCount";
 	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -772,9 +773,10 @@ public class DMT {
 		addField(MY_UID, Long.class);
 		addField(PEER_LOCATIONS, ShortBuffer.class);
 		addField(PEER_UIDS, ShortBuffer.class);
+		addField(FORK_COUNT, Short.class);
 	}};
 	
-	public static Message createFNPProbeTrace(long uid, double target, double nearest, double best, short htl, short counter, double myLoc, long swapIdentifier, double[] peerLocs, long[] peerUIDs) {
+	public static Message createFNPProbeTrace(long uid, double target, double nearest, double best, short htl, short counter, double myLoc, long swapIdentifier, double[] peerLocs, long[] peerUIDs, short forkCount) {
 		Message msg = new Message(FNPProbeTrace);
 		msg.set(UID, uid);
 		msg.set(TARGET_LOCATION, target);
@@ -786,6 +788,7 @@ public class DMT {
 		msg.set(MY_UID, swapIdentifier);
 		msg.set(PEER_LOCATIONS, new ShortBuffer(Fields.doublesToBytes(peerLocs)));
 		msg.set(PEER_UIDS, new ShortBuffer(Fields.longsToBytes(peerUIDs)));
+		msg.set(FORK_COUNT, forkCount);
 		return msg;
 	}
 
