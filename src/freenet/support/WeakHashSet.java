@@ -7,7 +7,11 @@ import java.util.WeakHashMap;
 
 public class WeakHashSet implements Set {
 	
-	private WeakHashMap map;
+	private final WeakHashMap map;
+	
+	public WeakHashSet() {
+		map = new WeakHashMap();
+	}
 
 	public boolean add(Object key) {
 		return map.put(key, null) == null;
