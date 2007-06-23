@@ -246,7 +246,7 @@ public class Yarrow extends RandomSource {
 	private void write_seed(File filename) {
 		synchronized(this) {
 			long now = System.currentTimeMillis();
-			if(now - timeLastWroteSeed <= 60*1000) {
+			if(now - timeLastWroteSeed <= 60*60*1000 /* once per hour */) {
 				return;
 			} else
 				timeLastWroteSeed = now;
