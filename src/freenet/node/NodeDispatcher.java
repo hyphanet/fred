@@ -437,7 +437,7 @@ public class NodeDispatcher implements Dispatcher {
 
 	class ProbeContext {
 
-		final WeakReference /* <PeerNode> */ srcRef; // FIXME make this a weak reference or something ? - Memory leak with high connection churn
+		private final WeakReference /* <PeerNode> */ srcRef; // FIXME make this a weak reference or something ? - Memory leak with high connection churn
 		final WeakHashSet visitedPeers;
 		final ProbeCallback cb;
 		short counter;
@@ -455,6 +455,11 @@ public class NodeDispatcher implements Dispatcher {
 			this.best = best;
 			this.srcRef = (src == null) ? null : src.myRef;
 			this.cb = cb;
+		}
+
+		public PeerNode getSource() {
+			if(srcRef != null) return (PeerNode) srcRef.get();
+			return null;
 		}
 
 	}
@@ -825,7 +830,7 @@ public class NodeDispatcher implements Dispatcher {
 		}
 		
 		// Just propagate back to source
-		PeerNode origSource = (PeerNode) ctx.srcRef.get();
+		PeerNode origSource = (PeerNode) ctx.getSource();
 		if(src != null) {
 			Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++);
 			Message sub = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
@@ -873,7 +878,7 @@ public class NodeDispatcher implements Dispatcher {
 				recentProbeContexts.popValue();
 		}
 
-		PeerNode origSource = (PeerNode) ctx.srcRef.get();
+		PeerNode origSource = ctx.getSource();
 		if(origSource != null) {
 			try {
 				origSource.sendAsync(m, null, 0, null);
