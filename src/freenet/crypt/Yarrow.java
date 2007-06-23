@@ -122,6 +122,7 @@ public class Yarrow extends RandomSource {
 		        }
 	        }
 
+	        boolean isSystemEntropyAvailable = true;
 	        // Read some bits from /dev/urandom
 	        try {
 	            fis = new FileInputStream("/dev/urandom");
@@ -132,6 +133,9 @@ public class Yarrow extends RandomSource {
 	            consumeBytes(buf);
 	        } catch (Throwable t) {
 	            Logger.normal(this, "Can't read /dev/urandom: "+t, t);
+	            // We can't read it; let's skip /dev/random and seed from SecureRandom.generateSeed()
+	            canBlock = true;
+	            isSystemEntropyAvailable = false;
 	        } finally {
 	            try {
 	            	if(fis != null)
@@ -140,7 +144,7 @@ public class Yarrow extends RandomSource {
 	                    dis.close();
 	            } catch (IOException e) {}
 	        }
-	        if(canBlock) {
+	        if(canBlock && isSystemEntropyAvailable) {
 	            // Read some bits from /dev/random
 	            try {
 	                fis = new FileInputStream("/dev/random");
