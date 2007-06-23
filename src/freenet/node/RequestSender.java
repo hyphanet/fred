@@ -154,6 +154,11 @@ public final class RequestSender implements Runnable, ByteCounter {
             
             Message req = createDataRequest();
             
+            // Not possible to get an accurate time for sending, guaranteed to be not later than the time of receipt.
+            // Why? Because by the time the sent() callback gets called, it may already have been acked, under heavy load.
+            // So take it from when we first started to try to send the request.
+            // See comments below when handling FNPRecentlyFailed for why we need this.
+            long timeSentRequest = System.currentTimeMillis();
             
             next.sendSync(req, this);
             
@@ -277,7 +282,65 @@ public final class RequestSender implements Runnable, ByteCounter {
             	
             	if(msg.getSpec() == DMT.FNPRecentlyFailed) {
             		next.successNotOverload();
-            		finish(RECENTLY_FAILED, next);
+            		/*
+            		 * Must set a correct recentlyFailedTimeLeft before calling this finish(), because it will be
+            		 * passed to the handler.
+            		 * 
+            		 * It is *VITAL* that the TIME_LEFT we pass on is not larger than it should be.
+            		 * It is somewhat less important that it is not too much smaller than it should be.
+            		 * 
+            		 * Why? Because:
+            		 * 1) We have to use FNPRecentlyFailed to create failure table entries. Because otherwise,
+            		 * the failure table is of little value: A request is routed through a node, which gets a DNF,
+            		 * and adds a failure table entry. Other requests then go through that node via other paths.
+            		 * They are rejected with FNPRecentlyFailed - not with DataNotFound. If this does not create
+            		 * failure table entries, more requests will be pointlessly routed through that chain.
+            		 * 
+            		 * 2) If we use a fixed timeout on receiving FNPRecentlyFailed, they can be self-seeding. 
+            		 * What this means is A sends a request to B, which DNFs. This creates a failure table entry 
+            		 * which lasts for 10 minutes. 5 minutes later, A sends another request to B, which is killed
+            		 * with FNPRecentlyFailed because of the failure table entry. B's failure table lasts for 
+            		 * another 5 minutes, but A's lasts for the full 10 minutes i.e. until 5 minutes after B's. 
+            		 * After B's failure table entry has expired, but before A's expires, B sends a request to A. 
+            		 * A replies with FNPRecentlyFailed. Repeat ad infinitum: A reinforces B's blocks, and B 
+            		 * reinforces A's blocks!
+            		 * 
+            		 * 3) This can still happen even if we check where the request is coming from. A loop could 
+            		 * very easily form: A - B - C - A. A requests from B, DNFs (assume the request comes in from 
+            		 * outside, there are more nodes. C requests from A, sets up a block. B's block expires, C's 
+            		 * is still active. A requests from B which requests from C ... and it goes round again.
+            		 * 
+            		 * 4) It is exactly the same if we specify a timeout, unless the timeout can be guaranteed to 
+            		 * not increase the expiry time.
+            		 */
+            		
+            		// First take the original TIME_LEFT. This will start at 10 minutes if we get rejected in
+            		// the same millisecond as the failure table block was added.
+            		int timeLeft = msg.getInt(DMT.TIME_LEFT);
+            		int origTimeLeft = timeLeft;
+            		
+            		if(timeLeft <= 0) {
+            			Logger.error(this, "Impossible: timeLeft="+timeLeft);
+            			origTimeLeft = 0;
+            			timeLeft=1000; // arbitrary default...
+            		}
+            		
+            		// This is in theory relative to when the request was received by the node. Lets make it relative
+            		// to a known event before that: the time when we sent the request.
+            		
+            		long timeSinceSent = Math.max(0, (System.currentTimeMillis() - timeSentRequest));
+            		timeLeft -= timeSinceSent;
+            		
+            		// Subtract 1% for good measure / to compensate for dodgy clocks
+            		timeLeft -= origTimeLeft / 100;
+            		
+            		if(timeLeft <= 0) {
+            			// No timeout left, cool
+            			finish(DATA_NOT_FOUND, next);
+            		} else {
+            			// Some timeout left
+            			finish(RECENTLY_FAILED, next);
+            		}
             		return;
             	}
             	
@@ -608,5 +671,11 @@ public final class RequestSender implements Runnable, ByteCounter {
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
+	}
+	
+	private int recentlyFailedTimeLeft;
+
+	synchronized int getRecentlyFailedTimeLeft() {
+		return recentlyFailedTimeLeft;
 	}
 }

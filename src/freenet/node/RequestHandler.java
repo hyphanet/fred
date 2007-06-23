@@ -146,7 +146,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             		source.sendSync(dnf, this);
             		return;
             	case RequestSender.RECENTLY_FAILED:
-            		Message rf = DMT.createFNPRecentlyFailed(uid);
+            		Message rf = DMT.createFNPRecentlyFailed(uid, rs.getRecentlyFailedTimeLeft());
             		source.sendSync(rf, this);
             		return;
             	case RequestSender.GENERATED_REJECTED_OVERLOAD:

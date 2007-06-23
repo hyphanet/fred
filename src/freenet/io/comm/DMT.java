@@ -112,6 +112,7 @@ public class DMT {
 	public static final String BWLIMIT_DELAY_TIME = "bwlimitDelayTime";
 	public static final String TIME = "time";
 	public static final String FORK_COUNT = "forkCount";
+	public static final String TIME_LEFT = "timeLeft";
 	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -523,11 +524,13 @@ public class DMT {
 	
 	public static final MessageType FNPRecentlyFailed = new MessageType("FNPRecentlyFailed") {{
 		addField(UID, Long.class);
+		addField(TIME_LEFT, Integer.class);
 	}};
 	
-	public static final Message createFNPRecentlyFailed(long id) {
+	public static final Message createFNPRecentlyFailed(long id, int timeLeft) {
 		Message msg = new Message(FNPRecentlyFailed);
 		msg.set(UID, id);
+		msg.set(TIME_LEFT, timeLeft);
 		return msg;
 	}
 	
@@ -708,6 +711,16 @@ public class DMT {
 	public static Message createFNPSSKPubKeyAccepted(long uid) {
 		Message msg = new Message(FNPSSKPubKeyAccepted);
 		msg.set(UID, uid);
+		return msg;
+	}
+	
+	public static MessageType FNPOfferKey = new MessageType("FNPOfferKey") {{
+		addField(KEY, Key.class);
+	}};
+	
+	public static Message createFNPOfferKey(Key key) {
+		Message msg = new Message(FNPOfferKey);
+		msg.set(KEY, key);
 		return msg;
 	}
 	
