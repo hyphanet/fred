@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -214,17 +215,29 @@ public class Yarrow extends RandomSource {
 	 */
 	private void read_seed(File filename) {
 		try {
-			DataInputStream dis =
-				new DataInputStream(new FileInputStream(filename));
-			EntropySource seedFile = new EntropySource();
+			FileInputStream fis = null;
+			BufferedInputStream bis = null;
+			DataInputStream dis = null;
+			
 			try {
-				for (int i = 0; i < 32; i++)
-					acceptEntropy(seedFile, dis.readLong(), 64);
-			} catch (EOFException f) {
+				fis = new FileInputStream(filename);
+				bis = new BufferedInputStream(fis);
+				dis = new DataInputStream(bis);
+				
+				EntropySource seedFile = new EntropySource();
+				try {
+					for (int i = 0; i < 32; i++)
+						acceptEntropy(seedFile, dis.readLong(), 64);
+				} catch (EOFException f) {}
+
+			} catch (IOException e) {
+				Logger.error(this, "IOE trying to read the seedfile from disk : " + e.getMessage());
+			} finally {
+				if(dis != null) dis.close();
+				if(bis != null) bis.close();
+				if(fis != null) fis.close();
 			}
-			dis.close();
-		} catch (Exception e) {
-		}
+		} catch (Exception e) {}
 		fast_pool_reseed();
 	}
 
