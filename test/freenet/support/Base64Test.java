@@ -33,7 +33,6 @@ public class Base64Test extends TestCase {
 	 * to verify if it encode works correctly.
 	 */
 	public void testEncode() {
-		System.out.println("Base64-Encode");
 		String toEncode = "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure.";
 		String expectedResult = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4";
 		byte[] aByteArrayToEncode = toEncode.getBytes();
@@ -47,7 +46,6 @@ public class Base64Test extends TestCase {
 	 * to verify if it decode an already encoded string correctly.
 	 */	
 	public void testDecode() {
-		System.out.println("Base64-Decode");
 		String toDecode = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
 		String expectedResult = "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure.";
 		try {
@@ -65,8 +63,6 @@ public class Base64Test extends TestCase {
 	 * and with the one after decoding.
 	 */
 	public void testEncodeDecode() {
-		System.out.println("Base64-EncodeThenDecode");
-		
 		byte[] bytesDecoded;
 		byte[] bytesToEncode = new byte[5];
 		
@@ -91,7 +87,6 @@ public class Base64Test extends TestCase {
 	 * character '=' is correctly placed.
 	 */
 	public void testEncodePadding() {
-		System.out.println("Base64-encodePadding");
 		byte[][] methodBytesArray = {
 				{4,4,4},	//three byte Array -> no padding char expected	
 				{4,4},		//two byte Array -> one padding char expected
@@ -114,8 +109,7 @@ public class Base64Test extends TestCase {
 	 * characters.
 	 */
 	public void testIllegalBaseCharacter() {
-		System.out.println("Base64-illegalCharacter");
-		String illegalCharString = "abcd=fghilmn";
+		String illegalCharString = "abcd=fghilmn";		//TODO: check many other possibile cases!
 		try {
 			Base64.decode(illegalCharString);
 			fail("Expected IllegalBase64Exception not thrown"); }
@@ -133,7 +127,6 @@ public class Base64Test extends TestCase {
 	 *  where -> number MOD 4 = 1).
 	 */
 	public void testIllegalBaseLength() {
-		System.out.println("Base64-illegalLength");
 		String illegalLengthString = "a";		//most interesting case
 		try {
 			Base64.decode(illegalLengthString);
