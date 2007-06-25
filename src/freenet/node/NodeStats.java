@@ -311,15 +311,43 @@ public class NodeStats implements Persistable {
 	public void start() throws NodeInitException {
 		nodePinger.start();
 		persister.start();
+		node.getTicker().queueTimedJob(throttledPacketSendAverageIdleUpdater, CHECK_THROTTLE_TIME);
 	}
 	
-	private long lastAcceptedRequest = -1;
+	/** Every 60 seconds, check whether we need to adjust the bandwidth delay time because of idleness.
+	 * (If no packets have been sent, the throttledPacketSendAverage should decrease; if it doesn't, it may go high,
+	 * and then no requests will be accepted, and it will stay high forever. */
+	static final int CHECK_THROTTLE_TIME = 60 * 1000;
 	
-	private long lastCheckedUncontended = -1;
+	private long lastAcceptedRequest = -1;
 	
 	static final int ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET = 
 		1024 + DMT.packetTransmitSize(1024, 32)
 		+ FNPPacketMangler.FULL_HEADERS_LENGTH_ONE_MESSAGE;
+	
+	final Runnable throttledPacketSendAverageIdleUpdater =
+		new Runnable() {
+			public void run() {
+				long now = System.currentTimeMillis();
+				try {
+					if(throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
+						// shouldn't take long
+						node.outputThrottle.blockingGrab(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
+						node.outputThrottle.recycle(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
+						long after = System.currentTimeMillis();
+						// Report time it takes to grab the bytes.
+						throttledPacketSendAverage.report(after - now);
+					}
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+				} finally {
+					node.getTicker().queueTimedJob(this, CHECK_THROTTLE_TIME);
+					long end = System.currentTimeMillis();
+					if(logMINOR)
+						Logger.minor(this, "Throttle check took "+TimeUtil.formatTime(end-now,2,true));
+				}
+			}
+	};
 	
 	/* return reject reason as string if should reject, otherwise return null */
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
@@ -335,27 +363,6 @@ public class NodeStats implements Persistable {
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.
 		long now = System.currentTimeMillis();
-		boolean checkUncontended = false;
-		synchronized(this) {
-			if(now - lastCheckedUncontended > 1000) {
-				checkUncontended = true;
-				lastCheckedUncontended = now;
-			}
-		}
-		if(checkUncontended && throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
-			// shouldn't take long
-			node.outputThrottle.blockingGrab(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
-			node.outputThrottle.recycle(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
-			long after = System.currentTimeMillis();
-			// Report time it takes to grab the bytes.
-			throttledPacketSendAverage.report(after - now);
-			now = after;
-			// will have changed, use new value
-			synchronized(this) {
-				bwlimitDelayTime = throttledPacketSendAverage.currentValue();
-			}
-		}
-		
 		double pingTime = nodePinger.averagePingTime();
 		synchronized(this) {
 			// Round trip time
