@@ -1329,7 +1329,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 				
 				
-				block = new SSKBlock(data,header,chk, true);
+				block = new SSKBlock(data,header,chk, false);
 				
 				if(!dontPromote) {
 					storeBlock.updateRecentlyUsed();
