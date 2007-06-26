@@ -80,6 +80,10 @@ public class HexUtil {
 	 */
 	public static final void hexToBytes(String s, byte[] out, int off)
 		throws NumberFormatException, IndexOutOfBoundsException {
+		
+		if (off >= out.length)
+			throw new IllegalArgumentException();
+		
 		int slen = s.length();
 		if ((slen % 2) != 0) {
 			s = '0' + s;
