@@ -550,7 +550,6 @@ public class NodeDispatcher implements Dispatcher {
 		if(htl <= 1) htl = 1;
 		ProbeContext ctx = null;
 		boolean rejected = false;
-		boolean isNew = false;
 		synchronized(recentProbeContexts) {
 			if(checkRecent) {
 				long now = System.currentTimeMillis();
@@ -558,14 +557,13 @@ public class NodeDispatcher implements Dispatcher {
 					rejected = true;
 				} else {
 					tLastReceivedProbeRequest = now;
-					counter++; // Accepted it; another hop
 				}
+				counter++; // Increment on every hop even if we reject it, this makes it easier to read the trace
 			}
 			if(!rejected) {
 				ctx = (ProbeContext) recentProbeContexts.get(lid);
 				if(ctx == null) {
 					ctx = new ProbeContext(id, target, best, nearest, htl, counter, src, cb);
-					isNew = true;
 				}
 				recentProbeContexts.push(lid, ctx); // promote or add
 				while(recentProbeContexts.size() > MAX_PROBE_CONTEXTS)
