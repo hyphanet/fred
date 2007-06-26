@@ -16,6 +16,7 @@
 
 package freenet.support;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
 
@@ -131,7 +132,49 @@ public class HexUtilTest extends TestCase {
 			bitSetIndex++;
 		}
 		aBitSet.flip(bitSetIndex);
-		//return aBitSet;
+	}
+	
+	/**
+	 * Test countBytesForBits(int) method
+	 * against all possible values until 256 bytes
+	 */
+	public void testCountBytesForBits_int() {
+		assertEquals(HexUtil.countBytesForBits(0),0);	//border case
+		for (int expectedBytesCount = 1; expectedBytesCount < 256; expectedBytesCount++)
+			for (int bits = (expectedBytesCount-1)*8+1; bits <= (expectedBytesCount)*8; bits++)
+				assertEquals(HexUtil.countBytesForBits(bits),expectedBytesCount);
+	}
+	
+	/**
+	 * Test bytesToBits(byte[],BitSet,int) method
+	 * against all possible single byte value.
+	 * It uses HexUtil.bitsToBytes() method for the check,
+	 * so be sure that method works correctly!
+	 */
+	public void testBytesToBits_byteBitSetInt() {
+		byte[] methodByteArray = new byte[1];
+		BitSet methodBitSet = new BitSet(8);
+		for (int i = 0; i < 255; i++) {
+			methodByteArray[0] = (byte)i;
+			HexUtil.bytesToBits(methodByteArray,methodBitSet,7);
+			assertTrue(Arrays.equals(methodByteArray,HexUtil.bitsToBytes(methodBitSet,8)));}
+	}
+	
+	/**
+	 * Test biToHex(BigInteger) method
+	 * comparing its results to results provided
+	 * by different scientific valid calculators.
+	 */
+	public void testBiToHex_BigInteger() {
+		BigInteger methodBigInteger = new BigInteger("999999999999999");
+		String expectedHexValue = "038d7ea4c67fff";
+		assertEquals(HexUtil.biToHex(methodBigInteger),expectedHexValue);
+		methodBigInteger = new BigInteger("0");
+		expectedHexValue = "00";
+		assertEquals(HexUtil.biToHex(methodBigInteger),expectedHexValue);
+		methodBigInteger = new BigInteger("72057594037927935");
+		expectedHexValue = "00ffffffffffffff";
+		assertEquals(HexUtil.biToHex(methodBigInteger),expectedHexValue);
 	}
 	
 	/**
@@ -239,8 +282,8 @@ public class HexUtilTest extends TestCase {
 		byte[] outputArray = new byte[1];
 		BitSet methodBitSet = new BitSet(8);
 		methodBitSet.flip(3);
-		outputArray = HexUtil.bitsToBytes(methodBitSet,2);
-		expectedByteArray[0] = (byte)0;
+		outputArray = HexUtil.bitsToBytes(methodBitSet,3);	//TODO: verify this strange method
+		expectedByteArray[0] = (byte)8;
 		assertTrue(Arrays.equals(expectedByteArray,outputArray));
 	}
 }
