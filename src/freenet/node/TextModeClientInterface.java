@@ -817,8 +817,8 @@ public class TextModeClientInterface implements Runnable {
         	String s = uline.substring("PROBE:".length()).trim();
         	double d = Double.parseDouble(s);
         	ProbeCallback cb = new ProbeCallback() {
-				public void onCompleted(String reason, double target, double best, double nearest, long id, short counter) {
-					String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" hops, id "+id+"\r\n";
+				public void onCompleted(String reason, double target, double best, double nearest, long id, short counter, short linearCounter) {
+					String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" nodes ("+linearCounter+" hops), id "+id+"\r\n";
 					try {
 						out.write(msg.getBytes());
 						out.flush();
@@ -831,8 +831,8 @@ public class TextModeClientInterface implements Runnable {
 					}
 				}
 
-				public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs, double[] locsNotVisited, short forkCount) {
-					String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+"node UID="+nodeUID+" peer locs="+StringArray.toString(peerLocs)+" peer UIDs="+StringArray.toString(peerUIDs)+" locs not visited = "+StringArray.toString(locsNotVisited)+" forks: "+forkCount+'\n';
+				public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs, double[] locsNotVisited, short forkCount, short linearCounter, String reason, long prevUID) {
+					String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" linear="+linearCounter+" location="+location+"node UID="+nodeUID+" prev UID="+prevUID+" peer locs="+StringArray.toString(peerLocs)+" peer UIDs="+StringArray.toString(peerUIDs)+" locs not visited = "+StringArray.toString(locsNotVisited)+" forks: "+forkCount+" reason="+reason+'\n';
 					try {
 						out.write(msg.toString().getBytes());
 						out.flush();

@@ -441,6 +441,7 @@ public class NodeDispatcher implements Dispatcher {
 		final WeakHashSet visitedPeers;
 		final ProbeCallback cb;
 		short counter;
+		short linearCounter;
 		short htl;
 		double nearest;
 		double best;
@@ -483,12 +484,13 @@ public class NodeDispatcher implements Dispatcher {
 		double nearest = m.getDouble(DMT.NEAREST_LOCATION);
 		short htl = m.getShort(DMT.HTL);
 		short counter = m.getShort(DMT.COUNTER);
+		short linearCounter = m.getShort(DMT.LINEAR_COUNTER);
 		if(logMINOR)
 			Logger.minor(this, "Probe request: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest+ ' ' +htl+ ' ' +counter);
 		synchronized(recentProbeContexts) {
 			if(recentProbeRequestIDs.contains(lid)) {
 				// Reject: Loop
-				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_LOOP);
+				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_LOOP, linearCounter);
 				try {
 					src.sendAsync(reject, null, 0, null);
 				} catch (NotConnectedException e) {
@@ -511,7 +513,7 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
-		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, false, null, notVisitedList, 2.0, false);
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, false, null, notVisitedList, 2.0, false, ++linearCounter, "request");
 		return true;
 	}
 
@@ -539,7 +541,8 @@ public class NodeDispatcher implements Dispatcher {
 	 */
 	private boolean innerHandleProbeRequest(PeerNode src, long id, Long lid, final double target, double best, 
 			double nearest, short htl, short counter, boolean checkRecent, boolean loadLimitRequest, 
-			boolean fromRejection, ProbeCallback cb, Vector locsNotVisited, double maxDistance, boolean dontReject) {
+			boolean fromRejection, ProbeCallback cb, Vector locsNotVisited, double maxDistance, boolean dontReject,
+			short linearCounter, String callerReason) {
 		if(fromRejection) {
 			nearest = furthestLoc(target); // reject CANNOT change nearest, because it's from a dead-end; "improving"
 			// nearest will only result in the request being truncated
@@ -570,6 +573,7 @@ public class NodeDispatcher implements Dispatcher {
 					recentProbeContexts.popValue();
 			}
 		}
+		if(linearCounter < 0) linearCounter = ctx.linearCounter;
 		if(locsNotVisited != null) {
 			if(logMINOR)
 				Logger.minor(this, "Locs not visited: "+locsNotVisited);
@@ -585,7 +589,7 @@ public class NodeDispatcher implements Dispatcher {
 		if(rejected) {
 			if(!dontReject) {
 				// Reject: rate limit
-				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_OVERLOAD);
+				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_OVERLOAD, linearCounter);
 				try {
 					src.sendAsync(reject, null, 0, null);
 				} catch (NotConnectedException e) {
@@ -664,7 +668,7 @@ public class NodeDispatcher implements Dispatcher {
 		if(htl == 0) {
 			if(src != null) {
 				// Complete
-				Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++);
+				Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++, linearCounter);
 				Message sub = DMT.createFNPBestRoutesNotTaken((Double[])locsNotVisited.toArray(new Double[locsNotVisited.size()]));
 				complete.addSubMessage(sub);
 				try {
@@ -674,7 +678,7 @@ public class NodeDispatcher implements Dispatcher {
 				}
 				return true; // counts as success
 			} else {
-				complete("success", target, best, nearest, id, ctx, counter);
+				complete("success", target, best, nearest, id, ctx, counter, linearCounter);
 			}
 		}
 
@@ -719,7 +723,7 @@ public class NodeDispatcher implements Dispatcher {
 				// Reject: RNF
 				if(!dontReject) {
 					if(src != null) {
-						Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_RNF);
+						Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_RNF, linearCounter);
 						reject.addSubMessage(sub);
 						try {
 							src.sendAsync(reject, null, 0, null);
@@ -727,7 +731,7 @@ public class NodeDispatcher implements Dispatcher {
 							Logger.error(this, "Not connected rejecting a probe request from "+src);
 						}
 					} else {
-						complete("RNF", target, best, nearest, id, ctx, counter);
+						complete("RNF", target, best, nearest, id, ctx, counter, linearCounter);
 					}
 				}
 				return false;
@@ -737,7 +741,7 @@ public class NodeDispatcher implements Dispatcher {
 
 			if(src != null) {
 				Message trace =
-					DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), ctx.forkCount);
+					DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), ctx.forkCount, linearCounter, callerReason, src == null ? -1 : src.swapIdentifier);
 				trace.addSubMessage(sub);
 				try {
 					src.sendAsync(trace, null, 0, null);
@@ -747,7 +751,7 @@ public class NodeDispatcher implements Dispatcher {
 			}
 			
 			Message forwarded =
-				DMT.createFNPProbeRequest(id, target, nearest, best, htl, counter++);
+				DMT.createFNPProbeRequest(id, target, nearest, best, htl, counter++, linearCounter);
 			forwarded.addSubMessage(sub);
 			try {
 				pn.sendAsync(forwarded, null, 0, null);
@@ -760,9 +764,9 @@ public class NodeDispatcher implements Dispatcher {
 
 	}
 
-	private void complete(String msg, double target, double best, double nearest, long id, ProbeContext ctx, short counter) {
+	private void complete(String msg, double target, double best, double nearest, long id, ProbeContext ctx, short counter, short linearHops) {
 		Logger.normal(this, "Completed Probe request # "+id+" - RNF - "+msg+": "+best);
-		ctx.cb.onCompleted(msg, target, best, nearest, id, counter);
+		ctx.cb.onCompleted(msg, target, best, nearest, id, counter, linearHops);
 	}
 
 	private void reportTrace(ProbeContext ctx, Message msg) {
@@ -774,6 +778,7 @@ public class NodeDispatcher implements Dispatcher {
 		short counter = msg.getShort(DMT.COUNTER);
 		double location = msg.getDouble(DMT.LOCATION);
 		long nodeUID = msg.getLong(DMT.MY_UID);
+		short linearCount = msg.getShort(DMT.LINEAR_COUNTER);
 		double[] peerLocs = Fields.bytesToDoubles(((ShortBuffer)msg.getObject(DMT.PEER_LOCATIONS)).getData());
 		long[] peerUIDs = Fields.bytesToLongs(((ShortBuffer)msg.getObject(DMT.PEER_UIDS)).getData());
 		Message notVisited = msg.getSubMessage(DMT.FNPBestRoutesNotTaken);
@@ -782,7 +787,9 @@ public class NodeDispatcher implements Dispatcher {
 			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
 		}
 		short forkCount = msg.getShort(DMT.FORK_COUNT);
-		ctx.cb.onTrace(uid, target, nearest, best, htl, counter, location, nodeUID, peerLocs, peerUIDs, locsNotVisited, forkCount);
+		String reason = msg.getString(DMT.REASON);
+		long prevUID = msg.getLong(DMT.PREV_UID);
+		ctx.cb.onTrace(uid, target, nearest, best, htl, counter, location, nodeUID, peerLocs, peerUIDs, locsNotVisited, forkCount, linearCount, reason, prevUID);
 	}
 
 	private boolean handleProbeReply(Message m, PeerNode src) {
@@ -792,6 +799,7 @@ public class NodeDispatcher implements Dispatcher {
 		double best = m.getDouble(DMT.BEST_LOCATION);
 		double nearest = m.getDouble(DMT.NEAREST_LOCATION);
 		short counter = m.getShort(DMT.COUNTER);
+		short linearCounter = m.getShort(DMT.LINEAR_COUNTER);
 		if(logMINOR)
 			Logger.minor(this, "Probe reply: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest);
 		
@@ -852,7 +860,7 @@ public class NodeDispatcher implements Dispatcher {
 						furthestDist = dist;
 					}
 				}
-				if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, null, notVisitedList, mustBeBetterThan, true))
+				if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, null, notVisitedList, mustBeBetterThan, true, linearCounter, "backtracking"))
 					return true;
 			}
 		}
@@ -860,7 +868,7 @@ public class NodeDispatcher implements Dispatcher {
 		// Just propagate back to source
 		PeerNode origSource = (PeerNode) ctx.getSource();
 		if(src != null) {
-			Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++);
+			Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++, linearCounter);
 			Message sub = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
 			if(sub != null) complete.addSubMessage(sub);
 			try {
@@ -870,7 +878,7 @@ public class NodeDispatcher implements Dispatcher {
 			}
 		} else {
 			if(ctx.cb != null)
-				complete("Completed", target, best, nearest, id, ctx, counter);
+				complete("Completed", target, best, nearest, id, ctx, counter, linearCounter);
 		}
 		return true;
 	}
@@ -952,7 +960,7 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
-		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, null, notVisitedList, 2.0, false);
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, null, notVisitedList, 2.0, false, (short)-1, "rejected");
 		return true;
 	}
 
@@ -963,7 +971,7 @@ public class NodeDispatcher implements Dispatcher {
 			recentProbeRequestIDs.push(ll);
 		}
 		double nodeLoc = node.getLocation();
-		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : furthestGreater(d), nodeLoc, node.maxHTL(), (short)0, false, false, false, cb, new Vector(), 2.0, false);
+		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : furthestGreater(d), nodeLoc, node.maxHTL(), (short)0, false, false, false, cb, new Vector(), 2.0, false, (short)-1, "start");
 	}
 	
 	private double furthestLoc(double d) {

@@ -78,6 +78,7 @@ public class DMT {
 	public static final String TYPE = "type";
 	public static final String PAYLOAD = "payload";
 	public static final String COUNTER = "counter";
+	public static final String LINEAR_COUNTER = "linearCounter";
 	public static final String RETURN_LOCATION = "returnLocation";
 	public static final String BLOCK_HEADERS = "blockHeaders";
 	public static final String DATA_INSERT_REJECTED_REASON = "dataInsertRejectedReason";
@@ -113,6 +114,7 @@ public class DMT {
 	public static final String TIME = "time";
 	public static final String FORK_COUNT = "forkCount";
 	public static final String TIME_LEFT = "timeLeft";
+	public static final String PREV_UID = "prevUID";
 	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -771,10 +773,11 @@ public class DMT {
 		addField(BEST_LOCATION, Double.class);
 		addField(HTL, Short.class);
 		addField(COUNTER, Short.class);
+		addField(LINEAR_COUNTER, Short.class);
 	}};
 	
 	public static final Message createFNPProbeRequest(long uid, double target, double nearest, 
-			double best, short htl, short counter) {
+			double best, short htl, short counter, short linearCounter) {
 		Message msg = new Message(FNPProbeRequest);
 		msg.set(UID, uid);
 		msg.set(TARGET_LOCATION, target);
@@ -782,6 +785,7 @@ public class DMT {
 		msg.set(BEST_LOCATION, best);
 		msg.set(HTL, htl);
 		msg.set(COUNTER, counter);
+		msg.set(LINEAR_COUNTER, linearCounter);
 		return msg;
 	}
 
@@ -797,9 +801,12 @@ public class DMT {
 		addField(PEER_LOCATIONS, ShortBuffer.class);
 		addField(PEER_UIDS, ShortBuffer.class);
 		addField(FORK_COUNT, Short.class);
+		addField(LINEAR_COUNTER, Short.class);
+		addField(REASON, String.class);
+		addField(PREV_UID, Long.class);
 	}};
 	
-	public static Message createFNPProbeTrace(long uid, double target, double nearest, double best, short htl, short counter, double myLoc, long swapIdentifier, double[] peerLocs, long[] peerUIDs, short forkCount) {
+	public static Message createFNPProbeTrace(long uid, double target, double nearest, double best, short htl, short counter, double myLoc, long swapIdentifier, double[] peerLocs, long[] peerUIDs, short forkCount, short linearCounter, String reason, long prevUID) {
 		Message msg = new Message(FNPProbeTrace);
 		msg.set(UID, uid);
 		msg.set(TARGET_LOCATION, target);
@@ -812,6 +819,9 @@ public class DMT {
 		msg.set(PEER_LOCATIONS, new ShortBuffer(Fields.doublesToBytes(peerLocs)));
 		msg.set(PEER_UIDS, new ShortBuffer(Fields.longsToBytes(peerUIDs)));
 		msg.set(FORK_COUNT, forkCount);
+		msg.set(LINEAR_COUNTER, linearCounter);
+		msg.set(REASON, reason);
+		msg.set(PREV_UID, prevUID);
 		return msg;
 	}
 
@@ -821,16 +831,18 @@ public class DMT {
 		addField(NEAREST_LOCATION, Double.class);
 		addField(BEST_LOCATION, Double.class);
 		addField(COUNTER, Short.class);
+		addField(LINEAR_COUNTER, Short.class);
 	}};
 	
 	public static final Message createFNPProbeReply(long uid, double target, double nearest, 
-			double best, short counter) {
+			double best, short counter, short linearCounter) {
 		Message msg = new Message(FNPProbeReply);
 		msg.set(UID, uid);
 		msg.set(TARGET_LOCATION, target);
 		msg.set(NEAREST_LOCATION, nearest);
 		msg.set(BEST_LOCATION, best);
 		msg.set(COUNTER, counter);
+		msg.set(LINEAR_COUNTER, linearCounter);
 		return msg;
 	}
 	
@@ -842,10 +854,11 @@ public class DMT {
 		addField(HTL, Short.class);
 		addField(COUNTER, Short.class);
 		addField(REASON, Short.class);
+		addField(LINEAR_COUNTER, Short.class);
 	}};
 	
 	public static final Message createFNPProbeRejected(long uid, double target, double nearest, 
-			double best, short counter, short htl, short reason) {
+			double best, short counter, short htl, short reason, short linearCounter) {
 		Message msg = new Message(FNPProbeRejected);
 		msg.set(UID, uid);
 		msg.set(TARGET_LOCATION, target);
@@ -854,6 +867,7 @@ public class DMT {
 		msg.set(HTL, htl);
 		msg.set(COUNTER, counter);
 		msg.set(REASON, reason);
+		msg.set(LINEAR_COUNTER, linearCounter);
 		return msg;
 	}
 
