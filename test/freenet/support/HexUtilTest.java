@@ -228,7 +228,7 @@ public class HexUtilTest extends TestCase {
         	byte[] methodByteArray = new byte[1];
     		HexUtil.hexToBytes(methodString,methodByteArray,methodByteArray.length);
             fail("Expected Exception Error Not Thrown!"); } 
-        catch (IllegalArgumentException anException) {
+        catch (ArrayIndexOutOfBoundsException anException) {
             assertNotNull(anException); }
     }
 	
