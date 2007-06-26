@@ -515,7 +515,7 @@ public class NodeDispatcher implements Dispatcher {
 		return true;
 	}
 
-	final int MAX_LOCS_NOT_VISITED = 3;
+	final int MAX_LOCS_NOT_VISITED = 10;
 	final int MAX_FORKS = 2;
 	
 	/**
@@ -541,8 +541,9 @@ public class NodeDispatcher implements Dispatcher {
 			double nearest, short htl, short counter, boolean checkRecent, boolean loadLimitRequest, 
 			boolean fromRejection, ProbeCallback cb, Vector locsNotVisited, double maxDistance, boolean dontReject) {
 		if(fromRejection) {
-			nearest = furthestLoc(target);
-			//best = furthestGreater(target); - accept best (result) from dead ends, but not nearest (affects htl)
+			nearest = furthestLoc(target); // reject CANNOT change nearest, because it's from a dead-end; "improving"
+			// nearest will only result in the request being truncated
+			// However it CAN improve best, because we want an accurate "best"
 		}
 		short max = node.maxHTL();
 		if(htl > max) htl = max;
@@ -574,6 +575,11 @@ public class NodeDispatcher implements Dispatcher {
 		if(locsNotVisited != null) {
 			if(logMINOR)
 				Logger.minor(this, "Locs not visited: "+locsNotVisited);
+		}
+		if(fromRejection) {
+			// Rejected by a dead-end, will not return us a notVisitedList.
+			// Would be pointless.
+			locsNotVisited = ctx.notVisitedList;
 		}
 		
 		// Add source
@@ -633,6 +639,14 @@ public class NodeDispatcher implements Dispatcher {
 
 		// Update nearest, htl
 
+		// Rejected, or even reply, cannot make nearest *worse* and thereby prolong the request.
+		// In fact, rejected probe requests result in clearing nearest at the beginning of the function, so it is vital
+		// that we restore it here.
+		if(PeerManager.distance(ctx.nearest, target, true) < PeerManager.distance(nearest, target, true)) {
+			nearest = ctx.nearest;
+		}
+		
+		// If we are closer to the target than nearest, update nearest and reset HTL, else decrement HTL
 		if(PeerManager.distance(myLoc, target, true) < PeerManager.distance(nearest, target, true)) {
 			if(logMINOR)
 				Logger.minor(this, "Updating nearest to "+myLoc+" from "+nearest+" for "+target+" and resetting htl from "+htl+" to "+max);
@@ -776,7 +790,7 @@ public class NodeDispatcher implements Dispatcher {
 	private boolean handleProbeReply(Message m, PeerNode src) {
 		long id = m.getLong(DMT.UID);
 		Long lid = new Long(id);
-		double target = m.getDouble(DMT.TARGET_LOCATION);
+		final double target = m.getDouble(DMT.TARGET_LOCATION);
 		double best = m.getDouble(DMT.BEST_LOCATION);
 		double nearest = m.getDouble(DMT.NEAREST_LOCATION);
 		short counter = m.getShort(DMT.COUNTER);
@@ -817,6 +831,22 @@ public class NodeDispatcher implements Dispatcher {
 		if(notVisitedList.size() > 0) {
 			if(ctx.forkCount < MAX_FORKS) {
 				ctx.forkCount++;
+
+				Double[] locs = (Double[]) notVisitedList.toArray(new Double[notVisitedList.size()]);
+				Arrays.sort(locs, new Comparator() {
+					public int compare(Object arg0, Object arg1) {
+						double d0 = ((Double) arg0).doubleValue();
+						double d1 = ((Double) arg1).doubleValue();
+						double dist0 = PeerManager.distance(d0, target, true);
+						double dist1 = PeerManager.distance(d1, target, true);
+						if(dist0 < dist1) return -1; // best at the beginning
+						if(dist0 > dist1) return 1;
+						return 0; // should not happen
+					}
+				});
+				
+				double mustBeBetterThan = ((Double)locs[Math.min(3,locs.length)]).doubleValue();
+				
 				for(int i=0;i<notVisitedList.size();i++) {
 					double loc = ((Double)(notVisitedList.get(i))).doubleValue();
 					double dist = PeerManager.distance(loc, target);
@@ -824,7 +854,7 @@ public class NodeDispatcher implements Dispatcher {
 						furthestDist = dist;
 					}
 				}
-				if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, null, notVisitedList, furthestDist, true))
+				if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, null, notVisitedList, mustBeBetterThan, true))
 					return true;
 			}
 		}
