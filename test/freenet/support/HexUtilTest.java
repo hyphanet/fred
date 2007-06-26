@@ -17,6 +17,7 @@
 package freenet.support;
 
 import java.util.Arrays;
+import java.util.BitSet;
 
 import junit.framework.TestCase;
 
@@ -48,6 +49,7 @@ public class HexUtilTest extends TestCase {
 	 * Test the hexToBytes(String) method
 	 * against the hex representation of
 	 * every possible single byte.
+	 * The starting offset is always 0.
 	 */
 	public void testHexToBytes_String() {
 		byte[] expectedByteArray = new byte[1];
@@ -102,6 +104,37 @@ public class HexUtilTest extends TestCase {
 	}
 	
 	/**
+	 * Test the bitsToByte(BitSet,int) method
+	 * against the bit representation of
+	 * every possible single byte.
+	 */
+	public void testBitsToBytes_BitSetInt() {
+		byte[] expectedByteArray = new byte[1];
+		byte[] outputArray = new byte[1];
+		BitSet methodBitSet = new BitSet(8);
+		for (int i = 0; i < 256; i++) {
+			outputArray = HexUtil.bitsToBytes(methodBitSet, 8);
+			expectedByteArray[0] = (byte)i;
+			assertTrue(Arrays.equals(expectedByteArray,outputArray));
+			addOne(methodBitSet);
+		}
+	}
+	
+	/**
+	 * It adds 1 to a given BitSet 
+	 * @param aBitSet
+	 */
+	private void addOne(BitSet aBitSet) {
+		int bitSetIndex = 0;
+		while (aBitSet.get(bitSetIndex)==true) {
+			aBitSet.flip(bitSetIndex);
+			bitSetIndex++;
+		}
+		aBitSet.flip(bitSetIndex);
+		//return aBitSet;
+	}
+	
+	/**
 	 * Test bytesToHex(byte[],int,int) method
 	 * with a too long starting offset. The tested
 	 * method should raise an exception.
@@ -139,5 +172,75 @@ public class HexUtilTest extends TestCase {
 		int length = 0;
 		byte[] methodBytesArray = {1,2,3};		//a non-zero bytes array
 		assertEquals("",HexUtil.bytesToHex(methodBytesArray,0,length));
+	}
+	
+	/**
+	 * Test hexToBytes(String,byte[],int) method
+	 * with a too long offset.
+	 * The method should raise an exception.
+	 */
+	public void testHexToBytes_StringByteInt_WithLongOffset() {
+        try {
+        	String methodString = "0";
+        	byte[] methodByteArray = new byte[1];
+    		HexUtil.hexToBytes(methodString,methodByteArray,methodByteArray.length);
+            fail("Expected Exception Error Not Thrown!"); } 
+        catch (IllegalArgumentException anException) {
+            assertNotNull(anException); }
+    }
+	
+	/**
+	 * Test hexToBytes(String,byte[],int) method
+	 * with a too short byte[] to put the result.
+	 * The method should raise an exception.
+	 */
+	public void testHexToBytes_StringByteInt_WithShortArray() {
+        try {
+        	String methodString = "0000";
+        	byte[] methodByteArray = new byte[1];
+    		HexUtil.hexToBytes(methodString,methodByteArray,0);
+            fail("Expected Exception Error Not Thrown!"); } 
+        catch (IndexOutOfBoundsException anException) {
+            assertNotNull(anException); }
+    }
+	
+	/**
+	 * Test all hexToBytes() methods
+	 * with a not valid character.
+	 * The method should raise an exception. 
+	 */
+	public void testHexToBytes_WithBadDigit() {
+		String methodString = "00%0";
+		try {
+        	byte[] methodByteArray = new byte[methodString.length()];
+    		HexUtil.hexToBytes(methodString,methodByteArray,0);
+            fail("Expected Exception Error Not Thrown!"); } 
+        catch (NumberFormatException anException) {
+            assertNotNull(anException); }
+        try {
+    		HexUtil.hexToBytes(methodString,0);
+            fail("Expected Exception Error Not Thrown!"); } 
+        catch (NumberFormatException anException) {
+            assertNotNull(anException); }
+        try {
+    		HexUtil.hexToBytes(methodString);
+            fail("Expected Exception Error Not Thrown!"); } 
+        catch (NumberFormatException anException) {
+            assertNotNull(anException); }
+    }
+	
+	/**
+	 * Test the bitsToByte(BitSet,int) method
+	 * using a size smaller than the actual number
+	 * of bits in the BitSet.
+	 */
+	public void testBitsToBytes_WithShortSize() {
+		byte[] expectedByteArray = new byte[1];
+		byte[] outputArray = new byte[1];
+		BitSet methodBitSet = new BitSet(8);
+		methodBitSet.flip(3);
+		outputArray = HexUtil.bitsToBytes(methodBitSet,2);
+		expectedByteArray[0] = (byte)0;
+		assertTrue(Arrays.equals(expectedByteArray,outputArray));
 	}
 }
