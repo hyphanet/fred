@@ -11,7 +11,6 @@ import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
-import freenet.support.RandomGrabArray;
 
 public abstract class BaseSingleFileFetcher extends SendableGet {
 
@@ -83,8 +82,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		synchronized(this) {
 			cancelled = true;
 		}
-		RandomGrabArray arr = getParentGrabArray();
-		if(arr != null) arr.remove(this);
+		super.unregister();
 	}
 
 	public synchronized boolean isCancelled() {

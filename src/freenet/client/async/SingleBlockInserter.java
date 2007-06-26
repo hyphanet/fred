@@ -276,8 +276,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 			finished = true;
 		}
-		RandomGrabArray arr = getParentGrabArray();
-		if(arr != null) arr.remove(this);
+		super.unregister();
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this);
 	}
 

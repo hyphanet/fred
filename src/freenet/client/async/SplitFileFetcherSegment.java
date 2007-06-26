@@ -203,7 +203,12 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			if(isCollectingBinaryBlob()) {
 				for(int i=0;i<dataBuckets.length;i++) {
 					Bucket data = dataBuckets[i].getData();
-					maybeAddToBinaryBlob(data, i, false);
+					try {
+						maybeAddToBinaryBlob(data, i, false);
+					} catch (FetchException e) {
+						fail(e);
+						return;
+					}
 				}
 			}
 			decodedData = fetchContext.bucketFactory.makeBucket(-1);
@@ -261,7 +266,12 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		for(int i=0;i<checkBuckets.length;i++) {
 			boolean heal = false;
 			Bucket data = checkBuckets[i].getData();
-			maybeAddToBinaryBlob(data, i, true);
+			try {
+				maybeAddToBinaryBlob(data, i, true);
+			} catch (FetchException e) {
+				fail(e);
+				return;
+			}
 			if(checkRetries[i] > 0)
 				heal = true;
 			if(heal) {
@@ -284,7 +294,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		} else return false;
 	}
 	
-	private void maybeAddToBinaryBlob(Bucket data, int i, boolean check) {
+	private void maybeAddToBinaryBlob(Bucket data, int i, boolean check) throws FetchException {
 		if(parentFetcher.parent instanceof ClientGetter) {
 			ClientGetter getter = (ClientGetter) (parentFetcher.parent);
 			if(getter.collectingBinaryBlob()) {
@@ -294,11 +304,9 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					getter.addKeyToBinaryBlob(block);
 				} catch (CHKEncodeException e) {
 					Logger.error(this, "Failed to encode (collecting binary blob) "+(check?"check":"data")+" block "+i+": "+e, e);
-					fail(new FetchException(FetchException.INTERNAL_ERROR, "Failed to encode for binary blob: "+e));
-					return;
+					throw new FetchException(FetchException.INTERNAL_ERROR, "Failed to encode for binary blob: "+e);
 				} catch (IOException e) {
-					fail(new FetchException(FetchException.BUCKET_ERROR, "Failed to encode for binary blob: "+e));
-					return;
+					throw new FetchException(FetchException.BUCKET_ERROR, "Failed to encode for binary blob: "+e);
 				}
 			}
 		}
@@ -343,7 +351,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		}
 		if(allFailed)
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
-		seg.possiblyRemoveFromParent();
+		else
+			seg.possiblyRemoveFromParent();
 	}
 	
 	/** A request has failed non-fatally, so the block may be retried */
@@ -412,6 +421,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				checkBuckets[i] = null;
 			}
 		}
+		removeSubSegments();
 		parentFetcher.segmentFinished(this);
 	}
 
@@ -455,6 +465,13 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				subSegments.remove(i);
 				i--;
 			}
+		}
+	}
+
+	private void removeSubSegments() {
+		for(int i=0;i<subSegments.size();i++) {
+			SplitFileFetcherSubSegment seg = (SplitFileFetcherSubSegment) subSegments.get(i);
+			seg.kill();
 		}
 	}
 

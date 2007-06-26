@@ -98,7 +98,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			}
 		}
 		// :(
-		getScheduler().removePendingKeys(this, false);
+		unregister();
 		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock();
 		else
@@ -108,6 +108,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 
 	/** Will be overridden by SingleFileFetcher */
 	protected void onSuccess(FetchResult data) {
+		unregister();
 		if(parent.isCancelled()) {
 			data.asBucket().free();
 			onFailure(new FetchException(FetchException.CANCELLED));

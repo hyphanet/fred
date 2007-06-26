@@ -116,5 +116,10 @@ public abstract class SendableGet extends SendableRequest {
 	}
 
 	public abstract void onGotKey(Key key, KeyBlock block);
-
+	
+	public final void unregister() {
+		getScheduler().removePendingKeys(this, false);
+		super.unregister();
+	}
+	
 }

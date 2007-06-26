@@ -106,8 +106,7 @@ public class SimpleSendableInsert extends SendableInsert {
 			if(finished) return;
 			finished = true;
 		}
-		RandomGrabArray arr = getParentGrabArray();
-		if(arr != null) arr.remove(this);
+		super.unregister();
 	}
 
 	public boolean shouldCache() {

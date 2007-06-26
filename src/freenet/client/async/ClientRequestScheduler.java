@@ -496,8 +496,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
-			RandomGrabArray array = req.getParentGrabArray();
-			if(array != null) array.remove(req);
+			req.unregister();
 			innerRegister(req);
 		}
 		synchronized(starter) {
@@ -534,5 +533,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		};
 		node.getTicker().queueTimedJob(r, 0); // FIXME ideally these would be completed on a single thread; when we have 1.5, use a dedicated non-parallel Executor
+	}
+
+	public boolean anyWantKey(Key key) {
+		synchronized(pendingKeys) {
+			return pendingKeys.get(key) != null;
+		}
 	}
 }

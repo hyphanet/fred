@@ -264,7 +264,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			if(!blockNums.isEmpty()) return;
 		}
 		segment.removeSeg(this);
-		getScheduler().removePendingKeys(this, false);
+		unregister();
 	}
 
 	public void onGotKey(Key key, KeyBlock block) {
@@ -290,6 +290,14 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			// FIXME if we ever abolish the direct route, this must be turned into an onFailure().
 			Logger.error(this, "Failed to parse in onGotKey("+key+","+block+") - believed to be "+ckey+" (block #"+blockNum+")");
 		}
+	}
+	
+	public void kill() {
+		synchronized(this) {
+			blockNums.clear();
+		}
+		segment.removeSeg(this);
+		unregister();
 	}
 	
 }

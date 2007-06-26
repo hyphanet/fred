@@ -26,7 +26,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 	
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, int token) {
-		getScheduler().removePendingKeys(this, false);
+		unregister();
 		cb.onSuccess((ClientSSKBlock)block);
 	}
 
@@ -63,7 +63,7 @@ class USKChecker extends BaseSingleFileFetcher {
 		if(canRetry && retry()) return;
 		
 		// Ran out of retries.
-		getScheduler().removePendingKeys(this, false);		
+		unregister();
 		if(e.code == LowLevelGetException.CANCELLED){
 			cb.onCancelled();
 			return;
