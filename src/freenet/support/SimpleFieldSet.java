@@ -35,6 +35,18 @@ public class SimpleFieldSet {
     static public final char MULTI_LEVEL_CHAR = '.';
     
     /**
+     * Create a SimpleFieldSet.
+     * @param shortLived If false, strings will be interned to ensure that they use as
+     * little memory as possible. Only set to true if the SFS will be short-lived or
+     * small.
+     */
+    public SimpleFieldSet(boolean shortLived) {
+        values = new HashMap();
+       	subsets = null;
+       	this.shortLived = shortLived;
+    }
+    
+    /**
      * Construct a SimpleFieldSet from reading a BufferedReader.
      * @param br
      * @param allowMultiple If true, multiple lines with the same field name will be
@@ -46,9 +58,7 @@ public class SimpleFieldSet {
      * problem.
      */
     public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
-        values = new HashMap();
-       	subsets = null;
-       	this.shortLived = shortLived;
+        this(shortLived);
         read(br, allowMultiple);
     }
 
@@ -61,22 +71,8 @@ public class SimpleFieldSet {
     }
 
     public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean tolerant, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived) throws IOException {
-    	values = new HashMap();
-       	subsets = null;
-       	this.shortLived = shortLived;
+    	this(shortLived);
     	read(lis, maxLineLength, lineBufferSize, tolerant, utf8OrIso88591, allowMultiple);
-    }
-    
-    /**
-     * Create a SimpleFieldSet.
-     * @param shortLived If false, strings will be interned to ensure that they use as
-     * little memory as possible. Only set to true if the SFS will be short-lived or
-     * small.
-     */
-    public SimpleFieldSet(boolean shortLived) {
-        values = new HashMap();
-       	subsets = null;
-       	this.shortLived = shortLived;
     }
 
     /**
@@ -87,9 +83,7 @@ public class SimpleFieldSet {
      * @throws IOException if the string is too short or invalid.
      */
     public SimpleFieldSet(String content, boolean allowMultiple, boolean shortLived) throws IOException {
-    	values = new HashMap();
-    	subsets = null;
-    	this.shortLived = shortLived;
+    	this(shortLived);
         StringReader sr = new StringReader(content);
         BufferedReader br = new BufferedReader(sr);
 	    read(br, allowMultiple);
