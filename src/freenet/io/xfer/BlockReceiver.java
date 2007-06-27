@@ -29,7 +29,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
-import freenet.io.comm.UdpSocketManager;
+import freenet.io.comm.MessageCore;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Logger;
@@ -47,12 +47,12 @@ public class BlockReceiver {
 	PartiallyReceivedBlock _prb;
 	PeerContext _sender;
 	long _uid;
-	UdpSocketManager _usm;
+	MessageCore _usm;
 	/** packet : Integer -> reportTime : Long * */
 	HashMap _recentlyReportedMissingPackets = new HashMap();
 	ByteCounter _ctr;
 
-	public BlockReceiver(UdpSocketManager usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr) {
+	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr) {
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;

@@ -5,10 +5,8 @@ package freenet.io.xfer;
 
 import java.io.IOException;
 
-import freenet.io.comm.DMT;
+import freenet.io.comm.MessageCore;
 import freenet.io.comm.RetrievalException;
-import freenet.io.comm.UdpSocketManager;
-import freenet.node.FNPPacketMangler;
 import freenet.support.BitArray;
 import freenet.support.Logger;
 import freenet.support.io.RandomAccessThing;
@@ -31,11 +29,10 @@ public class PartiallyReceivedBulk {
 	private final BitArray blocksReceived;
 	final int blocks;
 	private BulkTransmitter[] transmitters;
-	final UdpSocketManager usm;
+	final MessageCore usm;
 	/** The one and only BulkReceiver */
 	private BulkReceiver recv;
 	private int blocksReceivedCount;
-	final int packetSize;
 	// Abort status
 	boolean _aborted;
 	int _abortReason;
@@ -49,7 +46,7 @@ public class PartiallyReceivedBulk {
 	 * @param initialState If true, assume all blocks have been received. If false, assume no blocks have
 	 * been received.
 	 */
-	public PartiallyReceivedBulk(UdpSocketManager usm, long size, int blockSize, RandomAccessThing raf, boolean initialState) {
+	public PartiallyReceivedBulk(MessageCore usm, long size, int blockSize, RandomAccessThing raf, boolean initialState) {
 		this.size = size;
 		this.blockSize = blockSize;
 		this.raf = raf;
@@ -63,8 +60,6 @@ public class PartiallyReceivedBulk {
 			blocksReceived.setAllOnes();
 			blocksReceivedCount = this.blocks;
 		}
-		packetSize = DMT.bulkPacketTransmitSize(blockSize) + 
-			FNPPacketMangler.FULL_HEADERS_LENGTH_ONE_MESSAGE; // FIXME generalise
 	}
 
 	/**
@@ -151,10 +146,6 @@ public class PartiallyReceivedBulk {
 
 	public synchronized boolean isAborted() {
 		return _aborted;
-	}
-
-	public int getPacketSize() {
-		return packetSize;
 	}
 
 	public boolean hasWholeFile() {

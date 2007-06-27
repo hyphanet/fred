@@ -11,7 +11,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
-import freenet.io.comm.UdpSocketManager;
+import freenet.io.comm.MessageCore;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
@@ -86,9 +86,9 @@ public class NodeIPDetector {
 				addedValidIP = true;
 		}
 		boolean dontDetect = false;
-		UdpSocketManager usm = node.usm;
+		MessageCore usm = node.usm;
 		if(usm != null) {
-			InetAddress addr = node.usm.getBindTo();
+			InetAddress addr = node.sock.getBindTo();
 			if(addr != null && (IPUtil.isValidAddress(addr, false))) {
 				dontDetect = true;
 				Peer p = new Peer(addr, node.portNumber);

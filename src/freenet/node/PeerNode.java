@@ -55,6 +55,7 @@ import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.RetrievalException;
+import freenet.io.comm.SocketHandler;
 import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PacketThrottle;
@@ -112,6 +113,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;
+    
+    /** My OutgoingPacketMangler i.e. the object which encrypts packets sent to this node */
+    private OutgoingPacketMangler outgoingMangler;
     
     /** Advertised addresses */
     private Vector nominalPeer;
@@ -3953,5 +3957,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		} catch (NotConnectedException e) {
 			// Ignore
 		}
+	}
+
+	public OutgoingPacketMangler getOutgoingMangler() {
+		return outgoingMangler;
+	}
+
+	public SocketHandler getSocketHandler() {
+		return outgoingMangler.getSocketHandler();
 	}
 }

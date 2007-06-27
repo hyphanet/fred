@@ -38,7 +38,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private static boolean logMINOR;
     final Node node;
     final PeerManager pm;
-    final UdpSocketManager usm;
+    final MessageCore usm;
+    final PacketSocketHandler sock;
     final EntropySource fnpTimingSource;
     final EntropySource myPacketDataSource;
     private static final int MAX_PACKETS_IN_FLIGHT = 256; 
@@ -64,17 +65,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	static public final int HEADERS_LENGTH_ONE_MESSAGE = 
 		HEADERS_LENGTH_MINIMUM + 2; // 2 bytes = length of message. rest is the same.
 	
-	static public final int FULL_HEADERS_LENGTH_MINIMUM = 
-		HEADERS_LENGTH_MINIMUM + UdpSocketManager.UDP_HEADERS_LENGTH;
-	static public final int FULL_HEADERS_LENGTH_ONE_MESSAGE =
-		HEADERS_LENGTH_ONE_MESSAGE + UdpSocketManager.UDP_HEADERS_LENGTH;
-    
-    public FNPPacketMangler(Node node) {
+	final int fullHeadersLengthMinimum;
+	final int fullHeadersLengthOneMessage;
+	
+    public FNPPacketMangler(Node node, PacketSocketHandler sock) {
         this.node = node;
         this.pm = node.peers;
         this.usm = node.usm;
+        this.sock = sock;
         fnpTimingSource = new EntropySource();
         myPacketDataSource = new EntropySource();
+        fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
+        fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
     }
 
     /**
@@ -432,7 +434,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      */
     private void sendAuthPacket(byte[] output, PeerNode pn, Peer replyTo) {
         int length = output.length;
-        if(length > node.usm.getMaxPacketSize()) {
+        if(length > sock.getMaxPacketSize()) {
             throw new IllegalStateException("Cannot send auth packet: too long: "+length);
         }
         BlockCipher cipher = pn.outgoingSetupCipher;
@@ -469,7 +471,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     		Peer p = pn.getPeer();
     		if(p != null) replyTo = p;
     	}
-    	usm.sendPacket(data, replyTo, pn.allowLocalAddresses());
+    	sock.sendPacket(data, replyTo, pn.allowLocalAddresses());
     	pn.reportOutgoingBytes(data.length);
     	node.outputThrottle.forceGrab(data.length - alreadyReportedBytes);
 	}
@@ -889,7 +891,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             ptr+=length;
             if(m != null) {
                 //Logger.minor(this, "Dispatching packet: "+m);
-                usm.checkFilters(m);
+                usm.checkFilters(m, sock);
             }
         }
         if(logMINOR) Logger.minor(this, "Done");
@@ -932,7 +934,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                     }
                     int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
                     this.processOutgoingPreformatted(buf, 0, buf.length, pn.getCurrentKeyTracker(), packetNumber, mi.cb, mi.alreadyReportedBytes);
-                    mi.onSent(buf.length + FULL_HEADERS_LENGTH_ONE_MESSAGE);
+                    mi.onSent(buf.length + fullHeadersLengthOneMessage);
                 } catch (NotConnectedException e) {
                     Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
                     // Requeue
@@ -969,7 +971,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             } else {
                 byte[] data = mi.getData(pn);
                 messageData[x] = data;
-                if(data.length > node.usm.getMaxPacketSize()) {
+                if(data.length > sock.getMaxPacketSize()) {
                     Logger.error(this, "Message exceeds packet size: "+messages[i]+" size "+data.length+" message "+mi.msg);
                     // Will be handled later
                 }
@@ -1003,7 +1005,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         }
         if(x != callbacksCount) throw new IllegalStateException();
         
-        if((length + HEADERS_LENGTH_MINIMUM < node.usm.getMaxPacketSize()) &&
+        if((length + HEADERS_LENGTH_MINIMUM < sock.getMaxPacketSize()) &&
                 (messageData.length < 256)) {
 			mi_name = null;
             try {
@@ -1011,7 +1013,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 for(int i=0;i<messageData.length;i++) {
                 	MessageItem mi = newMsgs[i];
 					mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
-					mi.onSent(messageData[i].length + 2 + (FULL_HEADERS_LENGTH_MINIMUM / messageData.length));
+					mi.onSent(messageData[i].length + 2 + (fullHeadersLengthMinimum / messageData.length));
                 }
             } catch (NotConnectedException e) {
                 Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
@@ -1048,7 +1050,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 else thisLength = (messageData[i].length + 2);
                 int newLength = length + thisLength;
                 count++;
-                if((newLength + HEADERS_LENGTH_MINIMUM > node.usm.getMaxPacketSize()) || (count > 255) || (i == messages.length)) {
+                if((newLength + HEADERS_LENGTH_MINIMUM > sock.getMaxPacketSize()) || (count > 255) || (i == messages.length)) {
                     // lastIndex up to the message right before this one
                     // e.g. lastIndex = 0, i = 1, we just send message 0
                     if(lastIndex != i) {
@@ -1058,7 +1060,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                             for(int j=lastIndex;j<i;j++) {
                             	MessageItem mi = newMsgs[j];
 								mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
-								mi.onSent(messageData[j].length + 2 + (FULL_HEADERS_LENGTH_MINIMUM / (i-lastIndex)));
+								mi.onSent(messageData[j].length + 2 + (fullHeadersLengthMinimum / (i-lastIndex)));
                             }
                         } catch (NotConnectedException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
@@ -1547,5 +1549,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	public int[] supportedNegTypes() {
 		return new int[] { 1 };
+	}
+
+	public int fullHeadersLengthOneMessage() {
+		return fullHeadersLengthOneMessage;
+	}
+
+	public SocketHandler getSocketHandler() {
+		return sock;
 	}
 }

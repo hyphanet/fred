@@ -62,11 +62,12 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
+import freenet.io.comm.MessageCore;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.io.comm.UdpSocketManager;
+import freenet.io.comm.UdpSocketHandler;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -369,7 +370,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public final RandomSource random;
 	/** Weak but fast RNG */
 	public final Random fastWeakRandom;
-	final UdpSocketManager usm;
+	/** The object which handles incoming messages and allows us to wait for them */
+	final MessageCore usm;
+	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
+	final UdpSocketHandler sock;
 	final FNPPacketMangler packetMangler;
 	final DNSRequester dnsr;
 	public final PacketSender ps;
@@ -791,7 +795,9 @@ public class Node implements TimeSkewDetectorCallback {
 			port=-1;
 		}
 		
-		UdpSocketManager u = null;
+		usm = new MessageCore();
+		
+		UdpSocketHandler u = null;
 		
 		if(port > 65535) {
 			throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Impossible port number: "+port);
@@ -800,7 +806,7 @@ public class Node implements TimeSkewDetectorCallback {
 			for(int i=0;i<200000;i++) {
 				int portNo = 1024 + random.nextInt(65535-1024);
 				try {
-					u = new UdpSocketManager(portNo, InetAddress.getByName(bindto), this);
+					u = new UdpSocketHandler(portNo, InetAddress.getByName(bindto), this);
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
@@ -814,12 +820,12 @@ public class Node implements TimeSkewDetectorCallback {
 				throw new NodeInitException(EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
 		} else {
 			try {
-				u = new UdpSocketManager(port, InetAddress.getByName(bindto), this);
+				u = new UdpSocketHandler(port, InetAddress.getByName(bindto), this);
 			} catch (Exception e) {
 				throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
 			}
 		}
-		usm = u;
+		sock = u;
 		
 		Logger.normal(this, "FNP port created on "+bindto+ ':' +port);
 		System.out.println("FNP port created on "+bindto+ ':' +port);
@@ -829,17 +835,17 @@ public class Node implements TimeSkewDetectorCallback {
 				new IntCallback() {
 
 					public int get() {
-						return usm.getDropProbability();
+						return ((UdpSocketHandler)sock).getDropProbability();
 					}
 
 					public void set(int val) throws InvalidConfigValueException {
-						usm.setDropProbability(val);
+						((UdpSocketHandler)sock).setDropProbability(val);
 					}
 			
 		});
 		
 		int dropProb = nodeConfig.getInt("testingDropPacketsEvery");
-		usm.setDropProbability(dropProb);
+		((UdpSocketHandler)sock).setDropProbability(dropProb);
 		
 		Logger.normal(Node.class, "Creating node...");
 
@@ -995,7 +1001,7 @@ public class Node implements TimeSkewDetectorCallback {
 		peers.updatePMUserAlert();
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
-		usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
+		sock.setLowLevelFilter(packetMangler = new FNPPacketMangler(this, sock));
 		
 		// Extra Peer Data Directory
 		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+portNumber).toString(), sortOrder++, true, false, "Node.extraPeerDir", "Node.extraPeerDirLong",
@@ -1439,7 +1445,9 @@ public class Node implements TimeSkewDetectorCallback {
 		ps.start(nodeStats);
 		peers.start(); // must be before usm
 		nodeStats.start();
-		usm.start(disableHangCheckers);
+		
+		usm.start(ps);
+		((UdpSocketHandler)sock).start(disableHangCheckers);
 		
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
@@ -2663,7 +2671,7 @@ public class Node implements TimeSkewDetectorCallback {
 	  return myName;
 	}
 
-	public UdpSocketManager getUSM() {
+	public MessageCore getUSM() {
 	  return usm;
 	}
 

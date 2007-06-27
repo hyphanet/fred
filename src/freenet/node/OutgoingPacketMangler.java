@@ -6,6 +6,7 @@ package freenet.node;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
+import freenet.io.comm.SocketHandler;
 import freenet.support.WouldBlockException;
 
 /**
@@ -78,5 +79,15 @@ public interface OutgoingPacketMangler {
 	 * List of supported negotiation types in preference order (best last)
 	 */
 	public int[] supportedNegTypes();
+	
+	/**
+	 * Size of the packet headers, in bytes, assuming only one message in this packet.
+	 */
+	public int fullHeadersLengthOneMessage();
+
+	/**
+	 * The SocketHandler we are connected to.
+	 */
+	public SocketHandler getSocketHandler();
 
 }

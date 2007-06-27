@@ -302,6 +302,9 @@ public class NodeStats implements Persistable {
 			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), 0);
 		requestInputThrottle = 
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), 0);
+		
+		estimatedSizeOfOneThrottledPacket = 1024 + DMT.packetTransmitSize(1024, 32) + 
+			node.packetMangler.fullHeadersLengthOneMessage();
 	}
 	
 	protected String l10n(String key) {
@@ -321,9 +324,7 @@ public class NodeStats implements Persistable {
 	
 	private long lastAcceptedRequest = -1;
 	
-	static final int ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET = 
-		1024 + DMT.packetTransmitSize(1024, 32)
-		+ FNPPacketMangler.FULL_HEADERS_LENGTH_ONE_MESSAGE;
+	final int estimatedSizeOfOneThrottledPacket;
 	
 	final Runnable throttledPacketSendAverageIdleUpdater =
 		new Runnable() {
@@ -332,8 +333,8 @@ public class NodeStats implements Persistable {
 				try {
 					if(throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
 						// shouldn't take long
-						node.outputThrottle.blockingGrab(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
-						node.outputThrottle.recycle(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
+						node.outputThrottle.blockingGrab(estimatedSizeOfOneThrottledPacket);
+						node.outputThrottle.recycle(estimatedSizeOfOneThrottledPacket);
 						long after = System.currentTimeMillis();
 						// Report time it takes to grab the bytes.
 						throttledPacketSendAverage.report(after - now);

@@ -41,7 +41,7 @@ public class RealNodeRequestInsertTest {
         new File(wd).mkdir();
         NodeStarter.globalTestInit(wd); // ignore Random, using our own
         // Don't clobber nearby nodes!
-        Logger.setupStdoutLogging(Logger.DEBUG, "freenet.store:minor,freenet.node.Location:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
+        Logger.setupStdoutLogging(Logger.DEBUG, "freenet.store:minor,freenet.node.Location:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         Logger.globalSetThreshold(Logger.DEBUG);
         System.out.println("Insert/retrieve test");
         System.out.println();

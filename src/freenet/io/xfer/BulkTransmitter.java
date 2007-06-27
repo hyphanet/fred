@@ -41,6 +41,7 @@ public class BulkTransmitter {
 	final DoubleTokenBucket masterThrottle;
 	private boolean sentCancel;
 	private boolean finished;
+	final int packetSize;
 	
 	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, DoubleTokenBucket masterThrottle) throws DisconnectedException {
 		this.prb = prb;
@@ -88,6 +89,8 @@ public class BulkTransmitter {
 			cancel();
 			throw e;
 		}
+		packetSize = DMT.bulkPacketTransmitSize(prb.blockSize) +
+			peer.getOutgoingMangler().fullHeadersLengthOneMessage();
 	}
 
 	/**
@@ -146,7 +149,6 @@ public class BulkTransmitter {
 	 * @return True if the file was successfully sent. False otherwise.
 	 */
 	public boolean send() {
-		int packetSize = prb.getPacketSize();
 		long lastSentPacket = System.currentTimeMillis();
 		while(true) {
 			if(prb.isAborted()) return false;

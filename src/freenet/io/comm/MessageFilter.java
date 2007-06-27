@@ -166,6 +166,7 @@ public class MessageFilter {
 	}
 	
 	public boolean match(Message m) {
+		if(timedOut()) return false;
 		if ((_or != null) && (_or.match(m))) {
 			_matched = true;
 			return true;
