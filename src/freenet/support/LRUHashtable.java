@@ -129,4 +129,8 @@ public class LRUHashtable {
         }
     }
 
+	public boolean isEmpty() {
+		return list.isEmpty();
+	}
+
 }

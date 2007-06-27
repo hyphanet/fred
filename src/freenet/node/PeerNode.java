@@ -61,6 +61,7 @@ import freenet.io.xfer.PacketThrottle;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
+import freenet.keys.Key;
 import freenet.keys.USK;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.N2NTMUserAlert;
@@ -3942,5 +3943,15 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public long getClockDelta() {
 		return clockDelta;
+	}
+
+	/** Offer a key to this node */
+	public void offer(Key key) {
+		Message msg = DMT.createFNPOfferKey(key);
+		try {
+			sendAsync(msg, null, 0, null);
+		} catch (NotConnectedException e) {
+			// Ignore
+		}
 	}
 }

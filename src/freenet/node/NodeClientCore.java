@@ -36,6 +36,7 @@ import freenet.keys.ClientSSKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
+import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
@@ -1075,5 +1076,17 @@ public class NodeClientCore implements Persistable {
 	
 	public File getTempDir() {
 		return tempDir;
+	}
+
+	/**
+	 * Has any client registered an interest in this particular key?
+	 */
+	public boolean clientWantKey(Key key) {
+		if(key instanceof NodeCHK)
+			return requestStarters.chkFetchScheduler.anyWantKey(key);
+		else if(key instanceof NodeSSK)
+			return requestStarters.sskFetchScheduler.anyWantKey(key);
+		else
+			throw new IllegalArgumentException("Not a CHK and not an SSK!");
 	}
 }
