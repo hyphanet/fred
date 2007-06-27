@@ -3939,10 +3939,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		return ""+getPeer()+" : "+getName();
 	}
 
-	public synchronized void setTimeDelta(long delta) {
-		clockDelta = delta;
-		if(Math.abs(clockDelta) > MAX_CLOCK_DELTA)
-			isRoutable = false;
+	public void setTimeDelta(long delta) {
+		synchronized(this) {
+			clockDelta = delta;
+			if(Math.abs(clockDelta) > MAX_CLOCK_DELTA)
+				isRoutable = false;
+		}
+		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
 	public long getClockDelta() {
