@@ -110,6 +110,9 @@ public class HexUtil {
 
 	/**
 	 * Pack the bits in ba into a byte[].
+	 *
+	 * @param ba : the BitSet
+	 * @param size : How many bits shall be taken into account starting from the MSB?
 	 */
 	public final static byte[] bitsToBytes(BitSet ba, int size) {
 		int bytesAlloc = countBytesForBits(size);
@@ -121,10 +124,10 @@ public class HexUtil {
 			for(int j=0;j<8;j++) {
 				int idx = i*8+j;
 				boolean val = 
-					idx > size ? false :
+					idx > size - 1 ? false :
 						ba.get(idx);
 				s |= val ? (1<<j) : 0;
-				if(sb != null) sb.append(val ? '1' : '0');
+				if(logDEBUG) sb.append(val ? '1' : '0');
 			}
 			if(s > 255) throw new IllegalStateException("WTF? s = "+s);
 			b[i] = (byte)s;
