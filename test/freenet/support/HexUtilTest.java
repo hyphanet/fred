@@ -281,9 +281,14 @@ public class HexUtilTest extends TestCase {
 		byte[] expectedByteArray = new byte[1];
 		byte[] outputArray = new byte[1];
 		BitSet methodBitSet = new BitSet(8);
-		methodBitSet.flip(0);
-		outputArray = HexUtil.bitsToBytes(methodBitSet,2);	//TODO: verify this strange method
-		expectedByteArray[0] = (byte)1;
+		methodBitSet.flip(3); /* 0x08 */
+		expectedByteArray[0] = (byte)8;
+		outputArray = HexUtil.bitsToBytes(methodBitSet,0); /* 0x08 & 0x00 */
+		assertFalse(Arrays.equals(expectedByteArray,outputArray));
+		outputArray = HexUtil.bitsToBytes(methodBitSet,3); /* 0x08 & 0xe0 */
+		assertTrue(Arrays.equals(expectedByteArray,outputArray));
+		methodBitSet.flip(4); /* 0x18 */
+		outputArray = HexUtil.bitsToBytes(methodBitSet,3); /* 0x18 & 0xe0 */
 		assertTrue(Arrays.equals(expectedByteArray,outputArray));
 	}
 }
