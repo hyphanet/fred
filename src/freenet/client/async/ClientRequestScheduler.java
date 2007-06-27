@@ -454,7 +454,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				SendableGet[] gets = (SendableGet[]) pendingKeys.get(key);
 				if(gets == null) {
 					if(complain)
-						Logger.error(this, "Not found: "+getter+" for "+key+" removing (no such key)");
+						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (no such key)");
 				} else if(gets.length > 1) {
 					SendableGet[] newGets = new SendableGet[gets.length-1];
 					boolean found = false;
@@ -463,7 +463,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(j >= gets.length) {
 							if(!found) {
 								if(complain)
-									Logger.error(this, "Not found: "+getter+" for "+key+" removing ("+gets.length+" getters)");
+									Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+gets.length+" getters)");
 								return; // not here
 							}
 							if(gets[j] == getter || gets[j] == null || gets[j].isCancelled()) continue;
@@ -480,7 +480,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					pendingKeys.remove(key);
 				} else if(gets.length == 1 && gets[0] != getter) {
 					if(complain)
-						Logger.error(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
+						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
 				}
 			}
 		}
