@@ -80,7 +80,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 	private final HashMap urisByWord = new HashMap();
 	private final HashMap titlesOfURIs = new HashMap();
 	
-	private static final int minTimeBetweenEachIndexRewriting = 10;
+	private static final int minTimeBetweenEachIndexRewriting = 60;
 	//private static final String indexFilename = "index.xml";
 	private static final String DEFAULT_INDEX_DIR = "myindex/";
 	public Set allowedMIMETypes;
@@ -96,7 +96,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 	private final HashMap positionsByWordByURI = new HashMap(); /* String (URI) -> HashMap (String (word) -> Integer[] (Positions)) */
 
 	// Can have many; this limit only exists to save memory.
-	private static final int maxParallelRequests = 20;
+	private static final int maxParallelRequests = 100;
 	private int maxShownURIs = 50;
 	private HashMap urisToNumbers;
 	private NodeClientCore core;
@@ -314,6 +314,8 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 		
 		if(word.length() < 3)
 			return;
+		
+		word = word.intern();
 
 
 		FreenetURI[] uris = (FreenetURI[]) urisByWord.get(word);
