@@ -16,6 +16,7 @@
 
 package freenet.support;
 
+import freenet.node.FSParseException;
 import junit.framework.TestCase;
 
 /**
@@ -38,8 +39,8 @@ public class SimpleFieldSetTest extends TestCase {
 		methodSFS.subset("foo").subset("").get("bar");	   /*it returns "foobar" */
 		
 		/*methodSFS.subset("foo").subset(null).get("bar");   /* it raises null exception
-																				* because subset(null) returns
-																				* null by default */
+															  * because subset(null) returns
+															  * null by default */
 		
 		methodSFS.get("foo..bar");						   /* it doesn't work
 		 													* but if I put("foo.bar.boo","bazoo") 
@@ -101,4 +102,165 @@ public class SimpleFieldSetTest extends TestCase {
 			assertEquals(methodSFS.get(aPairsArray[i][0]),aPairsArray[i][1]);
 	}
 	
+	/**
+	 * Test subset(String) method
+	 * putting two levels keys and
+	 * fetching it through subset() method
+	 * on the first level and then get()
+	 * on the second
+	 */
+	public void testSimpleFieldSetSubset_String() {
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		String[][] methodPairsArray_MultiLevel =
+			{ {"A","A","aa"},{"A","B","ab"},{"A","C","ac"},{"A","D","ad"},{"A","E","ae"},{"A","F","af"} };
+		for (int i = 0; i < methodPairsArray_MultiLevel.length; i++)		//putting values
+			methodSFS.putSingle(methodPairsArray_MultiLevel[i][0] 
+			                    + SimpleFieldSet.MULTI_LEVEL_CHAR + methodPairsArray_MultiLevel[i][1], 
+			                    methodPairsArray_MultiLevel[i][2]);
+		for (int i = 0; i < methodPairsArray_MultiLevel.length; i++)		//getting subsets and then values
+			assertEquals(
+					methodSFS.subset(methodPairsArray_MultiLevel[i][0]).get(methodPairsArray_MultiLevel[i][1]),
+					methodPairsArray_MultiLevel[i][2]);
+	}
+	
+	/**
+	 * Test put(String,boolean) and getBoolean(String,boolean)
+	 * methods consistency.
+	 * The default value (returned if the key is not found) is set to "false"
+	 * and the real value is always set to "true", so
+	 * we are sure if it finds the right value or not
+	 * (and does not use the default).
+	 */
+	public void testPut_StringBoolean() {
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		int length = 15;
+		for(int i = 0; i < length; i++)
+			methodSFS.put(Integer.toString(i),true);
+		for (int i = 0; i < length; i++)
+			assertEquals(methodSFS.getBoolean(Integer.toString(i),false),true);
+	}
+	
+	/**
+	 * Test put(String,int) and 
+	 * [getInt(String),getInt(String,int)]
+	 * methods consistency.
+	 * The default value (returned if the key is not found)
+	 * is set to a not present int value, so we are sure 
+	 * if it finds the right value or not 
+	 * (and does not use the default).
+	 */
+	public void testPut_StringInt() {
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		int[][] methodPairsArray =
+			{ {1,1},{2,2},{3,3},{4,4} };
+		for (int i = 0; i < methodPairsArray.length; i++)
+			methodSFS.put(Integer.toString(methodPairsArray[i][0]), methodPairsArray[i][1]);
+		for (int i = 0; i < methodPairsArray.length; i++) {
+			try {
+				assertEquals(methodSFS.getInt(Integer.toString(methodPairsArray[i][0])),methodPairsArray[i][1]);
+				assertEquals(methodSFS.getInt(Integer.toString(methodPairsArray[i][0]),5),methodPairsArray[i][1]);
+			} catch (FSParseException aException) {
+				fail("Not expected exception thrown : " + aException.getMessage()); }
+		}
+	}
+	
+	/**
+	 * Test put(String,long) and 
+	 * [getLong(String),getLong(String,long)]
+	 * methods consistency.
+	 * The default value (returned if the key is not found)
+	 * is set to a not present long value, so we are sure 
+	 * if it finds the right value or not 
+	 * (and does not use the default).
+	 */
+	public void testPut_StringLong() {
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		long[][] methodPairsArray =
+			{ {1,1},{2,2},{3,3},{4,4} };
+		for (int i = 0; i < methodPairsArray.length; i++)
+			methodSFS.put(Long.toString(methodPairsArray[i][0]), methodPairsArray[i][1]);
+		for (int i = 0; i < methodPairsArray.length; i++) {
+			try {
+				assertEquals(methodSFS.getLong(Long.toString(methodPairsArray[i][0])),methodPairsArray[i][1]);
+				assertEquals(methodSFS.getLong(Long.toString(methodPairsArray[i][0]),5),methodPairsArray[i][1]);
+			} catch (FSParseException aException) {
+				fail("Not expected exception thrown : " + aException.getMessage()); }
+		}
+	}
+	
+	/**
+	 * Test put(String,char) and 
+	 * [getChar(String),getChar(String,char)]
+	 * methods consistency.
+	 * The default value (returned if the key is not found)
+	 * is set to a not present char value, so we are sure 
+	 * if it finds the right value or not 
+	 * (and does not use the default).
+	 */
+	public void testPut_StringChar() {
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		char[][] methodPairsArray =
+			{ {'1','1'},{'2','2'},{'3','3'},{'4','4'} };
+		for (int i = 0; i < methodPairsArray.length; i++)
+			methodSFS.put(String.valueOf(methodPairsArray[i][0]), methodPairsArray[i][1]);
+		for (int i = 0; i < methodPairsArray.length; i++) {
+			try {
+				assertEquals(methodSFS.getChar(String.valueOf(methodPairsArray[i][0])),methodPairsArray[i][1]);
+				assertEquals(methodSFS.getChar(String.valueOf(methodPairsArray[i][0]),'5'),methodPairsArray[i][1]);
+			} catch (FSParseException aException) {
+				fail("Not expected exception thrown : " + aException.getMessage()); }
+		}
+	}
+	
+	/**
+	 * Test put(String,short) and 
+	 * [getShort(String)|getShort(String,short)]
+	 * methods consistency.
+	 * The default value (returned if the key is not found)
+	 * is set to a not present short value, so we are sure 
+	 * if it finds the right value or not 
+	 * (and does not use the default).
+	 */
+	public void testPut_StringShort() {
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		short[][] methodPairsArray =
+			{ {1,1},{2,2},{3,3},{4,4} };
+		for (int i = 0; i < methodPairsArray.length; i++)
+			methodSFS.put(Short.toString(methodPairsArray[i][0]), methodPairsArray[i][1]);
+		for (int i = 0; i < methodPairsArray.length; i++) {
+			try {
+				assertEquals(methodSFS.getShort(Short.toString(methodPairsArray[i][0])),methodPairsArray[i][1]);
+				assertEquals(methodSFS.getShort(Short.toString(methodPairsArray[i][0]),(short)5),methodPairsArray[i][1]);
+			} catch (FSParseException aException) {
+				fail("Not expected exception thrown : " + aException.getMessage()); }
+		}
+	}
+	
+	/**
+	 * Test put(String,double) and 
+	 * [getDouble(String)|getDouble(String,double)]
+	 * methods consistency.
+	 * The default value (returned if the key is not found)
+	 * is set to a not present double value, so we are sure 
+	 * if it finds the right value or not 
+	 * (and does not use the default).
+	 */
+	public void testPut_StringDouble() {
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		double[][] methodPairsArray =
+			{ {1,1},{2,2},{3,3},{4,4} };
+		for (int i = 0; i < methodPairsArray.length; i++)
+			methodSFS.put(Double.toString(methodPairsArray[i][0]), methodPairsArray[i][1]);
+		for (int i = 0; i < methodPairsArray.length; i++) {
+			try {
+				assertEquals(Double.compare((methodSFS.getDouble(Double.toString(methodPairsArray[i][0]))),
+											methodPairsArray[i][1]),
+							 0);		//there is no assertEquals(Double,Double) so we are obliged to do this way -_-
+				assertEquals(Double.compare(methodSFS.getDouble(Double.toString(methodPairsArray[i][0]),(double)5),
+											methodPairsArray[i][1]),
+							 0);
+			} catch (FSParseException aException) {
+				fail("Not expected exception thrown : " + aException.getMessage()); }
+		}
+	}
 }
