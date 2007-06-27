@@ -281,15 +281,20 @@ public class HexUtilTest extends TestCase {
 		byte[] expectedByteArray = new byte[1];
 		byte[] outputArray = new byte[1];
 		BitSet methodBitSet = new BitSet(8);
-		methodBitSet.flip(3); /* 0x08 */
-		expectedByteArray[0] = (byte)8;
-		outputArray = HexUtil.bitsToBytes(methodBitSet,0); /* 0x08 & 0x00 */
+
+		methodBitSet.flip(0); /* 0x01 */
+		expectedByteArray[0] = (byte)1;
+		outputArray = HexUtil.bitsToBytes(methodBitSet,0); /* 0x01 & 0x00 == 0x01 */
 		assertFalse(Arrays.equals(expectedByteArray,outputArray));
-		outputArray = HexUtil.bitsToBytes(methodBitSet,3); /* 0x08 & 0xe0 */
-		assertFalse(Arrays.equals(expectedByteArray,outputArray));
-		outputArray = HexUtil.bitsToBytes(methodBitSet,4); /* 0x08 & 0xf0 */
+		outputArray = HexUtil.bitsToBytes(methodBitSet,1); /* 0x01 & 0x01 == 0x01 */
 		assertTrue(Arrays.equals(expectedByteArray,outputArray));
-		outputArray = HexUtil.bitsToBytes(methodBitSet,8); /* 0x08 & 0xff */
+		
+		methodBitSet.flip(7); /* 0x80 */
+		methodBitSet.flip(3); /* 0x08 */
+		expectedByteArray[0] = (byte)128+8+1;
+		outputArray = HexUtil.bitsToBytes(methodBitSet,3); /* 0x89 & 0x08 == 0x89 */
+		assertFalse(Arrays.equals(expectedByteArray,outputArray));
+		outputArray = HexUtil.bitsToBytes(methodBitSet,8); /* 0x89 & 0xff == 0x89 */
 		assertTrue(Arrays.equals(expectedByteArray,outputArray));
 	}
 }

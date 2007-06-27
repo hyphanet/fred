@@ -112,7 +112,7 @@ public class HexUtil {
 	 * Pack the bits in ba into a byte[].
 	 *
 	 * @param ba : the BitSet
-	 * @param size : How many bits shall be taken into account starting from the MSB?
+	 * @param size : How many bits shall be taken into account starting from the LSB?
 	 */
 	public final static byte[] bitsToBytes(BitSet ba, int size) {
 		int bytesAlloc = countBytesForBits(size);
