@@ -674,6 +674,16 @@ public class SimpleFieldSet {
 		}
 	}
 
+	public double getDouble(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No key "+key);
+		try {
+			return Double.parseDouble(s);
+		} catch (NumberFormatException e) {
+			throw new FSParseException("Cannot parse "+s+" for integer "+key);
+		}
+	}
+	
 	public long getLong(String key, long def) {
 		String s = get(key);
 		if(s == null) return def;
@@ -693,6 +703,44 @@ public class SimpleFieldSet {
 			throw new FSParseException("Cannot parse "+s+" for long "+key);
 		}
 	}
+	
+	public short getShort(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No key "+key);
+		try {
+			return Short.parseShort(s);
+		} catch (NumberFormatException e) {
+			throw new FSParseException("Cannot parse "+s+" for short "+key);
+		}
+	}
+	
+	public short getShort(String key, short def) {
+		String s = get(key);
+		if(s == null) return def;
+		try {
+			return Short.parseShort(s);
+		} catch (NumberFormatException e) {
+			return def;
+		}
+	}
+	
+	public char getChar(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No key "+key);
+			if (s.length() == 1)
+				return s.charAt(0);
+			else
+				throw new FSParseException("Cannot parse "+s+" for char "+key);
+	} 
+	
+	public char getChar(String key, char def) {
+		String s = get(key);
+		if(s == null) return def;
+			if (s.length() == 1)
+				return s.charAt(0);
+			else
+				return def;
+	} 
 
 	public boolean getBoolean(String key, boolean def) {
 		return Fields.stringToBool(get(key), def);
