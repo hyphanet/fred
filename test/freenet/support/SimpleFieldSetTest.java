@@ -16,6 +16,8 @@
 
 package freenet.support;
 
+import java.io.IOException;
+
 import freenet.node.FSParseException;
 import junit.framework.TestCase;
 
@@ -26,6 +28,8 @@ import junit.framework.TestCase;
  */
 public class SimpleFieldSetTest extends TestCase {
 
+	private static final char KEY_VALUE_SEPARATOR = '='; 
+	
 	/**
 	 * Test putSingle(String,String) method
 	 * trying to store a key with two paired
@@ -262,5 +266,54 @@ public class SimpleFieldSetTest extends TestCase {
 			} catch (FSParseException aException) {
 				fail("Not expected exception thrown : " + aException.getMessage()); }
 		}
+	}
+	
+	/**
+	 * Generates a string for the SFS parser in the canonical form:
+	 *  key=value
+	 *  END
+	 * @param aStringPairsArray
+	 * @return a String ready to be read by a SFS parser
+	 */
+	private String sfsReadyString(String[][] aStringPairsArray) {
+		String endMarker = "\nEND";
+		String methodStringToReturn = "";
+		for(int i = 0; i < aStringPairsArray.length; i++)
+			methodStringToReturn += aStringPairsArray[i][0]+KEY_VALUE_SEPARATOR+aStringPairsArray[i][1]+'\n';
+		methodStringToReturn += endMarker;
+		return methodStringToReturn;
+	}
+	
+	/**
+	 * Test SimpleFieldSet(String,boolean,boolean) constructor,
+	 * with a simple string
+	 */
+	public void testSimpleFieldSet_StringBooleanBoolean() {
+		String[][] methodStringPair = { {"foo","bar"}};
+		String methodStringToParse = sfsReadyString(methodStringPair);
+		try {
+			SimpleFieldSet methodSFS = new SimpleFieldSet(methodStringToParse,false,false);
+			assertEquals(methodSFS.get(methodStringPair[0][0]),methodStringPair[0][1]);
+		} catch (IOException aException) {
+			fail("Not expected exception thrown : " + aException.getMessage()); }
+	}
+	
+	/**
+	 * Test SimpleFieldSet(String,boolean,boolean) constructor,
+	 * with border cases of the canonical form.
+	 */
+	public void testSimpleFieldSet_StringBooleanBoolean_NotCanonical() {
+		String[][] methodStringPairs = 
+			{  {"foo.bar","foobar"},
+			   {"foo.bar.boo.far","foobar"},
+			   {"foo","foobar.fooboo.foofar.foofoo"},
+			   {"foo2",KEY_VALUE_SEPARATOR+"bar"} };
+		String methodStringToParse = sfsReadyString(methodStringPairs);
+		try {
+			SimpleFieldSet methodSFS = new SimpleFieldSet(methodStringToParse,false,false);
+			for (int i=0; i < methodStringPairs.length; i++)
+				assertEquals(methodSFS.get(methodStringPairs[i][0]),methodStringPairs[i][1]);
+		} catch (IOException aException) {
+			fail("Not expected exception thrown : " + aException.getMessage()); }
 	}
 }
