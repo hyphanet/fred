@@ -31,16 +31,14 @@ public class NodeARKInserter implements ClientCallback {
 	private final Node node;
 	private final NodeIPDetector detector;
 	private static boolean logMINOR;
-	private final boolean old;
 
 	/**
 	 * @param node
 	 * @param old If true, use the old ARK rather than the new ARK
 	 */
-	NodeARKInserter(Node node, NodeIPDetector detector, boolean old) {
+	NodeARKInserter(Node node, NodeIPDetector detector) {
 		this.node = node;
 		this.detector = detector;
-		this.old = old;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -130,8 +128,8 @@ public class NodeARKInserter implements ClientCallback {
 		
 		Bucket b = new SimpleReadOnlyArrayBucket(buf);
 		
-		long number = old ? node.myOldARKNumber : node.myARKNumber;
-		InsertableClientSSK ark = old ? node.myOldARK : node.myARK;
+		long number = node.myARKNumber;
+		InsertableClientSSK ark = node.myARK;
 		FreenetURI uri = ark.getInsertURI().setKeyType("USK").setSuggestedEdition(number);
 		
 		if(logMINOR) Logger.minor(this, "Inserting ARK: "+uri);

@@ -325,10 +325,6 @@ public class Node implements TimeSkewDetectorCallback {
 	/** My ARK sequence number */
 	long myARKNumber;
 	// FIXME remove old ARK support
-	/** My old ARK SSK private key */
-	InsertableClientSSK myOldARK;
-	/** My old ARK sequence number */
-	long myOldARKNumber;
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
 	
@@ -551,8 +547,6 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		// ARK
 		
-		boolean arkIsOld = false;
-		
 		String s = fs.get("ark.number");
 		
 		String privARK = fs.get("ark.privURI");
@@ -560,9 +554,11 @@ public class Node implements TimeSkewDetectorCallback {
 			if(privARK != null) {
 				FreenetURI uri = new FreenetURI(privARK);
 				ark = InsertableClientSSK.create(uri);
-				arkIsOld = ark.isInsecure();
-				if(s == null) {
+				if(ark.isInsecure() || s == null) {
+					if(ark.isInsecure())
+						System.out.println("Creating new ARK, old is insecure");
 					ark = null;
+					myARKNumber = 0;
 				} else {
 					try {
 						myARKNumber = Long.parseLong(s);
@@ -581,46 +577,6 @@ public class Node implements TimeSkewDetectorCallback {
 			myARKNumber = 0;
 		}
 		this.myARK = ark;
-		
-		if(arkIsOld) {
-			System.out.println("Creating new ARK, old is insecure");
-			myOldARKNumber = myARKNumber;
-			myOldARK = myARK;
-			myARK = InsertableClientSSK.createRandom(r, "ark");
-			myARKNumber = 0;
-		} else {
-			ark = null;
-			// FIXME remove in a few versions; back compat support for 1012 only
-			// and not very important; remove in 1014??
-			// Note that "old-ark" doesn't work because it is stripped by the manually
-			// posted references filter.
-			s = fs.get("oldark.number");
-			if(s == null) s = fs.get("old-ark.number");
-			privARK = fs.get("oldark.privURI");
-			if(privARK == null) privARK = fs.get("old-ark.privURI");
-			try {
-				if(privARK != null) {
-					FreenetURI uri = new FreenetURI(privARK);
-					ark = InsertableClientSSK.create(uri);
-					arkIsOld = ark.isInsecure();
-					if(s == null) {
-						ark = null;
-					} else {
-						try {
-							myOldARKNumber = Long.parseLong(s);
-						} catch (NumberFormatException e) {
-							myOldARKNumber = 0;
-							ark = null;
-						}
-					}
-				}
-			} catch (MalformedURLException e) {
-				Logger.minor(this, "Caught "+e, e);
-				ark = null;
-			}
-			this.myOldARK = ark;
-			
-		}
 		
 		wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
 	}
@@ -1728,9 +1684,6 @@ public class Node implements TimeSkewDetectorCallback {
 		SimpleFieldSet fs = exportPublicFieldSet(false);
 		fs.put("dsaPrivKey", myPrivKey.asFieldSet());
 		fs.putSingle("ark.privURI", this.myARK.getInsertURI().toString(false, false));
-		if(myOldARK != null) {
-			fs.putSingle("oldark.privURI", this.myOldARK.getInsertURI().toString(false, false));
-		}
 		return fs;
 	}
 	
@@ -1775,10 +1728,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		fs.put("ark.number", myARKNumber); // Can be changed on setup
 		fs.putSingle("ark.pubURI", this.myARK.getURI().toString(false, false)); // Can be changed on setup
-		if(myOldARK != null) {
-			fs.put("oldark.number", myOldARKNumber);
-			fs.putSingle("oldark.pubURI", this.myOldARK.getURI().toString(false, false));
-		}
 		
 		synchronized (referenceSync) {
 			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
