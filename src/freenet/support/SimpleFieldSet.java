@@ -77,6 +77,10 @@ public class SimpleFieldSet {
 
     /**
      * Construct from a string.
+     * String format:
+     * blah=blah
+     * blah=blah
+     * End
      * @param shortLived If false, strings will be interned to ensure that they use as
      * little memory as possible. Only set to true if the SFS will be short-lived or
      * small.
