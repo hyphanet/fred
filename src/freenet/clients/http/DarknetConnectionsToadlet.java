@@ -144,6 +144,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int numberOfBursting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_BURSTING);
 		int numberOfListening = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTENING);
 		int numberOfListenOnly = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTEN_ONLY);
+		int numberOfClockProblem = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM);
 		
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
@@ -273,6 +274,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			if (numberOfListenOnly > 0) {
 				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
 				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_listen_only", l10n("listenOnly"), "border-bottom: 1px dotted; cursor: help;" }, l10n("listenOnlyShort"));
+				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
+			}
+			if (numberOfClockProblem > 0) {
+				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_clock_problem", l10n("clockProblem"), "border-bottom: 1px dotted; cursor: help;" }, l10n("clockProblemShort"));
 				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
 			}
 
