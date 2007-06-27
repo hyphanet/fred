@@ -286,9 +286,10 @@ public class HexUtilTest extends TestCase {
 		outputArray = HexUtil.bitsToBytes(methodBitSet,0); /* 0x08 & 0x00 */
 		assertFalse(Arrays.equals(expectedByteArray,outputArray));
 		outputArray = HexUtil.bitsToBytes(methodBitSet,3); /* 0x08 & 0xe0 */
+		assertFalse(Arrays.equals(expectedByteArray,outputArray));
+		outputArray = HexUtil.bitsToBytes(methodBitSet,4); /* 0x08 & 0xf0 */
 		assertTrue(Arrays.equals(expectedByteArray,outputArray));
-		methodBitSet.flip(4); /* 0x18 */
-		outputArray = HexUtil.bitsToBytes(methodBitSet,3); /* 0x18 & 0xe0 */
+		outputArray = HexUtil.bitsToBytes(methodBitSet,8); /* 0x08 & 0xff */
 		assertTrue(Arrays.equals(expectedByteArray,outputArray));
 	}
 }
