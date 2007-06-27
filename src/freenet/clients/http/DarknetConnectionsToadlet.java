@@ -279,7 +279,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			if (numberOfClockProblem > 0) {
 				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
 				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_clock_problem", l10n("clockProblem"), "border-bottom: 1px dotted; cursor: help;" }, l10n("clockProblemShort"));
-				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
+				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfClockProblem);
 			}
 
 			// Peer routing backoff reason box
