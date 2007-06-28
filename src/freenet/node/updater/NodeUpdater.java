@@ -242,7 +242,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					maybeUpdate();
 				}
 			}, 0);
-			maybeUpdate();
 		} else {
 			Logger.error(this, "Canceling fetch : "+ e.getMessage());
 			System.err.println("Unexpected error fetching update: "+e.getMessage());
