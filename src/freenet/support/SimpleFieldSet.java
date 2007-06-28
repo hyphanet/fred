@@ -496,10 +496,18 @@ public class SimpleFieldSet {
 
 		public boolean hasNext() {
 			synchronized(SimpleFieldSet.this) {
-				if(valuesIterator.hasNext()) return true;
-				if((subIterator != null) && subIterator.hasNext()) return true;
-				if(subIterator != null) subIterator = null;
-				return false;
+				while(true) {
+					if(valuesIterator.hasNext()) return true;
+					if((subIterator != null) && subIterator.hasNext()) return true;
+					if(subIterator != null) subIterator = null;
+					if(subsetIterator != null && subsetIterator.hasNext()) {
+						String key = (String) subsetIterator.next();
+						SimpleFieldSet fs = (SimpleFieldSet) subsets.get(key);
+						String newPrefix = prefix + key + MULTI_LEVEL_CHAR;
+						subIterator = fs.keyIterator(newPrefix);
+					} else
+						return false;
+				}
 			}
 		}
 
