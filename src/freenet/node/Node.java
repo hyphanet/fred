@@ -1092,7 +1092,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
 		
-		nodeConfig.register("storeDir", ".", sortOrder++, true, false, "Node.storeDirectory", "Node.storeDirectoryLong", 
+		nodeConfig.register("storeDir", ".", sortOrder++, true, true, "Node.storeDirectory", "Node.storeDirectoryLong", 
 				new StringCallback() {
 					public String get() {
 						return storeDir.getPath();
