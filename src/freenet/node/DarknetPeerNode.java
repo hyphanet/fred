@@ -167,7 +167,7 @@ public class DarknetPeerNode extends PeerNode {
     	synchronized(this) {
     		if(isDisabled) return false;
     		if(isListenOnly) return false;
-    		if(!shouldSendHandshake()) return false;
+    		if(!super.shouldSendHandshake()) return false;
     		if(isBurstOnly())
     			isBursting = true;
     		else
