@@ -230,12 +230,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			this.cg = null;
 			isFetching=false;
 		}
-		if((errorCode == FetchException.DATA_NOT_FOUND) ||
-				(errorCode == FetchException.ROUTE_NOT_FOUND) ||
-				(errorCode == FetchException.PERMANENT_REDIRECT) ||
-				(errorCode == FetchException.REJECTED_OVERLOAD) ||
-				(errorCode == FetchException.CANCELLED)){
-			
+		if(errorCode == FetchException.CANCELLED ||
+				!e.isFatal()) {
 			Logger.normal(this, "Rescheduling new request");
 			ticker.queueTimedJob(new Runnable() {
 				public void run() {
