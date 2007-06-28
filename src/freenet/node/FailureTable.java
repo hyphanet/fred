@@ -114,9 +114,9 @@ public class FailureTable {
 		 * 
 		 * Note that this means we can route to the same node twice - but only if its location improves.
 		 */
-		double bestLiveLoc = entry.bestLiveLocDiff();
+		double bestLiveLocDiff = entry.bestLiveLocDiff();
 		
-		PeerNode p = peers.closerPeer(requestor, null, null, key.toNormalizedDouble(), true, false, 0, null, PeerManager.distance(bestLiveLoc, key.toNormalizedDouble()));
+		PeerNode p = peers.closerPeer(requestor, null, null, key.toNormalizedDouble(), true, false, 0, null, bestLiveLocDiff);
 		
 		if(p != null) return false; // there is a better route now / we want to retry an old one
 		
