@@ -37,7 +37,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	private static boolean logMINOR;
     final Node node;
-    final PeerManager pm;
     final MessageCore usm;
     final PacketSocketHandler sock;
     final EntropySource fnpTimingSource;
@@ -70,7 +69,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
     public FNPPacketMangler(Node node, PacketSocketHandler sock) {
         this.node = node;
-        this.pm = node.peers;
         this.usm = node.usm;
         this.sock = sock;
         fnpTimingSource = new EntropySource();
@@ -111,7 +109,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
          * Otherwise try all of them (on the theory that nodes 
          * occasionally change their IP addresses).
          */
-        PeerNode opn = pm.getByPeer(peer);
+        PeerNode opn = node.peers.getByPeer(peer);
         PeerNode pn;
         
         if(opn != null) {
@@ -129,8 +127,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             }
         }
         if(length > HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6) {
-            for(int i=0;i<pm.connectedPeers.length;i++) {
-                pn = pm.myPeers[i];
+            for(int i=0;i<node.peers.connectedPeers.length;i++) {
+                pn = node.peers.myPeers[i];
                 if(pn == opn) continue;
                 if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker())) {
                     // IP address change
@@ -150,8 +148,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             }
         }
         if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
-            for(int i=0;i<pm.myPeers.length;i++) {
-                pn = pm.myPeers[i];
+            for(int i=0;i<node.peers.myPeers.length;i++) {
+                pn = node.peers.myPeers[i];
                 if(pn == opn) continue;
                 if(tryProcessAuth(buf, offset, length, pn, peer)) return;
             }
