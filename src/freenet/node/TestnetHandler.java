@@ -255,7 +255,7 @@ public class TestnetHandler implements Runnable {
         if(enabled) {
         	// Get the testnet port
 
-        	testnetConfig.register("port", node.portNumber+1000, 2, true, false, "TestnetHandler.port", "TestnetHandler.portLong",
+        	testnetConfig.register("port", node.darknetPortNumber+1000, 2, true, false, "TestnetHandler.port", "TestnetHandler.portLong",
         			new TestnetPortNumberCallback(node));
 
         	int port = testnetConfig.getInt("port");

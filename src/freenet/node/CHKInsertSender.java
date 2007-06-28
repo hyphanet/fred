@@ -137,7 +137,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     }
 
 	void start() {
-        Thread t = new Thread(this, "CHKInsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
+        Thread t = new Thread(this, "CHKInsertSender for UID "+uid+" on "+node.darknetPortNumber+" at "+System.currentTimeMillis());
         t.setDaemon(true);
         t.start();
 	}

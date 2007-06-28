@@ -80,18 +80,18 @@ public class NodeIPDetector {
 		Vector addresses = new Vector();
 		if(overrideIPAddress != null) {
 			// If the IP is overridden, the override has to be the first element.
-			Peer p = new Peer(overrideIPAddress, node.portNumber);
+			Peer p = new Peer(overrideIPAddress, node.darknetPortNumber);
 			addresses.add(p);
 			if(p.getFreenetAddress().isRealInternetAddress(false, true))
 				addedValidIP = true;
 		}
 		boolean dontDetect = false;
-		UdpSocketHandler sock = node.sock;
+		UdpSocketHandler sock = node.darknetSocket;
 		if(sock != null) {
 			InetAddress addr = sock.getBindTo();
 			if(addr != null && (IPUtil.isValidAddress(addr, false))) {
 				dontDetect = true;
-				Peer p = new Peer(addr, node.portNumber);
+				Peer p = new Peer(addr, node.darknetPortNumber);
 				if(!addresses.contains(p)) addresses.add(p);
 				dontDetect = true;
 			}
@@ -119,7 +119,7 @@ public class NodeIPDetector {
 		}
 		
 		for(int i=0;i<detectedAddrs.length;i++) {
-			Peer p = new Peer(detectedAddrs[i], node.portNumber);
+			Peer p = new Peer(detectedAddrs[i], node.darknetPortNumber);
 			if(!addresses.contains(p)) {
 				Logger.normal(this, "Detected IP address: "+p);
 				addresses.add(p);
@@ -132,7 +132,7 @@ public class NodeIPDetector {
 			for(int i=0;i<pluginDetectedIPs.length;i++) {
 				InetAddress addr = pluginDetectedIPs[i].publicAddress;
 				if(addr == null) continue;
-				Peer a = new Peer(new FreenetInetAddress(addr), node.portNumber);
+				Peer a = new Peer(new FreenetInetAddress(addr), node.darknetPortNumber);
 				if(!addresses.contains(a)) {
 					Logger.normal(this, "Plugin detected IP address: "+a);
 					addresses.add(a);
@@ -141,7 +141,7 @@ public class NodeIPDetector {
 			}
 		}
 		if(addresses.isEmpty() && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
-			addresses.add(new Peer(oldIPAddress, node.portNumber));
+			addresses.add(new Peer(oldIPAddress, node.darknetPortNumber));
 		// Try to pick it up from our connections
 		if(node.peers != null) {
 			PeerNode[] peerList = node.peers.connectedPeers;
@@ -220,7 +220,7 @@ public class NodeIPDetector {
 										node.clientCore.alerts.unregister(maybeSymmetricAlert);
 								}
 								
-								Peer p = new Peer(best.getFreenetAddress(), node.portNumber);
+								Peer p = new Peer(best.getFreenetAddress(), node.darknetPortNumber);
 								if(!addresses.contains(p))
 									addresses.add(p);
 							}

@@ -260,9 +260,6 @@ public class Node implements TimeSkewDetectorCallback {
 	static final long TESTNET_MIN_MAX_ZIPPED_LOGFILES = 512*1024*1024;
 	static final String TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING = "512M";
 	
-	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
-	final int portNumber;
-
 	/** Datastore directory */
 	private final File storeDir;
 
@@ -373,8 +370,10 @@ public class Node implements TimeSkewDetectorCallback {
 	/** The object which handles incoming messages and allows us to wait for them */
 	final MessageCore usm;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
-	final UdpSocketHandler sock;
-	public final FNPPacketMangler packetMangler;
+	final UdpSocketHandler darknetSocket;
+	public final FNPPacketMangler darknetPacketMangler;
+	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
+	final int darknetPortNumber;
 	final DNSRequester dnsr;
 	public final PacketSender ps;
 	final NodeDispatcher dispatcher;
@@ -490,7 +489,7 @@ public class Node implements TimeSkewDetectorCallback {
 					e1.initCause(e);
 					throw e1;
 				}
-				if(p.getPort() == portNumber) {
+				if(p.getPort() == darknetPortNumber) {
 					// DNSRequester doesn't deal with our own node
 					ipDetector.setOldIPAddress(p.getFreenetAddress());
 					break;
@@ -590,7 +589,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void writeNodeFile() {
-		writeNodeFile(new File(nodeDir, "node-"+portNumber), new File(nodeDir, "node-"+portNumber+".bak"));
+		writeNodeFile(new File(nodeDir, "node-"+darknetPortNumber), new File(nodeDir, "node-"+darknetPortNumber+".bak"));
 	}
 	
 	private void writeNodeFile(File orig, File backup) {
@@ -624,7 +623,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private void initNodeFileSettings(RandomSource r) {
 		Logger.normal(this, "Creating new node file from scratch");
-		// Don't need to set portNumber
+		// Don't need to set darknetPortNumber
 		// FIXME use a real IP!
 		myIdentity = new byte[32];
 		r.nextBytes(myIdentity);
@@ -774,7 +773,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		nodeConfig.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
 					public int get() {
-						return portNumber;
+						return darknetPortNumber;
 					}
 					public void set(int val) throws InvalidConfigValueException {
 						// FIXME implement on the fly listenPort changing
@@ -825,27 +824,27 @@ public class Node implements TimeSkewDetectorCallback {
 				throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
 			}
 		}
-		sock = u;
+		darknetSocket = u;
 		
 		Logger.normal(this, "FNP port created on "+bindto+ ':' +port);
 		System.out.println("FNP port created on "+bindto+ ':' +port);
-		portNumber = port;
+		darknetPortNumber = port;
 
 		nodeConfig.register("testingDropPacketsEvery", 0, sortOrder++, true, false, "Node.dropPacketEvery", "Node.dropPacketEveryLong",
 				new IntCallback() {
 
 					public int get() {
-						return ((UdpSocketHandler)sock).getDropProbability();
+						return ((UdpSocketHandler)darknetSocket).getDropProbability();
 					}
 
 					public void set(int val) throws InvalidConfigValueException {
-						((UdpSocketHandler)sock).setDropProbability(val);
+						((UdpSocketHandler)darknetSocket).setDropProbability(val);
 					}
 			
 		});
 		
 		int dropProb = nodeConfig.getInt("testingDropPacketsEvery");
-		((UdpSocketHandler)sock).setDropProbability(dropProb);
+		((UdpSocketHandler)darknetSocket).setDropProbability(dropProb);
 		
 		Logger.normal(Node.class, "Creating node...");
 
@@ -979,10 +978,10 @@ public class Node implements TimeSkewDetectorCallback {
 		// After we have set up testnet and IP address, load the node file
 		try {
 			// FIXME should take file directly?
-			readNodeFile(new File(nodeDir, "node-"+portNumber).getPath(), random);
+			readNodeFile(new File(nodeDir, "node-"+darknetPortNumber).getPath(), random);
 		} catch (IOException e) {
 			try {
-				readNodeFile(new File("node-"+portNumber+".bak").getPath(), random);
+				readNodeFile(new File("node-"+darknetPortNumber+".bak").getPath(), random);
 			} catch (IOException e1) {
 				initNodeFileSettings(random);
 			}
@@ -996,15 +995,15 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
-		sock.setLowLevelFilter(packetMangler = new FNPPacketMangler(this, sock));
+		darknetSocket.setLowLevelFilter(darknetPacketMangler = new FNPPacketMangler(this, darknetSocket));
 		
 		// Then read the peers
-		peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath(), packetMangler);
+		peers = new PeerManager(this, new File(nodeDir, "peers-"+darknetPortNumber).getPath(), darknetPacketMangler);
 		peers.writePeers();
 		peers.updatePMUserAlert();
 
 		// Extra Peer Data Directory
-		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+portNumber).toString(), sortOrder++, true, false, "Node.extraPeerDir", "Node.extraPeerDirLong",
+		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+darknetPortNumber).toString(), sortOrder++, true, false, "Node.extraPeerDir", "Node.extraPeerDirLong",
 				new StringCallback() {
 					public String get() {
 						return extraPeerDataDir.getPath();
@@ -1129,7 +1128,7 @@ public class Node implements TimeSkewDetectorCallback {
 		envConfig.setLockTimeout(600*1000*1000); // should be long enough even for severely overloaded nodes!
 		// Note that the above is in *MICRO*seconds.
 		
-		File dbDir = new File(storeDir, "database-"+portNumber);
+		File dbDir = new File(storeDir, "database-"+darknetPortNumber);
 		dbDir.mkdirs();
 		
 		File reconstructFile = new File(dbDir, "reconstruct");
@@ -1139,7 +1138,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		boolean tryDbLoad = false;
 		
-		String suffix = "-" + portNumber;
+		String suffix = "-" + darknetPortNumber;
 		
 		// This can take some time
 		System.out.println("Starting database...");
@@ -1369,7 +1368,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit);
 		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"));
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, darknetPortNumber, sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"));
 
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
@@ -1447,7 +1446,7 @@ public class Node implements TimeSkewDetectorCallback {
 		nodeStats.start();
 		
 		usm.start(ps);
-		((UdpSocketHandler)sock).start(disableHangCheckers);
+		((UdpSocketHandler)darknetSocket).start(disableHangCheckers);
 		
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
@@ -1458,8 +1457,8 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		Logger.normal(this, "Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
 		System.out.println("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
-		Logger.normal(this, "FNP port is on "+bindto+ ':' +portNumber);
-		System.out.println("FNP port is on "+bindto+ ':' +portNumber);
+		Logger.normal(this, "FNP port is on "+bindto+ ':' +darknetPortNumber);
+		System.out.println("FNP port is on "+bindto+ ':' +darknetPortNumber);
 		// Start services
 		
 //		SubConfig pluginManagerConfig = new SubConfig("pluginmanager3", config);
@@ -1719,7 +1718,7 @@ public class Node implements TimeSkewDetectorCallback {
 				fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
 		}
 		// Negotiation types
-		int[] negTypes = packetMangler.supportedNegTypes();
+		int[] negTypes = darknetPacketMangler.supportedNegTypes();
 		fs.put("auth.negTypes", negTypes);
 		fs.putSingle("identity", Base64.encode(myIdentity)); // FIXME !forSetup after 11104 is mandatory
 		fs.put("location", lm.getLocation().getValue()); // FIXME maybe !forSetup; see #943
@@ -1814,7 +1813,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean resetClosestLocation, boolean localOnly, boolean cache, boolean ignoreStore) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+portNumber);
+		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+darknetPortNumber);
 		// In store?
 		KeyBlock chk = null;
 		if(!ignoreStore) {
@@ -2574,7 +2573,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public int getFNPPort(){
-		return this.portNumber;
+		return this.darknetPortNumber;
 	}
 	
 	public int getIdentityHash(){
@@ -2831,15 +2830,15 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Connect this node to another node (for purposes of testing) 
 	 */
 	public void connect(Node node) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		peers.connect(node.exportPublicFieldSet(), packetMangler);
+		peers.connect(node.exportPublicFieldSet(), darknetPacketMangler);
 	}
 	
 	public short maxHTL() {
 		return maxHTL;
 	}
 
-	public int getPortNumber() {
-		return portNumber;
+	public int getDarknetPortNumber() {
+		return darknetPortNumber;
 	}
 
 	public void JEStatsDump() {

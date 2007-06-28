@@ -1789,7 +1789,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
             long t = tracker.getNextUrgentTime();
             if(t < now) {
                 try {
-                    node.packetMangler.processOutgoing(null, 0, 0, tracker, 0);
+                    node.darknetPacketMangler.processOutgoing(null, 0, 0, tracker, 0);
                 } catch (NotConnectedException e) {
                     // Ignore
                 } catch (KeyChangedException e) {
@@ -1804,7 +1804,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
             long t = tracker.getNextUrgentTime();
             if(t < now) {
                 try {
-                    node.packetMangler.processOutgoing(null, 0, 0, tracker, 0);
+                    node.darknetPacketMangler.processOutgoing(null, 0, 0, tracker, 0);
                 } catch (NotConnectedException e) {
                     // Ignore
                 } catch (KeyChangedException e) {

@@ -197,7 +197,7 @@ public class LocationManager {
      */
     private void startSwapRequest() {
         Thread t = new Thread(new OutgoingSwapRequestHandler(),
-                "Outgoing swap request handler for port "+node.portNumber);
+                "Outgoing swap request handler for port "+node.darknetPortNumber);
         t.setDaemon(true);
         t.start();
     }
@@ -569,7 +569,7 @@ public class LocationManager {
         	if(logMINOR) Logger.minor(this, "Already locked");
         	return false;
         }
-        if(logMINOR) Logger.minor(this, "Locking on port "+node.portNumber);
+        if(logMINOR) Logger.minor(this, "Locking on port "+node.darknetPortNumber);
         locked = true;
         lockedTime = System.currentTimeMillis();
         return true;
@@ -581,7 +581,7 @@ public class LocationManager {
         locked = false;
         long lockTime = System.currentTimeMillis() - lockedTime;
         if(logMINOR) {
-        	Logger.minor(this, "Unlocking on port "+node.portNumber);
+        	Logger.minor(this, "Unlocking on port "+node.darknetPortNumber);
         	Logger.minor(this, "lockTime: "+lockTime);
         }
     }
@@ -762,7 +762,7 @@ public class LocationManager {
                 IncomingSwapRequestHandler isrh =
                     new IncomingSwapRequestHandler(m, pn, item);
                 if(logMINOR) Logger.minor(this, "Handling... "+uid);
-                Thread t = new Thread(isrh, "Incoming swap request handler for port "+node.portNumber);
+                Thread t = new Thread(isrh, "Incoming swap request handler for port "+node.darknetPortNumber);
                 t.setDaemon(true);
                 t.start();
                 return true;

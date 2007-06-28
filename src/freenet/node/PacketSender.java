@@ -49,7 +49,7 @@ public class PacketSender implements Runnable, Ticker {
         resendPackets = new LinkedList();
         timedJobsByTime = new TreeMap();
         this.node = node;
-        myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
+        myThread = new Thread(this, "PacketSender thread for "+node.darknetPortNumber);
         myThread.setDaemon(true);
         myThread.setPriority(Thread.MAX_PRIORITY);
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -226,7 +226,7 @@ public class PacketSender implements Runnable, Ticker {
                         if(item == null) continue;
                         try {
                             if(logMINOR) Logger.minor(this, "Resending "+item.packetNumber+" to "+item.kt);
-                            node.packetMangler.resend(item);
+                            node.darknetPacketMangler.resend(item);
                             mustSend = false;
                         } catch (KeyChangedException e) {
                             Logger.error(this, "Caught "+e+" resending packets to "+kt);
@@ -246,7 +246,7 @@ public class PacketSender implements Runnable, Ticker {
                     
                 }
 
-                if(node.packetMangler == null) continue;
+                if(node.darknetPacketMangler == null) continue;
                 // Any messages to send?
                 MessageItem[] messages = null;
                 messages = pn.grabQueuedMessageItems();
@@ -267,7 +267,7 @@ public class PacketSender implements Runnable, Ticker {
                 			if(logMINOR) Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));
                 		}
                 		// Send packets, right now, blocking, including any active notifications
-                		node.packetMangler.processOutgoingOrRequeue(messages, pn, true, false);
+                		node.darknetPacketMangler.processOutgoingOrRequeue(messages, pn, true, false);
                 		continue;
                 	}
                 }
@@ -288,14 +288,14 @@ public class PacketSender implements Runnable, Ticker {
                    	// Force packet to have a sequence number.
                    	Message m = DMT.createFNPVoid();
                    	pn.addToLocalNodeSentMessagesToStatistic(m);
-                   	node.packetMangler.processOutgoingOrRequeue(new MessageItem[] { new MessageItem(m, null, 0, null) }, pn, true, true);
+                   	node.darknetPacketMangler.processOutgoingOrRequeue(new MessageItem[] { new MessageItem(m, null, 0, null) }, pn, true, true);
                 }
             } else {
                 // Not connected
                 // Send handshake if necessary
                 long beforeHandshakeTime = System.currentTimeMillis();
                 if(pn.shouldSendHandshake())
-                    node.packetMangler.sendHandshake(pn);
+                    node.darknetPacketMangler.sendHandshake(pn);
                 if(pn.noContactDetails())
                 	pn.startARKFetcher();
                 long afterHandshakeTime = System.currentTimeMillis();

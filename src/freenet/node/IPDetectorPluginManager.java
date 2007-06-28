@@ -45,7 +45,7 @@ public class IPDetectorPluginManager {
 			div.addChild("#", text);
 			if(suggestPortForward) {
 				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardPortWithLink", new String[] { "link", "/link", "port" },
-						new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(node.portNumber) });
+						new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(node.darknetPortNumber) });
 			}
 			return div;
 		}
@@ -58,7 +58,7 @@ public class IPDetectorPluginManager {
 			if(!suggestPortForward) return text;
 			StringBuffer sb = new StringBuffer();
 			sb.append(text);
-			sb.append(l10n("suggestForwardPort", "port", Integer.toString(node.portNumber)));
+			sb.append(l10n("suggestForwardPort", "port", Integer.toString(node.darknetPortNumber)));
 			return sb.toString();
 		}
 

@@ -112,7 +112,7 @@ public class AddPeer extends FCPMessage {
 		fs.setEndMarker( "End" );
 		PeerNode pn;
 		try {
-			pn = new DarknetPeerNode(fs, node, node.peers, false, node.packetMangler);
+			pn = new DarknetPeerNode(fs, node, node.peers, false, node.darknetPacketMangler);
 		} catch (FSParseException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), null, false);
 		} catch (PeerParseException e) {
