@@ -471,6 +471,15 @@ public class SimpleFieldSet {
     	KeyIterator subIterator;
     	String prefix;
     	
+    	/**
+    	 * It provides an iterator for the SimpleSetField
+    	 * which passes through every key.
+    	 * (e.g. for key1=value1 key2.sub2=value2 key1.sub=value3
+    	 * it will provide key1,key2.sub2,key1.sub)
+    	 * @param a prefix to put BEFORE every key
+    	 * (e.g. for key1=value, if the iterator is created with prefix "aPrefix",
+    	 * it will provide aPrefixkey1
+    	 */
     	public KeyIterator(String prefix) {
     		synchronized(SimpleFieldSet.this) {
     			valuesIterator = values.keySet().iterator();
