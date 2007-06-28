@@ -80,7 +80,7 @@ public class PeerNodeStatus {
 	
 	private long clockDelta;
 
-	public PeerNodeStatus(PeerNode peerNode) {
+	PeerNodeStatus(PeerNode peerNode) {
 		Peer p = peerNode.getPeer();
 		if(p == null) {
 			peerAddress = null;

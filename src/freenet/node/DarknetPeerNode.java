@@ -1477,4 +1477,8 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		return fetchARKFlag;
 	}
+
+	public PeerNodeStatus getStatus() {
+		return new DarknetPeerNodeStatus(this);
+	}
 }

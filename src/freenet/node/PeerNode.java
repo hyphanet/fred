@@ -1816,9 +1816,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         }
     }
 
-    public synchronized PeerNodeStatus getStatus() {
-    	return new PeerNodeStatus(this);
-    }
+    public abstract PeerNodeStatus getStatus();
     
     public String getTMCIPeerInfo() {
 		long now = System.currentTimeMillis();
