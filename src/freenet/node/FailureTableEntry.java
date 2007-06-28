@@ -50,7 +50,7 @@ class FailureTableEntry {
 		requestorTimes = new long[requestors.length];
 		requestorBootIDs = new long[requestors.length];
 		for(int i=0;i<requestorNodes.length;i++) {
-			requestorNodes[i] = new WeakReference(requestors[i]);
+			requestorNodes[i] = requestors[i].myRef;
 			requestorTimes[i] = now;
 			requestorBootIDs[i] = requestors[i].getBootID();
 		}
