@@ -122,7 +122,7 @@ class FailureTableEntry {
 			// Nice special case
 			int x = 0;
 			for(int i=0;i<requestorNodes.length;i++) {
-				if(requestorNodes[i].get() == null) {
+				if(requestorNodes[i] == null || requestorNodes[i].get() == null) {
 					PeerNode pn = requestors[x++];
 					requestorNodes[i] = pn.myRef;
 					requestorTimes[i] = now;
@@ -217,7 +217,7 @@ class FailureTableEntry {
 			// Nice special case
 			int x = 0;
 			for(int i=0;i<requestedNodes.length;i++) {
-				if(requestedNodes[i].get() == null) {
+				if(requestedNodes[i] == null || requestedNodes[i].get() == null) {
 					PeerNode pn = requestedFrom[x++];
 					requestedNodes[i] = pn.myRef;
 					requestedLocs[i] = pn.getLocation().getValue();
