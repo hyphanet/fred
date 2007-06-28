@@ -71,7 +71,7 @@ import freenet.support.math.TimeDecayingRunningAverage;
  * code into KeyTracker, which handles all communications to and
  * from this peer over the duration of a single key.
  */
-public class PeerNode implements PeerContext, USKRetrieverCallback {
+public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
     /** Set to true when we complete a handshake. */
     private boolean completedHandshake;
@@ -2644,5 +2644,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	public boolean isIgnoreSource() {
 		return false;
+	}
+
+	/**
+	 * Create a DarknetPeerNode or an OpennetPeerNode as appropriate
+	 */
+	public static PeerNode create(SimpleFieldSet fs, Node node2, PeerManager manager, boolean b, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		return new DarknetPeerNode(fs, node2, manager, b, mangler);
 	}
 }
