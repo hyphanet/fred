@@ -3,9 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import freenet.node.DarknetPeerNode;
 import freenet.node.FSParseException;
 import freenet.node.Node;
-import freenet.node.PeerNode;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
@@ -37,7 +37,7 @@ public class ModifyPeerNote extends FCPMessage {
 		if( nodeIdentifier == null ) {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", null, false);
 		}
-		PeerNode pn = node.getPeerNode(nodeIdentifier);
+		DarknetPeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
 			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier);
 			handler.outputHandler.queue(msg);

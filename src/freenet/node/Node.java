@@ -2550,8 +2550,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return nodeUpdater;
 	}
 	
-	public PeerNode[] getDarknetConnections() {
-		return peers.myPeers;
+	public DarknetPeerNode[] getDarknetConnections() {
+		return peers.getDarknetPeers();
 	}
 	
 	public boolean addDarknetConnection(PeerNode pn) {
@@ -2596,7 +2596,12 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Handle a received node to node message
 	 */
 	public void receivedNodeToNodeMessage(Message m) {
-	  PeerNode source = (PeerNode)m.getSource();
+	  PeerNode src = (PeerNode) m.getSource();
+	  if(!(src instanceof DarknetPeerNode)) {
+		Logger.error(this, "Got N2NTM from opennet node ?!?!?!: "+m+" from "+src);
+		return;
+	  }
+	  DarknetPeerNode source = (DarknetPeerNode)m.getSource();
 	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
 	  if(type == Node.N2N_MESSAGE_TYPE_FPROXY) {
 		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
@@ -2640,7 +2645,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Handle a node to node text message SimpleFieldSet
 	 * @throws FSParseException 
 	 */
-	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, PeerNode source, int fileNumber) throws FSParseException {
+	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, DarknetPeerNode source, int fileNumber) throws FSParseException {
 	  if(logMINOR)
 		  Logger.minor(this, "Got node to node message: \n"+fs);
 	  int overallType = fs.getInt("n2nType", 1); // FIXME remove default
@@ -2652,7 +2657,7 @@ public class Node implements TimeSkewDetectorCallback {
 	  }
 	}
 
-	private void handleFproxyNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, PeerNode source, int fileNumber) throws FSParseException {
+	private void handleFproxyNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, DarknetPeerNode source, int fileNumber) throws FSParseException {
 		int type = fs.getInt("type");
 		if(type == Node.N2N_TEXT_MESSAGE_TYPE_USERALERT) {
 			source.handleFproxyN2NTM(fs, fileNumber);
@@ -2718,8 +2723,8 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Return a peer of the node given its ip and port, name or identity, as a String
 	 */
-	public PeerNode getPeerNode(String nodeIdentifier) {
-		PeerNode[] pn = peers.myPeers;
+	public DarknetPeerNode getPeerNode(String nodeIdentifier) {
+		DarknetPeerNode[] pn = peers.getDarknetPeers();
 		for(int i=0;i<pn.length;i++)
 		{
 			Peer peer = pn[i].getPeer();

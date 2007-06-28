@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
-import freenet.node.PeerNode;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
@@ -31,7 +31,7 @@ public class ModifyPeer extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyPeer requires full access", fs.get("Identifier"), false);
 		}
 		String nodeIdentifier = fs.get("NodeIdentifier");
-		PeerNode pn = node.getPeerNode(nodeIdentifier);
+		DarknetPeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
 			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier);
 			handler.outputHandler.queue(msg);

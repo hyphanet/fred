@@ -112,7 +112,7 @@ public class UpdateOverMandatoryManager {
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) {
-			Logger.minor(this, "Update Over Mandatory offer from node "+source.getPeer()+" : "+source.getName()+":");
+			Logger.minor(this, "Update Over Mandatory offer from node "+source.getPeer()+" : "+source.userToString()+":");
 			Logger.minor(this, "Main jar key: "+jarKey+" version="+mainJarVersion+" length="+mainJarFileLength);
 			Logger.minor(this, "Extra jar key: "+extraJarKey+" version="+extraJarVersion+" length="+extraJarFileLength);
 			Logger.minor(this, "Revocation key: "+revocationKey+" found="+haveRevocationKey+" length="+revocationKeyFileLength+" last had 3 DNFs "+revocationKeyLastTried+" ms ago, "+revocationKeyDNFs+" DNFs so far");
@@ -147,7 +147,7 @@ public class UpdateOverMandatoryManager {
 					// Tell the user
 					alertUser();
 					
-					System.err.println("Your peer "+source.getPeer()+" : "+source.getName()+" says that the auto-update key is blown!");
+					System.err.println("Your peer "+source.userToString()+" says that the auto-update key is blown!");
 					System.err.println("Attempting to fetch it...");
 					
 					// Try to transfer it.
@@ -159,14 +159,14 @@ public class UpdateOverMandatoryManager {
 						}
 						public void disconnected() {
 							// :(
-							System.err.println("Failed to send request for revocation key to "+source.getPeer()+" : "+source.getName()+" because it disconnected!");
+							System.err.println("Failed to send request for revocation key to "+source.userToString()+" because it disconnected!");
 							synchronized(UpdateOverMandatoryManager.this) {
 								nodesSayKeyRevokedFailedTransfer.add(source);
 							}
 						}
 						public void fatalError() {
 							// Not good!
-							System.err.println("Failed to send request for revocation key to "+source.getPeer()+" : "+source.getName()+" because of a fatal error.");
+							System.err.println("Failed to send request for revocation key to "+source.userToString()+" because of a fatal error.");
 						}
 						public void sent() {
 							// Cool
@@ -179,12 +179,12 @@ public class UpdateOverMandatoryManager {
 				} else {
 					// Should probably also be a useralert?
 					Logger.normal(this, "Node "+source+" sent us a UOM claiming that the auto-update key was blown, but it used a different key to us: \nour key="+updateManager.revocationURI+"\nhis key="+revocationURI);
-					System.err.println("Node "+source.getPeer()+" : "+source.getName()+" sent us a UOM claiming that the revocation key was blown, but it used a different key to us: \nour key="+updateManager.revocationURI+"\nhis key="+revocationURI);
+					System.err.println("Node "+source.userToString()+" sent us a UOM claiming that the revocation key was blown, but it used a different key to us: \nour key="+updateManager.revocationURI+"\nhis key="+revocationURI);
 				}
 			} catch (MalformedURLException e) {
 				// Should maybe be a useralert?
 				Logger.error(this, "Node "+source+" sent us a UOMAnnounce claiming that the auto-update key was blown, but it had an invalid revocation URI: "+revocationKey+" : "+e, e);
-				System.err.println("Node "+source.getPeer()+" : "+source.getName()+" sent us a UOMAnnounce claiming that the revocation key was blown, but it had an invalid revocation URI: "+revocationKey+" : "+e);
+				System.err.println("Node "+source.userToString()+" sent us a UOMAnnounce claiming that the revocation key was blown, but it had an invalid revocation URI: "+revocationKey+" : "+e);
 			} catch (NotConnectedException e) {
 				System.err.println("Node "+source+" says that the auto-update key was blown, but has now gone offline! Something bad may be happening!");
 				Logger.error(this, "Node "+source+" says that the auto-update key was blown, but has now gone offline! Something bad may be happening!");
@@ -213,7 +213,7 @@ public class UpdateOverMandatoryManager {
 			} catch (MalformedURLException e) {
 				// Should maybe be a useralert?
 				Logger.error(this, "Node "+source+" sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: "+revocationKey+" : "+e, e);
-				System.err.println("Node "+source.getPeer()+" : "+source.getName()+" sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: "+revocationKey+" : "+e);
+				System.err.println("Node "+source.userToString()+" sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: "+revocationKey+" : "+e);
 			}
 		}
 		
@@ -329,7 +329,7 @@ public class UpdateOverMandatoryManager {
 				div.addChild("p").addChild("#", l10n("connectedSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
 				for(int i=0;i<nodesSayBlownConnected.length;i++) {
-					list.addChild("li", nodesSayBlownConnected[i].getName()+" ("+nodesSayBlownConnected[i].getPeer()+")");
+					list.addChild("li", nodesSayBlownConnected[i].userToString()+" ("+nodesSayBlownConnected[i].getPeer()+")");
 				}
 			}
 			
@@ -337,7 +337,7 @@ public class UpdateOverMandatoryManager {
 				div.addChild("p").addChild("#", l10n("disconnectedSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
 				for(int i=0;i<nodesSayBlownDisconnected.length;i++) {
-					list.addChild("li", nodesSayBlownDisconnected[i].getName()+" ("+nodesSayBlownDisconnected[i].getPeer()+")");
+					list.addChild("li", nodesSayBlownDisconnected[i].userToString()+" ("+nodesSayBlownDisconnected[i].getPeer()+")");
 				}
 			}
 			
@@ -345,7 +345,7 @@ public class UpdateOverMandatoryManager {
 				div.addChild("p").addChild("#", l10n("failedTransferSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
 				for(int i=0;i<nodesSayBlownFailedTransfer.length;i++) {
-					list.addChild("li", nodesSayBlownFailedTransfer[i].getName()+" ("+nodesSayBlownFailedTransfer[i].getPeer()+")");
+					list.addChild("li", nodesSayBlownFailedTransfer[i].userToString()+" ("+nodesSayBlownFailedTransfer[i].getPeer()+")");
 				}
 			}
 			
@@ -381,7 +381,7 @@ public class UpdateOverMandatoryManager {
 			if(nodesSayBlownConnected.length > 0) {
 				sb.append(l10n("connectedSayBlownLabel")).append("\n\n");
 				for(int i=0;i<nodesSayBlownConnected.length;i++) {
-					sb.append(nodesSayBlownConnected[i].getName()+" ("+nodesSayBlownConnected[i].getPeer()+")").append("\n");
+					sb.append(nodesSayBlownConnected[i].userToString()+" ("+nodesSayBlownConnected[i].getPeer()+")").append("\n");
 				}
 				sb.append("\n");
 			}
@@ -390,7 +390,7 @@ public class UpdateOverMandatoryManager {
 				sb.append(l10n("disconnectedSayBlownLabel"));
 				
 				for(int i=0;i<nodesSayBlownDisconnected.length;i++) {
-					sb.append(nodesSayBlownDisconnected[i].getName()+" ("+nodesSayBlownDisconnected[i].getPeer()+")").append("\n");
+					sb.append(nodesSayBlownDisconnected[i].userToString()+" ("+nodesSayBlownDisconnected[i].getPeer()+")").append("\n");
 				}
 				sb.append("\n");
 			}
@@ -399,7 +399,7 @@ public class UpdateOverMandatoryManager {
 				sb.append(l10n("failedTransferSayBlownLabel"));
 				
 				for(int i=0;i<nodesSayBlownFailedTransfer.length;i++) {
-					sb.append(nodesSayBlownFailedTransfer[i].getName()+" ("+nodesSayBlownFailedTransfer[i].getPeer()+")").append('\n');
+					sb.append(nodesSayBlownFailedTransfer[i].userToString()+" ("+nodesSayBlownFailedTransfer[i].getPeer()+")").append('\n');
 				}
 				sb.append("\n");
 			}
@@ -514,9 +514,9 @@ public class UpdateOverMandatoryManager {
 		final Runnable r = new Runnable() {
 			public void run() {
 				if(!bt.send()) {
-					Logger.error(this, "Failed to send revocation key blob to "+source.getPeer()+" : "+source.getName());
+					Logger.error(this, "Failed to send revocation key blob to "+source.userToString());
 				} else {
-					Logger.normal(this, "Sent revocation key blob to "+source.getPeer()+" : "+source.getName());
+					Logger.normal(this, "Sent revocation key blob to "+source.userToString());
 				}
 			}
 			
@@ -530,7 +530,7 @@ public class UpdateOverMandatoryManager {
 					if(logMINOR)
 						Logger.minor(this, "Sending data...");
 					// Send the data
-					Thread t = new Thread(r, "Revocation key send for "+uid+" to "+source.getPeer()+" : "+source.getName());
+					Thread t = new Thread(r, "Revocation key send for "+uid+" to "+source.userToString());
 					t.setDaemon(true);
 					t.start();
 				}
@@ -583,7 +583,7 @@ public class UpdateOverMandatoryManager {
 		
 		if(!revocationURI.equals(updateManager.revocationURI)) {
 			System.err.println("Node sending us a revocation certificate from the wrong URI:\n"+
-					"Node: "+source.getPeer()+" : "+source.getName()+"\n"+
+					"Node: "+source.userToString()+"\n"+
 					"Our   URI: "+updateManager.revocationURI+"\n"+
 					"Their URI: "+revocationURI);
 			synchronized(this) {
@@ -602,8 +602,8 @@ public class UpdateOverMandatoryManager {
 		}
 		
 		if(length > NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH) {
-			System.err.println("Node "+source.getPeer()+" : "+source.getName()+" offered us a revocation certificate "+SizeUtil.formatSize(length)+" long. This is unacceptably long so we have refused the transfer.");
-			Logger.error(this, "Node "+source.getPeer()+" : "+source.getName()+" offered us a revocation certificate "+SizeUtil.formatSize(length)+" long. This is unacceptably long so we have refused the transfer.");
+			System.err.println("Node "+source.userToString()+" offered us a revocation certificate "+SizeUtil.formatSize(length)+" long. This is unacceptably long so we have refused the transfer.");
+			Logger.error(this, "Node "+source.userToString()+" offered us a revocation certificate "+SizeUtil.formatSize(length)+" long. This is unacceptably long so we have refused the transfer.");
 			synchronized(UpdateOverMandatoryManager.this) {
 				nodesSayKeyRevokedFailedTransfer.add(source);
 			}
@@ -654,7 +654,7 @@ public class UpdateOverMandatoryManager {
 				}
 			}
 			
-		}, "Revocation key receive for "+uid+" from "+source.getPeer()+" : "+source.getName());
+		}, "Revocation key receive for "+uid+" from "+source.userToString());
 		
 		t.setDaemon(true);
 		t.start();
@@ -892,9 +892,9 @@ public class UpdateOverMandatoryManager {
 		final Runnable r = new Runnable() {
 			public void run() {
 				if(!bt.send()) {
-					Logger.error(this, "Failed to send main jar blob to "+source.getPeer()+" : "+source.getName());
+					Logger.error(this, "Failed to send main jar blob to "+source.userToString());
 				} else {
-					Logger.normal(this, "Sent main jar blob to "+source.getPeer()+" : "+source.getName());
+					Logger.normal(this, "Sent main jar blob to "+source.userToString());
 				}
 			}
 			
@@ -908,7 +908,7 @@ public class UpdateOverMandatoryManager {
 					if(logMINOR)
 						Logger.minor(this, "Sending data...");
 					// Send the data
-					Thread t = new Thread(r, "Main jar send for "+uid+" to "+source.getPeer()+" : "+source.getName());
+					Thread t = new Thread(r, "Main jar send for "+uid+" to "+source.userToString());
 					t.setDaemon(true);
 					t.start();
 				}
@@ -961,7 +961,7 @@ public class UpdateOverMandatoryManager {
 		
 		if(!jarURI.equals(updateManager.updateURI.setSuggestedEdition(version))) {
 			System.err.println("Node sending us a main jar update ("+version+") from the wrong URI:\n"+
-					"Node: "+source.getPeer()+" : "+source.getName()+"\n"+
+					"Node: "+source.userToString()+"\n"+
 					"Our   URI: "+updateManager.updateURI+"\n"+
 					"Their URI: "+jarURI);
 			cancelSend(source, uid);
@@ -982,8 +982,8 @@ public class UpdateOverMandatoryManager {
 		}
 		
 		if(length > NodeUpdateManager.MAX_MAIN_JAR_LENGTH) {
-			System.err.println("Node "+source.getPeer()+" : "+source.getName()+" offered us a main jar ("+version+") "+SizeUtil.formatSize(length)+" long. This is unacceptably long so we have refused the transfer.");
-			Logger.error(this, "Node "+source.getPeer()+" : "+source.getName()+" offered us a main jar ("+version+") "+SizeUtil.formatSize(length)+" long. This is unacceptably long so we have refused the transfer.");
+			System.err.println("Node "+source.userToString()+" offered us a main jar ("+version+") "+SizeUtil.formatSize(length)+" long. This is unacceptably long so we have refused the transfer.");
+			Logger.error(this, "Node "+source.userToString()+" offered us a main jar ("+version+") "+SizeUtil.formatSize(length)+" long. This is unacceptably long so we have refused the transfer.");
 			// If the transfer fails, we don't try again.
 			cancelSend(source, uid);
 			synchronized(this) {
@@ -1047,7 +1047,7 @@ public class UpdateOverMandatoryManager {
 				}
 			}
 			
-		}, "Main jar ("+version+") receive for "+uid+" from "+source.getPeer()+" : "+source.getName());
+		}, "Main jar ("+version+") receive for "+uid+" from "+source.userToString());
 		
 		t.setDaemon(true);
 		t.start();

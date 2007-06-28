@@ -206,7 +206,8 @@ public class PeerManager {
         if(peerNodePreviousRoutingBackoffReason != null) {
         	removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
         }
-        pn.removeExtraPeerDataDir();
+        if(pn instanceof DarknetPeerNode)
+        	((DarknetPeerNode)pn).removeExtraPeerDataDir();
         if(!isInPeers) return false;
                 
         // removing from connectedPeers
@@ -829,10 +830,7 @@ public class PeerManager {
 	 * Ask each PeerNode to read in it's extra peer data
 	 */
 	public void readExtraPeerData() {
-		PeerNode[] peers;
-		synchronized (this) {
-			peers = myPeers;
-		}
+		DarknetPeerNode[] peers = getDarknetPeers();
 		for (int i = 0; i < peers.length; i++) {
 			try {
 				peers[i].readExtraPeerData();
@@ -1107,6 +1105,15 @@ public class PeerManager {
 		return peerNodeStatuses;
 	}
 
+	public DarknetPeerNodeStatus[] getDarknetPeerNodeStatuses() {
+        DarknetPeerNode[] peers = getDarknetPeers();
+		DarknetPeerNodeStatus[] peerNodeStatuses = new DarknetPeerNodeStatus[peers.length];
+		for (int peerIndex = 0, peerCount = peers.length; peerIndex < peerCount; peerIndex++) {
+			peerNodeStatuses[peerIndex] = (DarknetPeerNodeStatus) peers[peerIndex].getStatus();
+		}
+		return peerNodeStatuses;
+	}
+
 	/**
 	 * Update hadRoutableConnectionCount/routableConnectionCheckCount on peers if the timer has expired
 	 */
@@ -1122,6 +1129,23 @@ public class PeerManager {
 				pn.checkRoutableConnectionStatus();
 			}
 	 	}
+	}
+
+	/**
+	 * Get the darknet peers list.
+	 */
+	public DarknetPeerNode[] getDarknetPeers() {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		// FIXME optimise! Maybe maintain as a separate list?
+		Vector v = new Vector(myPeers.length);
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] instanceof DarknetPeerNode)
+				v.add(peers[i]);
+		}
+		return (DarknetPeerNode[])v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
 }

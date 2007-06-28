@@ -402,15 +402,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         if(logMINOR) Logger.minor(this, "Processed: "+HexUtil.bytesToHex(data));
         long time2 = System.currentTimeMillis();
         if((time2 - time1) > 200) {
-          Logger.error(this, "sendFirstHalfDHPacket: time2 is more than 200ms after time1 ("+(time2 - time1)+") working on "+replyTo+" of "+pn.getName());
+          Logger.error(this, "sendFirstHalfDHPacket: time2 is more than 200ms after time1 ("+(time2 - time1)+") working on "+replyTo+" of "+pn.userToString());
         }
         sendAuthPacket(1, negType, phase, data, pn, replyTo);
         long time3 = System.currentTimeMillis();
         if((time3 - time2) > 500) {
-          Logger.error(this, "sendFirstHalfDHPacket:sendAuthPacket() time3 is more than half a second after time2 ("+(time3 - time2)+") working on "+replyTo+" of "+pn.getName());
+          Logger.error(this, "sendFirstHalfDHPacket:sendAuthPacket() time3 is more than half a second after time2 ("+(time3 - time2)+") working on "+replyTo+" of "+pn.userToString());
         }
         if((time3 - time1) > 500) {
-          Logger.error(this, "sendFirstHalfDHPacket: time3 is more than half a second after time1 ("+(time3 - time1)+") working on "+replyTo+" of "+pn.getName());
+          Logger.error(this, "sendFirstHalfDHPacket: time3 is more than half a second after time1 ("+(time3 - time1)+") working on "+replyTo+" of "+pn.userToString());
         }
     }
 
@@ -467,7 +467,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      }
 
     private void sendPacket(byte[] data, Peer replyTo, PeerNode pn, int alreadyReportedBytes) throws LocalAddressException {
-    	if(pn.isIgnoreSourcePort()) {
+    	if(pn.isIgnoreSource()) {
     		Peer p = pn.getPeer();
     		if(p != null) replyTo = p;
     	}
@@ -1484,23 +1484,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         handshakeIPs = pn.getHandshakeIPs();
         long secondTime = System.currentTimeMillis();
         if((secondTime - firstTime) > 1000)
-            Logger.error(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+") working on "+pn.getName());
+            Logger.error(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+") working on "+pn.userToString());
         if(handshakeIPs.length == 0) {
             pn.couldNotSendHandshake();
             long thirdTime = System.currentTimeMillis();
             if((thirdTime - secondTime) > 1000)
-                Logger.error(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+pn.getName());
+                Logger.error(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+pn.userToString());
             return;
         } else {
             long DHTime1 = System.currentTimeMillis();
             ctx = DiffieHellman.generateContext();
             long DHTime2 = System.currentTimeMillis();
             if((DHTime2 - DHTime1) > 1000)
-                Logger.error(this, "DHTime2 is more than a second after DHTime1 ("+(DHTime2 - DHTime1)+") working on "+pn.getName());
+                Logger.error(this, "DHTime2 is more than a second after DHTime1 ("+(DHTime2 - DHTime1)+") working on "+pn.userToString());
             pn.setKeyAgreementSchemeContext(ctx);
             long DHTime3 = System.currentTimeMillis();
             if((DHTime3 - DHTime2) > 1000)
-                Logger.error(this, "DHTime3 is more than a second after DHTime2 ("+(DHTime3 - DHTime2)+") working on "+pn.getName());
+                Logger.error(this, "DHTime3 is more than a second after DHTime2 ("+(DHTime3 - DHTime2)+") working on "+pn.userToString());
         }
         int sentCount = 0;
         long loopTime1 = System.currentTimeMillis();
@@ -1516,20 +1516,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         	}
         	long innerLoopTime2 = System.currentTimeMillis();
         	if((innerLoopTime2 - innerLoopTime1) > 500)
-        		Logger.normal(this, "innerLoopTime2 is more than half a second after innerLoopTime1 ("+(innerLoopTime2 - innerLoopTime1)+") working on "+handshakeIPs[i]+" of "+pn.getName());
+        		Logger.normal(this, "innerLoopTime2 is more than half a second after innerLoopTime1 ("+(innerLoopTime2 - innerLoopTime1)+") working on "+handshakeIPs[i]+" of "+pn.userToString());
         	sendFirstHalfDHPacket(0, negType, ctx.getOurExponential(), pn, handshakeIPs[i]);
         	long innerLoopTime3 = System.currentTimeMillis();
         	if((innerLoopTime3 - innerLoopTime2) > 500)
-        		Logger.normal(this, "innerLoopTime3 is more than half a second after innerLoopTime2 ("+(innerLoopTime3 - innerLoopTime2)+") working on "+handshakeIPs[i]+" of "+pn.getName());
+        		Logger.normal(this, "innerLoopTime3 is more than half a second after innerLoopTime2 ("+(innerLoopTime3 - innerLoopTime2)+") working on "+handshakeIPs[i]+" of "+pn.userToString());
         	pn.sentHandshake();
         	long innerLoopTime4 = System.currentTimeMillis();
         	if((innerLoopTime4 - innerLoopTime3) > 500)
-        		Logger.normal(this, "innerLoopTime4 is more than half a second after innerLoopTime3 ("+(innerLoopTime4 - innerLoopTime3)+") working on "+handshakeIPs[i]+" of "+pn.getName());
+        		Logger.normal(this, "innerLoopTime4 is more than half a second after innerLoopTime3 ("+(innerLoopTime4 - innerLoopTime3)+") working on "+handshakeIPs[i]+" of "+pn.userToString());
         	sentCount += 1;
         }
         long loopTime2 = System.currentTimeMillis();
         if((loopTime2 - loopTime1) > 1000)
-        	Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+pn.getName());
+        	Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+pn.userToString());
         if(sentCount==0) {
             pn.couldNotSendHandshake();
         }

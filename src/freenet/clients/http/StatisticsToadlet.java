@@ -16,6 +16,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.l10n.L10n;
+import freenet.node.DarknetPeerNodeStatus;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
@@ -115,8 +116,8 @@ public class StatisticsToadlet extends Toadlet {
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses();
 		Arrays.sort(peerNodeStatuses, new Comparator() {
 			public int compare(Object first, Object second) {
-				PeerNodeStatus firstNode = (PeerNodeStatus) first;
-				PeerNodeStatus secondNode = (PeerNodeStatus) second;
+				DarknetPeerNodeStatus firstNode = (DarknetPeerNodeStatus) first;
+				DarknetPeerNodeStatus secondNode = (DarknetPeerNodeStatus) second;
 				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
 				if (statusDifference != 0) {
 					return statusDifference;

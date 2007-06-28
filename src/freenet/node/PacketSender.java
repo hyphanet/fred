@@ -300,11 +300,11 @@ public class PacketSender implements Runnable, Ticker {
                 	pn.startARKFetcher();
                 long afterHandshakeTime = System.currentTimeMillis();
                 if((afterHandshakeTime - beforeHandshakeTime) > (2*1000))
-                    Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime ("+(afterHandshakeTime - beforeHandshakeTime)+") in PacketSender working with "+pn.getPeer()+" named "+pn.getName());
+                    Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime ("+(afterHandshakeTime - beforeHandshakeTime)+") in PacketSender working with "+pn.userToString());
             }
     		long tempNow = System.currentTimeMillis();
     		if((tempNow - oldTempNow) > (5*1000))
-    			Logger.error(this, "tempNow is more than 5 seconds past oldTempNow ("+(tempNow - oldTempNow)+") in PacketSender working with "+pn.getPeer()+" named "+pn.getName());
+    			Logger.error(this, "tempNow is more than 5 seconds past oldTempNow ("+(tempNow - oldTempNow)+") in PacketSender working with "+pn.userToString());
     		oldTempNow = tempNow;
     	}
     	

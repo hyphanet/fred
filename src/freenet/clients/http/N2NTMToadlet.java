@@ -12,6 +12,7 @@ import java.util.Iterator;
 import freenet.client.HighLevelSimpleClient;
 import freenet.io.comm.MessageCore;
 import freenet.l10n.L10n;
+import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.PeerManager;
@@ -67,7 +68,7 @@ public class N2NTMToadlet extends Toadlet {
 				// ignore here, handle below
 			}
 			if (input_hashcode != -1) {
-				PeerNode[] peerNodes = node.getDarknetConnections();
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 				for (int i = 0; i < peerNodes.length; i++) {
 					int peer_hashcode = peerNodes[i].hashCode();
 					if (peer_hashcode == input_hashcode) {
@@ -150,7 +151,7 @@ public class N2NTMToadlet extends Toadlet {
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class",
 					"infobox infobox-normal");
-			PeerNode[] peerNodes = node.getDarknetConnections();
+			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			String fnam = request.getPartAsString("filename", 1024);
 			File filename = null;
 			if(fnam != null && fnam.length() > 0) {
@@ -169,7 +170,7 @@ public class N2NTMToadlet extends Toadlet {
 			peerTableHeaderRow.addChild("th", l10n("sendStatus"));
 			for (int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_" + peerNodes[i].hashCode())) {
-					PeerNode pn = peerNodes[i];
+					DarknetPeerNode pn = peerNodes[i];
 					
 					int status;
 					

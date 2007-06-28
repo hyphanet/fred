@@ -695,11 +695,11 @@ public class NodeStats implements Persistable {
 		fs.put("unclaimedFIFOSize", node.usm.getUnclaimedFIFOSize());
 		
 		/* gather connection statistics */
-		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses();
+		DarknetPeerNodeStatus[] peerNodeStatuses = peers.getDarknetPeerNodeStatuses();
 		Arrays.sort(peerNodeStatuses, new Comparator() {
 			public int compare(Object first, Object second) {
-				PeerNodeStatus firstNode = (PeerNodeStatus) first;
-				PeerNodeStatus secondNode = (PeerNodeStatus) second;
+				DarknetPeerNodeStatus firstNode = (DarknetPeerNodeStatus) first;
+				DarknetPeerNodeStatus secondNode = (DarknetPeerNodeStatus) second;
 				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
 				if (statusDifference != 0) {
 					return statusDifference;

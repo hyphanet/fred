@@ -11,7 +11,6 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
-import freenet.io.comm.MessageCore;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.IPUndetectedUserAlert;

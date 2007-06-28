@@ -7,13 +7,13 @@ import java.text.DateFormat;
 import java.util.Date;
 
 import freenet.l10n.L10n;
-import freenet.node.PeerNode;
+import freenet.node.DarknetPeerNode;
 import freenet.support.HTMLNode;
 
 // Node To Node Text Message User Alert
 public class N2NTMUserAlert implements UserAlert {
 	private boolean isValid=true;
-	private PeerNode sourcePeerNode;
+	private DarknetPeerNode sourcePeerNode;
 	private String sourceNodename;
 	private String targetNodename;
 	private String messageText;
@@ -22,7 +22,7 @@ public class N2NTMUserAlert implements UserAlert {
 	private long sentTime;
 	private long receivedTime;
 
-	public N2NTMUserAlert(PeerNode sourcePeerNode, String source, String target, String message, int fileNumber, long composedTime, long  sentTime, long receivedTime) {
+	public N2NTMUserAlert(DarknetPeerNode sourcePeerNode, String source, String target, String message, int fileNumber, long composedTime, long  sentTime, long receivedTime) {
 		this.sourcePeerNode = sourcePeerNode;
 		this.sourceNodename = source;
 		this.targetNodename = target;

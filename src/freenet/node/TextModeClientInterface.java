@@ -733,7 +733,7 @@ public class TextModeClientInterface implements Runnable {
         		out.flush();
         		return false;
         	}
-			PeerNode pn = n.getPeerNode(nodeIdentifier);
+			DarknetPeerNode pn = n.getPeerNode(nodeIdentifier);
         	if(pn == null) {
         		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
         		out.flush();
@@ -748,7 +748,7 @@ public class TextModeClientInterface implements Runnable {
         		out.flush();
         		return false;
         	}
-			PeerNode pn = n.getPeerNode(nodeIdentifier);
+			DarknetPeerNode pn = n.getPeerNode(nodeIdentifier);
         	if(pn == null) {
         		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
         		out.flush();
@@ -1040,7 +1040,7 @@ public class TextModeClientInterface implements Runnable {
 	 * Report peer success as boolean
 	 */
 	private boolean disablePeer(String nodeIdentifier) {
-		PeerNode[] pn = n.peers.myPeers;
+		DarknetPeerNode[] pn = n.peers.getDarknetPeers();
 		for(int i=0;i<pn.length;i++)
 		{
 			Peer peer = pn[i].getPeer();
@@ -1063,7 +1063,7 @@ public class TextModeClientInterface implements Runnable {
 	 * Report peer success as boolean
 	 */
 	private boolean enablePeer(String nodeIdentifier) {
-		PeerNode[] pn = n.peers.myPeers;
+		DarknetPeerNode[] pn = n.peers.getDarknetPeers();
 		for(int i=0;i<pn.length;i++)
 		{
 			Peer peer = pn[i].getPeer();
@@ -1086,7 +1086,7 @@ public class TextModeClientInterface implements Runnable {
      * Report peer existence as boolean
      */
     private boolean havePeer(String nodeIdentifier) {
-    	PeerNode[] pn = n.peers.myPeers;
+    	DarknetPeerNode[] pn = n.peers.getDarknetPeers();
     	for(int i=0;i<pn.length;i++)
     	{
     		Peer peer = pn[i].getPeer();
@@ -1110,7 +1110,7 @@ public class TextModeClientInterface implements Runnable {
      */
     private boolean removePeer(String nodeIdentifier) {
     	System.out.println("Removing peer from node for: "+nodeIdentifier);
-    	PeerNode[] pn = n.peers.myPeers;
+    	DarknetPeerNode[] pn = n.peers.getDarknetPeers();
     	for(int i=0;i<pn.length;i++)
     	{
     		Peer peer = pn[i].getPeer();
