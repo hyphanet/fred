@@ -118,7 +118,7 @@ class FailureTableEntry {
 		for(int i=ptr;i<requestors.length;i++) requestors[i] = null;
 		if(notIncluded == 0 && nulls == 0) return;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
-		if(notIncluded == nulls && notIncluded > 0) {
+		if(notIncluded == nulls) {
 			// Nice special case
 			int x = 0;
 			for(int i=0;i<requestorNodes.length;i++) {
@@ -213,7 +213,7 @@ class FailureTableEntry {
 		for(int i=ptr;i<requestedFrom.length;i++) requestedFrom[i] = null;
 		if(notIncluded == 0 && nulls == 0) return;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
-		if(notIncluded == nulls && notIncluded > 0) {
+		if(notIncluded == nulls) {
 			// Nice special case
 			int x = 0;
 			for(int i=0;i<requestedNodes.length;i++) {
