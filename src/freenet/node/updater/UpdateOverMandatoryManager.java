@@ -790,6 +790,8 @@ public class UpdateOverMandatoryManager {
 		try {
 			cg.start();
 		} catch (FetchException e1) {
+			System.err.println("Failed to decode UOM blob: "+e1);
+			e1.printStackTrace();
 			myCallback.onFailure(e1, cg);
 		}
 		
