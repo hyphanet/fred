@@ -279,7 +279,7 @@ class FailureTableEntry {
 		return bestDiff;
 	}
 
-	/** Offer this node to all the nodes that have requested it, and all the nodes it has been requested from.
+	/** Offer this key to all the nodes that have requested it, and all the nodes it has been requested from.
 	 * Called after a) the data has been stored, and b) this entry has been removed from the FT */
 	public void offer() {
 		for(int i=0;i<requestorNodes.length;i++) {
