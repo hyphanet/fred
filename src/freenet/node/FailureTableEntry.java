@@ -135,38 +135,28 @@ class FailureTableEntry {
 		WeakReference[] newRequestorNodes = new WeakReference[requestorNodes.length+notIncluded-nulls];
 		long[] newRequestorTimes = new long[requestorNodes.length+notIncluded-nulls];
 		long[] newRequestorBootIDs = new long[requestorNodes.length+notIncluded-nulls];
-		int fromIndex = 0;
 		int toIndex = 0;
+		
 		for(int i=0;i<requestorNodes.length;i++) {
 			WeakReference ref = requestorNodes[i];
-			if(ref == null || ref.get() == null) {
-				while(fromIndex < ptr) {
-					PeerNode pn = requestors[fromIndex];
-					if(pn != null) {
-						newRequestorNodes[toIndex] = pn.myRef;
-						newRequestorTimes[toIndex] = now;
-						newRequestorBootIDs[toIndex] = pn.getBootID();
-						toIndex++;
-						break;
-					}
-					fromIndex++;
-				}
-			} else {
-				newRequestorNodes[toIndex] = requestorNodes[i];
-				newRequestorTimes[toIndex] = requestorTimes[i];
-				newRequestorBootIDs[toIndex] = requestorBootIDs[i];
-				toIndex++;
-			}
+			if(ref == null || ref.get() == null) continue;
+			newRequestorNodes[toIndex] = requestorNodes[i];
+			newRequestorTimes[toIndex] = requestorTimes[i];
+			newRequestorBootIDs[toIndex] = requestorBootIDs[i];
+			toIndex++;
 		}
-		for(;fromIndex<ptr;fromIndex++) {
+		
+		for(int fromIndex=0;fromIndex<ptr;fromIndex++) {
 			PeerNode pn = requestors[fromIndex];
 			if(pn != null) {
 				newRequestorNodes[toIndex] = pn.myRef;
 				newRequestorTimes[toIndex] = now;
 				newRequestorBootIDs[toIndex] = pn.getBootID();
 				toIndex++;
+				break;
 			}
 		}
+		
 		for(int i=toIndex;i<newRequestorNodes.length;i++) newRequestorNodes[i] = null;
 		if(toIndex > newRequestorNodes.length + 2) {
 			WeakReference[] newNewRequestorNodes = new WeakReference[toIndex];
@@ -232,40 +222,29 @@ class FailureTableEntry {
 		long[] newRequestedBootIDs = new long[requestedNodes.length+notIncluded-nulls];
 		long[] newRequestedTimes = new long[requestedNodes.length+notIncluded-nulls];
 
-		int fromIndex = 0;
 		int toIndex = 0;
-		for(int i=0;i<requestedNodes.length;i++) {
-			WeakReference ref = requestedNodes[i];
-			if(ref == null || ref.get() == null) {
-				while(fromIndex < ptr) {
-					PeerNode pn = requestedFrom[fromIndex];
-					if(pn != null) {
-						newRequestedNodes[toIndex] = pn.myRef;
-						newRequestedLocs[toIndex] = pn.getLocation().getValue();
-						newRequestedBootIDs[toIndex] = pn.getBootID();
-						newRequestedTimes[toIndex] = now;
-						toIndex++;
-					}
-					fromIndex++;
-				}
-			} else {
-				newRequestedNodes[toIndex] = requestedNodes[i];
-				newRequestedLocs[toIndex] = requestedLocs[i];
-				newRequestedBootIDs[toIndex] = requestedBootIDs[i];
-				newRequestedTimes[toIndex] = requestedTimes[i];
-				toIndex++;
-			}
+		for(int i=0;i<requestorNodes.length;i++) {
+			WeakReference ref = requestorNodes[i];
+			if(ref == null || ref.get() == null) continue;
+			newRequestedNodes[toIndex] = requestedNodes[i];
+			newRequestedTimes[toIndex] = requestedTimes[i];
+			newRequestedBootIDs[toIndex] = requestedBootIDs[i];
+			newRequestedLocs[toIndex] = requestedLocs[i];
+			toIndex++;
 		}
-		for(;fromIndex<ptr;fromIndex++) {
+		
+		for(int fromIndex=0;fromIndex<ptr;fromIndex++) {
 			PeerNode pn = requestedFrom[fromIndex];
 			if(pn != null) {
 				newRequestedNodes[toIndex] = pn.myRef;
-				newRequestedLocs[toIndex] = pn.getLocation().getValue();
-				newRequestedBootIDs[toIndex] = pn.getBootID();
 				newRequestedTimes[toIndex] = now;
+				newRequestedBootIDs[toIndex] = pn.getBootID();
+				newRequestedLocs[toIndex] = pn.getLocation().getValue();
 				toIndex++;
+				break;
 			}
 		}
+		
 		for(int i=toIndex;i<newRequestedNodes.length;i++) newRequestedNodes[i] = null;
 		if(toIndex > newRequestedNodes.length + 2) {
 			WeakReference[] newNewRequestedNodes = new WeakReference[toIndex];
