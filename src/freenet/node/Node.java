@@ -561,8 +561,6 @@ public class Node implements TimeSkewDetectorCallback {
 		runningSSKGetUIDs = new HashSet();
 		runningCHKPutUIDs = new HashSet();
 		runningSSKPutUIDs = new HashSet();
-		dnsr = new DNSRequester(this);
-		ps = new PacketSender(this);
 		bootID = random.nextLong();
 		
 		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
@@ -604,10 +602,6 @@ public class Node implements TimeSkewDetectorCallback {
 		decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
 		decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
 		
-		// FIXME maybe these configs should actually be under a node.ip subconfig?
-		ipDetector = new NodeIPDetector(this, darknetCrypto);
-		sortOrder = ipDetector.registerConfigs(nodeConfig, sortOrder);
-		
 		// Determine where to bind to
 		
 		usm = new MessageCore();
@@ -615,6 +609,13 @@ public class Node implements TimeSkewDetectorCallback {
 		// Determine the port number
 		
 		darknetCrypto = new NodeCrypto(nodeConfig, sortOrder++, this);
+
+		// Must be created after darknetCrypto
+		dnsr = new DNSRequester(this);
+		ps = new PacketSender(this);
+		// FIXME maybe these configs should actually be under a node.ip subconfig?
+		ipDetector = new NodeIPDetector(this, darknetCrypto);
+		sortOrder = ipDetector.registerConfigs(nodeConfig, sortOrder);
 		
 		Logger.normal(Node.class, "Creating node...");
 
