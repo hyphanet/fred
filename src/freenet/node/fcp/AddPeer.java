@@ -111,7 +111,7 @@ public class AddPeer extends FCPMessage {
 		fs.setEndMarker( "End" );
 		PeerNode pn;
 		try {
-			pn = new PeerNode(fs, node, node.peers, false);
+			pn = new PeerNode(fs, node, node.peers, false, node.packetMangler);
 		} catch (FSParseException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), null, false);
 		} catch (PeerParseException e) {

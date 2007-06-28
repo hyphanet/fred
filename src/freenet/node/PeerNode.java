@@ -115,7 +115,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     private Peer detectedPeer;
     
     /** My OutgoingPacketMangler i.e. the object which encrypts packets sent to this node */
-    private OutgoingPacketMangler outgoingMangler;
+    private final OutgoingPacketMangler outgoingMangler;
     
     /** Advertised addresses */
     private Vector nominalPeer;
@@ -380,9 +380,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * @param fs The SimpleFieldSet to parse
      * @param node2 The running Node we are part of.
      */
-    public PeerNode(SimpleFieldSet fs, Node node2, PeerManager peers, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+    public PeerNode(SimpleFieldSet fs, Node node2, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	myRef = new WeakReference(this);
+    	this.outgoingMangler = mangler;
         this.node = node2;
         this.peers = peers;
         this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);

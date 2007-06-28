@@ -93,7 +93,7 @@ public class PeerManager {
      * @param node
      * @param filename
      */
-    public PeerManager(Node node, String filename) {
+    public PeerManager(Node node, String filename, OutgoingPacketMangler mangler) {
         Logger.normal(this, "Creating PeerManager");
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		peerNodeStatuses = new HashMap();
@@ -107,7 +107,7 @@ public class PeerManager {
         File backupFile = new File(filename+".bak");
         // Try to read the node list from disk
      	if(peersFile.exists()) {
-      		if(readPeers(peersFile)) {
+      		if(readPeers(peersFile, mangler)) {
       			String msg = "Read "+myPeers.length+" peers from "+peersFile;
       			Logger.normal(this, msg);
       			System.out.println(msg);
@@ -116,7 +116,7 @@ public class PeerManager {
        	}
      	// Try the backup
      	if(backupFile.exists()) {
-        	if(readPeers(backupFile)) {
+        	if(readPeers(backupFile, mangler)) {
       			String msg = "Read "+myPeers.length+" peers from "+backupFile;
       			Logger.normal(this, msg);
       			System.out.println(msg);
@@ -127,7 +127,7 @@ public class PeerManager {
      	}     		
     }
 
-    private boolean readPeers(File peersFile) {
+    private boolean readPeers(File peersFile, OutgoingPacketMangler mangler) {
     	boolean gotSome = false;
     	FileInputStream fis;
 		try {
@@ -150,7 +150,7 @@ public class PeerManager {
                 fs = new SimpleFieldSet(br, false, true);
                 PeerNode pn;
                 try {
-                    pn = new PeerNode(fs, node, this, true);
+                    pn = new PeerNode(fs, node, this, true, mangler);
                 } catch (FSParseException e2) {
                     Logger.error(this, "Could not parse peer: "+e2+ '\n' +fs.toString(),e2);
                     continue;
@@ -326,8 +326,8 @@ public class PeerManager {
     /**
      * Connect to a node provided the fieldset representing it.
      */
-    public void connect(SimpleFieldSet noderef) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-        PeerNode pn = new PeerNode(noderef, node, this, false);
+    public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+        PeerNode pn = new PeerNode(noderef, node, this, false, mangler);
         for(int i=0;i<myPeers.length;i++) {
             if(Arrays.equals(myPeers[i].identity, pn.identity)) return;
         }

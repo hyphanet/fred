@@ -699,7 +699,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			PeerNode pn;
 			try {
-				pn = new PeerNode(fs, node, node.peers, false);
+				pn = new PeerNode(fs, node, node.peers, false, node.packetMangler);
 				pn.setPrivateDarknetCommentNote(privateComment);
 			} catch (FSParseException e1) {
 				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),

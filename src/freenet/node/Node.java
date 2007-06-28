@@ -374,7 +374,7 @@ public class Node implements TimeSkewDetectorCallback {
 	final MessageCore usm;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
 	final UdpSocketHandler sock;
-	final FNPPacketMangler packetMangler;
+	public final FNPPacketMangler packetMangler;
 	final DNSRequester dnsr;
 	public final PacketSender ps;
 	final NodeDispatcher dispatcher;
@@ -995,14 +995,14 @@ public class Node implements TimeSkewDetectorCallback {
 			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
 		}
 
-		// Then read the peers
-		peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
-		peers.writePeers();
-		peers.updatePMUserAlert();
-
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 		sock.setLowLevelFilter(packetMangler = new FNPPacketMangler(this, sock));
 		
+		// Then read the peers
+		peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath(), packetMangler);
+		peers.writePeers();
+		peers.updatePMUserAlert();
+
 		// Extra Peer Data Directory
 		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+portNumber).toString(), sortOrder++, true, false, "Node.extraPeerDir", "Node.extraPeerDirLong",
 				new StringCallback() {
@@ -2826,7 +2826,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Connect this node to another node (for purposes of testing) 
 	 */
 	public void connect(Node node) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		peers.connect(node.exportPublicFieldSet());
+		peers.connect(node.exportPublicFieldSet(), packetMangler);
 	}
 	
 	public short maxHTL() {
