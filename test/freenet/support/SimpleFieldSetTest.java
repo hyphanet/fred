@@ -41,7 +41,7 @@ public class SimpleFieldSetTest extends TestCase {
 		   {"foo3",KEY_VALUE_SEPARATOR+"bar"} };
 	
 	/**
-	 * Test putSingle(String,String) method
+	 * Tests putSingle(String,String) method
 	 * trying to store a key with two paired
 	 * multi_level_chars (i.e. "..").
 	 */
@@ -65,7 +65,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test putAppend(String,String) method
+	 * Tests putAppend(String,String) method
 	 * trying to store a key with two paired
 	 * multi_level_chars (i.e. "..").
 	 */
@@ -78,7 +78,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test put() and get() methods
+	 * Tests put() and get() methods
 	 * using a normal Map behaviour
 	 * and without MULTI_LEVEL_CHARs
 	 */
@@ -88,7 +88,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test put() and get() methods
+	 * Tests put() and get() methods
 	 * using a normal Map behaviour
 	 * and with MULTI_LEVEL_CHARs
 	 */
@@ -121,7 +121,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test subset(String) method
+	 * Tests subset(String) method
 	 * putting two levels keys and
 	 * fetching it through subset() method
 	 * on the first level and then get()
@@ -143,7 +143,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test put(String,boolean) and getBoolean(String,boolean)
+	 * Tests put(String,boolean) and getBoolean(String,boolean)
 	 * methods consistency.
 	 * The default value (returned if the key is not found) is set to "false"
 	 * and the real value is always set to "true", so
@@ -162,7 +162,7 @@ public class SimpleFieldSetTest extends TestCase {
 	
 	
 	/**
-	 * Check if the provided SimpleFieldSet
+	 * Checks if the provided SimpleFieldSet
 	 * has the right size
 	 * @param aSimpleFieldSet
 	 * @param expectedSize
@@ -178,7 +178,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test put(String,int) and 
+	 * Tests put(String,int) and 
 	 * [getInt(String),getInt(String,int)]
 	 * methods consistency.
 	 * The default value (returned if the key is not found)
@@ -205,7 +205,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test put(String,long) and 
+	 * Tests put(String,long) and 
 	 * [getLong(String),getLong(String,long)]
 	 * methods consistency.
 	 * The default value (returned if the key is not found)
@@ -232,7 +232,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test put(String,char) and 
+	 * Tests put(String,char) and 
 	 * [getChar(String),getChar(String,char)]
 	 * methods consistency.
 	 * The default value (returned if the key is not found)
@@ -259,7 +259,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test put(String,short) and 
+	 * Tests put(String,short) and 
 	 * [getShort(String)|getShort(String,short)]
 	 * methods consistency.
 	 * The default value (returned if the key is not found)
@@ -286,7 +286,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test put(String,double) and 
+	 * Tests put(String,double) and 
 	 * [getDouble(String)|getDouble(String,double)]
 	 * methods consistency.
 	 * The default value (returned if the key is not found)
@@ -332,7 +332,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test SimpleFieldSet(String,boolean,boolean) constructor,
+	 * Tests SimpleFieldSet(String,boolean,boolean) constructor,
 	 * with simple and border cases of the canonical form.
 	 */
 	public void testSimpleFieldSet_StringBooleanBoolean() {
@@ -347,7 +347,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test SimpleFieldSet(BufferedReader,boolean,boolean) constructor,
+	 * Tests SimpleFieldSet(BufferedReader,boolean,boolean) constructor,
 	 * with simple and border cases of the canonical form.
 	 */
 	public void testSimpleFieldSet_BufferedReaderBooleanBoolean() {
@@ -377,7 +377,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test SimpleFieldSet(SimpleFieldSet) constructor,
+	 * Tests SimpleFieldSet(SimpleFieldSet) constructor,
 	 * with simple and border cases of the canonical form.
 	 */
 	public void testSimpleFieldSet_SimpleFieldSet() {
@@ -388,7 +388,24 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Search for a key in a given String[][] array.
+	 * Tests isEmpty() method. 
+	 */
+	public void testIsEmpty() {
+		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
+		assertFalse(methodSFS.isEmpty());
+		methodSFS = new SimpleFieldSet(true);
+		assertTrue(methodSFS.isEmpty());
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	/**
+	 * Searches for a key in a given String[][] array.
 	 * We consider that keys are stored in String[x][0] 
 	 * @param aStringPairsArray
 	 * @param aPrefix that could be put before found key
@@ -403,7 +420,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Verify if all keys in a String[][]
+	 * Verifies if all keys in a String[][]
 	 * (We consider that keys are stored in String[x][0])
 	 * are the same that the Iterator provides.
 	 * In this way both hasNext() and next() methods
@@ -425,7 +442,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test the Iterator given for the
+	 * Tests the Iterator given for the
 	 * SimpleFieldSet class.
 	 * It tests hasNext() and next() methods.
 	 */
@@ -436,7 +453,7 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Test the Iterator created using prefix 
+	 * Tests the Iterator created using prefix 
 	 * given for the SimpleFieldSet class
 	 */
 	public void testKeyIterator_String() {
