@@ -206,9 +206,13 @@ public class FailureTable {
 			 * 
 			 * Attacks:
 			 * - Frost spamming etc: Is it easier to offer data to our peers rather than inserting it? Will
-			 * it result in it being propagated further? Probably not. Propagation to nodes that have asked is
-			 * worthwhile in general partly because reduced polling cost enables more secure messaging systems
-			 * e.g. outbox polling... Not relevant with CHKs.
+			 * it result in it being propagated further? The peer node would then do the request, rather than
+			 * this node doing an insert. Is that beneficial?
+			 * 
+			 * Not relevant with CHKs anyway.
+			 * 
+			 * On the plus side, propagation to nodes that have asked is worthwhile because reduced polling 
+			 * cost enables more secure messaging systems e.g. outbox polling...
 			 * - Social engineering: If a key is unpopular, you can put a different copy of it on different 
 			 * nodes. You can then use this to trace the requestor - identify that he is or isn't on the target. 
 			 * You can't do this with a regular insert because it will often go several nodes even at htl 0. 
