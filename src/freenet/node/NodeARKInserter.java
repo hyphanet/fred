@@ -29,6 +29,7 @@ public class NodeARKInserter implements ClientCallback {
 	 * 
 	 */
 	private final Node node;
+	private final NodeCrypto crypto;
 	private final NodeIPDetector detector;
 	private static boolean logMINOR;
 
@@ -36,8 +37,9 @@ public class NodeARKInserter implements ClientCallback {
 	 * @param node
 	 * @param old If true, use the old ARK rather than the new ARK
 	 */
-	NodeARKInserter(Node node, NodeIPDetector detector) {
+	NodeARKInserter(Node node, NodeCrypto crypto, NodeIPDetector detector) {
 		this.node = node;
+		this.crypto = crypto;
 		this.detector = detector;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
@@ -128,8 +130,8 @@ public class NodeARKInserter implements ClientCallback {
 		
 		Bucket b = new SimpleReadOnlyArrayBucket(buf);
 		
-		long number = node.darknetARKNumber;
-		InsertableClientSSK ark = node.darknetARK;
+		long number = crypto.myARKNumber;
+		InsertableClientSSK ark = crypto.myARK;
 		FreenetURI uri = ark.getInsertURI().setKeyType("USK").setSuggestedEdition(number);
 		
 		if(logMINOR) Logger.minor(this, "Inserting ARK: "+uri);
@@ -210,12 +212,12 @@ public class NodeARKInserter implements ClientCallback {
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		if(logMINOR) Logger.minor(this, "Generated URI for ARK: "+uri);
 		long l = uri.getSuggestedEdition();
-		if(l < this.node.darknetARKNumber) {
-			Logger.error(this, "Inserted edition # lower than attempted: "+l+" expected "+this.node.darknetARKNumber);
-		} else if(l > this.node.darknetARKNumber) {
-			if(logMINOR) Logger.minor(this, "ARK number moving from "+this.node.darknetARKNumber+" to "+l);
-			this.node.darknetARKNumber = l;
-			this.node.writeNodeFile();
+		if(l < crypto.myARKNumber) {
+			Logger.error(this, "Inserted edition # lower than attempted: "+l+" expected "+crypto.myARKNumber);
+		} else if(l > crypto.myARKNumber) {
+			if(logMINOR) Logger.minor(this, "ARK number moving from "+crypto.myARKNumber+" to "+l);
+			crypto.myARKNumber = l;
+			node.writeNodeFile();
 		}
 	}
 

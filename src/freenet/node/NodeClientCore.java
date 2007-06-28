@@ -40,7 +40,6 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
-import freenet.node.Node.NodeInitException;
 import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.store.KeyCollisionException;
@@ -158,14 +157,14 @@ public class NodeClientCore implements Persistable {
 		tempDir = new File(nodeConfig.getString("tempDir"));
 		if(!((tempDir.exists() && tempDir.isDirectory()) || (tempDir.mkdir()))) {
 			String msg = "Could not find or create temporary directory";
-			throw new NodeInitException(Node.EXIT_BAD_TEMP_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 		
 		try {
 			tempFilenameGenerator = new FilenameGenerator(random, true, tempDir, "temp-");
 		} catch (IOException e) {
 			String msg = "Could not find or create temporary directory (filename generator)";
-			throw new NodeInitException(Node.EXIT_BAD_TEMP_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
 		// Persistent temp files
@@ -186,7 +185,7 @@ public class NodeClientCore implements Persistable {
 			persistentEncryptedTempBucketFactory = new PersistentEncryptedTempBucketFactory(persistentTempBucketFactory);
 		} catch (IOException e2) {
 			String msg = "Could not find or create persistent temporary directory";
-			throw new NodeInitException(Node.EXIT_BAD_TEMP_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
 		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, 1024);
@@ -215,7 +214,7 @@ public class NodeClientCore implements Persistable {
 		String val = nodeConfig.getString("downloadsDir");
 		downloadDir = new File(val);
 		if(!((downloadDir.exists() && downloadDir.isDirectory()) || (downloadDir.mkdir()))) {
-			throw new NodeInitException(Node.EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
+			throw new NodeInitException(NodeInitException.EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
 		}
 
 		// Downloads allowed, uploads allowed
@@ -417,16 +416,16 @@ public class NodeClientCore implements Persistable {
 			TextModeClientInterfaceServer.maybeCreate(node, config);
 		} catch (IOException e) {
 			e.printStackTrace();
-			throw new NodeInitException(Node.EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);
 		}
 		
 		// FCP (including persistent requests so needs to start before FProxy)
 		try {
 			fcpServer = FCPServer.maybeCreate(node, this, node.config);
 		} catch (IOException e) {
-			throw new NodeInitException(Node.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
 		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(Node.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
 		}
 		
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
@@ -438,9 +437,9 @@ public class NodeClientCore implements Persistable {
 			FProxyToadlet.maybeCreateFProxyEtc(this, node, config, fproxyConfig);
 		} catch (IOException e) {
 			e.printStackTrace();
-			throw new NodeInitException(Node.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
 		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(Node.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
 		}
 
 		Thread completer = new Thread(new Runnable() {

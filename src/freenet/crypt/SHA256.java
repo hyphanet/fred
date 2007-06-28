@@ -48,6 +48,7 @@ import java.util.Vector;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.node.Node;
+import freenet.node.NodeInitException;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
@@ -372,7 +373,7 @@ public class SHA256 implements Digest {
 	    	System.err.println("Check your JVM settings especially the JCE!"+e2);
 	    	e2.printStackTrace();
 		}
-		WrapperManager.stop(Node.EXIT_CRAPPY_JVM);
+		WrapperManager.stop(NodeInitException.EXIT_CRAPPY_JVM);
 		throw new RuntimeException();
 	}
 

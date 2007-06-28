@@ -93,7 +93,7 @@ public class PeerManager {
      * @param node
      * @param filename
      */
-    public PeerManager(Node node, String filename, OutgoingPacketMangler mangler) {
+    public PeerManager(Node node, NodeCrypto crypto, String filename, OutgoingPacketMangler mangler) {
         Logger.normal(this, "Creating PeerManager");
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		peerNodeStatuses = new HashMap();
@@ -107,7 +107,7 @@ public class PeerManager {
         File backupFile = new File(filename+".bak");
         // Try to read the node list from disk
      	if(peersFile.exists()) {
-      		if(readPeers(peersFile, mangler)) {
+      		if(readPeers(peersFile, mangler, crypto)) {
       			String msg = "Read "+myPeers.length+" peers from "+peersFile;
       			Logger.normal(this, msg);
       			System.out.println(msg);
@@ -116,7 +116,7 @@ public class PeerManager {
        	}
      	// Try the backup
      	if(backupFile.exists()) {
-        	if(readPeers(backupFile, mangler)) {
+        	if(readPeers(backupFile, mangler, crypto)) {
       			String msg = "Read "+myPeers.length+" peers from "+backupFile;
       			Logger.normal(this, msg);
       			System.out.println(msg);
@@ -127,7 +127,7 @@ public class PeerManager {
      	}     		
     }
 
-    private boolean readPeers(File peersFile, OutgoingPacketMangler mangler) {
+    private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto) {
     	boolean gotSome = false;
     	FileInputStream fis;
 		try {
@@ -150,7 +150,7 @@ public class PeerManager {
                 fs = new SimpleFieldSet(br, false, true);
                 PeerNode pn;
                 try {
-                    pn = PeerNode.create(fs, node, this, true, mangler);
+                    pn = PeerNode.create(fs, node, crypto, this, true, mangler);
                 } catch (FSParseException e2) {
                     Logger.error(this, "Could not parse peer: "+e2+ '\n' +fs.toString(),e2);
                     continue;
@@ -328,7 +328,7 @@ public class PeerManager {
      * Connect to a node provided the fieldset representing it.
      */
     public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-        PeerNode pn = new DarknetPeerNode(noderef, node, this, false, mangler);
+        PeerNode pn = node.createNewDarknetNode(noderef);
         for(int i=0;i<myPeers.length;i++) {
             if(Arrays.equals(myPeers[i].identity, pn.identity)) return;
         }

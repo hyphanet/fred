@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
@@ -122,7 +123,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			DarknetPeerNode pn;
 			try {
-				pn = new DarknetPeerNode(fs, node, node.peers, false, node.darknetPacketMangler);
+				pn = node.createNewDarknetNode(fs);
 				pn.setPrivateDarknetCommentNote(privateComment);
 			} catch (FSParseException e1) {
 				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),
@@ -142,7 +143,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 				this.sendErrorPage(ctx, l10n("failedToAddNodeInternalErrorTitle"), l10n("failedToAddNodeInternalError"), t);
 				return;
 			}
-			if(pn.getIdentityHash()==node.getIdentityHash()) {
+			if(Arrays.equals(pn.getIdentity(), node.getDarknetIdentity())) {
 				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("triedToAddSelf"));
 				return;
 			}

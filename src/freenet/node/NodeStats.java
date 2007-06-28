@@ -11,7 +11,6 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.DMT;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.l10n.L10n;
-import freenet.node.Node.NodeInitException;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -304,7 +303,7 @@ public class NodeStats implements Persistable {
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), 0);
 		
 		estimatedSizeOfOneThrottledPacket = 1024 + DMT.packetTransmitSize(1024, 32) + 
-			node.darknetPacketMangler.fullHeadersLengthOneMessage();
+			node.estimateFullHeadersLengthOneMessage();
 	}
 	
 	protected String l10n(String key) {

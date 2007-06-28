@@ -14,6 +14,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.LoggingConfigHandler;
 import freenet.node.Node;
+import freenet.node.NodeInitException;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -319,7 +320,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 				} else {
 					Logger.error(this, "MAIN LOOP TERMINATED");
 					System.err.println("MAIN LOOP TERMINATED!");
-					node.exit(Node.EXIT_MAIN_LOOP_LOST);
+					node.exit(NodeInitException.EXIT_MAIN_LOOP_LOST);
 				}
 			}
 		}

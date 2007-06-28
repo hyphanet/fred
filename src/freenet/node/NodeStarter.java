@@ -16,7 +16,6 @@ import freenet.config.SubConfig;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
-import freenet.node.Node.NodeInitException;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.LoggerHook.InvalidThresholdException;
@@ -267,7 +266,7 @@ public class NodeStarter
 		File dir = new File(testName);
 		if((!dir.mkdir()) && ((!dir.exists()) || (!dir.isDirectory()))) {
 			System.err.println("Cannot create directory for test");
-			System.exit(Node.EXIT_TEST_ERROR);
+			System.exit(NodeInitException.EXIT_TEST_ERROR);
 		}
 		
         Logger.setupStdoutLogging(Logger.MINOR, "");
@@ -332,7 +331,7 @@ public class NodeStarter
 		File portDir = new File(baseDir, Integer.toString(port));
 		if((!portDir.mkdir()) && ((!portDir.exists()) || (!portDir.isDirectory()))) {
 			System.err.println("Cannot create directory for test");
-			System.exit(Node.EXIT_TEST_ERROR);
+			System.exit(NodeInitException.EXIT_TEST_ERROR);
 		}
 		
 		// Set up config for testing

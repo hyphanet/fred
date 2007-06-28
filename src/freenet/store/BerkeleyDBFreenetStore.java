@@ -1804,7 +1804,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 				Logger.error(this, "Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
 				System.err.println("Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
-				System.exit(freenet.node.Node.EXIT_DATABASE_REQUIRES_RESTART);
+				System.exit(freenet.node.NodeInitException.EXIT_DATABASE_REQUIRES_RESTART);
 			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException) {
 				System.err.println("Corrupt database! Will be reconstructed on restart");
 				try {

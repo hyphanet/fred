@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Arrays;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
@@ -112,7 +113,7 @@ public class AddPeer extends FCPMessage {
 		fs.setEndMarker( "End" );
 		PeerNode pn;
 		try {
-			pn = new DarknetPeerNode(fs, node, node.peers, false, node.darknetPacketMangler);
+			pn = node.createNewDarknetNode(fs);
 		} catch (FSParseException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), null, false);
 		} catch (PeerParseException e) {
@@ -120,9 +121,8 @@ public class AddPeer extends FCPMessage {
 		} catch (ReferenceSignatureVerificationException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.REF_SIGNATURE_INVALID, "Error adding ref: "+e.getMessage(), null, false);
 		}
-		if(pn.getIdentityHash()==node.getIdentityHash()) {
+		if(Arrays.equals(pn.getIdentity(), node.getDarknetIdentity()))
 			throw new MessageInvalidException(ProtocolErrorMessage.CANNOT_PEER_WITH_SELF, "Node cannot peer with itself", null, false);
-		}
 		if(!node.addDarknetConnection(pn)) {
 			throw new MessageInvalidException(ProtocolErrorMessage.DUPLICATE_PEER_REF, "Node already has a peer with that identity", null, false);
 		}

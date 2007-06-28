@@ -37,6 +37,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	private static boolean logMINOR;
     final Node node;
+    final NodeCrypto crypto;
     final MessageCore usm;
     final PacketSocketHandler sock;
     final EntropySource fnpTimingSource;
@@ -67,8 +68,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	final int fullHeadersLengthMinimum;
 	final int fullHeadersLengthOneMessage;
 	
-    public FNPPacketMangler(Node node, PacketSocketHandler sock) {
+    public FNPPacketMangler(Node node, NodeCrypto crypt, PacketSocketHandler sock) {
         this.node = node;
+        this.crypto = crypt;
         this.usm = node.usm;
         this.sock = sock;
         fnpTimingSource = new EntropySource();
@@ -345,7 +347,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         md.update(data);
         byte[] hash = md.digest();
         
-        DSASignature sig = node.sign(hash);
+        DSASignature sig = crypto.sign(hash);
         
         byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);

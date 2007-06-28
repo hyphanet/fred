@@ -28,6 +28,7 @@ public class NodeIPDetector {
 
 	/** Parent node */
 	final Node node;
+	final NodeCrypto crypto;
 	/** Ticker */
 	final Ticker ticker;
 	/** Explicit forced IP address */
@@ -59,13 +60,14 @@ public class NodeIPDetector {
 	
 	SimpleUserAlert maybeSymmetricAlert;
 	
-	public NodeIPDetector(Node node) {
+	public NodeIPDetector(Node node, NodeCrypto crypto) {
 		this.node = node;
+		this.crypto = crypto;
 		this.ticker = node.ps;
 		ipDetectorManager = new IPDetectorPluginManager(node, this);
 		ipDetector = new IPAddressDetector(10*1000, this);
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
-		arkPutter = new NodeARKInserter(node, this);
+		arkPutter = new NodeARKInserter(node, crypto, this);
 	}
 
 	/**
@@ -76,28 +78,29 @@ public class NodeIPDetector {
 	 */
 	Peer[] detectPrimaryIPAddress() {
 		boolean addedValidIP = false;
+		int portNumber = crypto.portNumber;
 		Logger.minor(this, "Redetecting IPs...");
 		Vector addresses = new Vector();
 		if(overrideIPAddress != null) {
 			// If the IP is overridden, the override has to be the first element.
-			Peer p = new Peer(overrideIPAddress, node.darknetPortNumber);
+			Peer p = new Peer(overrideIPAddress, portNumber);
 			addresses.add(p);
 			if(p.getFreenetAddress().isRealInternetAddress(false, true))
 				addedValidIP = true;
 		}
 		boolean dontDetect = false;
-		UdpSocketHandler sock = node.darknetSocket;
+		UdpSocketHandler sock = crypto.socket;
 		if(sock != null) {
 			InetAddress addr = sock.getBindTo();
 			if(addr != null && (IPUtil.isValidAddress(addr, false))) {
 				dontDetect = true;
-				Peer p = new Peer(addr, node.darknetPortNumber);
+				Peer p = new Peer(addr, portNumber);
 				if(!addresses.contains(p)) addresses.add(p);
 				dontDetect = true;
 			}
 		}
 		if(!dontDetect) {
-			addedValidIP = innerDetect(addresses, addedValidIP);
+			addedValidIP = innerDetect(addresses, addedValidIP, portNumber);
 		}
 	   	if(node.clientCore != null) {
 	   		if (addedValidIP) {
@@ -110,7 +113,7 @@ public class NodeIPDetector {
 	   	return lastIPAddress;
 	}
 
-	private boolean innerDetect(Vector addresses, boolean addedValidIP) {
+	private boolean innerDetect(Vector addresses, boolean addedValidIP, int portNumber) {
 		boolean setMaybeSymmetric = false;
 		InetAddress[] detectedAddrs = ipDetector.getAddress();
 		assert(detectedAddrs != null);
@@ -119,7 +122,7 @@ public class NodeIPDetector {
 		}
 		
 		for(int i=0;i<detectedAddrs.length;i++) {
-			Peer p = new Peer(detectedAddrs[i], node.darknetPortNumber);
+			Peer p = new Peer(detectedAddrs[i], portNumber);
 			if(!addresses.contains(p)) {
 				Logger.normal(this, "Detected IP address: "+p);
 				addresses.add(p);
@@ -132,7 +135,7 @@ public class NodeIPDetector {
 			for(int i=0;i<pluginDetectedIPs.length;i++) {
 				InetAddress addr = pluginDetectedIPs[i].publicAddress;
 				if(addr == null) continue;
-				Peer a = new Peer(new FreenetInetAddress(addr), node.darknetPortNumber);
+				Peer a = new Peer(new FreenetInetAddress(addr), portNumber);
 				if(!addresses.contains(a)) {
 					Logger.normal(this, "Plugin detected IP address: "+a);
 					addresses.add(a);
@@ -141,7 +144,7 @@ public class NodeIPDetector {
 			}
 		}
 		if(addresses.isEmpty() && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
-			addresses.add(new Peer(oldIPAddress, node.darknetPortNumber));
+			addresses.add(new Peer(oldIPAddress, portNumber));
 		// Try to pick it up from our connections
 		if(node.peers != null) {
 			PeerNode[] peerList = node.peers.connectedPeers;
@@ -220,7 +223,7 @@ public class NodeIPDetector {
 										node.clientCore.alerts.unregister(maybeSymmetricAlert);
 								}
 								
-								Peer p = new Peer(best.getFreenetAddress(), node.darknetPortNumber);
+								Peer p = new Peer(best.getFreenetAddress(), portNumber);
 								if(!addresses.contains(p))
 									addresses.add(p);
 							}

@@ -1016,7 +1016,7 @@ public class TextModeClientInterface implements Runnable {
         }
         PeerNode pn;
         try {
-            pn = new DarknetPeerNode(fs, n, n.peers, false, n.darknetPacketMangler);
+            pn = n.createNewDarknetNode(fs);
         } catch (FSParseException e1) {
             System.err.println("Did not parse: "+e1);
             Logger.error(this, "Did not parse: "+e1, e1);

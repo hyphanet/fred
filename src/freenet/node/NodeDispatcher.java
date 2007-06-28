@@ -234,12 +234,12 @@ public class NodeDispatcher implements Dispatcher {
 		long now = System.currentTimeMillis();
 		if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
 			SSKInsertHandler rh = new SSKInsertHandler(m, id, node, now);
-			Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.darknetPortNumber);
+			Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
 			t.setDaemon(true);
 			t.start();
 		} else {
 			InsertHandler rh = new InsertHandler(m, id, node, now);
-			Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.darknetPortNumber);
+			Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
 			t.setDaemon(true);
 			t.start();
 		}
@@ -326,7 +326,7 @@ public class NodeDispatcher implements Dispatcher {
 		double target = m.getDouble(DMT.TARGET_LOCATION);
 		if(logMINOR) Logger.minor(this, "id "+id+" from "+pn+" htl "+htl+" target "+target);
 		if(Math.abs(node.lm.getLocation().getValue() - target) <= Double.MIN_VALUE) {
-			if(logMINOR) Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.darknetPortNumber);
+			if(logMINOR) Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.getDarknetPortNumber());
 			// Handle locally
 			// Message type specific processing
 			dispatchRoutedMessage(m, pn, id);
@@ -380,7 +380,7 @@ public class NodeDispatcher implements Dispatcher {
 					continue;
 				}
 			} else {
-				if(logMINOR) Logger.minor(this, "Reached dead end for "+m.getSpec()+" on "+node.darknetPortNumber);
+				if(logMINOR) Logger.minor(this, "Reached dead end for "+m.getSpec()+" on "+node.getDarknetPortNumber());
 				// Reached a dead end...
 				Message reject = DMT.createFNPRoutedRejected(id, htl);
 				if(pn != null) try {

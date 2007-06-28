@@ -314,7 +314,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      * @param fs The SimpleFieldSet to parse
      * @param node2 The running Node we are part of.
      */
-    public PeerNode(SimpleFieldSet fs, Node node2, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+    public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
     	logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
     	myRef = new WeakReference(this);
     	this.outgoingMangler = mangler;
@@ -425,7 +425,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     				Logger.error(this, "Error while signing the node identity!"+e);
     				System.err.println("Error while signing the node identity!"+e);
     				e.printStackTrace();
-    				node.exit(Node.EXIT_CRAPPY_JVM);
+    				node.exit(NodeInitException.EXIT_CRAPPY_JVM);
 				}
     		}else // Local is always good (assumed)
     			this.isSignatureVerificationSuccessfull = true;
@@ -435,8 +435,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         }
 
         // Setup incoming and outgoing setup ciphers
-        byte[] nodeKey = node.identityHash;
-        byte[] nodeKeyHash = node.identityHashHash;
+        byte[] nodeKey = crypto.identityHash;
+        byte[] nodeKeyHash = crypto.identityHashHash;
         
         int digestLength = SHA256.getDigestLength();
         incomingSetupKey = new byte[digestLength];
@@ -446,7 +446,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         for(int i=0;i<outgoingSetupKey.length;i++)
             outgoingSetupKey[i] = (byte) (nodeKeyHash[i] ^ identityHash[i]);
         if(logMINOR)
-        	Logger.minor(this, "Keys:\nIdentity:  "+HexUtil.bytesToHex(node.myIdentity)+
+        	Logger.minor(this, "Keys:\nIdentity:  "+HexUtil.bytesToHex(crypto.myIdentity)+
         			"\nThisIdent: "+HexUtil.bytesToHex(identity)+
         			"\nNode:      "+HexUtil.bytesToHex(nodeKey)+
         			"\nNode hash: "+HexUtil.bytesToHex(nodeKeyHash)+
@@ -1789,7 +1789,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
             long t = tracker.getNextUrgentTime();
             if(t < now) {
                 try {
-                    node.darknetPacketMangler.processOutgoing(null, 0, 0, tracker, 0);
+                    outgoingMangler.processOutgoing(null, 0, 0, tracker, 0);
                 } catch (NotConnectedException e) {
                     // Ignore
                 } catch (KeyChangedException e) {
@@ -1804,7 +1804,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
             long t = tracker.getNextUrgentTime();
             if(t < now) {
                 try {
-                    node.darknetPacketMangler.processOutgoing(null, 0, 0, tracker, 0);
+                    outgoingMangler.processOutgoing(null, 0, 0, tracker, 0);
                 } catch (NotConnectedException e) {
                     // Ignore
                 } catch (KeyChangedException e) {
@@ -2647,7 +2647,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/**
 	 * Create a DarknetPeerNode or an OpennetPeerNode as appropriate
 	 */
-	public static PeerNode create(SimpleFieldSet fs, Node node2, PeerManager manager, boolean b, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		return new DarknetPeerNode(fs, node2, manager, b, mangler);
+	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager manager, boolean b, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		return new DarknetPeerNode(fs, node2, crypto, manager, b, mangler);
+	}
+
+	public byte[] getIdentity() {
+		return identity;
 	}
 }

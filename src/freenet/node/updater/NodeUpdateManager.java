@@ -16,6 +16,7 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.ExtVersion;
 import freenet.node.Node;
+import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
 import freenet.node.Version;
@@ -565,7 +566,7 @@ public class NodeUpdateManager {
 			// Break
 		} // in case it's still restarting
 		System.err.println("Failed to restart. Exiting, please restart the node.");
-		System.exit(Node.EXIT_RESTART_FAILED);
+		System.exit(NodeInitException.EXIT_RESTART_FAILED);
 	}
 
 	private void failUpdate(String reason) {
