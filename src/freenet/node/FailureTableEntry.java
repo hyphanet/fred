@@ -266,18 +266,14 @@ class FailureTableEntry {
 		requestedTimes = newRequestedTimes;
 	}
 
-	public double bestLiveLocDiff() {
-		WeakReference[] nodes;
-		synchronized(this) {
-			nodes = requestedNodes;
-		}
+	public synchronized double bestLiveLocDiff() {
 		double bestDiff = 2.0;
-		for(int i=0;i<nodes.length;i++) {
-			if(nodes[i] == null) continue;
-			PeerNode pn = (PeerNode) nodes[i].get();
+		for(int i=0;i<requestedNodes.length;i++) {
+			if(requestedNodes[i] == null) continue;
+			PeerNode pn = (PeerNode) requestedNodes[i].get();
 			if(pn == null) continue;
 			if(!(pn.isRoutable() && pn.isRoutingBackedOff())) continue;
-			double diff = PeerManager.distance(key.toNormalizedDouble(), pn.getLocation().getValue());
+			double diff = PeerManager.distance(key.toNormalizedDouble(), requestedLocs[i]);
 			if(diff < bestDiff) bestDiff = diff;
 		}
 		return bestDiff;
