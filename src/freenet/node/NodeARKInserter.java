@@ -128,8 +128,8 @@ public class NodeARKInserter implements ClientCallback {
 		
 		Bucket b = new SimpleReadOnlyArrayBucket(buf);
 		
-		long number = node.myARKNumber;
-		InsertableClientSSK ark = node.myARK;
+		long number = node.darknetARKNumber;
+		InsertableClientSSK ark = node.darknetARK;
 		FreenetURI uri = ark.getInsertURI().setKeyType("USK").setSuggestedEdition(number);
 		
 		if(logMINOR) Logger.minor(this, "Inserting ARK: "+uri);
@@ -210,11 +210,11 @@ public class NodeARKInserter implements ClientCallback {
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		if(logMINOR) Logger.minor(this, "Generated URI for ARK: "+uri);
 		long l = uri.getSuggestedEdition();
-		if(l < this.node.myARKNumber) {
-			Logger.error(this, "Inserted edition # lower than attempted: "+l+" expected "+this.node.myARKNumber);
-		} else if(l > this.node.myARKNumber) {
-			if(logMINOR) Logger.minor(this, "ARK number moving from "+this.node.myARKNumber+" to "+l);
-			this.node.myARKNumber = l;
+		if(l < this.node.darknetARKNumber) {
+			Logger.error(this, "Inserted edition # lower than attempted: "+l+" expected "+this.node.darknetARKNumber);
+		} else if(l > this.node.darknetARKNumber) {
+			if(logMINOR) Logger.minor(this, "ARK number moving from "+this.node.darknetARKNumber+" to "+l);
+			this.node.darknetARKNumber = l;
 			this.node.writeNodeFile();
 		}
 	}

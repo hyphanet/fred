@@ -312,17 +312,6 @@ public class Node implements TimeSkewDetectorCallback {
 	private final HashSet transferringRequestHandlers;
 	/** CHKInsertSender's currently running, by KeyHTLPair */
 	private final HashMap insertSenders;
-	/** My crypto group */
-	private DSAGroup myCryptoGroup;
-	/** My private key */
-	private DSAPrivateKey myPrivKey;
-	/** My public key */
-	private DSAPublicKey myPubKey;
-	/** My ARK SSK private key */
-	InsertableClientSSK myARK;
-	/** My ARK sequence number */
-	long myARKNumber;
-	// FIXME remove old ARK support
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
 	
@@ -369,13 +358,29 @@ public class Node implements TimeSkewDetectorCallback {
 	public final Random fastWeakRandom;
 	/** The object which handles incoming messages and allows us to wait for them */
 	final MessageCore usm;
+	
+	// Darknet stuff
+	
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
 	final UdpSocketHandler darknetSocket;
 	public final FNPPacketMangler darknetPacketMangler;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int darknetPortNumber;
-	final DNSRequester dnsr;
+	/** My crypto group */
+	private DSAGroup darknetCryptoGroup;
+	/** My private key */
+	private DSAPrivateKey darknetPrivKey;
+	/** My public key */
+	private DSAPublicKey darknetPubKey;
+	/** My ARK SSK private key */
+	InsertableClientSSK darknetARK;
+	/** My ARK sequence number */
+	long darknetARKNumber;
+	
+	// General stuff
+	
 	public final PacketSender ps;
+	final DNSRequester dnsr;
 	final NodeDispatcher dispatcher;
 	static final int MAX_MEMORY_CACHED_PUBKEYS = 1000;
 	final LRUHashtable cachedPubKeys;
@@ -532,19 +537,19 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// FIXME: Back compatibility; REMOVE !!
 		try {
-			this.myCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
-			this.myPrivKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup);
-			this.myPubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup);
+			this.darknetCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
+			this.darknetPrivKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), darknetCryptoGroup);
+			this.darknetPubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), darknetCryptoGroup);
 		} catch (NullPointerException e) {
 			if(logMINOR) Logger.minor(this, "Caught "+e, e);
-			this.myCryptoGroup = Global.DSAgroupBigA;
-			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
-			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+			this.darknetCryptoGroup = Global.DSAgroupBigA;
+			this.darknetPrivKey = new DSAPrivateKey(darknetCryptoGroup, r);
+			this.darknetPubKey = new DSAPublicKey(darknetCryptoGroup, darknetPrivKey);
 		} catch (IllegalBase64Exception e) {
 			if(logMINOR) Logger.minor(this, "Caught "+e, e);
-			this.myCryptoGroup = Global.DSAgroupBigA;
-			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
-			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+			this.darknetCryptoGroup = Global.DSAgroupBigA;
+			this.darknetPrivKey = new DSAPrivateKey(darknetCryptoGroup, r);
+			this.darknetPubKey = new DSAPublicKey(darknetCryptoGroup, darknetPrivKey);
 		}
 		InsertableClientSSK ark = null;
 		
@@ -561,12 +566,12 @@ public class Node implements TimeSkewDetectorCallback {
 					if(ark.isInsecure())
 						System.out.println("Creating new ARK, old is insecure");
 					ark = null;
-					myARKNumber = 0;
+					darknetARKNumber = 0;
 				} else {
 					try {
-						myARKNumber = Long.parseLong(s);
+						darknetARKNumber = Long.parseLong(s);
 					} catch (NumberFormatException e) {
-						myARKNumber = 0;
+						darknetARKNumber = 0;
 						ark = null;
 					}
 				}
@@ -577,9 +582,9 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(ark == null) {
 			ark = InsertableClientSSK.createRandom(r, "ark");
-			myARKNumber = 0;
+			darknetARKNumber = 0;
 		}
-		this.myARK = ark;
+		this.darknetARK = ark;
 		
 		wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
 	}
@@ -632,11 +637,11 @@ public class Node implements TimeSkewDetectorCallback {
 		identityHashHash = md.digest(identityHash);
 		swapIdentifier = Fields.bytesToLong(identityHashHash);
 		myName = newName();
-		this.myCryptoGroup = Global.DSAgroupBigA;
-		this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
-		this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
-		myARK = InsertableClientSSK.createRandom(r, "ark");
-		myARKNumber = 0;
+		this.darknetCryptoGroup = Global.DSAgroupBigA;
+		this.darknetPrivKey = new DSAPrivateKey(darknetCryptoGroup, r);
+		this.darknetPubKey = new DSAPublicKey(darknetCryptoGroup, darknetPrivKey);
+		darknetARK = InsertableClientSSK.createRandom(r, "ark");
+		darknetARKNumber = 0;
 		SHA256.returnMessageDigest(md);
 	}
 
@@ -989,9 +994,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(wasTestnet != testnetEnabled) {
 			Logger.error(this, "Switched from testnet mode to non-testnet mode or vice versa! Regenerating pubkey, privkey, and deleting logs.");
-			this.myCryptoGroup = Global.DSAgroupBigA;
-			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, random);
-			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+			this.darknetCryptoGroup = Global.DSAgroupBigA;
+			this.darknetPrivKey = new DSAPrivateKey(darknetCryptoGroup, random);
+			this.darknetPubKey = new DSAPublicKey(darknetCryptoGroup, darknetPrivKey);
 		}
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
@@ -1689,8 +1694,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public SimpleFieldSet exportPrivateFieldSet() {
 		SimpleFieldSet fs = exportPublicFieldSet(false);
-		fs.put("dsaPrivKey", myPrivKey.asFieldSet());
-		fs.putSingle("ark.privURI", this.myARK.getInsertURI().toString(false, false));
+		fs.put("dsaPrivKey", darknetPrivKey.asFieldSet());
+		fs.putSingle("ark.privURI", this.darknetARK.getInsertURI().toString(false, false));
 		return fs;
 	}
 	
@@ -1730,11 +1735,11 @@ public class Node implements TimeSkewDetectorCallback {
 		fs.putSingle("myName", myName); // FIXME see #942
 		if(!forSetup) {
 			// These are invariant. They cannot change on connection setup. They can safely be excluded.
-			fs.put("dsaGroup", myCryptoGroup.asFieldSet());
-			fs.put("dsaPubKey", myPubKey.asFieldSet());
+			fs.put("dsaGroup", darknetCryptoGroup.asFieldSet());
+			fs.put("dsaPubKey", darknetPubKey.asFieldSet());
 		}
-		fs.put("ark.number", myARKNumber); // Can be changed on setup
-		fs.putSingle("ark.pubURI", this.myARK.getURI().toString(false, false)); // Can be changed on setup
+		fs.put("ark.number", darknetARKNumber); // Can be changed on setup
+		fs.putSingle("ark.pubURI", this.darknetARK.getURI().toString(false, false)); // Can be changed on setup
 		
 		synchronized (referenceSync) {
 			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
@@ -1745,9 +1750,9 @@ public class Node implements TimeSkewDetectorCallback {
 					byte[] ref = mySignedReference.getBytes("UTF-8");
 					BigInteger m = new BigInteger(1, SHA256.digest(ref));
 					if(logMINOR) Logger.minor(this, "m = "+m.toString(16));
-					myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, m, random);
+					myReferenceSignature = DSA.sign(darknetCryptoGroup, darknetPrivKey, m, random);
 					// FIXME remove this ... eventually
-					if(!DSA.verify(myPubKey, myReferenceSignature, m, false))
+					if(!DSA.verify(darknetPubKey, myReferenceSignature, m, false))
 						Logger.error(this, "Signature failed!");
 				} catch(UnsupportedEncodingException e){
 					//duh ?
@@ -2810,12 +2815,12 @@ public class Node implements TimeSkewDetectorCallback {
 		 config.get("node").getOption("name").setValue(key);
 	}
 
-	protected DSAPrivateKey getMyPrivKey() {
-		return myPrivKey;
+	protected DSAPrivateKey getDarknetPrivKey() {
+		return darknetPrivKey;
 	}
 
-	protected DSAPublicKey getMyPubKey() {
-		return myPubKey;
+	protected DSAPublicKey getDarknetPubKey() {
+		return darknetPubKey;
 	}
 
 	public Ticker getTicker() {
@@ -2862,7 +2867,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** Sign a hash */
 	DSASignature sign(byte[] hash) {
-		return DSA.sign(myCryptoGroup, myPrivKey, new NativeBigInteger(1, hash), random);
+		return DSA.sign(darknetCryptoGroup, darknetPrivKey, new NativeBigInteger(1, hash), random);
 	}
 	
 	public synchronized void setTimeSkewDetectedUserAlert() {
