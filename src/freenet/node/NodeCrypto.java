@@ -64,6 +64,7 @@ class NodeCrypto {
 	/** My ARK sequence number */
 	long myARKNumber;
 	static boolean logMINOR;
+	final NodeCryptoConfig config;
 	
 	// Noderef related
 	/** The signature of the above fieldset */
@@ -80,6 +81,7 @@ class NodeCrypto {
 	public NodeCrypto(int sortOrder, Node node, boolean isOpennet, NodeCryptoConfig config) throws NodeInitException {
 
 		this.node = node;
+		this.config = config;
 		random = node.random;
 		this.isOpennet = isOpennet;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -368,6 +370,11 @@ class NodeCrypto {
 			if(socket == null) return;
 		}
 		socket.setDropProbability(val);
+	}
+
+	public void stop() {
+		socket.close(true);
+		config.stopping(this);
 	}
 	
 }

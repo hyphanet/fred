@@ -72,14 +72,14 @@ public class OpennetManager {
 	}
 
 	public void start() {
-		// FIXME do something
+		crypto.start(node.disableHangCheckers);
 	}
 
 	/**
 	 * Called when opennet is disabled
 	 */
 	public void stop() {
-		// FIXME do something
+		crypto.stop();
 	}
 
 }
