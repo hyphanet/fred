@@ -19,9 +19,11 @@ package freenet.support;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import freenet.node.FSParseException;
+import freenet.support.io.LineReader;
 import junit.framework.TestCase;
 
 /**
@@ -33,12 +35,17 @@ public class SimpleFieldSetTest extends TestCase {
 
 	private static final char KEY_VALUE_SEPARATOR = '=';
 	
+	/* A double string array used across all tests 
+	 * it must not be changed in order to perform tests
+	 * correctly */
 	private static final String[][] SAMPLE_STRING_PAIRS = 
-		{  {"foo","bar"},
-		   {"foo.bar","foobar"},
+		{  {"foo","bar"},			//directSubset
+		   {"foo.bar","foobar"},	
 		   {"foo.bar.boo.far","foobar"},
 		   {"foo2","foobar.fooboo.foofar.foofoo"},
 		   {"foo3",KEY_VALUE_SEPARATOR+"bar"} };
+	
+	private static final String SAMPLE_END_MARKER = "END";
 	
 	/**
 	 * Tests putSingle(String,String) method
@@ -140,6 +147,77 @@ public class SimpleFieldSetTest extends TestCase {
 					methodSFS.subset(methodPairsArray_MultiLevel[i][0]).get(methodPairsArray_MultiLevel[i][1]),
 					methodPairsArray_MultiLevel[i][2]);
 		assertTrue(checkSimpleFieldSetSize(methodSFS,methodPairsArray_MultiLevel.length));
+	}
+	
+	/**
+	 * Tests putAllOverwrite(SimpleFieldSet) method
+	 * trying to overwrite a whole SimpleFieldSet
+	 * with another with same keys but different
+	 * values
+	 */
+	public void testPutAllOverwrite() {
+		String methodAppendedString = "buu";
+		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
+		SimpleFieldSet methodNewSFS = this.sfsFromStringPairs(methodAppendedString);
+		methodSFS.putAllOverwrite(methodNewSFS);
+		for (int i=0; i < SAMPLE_STRING_PAIRS.length; i++)
+			assertEquals(methodSFS.get(SAMPLE_STRING_PAIRS[i][0]),SAMPLE_STRING_PAIRS[i][1]+methodAppendedString);
+	}
+	
+	/**
+	 * Tests put(String,SimpleFieldSet) method
+	 */
+	public void testPut_StringSimpleFieldSet() {
+		String methodKey = "prefix";
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		methodSFS.put(methodKey,sfsFromSampleStringPairs());
+		for (int i=0; i < SAMPLE_STRING_PAIRS.length; i++)
+			assertEquals(methodSFS.get(methodKey+SimpleFieldSet.MULTI_LEVEL_CHAR+SAMPLE_STRING_PAIRS[i][0]),
+					SAMPLE_STRING_PAIRS[i][1]);
+	}
+	
+	/**
+	 * Tests put(String,SimpleFieldSet) method
+	 */
+	public void testTPut_StringSimpleFieldSet() {
+		String methodKey = "prefix";
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		methodSFS.tput(methodKey,sfsFromSampleStringPairs());
+		for (int i=0; i < SAMPLE_STRING_PAIRS.length; i++)
+			assertEquals(methodSFS.get(methodKey+SimpleFieldSet.MULTI_LEVEL_CHAR+SAMPLE_STRING_PAIRS[i][0]),
+					SAMPLE_STRING_PAIRS[i][1]);
+	}
+	
+	/**
+	 * Tests put(String,SimpleFieldSet) and
+	 * tput(String,SimpleFieldSet) trying to
+	 * add empty data structures
+	 */
+	public void testPutAndTPut_WithEmpty() {
+		SimpleFieldSet methodEmptySFS = new SimpleFieldSet(true);
+		SimpleFieldSet methodSampleSFS = sfsFromSampleStringPairs();
+		try {
+			methodSampleSFS.put("sample",methodEmptySFS);
+			fail("Expected Exception Error Not Thrown!"); } 
+        catch (IllegalArgumentException anException) {
+            assertNotNull(anException); }
+        try {
+        	methodSampleSFS.tput("sample",methodSampleSFS); }
+        catch (IllegalArgumentException aException) {
+        	fail("Not expected exception thrown : " + aException.getMessage()); }			
+	}
+	
+	/**
+	 * It creates a SFS from the SAMPLE_STRING_PAIRS
+	 * and putting a suffix after every value
+	 * @param aSuffix to put after every value
+	 * @return the SimpleFieldSet created
+	 */
+	private SimpleFieldSet sfsFromStringPairs(String aSuffix) {
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		for (int i = 0; i < SAMPLE_STRING_PAIRS.length; i++)	//creating new 
+			methodSFS.putSingle(SAMPLE_STRING_PAIRS[i][0],SAMPLE_STRING_PAIRS[i][1]+aSuffix);
+		return methodSFS;
 	}
 	
 	/**
@@ -323,11 +401,11 @@ public class SimpleFieldSetTest extends TestCase {
 	 * @return a String ready to be read by a SFS parser
 	 */
 	private String sfsReadyString(String[][] aStringPairsArray) {
-		String endMarker = "\nEND";
+		
 		String methodStringToReturn = "";
 		for(int i = 0; i < aStringPairsArray.length; i++)
 			methodStringToReturn += aStringPairsArray[i][0]+KEY_VALUE_SEPARATOR+aStringPairsArray[i][1]+'\n';
-		methodStringToReturn += endMarker;
+		methodStringToReturn += SAMPLE_END_MARKER;
 		return methodStringToReturn;
 	}
 	
@@ -362,7 +440,6 @@ public class SimpleFieldSetTest extends TestCase {
 			fail("Not expected exception thrown : " + aException.getMessage()); }
 	}
 	
-	
 	/**
 	 * Generates a SimpleFieldSet using the 
 	 * SAMPLE_STRING_PAIRS and sfs put method
@@ -388,7 +465,23 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
-	 * Tests isEmpty() method. 
+	 * Tests {get,set}EndMarker(String) methods
+	 * using them after a String parsing
+	 */
+	public void testEndMarker() {
+		String methodEndMarker = "ANOTHER-ENDING";
+		String methodStringToParse = sfsReadyString(SAMPLE_STRING_PAIRS);
+		try {
+			SimpleFieldSet methodSFS = new SimpleFieldSet(methodStringToParse,false,false);
+			assertEquals(methodSFS.getEndMarker(),SAMPLE_END_MARKER);
+			methodSFS.setEndMarker(methodEndMarker);
+			assertEquals(methodSFS.getEndMarker(),methodEndMarker);
+		} catch (IOException aException) {
+			fail("Not expected exception thrown : " + aException.getMessage()); }
+	}
+	
+	/**
+	 * Tests isEmpty() method.
 	 */
 	public void testIsEmpty() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
@@ -397,13 +490,131 @@ public class SimpleFieldSetTest extends TestCase {
 		assertTrue(methodSFS.isEmpty());
 	}
 	
+	/**
+	 * Tests directSubsetNameIterator() method.
+	 */
+	public void testDirectSubsetNameIterator() {
+		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
+		Iterator methodIter = methodSFS.directSubsetNameIterator();
+		while (methodIter.hasNext())
+			((String)methodIter.next()).equals(SAMPLE_STRING_PAIRS[0][0]);
+		methodSFS = new SimpleFieldSet(true);
+		/*TODO: the code below should work, 
+		        instead atm it raises a not-so-good null exception
+		methodIter = methodSFS.directSubsetNameIterator();
+		while (methodIter.hasNext())
+		fail("An empty SFS cannot have direct subset!"); */
+	}
 	
+	/**
+	 * Tests nameOfDirectSubsets() method.
+	 */
+	public void testNamesOfDirectSubsets() {
+		String[] expectedResult = {SAMPLE_STRING_PAIRS[0][0]};
+		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
+		assertTrue(Arrays.equals(methodSFS.namesOfDirectSubsets(),expectedResult));
+		/*TODO: the code below should work, 
+        	instead atm it raises a not-so-good null exception
+		expectedResult = new String[0];
+		methodSFS = new SimpleFieldSet(true);
+		assertTrue(Arrays.equals(methodSFS.namesOfDirectSubsets(),expectedResult)); */
+		
+	}
 	
+	public void testOrderedString() {
+		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
+		System.out.println(methodSFS.toOrderedString());
+	}
 	
+	/**
+	 * Test the putOverwrite(String,String) method.
+	 */
+	public void testPutOverwrite_String() {
+		String methodKey = "foo.bar";
+		String[] methodValues = {"boo","bar","zoo"};
+		String expectedResult = "zoo";
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		for (int i = 0 ; i < methodValues.length; i++)
+			methodSFS.putOverwrite(methodKey,methodValues[i]);
+		assertEquals(methodSFS.get(methodKey),expectedResult);
+	}
 	
+	/**
+	 * Test the putOverwrite(String,String[]) method.
+	 */
+	public void testPutOverwrite_StringArray() {
+		String methodKey = "foo.bar";
+		String[] methodValues = {"boo","bar","zoo"};
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		methodSFS.putOverwrite(methodKey,methodValues);
+		assertTrue(Arrays.equals(methodSFS.getAll(methodKey),methodValues));
+	}
 	
+	/**
+	 * Test the putAppend(String,String) method.
+	 */
+	public void testPutAppend() {
+		String methodKey = "foo.bar";
+		String[] methodValues = {"boo","bar","zoo"};
+		String expectedResult = "boo"+SimpleFieldSet.MULTI_VALUE_CHAR
+								+"bar"+SimpleFieldSet.MULTI_VALUE_CHAR
+								+"zoo";
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		for (int i = 0 ; i < methodValues.length; i++)
+			methodSFS.putAppend(methodKey,methodValues[i]);
+		assertEquals(methodSFS.get(methodKey),expectedResult);
+	}
 	
+	/**
+	 * Tests the getAll(String) method.
+	 */
+	public void testGetAll() {
+		String methodKey = "foo.bar";
+		String[] methodValues = {"boo","bar","zoo"};
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		for (int i = 0 ; i < methodValues.length; i++)
+			methodSFS.putAppend(methodKey,methodValues[i]);
+		assertTrue(Arrays.equals(methodSFS.getAll(methodKey),methodValues));
+	}
 	
+	/**
+	 * Tests the getIntArray(String) method
+	 */
+	public void testGetIntArray() {
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		String keyPrefix = "foo";
+		for (int i = 0; i<15; i++)
+			methodSFS.putAppend(keyPrefix,String.valueOf(i));
+		int[] result = methodSFS.getIntArray(keyPrefix);
+		for (int i = 0; i<15; i++)
+			assertTrue(result[i]==i);
+		
+	}
+	
+	/**
+	 * Tests removeValue(String) method
+	 */
+	public void testRemoveValue() {
+		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
+		methodSFS.removeValue("foo");
+		assertNull(methodSFS.get(SAMPLE_STRING_PAIRS[0][0]));
+		for(int i=1;i<SAMPLE_STRING_PAIRS.length;i++)
+			assertEquals(methodSFS.get(SAMPLE_STRING_PAIRS[i][0]),SAMPLE_STRING_PAIRS[i][1]);
+	}
+	
+	/**
+	 * Tests removeSubset(String) method
+	 */
+	public void testRemoveSubset() {
+		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
+		methodSFS.removeSubset("foo");
+		for(int i = 1; i< 3; i++)
+			assertNull(methodSFS.get(SAMPLE_STRING_PAIRS[i][0]));
+		assertEquals(methodSFS.get(SAMPLE_STRING_PAIRS[0][0]),SAMPLE_STRING_PAIRS[0][1]);
+		for(int i = 3; i< 5; i++)
+			assertEquals(methodSFS.get(SAMPLE_STRING_PAIRS[i][0]),SAMPLE_STRING_PAIRS[i][1]);
+	}
+
 	/**
 	 * Searches for a key in a given String[][] array.
 	 * We consider that keys are stored in String[x][0] 
@@ -462,5 +673,4 @@ public class SimpleFieldSetTest extends TestCase {
 		Iterator itr = methodSFS.keyIterator(methodPrefix);
 		assertTrue(areAllContainedKeys(SAMPLE_STRING_PAIRS,methodPrefix,itr));	
 	}
-	
 }
