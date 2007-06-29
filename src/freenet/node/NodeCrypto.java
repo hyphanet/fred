@@ -23,6 +23,7 @@ import freenet.crypt.DSASignature;
 import freenet.crypt.Global;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.keys.FreenetURI;
@@ -45,7 +46,7 @@ class NodeCrypto {
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
 	UdpSocketHandler socket;
 	public FNPPacketMangler packetMangler;
-	final InetAddress bindto;
+	final FreenetInetAddress bindto;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
 	byte[] myIdentity; // FIXME: simple identity block; should be unique
@@ -65,6 +66,7 @@ class NodeCrypto {
 	long myARKNumber;
 	static boolean logMINOR;
 	final NodeCryptoConfig config;
+	final NodeIPPortDetector detector;
 	
 	// Noderef related
 	/** The signature of the above fieldset */
@@ -103,7 +105,7 @@ class NodeCrypto {
 			for(int i=0;i<200000;i++) {
 				int portNo = 1024 + random.nextInt(65535-1024);
 				try {
-					u = new UdpSocketHandler(portNo, bindto, node);
+					u = new UdpSocketHandler(portNo, bindto.getAddress(), node);
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
@@ -117,7 +119,7 @@ class NodeCrypto {
 				throw new NodeInitException(NodeInitException.EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
 		} else {
 			try {
-				u = new UdpSocketHandler(port, bindto, node);
+				u = new UdpSocketHandler(port, bindto.getAddress(), node);
 			} catch (Exception e) {
 				throw new NodeInitException(NodeInitException.EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
 			}
@@ -132,6 +134,9 @@ class NodeCrypto {
 		((UdpSocketHandler)socket).setDropProbability(config.getDropProbability());
 		
 		socket.setLowLevelFilter(packetMangler = new FNPPacketMangler(node, this, socket));
+		
+		detector = new NodeIPPortDetector(node, node.ipDetector, this);
+		
 		} catch (NodeInitException e) {
 			config.stopping(this);
 			throw e;
@@ -255,7 +260,7 @@ class NodeCrypto {
 	SimpleFieldSet exportPublicFieldSet(boolean forSetup) {
 		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup);
 		// IP addresses
-		Peer[] ips = node.ipDetector.getPrimaryIPAddress();
+		Peer[] ips = detector.detectPrimaryPeers();
 		if(ips != null) {
 			for(int i=0;i<ips.length;i++)
 				fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
@@ -375,6 +380,14 @@ class NodeCrypto {
 	public void stop() {
 		socket.close(true);
 		config.stopping(this);
+	}
+
+	public PeerNode[] getPeerNodes() {
+		if(node.peers == null) return null;
+		if(isOpennet)
+			return node.peers.getOpennetPeers();
+		else
+			return node.peers.getDarknetPeers();
 	}
 	
 }

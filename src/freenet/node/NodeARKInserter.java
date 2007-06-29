@@ -30,14 +30,14 @@ public class NodeARKInserter implements ClientCallback {
 	 */
 	private final Node node;
 	private final NodeCrypto crypto;
-	private final NodeIPDetector detector;
+	private final NodeIPPortDetector detector;
 	private static boolean logMINOR;
 
 	/**
 	 * @param node
 	 * @param old If true, use the old ARK rather than the new ARK
 	 */
-	NodeARKInserter(Node node, NodeCrypto crypto, NodeIPDetector detector) {
+	NodeARKInserter(Node node, NodeCrypto crypto, NodeIPPortDetector detector) {
 		this.node = node;
 		this.crypto = crypto;
 		this.detector = detector;
@@ -82,7 +82,7 @@ public class NodeARKInserter implements ClientCallback {
 	}
 
 	private boolean checkIPUpdated() {
-		Peer[] p = detector.getPrimaryIPAddress();
+		Peer[] p = detector.detectPrimaryPeers();
 		if(p == null) {
 			if(logMINOR) Logger.minor(this, "Not inserting because no IP address");
 			return false; // no point inserting

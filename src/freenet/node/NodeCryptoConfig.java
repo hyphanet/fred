@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import freenet.config.InvalidConfigValueException;
@@ -26,7 +25,7 @@ public class NodeCryptoConfig {
 	private int portNumber;
 	
 	/** Bind address. 0.0.0.0 = all addresses. */
-	private InetAddress bindTo;
+	private FreenetInetAddress bindTo;
 	
 	/** If nonzero, 1/dropProbability = probability of UdpSocketHandler dropping a packet (for debugging
 	 * purposes; not static as we may need to simulate some nodes with more loss than others). */
@@ -79,7 +78,8 @@ public class NodeCryptoConfig {
 		config.register("bindTo", "0.0.0.0", sortOrder++, true, true, "Node.bindTo", "Node.bindToLong", new NodeBindtoCallback());
 		
 		try {
-			bindTo = InetAddress.getByName(config.getString("bindTo"));
+			bindTo = new FreenetInetAddress(config.getString("bindTo"), false);
+			
 		} catch (UnknownHostException e) {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_BIND_USM, "Invalid bindTo: "+config.getString("bindTo"));
 		}
@@ -137,7 +137,7 @@ public class NodeCryptoConfig {
 	class NodeBindtoCallback implements StringCallback {
 		
 		public String get() {
-			return FreenetInetAddress.getHostName(bindTo);
+			return bindTo.toString();
 		}
 		
 		public void set(String val) throws InvalidConfigValueException {
@@ -147,7 +147,7 @@ public class NodeCryptoConfig {
 		}
 	}
 
-	public InetAddress getBindTo() {
+	public FreenetInetAddress getBindTo() {
 		return bindTo;
 	}
 

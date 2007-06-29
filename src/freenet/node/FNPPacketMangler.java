@@ -1558,4 +1558,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	public SocketHandler getSocketHandler() {
 		return sock;
 	}
+
+	public Peer[] getPrimaryIPAddress() {
+		return crypto.detector.getPrimaryPeers();
+	}
 }

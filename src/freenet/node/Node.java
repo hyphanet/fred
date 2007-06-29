@@ -598,6 +598,10 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		usm = new MessageCore();
 		
+		// FIXME maybe these configs should actually be under a node.ip subconfig?
+		ipDetector = new NodeIPDetector(this);
+		sortOrder = ipDetector.registerConfigs(nodeConfig, sortOrder);
+		
 		// Determine the port number
 		
 		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++);
@@ -607,9 +611,6 @@ public class Node implements TimeSkewDetectorCallback {
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
-		// FIXME maybe these configs should actually be under a node.ip subconfig?
-		ipDetector = new NodeIPDetector(this, darknetCrypto);
-		sortOrder = ipDetector.registerConfigs(nodeConfig, sortOrder);
 		
 		Logger.normal(Node.class, "Creating node...");
 
@@ -2586,5 +2587,18 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public SimpleFieldSet exportDarknetPrivateFieldSet() {
 		return darknetCrypto.exportPrivateFieldSet();
+	}
+
+	/**
+	 * Should the IP detection code only use the IP address override and the bindTo information,
+	 * rather than doing a full detection?
+	 */
+	public synchronized boolean dontDetect() {
+		// Only return true if bindTo is set on all ports which are in use
+		if(!darknetCrypto.bindto.isRealInternetAddress(false, true)) return false;
+		if(opennet != null) {
+			if(opennet.crypto.bindto.isRealInternetAddress(false, true)) return false;
+		}
+		return true;
 	}
 }

@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.Vector;
 
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.ProxyUserAlert;
@@ -239,7 +240,7 @@ public class IPDetectorPluginManager {
 		if(logMINOR) Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getConnectedPeers();
-		Peer[] nodeAddrs = detector.getPrimaryIPAddress();
+		FreenetInetAddress[] nodeAddrs = detector.getPrimaryIPAddress();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(plugins.length == 0) {
@@ -407,7 +408,7 @@ public class IPDetectorPluginManager {
 	 * @param nodeAddrs Our peers' addresses.
 	 * @return True if we should run a detection.
 	 */
-	private boolean shouldDetectDespiteRealIP(long now, PeerNode[] peers, Peer[] nodeAddrs) {
+	private boolean shouldDetectDespiteRealIP(long now, PeerNode[] peers, FreenetInetAddress[] nodeAddrs) {
 		// We might still be firewalled?
 		// First, check only once per day or startup
 		if(now - lastDetectAttemptEndedTime < 12*60*60*1000) {
@@ -432,7 +433,7 @@ public class IPDetectorPluginManager {
 						// Is it internal?
 						boolean internal = false;
 						for(int j=0;j<nodeAddrs.length;j++) {
-							if(addr.equals(nodeAddrs[j].getAddress())) {
+							if(addr.equals(nodeAddrs[j])) {
 								// Internal
 								internal = true;
 								break;

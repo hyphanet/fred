@@ -749,8 +749,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
     	// Hack for two nodes on the same IP that can't talk over inet for routing reasons
     	FreenetInetAddress localhost = node.fLocalhostAddress;
-    	Peer[] nodePeers = node.ipDetector.getPrimaryIPAddress();
-//    	FreenetInetAddress nodeAddr = node.getPrimaryIPAddress();
+    	Peer[] nodePeers = outgoingMangler.getPrimaryIPAddress();
     	
     	Vector peers = null;
     	synchronized(this) {

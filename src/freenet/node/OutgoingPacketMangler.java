@@ -5,6 +5,7 @@ package freenet.node;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.SocketHandler;
 import freenet.support.WouldBlockException;
@@ -90,4 +91,8 @@ public interface OutgoingPacketMangler {
 	 */
 	public SocketHandler getSocketHandler();
 
+	/**
+	 * Get our addresses, as peers.
+	 */
+	public Peer[] getPrimaryIPAddress();
 }
