@@ -50,12 +50,8 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 		if(sz < 32768)
 			_sock.setReceiveBufferSize(32768);
 		try {
-			// We make it timeout every 100ms so that we can check for
-			// _filters which have timed out, this
-			// is ugly but our only option without resorting to java.nio
-			// because there is no way to forcefully
-			// interrupt a socket wait operation
-			_sock.setSoTimeout(100);
+			// Exit reasonably quickly
+			_sock.setSoTimeout(1000);
 		} catch (SocketException e) {
 			throw new RuntimeException(e);
 		}
@@ -118,6 +114,9 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 		byte[] buf = new byte[MAX_RECEIVE_SIZE];
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 		while (/*_active*/true) {
+			synchronized(this) {
+				if(_isDone) return; // Finished
+			}
 			try {
 				lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
 				realRun(packet);
