@@ -621,7 +621,7 @@ public class FProxyToadlet extends Toadlet {
 			server.register(browsertTestToadlet, "/test/", true, false);
 			
 			TranslationToadlet translationToadlet = new TranslationToadlet(client, core);
-			server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, l10n("translationTitle"), l10n("translation"), true, translationToadlet);
+			server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, true);
 			
 			FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node);
 			server.register(firstTimeWizardToadlet, FirstTimeWizardToadlet.TOADLET_URL, true, false);

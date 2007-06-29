@@ -133,6 +133,7 @@ public class ConfigToadlet extends Toadlet {
 		if(advancedModeEnabled){
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
+			navigationContent.addChild("a", "href", TranslationToadlet.TOADLET_URL, l10n("contributeTranslation"));
 			HTMLNode navigationTable = navigationContent.addChild("table", "class", "config_navigation");
 			HTMLNode navigationTableRow = navigationTable.addChild("tr");
 			HTMLNode nextTableCell = navigationTableRow;

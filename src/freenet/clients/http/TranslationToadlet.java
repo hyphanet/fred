@@ -22,7 +22,7 @@ import freenet.support.io.BucketTools;
  * 
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
-public class TranslationToadlet extends Toadlet implements LinkEnabledCallback {
+public class TranslationToadlet extends Toadlet {
 	public static final String TOADLET_URL = "/translation/";
 	private final NodeClientCore core;
 	private static final SimpleFieldSet DEFAULT_TRANSLATION = L10n.getDefaultLanguageTranslation();
@@ -256,9 +256,5 @@ public class TranslationToadlet extends Toadlet implements LinkEnabledCallback {
 	
 	private String l10n(String key, String pattern, String value) {
 		return L10n.getString("TranslationToadlet."+key, new String[] { pattern }, new String[] { value });
-	}
-
-	public boolean isEnabled() {
-		return !L10n.FALLBACK_DEFAULT.equals(L10n.getSelectedLanguage());
 	}
 }
