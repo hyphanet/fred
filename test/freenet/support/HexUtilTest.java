@@ -16,6 +16,11 @@
 
 package freenet.support;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -175,6 +180,64 @@ public class HexUtilTest extends TestCase {
 		methodBigInteger = new BigInteger("72057594037927935");
 		expectedHexValue = "00ffffffffffffff";
 		assertEquals(HexUtil.biToHex(methodBigInteger),expectedHexValue);
+	}
+	
+	/**
+	 * Test bitsToHexString(BitSet,int) method
+	 * comparing its results to results provided
+	 * by different scientific valid calculators.
+	 */
+	public void testBitsToHexString() {
+		BitSet methodBitSet = new BitSet(8);
+		String expectedString = "00";
+		assertEquals(HexUtil.bitsToHexString(methodBitSet,8),expectedString);
+		methodBitSet.set(0,7,true); /*0x7f*/
+		expectedString = "7f";
+		assertEquals(HexUtil.bitsToHexString(methodBitSet,8),expectedString);
+		methodBitSet.set(0,9,true); /*0xff*/
+		expectedString = "ff";
+		assertEquals(HexUtil.bitsToHexString(methodBitSet,8),expectedString);
+	}
+	
+	/**
+	 * Tests hexToBits(String,BitSet,int) method
+	 */
+	public void testHexToBits() {
+		String methodStringToStore = "00";
+		BitSet methodBitSet = new BitSet(8);
+		HexUtil.hexToBits(methodStringToStore,methodBitSet,methodBitSet.size());
+		assertTrue(methodBitSet.cardinality()==0);		
+		BitSet expectedBitSet = new BitSet(8);
+		expectedBitSet.set(0,7,true); /*0x7f*/
+		methodStringToStore = "7f";
+		methodBitSet = new BitSet(8);
+		HexUtil.hexToBits(methodStringToStore,methodBitSet,methodBitSet.size());
+		assertTrue(methodBitSet.intersects(expectedBitSet));
+		expectedBitSet.set(0,9,true); /*0xff*/
+		methodStringToStore = "ff";
+		methodBitSet = new BitSet(8);
+		HexUtil.hexToBits(methodStringToStore,methodBitSet,methodBitSet.size());
+		assertTrue(methodBitSet.intersects(expectedBitSet));
+	}
+	
+	/**
+	 * Tests writeBigInteger(BigInteger,DataOutputStream)
+	 * and readBigInteger(DataInputStream) comparing a
+	 * BigInteger after writing it to a Stream and
+	 * reading it from the writing result.
+	 */
+	public void testWriteAndReadBigInteger() {
+		BigInteger methodBigInteger = new BigInteger("999999999999999");
+		ByteArrayOutputStream methodByteArrayOutStream = new ByteArrayOutputStream();
+		DataOutputStream methodDataOutStream = new DataOutputStream(methodByteArrayOutStream);
+		try {
+			HexUtil.writeBigInteger(methodBigInteger,methodDataOutStream);
+			ByteArrayInputStream methodByteArrayInStream = 
+				new ByteArrayInputStream(methodByteArrayOutStream.toByteArray());
+			DataInputStream methodDataInStream = new DataInputStream(methodByteArrayInStream);
+			assertTrue(methodBigInteger.compareTo(HexUtil.readBigInteger(methodDataInStream))==0);
+		} catch (IOException aException) {
+			fail("Not expected exception thrown : " + aException.getMessage()); }
 	}
 	
 	/**
