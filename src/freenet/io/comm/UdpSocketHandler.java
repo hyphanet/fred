@@ -35,6 +35,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 	private static boolean logMINOR; 
 	private volatile int lastTimeInSeconds;
 	private boolean _isDone;
+	private boolean _active = true;
 	
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node) throws SocketException {
 		super("MessageCore packet receiver thread on port " + listenPort);
@@ -115,7 +116,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 		while (/*_active*/true) {
 			synchronized(this) {
-				if(_isDone) return; // Finished
+				if(!_active) return; // Finished
 			}
 			try {
 				lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
@@ -329,6 +330,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
     public void close(boolean exit) {
     	Logger.error(this, "Closing.", new Exception("error"));
 		synchronized (this) {
+			_active = false;
 			while (!_isDone) {
 				try {
 					wait(2000);
