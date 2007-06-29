@@ -7,7 +7,7 @@ import freenet.node.PeerNodeStatus;
 import freenet.support.HTMLNode;
 import freenet.support.SimpleFieldSet;
 
-public class OpennetConnectionsToadlet extends ConnectionsToadlet {
+public class OpennetConnectionsToadlet extends ConnectionsToadlet implements LinkEnabledCallback {
 
 	protected OpennetConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
 		super(n, core, client);
@@ -37,6 +37,10 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet {
 
 	protected PeerNodeStatus[] getPeerNodeStatuses() {
 		return node.peers.getOpennetPeerNodeStatuses();
+	}
+
+	public boolean isEnabled() {
+		return node.isOpennetEnabled();
 	}
 
 }

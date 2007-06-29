@@ -32,6 +32,7 @@ public class PageMaker {
 	private final Map navigationLinkTitles = new HashMap();
 	private final Map navigationLinks = new HashMap();
 	private final Map contentNodes = new HashMap();
+	private final Map /* <String, LinkEnabledCallback> */ navigationLinkCallbacks = new HashMap();
 	
 	/** Cache for themes read from the JAR file. */
 	private List jarThemesCache = null;
@@ -56,12 +57,14 @@ public class PageMaker {
 		}
 	}
 	
-	public void addNavigationLink(String path, String name, String title, boolean fullOnly) {
+	public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
 		navigationLinkTexts.add(name);
 		if(!fullOnly)
 			navigationLinkTextsNonFull.add(name);
 		navigationLinkTitles.put(name, title);
 		navigationLinks.put(name, path);
+		if(cb != null)
+			navigationLinkCallbacks.put(name, cb);
 	}
 	
 	public void removeNavigationLink(String name) {
@@ -109,6 +112,8 @@ public class PageMaker {
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
 			for (Iterator navigationLinkIterator = fullAccess ? navigationLinkTexts.iterator() : navigationLinkTextsNonFull.iterator(); navigationLinkIterator.hasNext();) {
 				String navigationLink = (String) navigationLinkIterator.next();
+				LinkEnabledCallback cb = (LinkEnabledCallback) navigationLinkCallbacks.get(navigationLink);
+				if(cb != null && !cb.isEnabled()) continue;
 				String navigationTitle = (String) navigationLinkTitles.get(navigationLink);
 				String navigationPath = (String) navigationLinks.get(navigationLink);
 				HTMLNode listItem = navbarUl.addChild("li");

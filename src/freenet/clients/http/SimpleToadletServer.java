@@ -365,16 +365,16 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public void register(Toadlet t, String urlPrefix, boolean atFront, boolean fullOnly) {
-		register(t, urlPrefix, atFront, null, null, fullOnly);
+		register(t, urlPrefix, atFront, null, null, fullOnly, null);
 	}
 	
-	public void register(Toadlet t, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly) {
+	public void register(Toadlet t, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
 		ToadletElement te = new ToadletElement(t, urlPrefix);
 		if(atFront) toadlets.addFirst(te);
 		else toadlets.addLast(te);
 		t.container = this;
 		if (name != null) {
-			pageMaker.addNavigationLink(urlPrefix, name, title, fullOnly);
+			pageMaker.addNavigationLink(urlPrefix, name, title, fullOnly, cb);
 		}
 	}
 

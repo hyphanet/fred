@@ -575,10 +575,10 @@ public class FProxyToadlet extends Toadlet {
 			core.random.nextBytes(random);
 			FProxyToadlet fproxy = new FProxyToadlet(client, core);
 			core.setFProxy(fproxy);
-			server.register(fproxy, "/", false, l10n("welcomeTitle"), l10n("welcome"), false);
+			server.register(fproxy, "/", false, l10n("welcomeTitle"), l10n("welcome"), false, null);
 			
 			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager, core);
-			server.register(pproxy, "/plugins/", true, l10n("pluginsTitle"), l10n("plugins"), true);
+			server.register(pproxy, "/plugins/", true, l10n("pluginsTitle"), l10n("plugins"), true, null);
 			
 			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node);
 			server.register(welcometoadlet, "/welcome/", true, false);
@@ -587,7 +587,7 @@ public class FProxyToadlet extends Toadlet {
 			server.register(pluginToadlet, "/plugin/", true, true);
 			
 			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
-			server.register(configtoadlet, "/config/", true, l10n("configTitle"), l10n("config"), true);
+			server.register(configtoadlet, "/config/", true, l10n("configTitle"), l10n("config"), true, null);
 			
 			StaticToadlet statictoadlet = new StaticToadlet(client);
 			server.register(statictoadlet, "/static/", true, false);
@@ -597,19 +597,19 @@ public class FProxyToadlet extends Toadlet {
 			
 			DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
 //			server.register(friendsToadlet, "/darknet/", true, l10n("friendsTitle"), l10n("friends"), true);
-			server.register(friendsToadlet, "/friends/", true, l10n("friendsTitle"), l10n("friends"), true);
+			server.register(friendsToadlet, "/friends/", true, l10n("friendsTitle"), l10n("friends"), true, null);
 			
 			OpennetConnectionsToadlet opennetToadlet = new OpennetConnectionsToadlet(node, core, client);
-			server.register(opennetToadlet, "/opennet/", true, l10n("opennetTitle"), l10n("opennet"), true);
+			server.register(opennetToadlet, "/opennet/", true, l10n("opennetTitle"), l10n("opennet"), true, opennetToadlet);
 			
 			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 			server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
 			
 			QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
-			server.register(queueToadlet, "/queue/", true, l10n("queueTitle"), l10n("queue"), false);
+			server.register(queueToadlet, "/queue/", true, l10n("queueTitle"), l10n("queue"), false, null);
 			
 			StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
-			server.register(statisticsToadlet, "/stats/", true, l10n("statsTitle"), l10n("stats"), true);
+			server.register(statisticsToadlet, "/stats/", true, l10n("statsTitle"), l10n("stats"), true, null);
 			
 			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
 			server.register(localFileInsertToadlet, "/files/", true, false);
@@ -621,7 +621,7 @@ public class FProxyToadlet extends Toadlet {
 			server.register(browsertTestToadlet, "/test/", true, false);
 			
 			TranslationToadlet translationToadlet = new TranslationToadlet(client, core);
-			server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, l10n("translationTitle"), l10n("translation"), true);
+			server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, l10n("translationTitle"), l10n("translation"), true, translationToadlet);
 			
 			FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node);
 			server.register(firstTimeWizardToadlet, FirstTimeWizardToadlet.TOADLET_URL, true, false);
