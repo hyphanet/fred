@@ -778,20 +778,22 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 			}
 			public void set(boolean val) throws InvalidConfigValueException {
+				OpennetManager o;
 				synchronized(Node.this) {
 					if(val == (opennet != null)) return;
 					if(val) {
 						try {
-							opennet = new OpennetManager(Node.this, opennetCryptoConfig);
+							o = opennet = new OpennetManager(Node.this, opennetCryptoConfig);
 						} catch (NodeInitException e) {
 							throw new InvalidConfigValueException(e.getMessage());
 						}
 					} else {
+						o = opennet;
 						opennet = null;
 					}
 				}
-				if(val) opennet.start();
-				else opennet.stop();
+				if(val) o.start();
+				else o.stop();
 			}
 		});
 		
