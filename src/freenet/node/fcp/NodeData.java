@@ -22,9 +22,9 @@ public class NodeData extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs;
 		if(withPrivate) {
-			fs = node.exportPrivateFieldSet();
+			fs = node.exportDarknetPublicFieldSet();
 		} else {
-			fs = node.exportPublicFieldSet();
+			fs = node.exportDarknetPrivateFieldSet();
 		}
 		if(withVolatile) {
 			SimpleFieldSet vol = node.exportVolatileFieldSet();

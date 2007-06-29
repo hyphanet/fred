@@ -177,9 +177,14 @@ public class TestnetHandler implements Runnable {
 					if(logMINOR) Logger.minor(this, "Sending references");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
 					BufferedWriter bw = new BufferedWriter(osw);
-					bw.write("My ref:\n\n");
-					SimpleFieldSet fs = node.exportPublicFieldSet();
+					bw.write("My darknet ref:\n\n");
+					SimpleFieldSet fs = node.exportDarknetPublicFieldSet();
 					fs.writeTo(bw);
+					if(node.isOpennetEnabled()) {
+						bw.write("My opennet ref:\n\n");
+						fs = node.exportOpennetPublicFieldSet();
+						fs.writeTo(bw);
+					}
 					bw.write("\n\nMy peers:\n");
 					node.peers.writePeers(bw);
 					bw.close();

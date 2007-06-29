@@ -647,8 +647,14 @@ public class TextModeClientInterface implements Runnable {
 			}
         	
         } else if(uline.startsWith("STATUS")) {
-            SimpleFieldSet fs = n.exportPublicFieldSet();
+        	outsb.append("DARKNET:\n");
+            SimpleFieldSet fs = n.exportDarknetPublicFieldSet();
             outsb.append(fs.toString());
+            if(n.isOpennetEnabled()) {
+            	outsb.append("OPENNET:\n");
+            	fs = n.exportOpennetPublicFieldSet();
+                outsb.append(fs.toString());
+            }
             outsb.append(n.getStatus());
             if(Version.buildNumber()<Version.highestSeenBuild){
                 outsb.append("The latest version is : ").append(Version.highestSeenBuild);

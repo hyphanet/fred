@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
@@ -40,6 +41,32 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		return L10n.getString("DarknetConnectionsToadlet."+string);
 	}
 	
+	protected class DarknetComparator extends ComparatorByStatus {
+
+		DarknetComparator(String sortBy, boolean reversed) {
+			super(sortBy, reversed);
+		}
+	
+		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy) {
+			if(sortBy.equals("name")) {
+				return ((DarknetPeerNodeStatus)firstNode).getName().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getName());
+			}else if(sortBy.equals("privnote")){
+				return ((DarknetPeerNodeStatus)firstNode).getPrivateDarknetCommentNote().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getPrivateDarknetCommentNote());
+			} else
+				return super.customCompare(firstNode, secondNode, sortBy);
+		}
+		
+		/** Default comparison, after taking into account status */
+		protected int lastResortCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+			return ((DarknetPeerNodeStatus)firstNode).getName().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getName());
+		}
+
+	}
+	
+	protected Comparator comparator(String sortBy, boolean reversed) {
+		return new DarknetComparator(sortBy, reversed);
+	}
+		
 	public void handlePost(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
@@ -407,6 +434,14 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		} else {
 			peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", status.getPrivateDarknetCommentNote() });
 		}
+	}
+
+	protected SimpleFieldSet getNoderef() {
+		return node.exportDarknetPublicFieldSet();
+	}
+
+	protected PeerNodeStatus[] getPeerNodeStatuses() {
+		return node.peers.getDarknetPeerNodeStatuses();
 	}
 
 

@@ -188,7 +188,7 @@ public class DarknetPeerNode extends PeerNode {
     }
     
     public synchronized SimpleFieldSet exportFieldSet() {
-    	SimpleFieldSet fs = super.exportMetadataFieldSet();
+    	SimpleFieldSet fs = super.exportFieldSet();
     	fs.putSingle("myName", getName());
     	return fs;
     }

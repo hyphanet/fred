@@ -2648,7 +2648,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Create a DarknetPeerNode or an OpennetPeerNode as appropriate
 	 */
 	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager manager, boolean b, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		return new DarknetPeerNode(fs, node2, crypto, manager, b, mangler);
+		if(crypto.isOpennet)
+			return new OpennetPeerNode(fs, node2, crypto, manager, b, mangler);
+		else
+			return new DarknetPeerNode(fs, node2, crypto, manager, b, mangler);
 	}
 
 	public byte[] getIdentity() {

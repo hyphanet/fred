@@ -599,6 +599,9 @@ public class FProxyToadlet extends Toadlet {
 //			server.register(friendsToadlet, "/darknet/", true, l10n("friendsTitle"), l10n("friends"), true);
 			server.register(friendsToadlet, "/friends/", true, l10n("friendsTitle"), l10n("friends"), true);
 			
+			OpennetConnectionsToadlet opennetToadlet = new OpennetConnectionsToadlet(node, core, client);
+			server.register(opennetToadlet, "/opennet/", true, l10n("opennetTitle"), l10n("opennet"), true);
+			
 			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 			server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
 			

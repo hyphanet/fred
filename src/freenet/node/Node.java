@@ -8,7 +8,6 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -26,7 +25,6 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Random;
-import java.util.zip.DeflaterOutputStream;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -46,7 +44,6 @@ import freenet.config.LongOption;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DSASignature;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.io.comm.DMT;
@@ -297,12 +294,6 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Semi-unique ID for swap requests. Used to identify us so that the
 	 * topology can be reconstructed. */
 	public long swapIdentifier;
-	/** The signature of the above fieldset */
-	private DSASignature myReferenceSignature = null;
-	/** A synchronization object used while signing the reference fiedlset */
-	private volatile Object referenceSync = new Object();
-	/** An ordered version of the FieldSet, without the signature */
-	private String mySignedReference = null;
 	private String myName;
 	final LocationManager lm;
 	/** My peers */
@@ -324,7 +315,8 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	// Opennet stuff
 	
-	private NodeCrypto opennetCrypto;
+	private final NodeCryptoConfig opennetCryptoConfig;
+	private OpennetManager opennet;
 	
 	// General stuff
 	
@@ -459,7 +451,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	private void writeNodeFile(File orig, File backup) {
-		SimpleFieldSet fs = exportPrivateFieldSet();
+		SimpleFieldSet fs = darknetCrypto.exportPrivateFieldSet();
 		
 		if(orig.exists()) backup.delete();
 		
@@ -608,7 +600,9 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		// Determine the port number
 		
-		darknetCrypto = new NodeCrypto(nodeConfig, sortOrder++, this);
+		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++);
+		sortOrder += NodeCryptoConfig.OPTION_COUNT;
+		darknetCrypto = new NodeCrypto(sortOrder++, this, false, darknetConfig);
 
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
@@ -767,10 +761,53 @@ public class Node implements TimeSkewDetectorCallback {
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 		
 		// Then read the peers
-		peers = new PeerManager(this, darknetCrypto, new File(nodeDir, "peers-"+getDarknetPortNumber()).getPath(), darknetCrypto.packetMangler);
+		peers = new PeerManager(this);
+		peers.tryReadPeers(new File(nodeDir, "peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, false);
 		peers.writePeers();
 		peers.updatePMUserAlert();
 
+		// Opennet
+		
+		final SubConfig opennetConfig = new SubConfig("node.opennet", config);
+		
+		// Can be enabled on the fly
+		opennetConfig.register("enabled", false, 0, false, true, "Node.opennetEnabled", "Node.opennetEnabledLong", new BooleanCallback() {
+			public boolean get() {
+				synchronized(Node.this) {
+					return opennet != null;
+				}
+			}
+			public void set(boolean val) throws InvalidConfigValueException {
+				synchronized(Node.this) {
+					if(val == (opennet != null)) return;
+					if(val) {
+						try {
+							opennet = new OpennetManager(Node.this, opennetCryptoConfig);
+						} catch (NodeInitException e) {
+							throw new InvalidConfigValueException(e.getMessage());
+						}
+					} else {
+						opennet = null;
+					}
+				}
+				if(val) opennet.start();
+				else opennet.stop();
+			}
+		});
+		
+		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
+		
+		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 1 /* 0 = enabled */);
+		
+		if(opennetEnabled) {
+			opennet = new OpennetManager(this, opennetCryptoConfig);
+			// Will be started later
+		} else {
+			opennet = null;
+		}
+		
+		opennetConfig.finishedInitialization();
+		
 		// Extra Peer Data Directory
 		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+getDarknetPortNumber()).toString(), sortOrder++, true, false, "Node.extraPeerDir", "Node.extraPeerDirLong",
 				new StringCallback() {
@@ -1216,6 +1253,8 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		usm.start(ps);
 		darknetCrypto.start(disableHangCheckers);
+		if(opennet != null)
+			opennet.start();
 		
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
@@ -1454,60 +1493,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private String l10n(String key, String pattern, String value) {
 		return L10n.getString("Node."+key, pattern, value);
-	}
-
-	public SimpleFieldSet exportPrivateFieldSet() {
-		SimpleFieldSet fs = exportPublicFieldSet(false);
-		darknetCrypto.addPrivateFields(fs);
-		return fs;
-	}
-	
-	/**
-	 * Export my node reference so that another node can connect to me.
-	 * Public version, includes everything apart from private keys.
-	 * @see exportPublicFieldSet(boolean forSetup).
-	 */
-	public SimpleFieldSet exportPublicFieldSet() {
-		return exportPublicFieldSet(false);
-	}
-	
-	/**
-	 * Export my reference so that another node can connect to me.
-	 * @param forSetup If true, strip out everything that isn't needed for the references
-	 * exchanged immediately after connection setup. I.e. strip out everything that is invariant,
-	 * or that can safely be exchanged later.
-	 */
-	SimpleFieldSet exportPublicFieldSet(boolean forSetup) {
-		SimpleFieldSet fs = darknetCrypto.exportPublicFieldSet(forSetup);
-		// IP addresses
-		Peer[] ips = ipDetector.getPrimaryIPAddress();
-		if(ips != null) {
-			for(int i=0;i<ips.length;i++)
-				fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
-		}
-		// Negotiation types
-		fs.put("location", lm.getLocation().getValue()); // FIXME maybe !forSetup; see #943
-		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
-		fs.put("testnet", testnetEnabled); // Vital that peer know this!
-		fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
-		if(testnetEnabled)
-			fs.put("testnetPort", testnetHandler.getPort()); // Useful, saves a lot of complexity
-		fs.putSingle("myName", myName); // FIXME see #942
-		
-		synchronized (referenceSync) {
-			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
-				mySignedReference = fs.toOrderedString();
-				try {
-					myReferenceSignature = darknetCrypto.signRef(mySignedReference);
-				} catch (NodeInitException e) {
-					exit(e.exitCode);
-				}
-			}
-			fs.putSingle("sig", myReferenceSignature.toLongString());
-		}
-		
-		if(logMINOR) Logger.minor(this, "My reference: "+fs.toOrderedString());
-		return fs;
 	}
 
 	/**
@@ -2099,34 +2084,6 @@ public class Node implements TimeSkewDetectorCallback {
 		return sb.toString();
 	}
 
-	/**
-	 * The part of our node reference which is exchanged in the connection setup, compressed.
-	 * @see exportSetupFieldSet()
-	 */
-	public byte[] myCompressedSetupRef() {
-		SimpleFieldSet fs = exportPublicFieldSet(true);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		DeflaterOutputStream gis;
-		gis = new DeflaterOutputStream(baos);
-		OutputStreamWriter osw = new OutputStreamWriter(gis);
-		BufferedWriter bw = new BufferedWriter(osw);
-		try {
-			fs.writeTo(bw);
-		} catch (IOException e) {
-			throw new Error(e);
-		}
-		try {
-			bw.close();
-		} catch (IOException e1) {
-			throw new Error(e1);
-		}
-		byte[] buf = baos.toByteArray();
-		byte[] obuf = new byte[buf.length + 1];
-		obuf[0] = 1;
-		System.arraycopy(buf, 0, obuf, 1, buf.length);
-		return obuf;
-	}
-
 	final LRUQueue recentlyCompletedIDs;
 
 	static final int MAX_RECENTLY_COMPLETED_IDS = 10*1000;
@@ -2560,7 +2517,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Connect this node to another node (for purposes of testing) 
 	 */
 	public void connect(Node node) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		peers.connect(node.exportPublicFieldSet(), darknetCrypto.packetMangler);
+		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler);
 	}
 	
 	public short maxHTL() {
@@ -2611,5 +2568,21 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public int estimateFullHeadersLengthOneMessage() {
 		return darknetCrypto.packetMangler.fullHeadersLengthOneMessage();
+	}
+
+	public synchronized boolean isOpennetEnabled() {
+		return opennet != null;
+	}
+
+	public SimpleFieldSet exportDarknetPublicFieldSet() {
+		return darknetCrypto.exportPublicFieldSet();
+	}
+
+	public SimpleFieldSet exportOpennetPublicFieldSet() {
+		return opennet.crypto.exportPublicFieldSet();
+	}
+
+	public SimpleFieldSet exportDarknetPrivateFieldSet() {
+		return darknetCrypto.exportPrivateFieldSet();
 	}
 }

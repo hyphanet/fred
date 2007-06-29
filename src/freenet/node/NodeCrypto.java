@@ -1,16 +1,20 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
+import java.util.zip.DeflaterOutputStream;
 
 import net.i2p.util.NativeBigInteger;
-
-import freenet.config.InvalidConfigValueException;
-import freenet.config.SubConfig;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
@@ -19,6 +23,7 @@ import freenet.crypt.DSASignature;
 import freenet.crypt.Global;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
+import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
@@ -27,8 +32,6 @@ import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.api.IntCallback;
-import freenet.support.api.StringCallback;
 
 /**
  * Cryptographic and transport level node identity. 
@@ -36,11 +39,13 @@ import freenet.support.api.StringCallback;
  */
 class NodeCrypto {
 
+	final Node node;
+	final boolean isOpennet;
 	final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
 	UdpSocketHandler socket;
 	public FNPPacketMangler packetMangler;
-	final String bindto;
+	final InetAddress bindto;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
 	byte[] myIdentity; // FIXME: simple identity block; should be unique
@@ -60,41 +65,32 @@ class NodeCrypto {
 	long myARKNumber;
 	static boolean logMINOR;
 	
+	// Noderef related
+	/** The signature of the above fieldset */
+	private DSASignature myReferenceSignature = null;
+	/** A synchronization object used while signing the reference fiedlset */
+	private volatile Object referenceSync = new Object();
+	/** An ordered version of the FieldSet, without the signature */
+	private String mySignedReference = null;
+	
 	/**
 	 * Get port number from a config, create socket and packet mangler
 	 * @throws NodeInitException 
 	 */
-	public NodeCrypto(SubConfig nodeConfig, int sortOrder, Node node) throws NodeInitException {
-		
+	public NodeCrypto(int sortOrder, Node node, boolean isOpennet, NodeCryptoConfig config) throws NodeInitException {
+
+		this.node = node;
 		random = node.random;
+		this.isOpennet = isOpennet;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
-		nodeConfig.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
-			public int get() {
-				return portNumber;
-			}
-			public void set(int val) throws InvalidConfigValueException {
-				// FIXME implement on the fly listenPort changing
-				// Note that this sort of thing should be the exception rather than the rule!!!!
-				String msg = "Switching listenPort on the fly not yet supported!";
-				Logger.error(this, msg);
-				throw new InvalidConfigValueException(msg);
-			}
-		});
+		config.starting(this);
 		
-		int port=-1;
-		try{
-			port=nodeConfig.getInt("listenPort");
-		}catch (Exception e){
-			Logger.error(this, "Caught "+e, e);
-			System.err.println(e);
-			e.printStackTrace();
-			port=-1;
-		}
+		try {
 		
-		nodeConfig.register("bindTo", "0.0.0.0", sortOrder++, true, true, "Node.bindTo", "Node.bindToLong", new NodeBindtoCallback());
+		int port = config.getPort();
 		
-		this.bindto = nodeConfig.getString("bindTo");
+		bindto = config.getBindTo();
 		
 		UdpSocketHandler u = null;
 		
@@ -105,7 +101,7 @@ class NodeCrypto {
 			for(int i=0;i<200000;i++) {
 				int portNo = 1024 + random.nextInt(65535-1024);
 				try {
-					u = new UdpSocketHandler(portNo, InetAddress.getByName(bindto), node);
+					u = new UdpSocketHandler(portNo, bindto, node);
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
@@ -119,7 +115,7 @@ class NodeCrypto {
 				throw new NodeInitException(NodeInitException.EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
 		} else {
 			try {
-				u = new UdpSocketHandler(port, InetAddress.getByName(bindto), node);
+				u = new UdpSocketHandler(port, bindto, node);
 			} catch (Exception e) {
 				throw new NodeInitException(NodeInitException.EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
 			}
@@ -129,39 +125,25 @@ class NodeCrypto {
 		Logger.normal(this, "FNP port created on "+bindto+ ':' +port);
 		System.out.println("FNP port created on "+bindto+ ':' +port);
 		portNumber = port;
+		config.setPort(port);
 		
-		nodeConfig.register("testingDropPacketsEvery", 0, sortOrder++, true, false, "Node.dropPacketEvery", "Node.dropPacketEveryLong",
-				new IntCallback() {
-
-					public int get() {
-						return ((UdpSocketHandler)socket).getDropProbability();
-					}
-
-					public void set(int val) throws InvalidConfigValueException {
-						((UdpSocketHandler)socket).setDropProbability(val);
-					}
-			
-		});
-		
-		int dropProb = nodeConfig.getInt("testingDropPacketsEvery");
-		((UdpSocketHandler)socket).setDropProbability(dropProb);
+		((UdpSocketHandler)socket).setDropProbability(config.getDropProbability());
 		
 		socket.setLowLevelFilter(packetMangler = new FNPPacketMangler(node, this, socket));
+		} catch (NodeInitException e) {
+			config.stopping(this);
+			throw e;
+		} catch (RuntimeException e) {
+			config.stopping(this);
+			throw e;
+		} catch (Error e) {
+			config.stopping(this);
+			throw e;
+		} finally {
+			config.maybeStarted(this);
+		}
 	}
 	
-	class NodeBindtoCallback implements StringCallback {
-		
-		public String get() {
-			return bindto;
-		}
-		
-		public void set(String val) throws InvalidConfigValueException {
-			if(val.equals(get())) return;
-			// FIXME why not? Can't we use freenet.io.NetworkInterface like everywhere else, just adapt it for UDP?
-			throw new InvalidConfigValueException("Cannot be updated on the fly");
-		}
-	}
-
 	/**
 	 * Read the cryptographic keys etc from a SimpleFieldSet
 	 * @param fs
@@ -246,8 +228,64 @@ class NodeCrypto {
 	public void start(boolean disableHangchecker) {
 		socket.start(disableHangchecker);
 	}
-
+	
+	public SimpleFieldSet exportPrivateFieldSet() {
+		SimpleFieldSet fs = exportPublicFieldSet(false);
+		addPrivateFields(fs);
+		return fs;
+	}
+	
+	/**
+	 * Export my node reference so that another node can connect to me.
+	 * Public version, includes everything apart from private keys.
+	 * @see exportPublicFieldSet(boolean forSetup).
+	 */
+	public SimpleFieldSet exportPublicFieldSet() {
+		return exportPublicFieldSet(false);
+	}
+	
+	/**
+	 * Export my reference so that another node can connect to me.
+	 * @param forSetup If true, strip out everything that isn't needed for the references
+	 * exchanged immediately after connection setup. I.e. strip out everything that is invariant,
+	 * or that can safely be exchanged later.
+	 */
 	SimpleFieldSet exportPublicFieldSet(boolean forSetup) {
+		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup);
+		// IP addresses
+		Peer[] ips = node.ipDetector.getPrimaryIPAddress();
+		if(ips != null) {
+			for(int i=0;i<ips.length;i++)
+				fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
+		}
+		// Negotiation types
+		fs.put("location", node.lm.getLocation().getValue()); // FIXME maybe !forSetup; see #943
+		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
+		fs.put("testnet", node.testnetEnabled); // Vital that peer know this!
+		fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
+		if(node.testnetEnabled)
+			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
+		if(!isOpennet)
+			fs.putSingle("myName", node.getMyName()); // FIXME see #942
+		
+		synchronized (referenceSync) {
+			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
+				mySignedReference = fs.toOrderedString();
+				try {
+					myReferenceSignature = signRef(mySignedReference);
+				} catch (NodeInitException e) {
+					node.exit(e.exitCode);
+				}
+			}
+			fs.putSingle("sig", myReferenceSignature.toLongString());
+		}
+		fs.put("opennet", isOpennet);
+		
+		if(logMINOR) Logger.minor(this, "My reference: "+fs.toOrderedString());
+		return fs;
+	}
+
+	SimpleFieldSet exportPublicCryptoFieldSet(boolean forSetup) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		int[] negTypes = packetMangler.supportedNegTypes();
 		fs.put("auth.negTypes", negTypes);
@@ -283,15 +321,39 @@ class NodeCrypto {
 		}
 	}
 
+	/**
+	 * The part of our node reference which is exchanged in the connection setup, compressed.
+	 * @see exportSetupFieldSet()
+	 */
+	public byte[] myCompressedSetupRef() {
+		SimpleFieldSet fs = exportPublicFieldSet(true);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		DeflaterOutputStream gis;
+		gis = new DeflaterOutputStream(baos);
+		OutputStreamWriter osw = new OutputStreamWriter(gis);
+		BufferedWriter bw = new BufferedWriter(osw);
+		try {
+			fs.writeTo(bw);
+		} catch (IOException e) {
+			throw new Error(e);
+		}
+		try {
+			bw.close();
+		} catch (IOException e1) {
+			throw new Error(e1);
+		}
+		byte[] buf = baos.toByteArray();
+		byte[] obuf = new byte[buf.length + 1];
+		obuf[0] = 1;
+		System.arraycopy(buf, 0, obuf, 1, buf.length);
+		return obuf;
+	}
+
 	void addPrivateFields(SimpleFieldSet fs) {
 		fs.put("dsaPrivKey", privKey.asFieldSet());
 		fs.putSingle("ark.privURI", myARK.getInsertURI().toString(false, false));
 	}
 
-	public String getBindTo(){
-		return this.bindto;
-	}
-	
 	public int getIdentityHash(){
 		return Fields.hashCode(identityHash);
 	}
@@ -299,6 +361,13 @@ class NodeCrypto {
 	/** Sign a hash */
 	DSASignature sign(byte[] hash) {
 		return DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
+	}
+
+	public void onSetDropProbability(int val) {
+		synchronized(this) {
+			if(socket == null) return;
+		}
+		socket.setDropProbability(val);
 	}
 	
 }

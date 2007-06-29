@@ -333,7 +333,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         PCFBMode pcfb = PCFBMode.create(cipher);
         byte[] iv = new byte[pcfb.lengthIV()];
         
-        byte[] myRef = node.myCompressedSetupRef();
+        byte[] myRef = crypto.myCompressedSetupRef();
         byte[] data = new byte[myRef.length + 8];
         System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
         System.arraycopy(myRef, 0, data, 8, myRef.length);

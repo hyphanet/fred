@@ -56,7 +56,7 @@ public class RealNodeRequestInsertTest {
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];
         for(int i=0;i<NUMBER_OF_NODES;i++)
-            refs[i] = nodes[i].exportPublicFieldSet();
+            refs[i] = nodes[i].exportDarknetPublicFieldSet();
         Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");
         // Now link them up
         // Connect the set

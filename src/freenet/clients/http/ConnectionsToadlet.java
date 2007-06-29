@@ -33,6 +33,65 @@ import freenet.support.api.HTTPRequest;
 
 public abstract class ConnectionsToadlet extends Toadlet {
 
+	protected class ComparatorByStatus implements Comparator {
+		
+		protected final String sortBy;
+		protected final boolean reversed;
+		
+		ComparatorByStatus(String sortBy, boolean reversed) {
+			this.sortBy = sortBy;
+			this.reversed = reversed;
+		}
+		
+		public int compare(Object first, Object second) {
+			int result = 0;
+			boolean isSet = true;
+			PeerNodeStatus firstNode = (DarknetPeerNodeStatus) first;
+			PeerNodeStatus secondNode = (DarknetPeerNodeStatus) second;
+			
+			if(sortBy != null){
+				result = customCompare(firstNode, secondNode, sortBy);
+				isSet = (result != 0);
+				
+			}else
+				isSet=false;
+			
+			if(!isSet){
+				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
+				if (statusDifference != 0) 
+					result = (statusDifference < 0 ? -1 : 1);
+				else
+					result = lastResortCompare(firstNode, secondNode);
+			}
+
+			if(result == 0){
+				return 0;
+			}else if(reversed){
+				isReversed = true;
+				return result > 0 ? -1 : 1;
+			}else{
+				isReversed = false;
+				return result < 0 ? -1 : 1;
+			}
+		}
+
+		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy2) {
+			if(sortBy.equals("address")){
+				return firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
+			}else if(sortBy.equals("location")){
+				return (firstNode.getLocation() - secondNode.getLocation()) < 0 ? -1 : 1; // Shouldn't be equal anyway
+			}else if(sortBy.equals("version")){
+				return Version.getArbitraryBuildNumber(firstNode.getVersion()) - Version.getArbitraryBuildNumber(secondNode.getVersion());
+			}else
+				return 0;
+		}
+
+		/** Default comparison, after taking into account status */
+		protected int lastResortCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+			return (firstNode.getLocation() - secondNode.getLocation()) < 0 ? -1 : 1;
+		}
+	}
+
 	protected final Node node;
 	protected final NodeClientCore core;
 	protected final NodeStats stats;
@@ -55,7 +114,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String path = uri.getPath();
 		if(path.endsWith("myref.fref")) {
-			SimpleFieldSet fs = node.exportPublicFieldSet();
+			SimpleFieldSet fs = getNoderef();
 			StringWriter sw = new StringWriter();
 			fs.writeTo(sw);
 			MultiValueTable extraHeaders = new MultiValueTable();
@@ -66,7 +125,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 
 		if(path.endsWith("myref.txt")) {
-			SimpleFieldSet fs = node.exportPublicFieldSet();
+			SimpleFieldSet fs = getNoderef();
 			StringWriter sw = new StringWriter();
 			fs.writeTo(sw);
 			this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
@@ -82,51 +141,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		final boolean fProxyJavascriptEnabled = node.isFProxyJavascriptEnabled();
 		
 		/* gather connection statistics */
-		DarknetPeerNodeStatus[] peerNodeStatuses = peers.getDarknetPeerNodeStatuses();
-		Arrays.sort(peerNodeStatuses, new Comparator() {
-			public int compare(Object first, Object second) {
-				int result = 0;
-				boolean isSet = true;
-				DarknetPeerNodeStatus firstNode = (DarknetPeerNodeStatus) first;
-				DarknetPeerNodeStatus secondNode = (DarknetPeerNodeStatus) second;
-				
-				if(request.isParameterSet("sortBy")){
-					final String sortBy = request.getParam("sortBy"); 
-
-					if(sortBy.equals("name")){
-						result = firstNode.getName().compareToIgnoreCase(secondNode.getName());
-					}else if(sortBy.equals("address")){
-						result = firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
-					}else if(sortBy.equals("location")){
-						result = (firstNode.getLocation() - secondNode.getLocation()) < 0 ? -1 : 1; // Shouldn't be equal anyway
-					}else if(sortBy.equals("version")){
-						result = Version.getArbitraryBuildNumber(firstNode.getVersion()) - Version.getArbitraryBuildNumber(secondNode.getVersion());
-					}else if(sortBy.equals("privnote")){
-						result = firstNode.getPrivateDarknetCommentNote().compareToIgnoreCase(secondNode.getPrivateDarknetCommentNote());
-					}else
-						isSet=false;
-				}else
-					isSet=false;
-				
-				if(!isSet){
-					int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
-					if (statusDifference != 0) 
-						result = (statusDifference < 0 ? -1 : 1);
-					else
-						result = firstNode.getName().compareToIgnoreCase(secondNode.getName());
-				}
-
-				if(result == 0){
-					return 0;
-				}else if(request.isParameterSet("reversed")){
-					isReversed = true;
-					return result > 0 ? -1 : 1;
-				}else{
-					isReversed = false;
-					return result < 0 ? -1 : 1;
-				}
-			}
-		});
+		PeerNodeStatus[] peerNodeStatuses = getPeerNodeStatuses();
+		Arrays.sort(peerNodeStatuses, comparator(request.getParam("sortBy", null), request.isParameterSet("reversed")));
 		
 		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
 		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
@@ -433,7 +449,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		L10n.addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
 				new String[] { "bold", "/bold" },
 				new String[] { "<b>", "</b>" });
-		referenceInfobox.addChild("div", "class", "infobox-content").addChild("pre", "id", "reference", node.exportPublicFieldSet().toString() + '\n');
+		referenceInfobox.addChild("div", "class", "infobox-content").addChild("pre", "id", "reference", getNoderef().toString() + '\n');
 		
 		// our ports
 		HTMLNode portInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -468,6 +484,14 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	}
 	
 	
+	protected Comparator comparator(String sortBy, boolean reversed) {
+		return new ComparatorByStatus(sortBy, reversed);
+	}
+
+	abstract protected PeerNodeStatus[] getPeerNodeStatuses();
+
+	abstract protected SimpleFieldSet getNoderef();
+
 	private void drawRow(HTMLNode peerTable, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled, boolean fProxyJavascriptEnabled, long now, String path) {
 		HTMLNode peerRow = peerTable.addChild("tr");
 

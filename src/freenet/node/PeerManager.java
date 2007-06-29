@@ -52,7 +52,8 @@ public class PeerManager {
     /** All the peers we are actually connected to */
     PeerNode[] connectedPeers;
     
-    final String filename;
+    private String darkFilename;
+    private String openFilename;
 
     private PeerManagerUserAlert ua;
     
@@ -93,16 +94,26 @@ public class PeerManager {
      * @param node
      * @param filename
      */
-    public PeerManager(Node node, NodeCrypto crypto, String filename, OutgoingPacketMangler mangler) {
+    public PeerManager(Node node) {
         Logger.normal(this, "Creating PeerManager");
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		peerNodeStatuses = new HashMap();
 		peerNodeRoutingBackoffReasons = new HashMap();
         System.out.println("Creating PeerManager");
-        this.filename = filename;
         myPeers = new PeerNode[0];
         connectedPeers = new PeerNode[0];
         this.node = node;
+    }
+
+    void tryReadPeers(String filename, NodeCrypto crypto, boolean isOpennet) {
+    	synchronized(writePeersSync) {
+    		if(isOpennet) {
+    			openFilename = filename;
+    		} else {
+    			darkFilename = filename;
+    		}
+    	}
+    	OutgoingPacketMangler mangler = crypto.packetMangler;
         File peersFile = new File(filename);
         File backupFile = new File(filename+".bak");
         // Try to read the node list from disk
@@ -125,9 +136,9 @@ public class PeerManager {
         		System.err.println("No (readable) peers file with peers in it found");
         	}
      	}     		
-    }
+	}
 
-    private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto) {
+	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto) {
     	boolean gotSome = false;
     	FileInputStream fis;
 		try {
@@ -172,7 +183,7 @@ public class PeerManager {
         try {
         	br.close();
         } catch (IOException e3) {
-        	Logger.error(this, "Ignoring "+e3+" caught reading "+filename, e3);
+        	Logger.error(this, "Ignoring "+e3+" caught reading "+peersFile, e3);
         }
         return gotSome;
 	}
@@ -727,11 +738,20 @@ public class PeerManager {
 			}
     	}, 0);
     }
+
+    private void writePeersInner() {
+    	synchronized(writePeersSync) {
+    		if(darkFilename != null)
+    			writePeersInner(darkFilename, getDarknetPeers());
+    		if(openFilename != null)
+    			writePeersInner(openFilename, getOpennetPeers());
+    	}
+    }
     
     /**
      * Write the peers file to disk
      */
-    private void writePeersInner() {
+    private void writePeersInner(String filename, PeerNode[] peers) {
         synchronized (writePeersSync) {
             FileOutputStream fos;
             String f = filename + ".bak";
@@ -750,7 +770,7 @@ public class PeerManager {
 			}
             BufferedWriter bw = new BufferedWriter(w);
             try {
-            	boolean succeeded = writePeers(bw);
+            	boolean succeeded = writePeers(bw, peers);
                 bw.close();
                 if(!succeeded) return;
             } catch (IOException e) {
@@ -762,9 +782,10 @@ public class PeerManager {
                 Logger.error(this, "Cannot write file: " + e, e);
                 return; // don't overwrite old file!
             }
-            if (!new File(f).renameTo(new File(filename))) {
-                new File(filename).delete();
-                if (!new File(f).renameTo(new File(filename))) {
+            File fnam = new File(filename);
+            if (!new File(f).renameTo(fnam)) {
+                fnam.delete();
+                if (!new File(f).renameTo(fnam)) {
                     Logger.error(this, "Could not rename " + f + " to "
                             + filename + " writing peers");
                 }
@@ -772,11 +793,13 @@ public class PeerManager {
         }
     }
 
-	public boolean writePeers(Writer bw) {
-        PeerNode[] peers;
-        synchronized (this) {
-			peers = myPeers;
-		}
+    public boolean writePeers(Writer bw) {
+    	if(!writePeers(bw, getDarknetPeers())) return false;
+    	if(!writePeers(bw, getOpennetPeers())) return false;
+    	return true;
+    }
+    
+	public boolean writePeers(Writer bw, PeerNode[] peers) {
         for (int i = 0; i < peers.length; i++) {
             try {
                 peers[i].write(bw);
@@ -1114,6 +1137,15 @@ public class PeerManager {
 		return peerNodeStatuses;
 	}
 
+	public OpennetPeerNodeStatus[] getOpennetPeerNodeStatuses() {
+        OpennetPeerNode[] peers = getOpennetPeers();
+		OpennetPeerNodeStatus[] peerNodeStatuses = new OpennetPeerNodeStatus[peers.length];
+		for (int peerIndex = 0, peerCount = peers.length; peerIndex < peerCount; peerIndex++) {
+			peerNodeStatuses[peerIndex] = (OpennetPeerNodeStatus) peers[peerIndex].getStatus();
+		}
+		return peerNodeStatuses;
+	}
+
 	/**
 	 * Update hadRoutableConnectionCount/routableConnectionCheckCount on peers if the timer has expired
 	 */
@@ -1133,6 +1165,7 @@ public class PeerManager {
 
 	/**
 	 * Get the darknet peers list.
+	 * FIXME: optimise
 	 */
 	public DarknetPeerNode[] getDarknetPeers() {
 		PeerNode[] peers;
@@ -1148,4 +1181,20 @@ public class PeerManager {
 		return (DarknetPeerNode[])v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
+	/**
+	 * Get the opennet peers list.
+	 */
+	public OpennetPeerNode[] getOpennetPeers() {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		// FIXME optimise! Maybe maintain as a separate list?
+		Vector v = new Vector(myPeers.length);
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] instanceof OpennetPeerNode)
+				v.add(peers[i]);
+		}
+		return (OpennetPeerNode[])v.toArray(new OpennetPeerNode[v.size()]);
+	}
 }
