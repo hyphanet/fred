@@ -411,7 +411,7 @@ public class StatisticsToadlet extends Toadlet {
 					"\u00a0(" + ((storeHits*100) / (storeAccesses)) + "%)");
 
 		storeSizeList.addChild("li", 
-				"Avg. access rate:\u00a0" + thousendPoint.format(overallAccesses/nodeUptimeSeconds) + "/s");
+				"Avg. access rate:\u00a0" + thousendPoint.format(overallAccesses/nodeUptimeSeconds) + "/sec");
 		
 	}
 
