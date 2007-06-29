@@ -275,6 +275,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 	public class USMChecker implements Runnable {
 		public void run() {
 			while(true) {
+				if(_isDone) return; // don't synchronize because don't want to deadlock - this is our recovery mechanism
 				logMINOR = Logger.shouldLog(Logger.MINOR, UdpSocketHandler.this);
 				try {
 					Thread.sleep(10*1000);
