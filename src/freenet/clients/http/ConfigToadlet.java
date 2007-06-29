@@ -11,6 +11,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.config.BooleanOption;
 import freenet.config.Config;
 import freenet.config.EnumerableOptionCallback;
+import freenet.config.InvalidConfigValueException;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -73,7 +74,9 @@ public class ConfigToadlet extends Toadlet {
 						if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName+" to "+value);
 						try{
 							o[j].setValue(value);
-						}catch(Exception e){
+						} catch (InvalidConfigValueException e) {
+							errbuf.append(o[j].getName()).append(e.getMessage()).append('\n');
+						} catch (Exception e){
                             errbuf.append(o[j].getName()).append(' ').append(e).append('\n');
 							Logger.error(this, "Caught "+e, e);
 						}
