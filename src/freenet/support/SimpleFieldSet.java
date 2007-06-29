@@ -33,6 +33,8 @@ public class SimpleFieldSet {
     private String endMarker;
     private final boolean shortLived;
     static public final char MULTI_LEVEL_CHAR = '.';
+    static public final char MULTI_VALUE_CHAR = ';';
+    static public final char KEYVALUE_SEPARATOR_CHAR = '=';
     
     /**
      * Create a SimpleFieldSet.
@@ -110,7 +112,7 @@ public class SimpleFieldSet {
                 throw new IOException(); // No end marker!
             }
             firstLine = false;
-            int index = line.indexOf('=');
+            int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
             if(index >= 0) {
                 // Mapping
                 String before = line.substring(0, index);
@@ -147,7 +149,7 @@ public class SimpleFieldSet {
             }
             if((line.length() == 0) && tolerant) continue; // ignore
             firstLine = false;
-            int index = line.indexOf('=');
+            int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
             if(index >= 0) {
                 // Mapping
                 String before = line.substring(0, index);
@@ -186,7 +188,7 @@ public class SimpleFieldSet {
 
     private static final String[] split(String string) {
     	if(string == null) return new String[0];
-    	return string.split(";"); // slower???
+    	return string.split(String.valueOf(MULTI_VALUE_CHAR)); // slower???
 //    	int index = string.indexOf(';');
 //    	if(index == -1) return null;
 //    	Vector v=new Vector();
@@ -206,7 +208,7 @@ public class SimpleFieldSet {
     private static final String unsplit(String[] strings) {
     	StringBuffer sb = new StringBuffer();
     	for(int i=0;i<strings.length;i++) {
-    		if(i != 0) sb.append(';');
+    		if(i != 0) sb.append(MULTI_VALUE_CHAR);
     		sb.append(strings[i]);
     	}
     	return sb.toString();
@@ -292,7 +294,7 @@ public class SimpleFieldSet {
 				values.put(key, value);
 			} else {
 				if(!allowMultiple) return false;
-				values.put(key, ((String)values.get(key))+ ';' +value);
+				values.put(key, ((String)values.get(key))+ MULTI_VALUE_CHAR +value);
 			}
 		} else {
 			String before = key.substring(0, idx);
@@ -358,7 +360,7 @@ public class SimpleFieldSet {
             String value = (String) entry.getValue();
             w.write(prefix);
             w.write(key);
-            w.write('=');
+            w.write(KEYVALUE_SEPARATOR_CHAR);
             w.write(value);
             w.write('\n');
     	}
@@ -394,7 +396,7 @@ public class SimpleFieldSet {
     	
     	// Output
     	for(i=0; i < keys.length; i++)
-    		w.write(prefix+keys[i]+'='+get(keys[i])+'\n');
+    		w.write(prefix+keys[i]+KEYVALUE_SEPARATOR_CHAR+get(keys[i])+'\n');
     	
     	if(subsets != null) {
     		String[] orderedPrefixes = (String[]) subsets.keySet().toArray(new String[subsets.size()]);
@@ -601,6 +603,16 @@ public class SimpleFieldSet {
 		}
 	}
 
+	/**
+	 * It removes the specified subset.
+	 * For example, in a SimpleFieldSet like this:
+	 * foo=bar
+	 * foo.bar=foobar
+	 * foo.bar.boo=foobarboo
+	 * calling it with the parameter "foo"
+	 * means to drop the second and the third line.
+	 * @param is the subset to remove
+	 */
 	public synchronized void removeSubset(String key) {
 		if(subsets == null) return;
 		int idx;
