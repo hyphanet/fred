@@ -709,7 +709,7 @@ public class Node implements TimeSkewDetectorCallback {
 		} else {
 			String s = "Testnet mode DISABLED. You may have some level of anonymity. :)\n"+
 				"Note that this version of Freenet is still a very early alpha, and may well have numerous bugs and design flaws.\n"+
-				"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE DARKNET PEERS! They can eavesdrop on your requests with relatively little difficulty at present (correlation attacks etc).";
+				"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE PEERS! They can eavesdrop on your requests with relatively little difficulty at present (correlation attacks etc).";
 			Logger.normal(this, s);
 			System.err.println(s);
 			testnetEnabled = false;
