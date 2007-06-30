@@ -1474,6 +1474,8 @@ public class DarknetPeerNode extends PeerNode {
 					+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 			}
 			if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')', new Exception("double-called debug"));
+		} else {
+			super.innerCalcNextHandshake(successfulHandshakeSend, dontFetchARK, now);
 		}
 		return fetchARKFlag;
 	}
