@@ -2601,4 +2601,9 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		return true;
 	}
+
+	public int getOpennetFNPPort() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }

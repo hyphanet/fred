@@ -459,7 +459,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		SimpleFieldSet fproxyConfig = node.config.get("fproxy").exportFieldSet(true);
 		SimpleFieldSet fcpConfig = node.config.get("fcp").exportFieldSet(true);
 		SimpleFieldSet tmciConfig = node.config.get("console").exportFieldSet(true);
-		portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.fnpPort", new String[] { "port" }, new String[] { Integer.toString(node.getFNPPort()) }));
+		portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.darknetFnpPort", new String[] { "port" }, new String[] { Integer.toString(node.getFNPPort()) }));
+		int opennetPort = node.getOpennetFNPPort();
+		if(opennetPort > 0)
+			portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.opennetFnpPort", new String[] { "port" }, new String[] { Integer.toString(opennetPort) }));
 		try {
 			if(fproxyConfig.getBoolean("enabled", false)) {
 				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.fproxyPort", new String[] { "port" }, new String[] { Integer.toString(fproxyConfig.getInt("port")) }));
