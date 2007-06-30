@@ -16,7 +16,6 @@ import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.PeerManager;
-import freenet.node.PeerNode;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
