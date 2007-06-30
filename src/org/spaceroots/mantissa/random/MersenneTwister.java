@@ -75,7 +75,7 @@ public class MersenneTwister extends Random {
 	private static final int   M     = 397;
 	private static final int[] MAG01 = { 0x0, 0x9908b0df };
 
-	private int[] mt;
+	private final int[] mt;
 	private int   mti;
 
 	/** Creates a new random number generator.
@@ -123,7 +123,7 @@ public class MersenneTwister extends Random {
 	 * generator built with the same seed.</p>
 	 * @param seed the initial seed (32 bits integer)
 	 */
-	public void setSeed(int seed) {
+	public synchronized void setSeed(int seed) {
 		// we use a long masked by 0xffffffffL as a poor man unsigned int
 		long longMT = seed;
 		mt[0]= (int) longMT;
@@ -138,7 +138,7 @@ public class MersenneTwister extends Random {
 	/**
 	 * Seed from byte[].
 	 */
-	public void setSeed(byte[] seed) {
+	public synchronized void setSeed(byte[] seed) {
 		int[] seeds = new int[seed.length/4];
 		for(int i=0;i<seeds.length;i+=4) {
 			seeds[i] = Fields.bytesToInt(seed, i);
@@ -152,7 +152,7 @@ public class MersenneTwister extends Random {
 	 * @param seed the initial seed (32 bits integers array), if null
 	 * the seed of the generator will be related to the current time
 	 */
-	public void setSeed(int[] seed) {
+	public synchronized void setSeed(int[] seed) {
 		if (seed == null) {
 			setSeed(System.currentTimeMillis());
 			return;
@@ -198,7 +198,7 @@ public class MersenneTwister extends Random {
 	 * generator built with the same seed.</p>
 	 * @param seed the initial seed (64 bits integer)
 	 */
-	public void setSeed(long seed) {
+	public synchronized void setSeed(long seed) {
 		if (mt == null) {
 			// this is probably a spurious call from base class constructor,
 			// we do nothing and wait for the setSeed in our own
@@ -218,7 +218,7 @@ public class MersenneTwister extends Random {
 	 * #nextLong nextLong}.</p>
 	 * @param bits number of random bits to produce
 	 */
-	protected int next(int bits) {
+	protected synchronized int next(int bits) {
 		int y;
 
 		if (mti >= N) { // generate N words at one time
