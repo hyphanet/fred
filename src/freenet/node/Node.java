@@ -46,6 +46,7 @@ import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
+import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
@@ -2249,6 +2250,10 @@ public class Node implements TimeSkewDetectorCallback {
 		isStopping = true;
 		
 		config.store();
+		
+		// TODO: find a smarter way of doing it not involving any casting
+		Yarrow myRandom = (Yarrow) random;
+		myRandom.write_seed(myRandom.seedfile, true);
 	}
 
 	public NodeUpdateManager getNodeUpdater(){

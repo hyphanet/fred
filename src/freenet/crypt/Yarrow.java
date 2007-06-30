@@ -56,7 +56,7 @@ public class Yarrow extends RandomSource {
 	private static final int Pg = 10;
 	private final SecureRandom sr;
 
-	private final File seedfile; //A file to which seed data should be dumped periodically
+	public final File seedfile; //A file to which seed data should be dumped periodically
 
 	public Yarrow() {
 		this("prng.seed", "SHA1", "Rijndael",true);
@@ -247,13 +247,19 @@ public class Yarrow extends RandomSource {
 
 	private long timeLastWroteSeed = -1;
 	
-	private void write_seed(File filename) {
-		synchronized(this) {
-			long now = System.currentTimeMillis();
-			if(now - timeLastWroteSeed <= 60*60*1000 /* once per hour */) {
-				return;
-			} else
-				timeLastWroteSeed = now;
+	public void write_seed(File filename) {
+		write_seed(filename, false);
+	}
+	
+	public void write_seed(File filename, boolean force) {
+		if(!force) {
+			synchronized(this) {
+				long now = System.currentTimeMillis();
+				if(now - timeLastWroteSeed <= 60*60*1000 /* once per hour */) {
+					return;
+				} else
+					timeLastWroteSeed = now;
+			}
 		}
 		
 		try {
