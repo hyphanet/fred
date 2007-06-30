@@ -1,6 +1,7 @@
 package freenet.clients.http;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.PeerNodeStatus;
@@ -41,6 +42,10 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 
 	public boolean isEnabled() {
 		return node.isOpennetEnabled();
+	}
+
+	protected String getPageTitle(String titleCountString, String myName) {
+		return L10n.getString("OpennetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
 	}
 
 }

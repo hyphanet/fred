@@ -165,7 +165,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("DarknetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } ), ctx);
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString, node.getMyName()), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		// FIXME! We need some nice images
@@ -487,6 +487,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	}
 	
 	
+	protected abstract String getPageTitle(String titleCountString, String myName);
+
 	protected Comparator comparator(String sortBy, boolean reversed) {
 		return new ComparatorByStatus(sortBy, reversed);
 	}

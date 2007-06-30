@@ -444,5 +444,8 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		return node.peers.getDarknetPeerNodeStatuses();
 	}
 
+	protected String getPageTitle(String titleCountString, String myName) {
+		return L10n.getString("DarknetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
+	}
 
 }
