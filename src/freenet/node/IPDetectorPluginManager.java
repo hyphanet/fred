@@ -91,7 +91,6 @@ public class IPDetectorPluginManager {
 
 	static boolean logMINOR;
 	private final NodeIPDetector detector;
-	private final Ticker ticker;
 	private final Node node;
 	FredPluginIPDetector[] plugins;
 	private final MyUserAlert noConnectionAlert;
@@ -106,7 +105,6 @@ public class IPDetectorPluginManager {
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
 		plugins = new FredPluginIPDetector[0];
 		this.node = node;
-		this.ticker = node.ps;
 		this.detector = detector;
 		noConnectionAlert = new MyUserAlert( l10n("noConnectivityTitle"), l10n("noConnectivity"), 
 				true, UserAlert.ERROR);
@@ -152,7 +150,7 @@ public class IPDetectorPluginManager {
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 		}
-		ticker.queueTimedJob(new Runnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
 				tryMaybeRun();
 			}

@@ -32,7 +32,6 @@ public class NodeIPDetector {
 	/** Parent node */
 	final Node node;
 	/** Ticker */
-	final Ticker ticker;
 	/** Explicit forced IP address */
 	FreenetInetAddress overrideIPAddress;
 	/** IP address from last time */
@@ -64,7 +63,6 @@ public class NodeIPDetector {
 	
 	public NodeIPDetector(Node node) {
 		this.node = node;
-		this.ticker = node.ps;
 		ipDetectorManager = new IPDetectorPluginManager(node, this);
 		ipDetector = new IPAddressDetector(10*1000, this);
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
@@ -398,7 +396,7 @@ public class NodeIPDetector {
 		t.start();
 		redetectAddress();
 		// 60 second delay for inserting ARK to avoid reinserting more than necessary if we don't detect IP on startup.
-		ticker.queueTimedJob(new FastRunnable() {
+		node.getTicker().queueTimedJob(new FastRunnable() {
 			public void run() {
 				NodeIPPortDetector[] detectors;
 				synchronized(this) {
