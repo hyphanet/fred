@@ -3,13 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -37,7 +33,6 @@ import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
-import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 
 public class PluginManager {
@@ -337,19 +332,13 @@ public class PluginManager {
 			filename = null;
 
 			URL url;
-			DataInputStream dis;
 			InputStream is = null;
-			BufferedInputStream bis = null;
-			FileOutputStream fos = null;
-			BufferedOutputStream bos = null;
 
 			try {
 				url = new URL("http://downloads.freenetproject.org/alpha/plugins/" + pluginname + ".jar.url");
 				if(logMINOR) Logger.minor(this, "Downloading "+url);
 				is = url.openStream();
-				bis = new BufferedInputStream(is);
-				dis = new DataInputStream(bis);
-
+				
 				File pluginsDirectory = new File("plugins");
 				if(!pluginsDirectory.exists()) {
 					Logger.normal(this, "The plugin directory hasn't been found, let's create it");
@@ -358,23 +347,12 @@ public class PluginManager {
 				}
 
 				File finalFile = new File("plugins/" + pluginname + ".jar");
-				File f = File.createTempFile(pluginname, ".tmp", pluginsDirectory);
-				fos = new FileOutputStream(f);
-				bos = new BufferedOutputStream(fos);
-				
-				int len = 0;
-				byte[] buffer = new byte[4096];
-				while ((len = dis.read(buffer)) > 0) {
-					bos.write(buffer, 0, len);
-				}
-				bos.close();
-				fos.close();
-				bos = null;
-				fos = null;
-				if(!f.renameTo(finalFile))
-					Logger.error(this, "Failed to rename "+f+" into "+finalFile);
+				if(!FileUtil.writeTo(is, finalFile));
+					Logger.error(this, "Failed to rename the temporary file into "+finalFile);
+					
 				filename = "*@file://" + FileUtil.getCanonicalFile(finalFile);
 				if(logMINOR) Logger.minor(this, "Rewritten to "+filename);
+				
 			} catch (MalformedURLException mue) {
 				Logger.error(this, "MAlformedURLException has occured : "+ mue, mue);
 				return null;
@@ -387,10 +365,7 @@ public class PluginManager {
 				return null;
 			} finally {
 				try {
-					if(bis != null) bis.close();
 					if(is != null) is.close();
-					if(bos != null) bos.close();
-					if(fos != null) fos.close();
 				} catch (IOException ioe) {}
 			}
 			if(filename == null)
