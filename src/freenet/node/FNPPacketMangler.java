@@ -77,6 +77,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         myPacketDataSource = new EntropySource();
         fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
         fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
     /**
@@ -314,7 +315,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         }else {
             Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
             return;
-	}
+        }
     }
 
     /**
