@@ -2603,7 +2603,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public int getOpennetFNPPort() {
-		// TODO Auto-generated method stub
-		return 0;
+		if(opennet == null) return -1;
+		return opennet.crypto.portNumber;
 	}
 }
