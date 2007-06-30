@@ -604,7 +604,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		// Determine the port number
 		
-		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++);
+		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false);
 		sortOrder += NodeCryptoConfig.OPTION_COUNT;
 		darknetCrypto = new NodeCrypto(sortOrder++, this, false, darknetConfig);
 
@@ -800,7 +800,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 		
-		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 1 /* 0 = enabled */);
+		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 1 /* 0 = enabled */, true);
 		
 		if(opennetEnabled) {
 			opennet = new OpennetManager(this, opennetCryptoConfig);
@@ -2606,4 +2606,5 @@ public class Node implements TimeSkewDetectorCallback {
 		if(opennet == null) return -1;
 		return opennet.crypto.portNumber;
 	}
+
 }

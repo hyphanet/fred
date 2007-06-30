@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.ArrayList;
 
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
@@ -1196,5 +1197,18 @@ public class PeerManager {
 				v.add(peers[i]);
 		}
 		return (OpennetPeerNode[])v.toArray(new OpennetPeerNode[v.size()]);
+	}
+
+	public boolean anyConnectedPeerHasAddress(FreenetInetAddress addr, PeerNode pn) {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] == pn) continue;
+			if(!peers[i].isConnected()) continue;
+			if(peers[i].getPeer().getFreenetAddress().equals(addr)) return true;
+		}
+		return false;
 	}
 }

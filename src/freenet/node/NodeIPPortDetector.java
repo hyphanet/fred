@@ -153,4 +153,11 @@ public class NodeIPPortDetector {
 		else
 			return lastPeers;
 	}
+
+	public boolean includes(FreenetInetAddress addr) {
+		FreenetInetAddress[] a = detectPrimaryIPAddress();
+		for(int i=0;i<a.length;i++)
+			if(a[i].equals(addr)) return true;
+		return false;
+	}
 }

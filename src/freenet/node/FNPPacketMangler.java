@@ -1506,26 +1506,22 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         int sentCount = 0;
         long loopTime1 = System.currentTimeMillis();
         for(int i=0;i<handshakeIPs.length;i++){
-        	long innerLoopTime1 = System.currentTimeMillis();
-        	if(handshakeIPs[i].getAddress(false) == null) {
+        	Peer peer = handshakeIPs[i];
+        	FreenetInetAddress addr = peer.getFreenetAddress();
+        	if(!crypto.allowConnection(pn, addr)) {
+        		if(logMINOR)
+        			Logger.minor(this, "Not sending handshake packet to "+peer+" for "+pn);
+        	}
+        	if(peer.getAddress(false) == null) {
         		if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
         		continue;
         	}
-        	if(!pn.allowLocalAddresses() && !handshakeIPs[i].isRealInternetAddress(false, false)) {
+        	if(!pn.allowLocalAddresses() && !peer.isRealInternetAddress(false, false)) {
         		if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
         		continue;
         	}
-        	long innerLoopTime2 = System.currentTimeMillis();
-        	if((innerLoopTime2 - innerLoopTime1) > 500)
-        		Logger.normal(this, "innerLoopTime2 is more than half a second after innerLoopTime1 ("+(innerLoopTime2 - innerLoopTime1)+") working on "+handshakeIPs[i]+" of "+pn.userToString());
-        	sendFirstHalfDHPacket(0, negType, ctx.getOurExponential(), pn, handshakeIPs[i]);
-        	long innerLoopTime3 = System.currentTimeMillis();
-        	if((innerLoopTime3 - innerLoopTime2) > 500)
-        		Logger.normal(this, "innerLoopTime3 is more than half a second after innerLoopTime2 ("+(innerLoopTime3 - innerLoopTime2)+") working on "+handshakeIPs[i]+" of "+pn.userToString());
+        	sendFirstHalfDHPacket(0, negType, ctx.getOurExponential(), pn, peer);
         	pn.sentHandshake();
-        	long innerLoopTime4 = System.currentTimeMillis();
-        	if((innerLoopTime4 - innerLoopTime3) > 500)
-        		Logger.normal(this, "innerLoopTime4 is more than half a second after innerLoopTime3 ("+(innerLoopTime4 - innerLoopTime3)+") working on "+handshakeIPs[i]+" of "+pn.userToString());
         	sentCount += 1;
         }
         long loopTime2 = System.currentTimeMillis();

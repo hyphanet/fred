@@ -9,6 +9,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.support.Logger;
+import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;
 
@@ -37,7 +38,11 @@ public class NodeCryptoConfig {
 	/** Whether the NodeCrypto has finished starting */
 	private boolean started;
 	
-	NodeCryptoConfig(SubConfig config, int sortOrder) throws NodeInitException {
+	/** Whether we should prevent multiple connections to the same IP (taking into account other
+	 * NodeCrypto's - this will usually be set for opennet but not for darknet). */
+	private boolean oneConnectionPerAddress;
+	
+	NodeCryptoConfig(SubConfig config, int sortOrder, boolean onePerIP) throws NodeInitException {
 		
 		config.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
 			public int get() {
@@ -105,6 +110,24 @@ public class NodeCryptoConfig {
 			
 		});
 		
+		
+		config.register("oneConnectionPerIP", onePerIP, sortOrder++, true, false, "Node.oneConnectionPerIP", "Node.oneConnectionPerIPLong",
+				new BooleanCallback() {
+
+					public boolean get() {
+						synchronized(NodeCryptoConfig.this) {
+							return oneConnectionPerAddress;
+						}
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						synchronized(NodeCryptoConfig.this) {
+							oneConnectionPerAddress = val;
+						}
+					}
+			
+		});
+		
 	}
 
 	/** The number of config options i.e. the amount to increment sortOrder by */
@@ -159,4 +182,7 @@ public class NodeCryptoConfig {
 		return dropProbability;
 	}
 
+	public boolean oneConnectionPerAddress() {
+		return oneConnectionPerAddress;
+	}
 }
