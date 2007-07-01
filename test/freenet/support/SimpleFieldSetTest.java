@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import freenet.node.FSParseException;
-import freenet.support.io.LineReader;
 import junit.framework.TestCase;
 
 /**

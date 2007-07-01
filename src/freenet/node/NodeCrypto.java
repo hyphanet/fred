@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.zip.DeflaterOutputStream;

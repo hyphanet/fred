@@ -21,7 +21,6 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
 import freenet.support.Logger;
-import freenet.support.RandomGrabArray;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 

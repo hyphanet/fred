@@ -7,8 +7,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
-
 import freenet.support.Base64;
 
 /**

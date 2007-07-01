@@ -5,7 +5,6 @@
  * http://www.gnu.org/ for further details of the GPL. */ 
 package freenet.clients.http.filter;
 import java.io.*;
-import java.util.*;
 import freenet.l10n.L10n;
 /* This class tokenizes a CSS2 Reader stream, writes it out to the output Writer, and filters any URLs found */
 // WARNING: this is not as thorough as the HTML parser - new versions of the standard could lead to anonymity risks. See comments in SaferFilter.java

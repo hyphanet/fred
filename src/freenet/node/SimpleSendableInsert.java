@@ -9,7 +9,6 @@ import freenet.keys.CHKBlock;
 import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
-import freenet.support.RandomGrabArray;
 
 /**
  * Simple SendableInsert implementation. No feedback, no retries, just insert the

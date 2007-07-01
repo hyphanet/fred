@@ -9,8 +9,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import freenet.l10n.L10n;
-
 public class HTMLNode {
 
 	protected final String name;
