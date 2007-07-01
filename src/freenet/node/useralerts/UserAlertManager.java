@@ -27,7 +27,8 @@ public class UserAlertManager implements Comparator {
 
 	public void register(UserAlert alert) {
 		synchronized (alerts) {
-			alerts.add(alert);
+			if(!alerts.contains(alert))
+				alerts.add(alert);
 		}
 	}
 
