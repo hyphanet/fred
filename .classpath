@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="freenet/node/*Test.java|org/spaceroots/mantissa/random/MersenneTwisterTest.java|plugins/JSTUN/**|test/**" kind="src" path="src"/>
-	<classpathentry including="freenet/**/*java" kind="src" path="test"/>
+	<classpathentry excluding="freenet/node/*Test.java|plugins/JSTUN/**|test/**" kind="src" path="src"/>
+	<classpathentry including="freenet/|org/" kind="src" path="test"/>
 	<classpathentry exported="true" kind="lib" path="lib/freenet-ext.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/usr/share/java/junit.jar"/>
