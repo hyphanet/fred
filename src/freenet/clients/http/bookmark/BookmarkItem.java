@@ -22,7 +22,7 @@ public class BookmarkItem extends Bookmark {
 
 	private final BookmarkUpdatedUserAlert alert;
 
-	private UserAlertManager alerts;
+	private final UserAlertManager alerts;
 
 	public BookmarkItem(FreenetURI k, String n, UserAlertManager uam)
 			throws MalformedURLException {
