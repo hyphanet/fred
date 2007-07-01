@@ -183,10 +183,10 @@ public class WelcomeToadlet extends Toadlet {
 						Logger.normal(this,"Disabling the userAlert "+alert.hashCode());
 						alert.isValid(false);
 					}
-
-					writePermanentRedirect(ctx, l10n("disabledAlert"), "/");
 				}
 			}
+			writePermanentRedirect(ctx, l10n("disabledAlert"), "/");
+			return;
 		} else if(request.isPartSet("boardname")&&(request.isPartSet("filename")||request.isPartSet("message"))) {
 			// Inserting into a frost board FIN
 			// boardname
