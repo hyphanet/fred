@@ -574,6 +574,7 @@ public class NodeDispatcher implements Dispatcher {
 			}
 		}
 		if(linearCounter < 0) linearCounter = ctx.linearCounter;
+		ctx.linearCounter = linearCounter;
 		if(locsNotVisited != null) {
 			if(logMINOR)
 				Logger.minor(this, "Locs not visited: "+locsNotVisited);
