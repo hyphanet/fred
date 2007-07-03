@@ -330,6 +330,7 @@ outer:		while(true) {
 					throw new ArchiveFailureException("Failed to create metadata: "+e1, e1);
 				}
 			} catch (IOException e1) {
+				Logger.error(this, "Failed to create metadata: "+e1, e1);
 				throw new ArchiveFailureException("Failed to create metadata: "+e1, e1);
 			}
 		}
