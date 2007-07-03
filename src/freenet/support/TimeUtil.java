@@ -57,7 +57,7 @@ public class TimeUtil {
             return sb.toString();
         }
         //
-        int weeks = (int)(l / ((long)7*24*60*60*1000));
+        long weeks = (long)(l / ((long)7*24*60*60*1000));
         if (weeks > 0) {
             sb.append(weeks).append('w');
             termCount++;
@@ -67,7 +67,7 @@ public class TimeUtil {
             return sb.toString();
         }
         //
-        int days = (int)(l / ((long)24*60*60*1000));
+        long days = (long)(l / ((long)24*60*60*1000));
         if (days > 0) {
             sb.append(days).append('d');
             termCount++;
@@ -77,7 +77,7 @@ public class TimeUtil {
           return sb.toString();
         }
         //
-        int hours = (int)(l / ((long)60*60*1000));
+        long hours = (long)(l / ((long)60*60*1000));
         if (hours > 0) {
             sb.append(hours).append('h');
             termCount++;
@@ -87,7 +87,7 @@ public class TimeUtil {
             return sb.toString();
         }
         //
-        int minutes = (int)(l / ((long)60*1000));
+        long minutes = (long)(l / ((long)60*1000));
         if (minutes > 0) {
             sb.append(minutes).append('m');
             termCount++;
@@ -105,7 +105,7 @@ public class TimeUtil {
                 //l = l - ((long)fractionalSeconds * (long)1000);
             }
         } else {
-            int seconds = (int)(l / (long)1000);
+            long seconds = (long)(l / (long)1000);
             if (seconds > 0) {
                 sb.append(seconds).append('s');
                 termCount++;
