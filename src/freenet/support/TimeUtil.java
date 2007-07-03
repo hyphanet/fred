@@ -32,12 +32,17 @@ public class TimeUtil {
 	 * @param timeInterval interval to convert
 	 * @param maxTerms the terms number to display
 	 * (e.g. 2 means "h" and "m" if the time could be expressed in hour,
-	 * 3 means "h","m","s" in the same example)
+	 * 3 means "h","m","s" in the same example).
+	 * The maximum terms number available is 6
 	 * @param withSecondFractions if true it displays seconds.milliseconds
 	 * @return the formatted String
 	 */
     public static String formatTime(long timeInterval, int maxTerms, boolean withSecondFractions) {
-        StringBuffer sb = new StringBuffer(64);
+        
+    	if (maxTerms > 6 )
+        	throw new IllegalArgumentException();
+        
+    	StringBuffer sb = new StringBuffer(64);
         long l = timeInterval;
         int termCount = 0;
         //
