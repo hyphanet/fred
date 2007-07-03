@@ -333,7 +333,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 	}
 
     public void close(boolean exit) {
-    	Logger.error(this, "Closing.", new Exception("error"));
+    	Logger.normal(this, "Closing.", new Exception("error"));
 		synchronized (this) {
 			_active = false;
 			while (!_isDone) {
