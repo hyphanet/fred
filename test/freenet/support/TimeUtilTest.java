@@ -11,8 +11,8 @@ public class TimeUtilTest extends TestCase {
 	 * trying the biggest long value
 	 */
 	public void testFormatTime_LongIntBoolean_MaxValue() {
-		// TimeUtil.formatTime(Long.MAX_VALUE,6,true);
-		// it does not works correctly yet, see bug: 0001492
+		String expectedForMaxLongValue = "15250284452w3d7h12m55.807s";
+		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE,6,true),expectedForMaxLongValue);
 	}
 
 	/**
@@ -20,8 +20,8 @@ public class TimeUtilTest extends TestCase {
 	 * trying the biggest long value
 	 */
 	public void testFormatTime_LongInt() {
-		// TimeUtil.formatTime(Long.MAX_VALUE,6);
-		// it does not works correctly yet, see bug: 0001492
+		String expectedForMaxLongValue = "15250284452w3d7h12m55s";
+		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE,6),expectedForMaxLongValue);
 	}
 	
 	/**
@@ -29,9 +29,8 @@ public class TimeUtilTest extends TestCase {
 	 * trying the biggest long value
 	 */
 	public void testFormatTime_Long() {
-		// Long methodBiggestValue = Long.valueOf("9223372036854771");	//biggest value
-		// TimeUtil.formatTime(methodBiggestValue.longValue());
-		// 	it does not works correctly yet, see bug: 0001492
+		String expectedForMaxLongValue = "15250284452w3d";	//it uses two terms by default
+		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE),expectedForMaxLongValue);
 	}
 	
 	/**
