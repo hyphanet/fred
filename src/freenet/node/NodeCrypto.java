@@ -273,6 +273,7 @@ class NodeCrypto {
 			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		if(!isOpennet)
 			fs.putSingle("myName", node.getMyName()); // FIXME see #942
+		fs.put("opennet", isOpennet);
 		
 		synchronized (referenceSync) {
 			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
@@ -285,7 +286,6 @@ class NodeCrypto {
 			}
 			fs.putSingle("sig", myReferenceSignature.toLongString());
 		}
-		fs.put("opennet", isOpennet);
 		
 		if(logMINOR) Logger.minor(this, "My reference: "+fs.toOrderedString());
 		return fs;
