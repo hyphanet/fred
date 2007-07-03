@@ -867,7 +867,7 @@ public class NodeDispatcher implements Dispatcher {
 		
 		// Just propagate back to source
 		PeerNode origSource = (PeerNode) ctx.getSource();
-		if(src != null) {
+		if(origSource != null) {
 			Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++, linearCounter);
 			Message sub = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
 			if(sub != null) complete.addSubMessage(sub);
