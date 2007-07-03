@@ -102,8 +102,8 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 				t.printStackTrace();
 			} catch (Throwable tt) {};
 		} finally {
-			System.err.println("run() exiting");
-			Logger.error(this, "run() exiting");
+			System.err.println("run() exiting for UdpSocketHandler on port "+_sock.getLocalPort());
+			Logger.error(this, "run() exiting for UdpSocketHandler on port "+_sock.getLocalPort());
 			synchronized (this) {
 				_isDone = true;
 				notifyAll();
@@ -319,6 +319,11 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 						}
 					}
 				} else {
+					if(_isDone) return;
+					// Final check
+					synchronized(this) {
+						if(_isDone) return;
+					}
 					Logger.error(this, "MAIN LOOP TERMINATED");
 					System.err.println("MAIN LOOP TERMINATED!");
 					node.exit(NodeInitException.EXIT_MAIN_LOOP_LOST);
