@@ -91,7 +91,10 @@ class Persister implements Runnable {
 					}
 				}
 				if(!persistTemp.renameTo(persistTarget)) {
-					Logger.error(this, "Could not rename "+persistTemp+" to "+persistTarget+" - check permissions");
+					Logger.error(this, "Could not rename "+persistTemp+" to "+persistTarget+
+							(persistTarget.exists() ? " (target exists)" : "")+
+							(persistTemp.exists() ? " (source exists)" : "")+
+							" - check permissions");
 				}
 			}
 		} catch (FileNotFoundException e) {
