@@ -48,12 +48,18 @@ public class TimeUtil {
         if( !withSecondFractions && l < 1000 ) {
             return "";
         }
+        if(termCount >= maxTerms) {
+            return sb.toString();
+        }
         //
         int weeks = (int)(l / ((long)7*24*60*60*1000));
         if (weeks > 0) {
             sb.append(weeks).append('w');
             termCount++;
             l = l - ((long)weeks * ((long)7*24*60*60*1000));
+        }
+        if(termCount >= maxTerms) {
+            return sb.toString();
         }
         //
         int days = (int)(l / ((long)24*60*60*1000));
