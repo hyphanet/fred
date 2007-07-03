@@ -95,7 +95,7 @@ public class DarknetPeerNode extends PeerNode {
      * @param node2 The running Node we are part of.
      */
     public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-    	super(fs, node2, crypto, peers, fromLocal, mangler);
+    	super(fs, node2, crypto, peers, fromLocal, mangler, false);
     	
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	

@@ -314,7 +314,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      * @param fs The SimpleFieldSet to parse
      * @param node2 The running Node we are part of.
      */
-    public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+    public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
     	logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
     	myRef = new WeakReference(this);
     	this.outgoingMangler = mangler;
@@ -384,6 +384,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         negTypes = fs.getIntArray("auth.negTypes");
         if(negTypes == null || negTypes.length == 0)
         	negTypes = new int[] { 0 };
+        
+        if((!fromLocal) && fs.getBoolean("opennet", false) != isOpennet)
+        	throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet");
         
         /* Read the DSA key material for the peer */
         try {
