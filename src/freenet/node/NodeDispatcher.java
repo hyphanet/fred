@@ -573,6 +573,7 @@ public class NodeDispatcher implements Dispatcher {
 					recentProbeContexts.popValue();
 			}
 		}
+		PeerNode origSource = ctx.getSource();
 		if(linearCounter < 0) linearCounter = ctx.linearCounter;
 		ctx.linearCounter = linearCounter;
 		if(locsNotVisited != null) {
@@ -740,12 +741,12 @@ public class NodeDispatcher implements Dispatcher {
 
 			visited.add(pn);
 
-			if(src != null) {
+			if(origSource != null) {
 				Message trace =
 					DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), ctx.forkCount, linearCounter, callerReason, src == null ? -1 : src.swapIdentifier);
 				trace.addSubMessage(sub);
 				try {
-					src.sendAsync(trace, null, 0, null);
+					origSource.sendAsync(trace, null, 0, null);
 				} catch (NotConnectedException e1) {
 					// Ignore
 				}
