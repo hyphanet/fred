@@ -25,6 +25,17 @@ import java.text.DecimalFormat;
  * Formats milliseconds into a week/day/hour/second/milliseconds string.
  */
 public class TimeUtil {
+	
+	/**
+	 * It converts a given time interval into a 
+	 * week/day/hour/second.milliseconds string.
+	 * @param timeInterval interval to convert
+	 * @param maxTerms the terms number to display
+	 * (e.g. 2 means "h" and "m" if the time could be expressed in hour,
+	 * 3 means "h","m","s" in the same example)
+	 * @param withSecondFractions if true it displays seconds.milliseconds
+	 * @return the formatted String
+	 */
     public static String formatTime(long timeInterval, int maxTerms, boolean withSecondFractions) {
         StringBuffer sb = new StringBuffer(64);
         long l = timeInterval;
