@@ -660,7 +660,7 @@ public class NodeDispatcher implements Dispatcher {
 			ctx.nearest = nearest;
 			ctx.htl = htl;
 		} else {
-			htl = node.decrementHTL(src, htl);
+			htl = node.decrementHTL(origSource, htl);
 			ctx.htl = htl;
 			if(logMINOR)
 				Logger.minor(this, "Updated htl to "+htl+" - myLoc="+myLoc+", target="+target+", nearest="+nearest);
@@ -668,13 +668,13 @@ public class NodeDispatcher implements Dispatcher {
 
 		// Complete ?
 		if(htl == 0) {
-			if(src != null) {
+			if(origSource != null) {
 				// Complete
 				Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++, linearCounter);
 				Message sub = DMT.createFNPBestRoutesNotTaken((Double[])locsNotVisited.toArray(new Double[locsNotVisited.size()]));
 				complete.addSubMessage(sub);
 				try {
-					src.sendAsync(complete, null, 0, null);
+					origSource.sendAsync(complete, null, 0, null);
 				} catch (NotConnectedException e) {
 					Logger.error(this, "Not connected completing a probe request from "+src);
 				}
@@ -962,7 +962,7 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
-		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, null, notVisitedList, 2.0, false, (short)-1, "rejected");
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, null, notVisitedList, 2.0, true, (short)-1, "rejected");
 		return true;
 	}
 
