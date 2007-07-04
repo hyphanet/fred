@@ -32,7 +32,7 @@ public class TimeUtilTest extends TestCase {
 	 */
 	public void testFormatTime_LongIntBoolean_MaxValue() {
 		String expectedForMaxLongValue = "15250284452w3d7h12m55.807s";
-		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE,6,true),expectedForMaxLongValue);
+		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE,6,true).replace(',','.'),expectedForMaxLongValue);
 	}
 
 	/**
@@ -90,7 +90,7 @@ public class TimeUtilTest extends TestCase {
 				"1w1d1h1m1.001s"	//6 terms
 		};
 		for(int i = 0; i < valAndExpected.length; i++)
-			assertEquals(TimeUtil.formatTime(oneForTermLong,i,true),valAndExpected[i]);
+			assertEquals(TimeUtil.formatTime(oneForTermLong,i,true).replace(',','.'),valAndExpected[i]);
 	}
 	
 	/**
@@ -102,7 +102,7 @@ public class TimeUtilTest extends TestCase {
 	public void testFormatTime_LongIntBoolean_milliseconds() {
 		long methodValue = 1;	//1ms
 		assertEquals(TimeUtil.formatTime(methodValue,6,false),"");
-		assertEquals(TimeUtil.formatTime(methodValue,6,true),"0.001s");
+		assertEquals(TimeUtil.formatTime(methodValue,6,true).replace(',','.'),"0.001s");
 	}
 	
 	/**
