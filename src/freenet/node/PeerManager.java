@@ -120,7 +120,12 @@ public class PeerManager {
         // Try to read the node list from disk
      	if(peersFile.exists()) {
       		if(readPeers(peersFile, mangler, crypto)) {
-      			String msg = "Read "+myPeers.length+" peers from "+peersFile;
+      		    String msg;
+      		    if(isOpennet) {
+      			    msg = "Read "+getOpennetPeers().length+" peers from "+peersFile;
+				} else {
+      			    msg = "Read "+getDarknetPeers().length+" peers from "+peersFile;
+				}
       			Logger.normal(this, msg);
       			System.out.println(msg);
       			return;
@@ -129,7 +134,12 @@ public class PeerManager {
      	// Try the backup
      	if(backupFile.exists()) {
         	if(readPeers(backupFile, mangler, crypto)) {
-      			String msg = "Read "+myPeers.length+" peers from "+backupFile;
+      		    String msg;
+      		    if(isOpennet) {
+      			    msg = "Read "+getOpennetPeers().length+" peers from "+backupFile;
+				} else {
+      			    msg = "Read "+getDarknetPeers().length+" peers from "+backupFile;
+				}
       			Logger.normal(this, msg);
       			System.out.println(msg);
         	} else {
