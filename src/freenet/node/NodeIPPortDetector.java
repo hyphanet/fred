@@ -56,6 +56,12 @@ public class NodeIPPortDetector {
 		return addresses;
 	}
 
+	/**
+	 * Get our Peer's. This is a list of IP:port's at which we might be contactable. Some of them
+	 * will have the same port as the listenPort, but if we are behind a NAT which rewrites our
+	 * port number, some of them may not. (If we're behind a symmetric NAT which rewrites it 
+	 * differently for each connection, we're stuffed, and we tell the user).
+	 */
 	Peer[] detectPrimaryPeers() {
 		Vector addresses = new Vector();
 		FreenetInetAddress[] addrs = detectPrimaryIPAddress();

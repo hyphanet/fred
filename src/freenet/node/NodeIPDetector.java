@@ -80,8 +80,7 @@ public class NodeIPDetector {
 	 * What is my IP address? Use all globally available information (everything which isn't
 	 * specific to a given port i.e. opennet or darknet) to determine our current IP addresses.
 	 * Will include more than one IP in many cases when we are not strictly multi-homed. For 
-	 * example, if we have a DNS name set, we will usually return an IP as well; if we are 
-	 * behind a NAT we may return both a rewritten port number and the original; etc.
+	 * example, if we have a DNS name set, we will usually return an IP as well.
 	 * 
 	 * Will warn the user with a UserAlert if we don't have sufficient information.
 	 */
