@@ -251,7 +251,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
     		Logger.error(this, "It shouldn't happen : we disabled the MTU detection algorithm because the advertised MTU is smallish !! ("+node.ipDetector.getMinimumDetectedMTU()+')'); 
     		return MAX_ALLOWED_MTU - UDP_HEADERS_LENGTH;
     	} else
-    		return (minAdvertisedMTU < MAX_ALLOWED_MTU ? minAdvertisedMTU : MAX_ALLOWED_MTU) - UDP_HEADERS_LENGTH;
+    		return Math.min(MAX_ALLOWED_MTU, minAdvertisedMTU) - UDP_HEADERS_LENGTH;
     	// UDP/IP header is 28 bytes.
     }
 
