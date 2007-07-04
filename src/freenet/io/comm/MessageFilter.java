@@ -196,6 +196,9 @@ public class MessageFilter {
 		return _matched;
 	}
 
+	/**
+	 * Which connection dropped or was restarted?
+	 */
 	public PeerContext droppedConnection() {
 	    return _droppedConnection;
 	}
