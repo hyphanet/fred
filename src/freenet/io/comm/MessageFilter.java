@@ -251,6 +251,7 @@ public class MessageFilter {
      * @param ctx
      */
     public synchronized void onDroppedConnection(PeerContext ctx) {
+    	_droppedConnection = ctx;
    		notifyAll();
     }
 
@@ -260,6 +261,7 @@ public class MessageFilter {
      * @param ctx
      */
     public synchronized void onRestartedConnection(PeerContext ctx) {
+    	_droppedConnection = ctx;
    		notifyAll();
     }
 
