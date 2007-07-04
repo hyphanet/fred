@@ -23,7 +23,6 @@ public class SizeUtilTest extends TestCase {
 		
 		for(int i = 1; i < valAndExpected.length; i++) {
 			methodLong = Long.valueOf(valAndExpected[i][0]);
-			System.out.println(SizeUtil.formatSize(methodLong.longValue()));
 			assertEquals(SizeUtil.formatSize(methodLong.longValue()),"1.0 "+valAndExpected[i][1]); }
 	}
 
