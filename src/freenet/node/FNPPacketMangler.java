@@ -324,12 +324,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		       * Initiator- This is a straightforward DiffieHellman exponential. The Init                       * iator Nonce serves two purposes;it allows the initiator to use the same 			 * exponentials during different sessions while ensuring that the resulting 			  * session key will be different,can be used to differentiate between
 		       * parallel sessions
 		       */
+			DiffieHellmanContext ctx =
+                                processDHZeroOrOne(0, payload, pn);
+                        if(ctx == null) return;
+	
+			
 		}
 		else if(packetType==1){
 		      /*
 		       * Responder replies with a signed copy of his own exponential, a random
 		       * nonce and an authenticator calculated from a transient hash key private
-		       * to the responder
+		       * to the responder. We slightly deviate JFK here;we do not send any public 			* key information as specified in the JFK docs
 		       */
 		}
 		else if(packetType==2){

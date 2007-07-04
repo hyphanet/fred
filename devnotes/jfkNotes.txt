@@ -1,0 +1,20 @@
+Initiator-Responder:
+This is a straightforward DiffieHellman exponential.
+The Initiator Nonce serves two purposes;it allows the initiator to use the same
+exponentials during different sessions while ensuring that the resulting 			 session key will be different,can be used to differentiate between parallel sessions 
+
+Responder-Initiator:
+Responder replies with a signed copy of his own exponential, a random nonce and an authenticator calculated from a transient hash key private to the responder.
+We slightly deviate JFK here;we do not send any public key information
+as specified in the JFK docs 
+
+Initiator-Responder:
+Initiator echoes the data sent by the responder including the authenticator. This helps
+the responder verify the authenticity of the returned data. Rejection messages do not
+concern us because grpinfo which is sent in Message2 indicates which groups and algorithms 
+are acceptable avoiding the need for explicit message rejection. 
+
+Responder-Initiator:
+Encrypted message of the signature
+on both nonces, both exponentials using the same keys as in the previous message
+
