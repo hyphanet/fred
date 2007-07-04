@@ -35,6 +35,7 @@ public class NodeIPPortDetector {
 		this.ipDetector = ipDetector;
 		this.crypto = crypto;
 		arkPutter = new NodeARKInserter(node, crypto, this);
+		ipDetector.addPortDetector(this);
 	}
 
 	/**
