@@ -44,7 +44,7 @@ public class DiffieHellman {
 	private static class PrecalcBufferFill extends Thread {
 
 		public PrecalcBufferFill() {
-			setName("Diffie-Helman-Precalc");
+			setName("Diffie-Hellman-Precalc");
 			setDaemon(true);
 		}
 
