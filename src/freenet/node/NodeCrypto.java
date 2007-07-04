@@ -295,9 +295,9 @@ class NodeCrypto {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		int[] negTypes = packetMangler.supportedNegTypes();
 		fs.put("auth.negTypes", negTypes);
-		fs.putSingle("identity", Base64.encode(myIdentity)); // FIXME !forSetup after 11104 is mandatory
 		if(!forSetup) {
 			// These are invariant. They cannot change on connection setup. They can safely be excluded.
+			fs.putSingle("identity", Base64.encode(myIdentity));
 			fs.put("dsaGroup", cryptoGroup.asFieldSet());
 			fs.put("dsaPubKey", pubKey.asFieldSet());
 		}

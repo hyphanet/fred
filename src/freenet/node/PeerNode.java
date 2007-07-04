@@ -1670,21 +1670,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      * @throws FSParseException */
     protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
         boolean changedAnything = false;
-        String identityString = fs.get("identity");
-        if(identityString != null) {
-        	// REDFLAG this is optional now, because it is invariant.
-        	// But if it IS there, check it.
-        	try {
-        		byte[] newIdentity = Base64.decode(identityString);
-        		if(!Arrays.equals(newIdentity, identity))
-        			throw new FSParseException("Identity changed!!");
-        		
-        	} catch (NumberFormatException e) {
-        		throw new FSParseException(e);
-        	} catch (IllegalBase64Exception e) {
-        		throw new FSParseException(e);
-        	}
-        }        
         if(node.testnetEnabled != Fields.stringToBool(fs.get("testnet"), true)) {
         	String err = "Preventing connection to node "+detectedPeer+" - peer.testnet="+!node.testnetEnabled+'(' +fs.get("testnet")+") but node.testnet="+node.testnetEnabled;
         	Logger.error(this, err);
