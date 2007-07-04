@@ -128,6 +128,8 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 
 			public void set(String val) throws InvalidConfigValueException {
+				if("".equals(val))
+					val = "~none~";
 				myName = val;
 				if(myName.startsWith("Node id|")|| myName.equals("MyFirstFreenetNode")){
 					clientCore.alerts.register(nodeNameUserAlert);
