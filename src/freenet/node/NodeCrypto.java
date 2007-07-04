@@ -394,10 +394,10 @@ class NodeCrypto {
     		// Disallow multiple connections to the same address
     		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)) {
     			Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
-    			return true;
+    			return false;
     		}
 		}
-    	return false;
+    	return true;
 	}
 	
 }
