@@ -159,7 +159,6 @@ public class NodeIPDetector {
 				if(p == null || p.isNull()) continue;
 				FreenetInetAddress addr = p.getFreenetAddress();
 				if(addr == null) continue;
-				// DNSRequester doesn't deal with our own node
 				if(!IPUtil.isValidAddress(addr.getAddress(false), false)) continue;
 				Logger.normal(this, "Peer "+peerList[i].getPeer()+" thinks we are "+addr);
 				if(countsByPeer.containsKey(addr)) {
