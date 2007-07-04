@@ -113,7 +113,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
          * occasionally change their IP addresses).
          */
         PeerNode opn = node.peers.getByPeer(peer);
-        if(opn.getOutgoingMangler() != this) {
+        if(opn != null && opn.getOutgoingMangler() != this) {
         	Logger.error(this, "Apparently contacted by "+opn+") on "+this);
         	opn = null;
         }
