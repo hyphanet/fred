@@ -53,10 +53,10 @@ public class SimpleFieldSetTest extends TestCase {
 	 */
 	public void testSimpleFieldSetPutSingle_StringString_WithTwoPairedMultiLevelChars() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
-		String methodKey = "foo..bar";
+		String methodKey = "foo..bar.";
 		String methodValue = "foobar";
 		methodSFS.putSingle(methodKey,methodValue);
-		assertEquals(methodSFS.subset("foo").subset("").get("bar"),methodValue);
+		assertEquals(methodSFS.subset("foo").subset("").subset("bar").get(""),methodValue);
 		assertEquals(methodSFS.get(methodKey),methodValue);
 	}
 	
