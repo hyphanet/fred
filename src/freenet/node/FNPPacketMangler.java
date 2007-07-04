@@ -113,6 +113,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
          * occasionally change their IP addresses).
          */
         PeerNode opn = node.peers.getByPeer(peer);
+        if(opn.getOutgoingMangler() != this) {
+        	Logger.error(this, "Apparently contacted by "+opn+") on "+this);
+        	opn = null;
+        }
         PeerNode pn;
         
         if(opn != null) {
@@ -129,9 +133,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 if(tryProcessAuth(buf, offset, length, opn, peer)) return;
             }
         }
+        PeerNode[] peers = crypto.getPeerNodes();
         if(length > HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6) {
-            for(int i=0;i<node.peers.connectedPeers.length;i++) {
-                pn = node.peers.myPeers[i];
+            for(int i=0;i<peers.length;i++) {
+                pn = peers[i];
                 if(pn == opn) continue;
                 if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker())) {
                     // IP address change
@@ -151,8 +156,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             }
         }
         if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
-            for(int i=0;i<node.peers.myPeers.length;i++) {
-                pn = node.peers.myPeers[i];
+            for(int i=0;i<peers.length;i++) {
+                pn = peers[i];
                 if(pn == opn) continue;
                 if(tryProcessAuth(buf, offset, length, pn, peer)) return;
             }
