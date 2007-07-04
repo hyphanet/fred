@@ -487,12 +487,10 @@ public class SimpleFieldSetTest extends TestCase {
 		Iterator methodIter = methodSFS.directSubsetNameIterator();
 		while (methodIter.hasNext())
 			((String)methodIter.next()).equals(SAMPLE_STRING_PAIRS[0][0]);
+
 		methodSFS = new SimpleFieldSet(true);
-		/*TODO: the code below should work, 
-		        instead atm it raises a not-so-good null exception
 		methodIter = methodSFS.directSubsetNameIterator();
-		while (methodIter.hasNext())
-		fail("An empty SFS cannot have direct subset!"); */
+		assertNull(methodIter);
 	}
 	
 	/**
@@ -502,12 +500,9 @@ public class SimpleFieldSetTest extends TestCase {
 		String[] expectedResult = {SAMPLE_STRING_PAIRS[0][0]};
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		assertTrue(Arrays.equals(methodSFS.namesOfDirectSubsets(),expectedResult));
-		/*TODO: the code below should work, 
-        	instead atm it raises a not-so-good null exception
-		expectedResult = new String[0];
+
 		methodSFS = new SimpleFieldSet(true);
-		assertTrue(Arrays.equals(methodSFS.namesOfDirectSubsets(),expectedResult)); */
-		
+		assertNull(methodSFS.namesOfDirectSubsets());
 	}
 	
 	public void testOrderedString() {

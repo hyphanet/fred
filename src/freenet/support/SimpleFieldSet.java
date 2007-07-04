@@ -640,11 +640,11 @@ public class SimpleFieldSet {
 	}
 
 	public Iterator directSubsetNameIterator() {
-		return subsets.keySet().iterator();
+		return (subsets == null) ? null : subsets.keySet().iterator();
 	}
 
 	public String[] namesOfDirectSubsets() {
-		return (String[]) subsets.keySet().toArray(new String[subsets.size()]);
+		return (subsets == null) ? null : (String[]) subsets.keySet().toArray(new String[subsets.size()]);
 	}
 
 	public static SimpleFieldSet readFrom(InputStream is, boolean allowMultiple, boolean shortLived) throws IOException {
