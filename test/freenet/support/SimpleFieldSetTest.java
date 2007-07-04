@@ -56,18 +56,8 @@ public class SimpleFieldSetTest extends TestCase {
 		String methodKey = "foo..bar";
 		String methodValue = "foobar";
 		methodSFS.putSingle(methodKey,methodValue);
-		methodSFS.subset("foo").subset("").get("bar");	   /*it returns "foobar" */
-		
-		/*methodSFS.subset("foo").subset(null).get("bar");   /* it raises null exception
-															  * because subset(null) returns
-															  * null by default */
-		
-		methodSFS.get("foo..bar");						   /* it doesn't work
-		 													* but if I put("foo.bar.boo","bazoo") 
-		 													* and I get("foo.bar.boo") -> it returns "bazoo"
-		 													* so it should do the same for "foo..bar" 
-		 													* or it would raise an exception */
-		//assertEquals(methodSFS.get(methodKey),methodValue);
+		assertEquals(methodSFS.subset("foo").subset("").get("bar"),methodValue);
+		assertEquals(methodSFS.get(methodKey),methodValue);
 	}
 	
 	/**
@@ -80,7 +70,7 @@ public class SimpleFieldSetTest extends TestCase {
 		String methodKey = "foo..bar";
 		String methodValue = "foobar";
 		methodSFS.putAppend(methodKey,methodValue);
-		//assertEquals(methodSFS.get(methodKey),methodValue);
+		assertEquals(methodSFS.get(methodKey),methodValue);
 	}
 	
 	/**

@@ -169,8 +169,8 @@ public class SimpleFieldSet {
    		if(idx == -1)
    			return (String) values.get(key);
    		else if(idx == 0)
-   			return null;
-   		else {
+			return (subset("") == null) ? null : subset("").get(key.substring(1));
+		else {
    			if(subsets == null) return null;
    			String before = key.substring(0, idx);
    			String after = key.substring(idx+1);
