@@ -16,7 +16,6 @@ import java.util.Map;
 import freenet.client.HighLevelSimpleClient;
 import freenet.io.xfer.PacketThrottle;
 import freenet.l10n.L10n;
-import freenet.node.DarknetPeerNodeStatus;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -46,8 +45,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		public int compare(Object first, Object second) {
 			int result = 0;
 			boolean isSet = true;
-			PeerNodeStatus firstNode = (DarknetPeerNodeStatus) first;
-			PeerNodeStatus secondNode = (DarknetPeerNodeStatus) second;
+			PeerNodeStatus firstNode = (PeerNodeStatus) first;
+			PeerNodeStatus secondNode = (PeerNodeStatus) second;
 			
 			if(sortBy != null){
 				result = customCompare(firstNode, secondNode, sortBy);
