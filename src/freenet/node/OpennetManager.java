@@ -38,6 +38,7 @@ public class OpennetManager {
 			}
 		}
 		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, true);
+		
 	}
 
 	private void readFile(String filename) throws IOException {
@@ -80,6 +81,7 @@ public class OpennetManager {
 	 */
 	public void stop() {
 		crypto.stop();
+		node.peers.removeOpennetPeers();
 	}
 
 }

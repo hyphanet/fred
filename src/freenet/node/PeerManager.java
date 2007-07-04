@@ -1211,4 +1211,20 @@ public class PeerManager {
 		}
 		return false;
 	}
+
+	public void removeOpennetPeers() {
+		synchronized(this) {
+			Vector keep = new Vector();
+			Vector conn = new Vector();
+			for(int i=0;i<myPeers.length;i++) {
+				PeerNode pn = myPeers[i];
+				if(pn instanceof OpennetPeerNode) continue;
+				keep.add(pn);
+				if(pn.isConnected()) conn.add(pn);
+			}
+			myPeers = (PeerNode[]) keep.toArray(new PeerNode[keep.size()]);
+			connectedPeers = (PeerNode[]) keep.toArray(new PeerNode[conn.size()]);
+		}
+		updatePMUserAlert();
+	}
 }
