@@ -788,6 +788,7 @@ public class SimpleFieldSet {
 
 	public int[] getIntArray(String key) {
 		String[] strings = getAll(key);
+		if(strings == null) return null;
 		int[] ret = new int[strings.length];
 		for(int i=0;i<strings.length;i++) {
 			try {
