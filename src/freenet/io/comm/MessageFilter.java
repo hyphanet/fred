@@ -201,6 +201,7 @@ public class MessageFilter {
 	}
 	
 	public boolean timedOut() {
+		if(_matched) return false;
 		if(_callback != null && _callback.shouldTimeout())
 			_timeout = -1; // timeout immediately
 		return _timeout < System.currentTimeMillis();
