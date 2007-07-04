@@ -32,7 +32,7 @@ public class OpennetManager {
 			new NodeCrypto(1 /* 0 is enabled */, node, true, opennetConfig);
 
 		File nodeFile = new File(node.nodeDir, "opennet-"+crypto.portNumber);
-		File backupNodeFile = new File("node-"+crypto.portNumber+".bak");
+		File backupNodeFile = new File("opennet-"+crypto.portNumber+".bak");
 		
 		// Keep opennet crypto details in a separate file
 		try {
@@ -45,7 +45,7 @@ public class OpennetManager {
 			}
 		}
 		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, true);
-		writeFile(backupNodeFile, nodeFile);
+		writeFile(nodeFile, backupNodeFile);
 	}
 
 	private void writeFile(File orig, File backup) {
