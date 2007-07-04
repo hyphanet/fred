@@ -23,7 +23,7 @@ public class NodeIPPortDetector {
 	final Node node;
 	/** The NodeIPDetector which determines the node's IP address but not its port number */
 	final NodeIPDetector ipDetector;
-	/** The NodeCrypto with the node's port number */
+	/** The NodeCrypto with the node's port number and list of peers */
 	final NodeCrypto crypto;
 	/** ARK inserter. */
 	private final NodeARKInserter arkPutter;
