@@ -1,13 +1,17 @@
 package freenet.node;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -27,21 +31,53 @@ public class OpennetManager {
 		crypto =
 			new NodeCrypto(1 /* 0 is enabled */, node, true, opennetConfig);
 
+		File nodeFile = new File(node.nodeDir, "opennet-"+crypto.portNumber);
+		File backupNodeFile = new File("node-"+crypto.portNumber+".bak");
+		
 		// Keep opennet crypto details in a separate file
 		try {
-			readFile(new File(node.nodeDir, "opennet-"+crypto.portNumber).getPath());
+			readFile(nodeFile);
 		} catch (IOException e) {
 			try {
-				readFile(new File("node-"+crypto.portNumber+".bak").getPath());
+				readFile(backupNodeFile);
 			} catch (IOException e1) {
 				crypto.initCrypto();
 			}
 		}
 		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, true);
-		
+		writeFile(backupNodeFile, nodeFile);
 	}
 
-	private void readFile(String filename) throws IOException {
+	private void writeFile(File orig, File backup) {
+		SimpleFieldSet fs = crypto.exportPrivateFieldSet();
+		
+		if(orig.exists()) backup.delete();
+		
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(backup);
+			OutputStreamWriter osr = new OutputStreamWriter(fos, "UTF-8");
+			BufferedWriter bw = new BufferedWriter(osr);
+			fs.writeTo(bw);
+			bw.close();
+			if(!backup.renameTo(orig)) {
+				orig.delete();
+				if(!backup.renameTo(orig)) {
+					Logger.error(this, "Could not rename new node file "+backup+" to "+orig);
+				}
+			}
+		} catch (IOException e) {
+			if(fos != null) {
+				try {
+					fos.close();
+				} catch (IOException e1) {
+					Logger.error(this, "Cannot close "+backup+": "+e1, e1);
+				}
+			}
+		}
+	}
+
+	private void readFile(File filename) throws IOException {
 		// REDFLAG: Any way to share this code with Node and NodePeer?
 		FileInputStream fis = new FileInputStream(filename);
 		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
