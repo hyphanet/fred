@@ -15,6 +15,8 @@
  */
 package freenet.support;
 
+import java.util.Locale;
+
 import junit.framework.TestCase;
 
 /**
@@ -26,13 +28,17 @@ public class TimeUtilTest extends TestCase {
 
 	private long oneForTermLong = 694861001;	//1w+1d+1h+1m+1s+1ms
 	
+	protected void setUp() throws Exception {
+		Locale.setDefault(Locale.US);
+	}
+	
 	/**
 	 * Tests formatTime(long,int,boolean) method
 	 * trying the biggest long value
 	 */
 	public void testFormatTime_LongIntBoolean_MaxValue() {
 		String expectedForMaxLongValue = "15250284452w3d7h12m55.807s";
-		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE,6,true).replace(',','.'),expectedForMaxLongValue);
+		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE,6,true),expectedForMaxLongValue);
 	}
 
 	/**
@@ -90,7 +96,7 @@ public class TimeUtilTest extends TestCase {
 				"1w1d1h1m1.001s"	//6 terms
 		};
 		for(int i = 0; i < valAndExpected.length; i++)
-			assertEquals(TimeUtil.formatTime(oneForTermLong,i,true).replace(',','.'),valAndExpected[i]);
+			assertEquals(TimeUtil.formatTime(oneForTermLong,i,true),valAndExpected[i]);
 	}
 	
 	/**
@@ -102,7 +108,7 @@ public class TimeUtilTest extends TestCase {
 	public void testFormatTime_LongIntBoolean_milliseconds() {
 		long methodValue = 1;	//1ms
 		assertEquals(TimeUtil.formatTime(methodValue,6,false),"");
-		assertEquals(TimeUtil.formatTime(methodValue,6,true).replace(',','.'),"0.001s");
+		assertEquals(TimeUtil.formatTime(methodValue,6,true),"0.001s");
 	}
 	
 	/**
