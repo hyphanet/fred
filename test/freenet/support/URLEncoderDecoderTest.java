@@ -15,6 +15,8 @@
  */
 package freenet.support;
 
+import java.io.UnsupportedEncodingException;
+
 import junit.framework.TestCase;
 
 /**
@@ -29,23 +31,75 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * Tests if URLEncode.encode(String) and
 	 * URLDecode.decode(String,boolean) methods
 	 * work correctly together, both with safe
-	 * characters and not safe.
+	 * characters and not safe "base" (i.e. ASCII) chars .
 	 */
-	public void testEncodeDecodeString() {
-		String[][] toEncode_encoded = {
-				{"*-_./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz",""}, //safe chars
-				{"!@#$%^&()+={}[]:;\"'<>,?~`\n",""}		//not safe chars
+	public void testEncodeDecodeString_notSafeBaseChars() {
+		String[] toEncode = {
+				URLEncoder.safeURLCharacters, 			//safe chars
+				"!@#$%^&()+={}[]:;\"'<>,?~`\n",		//not safe "base" chars
+				"%%%",		//triple % char, if badly encoded it will generate an exception
+				""			//no chars
 		};
 		
-		for (int i = 0; i < toEncode_encoded.length; i++)	//encoding
-			toEncode_encoded[i][1] = URLEncoder.encode(toEncode_encoded[i][0]);
-		
 		try {
-			for (int i = 0; i < toEncode_encoded.length; i++)	//decoding
-				assertEquals(URLDecoder.decode(toEncode_encoded[i][1],false),toEncode_encoded[i][0]);
+			assertTrue(areCorrectlyEncodedDecoded(toEncode));
 		} catch (URLEncodedFormatException anException) {
-			fail("Not expected exception thrown : " + anException.getMessage()); }	
-		
+			fail("Not expected exception thrown : " + anException.getMessage()); }
+	}
+	
+	/**
+	 * Tests if URLEncode.encode(String) and
+	 * URLDecode.decode(String,boolean) methods
+	 * work correctly together, both with safe
+	 * characters and not safe "advanced" (i.e. not ASCII) chars .
+	 */
+	public void testEncodeDecodeString_notSafeAdvChars() {
+		String[] toEncode = { "ÉâûĔĭņşÊãüĕĮŇŠËäýĖįňšÌåþėİŉŢÍæÿĘıŊţÎçĀęĲŋŤÏèāĚĳŌťÐéĂěĴōŦÑêăĜĵŎŧ"+ 
+							  "ÒëĄĝĶŏŨÓìąĞķŐũÔíĆğĸőŪÕîćĠĹŒūÖïĈġĺœŬ×ðĉĢĻŔŭØñĊģļŕŮÙòċĤĽŖůÚóČĥľŗŰ"+
+							  "ÛôčĦĿŘűÜõĎħŀřŲÝöďĨŁŚųÞ÷ĐĩłśŴßøđĪŃŜŵàùĒīńŝŶáúēĬŅŞŷ"};
+		/*try {
+			assertTrue(areCorrectlyEncodedDecoded(toEncode));
+		} catch (URLEncodedFormatException anException) {
+			fail("Not expected exception thrown : " + anException.getMessage()); } */
 	}
 
+	/**
+	 * Verifies if a string is the same after
+	 * being processed by encoding and 
+	 * decoding methods
+	 * @param toEncode String to Encode
+	 * @return true if the String is correctly processed
+	 * @throws URLEncodedFormatException
+	 */
+	private boolean areCorrectlyEncodedDecoded(String[] toEncode) throws URLEncodedFormatException {
+		boolean retValue = true;
+		String[] encoded = new String[toEncode.length];
+		for (int i = 0; i < encoded.length; i++)	//encoding
+			encoded[i] = URLEncoder.encode(toEncode[i]);
+		for (int i = 0; i < encoded.length; i++)	//decoding
+			retValue &= (URLDecoder.decode(encoded[i],false)).equals(toEncode[i]);
+		return retValue;
+	}
+	
+	/**
+	 * Tests URLEncode(String,String,boolean) method
+	 * to verify if the force parameter is
+	 * well-managed for each safeURLCharacter,
+	 * with both true and false ascii-flag.
+	 */
+	public void testEncodeForced() {
+		String toEncode,expectedResult;
+		char eachChar;
+		for(int i=0; i<URLEncoder.safeURLCharacters.length(); i++) {
+			eachChar = URLEncoder.safeURLCharacters.charAt(i);
+			toEncode = String.valueOf(eachChar);
+			try {
+				expectedResult = "%"+ HexUtil.bytesToHex(
+						toEncode.getBytes("US-ASCII")); 	//since safe chars are only US-ASCII
+				assertEquals(URLEncoder.encode(toEncode,toEncode,false),expectedResult);
+				assertEquals(URLEncoder.encode(toEncode,toEncode,true),expectedResult);
+			} catch (UnsupportedEncodingException anException) {
+				fail("Not expected exception thrown : " + anException.getMessage()); }
+		}
+	}
 }
