@@ -116,13 +116,13 @@ public class StatisticsToadlet extends Toadlet {
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses();
 		Arrays.sort(peerNodeStatuses, new Comparator() {
 			public int compare(Object first, Object second) {
-				DarknetPeerNodeStatus firstNode = (DarknetPeerNodeStatus) first;
-				DarknetPeerNodeStatus secondNode = (DarknetPeerNodeStatus) second;
+				PeerNodeStatus firstNode = (PeerNodeStatus) first;
+				PeerNodeStatus secondNode = (PeerNodeStatus) second;
 				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
 				if (statusDifference != 0) {
 					return statusDifference;
 				}
-				return firstNode.getName().compareToIgnoreCase(secondNode.getName());
+				return 0;
 			}
 		});
 
