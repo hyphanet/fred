@@ -481,13 +481,15 @@ public class SimpleFieldSetTest extends TestCase {
 	
 	/**
 	 * Tests directSubsetNameIterator() method.
+	 * It uses SAMPLE_STRING_PAIRS and for this reason
+	 * the expected subset is "foo".
 	 */
 	public void testDirectSubsetNameIterator() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
+		String expectedSubset = SAMPLE_STRING_PAIRS[0][0];	//"foo"
 		Iterator methodIter = methodSFS.directSubsetNameIterator();
 		while (methodIter.hasNext())
-			((String)methodIter.next()).equals(SAMPLE_STRING_PAIRS[0][0]);
-
+			((String)methodIter.next()).equals(expectedSubset);
 		methodSFS = new SimpleFieldSet(true);
 		methodIter = methodSFS.directSubsetNameIterator();
 		assertNull(methodIter);
@@ -503,11 +505,6 @@ public class SimpleFieldSetTest extends TestCase {
 
 		methodSFS = new SimpleFieldSet(true);
 		assertNull(methodSFS.namesOfDirectSubsets());
-	}
-	
-	public void testOrderedString() {
-		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
-		System.out.println(methodSFS.toOrderedString());
 	}
 	
 	/**
