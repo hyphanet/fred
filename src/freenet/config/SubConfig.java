@@ -303,9 +303,14 @@ public class SubConfig implements Comparable {
 	}
 
 	public String getRawOption(String name) {
-		if(config instanceof PersistentConfig)
-			return ((PersistentConfig) config).origConfigFileContents.get(prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + name);
-		else return null;
+		if(config instanceof PersistentConfig) {
+			PersistentConfig pc = (PersistentConfig) config;
+			if(pc.finishedInit)
+				throw new IllegalStateException("getRawOption("+name+") on "+this+" but persistent config has been finishedInit() already!");
+			SimpleFieldSet fs = pc.origConfigFileContents;
+			if(fs == null) return null;
+			return fs.get(prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + name);
+		} else return null;
 	}
 
 }
