@@ -336,7 +336,12 @@ class NodeCrypto {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DeflaterOutputStream gis;
 		gis = new DeflaterOutputStream(baos);
-		OutputStreamWriter osw = new OutputStreamWriter(gis);
+		OutputStreamWriter osw;
+		try {
+			osw = new OutputStreamWriter(gis, "UTF-8");
+		} catch (UnsupportedEncodingException e2) {
+			throw new Error(e2);
+		}
 		BufferedWriter bw = new BufferedWriter(osw);
 		try {
 			fs.writeTo(bw);
