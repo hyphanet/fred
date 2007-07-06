@@ -609,7 +609,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false);
 		sortOrder += NodeCryptoConfig.OPTION_COUNT;
-		darknetCrypto = new NodeCrypto(sortOrder++, this, false, darknetConfig);
+		darknetCrypto = new NodeCrypto(this, false, darknetConfig);
 
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);

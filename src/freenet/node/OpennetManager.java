@@ -29,7 +29,7 @@ public class OpennetManager {
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig) throws NodeInitException {
 		this.node = node;
 		crypto =
-			new NodeCrypto(1 /* 0 is enabled */, node, true, opennetConfig);
+			new NodeCrypto(node, true, opennetConfig);
 
 		File nodeFile = new File(node.nodeDir, "opennet-"+crypto.portNumber);
 		File backupNodeFile = new File("opennet-"+crypto.portNumber+".bak");

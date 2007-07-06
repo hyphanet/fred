@@ -79,7 +79,7 @@ class NodeCrypto {
 	 * Get port number from a config, create socket and packet mangler
 	 * @throws NodeInitException 
 	 */
-	public NodeCrypto(int sortOrder, Node node, boolean isOpennet, NodeCryptoConfig config) throws NodeInitException {
+	public NodeCrypto(Node node, boolean isOpennet, NodeCryptoConfig config) throws NodeInitException {
 
 		this.node = node;
 		this.config = config;
