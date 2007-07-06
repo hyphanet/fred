@@ -349,7 +349,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
-			peerTableInfoboxHeader.addChild("#", l10n("myFriends"));
+			peerTableInfoboxHeader.addChild("#", getPeerListTitle());
 			if (advancedModeEnabled) {
 				if (!path.endsWith("displaymessagetypes.html")) {
 					peerTableInfoboxHeader.addChild("#", " ");
@@ -451,6 +451,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
+
+	/**
+	 * What should the heading (before "(more detailed)") be on the peers table?
+	 */
+	protected abstract String getPeerListTitle();
 
 	/** Should there be a checkbox for each peer, and drawPeerActionSelectBox() be called directly
 	 * after drawing the peers list? */

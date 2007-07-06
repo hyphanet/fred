@@ -500,4 +500,8 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doAction", l10n("go") });
 	}
 
+	protected String getPeerListTitle() {
+		return l10n("myFriends");
+	}
+
 }

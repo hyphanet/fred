@@ -67,4 +67,8 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		// Do nothing, see showPeerActionsBox().
 	}
 
+	protected String getPeerListTitle() {
+		return L10n.getString("OpennetConnectionsToadlet.peersListTitle");
+	}
+
 }
