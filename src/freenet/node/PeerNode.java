@@ -1919,10 +1919,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.putSingle("ark.number", Long.toString(myARK.suggestedEdition - 1));
 			fs.putSingle("ark.pubURI", myARK.getBaseSSK().toString(false, false));
 		}
+		fs.put("opennet", isOpennet());
         return fs;
     }
 
-    /**
+    public abstract boolean isOpennet();
+
+	/**
      * @return The time at which we last connected (or reconnected).
      */
     public synchronized long timeLastConnectionCompleted() {

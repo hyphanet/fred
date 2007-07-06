@@ -18,4 +18,8 @@ public class OpennetPeerNode extends PeerNode {
 		if(!node.isOpennetEnabled()) return false;
 		return super.isRoutingCompatible();
 	}
+
+	public boolean isOpennet() {
+		return true;
+	}
 }
