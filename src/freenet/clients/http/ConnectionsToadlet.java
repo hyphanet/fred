@@ -78,18 +78,22 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(sortBy.equals("address")){
 				return firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
 			}else if(sortBy.equals("location")){
-				double diff = firstNode.getLocation() - secondNode.getLocation(); // Can occasionally be the same, and we must have a consistent sort order
-				if(Double.MIN_VALUE*2 < Math.abs(diff)) return 0;
-				return diff > 0 ? 1 : -1;
+				return compareLocations(firstNode, secondNode);
 			}else if(sortBy.equals("version")){
 				return Version.getArbitraryBuildNumber(firstNode.getVersion()) - Version.getArbitraryBuildNumber(secondNode.getVersion());
 			}else
 				return 0;
 		}
 
+		private int compareLocations(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+			double diff = firstNode.getLocation() - secondNode.getLocation(); // Can occasionally be the same, and we must have a consistent sort order
+			if(Double.MIN_VALUE*2 < Math.abs(diff)) return 0;
+			return diff > 0 ? 1 : -1;
+		}
+
 		/** Default comparison, after taking into account status */
 		protected int lastResortCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
-			return (firstNode.getLocation() - secondNode.getLocation()) < 0 ? -1 : 1;
+			return compareLocations(firstNode, secondNode);
 		}
 	}
 
