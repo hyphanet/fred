@@ -565,11 +565,13 @@ public class NodeDispatcher implements Dispatcher {
 			}
 			if(!rejected) {
 				ctx = (ProbeContext) recentProbeContexts.get(lid);
-				if(ctx == null && isNew) {
-					ctx = new ProbeContext(id, target, best, nearest, htl, counter, src, cb);
-				} else {
-					Logger.error(this, "Not creating new context for: "+id);
-					return true;
+				if(ctx == null) {
+					if(isNew) {
+						ctx = new ProbeContext(id, target, best, nearest, htl, counter, src, cb);
+					} else {
+						Logger.error(this, "Not creating new context for: "+id);
+						return true;
+					}
 				}
 				recentProbeContexts.push(lid, ctx); // promote or add
 				while(recentProbeContexts.size() > MAX_PROBE_CONTEXTS)
