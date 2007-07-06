@@ -1211,7 +1211,9 @@ public class DarknetPeerNode extends PeerNode {
 		protected void addComment(HTMLNode node) {
 			String[] lines = comment.split("\n");
 			for (int i = 0, c = lines.length; i < c; i++) {
-				node.addChild("p", lines[i]);
+				node.addChild("#", lines[i]);
+				if(i != lines.length - 1)
+					node.addChild("br");
 			}
 		}
 
