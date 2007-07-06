@@ -87,7 +87,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 		private int compareLocations(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
 			double diff = firstNode.getLocation() - secondNode.getLocation(); // Can occasionally be the same, and we must have a consistent sort order
-			if(Double.MIN_VALUE*2 < Math.abs(diff)) return 0;
+			if(Double.MIN_VALUE*2 > Math.abs(diff)) return 0;
 			return diff > 0 ? 1 : -1;
 		}
 
