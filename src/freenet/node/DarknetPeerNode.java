@@ -886,8 +886,6 @@ public class DarknetPeerNode extends PeerNode {
 				public HTMLNode getHTMLText() {
 					HTMLNode div = new HTMLNode("div");
 					
-					// FIXME localise!!!
-					
 					div.addChild("p", l10n("failedReceiveHeader", new String[] { "filename", "node" },
 							new String[] { filename, getName() }));
 					
