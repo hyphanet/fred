@@ -419,38 +419,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// END PEER TABLE
 		}
 
-		// BEGIN PEER ADDITION BOX
-		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		peerAdditionInfobox.addChild("div", "class", "infobox-header", l10n("addPeerTitle"));
-		HTMLNode peerAdditionContent = peerAdditionInfobox.addChild("div", "class", "infobox-content");
-		HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, ".", "addPeerForm");
-		peerAdditionForm.addChild("#", l10n("pasteReference"));
-		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "reftext", "ref", "8", "74" });
-		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("#", (l10n("urlReference") + ' '));
-		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "refurl", "text", "url" });
-		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("#", (l10n("fileReference") + ' '));
-		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
-		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
-		peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
-		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", l10n("add") });
+		drawAddPeerBox(contentNode, ctx);
 		
 		// our reference
-		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
-		// FIXME better way to deal with this sort of thing???
-		L10n.addL10nSubstitution(headerReferenceInfobox, "DarknetConnectionsToadlet.myReferenceHeader",
-				new String[] { "linkref", "/linkref", "linktext", "/linktext" },
-				new String[] { "<a href=\"myref.fref\">", "</a>", "<a href=\"myref.txt\">", "</a>" });
-		HTMLNode warningSentence = headerReferenceInfobox.addChild("pre");
-		L10n.addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
-				new String[] { "bold", "/bold" },
-				new String[] { "<b>", "</b>" });
-		referenceInfobox.addChild("div", "class", "infobox-content").addChild("pre", "id", "reference", getNoderef().toString() + '\n');
+		if(shouldDrawNoderefBox(advancedModeEnabled))
+			drawNoderefBox(contentNode, ctx);
 		
 		// our ports
 		HTMLNode portInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -488,7 +461,27 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	}
 	
 	
+	protected abstract boolean shouldDrawNoderefBox(boolean advancedModeEnabled);
+
+	private void drawNoderefBox(HTMLNode contentNode, ToadletContext ctx) {
+		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
+		// FIXME better way to deal with this sort of thing???
+		L10n.addL10nSubstitution(headerReferenceInfobox, "DarknetConnectionsToadlet.myReferenceHeader",
+				new String[] { "linkref", "/linkref", "linktext", "/linktext" },
+				new String[] { "<a href=\"myref.fref\">", "</a>", "<a href=\"myref.txt\">", "</a>" });
+		HTMLNode warningSentence = headerReferenceInfobox.addChild("pre");
+		L10n.addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
+				new String[] { "bold", "/bold" },
+				new String[] { "<b>", "</b>" });
+		referenceInfobox.addChild("div", "class", "infobox-content").addChild("pre", "id", "reference", getNoderef().toString() + '\n');
+	}
+
 	protected abstract String getPageTitle(String titleCountString, String myName);
+
+	/** Draw the add a peer box. This comes immediately after the main peers table and before the noderef box.
+	 * Implementors may skip it by not doing anything in this method. */
+	protected abstract void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx);
 
 	protected Comparator comparator(String sortBy, boolean reversed) {
 		return new ComparatorByStatus(sortBy, reversed);
