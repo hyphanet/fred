@@ -78,7 +78,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(sortBy.equals("address")){
 				return firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
 			}else if(sortBy.equals("location")){
-				return (firstNode.getLocation() - secondNode.getLocation()) < 0 ? -1 : 1; // Shouldn't be equal anyway
+				return (int) Math.signum(firstNode.getLocation() - secondNode.getLocation()); // Can occasionally be the same, and we must have a consistent sort order
 			}else if(sortBy.equals("version")){
 				return Version.getArbitraryBuildNumber(firstNode.getVersion()) - Version.getArbitraryBuildNumber(secondNode.getVersion());
 			}else
