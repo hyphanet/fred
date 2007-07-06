@@ -153,7 +153,6 @@ class FailureTableEntry {
 				newRequestorTimes[toIndex] = now;
 				newRequestorBootIDs[toIndex] = pn.getBootID();
 				toIndex++;
-				break;
 			}
 		}
 		
@@ -241,7 +240,6 @@ class FailureTableEntry {
 				newRequestedBootIDs[toIndex] = pn.getBootID();
 				newRequestedLocs[toIndex] = pn.getLocation().getValue();
 				toIndex++;
-				break;
 			}
 		}
 		
