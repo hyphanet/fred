@@ -68,12 +68,12 @@ class NodeCrypto {
 	final NodeIPPortDetector detector;
 	
 	// Noderef related
+	/** An ordered version of the noderef FieldSet, without the signature */
+	private String mySignedReference = null;
 	/** The signature of the above fieldset */
 	private DSASignature myReferenceSignature = null;
-	/** A synchronization object used while signing the reference fiedlset */
+	/** A synchronization object used while signing the reference fieldset */
 	private volatile Object referenceSync = new Object();
-	/** An ordered version of the FieldSet, without the signature */
-	private String mySignedReference = null;
 	
 	/**
 	 * Get port number from a config, create socket and packet mangler
