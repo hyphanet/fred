@@ -1521,7 +1521,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         		if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
         		continue;
         	}
-        	if(!pn.allowLocalAddresses() && !peer.isRealInternetAddress(false, false)) {
+        	if((!pn.allowLocalAddresses()) && (!peer.isRealInternetAddress(false, false))) {
         		if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
         		continue;
         	}
