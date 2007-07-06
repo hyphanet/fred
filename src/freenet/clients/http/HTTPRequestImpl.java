@@ -406,6 +406,9 @@ public class HTTPRequestImpl implements HTTPRequest {
 		if (boundary.charAt(boundary.length() - 1) == '"')
 			boundary = boundary.substring(0, boundary.length() - 1);
 		
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Boundary is: "+boundary);
+		
 		boundary = "--"+boundary;
 		
 		InputStream is = this.data.getInputStream();
