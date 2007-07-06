@@ -843,6 +843,8 @@ public class DarknetPeerNode extends PeerNode {
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" receiving file", t);
 						onReceiveFailure();
+					} finally {
+						remove();
 					}
 					if(logMINOR)
 						Logger.minor(this, "Received file");
@@ -852,6 +854,15 @@ public class DarknetPeerNode extends PeerNode {
 			t.start();
 			if(logMINOR) Logger.minor(this, "Receiving on "+t);
 			sendFileOfferAccepted(uid);
+		}
+
+		protected void remove() {
+			Long l = new Long(uid);
+			synchronized(DarknetPeerNode.this) {
+				myFileOffersByUID.remove(l);
+				hisFileOffersByUID.remove(l);
+			}
+			data.close();
 		}
 
 		public void send() throws DisconnectedException {
@@ -871,6 +882,7 @@ public class DarknetPeerNode extends PeerNode {
 						}
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" sending file", t);
+						remove();
 					}
 					if(logMINOR)
 						Logger.minor(this, "Sent file");
@@ -1199,7 +1211,7 @@ public class DarknetPeerNode extends PeerNode {
 		protected void addComment(HTMLNode node) {
 			String[] lines = comment.split("\n");
 			for (int i = 0, c = lines.length; i < c; i++) {
-				node.addChild("div", lines[i]);
+				node.addChild("p", lines[i]);
 			}
 		}
 
