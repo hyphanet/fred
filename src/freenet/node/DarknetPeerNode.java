@@ -789,7 +789,17 @@ public class DarknetPeerNode extends PeerNode {
 			size = fs.getLong("size");
 			mimeType = fs.get("metadata.contentType");
 			filename = FileUtil.sanitize(fs.get("filename"), mimeType);
-			comment = fs.get("comment");
+			String s = fs.get("comment");
+			if(s != null) {
+				try {
+					s = new String(Base64.decode(s), "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					throw new Error(e);
+				} catch (IllegalBase64Exception e) {
+					// Maybe it wasn't encoded? FIXME remove
+				}
+			}
+			comment = s;
 			this.amIOffering = amIOffering;
 		}
 
@@ -797,7 +807,11 @@ public class DarknetPeerNode extends PeerNode {
 			fs.put("uid", uid);
 			fs.putSingle("filename", filename);
 			fs.putSingle("metadata.contentType", mimeType);
-			fs.putSingle("comment", comment);
+			try {
+				fs.putSingle("comment", Base64.encode(comment.getBytes("UTF-8")));
+			} catch (UnsupportedEncodingException e) {
+				throw new Error(e);
+			}
 			fs.put("size", size);
 		}
 
