@@ -312,7 +312,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 			}
 			// END OVERVIEW TABLE
-
+			
+			boolean enablePeerActions = showPeerActionsBox();
+			
 			// BEGIN PEER TABLE
 			if(fProxyJavascriptEnabled) {
 				StringBuffer jsBuf = new StringBuffer();
@@ -360,10 +362,17 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				L10n.addL10nSubstitution(peerTableInfoboxContent, "DarknetConnectionsToadlet.noPeersWithHomepageLink", 
 						new String[] { "link", "/link" }, new String[] { "<a href=\"/\">", "</a>" });
 			} else {
-				HTMLNode peerForm = ctx.addFormChild(peerTableInfoboxContent, ".", "peersForm");
-				HTMLNode peerTable = peerForm.addChild("table", "class", "darknet_connections");
+				HTMLNode peerForm = null;
+				HTMLNode peerTable;
+				if(enablePeerActions) {
+					peerForm = ctx.addFormChild(peerTableInfoboxContent, ".", "peersForm");
+					peerTable = peerForm.addChild("table", "class", "darknet_connections");
+				} else {
+					peerTable = peerTableInfoboxContent.addChild("table", "class", "darknet_connections");
+				}
 				HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
-				peerTableHeaderRow.addChild("th");
+				if(enablePeerActions)
+					peerTableHeaderRow.addChild("th");
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "status")).addChild("#", l10n("statusTitle"));
 				if(hasNameColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "name")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("nameClickToMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("nameTitle"));
@@ -391,30 +400,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
 					
 					PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
-					drawRow(peerTable, peerNodeStatus, advancedModeEnabled, fProxyJavascriptEnabled, now, path);
+					drawRow(peerTable, peerNodeStatus, advancedModeEnabled, fProxyJavascriptEnabled, now, path, enablePeerActions);
 					
 				}
 
-				HTMLNode actionSelect = peerForm.addChild("select", new String[] { "id", "name" }, new String[] { "action", "action" });
-				actionSelect.addChild("option", "value", "", l10n("selectAction"));
-				actionSelect.addChild("option", "value", "send_n2ntm", l10n("sendMessageToPeers"));
-				actionSelect.addChild("option", "value", "update_notes", l10n("updateChangedPrivnotes"));
-				if(advancedModeEnabled) {
-					actionSelect.addChild("option", "value", "enable", "Enable selected peers");
-					actionSelect.addChild("option", "value", "disable", "Disable selected peers");
-					actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly (only set this if you have a static IP and are not NATed and neither is the peer)");
-					actionSelect.addChild("option", "value", "clear_burst_only", "On selected peers, clear BurstOnly");
-					actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly (not recommended)");
-					actionSelect.addChild("option", "value", "clear_listen_only", "On selected peers, clear ListenOnly");
-					actionSelect.addChild("option", "value", "set_allow_local", "On selected peers, set allowLocalAddresses (useful if you are connecting to another node on the same LAN)");
-					actionSelect.addChild("option", "value", "clear_allow_local", "On selected peers, clear allowLocalAddresses");
-					actionSelect.addChild("option", "value", "set_ignore_source_port", "On selected peers, set ignoreSourcePort (try this if behind an evil corporate firewall; otherwise not recommended)");
-					actionSelect.addChild("option", "value", "clear_ignore_source_port", "On selected peers, clear ignoreSourcePort");
+				if(peerForm != null) {
+					drawPeerActionSelectBox(peerForm, advancedModeEnabled);
 				}
-				actionSelect.addChild("option", "value", "", l10n("separator"));
-				actionSelect.addChild("option", "value", "remove", l10n("removePeers"));
-				peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doAction", l10n("go") });
-				
 			}
 			// END PEER TABLE
 		}
@@ -459,7 +451,16 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
-	
+
+	/** Should there be a checkbox for each peer, and drawPeerActionSelectBox() be called directly
+	 * after drawing the peers list? */
+	protected abstract boolean showPeerActionsBox();
+
+	/** If showPeerActionsBox() is true, this will be called directly after drawing the peers table.
+	 * A form has been added, and checkboxes added for each peer. This function should draw the rest
+	 * of the form - any additional controls and one or more submit buttons.
+	 */
+	protected abstract void drawPeerActionSelectBox(HTMLNode peerForm, boolean advancedModeEnabled);
 	
 	protected abstract boolean shouldDrawNoderefBox(boolean advancedModeEnabled);
 
@@ -491,11 +492,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 	abstract protected SimpleFieldSet getNoderef();
 
-	private void drawRow(HTMLNode peerTable, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled, boolean fProxyJavascriptEnabled, long now, String path) {
+	private void drawRow(HTMLNode peerTable, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled, boolean fProxyJavascriptEnabled, long now, String path, boolean enablePeerActions) {
 		HTMLNode peerRow = peerTable.addChild("tr");
 
-		// check box column
-		peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peerNodeStatus.hashCode() });
+		if(enablePeerActions) {
+			// check box column
+			peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peerNodeStatus.hashCode() });
+		}
 
 		// status column
 		String statusString = peerNodeStatus.getStatusName();

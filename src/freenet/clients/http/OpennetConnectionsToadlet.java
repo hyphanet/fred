@@ -57,4 +57,14 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		return advancedModeEnabled;
 	}
 
+	protected boolean showPeerActionsBox() {
+		// No per-peer actions supported on opennet - there's no point, they'll only reconnect,
+		// possibly as a different identity. And we don't want to be able to send N2NTM spam either.
+		return false;
+	}
+
+	protected void drawPeerActionSelectBox(HTMLNode peerForm, boolean advancedModeEnabled) {
+		// Do nothing, see showPeerActionsBox().
+	}
+
 }
