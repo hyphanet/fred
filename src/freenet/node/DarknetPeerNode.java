@@ -921,7 +921,7 @@ public class DarknetPeerNode extends PeerNode {
 					row = table.addChild("tr");
 					if(comment != null && comment.length() > 0) {
 						row.addChild("td").addChild("#", l10n("commentLabel"));
-						row.addChild("td").addChild("#", comment);
+						addComment(row.addChild("td"));
 					}
 					
 					return div;
@@ -1019,7 +1019,7 @@ public class DarknetPeerNode extends PeerNode {
 					row = table.addChild("tr");
 					if(comment != null && comment.length() > 0) {
 						row.addChild("td").addChild("#", l10n("commentLabel"));
-						row.addChild("td").addChild("#", comment);
+						addComment(row.addChild("td"));
 					}
 					
 					return div;
@@ -1116,7 +1116,7 @@ public class DarknetPeerNode extends PeerNode {
 					row = table.addChild("tr");
 					if(comment != null && comment.length() > 0) {
 						row.addChild("td").addChild("#", l10n("commentLabel"));
-						row.addChild("td").addChild("#", comment);
+						addComment(row.addChild("td"));
 					}
 					
 					// Accept/reject form
@@ -1196,6 +1196,13 @@ public class DarknetPeerNode extends PeerNode {
 			};
 			
 		}
+		protected void addComment(HTMLNode node) {
+			String[] lines = comment.split("\n");
+			for (int i = 0, c = lines.length; i < c; i++) {
+				node.addChild("div", lines[i]);
+			}
+		}
+
 		private String l10n(String key) {
 			return L10n.getString("FileOffer."+key);
 		}
