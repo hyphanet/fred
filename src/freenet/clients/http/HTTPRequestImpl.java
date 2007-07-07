@@ -493,7 +493,6 @@ public class HTTPRequestImpl implements HTTPRequest {
 					// offset bytes matched, but no more
 					// write the bytes that matched, then the non-matching byte
 					bbos.write(bbound, 0, offset);
-					bbos.write((int) b & 0xff);
 					if(logMINOR)
 						Logger.minor(this, "Partial match: "+offset+" of "+bbound.length+" matched, no more because b = "+b);
 					offset = 0;
@@ -501,6 +500,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 						offset = 1;
 						if(logMINOR)
 							Logger.minor(this, "Matched "+offset+" of "+bbound.length+" : "+b+" after reset");
+					} else {
+						bbos.write((int) b & 0xff);
 					}
 				} else {
 					bbos.write((int) b & 0xff);
