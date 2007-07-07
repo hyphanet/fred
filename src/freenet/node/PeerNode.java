@@ -776,7 +776,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     			addedLocalhost = true;
     		}
     		for(int j=0;j<nodePeers.length;j++) {
-    			if(nodePeers[j].getFreenetAddress().equals(addr)) {
+    			// REDFLAG - Two lines so we can see which variable is null when it NPEs
+    			FreenetInetAddress myAddr = nodePeers[j].getFreenetAddress();
+    			if(myAddr.equals(addr)) {
         			if(!addedLocalhost)
         				peers.add(new Peer(localhost, p.getPort()));
     				addedLocalhost = true;
