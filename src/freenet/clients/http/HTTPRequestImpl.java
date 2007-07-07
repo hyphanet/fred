@@ -499,6 +499,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 					offset = 0;
 				} else {
 					bbos.write((int) b & 0xff);
+					if(logMINOR)
+						Logger.minor(this, "Did not match: "+b);
 				}
 			}
 			
