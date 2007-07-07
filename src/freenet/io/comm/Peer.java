@@ -92,6 +92,7 @@ public class Peer {
     
     public Peer(FreenetInetAddress addr, int port) {
     	this.addr = addr;
+    	if(addr == null) throw new NullPointerException();
     	this._port = port;
 	}
 
