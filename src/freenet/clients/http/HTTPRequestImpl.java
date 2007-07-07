@@ -497,6 +497,11 @@ public class HTTPRequestImpl implements HTTPRequest {
 					if(logMINOR)
 						Logger.minor(this, "Partial match: "+offset+" of "+bbound.length+" matched, no more because b = "+b);
 					offset = 0;
+					if(b == bbound[0]) {
+						offset = 1;
+						if(logMINOR)
+							Logger.minor(this, "Matched "+offset+" of "+bbound.length+" : "+b+" after reset");
+					}
 				} else {
 					bbos.write((int) b & 0xff);
 					if(logMINOR)
