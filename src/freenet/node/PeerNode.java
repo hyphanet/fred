@@ -1851,7 +1851,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     public synchronized SimpleFieldSet exportMetadataFieldSet() {
     	SimpleFieldSet fs = new SimpleFieldSet(true);
     	if(detectedPeer != null)
-    		fs.putSingle("detected.udp", detectedPeer.toString());
+    		fs.putSingle("detected.udp", detectedPeer.toStringPrefNumeric());
     	if(lastReceivedPacketTime() > 0)
     		fs.putSingle("timeLastReceivedPacket", Long.toString(timeLastReceivedPacket));
     	if(timeLastConnected() > 0)
