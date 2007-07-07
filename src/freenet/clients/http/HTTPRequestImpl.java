@@ -375,10 +375,11 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * params, whereas if it is multipart/form-data it will be separated into buckets.
 	 */
 	private void parseMultiPartData() throws IOException {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(data == null) return;
 		String ctype = (String) this.headers.get("content-type");
 		if (ctype == null) return;
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Uploaded content-type: "+ctype);
 		String[] ctypeparts = ctype.split(";");
 		if(ctypeparts[0].equalsIgnoreCase("application/x-www-form-urlencoded")) {
@@ -408,7 +409,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		
 		boundary = "--"+boundary;
 		
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Boundary is: "+boundary);
 		
 		InputStream is = this.data.getInputStream();
@@ -486,11 +487,15 @@ public class HTTPRequestImpl implements HTTPRequest {
 				
 				if (b == bbound[offset]) {
 					offset++;
+					if(logMINOR)
+						Logger.minor(this, "Matched "+offset+" of "+bbound.length+" : "+b);
 				} else if ((b != bbound[offset]) && (offset > 0)) {
 					// offset bytes matched, but no more
 					// write the bytes that matched, then the non-matching byte
 					bbos.write(bbound, 0, offset);
 					bbos.write((int) b & 0xff);
+					if(logMINOR)
+						Logger.minor(this, "Partial match: "+offset+" of "+bbound.length+" matched, no more because b = "+b);
 					offset = 0;
 				} else {
 					bbos.write((int) b & 0xff);
