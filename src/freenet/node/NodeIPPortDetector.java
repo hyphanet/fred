@@ -51,6 +51,7 @@ public class NodeIPPortDetector {
 			}
 			FreenetInetAddress[] newAddresses = new FreenetInetAddress[addresses.length+1];
 			System.arraycopy(addresses, 0, newAddresses, 0, addresses.length);
+			newAddresses[addresses.length] = addr;
 			return newAddresses;
 		}
 		return addresses;
