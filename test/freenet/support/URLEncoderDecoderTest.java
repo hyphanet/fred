@@ -146,4 +146,21 @@ public class URLEncoderDecoderTest extends TestCase {
 		for (int i = 0; i<toDecode.length(); i++)
 			assertTrue(isDecodeRaisingEncodedException("%"+toDecode.substring(i,i+1),false));
 	}
+	
+	/**
+	 * Tests decode(String,boolean) method
+	 * trying the boolean argument, to verify
+	 * if it work correctly as a hack to allow users 
+	 * to paste in URLs containing %'s.
+	 */
+	public void testTolerantDecoding() {
+		String toDecode = "%%%";
+		
+		try {
+			assertEquals(URLDecoder.decode(toDecode,true),toDecode);
+		} catch (URLEncodedFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 }
