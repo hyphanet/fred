@@ -158,9 +158,7 @@ public class URLEncoderDecoderTest extends TestCase {
 		
 		try {
 			assertEquals(URLDecoder.decode(toDecode,true),toDecode);
-		} catch (URLEncodedFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} catch (URLEncodedFormatException anException) {
+			fail("Not expected exception thrown : " + anException.getMessage()); }
 	}
 }
