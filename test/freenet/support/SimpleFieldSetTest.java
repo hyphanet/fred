@@ -504,7 +504,7 @@ public class SimpleFieldSetTest extends TestCase {
 		assertTrue(Arrays.equals(methodSFS.namesOfDirectSubsets(),expectedResult));
 
 		methodSFS = new SimpleFieldSet(true);
-		assertNull(methodSFS.namesOfDirectSubsets());
+		assertTrue(Arrays.equals(methodSFS.namesOfDirectSubsets(), new String[0]));
 	}
 	
 	/**
