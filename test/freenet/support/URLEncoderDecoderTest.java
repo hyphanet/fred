@@ -27,6 +27,11 @@ import junit.framework.TestCase;
  */
 public class URLEncoderDecoderTest extends TestCase {
 
+	private String prtblAscii = " !@#$%^&()+={}[]:;\"'<>,?~`";			//printable ascii symbols
+	private String stressedUTF_8Chars = "ÉâûĔĭņşÊãüĕĮŇŠËäýĖįňšÌåþėİŉŢÍæÿĘıŊţÎçĀęĲŋŤÏèāĚĳŌťÐéĂěĴōŦÑêăĜĵŎŧ"+ 
+	  									"ÒëĄĝĶŏŨÓìąĞķŐũÔíĆğĸőŪÕîćĠĹŒūÖïĈġĺœŬ×ðĉĢĻŔŭØñĊģļŕŮÙòċĤĽŖůÚóČĥľŗŰ"+
+	  									"ÛôčĦĿŘűÜõĎħŀřŲÝöďĨŁŚųÞ÷ĐĩłśŴßøđĪŃŜŵàùĒīńŝŶáúēĬŅŞŷ";	//UTF-8 chars with stress 
+	
 	/**
 	 * Tests if URLEncode.encode(String) and
 	 * URLDecode.decode(String,boolean) methods
@@ -36,7 +41,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	public void testEncodeDecodeString_notSafeBaseChars() {
 		String[] toEncode = {
 				URLEncoder.safeURLCharacters, 			//safe chars
-				"!@#$%^&()+={}[]:;\"'<>,?~`\n",		//not safe "base" chars
+				prtblAscii,
 				"%%%",		//triple % char, if badly encoded it will generate an exception
 				""			//no chars
 		};
@@ -54,13 +59,11 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * characters and not safe "advanced" (i.e. not ASCII) chars .
 	 */
 	public void testEncodeDecodeString_notSafeAdvChars() {
-		String[] toEncode = { "ÉâûĔĭņşÊãüĕĮŇŠËäýĖįňšÌåþėİŉŢÍæÿĘıŊţÎçĀęĲŋŤÏèāĚĳŌťÐéĂěĴōŦÑêăĜĵŎŧ"+ 
-							  "ÒëĄĝĶŏŨÓìąĞķŐũÔíĆğĸőŪÕîćĠĹŒūÖïĈġĺœŬ×ðĉĢĻŔŭØñĊģļŕŮÙòċĤĽŖůÚóČĥľŗŰ"+
-							  "ÛôčĦĿŘűÜõĎħŀřŲÝöďĨŁŚųÞ÷ĐĩłśŴßøđĪŃŜŵàùĒīńŝŶáúēĬŅŞŷ"};
-		/*try {
-			assertTrue(areCorrectlyEncodedDecoded(toEncode));
-		} catch (URLEncodedFormatException anException) {
-			fail("Not expected exception thrown : " + anException.getMessage()); } */
+		//String[] toEncode = {stressedUTF_8Chars};
+		//try {
+		//	assertTrue(areCorrectlyEncodedDecoded(toEncode));
+		//} catch (URLEncodedFormatException anException) {
+		//	fail("Not expected exception thrown : " + anException.getMessage()); }
 	}
 
 	/**
@@ -68,7 +71,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * being processed by encoding and 
 	 * decoding methods
 	 * @param toEncode String to Encode
-	 * @return true if the String is correctly processed
+	 * @return true means to be tolerant of bogus escapes
 	 * @throws URLEncodedFormatException
 	 */
 	private boolean areCorrectlyEncodedDecoded(String[] toEncode) throws URLEncodedFormatException {
@@ -82,7 +85,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	}
 	
 	/**
-	 * Tests URLEncode(String,String,boolean) method
+	 * Tests encode(String,String,boolean) method
 	 * to verify if the force parameter is
 	 * well-managed for each safeURLCharacter,
 	 * with both true and false ascii-flag.
@@ -101,5 +104,46 @@ public class URLEncoderDecoderTest extends TestCase {
 			} catch (UnsupportedEncodingException anException) {
 				fail("Not expected exception thrown : " + anException.getMessage()); }
 		}
+	}
+	
+	
+	/**
+	 * Verifies if a URLEncodedFormatException is raised
+	 * when decoding the provided String
+	 * @param toDecode the String to decode
+	 * @param tolerant whether the decoding should be tolerant with 
+	 * @return
+	 */
+	private boolean isDecodeRaisingEncodedException(String toDecode, boolean tolerant) {
+		boolean retValue = false;
+		try {
+			System.out.println(URLDecoder.decode(toDecode,false));
+		} catch (URLEncodedFormatException anException) {
+			retValue = true; }
+		return retValue;
+	}
+	
+	/**
+	 * Tests decode(String,boolean) method
+	 * using not valid encoded String to
+	 * verifies if it raises an exception
+	 */
+	public void testDecodeWrongString() {
+		//String toDecode = stressedUTF_8Chars+prtblAscii;
+		
+		//for (int i = 0; i<toDecode.length(); i++)
+		//	assertTrue(isDecodeRaisingEncodedException(toDecode.substring(i,i+1),false));
+	}
+	
+	/**
+	 * Tests decode(String,boolean) method
+	 * using not valid hex values String to
+	 * verifies if it raises an exception
+	 */
+	public void testDecodeWrongHex() {
+		String toDecode = "123456789abcde"+prtblAscii+stressedUTF_8Chars;
+		
+		for (int i = 0; i<toDecode.length(); i++)
+			assertTrue(isDecodeRaisingEncodedException("%"+toDecode.substring(i,i+1),false));
 	}
 }
