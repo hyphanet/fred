@@ -186,7 +186,7 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+m.getSource().getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, false);
+			node.unlockUID(id, isSSK, false, false);
 			return true;
 		}
 		//if(!node.lockUID(id)) return false;
@@ -228,7 +228,7 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+m.getSource().getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, true);
+			node.unlockUID(id, isSSK, true, false);
 			return true;
 		}
 		long now = System.currentTimeMillis();

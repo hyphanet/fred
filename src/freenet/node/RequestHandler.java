@@ -203,7 +203,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             thrown = true;
         } finally {
         	node.removeTransferringRequestHandler(uid);
-            node.unlockUID(uid, key instanceof NodeSSK, false);
+            node.unlockUID(uid, key instanceof NodeSSK, false, false);
             if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD 
             		&& status != RequestSender.INTERNAL_ERROR && !thrown) {
             	int sent, rcvd;

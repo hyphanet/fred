@@ -1960,7 +1960,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 	
-	public void unlockUID(long uid, boolean ssk, boolean insert) {
+	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail) {
 		if(logMINOR) Logger.minor(this, "Unlocking "+uid);
 		Long l = new Long(uid);
 		completed(uid);
@@ -1969,7 +1969,7 @@ public class Node implements TimeSkewDetectorCallback {
 			set.remove(l);
 		}
 		synchronized(runningUIDs) {
-			if(!runningUIDs.remove(l))
+			if(!runningUIDs.remove(l) && !canFail)
 				throw new IllegalStateException("Could not unlock "+uid+ '!');
 		}
 	}

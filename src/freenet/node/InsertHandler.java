@@ -79,7 +79,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             Logger.error(this, "Caught in run() "+t, t);
         } finally {
         	if(logMINOR) Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
-            node.unlockUID(uid, false, true);
+            node.unlockUID(uid, false, true, false);
         }
     }
 

@@ -479,7 +479,6 @@ public class NodeClientCore implements Persistable {
 		Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, node.getLocation(), false, localOnly, cache, ignoreStore);
 		if(o instanceof CHKBlock) {
 			try {
-				node.unlockUID(uid, false, false);
 				return new ClientCHKBlock((CHKBlock)o, key);
 			} catch (CHKVerifyException e) {
 				Logger.error(this, "Does not verify: "+e, e);
@@ -574,7 +573,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, false, false);
+			node.unlockUID(uid, false, false, true);
 		}
 	}
 
@@ -592,7 +591,6 @@ public class NodeClientCore implements Persistable {
 			try {
 				SSKBlock block = (SSKBlock)o;
 				key.setPublicKey(block.getPubKey());
-				node.unlockUID(uid, true, false);
 				return ClientSSKBlock.construct(block, key);
 			} catch (SSKVerifyException e) {
 				Logger.error(this, "Does not verify: "+e, e);
@@ -686,7 +684,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, true, false);
+			node.unlockUID(uid, true, false, true);
 		}
 	}
 
@@ -814,7 +812,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, false, true);
+			node.unlockUID(uid, false, true, true);
 		}
 	}
 
@@ -940,7 +938,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, true, true);
+			node.unlockUID(uid, true, true, true);
 		}
 	}
 
