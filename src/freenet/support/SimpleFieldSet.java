@@ -35,6 +35,7 @@ public class SimpleFieldSet {
     static public final char MULTI_LEVEL_CHAR = '.';
     static public final char MULTI_VALUE_CHAR = ';';
     static public final char KEYVALUE_SEPARATOR_CHAR = '=';
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
     
     /**
      * Create a SimpleFieldSet.
@@ -644,7 +645,7 @@ public class SimpleFieldSet {
 	}
 
 	public String[] namesOfDirectSubsets() {
-		return (subsets == null) ? null : (String[]) subsets.keySet().toArray(new String[subsets.size()]);
+		return (subsets == null) ? EMPTY_STRING_ARRAY : (String[]) subsets.keySet().toArray(new String[subsets.size()]);
 	}
 
 	public static SimpleFieldSet readFrom(InputStream is, boolean allowMultiple, boolean shortLived) throws IOException {
