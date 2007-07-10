@@ -194,6 +194,18 @@ public class FetchException extends Exception {
 		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
 	}
 
+	public FetchException(FetchException e, FreenetURI uri) {
+		super(e.getMessage());
+		initCause(e);
+		this.mode = e.mode;
+		this.newURI = uri;
+		this.errorCodes = e.errorCodes;
+		this.expectedMimeType = e.expectedMimeType;
+		this.expectedSize = e.expectedSize;
+		this.extraMessage = e.extraMessage;
+		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
+	}
+
 	public static String getShortMessage(int mode) {
 		String ret = L10n.getString("FetchException.shortError."+mode);
 		if(ret == null)

@@ -31,7 +31,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		FreenetURI uri = e.newURI;
 		if(uri != null) {
 			uri = usk.turnMySSKIntoUSK(uri);
-			e.newURI = uri;
+			e = new FetchException(e, uri);
 		}
 		cb.onFailure(e, state);
 	}
