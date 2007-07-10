@@ -355,6 +355,7 @@ public class NodeStats implements Persistable {
 		
 		int threadCount = getActiveThreadCount();
 		if(threadLimit < threadCount) {
+			pInstantRejectIncoming.report(1.0);
 			preemptiveRejectReasons.inc(">threadLimit");
 			return ">threadLimit ("+threadCount+'/'+threadLimit+')';
 		}
