@@ -15,7 +15,7 @@
  */
 package freenet.support;
 
-import java.util.Arrays;
+import java.util.Enumeration;
 
 import junit.framework.TestCase;
 
@@ -68,8 +68,8 @@ public class LRUQueueTest extends TestCase {
 	
 	/**
 	 * Tests push(Object) method
-	 * providing a null object as arg (after 
-	 * setting up a sample queue) 
+	 * providing a null object as argument 
+	 * (after setting up a sample queue) 
 	 * and verifying if the correct exception
 	 * is raised
 	 */
@@ -84,28 +84,45 @@ public class LRUQueueTest extends TestCase {
 	
 	/**
 	 * Tests push(Object) method
-	 * and verifies the behaviuor when
+	 * and verifies the behaviour when
 	 * pushing the same object more than one
-	 * time
+	 * time.
 	 */
 	public void testPushSameObjTwice() {
-		LRUQueue methodLRUQueue = new LRUQueue();
-		Object sampleObj = new Object();
-		methodLRUQueue.push(sampleObj);
-		assertTrue(methodLRUQueue.contains(sampleObj));
-		assertTrue(methodLRUQueue.size()==1);
-		methodLRUQueue.push(sampleObj);			//push the same object again
+		LRUQueue methodLRUQueue = this.createSampleQueue(sampleElemsNumber);
+		Object[] sampleObj = {new Object(), new Object()};
 		
-		//assertTrue(methodLRUQueue.size()==2);	//I expect that, if I put the same object twice in 
-												//an empty queue, I will have size 2...
+		methodLRUQueue.push(sampleObj[0]);
+		methodLRUQueue.push(sampleObj[1]);
 		
-		//assertEquals(methodLRUQueue.pop(),sampleObj);		
-		//assertEquals(methodLRUQueue.pop(),sampleObj);		...and I could pop it twice
+		assertTrue(methodLRUQueue.size()==sampleElemsNumber+2);			//check size
+		assertTrue(this.verifyLastElemsOrder(methodLRUQueue, sampleObj[0], sampleObj[1]));		//check order
+		
+		methodLRUQueue.push(sampleObj[0]);
+		assertTrue(methodLRUQueue.size()==sampleElemsNumber+2);			//check size
+		assertTrue(this.verifyLastElemsOrder(methodLRUQueue, sampleObj[1], sampleObj[0]));		//check order
+		
+	}
+	
+	private boolean verifyLastElemsOrder(LRUQueue aLRUQueue, Object nextToLast, Object last ) {
+		boolean retVal = true;
+		int size = aLRUQueue.size();
+		Enumeration methodEnum = aLRUQueue.elements();
+		int counter = 0;
+		while (methodEnum.hasMoreElements()) {
+			if (counter == size-2)		//next-to-last object
+				retVal &= (methodEnum.nextElement()).equals(nextToLast);
+			else if (counter == size-1)		//last object
+				retVal &= (methodEnum.nextElement()).equals(last);
+			else
+				methodEnum.nextElement();
+			counter++; }
+		return retVal;
 	}
 	
 	/**
 	 * Tests pop() method pushing
-	 * and popping(?) objects and
+	 * and popping objects and
 	 * verifying if they are correctly (in a FIFO manner)
 	 * fetched and deleted
 	 */
@@ -140,7 +157,7 @@ public class LRUQueueTest extends TestCase {
 	/**
 	 * Tests remove(Object) method
 	 * verifies if all objects are correctly
-	 * removed checking the method retun value,
+	 * removed checking the method return value,
 	 * if the object is still contained and
 	 * the queue size.
 	 */
@@ -193,8 +210,22 @@ public class LRUQueueTest extends TestCase {
 		assertTrue(methodLRUQueue.contains(methodSampleObj));
 	}
 
+	
+	/**
+	 * Tests elements() method
+	 * verifying if the Enumeration provided
+	 * is correct
+	 */
 	public void testElements() {
-		//fail("Not yet implemented");
+		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
+		LRUQueue methodLRUQueue = new LRUQueue();
+		for (int i=0; i<sampleObjects.length; i++) 	//pushing objects
+			methodLRUQueue.push(sampleObjects[i]);
+		Enumeration methodEnumeration = methodLRUQueue.elements();
+		int j=0;
+		while(methodEnumeration.hasMoreElements()) {			
+			assertEquals(methodEnumeration.nextElement(),sampleObjects[j]);
+			j++; }
 	}
 
 	/**
