@@ -3,8 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.Arrays;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 
 public class USKProxyCompletionCallback implements GetCompletionCallback {
@@ -25,6 +28,11 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 	}
 
 	public void onFailure(FetchException e, ClientGetState state) {
+		FreenetURI uri = e.newURI;
+		if(uri != null) {
+			uri = usk.turnMySSKIntoUSK(uri);
+			e.newURI = uri;
+		}
 		cb.onFailure(e, state);
 	}
 

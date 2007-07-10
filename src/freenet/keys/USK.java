@@ -139,4 +139,27 @@ public class USK extends BaseClientKey {
 	public String toString() {
 		return super.toString()+ ':' +getURI();
 	}
+
+	public FreenetURI turnMySSKIntoUSK(FreenetURI uri) {
+		if(uri.getKeyType().equals("SSK") &&
+				Arrays.equals(uri.getRoutingKey(), pubKeyHash) &&
+				Arrays.equals(uri.getCryptoKey(), cryptoKey) &&
+				Arrays.equals(uri.getExtra(), ClientSSK.getExtraBytes(cryptoAlgorithm)) &&
+				uri.getDocName() != null &&
+				uri.getDocName().startsWith(siteName)) {
+			String doc = uri.getDocName();
+			doc = doc.substring(siteName.length());
+			if(doc.length() < 2 || doc.charAt(0) != '-') return uri;
+			long edition;
+			try {
+				edition = Long.parseLong(doc);
+			} catch (NumberFormatException e) {
+				Logger.normal(this, "Trying to turn SSK back into USK: "+uri+" doc="+doc+" caught "+e, e);
+				return uri;
+			}
+			if(!doc.equals(Long.toString(edition))) return uri;
+			return new FreenetURI("USK", siteName, uri.getAllMetaStrings(), pubKeyHash, cryptoKey, ClientSSK.getExtraBytes(cryptoAlgorithm), edition);
+		}
+		return uri;
+	}
 }
