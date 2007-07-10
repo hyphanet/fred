@@ -214,7 +214,7 @@ class SingleFileInserter implements ClientPutState {
 		boolean fitsInOneBlockAsIs = bestCodec == null ? compressedDataSize < blockSize : compressedDataSize < oneBlockCompressedSize;
 		boolean fitsInOneCHK = bestCodec == null ? compressedDataSize < CHKBlock.DATA_LENGTH : compressedDataSize < CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
 
-		if(block.getData().size() > Integer.MAX_VALUE)
+		if((fitsInOneBlockAsIs || fitsInOneCHK) && block.getData().size() > Integer.MAX_VALUE)
 			throw new InsertException(InsertException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
 
 		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;
