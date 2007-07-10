@@ -1485,8 +1485,8 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	protected synchronized boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
-		boolean fetchARKFlag = false;
 		if(isBurstOnly) {
+			boolean fetchARKFlag = false;
 			listeningHandshakeBurstCount++;
 			if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
 				// Let them know we're here, but have no hope of connecting
@@ -1507,10 +1507,10 @@ public class DarknetPeerNode extends PeerNode {
 					+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 			}
 			if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')', new Exception("double-called debug"));
+			return fetchARKFlag;
 		} else {
-			super.innerCalcNextHandshake(successfulHandshakeSend, dontFetchARK, now);
+			return super.innerCalcNextHandshake(successfulHandshakeSend, dontFetchARK, now);
 		}
-		return fetchARKFlag;
 	}
 
 	public PeerNodeStatus getStatus() {
