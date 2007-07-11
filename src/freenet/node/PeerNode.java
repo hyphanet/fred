@@ -325,7 +325,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     	if(identityString == null)
     		throw new PeerParseException("No identity!");
         try {	
-        		identity = Base64.decode(identityString);
+			identity = Base64.decode(identityString);
         } catch (NumberFormatException e) {
             throw new FSParseException(e);
         } catch (IllegalBase64Exception e) {
@@ -357,15 +357,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         }
         
         nominalPeer=new Vector();
-        try{
+        try {
         	String physical[]=fs.getAll("physical.udp");
-        	if(physical==null){
+        	if(physical==null) {
         		// Be tolerant of nonexistent domains.
         		Peer p = new Peer(fs.get("physical.udp"), true);
         		if(p != null)
         			nominalPeer.addElement(p);
-        	}else{
-	    		for(int i=0;i<physical.length;i++){		
+        	} else {
+	    		for(int i=0;i<physical.length;i++) {
 					Peer p = new Peer(physical[i], true);
 				    if(!nominalPeer.contains(p)) 
 				    	nominalPeer.addElement(p);
@@ -404,8 +404,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         	
     		String signature = fs.get("sig");
     		fs.removeValue("sig"); 
-    		if(!fromLocal){
-    			try{
+    		if(!fromLocal) {
+    			try {
     				boolean failed = false;
     				if(signature == null || peerCryptoGroup == null || peerPubKey == null || 
     						(failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(fs.toOrderedString().getBytes("UTF-8"))), false)))) {
@@ -418,7 +418,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     					this.isSignatureVerificationSuccessfull = false;
     					fs.putSingle("sig", signature);
    						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!"+errCause);
-    				}else
+    				} else
     					this.isSignatureVerificationSuccessfull = true;
     			} catch (NumberFormatException e) {
     				Logger.error(this, "Invalid reference: "+e, e);
@@ -430,7 +430,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     				e.printStackTrace();
     				node.exit(NodeInitException.EXIT_CRAPPY_JVM);
 				}
-    		}else // Local is always good (assumed)
+    		} else // Local is always good (assumed)
     			this.isSignatureVerificationSuccessfull = true;
         } catch (IllegalBase64Exception e) {
         	Logger.error(this, "Caught "+e, e);
@@ -687,23 +687,23 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
       * Do the maybeUpdateHandshakeIPs DNS requests, but only if ignoreHostnames is false
       * This method should only be called by maybeUpdateHandshakeIPs
       */
-    private Peer[] updateHandshakeIPs(Peer[] localHandshakeIPs, boolean ignoreHostnames) {
-        for(int i=0;i<localHandshakeIPs.length;i++) {
-          if(ignoreHostnames) {
-            // Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
-            // upon startup (I suspect the following won't do anything, but just in case)
-        	if(logMINOR)
-        		Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '"+localHandshakeIPs[i]+"' for "+shortToString()+" ("+ignoreHostnames+ ')');
-            localHandshakeIPs[i].getAddress(false);
-          } else {
-            // Actually do the DNS request for the member Peer of localHandshakeIPs
-        	if(logMINOR)
-        		Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '"+localHandshakeIPs[i]+"' for "+shortToString()+" ("+ignoreHostnames+ ')');
-            localHandshakeIPs[i].getHandshakeAddress();
-          }
-        }
-        return localHandshakeIPs;
-    }
+	private Peer[] updateHandshakeIPs(Peer[] localHandshakeIPs, boolean ignoreHostnames) {
+		for(int i=0;i<localHandshakeIPs.length;i++) {
+			if(ignoreHostnames) {
+				// Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
+				// upon startup (I suspect the following won't do anything, but just in case)
+				if(logMINOR)
+					Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '"+localHandshakeIPs[i]+"' for "+shortToString()+" ("+ignoreHostnames+ ')');
+				localHandshakeIPs[i].getAddress(false);
+			} else {
+				// Actually do the DNS request for the member Peer of localHandshakeIPs
+				if(logMINOR)
+					Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '"+localHandshakeIPs[i]+"' for "+shortToString()+" ("+ignoreHostnames+ ')');
+				localHandshakeIPs[i].getHandshakeAddress();
+			}
+		}
+		return localHandshakeIPs;
+	}
 
     /**
       * Do occasional DNS requests, but ignoreHostnames should be true
@@ -1712,13 +1712,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         
         Peer[] oldPeers = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
         
-        try{
+        try {
         	String physical[]=fs.getAll("physical.udp");
-        	if(physical==null){
+        	if(physical==null) {
         		Peer p = new Peer(fs.get("physical.udp"), true);
         		nominalPeer.addElement(p);
-        	}else{
-	    		for(int i=0;i<physical.length;i++){		
+        	} else {
+	    		for(int i=0;i<physical.length;i++) {
 					Peer p = new Peer(physical[i], true);
 				    if(!nominalPeer.contains(p)) {
 				    	if(oldNominalPeer.contains(p)) {
@@ -1971,7 +1971,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
                 continue;
             }
             MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0, null);
-            requeueMessageItems(new MessageItem[] {mi}, 0, 1, true);
+            requeueMessageItems(new MessageItem[] { mi }, 0, 1, true);
         }
     }
     
@@ -2275,73 +2275,73 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 
-  public synchronized int getPeerNodeStatus() {
+	public synchronized int getPeerNodeStatus() {
 		return peerNodeStatus;
-  }
+	}
 
-  public String getPeerNodeStatusString() {
-  	int status = getPeerNodeStatus();
-  	return getPeerNodeStatusString(status);
-  }
+	public String getPeerNodeStatusString() {
+		int status = getPeerNodeStatus();
+		return getPeerNodeStatusString(status);
+	}
 
-  public static String getPeerNodeStatusString(int status) {
-  	if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
-  		return "CONNECTED";
-  	if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
-  		return "BACKED OFF";
-  	if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
-  		return "TOO NEW";
-  	if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
-  		return "TOO OLD";
-  	if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
-  		return "DISCONNECTED";
-  	if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
-  		return "NEVER CONNECTED";
-  	if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
-  		return "DISABLED";
-  	if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
-  		return "LISTEN ONLY";
-  	if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
-  		return "LISTENING";
-  	if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
-  		return "BURSTING";
-  	if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
-  		return "CLOCK PROBLEM";
-  	return "UNKNOWN STATUS";
-  }
+	public static String getPeerNodeStatusString(int status) {
+		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
+			return "CONNECTED";
+		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+			return "BACKED OFF";
+		if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
+			return "TOO NEW";
+		if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
+			return "TOO OLD";
+		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
+			return "DISCONNECTED";
+		if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
+			return "NEVER CONNECTED";
+		if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
+			return "DISABLED";
+		if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
+			return "LISTEN ONLY";
+		if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
+			return "LISTENING";
+		if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
+			return "BURSTING";
+		if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
+			return "CLOCK PROBLEM";
+		return "UNKNOWN STATUS";
+	}
 
-  public String getPeerNodeStatusCSSClassName() {
-  	int status = getPeerNodeStatus();
-  	return getPeerNodeStatusCSSClassName(status);
-  }
+	public String getPeerNodeStatusCSSClassName() {
+		int status = getPeerNodeStatus();
+		return getPeerNodeStatusCSSClassName(status);
+	}
 
-  public static String getPeerNodeStatusCSSClassName(int status) {
-  	if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
-  		return "peer_connected";
-  	if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
-  		return "peer_backed_off";
-  	if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
-  		return "peer_too_new";
-  	if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
-  		return "peer_too_old";
-  	if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
-  		return "peer_disconnected";
-  	if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
-  		return "peer_never_connected";
-  	if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
-  		return "peer_disabled";
-  	if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
-  		return "peer_bursting";
-  	if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
-  		return "peer_listening";
-  	if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
-  		return "peer_listen_only";
-  	if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
-  		return "peer_clock_problem";
-  	return "peer_unknown_status";
-  }
+	public static String getPeerNodeStatusCSSClassName(int status) {
+		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
+			return "peer_connected";
+		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+			return "peer_backed_off";
+		if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
+			return "peer_too_new";
+		if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
+			return "peer_too_old";
+		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
+			return "peer_disconnected";
+		if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
+			return "peer_never_connected";
+		if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
+			return "peer_disabled";
+		if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
+			return "peer_bursting";
+		if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
+			return "peer_listening";
+		if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
+			return "peer_listen_only";
+		if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
+			return "peer_clock_problem";
+		return "peer_unknown_status";
+	}
 
-    protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntil) {
+	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntil) {
 		checkConnectionsAndTrackers();
 		int oldPeerNodeStatus = peerNodeStatus;
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
@@ -2381,8 +2381,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			peers.addPeerNodeStatus( peerNodeStatus, this );
 		}
 		return peerNodeStatus;
-    }
-  
+	}
+
 	public int setPeerNodeStatus(long now) {
 		long routingBackedOffUntil = getRoutingBackedOffUntil();
 		synchronized(this) {
@@ -2417,8 +2417,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public String getIdentityString() {
-    	return Base64.encode(identity);
-    }
+		return Base64.encode(identity);
+	}
 
 	public boolean isFetchingARK() {
 		return arkFetcher != null;
