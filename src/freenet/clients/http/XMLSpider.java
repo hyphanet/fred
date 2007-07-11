@@ -22,6 +22,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.Vector;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -69,6 +71,7 @@ import freenet.support.api.HTTPRequest;
 public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,USKCallback{
 
 	long tProducedIndex;
+	TreeMap <String, String>tMap = new TreeMap<String, String>();
 
 	// URIs visited, or fetching, or queued. Added once then forgotten about.
 	private final HashSet visitedURIs = new HashSet();
@@ -79,12 +82,15 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 	private final HashMap runningFetchesByURI = new HashMap();
 	private final HashMap urisByWord = new HashMap();
 	private final HashMap titlesOfURIs = new HashMap();
+	private Vector indices;
+	private int match;
+	private Vector list;
 	
-	private static final int minTimeBetweenEachIndexRewriting = 60;
+	private static final int minTimeBetweenEachIndexRewriting = 10;
 	//private static final String indexFilename = "index.xml";
-	private static final String DEFAULT_INDEX_DIR = "myindex/";
+	private static final String DEFAULT_INDEX_DIR = "myindex2/";
 	public Set allowedMIMETypes;
-	private static final int MAX_ENTRIES = 50;
+	private static final int MAX_ENTRIES = 5;
 	private static final String pluginName = "XML spider";
 	
 	private static final String indexTitle= "This is an index";
@@ -108,6 +114,10 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 
 	private synchronized void queueURI(FreenetURI uri) {
 		//not adding the html condition
+		if((uri.getKeyType()).equals("USK")){
+			if(uri.getSuggestedEdition() < 0)
+				uri = uri.setSuggestedEdition((-1)* uri.getSuggestedEdition());
+		}
 		if ((!visitedURIs.contains(uri)) && queuedURISet.add(uri)) {
 			queuedURIList.addLast(uri);
 			visitedURIs.add(uri);
@@ -142,8 +152,8 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 				FreenetURI uri = (FreenetURI) queuedURIList.removeFirst();
 				queuedURISet.remove(uri);
 				if((uri.getKeyType()).equals("USK")){
-				if(uri.getSuggestedEdition() < 0)
-					uri = uri.setSuggestedEdition((-1)* uri.getSuggestedEdition());
+//				if(uri.getSuggestedEdition() < 0)
+//					uri = uri.setSuggestedEdition((-1)* uri.getSuggestedEdition());
 				try{
 					(ctx.uskManager).subscribe(USK.create(uri),this, false, this);	
 				}catch(Exception e){
@@ -315,7 +325,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 		if(word.length() < 3)
 			return;
 		
-		word = word.intern();
+		//word = word.intern();
 
 
 		FreenetURI[] uris = (FreenetURI[]) urisByWord.get(word);
@@ -361,10 +371,17 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 			newURIs[uris.length] = uri;
 			urisByWord.put(word, newURIs);
 		}
-		if (tProducedIndex + minTimeBetweenEachIndexRewriting * 1000 < System.currentTimeMillis()) {
+		//the new word is added here in urisByWord
+		tMap.put(MD5(word), word);
+		
+		if (tProducedIndex + minTimeBetweenEachIndexRewriting * 10 < System.currentTimeMillis()) {
 			try {
-				produceIndex();
-				generateIndex();
+				//produceIndex();
+				//check();
+				
+				
+				generateIndex2();
+				produceIndex2();
 			} catch (IOException e) {
 				Logger.error(this, "Caught " + e + " while creating index", e);
 			}
@@ -372,6 +389,14 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 		}
 		
 	}
+//	private synchronized void check() throws IOException{
+//		FileWriter outp = new FileWriter("logs/indexing",true);
+//		outp.write("size = "+urisByWord.size()+"\n");
+//		Iterator it = urisByWord.keySet().iterator();
+//		while(it.hasNext())
+//			outp.write(it.next()+"\n");
+//		outp.close();
+//	}
 
 	private synchronized void produceIndex() throws IOException,NoSuchAlgorithmException {
 		// Produce the main index file.
@@ -437,8 +462,8 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 		}
 
 		
-		String[] words = (String[]) urisByWord.keySet().toArray(new String[urisByWord.size()]);
-		Arrays.sort(words);
+		//String[] words = (String[]) urisByWord.keySet().toArray(new String[urisByWord.size()]);
+		//Arrays.sort(words);
 		FreenetURI[] uris = (FreenetURI[]) urisWithWords.toArray(new FreenetURI[urisWithWords.size()]);
 		urisToNumbers = new HashMap();
 		Element prefixElement = xmlDoc.createElement("prefix");
@@ -504,6 +529,393 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 
 	}
 
+	private synchronized void produceIndex2() throws IOException,NoSuchAlgorithmException {
+		// Produce the main index file.
+		
+		//the number of bits to consider for matching 
+		
+	
+		if (urisByWord.isEmpty() || urisWithWords.isEmpty()) {
+			System.out.println("No URIs with words");
+			return;
+		}
+		File outputFile = new File(DEFAULT_INDEX_DIR+"index.xml");
+		StreamResult resultStream;
+		resultStream = new StreamResult(outputFile);
+
+		/* Initialize xml builder */
+		Document xmlDoc = null;
+		DocumentBuilderFactory xmlFactory = null;
+		DocumentBuilder xmlBuilder = null;
+		DOMImplementation impl = null;
+		Element rootElement = null;
+
+		xmlFactory = DocumentBuilderFactory.newInstance();
+
+
+		try {
+			xmlBuilder = xmlFactory.newDocumentBuilder();
+		} catch(javax.xml.parsers.ParserConfigurationException e) {
+			/* Will (should ?) never happen */
+			Logger.error(this, "Spider: Error while initializing XML generator: "+e.toString());
+			return;
+		}
+
+		impl = xmlBuilder.getDOMImplementation();
+		/* Starting to generate index */
+		xmlDoc = impl.createDocument(null, "main_index", null);
+		rootElement = xmlDoc.getDocumentElement();
+
+		/* Adding header to the index */
+		Element headerElement = xmlDoc.createElement("header");
+
+		/* -> title */
+		Element subHeaderElement = xmlDoc.createElement("title");
+		Text subHeaderText = xmlDoc.createTextNode(indexTitle);
+		
+		subHeaderElement.appendChild(subHeaderText);
+		headerElement.appendChild(subHeaderElement);
+
+		/* -> owner */
+		subHeaderElement = xmlDoc.createElement("owner");
+		subHeaderText = xmlDoc.createTextNode(indexOwner);
+		
+		subHeaderElement.appendChild(subHeaderText);
+		headerElement.appendChild(subHeaderElement);
+		
+		/* -> owner email */
+		if(indexOwnerEmail != null) {
+			subHeaderElement = xmlDoc.createElement("email");
+			subHeaderText = xmlDoc.createTextNode(indexOwnerEmail);
+			
+			subHeaderElement.appendChild(subHeaderText);
+			headerElement.appendChild(subHeaderElement);
+		}
+
+		
+		//String[] words = (String[]) urisByWord.keySet().toArray(new String[urisByWord.size()]);
+		//Arrays.sort(words);
+		
+		Element prefixElement = xmlDoc.createElement("prefix");
+		//prefixElement.setAttribute("value",match+"");
+		//this match will be set after processing the TreeMap
+	
+
+		
+		//all index files are ready
+		/* Adding word index */
+		Element keywordsElement = xmlDoc.createElement("keywords");
+		for(int i = 0;i<indices.size();i++){
+			//generateSubIndex(DEFAULT_INDEX_DIR+"index_"+Integer.toHexString(i)+".xml");
+			Element subIndexElement = xmlDoc.createElement("subIndex");
+//			if(i<=9)
+//			subIndexElement.setAttribute("key",i+"");
+//			else
+//				subIndexElement.setAttribute("key",Integer.toHexString(i));
+			subIndexElement.setAttribute("key", (String) indices.elementAt(i));
+			//the subindex element key will contain the bits used for matching in that subindex
+			keywordsElement.appendChild(subIndexElement);
+		}
+		
+		prefixElement.setAttribute("value",match+"");
+		// make sure that prefix is the first child of root Element
+		rootElement.appendChild(prefixElement);
+		rootElement.appendChild(headerElement);
+		
+		//rootElement.appendChild(filesElement);
+		rootElement.appendChild(keywordsElement);
+
+		/* Serialization */
+		DOMSource domSource = new DOMSource(xmlDoc);
+		TransformerFactory transformFactory = TransformerFactory.newInstance();
+		Transformer serializer;
+
+		try {
+			serializer = transformFactory.newTransformer();
+		} catch(javax.xml.transform.TransformerConfigurationException e) {
+			Logger.error(this, "Spider: Error while serializing XML (transformFactory.newTransformer()): "+e.toString());
+			return;
+		}
+
+		serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		serializer.setOutputProperty(OutputKeys.INDENT,"yes");
+		
+		/* final step */
+		try {
+			serializer.transform(domSource, resultStream);
+		} catch(javax.xml.transform.TransformerException e) {
+			Logger.error(this, "Spider: Error while serializing XML (transform()): "+e.toString());
+			return;
+		}
+
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Spider: indexes regenerated.");
+	
+	//the main xml file is generated 
+	//now as each word is generated enter it into the respective subindex
+	//now the parsing will start and nodes will be added as needed 
+		
+
+	}
+	private synchronized void generateIndex2() throws Exception{
+		// now we the tree map and we need to use the sorted (md5s) to generate the xml indices
+		if (urisByWord.isEmpty() || urisWithWords.isEmpty()) {
+			System.out.println("No URIs with words");
+			return;
+		}
+		FreenetURI[] uris = (FreenetURI[]) urisWithWords.toArray(new FreenetURI[urisWithWords.size()]);
+		urisToNumbers = new HashMap();
+		for (int i = 0; i < uris.length; i++) {
+			urisToNumbers.put(uris[i], new Integer(i));
+			}
+		indices = new Vector();
+		int prefix = 1;
+		match = 1;
+		Vector list = new Vector();
+		//String str = tMap.firstKey();
+		Iterator it = tMap.keySet().iterator();
+		FileWriter outp = new FileWriter("indexing");
+		outp.write("size = "+tMap.size()+"\n");
+		outp.close();
+		String str = (String) it.next();
+		int i = 0,index =0;
+		while(it.hasNext())
+		{
+		 outp = new FileWriter("indexing",true);
+			String key =(String) it.next();
+			outp.write(key + "\n");
+			outp.close();
+			if(key.substring(0, prefix).equals(str.substring(0, prefix))) 
+				{i++;
+				list.add(key);
+				}
+			else {
+		generateSubIndex(prefix,list);
+		str = key;
+		list = new Vector();
+//		int count = list.size();
+//		if(count > MAX_ENTRIES){
+//			//the index has to be split up
+//			generateSubIndex(prefix,list);			
+//		}
+//		else generateXML(list,prefix);
+//		str = key;
+//		list = new Vector();
+		}
+			//
+		// this variable will keep the number of digits to be used 
+		}
+		
+		generateSubIndex(prefix,list);
+	}
+	private synchronized Vector subVector(Vector list, int begin, int end){
+		Vector tmp = new Vector();
+		for(int i = begin;i<end+1;i++) tmp.add(list.elementAt(i));
+		return tmp;
+	}
+	
+	private synchronized void generateSubIndex(int p,Vector list) throws Exception{
+		
+		if(list.size() < MAX_ENTRIES)
+		{
+			//the index can be generated from this list
+			generateXML(list,p);
+		}
+		else
+		{
+			//this means that prefix needs to be incremented
+			if(match <= p) match = p+1; 
+			int prefix = p+1;
+			int i =0;
+			String str = (String) list.elementAt(i);
+			int index=0;
+			while(i<list.size())
+			{
+				String key = (String) list.elementAt(i);
+				if((key.substring(0, prefix)).equals(str.substring(0, prefix))) 
+					{
+					//index = i;
+					i++;
+					}
+				else {
+					//generateXML(subVector(list,index,i-1),prefix);
+					generateSubIndex(prefix,subVector(list,index,i-1));
+					index = i;
+					str = key;
+				}
+				
+
+			}
+			generateSubIndex(prefix,subVector(list,index,i-1));
+		}
+	}	
+		
+
+	private synchronized void generateXML(Vector list, int prefix)
+	{
+		String p = ((String) list.elementAt(0)).substring(0, prefix);
+		indices.add(p);
+		File outputFile = new File(DEFAULT_INDEX_DIR+"index_"+p+".xml");
+		//indices.add(p);
+		StreamResult resultStream;
+		resultStream = new StreamResult(outputFile);
+
+		/* Initialize xml builder */
+		Document xmlDoc = null;
+		DocumentBuilderFactory xmlFactory = null;
+		DocumentBuilder xmlBuilder = null;
+		DOMImplementation impl = null;
+		Element rootElement = null;
+
+		xmlFactory = DocumentBuilderFactory.newInstance();
+
+
+		try {
+			xmlBuilder = xmlFactory.newDocumentBuilder();
+		} catch(javax.xml.parsers.ParserConfigurationException e) {
+			/* Will (should ?) never happen */
+			Logger.error(this, "Spider: Error while initializing XML generator: "+e.toString());
+			return;
+		}
+
+
+		impl = xmlBuilder.getDOMImplementation();
+
+		/* Starting to generate index */
+
+		xmlDoc = impl.createDocument(null, "sub_index", null);
+		rootElement = xmlDoc.getDocumentElement();
+
+		/* Adding header to the index */
+		Element headerElement = xmlDoc.createElement("header");
+
+		/* -> title */
+		Element subHeaderElement = xmlDoc.createElement("title");
+		Text subHeaderText = xmlDoc.createTextNode(indexTitle);
+		
+		subHeaderElement.appendChild(subHeaderText);
+		headerElement.appendChild(subHeaderElement);
+
+		/* -> owner */
+		subHeaderElement = xmlDoc.createElement("owner");
+		subHeaderText = xmlDoc.createTextNode(indexOwner);
+		
+		subHeaderElement.appendChild(subHeaderText);
+		headerElement.appendChild(subHeaderElement);
+		
+	
+		/* -> owner email */
+		if(indexOwnerEmail != null) {
+			subHeaderElement = xmlDoc.createElement("email");
+			subHeaderText = xmlDoc.createTextNode(indexOwnerEmail);
+			
+			subHeaderElement.appendChild(subHeaderText);
+			headerElement.appendChild(subHeaderElement);
+		}
+
+		
+		Element filesElement = xmlDoc.createElement("files"); /* filesElement != fileElement */
+
+		Element EntriesElement = xmlDoc.createElement("entries");
+		EntriesElement.setNodeValue(list.size()+"");
+		EntriesElement.setAttribute("value", list.size()+"");
+		//all index files are ready
+		/* Adding word index */
+		Element keywordsElement = xmlDoc.createElement("keywords");
+		//words to be added 
+		Vector fileid = new Vector();
+		for(int i =0;i<list.size();i++)
+		{
+			Element wordElement = xmlDoc.createElement("word");
+			String str = tMap.get(list.elementAt(i));
+			wordElement.setAttribute("v",str );
+			FreenetURI[] urisForWord = (FreenetURI[]) urisByWord.get(str);
+//			
+			for (int j = 0; j < urisForWord.length; j++) {
+				FreenetURI uri = urisForWord[j];
+				Integer x = (Integer) urisToNumbers.get(uri);
+				
+				if (x == null) {
+					Logger.error(this, "Eh?");
+					continue;
+				}
+//
+				Element uriElement = xmlDoc.createElement("file");
+				Element fileElement = xmlDoc.createElement("file");
+				uriElement.setAttribute("id", x.toString());
+				fileElement.setAttribute("id", x.toString());
+				fileElement.setAttribute("key", uri.toString());
+////				/* Position by position */
+				HashMap positionsForGivenWord = (HashMap)positionsByWordByURI.get(uri.toString());
+				Integer[] positions = (Integer[])positionsForGivenWord.get(str);
+
+				StringBuffer positionList = new StringBuffer();
+
+				for(int k=0; k < positions.length ; k++) {
+					if(k!=0)
+						positionList.append(',');
+
+					positionList.append(positions[k].toString());
+				}
+				
+				uriElement.appendChild(xmlDoc.createTextNode(positionList.toString()));
+				int l;
+				wordElement.appendChild(uriElement);
+//			for(l = 0;l<filesElement.getChildNodes().getLength();l++)
+//				{ Element file = (Element) filesElement.getChildNodes().item(l);
+//				if(file.getAttribute("id").equals(x.toString()))
+//				
+//				break;
+//				}
+				
+//				if(l>=filesElement.getChildNodes().getLength())
+//				filesElement.appendChild(fileElement);
+				if(!fileid.contains(x.toString()))
+				{
+					fileid.add(x.toString());
+					filesElement.appendChild(fileElement);
+				}
+			}
+			
+			//Element keywordsElement = (Element) root.getElementsByTagName("keywords").item(0);
+			keywordsElement.appendChild(wordElement);
+//				
+		}
+//	
+		
+		rootElement.appendChild(EntriesElement);
+		rootElement.appendChild(headerElement);
+		rootElement.appendChild(filesElement);
+		rootElement.appendChild(keywordsElement);
+
+		/* Serialization */
+		DOMSource domSource = new DOMSource(xmlDoc);
+		TransformerFactory transformFactory = TransformerFactory.newInstance();
+		Transformer serializer;
+
+		try {
+			serializer = transformFactory.newTransformer();
+		} catch(javax.xml.transform.TransformerConfigurationException e) {
+			Logger.error(this, "Spider: Error while serializing XML (transformFactory.newTransformer()): "+e.toString());
+			return;
+		}
+
+
+		serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		serializer.setOutputProperty(OutputKeys.INDENT,"yes");
+		
+		/* final step */
+		try {
+			serializer.transform(domSource, resultStream);
+		} catch(javax.xml.transform.TransformerException e) {
+			Logger.error(this, "Spider: Error while serializing XML (transform()): "+e.toString());
+			return;
+		}
+
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Spider: indexes regenerated.");
+	
+	}
 	private synchronized void generateIndex() throws Exception{
 		String[] words = (String[]) urisByWord.keySet().toArray(new String[urisByWord.size()]);
 		Arrays.sort(words);
