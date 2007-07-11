@@ -383,7 +383,8 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 				if(indexing){
 				generateIndex2();
 				produceIndex2();
-				if((System.currentTimeMillis() - time_indexing)/(System.currentTimeMillis() - tProducedIndex) <= MAX_TIME_SPENT_INDEXING) indexing= true;
+				if((System.currentTimeMillis() - time_indexing)/(System.currentTimeMillis() - tProducedIndex) > MAX_TIME_SPENT_INDEXING) indexing= false;
+				else indexing = true;
 				}
 				
 			} catch (IOException e) {
