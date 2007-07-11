@@ -71,7 +71,7 @@ import freenet.support.api.HTTPRequest;
 public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,USKCallback{
 
 	long tProducedIndex;
-	TreeMap <String, String>tMap = new TreeMap<String, String>();
+	private TreeMap tMap = new TreeMap();
 
 	// URIs visited, or fetching, or queued. Added once then forgotten about.
 	private final HashSet visitedURIs = new HashSet();
@@ -85,14 +85,15 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 	private Vector indices;
 	private int match;
 	private Vector list;
-	
-	private static final int minTimeBetweenEachIndexRewriting = 10;
+	private boolean indexing ;
+	private static final int minTimeBetweenEachIndexRewriting = 50;
 	//private static final String indexFilename = "index.xml";
 	private static final String DEFAULT_INDEX_DIR = "myindex2/";
 	public Set allowedMIMETypes;
-	private static final int MAX_ENTRIES = 5;
+	private static final int MAX_ENTRIES = 50;
 	private static final String pluginName = "XML spider";
-	
+	private static final double MAX_TIME_SPENT_INDEXING = 0.5;
+	//MAX_TIME_SPENT_INDEXING is the fraction of the total time  allowed to be spent on indexing(max value = 1)
 	private static final String indexTitle= "This is an index";
 	private static final String indexOwner = "Another anonymous";
 	private static final String indexOwnerEmail = null;
@@ -373,15 +374,18 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 		}
 		//the new word is added here in urisByWord
 		tMap.put(MD5(word), word);
-		
-		if (tProducedIndex + minTimeBetweenEachIndexRewriting * 10 < System.currentTimeMillis()) {
+		long time_indexing = System.currentTimeMillis();
+		if (tProducedIndex + minTimeBetweenEachIndexRewriting * 1000 < System.currentTimeMillis()) {
 			try {
 				//produceIndex();
 				//check();
 				
-				
+				if(indexing){
 				generateIndex2();
 				produceIndex2();
+				if((System.currentTimeMillis() - time_indexing)/(System.currentTimeMillis() - tProducedIndex) <= MAX_TIME_SPENT_INDEXING) indexing= true;
+				}
+				
 			} catch (IOException e) {
 				Logger.error(this, "Caught " + e + " while creating index", e);
 			}
@@ -827,7 +831,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 		for(int i =0;i<list.size();i++)
 		{
 			Element wordElement = xmlDoc.createElement("word");
-			String str = tMap.get(list.elementAt(i));
+			String str = (String) tMap.get(list.elementAt(i));
 			wordElement.setAttribute("v",str );
 			FreenetURI[] urisForWord = (FreenetURI[]) urisByWord.get(str);
 //			
@@ -1293,6 +1297,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 		ctx.allowedMIMETypes = new HashSet(allowedMIMETypes);
 	//	ctx.allowedMIMETypes.add("text/html"); 
 		tProducedIndex = System.currentTimeMillis();
+		indexing = true;
 	}
 
 
@@ -1481,7 +1486,7 @@ public void runPlugin(PluginRespirator pr){
 	ctx.allowedMIMETypes = new HashSet(allowedMIMETypes);
 //	ctx.allowedMIMETypes.add("text/html"); 
 	tProducedIndex = System.currentTimeMillis();
-	
+	indexing = true;
 	stopped = false;
 	
 	Thread starterThread = new Thread("Spider Plugin Starter") {
