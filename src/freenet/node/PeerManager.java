@@ -998,14 +998,14 @@ public class PeerManager {
 			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
 				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
 				if(statusSet.contains(peerNode)) {
-					Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode+" with status code "+peerNodeStatus);
+					Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode.getPeer()+" with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'");
 					return;
 				}
 				peerNodeStatuses.remove(peerNodeStatus);
 			} else {
 				statusSet = new HashSet();
 			}
-			if(logMINOR) Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
+			if(logMINOR) Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'");
 			statusSet.add(peerNode);
 			peerNodeStatuses.put(peerNodeStatus, statusSet);
 		}
@@ -1037,14 +1037,14 @@ public class PeerManager {
 			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
 				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
 				if(!statusSet.contains(peerNode)) {
-					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status code "+peerNodeStatus);
+					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'");
 					return;
 				}
 				peerNodeStatuses.remove(peerNodeStatus);
 			} else {
 				statusSet = new HashSet();
 			}
-			if(logMINOR) Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
+			if(logMINOR) Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'");
 			if(statusSet.contains(peerNode)) {
 				statusSet.remove(peerNode);
 			}
@@ -1061,7 +1061,7 @@ public class PeerManager {
 			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
 				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
 				if(reasonSet.contains(peerNode)) {
-					Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' already in peerNodeRoutingBackoffReasons as "+peerNode+" with status code "+peerNodeRoutingBackoffReason);
+					Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' already in peerNodeRoutingBackoffReasons as "+peerNode.getPeer()+" with status code "+peerNodeRoutingBackoffReason);
 					return;
 				}
 				peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);

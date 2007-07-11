@@ -2281,6 +2281,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
   public String getPeerNodeStatusString() {
   	int status = getPeerNodeStatus();
+  	return getPeerNodeStatusString(status);
+  }
+
+  public static String getPeerNodeStatusString(int status) {
   	if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
   		return "CONNECTED";
   	if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
@@ -2308,6 +2312,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
   public String getPeerNodeStatusCSSClassName() {
   	int status = getPeerNodeStatus();
+  	return getPeerNodeStatusCSSClassName(status);
+  }
+
+  public static String getPeerNodeStatusCSSClassName(int status) {
   	if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
   		return "peer_connected";
   	if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
@@ -2370,7 +2378,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		if(peerNodeStatus != oldPeerNodeStatus) {
 			peers.removePeerNodeStatus( oldPeerNodeStatus, this );
-		  peers.addPeerNodeStatus( peerNodeStatus, this );
+			peers.addPeerNodeStatus( peerNodeStatus, this );
 		}
 		return peerNodeStatus;
     }
