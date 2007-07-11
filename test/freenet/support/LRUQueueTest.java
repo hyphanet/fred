@@ -67,6 +67,30 @@ public class LRUQueueTest extends TestCase {
 	}
 	
 	/**
+	 * Verifies if the order of the last two elements in the
+	 * queue is correct
+	 * @param aLRUQueue the LRUQueue to check
+	 * @param nextToLast the next-to-last element expected
+	 * @param last the last element expected
+	 * @return true if the order is correct
+	 */
+	private boolean verifyLastElemsOrder(LRUQueue aLRUQueue, Object nextToLast, Object last ) {
+		boolean retVal = true;
+		int size = aLRUQueue.size();
+		Enumeration methodEnum = aLRUQueue.elements();
+		int counter = 0;
+		while (methodEnum.hasMoreElements()) {
+			if (counter == size-2)		//next-to-last object
+				retVal &= (methodEnum.nextElement()).equals(nextToLast);
+			else if (counter == size-1)		//last object
+				retVal &= (methodEnum.nextElement()).equals(last);
+			else
+				methodEnum.nextElement();
+			counter++; }
+		return retVal;
+	}
+	
+	/**
 	 * Tests push(Object) method
 	 * providing a null object as argument 
 	 * (after setting up a sample queue) 
@@ -103,23 +127,7 @@ public class LRUQueueTest extends TestCase {
 		assertTrue(this.verifyLastElemsOrder(methodLRUQueue, sampleObj[1], sampleObj[0]));		//check order
 		
 	}
-	
-	private boolean verifyLastElemsOrder(LRUQueue aLRUQueue, Object nextToLast, Object last ) {
-		boolean retVal = true;
-		int size = aLRUQueue.size();
-		Enumeration methodEnum = aLRUQueue.elements();
-		int counter = 0;
-		while (methodEnum.hasMoreElements()) {
-			if (counter == size-2)		//next-to-last object
-				retVal &= (methodEnum.nextElement()).equals(nextToLast);
-			else if (counter == size-1)		//last object
-				retVal &= (methodEnum.nextElement()).equals(last);
-			else
-				methodEnum.nextElement();
-			counter++; }
-		return retVal;
-	}
-	
+
 	/**
 	 * Tests pop() method pushing
 	 * and popping objects and
@@ -191,7 +199,7 @@ public class LRUQueueTest extends TestCase {
 	 * trying to remove a not present object after 
 	 * setting up a sample queue.
 	 */
-	public void removeNotPresent() {
+	public void testRemoveNotPresent() {
 		LRUQueue methodLRUQueue = createSampleQueue(sampleElemsNumber);
 		assertFalse(methodLRUQueue.remove(new Object()));
 	}
