@@ -268,8 +268,8 @@ class NodeCrypto {
 		fs.put("location", node.lm.getLocation().getValue()); // FIXME maybe !forSetup; see #943
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
+		fs.put("testnet", node.testnetEnabled); // Vital that peer know this!
 		if(node.testnetEnabled) {
-			fs.put("testnet", node.testnetEnabled); // Vital that peer know this!
 			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		}
 		if(!isOpennet)
