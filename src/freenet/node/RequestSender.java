@@ -658,14 +658,14 @@ public final class RequestSender implements Runnable, ByteCounter {
     	
     	if(m == null) {
     		// Timeout
-    		Logger.error(this, "Timed out waiting for opennet acknowledgement on "+this);
+    		Logger.error(this, "Timed out waiting for opennet acknowledgement on "+this+" from "+next);
     		return;
     	} else if(m.getSpec() == DMT.FNPOpennetCompletedAck) {
     		if(logMINOR)
-    			Logger.minor(this, "Destination does not want to path fold on "+this);
+    			Logger.minor(this, "Destination does not want to path fold on "+this+" from "+next);
     		return;
     	} else if(!(m.getSpec() == DMT.FNPOpennetConnectDestination)) {
-    		Logger.error(this, "Got a "+m+" expecting opennet completed / opennet connect destination on "+this);
+    		Logger.error(this, "Got a "+m+" expecting opennet completed / opennet connect destination on "+this+" from "+next);
     		return;
     	}
     	
@@ -689,7 +689,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 				}
 				return;
 			} else {
-				Logger.error(this, "Added opennet noderef in "+this);
+				Logger.error(this, "Added opennet noderef in "+this+" from "+next);
 			}
 		} catch (FSParseException e) {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
