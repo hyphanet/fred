@@ -628,6 +628,11 @@ public final class RequestSender implements Runnable, ByteCounter {
         	finishOpennet(next);
         }
         
+		synchronized(this) {
+			opennetFinished = true;
+			notifyAll();
+		}
+        
     }
 
     /**
