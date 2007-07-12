@@ -115,6 +115,7 @@ public class DMT {
 	public static final String FORK_COUNT = "forkCount";
 	public static final String TIME_LEFT = "timeLeft";
 	public static final String PREV_UID = "prevUID";
+	public static final String OPENNET_NODEREF = "opennetNoderef";
 	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -715,6 +716,59 @@ public class DMT {
 		msg.set(UID, uid);
 		return msg;
 	}
+	
+	// Opennet completions (not sent to darknet nodes)
+	
+	/** Sent when a request to an opennet node is completed, but the data source does not want to 
+	 * path fold */
+	public static MessageType FNPOpennetCompletedAck = new MessageType("FNPOpennetCompletedAck") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static Message createFNPOpennetCompletedAck(long uid) {
+		Message msg = new Message(FNPOpennetCompletedAck);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
+	/** Sent when a request completes and the data source does want to path fold */
+	public static MessageType FNPOpennetConnectDestination = new MessageType("FNPOpennetConnectDestination") {{
+		addField(UID, Long.class);
+		addField(OPENNET_NODEREF, ShortBuffer.class);
+	}};
+	
+	public static Message createFNPOpennetConnectDestination(long uid, ShortBuffer buf) {
+		Message msg = new Message(FNPOpennetConnectDestination);
+		msg.set(UID, uid);
+		msg.set(OPENNET_NODEREF, buf);
+		return msg;
+	}
+	
+	/** Path folding response */
+	public static MessageType FNPOpennetConnectReply = new MessageType("FNPOpennetConnectReply") {{
+		addField(UID, Long.class);
+		addField(OPENNET_NODEREF, ShortBuffer.class);
+	}};
+	
+	public static Message createFNPOpennetConnectReply(long uid, ShortBuffer buf) {
+		Message msg = new Message(FNPOpennetConnectReply);
+		msg.set(UID, uid);
+		msg.set(OPENNET_NODEREF, buf);
+		return msg;
+	}
+	
+	/** Path folding rejected by request sender */
+	public static MessageType FNPOpennetConnectRejected = new MessageType("FNPOpennetConnectRejected") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static Message createFNPOpennetConnectRejected(long uid) {
+		Message msg = new Message(FNPOpennetConnectRejected);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
+	// Key offers (ULPRs)
 	
 	public static MessageType FNPOfferKey = new MessageType("FNPOfferKey") {{
 		addField(KEY, Key.class);
