@@ -141,6 +141,9 @@ public class RequestHandler implements Runnable, ByteCounter {
             	node.addTransferringRequestHandler(uid);
             	if(!bt.send()){
             		finalTransferFailed = true;
+            	} else {
+    				// Successful CHK transfer, maybe path fold
+    				finishOpennet(rs);
             	}
         	    return;
             }
@@ -184,9 +187,6 @@ public class RequestHandler implements Runnable, ByteCounter {
             		} else {
             			if(!rs.transferStarted()) {
             				Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
-            			} else {
-            				// Successful CHK transfer, maybe path fold
-            				finishOpennet(rs);
             			}
             		}
             		return;
