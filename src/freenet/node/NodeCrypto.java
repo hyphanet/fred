@@ -328,12 +328,8 @@ class NodeCrypto {
 		}
 	}
 
-	/**
-	 * The part of our node reference which is exchanged in the connection setup, compressed.
-	 * @see exportSetupFieldSet()
-	 */
-	public byte[] myCompressedSetupRef() {
-		SimpleFieldSet fs = exportPublicFieldSet(true);
+	private byte[] myCompressedRef(boolean setup) {
+		SimpleFieldSet fs = exportPublicFieldSet(setup);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DeflaterOutputStream gis;
 		gis = new DeflaterOutputStream(baos);
@@ -360,7 +356,23 @@ class NodeCrypto {
 		System.arraycopy(buf, 0, obuf, 1, buf.length);
 		return obuf;
 	}
+	
+	/**
+	 * The part of our node reference which is exchanged in the connection setup, compressed.
+	 * @see exportSetupFieldSet()
+	 */
+	public byte[] myCompressedSetupRef() {
+		return myCompressedRef(true);
+	}
 
+	/**
+	 * Our full node reference, compressed.
+	 * @see exportSetupFieldSet()
+	 */
+	public byte[] myCompressedFullRef() {
+		return myCompressedRef(false);
+	}
+	
 	void addPrivateFields(SimpleFieldSet fs) {
 		fs.put("dsaPrivKey", privKey.asFieldSet());
 		fs.putSingle("ark.privURI", myARK.getInsertURI().toString(false, false));
@@ -405,5 +417,5 @@ class NodeCrypto {
 		}
     	return true;
 	}
-	
+
 }

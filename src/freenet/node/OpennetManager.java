@@ -11,9 +11,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.Arrays;
 
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -28,6 +30,11 @@ public class OpennetManager {
 	
 	final Node node;
 	final NodeCrypto crypto;
+	
+	// FIXME make this configurable
+	static final int MAX_PEERS = 30;
+	// Chance of resetting path folding (for plausible deniability) is 1 in this number.
+	static final int RESET_PATH_FOLDING_PROB = 20;
 
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig) throws NodeInitException {
 		this.node = node;
@@ -121,6 +128,22 @@ public class OpennetManager {
 	public void stop() {
 		crypto.stop();
 		node.peers.removeOpennetPeers();
+	}
+
+	public boolean addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, node.peers, false, crypto.packetMangler);
+		if(Arrays.equals(pn.getIdentity(), crypto.myIdentity))
+			return false; // Equal to myself
+		if(node.peers.containsPeer(pn)) 
+			return false;
+		if(!wantPeer()) return false;
+		return node.peers.addPeer(pn); // False = already in peers list
+	}
+
+	public boolean wantPeer() {
+		// FIXME implement LRU !!!
+		if(node.peers.getOpennetPeers().length >= MAX_PEERS) return false;
+		return true;
 	}
 
 }

@@ -2569,6 +2569,12 @@ public class Node implements TimeSkewDetectorCallback {
 	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
     	return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler);
 	}
+	
+	public boolean addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		if(opennet == null) return false;
+		return opennet.addNewOpennetNode(fs);
+	}
+	
 
 	public byte[] getDarknetIdentity() {
 		return darknetCrypto.myIdentity;
@@ -2610,6 +2616,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public int getOpennetFNPPort() {
 		if(opennet == null) return -1;
 		return opennet.crypto.portNumber;
+	}
+
+	OpennetManager getOpennet() {
+		return opennet;
 	}
 
 }

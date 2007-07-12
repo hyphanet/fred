@@ -1611,6 +1611,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      * The identity must not change, or we throw.
      */
     private void processNewNoderef(byte[] data, int offset, int length) throws FSParseException {
+    	SimpleFieldSet fs = compressedNoderefToFieldSet(data, offset, length);
+    	processNewNoderef(fs, false);
+    }
+    
+    static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
         if(length == 0) throw new FSParseException("Too short");
         // Firstly, is it compressed?
         if(data[offset] == 1) {
@@ -1639,7 +1644,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
                 }
             }
         }
-        if(logMINOR) Logger.minor(this, "Reference: "+new String(data, offset, length)+ '(' +length+ ')');
+        if(logMINOR) Logger.minor(PeerNode.class, "Reference: "+new String(data, offset, length)+ '(' +length+ ')');
         // Now decode it
         ByteArrayInputStream bais = new ByteArrayInputStream(data, offset+1, length-1);
         InputStreamReader isr;
@@ -1651,13 +1656,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         BufferedReader br = new BufferedReader(isr);
         SimpleFieldSet fs;
         try {
-            fs = new SimpleFieldSet(br, false, true);
+            return new SimpleFieldSet(br, false, true);
         } catch (IOException e) {
-            Logger.error(this, "Impossible: e", e);
-            return;
+        	FSParseException ex = new FSParseException("Impossible: "+e);
+        	ex.initCause(e);
+        	throw ex;
         }
-        processNewNoderef(fs, false);
-    }
+	}
 
     /**
      * Process a new nodereference, as a SimpleFieldSet.

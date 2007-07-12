@@ -1237,4 +1237,13 @@ public class PeerManager {
 		}
 		updatePMUserAlert();
 	}
+
+	public boolean containsPeer(PeerNode pn) {
+		PeerNode[] peers = pn.isOpennet() ? ((PeerNode[])getOpennetPeers()) : ((PeerNode[])getDarknetPeers());
+		
+		for(int i=0;i<peers.length;i++)
+			if(Arrays.equals(pn.getIdentity(), peers[i].getIdentity())) return true;
+		
+		return false;
+	}
 }

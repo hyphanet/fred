@@ -1564,4 +1564,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	public Peer[] getPrimaryIPAddress() {
 		return crypto.detector.getPrimaryPeers();
 	}
+
+	public byte[] getCompressedNoderef() {
+		return crypto.myCompressedFullRef();
+	}
 }

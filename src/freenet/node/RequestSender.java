@@ -12,6 +12,9 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
+import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.PartiallyReceivedBlock;
@@ -25,6 +28,7 @@ import freenet.keys.SSKVerifyException;
 import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
+import freenet.support.SimpleFieldSet;
 
 /**
  * @author amphibian
@@ -43,6 +47,8 @@ public final class RequestSender implements Runnable, ByteCounter {
     // Constants
     static final int ACCEPTED_TIMEOUT = 5000;
     static final int FETCH_TIMEOUT = 120000;
+    /** Wait up to this long to get a path folding reply */
+    static final int OPENNET_TIMEOUT = 120000;
     /** One in this many successful requests is randomly reinserted.
      * This is probably a good idea anyway but with the split store it's essential. */
     static final int RANDOM_REINSERT_INTERVAL = 200;
@@ -78,6 +84,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     static final int GENERATED_REJECTED_OVERLOAD = 7;
     static final int INTERNAL_ERROR = 8;
     static final int RECENTLY_FAILED = 9;
+    private PeerNode successFrom;
     
     private static boolean logMINOR;
     
@@ -613,10 +620,133 @@ public final class RequestSender implements Runnable, ByteCounter {
         
         synchronized(this) {
             notifyAll();
+            if(status == SUCCESS)
+            	successFrom = next;
         }
+        
+        if(status == SUCCESS && key instanceof NodeCHK && next != null && next.isOpennet()) {
+        	finishOpennet(next);
+        }
+        
     }
 
-    public byte[] getHeaders() {
+    /**
+     * Do path folding, maybe.
+     * Wait for either a CompletedAck or a ConnectDestination.
+     * If the former, exit.
+     * If we want a connection, reply with a ConnectReply, otherwise send a ConnectRejected and exit.
+     * Add the peer.
+     */
+    private void finishOpennet(PeerNode next) {
+    	
+    	try {
+    	MessageFilter mfAck = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
+    	MessageFilter mfConnect = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(OPENNET_TIMEOUT).setType(DMT.FNPOpennetConnectDestination);
+    	MessageFilter mf = mfAck.or(mfConnect).setMatchesDroppedConnection(true).setMatchesRestartedConnections(true);
+    	
+    	Message m;
+		try {
+			m = node.usm.waitFor(mf, this);
+		} catch (DisconnectedException e) {
+			return; // Ok
+		}
+    	
+    	if(m == null) {
+    		// Timeout
+    		Logger.error(this, "Timed out waiting for opennet acknowledgement on "+this);
+    		return;
+    	} else if(m.getSpec() == DMT.FNPOpennetCompletedAck) {
+    		if(logMINOR)
+    			Logger.minor(this, "Destination does not want to path fold on "+this);
+    		return;
+    	} else if(!(m.getSpec() == DMT.FNPOpennetConnectDestination)) {
+    		Logger.error(this, "Got a "+m+" expecting opennet completed / opennet connect destination on "+this);
+    		return;
+    	}
+    	
+    	// DMT.getSpec() === DMT.FNPOpennetConnectDestination
+    	
+    	byte[] noderef = ((ShortBuffer) m.getObject(DMT.OPENNET_NODEREF)).getData();
+    	
+    	SimpleFieldSet ref;
+		try {
+			ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
+		} catch (FSParseException e) {
+			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
+			return;
+		}
+    	
+    	try {
+			if(!node.addNewOpennetNode(ref)) {
+				// If we don't want it let somebody else have it
+				synchronized(this) {
+					opennetNoderef = noderef;
+				}
+				return;
+			} else {
+				Logger.error(this, "Added opennet noderef in "+this);
+			}
+		} catch (FSParseException e) {
+			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
+			return;
+		} catch (PeerParseException e) {
+			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
+			return;
+		} catch (ReferenceSignatureVerificationException e) {
+			Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+next+" : "+e, e);
+			return;
+		}
+    	
+    	// Send our reference
+    	
+    	Message msg = DMT.createFNPOpennetConnectReply(uid, new ShortBuffer(next.getOutgoingMangler().getCompressedNoderef()));
+    	
+    	try {
+			next.sendAsync(msg, null, 0, this);
+		} catch (NotConnectedException e) {
+			// Hmmm... let the LRU deal with it
+			if(logMINOR)
+				Logger.minor(this, "Not connected sending ConnectReply on "+this+" to "+next);
+		}
+    	} finally {
+    		synchronized(this) {
+    			opennetFinished = true;
+    			notifyAll();
+    		}
+    	}
+	}
+
+    // Opennet stuff
+    
+    /** Have we finished all opennet-related activities? */
+    private boolean opennetFinished;
+    
+    /** Opennet noderef from next node */
+    private byte[] opennetNoderef;
+    
+    public byte[] waitForOpennetNoderef() {
+    	synchronized(this) {
+    		while(true) {
+    			if(opennetFinished) {
+    				// Only one RequestHandler may take the noderef
+    				byte[] ref = opennetNoderef;
+    				opennetNoderef = null;
+    				return ref;
+    			}
+    			try {
+					wait(OPENNET_TIMEOUT);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+    		}
+    	}
+    }
+
+    public PeerNode successFrom() {
+    	return successFrom;
+    }
+    
+	public byte[] getHeaders() {
         return headers;
     }
 

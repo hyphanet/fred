@@ -757,17 +757,6 @@ public class DMT {
 		return msg;
 	}
 	
-	/** Path folding rejected by request sender */
-	public static MessageType FNPOpennetConnectRejected = new MessageType("FNPOpennetConnectRejected") {{
-		addField(UID, Long.class);
-	}};
-	
-	public static Message createFNPOpennetConnectRejected(long uid) {
-		Message msg = new Message(FNPOpennetConnectRejected);
-		msg.set(UID, uid);
-		return msg;
-	}
-	
 	// Key offers (ULPRs)
 	
 	public static MessageType FNPOfferKey = new MessageType("FNPOfferKey") {{

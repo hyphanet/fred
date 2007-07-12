@@ -6,7 +6,12 @@ package freenet.node;
 import freenet.crypt.DSAPublicKey;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
+import freenet.io.comm.MessageFilter;
+import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
@@ -16,6 +21,8 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
+import freenet.support.ShortBuffer;
+import freenet.support.SimpleFieldSet;
 
 /**
  * Handle an incoming request. Does not do the actual fetching; that
@@ -96,6 +103,9 @@ public class RequestHandler implements Runnable, ByteCounter {
             	node.addTransferringRequestHandler(uid);
             	if(bt.send())
             		status = RequestSender.SUCCESS; // for byte logging
+            	if(source.isOpennet()) {
+            		finishOpennetNoRelay();
+            	}
             }
             return;
         }
@@ -171,8 +181,13 @@ public class RequestHandler implements Runnable, ByteCounter {
                         	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
                         	source.sendSync(pk, this);
                         }
-            		} else if(!rs.transferStarted()) {
-            			Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
+            		} else {
+            			if(!rs.transferStarted()) {
+            				Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
+            			} else {
+            				// Successful CHK transfer, maybe path fold
+            				finishOpennet(rs);
+            			}
             		}
             		return;
             	case RequestSender.VERIFY_FAILURE:
@@ -236,6 +251,126 @@ public class RequestHandler implements Runnable, ByteCounter {
 
         }
     }
+
+    private void finishOpennet(RequestSender rs) {
+		if(!source.isOpennet()) return;
+		byte[] noderef = rs.waitForOpennetNoderef();
+		if(noderef == null) {
+			finishOpennetNoRelay();
+			return;
+		}
+		
+		if(node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0) {
+			finishOpennetNoRelay();
+			return;
+		}
+		
+    	finishOpennetRelay(rs, noderef);
+    }
+    
+    private void finishOpennetNoRelay() {
+		OpennetManager om = node.getOpennet();
+		if(om != null) {
+			if(om.wantPeer()) {
+    			Message msg = DMT.createFNPOpennetConnectDestination(uid, new ShortBuffer(om.crypto.myCompressedFullRef()));
+				try {
+					source.sendAsync(msg, null, 0, this);
+				} catch (NotConnectedException e) {
+					// Oh well...
+					return;
+				}
+				
+				// Wait for response
+				
+				MessageFilter mf = MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetConnectReply);
+				
+				try {
+					msg = node.usm.waitFor(mf, this);
+				} catch (DisconnectedException e) {
+					return; // Lost connection with request source
+				}
+				
+				if(msg == null) {
+					// Timeout
+					return;
+				}
+				
+				byte[] noderef = ((ShortBuffer)msg.getObject(DMT.OPENNET_NODEREF)).getData();
+				
+		    	SimpleFieldSet ref;
+				try {
+					ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
+				} catch (FSParseException e) {
+					Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
+					return;
+				}
+		    	
+		    	try {
+					if(!node.addNewOpennetNode(ref)) {
+						Logger.normal(this, "Asked for opennet ref but didn't want it for "+this+" :\n"+ref);
+						return;
+					} else {
+						Logger.error(this, "Added opennet noderef in "+this);
+					}
+				} catch (FSParseException e) {
+					Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
+					return;
+				} catch (PeerParseException e) {
+					Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
+					return;
+				} catch (ReferenceSignatureVerificationException e) {
+					Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+source+" : "+e, e);
+					return;
+				}
+			} else {
+				Message msg = DMT.createFNPOpennetCompletedAck(uid);
+				try {
+					source.sendAsync(msg, null, 0, this);
+				} catch (NotConnectedException e) {
+					// Oh well...
+				}
+			}
+		}
+    }
+    
+	private void finishOpennetRelay(RequestSender rs, byte[] noderef) {
+		// Send it back to the handler, then wait for the ConnectReply
+		PeerNode dataSource = rs.successFrom();
+		
+		Message msg = DMT.createFNPOpennetConnectDestination(uid, new ShortBuffer(noderef));
+		
+		try {
+			source.sendAsync(msg, null, 0, this);
+		} catch (NotConnectedException e) {
+			// Lost contact with request source, nothing we can do
+			return;
+		}
+		
+		// Now wait for reply from the request source
+		
+		MessageFilter mf = MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetConnectReply);
+		
+		try {
+			msg = node.usm.waitFor(mf, this);
+		} catch (DisconnectedException e) {
+			return; // Lost connection with request source
+		}
+		
+		if(msg == null) {
+			// Timeout
+			return;
+		}
+		
+		noderef = ((ShortBuffer)msg.getObject(DMT.OPENNET_NODEREF)).getData();
+		msg = DMT.createFNPOpennetConnectReply(uid, new ShortBuffer(noderef));
+		
+		try {
+			dataSource.sendAsync(msg, null, 0, this);
+		} catch (NotConnectedException e) {
+			// How sad
+			return;
+		}
+	}
 
 	private Message createDataFound(KeyBlock block) {
 		if(block instanceof CHKBlock)
