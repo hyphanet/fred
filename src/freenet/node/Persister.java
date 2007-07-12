@@ -32,13 +32,14 @@ class Persister implements Runnable {
 	private final PacketSender ps;
 	File persistTemp;
 	File persistTarget;
+	private boolean started;
 	
 	void interrupt() {
 		synchronized(this) {
 			notifyAll();
 		}
 	}
-	
+
 	public void run() {
 		try {
 			persistThrottle();
@@ -123,6 +124,13 @@ class Persister implements Runnable {
 	}
 
 	public void start() {
+		synchronized(this) {
+			if(started) {
+				Logger.error(this, "Already started: "+this, new Exception("debug"));
+				return;
+			}
+			started = true;
+		}
 		run();
 	}
 
