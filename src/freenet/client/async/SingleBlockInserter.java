@@ -162,7 +162,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code);
 			errors.inc(InsertException.INTERNAL_ERROR);
 		}
-		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND) {
+		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND || e.code == LowLevelPutException.ROUTE_REALLY_NOT_FOUND) {
 			consecutiveRNFs++;
 			if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+ctx.consecutiveRNFsCountAsSuccess);
 			if(consecutiveRNFs == ctx.consecutiveRNFsCountAsSuccess) {
