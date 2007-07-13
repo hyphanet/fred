@@ -41,6 +41,11 @@ public class MessageCore {
 	private static final long MAX_UNCLAIMED_FIFO_ITEM_LIFETIME = 60*60*1000;  // 1 hour
 	// Every second, remove all timed out filters
 	private static final int FILTER_REMOVE_TIME = 1000;
+	private long startedTime;
+	
+	public synchronized long getStartedTime() {
+		return startedTime;
+	}
 
 	public MessageCore() {
 		_timedOutFilters = new Vector(32);
@@ -69,6 +74,9 @@ public class MessageCore {
     private final Vector _timedOutFilters;
     
     public void start(final Ticker ticker) {
+    	synchronized(this) {
+    		startedTime = System.currentTimeMillis();
+    	}
     	ticker.queueTimedJob(new Runnable() {
 
 			public void run() {
