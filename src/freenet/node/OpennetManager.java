@@ -266,6 +266,7 @@ public class OpennetManager {
 
 	public synchronized void onSuccess(OpennetPeerNode pn) {
 		peersLRU.push(pn);
+		Logger.error(this, "Opennet peer "+pn+" promoted to top of LRU because of successful request");
 	}
 
 	public synchronized void onRemove(OpennetPeerNode pn) {
