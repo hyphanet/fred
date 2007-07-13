@@ -56,6 +56,9 @@ public class OpennetManager {
 	static final int DROP_DISCONNECT_DELAY_COOLDOWN = 60*60*1000;
 	/** Every DROP_CONNECTED_TIME, we may drop a peer even though it is connected */
 	static final int DROP_CONNECTED_TIME = 10*60*1000;
+	/** Minimum time between offers, if we have maximum peers. Less than the above limits,
+	 * since an offer may not be accepted. */
+	static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
 
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig) throws NodeInitException {
 		this.node = node;
@@ -192,6 +195,9 @@ public class OpennetManager {
 		return wantPeer(pn);
 	}
 
+	/** When did we last offer our noderef to some other node? */
+	private long timeLastOffered;
+	
 	public boolean wantPeer(PeerNode nodeToAddNow) {
 		synchronized(this) {
 			if(peersLRU.size() < MAX_PEERS) {
@@ -199,12 +205,14 @@ public class OpennetManager {
 					Logger.error(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
 					peersLRU.push(nodeToAddNow);
 				}
+				timeLastOffered = System.currentTimeMillis();
 				return true;
 			}
 		}
 		Vector dropList = new Vector();
 		boolean ret = true;
 		synchronized(this) {
+			boolean hasDisconnected = false;
 			while(peersLRU.size() > MAX_PEERS - (nodeToAddNow == null ? 0 : 1)) {
 				PeerNode toDrop;
 				toDrop = peerToDrop();
@@ -212,11 +220,13 @@ public class OpennetManager {
 					ret = false;
 					break;
 				}
+				if(!toDrop.isConnected())
+					hasDisconnected = true;
 				peersLRU.remove(toDrop);
 				dropList.add(toDrop);
 			}
 			if(ret) {
-				timeLastDropped = System.currentTimeMillis();
+				long now = System.currentTimeMillis();
 				if(nodeToAddNow != null) {
 					if(!node.peers.addPeer(nodeToAddNow)) {
 						// Can't add it, already present (some sort of race condition)
@@ -226,6 +236,15 @@ public class OpennetManager {
 						Logger.error(this, "Could not add opennet peer "+nodeToAddNow+" because already in list");
 					} else {
 						Logger.error(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");					
+					}
+					timeLastDropped = now;
+				} else {
+					if(now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS && !hasDisconnected) {
+						// Cancel
+						ret = false;
+					} else {
+						timeLastDropped = now;
+						timeLastOffered = now;
 					}
 				}
 			}
@@ -261,6 +280,7 @@ public class OpennetManager {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
 				if(!pn.isDroppable()) continue;
+				// LOCKING: Always take the OpennetManager lock first
 				if(!pn.isConnected()) {
 					if(Logger.shouldLog(Logger.MINOR, this))
 						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected");
