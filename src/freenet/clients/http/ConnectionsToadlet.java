@@ -160,10 +160,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		int numberOfListening = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTENING);
 		int numberOfListenOnly = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTEN_ONLY);
 		int numberOfClockProblem = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM);
-		int numberOfError = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONN_ERROR);
+		int numberOfConnError = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONN_ERROR);
 		
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
-		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly + numberOfClockProblem + numberOfError;
+		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly + numberOfClockProblem + numberOfConnError;
 		String titleCountString = null;
 		if(advancedModeEnabled) {
 			titleCountString = "(" + numberOfConnected + '/' + numberOfRoutingBackedOff + '/' + numberOfTooNew + '/' + numberOfTooOld + '/' + numberOfNotConnected + ')';
@@ -296,10 +296,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_clock_problem", l10n("clockProblem"), "border-bottom: 1px dotted; cursor: help;" }, l10n("clockProblemShort"));
 				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfClockProblem);
 			}
-			if (numberOfError > 0) {
+			if (numberOfConnError > 0) {
 				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_clock_problem", l10n("error"), "border-bottom: 1px dotted; cursor: help;" }, l10n("errorShort"));
-				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfError);
+				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_clock_problem", l10n("connError"), "border-bottom: 1px dotted; cursor: help;" }, l10n("connErrorShort"));
+				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfConnError);
 			}
 
 			// Peer routing backoff reason box
