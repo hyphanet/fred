@@ -213,6 +213,7 @@ public class PeerManager {
         myPeers = newMyPeers;
         Logger.normal(this, "Added "+pn);
     	}
+    	this.addPeerNodeStatus(pn.getPeerNodeStatus(), pn);
         updatePMUserAlert();
         return true;
     }

@@ -483,7 +483,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         
         // Not connected yet; need to handshake
         isConnected = false;
-        peers.addPeerNodeStatus(PeerManager.PEER_NODE_STATUS_DISCONNECTED, this);
                
         messagesToSendNow = new LinkedList();
         
