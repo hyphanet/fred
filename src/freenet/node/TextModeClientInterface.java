@@ -1128,7 +1128,7 @@ public class TextModeClientInterface implements Runnable {
     		String identity = pn[i].getIdentityString();
     		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
     		{
-    			n.removeDarknetConnection(pn[i]);
+    			n.removePeerConnection(pn[i]);
     			return true;
     		}
     	}

@@ -37,7 +37,7 @@ public class RemovePeer extends FCPMessage {
 			return;
 		}
 		String identity = pn.getIdentityString();
-		node.removeDarknetConnection(pn);
+		node.removePeerConnection(pn);
 		handler.outputHandler.queue(new PeerRemoved(identity, nodeIdentifier));
 	}
 

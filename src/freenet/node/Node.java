@@ -2264,13 +2264,13 @@ public class Node implements TimeSkewDetectorCallback {
 		return peers.getDarknetPeers();
 	}
 	
-	public boolean addDarknetConnection(PeerNode pn) {
+	public boolean addPeerConnection(PeerNode pn) {
 		boolean retval = peers.addPeer(pn);
 		peers.writePeers();
 		return retval;
 	}
 	
-	public void removeDarknetConnection(PeerNode pn) {
+	public void removePeerConnection(PeerNode pn) {
 		peers.disconnect(pn);
 	}
 
@@ -2569,13 +2569,22 @@ public class Node implements TimeSkewDetectorCallback {
 	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
     	return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler);
 	}
+
+	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
+		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
+    	return new OpennetPeerNode(fs, this, opennet.crypto, opennet, peers, false, opennet.crypto.packetMangler);
+	}
 	
 	public boolean addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		// FIXME: perhaps this should throw OpennetDisabledExcemption rather than returing false?
 		if(opennet == null) return false;
 		return opennet.addNewOpennetNode(fs);
 	}
 	
-
+	public byte[] getOpennetIdentity() {
+		return opennet.crypto.myIdentity;
+	}
+	
 	public byte[] getDarknetIdentity() {
 		return darknetCrypto.myIdentity;
 	}

@@ -174,7 +174,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("triedToAddSelf"));
 				return;
 			}
-			if(!this.node.addDarknetConnection(pn)) {
+			if(!this.node.addPeerConnection(pn)) {
 				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("alreadyInReferences"));
 				return;
 			}
@@ -353,7 +353,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			for(int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {	
 					if((peerNodes[i].timeLastConnectionCompleted() < (System.currentTimeMillis() - 1000*60*60*24*7) /* one week */) ||  (peerNodes[i].peerNodeStatus == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED) || request.isPartSet("forceit")){
-						this.node.removeDarknetConnection(peerNodes[i]);
+						this.node.removePeerConnection(peerNodes[i]);
 						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
 					}else{
 						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn) : let's display the warning message.");
