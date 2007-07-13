@@ -2680,4 +2680,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean neverConnected() {
 		return neverConnected;
 	}
+	
+	/** Called when a request or insert succeeds. Used by opennet. */
+	public abstract void onSuccess(boolean insert, boolean ssk);
+
+	/** Called when the peer is removed from the PeerManager */
+	public abstract void onRemove();
 }

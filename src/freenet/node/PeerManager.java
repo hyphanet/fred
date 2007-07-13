@@ -258,6 +258,7 @@ public class PeerManager {
         
         Logger.normal(this, "Removed "+pn);
     	}
+    	pn.onRemove();
         updatePMUserAlert();
         return true;
     }

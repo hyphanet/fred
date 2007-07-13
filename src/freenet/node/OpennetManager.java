@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
+import java.util.Comparator;
 
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -65,6 +66,29 @@ public class OpennetManager {
 		}
 		peersLRU = new LRUQueue();
 		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, this, true);
+		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
+		Arrays.sort(nodes, new Comparator() {
+			public int compare(Object arg0, Object arg1) {
+				OpennetPeerNode pn1 = (OpennetPeerNode) arg0;
+				OpennetPeerNode pn2 = (OpennetPeerNode) arg1;
+				
+				long lastSuccess1 = pn1.timeLastSuccess();
+				long lastSuccess2 = pn2.timeLastSuccess();
+				
+				if(lastSuccess1 > lastSuccess2) return 1;
+				if(lastSuccess2 > lastSuccess1) return -1;
+				
+				boolean neverConnected1 = pn1.neverConnected();
+				boolean neverConnected2 = pn2.neverConnected();
+				if(neverConnected1 && (!neverConnected2))
+					return -1;
+				if((!neverConnected1) && neverConnected2)
+					return 1;
+				return pn1.hashCode - pn2.hashCode;
+			}
+		});
+		for(int i=0;i<nodes.length;i++)
+			peersLRU.push(nodes[i]);
 		writeFile(nodeFile, backupNodeFile);
 	}
 
@@ -164,6 +188,14 @@ public class OpennetManager {
 		// FIXME implement LRU !!!
 		if(node.peers.getOpennetPeers().length >= MAX_PEERS) return false;
 		return true;
+	}
+
+	public synchronized void onSuccess(OpennetPeerNode pn) {
+		peersLRU.push(pn);
+	}
+
+	public synchronized void onRemove(OpennetPeerNode pn) {
+		peersLRU.remove(pn);
 	}
 
 }

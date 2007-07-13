@@ -209,7 +209,6 @@ public class DarknetPeerNode extends PeerNode {
     	return fs;
     }
 
-    
 	public synchronized String getName() {
 		return myName;
 	}
@@ -1521,5 +1520,14 @@ public class DarknetPeerNode extends PeerNode {
 
 	public boolean isOpennet() {
 		return false;
+	}
+
+	public void onSuccess(boolean insert, boolean ssk) {
+		// Ignore it
+	}
+
+	public void onRemove() {
+		// Do nothing
+		// FIXME is there anything we should do?
 	}
 }
