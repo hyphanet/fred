@@ -74,6 +74,49 @@ public class RequestHandler implements Runnable, ByteCounter {
     	RequestSender rs = null;
     	boolean thrown = false;
         try {
+        	realRun(rs, status);
+        } catch (NotConnectedException e) {
+        	// Ignore, normal
+        } catch (Throwable t) {
+            Logger.error(this, "Caught "+t, t);
+            thrown = true;
+        } finally {
+        	node.removeTransferringRequestHandler(uid);
+            node.unlockUID(uid, key instanceof NodeSSK, false, false);
+            if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD 
+            		&& status != RequestSender.INTERNAL_ERROR && !thrown) {
+            	int sent, rcvd;
+            	synchronized(this) {
+            		sent = sentBytes;
+            		rcvd = receivedBytes;
+            	}
+            	sent += rs.getTotalSentBytes();
+            	rcvd += rs.getTotalReceivedBytes();
+            	if(key instanceof NodeSSK) {
+            		if(logMINOR) Logger.minor(this, "Remote SSK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
+                	node.nodeStats.remoteSskFetchBytesSentAverage.report(sent);
+                	node.nodeStats.remoteSskFetchBytesReceivedAverage.report(rcvd);
+                	if(status == RequestSender.SUCCESS) {
+                		// Can report both parts, because we had both a Handler and a Sender
+                		node.nodeStats.successfulSskFetchBytesSentAverage.report(sent);
+                		node.nodeStats.successfulSskFetchBytesReceivedAverage.report(rcvd);
+                	}
+            	} else {
+            		if(logMINOR) Logger.minor(this, "Remote CHK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
+                	node.nodeStats.remoteChkFetchBytesSentAverage.report(sent);
+                	node.nodeStats.remoteChkFetchBytesReceivedAverage.report(rcvd);
+                	if(status == RequestSender.SUCCESS) {
+                		// Can report both parts, because we had both a Handler and a Sender
+                		node.nodeStats.successfulChkFetchBytesSentAverage.report(sent);
+                		node.nodeStats.successfulChkFetchBytesReceivedAverage.report(sent);
+                	}
+            	}
+            }
+
+        }
+    }
+
+    private void realRun(RequestSender rs, int status) throws NotConnectedException {
         if(logMINOR) Logger.minor(this, "Handling a request: "+uid);
         if(!resetClosestLoc)
         	htl = source.decrementHTL(htl);
@@ -214,46 +257,9 @@ public class RequestHandler implements Runnable, ByteCounter {
             	    throw new IllegalStateException("Unknown status code "+status);
             }
         }
-        } catch (Throwable t) {
-            Logger.error(this, "Caught "+t, t);
-            thrown = true;
-        } finally {
-        	node.removeTransferringRequestHandler(uid);
-            node.unlockUID(uid, key instanceof NodeSSK, false, false);
-            if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD 
-            		&& status != RequestSender.INTERNAL_ERROR && !thrown) {
-            	int sent, rcvd;
-            	synchronized(this) {
-            		sent = sentBytes;
-            		rcvd = receivedBytes;
-            	}
-            	sent += rs.getTotalSentBytes();
-            	rcvd += rs.getTotalReceivedBytes();
-            	if(key instanceof NodeSSK) {
-            		if(logMINOR) Logger.minor(this, "Remote SSK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
-                	node.nodeStats.remoteSskFetchBytesSentAverage.report(sent);
-                	node.nodeStats.remoteSskFetchBytesReceivedAverage.report(rcvd);
-                	if(status == RequestSender.SUCCESS) {
-                		// Can report both parts, because we had both a Handler and a Sender
-                		node.nodeStats.successfulSskFetchBytesSentAverage.report(sent);
-                		node.nodeStats.successfulSskFetchBytesReceivedAverage.report(rcvd);
-                	}
-            	} else {
-            		if(logMINOR) Logger.minor(this, "Remote CHK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
-                	node.nodeStats.remoteChkFetchBytesSentAverage.report(sent);
-                	node.nodeStats.remoteChkFetchBytesReceivedAverage.report(rcvd);
-                	if(status == RequestSender.SUCCESS) {
-                		// Can report both parts, because we had both a Handler and a Sender
-                		node.nodeStats.successfulChkFetchBytesSentAverage.report(sent);
-                		node.nodeStats.successfulChkFetchBytesReceivedAverage.report(sent);
-                	}
-            	}
-            }
+	}
 
-        }
-    }
-
-    private void finishOpennet(RequestSender rs) {
+	private void finishOpennet(RequestSender rs) {
 		if(!source.isOpennet()) return;
 		byte[] noderef = rs.waitForOpennetNoderef();
 		if(noderef == null) {
