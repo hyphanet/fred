@@ -173,6 +173,7 @@ public class DarknetPeerNode extends PeerNode {
     		else
     			return true;
     	}
+    	// Might have changed from burst only to bursting
 		setPeerNodeStatus(System.currentTimeMillis());
 		return true;
     }

@@ -2391,17 +2391,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
 			previousRoutingBackoffReason = null;
 		}
-		if(peerNodeStatus != oldPeerNodeStatus) {
-			peers.removePeerNodeStatus( oldPeerNodeStatus, this );
-			peers.addPeerNodeStatus( peerNodeStatus, this );
-		}
 		return peerNodeStatus;
 	}
 
 	public int setPeerNodeStatus(long now) {
 		long routingBackedOffUntil = getRoutingBackedOffUntil();
 		synchronized(this) {
+			int oldPeerNodeStatus = peerNodeStatus;
 			peerNodeStatus = getPeerNodeStatus(now, routingBackedOffUntil);
+			
+			if(peerNodeStatus != oldPeerNodeStatus) {
+				peers.removePeerNodeStatus( oldPeerNodeStatus, this );
+				peers.addPeerNodeStatus( peerNodeStatus, this );
+			}
+
 		}
 		return peerNodeStatus;
 	}
