@@ -25,4 +25,8 @@ public class OpennetPeerNode extends PeerNode {
 	public boolean isOpennet() {
 		return true;
 	}
+	
+	public boolean isDroppable() {
+		return System.currentTimeMillis() - getPeerAddedTime() > OpennetManager.DROP_ELIGIBLE_TIME;
+	}
 }

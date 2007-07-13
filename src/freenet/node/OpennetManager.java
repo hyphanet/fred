@@ -42,7 +42,7 @@ public class OpennetManager {
 	static final int RESET_PATH_FOLDING_PROB = 20;
 	/** Don't re-add a node until it's been up and disconnected for at least this long */
 	static final int DONT_READD_TIME = 60*1000;
-	/** Don't drop a node until it's at least this old (time since added, or since startup */
+	/** Don't drop a node until it's at least this old */
 	static final int DROP_ELIGIBLE_TIME = 300*1000;
 
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig) throws NodeInitException {
