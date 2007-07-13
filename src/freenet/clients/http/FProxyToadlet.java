@@ -325,6 +325,11 @@ public class FProxyToadlet extends Toadlet {
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
 			return;
+		}else if(ks.startsWith("/opennet/")) { //TODO: remove when obsolete
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/strangers/");
+			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
+			return;
 		}
 		
 		if(ks.startsWith("/"))
@@ -600,7 +605,8 @@ public class FProxyToadlet extends Toadlet {
 			server.register(friendsToadlet, "/friends/", true, l10n("friendsTitle"), l10n("friends"), true, null);
 			
 			OpennetConnectionsToadlet opennetToadlet = new OpennetConnectionsToadlet(node, core, client);
-			server.register(opennetToadlet, "/opennet/", true, l10n("opennetTitle"), l10n("opennet"), true, opennetToadlet);
+//			server.register(opennetToadlet, "/opennet/", true, l10n("opennetTitle"), l10n("opennet"), true, opennetToadlet);
+			server.register(opennetToadlet, "/strangers/", true, l10n("opennetTitle"), l10n("opennet"), true, opennetToadlet);
 			
 			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 			server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
