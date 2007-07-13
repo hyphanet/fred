@@ -33,8 +33,12 @@ public class OpennetManager {
 	
 	// FIXME make this configurable
 	static final int MAX_PEERS = 30;
-	// Chance of resetting path folding (for plausible deniability) is 1 in this number.
+	/** Chance of resetting path folding (for plausible deniability) is 1 in this number. */
 	static final int RESET_PATH_FOLDING_PROB = 20;
+	/** Don't re-add a node until it's been up and disconnected for at least this long */
+	static final int DONT_READD_TIME = 60*1000;
+	/** Don't drop a node until it's at least this old (time since added, or since startup */
+	static final int DROP_ELIGIBLE_TIME = 300*1000;
 
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig) throws NodeInitException {
 		this.node = node;
@@ -136,7 +140,9 @@ public class OpennetManager {
 			Logger.error(this, "Not adding self as opennet peer");
 			return false; // Equal to myself
 		}
-		if(node.peers.containsPeer(pn)) {
+		PeerNode match;
+		if(((match = node.peers.containsPeer(pn)) != null) && (match.isConnected() || 
+				((!match.hasCompletedHandshake()) && match.timeSinceAddedOrRestarted() < DONT_READD_TIME))) {
 			Logger.error(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return false;
 		}

@@ -126,6 +126,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     /** When was isRoutingCompatible() last true? */
     private long timeLastRoutable;
     
+    /** Time added or restarted (reset on startup unlike peerAddedTime) */
+    private long timeAddedOrRestarted;
+    
     /** Are we connected? If not, we need to start trying to
      * handshake.
      */
@@ -476,6 +479,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         timeLastReceivedSwapRequest = -1;
         timeLastConnected = -1;
         timeLastRoutable = -1;
+        timeAddedOrRestarted = System.currentTimeMillis();
         
         randomizeMaxTimeBetweenPacketSends();
         swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
@@ -916,12 +920,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     }
 
     /**
-     * @return The time this PeerNode was added to the node
+     * @return The time this PeerNode was added to the node (persistent across restarts).
      */
     public synchronized long getPeerAddedTime() {
         return peerAddedTime;
     }
 
+    /**
+     * @return The time elapsed since this PeerNode was added to the node, or the node started up.
+     */
+    public synchronized long timeSinceAddedOrRestarted() {
+    	return System.currentTimeMillis() - timeAddedOrRestarted;
+    }
+    
     /**
      * Disconnected e.g. due to not receiving a packet for ages.
      */
@@ -1661,7 +1672,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
             throw new Error(e1);
         }
         BufferedReader br = new BufferedReader(isr);
-        SimpleFieldSet fs;
         try {
             return new SimpleFieldSet(br, false, true);
         } catch (IOException e) {
