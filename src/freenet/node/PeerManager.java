@@ -214,6 +214,7 @@ public class PeerManager {
         Logger.normal(this, "Added "+pn);
     	}
     	this.addPeerNodeStatus(pn.getPeerNodeStatus(), pn);
+    	pn.setPeerNodeStatus(System.currentTimeMillis());
         updatePMUserAlert();
         return true;
     }

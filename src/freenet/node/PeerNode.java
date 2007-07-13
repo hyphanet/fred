@@ -593,8 +593,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         sendHandshakeTime = now;  // Be sure we're ready to handshake right away
     
         // status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
-        setPeerNodeStatus(now);
-        
     }
 
     private boolean parseARK(SimpleFieldSet fs, boolean onStartup) {
