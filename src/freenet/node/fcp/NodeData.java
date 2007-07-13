@@ -10,21 +10,31 @@ public class NodeData extends FCPMessage {
 	static final String name = "NodeData";
 	
 	final Node node;
+	final boolean giveOpennetRef;
 	final boolean withPrivate;
 	final boolean withVolatile;
 	
-	public NodeData(Node node, boolean withPrivate, boolean withVolatile) {
+	public NodeData(Node node, boolean giveOpennetRef, boolean withPrivate, boolean withVolatile) {
 		this.node = node;
+		this.giveOpennetRef = giveOpennetRef;
 		this.withPrivate = withPrivate;
 		this.withVolatile = withVolatile;
 	}
 	
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs;
-		if(withPrivate) {
-			fs = node.exportDarknetPrivateFieldSet();
+		if(giveOpennetRef) {
+			if(withPrivate) {
+				fs = node.exportOpennetPrivateFieldSet();
+			} else {
+				fs = node.exportOpennetPublicFieldSet();
+			}
 		} else {
-			fs = node.exportDarknetPublicFieldSet();
+			if(withPrivate) {
+				fs = node.exportDarknetPrivateFieldSet();
+			} else {
+				fs = node.exportDarknetPublicFieldSet();
+			}
 		}
 		if(withVolatile) {
 			SimpleFieldSet vol = node.exportVolatileFieldSet();

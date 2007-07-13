@@ -2600,6 +2600,10 @@ public class Node implements TimeSkewDetectorCallback {
 		return darknetCrypto.exportPrivateFieldSet();
 	}
 
+	public SimpleFieldSet exportOpennetPrivateFieldSet() {
+		return opennet.crypto.exportPrivateFieldSet();
+	}
+
 	/**
 	 * Should the IP detection code only use the IP address override and the bindTo information,
 	 * rather than doing a full detection?
