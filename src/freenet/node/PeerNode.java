@@ -73,9 +73,6 @@ import freenet.support.math.TimeDecayingRunningAverage;
  */
 public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
-    /** Set to true when we complete a handshake. */
-    private boolean completedHandshake;
-    
     private String lastGoodVersion; 
 	
     /** Set to true based on a relevant incoming handshake from this peer
@@ -945,7 +942,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         	// Force renegotiation.
             isConnected = false;
             isRoutable = false;
-            completedHandshake = false;
             // Prevent sending packets to the node until that happens.
             if(currentTracker != null)
             	currentTracker.disconnected();
@@ -1438,7 +1434,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		KeyTracker oldCur = null;
 		KeyTracker prev = null;
     	synchronized(this) {
-    		completedHandshake = true;
     		handshakeCount = 0;
         	bogusNoderef = false;
 			isConnected = true;
@@ -2226,10 +2221,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		lastRoutingBackoffReason = s;
 	}
 
-	public synchronized boolean hasCompletedHandshake() {
-		return completedHandshake;
-	}
-	
 	public void addToLocalNodeSentMessagesToStatistic (Message m) {
 		String messageSpecName;
 		Long count;
@@ -2680,5 +2671,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public byte[] getIdentity() {
 		return identity;
+	}
+
+	public boolean neverConnected() {
+		return neverConnected;
 	}
 }

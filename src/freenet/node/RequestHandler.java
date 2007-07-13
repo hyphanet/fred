@@ -184,12 +184,13 @@ public class RequestHandler implements Runnable, ByteCounter {
                         	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
                         	source.sendSync(pk, this);
                         }
+                		return;
             		} else {
             			if(!rs.transferStarted()) {
             				Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
             			}
+            			// Wait for transfer to start
             		}
-            		return;
             	case RequestSender.VERIFY_FAILURE:
             		if(key instanceof NodeCHK) {
             			if(shouldHaveStartedTransfer)

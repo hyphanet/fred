@@ -141,8 +141,9 @@ public class OpennetManager {
 			return false; // Equal to myself
 		}
 		PeerNode match;
-		if(((match = node.peers.containsPeer(pn)) != null) && (match.isConnected() || 
-				((!match.hasCompletedHandshake()) && match.timeSinceAddedOrRestarted() < DONT_READD_TIME))) {
+		if(((match = node.peers.containsPeer(pn)) != null) && 
+				(match.isConnected() || (!match.neverConnected()) || 
+						match.timeSinceAddedOrRestarted() < DONT_READD_TIME)) {
 			Logger.error(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return false;
 		}
