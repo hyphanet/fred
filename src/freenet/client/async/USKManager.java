@@ -10,6 +10,7 @@ import freenet.client.FetchContext;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
+import freenet.node.Ticker;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 
@@ -40,6 +41,8 @@ public class USKManager {
 	final FetchContext backgroundFetchContext;
 	final ClientRequestScheduler chkRequestScheduler;
 	final ClientRequestScheduler sskRequestScheduler;
+	
+	final Ticker ticker;
 
 	
 	public USKManager(NodeClientCore core) {
@@ -54,6 +57,7 @@ public class USKManager {
 		checkersByUSK = new HashMap();
 		backgroundFetchersByClearUSK = new HashMap();
 		temporaryBackgroundFetchersLRU = new LRUQueue();
+		ticker = core.getTicker();
 	}
 
 	/**
@@ -183,8 +187,14 @@ public class USKManager {
 		}
 		if(curEd > ed)
 			cb.onFoundEdition(curEd, origUSK.copy(curEd));
-		if(sched != null)
-			sched.schedule();
+		final USKFetcher fetcher = sched;
+		if(fetcher != null) {
+			ticker.queueTimedJob(new Runnable() {
+				public void run() {
+					fetcher.schedule();
+				}
+			}, 0);
+		}
 	}
 	
 	public void unsubscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch) {
