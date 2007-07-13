@@ -2320,6 +2320,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return "BURSTING";
 		if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
 			return "CLOCK PROBLEM";
+		if(status == PeerManager.PEER_NODE_STATUS_CONN_ERROR)
+			return "CONNECTION ERROR";
 		return "UNKNOWN STATUS";
 	}
 

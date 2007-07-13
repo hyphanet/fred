@@ -945,6 +945,8 @@ public class PeerManager {
 		int numberOfListenOnly = 0;
 		int numberOfListening = 0;
 		int numberOfBursting = 0;
+		int numberOfClockProblem = 0;
+		int numberOfConnError = 0;
 		
 		PeerNodeStatus[] pns = getPeerNodeStatuses();
 		
@@ -980,12 +982,18 @@ public class PeerManager {
 			case PEER_NODE_STATUS_BURSTING:
 				numberOfBursting++;
 				break;
+			case PEER_NODE_STATUS_CLOCK_PROBLEM:
+				numberOfClockProblem++;
+				break;
+			case PEER_NODE_STATUS_CONN_ERROR:
+				numberOfConnError++;
+				break;
 			default:
 				Logger.error(this, "Unknown peer status value : "+pns[i].getStatusValue());
 				break;
 			}
 		}
-		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Bursting: "+numberOfBursting+"  Listening: "+numberOfListening+"  Listen Only: "+numberOfListenOnly);
+		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Bursting: "+numberOfBursting+"  Listening: "+numberOfListening+"  Listen Only: "+numberOfListenOnly+"  Clock Problem: "+numberOfClockProblem+"  Connection Problem: "+numberOfConnError);
 		nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 		}
 	}
@@ -1039,7 +1047,7 @@ public class PeerManager {
 			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
 				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
 				if(!statusSet.contains(peerNode)) {
-					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'");
+					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
 					return;
 				}
 				peerNodeStatuses.remove(peerNodeStatus);
