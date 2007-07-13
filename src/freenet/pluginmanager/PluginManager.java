@@ -27,6 +27,7 @@ import freenet.config.SubConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.Ticker;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Logger;
@@ -495,5 +496,9 @@ public class PluginManager {
 		}
 
 		return (FredPlugin)o;
+	}
+	
+	Ticker getTicker() {
+		return node.getTicker();
 	}
 }

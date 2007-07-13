@@ -1,5 +1,7 @@
 package freenet.pluginmanager;
 
+import java.util.Vector;
+
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 
@@ -20,17 +22,24 @@ public class PluginHandler {
 	 * @param plug
 	 */
 	public static PluginInfoWrapper startPlugin(PluginManager pm, String filename, FredPlugin plug, PluginRespirator pr) {
-		PluginStarter ps = new PluginStarter(pr);
-		PluginInfoWrapper pi = new PluginInfoWrapper(plug, ps, filename);
+		final PluginStarter ps = new PluginStarter(pr);
+		final PluginInfoWrapper pi = new PluginInfoWrapper(plug, ps, filename);
 		
 		// This is an ugly trick... sorry ;o)
 		// The thread still exists as an identifier, but is never started if the
 		// plugin doesn't require it
 		ps.setPlugin(pm, plug);
-		if (!pi.isThreadlessPlugin())
-			ps.start();
-		else
-			ps.run();
+		// Run after startup
+		// FIXME this is horrible, wastes a thread, need to make PluginStarter a Runnable 
+		// not a Thread, and then deal with the consequences of that (removePlugin(Thread)) ...
+		pm.getTicker().queueTimedJob(new Runnable() {
+			public void run() {
+				if (!pi.isThreadlessPlugin())
+					ps.start();
+				else
+					ps.run();
+			}
+		}, 0);
 		return pi;
 	}
 	

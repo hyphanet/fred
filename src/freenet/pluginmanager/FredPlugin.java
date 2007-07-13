@@ -8,5 +8,6 @@ public interface FredPlugin {
 	
 	public void terminate();
 	
+	/** Run the plugin. Called after node startup. Should be able to access queue etc at this point. */
 	public void runPlugin(PluginRespirator pr);
 }
