@@ -272,7 +272,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     private void finishOpennetNoRelay() {
 		OpennetManager om = node.getOpennet();
 		if(om != null) {
-			if(om.wantPeer()) {
+			if(om.wantPeer(null)) {
     			Message msg = DMT.createFNPOpennetConnectDestination(uid, new ShortBuffer(om.crypto.myCompressedFullRef()));
 				try {
 					source.sendAsync(msg, null, 0, this);

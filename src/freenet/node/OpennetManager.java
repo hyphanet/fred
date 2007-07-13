@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Vector;
 
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -36,15 +37,19 @@ public class OpennetManager {
 	/** Our peers. PeerNode's are promoted when they successfully fetch a key. Normally we take
 	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
 	private final LRUQueue peersLRU;
+	/** Time at which last dropped a peer */
+	private long timeLastDropped;
 	
 	// FIXME make this configurable
-	static final int MAX_PEERS = 30;
+	static final int MAX_PEERS = 5;
 	/** Chance of resetting path folding (for plausible deniability) is 1 in this number. */
 	static final int RESET_PATH_FOLDING_PROB = 20;
 	/** Don't re-add a node until it's been up and disconnected for at least this long */
 	static final int DONT_READD_TIME = 60*1000;
 	/** Don't drop a node until it's at least this old */
 	static final int DROP_ELIGIBLE_TIME = 300*1000;
+	/** Every DROP_CONNECTED_TIME, we may drop a peer even though it is connected */
+	static final int DROP_CONNECTED_TIME = 10*60*1000;
 
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig) throws NodeInitException {
 		this.node = node;
@@ -177,17 +182,86 @@ public class OpennetManager {
 			Logger.error(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return false;
 		}
-		if(!wantPeer()) {
-			Logger.error(this, "Not adding "+pn.userToString()+" to opennet list as don't want it");
-			return false;
-		}
-		return node.peers.addPeer(pn); // False = already in peers list
+		return wantPeer(pn);
 	}
 
-	public boolean wantPeer() {
-		// FIXME implement LRU !!!
-		if(node.peers.getOpennetPeers().length >= MAX_PEERS) return false;
-		return true;
+	public boolean wantPeer(PeerNode nodeToAddNow) {
+		synchronized(this) {
+			if(peersLRU.size() < MAX_PEERS) {
+				if(nodeToAddNow != null) {
+					Logger.error(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
+					peersLRU.push(nodeToAddNow);
+				}
+				return true;
+			}
+		}
+		Vector dropList = new Vector();
+		boolean ret = true;
+		synchronized(this) {
+			while(peersLRU.size() < MAX_PEERS - (nodeToAddNow == null ? 0 : 1)) {
+				PeerNode toDrop;
+				toDrop = peerToDrop();
+				if(toDrop == null) {
+					ret = false;
+					break;
+				}
+				peersLRU.remove(toDrop);
+				dropList.add(toDrop);
+			}
+			if(!dropList.isEmpty())
+				timeLastDropped = System.currentTimeMillis();
+			if(nodeToAddNow != null) {
+				if(!node.peers.addPeer(nodeToAddNow)) {
+					// Can't add it, already present (some sort of race condition)
+					PeerNode readd = (PeerNode) dropList.remove(dropList.size()-1);
+					peersLRU.pushLeast(readd);
+					ret = false;
+					Logger.error(this, "Could not add opennet peer "+nodeToAddNow+" because already in list");
+				} else {
+					Logger.error(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");					
+				}
+			}
+		}
+		if(dropList != null) {
+			for(int i=0;i<dropList.size();i++) {
+				OpennetPeerNode pn = (OpennetPeerNode) dropList.get(i);
+				Logger.error(this, "Dropping LRU opennet peer: "+pn);
+				node.peers.disconnect(pn);
+			}
+		}
+		return ret;
+	}
+
+	synchronized PeerNode peerToDrop() {
+		if(peersLRU.size() < MAX_PEERS) {
+			// Don't drop any peers
+			return null;
+		} else {
+			// Do we want it?
+			OpennetPeerNode[] peers = (OpennetPeerNode[]) peersLRU.toArray(new OpennetPeerNode[peersLRU.size()]);
+			for(int i=0;i<peers.length;i++) {
+				OpennetPeerNode pn = peers[i];
+				if(pn == null) continue;
+				if(!pn.isDroppable()) continue;
+				if(!pn.isConnected()) {
+					if(Logger.shouldLog(Logger.MINOR, this))
+						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected");
+					return pn;
+				}
+			}
+			if(System.currentTimeMillis() - timeLastDropped < DROP_CONNECTED_TIME)
+				return null;
+			for(int i=0;i<peers.length;i++) {
+				OpennetPeerNode pn = peers[i];
+				if(pn == null) continue;
+				if(!pn.isDroppable()) continue;
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
+							(System.currentTimeMillis() - timeLastDropped)+" ms since last dropped peer");
+				return pn;
+			}
+		}
+		return null;
 	}
 
 	public synchronized void onSuccess(OpennetPeerNode pn) {

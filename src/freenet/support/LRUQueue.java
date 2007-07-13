@@ -2,6 +2,10 @@ package freenet.support;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
+
+import freenet.node.OpennetPeerNode;
+import freenet.node.PeerNode;
 
 public class LRUQueue {
 
@@ -33,6 +37,21 @@ public class LRUQueue {
         list.unshift(insert);
     } 
 
+    /**
+     * push to bottom (least recently used position)
+     */
+	public void pushLeast(Object obj) {
+        QItem insert = (QItem)hash.get(obj);        
+        if (insert == null) {
+            insert = new QItem(obj);
+            hash.put(obj,insert);
+        } else {
+            list.remove(insert);
+        }
+
+        list.push(insert);
+	}
+	
     /**
      *  @return Least recently pushed Object.
      */
@@ -95,6 +114,32 @@ public class LRUQueue {
 		return hash.keySet().toArray();
 	}
 
+	public Object[] toArray(Object[] array) {
+		return hash.keySet().toArray(array);
+	}
+	
+	public synchronized Object[] toArrayOrdered() {
+		Object[] array = new Object[list.size()];
+		int x = 0;
+		for(Enumeration e = list.reverseElements();e.hasMoreElements();) {
+			array[x++] = e.nextElement();
+		}
+		return array;
+	}
+
+	/**
+	 * Warning, this will not reallocate unlike the toArray(Object[]) on java class library functions.
+	 * FIXME fix that.
+	 * @param array The array to fill in
+	 */
+	public synchronized Object[] toArrayOrdered(Object[] array) {
+		int x = 0;
+		for(Enumeration e = list.reverseElements();e.hasMoreElements();) {
+			array[x++] = e.nextElement();
+		}
+		return array;
+	}
+	
 	public synchronized boolean isEmpty() {
 		return hash.isEmpty();
 	}
