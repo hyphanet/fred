@@ -454,6 +454,9 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             notifyAll();
         }
 
+        if(status == SUCCESS && next != null)
+        	next.onSuccess(true, true);
+        
         if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString());
         // Nothing to wait for, no downstream transfers, just exit.
     }

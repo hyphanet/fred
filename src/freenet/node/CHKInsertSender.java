@@ -572,6 +572,10 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         		notifyAll();
         	}
         }
+        
+        if(status == SUCCESS && next != null)
+        	next.onSuccess(true, false);
+        
         if(logMINOR) Logger.minor(this, "Returning from finish()");
     }
 
