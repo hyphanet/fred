@@ -16,6 +16,7 @@ import java.util.Arrays;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -30,6 +31,10 @@ public class OpennetManager {
 	
 	final Node node;
 	final NodeCrypto crypto;
+	
+	/** Our peers. PeerNode's are promoted when they successfully fetch a key. Normally we take
+	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
+	private final LRUQueue peersLRU;
 	
 	// FIXME make this configurable
 	static final int MAX_PEERS = 30;
@@ -58,7 +63,8 @@ public class OpennetManager {
 				crypto.initCrypto();
 			}
 		}
-		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, true);
+		peersLRU = new LRUQueue();
+		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, this, true);
 		writeFile(nodeFile, backupNodeFile);
 	}
 
@@ -135,7 +141,7 @@ public class OpennetManager {
 	}
 
 	public boolean addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, node.peers, false, crypto.packetMangler);
+		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
 		if(Arrays.equals(pn.getIdentity(), crypto.myIdentity)) {
 			Logger.error(this, "Not adding self as opennet peer");
 			return false; // Equal to myself

@@ -107,7 +107,7 @@ public class PeerManager {
         this.node = node;
     }
 
-    void tryReadPeers(String filename, NodeCrypto crypto, boolean isOpennet) {
+    void tryReadPeers(String filename, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet) {
     	synchronized(writePeersSync) {
     		if(isOpennet) {
     			openFilename = filename;
@@ -120,7 +120,7 @@ public class PeerManager {
         File backupFile = new File(filename+".bak");
         // Try to read the node list from disk
      	if(peersFile.exists()) {
-      		if(readPeers(peersFile, mangler, crypto)) {
+      		if(readPeers(peersFile, mangler, crypto, opennet, isOpennet)) {
       		    String msg;
       		    if(isOpennet) {
       			    msg = "Read "+getOpennetPeers().length+" peers from "+peersFile;
@@ -134,7 +134,7 @@ public class PeerManager {
        	}
      	// Try the backup
      	if(backupFile.exists()) {
-        	if(readPeers(backupFile, mangler, crypto)) {
+        	if(readPeers(backupFile, mangler, crypto, opennet, isOpennet)) {
       		    String msg;
       		    if(isOpennet) {
       			    msg = "Read "+getOpennetPeers().length+" peers from "+backupFile;
@@ -150,7 +150,7 @@ public class PeerManager {
      	}     		
 	}
 
-	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto) {
+	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet) {
     	boolean gotSome = false;
     	FileInputStream fis;
 		try {
@@ -173,7 +173,7 @@ public class PeerManager {
                 fs = new SimpleFieldSet(br, false, true);
                 PeerNode pn;
                 try {
-                    pn = PeerNode.create(fs, node, crypto, this, true, mangler);
+                    pn = PeerNode.create(fs, node, crypto, opennet, this, true, mangler);
                 } catch (FSParseException e2) {
                     Logger.error(this, "Could not parse peer: "+e2+ '\n' +fs.toString(),e2);
                     continue;
