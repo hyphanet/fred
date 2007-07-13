@@ -132,8 +132,6 @@ public class DarknetPeerNode extends PeerNode {
 		// Setup the queuedToSendN2NTMExtraPeerDataFileNumbers
 		queuedToSendN2NTMExtraPeerDataFileNumbers = new LinkedHashSet();
         
-        setPeerNodeStatus(now);
-
     }
 
     /**
