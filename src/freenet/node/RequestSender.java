@@ -614,8 +614,6 @@ public final class RequestSender implements Runnable, ByteCounter {
     
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
-        if(status != NOT_FINISHED)
-        	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;
         
         synchronized(this) {
