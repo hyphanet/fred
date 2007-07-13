@@ -75,7 +75,7 @@ public class ConfigToadlet extends Toadlet {
 						try{
 							o[j].setValue(value);
 						} catch (InvalidConfigValueException e) {
-							errbuf.append(o[j].getName()).append(e.getMessage()).append('\n');
+							errbuf.append(o[j].getName()).append(' ').append(e.getMessage()).append('\n');
 						} catch (Exception e){
                             errbuf.append(o[j].getName()).append(' ').append(e).append('\n');
 							Logger.error(this, "Caught "+e, e);
