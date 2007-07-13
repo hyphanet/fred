@@ -150,9 +150,10 @@ public class USKFetcher implements ClientGetState {
 		}
 		
 		public void schedule() {
-			if(checker == null)
-				Logger.error(this, "Checker == null in schedule()", new Exception("error"));
-			else
+			if(checker == null) {
+				if(logMINOR)
+					Logger.minor(this, "Checker == null in schedule() for "+this, new Exception("debug"));
+			} else
 				checker.schedule();
 		}
 		
