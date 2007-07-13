@@ -1399,7 +1399,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean routable = true;
 		boolean newer = false;
 		boolean older = false;
-		if(reverseInvalidVersion()) {
+		if(bogusNoderef) {
+			Logger.normal(this, "Not connecting to "+this+" - bogus noderef");
+			routable = false;
+		} else if(reverseInvalidVersion()) {
 			try {
 				node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(getLastGoodVersion()));
 			} catch (NumberFormatException e) {
@@ -1410,7 +1413,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else {
 			newer = false;
 		}
-		if(invalidVersion()) {
+		if(forwardInvalidVersion()) {
 			Logger.normal(this, "Not connecting to "+this+" - invalid version "+getVersion());
 			older = true;
 			routable = false;
@@ -1591,11 +1594,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     }
     
     private synchronized boolean invalidVersion() {
-        return bogusNoderef || (!Version.checkGoodVersion(version));
+    	return bogusNoderef || forwardInvalidVersion() || reverseInvalidVersion();
+    }
+    
+    private synchronized boolean forwardInvalidVersion() {
+        return !Version.checkGoodVersion(version);
     }
     
     private synchronized boolean reverseInvalidVersion() {
-        return bogusNoderef || (!Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion));
+        return !Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion);
     }
     
     public boolean publicInvalidVersion() {
@@ -2366,6 +2373,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					previousRoutingBackoffReason = null;
 				}
 			}
+		} else if(isConnected() && bogusNoderef) {
+			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONN_ERROR;
 		} else if(isConnected() && verifiedIncompatibleNewerVersion) {
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_NEW;
 		} else if(isConnected && verifiedIncompatibleOlderVersion) {
@@ -2434,7 +2443,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	synchronized void updateShouldDisconnectNow() {
-		verifiedIncompatibleOlderVersion = invalidVersion();
+		verifiedIncompatibleOlderVersion = forwardInvalidVersion();
 		verifiedIncompatibleNewerVersion = reverseInvalidVersion();
 	}
 	

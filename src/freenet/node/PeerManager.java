@@ -88,6 +88,7 @@ public class PeerManager {
 	public static final int PEER_NODE_STATUS_LISTENING = 9;
 	public static final int PEER_NODE_STATUS_LISTEN_ONLY = 10;
 	public static final int PEER_NODE_STATUS_CLOCK_PROBLEM = 11;
+	public static final int PEER_NODE_STATUS_CONN_ERROR = 12;
 	
     /**
      * Create a PeerManager by reading a list of peers from
@@ -844,6 +845,7 @@ public class PeerManager {
 			ua.peers = peers;
 			ua.neverConn = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED);
 			ua.clockProblem = getPeerNodeStatusSize(PEER_NODE_STATUS_CLOCK_PROBLEM);
+			ua.connError = getPeerNodeStatusSize(PEER_NODE_STATUS_CONN_ERROR);
 		}
 		if(anyConnectedPeers())
 			node.onConnectedPeer();

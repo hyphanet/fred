@@ -221,6 +221,7 @@ public class DarknetPeerNode extends PeerNode {
 		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED || 
 				status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM ||
 				status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF ||
+				status == PeerManager.PEER_NODE_STATUS_CONN_ERROR ||
 				status == PeerManager.PEER_NODE_STATUS_TOO_NEW ||
 				status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
 			return status;
