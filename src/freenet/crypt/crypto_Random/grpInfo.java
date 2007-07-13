@@ -6,21 +6,21 @@ public class grpInfo{
 	private String encryptionAlgorithm;
         private String signatureAlgorithm;
         private String hashAlgorithm;
-        private byte[] grpInfo;
+        private byte[] grpInfo=new byte[3];
 	public void processData(){
         	if (grpInfo.length == 3)
 		{
-            		int enc = (new Byte(grpInfo[0])).intValue();
+            		int enc = grpInfo[0] & 0xFF;
             		encryptionAlgorithm = getEncryptionAlgorithm(enc);
-            		int sig = (new Byte(grpInfo[1])).intValue();
+            		int sig = grpInfo[1] & 0xFF;
             		signatureAlgorithm  = getSignatureAlgorithm(sig);
-            		int hash = (new Byte(grpInfo[2])).intValue();
+            		int hash = grpInfo[2] & 0xFF;
             		hashAlgorithm = getHashAlgorithm(hash);
             		return;
             	}
             	else
 			System.err.println("ERROR");
-                  
+        }          
         	
 
 	/**
@@ -29,8 +29,8 @@ public class grpInfo{
 	 * 
 	 * @return String
 	 */
-	public String getEncryptionAlgorithm(int val){
-        	return encryptionAlgorithm;
+	public String getEncryptionAlgorithm(int encVal){
+        	return algorithm.getAlgo(encVal);
 	}
 
 	/**
@@ -39,8 +39,8 @@ public class grpInfo{
 	 * 
 	 * @return String
 	 */
-	public String getSignatureAlgorithm(){
-        	return signatureAlgorithm;
+	public String getSignatureAlgorithm(int sigVal){
+        	return algorithm.getAlgo(sigVal);
     	}
 
 	/**
@@ -49,8 +49,8 @@ public class grpInfo{
 	 * 
 	 * @return String
 	 */
-    	public String getHashAlgorithm(){
-        	return hashAlgorithm;
+    	public String getHashAlgorithm(int hashVal){
+        	return algorithm.getAlgo(hashVal);
     	}
 }
 
