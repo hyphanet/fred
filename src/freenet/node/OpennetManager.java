@@ -209,17 +209,18 @@ public class OpennetManager {
 				peersLRU.remove(toDrop);
 				dropList.add(toDrop);
 			}
-			if(!dropList.isEmpty())
+			if(ret) {
 				timeLastDropped = System.currentTimeMillis();
-			if(nodeToAddNow != null) {
-				if(!node.peers.addPeer(nodeToAddNow)) {
-					// Can't add it, already present (some sort of race condition)
-					PeerNode readd = (PeerNode) dropList.remove(dropList.size()-1);
-					peersLRU.pushLeast(readd);
-					ret = false;
-					Logger.error(this, "Could not add opennet peer "+nodeToAddNow+" because already in list");
-				} else {
-					Logger.error(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");					
+				if(nodeToAddNow != null) {
+					if(!node.peers.addPeer(nodeToAddNow)) {
+						// Can't add it, already present (some sort of race condition)
+						PeerNode readd = (PeerNode) dropList.remove(dropList.size()-1);
+						peersLRU.pushLeast(readd);
+						ret = false;
+						Logger.error(this, "Could not add opennet peer "+nodeToAddNow+" because already in list");
+					} else {
+						Logger.error(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");					
+					}
 				}
 			}
 		}
