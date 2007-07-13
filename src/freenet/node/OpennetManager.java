@@ -94,6 +94,7 @@ public class OpennetManager {
 		});
 		for(int i=0;i<nodes.length;i++)
 			peersLRU.push(nodes[i]);
+		dropExcessPeers();
 		writeFile(nodeFile, backupNodeFile);
 	}
 
