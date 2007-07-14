@@ -315,7 +315,8 @@ public class OpennetManager {
 				// Re-add it: nasty race condition when we have few peers
 			}
 		}
-		wantPeer(pn, false);
+		if(!wantPeer(pn, false))
+			node.peers.disconnect(pn);
 	}
 
 	public synchronized void onRemove(OpennetPeerNode pn) {
