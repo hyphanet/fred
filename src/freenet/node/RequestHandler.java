@@ -276,6 +276,8 @@ public class RequestHandler implements Runnable, ByteCounter {
     }
     
     private void finishOpennetNoRelay() {
+    	if(logMINOR)
+    		Logger.minor(this, "Finishing opennet: sending own reference");
 		OpennetManager om = node.getOpennet();
 		if(om != null) {
 			if(om.wantPeer(null)) {
@@ -341,6 +343,8 @@ public class RequestHandler implements Runnable, ByteCounter {
     }
     
 	private void finishOpennetRelay(RequestSender rs, byte[] noderef) {
+    	if(logMINOR)
+    		Logger.minor(this, "Finishing opennet: relaying reference from "+rs.successFrom());
 		// Send it back to the handler, then wait for the ConnectReply
 		PeerNode dataSource = rs.successFrom();
 		
