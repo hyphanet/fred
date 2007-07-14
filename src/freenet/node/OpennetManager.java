@@ -301,7 +301,7 @@ public class OpennetManager {
 			return null;
 		} else {
 			// Do we want it?
-			OpennetPeerNode[] peers = (OpennetPeerNode[]) peersLRU.toArray(new OpennetPeerNode[peersLRU.size()]);
+			OpennetPeerNode[] peers = (OpennetPeerNode[]) peersLRU.toArrayOrdered(new OpennetPeerNode[peersLRU.size()]);
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
