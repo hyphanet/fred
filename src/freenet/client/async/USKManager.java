@@ -129,11 +129,11 @@ public class USKManager {
 		if(sched != null) sched.schedule();
 	}
 	
-	void update(USK origUSK, long number) {
+	void update(final USK origUSK, final long number) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
-		USKCallback[] callbacks;
+		final USKCallback[] callbacks;
 		synchronized(this) {
 			Long l = (Long) latestVersionByClearUSK.get(clear);
 			if(logMINOR) Logger.minor(this, "Old value: "+l);
@@ -145,9 +145,14 @@ public class USKManager {
 			callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
 		}
 		if(callbacks != null) {
-			USK usk = origUSK.copy(number);
-			for(int i=0;i<callbacks.length;i++)
-				callbacks[i].onFoundEdition(number, usk);
+			// Run off-thread, because of locking, and because client callbacks may take some time
+			ticker.queueTimedJob(new Runnable() {
+				public void run() {
+					USK usk = origUSK.copy(number);
+					for(int i=0;i<callbacks.length;i++)
+						callbacks[i].onFoundEdition(number, usk);
+				}
+			}, 0);
 		}
 	}
 	
