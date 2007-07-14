@@ -48,10 +48,6 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		return L10n.getString("OpennetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
 	}
 
-	protected void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx) {
-		// Don't draw the add a peer box, it doesn't work anyway.
-	}
-
 	protected boolean shouldDrawNoderefBox(boolean advancedModeEnabled) {
 		// Developers may want to see the noderef.
 		return advancedModeEnabled;
