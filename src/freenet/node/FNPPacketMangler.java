@@ -35,7 +35,7 @@ import freenet.support.WouldBlockException;
  */
 public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFilter {
 
-	private static boolean logMINOR;
+    private static boolean logMINOR;
     final Node node;
     final PeerManager pm;
     final UdpSocketManager usm;
@@ -324,10 +324,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		       * Initiator- This is a straightforward DiffieHellman exponential. The Init                       * iator Nonce serves two purposes;it allows the initiator to use the same 			 * exponentials during different sessions while ensuring that the resulting 			  * session key will be different,can be used to differentiate between
 		       * parallel sessions
 		       */
-			DiffieHellmanContext ctx =
-                                processDHZeroOrOne(0, payload, pn);
-                        if(ctx == null) return;
-	
+			message1(pn,payload,0);			
 			
 		}
 		else if(packetType==1){
@@ -348,7 +345,66 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		       */
 		}
     }
+    /*
+     * Initiator Method:Message1
+     * Process Message1
+     * Send the Initiator nonce and DiffieHellman Exponential
+     * @param The packet phase number
+     * @param The peerNode we are talking to
+     * @param Payload
+     */	
+    public void Message1(PeerNode pn,byte[] payload,int phase)
+    {
+                long t1=System.currentTimeMillis();
+                Ni=nonceGen.getNewNonce();
+                DiffieHellmanContext dh=(DiffieHellmanContext)pn.getKeyAgreementSchemeContext();
+                if(ctx==null)
+		{
+                        if(shouldLogErrorInHandshake())
+                                Logger.error(this,"Failed getting exponentials");
+                        
+                        return null;
+                }
+                byte[] gi=ctx.getOurExponential().toByteArray();
+                byte[] message1=new byte[Ni.length + gi.length+1];
+                System.arraycopy(Ni,0,message1,0,Ni.length);
+                System.arraycopy(gi,0,message1,Ni.length+1,gi.length);
+                sendMessage1Packet(1,negType,phase,message1,pn,replyTo);
+                long t2=System.currentTimeMillis();
+                if((t2-t1)>500)
+                        Logger.error(this,"Message1 timeout error "+" replyto "+pn.getName());
 
+    }
+    /*
+     * Send Message1 packet
+     * @param version
+     * @param negType
+     * @param The packet phase number
+     * @param Concatenated data
+     * @param The peerNode we are talking to
+     * @param The peer to which we need to send the packet
+     */
+    public void sendMessage1Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+    {
+                long now = System.currentTimeMillis();
+                long delta = now - pn.lastSentPacketTime();
+                byte[] output = new byte[data.length+3];
+                output[0] = (byte) version;
+                output[1] = (byte) negType;
+                output[2] = (byte) phase;
+                System.arraycopy(data, 0, output, 3, data.length);
+                if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
+		try{
+			sendPacket(data,replyTo,pn,0);
+		}catch(LocalAddressException e){
+			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
+		}
+    }
+		
+    }
+	
+	
+   
     /**
      * Send a signed DH completion message.
      * Format:
@@ -361,20 +417,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param replyTo The Peer to which to send the packet (not necessarily the same
      * as the one on pn as the IP may have changed).
      */
-    private void sendSignedDHCompletion(int phase, BlockCipher cipher, PeerNode pn, Peer replyTo, DiffieHellmanContext ctx) {
-        PCFBMode pcfb = PCFBMode.create(cipher);
-        byte[] iv = new byte[pcfb.lengthIV()];
-        
-        byte[] myRef = node.myCompressedSetupRef();
-        byte[] data = new byte[myRef.length + 8];
-        System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
-        System.arraycopy(myRef, 0, data, 8, myRef.length);
-        
-        byte[] myExp = ctx.getOurExponential().toByteArray();
-        byte[] hisExp = ctx.getHisExponential().toByteArray();
-        
-        MessageDigest md = SHA256.getMessageDigest();
-     
+         
     private void sendSignedDHCompletion(int phase, BlockCipher cipher, PeerNode pn, Peer replyTo, DiffieHellmanContext ctx) {
         PCFBMode pcfb = PCFBMode.create(cipher);
         byte[] iv = new byte[pcfb.lengthIV()];
@@ -1478,74 +1521,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         //Logger.minor(this, "Ciphertext:\n"+HexUtil.bytesToHex(output, digestLength, plaintext.length));
         
         // We have a packet
-        // Send it
-        
-        if(logMINOR) Logger.minor(this,"Sending packet of length "+output.length+" (" + Fields.hashCode(output) + " to "+kt.pn);
-        
-        // pn.getPeer() cannot be null
-        try {
-        	sendPacket(output, kt.pn.getPeer(), kt.pn, alreadyReportedBytes);
-		} catch (LocalAddressException e) {
-			Logger.error(this, "Tried to send data packet to local address: "+kt.pn.getPeer()+" for "+kt.pn.allowLocalAddresses());
-		}
-        kt.pn.sentPacket();
-    }
-
-    /* (non-Javadoc)
-	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
-	 */
-    public void sendHandshake(PeerNode pn) {
-    	int negType = pn.bestNegType(this);
-    	if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn+" negotiation type "+negType);
-        DiffieHellmanContext ctx;
-        Peer[] handshakeIPs;
-        if(!pn.shouldSendHandshake()) {
-        	if(logMINOR) Logger.minor(this, "Not sending handshake to "+pn.getPeer()+" because pn.shouldSendHandshake() returned false");
-        	return;
-        }
-        long firstTime = System.currentTimeMillis();
-        handshakeIPs = pn.getHandshakeIPs();
-                Logger.error(this, "DHTime2 is more than a second after DHTime1 ("+(DHTime2 - DHTime1)+") working on "+pn.getName());
-            pn.setKeyAgreementSchemeContext(ctx);
-            long DHTime3 = System.currentTimeMillis();
-            if((DHTime3 - DHTime2) > 1000)
-                Logger.error(this, "DHTime3 is more than a second after DHTime2 ("+(DHTime3 - DHTime2)+") working on "+pn.getName());
-        }
-        int sentCount = 0;
-        long loopTime1 = System.currentTimeMillis();
-        for(int i=0;i<handshakeIPs.length;i++){
-        	long innerLoopTime1 = System.currentTimeMillis();
-        	if(handshakeIPs[i].getAddress(false) == null) {
-        		if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
-        		continue;
-        	}
-        	if(!pn.allowLocalAddresses() && !handshakeIPs[i].isRealInternetAddress(false, false)) {
-        		if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
-        		continue;
-        	}
-        	long innerLoopTime2 = System.currentTimeMillis();
-        	if((innerLoopTime2 - innerLoopTime1) > 500)
-        		Logger.normal(this, "innerLoopTime2 is more than half a second after innerLoopTime1 ("+(innerLoopTime2 - innerLoopTime1)+") working on "+handshakeIPs[i]+" of "+pn.getName());
-        	sendFirstHalfDHPacket(0, negType, ctx.getOurExponential(), pn, handshakeIPs[i]);
-        	long innerLoopTime3 = System.currentTimeMillis();
-        	if((innerLoopTime3 - innerLoopTime2) > 500)
-        		Logger.normal(this, "innerLoopTime3 is more than half a second after innerLoopTime2 ("+(innerLoopTime3 - innerLoopTime2)+") working on "+handshakeIPs[i]+" of "+pn.getName());
-        	pn.sentHandshake();
-        	long innerLoopTime4 = System.currentTimeMillis();
-        	if((innerLoopTime4 - innerLoopTime3) > 500)
-        		Logger.normal(this, "innerLoopTime4 is more than half a second after innerLoopTime3 ("+(innerLoopTime4 - innerLoopTime3)+") working on "+handshakeIPs[i]+" of "+pn.getName());
-        	sentCount += 1;
-        }
-        long loopTime2 = System.currentTimeMillis();
-        if((loopTime2 - loopTime1) > 1000)
-        	Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+pn.getName());
-        if(sentCount==0) {
-            pn.couldNotSendHandshake();
-        }
-    }
-
-    /* (non-Javadoc)
-	 * @see freenet.node.OutgoingPacketMangler#isDisconnected(freenet.io.comm.PeerContext)
 	 */
     public boolean isDisconnected(PeerContext context) {
         if(context == null) return false;
