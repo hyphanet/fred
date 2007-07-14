@@ -22,7 +22,7 @@ import freenet.support.SimpleFieldSet;
  * ClientGet
  * IgnoreDS=false // true = ignore the datastore
  * DSOnly=false // true = only check the datastore, don't route (~= htl 0)
- * URI=KSK@gpl.txt
+ * URI=KSK@sample.txt
  * Identifier=Request Number One
  * Verbosity=0 // no status, just tell us when it's done
  * ReturnType=direct // return all at once over the FCP connection
