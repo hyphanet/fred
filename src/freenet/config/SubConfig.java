@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import freenet.l10n.L10n;
 import freenet.support.Logger;
@@ -199,13 +200,16 @@ public class SubConfig implements Comparable {
 
 	public SimpleFieldSet exportFieldSet(int configRequestType, boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		Set entrySet = map.entrySet();
-		Iterator i = entrySet.iterator();
+		// FIXME is any locking at all necessary here? After it has finished init, it's constant...
+		Map.Entry[] entries;
+		synchronized(this) {
+			entries = (Entry[]) map.entrySet().toArray(new Map.Entry[map.size()]);
+		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Prefix="+prefix);
-		while(i.hasNext()) {
-			Map.Entry entry = (Map.Entry) i.next();
+		for(int i=0;i<entries.length;i++) {
+			Map.Entry entry = (Map.Entry) entries[i];
 			String key = (String) entry.getKey();
 			Option o = (Option) entry.getValue();
 //			if(logMINOR)
