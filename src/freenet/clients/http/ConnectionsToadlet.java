@@ -482,7 +482,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	public void handlePost(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
-		if(acceptRefPosts()) {
+		if(!acceptRefPosts()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
