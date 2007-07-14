@@ -59,8 +59,10 @@ public class OpennetManager {
 	/** Minimum time between offers, if we have maximum peers. Less than the above limits,
 	 * since an offer may not be accepted. */
 	static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
+	private static boolean logMINOR;
 
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig) throws NodeInitException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.node = node;
 		crypto =
 			new NodeCrypto(node, true, opennetConfig);
@@ -108,6 +110,7 @@ public class OpennetManager {
 	}
 
 	private void writeFile(File orig, File backup) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SimpleFieldSet fs = crypto.exportPrivateFieldSet();
 		
 		if(orig.exists()) backup.delete();
@@ -182,14 +185,14 @@ public class OpennetManager {
 	public boolean addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
 		if(Arrays.equals(pn.getIdentity(), crypto.myIdentity)) {
-			Logger.error(this, "Not adding self as opennet peer");
+			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
 			return false; // Equal to myself
 		}
 		PeerNode match;
 		if(((match = node.peers.containsPeer(pn)) != null) && 
 				(match.isConnected() || (!match.neverConnected()) || 
 						match.timeSinceAddedOrRestarted() < DONT_READD_TIME)) {
-			Logger.error(this, "Not adding "+pn.userToString()+" to opennet list as already there");
+			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return false;
 		}
 		return wantPeer(pn, true); 
@@ -213,7 +216,7 @@ public class OpennetManager {
 		synchronized(this) {
 			if(peersLRU.size() < MAX_PEERS) {
 				if(nodeToAddNow != null) {
-					Logger.error(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
+					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
 					peersLRU.push(nodeToAddNow);
 				}
 				timeLastOffered = System.currentTimeMillis();
@@ -244,13 +247,13 @@ public class OpennetManager {
 						PeerNode readd = (PeerNode) dropList.remove(dropList.size()-1);
 						peersLRU.pushLeast(readd);
 						ret = false;
-						Logger.error(this, "Could not add opennet peer "+nodeToAddNow+" because already in list");
+						if(logMINOR) Logger.minor(this, "Could not add opennet peer "+nodeToAddNow+" because already in list");
 					} else {
 						if(addAtLRU)
 							peersLRU.pushLeast(nodeToAddNow);
 						else
 							peersLRU.push(nodeToAddNow);
-						Logger.error(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");					
+						if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");					
 					}
 					timeLastDropped = now;
 				} else {
@@ -266,7 +269,7 @@ public class OpennetManager {
 		}
 		for(int i=0;i<dropList.size();i++) {
 			OpennetPeerNode pn = (OpennetPeerNode) dropList.get(i);
-			Logger.error(this, "Dropping LRU opennet peer: "+pn);
+			if(logMINOR) Logger.minor(this, "Dropping LRU opennet peer: "+pn);
 			node.peers.disconnect(pn);
 		}
 		return ret;
@@ -322,7 +325,7 @@ public class OpennetManager {
 				Logger.normal(this, "Opennet peer "+pn+" promoted to top of LRU because of successful request");
 				return;
 			} else {
-				Logger.error(this, "Success on opennet peer which isn't in the LRU!: "+pn, new Exception("debug"));
+				if(logMINOR) Logger.minor(this, "Success on opennet peer which isn't in the LRU!: "+pn, new Exception("debug"));
 				// Re-add it: nasty race condition when we have few peers
 			}
 		}
