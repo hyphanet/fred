@@ -218,6 +218,8 @@ public class OpennetManager {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
 					peersLRU.push(nodeToAddNow);
+				} else {
+					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
 				timeLastOffered = System.currentTimeMillis();
 				return true;
@@ -231,9 +233,13 @@ public class OpennetManager {
 				PeerNode toDrop;
 				toDrop = peerToDrop();
 				if(toDrop == null) {
+					if(logMINOR)
+						Logger.minor(this, "No more peers to drop, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
 					ret = false;
 					break;
 				}
+				if(logMINOR)
+					Logger.minor(this, "Drop peer: "+toDrop+" (connected="+toDrop.isConnected()+")");
 				if(!toDrop.isConnected())
 					hasDisconnected = true;
 				peersLRU.remove(toDrop);
@@ -258,6 +264,8 @@ public class OpennetManager {
 					timeLastDropped = now;
 				} else {
 					if(now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS && !hasDisconnected) {
+						if(logMINOR)
+							Logger.minor(this, "Cannot accept peer because of minimum time between offers");
 						// Cancel
 						ret = false;
 					} else {
