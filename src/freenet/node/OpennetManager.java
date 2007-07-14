@@ -41,7 +41,7 @@ public class OpennetManager {
 	private long timeLastDropped;
 	
 	// FIXME make this configurable
-	static final int MAX_PEERS = 5;
+	static final int MAX_PEERS = 15;
 	/** Chance of resetting path folding (for plausible deniability) is 1 in this number. */
 	static final int RESET_PATH_FOLDING_PROB = 20;
 	/** Don't re-add a node until it's been up and disconnected for at least this long */
