@@ -261,7 +261,8 @@ public class OpennetManager {
 							peersLRU.push(nodeToAddNow);
 						if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");					
 					}
-					timeLastDropped = now;
+					if(!dropList.isEmpty())
+						timeLastDropped = now;
 				} else {
 					if(now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS && !hasDisconnected) {
 						if(logMINOR)
@@ -269,7 +270,8 @@ public class OpennetManager {
 						// Cancel
 						ret = false;
 					} else {
-						timeLastDropped = now;
+						if(!dropList.isEmpty())
+							timeLastDropped = now;
 						timeLastOffered = now;
 					}
 				}
