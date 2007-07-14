@@ -249,12 +249,10 @@ public class OpennetManager {
 				}
 			}
 		}
-		if(dropList != null) {
-			for(int i=0;i<dropList.size();i++) {
-				OpennetPeerNode pn = (OpennetPeerNode) dropList.get(i);
-				Logger.error(this, "Dropping LRU opennet peer: "+pn);
-				node.peers.disconnect(pn);
-			}
+		for(int i=0;i<dropList.size();i++) {
+			OpennetPeerNode pn = (OpennetPeerNode) dropList.get(i);
+			Logger.error(this, "Dropping LRU opennet peer: "+pn);
+			node.peers.disconnect(pn);
 		}
 		return ret;
 	}
