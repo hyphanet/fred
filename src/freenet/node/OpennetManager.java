@@ -192,13 +192,13 @@ public class OpennetManager {
 			Logger.error(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return false;
 		}
-		return wantPeer(pn);
+		return wantPeer(pn, false);
 	}
 
 	/** When did we last offer our noderef to some other node? */
 	private long timeLastOffered;
 	
-	public boolean wantPeer(PeerNode nodeToAddNow) {
+	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
 		synchronized(this) {
 			if(peersLRU.size() < MAX_PEERS) {
 				if(nodeToAddNow != null) {
@@ -235,6 +235,10 @@ public class OpennetManager {
 						ret = false;
 						Logger.error(this, "Could not add opennet peer "+nodeToAddNow+" because already in list");
 					} else {
+						if(addAtLRU)
+							peersLRU.pushLeast(nodeToAddNow);
+						else
+							peersLRU.push(nodeToAddNow);
 						Logger.error(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");					
 					}
 					timeLastDropped = now;
@@ -300,9 +304,18 @@ public class OpennetManager {
 		return null;
 	}
 
-	public synchronized void onSuccess(OpennetPeerNode pn) {
-		peersLRU.push(pn);
-		Logger.error(this, "Opennet peer "+pn+" promoted to top of LRU because of successful request");
+	public void onSuccess(OpennetPeerNode pn) {
+		synchronized(this) {
+			if(peersLRU.contains(pn)) {
+				peersLRU.push(pn);
+				Logger.normal(this, "Opennet peer "+pn+" promoted to top of LRU because of successful request");
+				return;
+			} else {
+				Logger.error(this, "Success on opennet peer which isn't in the LRU!: "+pn, new Exception("debug"));
+				// Re-add it: nasty race condition when we have few peers
+			}
+		}
+		wantPeer(pn, false);
 	}
 
 	public synchronized void onRemove(OpennetPeerNode pn) {
