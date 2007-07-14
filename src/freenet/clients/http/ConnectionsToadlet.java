@@ -569,7 +569,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			PeerNode pn;
 			try {
-				pn = node.createNewDarknetNode(fs);
 				if(isOpennet()) {
 					pn = node.createNewOpennetNode(fs);
 				} else {
