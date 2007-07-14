@@ -80,11 +80,13 @@ public class PluginHandler {
 					System.err.println("Caught Throwable while running plugin: "+t);
 					t.printStackTrace();
 				}
+				if(!(plugin instanceof FredPluginThreadless))
+					pm.removePlugin(this);
+			} else {
+				// If not FredPlugin, then the whole thing is aborted,
+				// and then this method will return, killing the thread
+				return;
 			}
-			// If not FredPlugin, then the whole thing is aborted,
-			// and then this method will return, killing the thread
-			
-			pm.removePlugin(this);
 		}
 		
 	}

@@ -177,7 +177,7 @@ public class PluginManager {
 						try {
 							toadletList.remove(pi.getPluginClassName());
 							Logger.normal(this, "Removed HTTP handler for /plugins/"+
-									pi.getPluginClassName()+ '/');
+									pi.getPluginClassName()+ '/', new Exception("debug"));
 						} catch (Throwable ex) {
 							Logger.error(this, "removing Plugin", ex);
 						}
