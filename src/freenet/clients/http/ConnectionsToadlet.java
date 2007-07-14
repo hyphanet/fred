@@ -661,7 +661,27 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 	/** Draw the add a peer box. This comes immediately after the main peers table and before the noderef box.
 	 * Implementors may skip it by not doing anything in this method. */
-	protected abstract void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx);
+	protected void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx) {
+		// BEGIN PEER ADDITION BOX
+		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		peerAdditionInfobox.addChild("div", "class", "infobox-header", l10n("addPeerTitle"));
+		HTMLNode peerAdditionContent = peerAdditionInfobox.addChild("div", "class", "infobox-content");
+		HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, ".", "addPeerForm");
+		peerAdditionForm.addChild("#", l10n("pasteReference"));
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "reftext", "ref", "8", "74" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("#", (l10n("urlReference") + ' '));
+		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "refurl", "text", "url" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("#", (l10n("fileReference") + ' '));
+		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
+		peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", l10n("add") });
+	}
 
 	protected Comparator comparator(String sortBy, boolean reversed) {
 		return new ComparatorByStatus(sortBy, reversed);
