@@ -44,7 +44,7 @@ public class PersistentConfig extends Config {
 		SubConfig[] configs;
 		synchronized(this) {
 			// FIXME maybe keep a cache of this?
-			configs = (SubConfig[]) configsByPrefix.keySet().toArray(new SubConfig[configsByPrefix.size()]);
+			configs = (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
 		}
 		SubConfig current;
 		for(int i=0;i<configs.length;i++) {
