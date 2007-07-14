@@ -285,6 +285,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 				try {
 					source.sendAsync(msg, null, 0, this);
 				} catch (NotConnectedException e) {
+					Logger.normal(this, "Can't send opennet ref because node disconnected on "+this);
 					// Oh well...
 					return;
 				}
@@ -296,11 +297,13 @@ public class RequestHandler implements Runnable, ByteCounter {
 				try {
 					msg = node.usm.waitFor(mf, this);
 				} catch (DisconnectedException e) {
+					Logger.normal(this, "No opennet response because node disconnected on "+this);
 					return; // Lost connection with request source
 				}
 				
 				if(msg == null) {
 					// Timeout
+					Logger.normal(this, "Timeout waiting for opennet peer on "+this);
 					return;
 				}
 				
