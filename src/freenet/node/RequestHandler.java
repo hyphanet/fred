@@ -280,7 +280,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     		Logger.minor(this, "Finishing opennet: sending own reference");
 		OpennetManager om = node.getOpennet();
 		if(om != null) {
-			if(om.wantPeer(null)) {
+			if(om.wantPeer(null, false)) {
     			Message msg = DMT.createFNPOpennetConnectDestination(uid, new ShortBuffer(om.crypto.myCompressedFullRef()));
 				try {
 					source.sendAsync(msg, null, 0, this);
