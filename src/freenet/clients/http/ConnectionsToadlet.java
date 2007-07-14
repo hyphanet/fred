@@ -677,7 +677,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		peerAdditionForm.addChild("#", (l10n("fileReference") + ' '));
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
 		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
+		if(!isOpennet())
+			peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
 		peerAdditionForm.addChild("br");
 		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", l10n("add") });
