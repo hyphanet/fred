@@ -191,9 +191,12 @@ public class NodeUpdateManager {
 	 * Is auto-update enabled?
 	 */
 	public boolean isEnabled() {
+		NodeUpdater updater;
 		synchronized(this) {
-			return mainUpdater != null && mainUpdater.isRunning();
+			updater = mainUpdater;
+			if(updater == null) return false;
 		}
+		return updater.isRunning();
 	}
 
 	/**
