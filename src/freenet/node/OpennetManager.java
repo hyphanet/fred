@@ -192,12 +192,23 @@ public class OpennetManager {
 			Logger.error(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return false;
 		}
-		return wantPeer(pn, false);
+		return wantPeer(pn, true); 
+		// Start at bottom. Node must prove itself.
 	}
 
 	/** When did we last offer our noderef to some other node? */
 	private long timeLastOffered;
 	
+	/**
+	 * Trim the peers list and possibly add a new node. Note that if we are not adding a new node,
+	 * we will only return true every MIN_TIME_BETWEEN_OFFERS, to prevent problems caused by many
+	 * pending offers being accepted simultaneously.
+	 * @param nodeToAddNow Node to add.
+	 * @param addAtLRU If there is a node to add, add it at the bottom rather than the top. Normally
+	 * we set this on new path folded nodes so that they will be replaced if during the trial period,
+	 * plus the time it takes to get a new path folding offer, they don't have a successful request.
+	 * @return True if the node was added / should be added.
+	 */
 	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
 		synchronized(this) {
 			if(peersLRU.size() < MAX_PEERS) {
@@ -315,7 +326,7 @@ public class OpennetManager {
 				// Re-add it: nasty race condition when we have few peers
 			}
 		}
-		if(!wantPeer(pn, false))
+		if(!wantPeer(pn, false)) // Start at top as it just succeeded
 			node.peers.disconnect(pn);
 	}
 
