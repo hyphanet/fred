@@ -260,7 +260,7 @@ public class OpennetManager {
 	}
 
 	private void dropExcessPeers() {
-		while(peersLRU.size() < MAX_PEERS) {
+		while(peersLRU.size() > MAX_PEERS) {
 			PeerNode toDrop;
 			toDrop = peerToDrop();
 			if(toDrop == null) return;
