@@ -97,9 +97,9 @@ public class OpennetManager {
 				boolean neverConnected1 = pn1.neverConnected();
 				boolean neverConnected2 = pn2.neverConnected();
 				if(neverConnected1 && (!neverConnected2))
-					return -1;
-				if((!neverConnected1) && neverConnected2)
 					return 1;
+				if((!neverConnected1) && neverConnected2)
+					return -1;
 				return pn1.hashCode - pn2.hashCode;
 			}
 		});
