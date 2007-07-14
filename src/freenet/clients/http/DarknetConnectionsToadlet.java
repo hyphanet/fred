@@ -67,123 +67,113 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		return new DarknetComparator(sortBy, reversed);
 	}
 		
-	public void handlePost(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
-			return;
-		}
-		
-		String pass = request.getPartAsString("formPassword", 32);
-		if((pass == null) || !pass.equals(core.formPassword)) {
-			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+ ')');
-			return;
-		}
-		
-		if (request.isPartSet("add")) {
-			// add a new node
-			String urltext = request.getPartAsString("url", 100);
-			urltext = urltext.trim();
-			String reftext = request.getPartAsString("ref", 2000);
-			reftext = reftext.trim();
-			if (reftext.length() < 200) {
-				reftext = request.getPartAsString("reffile", 2000);
-				reftext = reftext.trim();
-			}
-			String privateComment = request.getPartAsString("peerPrivateNote", 250).trim();
-			
-			StringBuffer ref = new StringBuffer(1024);
-			if (urltext.length() > 0) {
-				// fetch reference from a URL
-				BufferedReader in = null;
-				try {
-					URL url = new URL(urltext);
-					URLConnection uc = url.openConnection();
-					// FIXME get charset encoding from uc.getContentType()
-					in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
-					String line;
-					while ( (line = in.readLine()) != null) {
-						ref.append( line ).append('\n');
-					}
-				} catch (IOException e) {
-					this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), L10n.getString("DarknetConnectionsToadlet.cantFetchNoderefURL", new String[] { "url" }, new String[] { urltext }));
-					return;
-				} finally {
-					if( in != null ){
-						in.close();
-					}
-				}
-			} else if (reftext.length() > 0) {
-				// read from post data or file upload
-				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
-				ref = new StringBuffer(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
-			} else {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("noRefOrURL"));
-				request.freeParts();
-				return;
-			}
-			ref = new StringBuffer(ref.toString().trim());
+	protected boolean hasNameColumn() {
+		return true;
+	}
+	
+	protected void drawNameColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
+		// name column
+		peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), ((DarknetPeerNodeStatus)peerNodeStatus).getName());
+	}
 
-			request.freeParts();
-			// we have a node reference in ref
-			SimpleFieldSet fs;
-			
-			try {
-				fs = new SimpleFieldSet(ref.toString(), false, true);
-				if(!fs.getEndMarker().endsWith("End")) {
-					sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),
-							L10n.getString("DarknetConnectionsToadlet.cantParseWrongEnding", new String[] { "end" }, new String[] { fs.getEndMarker() }));
-					return;
-				}
-				fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
-			} catch (IOException e) {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), 
-						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e.toString() }));
-				return;
-			} catch (Throwable t) {
-				this.sendErrorPage(ctx, l10n("failedToAddNodeInternalErrorTitle"), l10n("failedToAddNodeInternalError"), t);
-				return;
-			}
-			DarknetPeerNode pn;
-			try {
-				pn = node.createNewDarknetNode(fs);
-				pn.setPrivateDarknetCommentNote(privateComment);
-			} catch (FSParseException e1) {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),
-						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
-				return;
-			} catch (PeerParseException e1) {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), 
-						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
-				return;
-			} catch (ReferenceSignatureVerificationException e1){
-				HTMLNode node = new HTMLNode("div");
-				node.addChild("#", L10n.getString("DarknetConnectionsToadlet.invalidSignature", new String[] { "error" }, new String[] { e1.toString() }));
-				node.addChild("br");
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), node);
-				return;
-			} catch (Throwable t) {
-				this.sendErrorPage(ctx, l10n("failedToAddNodeInternalErrorTitle"), l10n("failedToAddNodeInternalError"), t);
-				return;
-			}
-			if(Arrays.equals(pn.getIdentity(), node.getDarknetIdentity())) {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("triedToAddSelf"));
-				return;
-			}
-			if(!this.node.addPeerConnection(pn)) {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("alreadyInReferences"));
-				return;
-			}
-			
-			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("send_n2ntm")) {
+	protected boolean hasPrivateNoteColumn() {
+		return true;
+	}
+
+	protected void drawPrivateNoteColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus, boolean fProxyJavascriptEnabled) {
+		// private darknet node comment note column
+		DarknetPeerNodeStatus status = (DarknetPeerNodeStatus) peerNodeStatus;
+		if(fProxyJavascriptEnabled) {
+			peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "onBlur", "onChange", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", "peerNoteBlur();", "peerNoteChange();", status.getPrivateDarknetCommentNote() });
+		} else {
+			peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", status.getPrivateDarknetCommentNote() });
+		}
+	}
+
+	protected SimpleFieldSet getNoderef() {
+		return node.exportDarknetPublicFieldSet();
+	}
+
+	protected PeerNodeStatus[] getPeerNodeStatuses() {
+		return node.peers.getDarknetPeerNodeStatuses();
+	}
+
+	protected String getPageTitle(String titleCountString, String myName) {
+		return L10n.getString("DarknetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
+	}
+	
+	protected void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx) {
+		// BEGIN PEER ADDITION BOX
+		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		peerAdditionInfobox.addChild("div", "class", "infobox-header", l10n("addPeerTitle"));
+		HTMLNode peerAdditionContent = peerAdditionInfobox.addChild("div", "class", "infobox-content");
+		HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, ".", "addPeerForm");
+		peerAdditionForm.addChild("#", l10n("pasteReference"));
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "reftext", "ref", "8", "74" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("#", (l10n("urlReference") + ' '));
+		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "refurl", "text", "url" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("#", (l10n("fileReference") + ' '));
+		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
+		peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", l10n("add") });
+	}
+
+	protected boolean shouldDrawNoderefBox(boolean advancedModeEnabled) {
+		return true;
+	}
+
+	protected boolean showPeerActionsBox() {
+		return true;
+	}
+
+	protected void drawPeerActionSelectBox(HTMLNode peerForm, boolean advancedModeEnabled) {
+		HTMLNode actionSelect = peerForm.addChild("select", new String[] { "id", "name" }, new String[] { "action", "action" });
+		actionSelect.addChild("option", "value", "", l10n("selectAction"));
+		actionSelect.addChild("option", "value", "send_n2ntm", l10n("sendMessageToPeers"));
+		actionSelect.addChild("option", "value", "update_notes", l10n("updateChangedPrivnotes"));
+		if(advancedModeEnabled) {
+			actionSelect.addChild("option", "value", "enable", "Enable selected peers");
+			actionSelect.addChild("option", "value", "disable", "Disable selected peers");
+			actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly (only set this if you have a static IP and are not NATed and neither is the peer)");
+			actionSelect.addChild("option", "value", "clear_burst_only", "On selected peers, clear BurstOnly");
+			actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly (not recommended)");
+			actionSelect.addChild("option", "value", "clear_listen_only", "On selected peers, clear ListenOnly");
+			actionSelect.addChild("option", "value", "set_allow_local", "On selected peers, set allowLocalAddresses (useful if you are connecting to another node on the same LAN)");
+			actionSelect.addChild("option", "value", "clear_allow_local", "On selected peers, clear allowLocalAddresses");
+			actionSelect.addChild("option", "value", "set_ignore_source_port", "On selected peers, set ignoreSourcePort (try this if behind an evil corporate firewall; otherwise not recommended)");
+			actionSelect.addChild("option", "value", "clear_ignore_source_port", "On selected peers, clear ignoreSourcePort");
+		}
+		actionSelect.addChild("option", "value", "", l10n("separator"));
+		actionSelect.addChild("option", "value", "remove", l10n("removePeers"));
+		peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doAction", l10n("go") });
+	}
+
+	protected String getPeerListTitle() {
+		return l10n("myFriends");
+	}
+
+	protected boolean acceptRefPosts() {
+		return true;
+	}
+
+	protected String defaultRedirectLocation() {
+		return "/friends/"; // FIXME
+	}
+
+	/**
+	 * Implement other post actions than adding nodes.
+	 * @throws IOException 
+	 * @throws ToadletContextClosedException 
+	 * @throws RedirectException 
+	 */
+	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
+		if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("send_n2ntm")) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -412,96 +402,9 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			this.handleGet(uri, new HTTPRequestImpl(uri), ctx);
 		}
 	}
-	
-	protected boolean hasNameColumn() {
-		return true;
-	}
-	
-	protected void drawNameColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
-		// name column
-		peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), ((DarknetPeerNodeStatus)peerNodeStatus).getName());
-	}
 
-	protected boolean hasPrivateNoteColumn() {
-		return true;
-	}
-
-	protected void drawPrivateNoteColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus, boolean fProxyJavascriptEnabled) {
-		// private darknet node comment note column
-		DarknetPeerNodeStatus status = (DarknetPeerNodeStatus) peerNodeStatus;
-		if(fProxyJavascriptEnabled) {
-			peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "onBlur", "onChange", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", "peerNoteBlur();", "peerNoteChange();", status.getPrivateDarknetCommentNote() });
-		} else {
-			peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", status.getPrivateDarknetCommentNote() });
-		}
-	}
-
-	protected SimpleFieldSet getNoderef() {
-		return node.exportDarknetPublicFieldSet();
-	}
-
-	protected PeerNodeStatus[] getPeerNodeStatuses() {
-		return node.peers.getDarknetPeerNodeStatuses();
-	}
-
-	protected String getPageTitle(String titleCountString, String myName) {
-		return L10n.getString("DarknetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
-	}
-	
-	protected void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx) {
-		// BEGIN PEER ADDITION BOX
-		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		peerAdditionInfobox.addChild("div", "class", "infobox-header", l10n("addPeerTitle"));
-		HTMLNode peerAdditionContent = peerAdditionInfobox.addChild("div", "class", "infobox-content");
-		HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, ".", "addPeerForm");
-		peerAdditionForm.addChild("#", l10n("pasteReference"));
-		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "reftext", "ref", "8", "74" });
-		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("#", (l10n("urlReference") + ' '));
-		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "refurl", "text", "url" });
-		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("#", (l10n("fileReference") + ' '));
-		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
-		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
-		peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
-		peerAdditionForm.addChild("br");
-		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", l10n("add") });
-	}
-
-	protected boolean shouldDrawNoderefBox(boolean advancedModeEnabled) {
-		return true;
-	}
-
-	protected boolean showPeerActionsBox() {
-		return true;
-	}
-
-	protected void drawPeerActionSelectBox(HTMLNode peerForm, boolean advancedModeEnabled) {
-		HTMLNode actionSelect = peerForm.addChild("select", new String[] { "id", "name" }, new String[] { "action", "action" });
-		actionSelect.addChild("option", "value", "", l10n("selectAction"));
-		actionSelect.addChild("option", "value", "send_n2ntm", l10n("sendMessageToPeers"));
-		actionSelect.addChild("option", "value", "update_notes", l10n("updateChangedPrivnotes"));
-		if(advancedModeEnabled) {
-			actionSelect.addChild("option", "value", "enable", "Enable selected peers");
-			actionSelect.addChild("option", "value", "disable", "Disable selected peers");
-			actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly (only set this if you have a static IP and are not NATed and neither is the peer)");
-			actionSelect.addChild("option", "value", "clear_burst_only", "On selected peers, clear BurstOnly");
-			actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly (not recommended)");
-			actionSelect.addChild("option", "value", "clear_listen_only", "On selected peers, clear ListenOnly");
-			actionSelect.addChild("option", "value", "set_allow_local", "On selected peers, set allowLocalAddresses (useful if you are connecting to another node on the same LAN)");
-			actionSelect.addChild("option", "value", "clear_allow_local", "On selected peers, clear allowLocalAddresses");
-			actionSelect.addChild("option", "value", "set_ignore_source_port", "On selected peers, set ignoreSourcePort (try this if behind an evil corporate firewall; otherwise not recommended)");
-			actionSelect.addChild("option", "value", "clear_ignore_source_port", "On selected peers, clear ignoreSourcePort");
-		}
-		actionSelect.addChild("option", "value", "", l10n("separator"));
-		actionSelect.addChild("option", "value", "remove", l10n("removePeers"));
-		peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doAction", l10n("go") });
-	}
-
-	protected String getPeerListTitle() {
-		return l10n("myFriends");
+	protected boolean isOpennet() {
+		return false;
 	}
 
 }

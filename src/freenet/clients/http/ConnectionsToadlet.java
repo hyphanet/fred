@@ -1,8 +1,12 @@
 package freenet.clients.http;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,16 +18,21 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.l10n.L10n;
+import freenet.node.DarknetPeerNode;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStats;
 import freenet.node.PeerManager;
+import freenet.node.PeerNode;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
@@ -105,7 +114,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected final DecimalFormat fix1 = new DecimalFormat("##0.0%");
 	
 	public String supportedMethods() {
-		return "GET";
+		if(this.acceptRefPosts())
+			return "GET, POST";
+		else
+			return "GET";
 	}
 
 	protected ConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
@@ -460,6 +472,158 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+	}
+
+	protected abstract boolean acceptRefPosts();
+	
+	/** Where to redirect to if there is an error */
+	protected abstract String defaultRedirectLocation();
+	
+	public void handlePost(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		
+		if(acceptRefPosts()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
+			return;
+		}
+		
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
+			return;
+		}
+		
+		String pass = request.getPartAsString("formPassword", 32);
+		if((pass == null) || !pass.equals(core.formPassword)) {
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", defaultRedirectLocation());
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+ ')');
+			return;
+		}
+		
+		if (request.isPartSet("add")) {
+			// add a new node
+			String urltext = request.getPartAsString("url", 100);
+			urltext = urltext.trim();
+			String reftext = request.getPartAsString("ref", 2000);
+			reftext = reftext.trim();
+			if (reftext.length() < 200) {
+				reftext = request.getPartAsString("reffile", 2000);
+				reftext = reftext.trim();
+			}
+			String privateComment = null;
+			if(!isOpennet())
+				privateComment = request.getPartAsString("peerPrivateNote", 250).trim();
+			
+			StringBuffer ref = new StringBuffer(1024);
+			if (urltext.length() > 0) {
+				// fetch reference from a URL
+				BufferedReader in = null;
+				try {
+					URL url = new URL(urltext);
+					URLConnection uc = url.openConnection();
+					// FIXME get charset encoding from uc.getContentType()
+					in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
+					String line;
+					while ( (line = in.readLine()) != null) {
+						ref.append( line ).append('\n');
+					}
+				} catch (IOException e) {
+					this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), L10n.getString("DarknetConnectionsToadlet.cantFetchNoderefURL", new String[] { "url" }, new String[] { urltext }));
+					return;
+				} finally {
+					if( in != null ){
+						in.close();
+					}
+				}
+			} else if (reftext.length() > 0) {
+				// read from post data or file upload
+				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
+				ref = new StringBuffer(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
+			} else {
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("noRefOrURL"));
+				request.freeParts();
+				return;
+			}
+			ref = new StringBuffer(ref.toString().trim());
+
+			request.freeParts();
+			// we have a node reference in ref
+			SimpleFieldSet fs;
+			
+			try {
+				fs = new SimpleFieldSet(ref.toString(), false, true);
+				if(!fs.getEndMarker().endsWith("End")) {
+					sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),
+							L10n.getString("DarknetConnectionsToadlet.cantParseWrongEnding", new String[] { "end" }, new String[] { fs.getEndMarker() }));
+					return;
+				}
+				fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
+			} catch (IOException e) {
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), 
+						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e.toString() }));
+				return;
+			} catch (Throwable t) {
+				this.sendErrorPage(ctx, l10n("failedToAddNodeInternalErrorTitle"), l10n("failedToAddNodeInternalError"), t);
+				return;
+			}
+			PeerNode pn;
+			try {
+				pn = node.createNewDarknetNode(fs);
+				if(isOpennet()) {
+					pn = node.createNewOpennetNode(fs);
+				} else {
+					pn = node.createNewDarknetNode(fs);
+					((DarknetPeerNode)pn).setPrivateDarknetCommentNote(privateComment);
+				}
+			} catch (FSParseException e1) {
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),
+						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
+				return;
+			} catch (PeerParseException e1) {
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), 
+						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
+				return;
+			} catch (ReferenceSignatureVerificationException e1){
+				HTMLNode node = new HTMLNode("div");
+				node.addChild("#", L10n.getString("DarknetConnectionsToadlet.invalidSignature", new String[] { "error" }, new String[] { e1.toString() }));
+				node.addChild("br");
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), node);
+				return;
+			} catch (Throwable t) {
+				this.sendErrorPage(ctx, l10n("failedToAddNodeInternalErrorTitle"), l10n("failedToAddNodeInternalError"), t);
+				return;
+			}
+			if(Arrays.equals(pn.getIdentity(), node.getDarknetIdentity())) {
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("triedToAddSelf"));
+				return;
+			}
+			if(!this.node.addPeerConnection(pn)) {
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("alreadyInReferences"));
+				return;
+			}
+			
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/friends/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else handleAltPost(uri, request, ctx, logMINOR);
+		
+		
+	}
+
+	/** Adding a darknet node or an opennet node? */
+	protected abstract boolean isOpennet();
+
+	/**
+	 * Rest of handlePost() method - supplied by subclass.
+	 * @throws IOException 
+	 * @throws ToadletContextClosedException 
+	 * @throws RedirectException 
+	 */
+	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
+		// Do nothing - we only support adding nodes
+		handleGet(uri, new HTTPRequestImpl(uri), ctx);
 	}
 
 	/**

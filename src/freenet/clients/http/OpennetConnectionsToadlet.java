@@ -71,4 +71,16 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		return L10n.getString("OpennetConnectionsToadlet.peersListTitle");
 	}
 
+	protected boolean acceptRefPosts() {
+		return true;
+	}
+
+	protected String defaultRedirectLocation() {
+		return "/opennet/";
+	}
+
+	protected boolean isOpennet() {
+		return true;
+	}
+
 }
