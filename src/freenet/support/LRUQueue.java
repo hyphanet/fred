@@ -2,10 +2,6 @@ package freenet.support;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
-
-import freenet.node.OpennetPeerNode;
-import freenet.node.PeerNode;
 
 public class LRUQueue {
 
