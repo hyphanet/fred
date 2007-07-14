@@ -603,7 +603,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/friends/");
+			headers.put("Location", defaultRedirectLocation());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else handleAltPost(uri, request, ctx, logMINOR);
