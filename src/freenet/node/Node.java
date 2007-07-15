@@ -2425,8 +2425,8 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Return a peer of the node given its ip and port, name or identity, as a String
 	 */
-	public DarknetPeerNode getPeerNode(String nodeIdentifier) {
-		DarknetPeerNode[] pn = peers.getDarknetPeers();
+	public PeerNode getPeerNode(String nodeIdentifier) {
+		PeerNode[] pn = peers.myPeers;
 		for(int i=0;i<pn.length;i++)
 		{
 			Peer peer = pn[i].getPeer();
@@ -2434,11 +2434,17 @@ public class Node implements TimeSkewDetectorCallback {
 			if(peer != null) {
 				nodeIpAndPort = peer.toString();
 			}
-			String name = pn[i].myName;
 			String identity = pn[i].getIdentityString();
-			if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
-			{
-				return pn[i];
+			if(pn[i] instanceof DarknetPeerNode) {
+				DarknetPeerNode dpn = (DarknetPeerNode) pn[i];
+				String name = dpn.myName;
+				if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
+					return pn[i];
+				}
+			} else {
+				if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier)) {
+					return pn[i];
+				}
 			}
 		}
 		return null;

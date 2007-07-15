@@ -5,6 +5,7 @@ package freenet.node.fcp;
 
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
+import freenet.node.PeerNode;
 import freenet.support.SimpleFieldSet;
 
 public class ListPeerNotesMessage extends FCPMessage {
@@ -30,14 +31,18 @@ public class ListPeerNotesMessage extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ListPeerNotes requires full access", fs.get("Identifier"), false);
 		}
 		String nodeIdentifier = fs.get("NodeIdentifier");
-		DarknetPeerNode pn = node.getPeerNode(nodeIdentifier);
+		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
 			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier);
 			handler.outputHandler.queue(msg);
 			return;
 		}
+		if(!(pn instanceof DarknetPeerNode)) {
+			throw new MessageInvalidException(ProtocolErrorMessage.DARKNET_ONLY, "ModifyPeer only available for darknet peers", fs.get("Identifier"), false);
+		}
+		DarknetPeerNode dpn = (DarknetPeerNode) pn;
 		// **FIXME** this should be generalized for multiple peer notes per peer, after PeerNode is similarly generalized
-		String noteText = pn.getPrivateDarknetCommentNote();
+		String noteText = dpn.getPrivateDarknetCommentNote();
 		handler.outputHandler.queue(new PeerNote(nodeIdentifier, noteText, Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT));
 		handler.outputHandler.queue(new EndListPeerNotesMessage(nodeIdentifier));
 	}

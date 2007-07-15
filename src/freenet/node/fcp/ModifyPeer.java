@@ -5,6 +5,7 @@ package freenet.node.fcp;
 
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
+import freenet.node.PeerNode;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
@@ -31,44 +32,48 @@ public class ModifyPeer extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyPeer requires full access", fs.get("Identifier"), false);
 		}
 		String nodeIdentifier = fs.get("NodeIdentifier");
-		DarknetPeerNode pn = node.getPeerNode(nodeIdentifier);
+		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
 			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier);
 			handler.outputHandler.queue(msg);
 			return;
 		}
+		if(!(pn instanceof DarknetPeerNode)) {
+			throw new MessageInvalidException(ProtocolErrorMessage.DARKNET_ONLY, "ModifyPeer only available for darknet peers", fs.get("Identifier"), false);
+		}
+		DarknetPeerNode dpn = (DarknetPeerNode) pn;
 		String isDisabledString = fs.get("IsDisabled");
 		if(isDisabledString != null) {
 			if(!isDisabledString.equals("")) {
 				if(Fields.stringToBool(isDisabledString, false)) {
-					pn.disablePeer();
+					dpn.disablePeer();
 				} else {
-					pn.enablePeer();
+					dpn.enablePeer();
 				}
 			}
 		}
 		String isListenOnlyString = fs.get("IsListenOnly");
 		if(isListenOnlyString != null) {
 			if(!isListenOnlyString.equals("")) {
-				pn.setListenOnly(Fields.stringToBool(isListenOnlyString, false));
+				dpn.setListenOnly(Fields.stringToBool(isListenOnlyString, false));
 			}
 		}
 		String isBurstOnlyString = fs.get("IsBurstOnly");
 		if(isBurstOnlyString != null) {
 			if(!isBurstOnlyString.equals("")) {
-				pn.setBurstOnly(Fields.stringToBool(isBurstOnlyString, false));
+				dpn.setBurstOnly(Fields.stringToBool(isBurstOnlyString, false));
 			}
 		}
 		String ignoreSourcePortString = fs.get("IgnoreSourcePort");
 		if(ignoreSourcePortString != null) {
 			if(!ignoreSourcePortString.equals("")) {
-				pn.setIgnoreSourcePort(Fields.stringToBool(ignoreSourcePortString, false));
+				dpn.setIgnoreSourcePort(Fields.stringToBool(ignoreSourcePortString, false));
 			}
 		}
 		String allowLocalAddressesString = fs.get("AllowLocalAddresses");
 		if(allowLocalAddressesString != null) {
 			if(!allowLocalAddressesString.equals("")) {
-				pn.setAllowLocalAddresses(Fields.stringToBool(allowLocalAddressesString, false));
+				dpn.setAllowLocalAddresses(Fields.stringToBool(allowLocalAddressesString, false));
 			}
 		}
 		handler.outputHandler.queue(new Peer(pn, true, true));

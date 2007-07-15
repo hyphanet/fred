@@ -739,13 +739,19 @@ public class TextModeClientInterface implements Runnable {
         		out.flush();
         		return false;
         	}
-			DarknetPeerNode pn = n.getPeerNode(nodeIdentifier);
+			PeerNode pn = n.getPeerNode(nodeIdentifier);
         	if(pn == null) {
         		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
         		out.flush();
         		return false;
         	}
-			pn.setListenOnly(true);
+			if(!(pn instanceof DarknetPeerNode)) {
+				out.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n").getBytes());
+				out.flush();
+				return false;
+			}
+			DarknetPeerNode dpn = (DarknetPeerNode) pn;
+			dpn.setListenOnly(true);
             outsb.append("set ListenOnly suceeded for ").append(nodeIdentifier).append("\r\n");
 		} else if(uline.startsWith("UNSETPEERLISTENONLY:")) {
 			String nodeIdentifier = (line.substring("UNSETPEERLISTENONLY:".length())).trim();
@@ -754,13 +760,19 @@ public class TextModeClientInterface implements Runnable {
         		out.flush();
         		return false;
         	}
-			DarknetPeerNode pn = n.getPeerNode(nodeIdentifier);
+			PeerNode pn = n.getPeerNode(nodeIdentifier);
         	if(pn == null) {
         		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
         		out.flush();
         		return false;
         	}
-			pn.setListenOnly(false);
+			if(!(pn instanceof DarknetPeerNode)) {
+				out.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n").getBytes());
+				out.flush();
+				return false;
+			}
+			DarknetPeerNode dpn = (DarknetPeerNode) pn;
+			dpn.setListenOnly(false);
             outsb.append("unset ListenOnly suceeded for ").append(nodeIdentifier).append("\r\n");
         } else if(uline.startsWith("HAVEPEER:")) {
         	String nodeIdentifier = (line.substring("HAVEPEER:".length())).trim();
