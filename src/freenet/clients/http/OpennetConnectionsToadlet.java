@@ -50,7 +50,8 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 
 	protected boolean shouldDrawNoderefBox(boolean advancedModeEnabled) {
 		// Developers may want to see the noderef.
-		return advancedModeEnabled;
+		// Users as well until the announcement protocol is implemented
+		return true;
 	}
 
 	protected boolean showPeerActionsBox() {
