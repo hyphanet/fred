@@ -55,6 +55,8 @@ public abstract class FCPMessage {
 			return new GetNode(fs);
 		if(name.equals(GetRequestStatusMessage.NAME))
 			return new GetRequestStatusMessage(fs);
+		if(name.equals(ListPeerMessage.NAME))
+			return new ListPeerMessage(fs);
 		if(name.equals(ListPeersMessage.NAME))
 			return new ListPeersMessage(fs);
 		if(name.equals(ListPeerNotesMessage.NAME))
