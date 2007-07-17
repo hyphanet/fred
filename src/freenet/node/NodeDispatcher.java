@@ -570,7 +570,7 @@ public class NodeDispatcher implements Dispatcher {
 						ctx = new ProbeContext(id, target, best, nearest, htl, counter, src, cb);
 					} else {
 						Logger.error(this, "Not creating new context for: "+id);
-						return true;
+						return false;
 					}
 				}
 				recentProbeContexts.push(lid, ctx); // promote or add
