@@ -218,6 +218,7 @@ public class OpennetManager {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
 					peersLRU.push(nodeToAddNow);
+					// Always take OpennetManager lock before PeerManager
 					node.peers.addPeer(nodeToAddNow);
 				} else {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
