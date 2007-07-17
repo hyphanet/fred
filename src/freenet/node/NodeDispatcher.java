@@ -437,7 +437,7 @@ public class NodeDispatcher implements Dispatcher {
 
 	class ProbeContext {
 
-		private final WeakReference /* <PeerNode> */ srcRef; // FIXME make this a weak reference or something ? - Memory leak with high connection churn
+		private final WeakReference /* <PeerNode> */ srcRef;
 		final WeakHashSet visitedPeers;
 		final ProbeCallback cb;
 		short counter;
@@ -840,6 +840,7 @@ public class NodeDispatcher implements Dispatcher {
 
 		// Maybe fork
 		
+		try {
 		double furthestDist = 0.0;
 		if(notVisitedList.size() > 0) {
 			if(ctx.forkCount < MAX_FORKS) {
@@ -870,6 +871,10 @@ public class NodeDispatcher implements Dispatcher {
 				if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, false, null, notVisitedList, mustBeBetterThan, true, linearCounter, "backtracking"))
 					return true;
 			}
+		}
+		} catch (Throwable t) {
+			// If something happens during the fork attempt, just propagate it
+			Logger.error(this, "Caught "+t+" while trying to fork", t);
 		}
 		
 		// Just propagate back to source
