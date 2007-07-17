@@ -842,16 +842,16 @@ public class NodeDispatcher implements Dispatcher {
 		Message sub = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
 
 		try {
-		// Send a completion trace
-		PeerNode[] peers = node.getConnectedPeers();
-		Message trace =
-			DMT.createFNPProbeTrace(id, target, nearest, best, ctx.htl, counter, node.getLocation(), node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), ctx.forkCount, linearCounter, "replying", src == null ? -1 : src.swapIdentifier);
-		trace.addSubMessage(sub);
-		try {
-			origSource.sendAsync(trace, null, 0, null);
-		} catch (NotConnectedException e1) {
-			// Ignore
-		}
+			// Send a completion trace
+			PeerNode[] peers = node.getConnectedPeers();
+			Message trace =
+				DMT.createFNPProbeTrace(id, target, nearest, best, ctx.htl, counter, node.getLocation(), node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), ctx.forkCount, linearCounter, "replying", src == null ? -1 : src.swapIdentifier);
+			trace.addSubMessage(sub);
+			try {
+				origSource.sendAsync(trace, null, 0, null);
+			} catch (NotConnectedException e1) {
+				// Ignore
+			}
 		} catch (Throwable t) {
 			Logger.error(this, "Could not send completion trace: "+t, t);
 		}
@@ -861,37 +861,37 @@ public class NodeDispatcher implements Dispatcher {
 		
 		
 		try {
-		double furthestDist = 0.0;
-		if(notVisitedList.size() > 0) {
-			if(ctx.forkCount < MAX_FORKS) {
-				ctx.forkCount++;
-
-				Double[] locs = (Double[]) notVisitedList.toArray(new Double[notVisitedList.size()]);
-				Arrays.sort(locs, new Comparator() {
-					public int compare(Object arg0, Object arg1) {
-						double d0 = ((Double) arg0).doubleValue();
-						double d1 = ((Double) arg1).doubleValue();
-						double dist0 = PeerManager.distance(d0, target, true);
-						double dist1 = PeerManager.distance(d1, target, true);
-						if(dist0 < dist1) return -1; // best at the beginning
-						if(dist0 > dist1) return 1;
-						return 0; // should not happen
+			double furthestDist = 0.0;
+			if(notVisitedList.size() > 0) {
+				if(ctx.forkCount < MAX_FORKS) {
+					ctx.forkCount++;
+					
+					Double[] locs = (Double[]) notVisitedList.toArray(new Double[notVisitedList.size()]);
+					Arrays.sort(locs, new Comparator() {
+						public int compare(Object arg0, Object arg1) {
+							double d0 = ((Double) arg0).doubleValue();
+							double d1 = ((Double) arg1).doubleValue();
+							double dist0 = PeerManager.distance(d0, target, true);
+							double dist1 = PeerManager.distance(d1, target, true);
+							if(dist0 < dist1) return -1; // best at the beginning
+							if(dist0 > dist1) return 1;
+							return 0; // should not happen
+						}
+					});
+					
+					double mustBeBetterThan = ((Double)locs[Math.min(3,locs.length)]).doubleValue();
+					
+					for(int i=0;i<notVisitedList.size();i++) {
+						double loc = ((Double)(notVisitedList.get(i))).doubleValue();
+						double dist = PeerManager.distance(loc, target);
+						if(dist > furthestDist) {
+							furthestDist = dist;
+						}
 					}
-				});
-				
-				double mustBeBetterThan = ((Double)locs[Math.min(3,locs.length)]).doubleValue();
-				
-				for(int i=0;i<notVisitedList.size();i++) {
-					double loc = ((Double)(notVisitedList.get(i))).doubleValue();
-					double dist = PeerManager.distance(loc, target);
-					if(dist > furthestDist) {
-						furthestDist = dist;
-					}
+					if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, false, null, notVisitedList, mustBeBetterThan, true, linearCounter, "backtracking"))
+						return true;
 				}
-				if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, false, null, notVisitedList, mustBeBetterThan, true, linearCounter, "backtracking"))
-					return true;
 			}
-		}
 		} catch (Throwable t) {
 			// If something happens during the fork attempt, just propagate it
 			Logger.error(this, "Caught "+t+" while trying to fork", t);
