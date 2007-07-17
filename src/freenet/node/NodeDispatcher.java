@@ -1017,4 +1017,30 @@ public class NodeDispatcher implements Dispatcher {
 	void start(NodeStats stats) {
 		this.nodeStats = stats;
 	}
+
+	public static String peersUIDsToString(long[] peerUIDs, double[] peerLocs) {
+		StringBuffer sb = new StringBuffer(peerUIDs.length*23+peerLocs.length*26);
+		int min=Math.min(peerUIDs.length, peerLocs.length);
+		for(int i=0;i<min;i++) {
+			double loc = peerLocs[i];
+			long uid = peerUIDs[i];
+			sb.append(loc);
+			sb.append('=');
+			sb.append(uid);
+			if(i != min-1)
+				sb.append('|');
+		}
+		if(peerUIDs.length > min) {
+			for(int i=min;i<peerUIDs.length;i++) {
+				sb.append("|U:");
+				sb.append(peerUIDs[i]);
+			}
+		} else if(peerLocs.length > min) {
+			for(int i=min;i<peerLocs.length;i++) {
+				sb.append("|L:");
+				sb.append(peerLocs[i]);
+			}
+		}
+		return sb.toString();
+	}
 }
