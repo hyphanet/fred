@@ -561,8 +561,8 @@ public class NodeDispatcher implements Dispatcher {
 				} else {
 					tLastReceivedProbeRequest = now;
 				}
-				counter++; // Increment on every hop even if we reject it, this makes it easier to read the trace
 			}
+			counter++; // Increment on every hop even if we reject it, this makes it easier to read the trace
 			if(!rejected) {
 				ctx = (ProbeContext) recentProbeContexts.get(lid);
 				if(ctx == null) {
