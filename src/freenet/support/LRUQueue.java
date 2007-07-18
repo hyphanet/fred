@@ -118,7 +118,7 @@ public class LRUQueue {
 		Object[] array = new Object[list.size()];
 		int x = 0;
 		for(Enumeration e = list.reverseElements();e.hasMoreElements();) {
-			array[x++] = e.nextElement();
+			array[x++] = ((QItem)e.nextElement()).obj;
 		}
 		return array;
 	}
@@ -133,7 +133,7 @@ public class LRUQueue {
 			throw new IllegalStateException("array.length="+array.length+" but list.size="+listSize);
 		int x = 0;
 		for(Enumeration e = list.reverseElements();e.hasMoreElements();) {
-			array[x++] = e.nextElement();
+			array[x++] = ((QItem)e.nextElement()).obj;
 		}
 		return array;
 	}
