@@ -16,7 +16,6 @@
 package freenet.support;
 
 import java.util.Enumeration;
-
 import junit.framework.TestCase;
 
 /**
@@ -119,13 +118,16 @@ public class LRUQueueTest extends TestCase {
 		methodLRUQueue.push(sampleObj[0]);
 		methodLRUQueue.push(sampleObj[1]);
 		
-		assertTrue(methodLRUQueue.size()==sampleElemsNumber+2);			//check size
-		assertTrue(this.verifyLastElemsOrder(methodLRUQueue, sampleObj[0], sampleObj[1]));		//check order
+		//check size
+		assertTrue(methodLRUQueue.size()==sampleElemsNumber+2);			
+		//check order
+		assertTrue(verifyLastElemsOrder(methodLRUQueue, sampleObj[0], sampleObj[1]));		
 		
 		methodLRUQueue.push(sampleObj[0]);
-		assertTrue(methodLRUQueue.size()==sampleElemsNumber+2);			//check size
-		assertTrue(this.verifyLastElemsOrder(methodLRUQueue, sampleObj[1], sampleObj[0]));		//check order
-		
+		//check size
+		assertTrue(methodLRUQueue.size()==sampleElemsNumber+2);			
+		//check order
+		assertTrue(verifyLastElemsOrder(methodLRUQueue, sampleObj[1], sampleObj[0]));		
 	}
 
 	/**
@@ -137,11 +139,14 @@ public class LRUQueueTest extends TestCase {
 	public void testPop() {
 		LRUQueue methodLRUQueue = new LRUQueue();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
-		for (int i=0; i<sampleObjects.length; i++)		//pushing objects
+		//pushing objects
+		for (int i=0; i<sampleObjects.length; i++)		
 			methodLRUQueue.push(sampleObjects[i]);
-		for (int i=0; i<sampleObjects.length; i++)		//getting objects
+		//getting objects
+		for (int i=0; i<sampleObjects.length; i++)		
 			assertEquals(sampleObjects[i],methodLRUQueue.pop());
-		assertNull(methodLRUQueue.pop());				//the queue must be empty
+		//the queue must be empty
+		assertNull(methodLRUQueue.pop());				
 	}
 
 	/**
@@ -153,10 +158,12 @@ public class LRUQueueTest extends TestCase {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 		LRUQueue methodLRUQueue = new LRUQueue();
 		assertTrue(methodLRUQueue.size()==0);
-		for (int i=0; i<sampleObjects.length; i++) {		//pushing objects
+		//pushing objects
+		for (int i=0; i<sampleObjects.length; i++) {
 			methodLRUQueue.push(sampleObjects[i]);
 			assertTrue(methodLRUQueue.size()==i+1); }
-		for (int i=sampleObjects.length-1; i>=0; i--) {		//getting all objects
+		//getting all objects
+		for (int i=sampleObjects.length-1; i>=0; i--) {
 			methodLRUQueue.pop();
 			assertTrue(methodLRUQueue.size()==i); }
 		assertTrue(methodLRUQueue.size()==0);
@@ -174,7 +181,8 @@ public class LRUQueueTest extends TestCase {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 		for (int i=0;i<sampleObjects.length;i++)
 			methodLRUQueue.push(sampleObjects[i]);
-		for(int i=sampleObjects.length-1;i>=0;i--) {			//removing all objects in the opposite way used by pop() method
+		//removing all objects in the opposite way used by pop() method
+		for(int i=sampleObjects.length-1;i>=0;i--) {
 			assertTrue(methodLRUQueue.remove(sampleObjects[i]));
 			assertFalse(methodLRUQueue.contains(sampleObjects[i])); 
 			assertTrue(methodLRUQueue.size()==i); }
@@ -227,7 +235,8 @@ public class LRUQueueTest extends TestCase {
 	public void testElements() {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 		LRUQueue methodLRUQueue = new LRUQueue();
-		for (int i=0; i<sampleObjects.length; i++) 	//pushing objects
+		//pushing objects
+		for (int i=0; i<sampleObjects.length; i++)
 			methodLRUQueue.push(sampleObjects[i]);
 		Enumeration methodEnumeration = methodLRUQueue.elements();
 		int j=0;
@@ -244,7 +253,8 @@ public class LRUQueueTest extends TestCase {
 	public void testToArray() {
 		LRUQueue methodLRUQueue = new LRUQueue();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
-		for (int i=0; i<sampleObjects.length; i++)		//pushing objects
+		//pushing objects
+		for (int i=0; i<sampleObjects.length; i++)
 			methodLRUQueue.push(sampleObjects[i]);
 		Object[] resultingArray = methodLRUQueue.toArray();
 		assertTrue(resultingArray.length==sampleObjects.length);
@@ -271,7 +281,8 @@ public class LRUQueueTest extends TestCase {
 		assertTrue(methodLRUQueue.isEmpty());
 		methodLRUQueue = createSampleQueue(sampleElemsNumber);
 		assertFalse(methodLRUQueue.isEmpty());
-		for(int i=0;i<sampleElemsNumber;i++)		//emptying the queue...
+		//emptying the queue...
+		for(int i=0;i<sampleElemsNumber;i++)		
 			methodLRUQueue.pop();
 		assertTrue(methodLRUQueue.isEmpty());
 	}
