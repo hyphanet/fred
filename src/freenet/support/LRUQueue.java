@@ -110,7 +110,7 @@ public class LRUQueue {
 		return hash.keySet().toArray();
 	}
 
-	public Object[] toArray(Object[] array) {
+	public synchronized Object[] toArray(Object[] array) {
 		return hash.keySet().toArray(array);
 	}
 	
