@@ -128,6 +128,9 @@ public class LRUQueue {
 	 */
 	public synchronized Object[] toArrayOrdered(Object[] array) {
 		array = toArray(array);
+		int listSize = list.size();
+		if(array.length != listSize)
+			throw new IllegalStateException("array.length="+array.length+" but list.size="+listSize);
 		int x = 0;
 		for(Enumeration e = list.reverseElements();e.hasMoreElements();) {
 			array[x++] = e.nextElement();
