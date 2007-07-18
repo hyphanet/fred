@@ -124,11 +124,10 @@ public class LRUQueue {
 	}
 
 	/**
-	 * Warning, this will not reallocate unlike the toArray(Object[]) on java class library functions.
-	 * FIXME fix that.
-	 * @param array The array to fill in
+	 * @param array The array to fill in. If it is too small a new array of the same type will be allocated.
 	 */
 	public synchronized Object[] toArrayOrdered(Object[] array) {
+		array = toArray(array);
 		int x = 0;
 		for(Enumeration e = list.reverseElements();e.hasMoreElements();) {
 			array[x++] = e.nextElement();
