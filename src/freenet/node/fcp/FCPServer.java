@@ -251,7 +251,8 @@ public class FCPServer implements Runnable {
 		}
 		
 		public String get() {
-			return node.getFCPServer().networkInterface.getAllowedHosts();
+			FCPServer server = node.getFCPServer(); 
+			return (server == null ? "127.0.0.1,0:0:0:0:0:0:0:1" : server.networkInterface.getAllowedHosts());
 		}
 
 		public void set(String val) {
@@ -445,10 +446,6 @@ public class FCPServer implements Runnable {
 	
 	private static String l10n(String key, String pattern, String value) {
 		return L10n.getString("FcpServer."+key, pattern, value);
-	}
-
-	private static String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("FcpServer."+key, patterns, values);
 	}
 
 	public void setPersistentDownloadsEnabled(boolean set) {
