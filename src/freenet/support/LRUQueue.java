@@ -36,7 +36,7 @@ public class LRUQueue {
     /**
      * push to bottom (least recently used position)
      */
-	public void pushLeast(Object obj) {
+	public synchronized void pushLeast(Object obj) {
         QItem insert = (QItem)hash.get(obj);        
         if (insert == null) {
             insert = new QItem(obj);
