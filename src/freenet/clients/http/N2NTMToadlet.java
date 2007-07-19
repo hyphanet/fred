@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.io.comm.MessageCore;
 import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
@@ -22,19 +21,14 @@ import freenet.support.MultiValueTable;
 import freenet.support.api.HTTPRequest;
 
 public class N2NTMToadlet extends Toadlet {
-
 	private Node node;
-
 	private NodeClientCore core;
-
-	private MessageCore usm;
 
 	protected N2NTMToadlet(Node n, NodeClientCore core,
 			HighLevelSimpleClient client) {
 		super(client);
 		this.node = n;
 		this.core = core;
-		this.usm = n.getUSM();
 	}
 
 	public String supportedMethods() {
