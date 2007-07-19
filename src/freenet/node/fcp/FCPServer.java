@@ -245,6 +245,7 @@ public class FCPServer implements Runnable {
 	static class FCPAllowedHostsCallback implements StringCallback {
 
 		private final NodeClientCore node;
+		public static final String DEFAULT = "127.0.0.1,0:0:0:0:0:0:0:1";
 		
 		public FCPAllowedHostsCallback(NodeClientCore node) {
 			this.node = node;
@@ -252,8 +253,9 @@ public class FCPServer implements Runnable {
 		
 		public String get() {
 			FCPServer server = node.getFCPServer();
+			if(server == null) return DEFAULT;
 			NetworkInterface netIface = server.networkInterface;
-			return (netIface == null ? "127.0.0.1,0:0:0:0:0:0:0:1" : netIface.getAllowedHosts());
+			return (netIface == null ? DEFAULT : netIface.getAllowedHosts());
 		}
 
 		public void set(String val) {
