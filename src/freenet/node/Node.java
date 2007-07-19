@@ -128,14 +128,12 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 
 			public void set(String val) throws InvalidConfigValueException {
-				if("".equals(val))
+				if(get().equals(val)) return;
+				else if(val.length() > 128)
+					throw new InvalidConfigValueException("The given node name is too long ("+val+')');
+				else if("".equals(val))
 					val = "~none~";
 				myName = val;
-				if(myName.startsWith("Node id|")|| myName.equals("MyFirstFreenetNode")){
-					clientCore.alerts.register(nodeNameUserAlert);
-				}else{
-					clientCore.alerts.unregister(nodeNameUserAlert);
-				}
 			}
 	}
 	
