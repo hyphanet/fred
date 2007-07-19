@@ -251,8 +251,9 @@ public class FCPServer implements Runnable {
 		}
 		
 		public String get() {
-			FCPServer server = node.getFCPServer(); 
-			return (server == null ? "127.0.0.1,0:0:0:0:0:0:0:1" : server.networkInterface.getAllowedHosts());
+			FCPServer server = node.getFCPServer();
+			NetworkInterface netIface = server.networkInterface;
+			return (netIface == null ? "127.0.0.1,0:0:0:0:0:0:0:1" : netIface.getAllowedHosts());
 		}
 
 		public void set(String val) {
