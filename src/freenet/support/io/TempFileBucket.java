@@ -75,9 +75,9 @@ public class TempFileBucket extends FileBucket {
 	 * @exception  IOException  Description of the Exception
 	 */
 	synchronized InputStream getRealInputStream() throws IOException {
-		if (released)
+		if (released || closing)
 			throw new IllegalStateException(
-				"Trying to getInputStream on " + "released TempFileBucket!");
+				"Trying to getRealInputStream on released TempFileBucket "+this+" !");
 		if (logDebug)
 			Logger.debug(
 				this,
@@ -96,6 +96,9 @@ public class TempFileBucket extends FileBucket {
 	 * @exception  IOException  Description of the Exception
 	 */
 	OutputStream getRealOutputStream() throws IOException {
+		if (released || closing)
+			throw new IllegalStateException(
+				"Trying to getRealOutputStream on released TempFileBucket "+this+" !");
 		synchronized(this) {
 			if (logDebug)
 				Logger.debug(
@@ -116,6 +119,9 @@ public class TempFileBucket extends FileBucket {
 	 * @exception  IOException  Description of the Exception
 	 */
 	public synchronized InputStream getInputStream() throws IOException {
+		if (released || closing)
+			throw new IllegalStateException(
+				"Trying to getInputStream on released TempFileBucket "+this+" !");
 		logDebug = Logger.shouldLog(Logger.DEBUG, this);
 		if (logDebug)
 			Logger.debug(this, "getInputStream for " + file);
@@ -130,6 +136,9 @@ public class TempFileBucket extends FileBucket {
 	 * @exception  IOException  Description of the Exception
 	 */
 	public synchronized OutputStream getOutputStream() throws IOException {
+		if (released || closing)
+			throw new IllegalStateException(
+				"Trying to getOutputStream on released TempFileBucket "+this+" !");
 		logDebug = Logger.shouldLog(Logger.DEBUG, this);
 		if (logDebug)
 			Logger.debug(this, "getOutputStream for " + file);
@@ -155,6 +164,7 @@ public class TempFileBucket extends FileBucket {
 		logDebug = Logger.shouldLog(Logger.DEBUG, this);
 		if (logDebug)
 			Logger.debug(this, "Releasing TempFileBucket " + file);
+		closing = true;
 		for (int i = 0; i < streams.size(); i++) {
 			try {
 				if (streams.elementAt(i) instanceof InputStream) {
@@ -221,7 +231,7 @@ public class TempFileBucket extends FileBucket {
 			if (!file.delete()) {
 				Logger.error(
 					this,
-					"Delete failed on bucket " + file.getName(),
+					"Delete failed on bucket " + file.getName() + "which existed" + (file.exists() ? " and still exists" : " but doesn't now"),
 					new Exception());
 				// Nonrecoverable; even though the user can't fix it it's still very serious
 				return false;
@@ -262,6 +272,7 @@ public class TempFileBucket extends FileBucket {
 
 	protected Vector streams = new Vector();
 	private boolean released;
+	private boolean closing;
 
 	protected synchronized FileBucketOutputStream newFileBucketOutputStream(
 		String s,
