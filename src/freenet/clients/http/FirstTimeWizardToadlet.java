@@ -232,7 +232,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		
 		
 		if(request.isPartSet("enableOpennet")) {
-			String isOpennetEnabled = request.getPartAsString("opennet", 255);
+			String isOpennetEnabled = request.getPartAsString("enableOpennet", 255);
 			boolean enable;
 			try {
 				enable = Fields.stringToBool(isOpennetEnabled);
