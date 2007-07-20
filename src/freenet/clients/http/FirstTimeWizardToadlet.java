@@ -50,7 +50,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		int currentStep = request.getIntParam("step");
 		
 		if(currentStep == 1) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step1Title"), false, ctx);
+			
+		} else if(currentStep == 2) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step2Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode nnameInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -62,12 +64,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode nnameForm = ctx.addFormChild(nnameInfoboxContent, ".", "nnameForm");
 			nnameForm.addChild("input", "name", "nname");
 			
-			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "nnameF", L10n.getString("Toadlet.ok")});
+			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "nnameF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
-		} else if(currentStep == 2) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step2Title"), false, ctx);
+		} else if(currentStep == 3) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -87,12 +89,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			result.addChild("option", "value", "96K", "1024+/1024 kbps");
 			result.addChild("option", "value", "1000K", "higher speed");
 			
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", L10n.getString("Toadlet.ok")});
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
-		} else if(currentStep == 3) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx);
+		} else if(currentStep == 4) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -114,12 +116,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			result.addChild("option", "value", "50G", "50GiB");
 			result.addChild("option", "value", "100G", "100GiB");
 			
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dsF", L10n.getString("Toadlet.ok")});
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dsF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
-		} else if(currentStep == 4) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
+		} else if(currentStep == 5) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step5Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode networkInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -157,12 +159,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			ctx.addFormChild(networkInfoboxContent, ".", "networkForm").addChild(networkForm);
 			
-			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkF", L10n.getString("Toadlet.ok")});
+			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
-		}else if(currentStep == 5) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step5Title"), true, ctx);
+		}else if(currentStep == 6) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step6Title"), true, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode congratzInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -186,7 +188,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
 		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1") + ' ');
-		firstParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("Toadlet.ok"));
+		firstParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("FirstTimeWizardToadlet.continue"));
 		
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
 		secondParagraph.addChild("a", "href", "/").addChild("#", l10n("skipWizard"));
@@ -218,7 +220,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e);
 			}
-			super.writeTemporaryRedirect(ctx, "step2", TOADLET_URL+"?step=2");
+			super.writeTemporaryRedirect(ctx, "step2", TOADLET_URL+"?step=3");
 			return;
 		} else if(request.isPartSet("bwF")) {
 			String selectedUploadSpeed =request.getPartAsString("bw", 6);
@@ -229,7 +231,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e);
 			}
-			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=3");
+			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=4");
 			return;
 		} else if(request.isPartSet("dsF")) {
 			String selectedStoreSize =request.getPartAsString("ds", 6);
@@ -240,7 +242,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e);
 			}
-			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=4");
+			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=5");
 			return;
 		} else if(request.isPartSet("networkF")) {
 			StringBuffer sb = new StringBuffer();
@@ -292,7 +294,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				}
 			}
 
-			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step=5");
+			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step=6");
 			return;
 		}
 		
