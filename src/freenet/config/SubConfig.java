@@ -265,6 +265,11 @@ public class SubConfig implements Comparable {
 		o.setValue(value);
 	}
 
+	public void set(String name, boolean value) throws InvalidConfigValueException {
+		BooleanOption o = (BooleanOption) map.get(name);
+		o.set(value);
+	}
+
 	/**
 	 * If the option's value is equal to the provided old default, then set it to the
 	 * new default. Used to deal with changes to important options where this is not
