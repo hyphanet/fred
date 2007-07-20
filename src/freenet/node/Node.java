@@ -77,6 +77,7 @@ import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
+import freenet.node.useralerts.OpennetUserAlert;
 import freenet.node.useralerts.TimeSkewDetectedUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.PluginManager;
@@ -1298,6 +1299,8 @@ public class Node implements TimeSkewDetectorCallback {
 			clientCore.alerts.register(new ExtOldAgeUserAlert());
 		else if(NodeStarter.extBuildNumber == -1)
 			clientCore.alerts.register(new ExtOldAgeUserAlert());
+		
+		clientCore.alerts.register(new OpennetUserAlert(this));
 		
 		this.clientCore.start(config);
 		
