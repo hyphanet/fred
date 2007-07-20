@@ -322,7 +322,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 						Logger.normal(this, "Asked for opennet ref but didn't want it for "+this+" :\n"+ref);
 						return;
 					} else {
-						Logger.error(this, "Added opennet noderef in "+this);
+						Logger.normal(this, "Added opennet noderef in "+this);
 					}
 				} catch (FSParseException e) {
 					Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
