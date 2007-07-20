@@ -270,7 +270,7 @@ public class TempFileBucket extends FileBucket {
 //		super.finalize();
 //	}
 
-	protected Vector streams = new Vector();
+	protected Vector streams = new Vector(0, 1); // TFB is a very common object, we need the space
 	private boolean released;
 	private boolean closing;
 
