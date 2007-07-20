@@ -62,7 +62,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode nnameForm = ctx.addFormChild(nnameInfoboxContent, ".", "nnameForm");
 			nnameForm.addChild("input", "name", "nname");
 			
-			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "nnameF", L10n.getString("Toadlet.clickHere")});
+			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "nnameF", L10n.getString("Toadlet.ok")});
 			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
@@ -87,7 +87,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			result.addChild("option", "value", "96K", "1024+/1024 kbps");
 			result.addChild("option", "value", "1000K", "higher speed");
 			
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", L10n.getString("Toadlet.clickHere")});
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", L10n.getString("Toadlet.ok")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
@@ -114,7 +114,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			result.addChild("option", "value", "50G", "50GiB");
 			result.addChild("option", "value", "100G", "100GiB");
 			
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dsF", L10n.getString("Toadlet.clickHere")});
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dsF", L10n.getString("Toadlet.ok")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
@@ -157,7 +157,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			ctx.addFormChild(networkInfoboxContent, ".", "networkForm").addChild(networkForm);
 			
-			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkF", L10n.getString("Toadlet.clickHere")});
+			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkF", L10n.getString("Toadlet.ok")});
 			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
@@ -186,7 +186,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
 		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1") + ' ');
-		firstParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("Toadlet.clickHere"));
+		firstParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("Toadlet.ok"));
 		
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
 		secondParagraph.addChild("a", "href", "/").addChild("#", l10n("skipWizard"));
