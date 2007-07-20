@@ -164,6 +164,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 				HTMLNode errorBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-error", error));
 				errorBox.addChild("#", L10n.getString("BookmarkEditorToadlet.bookmarkDoesNotExist", new String[] { "bookmark" }, new String[] { bookmarkPath }));
 				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				return;
 			} else {
 
 				if(action.equals("del")){
