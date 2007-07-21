@@ -11,6 +11,7 @@ import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
+import freenet.node.Ticker;
 import freenet.support.api.BucketFactory;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
@@ -51,6 +52,7 @@ public class FetchContext implements Cloneable {
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
 	public BlockSet blocks;
 	public Set allowedMIMETypes;
+	public final Ticker ticker;
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -59,7 +61,8 @@ public class FetchContext implements Cloneable {
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
-			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, HealingQueue hq, boolean ignoreTooManyPathComponents) {
+			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, HealingQueue hq, boolean ignoreTooManyPathComponents, Ticker ticker) {
+		this.ticker = ticker;
 		this.maxOutputLength = curMaxLength;
 		this.uskManager = uskManager;
 		this.maxTempLength = curMaxTempLength;
@@ -91,6 +94,7 @@ public class FetchContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 		else
 			this.eventProducer = new SimpleEventProducer();
+		this.ticker = ctx.ticker;
 		this.uskManager = ctx.uskManager;
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
 		this.blocks = ctx.blocks;

@@ -191,7 +191,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				random, archiveManager, bucketFactory, globalEventProducer, 
 				cacheLocalRequests, core.uskManager, healingQueue, 
-				forceDontIgnoreTooManyPathComponents ? false : core.ignoreTooManyPathComponents);
+				forceDontIgnoreTooManyPathComponents ? false : core.ignoreTooManyPathComponents, core.getTicker());
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
