@@ -101,12 +101,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	public Bucket makeBucket(long size) throws IOException {
 		Bucket b = makeRawBucket(size);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false));
+		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand));
 	}
 	
 	public Bucket makeEncryptedBucket() throws IOException {
 		Bucket b = makeRawBucket(-1);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false));
+		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand));
 	}
 
 	/**

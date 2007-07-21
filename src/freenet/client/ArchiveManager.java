@@ -446,7 +446,7 @@ outer:		while(true) {
 		
 		byte[] cipherKey = new byte[32];
 		random.nextBytes(cipherKey);
-		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, random, true);
+		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, random);
 		return new TempStoreElement(myFile, fb, encryptedBucket);
 	}
 

@@ -6,6 +6,7 @@ package freenet.support.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.SoftReference;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 
@@ -28,8 +29,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	private final Bucket bucket;
 	private final int minPaddedSize;
 	private final RandomSource origRandom;
-	private final Rijndael aes;
-	/** The decryption key. May be null. */
+	private SoftReference /* <Rijndael> */ aesRef;
+	/** The decryption key. */
 	private final byte[] key;
 	/** Broken (old) encryption? */
 	private final boolean brokenEncryption;
@@ -45,26 +46,14 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	 * @param origRandom Hard random number generator from which to obtain a seed for padding.
 	 * @throws UnsupportedCipherException 
 	 */
-	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource origRandom, boolean forgetKey) {
+	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource origRandom) {
 		this.origRandom = origRandom;
 		this.bucket = bucket;
 		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");
-		try {
-			aes = new Rijndael(256, 256, false);
-		} catch (UnsupportedCipherException e) {
-			throw new Error(e);
-		}
 		brokenEncryption = false;
 		byte[] tempKey = new byte[32];
 		origRandom.nextBytes(tempKey);
-		aes.initialize(tempKey);
-		if(forgetKey) {
-			// Might as well blank it
-			for(int i=0;i<tempKey.length;i++) tempKey[i] = 0;
-			this.key = null;
-		} else {
-			this.key = tempKey;
-		}
+		this.key = tempKey;
 		this.minPaddedSize = minSize;
 		readOnly = false;
 		lastOutputStream = 0;
@@ -88,12 +77,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		this.origRandom = origRandom;
 		this.bucket = bucket;
 		brokenEncryption = oldCrypto;
-		try {
-			aes = new Rijndael(256, 256, oldCrypto);
-		} catch (UnsupportedCipherException e) {
-			throw new Error(e);
-		}
-		aes.initialize(key);
+		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
 		this.key = key;
 		this.minPaddedSize = minSize;
 		readOnly = false;
@@ -119,12 +103,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			throw new CannotCreateFromFieldSetException("No key");
 		brokenEncryption = fs.get("CryptoType") == null;
 		key = HexUtil.hexToBytes(tmp);
-		try {
-			aes = new Rijndael(256, 256, brokenEncryption);
-		} catch (UnsupportedCipherException e) {
-			throw new Error(e);
-		}
-		aes.initialize(key);
+		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
 		tmp = fs.get("MinPaddedSize");
 		if(tmp == null)
 			minPaddedSize = 1024; // FIXME throw! back compatibility hack
@@ -159,6 +138,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			this.out = out;
 			dataLength = 0;
 			this.streamNumber = streamNumber;
+			Rijndael aes = getRijndael();
 			pcfb = PCFBMode.create(aes);
 		}
 		
@@ -235,6 +215,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		
 		public PaddedEphemerallyEncryptedInputStream(InputStream in) {
 			this.in = in;
+			Rijndael aes = getRijndael();
 			pcfb = PCFBMode.create(aes);
 			ptr = 0;
 		}
@@ -310,6 +291,22 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		}
 	}
 
+	private synchronized Rijndael getRijndael() {
+		Rijndael aes;
+		if(aesRef != null) {
+			aes = (Rijndael) aesRef.get();
+			if(aes != null) return aes;
+		}
+		try {
+			aes = new Rijndael(256, 256, false);
+		} catch (UnsupportedCipherException e) {
+			throw new Error(e);
+		}
+		aes.initialize(key);
+		aesRef = new SoftReference(aes);
+		return aes;
+	}
+
 	public String getName() {
 		return "Encrypted:"+bucket.getName();
 	}
@@ -342,7 +339,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 
 	/**
-	 * Get the decryption key. May have been blanked out.
+	 * Get the decryption key.
 	 */
 	public byte[] getKey() {
 		return key;
