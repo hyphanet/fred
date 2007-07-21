@@ -333,6 +333,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		       * nonce and an authenticator calculated from a transient hash key private
 		       * to the responder. We slightly deviate JFK here;we do not send any public 			* key information as specified in the JFK docs
 		       */
+			message2(pn,payload,1);
 		}
 		else if(packetType==2){
 		      // Initiator echoes the data sent by the responder
@@ -353,7 +354,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param The peerNode we are talking to
      * @param Payload
      */	
-    public void Message1(PeerNode pn,byte[] payload,int phase)
+    private void Message1(PeerNode pn,byte[] payload,int phase)
     {
                 long t1=System.currentTimeMillis();
                 Ni=nonceGen.getNewNonce();
@@ -362,8 +363,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		{
                         if(shouldLogErrorInHandshake())
                                 Logger.error(this,"Failed getting exponentials");
-                        
-                        return null;
+                       
                 }
                 byte[] gi=ctx.getOurExponential().toByteArray();
                 byte[] message1=new byte[Ni.length + gi.length+1];
@@ -376,6 +376,66 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
     }
     /*
+     * Responder Method:Message2
+     * Process Message2
+     * Send the Initiator nonce,Responder nonce and DiffieHellman Exponential of the responder
+     * and grpInfo in the clear.
+     * Send a signed copy of his own exponential and grpInfo.
+     * Send an authenticator which is a hash of Ni,Nr,g^r calculated over the transient key HKr
+     * @param The packet phase number
+     * @param The peerNode we are talking to
+     * @param Payload
+     */
+
+    private void ProcessMessage2(PeerNode pn,byte[] payload,int phase)
+    {
+		long t1=System.currentTimeMillis();
+		Nr=nonceGen.getNewNonce();
+		DiffieHellmanContext dh=(DIffieHellmanContext)pn.getKeyAgreementSchemeContext();
+		if(ctx==null)
+		{
+			if(shouldLogErrorInHandshake())
+				Logger.error(this,"failed getting exponentials");
+		}
+		HashMap grpInfo=new HashMap();
+		BufferedReader Source = new BufferedReader(new FileReader(fileName ));
+		String input;
+		//grpInfo method to be modified
+		while ((input = Source.readLine()) != null) {
+			grpInfo.put(Object key,Object value);
+		}
+		Iterator keyValuePairs = grpInfo.entrySet().iterator();
+		for (int i = 0; i < grpInfo.size(); i++)
+		{
+			Map.Entry e = (Map.Entry) keyValuePairs.next();
+			Object key = e.getKey();
+			Object value = e.getValue();
+		}
+		
+		MessageDigest md=SHA256.getMessageDigest();
+		md.update(dh.getHisExponential().toByteArray());
+		md.update(Nr);
+		md.update(Ni);
+		byte[] hash=md.digest();
+		long totalRSize=0;
+		long totalSSize=0;
+		int maxRSize=0;
+		int maxSSize=0;
+		int rSize = sig.getR().bitLength();
+                rSize = (rSize / 8) + (rSize % 8 == 0 ? 0 : 1);
+                totalRSize += rSize;
+                if(rSize > maxRSize) maxRSize = rSize;
+		int sSize = sig.getS().bitLength();
+                sSize = sSize / 8 +  (sSize % 8 == 0 ? 0 : 1);
+                totalSSize += sSize;
+                if(sSize > maxSSize) maxSSize = sSize;
+		//byte signData=new byte[maxSSize+maxRSize+1];
+		byte[] data=new byte[grpInfo.size()+
+		signatureMessage(data);
+		
+		
+    }			
+    /*
      * Send Message1 packet
      * @param version
      * @param negType
@@ -384,7 +444,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param The peerNode we are talking to
      * @param The peer to which we need to send the packet
      */
-    public void sendMessage1Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+    private void sendMessage1Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
     {
                 long now = System.currentTimeMillis();
                 long delta = now - pn.lastSentPacketTime();
@@ -394,15 +454,76 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 output[2] = (byte) phase;
                 System.arraycopy(data, 0, output, 3, data.length);
                 if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
-		try{
+		try
+		{
 			sendPacket(data,replyTo,pn,0);
-		}catch(LocalAddressException e){
+		}catch(LocalAddressException e)
+		{
 			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
 		}
-    }
+    	
 		
     }
-	
+    /*
+     * Signature of the message using DSA
+     * Information on what are the encryption and authentication algorithms used is sent in
+     * message2 via grpInfo
+     * @param Concatenation of the data to be signed and verified
+     */ 
+    private void signatureMessage(byte[] data)
+    {
+		DSAGroup g = Global.DSAgroupBigA;
+                DummyRandomSource y = new DummyRandomSource();
+		//DSA Private key:Sign the message
+                DSAPrivateKey pk=new DSAPrivateKey(g, y);
+		//DSA Public key:Verify the message
+                DSAPublicKey pub=new DSAPublicKey(g, pk);
+                while(true)
+		{
+                        long totalRSize = 0;
+                        long totalSSize = 0;
+                        long totalPubKeySize = 0;
+                        long totalPrivKeySize = 0;
+                        int maxPrivKeySize = 0;
+                        int maxPubKeySize = 0;
+                        int maxRSize = 0;
+                        int maxSSize = 0;
+                        int totalRUnsignedBitSize = 0;
+                        int maxRUnsignedBitSize = 0;
+                        Random r = new Random(y.nextLong());
+			byte[] msg=new byte[32];
+			for(int i=0;i<1000;i++) {
+                                r.nextBytes(msg);
+                                BigInteger m = new BigInteger(1, msg);
+				BigInteger d = new BigInteger(1,data);
+                                pk = new DSAPrivateKey(g, r);
+                                int privKeySize = pk.asBytes().length;
+                                totalPrivKeySize += privKeySize;
+                                if(privKeySize > maxPrivKeySize) maxPrivKeySize = privKeySize;
+                                pub = new DSAPublicKey(g, pk);
+                                int pubKeySize = pub.asBytes().length;
+                                totalPubKeySize += pubKeySize;
+                                if(pubKeySize > maxPubKeySize) maxPubKeySize = pubKeySize;
+				/*Signature of payload data using the private key belonging				 	 to the initiator or responder*/ 
+                                sig = sign(g,pk,m,d,y);
+                                if(!verify(pub, sig, m, false)) {
+                                        System.err.println("Failed to verify!");
+                                }
+                                int rSize = sig.getR().bitLength();
+                                rSize = (rSize / 8) + (rSize % 8 == 0 ? 0 : 1);
+                                totalRSize += rSize;
+                                if(rSize > maxRSize) maxRSize = rSize;
+                                int rUnsignedBitSize = sig.getR().bitLength();
+                                totalRUnsignedBitSize += rUnsignedBitSize;
+                                maxRUnsignedBitSize = Math.max(maxRUnsignedBitSize, rUnsignedBitSize);
+                                int sSize = sig.getS().bitLength();
+                                sSize = sSize / 8 +  (sSize % 8 == 0 ? 0 : 1);
+				totalSSize += sSize;
+                                if(sSize > maxSSize) maxSSize = sSize;
+                        }
+
+        }
+}	
 	
    
     /**
@@ -418,7 +539,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * as the one on pn as the IP may have changed).
      */
          
-    private void sendSignedDHCompletion(int phase, BlockCipher cipher, PeerNode pn, Peer replyTo, DiffieHellmanContext ctx) {
+    private void sendSignedDHCompletion(int phase, BlockCipher cipher, PeerNode pn, Peer replyTo, DiffieHellmanContext ctx) 
+     {
         PCFBMode pcfb = PCFBMode.create(cipher);
         byte[] iv = new byte[pcfb.lengthIV()];
         
