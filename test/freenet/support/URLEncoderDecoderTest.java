@@ -38,10 +38,13 @@ public class URLEncoderDecoderTest extends TestCase {
 	 */
 	public void testEncodeDecodeString_notSafeBaseChars() {
 		String[] toEncode = {
-				URLEncoder.safeURLCharacters, 			//safe chars
+				//safe chars
+				URLEncoder.safeURLCharacters,
 				prtblAscii,
-				"%%%",		//triple % char, if badly encoded it will generate an exception
-				""			//no chars
+				//triple % char, if badly encoded it will generate an exception
+				"%%%",
+				//no chars
+				""
 		};
 		
 		try {
@@ -75,9 +78,11 @@ public class URLEncoderDecoderTest extends TestCase {
 	private boolean areCorrectlyEncodedDecoded(String[] toEncode) throws URLEncodedFormatException {
 		boolean retValue = true;
 		String[] encoded = new String[toEncode.length];
-		for (int i = 0; i < encoded.length; i++)	//encoding
+		//encoding
+		for (int i = 0; i < encoded.length; i++)	
 			encoded[i] = URLEncoder.encode(toEncode[i]);
-		for (int i = 0; i < encoded.length; i++)	//decoding
+		//decoding
+		for (int i = 0; i < encoded.length; i++)
 			retValue &= (URLDecoder.decode(encoded[i],false)).equals(toEncode[i]);
 		return retValue;
 	}
@@ -98,8 +103,10 @@ public class URLEncoderDecoderTest extends TestCase {
 				expectedResult = "%"+ HexUtil.bytesToHex(
 						//since safe chars are only US-ASCII
 						toEncode.getBytes("US-ASCII")); 
-				assertEquals(URLEncoder.encode(toEncode,toEncode,false),expectedResult);
-				assertEquals(URLEncoder.encode(toEncode,toEncode,true),expectedResult);
+				assertEquals(URLEncoder.encode(toEncode,toEncode,false),
+						expectedResult);
+				assertEquals(URLEncoder.encode(toEncode,toEncode,true),
+						expectedResult);
 			} catch (UnsupportedEncodingException anException) {
 				fail("Not expected exception thrown : " + anException.getMessage()); }
 		}
@@ -143,7 +150,8 @@ public class URLEncoderDecoderTest extends TestCase {
 		String toDecode = "123456789abcde"+prtblAscii+stressedUTF_8Chars;
 		
 		for (int i = 0; i<toDecode.length(); i++)
-			assertTrue(isDecodeRaisingEncodedException("%"+toDecode.substring(i,i+1),false));
+			assertTrue(
+					isDecodeRaisingEncodedException("%"+toDecode.substring(i,i+1),false));
 	}
 	
 	/**

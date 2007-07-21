@@ -79,9 +79,11 @@ public class LRUQueueTest extends TestCase {
 		Enumeration methodEnum = aLRUQueue.elements();
 		int counter = 0;
 		while (methodEnum.hasMoreElements()) {
-			if (counter == size-2)		//next-to-last object
+			//next-to-last object
+			if (counter == size-2)
 				retVal &= (methodEnum.nextElement()).equals(nextToLast);
-			else if (counter == size-1)		//last object
+			//last object
+			else if (counter == size-1)
 				retVal &= (methodEnum.nextElement()).equals(last);
 			else
 				methodEnum.nextElement();
@@ -286,5 +288,4 @@ public class LRUQueueTest extends TestCase {
 			methodLRUQueue.pop();
 		assertTrue(methodLRUQueue.isEmpty());
 	}
-
 }

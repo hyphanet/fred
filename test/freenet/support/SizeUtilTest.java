@@ -25,25 +25,36 @@ import junit.framework.TestCase;
 public class SizeUtilTest extends TestCase {
 	
 	String[][] valAndExpected = {
-			{"1","B"},									//one byte
-			{"1024","KiB"},								//one kilobyte
-			{"1048576","MiB"},							//one megabyte
-			{"1073741824","GiB"},						//one gigabyte
-			{"1099511627776","TiB"},					//one terabyte
-			//{"1125899906842624","1.0 PiB"},			//one petabyte
-			//{"1152921504606846976", "1.0 EiB"},		//one exabyte
-			//{"1180591620717411303424", "1.0 ZiB"},	//one zettabyte
-			//{"1208925819614629174706176","1.0 YiB"},	//one yottabyte
+			//one byte
+			{"1","B"},
+			//one kilobyte
+			{"1024","KiB"},
+			//one megabyte
+			{"1048576","MiB"},							
+			//one gigabyte
+			{"1073741824","GiB"},						
+			//one terabyte
+			{"1099511627776","TiB"},					
+			//one petabyte
+			//{"1125899906842624","1.0 PiB"},			
+			//one exabyte
+			//{"1152921504606846976", "1.0 EiB"},		
+			//one zettabyte
+			//{"1180591620717411303424", "1.0 ZiB"},	
+			//one yottabyte
+			//{"1208925819614629174706176","1.0 YiB"},	
 	};
 	
 	public void testFormatSizeLong() {
 		Long methodLong;
 		methodLong = Long.valueOf(valAndExpected[0][0]);
-		assertEquals(SizeUtil.formatSize(methodLong.longValue()),"1 "+valAndExpected[0][1]);
+		assertEquals(SizeUtil.formatSize(methodLong.longValue()),
+				"1 "+valAndExpected[0][1]);
 		
 		for(int i = 1; i < valAndExpected.length; i++) {
 			methodLong = Long.valueOf(valAndExpected[i][0]);
-			assertEquals(SizeUtil.formatSize(methodLong.longValue()),"1.0 "+valAndExpected[i][1]); }
+			assertEquals(SizeUtil.formatSize(methodLong.longValue()),
+					"1.0 "+valAndExpected[i][1]); }
 	}
 
 	/**

@@ -38,8 +38,10 @@ public class LRUHashtableTest extends TestCase {
 	private Object[][] createSampleKeyVal(int size) {
 		Object[][] sampleObjects = new Object[size][2];
 		for (int i=0; i<sampleObjects.length;i++) {
-			sampleObjects[i][0] = new Integer(i);		//key
-			sampleObjects[i][1] = new Object(); }		//value
+			//key
+			sampleObjects[i][0] = new Integer(i);
+			//value
+			sampleObjects[i][1] = new Object(); }		
 		return sampleObjects;
 	}
 	
@@ -80,7 +82,8 @@ public class LRUHashtableTest extends TestCase {
 	public void testPushNull() {
 		LRUHashtable methodLRUht = createSampleHashTable(sampleElemsNumber);
 		try {
-			methodLRUht.push(new Object(),null);}		//a null value is admitted
+			//a null value is admitted
+			methodLRUht.push(new Object(),null);}		
 		catch (NullPointerException anException) { 
 			fail("Not expected exception thrown : " + anException.getMessage()); }
 		try {
