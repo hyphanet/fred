@@ -14,9 +14,9 @@ import freenet.support.api.Bucket;
 
 public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
 
-	protected long length;
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
+	protected long length;
 	protected long fileRestartCounter;
 
 	protected static String tempDir = null;
