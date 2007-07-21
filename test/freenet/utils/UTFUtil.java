@@ -15,13 +15,19 @@
  */
 package freenet.utils;
 
+import junit.framework.TestCase;
+
 /**
  * Utility class used throught test cases classes
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public final class UTFUtil {
+public final class UTFUtil extends TestCase {
 
+	public void testFake() {
+		
+	}
+	
 	//printable ascii symbols
 	public static final char PRINTABLE_ASCII[] = {
 		' ','!','@','#','$','%','^','&','(',')','+','=','{','}','[',']',':',';','\\','\"','\'',
