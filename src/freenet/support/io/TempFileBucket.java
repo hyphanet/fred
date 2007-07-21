@@ -204,7 +204,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = super.toFieldSet();
-		fs.putSingle("Type", "TempFileBucket");
+		fs.putOverwrite("Type", "TempFileBucket");
 		return fs;
 	}
 
