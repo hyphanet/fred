@@ -8,6 +8,7 @@ import java.util.Vector;
 
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 
 /*
  *  This code is part of FProxy, an HTTP proxy server for Freenet.
@@ -19,138 +20,49 @@ import freenet.support.SimpleFieldSet;
  *
  * @author     giannij
  */
-public class TempFileBucket extends FileBucket {
-	TempBucketHook hook = null;
-	// How much we have asked the Hook to allocate for us
-	long fakeLength = 0;
-	long minAlloc;
-	float factor;
+public class TempFileBucket extends BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
+	long filenameID;
+	final FilenameGenerator generator;
 	private static boolean logDebug = true;
+	private boolean readOnly;
 	/**
 	 * Constructor for the TempFileBucket object
 	 *
 	 * @param  f  File
 	 */
-	protected TempFileBucket(
-		File f,
-		TempBucketHook hook,
-		long startLength,
-		long minAlloc,
-		float factor)
-		throws IOException {
-		super(f, false, false, true, true, true);
+	public TempFileBucket(
+		long id,
+		FilenameGenerator generator) {
+		super(generator.getFilename(id));
+		this.filenameID = id;
+		this.generator = generator;
 		synchronized(this) {
 			logDebug = Logger.shouldLog(Logger.DEBUG, this);
 		}
-		if (minAlloc > 0)
-			this.minAlloc = minAlloc;
-		else
-			this.minAlloc = 1024;
-		this.factor = factor;
-		if (factor < 1.0)
-			throw new IllegalArgumentException("factor must be >= 1.0");
-
-		// Make sure finalize wacks temp file 
-		// if it is not explictly freed.
-		deleteOnFinalize = true;
 
 		//System.err.println("FProxyServlet.TempFileBucket -- created: " +
 		//         f.getAbsolutePath());
-		this.hook = hook;
-		long x = startLength <= 0 ? minAlloc : startLength;
-		hook.createFile(x);
-		this.fakeLength = x;
 		synchronized(this) {
 			if (logDebug)
 				Logger.debug(
 					this,
-					"Initializing TempFileBucket(" + f + ',' + hook + ')');
+					"Initializing TempFileBucket(" + getFile());
 		}
 	}
 
-	/**
-	 *  Gets the realInputStream attribute of the TempFileBucket object
-	 *
-	 * @return                  The realInputStream value
-	 * @exception  IOException  Description of the Exception
-	 */
-	synchronized InputStream getRealInputStream() throws IOException {
-		if (released || closing)
-			throw new IllegalStateException(
-				"Trying to getRealInputStream on released TempFileBucket "+this+" !");
-		if (logDebug)
-			Logger.debug(
-				this,
-				"getRealInputStream() for " + file,
-				new Exception("debug"));
-		if (!file.exists())
-			return new NullInputStream();
-		else
-			return new HookedFileBucketInputStream(file);
+	protected boolean deleteOnFinalize() {
+		// Make sure finalize wacks temp file 
+		// if it is not explictly freed.
+		return true;
 	}
-
-	/**
-	 *  Gets the realOutputStream attribute of the TempFileBucket object
-	 *
-	 * @return                  The realOutputStream value
-	 * @exception  IOException  Description of the Exception
-	 */
-	OutputStream getRealOutputStream() throws IOException {
-		if (released || closing)
-			throw new IllegalStateException(
-				"Trying to getRealOutputStream on released TempFileBucket "+this+" !");
-		synchronized(this) {
-			if (logDebug)
-				Logger.debug(
-					this,
-					"getRealOutputStream() for " + file,
-					new Exception("debug"));
-		}
-		return super.getOutputStream();
-	}
-
-	// Wrap non-const members so we can tell
-	// when code touches the Bucket after it
-	// has been released.
-	/**
-	 *  Gets the inputStream attribute of the TempFileBucket object
-	 *
-	 * @return                  The inputStream value
-	 * @exception  IOException  Description of the Exception
-	 */
-	public synchronized InputStream getInputStream() throws IOException {
-		if (released || closing)
-			throw new IllegalStateException(
-				"Trying to getInputStream on released TempFileBucket "+this+" !");
-		logDebug = Logger.shouldLog(Logger.DEBUG, this);
-		if (logDebug)
-			Logger.debug(this, "getInputStream for " + file);
-		InputStream newIn = new SpyInputStream(this, file.getAbsolutePath());
-		return newIn;
-	}
-
-	/**
-	 *  Gets the outputStream attribute of the TempFileBucket object
-	 *
-	 * @return                  The outputStream value
-	 * @exception  IOException  Description of the Exception
-	 */
-	public synchronized OutputStream getOutputStream() throws IOException {
-		if (released || closing)
-			throw new IllegalStateException(
-				"Trying to getOutputStream on released TempFileBucket "+this+" !");
-		logDebug = Logger.shouldLog(Logger.DEBUG, this);
-		if (logDebug)
-			Logger.debug(this, "getOutputStream for " + file);
-		return new SpyOutputStream(this, file.getAbsolutePath());
-	}
-
+	
 	/**
 	 *  Release
 	 *
 	 * @return    Success
 	 */
 	public synchronized boolean release() {
+		File file = getFile();
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Releasing bucket: "+file, new Exception("debug"));
 		//System.err.println("FProxyServlet.TempFileBucket -- release: " +                      // file.getAbsolutePath());
@@ -235,13 +147,7 @@ public class TempFileBucket extends FileBucket {
 					new Exception());
 				// Nonrecoverable; even though the user can't fix it it's still very serious
 				return false;
-			} else {
-				if (hook != null)
-					hook.deleteFile(fakeLength);
 			}
-		} else {
-			if (hook != null)
-				hook.deleteFile(fakeLength);
 		}
 		if (logDebug)
 			Logger.debug(
@@ -274,179 +180,55 @@ public class TempFileBucket extends FileBucket {
 	private boolean released;
 	private boolean closing;
 
-	protected synchronized FileBucketOutputStream newFileBucketOutputStream(
-		String s,
-		boolean append,
-		long restartCount)
-		throws IOException {
-		if (logDebug)
-			Logger.debug(this,
-				"Creating new HookedFileBucketOutputStream for " + file);
-		if (hook != null)
-			return new HookedFileBucketOutputStream(s, restartCount);
-		else
-			return super.newFileBucketOutputStream(new File(s), s, restartCount);
-	}
-
 	protected synchronized void deleteFile() {
 		if (logDebug)
-			Logger.debug(this, "Deleting " + file);
-		file.delete();
-		if (hook != null)
-			hook.deleteFile(fakeLength);
+			Logger.debug(this, "Deleting " + getFile());
+		getFile().delete();
 	}
 
 	protected synchronized void resetLength() {
 		if (logDebug)
-			Logger.debug(this, "Resetting length for " + file);
-		if (length != 0) {
-			if (hook != null) {
-				hook.shrinkFile(0, fakeLength);
-				fakeLength = 0;
-			}
-			super.resetLength();
-		}
+			Logger.debug(this, "Resetting length for " + getFile());
 	}
 
 	protected final synchronized void getLengthSynchronized(long len) throws IOException {
 		//       Core.logger.log(this, "getLengthSynchronized("+len+
 		// 		      "); fakeLength = "+fakeLength, Logger.DEBUG);
-		long l = fakeLength;
-		long ol = l;
-		while (len > l) {
-			l = (long) (l * factor);
-			if (minAlloc > 0)
-				l = l + minAlloc - (l % minAlloc);
-			if (l <= fakeLength)
-				throw new IllegalStateException("Bucket extension error!");
-			// 	  Core.logger.log(this, "l now "+l, Logger.DEBUG);
-			if (ol == l)
-				throw new IllegalStateException("infinite loop");
-			ol = l;
-		}
-		if (fakeLength != l) {
-			if (Logger.shouldLog(Logger.DEBUG, this))
-				Logger.debug(
-					this,
-					"getLengthSynchronized("
-						+ len
-						+ "): increasing "
-						+ fakeLength
-						+ " to: "
-						+ l
-						+ " (real length: "
-						+ length
-						+ ')');
-			hook.enlargeFile(fakeLength, l);
-		}
-		fakeLength = l;
+		if(len <= 0) return;
+		length += len;
 	}
 
 	public synchronized String toString(){
-		return "TempFileBucket (File: '"+getFile().getAbsolutePath()+"', streams: "+streams.size()+", hook: "+hook+ ')';
-	}
-
-	class HookedFileBucketInputStream extends FileBucketInputStream {
-		HookedFileBucketInputStream(File f) throws IOException {
-			super(f);
-			streams.addElement(this);
-		}
-
-		public void close() throws IOException {
-			super.close();
-			while (streams.remove(this));
-		}
-	}
-
-	class HookedFileBucketOutputStream extends FileBucketOutputStream {
-
-		protected HookedFileBucketOutputStream(
-			String s,
-			long restartCount)
-			throws IOException {
-			super(new File(s), s, restartCount);
-			streams.addElement(this);
-			if (Logger.shouldLog(Logger.DEBUG, this))
-				Logger.debug(
-					this,
-					"Created HookedFileBucketOutputStream("
-						+ s
-						+ ','
-                            + restartCount
-						+ ')');
-		}
-
-		public void close() throws IOException {
-			super.close();
-			while (streams.remove(this));
-		}
-
-		public void write(byte[] b) throws IOException {
-			// 	  Core.logger.log(this, "HookedFileBucketOutputStream.write(byte[] len "+
-			// 			  b.length+") for "+file, Logger.DEBUG);
-			synchronized (TempFileBucket.this) {
-				// 	      Core.logger.log(this, "Synchronized on TempFileBucket", 
-				// 			      Logger.DEBUG);
-				super.confirmWriteSynchronized();
-				// 	      Core.logger.log(this, "confirmWriteSynchronized()", Logger.DEBUG);
-				long finalLength = length + b.length;
-				// 	      Core.logger.log(this, "length="+length+", finalLength="+finalLength,
-				// 			      Logger.DEBUG);
-				long realStartLen = fakeLength;
-				getLengthSynchronized(finalLength);
-				// 	      Core.logger.log(this, "Called hook.enlargeFile()", Logger.DEBUG);
-				try {
-					super.write(b);
-					// 		  Core.logger.log(this, "Written", Logger.DEBUG);
-				} catch (IOException e) {
-					// 		  Core.logger.log(this, "Write failed", Logger.DEBUG);
-					hook.shrinkFile(realStartLen, fakeLength);
-					fakeLength = realStartLen;
-					// 		  Core.logger.log(this, "Shrank file", Logger.DEBUG);
-					throw e;
-				}
-			}
-		}
-
-		public void write(byte[] b, int off, int len) throws IOException {
-			//  	  Core.logger.log(this, "HookedFileBucketOutputStream.write(byte[], "+off+
-			//  			  ","+len+") for "+file, Logger.DEBUG);
-			synchronized (TempFileBucket.this) {
-				long finalLength = length + len;
-				long realStartLen = fakeLength;
-				getLengthSynchronized(finalLength);
-				try {
-					super.write(b, off, len);
-				} catch (IOException e) {
-					hook.shrinkFile(realStartLen, fakeLength);
-					fakeLength = realStartLen;
-					throw e;
-				}
-			}
-		}
-
-		public void write(int b) throws IOException {
-			// 	  Core.logger.log(this, "HookedFileBucketOutputStream.write(int) for "+file,
-			// 			  Logger.DEBUG);
-			synchronized (TempFileBucket.this) {
-				long finalLength = length + 1;
-				long realStartLen = fakeLength;
-				getLengthSynchronized(finalLength);
-				try {
-					super.write(b);
-				} catch (IOException e) {
-					hook.shrinkFile(realStartLen, fakeLength);
-					fakeLength = realStartLen;
-					throw e;
-				}
-			}
-		}
-
+		return "TempFileBucket (File: '"+getFile().getAbsolutePath()+"', streams: "+streams.size();
 	}
 
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = super.toFieldSet();
 		fs.putSingle("Type", "TempFileBucket");
 		return fs;
+	}
+
+	protected boolean createFileOnly() {
+		return false;
+	}
+
+	protected boolean deleteOnFree() {
+		return true;
+	}
+
+	public File getFile() {
+		return generator.getFilename(filenameID);
+	}
+
+	public boolean isReadOnly() {
+		return readOnly;
+	}
+
+	public void setReadOnly() {
+		readOnly = true;
+	}
+
+	protected boolean deleteOnExit() {
+		return true;
 	}
 }

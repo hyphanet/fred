@@ -56,7 +56,7 @@ public class SerializableToFieldSetBucketUtil {
 			
 			throw new CannotCreateFromFieldSetException("No type");
 		} else if(type.equals("FileBucket")) {
-			return new FileBucket(fs, f);
+			return BaseFileBucket.create(fs, f);
 		} else if(type.equals("PaddedEphemerallyEncryptedBucket")) {
 			return new PaddedEphemerallyEncryptedBucket(fs, random, f);
 		} else if(type.equals("NullBucket")) {

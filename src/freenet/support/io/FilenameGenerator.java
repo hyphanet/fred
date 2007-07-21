@@ -6,7 +6,6 @@ import java.io.IOException;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.crypt.RandomSource;
-import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
@@ -27,15 +26,14 @@ public class FilenameGenerator {
 		this.random = random;
 		this.prefix = prefix;
 		if (dir == null)
-			tmpDir = new File(System.getProperty("java.io.tmpdir"));
+			tmpDir = FileUtil.getCanonicalFile(new File(System.getProperty("java.io.tmpdir")));
 		else
-			tmpDir = dir;
+			tmpDir = FileUtil.getCanonicalFile(dir);
         if(!tmpDir.exists()) {
             tmpDir.mkdir();
 		}
 		if(!(tmpDir.isDirectory() && tmpDir.canRead() && tmpDir.canWrite()))
 			throw new IOException("Not a directory or cannot read/write: "+tmpDir);
-		
 		if(wipeFiles) {
 			long wipedFiles = 0;
 			long wipeableFiles = 0;
@@ -64,17 +62,37 @@ public class FilenameGenerator {
 		}
 	}
 
-	public File makeRandomFilename() {
-		byte[] randomFilename = new byte[8]; // should be plenty
+	public long makeRandomFilename() {
+		long randomFilename; // should be plenty
 		while(true) {
-			random.nextBytes(randomFilename);
-			String filename = prefix + HexUtil.bytesToHex(randomFilename);
+			randomFilename = random.nextLong();
+			if(randomFilename == -1) continue; // Disallowed as used for error reporting
+			String filename = prefix + Long.toHexString(randomFilename);
 			File ret = new File(tmpDir, filename);
 			if(!ret.exists()) {
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Made random filename: "+ret, new Exception("debug"));
-				return ret;
+				return randomFilename;
 			}
+		}
+	}
+
+	public File getFilename(long id) {
+		return new File(tmpDir, prefix + Long.toHexString(id));
+	}
+
+	public boolean matches(File file) {
+		return getID(file) != -1;
+	}
+
+	public long getID(File file) {
+		if(!(FileUtil.getCanonicalFile(file.getParentFile()).equals(tmpDir))) return -1;
+		String name = file.getName();
+		if(!name.startsWith(prefix)) return -1;
+		try {
+			return Long.parseLong(name.substring(prefix.length()), 16);
+		} catch (NumberFormatException e) {
+			return -1;
 		}
 	}
 

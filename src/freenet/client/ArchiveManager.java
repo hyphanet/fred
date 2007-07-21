@@ -22,6 +22,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
+import freenet.support.io.TempFileBucket;
 
 /**
  * Cache of recently decoded archives:
@@ -441,8 +442,9 @@ outer:		while(true) {
 	 * go over the maximum size. Will obviously keep its key when we move it to main.
 	 */
 	private TempStoreElement makeTempStoreBucket(long size) {
-		File myFile = filenameGenerator.makeRandomFilename();
-		FileBucket fb = new FileBucket(myFile, false, false, true, true, true);
+		long id = filenameGenerator.makeRandomFilename();
+		File myFile = filenameGenerator.getFilename(id);
+		TempFileBucket fb = new TempFileBucket(id, filenameGenerator);
 		
 		byte[] cipherKey = new byte[32];
 		random.nextBytes(cipherKey);

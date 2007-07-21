@@ -96,7 +96,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 
 	private Bucket makeRawBucket(long size) throws IOException {
-		return new FileBucket(fg.makeRandomFilename(), false, true, false, false, true);
+		return new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
@@ -128,6 +128,18 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	public File getDir() {
 		return dir;
+	}
+
+	public FilenameGenerator getGenerator() {
+		return fg;
+	}
+
+	public boolean matches(File file) {
+		return fg.matches(file);
+	}
+
+	public long getID(File file) {
+		return fg.getID(file);
 	}
 
 }

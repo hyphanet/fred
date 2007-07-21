@@ -22,4 +22,16 @@ public class NullPersistentFileTracker implements PersistentFileTracker {
 		return new File(".");
 	}
 
+	public boolean matches(File file) {
+		return false;
+	}
+
+	public FilenameGenerator getGenerator() {
+		return null;
+	}
+
+	public long getID(File file) {
+		return 0;
+	}
+
 }

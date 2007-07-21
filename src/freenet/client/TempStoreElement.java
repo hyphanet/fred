@@ -5,15 +5,15 @@ package freenet.client;
 
 import java.io.File;
 
-import freenet.support.io.FileBucket;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
+import freenet.support.io.TempFileBucket;
 
 class TempStoreElement {
 	final File myFilename;
 	final PaddedEphemerallyEncryptedBucket bucket;
-	final FileBucket underBucket;
+	final TempFileBucket underBucket;
 	
-	TempStoreElement(File myFile, FileBucket fb, PaddedEphemerallyEncryptedBucket encryptedBucket) {
+	TempStoreElement(File myFile, TempFileBucket fb, PaddedEphemerallyEncryptedBucket encryptedBucket) {
 		this.myFilename = myFile;
 		this.underBucket = fb;
 		this.bucket = encryptedBucket;
