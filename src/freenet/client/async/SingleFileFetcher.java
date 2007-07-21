@@ -527,9 +527,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true));
 		ctx.ticker.queueTimedJob(new Runnable() {
 			public void run() {
-				// When it is done (if successful), the ArchiveCallback will re-call this function.
-				// Which will then discover that the metadata *is* available.
-				// And will also discover that the data is available, and will complete.
+				// Fetch the archive. The archive fetcher callback will unpack it, and either call the element 
+				// callback, or just go back around handleMetadata() on this, which will see that the data is now
+				// available.
 				f.wrapHandleMetadata(true);
 			}
 		}, 0);
