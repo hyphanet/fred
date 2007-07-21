@@ -38,7 +38,7 @@ public class MessageCore {
 	private final LinkedList _filters = new LinkedList();
 	private final LinkedList _unclaimed = new LinkedList();
 	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
-	private static final long MAX_UNCLAIMED_FIFO_ITEM_LIFETIME = 60*60*1000;  // 1 hour
+	private static final long MAX_UNCLAIMED_FIFO_ITEM_LIFETIME = 10*60*1000;  // 10 minutes; maybe this should be per message type??
 	// Every second, remove all timed out filters
 	private static final int FILTER_REMOVE_TIME = 1000;
 	private long startedTime;
