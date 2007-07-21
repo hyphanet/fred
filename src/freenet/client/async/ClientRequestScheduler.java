@@ -214,27 +214,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							if(block == null)
 								block = node.fetchKey(key, getter.dontCache());
 							if(block == null) {
-								Key nodeKey = key.getNodeKey();
-								synchronized(pendingKeys) {
-									SendableGet[] gets = (SendableGet[]) pendingKeys.get(nodeKey);
-									if(gets == null) {
-										pendingKeys.put(nodeKey, new SendableGet[] { getter });
-									} else {
-										boolean found = false;
-										for(int j=0;j<gets.length;j++) {
-											if(gets[j] == getter) {
-												found = true;
-												break;
-											}
-										}
-										if(!found) {
-											SendableGet[] newGets = new SendableGet[gets.length+1];
-											System.arraycopy(gets, 0, newGets, 0, gets.length);
-											newGets[gets.length] = getter;
-											pendingKeys.put(nodeKey, newGets);
-										}
-									}
-								}
+								addPendingKey(key, getter);
 							}
 						}
 					} catch (KeyVerifyException e) {
@@ -261,6 +241,36 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	private void addPendingKey(ClientKey key, SendableGet getter) {
+		Key nodeKey = key.getNodeKey();
+		synchronized(pendingKeys) {
+			Object o = pendingKeys.get(nodeKey);
+			if(o == null) {
+				pendingKeys.put(nodeKey, getter);
+			} else if(o instanceof SendableGet) {
+				SendableGet oldGet = (SendableGet) o;
+				if(oldGet != getter) {
+					pendingKeys.put(nodeKey, new SendableGet[] { oldGet, getter });
+				}
+			} else {
+				SendableGet[] gets = (SendableGet[]) o;
+				boolean found = false;
+				for(int j=0;j<gets.length;j++) {
+					if(gets[j] == getter) {
+						found = true;
+						break;
+					}
+					if(!found) {
+						SendableGet[] newGets = new SendableGet[gets.length+1];
+						System.arraycopy(gets, 0, newGets, 0, gets.length);
+						newGets[gets.length] = getter;
+						pendingKeys.put(nodeKey, newGets);
+					}
+				}
+			}
+		}
+	}
+
 	private synchronized void innerRegister(SendableRequest req) {
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount());
 		addToGrabArray(req.getPriorityClass(), req.getRetryCount(), req.getClient(), req.getClientRequest(), req);
@@ -451,16 +461,25 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			Key key = ckey.getNodeKey();
 			synchronized(pendingKeys) {
-				SendableGet[] gets = (SendableGet[]) pendingKeys.get(key);
-				if(gets == null) {
+				Object o = pendingKeys.get(key);
+				if(o == null) {
 					if(complain)
 						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (no such key)");
-				} else if(gets.length > 1) {
+				} else if(o instanceof SendableGet) {
+					SendableGet oldGet = (SendableGet) o;
+					if(oldGet != getter) {
+						if(complain)
+							Logger.normal(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
+					} else {
+						pendingKeys.remove(key);
+					}
+				} else {
+					SendableGet[] gets = (SendableGet[]) o;
 					SendableGet[] newGets = new SendableGet[gets.length-1];
 					boolean found = false;
 					int x = 0;
 					for(int j=0;j<gets.length;j++) {
-						if(j >= gets.length) {
+						if(j > newGets.length) {
 							if(!found) {
 								if(complain)
 									Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+gets.length+" getters)");
@@ -475,12 +494,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 						System.arraycopy(newGets, 0, newNewGets, 0, x);
 						newGets = newNewGets;
 					}
-					pendingKeys.put(key, newGets);
-				} else if(gets.length == 1 && gets[0] == getter) {
-					pendingKeys.remove(key);
-				} else if(gets.length == 1 && gets[0] != getter) {
-					if(complain)
-						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
+					if(newGets.length == 0) {
+						pendingKeys.remove(key);
+					} else if(newGets.length == 1) {
+						pendingKeys.put(key, newGets[0]);
+					} else {
+						pendingKeys.put(key, newGets);
+					}
 				}
 			}
 		}
@@ -521,8 +541,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void tripPendingKey(final KeyBlock block) {
 		final Key key = block.getKey();
 		final SendableGet[] gets;
+		Object o;
 		synchronized(pendingKeys) {
-			gets = (SendableGet[]) pendingKeys.get(key);
+			o = pendingKeys.get(key);
+		}
+		if(o == null) return;
+		if(o instanceof SendableGet) {
+			gets = new SendableGet[] { (SendableGet) o };
+		} else {
+			gets = (SendableGet[]) o;
 		}
 		if(gets == null) return;
 		Runnable r = new Runnable() {
