@@ -136,6 +136,9 @@ public class ClientCHK extends ClientKey {
 	}
 
 	public NodeCHK getNodeCHK() {
+		// This costs us more or less nothing: we have to keep the routingKey anyway.
+		// Therefore, keeping a NodeCHK as well is a net saving, since it's frequently
+		// asked for. (A SoftReference would cost more).
 		if(nodeKey == null)
 	        nodeKey = new NodeCHK(routingKey, cryptoAlgorithm);
 	    return nodeKey;
