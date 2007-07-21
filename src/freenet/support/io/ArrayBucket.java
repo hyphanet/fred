@@ -32,7 +32,7 @@ public class ArrayBucket implements Bucket {
 		data.add(initdata);
 	}
 
-	public ArrayBucket(String name) {
+	ArrayBucket(String name) {
 		data = new ArrayList();
 		this.name = name;
 	}
