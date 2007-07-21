@@ -336,7 +336,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			message2(pn,payload,1);
 		}
 		else if(packetType==2){
-		      // Initiator echoes the data sent by the responder
+		      /* Initiator echoes the data sent by the responder.These messages are
+                       * cached by the Responder.Receiving a duplicate message simply causes
+                       * the responder to Re-transmit the corresponding message4
+                       */
 		       
 		}
 		else if(packetType==3){
@@ -345,6 +348,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		       * using the same keys as in the previous message
 		       */
 		}
+    	}
     }
     /*
      * Initiator Method:Message1
@@ -400,7 +404,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		HashMap grpInfo=new HashMap();
 		BufferedReader Source = new BufferedReader(new FileReader(fileName ));
 		String input;
-		//grpInfo method to be modified
+		/*grpInfo method to be modified
 		while ((input = Source.readLine()) != null) {
 			grpInfo.put(Object key,Object value);
 		}
@@ -411,12 +415,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Object key = e.getKey();
 			Object value = e.getValue();
 		}
-		
+		*/
 		MessageDigest md=SHA256.getMessageDigest();
+		byte[] DHExp=dh.getHisExponential().toByteArray();
 		md.update(dh.getHisExponential().toByteArray());
 		md.update(Nr);
 		md.update(Ni);
 		byte[] hash=md.digest();
+		/*
 		long totalRSize=0;
 		long totalSSize=0;
 		int maxRSize=0;
@@ -429,12 +435,22 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 sSize = sSize / 8 +  (sSize % 8 == 0 ? 0 : 1);
                 totalSSize += sSize;
                 if(sSize > maxSSize) maxSSize = sSize;
-		//byte signData=new byte[maxSSize+maxRSize+1];
-		
-
-		
-		
-    }			
+		*/
+		int grpLength=grpInfo.size();
+		byte signData=new byte[grpLength+DHExp.length+1];
+		signatureMessage(signData);
+		byte[] unVerifiedData=new byte[Ni.length+Nr.length+DHExp.length+1];
+                System.arraycopy(Ni,0,unVerifiedData,0,Ni.length);
+                System.arraycopy(Nr,0,unVerifiedData,Ni.length+1,Nr.length);
+		System.arraycopy(DHExp,0,unVerifiedData,Ni.length+nr.length+1,DHExp.length);
+		//Calculate the Hash of the Concatenated data(Responder exponentials and nonces
+		//using a key that will be private to the responder
+		HKrGenerator message2Key=new HKrGenerator(20);
+		hkr=message2Key.getNewHKr();
+		HMAC s=new HMAC(SHA1.getInstance());
+		byte[] hashedMessage=s.mac(hkr,unVerifiedData,20);
+		byte[] Message2=new byte[hashedMessage.length+unVerifiedData.length+signData.length+1];
+}			
     /*
      * Send Message1 packet
      * @param version
@@ -444,7 +460,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param The peerNode we are talking to
      * @param The peer to which we need to send the packet
      */
-    private void sendMessage1Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+    private void sendMessage1or3Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
     {
                 long now = System.currentTimeMillis();
                 long delta = now - pn.lastSentPacketTime();
