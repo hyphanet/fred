@@ -260,12 +260,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 						found = true;
 						break;
 					}
-					if(!found) {
-						SendableGet[] newGets = new SendableGet[gets.length+1];
-						System.arraycopy(gets, 0, newGets, 0, gets.length);
-						newGets[gets.length] = getter;
-						pendingKeys.put(nodeKey, newGets);
-					}
+				}
+				if(!found) {
+					SendableGet[] newGets = new SendableGet[gets.length+1];
+					System.arraycopy(gets, 0, newGets, 0, gets.length);
+					newGets[gets.length] = getter;
+					pendingKeys.put(nodeKey, newGets);
 				}
 			}
 		}
