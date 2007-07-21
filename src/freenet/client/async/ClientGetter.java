@@ -169,6 +169,7 @@ public class ClientGetter extends BaseClientGetter {
 			}
 			synchronized(this) {
 				finished = true;
+				currentState = null;
 			}
 			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
 				e = new FetchException(e.errorCodes.getFirstCode(), e);
