@@ -17,7 +17,7 @@ package freenet.support;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-
+import freenet.utils.UTFUtil;
 import junit.framework.TestCase;
 
 /**
@@ -27,11 +27,8 @@ import junit.framework.TestCase;
  */
 public class URIPreEncoderTest extends TestCase {
 
-	private String prtblAscii = " !@#$%^&()+={}[]:;\"'<>,?~`";			//printable ascii symbols
-	
-	private String stressedUTF_8Chars = "ÉâûĔĭņşÊãüĕĮŇŠËäýĖįňšÌåþėİŉŢÍæÿĘıŊţÎçĀęĲŋŤÏèāĚĳŌťÐéĂěĴōŦÑêăĜĵŎŧ"+ 
-		"ÒëĄĝĶŏŨÓìąĞķŐũÔíĆğĸőŪÕîćĠĹŒūÖïĈġĺœŬ×ðĉĢĻŔŭØñĊģļŕŮÙòċĤĽŖůÚóČĥľŗŰ"+
-		"ÛôčĦĿŘűÜõĎħŀřŲÝöďĨŁŚųÞ÷ĐĩłśŴßøđĪŃŜŵàùĒīńŝŶáúēĬŅŞŷ";	//UTF-8 chars with stress 
+	private String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
+	private String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
 	
 	private boolean containsOnlyValidChars(String aString) {
 		char eachChar;
