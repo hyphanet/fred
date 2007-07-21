@@ -5,9 +5,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetchContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
@@ -21,7 +21,6 @@ import freenet.node.RequestStarter;
 import freenet.node.Ticker;
 import freenet.node.Version;
 import freenet.support.Logger;
-import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
@@ -130,7 +129,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 						File.createTempFile(blobFilenamePrefix+"-"+availableVersion, ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
 					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, 
 							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.UPDATE_PRIORITY_CLASS, 
-							this, new ArrayBucket(), new FileBucket(tempBlobFile, false, false, false, false, false));
+							this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
 					toStart = cg;
 				}
 				isFetching = true;
