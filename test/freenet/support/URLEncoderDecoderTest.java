@@ -16,7 +16,7 @@
 package freenet.support;
 
 import java.io.UnsupportedEncodingException;
-
+import freenet.utils.*;
 import junit.framework.TestCase;
 
 /**
@@ -27,11 +27,9 @@ import junit.framework.TestCase;
  */
 public class URLEncoderDecoderTest extends TestCase {
 
-	private String prtblAscii = " !@#$%^&()+={}[]:;\"'<>,?~`";			//printable ascii symbols
-	private String stressedUTF_8Chars = "ÉâûĔĭņşÊãüĕĮŇŠËäýĖįňšÌåþėİŉŢÍæÿĘıŊţÎçĀęĲŋŤÏèāĚĳŌťÐéĂěĴōŦÑêăĜĵŎŧ"+ 
-	  									"ÒëĄĝĶŏŨÓìąĞķŐũÔíĆğĸőŪÕîćĠĹŒūÖïĈġĺœŬ×ðĉĢĻŔŭØñĊģļŕŮÙòċĤĽŖůÚóČĥľŗŰ"+
-	  									"ÛôčĦĿŘűÜõĎħŀřŲÝöďĨŁŚųÞ÷ĐĩłśŴßøđĪŃŜŵàùĒīńŝŶáúēĬŅŞŷ";	//UTF-8 chars with stress 
-	
+	private String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
+	private String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
+			
 	/**
 	 * Tests if URLEncode.encode(String) and
 	 * URLDecode.decode(String,boolean) methods
@@ -98,7 +96,8 @@ public class URLEncoderDecoderTest extends TestCase {
 			toEncode = String.valueOf(eachChar);
 			try {
 				expectedResult = "%"+ HexUtil.bytesToHex(
-						toEncode.getBytes("US-ASCII")); 	//since safe chars are only US-ASCII
+						//since safe chars are only US-ASCII
+						toEncode.getBytes("US-ASCII")); 
 				assertEquals(URLEncoder.encode(toEncode,toEncode,false),expectedResult);
 				assertEquals(URLEncoder.encode(toEncode,toEncode,true),expectedResult);
 			} catch (UnsupportedEncodingException anException) {
