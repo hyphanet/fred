@@ -430,8 +430,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 totalSSize += sSize;
                 if(sSize > maxSSize) maxSSize = sSize;
 		//byte signData=new byte[maxSSize+maxRSize+1];
-		byte[] data=new byte[grpInfo.size()+
-		signatureMessage(data);
+		
+
 		
 		
     }			
