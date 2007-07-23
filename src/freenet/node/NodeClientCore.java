@@ -142,7 +142,7 @@ public class NodeClientCore implements Persistable {
 		
 		// Temp files
 		
-		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, false, "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", 
+		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, true, "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", 
 				new StringCallback() {
 					public String get() {
 						return tempDir.getPath();
