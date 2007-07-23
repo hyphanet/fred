@@ -57,4 +57,45 @@ public final class UTFUtil extends TestCase {
 		'\u0173','\u00de','\u00f7','\u0110','\u0129','\u0142','\u015b','\u0174','\u00df','\u00f8',
 		'\u0111','\u012a','\u0143','\u015c','\u0175','\u00e0','\u00f9','\u0112','\u012b','\u0144',
 		'\u015d','\u0176','\u00e1','\u00fa','\u0113','\u012c','\u0145','\u015e','\u0177'};
+	
+	/*
+	 * HTML 4.01 entities as referred by W3Schools 
+	 * http://www.w3schools.com/tags/ref_entities.asp
+	 */
+	public static final String HTML_ENTITIES_UTF[][] = {
+		//ISO 8859-1 Symbol Entities
+		{"\u00a1","&iexcl;"},{"\u00a4","&curren;"},{"\u00a2","&cent;"},{"\u00a3","&pound;"},
+		{"\u00a5","&yen;"},{"\u00a6","&brvbar;"},{"\u00a7","&sect;"},{"\u00a8","&uml;"},{"\u00a9","&copy;"},
+		{"\u00aa","&ordf;"},{"\u00ab","&laquo;"},{"\u00ac","&not;"},{"\u00ad","&shy;"},{"\u00ae","&reg;"},
+		{"\u2122","&trade;"},{"\u00af","&macr;"},{"\u00b0","&deg;"},{"\u00b1","&plusmn;"},
+		{"\u00b2","&sup2;"},{"\u00b3","&sup3;"},{"\u00b4","&acute;"},{"\u00b5","&micro;"},
+		{"\u00b6","&para;"},{"\u00b7","&middot;"},{"\u00b8","&cedil;"},{"\u00b9","&sup1;"},
+		{"\u00ba","&ordm;"},{"\u00bb","&raquo;"},{"\u00bc","&frac14;"},{"\u00bd","&frac12;"},
+		{"\u00be","&frac34;"},{"\u00bf","&iquest;"},{"\u00d7","&times;"},{"\u00f7","&divide;"},
+		//ISO 8859-1 Character Entities
+		{"\u00c0","&Agrave;"},{"\u00c1","&Aacute;"},{"\u00c2","&Acirc;"},{"\u00c3","&Atilde;"},
+		{"\u00c4","&Auml;"},{"\u00c5","&Aring;"},{"\u00c6","&AElig;"},{"\u00c7","&Ccedil;"},
+		{"\u00c8","&Egrave;"},{"\u00c9","&Eacute;"},{"\u00ca","&Ecirc;"},{"\u00cb","&Euml;"},
+		{"\u00cc","&Igrave;"},{"\u00cd","&Iacute;"},{"\u00ce","&Icirc;"},{"\u00cf","&Euml;"},
+		{"\u00d0","&ETH;"},{"\u00d1","&Ntilde;"},{"\u00d2","&Ograve;"},{"\u00d3","&Oacute;"},
+		{"\u00d4","&Ocirc;"},{"\u00d5","&Otilde;"},{"\u00d6","&Ouml;"},{"\u00d8","&Oslash;"},
+		{"\u00d9","&Ugrave;"},{"\u00da","&Uacute;"},{"\u00db","&Uacute;"},{"\u00dc","&Uuml;"},
+		{"\u00dd","&Yacute;"},{"\u00de","&THORN;"},{"\u00df","&szlig;"},
+		{"\u00e0","&agrave;"},{"\u00e1","&aacute;"},{"\u00e2","&acirc;"},{"\u00e3","&atilde;"},
+		{"\u00e4","&auml;"},{"\u00e5","&aring;"},{"\u00e6","&aelig;"},{"\u00e7","&ccedil;"},
+		{"\u00e8","&egrave;"},{"\u00e9","&eacute;"},{"\u00ea","&ecirc;"},{"\u00eb","&euml;"},
+		{"\u00ec","&igrave;"},{"\u00ed","&iacute;"},{"\u00ee","&icirc;"},{"\u00ef","&iuml;"},
+		{"\u00f0","&eth;"},{"\u00f1","&ntilde;"},
+		{"\u00f2","&ograve;"},{"\u00f3","&oacute;"},{"\u00f4","&ocirc;"},{"\u00f5","&otilde;"},
+		{"\u00f6","&ouml;"},{"\u00f8","&oslash;"},
+		{"\u00f9","&ugrave;"},{"\u00fa","&uacute;"},{"\u00fb","&ucirc;"},{"\u00fc","&uuml;"},
+		{"\u00fd","&yacute;"},{"\u00fe","&thorn;"},{"\u00ff","&yuml;"},
+		//Some Other Entities supported by HTML
+		{"\u0152","&OElig;"},{"\u0153","&oelig;"},{"\u0160","&Scaron;"},{"\u0161","&scaron;"},
+		{"\u0178","&Ytml;"},{"\u02c6","&circ;"},{"\u02dc","&tilde;"},{"\u2013","&ndash;"},
+		{"\u2014","&mdash;"},{"\u2018","&lsquo;"},{"\u2019","&rsquo;"},{"\u201a","&sbquo;"},
+		{"\u201c","&ldquo;"},{"\u201d","&rdquo;"},{"\u201e","&bdquo;"},{"\u2020","&dagger;"},
+		{"\u2021","&Dagger;"},{"\u2026","&hellip;"},{"\u2030","&permil;"},{"\u2039","&lsaquo;"},
+		{"\u203a","&rsaquo;"},{"\u20ac","&euro;"}
+	};
 }
