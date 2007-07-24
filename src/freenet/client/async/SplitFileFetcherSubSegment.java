@@ -293,11 +293,12 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 	
 	public void kill() {
+		// Do unregister() first so can get and unregister each key and avoid a memory leak
+		unregister();
 		synchronized(this) {
 			blockNums.clear();
 		}
 		segment.removeSeg(this);
-		unregister();
 	}
 	
 }
