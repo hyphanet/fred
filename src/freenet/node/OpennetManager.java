@@ -40,7 +40,7 @@ public class OpennetManager {
 	/** Time at which last dropped a peer */
 	private long timeLastDropped;
 	/** Number of successful CHK requests since last added a node */
-	private int successCount;
+	private long successCount;
 	
 	/** Only drop a connection after at least this many successful requests */
 	static final int MIN_SUCCESS_BETWEEN_DROP_CONNS = 10;
