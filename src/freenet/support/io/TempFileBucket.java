@@ -203,10 +203,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	}
 
 	public SimpleFieldSet toFieldSet() {
-		if(deleteOnFinalize()) return null;
-		SimpleFieldSet fs = super.toFieldSet();
-		fs.putOverwrite("Type", "TempFileBucket");
-		return fs;
+		return null; // Not persistent
 	}
 
 	protected boolean createFileOnly() {
