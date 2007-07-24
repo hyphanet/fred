@@ -444,6 +444,53 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return null;
 	}
 	
+	public void removePendingKey(SendableGet getter, boolean complain, ClientKey ckey) {
+		Key key = ckey.getNodeKey();
+		synchronized(pendingKeys) {
+			Object o = pendingKeys.get(key);
+			if(o == null) {
+				if(complain)
+					Logger.normal(this, "Not found: "+getter+" for "+key+" removing (no such key)");
+			} else if(o instanceof SendableGet) {
+				SendableGet oldGet = (SendableGet) o;
+				if(oldGet != getter) {
+					if(complain)
+						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
+				} else {
+					pendingKeys.remove(key);
+				}
+			} else {
+				SendableGet[] gets = (SendableGet[]) o;
+				SendableGet[] newGets = new SendableGet[gets.length-1];
+				boolean found = false;
+				int x = 0;
+				for(int j=0;j<gets.length;j++) {
+					if(j > newGets.length) {
+						if(!found) {
+							if(complain)
+								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+gets.length+" getters)");
+							return; // not here
+						}
+						if(gets[j] == getter || gets[j] == null || gets[j].isCancelled()) continue;
+						newGets[x++] = gets[j];
+					}
+				}
+				if(x != gets.length-1) {
+					SendableGet[] newNewGets = new SendableGet[x];
+					System.arraycopy(newGets, 0, newNewGets, 0, x);
+					newGets = newNewGets;
+				}
+				if(newGets.length == 0) {
+					pendingKeys.remove(key);
+				} else if(newGets.length == 1) {
+					pendingKeys.put(key, newGets[0]);
+				} else {
+					pendingKeys.put(key, newGets);
+				}
+			}
+		}
+	}
+	
 	/**
 	 * Remove a SendableGet from the list of getters we maintain for each key, indicating that we are no longer interested
 	 * in that key.
@@ -459,50 +506,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				Logger.error(this, "Key "+tok+" is null for "+getter);
 				continue;
 			}
-			Key key = ckey.getNodeKey();
-			synchronized(pendingKeys) {
-				Object o = pendingKeys.get(key);
-				if(o == null) {
-					if(complain)
-						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (no such key)");
-				} else if(o instanceof SendableGet) {
-					SendableGet oldGet = (SendableGet) o;
-					if(oldGet != getter) {
-						if(complain)
-							Logger.normal(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
-					} else {
-						pendingKeys.remove(key);
-					}
-				} else {
-					SendableGet[] gets = (SendableGet[]) o;
-					SendableGet[] newGets = new SendableGet[gets.length-1];
-					boolean found = false;
-					int x = 0;
-					for(int j=0;j<gets.length;j++) {
-						if(j > newGets.length) {
-							if(!found) {
-								if(complain)
-									Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+gets.length+" getters)");
-								return; // not here
-							}
-							if(gets[j] == getter || gets[j] == null || gets[j].isCancelled()) continue;
-							newGets[x++] = gets[j];
-						}
-					}
-					if(x != gets.length-1) {
-						SendableGet[] newNewGets = new SendableGet[x];
-						System.arraycopy(newGets, 0, newNewGets, 0, x);
-						newGets = newNewGets;
-					}
-					if(newGets.length == 0) {
-						pendingKeys.remove(key);
-					} else if(newGets.length == 1) {
-						pendingKeys.put(key, newGets[0]);
-					} else {
-						pendingKeys.put(key, newGets);
-					}
-				}
-			}
+			removePendingKey(getter, complain, ckey);
 		}
 	}
 
