@@ -122,4 +122,8 @@ public abstract class SendableGet extends SendableRequest {
 		super.unregister();
 	}
 	
+	public final void unregisterKey(Key key) {
+		getScheduler().removePendingKey(this, false, key);
+	}
+	
 }

@@ -322,6 +322,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		boolean allFailed;
+		// Since we can't keep the key, we need to unregister for it at this point to avoid a memory leak
+		seg.unregisterKey(getBlockKey(blockNo).getNodeKey());
 		synchronized(this) {
 			if(isFinishing()) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
 			if(blockNo < dataKeys.length) {

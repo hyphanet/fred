@@ -300,5 +300,5 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		segment.removeSeg(this);
 	}
-	
+
 }
