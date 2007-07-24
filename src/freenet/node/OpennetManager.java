@@ -195,8 +195,8 @@ public class OpennetManager {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return false;
 		}
-		return wantPeer(pn, true); 
-		// Start at bottom. Node must prove itself.
+		return wantPeer(pn, false);
+		// Start at top. CHK requests may be relatively rare.
 	}
 
 	/** When did we last offer our noderef to some other node? */
@@ -241,7 +241,7 @@ public class OpennetManager {
 					break;
 				}
 				if(logMINOR)
-					Logger.minor(this, "Drop peer: "+toDrop+" (connected="+toDrop.isConnected()+")");
+					Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+")");
 				if(!toDrop.isConnected())
 					hasDisconnected = true;
 				peersLRU.remove(toDrop);
