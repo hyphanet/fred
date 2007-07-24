@@ -262,6 +262,7 @@ public class HTMLDecoder {
 		charTable.put("oelig", new Character((char)339));
 		charTable.put("Scaron", new Character((char)352));
 		charTable.put("scaron", new Character((char)353));
+		charTable.put("Yuml", new Character((char)376));
 		charTable.put("fnof", new Character((char)402));
 		charTable.put("circ", new Character((char)710));
 		charTable.put("tilde", new Character((char)732));
