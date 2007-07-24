@@ -259,9 +259,18 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ret = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), fctx.random, client.server.core.persistentTempBucketFactory);
 			} catch (CannotCreateFromFieldSetException e) {
 				Logger.error(this, "Cannot read: "+this+" : "+e, e);
-				ret = null;
-				finished = false;
-				succeeded = false;
+				try {
+					// Create a new temp bucket
+					if(persistenceType == PERSIST_FOREVER)
+						ret = client.server.core.persistentTempBucketFactory.makeEncryptedBucket();
+					else
+						ret = fctx.bucketFactory.makeBucket(-1);
+				} catch (IOException e1) {
+					onFailure(new FetchException(FetchException.BUCKET_ERROR), null);
+					getter = null;
+					returnBucket = null;
+					return;
+				}
 			}
 		} else {
 			throw new IllegalArgumentException();
