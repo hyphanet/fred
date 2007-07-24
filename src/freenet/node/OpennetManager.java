@@ -43,6 +43,7 @@ public class OpennetManager {
 	private long successCount;
 	
 	/** Only drop a connection after at least this many successful requests */
+	// FIXME should be a function of # opennet peers? max # opennet peers? ...
 	static final int MIN_SUCCESS_BETWEEN_DROP_CONNS = 10;
 	// FIXME make this configurable
 	static final int MAX_PEERS = 15;
