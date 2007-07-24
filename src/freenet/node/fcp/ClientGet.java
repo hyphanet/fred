@@ -109,7 +109,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				else
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
-				onFailure(new FetchException(FetchException.BUCKET_ERROR), null);
+				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);
 				getter = null;
 				returnBucket = null;
 				return;
@@ -176,12 +177,15 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				else
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
-				onFailure(new FetchException(FetchException.BUCKET_ERROR), null);
+				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);
 				getter = null;
 				returnBucket = null;
 				return;
 			}
 		}
+		if(ret == null)
+			Logger.error(this, "Impossible: ret = null in FCP constructor for "+this, new Exception("debug"));
 		returnBucket = ret;
 		if(persistenceType != PERSIST_CONNECTION)
 			try {
@@ -281,6 +285,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				succeeded = false;
 			}
 		}
+		if(ret == null)
+			Logger.error(this, "Impossible: ret = null in SFS constructor for "+this, new Exception("debug"));
 		returnBucket = ret;
 
 		String[] allowed = fs.getAll("AllowedMIMETypes");
