@@ -351,17 +351,26 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		Logger.minor(this, "Succeeded: "+identifier);
 		Bucket data = result.asBucket();
 		if(returnBucket != data && !binaryBlob) {
+			boolean failed = true;
 			synchronized(this) {
 				if(finished) {
 					Logger.error(this, "Already finished but onSuccess() for "+this+" data = "+data, new Exception("debug"));
-					result.asBucket().free();
+					data.free();
 					return; // Already failed - bucket error maybe??
 				}
+				if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && returnBucket == null) {
+					// Lost bucket for some reason e.g. bucket error (caused by IOException) on previous try??
+					// Recover...
+					returnBucket = data;
+					failed = false;
+				}
 			}
-			Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data, new Exception("debug"));
-			// Caller guarantees that data == returnBucket
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null);
-			return;
+			if(failed) {
+				Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data, new Exception("debug"));
+				// Caller guarantees that data == returnBucket
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null);
+				return;
+			}
 		}
 		boolean dontFree = false;
 		// FIXME I don't think this is a problem in this case...? (Disk write while locked..)
