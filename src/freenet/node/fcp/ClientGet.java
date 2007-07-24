@@ -270,7 +270,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					else
 						ret = fctx.bucketFactory.makeBucket(-1);
 				} catch (IOException e1) {
-					onFailure(new FetchException(FetchException.BUCKET_ERROR), null);
+					Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
+					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);
 					getter = null;
 					returnBucket = null;
 					return;
