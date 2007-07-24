@@ -444,8 +444,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return null;
 	}
 	
-	public void removePendingKey(SendableGet getter, boolean complain, ClientKey ckey) {
-		Key key = ckey.getNodeKey();
+	public void removePendingKey(SendableGet getter, boolean complain, Key key) {
 		synchronized(pendingKeys) {
 			Object o = pendingKeys.get(key);
 			if(o == null) {
@@ -506,7 +505,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				Logger.error(this, "Key "+tok+" is null for "+getter);
 				continue;
 			}
-			removePendingKey(getter, complain, ckey);
+			removePendingKey(getter, complain, ckey.getNodeKey());
 		}
 	}
 
