@@ -342,7 +342,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					return; // Already failed - bucket error maybe??
 				}
 			}
-			Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data);
+			Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data, new Exception("debug"));
 			// Caller guarantees that data == returnBucket
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null);
 			return;
