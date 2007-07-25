@@ -58,9 +58,6 @@ public final class UTFUtil extends TestCase {
 		'\u0111','\u012a','\u0143','\u015c','\u0175','\u00e0','\u00f9','\u0112','\u012b','\u0144',
 		'\u015d','\u0176','\u00e1','\u00fa','\u0113','\u012c','\u0145','\u015e','\u0177'};
 	
-	
-	//{"\u2122","&trade;"},,
-	
 	/*
 	 * HTML entities ISO-88591
 	 * see for reference http://www.w3.org/TR/html4/sgml/entities.html#iso-88591
