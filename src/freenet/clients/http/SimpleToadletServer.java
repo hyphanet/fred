@@ -340,9 +340,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");		
 		toadlets = new LinkedList();
-		core.setToadletContainer(this); // even if not enabled, because of config
 		
 		this.networkInterface = NetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"));
+		
 		if(!enabled) {
 			Logger.normal(core, "Not starting FProxy as it's disabled");
 			System.out.println("Not starting FProxy as it's disabled");
@@ -350,6 +350,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			myThread = new Thread(this, "SimpleToadletServer");
 			myThread.setDaemon(true);
 		}
+
 	}
 
 	public boolean doRobots() {

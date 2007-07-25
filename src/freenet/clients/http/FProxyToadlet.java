@@ -565,17 +565,18 @@ public class FProxyToadlet extends Toadlet {
 		return f;
 	}
 
-	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SubConfig fproxyConfig) throws IOException, InvalidConfigValueException {
+	public static SimpleToadletServer maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SubConfig fproxyConfig) throws IOException, InvalidConfigValueException {
+		
+		SimpleToadletServer server = null;
 		
 		// FIXME how to change these on the fly when the interface language is changed?
 		
 		try {
 			
-			SimpleToadletServer server = new SimpleToadletServer(fproxyConfig, core);
+			server = new SimpleToadletServer(fproxyConfig, core);
 			
 			HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
 			
-			core.setToadletContainer(server);
 			random = new byte[32];
 			core.random.nextBytes(random);
 			FProxyToadlet fproxy = new FProxyToadlet(client, core);
@@ -632,9 +633,6 @@ public class FProxyToadlet extends Toadlet {
 			FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node);
 			server.register(firstTimeWizardToadlet, FirstTimeWizardToadlet.TOADLET_URL, true, false);
 			
-			// Now start the server.
-			server.start();
-			
 		}catch (BindException e){
 			Logger.error(core,"Failed to start FProxy port already bound: isn't Freenet already running ?");
 			System.err.println("Failed to start FProxy port already bound: isn't Freenet already running ?");
@@ -644,6 +642,8 @@ public class FProxyToadlet extends Toadlet {
 		}
 		
 		fproxyConfig.finishedInitialization();
+		
+		return server; // caller must start server
 	}
 	
 	/**

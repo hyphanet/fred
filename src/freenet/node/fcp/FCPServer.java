@@ -115,10 +115,20 @@ public class FCPServer implements Runnable {
 		
 		globalClient = new FCPClient("Global Queue", this, null, true);
 		
+		NetworkInterface tempNetworkInterface = null;
+		try {
+			tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts);
+		} catch (BindException be) {
+			Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
+			System.out.println("Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
+		}
+		
+		this.networkInterface = tempNetworkInterface;
+		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
-	public void maybeStart(String allowedHosts) throws IOException, InvalidConfigValueException {
+	public void maybeStart() {
 		if (this.enabled) {
 			
 			if(enablePersistentDownloads) {
@@ -127,15 +137,6 @@ public class FCPServer implements Runnable {
 			
 			Logger.normal(this, "Starting FCP server on "+bindTo+ ':' +port+ '.');
 			System.out.println("Starting FCP server on "+bindTo+ ':' +port+ '.');
-			NetworkInterface tempNetworkInterface = null;
-			try {
-				tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts);
-			} catch (BindException be) {
-				Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
-				System.out.println("Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
-			}
-			
-			this.networkInterface = tempNetworkInterface;
 			
 			if (this.networkInterface != null) {
 				Thread t = new Thread(this, "FCP server");
@@ -386,7 +387,6 @@ public class FCPServer implements Runnable {
 		fcpConfig.register("assumeUploadDDAIsAllowed", true, sortOrder++, true, false, "FcpServer.assumeUploadDDAIsAllowed", "FcpServer.assumeUploadDDAIsAllowedLong", cb5 = new AssumeDDAUploadIsAllowedCallback());
 		
 		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"));
-		core.setFCPServer(fcp);	
 		
 		if(fcp != null) {
 			cb1.server = fcp;
@@ -395,9 +395,6 @@ public class FCPServer implements Runnable {
 			cb4.server = fcp;
 			cb5.server = fcp;
 		}
-		
-		if(fcp != null)
-			fcp.maybeStart(fcpConfig.getString("allowedHosts"));
 		
 		fcpConfig.finishedInitialization();
 		return fcp;

@@ -89,11 +89,11 @@ public class NodeClientCore implements Persistable {
 	public final PersistentEncryptedTempBucketFactory persistentEncryptedTempBucketFactory;
 	
 	public final UserAlertManager alerts;
-	TextModeClientInterfaceServer tmci;
+	final TextModeClientInterfaceServer tmci;
 	TextModeClientInterface directTMCI;
-	FCPServer fcpServer;
+	final FCPServer fcpServer;
 	FProxyToadlet fproxyServlet;
-	SimpleToadletServer toadletContainer;
+	final SimpleToadletServer toadletContainer;
 	// FIXME why isn't this just in fproxy?
 	public BookmarkManager bookmarkManager;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
@@ -360,6 +360,40 @@ public class NodeClientCore implements Persistable {
 		
 		Key.ALLOW_INSECURE_CLIENT_SSKS = nodeConfig.getBoolean("allowInsecureSSKs");
 		
+		// This is all part of construction, not of start().
+		// Some plugins depend on it, so it needs to be *created* before they are started.
+		
+		// TMCI
+		try{
+			tmci = TextModeClientInterfaceServer.maybeCreate(node, config);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);
+		}
+		
+		// FCP (including persistent requests so needs to start before FProxy)
+		try {
+			fcpServer = FCPServer.maybeCreate(node, this, node.config);
+		} catch (IOException e) {
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
+		} catch (InvalidConfigValueException e) {
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
+		}
+		
+		SubConfig fproxyConfig = new SubConfig("fproxy", config);
+		bookmarkManager = new BookmarkManager(this, fproxyConfig);
+		
+		// FProxy
+		// FIXME this is a hack, the real way to do this is plugins
+		try {
+			toadletContainer = FProxyToadlet.maybeCreateFProxyEtc(this, node, config, fproxyConfig);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
+		} catch (InvalidConfigValueException e) {
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
+		}
+
 	}
 
 	private static String l10n(String key) {
@@ -410,38 +444,10 @@ public class NodeClientCore implements Persistable {
 	public void start(Config config) throws NodeInitException {
 
 		persister.start();
+		fcpServer.maybeStart();
+		toadletContainer.start();
+		tmci.start();
 		
-		// TMCI
-		try{
-			TextModeClientInterfaceServer.maybeCreate(node, config);
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);
-		}
-		
-		// FCP (including persistent requests so needs to start before FProxy)
-		try {
-			fcpServer = FCPServer.maybeCreate(node, this, node.config);
-		} catch (IOException e) {
-			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
-		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
-		}
-		
-		SubConfig fproxyConfig = new SubConfig("fproxy", config);
-		bookmarkManager = new BookmarkManager(this, fproxyConfig);
-		
-		// FProxy
-		// FIXME this is a hack, the real way to do this is plugins
-		try {
-			FProxyToadlet.maybeCreateFProxyEtc(this, node, config, fproxyConfig);
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
-		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
-		}
-
 		Thread completer = new Thread(new Runnable() {
 			public void run() {
 				System.out.println("Resuming persistent requests");
@@ -954,10 +960,6 @@ public class NodeClientCore implements Persistable {
 		return fcpServer;
 	}
 
-	public void setToadletContainer(SimpleToadletServer server) {
-		toadletContainer = server;
-	}
-
 	public FProxyToadlet getFProxy() {
 		return fproxyServlet;
 	}
@@ -972,14 +974,6 @@ public class NodeClientCore implements Persistable {
 
 	public void setFProxy(FProxyToadlet fproxy) {
 		this.fproxyServlet = fproxy;
-	}
-
-	public void setFCPServer(FCPServer fcp) {
-		this.fcpServer = fcp;
-	}
-	
-	public void setTMCI(TextModeClientInterfaceServer server) {
-		this.tmci = server;
 	}
 
 	public TextModeClientInterface getDirectTMCI() {
