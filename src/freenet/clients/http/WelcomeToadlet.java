@@ -47,10 +47,10 @@ public class WelcomeToadlet extends Toadlet {
 	final Node node;
 	final BookmarkManager bookmarkManager;
 	
-	WelcomeToadlet(HighLevelSimpleClient client, Node node) {
+	WelcomeToadlet(HighLevelSimpleClient client, NodeClientCore core, Node node) {
 		super(client);
 		this.node = node;
-		this.core = node.clientCore;
+		this.core = core;
 		this.bookmarkManager = core.bookmarkManager;
 		try {
 			manageBookmarksURI = new URI("/welcome/?managebookmarks");

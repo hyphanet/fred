@@ -34,9 +34,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	private final Config config;
 	
 	
-	FirstTimeWizardToadlet(HighLevelSimpleClient client, Node node) {
+	FirstTimeWizardToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
 		super(client);
-		this.core = node.clientCore;
+		this.core = core;
 		this.config = node.config;
 	}
 	

@@ -586,7 +586,7 @@ public class FProxyToadlet extends Toadlet {
 			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager, core);
 			server.register(pproxy, "/plugins/", true, l10n("pluginsTitle"), l10n("plugins"), true, null);
 			
-			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node);
+			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node);
 			server.register(welcometoadlet, "/welcome/", true, false);
 			
 			PluginToadlet pluginToadlet = new PluginToadlet(client, node.pluginManager2, core);
@@ -630,7 +630,7 @@ public class FProxyToadlet extends Toadlet {
 			TranslationToadlet translationToadlet = new TranslationToadlet(client, core);
 			server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, true);
 			
-			FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node);
+			FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node, core);
 			server.register(firstTimeWizardToadlet, FirstTimeWizardToadlet.TOADLET_URL, true, false);
 			
 		}catch (BindException e){
