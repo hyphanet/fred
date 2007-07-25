@@ -59,8 +59,7 @@ public final class UTFUtil extends TestCase {
 		'\u015d','\u0176','\u00e1','\u00fa','\u0113','\u012c','\u0145','\u015e','\u0177'};
 	
 	/*
-	 * HTML 4.01 entities as referred by W3Schools 
-	 * http://www.w3schools.com/tags/ref_entities.asp
+	 * HTML entities
 	 */
 	public static final String HTML_ENTITIES_UTF[][] = {
 		//ISO 8859-1 Symbol Entities
@@ -76,10 +75,10 @@ public final class UTFUtil extends TestCase {
 		{"\u00c0","&Agrave;"},{"\u00c1","&Aacute;"},{"\u00c2","&Acirc;"},{"\u00c3","&Atilde;"},
 		{"\u00c4","&Auml;"},{"\u00c5","&Aring;"},{"\u00c6","&AElig;"},{"\u00c7","&Ccedil;"},
 		{"\u00c8","&Egrave;"},{"\u00c9","&Eacute;"},{"\u00ca","&Ecirc;"},{"\u00cb","&Euml;"},
-		{"\u00cc","&Igrave;"},{"\u00cd","&Iacute;"},{"\u00ce","&Icirc;"},{"\u00cf","&Euml;"},
+		{"\u00cc","&Igrave;"},{"\u00cd","&Iacute;"},{"\u00ce","&Icirc;"},{"\u00cf","&Iuml;"},
 		{"\u00d0","&ETH;"},{"\u00d1","&Ntilde;"},{"\u00d2","&Ograve;"},{"\u00d3","&Oacute;"},
 		{"\u00d4","&Ocirc;"},{"\u00d5","&Otilde;"},{"\u00d6","&Ouml;"},{"\u00d8","&Oslash;"},
-		{"\u00d9","&Ugrave;"},{"\u00da","&Uacute;"},{"\u00db","&Uacute;"},{"\u00dc","&Uuml;"},
+		{"\u00d9","&Ugrave;"},{"\u00da","&Uacute;"},{"\u00db","&Ucirc;"},{"\u00dc","&Uuml;"},
 		{"\u00dd","&Yacute;"},{"\u00de","&THORN;"},{"\u00df","&szlig;"},
 		{"\u00e0","&agrave;"},{"\u00e1","&aacute;"},{"\u00e2","&acirc;"},{"\u00e3","&atilde;"},
 		{"\u00e4","&auml;"},{"\u00e5","&aring;"},{"\u00e6","&aelig;"},{"\u00e7","&ccedil;"},
@@ -92,7 +91,7 @@ public final class UTFUtil extends TestCase {
 		{"\u00fd","&yacute;"},{"\u00fe","&thorn;"},{"\u00ff","&yuml;"},
 		//Some Other Entities supported by HTML
 		{"\u0152","&OElig;"},{"\u0153","&oelig;"},{"\u0160","&Scaron;"},{"\u0161","&scaron;"},
-		{"\u0178","&Ytml;"},{"\u02c6","&circ;"},{"\u02dc","&tilde;"},{"\u2013","&ndash;"},
+		{"\u0178","&Yuml;"},{"\u02c6","&circ;"},{"\u02dc","&tilde;"},{"\u2013","&ndash;"},
 		{"\u2014","&mdash;"},{"\u2018","&lsquo;"},{"\u2019","&rsquo;"},{"\u201a","&sbquo;"},
 		{"\u201c","&ldquo;"},{"\u201d","&rdquo;"},{"\u201e","&bdquo;"},{"\u2020","&dagger;"},
 		{"\u2021","&Dagger;"},{"\u2026","&hellip;"},{"\u2030","&permil;"},{"\u2039","&lsaquo;"},
