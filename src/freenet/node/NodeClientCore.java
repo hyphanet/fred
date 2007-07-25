@@ -365,7 +365,7 @@ public class NodeClientCore implements Persistable {
 		
 		// TMCI
 		try{
-			tmci = TextModeClientInterfaceServer.maybeCreate(node, config);
+			tmci = TextModeClientInterfaceServer.maybeCreate(node, this, config);
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);

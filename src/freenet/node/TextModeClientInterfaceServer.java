@@ -37,7 +37,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     boolean isEnabled;
     NetworkInterface networkInterface;
 
-    TextModeClientInterfaceServer(Node node, int port, String bindTo, String allowedHosts) {
+    TextModeClientInterfaceServer(Node node, NodeClientCore core, int port, String bindTo, String allowedHosts) {
     	this.n = node;
     	this.core = n.clientCore;
         this.r = n.random;
@@ -55,13 +55,11 @@ public class TextModeClientInterfaceServer implements Runnable {
         t.start();
     }
     
-	public static TextModeClientInterfaceServer maybeCreate(Node node, Config config) throws IOException {
+	public static TextModeClientInterfaceServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException {
 		
 		TextModeClientInterfaceServer server;
 		
 		SubConfig TMCIConfig = new SubConfig("console", config);
-		
-		NodeClientCore core = node.clientCore;
 		
 		TMCIConfig.register("enabled", true, 1, true, false, "TextModeClientInterfaceServer.enabled", "TextModeClientInterfaceServer.enabledLong", new TMCIEnabledCallback(core));
 		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, false, "TextModeClientInterfaceServer.bindTo", "TextModeClientInterfaceServer.bindToLong", new TMCIBindtoCallback(core));
@@ -76,7 +74,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		boolean direct = TMCIConfig.getBoolean("directEnabled");
 
 		if(TMCIEnabled){
-			server = new TextModeClientInterfaceServer(node, port, bind_ip, allowedHosts);
+			server = new TextModeClientInterfaceServer(node, core, port, bind_ip, allowedHosts);
 			Logger.normal(core, "TMCI started on "+bind_ip+ ':' +port);
 			System.out.println("TMCI started on "+bind_ip+ ':' +port);
 		}
