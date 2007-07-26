@@ -43,7 +43,10 @@ public class ConfigurablePersister extends Persister {
 				break;
 			} else {
 				try {
-					f.createNewFile();
+					if(!f.createNewFile()) {
+						if(f.exists()) continue;
+						throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate"));
+					}
 				} catch (IOException e) {
 					throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate"));
 				}
