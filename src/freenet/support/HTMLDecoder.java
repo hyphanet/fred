@@ -148,11 +148,18 @@ public class HTMLDecoder {
 
 	// HTML is very particular about what constitutes white space.
 	public static boolean isWhitespace(char ch) {
-		return (ch == '\u0020')
-			|| (ch == '\r')
-			|| (ch == '\n')
+		return 
+			//space
+		    (ch == '\u0020')
+			//Mac newline
+		    || (ch == '\r')
+		    //Unix newline
+			|| (ch == '\n')		
+			//tab
 			|| (ch == '\u0009')
+			//Control
 			|| (ch == '\u000c')
+			//zero width space
 			|| (ch == '\u200b');
 	}
 
