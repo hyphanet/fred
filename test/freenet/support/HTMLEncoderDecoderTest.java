@@ -24,16 +24,36 @@ import junit.framework.TestCase;
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
 public class HTMLEncoderDecoderTest extends TestCase {
-
+	
+	private static final char WHITESPACE = '\u0020';
+	private static final char TAB = '\t';
+	private static final char UNIX_NEWLINE = '\n';
+	private static final char MAC_NEWLINE = '\r';
+	private static final char CONTROL = '\u000c';
+	private static final char ZEROWIDTHSPACE = '\u200b';
+	
 	/**
 	 * Tests decode(String) method
 	 * trying to decode entity by entity
 	 */
 	public void testDecodeSingleEntities() {
-		for (int i =0; i<UTFUtil.HTML_ENTITIES_UTF.length; i++) {
+		for (int i =0; i<UTFUtil.HTML_ENTITIES_UTF.length; i++)
 			assertEquals(HTMLDecoder.decode(UTFUtil.HTML_ENTITIES_UTF[i][1]),UTFUtil.HTML_ENTITIES_UTF[i][0]);
+	}
+	
+	/**
+	 * Tests decode(String) method
+	 * trying to decode a long String
+	 * with all possible entity appended
+	 */
+	public void testDecodeAppendedEntities() {
+		StringBuffer toDecode = new StringBuffer();
+		StringBuffer expected = new StringBuffer();
+		for (int i =0; i<UTFUtil.HTML_ENTITIES_UTF.length; i++) {
+			toDecode.append(UTFUtil.HTML_ENTITIES_UTF[i][1]);
+			expected.append(UTFUtil.HTML_ENTITIES_UTF[i][0]);
 		}
-		
+		assertEquals(HTMLDecoder.decode(toDecode.toString()),expected.toString());
 	}
 	
 	/**
@@ -65,23 +85,47 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 * (e.g. tabs,newline,space).
 	 */
 	public void testCompactRepeated(){
-		StringBuffer strWhiteSpace = new StringBuffer ("\u0020");
-		StringBuffer strTab = new StringBuffer ("");
-		StringBuffer strUnixNewLine = new StringBuffer ("");
-		StringBuffer strMacNewLine = new StringBuffer ("");
+		StringBuffer strBuffer[] = new StringBuffer[6];
+		for (int i = 0; i < strBuffer.length; i++)
+			strBuffer[i] = new StringBuffer();
+		
 		for (int i=0;i<100;i++) {
-			strWhiteSpace.append("\u0020");
-			strTab.append("\t");
-			strUnixNewLine.append("\n");
-			strMacNewLine.append("\r");
+			//adding different "whitespaces"
+			strBuffer[0].append(WHITESPACE);
+			strBuffer[1].append(TAB);
+			strBuffer[2].append(UNIX_NEWLINE);
+			strBuffer[3].append(MAC_NEWLINE);
+			strBuffer[4].append(CONTROL);
+			strBuffer[5].append(ZEROWIDTHSPACE);
 			
-			assertEquals(" ",HTMLDecoder.compact(strWhiteSpace.toString()));
-			assertEquals(" ",HTMLDecoder.compact(strTab.toString()));
-			assertEquals(" ",HTMLDecoder.compact(strUnixNewLine.toString()));
-			assertEquals(" ",HTMLDecoder.compact(strMacNewLine.toString()));
+			for (int j = 0; j < strBuffer.length; j++)
+				assertEquals(" ",
+						HTMLDecoder.compact(strBuffer[j].toString()));
 		}
 	}
 	
+	/**
+	 * Tests compact(String) method
+	 * with each kind of "whitespace"
+	 */
+	public void testCompactMixed(){
+		String toCompact = "\u0020"+"\t"+"\n"+"\r"+"\u200b"+"\u000c";
+		assertEquals(HTMLDecoder.compact(toCompact)," ");
+	}
+	
+	/**
+	 * Tests isWhiteSpace() method
+	 * against all possible HTML white space
+	 * type
+	 */
+	public void testIsWhiteSpace() {
+		assertTrue(HTMLDecoder.isWhitespace(WHITESPACE));
+		assertTrue(HTMLDecoder.isWhitespace(TAB));
+		assertTrue(HTMLDecoder.isWhitespace(UNIX_NEWLINE));
+		assertTrue(HTMLDecoder.isWhitespace(MAC_NEWLINE));
+		assertTrue(HTMLDecoder.isWhitespace(CONTROL));
+		assertTrue(HTMLDecoder.isWhitespace(ZEROWIDTHSPACE));
+	}
 
 
 }
