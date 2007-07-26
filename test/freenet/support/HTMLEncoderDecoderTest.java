@@ -35,6 +35,53 @@ public class HTMLEncoderDecoderTest extends TestCase {
 		}
 		
 	}
+	
+	/**
+	 * Tests decode(String) method
+	 * trying to decode incomplete entities.
+	 * The incomplete entity must remain
+	 * the same as before encoding
+	 */
+	public void testDecodeIncomplete() {
+		//without ending semicolon
+		assertEquals("&Phi","&Phi");
+		//an Entity without a char, 
+		//which means a not existing Entity 
+		assertEquals("&Ph;","&Ph;");
+		//without ash
+		assertEquals("&1234;","&1234;");
+		//too short entity code
+		assertEquals("&#123;","&#123;");
+		//without ampersand
+		assertEquals("Phi;","Phi;");
+		//emtpy String
+		assertEquals("","");
+	}
+	
+	/**
+	 * Tests compact(String) method
+	 * trying to compact String with
+	 * repeated whitespaces of every kind
+	 * (e.g. tabs,newline,space).
+	 */
+	public void testCompactRepeated(){
+		StringBuffer strWhiteSpace = new StringBuffer ("\u0020");
+		StringBuffer strTab = new StringBuffer ("");
+		StringBuffer strUnixNewLine = new StringBuffer ("");
+		StringBuffer strMacNewLine = new StringBuffer ("");
+		for (int i=0;i<100;i++) {
+			strWhiteSpace.append("\u0020");
+			strTab.append("\t");
+			strUnixNewLine.append("\n");
+			strMacNewLine.append("\r");
+			
+			assertEquals(" ",HTMLDecoder.compact(strWhiteSpace.toString()));
+			assertEquals(" ",HTMLDecoder.compact(strTab.toString()));
+			assertEquals(" ",HTMLDecoder.compact(strUnixNewLine.toString()));
+			assertEquals(" ",HTMLDecoder.compact(strMacNewLine.toString()));
+		}
+	}
+	
 
 
 }
