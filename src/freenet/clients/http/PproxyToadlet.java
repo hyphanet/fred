@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.L10n;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.AccessDeniedPluginHTTPException;
 import freenet.pluginmanager.DownloadPluginHTTPException;
@@ -22,12 +23,12 @@ import freenet.support.api.HTTPRequest;
 
 public class PproxyToadlet extends Toadlet {
 	private static final int MAX_PLUGIN_NAME_LENGTH = 1024;
-	private final PluginManager pm;
+	private final Node node;
 	private final NodeClientCore core;
 
-	public PproxyToadlet(HighLevelSimpleClient client, PluginManager pm, NodeClientCore core) {
+	public PproxyToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
 		super(client);
-		this.pm = pm;
+		this.node = node;
 		this.core = core;
 	}
 
@@ -61,6 +62,8 @@ public class PproxyToadlet extends Toadlet {
 
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Pproxy received POST on "+path);
 
+		PluginManager pm = node.pluginManager;
+		
 		if(path.length()>0)
 		{
 			try
@@ -196,11 +199,13 @@ public class PproxyToadlet extends Toadlet {
 		if(path.startsWith("/")) path = path.substring(1);
 		if(path.startsWith("plugins/")) path = path.substring("plugins/".length());
 
+		PluginManager pm = node.pluginManager;
+		
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Pproxy fetching "+path);
 		try {
 			if (path.equals("")) {
-				this.showPluginList(ctx, request);
+				this.showPluginList(ctx, request, pm);
 			} else {
 				// split path into plugin class name and 'data' path for plugin
 				int to = path.indexOf("/");
@@ -238,7 +243,7 @@ public class PproxyToadlet extends Toadlet {
 		}
 	}
 
-	private void showPluginList(ToadletContext ctx, HTTPRequest request) throws ToadletContextClosedException, IOException {
+	private void showPluginList(ToadletContext ctx, HTTPRequest request, PluginManager pm) throws ToadletContextClosedException, IOException {
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
 			return;
