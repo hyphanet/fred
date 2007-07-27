@@ -6,6 +6,7 @@ import java.io.IOException;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.crypt.RandomSource;
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
@@ -86,12 +87,19 @@ public class FilenameGenerator {
 	}
 
 	public long getID(File file) {
-		if(!(FileUtil.getCanonicalFile(file.getParentFile()).equals(tmpDir))) return -1;
+		if(!(FileUtil.getCanonicalFile(file.getParentFile()).equals(tmpDir))) {
+			Logger.error(this, "Not the same dir: parent="+FileUtil.getCanonicalFile(file.getParentFile())+" but tmpDir="+tmpDir);
+			return -1;
+		}
 		String name = file.getName();
-		if(!name.startsWith(prefix)) return -1;
+		if(!name.startsWith(prefix)) {
+			Logger.error(this, "Does not start with prefix: "+name+" prefix "+prefix);
+			return -1;
+		}
 		try {
-			return Long.parseLong(name.substring(prefix.length()), 16);
+			return Fields.hexToLong(name.substring(prefix.length()));
 		} catch (NumberFormatException e) {
+			Logger.error(this, "Cannot getID: "+e+" from "+(name.substring(prefix.length())), e);
 			return -1;
 		}
 	}
