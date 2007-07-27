@@ -209,6 +209,8 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	 * called twice. But length must still be valid when calling it.
 	 */
 	protected synchronized void deleteFile() {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Deleting "+getFile()+" for "+this, new Exception("debug"));
 		getFile().delete();
 	}
 

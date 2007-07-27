@@ -180,12 +180,6 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	private boolean released;
 	private boolean closing;
 
-	protected synchronized void deleteFile() {
-		if (logDebug)
-			Logger.debug(this, "Deleting " + getFile());
-		getFile().delete();
-	}
-
 	protected synchronized void resetLength() {
 		if (logDebug)
 			Logger.debug(this, "Resetting length for " + getFile());

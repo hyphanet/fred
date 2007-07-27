@@ -91,6 +91,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		Iterator i = originalFiles.iterator();
 		while(i.hasNext()) {
 			File f = (File) (i.next());
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Deleting old tempfile "+f);
 			f.delete();
 		}
 	}
