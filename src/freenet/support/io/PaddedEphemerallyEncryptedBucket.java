@@ -115,7 +115,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			}
 		}
 		if(dataLength > bucket.size())
-			throw new CannotCreateFromFieldSetException("Underlying bucket is too small: should be "+dataLength+" actually "+bucket.size());
+			throw new CannotCreateFromFieldSetException("Underlying bucket "+bucket+" is too small: should be "+dataLength+" actually "+bucket.size());
 	}
 
 	public OutputStream getOutputStream() throws IOException {

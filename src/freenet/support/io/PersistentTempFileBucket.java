@@ -26,6 +26,8 @@ public class PersistentTempFileBucket extends TempFileBucket {
 		if(tmp == null) throw new CannotCreateFromFieldSetException("No filename");
 		File file = FileUtil.getCanonicalFile(new File(tmp));
 		long id = f.getID(file);
+		if(id == -1)
+			throw new CannotCreateFromFieldSetException("Cannot derive persistent temp file id from filename "+file);
 		tmp = fs.get("Length");
 		if(tmp == null) throw new CannotCreateFromFieldSetException("No length");
 		long length;
