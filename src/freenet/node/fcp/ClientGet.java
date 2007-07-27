@@ -261,6 +261,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 			try {
 				ret = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), fctx.random, client.server.core.persistentTempBucketFactory);
+				if(ret == null) throw new CannotCreateFromFieldSetException("ret == null");
 			} catch (CannotCreateFromFieldSetException e) {
 				Logger.error(this, "Cannot read: "+this+" : "+e, e);
 				try {
