@@ -38,7 +38,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		synchronized (this) {
 			File file = getFile();
 			if(isReadOnly())
-				throw new IOException("Bucket is read-only");
+				throw new IOException("Bucket is read-only: "+this);
 			
 			if(createFileOnly() && file.exists())
 				throw new FileExistsException(file);
