@@ -40,7 +40,7 @@ public class PersistentTempFileBucket extends TempFileBucket {
 	public SimpleFieldSet toFieldSet() {
 		if(deleteOnFinalize()) return null;
 		SimpleFieldSet fs = super.toFieldSet();
-		fs.putOverwrite("Type", "TempFileBucket");
+		fs.putOverwrite("Type", "PersistentTempFileBucket");
 		return fs;
 	}
 	
