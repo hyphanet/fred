@@ -94,6 +94,7 @@ import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
@@ -1769,6 +1770,12 @@ public class Node implements TimeSkewDetectorCallback {
 				clientCore.requestStarters.chkFetchScheduler.tripPendingKey(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
+		} catch (Throwable t) {
+			System.err.println(t);
+			t.printStackTrace();
+			Logger.error(this, "Caught "+t+" storing data", t);
 		}
 	}
 	
@@ -1795,6 +1802,12 @@ public class Node implements TimeSkewDetectorCallback {
 			
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
+		} catch (Throwable t) {
+			System.err.println(t);
+			t.printStackTrace();
+			Logger.error(this, "Caught "+t+" storing data", t);
 		}
 	}
 	
