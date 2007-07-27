@@ -15,7 +15,12 @@ public class PersistentTempFileBucket extends TempFileBucket {
 		// Do not delete on finalize
 		return false;
 	}
-
+	
+	protected boolean deleteOnExit() {
+		// DO NOT DELETE ON EXIT !!!!
+		return false;
+	}
+	
 	public static Bucket create(SimpleFieldSet fs, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		String tmp = fs.get("Filename");
 		if(tmp == null) throw new CannotCreateFromFieldSetException("No filename");
