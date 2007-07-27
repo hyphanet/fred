@@ -204,7 +204,11 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			if(!tempBlobFile.renameTo(blobFile)) {
 				blobFile.delete();
 				if(!tempBlobFile.renameTo(blobFile)) {
-					Logger.error(this, "Not able to rename binary blob for node updater: "+tempBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this build");
+					if(blobFile.exists() && tempBlobFile.exists() &&
+							blobFile.length() == tempBlobFile.length())
+						Logger.minor(this, "Can't rename "+tempBlobFile+" over "+blobFile+" for "+fetchedVersion+" - probably not a big deal though as the files are the same size");
+					else
+						Logger.error(this, "Not able to rename binary blob for node updater: "+tempBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this build");
 				}
 			}
 			this.fetchedVersion = fetchedVersion;
