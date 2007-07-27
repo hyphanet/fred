@@ -56,8 +56,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 		// file.getAbsolutePath());
 		// (new Exception("get stack")).printStackTrace();
 		fileRestartCounter = 0;
-		if(!file.canRead())
-			this.readOnly = true;
 	}
 
 	/**
