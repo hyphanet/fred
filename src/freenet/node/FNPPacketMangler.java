@@ -324,7 +324,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		       * Initiator- This is a straightforward DiffieHellman exponential. The Init                       * iator Nonce serves two purposes;it allows the initiator to use the same 			 * exponentials during different sessions while ensuring that the resulting 			  * session key will be different,can be used to differentiate between
 		       * parallel sessions
 		       */
-			message1(pn,payload,0);			
+			ProcessMessage1(pn,payload,0);			
 			
 		}
 		else if(packetType==1){
@@ -333,7 +333,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		       * nonce and an authenticator calculated from a transient hash key private
 		       * to the responder. We slightly deviate JFK here;we do not send any public 			* key information as specified in the JFK docs
 		       */
-			message2(pn,payload,1);
+			ProcessMessage2(pn,payload,1);
 		}
 		else if(packetType==2){
 		      /* Initiator echoes the data sent by the responder.These messages are
@@ -358,7 +358,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param The peerNode we are talking to
      * @param Payload
      */	
-    private void Message1(PeerNode pn,byte[] payload,int phase)
+    private void ProcessMessage1(PeerNode pn,byte[] payload,int phase)
     {
                 long t1=System.currentTimeMillis();
                 Ni=nonceGen.getNewNonce();
@@ -373,7 +373,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 byte[] message1=new byte[Ni.length + gi.length+1];
                 System.arraycopy(Ni,0,message1,0,Ni.length);
                 System.arraycopy(gi,0,message1,Ni.length+1,gi.length);
-                sendMessage1Packet(1,negType,phase,message1,pn,replyTo);
+                sendMessage1or3Packet(1,negType,phase,message1,pn,replyTo);
                 long t2=System.currentTimeMillis();
                 if((t2-t1)>500)
                         Logger.error(this,"Message1 timeout error "+" replyto "+pn.getName());
@@ -401,10 +401,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(shouldLogErrorInHandshake())
 				Logger.error(this,"failed getting exponentials");
 		}
-		HashMap grpInfo=new HashMap();
+		/*HashMap grpInfo=new HashMap();
 		BufferedReader Source = new BufferedReader(new FileReader(fileName ));
 		String input;
-		/*grpInfo method to be modified
+		grpInfo method to be modified
 		while ((input = Source.readLine()) != null) {
 			grpInfo.put(Object key,Object value);
 		}
@@ -450,6 +450,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		HMAC s=new HMAC(SHA1.getInstance());
 		byte[] hashedMessage=s.mac(hkr,unVerifiedData,20);
 		byte[] Message2=new byte[hashedMessage.length+unVerifiedData.length+signData.length+1];
+		sendMessage1or3Packet(1,negType,phase,message1,pn,replyTo);
+		
 }			
     /*
      * Send Message1 packet
@@ -537,9 +539,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				totalSSize += sSize;
                                 if(sSize > maxSSize) maxSSize = sSize;
                         }
-
-        }
-}	
+  	      }
+   }	
 	
    
     /**
