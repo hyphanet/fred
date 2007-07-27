@@ -444,9 +444,12 @@ public class NodeClientCore implements Persistable {
 	public void start(Config config) throws NodeInitException {
 
 		persister.start();
-		fcpServer.maybeStart();
-		toadletContainer.start();
-		tmci.start();
+		if(fcpServer != null)
+			fcpServer.maybeStart();
+		if(toadletContainer != null)
+			toadletContainer.start();
+		if(tmci != null)
+			tmci.start();
 		
 		Thread completer = new Thread(new Runnable() {
 			public void run() {
