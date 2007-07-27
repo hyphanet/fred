@@ -126,7 +126,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					if(availableVersion > currentVersion)
 						System.err.println("Starting "+(extUpdate?"freenet-ext.jar ":"")+"fetch for "+availableVersion);
 					tempBlobFile = 
-						File.createTempFile(blobFilenamePrefix+"-"+availableVersion, ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+						File.createTempFile(blobFilenamePrefix+availableVersion+"-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
 					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, 
 							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.UPDATE_PRIORITY_CLASS, 
 							this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
