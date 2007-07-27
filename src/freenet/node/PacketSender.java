@@ -183,7 +183,7 @@ public class PacketSender implements Runnable, Ticker {
 			pn.maybeOnConnect();
             if(pn.isConnected()) {
             	
-            	if(pn.isRoutable() && pn.shouldDisconnectNow()) {
+            	if(pn.isRoutable() && pn.noLongerRoutable()) {
             		// we don't disconnect but we mark it incompatible
             		pn.invalidate();
             		pn.setPeerNodeStatus(now);

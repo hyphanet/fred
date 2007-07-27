@@ -2175,7 +2175,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(logMINOR) Logger.minor(this, "Reporting ping time to "+this+" : "+(now - startTime));
 		}
 		
-		if(shouldDisconnectNow()){
+		if(noLongerRoutable()){
 			invalidate();
 			setPeerNodeStatus(now);
 		}
@@ -2451,10 +2451,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	/**
-	 * Should the node be disconnected from immediately?
+	 * Has the node gone from being routable to being non-routable?
 	 * This will return true if our lastGoodBuild has changed due to a timed mandatory.
 	 */
-	public synchronized boolean shouldDisconnectNow() {
+	public synchronized boolean noLongerRoutable() {
 		// TODO: We should disconnect here if "protocol version mismatch", maybe throwing an exception
 		// TODO: shouldDisconnectNow() is hopefully only called when we're connected, otherwise we're breaking the meaning of verifiedIncompable[Older|Newer]Version
 		if(verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion) return true;
