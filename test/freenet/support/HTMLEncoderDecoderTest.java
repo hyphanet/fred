@@ -64,18 +64,16 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 */
 	public void testDecodeIncomplete() {
 		//without ending semicolon
-		assertEquals("&Phi","&Phi");
+		assertEquals(HTMLDecoder.decode("&Phi"),"&Phi");
 		//an Entity without a char, 
 		//which means a not existing Entity 
-		assertEquals("&Ph;","&Ph;");
+		assertEquals(HTMLDecoder.decode("&Ph;"),"&Ph;");
 		//without ash
-		assertEquals("&1234;","&1234;");
-		//too short entity code
-		assertEquals("&#123;","&#123;");
+		assertEquals(HTMLDecoder.decode("&1234;"),"&1234;");
 		//without ampersand
-		assertEquals("Phi;","Phi;");
+		assertEquals(HTMLDecoder.decode("Phi;"),"Phi;");
 		//emtpy String
-		assertEquals("","");
+		assertEquals(HTMLDecoder.decode(""),"");
 	}
 	
 	/**
