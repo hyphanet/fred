@@ -1804,6 +1804,8 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.error(this, "Cannot store data: "+e, e);
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
+		} catch (KeyCollisionException e) {
+			throw e;
 		} catch (Throwable t) {
 			System.err.println(t);
 			t.printStackTrace();
