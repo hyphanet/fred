@@ -320,6 +320,7 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private final NodeCryptoConfig opennetCryptoConfig;
 	private OpennetManager opennet;
+	private boolean passOpennetRefsThroughDarknet;
 	
 	// General stuff
 	
@@ -813,6 +814,23 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		
 		opennetConfig.finishedInitialization();
+		
+		nodeConfig.register("passOpennetPeersThroughDarknet", true, sortOrder++, true, false, "Node.passOpennetPeersThroughDarknet", "Node.passOpennetPeersThroughDarknetLong",
+				new BooleanCallback() {
+
+					public boolean get() {
+						synchronized(Node.this) {
+							return passOpennetRefsThroughDarknet;
+						}
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						synchronized(Node.this) {
+							passOpennetRefsThroughDarknet = val;
+						}
+					}
+			
+		});
 		
 		// Extra Peer Data Directory
 		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+getDarknetPortNumber()).toString(), sortOrder++, true, false, "Node.extraPeerDir", "Node.extraPeerDirLong",
@@ -2655,6 +2673,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	OpennetManager getOpennet() {
 		return opennet;
+	}
+	
+	public synchronized boolean passOpennetRefsThroughDarknet() {
+		return passOpennetRefsThroughDarknet;
 	}
 
 }

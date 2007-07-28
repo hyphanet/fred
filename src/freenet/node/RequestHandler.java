@@ -260,7 +260,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 	}
 
 	private void finishOpennet(RequestSender rs) {
-		if(!source.isOpennet()) return;
+		if(!node.passOpennetRefsThroughDarknet()) return;
 		byte[] noderef = rs.waitForOpennetNoderef();
 		if(noderef == null) {
 			finishOpennetNoRelay();
