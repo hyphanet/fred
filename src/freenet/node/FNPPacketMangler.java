@@ -1568,4 +1568,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	public byte[] getCompressedNoderef() {
 		return crypto.myCompressedFullRef();
 	}
+
+	public boolean alwaysAllowLocalAddresses() {
+		return crypto.config.alwaysAllowLocalAddresses();
+	}
 }

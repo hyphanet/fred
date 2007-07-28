@@ -2651,7 +2651,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * a local address even if it advertises them.
 	 */
 	public boolean allowLocalAddresses() {
-		return false;
+		return this.outgoingMangler.alwaysAllowLocalAddresses();
 	}
 
 	/** Is this peer set to ignore source address? If so, we will always reply to the peer's official

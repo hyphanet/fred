@@ -310,8 +310,11 @@ public class DarknetPeerNode extends PeerNode {
 		return isBurstOnly;
 	}
 
-	public synchronized boolean allowLocalAddresses() {
-		return allowLocalAddresses;
+	public boolean allowLocalAddresses() {
+		synchronized(this) {
+			if(allowLocalAddresses) return true;
+		}
+		return super.allowLocalAddresses();
 	}
 
 	public void setAllowLocalAddresses(boolean setting) {

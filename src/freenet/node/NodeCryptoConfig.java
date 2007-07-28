@@ -42,6 +42,10 @@ public class NodeCryptoConfig {
 	 * NodeCrypto's - this will usually be set for opennet but not for darknet). */
 	private boolean oneConnectionPerAddress;
 	
+	/** If true, we will allow to connect to nodes via local (LAN etc) IP addresses,
+	 * regardless of any per-peer setting. */
+	private boolean alwaysAllowLocalAddresses;
+	
 	NodeCryptoConfig(SubConfig config, int sortOrder, boolean onePerIP) throws NodeInitException {
 		
 		config.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
@@ -128,6 +132,21 @@ public class NodeCryptoConfig {
 			
 		});
 		
+		config.register("alwaysAllowLocalAddresses", false, sortOrder++, true, false, "Node.alwaysAllowLocalAddresses", "Node.alwaysAllowLocalAddressesLong",
+				new BooleanCallback() {
+
+					public boolean get() {
+						synchronized(NodeCryptoConfig.this) {
+							return alwaysAllowLocalAddresses;
+						}
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						synchronized(NodeCryptoConfig.this) {
+							alwaysAllowLocalAddresses = val;
+						}
+					}
+		});
 	}
 
 	/** The number of config options i.e. the amount to increment sortOrder by */
@@ -153,7 +172,7 @@ public class NodeCryptoConfig {
 		crypto = null;
 	}
 	
-	public int getPort() {
+	public synchronized int getPort() {
 		return portNumber;
 	}
 	
@@ -170,7 +189,7 @@ public class NodeCryptoConfig {
 		}
 	}
 
-	public FreenetInetAddress getBindTo() {
+	public synchronized FreenetInetAddress getBindTo() {
 		return bindTo;
 	}
 
@@ -182,7 +201,11 @@ public class NodeCryptoConfig {
 		return dropProbability;
 	}
 
-	public boolean oneConnectionPerAddress() {
+	public synchronized boolean oneConnectionPerAddress() {
 		return oneConnectionPerAddress;
+	}
+
+	public synchronized boolean alwaysAllowLocalAddresses() {
+		return alwaysAllowLocalAddresses;
 	}
 }

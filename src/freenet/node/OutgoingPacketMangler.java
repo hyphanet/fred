@@ -101,4 +101,9 @@ public interface OutgoingPacketMangler {
 	 * Get our compressed noderef
 	 */
 	public byte[] getCompressedNoderef();
+	
+	/**
+	 * Always allow local addresses?
+	 */
+	public boolean alwaysAllowLocalAddresses();
 }
