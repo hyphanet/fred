@@ -401,58 +401,81 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(shouldLogErrorInHandshake())
 				Logger.error(this,"failed getting exponentials");
 		}
-		/*HashMap grpInfo=new HashMap();
-		BufferedReader Source = new BufferedReader(new FileReader(fileName ));
-		String input;
-		grpInfo method to be modified
-		while ((input = Source.readLine()) != null) {
-			grpInfo.put(Object key,Object value);
-		}
-		Iterator keyValuePairs = grpInfo.entrySet().iterator();
-		for (int i = 0; i < grpInfo.size(); i++)
-		{
-			Map.Entry e = (Map.Entry) keyValuePairs.next();
-			Object key = e.getKey();
-			Object value = e.getValue();
-		}
-		*/
-		MessageDigest md=SHA256.getMessageDigest();
-		byte[] DHExp=dh.getHisExponential().toByteArray();
-		md.update(dh.getHisExponential().toByteArray());
-		md.update(Nr);
-		md.update(Ni);
-		byte[] hash=md.digest();
-		/*
-		long totalRSize=0;
-		long totalSSize=0;
-		int maxRSize=0;
-		int maxSSize=0;
-		int rSize = sig.getR().bitLength();
-                rSize = (rSize / 8) + (rSize % 8 == 0 ? 0 : 1);
-                totalRSize += rSize;
-                if(rSize > maxRSize) maxRSize = rSize;
-		int sSize = sig.getS().bitLength();
-                sSize = sSize / 8 +  (sSize % 8 == 0 ? 0 : 1);
-                totalSSize += sSize;
-                if(sSize > maxSSize) maxSSize = sSize;
-		*/
+		//Get responder Exponentials
+		byte[] DHExpr=dh.getHisExponential().toByteArray();
 		int grpLength=grpInfo.size();
-		byte signData=new byte[grpLength+DHExp.length+1];
-		signatureMessage(signData);
-		byte[] unVerifiedData=new byte[Ni.length+Nr.length+DHExp.length+1];
+		byte signData=new byte[grpLength+DHExpr.length+1];
+		//Signature of Initiator Exponentials and GrpInfo
+		DSASignature sig = crypto.sign(unVerifiedData);
+	        byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+        	byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+        	Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
+	        
+        	if(r.length > 255 || s.length > 255)
+                	throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
+
+		//Data sent in the clear
+		byte[] unVerifiedData=new byte[Ni.length+Nr.length+DHExpr.length+1];
                 System.arraycopy(Ni,0,unVerifiedData,0,Ni.length);
                 System.arraycopy(Nr,0,unVerifiedData,Ni.length+1,Nr.length);
-		System.arraycopy(DHExp,0,unVerifiedData,Ni.length+nr.length+1,DHExp.length);
+		System.arraycopy(DHExp,0,unVerifiedData,Ni.length+nr.length+1,DHExpr.length);
 		//Calculate the Hash of the Concatenated data(Responder exponentials and nonces
 		//using a key that will be private to the responder
 		HKrGenerator message2Key=new HKrGenerator(20);
 		hkr=message2Key.getNewHKr();
 		HMAC s=new HMAC(SHA1.getInstance());
 		byte[] hashedMessage=s.mac(hkr,unVerifiedData,20);
-		byte[] Message2=new byte[hashedMessage.length+unVerifiedData.length+signData.length+1];
-		sendMessage1or3Packet(1,negType,phase,message1,pn,replyTo);
+		byte[] Message2=new byte[hashedMessage.length+unVerifiedData.length+s.length+r.length+1];
+		byte[] signedData=new byte[s.length+r.length+1];
+		System.arraycopy(signedData,0,Message2,0,signedData.length);
+		System.arraycopy(unVerifiedData,0,Message2,signData.length+1,unVerifiedData.length);
+		System.arraycopy(hashedMessage,0,Message2,signedData.length+unVerifiedData.length+1,hashedMessage.length);
+		sendMessage2or4Packet(1,negType,phase,message1,pn,replyTo);
+		long t2=System.currentTimeMillis();
+                if((t2-t1)>500)
+                        Logger.error(this,"Message2 timeout error "+" replyto "+pn.getName());
+
 		
-}			
+}
+    private void ProcessMessage3(PeerNode pn,byte[] payload,int phase,BlockCipher cipher)			
+    {
+	PCFBMode pcfb = PCFBMode.create(cipher);
+        int paddingLength = node.random.nextInt(100);
+        byte[] iv = new byte[pcfb.lengthIV()];
+        node.random.nextBytes(iv);
+	//Hash of the Data using the transient hashkey private to the responder
+        HKrGenerator message3Key=new HKrGenerator(20);
+        hkr=message3Key.getNewHKr();
+        HMAC s=new HMAC(SHA1.getInstance());
+        byte[] unVerifiedDataMinusExpi=new byte[Ni.length+Nr.length+DHExpr.length+1];
+        System.arraycopy(Ni,0,unVerifiedDataMinusExpi,0,Ni.length);
+        System.arraycopy(Nr,0,unVerifiedDataMinusExpi,Ni.length+1,Nr.length);
+        System.arraycopy(DHExpr,0,unVerifiedDataMinuxExpi,Ni.length+nr.length+1,DHExpr.length);
+	byte[] hash=s.mac(hkr,unVerifiedDataMinusExpi,20);
+	byte[] unVerifiedData=new byte[unVerifiedDataMinusExpi.length+DHExpi.length+1];
+	System.arraycopy(DHExpi,0,unVerifiedData,unVerifiedDataMinusExpi.length+1,DHExpi.length);
+        if(logMINOR)
+		 Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
+	DSASignature sig = crypto.sign(unVerifiedData);
+        byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+        byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+        Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
+        
+        int outputLength = iv.length + r.length + s.length + 2;
+        byte[] output = new byte[outputLength];
+        System.arraycopy(iv, 0, output, 0, iv.length);
+        int count = iv.length;
+        if(r.length > 255 || s.length > 255)
+        	throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
+        output[count++] = (byte) r.length;
+        System.arraycopy(r, 0, output, count, r.length);
+        count += r.length;
+        output[count++] = (byte) s.length;
+        System.arraycopy(s, 0, output, count, s.length);
+        count += s.length;
+        pcfb.blockEncipher(output, 0, output.length);
+    }		
+			
     /*
      * Send Message1 packet
      * @param version
