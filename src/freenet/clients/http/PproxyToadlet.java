@@ -113,7 +113,10 @@ public class PproxyToadlet extends Toadlet {
 
 			if (request.isPartSet("load")) {
 				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Loading "+request.getPartAsString("load", MAX_PLUGIN_NAME_LENGTH));
-				pm.startPlugin(request.getPartAsString("load", MAX_PLUGIN_NAME_LENGTH), true);
+				String toLoad = request.getPartAsString("load", MAX_PLUGIN_NAME_LENGTH);
+				if (toLoad.indexOf("@") < 0)
+					toLoad = "*@file://"+toLoad;
+				pm.startPlugin(toLoad, true);
 				//writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Loading plugin", "Loading plugin...", ".", 5));
 
 				headers.put("Location", ".");
