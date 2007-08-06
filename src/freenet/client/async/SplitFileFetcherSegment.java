@@ -22,6 +22,7 @@ import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -323,7 +324,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		boolean allFailed;
 		// Since we can't keep the key, we need to unregister for it at this point to avoid a memory leak
-		seg.unregisterKey(getBlockKey(blockNo).getNodeKey());
+		seg.unregisterKey(getBlockNodeKey(blockNo));
 		synchronized(this) {
 			if(isFinishing()) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
 			if(blockNo < dataKeys.length) {
@@ -455,10 +456,18 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 
 	public ClientCHK getBlockKey(int blockNum) {
-		if(blockNum < dataKeys.length)
+		if(blockNum < 0) return null;
+		else if(blockNum < dataKeys.length)
 			return dataKeys[blockNum];
-		else
+		else if(blockNum < dataKeys.length + checkKeys.length)
 			return checkKeys[blockNum - dataKeys.length];
+		else return null;
+	}
+	
+	public NodeCHK getBlockNodeKey(int blockNum) {
+		ClientCHK key = getBlockKey(blockNum);
+		if(key != null) return key.getNodeCHK();
+		else return null;
 	}
 
 	public synchronized void removeSeg(SplitFileFetcherSubSegment segment) {
