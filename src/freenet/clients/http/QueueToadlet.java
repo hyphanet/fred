@@ -298,7 +298,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceDownload", String.valueOf(System.currentTimeMillis()) });
 									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "get", "Download anyway" });
 									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "return", "Return to queue page" });
-									writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+									writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 									return;
 								}
 							}
@@ -326,7 +326,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 		infoboxContent.addChild("#", message);
 		infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", "/queue/", "queue page"), new HTMLNode("#", ".") });
-		writeReply(context, 400, "text/html; charset=utf-8", "Error", pageNode.generate());
+		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
 	}
 
 	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) 
@@ -396,7 +396,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 			infoboxContent.addChild("#", L10n.getString("QueueToadlet.noTaskOnGlobalQueue"));
 			contentNode.addChild(createInsertBox(pageMaker, ctx));
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
 
@@ -688,7 +688,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		
 		MultiValueTable pageHeaders = new MultiValueTable();
-		this.writeReply(ctx, 200, "text/html", "OK", pageHeaders, pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
 	}
 
 	

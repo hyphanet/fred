@@ -106,7 +106,7 @@ public class ConfigToadlet extends Toadlet {
 		content.addChild("br");
 		addHomepageLink(content);
 
-		writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		
 	}
 	
@@ -191,7 +191,7 @@ public class ConfigToadlet extends Toadlet {
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
 		
-		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
 	public String supportedMethods() {

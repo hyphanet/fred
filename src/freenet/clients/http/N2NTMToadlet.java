@@ -74,14 +74,14 @@ public class N2NTMToadlet extends Toadlet {
 				contentNode.addChild(createPeerInfobox("infobox-error",
 						l10n("peerNotFoundTitle"), l10n("peerNotFoundWithHash",
 								"hash", input_hashcode_string)));
-				this.writeReply(ctx, 200, "text/html", "OK", pageNode
+				this.writeHTMLReply(ctx, 200, "OK", pageNode
 						.generate());
 				return;
 			}
 			HashMap peers = new HashMap();
 			peers.put(input_hashcode_string, peernode_name);
 			createN2NTMSendForm(pageNode, contentNode, ctx, peers);
-			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
 		MultiValueTable headers = new MultiValueTable();
@@ -135,7 +135,7 @@ public class N2NTMToadlet extends Toadlet {
 			String message = request.getPartAsString("message", 5 * 1024);
 			message = message.trim();
 			if (message.length() > 1024) {
-				this.writeReply(ctx, 400, "text/plain", l10n("tooLongTitle"),
+				this.writeTextReply(ctx, 400, "Bad request",
 						l10n("tooLong"));
 				return;
 			}
@@ -152,7 +152,7 @@ public class N2NTMToadlet extends Toadlet {
 				if(!(filename.exists() && filename.canRead())) {
 					peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
 					Toadlet.addHomepageLink(peerTableInfobox);
-					this.writeReply(ctx, 400, "text/html", "OK", pageNode.generate());
+					this.writeHTMLReply(ctx, 400, "OK", pageNode.generate());
 					return;
 				}
 			}
@@ -173,7 +173,7 @@ public class N2NTMToadlet extends Toadlet {
 						} catch (IOException e) {
 							peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
 							Toadlet.addHomepageLink(peerTableInfobox);
-							this.writeReply(ctx, 400, "text/html", "OK", pageNode.generate());
+							this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 							return;
 						}
 					} else {
@@ -223,7 +223,7 @@ public class N2NTMToadlet extends Toadlet {
 			list.addChild("li").addChild("a", new String[] { "href", "title" },
 					new String[] { "/friends/", l10n("returnToFriends") },
 					l10n("friends"));
-			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
 		MultiValueTable headers = new MultiValueTable();

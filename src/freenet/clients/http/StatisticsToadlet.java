@@ -289,7 +289,7 @@ public class StatisticsToadlet extends Toadlet {
 			addNodeCircle(nodeCircleTable);
 		}
 
-		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	private void drawRejectReasonsBox(HTMLNode nextTableCell) {

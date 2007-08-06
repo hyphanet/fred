@@ -145,7 +145,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			SimpleFieldSet fs = getNoderef();
 			StringWriter sw = new StringWriter();
 			fs.writeTo(sw);
-			this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
+			this.writeTextReply(ctx, 200, "OK", sw.toString());
 			return;
 		}
 		
@@ -471,7 +471,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// ignore
 		}
 		
-		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	protected abstract boolean acceptRefPosts();

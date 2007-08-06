@@ -109,7 +109,7 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 			content.addChild("p").addChild("#", l10n("updating"));
 			content.addChild("p").addChild("#", l10n("thanks"));
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			Logger.normal(this, "Node is updating/restarting");
 			node.getNodeUpdater().arm();
 		}else if (request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH).length()>0){
@@ -132,7 +132,7 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode updateForm = ctx.addFormChild(content, "/", "updateConfirmForm");
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "updateconfirm", l10n("update") });
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		}else if(request.isPartSet("getThreadDump")) {
 			if(noPassword) {
 				redirectToRoot(ctx);
@@ -149,7 +149,7 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error",l10n("threadDumpSubTitle")));
 				ctx.getPageMaker().getContentNode(infobox).addChild("#", l10n("threadDumpNotUsingWrapper"));
 			}
-			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		}else if(request.isPartSet("getJEStatsDump")) {
 			if(noPassword) {
 				redirectToRoot(ctx);
@@ -164,7 +164,7 @@ public class WelcomeToadlet extends Toadlet {
 			System.out.println(">>>>>>>>>>>>>>>>>>>>>>>  END DATABASE STATS  <<<<<<<<<<<<<<<<<<<<<<<");
 
 			ctx.getPageMaker().getContentNode(infobox).addChild("#", l10n("writtenDatabaseStats"));
-			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		}else if(request.isPartSet("disable")){
 			if(noPassword) {
 				redirectToRoot(ctx);
@@ -239,7 +239,7 @@ public class WelcomeToadlet extends Toadlet {
 				
 				postForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 				postForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "finconfirm", l10n("post") });
-				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}
 			
@@ -282,7 +282,7 @@ public class WelcomeToadlet extends Toadlet {
 			content.addChild("br");
 			addHomepageLink(content);
 			
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			request.freeParts();
 		}else if(request.isPartSet("key")&&request.isPartSet("filename")){
 			if(noPassword) {
@@ -335,7 +335,7 @@ public class WelcomeToadlet extends Toadlet {
 			content.addChild("br");
 			addHomepageLink(content);
 			
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			request.freeParts();
 			bucket.free();
 		}else if (request.isPartSet("shutdownconfirm")) {
@@ -413,7 +413,7 @@ public class WelcomeToadlet extends Toadlet {
 				while((read = reader.read(buffer)) != -1)
 					sw.write(buffer, 0, read);
 
-				this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
+				this.writeHTMLReply(ctx, 200, "OK", sw.toString());
 				return;
 			} else if (request.isParameterSet("terminated")) {
 				if((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(core.formPassword)) {
@@ -426,7 +426,7 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", l10n("shutdownDone")));
 				HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
 				infoboxContent.addChild("#", l10n("thanks"));
-				this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if (request.isParameterSet("restarted")) {
 				if((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(core.formPassword)) {
@@ -439,7 +439,7 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", l10n("restartingTitle")));
 				HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
 				infoboxContent.addChild("#", l10n("restarting"));
-				writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				Logger.normal(this, "Node is restarting");
 				return;
                         } else if (request.getParam("newbookmark").length() > 0) {
@@ -457,7 +457,7 @@ public class WelcomeToadlet extends Toadlet {
                                 addForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "bookmark", "/"});
 				addForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "action", "addItem"});
 				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addbookmark", L10n.getString("BookmarkEditorToadlet.addBookmark") });
-				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode( l10n("confirmExternalLinkTitle"), ctx);
@@ -471,7 +471,7 @@ public class WelcomeToadlet extends Toadlet {
 				externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", GenericReadFilterCallback.magicHTTPEscapeString, target });
 				externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 				externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Go", l10n("goToExternalLink") });
-				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if (request.isParameterSet("exit")) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("shutdownConfirmTitle"), ctx);
@@ -482,7 +482,7 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode shutdownForm = ctx.addFormChild(content.addChild("p"), "/", "confirmShutdownForm");
 				shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 				shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "shutdownconfirm", l10n("shutdown") });
-				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}else if (request.isParameterSet("restart")) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("restartConfirmTitle"), ctx);
@@ -493,7 +493,7 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode restartForm = ctx.addFormChild(content.addChild("p"), "/", "confirmRestartForm");
 				restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 				restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restartconfirm", l10n("restart") });
-				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}
 		}
@@ -584,7 +584,7 @@ public class WelcomeToadlet extends Toadlet {
 			activityList.addChild("li", l10n("arkFetchCount", "total", Integer.toString(node.getNumARKFetchers())));
 		}
 
-		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
 	public String supportedMethods() {

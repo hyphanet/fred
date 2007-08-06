@@ -318,7 +318,7 @@ public class FProxyToadlet extends Toadlet {
 			}
 			return;
 		}else if(ks.equals("/robots.txt") && ctx.doRobots()){
-			this.writeReply(ctx, 200, "text/plain", "Ok", "User-agent: *\nDisallow: /");
+			this.writeTextReply(ctx, 200, "Ok", "User-agent: *\nDisallow: /");
 			return;
 		}else if(ks.startsWith("/darknet/")) { //TODO: remove when obsolete
 			MultiValueTable headers = new MultiValueTable();
@@ -354,7 +354,7 @@ public class FProxyToadlet extends Toadlet {
 			errorContent.addChild("br");
 			addHomepageLink(errorContent);
 
-			this.writeReply(ctx, 400, "text/html", l10n("invalidKeyTitle"), pageNode.generate());
+			this.writeHTMLReply(ctx, 400, l10n("invalidKeyTitle"), pageNode.generate());
 			return;
 		}
 		String requestedMimeType = httprequest.getParam("type", null);
@@ -415,7 +415,7 @@ public class FProxyToadlet extends Toadlet {
 				}
 				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, l10n("abortToHomepage"));
 
-				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			} else {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(FetchException.getShortMessage(e.mode), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -463,8 +463,8 @@ public class FProxyToadlet extends Toadlet {
 				option = optionList.addChild("li");
 				option.addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
 				
-				this.writeReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
-						"text/html", FetchException.getShortMessage(e.mode), pageNode.generate());
+				this.writeHTMLReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
+						"Internal Error", pageNode.generate());
 			}
 		} catch (SocketException e) {
 			// Probably irrelevant

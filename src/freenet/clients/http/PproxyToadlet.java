@@ -80,7 +80,7 @@ public class PproxyToadlet extends Toadlet {
 					plugin = path.substring(0, to);
 				}
 
-				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPPost(plugin, request));
+				writeHTMLReply(ctx, 200, "OK", pm.handleHTTPPost(plugin, request));
 			}
 			catch (RedirectPluginHTTPException e) {
 				writeTemporaryRedirect(ctx, e.message, e.newLocation);
@@ -136,7 +136,7 @@ public class PproxyToadlet extends Toadlet {
 				infoboxContent.addChild("#", l10n("pluginUnloadedWithName", "name", request.getPartAsString("remove", MAX_PLUGIN_NAME_LENGTH)));
 				infoboxContent.addChild("br");
 				infoboxContent.addChild("a", "href", "/plugins/", l10n("returnToPluginPage"));
-				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}if (request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
@@ -150,7 +150,7 @@ public class PproxyToadlet extends Toadlet {
 				unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 				unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unloadconfirm", request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH) });
 				unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n("unload") });
-				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}else if (request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				String fn = null;
@@ -221,7 +221,7 @@ public class PproxyToadlet extends Toadlet {
 
 				// Plugin may need to know where it was accessed from, so it can e.g. produce relative URLs.
 				//writeReply(ctx, 200, "text/html", "OK", mkPage("plugin", pm.handleHTTPGet(plugin, data)));
-				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPGet(plugin, request));				
+				writeHTMLReply(ctx, 200, "OK", pm.handleHTTPGet(plugin, request));				
 			}
 
 			//FetchResult result = fetch(key);
@@ -297,7 +297,7 @@ public class PproxyToadlet extends Toadlet {
 			loadDiv.addChild("#", (l10n("loadPluginLabel") + ' '));
 			loadDiv.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "load", "40" });
 			loadDiv.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Load" });
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		} 
 	}
 }

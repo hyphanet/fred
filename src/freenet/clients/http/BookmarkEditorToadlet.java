@@ -150,7 +150,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			} catch (URLEncodedFormatException e) {
 				HTMLNode errorBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-error", error));
 				errorBox.addChild("#", L10n.getString("BookmarkEditorToadlet.urlDecodeError"));
-				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}
 			Bookmark bookmark;
@@ -163,7 +163,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			if(bookmark == null) {
 				HTMLNode errorBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-error", error));
 				errorBox.addChild("#", L10n.getString("BookmarkEditorToadlet.bookmarkDoesNotExist", new String[] { "bookmark" }, new String[] { bookmarkPath }));
-				this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else {
 
@@ -242,7 +242,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		HTMLNode bookmarksBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-normal", L10n.getString("BookmarkEditorToadlet.myBookmarksTitle")));
 		bookmarksBox.addChild(getBookmarksList());
 
-		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 
@@ -319,7 +319,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		HTMLNode bookmarksBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-normal", L10n.getString("BookmarkEditorToadlet.myBookmarksTitle")));
 		bookmarksBox.addChild(getBookmarksList());
 
-		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	public String supportedMethods()

@@ -73,11 +73,11 @@ public class PluginToadlet extends Toadlet {
 				if (plugin instanceof HttpPlugin) {
 					((HttpPlugin) plugin).handleGet(httpRequest, ctx);
 				} else {
-					writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, l10n("noWebInterfaceTitle"), l10n("noWebInterface")).toString());
+					writeHTMLReply(ctx, 220, "OK", createBox(ctx, l10n("noWebInterfaceTitle"), l10n("noWebInterface")).toString());
 				}
 				return;
 			}
-			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, l10n("pluginNotFoundTitle"), l10n("pluginNotFound")).toString());
+			writeHTMLReply(ctx, 220, "OK", createBox(ctx, l10n("pluginNotFoundTitle"), l10n("pluginNotFound")).toString());
 			return;
 		}
 
@@ -96,10 +96,10 @@ public class PluginToadlet extends Toadlet {
 		if ("list".equals(action)) {
 			replyBuffer.append(listPlugins(ctx));
 		} else {
-			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, l10n("unsupportedMethodTitle"), l10n("unsupportedMethod")).toString());
+			writeHTMLReply(ctx, 220, "OK", createBox(ctx, l10n("unsupportedMethodTitle"), l10n("unsupportedMethod")).toString());
 			return;
 		}
-		writeReply(ctx, 220, "text/html; charset=utf-8", "OK", replyBuffer.toString());
+		writeHTMLReply(ctx, 220, "OK", replyBuffer.toString());
 	}
 	
 	private String l10n(String key) {
@@ -119,11 +119,11 @@ public class PluginToadlet extends Toadlet {
 				if (plugin instanceof HttpPlugin) {
 					((HttpPlugin) plugin).handlePost(httpRequest, ctx);
 				} else {
-					writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, l10n("noWebInterfaceTitle"), l10n("noWebInterface")).toString());
+					writeHTMLReply(ctx, 220, "OK", createBox(ctx, l10n("noWebInterfaceTitle"), l10n("noWebInterface")).toString());
 				}
 				return;
 			}
-			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, l10n("pluginNotFoundTitle") , l10n("pluginNotFound")).toString());
+			writeHTMLReply(ctx, 220, "OK", createBox(ctx, l10n("pluginNotFoundTitle") , l10n("pluginNotFound")).toString());
 			return;
 		}
 		
@@ -176,7 +176,7 @@ public class PluginToadlet extends Toadlet {
 			writePermanentRedirect(ctx, l10n("pluginList"), "?action=list");
 			return;
 		}
-		writeReply(ctx, 220, "text/html; charset=utf-8", "OK", replyBuffer.toString());
+		writeHTMLReply(ctx, 220, "OK", replyBuffer.toString());
 	}
 
 	/**

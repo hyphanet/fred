@@ -167,7 +167,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 				}
 			}
 			N2NTMToadlet.createN2NTMSendForm( pageNode, contentNode, ctx, peers);
-			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("update_notes")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -337,7 +337,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", l10n("remove") });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceit", l10n("forceRemove") });
 
-						writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+						writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 						return; // FIXME: maybe it breaks multi-node removing
 					}				
 				} else {

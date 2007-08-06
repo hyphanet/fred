@@ -68,7 +68,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			opennetDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "enableOpennet", "false" }, L10n.getString("Toadlet.no"));
 			opennetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "opennetF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			opennetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == 2) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step2Title"), false, ctx);
@@ -85,7 +85,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "nnameF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == 3) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx);
@@ -110,7 +110,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == 4) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
@@ -137,7 +137,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dsF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == 5) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step5Title"), false, ctx);
@@ -180,7 +180,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}else if(currentStep == 6) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step6Title"), true, ctx);
@@ -193,7 +193,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			congratzInfoboxHeader.addChild("#", l10n("congratz"));
 			congratzInfoboxContent.addChild("#", l10n("congratzLong"));
 
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
 		
@@ -212,7 +212,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
 		secondParagraph.addChild("a", "href", "/").addChild("#", l10n("skipWizard"));
 		
-		this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
