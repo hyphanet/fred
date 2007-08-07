@@ -15,7 +15,7 @@ public class HTMLNode {
 
 	private final String content;
 
-	protected final Map attributes = new HashMap();
+	private final Map attributes = new HashMap();
 
 	protected final List children = new ArrayList();
 
@@ -73,10 +73,6 @@ public class HTMLNode {
 	 */
 	public String getContent() {
 		return content;
-	}
-
-	public void addAttribute(String attributeName) {
-		addAttribute(attributeName, attributeName);
 	}
 
 	public void addAttribute(String attributeName, String attributeValue) {
