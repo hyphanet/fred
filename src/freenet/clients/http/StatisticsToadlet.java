@@ -17,6 +17,7 @@ import freenet.config.SubConfig;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNodeStatus;
+import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
@@ -871,7 +872,7 @@ public class StatisticsToadlet extends Toadlet {
 		for (int peerIndex = 0; peerIndex < peerCount; peerIndex++) {
 			peerNodeStatus = peerNodeStatuses[peerIndex];
 			peerLocation = peerNodeStatus.getLocation();
-			peerDistance = PeerManager.distance( myLocation, peerLocation );
+			peerDistance = Location.distance( myLocation, peerLocation );
 			histogramIndex = (int) (Math.floor(peerDistance * HISTOGRAM_LENGTH * 2));
 			if (peerNodeStatus.isConnected()) {
 				histogramConnected[histogramIndex]++;

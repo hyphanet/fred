@@ -58,7 +58,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
         double targetLoc = key.toNormalizedDouble();
         double myLoc = node.lm.getLocation().getValue();
-        if(PeerManager.distance(targetLoc, myLoc) < PeerManager.distance(targetLoc, closestLoc)) {
+        if(Location.distance(targetLoc, myLoc) < Location.distance(targetLoc, closestLoc)) {
             closestLoc = myLoc;
             htl = node.maxHTL();
         }

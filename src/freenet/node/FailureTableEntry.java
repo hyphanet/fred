@@ -271,7 +271,7 @@ class FailureTableEntry {
 			PeerNode pn = (PeerNode) requestedNodes[i].get();
 			if(pn == null) continue;
 			if(!(pn.isRoutable() && pn.isRoutingBackedOff())) continue;
-			double diff = PeerManager.distance(key.toNormalizedDouble(), requestedLocs[i]);
+			double diff = Location.distance(key.toNormalizedDouble(), requestedLocs[i]);
 			if(diff < bestDiff) bestDiff = diff;
 		}
 		return bestDiff;

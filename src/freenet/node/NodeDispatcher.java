@@ -651,12 +651,12 @@ public class NodeDispatcher implements Dispatcher {
 		// Rejected, or even reply, cannot make nearest *worse* and thereby prolong the request.
 		// In fact, rejected probe requests result in clearing nearest at the beginning of the function, so it is vital
 		// that we restore it here.
-		if(PeerManager.distance(ctx.nearest, target, true) < PeerManager.distance(nearest, target, true)) {
+		if(Location.distance(ctx.nearest, target, true) < Location.distance(nearest, target, true)) {
 			nearest = ctx.nearest;
 		}
 		
 		// If we are closer to the target than nearest, update nearest and reset HTL, else decrement HTL
-		if(PeerManager.distance(myLoc, target, true) < PeerManager.distance(nearest, target, true)) {
+		if(Location.distance(myLoc, target, true) < Location.distance(nearest, target, true)) {
 			if(logMINOR)
 				Logger.minor(this, "Updating nearest to "+myLoc+" from "+nearest+" for "+target+" and resetting htl from "+htl+" to "+max);
 			if(Math.abs(nearest - myLoc) > Double.MIN_VALUE * 2)
@@ -707,8 +707,8 @@ public class NodeDispatcher implements Dispatcher {
 				public int compare(Object arg0, Object arg1) {
 					double d0 = ((Double) arg0).doubleValue();
 					double d1 = ((Double) arg1).doubleValue();
-					double dist0 = PeerManager.distance(d0, target, true);
-					double dist1 = PeerManager.distance(d1, target, true);
+					double dist0 = Location.distance(d0, target, true);
+					double dist1 = Location.distance(d1, target, true);
 					if(dist0 < dist1) return -1; // best at the beginning
 					if(dist0 > dist1) return 1;
 					return 0; // should not happen
@@ -871,8 +871,8 @@ public class NodeDispatcher implements Dispatcher {
 						public int compare(Object arg0, Object arg1) {
 							double d0 = ((Double) arg0).doubleValue();
 							double d1 = ((Double) arg1).doubleValue();
-							double dist0 = PeerManager.distance(d0, target, true);
-							double dist1 = PeerManager.distance(d1, target, true);
+							double dist0 = Location.distance(d0, target, true);
+							double dist1 = Location.distance(d1, target, true);
 							if(dist0 < dist1) return -1; // best at the beginning
 							if(dist0 > dist1) return 1;
 							return 0; // should not happen
@@ -883,7 +883,7 @@ public class NodeDispatcher implements Dispatcher {
 					
 					for(int i=0;i<notVisitedList.size();i++) {
 						double loc = ((Double)(notVisitedList.get(i))).doubleValue();
-						double dist = PeerManager.distance(loc, target);
+						double dist = Location.distance(loc, target);
 						if(dist > furthestDist) {
 							furthestDist = dist;
 						}

@@ -152,7 +152,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             if(logMINOR) Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
             
-            if(PeerManager.distance(target, nextValue) > PeerManager.distance(target, closestLocation)) {
+            if(Location.distance(target, nextValue) > Location.distance(target, closestLocation)) {
             	if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
                 htl = node.decrementHTL(source, htl);
             }

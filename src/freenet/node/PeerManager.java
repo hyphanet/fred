@@ -516,7 +516,7 @@ public class PeerManager {
             double peerloc = p.getLocation().getValue();
             if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
             	continue;
-            double diff = distance(peerloc, loc);
+            double diff = Location.distance(peerloc, loc);
             if(diff < bestDiff) {
             	foundOne = true;
                 bestDiff = diff;
@@ -531,7 +531,7 @@ public class PeerManager {
                 double peerloc = p.getLocation().getValue();
                 if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
                 	continue;
-                double diff = distance(peerloc, loc);
+                double diff = Location.distance(peerloc, loc);
                 if(diff < bestDiff) {
                 	foundOne = true;
                     bestDiff = diff;
@@ -544,40 +544,16 @@ public class PeerManager {
 
     public boolean isCloserLocation(double loc) {
     	double nodeLoc = node.lm.getLocation().getValue();
-    	double nodeDist = distance(nodeLoc, loc);
+    	double nodeDist = Location.distance(nodeLoc, loc);
     	double closest = closestPeerLocation(loc, nodeLoc);
     	if(closest > 1.0) {
     		// No peers found
     		return false;
     	}
-    	double closestDist = distance(closest, loc);
+    	double closestDist = Location.distance(closest, loc);
     	return closestDist < nodeDist;
     }
     
-    static double distance(PeerNode p, double loc) {
-    	double d = distance(p.getLocation().getValue(), loc);
-    	return d;
-    	//return d * p.getBias();
-    }
-    
-    /**
-     * Distance between two locations.
-     * Both parameters must be in [0.0, 1.0].
-     */
-    public static double distance(double a, double b) {
-    	return distance(a, b, false);
-    }
-    
-    public static double distance(double a, double b, boolean allowCrazy) {
-        if(((a < 0.0 || a > 1.0)||(b < 0.0 || b > 1.0)) && !allowCrazy) {
-        	Logger.error(PeerManager.class, "Invalid Location ! a = "+a +" b = "+ b + "Please report this bug!", new Exception("error"));
-        	throw new NullPointerException();
-        }
-        // Circular keyspace
-    	if (a > b) return Math.min (a - b, 1.0 - a + b);
-    	else return Math.min (b - a, 1.0 - b + a);
-    }
-
     public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo) {
     	return closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0);
     }
@@ -593,7 +569,7 @@ public class PeerManager {
     	if (calculateMisrouting) {
     		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, null, maxDistance);
     		if(nbo != null) {
-    			node.nodeStats.routingMissDistance.report(distance(best, nbo.getLocation().getValue()));
+    			node.nodeStats.routingMissDistance.report(Location.distance(best, nbo.getLocation().getValue()));
     			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
     			int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF);
     			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
@@ -627,7 +603,7 @@ public class PeerManager {
         double bestDiff = Double.MAX_VALUE;
         double maxDiff = 0.0;
         if(!ignoreSelf)
-            maxDiff = distance(node.lm.getLocation().getValue(), target);
+            maxDiff = Location.distance(node.lm.getLocation().getValue(), target);
         PeerNode best = null;
         double bestLoc = -2;
         int count = 0;
@@ -654,9 +630,9 @@ public class PeerManager {
             	continue;
             }
             count++;
-            double diff = distance(p, target);
+            double diff = Location.distance(p, target);
             if(diff > maxDistance) continue;
-            if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation().getValue()+", target="+target+", d="+distance(p.getLocation().getValue(), target)+" usedD="+diff+" for "+p.getPeer());
+            if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation().getValue()+", target="+target+", d="+Location.distance(p.getLocation().getValue(), target)+" usedD="+diff+" for "+p.getPeer());
             if((!ignoreSelf) && (diff > maxDiff)) {
             	if(logMINOR) Logger.minor(this, "Ignoring because >maxDiff="+maxDiff);
             	continue;

@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.crypt.RandomSource;
+import freenet.support.Logger;
 
 /**
  * @author amphibian
@@ -63,4 +64,28 @@ public class Location {
     public synchronized void randomize(RandomSource r) {
         setValue(r.nextDouble());
     }
+
+	static double distance(PeerNode p, double loc) {
+		double d = distance(p.getLocation().getValue(), loc);
+		return d;
+		//return d * p.getBias();
+	}
+
+	/**
+	 * Distance between two locations.
+	 * Both parameters must be in [0.0, 1.0].
+	 */
+	public static double distance(double a, double b) {
+		return distance(a, b, false);
+	}
+
+	public static double distance(double a, double b, boolean allowCrazy) {
+	    if(((a < 0.0 || a > 1.0)||(b < 0.0 || b > 1.0)) && !allowCrazy) {
+	    	Logger.error(PeerManager.class, "Invalid Location ! a = "+a +" b = "+ b + "Please report this bug!", new Exception("error"));
+	    	throw new NullPointerException();
+	    }
+	    // Circular keyspace
+		if (a > b) return Math.min (a - b, 1.0 - a + b);
+		else return Math.min (b - a, 1.0 - b + a);
+	}
 }

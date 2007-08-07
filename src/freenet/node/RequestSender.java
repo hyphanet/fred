@@ -154,7 +154,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             if(logMINOR) Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
             
-            if(PeerManager.distance(target, nextValue) > PeerManager.distance(target, nearestLoc)) {
+            if(Location.distance(target, nextValue) > Location.distance(target, nearestLoc)) {
                 htl = node.decrementHTL(source, htl);
                 if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc+" so htl="+htl);
             }
