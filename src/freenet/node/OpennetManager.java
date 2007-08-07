@@ -238,7 +238,10 @@ public class OpennetManager {
 		Vector dropList = new Vector();
 		synchronized(this) {
 			boolean hasDisconnected = false;
-			while(peersLRU.size() > MAX_PEERS - (nodeToAddNow == null ? 0 : 1)) {
+			if(peersLRU.size() == MAX_PEERS && nodeToAddNow == null) {
+				PeerNode toDrop = peerToDrop(true, false);
+				hasDisconnected = !toDrop.isConnected();
+			} else while(peersLRU.size() > MAX_PEERS - (nodeToAddNow == null ? 0 : 1)) {
 				PeerNode toDrop;
 				// can drop peers which are over the limit
 				toDrop = peerToDrop(noDisconnect && nodeToAddNow != null && peersLRU.size() == MAX_PEERS, nodeToAddNow != null);
