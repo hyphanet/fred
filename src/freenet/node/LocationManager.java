@@ -87,7 +87,7 @@ public class LocationManager {
         this.loc = l;
     }
     
-    public void updateLocationChangeSession(double newLoc) {
+    public synchronized void updateLocationChangeSession(double newLoc) {
     	double oldLoc = loc;
     	// Patterned after PeerManager.distance( double, double ), but also need to know the direction of the change
 		if (newLoc > oldLoc) {
@@ -158,7 +158,7 @@ public class LocationManager {
                         if(System.currentTimeMillis() - timeLastSuccessfullySwapped > 30*1000) {
                             try {
                                 boolean myFlag = false;
-                                double myLoc = loc;
+                                double myLoc = getLocation();
                                 PeerNode[] peers = node.peers.connectedPeers;
                                 for(int i=0;i<peers.length;i++) {
                                     PeerNode pn = peers[i];
@@ -250,7 +250,7 @@ public class LocationManager {
             // Create my side
             
             long random = r.nextLong();
-            double myLoc = loc;
+            double myLoc = getLocation();
             LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
             double[] friendLocs = extractLocs(friendLocsAndUIDs);
             long[] myValueLong = new long[1+1+friendLocs.length];
@@ -380,7 +380,7 @@ public class LocationManager {
                 // We can't lock friends_locations, so lets just
                 // pretend that they're locked
                 long random = r.nextLong();
-                double myLoc = loc;
+                double myLoc = getLocation();
                 LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
                 double[] friendLocs = extractLocs(friendLocsAndUIDs);
                 long[] myValueLong = new long[1+1+friendLocs.length];
@@ -546,7 +546,7 @@ public class LocationManager {
      * Tell all connected peers that our location has changed
      */
     private void announceLocChange() {
-        Message msg = DMT.createFNPLocChangeNotification(loc);
+        Message msg = DMT.createFNPLocChangeNotification(getLocation());
         node.peers.localBroadcast(msg, false);
     }
     
