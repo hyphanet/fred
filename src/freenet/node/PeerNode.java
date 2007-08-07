@@ -340,7 +340,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         version = fs.get("version");
         Version.seenVersion(version);
         String locationString = fs.get("location");
-       	currentLocation = Location.getLocation(locationString);
+        try {
+        	currentLocation = Location.getLocation(locationString);
+        } catch (FSParseException e) {
+        	// Wait for them to send us an FNPLocChangeNotification
+        	currentLocation = -1.0;
+        }
 
         // FIXME make mandatory once everyone has upgraded
         lastGoodVersion = fs.get("lastGoodVersion");
@@ -837,7 +842,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      * PeerManager in e.g. verified.
      */
     public boolean isRoutable() {
-        return isConnected() && isRoutingCompatible();
+        return isConnected() && isRoutingCompatible() &&
+        	!(currentLocation < 0.0 || currentLocation > 1.0);
     }
     
     public boolean isRoutingCompatible(){
@@ -1717,10 +1723,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         	if(!forARK)
         		throw new FSParseException("No location");
         } else {
-        	double newLoc = Location.getLocation(locationString);
-        	if(!Location.equals(newLoc, currentLocation)) {
-        		changedAnything = true;
-        		currentLocation = newLoc;
+        	try {
+        		double newLoc = Location.getLocation(locationString);
+        		if(!Location.equals(newLoc, currentLocation)) {
+        			changedAnything = true;
+        			currentLocation = newLoc;
+        		}
+        	} catch (FSParseException e) {
+        		// Location is optional, we will wait for FNPLocChangeNotification
+        		if(logMINOR)
+        			Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: "+e);
         	}
         }
 
