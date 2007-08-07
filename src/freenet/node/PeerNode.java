@@ -1543,7 +1543,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      * Send any high level messages that need to be sent on connect.
      */
     private void sendInitialMessages() {
-        Message locMsg = DMT.createFNPLocChangeNotification(node.lm.loc);
+        Message locMsg = DMT.createFNPLocChangeNotification(node.lm.getLocation());
         Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
         

@@ -2501,11 +2501,11 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public double getLocation() {
-		return lm.loc;
+		return lm.getLocation();
 	}
 
 	public double getLocationChangeSession() {
-		return lm.locChangeSession;
+		return lm.getLocChangeSession();
 	}
 	
 	public int getNumberOfRemotePeerLocationsSeenInSwaps() {

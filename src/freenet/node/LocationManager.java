@@ -64,22 +64,22 @@ public class LocationManager {
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
-    double loc;
-    double locChangeSession = 0.0;
+    private double loc;
+    private double locChangeSession = 0.0;
     
     int numberOfRemotePeerLocationsSeenInSwaps = 0;
 
     /**
      * @return The current Location of this node.
      */
-    public double getLocation() {
+    public synchronized double getLocation() {
         return loc;
     }
 
     /**
      * @param l
      */
-    public void setLocation(double l) {
+    public synchronized void setLocation(double l) {
     	if(l < 0.0 || l > 1.0) {
     		Logger.error(this, "Setting invalid location: "+l, new Exception("error"));
     		return;
@@ -1146,5 +1146,9 @@ public class LocationManager {
 		for(int i=0;i<peers.length;i++)
 			uids[i] = peers[i].swapIdentifier;
 		return uids;
+	}
+
+	public synchronized double getLocChangeSession() {
+		return locChangeSession;
 	}
 }
