@@ -117,7 +117,7 @@ public class PageMaker {
 				String navigationTitle = (String) navigationLinkTitles.get(navigationLink);
 				String navigationPath = (String) navigationLinks.get(navigationLink);
 				HTMLNode listItem = navbarUl.addChild("li");
-				listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
+				listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
 			}
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");

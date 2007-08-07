@@ -581,10 +581,10 @@ public class FProxyToadlet extends Toadlet {
 			core.random.nextBytes(random);
 			FProxyToadlet fproxy = new FProxyToadlet(client, core);
 			core.setFProxy(fproxy);
-			server.register(fproxy, "/", false, l10n("welcomeTitle"), l10n("welcome"), false, null);
+			server.register(fproxy, "/", false, "FProxyToadlet.welcomeTitle", "FProxyToadlet.welcome", false, null);
 			
 			PproxyToadlet pproxy = new PproxyToadlet(client, node, core);
-			server.register(pproxy, "/plugins/", true, l10n("pluginsTitle"), l10n("plugins"), true, null);
+			server.register(pproxy, "/plugins/", true, "FProxyToadlet.pluginsTitle", "FProxyToadlet.plugins", true, null);
 			
 			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node);
 			server.register(welcometoadlet, "/welcome/", true, false);
@@ -593,7 +593,7 @@ public class FProxyToadlet extends Toadlet {
 			server.register(pluginToadlet, "/plugin/", true, true);
 			
 			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
-			server.register(configtoadlet, "/config/", true, l10n("configTitle"), l10n("config"), true, null);
+			server.register(configtoadlet, "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);
 			
 			StaticToadlet statictoadlet = new StaticToadlet(client);
 			server.register(statictoadlet, "/static/", true, false);
@@ -603,20 +603,20 @@ public class FProxyToadlet extends Toadlet {
 			
 			DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
 //			server.register(friendsToadlet, "/darknet/", true, l10n("friendsTitle"), l10n("friends"), true);
-			server.register(friendsToadlet, "/friends/", true, l10n("friendsTitle"), l10n("friends"), true, null);
+			server.register(friendsToadlet, "/friends/", true, "FProxyToadlet.friendsTitle", "FProxyToadlet.friends", true, null);
 			
 			OpennetConnectionsToadlet opennetToadlet = new OpennetConnectionsToadlet(node, core, client);
 //			server.register(opennetToadlet, "/opennet/", true, l10n("opennetTitle"), l10n("opennet"), true, opennetToadlet);
-			server.register(opennetToadlet, "/strangers/", true, l10n("opennetTitle"), l10n("opennet"), true, opennetToadlet);
+			server.register(opennetToadlet, "/strangers/", true, "FProxyToadlet.opennetTitle", "FProxyToadlet.opennet", true, opennetToadlet);
 			
 			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 			server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
 			
 			QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
-			server.register(queueToadlet, "/queue/", true, l10n("queueTitle"), l10n("queue"), false, null);
+			server.register(queueToadlet, "/queue/", true, "FProxyToadlet.queueTitle", "FProxyToadlet.queue", false, null);
 			
 			StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
-			server.register(statisticsToadlet, "/stats/", true, l10n("statsTitle"), l10n("stats"), true, null);
+			server.register(statisticsToadlet, "/stats/", true, "FProxyToadlet.statsTitle", "FProxyToadlet.stats", true, null);
 			
 			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
 			server.register(localFileInsertToadlet, "/files/", true, false);
