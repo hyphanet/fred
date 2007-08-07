@@ -13,60 +13,20 @@ import freenet.support.Logger;
  * Simply a number from 0.0 to 1.0.
  */
 public class Location {
-    private double loc;
-    private int hashCode;
-    
-    private Location(double location) {
-        setValue(location);
-    }
 
-    public Location(String init) throws FSParseException {
-        try {
-            setValue(Double.parseDouble(init));
-        } catch (NumberFormatException e) {
-            throw new FSParseException(e);
-        }
-    }
-
-    public double getValue() {
-        return loc;
-    }
-
-    /**
-     * @return A random Location to initialize the node to.
-     */
-    public static Location randomInitialLocation(RandomSource r) {
-        return new Location(r.nextDouble());
-    }
-
-    public void setValue(double newLoc) {
-        if((loc < 0.0) || (loc > 1.0))
-            throw new IllegalArgumentException();
-        this.loc = newLoc;
-        long l = Double.doubleToLongBits(newLoc);
-        hashCode = ((int)(l >>> 32)) ^ ((int)l);
-    }
-    
-    public boolean equals(Object o) {
-        if(o instanceof Location) {
-            return Math.abs(((Location)o).loc - loc) <= Double.MIN_VALUE;
-        }
-        return false;
-    }
-    
-    public int hashCode() {
-        return hashCode;
-    }
-
-    /**
-     * Randomize the location.
-     */
-    public synchronized void randomize(RandomSource r) {
-        setValue(r.nextDouble());
-    }
-
+	public static double getLocation(String init) throws FSParseException {
+		try {
+			if(init == null) throw new FSParseException("Null location");
+			double d = Double.parseDouble(init);
+			if(d < 0.0 || d > 1.0) throw new FSParseException("Invalid location "+d);
+			return d;
+		} catch (NumberFormatException e) {
+			throw new FSParseException(e);
+		}
+	}
+	
 	static double distance(PeerNode p, double loc) {
-		double d = distance(p.getLocation().getValue(), loc);
+		double d = distance(p.getLocation(), loc);
 		return d;
 		//return d * p.getBias();
 	}
@@ -87,5 +47,9 @@ public class Location {
 	    // Circular keyspace
 		if (a > b) return Math.min (a - b, 1.0 - a + b);
 		else return Math.min (b - a, 1.0 - b + a);
+	}
+
+	public static boolean equals(double newLoc, double currentLocation) {
+		return Math.abs(newLoc - currentLocation) < Double.MIN_VALUE * 2;
 	}
 }

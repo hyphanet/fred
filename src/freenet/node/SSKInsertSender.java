@@ -139,7 +139,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             synchronized(node.peers) {
                 next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
                 if(next != null)
-                    nextValue = next.getLocation().getValue();
+                    nextValue = next.getLocation();
                 else
                     nextValue = -1.0;
             }

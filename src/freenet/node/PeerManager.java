@@ -374,7 +374,7 @@ public class PeerManager {
     	long uid;
     	
     	LocationUIDPair(PeerNode pn) {
-    		location = pn.getLocation().getValue();
+    		location = pn.getLocation();
     		uid = pn.swapIdentifier;
     	}
 
@@ -401,7 +401,7 @@ public class PeerManager {
         int x = 0;
         for(int i=0;i<conns.length;i++) {
             if(conns[i].isRoutable())
-                locs[x++] = conns[i].getLocation().getValue();
+                locs[x++] = conns[i].getLocation();
         }
         // Wipe out any information contained in the order
         java.util.Arrays.sort(locs, 0, x);
@@ -513,7 +513,7 @@ public class PeerManager {
             PeerNode p = peers[i];
             if(!p.isRoutable()) continue;
             if(p.isRoutingBackedOff()) continue;
-            double peerloc = p.getLocation().getValue();
+            double peerloc = p.getLocation();
             if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
             	continue;
             double diff = Location.distance(peerloc, loc);
@@ -528,7 +528,7 @@ public class PeerManager {
                 PeerNode p = peers[i];
                 if(!p.isRoutable()) continue;
                 // Ignore backoff state
-                double peerloc = p.getLocation().getValue();
+                double peerloc = p.getLocation();
                 if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
                 	continue;
                 double diff = Location.distance(peerloc, loc);
@@ -543,7 +543,7 @@ public class PeerManager {
     }
 
     public boolean isCloserLocation(double loc) {
-    	double nodeLoc = node.lm.getLocation().getValue();
+    	double nodeLoc = node.lm.getLocation();
     	double nodeDist = Location.distance(nodeLoc, loc);
     	double closest = closestPeerLocation(loc, nodeLoc);
     	if(closest > 1.0) {
@@ -569,7 +569,7 @@ public class PeerManager {
     	if (calculateMisrouting) {
     		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, null, maxDistance);
     		if(nbo != null) {
-    			node.nodeStats.routingMissDistance.report(Location.distance(best, nbo.getLocation().getValue()));
+    			node.nodeStats.routingMissDistance.report(Location.distance(best, nbo.getLocation()));
     			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
     			int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF);
     			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
@@ -603,7 +603,7 @@ public class PeerManager {
         double bestDiff = Double.MAX_VALUE;
         double maxDiff = 0.0;
         if(!ignoreSelf)
-            maxDiff = Location.distance(node.lm.getLocation().getValue(), target);
+            maxDiff = Location.distance(node.lm.getLocation(), target);
         PeerNode best = null;
         double bestLoc = -2;
         int count = 0;
@@ -632,17 +632,17 @@ public class PeerManager {
             count++;
             double diff = Location.distance(p, target);
             if(diff > maxDistance) continue;
-            if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation().getValue()+", target="+target+", d="+Location.distance(p.getLocation().getValue(), target)+" usedD="+diff+" for "+p.getPeer());
+            if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation()+", target="+target+", d="+Location.distance(p.getLocation(), target)+" usedD="+diff+" for "+p.getPeer());
             if((!ignoreSelf) && (diff > maxDiff)) {
             	if(logMINOR) Logger.minor(this, "Ignoring because >maxDiff="+maxDiff);
             	continue;
             }
-            double loc = p.getLocation().getValue();
+            double loc = p.getLocation();
             if(diff < bestDiff) {
             	bestLoc = loc;
                 best = p;
                 bestDiff = diff;
-                if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+p.getLocation().getValue()+" for "+p.getPeer());
+                if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+p.getLocation()+" for "+p.getPeer());
             }
            	if(addUnpickedLocsTo != null) {
            		Double d = new Double(loc);

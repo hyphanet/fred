@@ -92,7 +92,7 @@ public class PeerNodeStatus {
 		this.statusValue = peerNode.getPeerNodeStatus();
 		this.statusName = peerNode.getPeerNodeStatusString();
 		this.statusCSSName = peerNode.getPeerNodeStatusCSSClassName();
-		this.location = peerNode.getLocation().getValue();
+		this.location = peerNode.getLocation();
 		this.version = peerNode.getVersion();
 		this.simpleVersion = peerNode.getSimpleVersion();
 		this.routingBackoffLength = peerNode.getRoutingBackoffLength();

@@ -325,7 +325,7 @@ public class NodeDispatcher implements Dispatcher {
 		// pn == null => originated locally, keep full htl
 		double target = m.getDouble(DMT.TARGET_LOCATION);
 		if(logMINOR) Logger.minor(this, "id "+id+" from "+pn+" htl "+htl+" target "+target);
-		if(Math.abs(node.lm.getLocation().getValue() - target) <= Double.MIN_VALUE) {
+		if(Math.abs(node.lm.getLocation() - target) <= Double.MIN_VALUE) {
 			if(logMINOR) Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.getDarknetPortNumber());
 			// Handle locally
 			// Message type specific processing
@@ -633,7 +633,7 @@ public class NodeDispatcher implements Dispatcher {
 			best = ctx.best;
 
 		for(int i=0;i<peers.length;i++) {
-			double loc = peers[i].getLocation().getValue();
+			double loc = peers[i].getLocation();
 			if(logMINOR) Logger.minor(this, "Location: "+loc);
 			// We are only interested in locations greater than the target
 			if(loc <= (target + 2*Double.MIN_VALUE)) {

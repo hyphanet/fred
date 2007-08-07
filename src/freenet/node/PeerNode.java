@@ -151,7 +151,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     private static final int MAX_HANDSHAKE_COUNT = 2;
     
     /** Current location in the keyspace */
-    private Location currentLocation;
+    private double currentLocation;
     
     /** Node identity; for now a block of data, in future a
      * public key (FIXME). Cannot be changed.
@@ -340,8 +340,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         version = fs.get("version");
         Version.seenVersion(version);
         String locationString = fs.get("location");
-        if(locationString == null) throw new FSParseException("No location");
-        currentLocation = new Location(locationString);
+       	currentLocation = Location.getLocation(locationString);
 
         // FIXME make mandatory once everyone has upgraded
         lastGoodVersion = fs.get("lastGoodVersion");
@@ -375,7 +374,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
                 throw new FSParseException(e1);
         }
         if(nominalPeer.isEmpty()) {
-        	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation.getValue())+": "+userToString());
+        	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation)+": "+userToString());
         	detectedPeer = null;
         } else {
         	detectedPeer = (Peer) nominalPeer.firstElement();
@@ -803,7 +802,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     /**
      * What is my current keyspace location?
      */
-    public synchronized Location getLocation() {
+    public synchronized double getLocation() {
         return currentLocation;
     }
     
@@ -1238,8 +1237,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     public void updateLocation(double newLoc) {
     	logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
+    	if(newLoc < 0.0 || newLoc > 1.0) {
+    		Logger.error(this, "Invalid location update for "+this, new Exception("error"));
+    		// Ignore it
+    		return;
+    	}
     	synchronized(this) {
-			currentLocation.setValue(newLoc);
+			currentLocation = newLoc;
 		}
         node.peers.writePeers();
     }
@@ -1539,7 +1543,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      * Send any high level messages that need to be sent on connect.
      */
     private void sendInitialMessages() {
-        Message locMsg = DMT.createFNPLocChangeNotification(node.lm.loc.getValue());
+        Message locMsg = DMT.createFNPLocChangeNotification(node.lm.loc);
         Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
         
@@ -1713,9 +1717,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         	if(!forARK)
         		throw new FSParseException("No location");
         } else {
-        	Location loc = new Location(locationString);
-        	if(!loc.equals(currentLocation)) changedAnything = true;
-        	currentLocation = loc;
+        	double newLoc = Location.getLocation(locationString);
+        	if(!Location.equals(newLoc, currentLocation)) {
+        		changedAnything = true;
+        		currentLocation = newLoc;
+        	}
         }
 
         Vector oldNominalPeer = nominalPeer;
@@ -1829,7 +1835,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         }
         if((getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED) && (getPeerAddedTime() > 1))
             idle = (int) ((now - getPeerAddedTime()) / 1000);
-        return String.valueOf(getPeer())+ '\t' +getIdentityString()+ '\t' +getLocation().getValue()+ '\t' +getPeerNodeStatusString()+ '\t' +idle;
+        return String.valueOf(getPeer())+ '\t' +getIdentityString()+ '\t' +getLocation()+ '\t' +getPeerNodeStatusString()+ '\t' +idle;
     }
     
     public String getFreevizOutput() {
@@ -1923,7 +1929,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		fs.put("auth.negTypes", negTypes);
         fs.putSingle("identity", getIdentityString());
-        fs.putSingle("location", Double.toString(currentLocation.getValue()));
+        fs.putSingle("location", Double.toString(currentLocation));
         fs.putSingle("testnet", Boolean.toString(testnetEnabled));
         fs.putSingle("version", version);
         if(peerCryptoGroup != null)

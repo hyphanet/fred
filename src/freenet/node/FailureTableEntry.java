@@ -55,7 +55,7 @@ class FailureTableEntry {
 			requestorBootIDs[i] = requestors[i].getBootID();
 		}
 		requestedNodes = new WeakReference[] { requested.myRef };
-		requestedLocs = new double[] { requested.getLocation().getValue() };
+		requestedLocs = new double[] { requested.getLocation() };
 		requestedBootIDs = new long[] { requested.getBootID() };
 	}
 	
@@ -188,7 +188,7 @@ class FailureTableEntry {
 				if(got == req) {
 					// Update existing entry
 					requestorIncluded = true;
-					requestedLocs[j] = req.getLocation().getValue();
+					requestedLocs[j] = req.getLocation();
 					requestedBootIDs[j] = req.getBootID();
 					requestedTimes[j] = now;
 					break;
@@ -209,7 +209,7 @@ class FailureTableEntry {
 				if(requestedNodes[i] == null || requestedNodes[i].get() == null) {
 					PeerNode pn = requestedFrom[x++];
 					requestedNodes[i] = pn.myRef;
-					requestedLocs[i] = pn.getLocation().getValue();
+					requestedLocs[i] = pn.getLocation();
 					requestedTimes[i] = now;
 					if(x == ptr) break;
 				}
@@ -238,7 +238,7 @@ class FailureTableEntry {
 				newRequestedNodes[toIndex] = pn.myRef;
 				newRequestedTimes[toIndex] = now;
 				newRequestedBootIDs[toIndex] = pn.getBootID();
-				newRequestedLocs[toIndex] = pn.getLocation().getValue();
+				newRequestedLocs[toIndex] = pn.getLocation();
 				toIndex++;
 			}
 		}

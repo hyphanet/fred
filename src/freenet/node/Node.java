@@ -421,15 +421,13 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
 		String loc = fs.get("location");
-		Location l;
 		try {
-			l = new Location(loc);
+			lm.setLocation(Location.getLocation(loc));
 		} catch (FSParseException e) {
 			IOException e1 = new IOException();
 			e1.initCause(e);
 			throw e1;
 		}
-		lm.setLocation(l);
 		myName = fs.get("myName");
 		if(myName == null) {
 			myName = newName();
@@ -2503,7 +2501,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public double getLocation() {
-		return lm.loc.getValue();
+		return lm.loc;
 	}
 
 	public double getLocationChangeSession() {

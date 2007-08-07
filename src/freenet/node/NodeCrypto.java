@@ -265,7 +265,7 @@ class NodeCrypto {
 				fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
 		}
 		// Negotiation types
-		fs.put("location", node.lm.getLocation().getValue()); // FIXME maybe !forSetup; see #943
+		fs.put("location", node.lm.getLocation()); // FIXME maybe !forSetup; see #943
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
 		fs.put("testnet", node.testnetEnabled); // Vital that peer know this!

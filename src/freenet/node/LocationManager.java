@@ -57,14 +57,14 @@ public class LocationManager {
     long timeLastSuccessfullySwapped;
     
     public LocationManager(RandomSource r) {
-        loc = Location.randomInitialLocation(r);
+        loc = r.nextDouble();
         sender = new SwapRequestSender();
         this.r = r;
         recentlyForwardedIDs = new Hashtable();
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
-    Location loc;
+    double loc;
     double locChangeSession = 0.0;
     
     int numberOfRemotePeerLocationsSeenInSwaps = 0;
@@ -72,19 +72,23 @@ public class LocationManager {
     /**
      * @return The current Location of this node.
      */
-    public Location getLocation() {
+    public double getLocation() {
         return loc;
     }
 
     /**
      * @param l
      */
-    public void setLocation(Location l) {
+    public void setLocation(double l) {
+    	if(l < 0.0 || l > 1.0) {
+    		Logger.error(this, "Setting invalid location: "+l, new Exception("error"));
+    		return;
+    	}
         this.loc = l;
     }
     
     public void updateLocationChangeSession(double newLoc) {
-    	double oldLoc = this.loc.getValue();
+    	double oldLoc = loc;
     	// Patterned after PeerManager.distance( double, double ), but also need to know the direction of the change
 		if (newLoc > oldLoc) {
 			double directDifference = newLoc - oldLoc;
@@ -154,12 +158,12 @@ public class LocationManager {
                         if(System.currentTimeMillis() - timeLastSuccessfullySwapped > 30*1000) {
                             try {
                                 boolean myFlag = false;
-                                double myLoc = loc.getValue();
+                                double myLoc = loc;
                                 PeerNode[] peers = node.peers.connectedPeers;
                                 for(int i=0;i<peers.length;i++) {
                                     PeerNode pn = peers[i];
                                     if(pn.isRoutable()) {
-                                        double ploc = pn.getLocation().getValue();
+                                        double ploc = pn.getLocation();
                                         if(Math.abs(ploc - myLoc) <= Double.MIN_VALUE) {
                                             myFlag = true;
                                             // Log an ERROR
@@ -171,7 +175,7 @@ public class LocationManager {
                                     }
                                 }
                                 if(myFlag) {
-                                    loc.randomize(node.random);
+                                    setLocation(node.random.nextDouble());
                                     announceLocChange();
                                     node.writeNodeFile();
                                 }
@@ -246,7 +250,7 @@ public class LocationManager {
             // Create my side
             
             long random = r.nextLong();
-            double myLoc = loc.getValue();
+            double myLoc = loc;
             LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
             double[] friendLocs = extractLocs(friendLocsAndUIDs);
             long[] myValueLong = new long[1+1+friendLocs.length];
@@ -338,7 +342,7 @@ public class LocationManager {
                 timeLastSuccessfullySwapped = System.currentTimeMillis();
                 // Swap
                 updateLocationChangeSession(hisLoc);
-                loc.setValue(hisLoc);
+                setLocation(hisLoc);
                 if(logMINOR) Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
                 swaps++;
                 announceLocChange();
@@ -376,7 +380,7 @@ public class LocationManager {
                 // We can't lock friends_locations, so lets just
                 // pretend that they're locked
                 long random = r.nextLong();
-                double myLoc = loc.getValue();
+                double myLoc = loc;
                 LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
                 double[] friendLocs = extractLocs(friendLocsAndUIDs);
                 long[] myValueLong = new long[1+1+friendLocs.length];
@@ -518,7 +522,7 @@ public class LocationManager {
                     timeLastSuccessfullySwapped = System.currentTimeMillis();
                     // Swap
                     updateLocationChangeSession(hisLoc);
-                    loc.setValue(hisLoc);
+                    setLocation(hisLoc);
                     if(logMINOR) Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
                     swaps++;
                     announceLocChange();
@@ -542,7 +546,7 @@ public class LocationManager {
      * Tell all connected peers that our location has changed
      */
     private void announceLocChange() {
-        Message msg = DMT.createFNPLocChangeNotification(loc.getValue());
+        Message msg = DMT.createFNPLocChangeNotification(loc);
         node.peers.localBroadcast(msg, false);
     }
     
@@ -1126,7 +1130,7 @@ public class LocationManager {
 	public static double[] extractLocs(PeerNode[] peers, boolean indicateBackoff) {
 		double[] locs = new double[peers.length];
 		for(int i=0;i<peers.length;i++) {
-			locs[i] = peers[i].getLocation().getValue();
+			locs[i] = peers[i].getLocation();
 			if(indicateBackoff) {
 				if(peers[i].isRoutingBackedOff())
 					locs[i] += 1;

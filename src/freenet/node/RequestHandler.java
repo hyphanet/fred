@@ -54,7 +54,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         htl = req.getShort(DMT.HTL);
         source = (PeerNode) req.getSource();
         closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
-        double myLoc = n.lm.getLocation().getValue();
+        double myLoc = n.lm.getLocation();
         key = (Key) req.getObject(DMT.FREENET_ROUTING_KEY);
         double keyLoc = key.toNormalizedDouble();
         if(Location.distance(keyLoc, myLoc) < Location.distance(keyLoc, closestLoc)) {
