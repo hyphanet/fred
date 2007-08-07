@@ -149,6 +149,7 @@ public class PluginToadlet extends Toadlet {
 		StringBuffer replyBuffer = new StringBuffer();
 		if ("add".equals(action)) {
 			pluginName = httpRequest.getPartAsString("pluginName", MAX_PLUGIN_NAME_LENGTH);
+
 			boolean added = false;
 			try {
 				pluginManager.addPlugin(pluginName, true);
