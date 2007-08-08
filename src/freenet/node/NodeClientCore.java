@@ -330,7 +330,7 @@ public class NodeClientCore implements Persistable {
 		// REDFLAG normally we wouldn't use static variables to carry important non-final data, but in this
 		// case it's temporary code which will be removed before 0.7.0.
 		
-		nodeConfig.register("allowInsecureCHKs", true, sortOrder++, true, false, "NodeClientCore.allowInsecureCHK", "NodeClientCore.allowInsecureCHKLong",
+		nodeConfig.register("allowInsecureCHKs", false, sortOrder++, true, false, "NodeClientCore.allowInsecureCHK", "NodeClientCore.allowInsecureCHKLong",
 				new BooleanCallback() {
 
 					public boolean get() {
@@ -345,7 +345,7 @@ public class NodeClientCore implements Persistable {
 		
 		Key.ALLOW_INSECURE_CLIENT_CHKS = nodeConfig.getBoolean("allowInsecureCHKs");
 		
-		nodeConfig.register("allowInsecureSSKs", true, sortOrder++, true, false, "NodeClientCore.allowInsecureSSK", "NodeClientCore.allowInsecureSSKLong",
+		nodeConfig.register("allowInsecureSSKs", false, sortOrder++, true, false, "NodeClientCore.allowInsecureSSK", "NodeClientCore.allowInsecureSSKLong",
 				new BooleanCallback() {
 
 					public boolean get() {
