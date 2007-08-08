@@ -24,13 +24,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	public BaseFileBucket(File file) {
 		this.length = file.length();
 		if(deleteOnExit()) {
-			try {
-				file.deleteOnExit();
-			} catch (NullPointerException e) {
-				Logger.error(this, "Impossible: "+e, e);
-				System.err.println("Impossible: "+e);
-				e.printStackTrace();
-			}
+			file.deleteOnExit();
 		}
 	}
 
