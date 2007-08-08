@@ -19,7 +19,6 @@ import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FileBucket;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 import freenet.support.io.TempFileBucket;
