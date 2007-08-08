@@ -261,6 +261,7 @@ outer:		while(true) {
 						callback.gotBucket(item.getReaderBucket());
 					}
 					names.add(name);
+					trimStoredData();
 				}
 			}
 
@@ -272,6 +273,7 @@ outer:		while(true) {
 					// Let it throw, if it does something is drastically wrong
 					callback.gotBucket(item.getReaderBucket());
 				}
+				trimStoredData();
 			}
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 			
@@ -415,7 +417,6 @@ outer:		while(true) {
 		}
 		if(oldItem != null)
 			oldItem.close();
-		trimStoredData();
 		return element;
 	}
 
