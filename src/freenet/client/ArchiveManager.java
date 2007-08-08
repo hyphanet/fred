@@ -17,6 +17,7 @@ import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.MutableBoolean;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FilenameGenerator;
@@ -177,7 +178,8 @@ public class ArchiveManager {
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
-		boolean gotElement = false;
+		MutableBoolean gotElement = element != null ? new MutableBoolean() : null;
+		
 		if(logMINOR) Logger.minor(this, "Extracting "+key);
 		ctx.onExtract();
 		ctx.removeAllCachedItems(); // flush cache anyway
@@ -253,12 +255,7 @@ outer:		while(true) {
 					out.close();
 					if(name.equals(".metadata"))
 						gotMetadata = true;
-					ArchiveStoreItem item = addStoreElement(ctx, key, name, temp);
-					if((!gotElement) && element != null && name.equals(element)) {
-						gotElement = true;
-						// Let it throw, if it does something is drastically wrong
-						callback.gotBucket(item.getReaderBucket());
-					}
+					addStoreElement(ctx, key, name, temp, gotElement, element, callback);
 					names.add(name);
 					trimStoredData();
 				}
@@ -266,17 +263,12 @@ outer:		while(true) {
 
 			// If no metadata, generate some
 			if(!gotMetadata) {
-				ArchiveStoreItem item = generateMetadata(ctx, key, names);
-				if(element != null && (!gotElement) && element.equals(METADATA_NAME)) {
-					gotElement = true;
-					// Let it throw, if it does something is drastically wrong
-					callback.gotBucket(item.getReaderBucket());
-				}
+				generateMetadata(ctx, key, names, gotElement, element, callback);
 				trimStoredData();
 			}
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 			
-			if((!gotElement) && element != null)
+			if((!gotElement.value) && element != null)
 				callback.notInArchive();
 			
 		} catch (IOException e) {
@@ -297,9 +289,12 @@ outer:		while(true) {
 	 * @param ctx The context object.
 	 * @param key The key from which the archive we are unpacking was fetched.
 	 * @param names Set of names in the archive.
+	 * @param element2 
+	 * @param gotElement 
+	 * @param callbackName If we generate a 
 	 * @throws ArchiveFailureException 
 	 */
-	private ArchiveStoreItem generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names) throws ArchiveFailureException {
+	private ArchiveStoreItem generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback) throws ArchiveFailureException {
 		/* What we have to do is to:
 		 * - Construct a filesystem tree of the names.
 		 * - Turn each level of the tree into a Metadata object, including those below it, with
@@ -324,10 +319,10 @@ outer:		while(true) {
 				OutputStream os = element.bucket.getOutputStream();
 				os.write(buf);
 				os.close();
-				return addStoreElement(ctx, key, ".metadata", element);
+				return addStoreElement(ctx, key, ".metadata", element, gotElement, element2, callback);
 			} catch (MetadataUnresolvedException e) {
 				try {
-					x = resolve(e, x, element, ctx, key);
+					x = resolve(e, x, element, ctx, key, gotElement, element2, callback);
 				} catch (IOException e1) {
 					throw new ArchiveFailureException("Failed to create metadata: "+e1, e1);
 				}
@@ -338,7 +333,7 @@ outer:		while(true) {
 		}
 	}
 	
-	private int resolve(MetadataUnresolvedException e, int x, TempStoreElement element, ArchiveStoreContext ctx, FreenetURI key) throws IOException {
+	private int resolve(MetadataUnresolvedException e, int x, TempStoreElement element, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback) throws IOException, ArchiveFailureException {
 		Metadata[] m = e.mustResolve;
 		for(int i=0;i<m.length;i++) {
 			try {
@@ -346,9 +341,9 @@ outer:		while(true) {
 				OutputStream os = element.bucket.getOutputStream();
 				os.write(buf);
 				os.close();
-				addStoreElement(ctx, key, ".metadata-"+(x++), element);
+				addStoreElement(ctx, key, ".metadata-"+(x++), element, gotElement, element2, callback);
 			} catch (MetadataUnresolvedException e1) {
-				x = resolve(e, x, element, ctx, key);
+				x = resolve(e, x, element, ctx, key, gotElement, element2, callback);
 			}
 		}
 		return x;
@@ -405,14 +400,31 @@ outer:		while(true) {
 
 	/**
 	 * Add a store element.
+	 * @param callbackName If set, the name of the file for which we must call the callback if this file happens to
+	 * match.
+	 * @param gotElement Flag indicating whether we've already found the file for the callback. If so we must not call
+	 * it again.
+	 * @param callback Callback to be called if we do find it. We must getReaderBucket() before adding the data to the 
+	 * LRU, otherwise it may be deleted before it reaches the client.
+	 * @throws ArchiveFailureException If a failure occurred resulting in the data not being readable. Only happens if
+	 * callback != null.
 	 */
-	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp) {
+	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp, MutableBoolean gotElement, String callbackName, ArchiveExtractCallback callback) throws ArchiveFailureException {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(this, ctx, key, name, temp);
 		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
 		ArchiveStoreItem oldItem;
+		// Let it throw, if it does something is drastically wrong
+		Bucket matchBucket = null;
+		if((!gotElement.value) && name.equals(callbackName)) {
+			matchBucket = element.getReaderBucket();
+		}
 		synchronized (storedData) {
 			oldItem = (ArchiveStoreItem) storedData.get(element.key);
 			storedData.push(element.key, element);
+		}
+		if(matchBucket != null) {
+			callback.gotBucket(matchBucket);
+			gotElement.value = true;
 		}
 		if(oldItem != null)
 			oldItem.close();
