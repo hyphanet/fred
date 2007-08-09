@@ -408,20 +408,24 @@ public class NodeStats implements Persistable {
 		// Reject request if the result of all our current requests completing simultaneously would be that
 		// some of them timeout.
 		
-		// Increment each running count unless it is the one we are currently processing.
-		// Purpose: Don't allow an SSK request (e.g.) unless there is space for a CHK insert *as well*.
+		// Never reject a CHK and accept an SSK. Because if we do that, we would be constantly accepting SSKs, as there
+		// would never be enough space for a CHK. So we add 1 to each type of request's count before computing the 
+		// bandwidth liability. Thus, if we have exactly enough space for 1 SSK and 1 CHK, we can accept either, and
+		// when one of either type completes, we can accept one of either type again: We never let SSKs drain the 
+		// "bucket" and block CHKs.
 		
-		int numCHKRequests = node.getNumCHKRequests() + ((!isInsert) && (!isSSK) ? 0 : 1);
-		int numSSKRequests = node.getNumSSKRequests() + ((!isInsert) && isSSK ? 0 : 1);
-		int numCHKInserts = node.getNumCHKInserts() + (isInsert && (!isSSK) ? 0 : 1);
-		int numSSKInserts = node.getNumSSKInserts() + (isInsert && isSSK ? 0 : 1);
+		int numCHKRequests = node.getNumCHKRequests() + 1;
+		int numSSKRequests = node.getNumSSKRequests() + 1;
+		int numCHKInserts = node.getNumCHKInserts() + 1;
+		int numSSKInserts = node.getNumSSKInserts() + 1;
+		if(logMINOR)
+			Logger.minor(this, "Running (adjusted): CHK fetch "+numCHKRequests+" SSK fetch "+numSSKRequests+" CHK insert "+numCHKInserts+" SSK insert "+numSSKInserts);
 		
 		double bandwidthLiabilityOutput =
 			successfulChkFetchBytesSentAverage.currentValue() * numCHKRequests +
 			successfulSskFetchBytesSentAverage.currentValue() * numSSKRequests +
 			successfulChkInsertBytesSentAverage.currentValue() * numCHKInserts +
 			successfulSskInsertBytesSentAverage.currentValue() * numSSKInserts;
-		bandwidthLiabilityOutput += getSuccessfulBytes(isSSK, isInsert, false).currentValue();
 		double bandwidthAvailableOutput =
 			node.getOutputBandwidthLimit() * 90; // 90 seconds at full power; we have to leave some time for the search as well
 		bandwidthAvailableOutput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
@@ -436,7 +440,6 @@ public class NodeStats implements Persistable {
 			successfulSskFetchBytesReceivedAverage.currentValue() * numSSKRequests +
 			successfulChkInsertBytesReceivedAverage.currentValue() * numCHKInserts +
 			successfulSskInsertBytesReceivedAverage.currentValue() * numSSKInserts;
-		bandwidthLiabilityInput += getSuccessfulBytes(isSSK, isInsert, true).currentValue();
 		double bandwidthAvailableInput =
 			node.getInputBandwidthLimit() * 90; // 90 seconds at full power
 		bandwidthAvailableInput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
