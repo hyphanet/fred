@@ -189,6 +189,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     				// Successful CHK transfer, maybe path fold
     				finishOpennet();
             	}
+				status = rs.getStatus();
         	    return;
             }
             
