@@ -614,9 +614,9 @@ public final class RequestSender implements Runnable, ByteCounter {
     
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
-        status = code;
         
         synchronized(this) {
+            status = code;
             notifyAll();
             if(status == SUCCESS)
             	successFrom = next;
