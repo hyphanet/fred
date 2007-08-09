@@ -224,7 +224,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             		if(key instanceof NodeSSK) {
                         Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
                         source.sendSync(df, this);
-                        node.sentPayload(rs.getSSKData().length);
+                        node.sentPayload(rs.getSSKData().length); // won't be sentPayload()ed by BlockTransmitter
                         if(needsPubKey) {
                         	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
                         	source.sendSync(pk, this);
@@ -392,7 +392,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 		if(block instanceof CHKBlock)
 			return DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
 		else if(block instanceof SSKBlock) {
-			node.sentPayload(block.getRawData().length);
+			node.sentPayload(block.getRawData().length); // won't be sentPayload()ed by BlockTransmitter
 			return DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
 		} else
 			throw new IllegalStateException("Unknown key block type: "+block.getClass());
