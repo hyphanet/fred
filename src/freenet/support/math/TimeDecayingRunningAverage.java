@@ -90,7 +90,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         	started = fs.getBoolean("Started", false);
         	if(started) {
         		curValue = fs.getDouble("CurrentValue", curValue);
-        		if(curValue > maxReport || curValue < minReport) {
+        		if(curValue > maxReport || curValue < minReport || Double.isNaN(curValue)) {
         			curValue = defaultValue;
         			totalReports = 0;
         			createdTime = System.currentTimeMillis();
