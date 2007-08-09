@@ -42,6 +42,8 @@ public class RequestHandler implements Runnable, ByteCounter {
     final Key key;
     private boolean finalTransferFailed = false;
     final boolean resetClosestLoc;
+    /** The RequestSender, if any */
+    private RequestSender rs;
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -74,7 +76,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     	RequestSender rs = null;
     	boolean thrown = false;
         try {
-        	realRun(rs, status);
+        	realRun(status);
         } catch (NotConnectedException e) {
         	// Ignore, normal
         } catch (Throwable t) {
@@ -116,7 +118,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         }
     }
 
-    private void realRun(RequestSender rs, int status) throws NotConnectedException {
+    private void realRun(int status) throws NotConnectedException {
         if(logMINOR) Logger.minor(this, "Handling a request: "+uid);
         if(!resetClosestLoc)
         	htl = source.decrementHTL(htl);
@@ -186,7 +188,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             		finalTransferFailed = true;
             	} else {
     				// Successful CHK transfer, maybe path fold
-    				finishOpennet(rs);
+    				finishOpennet();
             	}
         	    return;
             }
@@ -259,7 +261,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         }
 	}
 
-	private void finishOpennet(RequestSender rs) {
+	private void finishOpennet() {
 		if(!(node.passOpennetRefsThroughDarknet() || source.isOpennet())) return;
 		byte[] noderef = rs.waitForOpennetNoderef();
 		if(noderef == null) {
@@ -272,7 +274,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 			return;
 		}
 		
-    	finishOpennetRelay(rs, noderef);
+    	finishOpennetRelay(noderef);
     }
     
     private void finishOpennetNoRelay() {
@@ -345,7 +347,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 		}
     }
     
-	private void finishOpennetRelay(RequestSender rs, byte[] noderef) {
+	private void finishOpennetRelay(byte[] noderef) {
     	if(logMINOR)
     		Logger.minor(this, "Finishing opennet: relaying reference from "+rs.successFrom());
 		// Send it back to the handler, then wait for the ConnectReply
