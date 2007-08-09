@@ -102,7 +102,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			result.addChild("option", new String[] { "value", "selected" }, new String[] { "15", "selected" }, "I don't know");
 			result.addChild("option", "value", "8K", "lower speed");
-			result.addChild("option", "value", "12K", "1024+/128 kbps");
+			result.addChild("option", "value", "12K", "512+/128 kbps");
 			result.addChild("option", "value", "24K", "1024+/256 kbps");
 			result.addChild("option", "value", "48K", "1024+/512 kbps");
 			result.addChild("option", "value", "96K", "1024+/1024 kbps");
