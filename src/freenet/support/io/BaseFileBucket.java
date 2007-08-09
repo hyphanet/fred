@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -24,7 +26,15 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	public BaseFileBucket(File file) {
 		this.length = file.length();
 		if(deleteOnExit()) {
-			file.deleteOnExit();
+			try {
+				file.deleteOnExit();
+			} catch (NullPointerException e) {
+				if(WrapperManager.hasShutdownHookBeenTriggered()) {
+					Logger.normal(this, "NullPointerException setting deleteOnExit while shutting down - buggy JVM code: "+e, e);
+				} else {
+					Logger.error(this, "Caught "+e+" doing deleteOnExit() for "+file+" - JVM bug ????");
+				}
+			}
 		}
 	}
 
