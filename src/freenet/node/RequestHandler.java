@@ -145,10 +145,11 @@ public class RequestHandler implements Runnable, ByteCounter {
             	BlockTransmitter bt =
             		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
             	node.addTransferringRequestHandler(uid);
-            	if(bt.send())
+            	if(bt.send()) {
             		status = RequestSender.SUCCESS; // for byte logging
-            	if(source.isOpennet()) {
-            		finishOpennetNoRelay();
+            		if(source.isOpennet()) {
+            			finishOpennetNoRelay();
+            		}
             	}
             }
             return;
