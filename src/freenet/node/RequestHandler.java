@@ -73,7 +73,6 @@ public class RequestHandler implements Runnable, ByteCounter {
 
     public void run() {
     	int status = RequestSender.NOT_FINISHED;
-    	RequestSender rs = null;
     	boolean thrown = false;
         try {
         	realRun(status);
