@@ -6,6 +6,8 @@ package freenet.node.fcp;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
@@ -49,6 +51,16 @@ public class FCPConnectionInputHandler implements Runnable {
 		
 		while(true) {
 			SimpleFieldSet fs;
+			if(WrapperManager.hasShutdownHookBeenTriggered()) {
+				FCPMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.SHUTTING_DOWN,true,"The node is shutting down","Node",false);
+				handler.outputHandler.queue(msg);
+				try {
+					is.close();
+				} catch (IOException e) {
+					// Don't care
+				}
+				return;
+			}
 			// Read a message
 			String messageType = lis.readLine(128, 128, true);
 			if(messageType == null) {
