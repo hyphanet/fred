@@ -24,6 +24,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	protected static String tempDir = null;
 
 	public BaseFileBucket(File file) {
+		if(file == null) throw new NullPointerException();
 		this.length = file.length();
 		if(deleteOnExit()) {
 			try {
