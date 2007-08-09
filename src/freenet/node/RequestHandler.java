@@ -44,6 +44,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     final boolean resetClosestLoc;
     /** The RequestSender, if any */
     private RequestSender rs;
+    private int status;
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -72,10 +73,9 @@ public class RequestHandler implements Runnable, ByteCounter {
     }
 
     public void run() {
-    	int status = RequestSender.NOT_FINISHED;
     	boolean thrown = false;
         try {
-        	realRun(status);
+        	realRun();
         } catch (NotConnectedException e) {
         	// Ignore, normal
         } catch (Throwable t) {
@@ -117,7 +117,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         }
     }
 
-    private void realRun(int status) throws NotConnectedException {
+    private void realRun() throws NotConnectedException {
         if(logMINOR) Logger.minor(this, "Handling a request: "+uid);
         if(!resetClosestLoc)
         	htl = source.decrementHTL(htl);
