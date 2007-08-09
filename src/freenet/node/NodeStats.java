@@ -452,6 +452,8 @@ public class NodeStats implements Persistable {
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
 					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
 		int expectedSent = (int)Math.max(expected, 0);
+		if(logMINOR)
+			Logger.minor(this, "Expected sent bytes: "+expectedSent);
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
 			pInstantRejectIncoming.report(1.0);
 			preemptiveRejectReasons.inc("Insufficient output bandwidth");
@@ -461,6 +463,8 @@ public class NodeStats implements Persistable {
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
 					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
 		int expectedReceived = (int)Math.max(expected, 0);
+		if(logMINOR)
+			Logger.minor(this, "Expected received bytes: "+expectedSent);
 		if(!requestInputThrottle.instantGrab(expectedReceived)) {
 			requestOutputThrottle.recycle(expectedSent);
 			pInstantRejectIncoming.report(1.0);
