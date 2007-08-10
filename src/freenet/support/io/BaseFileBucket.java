@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -20,6 +21,12 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	// need to track it ourselves
 	protected long length;
 	protected long fileRestartCounter;
+	/** Has the bucket been freed? If so, no further operations may be done */
+	private boolean freed;
+	/** Vector of streams (FileBucketInputStream or FileBucketOutputStream) which 
+	 * are open to this file. So we can be sure they are all closed when we free it. 
+	 * Can be null. */
+	private Vector streams;
 
 	protected static String tempDir = null;
 
@@ -42,19 +49,41 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	public OutputStream getOutputStream() throws IOException {
 		synchronized (this) {
 			File file = getFile();
+			if(freed)
+				throw new IOException("File already freed");
 			if(isReadOnly())
 				throw new IOException("Bucket is read-only: "+this);
 			
 			if(createFileOnly() && file.exists())
 				throw new FileExistsException(file);
 			
-			// FIXME: behaviour depends on UNIX semantics, to totally abstract
-			// it out we would have to kill the old write streams here
-			// FIXME: what about existing streams? Will ones on append append
-			// to the new truncated file? Do we want them to? What about
-			// truncated ones? We should kill old streams here, right?
-			return newFileBucketOutputStream(createFileOnly() ? getTempfile() : file, file.getPath(), ++fileRestartCounter);
+			if(streams != null && !streams.isEmpty())
+				Logger.error(this, "Streams open on "+this+" while opening an output stream!: "+streams);
+			
+			File tempfile = createFileOnly() ? getTempfile() : file;
+			long streamNumber = ++fileRestartCounter;
+			
+			FileBucketOutputStream os = 
+				new FileBucketOutputStream(tempfile, streamNumber);
+			
+			addStream(os);
+			return os;
 		}
+	}
+
+	private synchronized void addStream(Object stream) {
+		// BaseFileBucket is a very common object, and often very long lived,
+		// so we need to minimize memory usage even at the cost of frequent allocations.
+		if(streams == null)
+			streams = new Vector(1,1);
+		streams.add(stream);
+	}
+	
+	private synchronized void removeStream(Object stream) {
+		// Race condition is possible
+		if(streams == null) return;
+		streams.remove(stream);
+		if(streams.isEmpty()) streams = null;
 	}
 
 	protected abstract boolean createFileOnly();
@@ -75,11 +104,6 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		return f;
 	}
 	
-	protected FileBucketOutputStream newFileBucketOutputStream(
-		File tempfile, String s, long streamNumber) throws IOException {
-		return new FileBucketOutputStream(tempfile, s, streamNumber);
-	}
-
 	protected synchronized void resetLength() {
 		length = 0;
 	}
@@ -99,7 +123,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		private boolean closed;
 		
 		protected FileBucketOutputStream(
-			File tempfile, String s, long restartCount)
+			File tempfile, long restartCount)
 			throws FileNotFoundException {
 			super(tempfile, false);
 			if(Logger.shouldLog(Logger.MINOR, this))
@@ -111,10 +135,15 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		}
 		
 		protected void confirmWriteSynchronized() throws IOException {
-			if (fileRestartCounter > restartCount)
-				throw new IllegalStateException("writing to file after restart");
+			synchronized(BaseFileBucket.this) {
+				if (fileRestartCounter > restartCount)
+					throw new IllegalStateException("writing to file after restart");
+				if(freed)
+					throw new IOException("writing to file after it has been freed");
+			}
 			if(isReadOnly())
 				throw new IOException("File is read-only");
+				
 		}
 		
 		public void write(byte[] b) throws IOException {
@@ -148,6 +177,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 				closed = true;
 				file = getFile();
 			}
+			removeStream(this);
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR)
 				Logger.minor(this, "Closing "+BaseFileBucket.this);
@@ -181,21 +211,37 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 	class FileBucketInputStream extends FileInputStream {
 		Exception e;
+		boolean closed;
 
 		public FileBucketInputStream(File f) throws IOException {
 			super(f);
 			if (Logger.shouldLog(Logger.DEBUG, this))
 				e = new Exception("debug");
 		}
+		
+		public void close() throws IOException {
+			synchronized(this) {
+				if(closed) return;
+				closed = true;
+			}
+			removeStream(this);
+			super.close();
+		}
 	}
 
 	public synchronized InputStream getInputStream() throws IOException {
+		if(freed)
+			throw new IOException("File already freed");
 		File file = getFile();
 		if(!file.exists()) {
 			Logger.normal(this, "File does not exist: "+file+" for "+this);
 			return new NullInputStream();
-		} else 
-			return new FileBucketInputStream(file);
+		} else {
+			FileBucketInputStream is =
+				new FileBucketInputStream(file);
+			addStream(is);
+			return is;
+		}
 	}
 
 	/**
@@ -324,7 +370,32 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		free(false);
 	}
 	
-	public synchronized void free(boolean forceFree) {
+	public void free(boolean forceFree) {
+		Object[] toClose;
+		synchronized(this) {
+			if(freed) return;
+			freed = true;
+			toClose = streams == null ? null : streams.toArray();
+			streams = null;
+		}
+		
+		if(toClose != null) {
+			Logger.error(this, "Streams open free()ing "+this+" : "+toClose);
+			for(int i=0;i<toClose.length;i++) {
+				try {
+					if(toClose[i] instanceof FileBucketOutputStream) {
+						((FileBucketOutputStream) toClose[i]).close();
+					} else {
+						((FileBucketInputStream) toClose[i]).close();
+					}
+				} catch (IOException e) {
+					Logger.error(this, "Caught closing stream in free(): "+e, e);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught closing stream in free(): "+t, t);
+				}
+			}
+		}
+		
 		File file = getFile();
 		if ((deleteOnFree() || forceFree) && file.exists()) {
 			Logger.debug(this,
