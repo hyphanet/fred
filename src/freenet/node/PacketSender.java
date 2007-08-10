@@ -28,7 +28,7 @@ public class PacketSender implements Runnable, Ticker {
 
 	private static boolean logMINOR;
 	
-	static final int MAX_COALESCING_DELAY = 100;
+	static final int MAX_COALESCING_DELAY = 200;
 	
     final LinkedList resendPackets;
     /** ~= Ticker :) */
