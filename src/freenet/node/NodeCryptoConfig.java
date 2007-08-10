@@ -113,7 +113,7 @@ public class NodeCryptoConfig {
 					}
 			
 		});
-		
+		dropProbability = config.getInt("testingDropPacketsEvery"); 
 		
 		config.register("oneConnectionPerIP", onePerIP, sortOrder++, true, false, "Node.oneConnectionPerIP", "Node.oneConnectionPerIPLong",
 				new BooleanCallback() {
@@ -131,6 +131,7 @@ public class NodeCryptoConfig {
 					}
 			
 		});
+		oneConnectionPerAddress = config.getBoolean("oneConnectionPerIP");
 		
 		config.register("alwaysAllowLocalAddresses", false, sortOrder++, true, false, "Node.alwaysAllowLocalAddresses", "Node.alwaysAllowLocalAddressesLong",
 				new BooleanCallback() {
@@ -147,6 +148,7 @@ public class NodeCryptoConfig {
 						}
 					}
 		});
+		alwaysAllowLocalAddresses = config.getBoolean("alwaysAllowLocalAddresses");
 	}
 
 	/** The number of config options i.e. the amount to increment sortOrder by */
