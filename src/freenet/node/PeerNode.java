@@ -482,7 +482,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         timeLastRoutable = -1;
         timeAddedOrRestarted = System.currentTimeMillis();
         
-        randomizeMaxTimeBetweenPacketSends();
         swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
         
         // Not connected yet; need to handshake
@@ -632,12 +631,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
         return false;
 	}
-
-    //FIXME: Huh wtf ?
-	private void randomizeMaxTimeBetweenPacketSends() {
-        int x = Node.KEEPALIVE_INTERVAL;
-        x += node.random.nextInt(x);
-    }
 
     /**
      * Get my low-level address. This is the address that packets have been received from from this node.
@@ -1365,7 +1358,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     public void sentPacket() {
         timeLastSentPacket = System.currentTimeMillis();
-        randomizeMaxTimeBetweenPacketSends();
     }
 
     public synchronized KeyAgreementSchemeContext getKeyAgreementSchemeContext() {
