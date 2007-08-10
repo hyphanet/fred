@@ -50,6 +50,8 @@ public class TextModeClientInterfaceServer implements Runnable {
     }
     
     void start() {
+		Logger.normal(core, "TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
+		System.out.println("TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
         Thread t = new Thread(this, "Text mode client interface");
         t.setDaemon(true);
         t.start();
@@ -57,7 +59,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     
 	public static TextModeClientInterfaceServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException {
 		
-		TextModeClientInterfaceServer server;
+		TextModeClientInterfaceServer server = null;
 		
 		SubConfig TMCIConfig = new SubConfig("console", config);
 		
@@ -73,16 +75,8 @@ public class TextModeClientInterfaceServer implements Runnable {
 		String allowedHosts = TMCIConfig.getString("allowedHosts");
 		boolean direct = TMCIConfig.getBoolean("directEnabled");
 
-		if(TMCIEnabled){
+		if(TMCIEnabled)
 			server = new TextModeClientInterfaceServer(node, core, port, bind_ip, allowedHosts);
-			Logger.normal(core, "TMCI started on "+bind_ip+ ':' +port);
-			System.out.println("TMCI started on "+bind_ip+ ':' +port);
-		}
-		else{
-			Logger.normal(core, "Not starting TMCI as it's disabled");
-			System.out.println("Not starting TMCI as it's disabled");
-			server = null;
-		}
 		
 		if(direct) {
 	        HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
