@@ -408,7 +408,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	}
 	
 	public synchronized String toString() {
-		return super.toString()+ ':' +getFile().getPath();
+		return super.toString()+ ':' +getFile().getPath()+":streams="+(streams == null ? 0 : streams.size());
 	}
 
 	/**
