@@ -106,6 +106,7 @@ public class QueueToadlet extends Toadlet {
 									new String[]{ "id", "message" },
 									new String[]{ identifier, e.getMessage()}
 							));
+					return;
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
