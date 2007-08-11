@@ -67,6 +67,9 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			FileBucketOutputStream os = 
 				new FileBucketOutputStream(tempfile, streamNumber);
 			
+			if(Logger.shouldLog(Logger.DEBUG, this))
+				Logger.debug(this, "Creating "+os, new Exception("debug"));
+			
 			addStream(os);
 			return os;
 		}
@@ -249,6 +252,8 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			FileBucketInputStream is =
 				new FileBucketInputStream(file);
 			addStream(is);
+			if(Logger.shouldLog(Logger.DEBUG, this))
+				Logger.debug(this, "Creating "+is, new Exception("debug"));
 			return is;
 		}
 	}
