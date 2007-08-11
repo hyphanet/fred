@@ -120,9 +120,7 @@ public class LocationManager {
     public void startSender(Node n, SwapRequestInterval interval) {
         this.node = n;
         this.interval = interval;
-        Thread t = new Thread(sender, "SwapRequest sender");
-        t.setDaemon(true);
-        t.start();
+        n.executor.execute(sender, "SwapRequest sender");
     }
 
     /**
@@ -200,10 +198,8 @@ public class LocationManager {
      * the wilderness.
      */
     private void startSwapRequest() {
-        Thread t = new Thread(new OutgoingSwapRequestHandler(),
+    	node.executor.execute(new OutgoingSwapRequestHandler(),
                 "Outgoing swap request handler for port "+node.getDarknetPortNumber());
-        t.setDaemon(true);
-        t.start();
     }
     
     /**
@@ -766,9 +762,7 @@ public class LocationManager {
                 IncomingSwapRequestHandler isrh =
                     new IncomingSwapRequestHandler(m, pn, item);
                 if(logMINOR) Logger.minor(this, "Handling... "+uid);
-                Thread t = new Thread(isrh, "Incoming swap request handler for port "+node.getDarknetPortNumber());
-                t.setDaemon(true);
-                t.start();
+                node.executor.execute(isrh, "Incoming swap request handler for port "+node.getDarknetPortNumber());
                 return true;
             } catch (Error e) {
                 unlock();

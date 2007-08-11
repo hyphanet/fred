@@ -530,9 +530,7 @@ public class UpdateOverMandatoryManager {
 					if(logMINOR)
 						Logger.minor(this, "Sending data...");
 					// Send the data
-					Thread t = new Thread(r, "Revocation key send for "+uid+" to "+source.userToString());
-					t.setDaemon(true);
-					t.start();
+					updateManager.node.executor.execute(r, "Revocation key send for "+uid+" to "+source.userToString());
 				}
 				public void disconnected() {
 					// Argh
@@ -639,7 +637,7 @@ public class UpdateOverMandatoryManager {
 		
 		final BulkReceiver br = new BulkReceiver(prb, source, uid);
 		
-		Thread t = new Thread(new Runnable() {
+		updateManager.node.executor.execute(new Runnable() {
 
 			public void run() {
 				if(br.receive()) {
@@ -655,9 +653,6 @@ public class UpdateOverMandatoryManager {
 			}
 			
 		}, "Revocation key receive for "+uid+" from "+source.userToString());
-		
-		t.setDaemon(true);
-		t.start();
 		
 		return true;
 	}
@@ -908,9 +903,8 @@ public class UpdateOverMandatoryManager {
 					if(logMINOR)
 						Logger.minor(this, "Sending data...");
 					// Send the data
-					Thread t = new Thread(r, "Main jar send for "+uid+" to "+source.userToString());
-					t.setDaemon(true);
-					t.start();
+					
+					updateManager.node.executor.execute(r, "Main jar send for "+uid+" to "+source.userToString());
 				}
 				public void disconnected() {
 					// Argh
@@ -1025,7 +1019,7 @@ public class UpdateOverMandatoryManager {
 		
 		final BulkReceiver br = new BulkReceiver(prb, source, uid);
 		
-		Thread t = new Thread(new Runnable() {
+		updateManager.node.executor.execute(new Runnable() {
 
 			public void run() {
 				try {
@@ -1048,9 +1042,6 @@ public class UpdateOverMandatoryManager {
 			}
 			
 		}, "Main jar ("+version+") receive for "+uid+" from "+source.userToString());
-		
-		t.setDaemon(true);
-		t.start();
 		
 		return true;
 	}

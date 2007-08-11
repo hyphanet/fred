@@ -279,13 +279,11 @@ public class SplitFileFetcher implements ClientGetState {
 	}
 
 	public void scheduleOffThread() {
-		Thread t = new Thread(new Runnable() {
+		fetchContext.executor.execute(new Runnable() {
 			public void run() {
 				schedule();
 			}
 		}, "Splitfile scheduler thread for "+this);
-		t.setDaemon(true);
-		t.start();
 	}
 
 }

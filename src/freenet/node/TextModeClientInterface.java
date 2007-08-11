@@ -908,9 +908,7 @@ public class TextModeClientInterface implements Runnable {
 
     private void probeAll() {
     	GlobalProbe p = new GlobalProbe(n);
-    	Thread t = new Thread(p);
-    	t.setDaemon(true);
-    	t.start();
+    	n.executor.execute(p, "GlobalProbe");
 	}
 
 	/**

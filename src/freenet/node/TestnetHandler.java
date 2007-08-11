@@ -124,9 +124,7 @@ public class TestnetHandler implements Runnable {
 		}
 
 		void start() {
-			Thread t = new Thread(this, "Testnet handler for "+s.getInetAddress()+" at "+System.currentTimeMillis());
-			t.setDaemon(true);
-			t.start();
+			node.executor.execute(this, "Testnet handler for "+s.getInetAddress()+" at "+System.currentTimeMillis());
 		}
 		
 		public void run() {

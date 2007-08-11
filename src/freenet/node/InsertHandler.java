@@ -147,9 +147,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         // Receive the data, off thread
         
         Runnable dataReceiver = new DataReceiver();
-        Thread t = new Thread(dataReceiver, "InsertHandler$DataReceiver for UID "+uid);
-        t.setDaemon(true);
-        t.start();
+        node.executor.execute(dataReceiver, "InsertHandler$DataReceiver for UID "+uid);
 
         if(htl == 0) {
             canCommit = true;

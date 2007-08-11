@@ -829,7 +829,7 @@ public class DarknetPeerNode extends PeerNode {
 			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, false);
 			receiver = new BulkReceiver(prb, DarknetPeerNode.this, uid);
 			// FIXME make this persistent
-			Thread t = new Thread(new Runnable() {
+			node.executor.execute(new Runnable() {
 				public void run() {
 					if(logMINOR)
 						Logger.minor(this, "Received file");
@@ -852,9 +852,6 @@ public class DarknetPeerNode extends PeerNode {
 						Logger.minor(this, "Received file");
 				}
 			}, "Receiver for bulk transfer "+uid+":"+filename);
-			t.setDaemon(true);
-			t.start();
-			if(logMINOR) Logger.minor(this, "Receiving on "+t);
 			sendFileOfferAccepted(uid);
 		}
 
@@ -872,7 +869,7 @@ public class DarknetPeerNode extends PeerNode {
 			transmitter = new BulkTransmitter(prb, DarknetPeerNode.this, uid, node.outputThrottle);
 			if(logMINOR)
 				Logger.minor(this, "Sending "+uid);
-			Thread t = new Thread(new Runnable() {
+			node.executor.execute(new Runnable() {
 				public void run() {
 					if(logMINOR)
 						Logger.minor(this, "Sending file");
@@ -891,8 +888,6 @@ public class DarknetPeerNode extends PeerNode {
 				}
 
 			}, "Sender for bulk transfer "+uid+":"+filename);
-			t.setDaemon(true);
-			t.start();
 		}
 
 		public void reject() {

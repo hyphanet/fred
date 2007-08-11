@@ -22,9 +22,7 @@ public class FCPConnectionInputHandler implements Runnable {
 	}
 
 	void start() {
-		Thread t = new Thread(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress());
-		t.setDaemon(true);
-		t.start();
+		handler.server.node.executor.execute(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress());
 	}
 	
 	public void run() {

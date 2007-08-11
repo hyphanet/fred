@@ -468,9 +468,7 @@ public class IPDetectorPluginManager {
 		if(logMINOR) Logger.minor(this, "Detecting...");
 		synchronized(this) {
 			runner = new DetectorRunner();
-			Thread t = new Thread(runner);
-			t.setDaemon(true);
-			t.start();
+			node.executor.execute(runner, "Plugin detector runner");
 		}
 	}
 

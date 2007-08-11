@@ -145,7 +145,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             	BlockTransmitter bt =
             		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
             	node.addTransferringRequestHandler(uid);
-            	if(bt.send()) {
+            	if(bt.send(node.executor)) {
             		status = RequestSender.SUCCESS; // for byte logging
             		if(source.isOpennet()) {
             			finishOpennetNoRelay();
@@ -184,7 +184,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             	BlockTransmitter bt =
             	    new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
             	node.addTransferringRequestHandler(uid);
-            	if(!bt.send()){
+            	if(!bt.send(node.executor)){
             		finalTransferFailed = true;
             	} else {
     				// Successful CHK transfer, maybe path fold

@@ -47,15 +47,14 @@ public class TextModeClientInterfaceServer implements Runnable {
         this.bindTo=bindTo;
         this.allowedHosts = allowedHosts;
         this.isEnabled=true;
-		networkInterface = NetworkInterface.create(port, bindTo, allowedHosts);
+		networkInterface = NetworkInterface.create(port, bindTo, allowedHosts, n.executor);
     }
     
     void start() {
 		Logger.normal(core, "TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
 		System.out.println("TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
-        Thread t = new Thread(this, "Text mode client interface");
-        t.setDaemon(true);
-        t.start();
+		
+		n.executor.execute(this, "Text mode client interface");
     }
     
 	public static TextModeClientInterfaceServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException {
@@ -232,9 +231,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     				TextModeClientInterface tmci = 
 					new TextModeClientInterface(this, in, out);
     				
-    				Thread t = new Thread(tmci, "Text mode client interface handler for "+s.getPort());
-    				t.setDaemon(true);
-    				t.start();
+    				n.executor.execute(tmci, "Text mode client interface handler for "+s.getPort());
     				
     			} catch (SocketTimeoutException e) {
     				// Ignore and try again

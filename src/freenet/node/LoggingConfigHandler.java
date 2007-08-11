@@ -298,9 +298,7 @@ public class LoggingConfigHandler {
 		}
 
 		void start() {
-			Thread t = new Thread(this, "Old log directory "+logDir+" deleter");
-			t.setDaemon(true);
-			t.start();
+			executor.execute(this, "Old log directory "+logDir+" deleter");
 		}
 		
 		public void run() {

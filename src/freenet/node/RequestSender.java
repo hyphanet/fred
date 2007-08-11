@@ -113,9 +113,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     }
 
     public void start() {
-        Thread t = new Thread(this, "RequestSender for UID "+uid);
-        t.setDaemon(true);
-        t.start();
+    	node.executor.execute(this, "RequestSender for UID "+uid);
     }
     
     public void run() {

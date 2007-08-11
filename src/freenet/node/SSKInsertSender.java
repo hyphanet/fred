@@ -97,9 +97,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
     }
 
     void start() {
-        Thread t = new Thread(this, "SSKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
-        t.setDaemon(true);
-        t.start();
+    	node.executor.execute(this, "SSKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
     }
     
 	public void run() {

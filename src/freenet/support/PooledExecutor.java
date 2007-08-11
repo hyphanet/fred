@@ -52,11 +52,13 @@ public class PooledExecutor implements Executor {
 
 	class MyThread extends Thread {
 		
+		final String defaultName;
 		boolean alive = true;
 		Runnable nextJob;
 		
-		public MyThread(String string) {
-			super(string);
+		public MyThread(String defaultName) {
+			super(defaultName);
+			this.defaultName = defaultName;
 		}
 
 		public void run() {
@@ -74,6 +76,7 @@ public class PooledExecutor implements Executor {
 					}
 					synchronized(this) {
 						if(nextJob == null) {
+							this.setName(defaultName);
 							try {
 								wait(TIMEOUT);
 							} catch (InterruptedException e) {

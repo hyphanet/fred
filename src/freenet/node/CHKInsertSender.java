@@ -18,6 +18,7 @@ import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 
@@ -27,15 +28,17 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		
 		final AwaitingCompletion completion;
 		final BlockTransmitter bt;
+		final Executor executor;
 		
-		public Sender(AwaitingCompletion ac) {
+		public Sender(AwaitingCompletion ac, Executor executor) {
 			this.bt = ac.bt;
 			this.completion = ac;
+			this.executor = executor;
 		}
 		
 		public void run() {
 			try {
-				bt.send();
+				bt.send(executor);
 				if(bt.failedDueToOverload()) {
 					completion.completedTransfer(false);
 				} else {
@@ -75,10 +78,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 		
 		void start() {
-			Sender s = new Sender(this);
-            Thread senderThread = new Thread(s, "Sender for "+uid+" to "+pn.getPeer());
-            senderThread.setDaemon(true);
-            senderThread.start();
+			Sender s = new Sender(this, node.executor);
+			node.executor.execute(s, "Sender for "+uid+" to "+pn.getPeer());
 		}
 		
 		void completed(boolean timeout, boolean success) {
@@ -137,9 +138,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     }
 
 	void start() {
-        Thread t = new Thread(this, "CHKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
-        t.setDaemon(true);
-        t.start();
+		node.executor.execute(this, "CHKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
 	}
 
 	static boolean logMINOR;
@@ -633,9 +632,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			else
 				return;
 		}
-		t = new Thread(cw, "Completion waiter for "+uid);
-		t.setDaemon(true);
-		t.start();
+		node.executor.execute(cw, "Completion waiter for "+uid);
 	}
 	
 	private class CompletionWaiter implements Runnable {

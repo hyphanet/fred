@@ -389,9 +389,7 @@ public class NodeIPDetector {
 	/** Start all IP detection related processes */
 	public void start() {
 		ipDetectorManager.start();
-		Thread t = new Thread(ipDetector, "IP address re-detector");
-		t.setDaemon(true);
-		t.start();
+		node.executor.execute(ipDetector, "IP address re-detector");
 		redetectAddress();
 		// 60 second delay for inserting ARK to avoid reinserting more than necessary if we don't detect IP on startup.
 		node.getTicker().queueTimedJob(new FastRunnable() {

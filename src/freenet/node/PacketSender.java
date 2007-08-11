@@ -358,9 +358,7 @@ public class PacketSender implements Runnable, Ticker {
         			}
         		} else {
         			try {
-						Thread t = new Thread(r, "Scheduled job: "+r);
-						t.setDaemon(true);
-						t.start();
+        				node.executor.execute(r, "Scheduled job: "+r);
 					} catch (OutOfMemoryError e) {
 						OOMHandler.handleOOM(e);
 						System.err.println("Will retry above failed operation...");

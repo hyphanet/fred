@@ -452,7 +452,7 @@ public class NodeClientCore implements Persistable {
 		if(tmci != null)
 			tmci.start();
 		
-		Thread completer = new Thread(new Runnable() {
+		node.executor.execute(new Runnable() {
 			public void run() {
 				System.out.println("Resuming persistent requests");
 				Logger.normal(this, "Resuming persistent requests");
@@ -464,8 +464,6 @@ public class NodeClientCore implements Persistable {
 				Logger.normal(this, "Completed startup: All persistent requests resumed or restarted");
 			}
 		}, "Startup completion thread");
-		completer.setDaemon(true);
-		completer.start();
 	}
 	
 	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {

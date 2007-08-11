@@ -106,10 +106,7 @@ class SingleFileInserter implements ClientPutState {
 		if(data.size() > COMPRESS_OFF_THREAD_LIMIT) {
 			// Run off thread
 			OffThreadCompressor otc = new OffThreadCompressor();
-			Thread t = new Thread(otc, "Compressor for "+this);
-			if(logMINOR) Logger.minor(this, "Compressing off-thread: "+t);
-			t.setDaemon(true);
-			t.start();
+			ctx.executor.execute(otc, "Compressor for "+this);
 		} else {
 			tryCompress();
 		}

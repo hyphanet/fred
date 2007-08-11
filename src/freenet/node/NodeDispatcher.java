@@ -191,9 +191,7 @@ public class NodeDispatcher implements Dispatcher {
 		}
 		//if(!node.lockUID(id)) return false;
 		RequestHandler rh = new RequestHandler(m, id, node);
-		Thread t = new Thread(rh, "RequestHandler for UID "+id);
-		t.setDaemon(true);
-		t.start();
+		node.executor.execute(rh, "RequestHandler for UID "+id);
 		return true;
 	}
 
@@ -234,14 +232,10 @@ public class NodeDispatcher implements Dispatcher {
 		long now = System.currentTimeMillis();
 		if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
 			SSKInsertHandler rh = new SSKInsertHandler(m, id, node, now);
-			Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
-			t.setDaemon(true);
-			t.start();
+			node.executor.execute(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
 			InsertHandler rh = new InsertHandler(m, id, node, now);
-			Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
-			t.setDaemon(true);
-			t.start();
+			node.executor.execute(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
 		return true;
