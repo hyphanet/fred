@@ -392,7 +392,8 @@ public class NodeIPDetector {
 		node.executor.execute(ipDetector, "IP address re-detector");
 		redetectAddress();
 		// 60 second delay for inserting ARK to avoid reinserting more than necessary if we don't detect IP on startup.
-		node.getTicker().queueTimedJob(new FastRunnable() {
+		// Not a FastRunnable as it can take a while to start the insert
+		node.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
 				NodeIPPortDetector[] detectors;
 				synchronized(this) {
