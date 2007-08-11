@@ -12,7 +12,6 @@ import freenet.support.io.MultiReaderBucket;
 
 class RealArchiveStoreItem extends ArchiveStoreItem {
 
-	private final ArchiveManager manager;
 	private final File myFilename;
 	private final MultiReaderBucket mb;
 	private final Bucket bucket;
@@ -25,15 +24,13 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	 * @param temp The TempStoreElement currently storing the data.
 	 * @param manager The parent ArchiveManager within which this item is stored.
 	 */
-	RealArchiveStoreItem(ArchiveManager manager, ArchiveStoreContext ctx, FreenetURI key2, String realName, TempStoreElement temp) {
+	RealArchiveStoreItem(ArchiveStoreContext ctx, FreenetURI key2, String realName, TempStoreElement temp) {
 		super(new ArchiveKey(key2, realName), ctx);
-		this.manager = manager;
 		mb = new MultiReaderBucket(temp.bucket);
 		this.bucket = mb.getReaderBucket();
 		temp.underBucket.setReadOnly();
 		this.myFilename = temp.underBucket.getFile();
 		spaceUsed = FileUtil.estimateUsage(myFilename, temp.underBucket.size());
-		this.manager.incrementSpace(spaceUsed);
 	}
 
 	/**

@@ -147,7 +147,14 @@ public class ArchiveManager {
 	 * @param item The ArchiveStoreItem to remove.
 	 */
 	synchronized void removeCachedItem(ArchiveStoreItem item) {
-		storedData.removeKey(item.key);	
+		long size = item.spaceUsed();
+		storedData.removeKey(item.key);
+		// Hard disk space limit = remove it here.
+		// Soft disk space limit would be to remove it outside the lock.
+		// Soft disk space limit = we go over the limit significantly when we
+		// are overloaded.
+		cachedData -= size;
+		item.close();
 	}
 	
 	/**
@@ -400,7 +407,7 @@ outer:		while(true) {
 	 * callback != null.
 	 */
 	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp, MutableBoolean gotElement, String callbackName, ArchiveExtractCallback callback) throws ArchiveFailureException {
-		RealArchiveStoreItem element = new RealArchiveStoreItem(this, ctx, key, name, temp);
+		RealArchiveStoreItem element = new RealArchiveStoreItem(ctx, key, name, temp);
 		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
 		ArchiveStoreItem oldItem;
 		// Let it throw, if it does something is drastically wrong
@@ -411,13 +418,16 @@ outer:		while(true) {
 		synchronized (this) {
 			oldItem = (ArchiveStoreItem) storedData.get(element.key);
 			storedData.push(element.key, element);
+			cachedData += element.spaceUsed();
+			if(oldItem != null) {
+				cachedData -= oldItem.spaceUsed();
+				oldItem.close();
+			}
 		}
 		if(matchBucket != null) {
 			callback.gotBucket(matchBucket);
 			gotElement.value = true;
 		}
-		if(oldItem != null)
-			oldItem.close();
 		return element;
 	}
 
@@ -426,20 +436,24 @@ outer:		while(true) {
 	 * Call synchronized on storedData.
 	 */
 	private void trimStoredData() {
+		synchronized(this) {
 		while(true) {
 			ArchiveStoreItem item;
-			synchronized(this) {
 				if(cachedData <= maxCachedData && storedData.size() <= maxCachedElements) return;
 				if(storedData.isEmpty()) {
 					// Race condition? cachedData out of sync?
 					Logger.error(this, "storedData is empty but still over limit: cachedData="+cachedData+" / "+maxCachedData);
 					return;
 				}
-				item = (ArchiveStoreItem) storedData.popValue();	
-			}
+				item = (ArchiveStoreItem) storedData.popValue();
+				long space = item.spaceUsed();
+				cachedData -= space;
+				// Hard limits = delete file within lock, soft limits = delete outside of lock
+				// Here we use a hard limit
 			if(logMINOR)
 				Logger.minor(this, "Dropping "+item+" : cachedData="+cachedData+" of "+maxCachedData);
 			item.close();
+		}
 		}
 	}
 
@@ -475,13 +489,5 @@ outer:		while(true) {
 		if(type.equals("application/zip") || type.equals("application/x-zip"))
 			return Metadata.ARCHIVE_ZIP;
 		else throw new IllegalArgumentException(); 
-	}
-
-	synchronized void decrementSpace(long spaceUsed) {
-		cachedData -= spaceUsed;
-	}
-
-	synchronized void incrementSpace(long spaceUsed) {
-		cachedData += spaceUsed;
 	}
 }
