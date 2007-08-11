@@ -208,6 +208,10 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 				}
 			}
 		}
+		
+		public String toString() {
+			return super.toString()+":"+BaseFileBucket.this.toString();
+		}
 	}
 
 	class FileBucketInputStream extends FileInputStream {
@@ -227,6 +231,10 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			}
 			removeStream(this);
 			super.close();
+		}
+		
+		public String toString() {
+			return super.toString()+":"+BaseFileBucket.this.toString();
 		}
 	}
 
