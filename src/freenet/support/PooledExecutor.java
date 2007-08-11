@@ -1,7 +1,15 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
 import java.util.ArrayList;
 
+/**
+ * Pooled Executor implementation. Create a thread when we need one, let them die
+ * after 5 minutes of inactivity.
+ * @author toad
+ */
 public class PooledExecutor implements Executor {
 
 	private final ArrayList runningThreads /* <MyThread> */ = new ArrayList();
