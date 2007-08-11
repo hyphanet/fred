@@ -297,8 +297,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
 				if(metaStrings.isEmpty() && isFinal && clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
-					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType()));
-					return;
+					throw new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType());
 				}
 				// Fetch it from the archive
 				if(ah == null)
@@ -308,7 +307,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				Bucket dataBucket = ah.get(filename, actx, null, recursionLevel+1, true);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
-					Bucket out;
+					final Bucket out;
 					try {
 						// Data will not be freed until client is finished with it.
 						if(returnBucket != null) {
@@ -319,11 +318,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							out = dataBucket;
 						}
 					} catch (IOException e) {
-						onFailure(new FetchException(FetchException.BUCKET_ERROR));
-						return;
+						throw new FetchException(FetchException.BUCKET_ERROR);
 					}
 					// Return the data
-					onSuccess(new FetchResult(this.clientMetadata, out));
+					ctx.executor.execute(new Runnable() {
+						public void run() {
+							onSuccess(new FetchResult(clientMetadata, out));
+						}
+					}, "SingleFileFetcher onSuccess callback for "+this);
+					
 					return;
 				} else {
 					if(logMINOR) Logger.minor(this, "Fetching archive (thisKey="+thisKey+ ')');
@@ -384,8 +387,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				
 				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null && 
 						!ctx.allowedMIMETypes.contains(mimeType)) {
-					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType()));
-					return;
+					throw new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType());
 				}
 				
 				// Simple redirect
@@ -444,8 +446,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				
 				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(mimeType)) {
-					onFailure(new FetchException(FetchException.WRONG_MIME_TYPE, metadata.uncompressedDataLength(), false, clientMetadata.getMIMEType()));
-					return;
+					throw new FetchException(FetchException.WRONG_MIME_TYPE, metadata.uncompressedDataLength(), false, clientMetadata.getMIMEType());
 				}
 				
 				// Splitfile (possibly compressed)
@@ -483,8 +484,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if((len > ctx.maxOutputLength) ||
 						(len > ctx.maxTempLength)) {
 					
-					onFailure(new FetchException(FetchException.TOO_BIG, len, isFinal && decompressors.size() <= (metadata.isCompressed() ? 1 : 0), clientMetadata.getMIMEType()));
-					return;
+					throw new FetchException(FetchException.TOO_BIG, len, isFinal && decompressors.size() <= (metadata.isCompressed() ? 1 : 0), clientMetadata.getMIMEType());
 				}
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
