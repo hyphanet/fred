@@ -419,7 +419,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 
 				// **FIXME** Is key in the call to SingleFileFetcher here supposed to be this.key or the same key used in the try block above?  MultiLevelMetadataCallback.onSuccess() below uses this.key, thus the question
-				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, this.uri, addedMetaStrings, ctx, actx, ah, maxRetries, recursionLevel, false, token, true, returnBucket, isFinal);
+				final SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, this.uri, addedMetaStrings, ctx, actx, ah, maxRetries, recursionLevel, false, token, true, returnBucket, isFinal);
 				if((key instanceof ClientCHK) && !((ClientCHK)key).isMetadata())
 					rcb.onBlockSetFinished(this);
 				if(metadata.isCompressed()) {
@@ -427,7 +427,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					f.addDecompressor(codec);
 				}
 				parent.onTransition(this, f);
-				f.schedule();
+				ctx.executor.execute(new Runnable() {
+					public void run() {
+						f.schedule();
+					}
+				}, "Schedule");
 				// All done! No longer our problem!
 				return;
 			} else if(metadata.isSplitfile()) {
