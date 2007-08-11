@@ -20,7 +20,7 @@ public class StringArray {
 		if((array != null) && (array.length > 0)){
 			StringBuffer sb = new StringBuffer();
 			for(int i=0; i<array.length; i++)
-				sb.append(array.toString()+'|');
+				sb.append(array[i].toString()+'|');
 			return '[' + sb.substring(0, sb.length() - 1).toString() + ']';
 		}else
 			return "";
