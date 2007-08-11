@@ -26,6 +26,15 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	private FreenetURI key;
 	private short archiveType;
 	private boolean forceRefetchArchive;
+	/** Archive size */
+	private long lastSize = -1;
+	/** Archive hash */
+	private byte[] lastHash;
+	/** Index of still-cached ArchiveStoreItems with this key.
+	 * Note that we never ever hold this and then take another lock! In particular
+	 * we must not take the ArchiveManager lock while holding this lock. It must be
+	 * the inner lock to avoid deadlocks. */
+	private final DoublyLinkedListImpl myItems;
 	
 	public ArchiveStoreContext(ArchiveManager manager, FreenetURI key, short archiveType, boolean forceRefetchArchive) {
 		this.manager = manager;
@@ -69,9 +78,6 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		return null;
 	}
 
-	// Archive size
-	private long lastSize = -1;
-	
 	/** Returns the size of the archive last time we fetched it, or -1 */
 	long getLastSize() {
 		return lastSize;
@@ -82,9 +88,6 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		lastSize = size;
 	}
 
-	// Archive hash
-	
-	private byte[] lastHash;
 	
 	/** Returns the hash of the archive last time we fetched it, or null */
 	public byte[] getLastHash() {
@@ -95,12 +98,6 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	public void setLastHash(byte[] realHash) {
 		lastHash = realHash;
 	}
-	
-	/** Index of still-cached ArchiveStoreItems with this key.
-	 * Note that we never ever hold this and then take another lock! In particular
-	 * we must not take the ArchiveManager lock while holding this lock. It must be
-	 * the inner lock to avoid deadlocks. */
-	private final DoublyLinkedListImpl myItems;
 
 	/**
 	 * Remove all ArchiveStoreItems with this key from the cache.
