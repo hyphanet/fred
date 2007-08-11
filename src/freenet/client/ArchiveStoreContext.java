@@ -143,6 +143,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		manager.extractToCache(key, archiveType, bucket, actx, this, element, callback);
 	}
 
+	/** Called just before extracting this container to the cache */
 	public void onExtract() {
 		forceRefetchArchive = false;
 	}
