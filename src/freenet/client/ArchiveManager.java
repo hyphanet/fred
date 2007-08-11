@@ -430,13 +430,14 @@ outer:		while(true) {
 	 */
 	private void trimStoredData() {
 		while(true) {
+			ArchiveStoreItem item;
 			synchronized(this) {
 				if(cachedData <= maxCachedData && storedData.size() <= maxCachedElements) return;
+				item = (ArchiveStoreItem) storedData.popValue();	
 			}
-			ArchiveStoreItem e = (ArchiveStoreItem) storedData.popValue();	
 			if(logMINOR)
-				Logger.minor(this, "Dropping "+e+" : cachedData="+cachedData+" of "+maxCachedData);
-			e.close();
+				Logger.minor(this, "Dropping "+item+" : cachedData="+cachedData+" of "+maxCachedData);
+			item.close();
 		}
 	}
 
