@@ -70,7 +70,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	}
 
 	// Archive size
-	long lastSize = -1;
+	private long lastSize = -1;
 	
 	/** Returns the size of the archive last time we fetched it, or -1 */
 	long getLastSize() {
@@ -84,7 +84,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 
 	// Archive hash
 	
-	byte[] lastHash;
+	private byte[] lastHash;
 	
 	/** Returns the hash of the archive last time we fetched it, or null */
 	public byte[] getLastHash() {
@@ -96,10 +96,11 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		lastHash = realHash;
 	}
 	
-	// Index of still-cached ArchiveStoreItems with this key
-	
-	/** Index of still-cached ArchiveStoreItems with this key */
-	final DoublyLinkedListImpl myItems;
+	/** Index of still-cached ArchiveStoreItems with this key.
+	 * Note that we never ever hold this and then take another lock! In particular
+	 * we must not take the ArchiveManager lock while holding this lock. It must be
+	 * the inner lock to avoid deadlocks. */
+	private final DoublyLinkedListImpl myItems;
 
 	/**
 	 * Remove all ArchiveStoreItems with this key from the cache.
