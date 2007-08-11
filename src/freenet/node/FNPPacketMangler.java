@@ -437,6 +437,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		
 }
+   /*
+    * Initiator Method:Message3
+    * Process Message3
+    * Send the Initiator nonce,Responder nonce and DiffieHellman Exponential of the responder
+    * and initiator in the clear.
+    * Compute a signed copy of his own exponential and grpInfo and encrypt it using a shared key
+    * which is derived from DHExponentials and the nonces
+    * @param The packet phase number
+    * @param The peerNode we are talking to
+    * @param Payload
+    */
     private void ProcessMessage3(PeerNode pn,byte[] payload,int phase,BlockCipher cipher)			
     {
 	PCFBMode pcfb = PCFBMode.create(cipher);
@@ -474,7 +485,25 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(s, 0, output, count, s.length);
         count += s.length;
         pcfb.blockEncipher(output, 0, output.length);
-    }		
+    }
+    /*
+     * Responder Method:Message4
+     * Process Message4
+     * Send the Initiator nonce,Responder nonce and DiffieHellman Exponential of the responder
+     * and grpInfo in the clear.
+     * Send a signed copy of his own exponential and grpInfo.
+     * Send an authenticator which is a hash of Ni,Nr,g^r calculated over the transient key HKr
+     * @param The packet phase number
+     * @param The peerNode we are talking to
+     * @param Payload
+     */
+ 	
+    private void ProcessMessage4(PeerNode pn,byte[] payload,int phase,BlockCipher cipher)
+    {
+	//Responder keeps a copy of recently received message3 and corresponding message4
+        //Receiving a duplicated message simply causes the responder to retransmit the
+	//corresponding message4 without creating a new state
+    }	
 			
     /*
      * Send Message1 packet
@@ -505,6 +534,37 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     	
 		
     }
+    /*
+     * Send Message2 packet
+     * @param version
+     * @param negType
+     * @param The packet phase number
+     * @param Concatenated data
+     * @param The peerNode we are talking to
+     * @param The peer to which we need to send the packet
+     */
+
+    private void sendMessage2or4Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+    {
+                long now = System.currentTimeMillis();
+                long delta = now - pn.lastSentPacketTime();
+                byte[] output = new byte[data.length+3];
+                output[0] = (byte) version;
+                output[1] = (byte) negType;
+                output[2] = (byte) phase;
+                System.arraycopy(data, 0, output, 3, data.length);
+                if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
+                try
+                {
+                        sendPacket(data,replyTo,pn,0);
+                }catch(LocalAddressException e)
+                {
+                        Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
+                }
+
+
+    }
+
     /*
      * Signature of the message using DSA
      * Information on what are the encryption and authentication algorithms used is sent in
