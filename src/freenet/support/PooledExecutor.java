@@ -37,7 +37,10 @@ public class PooledExecutor implements Executor {
 				if(t.nextJob != null) continue;
 				t.nextJob = job;
 				if(!mustStart)
-					t.notify();
+					// It is possible that we could get a wierd race condition with
+					// notify()/wait() signalling on a thread being used by higher
+					// level code. So we'd best use notifyAll().
+					t.notifyAll();
 			}
 			t.setName(jobName);
 			if(mustStart) {
