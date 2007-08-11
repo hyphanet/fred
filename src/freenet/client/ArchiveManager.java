@@ -433,6 +433,11 @@ outer:		while(true) {
 			ArchiveStoreItem item;
 			synchronized(this) {
 				if(cachedData <= maxCachedData && storedData.size() <= maxCachedElements) return;
+				if(storedData.isEmpty()) {
+					// Race condition? cachedData out of sync?
+					Logger.error(this, "storedData is empty but still over limit: cachedData="+cachedData+" / "+maxCachedData);
+					return;
+				}
 				item = (ArchiveStoreItem) storedData.popValue();	
 			}
 			if(logMINOR)
