@@ -140,7 +140,7 @@ public class ArchiveManager {
 		if(logMINOR) Logger.minor(this, "Fetch cached: "+key+ ' ' +filename);
 		ArchiveKey k = new ArchiveKey(key, filename);
 		ArchiveStoreItem asi = null;
-		synchronized (storedData) {
+		synchronized (this) {
 			asi = (ArchiveStoreItem) storedData.get(k);	
 			if(asi == null) return null;
 			// Promote to top of LRU
@@ -154,10 +154,8 @@ public class ArchiveManager {
 	 * Remove a file from the cache.
 	 * @param item The ArchiveStoreItem to remove.
 	 */
-	void removeCachedItem(ArchiveStoreItem item) {
-		synchronized (storedData) {
-			storedData.removeKey(item.key);	
-		}
+	synchronized void removeCachedItem(ArchiveStoreItem item) {
+		storedData.removeKey(item.key);	
 	}
 	
 	/**
@@ -390,7 +388,7 @@ outer:		while(true) {
 		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error);
 		if(logMINOR) Logger.minor(this, "Adding error element: "+element+" for "+key+ ' ' +name);
 		ArchiveStoreItem oldItem;
-		synchronized (storedData) {
+		synchronized (this) {
 			oldItem = (ArchiveStoreItem) storedData.get(element.key);
 			storedData.push(element.key, element);	
 		}
@@ -418,7 +416,7 @@ outer:		while(true) {
 		if((!gotElement.value) && name.equals(callbackName)) {
 			matchBucket = element.getReaderBucket();
 		}
-		synchronized (storedData) {
+		synchronized (this) {
 			oldItem = (ArchiveStoreItem) storedData.get(element.key);
 			storedData.push(element.key, element);
 		}
