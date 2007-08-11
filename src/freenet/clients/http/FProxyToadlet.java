@@ -241,6 +241,7 @@ public class FProxyToadlet extends Toadlet {
 		if(checkForString(buf, "<rss")) return true;
 		if(checkForString(buf, "<feed")) return true;
 		if(checkForString(buf, "<rdf:RDF")) return true;
+		is.close();
 		return false;
 	}
 
