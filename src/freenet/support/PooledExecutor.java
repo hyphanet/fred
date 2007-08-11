@@ -27,7 +27,8 @@ public class PooledExecutor implements Executor {
 				if(!waitingThreads.isEmpty()) {
 					t = (MyThread) waitingThreads.remove(waitingThreads.size()-1);
 				} else {
-					t = new MyThread("Pooled thread "+(threadCounter++));
+					// Will be coalesced by thread count listings if we use "@" or "for"
+					t = new MyThread("Pooled thread @"+(threadCounter++));
 					t.setDaemon(true);
 					mustStart = true;
 				}
