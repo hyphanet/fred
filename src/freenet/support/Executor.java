@@ -9,6 +9,6 @@ package freenet.support;
 public interface Executor {
 	
 	/** Execute a job. */
-	public void execute(Runnable job);
+	public void execute(Runnable job, String jobName);
 
 }

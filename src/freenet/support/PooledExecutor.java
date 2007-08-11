@@ -19,7 +19,7 @@ public class PooledExecutor implements Executor {
 	/** Maximum time a thread will wait for a job */
 	static final int TIMEOUT = 5*60*1000;
 	
-	public void execute(Runnable job) {
+	public void execute(Runnable job, String jobName) {
 		while(true) {
 			MyThread t;
 			boolean mustStart = false;
@@ -39,6 +39,7 @@ public class PooledExecutor implements Executor {
 				if(!mustStart)
 					t.notify();
 			}
+			t.setName(jobName);
 			if(mustStart) {
 				t.start();
 				synchronized(this) {
