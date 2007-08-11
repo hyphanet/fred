@@ -32,8 +32,11 @@ public class NodePinger implements Runnable {
 	final Node node;
 	
 	public void run() {
-		node.ps.queueTimedJob(this, 200);
-		recalculateMean(node.peers.connectedPeers);
+		try {
+			recalculateMean(node.peers.connectedPeers);
+		} finally {
+			node.ps.queueTimedJob(this, 200);
+		}
 	}
 
 	/** Recalculate the mean ping time */
