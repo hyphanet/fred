@@ -4,7 +4,6 @@
 package freenet.support;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 /**
  * Pooled Executor implementation. Create a thread when we need one, let them die
@@ -14,7 +13,7 @@ import java.util.LinkedList;
 public class PooledExecutor implements Executor {
 
 	private final ArrayList runningThreads /* <MyThread> */ = new ArrayList();
-	private final LinkedList waitingThreads /* <MyThread> */ = new LinkedList();
+	private final ArrayList waitingThreads /* <MyThread> */ = new ArrayList();
 	long threadCounter = 0;
 	
 	/** Maximum time a thread will wait for a job */
@@ -26,7 +25,7 @@ public class PooledExecutor implements Executor {
 			boolean mustStart = false;
 			synchronized(this) {
 				if(!waitingThreads.isEmpty()) {
-					t = (MyThread) waitingThreads.removeLast();
+					t = (MyThread) waitingThreads.remove(waitingThreads.size()-1);
 				} else {
 					// Will be coalesced by thread count listings if we use "@" or "for"
 					t = new MyThread("Pooled thread awaiting work @"+(threadCounter++));
@@ -81,7 +80,7 @@ public class PooledExecutor implements Executor {
 				
 				if(job == null) {
 					synchronized(PooledExecutor.this) {
-						waitingThreads.addFirst(this);
+						waitingThreads.add(this);
 					}
 					synchronized(this) {
 						if(nextJob == null) {
