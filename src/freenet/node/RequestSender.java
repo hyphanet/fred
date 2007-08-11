@@ -683,6 +683,11 @@ public final class RequestSender implements Runnable, ByteCounter {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
 			return;
 		}
+		
+		if(!ref.getBoolean("opennet", false)) {
+			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next);
+			return;
+		}
     	
 		OpennetManager om = node.getOpennet();
     	try {

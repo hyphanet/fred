@@ -379,7 +379,17 @@ public class RequestHandler implements Runnable, ByteCounter {
 		}
 		
 		noderef = ((ShortBuffer)msg.getObject(DMT.OPENNET_NODEREF)).getData();
-		msg = DMT.createFNPOpennetConnectReply(uid, new ShortBuffer(noderef));
+		
+		try {
+			SimpleFieldSet fs = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
+			if(!fs.getBoolean("opennet", false)) {
+				msg = DMT.createFNPOpennetCompletedAck(uid);
+			} else {
+				msg = DMT.createFNPOpennetConnectReply(uid, new ShortBuffer(noderef));
+			}
+		} catch (FSParseException e1) {
+			msg = DMT.createFNPOpennetCompletedAck(uid);
+		}
 		
 		try {
 			dataSource.sendAsync(msg, null, 0, this);
