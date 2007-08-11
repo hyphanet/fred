@@ -11,4 +11,6 @@ public interface Executor {
 	/** Execute a job. */
 	public void execute(Runnable job, String jobName);
 
+	/** Count the number of threads waiting for work */
+	public int waitingThreads();
 }

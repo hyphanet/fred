@@ -54,6 +54,10 @@ public class PooledExecutor implements Executor {
 		}
 	}
 
+	public synchronized int waitingThreads() {
+		return waitingThreads.size();
+	}
+	
 	class MyThread extends Thread {
 		
 		final String defaultName;
