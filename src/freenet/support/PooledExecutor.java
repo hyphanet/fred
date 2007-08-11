@@ -90,7 +90,7 @@ public class PooledExecutor implements Executor {
 						nextJob = null;
 						if(job == null) {
 							alive = false;
-							// execute() won't give us another one if alive = false
+							// execute() won't give us another job if alive = false
 						}
 					}
 					synchronized(PooledExecutor.this) {
