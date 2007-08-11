@@ -625,7 +625,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     private boolean tryProcess(byte[] buf, int offset, int length, KeyTracker tracker) {
         // Need to be able to call with tracker == null to simplify code above
         if(tracker == null) {
-            if(logMINOR) Logger.minor(this, "Tracker == null");
+            if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Tracker == null");
             return false;
         }
         if(logMINOR) Logger.minor(this,"Entering tryProcess: "+Fields.hashCode(buf)+ ',' +offset+ ',' +length+ ',' +tracker);
