@@ -141,7 +141,13 @@ public class ClientGetter extends BaseClientGetter {
 			if(returnBucket != null && Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "client.async returned data in returnBucket");
 		}
-		client.onSuccess(result, this);
+		final FetchResult res = result;
+		ctx.executor.execute(new Runnable() {
+			public void run() {
+				client.onSuccess(res, ClientGetter.this);
+			}
+		}, "ClientGetter onSuccess callback");
+		
 	}
 
 	public void onFailure(FetchException e, ClientGetState state) {
@@ -176,7 +182,13 @@ public class ClientGetter extends BaseClientGetter {
 			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
 			Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
-			client.onFailure(e, this);
+			final FetchException e1 = e;
+			ctx.executor.execute(new Runnable() {
+				public void run() {
+					client.onFailure(e1, ClientGetter.this);
+				}
+			}, "ClientGetter onFailure callback");
+			
 			return;
 		}
 	}
