@@ -94,6 +94,10 @@ public class MultiReaderBucket {
 				return is.read(data);
 			}
 			
+			public final void close() throws IOException {
+				is.close();
+			}
+			
 		}
 		
 		public String getName() {
