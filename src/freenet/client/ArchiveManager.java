@@ -143,7 +143,8 @@ public class ArchiveManager {
 	}
 	
 	/**
-	 * Remove a file from the cache.
+	 * Remove a file from the cache. Called after it has been removed from its 
+	 * ArchiveHandler.
 	 * @param item The ArchiveStoreItem to remove.
 	 */
 	synchronized void removeCachedItem(ArchiveStoreItem item) {
@@ -390,9 +391,11 @@ outer:		while(true) {
 		synchronized (this) {
 			oldItem = (ArchiveStoreItem) storedData.get(element.key);
 			storedData.push(element.key, element);	
+			if(oldItem != null) {
+				oldItem.close();
+				cachedData -= oldItem.spaceUsed();
+			}
 		}
-		if(oldItem != null)
-			oldItem.close();
 	}
 
 	/**

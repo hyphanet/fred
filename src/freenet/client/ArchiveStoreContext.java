@@ -110,7 +110,6 @@ public class ArchiveStoreContext implements ArchiveHandler {
 			}
 			if(item == null) break;
 			manager.removeCachedItem(item);
-			item.context.removeItem(item);
 		}
 	}
 
@@ -121,7 +120,9 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		}
 	}
 
-	/** Notify that an archive store item with this key has been expelled from the cache. */
+	/** Notify that an archive store item with this key has been expelled from the 
+	 * cache. Remove it from our local cache and ask it to free the bucket if 
+	 * necessary. */
 	public void removeItem(ArchiveStoreItem item) {
 		synchronized(myItems) {
 			if(myItems.remove(item) == null) return; // only removed once
