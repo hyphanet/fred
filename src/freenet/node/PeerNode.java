@@ -2014,10 +2014,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean isRoutingBackedOff() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			if(now < routingBackedOffUntil) {
-				if(logMINOR) Logger.minor(this, "Routing is backed off");
-				return true;
-			} else return false;
+			return now < routingBackedOffUntil;
 		}
 	}
 	
