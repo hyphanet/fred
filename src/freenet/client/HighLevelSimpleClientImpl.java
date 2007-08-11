@@ -191,7 +191,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				random, archiveManager, bucketFactory, globalEventProducer, 
 				cacheLocalRequests, core.uskManager, healingQueue, 
-				forceDontIgnoreTooManyPathComponents ? false : core.ignoreTooManyPathComponents, core.getTicker());
+				forceDontIgnoreTooManyPathComponents ? false : core.ignoreTooManyPathComponents, core.getTicker(), core.getExecutor());
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
@@ -199,6 +199,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				forceNonPersistent ? new NullPersistentFileTracker() : persistentFileTracker,
 				random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				globalEventProducer, cacheLocalRequests, core.uskManager, blockEncoder);
+				globalEventProducer, cacheLocalRequests, core.uskManager, blockEncoder, core.getExecutor());
 	}
 }

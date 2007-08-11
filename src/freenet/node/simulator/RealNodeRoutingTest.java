@@ -14,7 +14,9 @@ import freenet.node.LocationManager;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
+import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
@@ -43,9 +45,10 @@ public class RealNodeRoutingTest {
         DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
+        Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, /* Node.DEFAULT_SWAP_INTERVAL */ 0, random);
+            	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, /* Node.DEFAULT_SWAP_INTERVAL */ 0, random, executor);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");

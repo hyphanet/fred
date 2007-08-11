@@ -10,6 +10,7 @@ import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.OptionFormatException;
 import freenet.config.SubConfig;
+import freenet.support.Executor;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.LoggerHook;
@@ -55,9 +56,11 @@ public class LoggingConfigHandler {
 	private String logRotateInterval;
 	private long maxCachedLogBytes;
 	private int maxCachedLogLines;
+	private final Executor executor;
 	
-	public LoggingConfigHandler(SubConfig loggingConfig) throws InvalidConfigValueException {
+	public LoggingConfigHandler(SubConfig loggingConfig, Executor executor) throws InvalidConfigValueException {
 		this.config = loggingConfig;
+		this.executor = executor;
     	
     	loggingConfig.register("enabled", true, 1, true, false, "LogConfigHandler.enabled", "LogConfigHandler.enabledLong",
     			new BooleanCallback() {

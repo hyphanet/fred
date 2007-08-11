@@ -8,6 +8,7 @@ import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
+import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.NullPersistentFileTracker;
 import freenet.support.io.PersistentFileTracker;
@@ -32,10 +33,11 @@ public class InsertContext {
 	public final boolean cacheLocalRequests;
 	public final USKManager uskManager;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
+	public final Executor executor;
 	
 	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker, RandomSource random,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager, BackgroundBlockEncoder blockEncoder) {
+			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager, BackgroundBlockEncoder blockEncoder, Executor executor) {
 		this.bf = bf;
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
@@ -51,6 +53,7 @@ public class InsertContext {
 		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.backgroundBlockEncoder = blockEncoder;
+		this.executor = executor;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer, boolean forceNonPersistent) {
@@ -69,6 +72,7 @@ public class InsertContext {
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
 		this.backgroundBlockEncoder = ctx.backgroundBlockEncoder;
+		this.executor = ctx.executor;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
@@ -87,6 +91,7 @@ public class InsertContext {
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
 		this.backgroundBlockEncoder = ctx.backgroundBlockEncoder;
+		this.executor = ctx.executor;
 	}
 
 }

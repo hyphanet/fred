@@ -44,6 +44,7 @@ import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
+import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
@@ -273,7 +274,7 @@ public class NodeClientCore implements Persistable {
 		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
 						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
-						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, backgroundBlockEncoder), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, backgroundBlockEncoder, node.executor), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 		// FIXME remove this code, the new behaviour should be handled by all clients
 		
@@ -1062,6 +1063,10 @@ public class NodeClientCore implements Persistable {
 	
 	public Ticker getTicker() {
 		return node.ps;
+	}
+	
+	public Executor getExecutor() {
+		return node.executor;
 	}
 
 	public File getPersistentTempDir() {

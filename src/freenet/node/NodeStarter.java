@@ -16,7 +16,9 @@ import freenet.config.SubConfig;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
+import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.LoggerHook.InvalidThresholdException;
        
@@ -74,7 +76,7 @@ public class NodeStarter
     		System.out.println("Usage: $ java freenet.node.Node <configFile>");
     		return new Integer(-1);
     	}
-    	 
+    	
     	File configFilename;
     	if(args.length == 0) {
     		System.out.println("Using default config filename freenet.ini");
@@ -86,7 +88,9 @@ public class NodeStarter
     	// use dyndns hostnames
     	java.security.Security.setProperty("networkaddress.cache.ttl" , "0");
     	java.security.Security.setProperty("networkaddress.cache.negative.ttl" , "0");
-    	  	
+    	
+    	Executor executor = new PooledExecutor();
+    	
     	try{
     		cfg = FreenetFilePersistentConfig.constructFreenetFilePersistentConfig(configFilename);	
     	}catch(IOException e){
@@ -99,7 +103,7 @@ public class NodeStarter
     	SubConfig loggingConfig = new SubConfig("logger", cfg);
     	
     	try {
-    		logConfigHandler = new LoggingConfigHandler(loggingConfig);
+    		logConfigHandler = new LoggingConfigHandler(loggingConfig, executor);
     	} catch (InvalidConfigValueException e) {
     		System.err.println("Error: could not set up logging: "+e.getMessage());
     		e.printStackTrace();
@@ -144,7 +148,7 @@ public class NodeStarter
 		
     	WrapperManager.signalStarting(500000);
     	try {
-    		node = new Node(cfg, random, logConfigHandler,this);
+    		node = new Node(cfg, random, logConfigHandler,this, executor);
     		node.start(false);
     		System.out.println("Node initialization completed.");
     	} catch (NodeInitException e) {
@@ -325,7 +329,7 @@ public class NodeStarter
 	 */
 	public static Node createTestNode(int port, String testName, boolean doClient, 
 			boolean doSwapping, boolean disableProbabilisticHTLs, short maxHTL,
-			int dropProb, int swapInterval, RandomSource random) throws NodeInitException {
+			int dropProb, int swapInterval, RandomSource random, Executor executor) throws NodeInitException {
 		
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -354,7 +358,7 @@ public class NodeStarter
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 		
-		return new Node(config, random, null, null);
+		return new Node(config, random, null, null, executor);
 	}
 	
 }

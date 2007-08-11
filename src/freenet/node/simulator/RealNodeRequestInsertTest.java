@@ -19,9 +19,11 @@ import freenet.node.LocationManager;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
+import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
@@ -49,9 +51,10 @@ public class RealNodeRequestInsertTest {
         DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
+        Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 20 /* 5% */, Node.DEFAULT_SWAP_INTERVAL, random);
+            	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 20 /* 5% */, Node.DEFAULT_SWAP_INTERVAL, random, executor);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];

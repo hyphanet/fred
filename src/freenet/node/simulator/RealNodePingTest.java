@@ -12,7 +12,9 @@ import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
+import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
 
 /**
@@ -30,8 +32,9 @@ public class RealNodePingTest {
     public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {
         RandomSource random = NodeStarter.globalTestInit("pingtest");
         // Create 2 nodes
-        Node node1 = NodeStarter.createTestNode(5001, "pingtest", false, false, true, Node.DEFAULT_MAX_HTL, 0, Node.DEFAULT_SWAP_INTERVAL, random);
-        Node node2 = NodeStarter.createTestNode(5002, "pingtest", false, false, true, Node.DEFAULT_MAX_HTL, 0, Node.DEFAULT_SWAP_INTERVAL, random);
+        Executor executor = new PooledExecutor();
+        Node node1 = NodeStarter.createTestNode(5001, "pingtest", false, false, true, Node.DEFAULT_MAX_HTL, 0, Node.DEFAULT_SWAP_INTERVAL, random, executor);
+        Node node2 = NodeStarter.createTestNode(5002, "pingtest", false, false, true, Node.DEFAULT_MAX_HTL, 0, Node.DEFAULT_SWAP_INTERVAL, random, executor);
         // Connect
         node1.connect(node2);
         node2.connect(node1);
