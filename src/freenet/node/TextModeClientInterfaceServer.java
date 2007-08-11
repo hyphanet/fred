@@ -35,9 +35,9 @@ public class TextModeClientInterfaceServer implements Runnable {
     String bindTo;
     String allowedHosts;
     boolean isEnabled;
-    NetworkInterface networkInterface;
+    final NetworkInterface networkInterface;
 
-    TextModeClientInterfaceServer(Node node, NodeClientCore core, int port, String bindTo, String allowedHosts) {
+    TextModeClientInterfaceServer(Node node, NodeClientCore core, int port, String bindTo, String allowedHosts) throws IOException {
     	this.n = node;
     	this.core = n.clientCore;
         this.r = n.random;
@@ -47,6 +47,7 @@ public class TextModeClientInterfaceServer implements Runnable {
         this.bindTo=bindTo;
         this.allowedHosts = allowedHosts;
         this.isEnabled=true;
+		networkInterface = NetworkInterface.create(port, bindTo, allowedHosts);
     }
     
     void start() {
@@ -211,13 +212,6 @@ public class TextModeClientInterfaceServer implements Runnable {
     	while(true) {
     		int curPort = port;
     		String tempBindTo = this.bindTo;
-    		try {
-    			networkInterface = NetworkInterface.create(curPort, tempBindTo, allowedHosts);
-    		} catch (IOException e) {
-    			Logger.error(this, "Could not bind to TMCI port: "+tempBindTo+ ':' +port);
-    			System.err.println("Could not bind to TMCI port: "+tempBindTo+ ':' +port);
-    			return;
-    		}
     		try {
     			networkInterface.setSoTimeout(1000);
     		} catch (SocketException e1) {
