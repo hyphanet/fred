@@ -684,8 +684,9 @@ public final class RequestSender implements Runnable, ByteCounter {
 			return;
 		}
     	
+		OpennetManager om = node.getOpennet();
     	try {
-			if(!node.addNewOpennetNode(ref)) {
+			if(om != null /* prevent race */ && !node.addNewOpennetNode(ref)) {
 				// If we don't want it let somebody else have it
 				synchronized(this) {
 					opennetNoderef = noderef;
@@ -707,7 +708,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     	
     	// Send our reference
     	
-    	Message msg = DMT.createFNPOpennetConnectReply(uid, new ShortBuffer(next.getOutgoingMangler().getCompressedNoderef()));
+    	Message msg = DMT.createFNPOpennetConnectReply(uid, new ShortBuffer( om.crypto.myCompressedFullRef()));
     	
     	try {
 			next.sendAsync(msg, null, 0, this);
