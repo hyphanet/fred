@@ -36,12 +36,14 @@ import freenet.support.io.NullWriter;
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	private static boolean logMINOR;
+	private static boolean logDEBUG;
 	
 	private static boolean deleteWierdStuff = true;
 	private static boolean deleteErrors = true;
 
 	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap otherParams, FilterCallback cb) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
 		InputStream strm = bucket.getInputStream();
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
@@ -334,7 +336,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	void saveText(StringBuffer s, String tagName, Writer w, HTMLParseContext pc)
 		throws IOException {
 
-		if(logMINOR) Logger.minor(this, "Saving text: "+s.toString());
+		if(logDEBUG) Logger.minor(this, "Saving text: "+s.toString());
 		if (pc.killText) {
 			return;
 		}
@@ -373,7 +375,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	void processTag(Vector splitTag, Writer w, HTMLParseContext pc)
 		throws IOException, DataFilterException {
 		// First, check that it is a recognized tag
-		if(logMINOR) {
+		if(logDEBUG) {
 			for(int i=0;i<splitTag.size();i++)
 				Logger.minor(this, "Tag["+i+"]="+splitTag.get(i));
 		}
@@ -412,7 +414,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if(s.charAt(s.length()-1) == '-')
 				s.setLength(s.length()-1);
 		}
-		if(logMINOR) Logger.minor(this, "Saving comment: "+s.toString());
+		if(logDEBUG) Logger.minor(this, "Saving comment: "+s.toString());
 		if (pc.expectingBadComment)
 			return; // ignore it
 
@@ -494,13 +496,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					unparsedAttrs[x - 1] = (String) v.elementAt(x);
 			} else
 				unparsedAttrs = new String[0];
-			if(logMINOR) Logger.minor(this, "Element = "+element);
+			if(logDEBUG) Logger.minor(this, "Element = "+element);
 		}
 
 		public ParsedTag sanitize(HTMLParseContext pc) throws DataFilterException {
 			TagVerifier tv =
 				(TagVerifier) allowedTagsVerifiers.get(element.toLowerCase());
-			if(logMINOR) Logger.minor(this, "Got verifier: "+tv+" for "+element);
+			if(logDEBUG) Logger.minor(this, "Got verifier: "+tv+" for "+element);
 			if (tv == null) {
 				if (deleteWierdStuff) {
 					return null;
@@ -1233,7 +1235,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Hashtable h,
 			Hashtable hn,
 			HTMLParseContext pc) throws DataFilterException {
-			if(logMINOR) Logger.minor(this, "Finishing script/style");
+			if(logDEBUG) Logger.minor(this, "Finishing script/style");
 			// Finishing
 			setStyle(false, pc);
 			pc.styleScriptRecurseCount--;
@@ -1258,7 +1260,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		Hashtable start(Hashtable h, Hashtable hn, HTMLParseContext pc) throws DataFilterException {
-			if(logMINOR) Logger.minor(this, "Starting script/style");
+			if(logDEBUG) Logger.minor(this, "Starting script/style");
 			pc.styleScriptRecurseCount++;
 			if (pc.styleScriptRecurseCount > 1) {
 				if (deleteErrors)
@@ -1490,7 +1492,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				type = typesplit[0];
 				if ((typesplit[1] != null) && (typesplit[1].length() > 0))
 					charset = typesplit[1];
-				if(logMINOR)
+				if(logDEBUG)
 					Logger.debug(
 							this,
 							"Processing link tag, type="
@@ -1647,7 +1649,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String name = getHashString(h, "name");
 			String content = getHashString(h, "content");
 			String scheme = getHashString(h, "scheme");
-			if(logMINOR) Logger.minor(this, "meta: name="+name+", content="+content+", http-equiv="+http_equiv+", scheme="+scheme);
+			if(logDEBUG) Logger.minor(this, "meta: name="+name+", content="+content+", http-equiv="+http_equiv+", scheme="+scheme);
 			if (content != null) {
 				if ((name != null) && (http_equiv == null)) {
 					if (name.equalsIgnoreCase("Author")) {
@@ -1685,7 +1687,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					} else if (http_equiv.equalsIgnoreCase("Content-Type")) {
 						if(logMINOR) Logger.minor(this, "Found http-equiv content-type="+content);
 						String[] typesplit = splitType(content);
-						if(logMINOR) {
+						if(logDEBUG) {
 							for(int i=0;i<typesplit.length;i++)
 								Logger.minor(this, "["+i+"] = "+typesplit[i]);
 						}
@@ -1854,7 +1856,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if ((s == null) || (s.length() == 0))
 			return null;
 		//		Core.logger.log(SaferFilter.class, "Style now: " + s, Logger.DEBUG);
-		if(logMINOR) Logger.debug(HTMLFilter.class, "Style finally: " + s);
+		if(logMINOR) Logger.minor(HTMLFilter.class, "Style finally: " + s);
 		return s;
 	}
 
