@@ -40,7 +40,8 @@ public class ArchiveManager {
 	
 	/**
 	 * Create an ArchiveManager.
-	 * @param maxHandlers The maximum number of cached ArchiveHandler's.
+	 * @param maxHandlers The maximum number of cached ArchiveHandler's i.e. the
+	 * maximum number of containers to track.
 	 * @param maxCachedData The maximum size of the cache directory, in bytes.
 	 * @param maxArchiveSize The maximum size of an archive.
 	 * @param maxArchivedFileSize The maximum extracted size of a single file in any
@@ -54,7 +55,6 @@ public class ArchiveManager {
 	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, RandomSource random, FilenameGenerator filenameGenerator) {
 		maxArchiveHandlers = maxHandlers;
 		archiveHandlers = new LRUHashtable();
-		cachedElements = new LRUHashtable();
 		this.maxCachedElements = maxCachedElements;
 		this.maxCachedData = maxCachedData;
 		storedData = new LRUHashtable();
@@ -73,7 +73,7 @@ public class ArchiveManager {
 	// ArchiveHandler's
 	
 	final int maxArchiveHandlers;
-	final LRUHashtable archiveHandlers;
+	private final LRUHashtable archiveHandlers;
 	
 	/** Add an ArchiveHandler by key */
 	private synchronized void putCached(FreenetURI key, ArchiveHandler zip) {
@@ -92,23 +92,18 @@ public class ArchiveManager {
 		return handler;
 	}
 
-	// Element cache
-	
-	/** Cache of ArchiveElement's by MyKey */
-	final LRUHashtable cachedElements;
-	/** Maximum number of cached ArchiveElement's */
-	final int maxCachedElements;
-
 	// Data cache
 	
+	/** Maximum number of cached ArchiveStoreItems */
+	final int maxCachedElements;
 	/** Maximum cached data in bytes */
 	final long maxCachedData;
 	/** Currently cached data in bytes */
 	private long cachedData;
 	/** Map from ArchiveKey to ArchiveStoreElement */
-	final LRUHashtable storedData;
+	private final LRUHashtable storedData;
 	/** Filename generator */
-	final FilenameGenerator filenameGenerator;
+	private final FilenameGenerator filenameGenerator;
 
 	/**
 	 * Create an archive handler. This does not need to know how to
