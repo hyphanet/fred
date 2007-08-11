@@ -38,6 +38,26 @@ public class ArchiveManager {
 	public static final String METADATA_NAME = ".metadata";
 	private static boolean logMINOR;
 	
+	final RandomSource random;
+	final long maxArchiveSize;
+	final long maxArchivedFileSize;
+	
+	// ArchiveHandler's
+	final int maxArchiveHandlers;
+	private final LRUHashtable archiveHandlers;
+	
+	// Data cache
+	/** Maximum number of cached ArchiveStoreItems */
+	final int maxCachedElements;
+	/** Maximum cached data in bytes */
+	final long maxCachedData;
+	/** Currently cached data in bytes */
+	private long cachedData;
+	/** Map from ArchiveKey to ArchiveStoreElement */
+	private final LRUHashtable storedData;
+	/** Filename generator */
+	private final FilenameGenerator filenameGenerator;
+
 	/**
 	 * Create an ArchiveManager.
 	 * @param maxHandlers The maximum number of cached ArchiveHandler's i.e. the
@@ -65,16 +85,6 @@ public class ArchiveManager {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
-	final RandomSource random;
-	final long maxArchiveSize;
-	final long maxArchivedFileSize;
-	
-	
-	// ArchiveHandler's
-	
-	final int maxArchiveHandlers;
-	private final LRUHashtable archiveHandlers;
-	
 	/** Add an ArchiveHandler by key */
 	private synchronized void putCached(FreenetURI key, ArchiveHandler zip) {
 		if(logMINOR) Logger.minor(this, "Put cached AH for "+key+" : "+zip);
@@ -91,19 +101,6 @@ public class ArchiveManager {
 		archiveHandlers.push(key, handler);
 		return handler;
 	}
-
-	// Data cache
-	
-	/** Maximum number of cached ArchiveStoreItems */
-	final int maxCachedElements;
-	/** Maximum cached data in bytes */
-	final long maxCachedData;
-	/** Currently cached data in bytes */
-	private long cachedData;
-	/** Map from ArchiveKey to ArchiveStoreElement */
-	private final LRUHashtable storedData;
-	/** Filename generator */
-	private final FilenameGenerator filenameGenerator;
 
 	/**
 	 * Create an archive handler. This does not need to know how to
