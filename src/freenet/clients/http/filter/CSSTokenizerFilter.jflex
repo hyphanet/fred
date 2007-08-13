@@ -239,7 +239,7 @@ STRING2=\'(\\{NL}|\"|(\\\')|{NONASCII}|{ESCAPE}|[^\'])*\'
 IDENT={NMSTART}{NMCHAR}*
 UNOFFICIAL_IDENT="-"{IDENT}
 NAME={NMCHAR}+
-NUM=[-]([0-9]+|[0-9]*"."[0-9]+)
+NUM=(-){0,1}([0-9]+|[0-9]*"."[0-9]+)
 STRING={STRING1}|{STRING2}
 
 // Not used any more. Was used in url(). Keep for now. Matches up to the end of a bracket.
