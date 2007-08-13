@@ -237,9 +237,9 @@ STRING1=\"(\\{NL}|\'|(\\\")|{NONASCII}|{ESCAPE}|[^\"])*\"
 STRING2=\'(\\{NL}|\"|(\\\')|{NONASCII}|{ESCAPE}|[^\'])*\'
 
 IDENT={NMSTART}{NMCHAR}*
-UNOFFICIAL_IDENT="-[^0-9]"{IDENT}
+UNOFFICIAL_IDENT="-"{IDENT}
 NAME={NMCHAR}+
-NUM="-"([0-9]+|[0-9]*"."[0-9]+)
+NUM=[-]([0-9]+|[0-9]*"."[0-9]+)
 STRING={STRING1}|{STRING2}
 
 // Not used any more. Was used in url(). Keep for now. Matches up to the end of a bracket.
@@ -391,14 +391,6 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 	w.write(s);
 	if(debug) log("Matched ident: "+s);
 }
-{UNOFFICIAL_IDENT} {
-	if(debug) log("Deleted unofficial ident: "+yytext());
-	w.write("/* " + l10n("deletedUnofficialIdent") + " */");
-}
-{UNOFFICIAL_IDENT}{W}":"{W}{REALURL} {
-	if(debug) log("Deleted unofficial ident with url: "+yytext());
-	w.write("/* " + l10n("deletedUnofficialIdentWithURL") + " */");
-}
 "@page" {
 	String s = yytext();
 	w.write(s);
@@ -445,7 +437,6 @@ U\+{H}{1,6}-{H}{1,6} {
 	w.write(s);
 	if(debug) log("Matched number: "+s);
 }
-
 {MEDIUMS}{W}*";" {
 	if(postBadImportFlag) {
 		// Ignore
@@ -458,7 +449,6 @@ U\+{H}{1,6}-{H}{1,6} {
 		if(debug) log("Matched and passing on mediums list: "+s);
 	}
 }
-
 "@charset"{W}*{STRING}{W}*";" {
 	String s = yytext();
 	detectedCharset = s;
@@ -510,6 +500,14 @@ U\+{H}{1,6}-{H}{1,6} {
 		if(debug) log("Discarded identifier: "+s);
 		// Ignore
 	}
+}
+{UNOFFICIAL_IDENT} {
+	if(debug) log("Deleted unofficial ident: "+yytext());
+	w.write("/* " + l10n("deletedUnofficialIdent") + " */");
+}
+{UNOFFICIAL_IDENT}{W}":"{W}{REALURL} {
+	if(debug) log("Deleted unofficial ident with url: "+yytext());
+	w.write("/* " + l10n("deletedUnofficialIdentWithURL") + " */");
 }
 // Default rule matches only one character
 . {
