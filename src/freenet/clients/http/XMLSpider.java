@@ -84,7 +84,6 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 	private final HashMap titlesOfURIs = new HashMap();
 	private Vector indices;
 	private int match;
-	private Vector list;
 	private boolean indexing ;
 	private static final int minTimeBetweenEachIndexRewriting = 50;
 	//private static final String indexFilename = "index.xml";
@@ -683,7 +682,7 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 		outp.write("size = "+tMap.size()+"\n");
 		outp.close();
 		String str = (String) it.next();
-		int i = 0,index =0;
+		int i = 0;
 		while(it.hasNext())
 		{
 		 outp = new FileWriter("indexing",true);
@@ -864,7 +863,6 @@ public class XMLSpider implements HttpPlugin, ClientCallback, FoundURICallback ,
 				}
 				
 				uriElement.appendChild(xmlDoc.createTextNode(positionList.toString()));
-				int l;
 				wordElement.appendChild(uriElement);
 //			for(l = 0;l<filesElement.getChildNodes().getLength();l++)
 //				{ Element file = (Element) filesElement.getChildNodes().item(l);

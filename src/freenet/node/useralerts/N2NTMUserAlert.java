@@ -15,7 +15,6 @@ public class N2NTMUserAlert implements UserAlert {
 	private boolean isValid=true;
 	private DarknetPeerNode sourcePeerNode;
 	private String sourceNodename;
-	private String targetNodename;
 	private String messageText;
 	private int fileNumber;
 	private long composedTime;
@@ -25,7 +24,6 @@ public class N2NTMUserAlert implements UserAlert {
 	public N2NTMUserAlert(DarknetPeerNode sourcePeerNode, String source, String target, String message, int fileNumber, long composedTime, long  sentTime, long receivedTime) {
 		this.sourcePeerNode = sourcePeerNode;
 		this.sourceNodename = source;
-		this.targetNodename = target;
 		this.messageText = message;
 		this.fileNumber = fileNumber;
 		this.composedTime = composedTime;

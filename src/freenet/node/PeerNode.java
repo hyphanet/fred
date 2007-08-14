@@ -2362,7 +2362,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntil) {
 		checkConnectionsAndTrackers();
-		int oldPeerNodeStatus = peerNodeStatus;
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
 			if(now < routingBackedOffUntil) {
