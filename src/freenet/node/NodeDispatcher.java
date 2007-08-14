@@ -511,8 +511,8 @@ public class NodeDispatcher implements Dispatcher {
 		return true;
 	}
 
-	final int MAX_LOCS_NOT_VISITED = 10;
-	final int MAX_FORKS = 2;
+	static final int MAX_LOCS_NOT_VISITED = 10;
+	static final int MAX_FORKS = 2;
 	
 	/**
 	 * 
