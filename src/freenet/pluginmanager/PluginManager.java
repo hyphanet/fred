@@ -348,7 +348,7 @@ public class PluginManager {
 				}
 
 				File finalFile = new File("plugins/" + pluginname + ".jar");
-				if(!FileUtil.writeTo(is, finalFile));
+				if(!FileUtil.writeTo(is, finalFile))
 					Logger.error(this, "Failed to rename the temporary file into "+finalFile);
 					
 				filename = "*@file://" + FileUtil.getCanonicalFile(finalFile);
