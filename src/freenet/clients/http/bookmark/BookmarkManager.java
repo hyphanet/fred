@@ -61,13 +61,13 @@ public class BookmarkManager {
 							"Frost", node.alerts));
 
 			sc.register("bookmarks", defaultRoot.toStrings(), 0, true, false,"BookmarkManager.list", "BookmarkManager.listLong", configCB);
-
-			configCB.set((sc.getStringArr("bookmarks").length == 0 ? defaultRoot.toStrings() : sc.getStringArr("bookmarks")));
-
+			
+			clear();
+			if(sc.getRawOption("bookmarks") == null)
+				configCB.set(defaultRoot.toStrings());
+			
 		} catch (MalformedURLException mue) {
-			// just ignore that one
 		} catch (InvalidConfigValueException icve) {
-			// TODO
 			icve.printStackTrace();
 		}
 	}
@@ -82,8 +82,6 @@ public class BookmarkManager {
 		}
 
 		public void set(String[] newVals) throws InvalidConfigValueException {
-			clear();
-			
 			FreenetURI key;
 			for (int i = 0; i < newVals.length; i++) {
 				try {
