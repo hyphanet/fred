@@ -20,7 +20,8 @@ import freenet.support.api.StringArrCallback;
 public class BookmarkManager {
 
 	private final NodeClientCore node;
-	private final USKUpdatedCallback uskcb = new USKUpdatedCallback();
+	private final USKUpdatedCallback uskCB = new USKUpdatedCallback();
+	private final StringArrCallback configCB = new BookmarkCallback();
 	private static final BookmarkCategory MAIN_CATEGORY = new BookmarkCategory("/");;
 	private final HashMap bookmarks = new HashMap();
 
@@ -59,11 +60,9 @@ public class BookmarkManager {
 							"USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/1"),
 							"Frost", node.alerts));
 
-			sc.register("bookmarks", defaultRoot.toStrings(), 0, true, false,
-					"BookmarkManager.list", "BookmarkManager.listLong",
-					makeCB());
+			sc.register("bookmarks", defaultRoot.toStrings(), 0, true, false,"BookmarkManager.list", "BookmarkManager.listLong", configCB);
 
-			makeCB().set((sc.getStringArr("bookmarks").length == 0 ? defaultRoot.toStrings() : sc.getStringArr("bookmarks")));
+			configCB.set((sc.getStringArr("bookmarks").length == 0 ? defaultRoot.toStrings() : sc.getStringArr("bookmarks")));
 
 		} catch (MalformedURLException mue) {
 			// just ignore that one
@@ -132,10 +131,6 @@ public class BookmarkManager {
 		return L10n.getString("BookmarkManager."+key);
 	}
 
-	public BookmarkCallback makeCB() {
-		return new BookmarkCallback();
-	}
-
 	public BookmarkCategory getMainCategory() {
 		return MAIN_CATEGORY;
 	}
@@ -177,7 +172,7 @@ public class BookmarkManager {
 		if (bookmark instanceof BookmarkItem && ((BookmarkItem) bookmark).getKeyType().equals("USK")) {
 			try {
 				USK u = ((BookmarkItem) bookmark).getUSK();
-				this.node.uskManager.subscribe(u, this.uskcb, true, this);
+				this.node.uskManager.subscribe(u, this.uskCB, true, this);
 			} catch (MalformedURLException mue) {
 			}
 		}
@@ -191,7 +186,7 @@ public class BookmarkManager {
 		bookmark.setName(newName);
 		if (bookmark instanceof BookmarkCategory) {
 			try {
-				makeCB().set(makeCB().get());
+				configCB.set(configCB.get());
 			} catch (InvalidConfigValueException icve) {}
 		}
 	}
@@ -225,7 +220,7 @@ public class BookmarkManager {
 			if (((BookmarkItem) bookmark).getKeyType().equals("USK")) {
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
-					this.node.uskManager.unsubscribe(u, this.uskcb, true);
+					this.node.uskManager.unsubscribe(u, this.uskCB, true);
 				} catch (MalformedURLException mue) {
 				}
 			}
