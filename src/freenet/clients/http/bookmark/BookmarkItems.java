@@ -1,16 +1,9 @@
 package freenet.clients.http.bookmark;
 
 import java.util.Vector;
-import java.util.Iterator;
 
-public class BookmarkItems // implements Iterator
-{
-
-	Vector items;
-
-	public BookmarkItems() {
-		items = new Vector();
-	}
+public class BookmarkItems {
+	private final Vector items = new Vector();
 
 	public BookmarkItem get(int i) {
 		return (BookmarkItem) items.get(i);
@@ -27,9 +20,5 @@ public class BookmarkItems // implements Iterator
 
 	public int size() {
 		return items.size();
-	}
-
-	public Iterator iterator() {
-		return (items).iterator();
 	}
 }

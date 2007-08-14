@@ -20,29 +20,15 @@ import freenet.support.api.StringArrCallback;
 public class BookmarkManager {
 
 	private final NodeClientCore node;
-
-	private USKUpdatedCallback uskcb;
-
-	private boolean started;
-
-	private BookmarkCategory mainCategory;
-
-	private HashMap bookmarks;
-
-	private SubConfig sc;
+	private final USKUpdatedCallback uskcb = new USKUpdatedCallback();
+	private final BookmarkCategory mainCategory = new BookmarkCategory("/");;
+	private final HashMap bookmarks = new HashMap();
 
 	public BookmarkManager(NodeClientCore n, SubConfig sc) {
-
-		bookmarks = new HashMap();
-		mainCategory = new BookmarkCategory("/");
 		bookmarks.put("/", mainCategory);
-
-		this.uskcb = new USKUpdatedCallback();
 		this.node = n;
-		this.sc = sc;
 
 		try {
-
 			BookmarkCategory defaultRoot = new BookmarkCategory("/");
 
 			BookmarkCategory indexes = (BookmarkCategory) defaultRoot
@@ -87,10 +73,7 @@ public class BookmarkManager {
 					"BookmarkManager.list", "BookmarkManager.listLong",
 					makeCB());
 
-			if (!importOldBookmarks())
-				makeCB().set(
-						(sc.getStringArr("bookmarks").length == 0 ? defaultRoot
-								.toStrings() : sc.getStringArr("bookmarks")));
+			makeCB().set((sc.getStringArr("bookmarks").length == 0 ? defaultRoot.toStrings() : sc.getStringArr("bookmarks")));
 
 		} catch (MalformedURLException mue) {
 			// just ignore that one
@@ -98,28 +81,20 @@ public class BookmarkManager {
 			// TODO
 			icve.printStackTrace();
 		}
-
-		synchronized (this) {
-			started = true;
-		}
 	}
 
 	public class BookmarkCallback implements StringArrCallback {
-		private final Pattern pattern = Pattern
-		.compile("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
+		private final Pattern pattern = Pattern.compile("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
 
 		public String[] get() {
-
 			synchronized (BookmarkManager.this) {
-
 				return mainCategory.toStrings();
-
 			}
 		}
 
 		public void set(String[] newVals) throws InvalidConfigValueException {
 			clear();
-
+			
 			FreenetURI key;
 			for (int i = 0; i < newVals.length; i++) {
 				try {
@@ -145,8 +120,7 @@ public class BookmarkManager {
 		public void onFoundEdition(long edition, USK key) {
 			BookmarkItems items = mainCategory.getAllItems();
 			for (int i = 0; i < items.size(); i++) {
-
-				if (!items.get(i).getKeyType().equals("USK"))
+				if (!"USK".equals(items.get(i).getKeyType()))
 					continue;
 
 				try {
@@ -162,29 +136,6 @@ public class BookmarkManager {
 			}
 			node.storeConfig();
 		}
-	}
-
-	private boolean importOldBookmarks() {
-		String[] strs = sc.getStringArr("bookmarks");
-
-		final Pattern pattern = Pattern.compile("([A-Z]{3}@.*)=(.*)");
-		for (int i = 0; i < strs.length; i++) {
-			Matcher matcher = pattern.matcher(strs[i]);
-			if (matcher.matches() && matcher.groupCount() == 2) {
-				if (getCategoryByPath("/Imported/") == null)
-					addBookmark("/", new BookmarkCategory("Imported"), false);
-				try {
-					addBookmark("/Imported/", new BookmarkItem(new FreenetURI(
-							matcher.group(1)), matcher.group(2), node.alerts),
-							false);
-				} catch (MalformedURLException mue) {
-				}
-			} else
-				return false;
-		}
-
-		node.storeConfig();
-		return true;
 	}
 
 	public String l10n(String key) {
@@ -226,23 +177,18 @@ public class BookmarkManager {
 		return null;
 	}
 
-	public void addBookmark(String parentPath, Bookmark bookmark, boolean store)
-	throws NullPointerException {
+	public void addBookmark(String parentPath, Bookmark bookmark, boolean store) {
 		BookmarkCategory parent = getCategoryByPath(parentPath);
-		if (parent == null)
-			throw new NullPointerException();
-		else {
-			parent.addBookmark(bookmark);
-			putPaths(parentPath + bookmark.getName()
-					+ ((bookmark instanceof BookmarkCategory) ? "/" : ""),
-					bookmark);
+		parent.addBookmark(bookmark);
+		putPaths(parentPath + bookmark.getName()
+				+ ((bookmark instanceof BookmarkCategory) ? "/" : ""),
+				bookmark);
 
-			if (bookmark instanceof BookmarkItem && ((BookmarkItem) bookmark).getKeyType().equals("USK")) {
-				try {
-					USK u = ((BookmarkItem) bookmark).getUSK();
-					this.node.uskManager.subscribe(u, this.uskcb, true, this);
-				} catch (MalformedURLException mue) {
-				}
+		if (bookmark instanceof BookmarkItem && ((BookmarkItem) bookmark).getKeyType().equals("USK")) {
+			try {
+				USK u = ((BookmarkItem) bookmark).getUSK();
+				this.node.uskManager.subscribe(u, this.uskcb, true, this);
+			} catch (MalformedURLException mue) {
 			}
 		}
 		if (store)
@@ -256,15 +202,11 @@ public class BookmarkManager {
 		if (bookmark instanceof BookmarkCategory) {
 			try {
 				makeCB().set(makeCB().get());
-
-			} catch (InvalidConfigValueException icve) {
-			}
+			} catch (InvalidConfigValueException icve) {}
 		}
-
 	}
 
-	public void moveBookmark(String bookmarkPath, String newParentPath,
-			boolean store) {
+	public void moveBookmark(String bookmarkPath, String newParentPath, boolean store) {
 		Bookmark b = getBookmarkByPath(bookmarkPath);
 		addBookmark(newParentPath, b, false);
 
@@ -273,7 +215,6 @@ public class BookmarkManager {
 
 		if (store)
 			node.storeConfig();
-
 	}
 
 	public void removeBookmark(String path, boolean store) {
@@ -306,7 +247,6 @@ public class BookmarkManager {
 
 		if (store)
 			node.storeConfig();
-
 	}
 
 	public void moveBookmarkUp(String path, boolean store) {
@@ -366,13 +306,9 @@ public class BookmarkManager {
 	}
 
 	public void clear() {
-
 		removeBookmark("/", false);
 		bookmarks.clear();
-
-		mainCategory = new BookmarkCategory("/");
 		bookmarks.put("/", mainCategory);
-
 	}
 
 	public FreenetURI[] getBookmarkURIs() {
@@ -384,36 +320,4 @@ public class BookmarkManager {
 
 		return uris;
 	}
-
-	/*
-	 * public void addBookmark(Bookmark b, boolean store) {
-	 * this.bookmarks.add(b); if (b.getKeyType().equals("USK")) { try { USK u =
-	 * b.getUSK(); this.node.uskManager.subscribe(u, this.uskcb, true, this); }
-	 * catch (MalformedURLException mue) {
-	 *  } } if(store && started) node.storeConfig(); }
-	 * 
-	 * public void removeBookmark(Bookmark b, boolean store) { if
-	 * (b.getKeyType().equals("USK")) { try { USK u = b.getUSK();
-	 * this.node.uskManager.unsubscribe(u, this.uskcb, true); } catch
-	 * (MalformedURLException mue) {
-	 *  } } this.bookmarks.remove(b); if(store && started) node.storeConfig(); }
-	 * 
-	 * public void moveBookmarkDown (Bookmark b, boolean store) { int i =
-	 * this.bookmarks.indexOf(b); if (i == -1) return;
-	 * 
-	 * Bookmark bk = (Bookmark)this.bookmarks.get(i); this.bookmarks.remove(i);
-	 * this.bookmarks.add((i+1)%(this.bookmarks.size()+1), bk);
-	 * 
-	 * if(store && started) node.storeConfig(); }
-	 * 
-	 * public void moveBookmarkUp (Bookmark b, boolean store) { int i =
-	 * this.bookmarks.indexOf(b); if (i == -1) return;
-	 * 
-	 * Bookmark bk = (Bookmark)this.bookmarks.get(i); this.bookmarks.remove(i);
-	 * if (--i < 0) i = this.bookmarks.size(); this.bookmarks.add(i, bk);
-	 * 
-	 * if(store && started) node.storeConfig(); }
-	 * 
-	 * public int getSize() { return this.bookmarks.size(); }
-	 */
 }
