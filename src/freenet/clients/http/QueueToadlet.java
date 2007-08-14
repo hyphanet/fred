@@ -208,7 +208,10 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					insertURI = new FreenetURI("CHK@");
 				} else if ("ksk".equals(keyType)) {
 					try {
-						insertURI = new FreenetURI(request.getPartAsString("key", 128));
+						String u = request.getPartAsString("key", 128);
+						insertURI = new FreenetURI(u);
+						if(logMINOR)
+							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+")");
 					} catch (MalformedURLException mue1) {
 						writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
 						return;
