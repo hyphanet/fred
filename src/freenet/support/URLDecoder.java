@@ -3,10 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 
 /**
  * Decode encoded URLs (or parts of URLs). @see URLEncoder.
@@ -42,13 +40,13 @@ public class URLDecoder
 		if (s.length() == 0)
 			return "";
 		int len = s.length();
-		StringWriter decodedBytes = new StringWriter();
+		StringWriter decoded = new StringWriter();
 		boolean hasDecodedSomething = false;
 
 		for (int i = 0; i < len; i++) {
 			char c = s.charAt(i);
 			if (Character.isLetterOrDigit(c))
-				decodedBytes.write(c);
+				decoded.write(c);
 			else if (c == '%') {
 				if (i >= len - 2) {
 					throw new URLEncodedFormatException(s);
@@ -63,25 +61,25 @@ public class URLDecoder
 					long read = Fields.hexToLong(hexval);
 					if (read == 0)
 						throw new URLEncodedFormatException("Can't encode" + " 00");
-					decodedBytes.write((int) read);
+					decoded.write((int) read);
 					hasDecodedSomething = true;
 				} catch (NumberFormatException nfe) {
 					// Not encoded?
 					if(tolerant && !hasDecodedSomething) {
-						decodedBytes.write('%');
-						decodedBytes.write(hexval);
+						decoded.write('%');
+						decoded.write(hexval);
 						continue;
 					}
 					
 					throw new URLEncodedFormatException("Not a two character hex % escape: "+hexval+" in "+s);
 				}
 			} else {
-				decodedBytes.write(c);
+				decoded.write(c);
 			}
 		}
 		try {
-			decodedBytes.close();
-			return decodedBytes.toString();
+			decoded.close();
+			return decoded.toString();
 		} catch (IOException ioe1) {
 			/* if this throws something's wrong */
 		}
