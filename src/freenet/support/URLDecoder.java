@@ -5,6 +5,7 @@ package freenet.support;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -41,7 +42,7 @@ public class URLDecoder
 		if (s.length() == 0)
 			return "";
 		int len = s.length();
-		ByteArrayOutputStream decodedBytes = new ByteArrayOutputStream();
+		StringWriter decodedBytes = new StringWriter();
 		boolean hasDecodedSomething = false;
 
 		for (int i = 0; i < len; i++) {
@@ -67,29 +68,20 @@ public class URLDecoder
 				} catch (NumberFormatException nfe) {
 					// Not encoded?
 					if(tolerant && !hasDecodedSomething) {
-						try {
-							byte[] buf = ('%'+hexval).getBytes("UTF-8");
-							decodedBytes.write(buf, 0, buf.length);
-							continue;
-						} catch (UnsupportedEncodingException e) {
-							throw new Error(e);
-						}
+						decodedBytes.write('%');
+						decodedBytes.write(hexval);
+						continue;
 					}
 					
 					throw new URLEncodedFormatException("Not a two character hex % escape: "+hexval+" in "+s);
 				}
 			} else {
-				try {
-					byte[] encoded = (""+c).getBytes("UTF-8");
-					decodedBytes.write(encoded, 0, encoded.length);
-				} catch (UnsupportedEncodingException e) {
-					throw new Error(e);
-				}
+				decodedBytes.write(c);
 			}
 		}
 		try {
 			decodedBytes.close();
-			return new String(decodedBytes.toByteArray(), "utf-8");
+			return decodedBytes.toString();
 		} catch (IOException ioe1) {
 			/* if this throws something's wrong */
 		}
