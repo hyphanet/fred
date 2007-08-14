@@ -1,22 +1,14 @@
 package freenet.clients.http;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.DarknetPeerNodeStatus;
-import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.PeerManager;

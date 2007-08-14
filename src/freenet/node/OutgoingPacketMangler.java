@@ -8,7 +8,6 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.SocketHandler;
-import freenet.support.ShortBuffer;
 import freenet.support.WouldBlockException;
 
 /**

@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 
 /**

@@ -16,7 +16,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.l10n.L10n;
-import freenet.node.DarknetPeerNodeStatus;
 import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;

@@ -1,7 +1,5 @@
 package freenet.pluginmanager;
 
-import java.util.Vector;
-
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 

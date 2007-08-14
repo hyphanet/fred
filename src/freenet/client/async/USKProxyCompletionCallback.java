@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.util.Arrays;
-
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
