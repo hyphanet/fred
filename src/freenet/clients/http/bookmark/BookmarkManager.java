@@ -21,50 +21,40 @@ public class BookmarkManager {
 
 	private final NodeClientCore node;
 	private final USKUpdatedCallback uskcb = new USKUpdatedCallback();
-	private final BookmarkCategory mainCategory = new BookmarkCategory("/");;
+	private static final BookmarkCategory MAIN_CATEGORY = new BookmarkCategory("/");;
 	private final HashMap bookmarks = new HashMap();
 
 	public BookmarkManager(NodeClientCore n, SubConfig sc) {
-		bookmarks.put("/", mainCategory);
+		bookmarks.put("/", MAIN_CATEGORY);
 		this.node = n;
 
 		try {
 			BookmarkCategory defaultRoot = new BookmarkCategory("/");
-
-			BookmarkCategory indexes = (BookmarkCategory) defaultRoot
-			.addBookmark(new BookmarkCategory("Indexes"));
-			indexes
-			.addBookmark(new BookmarkItem(
+			BookmarkCategory indexes = (BookmarkCategory) defaultRoot.addBookmark(new BookmarkCategory("Indexes"));
+			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
 							"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/25/"),
 							"Entry point (freesites with descriptions but no categories)",
 							node.alerts));
 
-			indexes
-			.addBookmark(new BookmarkItem(
+			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
 							"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/3/"),
 							"Another Index (freesites with categories but no descriptions)",
 							node.alerts));
 
-			BookmarkCategory flog = (BookmarkCategory) defaultRoot
-			.addBookmark(new BookmarkCategory("Freenet devel's flogs"));
-			flog
-			.addBookmark(new BookmarkItem(
+			BookmarkCategory flog = (BookmarkCategory) defaultRoot.addBookmark(new BookmarkCategory("Freenet devel's flogs"));
+			flog.addBookmark(new BookmarkItem(
 					new FreenetURI(
 							"USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/2/"),
 							"Toad", node.alerts));
-			flog
-			.addBookmark(new BookmarkItem(
+			flog.addBookmark(new BookmarkItem(
 					new FreenetURI(
 							"USK@hM9XRwjXIzU8xTSBXNZvTn2KuvTSRFnVn4EER9FQnpM,gsth24O7ud4gL4NwNuYJDUqfaWASOG2zxZY~ChtgPxc,AQACAAE/Flog/4/"),
 							"Nextgen$", node.alerts));
 
-			BookmarkCategory apps = (BookmarkCategory) defaultRoot
-			.addBookmark(new BookmarkCategory(
-					"Freenet related software"));
-			apps
-			.addBookmark(new BookmarkItem(
+			BookmarkCategory apps = (BookmarkCategory) defaultRoot.addBookmark(new BookmarkCategory("Freenet related software"));
+			apps.addBookmark(new BookmarkItem(
 					new FreenetURI(
 							"USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/1"),
 							"Frost", node.alerts));
@@ -88,7 +78,7 @@ public class BookmarkManager {
 
 		public String[] get() {
 			synchronized (BookmarkManager.this) {
-				return mainCategory.toStrings();
+				return MAIN_CATEGORY.toStrings();
 			}
 		}
 
@@ -118,7 +108,7 @@ public class BookmarkManager {
 
 	private class USKUpdatedCallback implements USKCallback {
 		public void onFoundEdition(long edition, USK key) {
-			BookmarkItems items = mainCategory.getAllItems();
+			BookmarkItems items = MAIN_CATEGORY.getAllItems();
 			for (int i = 0; i < items.size(); i++) {
 				if (!"USK".equals(items.get(i).getKeyType()))
 					continue;
@@ -147,7 +137,7 @@ public class BookmarkManager {
 	}
 
 	public BookmarkCategory getMainCategory() {
-		return mainCategory;
+		return MAIN_CATEGORY;
 	}
 
 	public String parentPath(String path) {
@@ -308,11 +298,11 @@ public class BookmarkManager {
 	public void clear() {
 		removeBookmark("/", false);
 		bookmarks.clear();
-		bookmarks.put("/", mainCategory);
+		bookmarks.put("/", MAIN_CATEGORY);
 	}
 
 	public FreenetURI[] getBookmarkURIs() {
-		BookmarkItems items = mainCategory.getAllItems();
+		BookmarkItems items = MAIN_CATEGORY.getAllItems();
 		FreenetURI[] uris = new FreenetURI[items.size()];
 		for (int i = 0; i < items.size(); i++) {
 			uris[i] = items.get(i).getURI();
