@@ -46,41 +46,41 @@ public class BookmarkManager {
 			BookmarkCategory defaultRoot = new BookmarkCategory("/");
 
 			BookmarkCategory indexes = (BookmarkCategory) defaultRoot
-					.addBookmark(new BookmarkCategory("Indexes"));
+			.addBookmark(new BookmarkCategory("Indexes"));
 			indexes
-					.addBookmark(new BookmarkItem(
-							new FreenetURI(
-									"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/25/"),
+			.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/25/"),
 							"Entry point (freesites with descriptions but no categories)",
 							node.alerts));
 
 			indexes
-					.addBookmark(new BookmarkItem(
-							new FreenetURI(
-									"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/3/"),
+			.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/3/"),
 							"Another Index (freesites with categories but no descriptions)",
 							node.alerts));
 
 			BookmarkCategory flog = (BookmarkCategory) defaultRoot
-					.addBookmark(new BookmarkCategory("Freenet devel's flogs"));
+			.addBookmark(new BookmarkCategory("Freenet devel's flogs"));
 			flog
-					.addBookmark(new BookmarkItem(
-							new FreenetURI(
-									"USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/2/"),
+			.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/2/"),
 							"Toad", node.alerts));
 			flog
-					.addBookmark(new BookmarkItem(
-							new FreenetURI(
-									"USK@hM9XRwjXIzU8xTSBXNZvTn2KuvTSRFnVn4EER9FQnpM,gsth24O7ud4gL4NwNuYJDUqfaWASOG2zxZY~ChtgPxc,AQACAAE/Flog/4/"),
+			.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@hM9XRwjXIzU8xTSBXNZvTn2KuvTSRFnVn4EER9FQnpM,gsth24O7ud4gL4NwNuYJDUqfaWASOG2zxZY~ChtgPxc,AQACAAE/Flog/4/"),
 							"Nextgen$", node.alerts));
 
 			BookmarkCategory apps = (BookmarkCategory) defaultRoot
-					.addBookmark(new BookmarkCategory(
-							"Freenet related software"));
+			.addBookmark(new BookmarkCategory(
+					"Freenet related software"));
 			apps
-					.addBookmark(new BookmarkItem(
-							new FreenetURI(
-									"USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/1"),
+			.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/1"),
 							"Frost", node.alerts));
 
 			sc.register("bookmarks", defaultRoot.toStrings(), 0, true, false,
@@ -106,7 +106,7 @@ public class BookmarkManager {
 
 	public class BookmarkCallback implements StringArrCallback {
 		private final Pattern pattern = Pattern
-				.compile("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
+		.compile("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
 
 		public String[] get() {
 
@@ -227,7 +227,7 @@ public class BookmarkManager {
 	}
 
 	public void addBookmark(String parentPath, Bookmark bookmark, boolean store)
-			throws NullPointerException {
+	throws NullPointerException {
 		BookmarkCategory parent = getCategoryByPath(parentPath);
 		if (parent == null)
 			throw new NullPointerException();
@@ -286,9 +286,9 @@ public class BookmarkManager {
 			for (int i = 0; i < cat.size(); i++) {
 				removeBookmark(
 						path
-								+ cat.get(i).getName()
-								+ ((cat.get(i) instanceof BookmarkCategory) ? "/"
-										: ""), false);
+						+ cat.get(i).getName()
+						+ ((cat.get(i) instanceof BookmarkCategory) ? "/"
+								: ""), false);
 			}
 		} else {
 			if (((BookmarkItem) bookmark).getKeyType().equals("USK")) {
