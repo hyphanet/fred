@@ -86,22 +86,22 @@ public class PproxyToadlet extends Toadlet {
 				writeTemporaryRedirect(ctx, e.message, e.newLocation);
 			}
 			catch (NotFoundPluginHTTPException e) {
-				sendErrorPage(ctx, e.code, e.message, e.location);
+				sendErrorPage(ctx, NotFoundPluginHTTPException.code, e.message, e.location);
 			}
 			catch (AccessDeniedPluginHTTPException e) {
-				sendErrorPage(ctx, e.code, e.message, e.location);
+				sendErrorPage(ctx, AccessDeniedPluginHTTPException.code, e.message, e.location);
 			}
 			catch (DownloadPluginHTTPException e) {
 				// FIXME: maybe it ought to be defined like sendErrorPage : in toadlets
 
 				MultiValueTable head = new MultiValueTable();
 				head.put("Content-Disposition", "attachment; filename=\"" + e.filename + '"');
-				ctx.sendReplyHeaders(e.code, "Found", head, e.mimeType, e.data.length);
+				ctx.sendReplyHeaders(DownloadPluginHTTPException.CODE, "Found", head, e.mimeType, e.data.length);
 				ctx.writeData(e.data);
 			}
 			catch(PluginHTTPException e)
 			{
-				sendErrorPage(ctx, e.code, e.message, e.location);
+				sendErrorPage(ctx, PluginHTTPException.code, e.message, e.location);
 			}
 			catch(Throwable t)
 			{
@@ -226,18 +226,18 @@ public class PproxyToadlet extends Toadlet {
 		} catch (RedirectPluginHTTPException e) {
 			writeTemporaryRedirect(ctx, e.message, e.newLocation);
 		} catch (NotFoundPluginHTTPException e) {
-			sendErrorPage(ctx, e.code, e.message, e.location);
+			sendErrorPage(ctx, NotFoundPluginHTTPException.code, e.message, e.location);
 		} catch (AccessDeniedPluginHTTPException e) {
-			sendErrorPage(ctx, e.code, e.message, e.location);
+			sendErrorPage(ctx, AccessDeniedPluginHTTPException.code, e.message, e.location);
 		} catch (DownloadPluginHTTPException e) {
 			// FIXME: maybe it ought to be defined like sendErrorPage : in toadlets
 
 			MultiValueTable head = new MultiValueTable();
 			head.put("Content-Disposition", "attachment; filename=\"" + e.filename + '"');
-			ctx.sendReplyHeaders(e.code, "Found", head, e.mimeType, e.data.length);
+			ctx.sendReplyHeaders(DownloadPluginHTTPException.CODE, "Found", head, e.mimeType, e.data.length);
 			ctx.writeData(e.data);
 		} catch(PluginHTTPException e) {
-			sendErrorPage(ctx, e.code, e.message, e.location);
+			sendErrorPage(ctx, PluginHTTPException.code, e.message, e.location);
 		} catch (Throwable t) {
 			writeInternalError(t, ctx);
 		}
