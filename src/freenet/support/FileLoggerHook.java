@@ -693,7 +693,7 @@ public class FileLoggerHook extends LoggerHook {
 		if (rotate) {
 			this.baseFilename = baseFilename;
 		} else {
-			logStream = new FileOutputStream(baseFilename, !logOverwrite);
+			logStream = new BufferedOutputStream(new FileOutputStream(baseFilename, !logOverwrite), 65536);
 		}
 	}
 	
