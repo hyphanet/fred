@@ -1,5 +1,6 @@
 package freenet.clients.http;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -214,7 +215,7 @@ public class ToadletContextImpl implements ToadletContext {
 	 */
 	public static void handle(Socket sock, ToadletContainer container, BucketFactory bf, PageMaker pageMaker) {
 		try {
-			InputStream is = sock.getInputStream();
+			InputStream is = new BufferedInputStream(sock.getInputStream(), 4096);
 			
 			LineReadingInputStream lis = new LineReadingInputStream(is);
 			
