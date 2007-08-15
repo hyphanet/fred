@@ -67,14 +67,14 @@ public class GzipCompressor extends Compressor {
 		byte[] buffer = new byte[4096];
 		while(true) {
 			int l = (int) Math.min(buffer.length, maxLength - written);
-			int x = gis.read(buffer, 0, 4096);
+			int x = gis.read(buffer, 0, buffer.length);
 			if(l < x) {
 				Logger.normal(this, "l="+l+", x="+x+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
 				if(maxCheckSizeBytes > 0) {
 					written += x;
 					while(true) {
 						l = (int) Math.min(buffer.length, maxLength + maxCheckSizeBytes - written);
-						x = gis.read(buffer, 0, 4096);
+						x = gis.read(buffer, 0, buffer.length);
 						if(x <= -1) throw new CompressionOutputSizeException(written);
 						if(x == 0) throw new IOException("Returned zero from read()");
 						written += x;
