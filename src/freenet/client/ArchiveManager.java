@@ -215,7 +215,7 @@ public class ArchiveManager {
 			// MINOR: Assumes the first entry in the zip is a directory. 
 			ZipEntry entry;
 			
-			byte[] buf = new byte[4096];
+			byte[] buf = new byte[32768];
 			HashSet names = new HashSet();
 			boolean gotMetadata = false;
 			
