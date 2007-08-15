@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
@@ -404,7 +405,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				// Only the *decoding* is generic at present.
 				
 				Bucket zipBucket = ctx.bf.makeBucket(-1);
-				OutputStream os = zipBucket.getOutputStream();
+				OutputStream os = new BufferedOutputStream(zipBucket.getOutputStream());
 				ZipOutputStream zos = new ZipOutputStream(os);
 				ZipEntry ze;
 				
