@@ -92,7 +92,9 @@ public class MessageType {
 		if (!(o instanceof MessageType)) {
 			return false;
 		}
-		return ((MessageType) o)._name.equals(_name);
+		// We can only register one MessageType for each name.
+		// So we can do == here.
+		return ((MessageType) o)._name == _name;
 	}
 
 	public int hashCode() {
