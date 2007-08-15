@@ -1815,6 +1815,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					System.err.println("Corrupt database ("+getName()+") but could not create flag file "+reconstructFile);
 					return; // Not sure what else we can do
 				}
+			} else {
+				if(ex.getCause() != null)
+					checkSecondaryDatabaseError(ex.getCause());
 			}
 		}
 	}
