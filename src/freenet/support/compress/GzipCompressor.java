@@ -24,7 +24,9 @@ public class GzipCompressor extends Compressor {
 			os = output.getOutputStream();
 			gos = new GZIPOutputStream(os);
 			long written = 0;
-			byte[] buffer = new byte[4096];
+			// Bigger input buffer, so can compress all at once.
+			// Won't hurt on I/O either, although most OSs will only return a page at a time.
+			byte[] buffer = new byte[32768];
 			while(true) {
 				int l = (int) Math.min(buffer.length, maxLength - written);
 				int x = is.read(buffer, 0, buffer.length);
