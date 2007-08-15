@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -97,7 +98,7 @@ public class ClientGetter extends BaseClientGetter {
 			if(currentState != null && !finished) {
 				if(binaryBlobBucket != null) {
 					try {
-						binaryBlobStream = new DataOutputStream(binaryBlobBucket.getOutputStream());
+						binaryBlobStream = new DataOutputStream(new BufferedOutputStream(binaryBlobBucket.getOutputStream()));
 						BinaryBlob.writeBinaryBlobHeader(binaryBlobStream);
 					} catch (IOException e) {
 						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e), null);
