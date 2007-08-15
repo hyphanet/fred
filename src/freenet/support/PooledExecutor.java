@@ -15,15 +15,24 @@ public class PooledExecutor implements Executor {
 	private final ArrayList runningThreads /* <MyThread> */ = new ArrayList();
 	private final ArrayList waitingThreads /* <MyThread> */ = new ArrayList();
 	long threadCounter = 0;
+	private long jobCount;
+	private long jobMisses;
+	private static boolean logMINOR;
 	
 	/** Maximum time a thread will wait for a job */
 	static final int TIMEOUT = 5*60*1000;
+	
+	public void start() {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+	}
 	
 	public void execute(Runnable job, String jobName) {
 		while(true) {
 			MyThread t;
 			boolean mustStart = false;
+			boolean miss = false;
 			synchronized(this) {
+				jobCount++;
 				if(!waitingThreads.isEmpty()) {
 					t = (MyThread) waitingThreads.remove(waitingThreads.size()-1);
 				} else {
@@ -31,6 +40,7 @@ public class PooledExecutor implements Executor {
 					t = new MyThread("Pooled thread awaiting work @"+(threadCounter++));
 					t.setDaemon(true);
 					mustStart = true;
+					miss = true;
 				}
 			}
 			synchronized(t) {
@@ -48,6 +58,10 @@ public class PooledExecutor implements Executor {
 				t.start();
 				synchronized(this) {
 					runningThreads.add(t);
+					if(miss)
+						jobMisses++;
+					if(logMINOR)
+						Logger.minor(this, "Jobs: "+jobMisses+" misses of "+jobCount);
 				}
 			}
 			return;
@@ -70,6 +84,7 @@ public class PooledExecutor implements Executor {
 		}
 
 		public void run() {
+			long ranJobs = 0;
 			while(true) {
 				Runnable job;
 				
@@ -102,6 +117,8 @@ public class PooledExecutor implements Executor {
 						waitingThreads.remove(this);
 						if(!alive) {
 							runningThreads.remove(this);
+							if(logMINOR)
+								Logger.minor(this, "Exiting having executed "+ranJobs+" jobs : "+this);
 							return;
 						}
 					}
@@ -113,6 +130,7 @@ public class PooledExecutor implements Executor {
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t+" running job "+job, t);
 				}
+				ranJobs++;
 			}
 		}
 		

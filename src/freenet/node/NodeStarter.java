@@ -89,8 +89,6 @@ public class NodeStarter
     	java.security.Security.setProperty("networkaddress.cache.ttl" , "0");
     	java.security.Security.setProperty("networkaddress.cache.negative.ttl" , "0");
     	
-    	Executor executor = new PooledExecutor();
-    	
     	try{
     		cfg = FreenetFilePersistentConfig.constructFreenetFilePersistentConfig(configFilename);	
     	}catch(IOException e){
@@ -102,6 +100,8 @@ public class NodeStarter
     	// First, set up logging. It is global, and may be shared between several nodes.
     	SubConfig loggingConfig = new SubConfig("logger", cfg);
     	
+    	PooledExecutor executor = new PooledExecutor();
+    	
     	try {
     		logConfigHandler = new LoggingConfigHandler(loggingConfig, executor);
     	} catch (InvalidConfigValueException e) {
@@ -110,6 +110,8 @@ public class NodeStarter
     		return new Integer(-2);
     	}
 
+    	executor.start();
+    	
     	getExtBuild();
     	
     	// Setup RNG
