@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.LinkedList;
@@ -40,13 +41,14 @@ public class FCPConnectionOutputHandler implements Runnable {
 	}
  
 	private void realRun() throws IOException {
-		OutputStream os = handler.sock.getOutputStream();
+		OutputStream os = new BufferedOutputStream(handler.sock.getOutputStream(), 4096);
 		while(true) {
 			FCPMessage msg;
 			synchronized(outQueue) {
 				while(true) {
 					if(outQueue.isEmpty()) {
 						if(handler.isClosed()) return;
+						os.flush();
 						try {
 							outQueue.wait(10000);
 						} catch (InterruptedException e) {
@@ -59,7 +61,11 @@ public class FCPConnectionOutputHandler implements Runnable {
 				}
 			}
 			msg.send(os);
-			if(handler.isClosed()) return;
+			if(handler.isClosed()) {
+				os.flush();
+				os.close();
+				return;
+			}
 		}
 	}
 
