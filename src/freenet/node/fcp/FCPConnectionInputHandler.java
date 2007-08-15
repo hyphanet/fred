@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -42,7 +43,7 @@ public class FCPConnectionInputHandler implements Runnable {
 	}
 	
 	public void realRun() throws IOException {
-		InputStream is = handler.sock.getInputStream();
+		InputStream is = new BufferedInputStream(handler.sock.getInputStream(), 4096);
 		LineReadingInputStream lis = new LineReadingInputStream(is);
 		
 		boolean firstMessage = true;
