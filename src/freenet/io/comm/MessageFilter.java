@@ -29,7 +29,7 @@ import freenet.support.Logger;
  * To change the template for this generated type comment go to Window - Preferences - Java - Code Generation - Code and
  * Comments
  */
-public class MessageFilter {
+public final class MessageFilter {
 
     public static final String VERSION = "$Id: MessageFilter.java,v 1.7 2005/08/25 17:28:19 amphibian Exp $";
 
