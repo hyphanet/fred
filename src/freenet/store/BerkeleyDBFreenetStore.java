@@ -32,6 +32,7 @@ import com.sleepycat.je.SecondaryDatabase;
 import com.sleepycat.je.SecondaryKeyCreator;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.log.DbChecksumException;
+import com.sleepycat.je.log.LogFileNotFoundException;
 import com.sleepycat.je.util.DbLoad;
 
 import freenet.crypt.CryptFormatException;
@@ -1805,7 +1806,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				Logger.error(this, "Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
 				System.err.println("Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
 				System.exit(freenet.node.NodeInitException.EXIT_DATABASE_REQUIRES_RESTART);
-			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException) {
+			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException || ex instanceof LogFileNotFoundException) {
 				System.err.println("Corrupt database! Will be reconstructed on restart");
 				try {
 					reconstructFile.createNewFile();
