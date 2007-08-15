@@ -67,7 +67,10 @@ public class GzipCompressor extends Compressor {
 		byte[] buffer = new byte[4096];
 		while(true) {
 			int l = (int) Math.min(buffer.length, maxLength - written);
-			int x = gis.read(buffer, 0, l);
+			// We can over-read to determine whether we have over-read.
+			// We enforce maximum size this way.
+			// FIXME there is probably a better way to do this!
+			int x = gis.read(buffer, 0, buffer.length);
 			if(l < x) {
 				Logger.normal(this, "l="+l+", x="+x+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
 				if(maxCheckSizeBytes > 0) {
