@@ -85,8 +85,7 @@ public class ClientPut extends ClientPutBase {
 	 *            The content type of the data
 	 * @param data
 	 *            The data (may be <code>null</code> if
-	 *            <code>uploadFromType</code> is UPLOAD_FROM_DISK or
-	 *            UPLOAD_FROM_REDIRECT)
+	 *            <code>uploadFromType</code> is UPLOAD_FROM_REDIRECT)
 	 * @param redirectTarget
 	 *            The URI to redirect to (if <code>uploadFromType</code> is
 	 *            UPLOAD_FROM_REDIRECT)
