@@ -167,7 +167,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 				return;
 			} else {
 
-				if(action.equals("del")){
+				if("del".equals(action)){
 
 					String[] bm = new String[] { "bookmark" };
 					String[] path = new String[] { bookmarkPath };
@@ -182,7 +182,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 					confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 					confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirmdelete", L10n.getString("BookmarkEditorToadlet.confirmDelete") });
 
-				} else if (action.equals("cut")) {
+				} else if ("cut".equals(action)) {
 
 					cutedPath = bookmarkPath;
 
@@ -191,12 +191,12 @@ public class BookmarkEditorToadlet extends Toadlet {
 					bookmarkManager.moveBookmark(cutedPath, bookmarkPath, true);
 					cutedPath = null;
 
-				} else if (action.equals("edit") || action.equals("addItem") || action.equals("addCat")) {
+				} else if ("edit".equals(action) || "addItem".equals(action) || "addCat".equals(action)) {
 
 					String header;
-					if(action.equals("edit")) {
+					if("edit".equals(action)) {
 						header = L10n.getString("BookmarkEditorToadlet.edit" + ((bookmark instanceof BookmarkItem) ? "Bookmark" : "Category") + "Title");
-					} else if(action.equals("addItem")) {
+					} else if("addItem".equals(action)) {
 						header = L10n.getString("BookmarkEditorToadlet.addNewBookmark");
 					} else {
 						header = L10n.getString("BookmarkEditorToadlet.addNewCategory");
@@ -207,10 +207,10 @@ public class BookmarkEditorToadlet extends Toadlet {
 					HTMLNode form = ctx.addFormChild(actionBox, "", "editBookmarkForm");
 
 					form.addChild("label", "for", "name", (L10n.getString("BookmarkEditorToadlet.nameLabel") + ' '));
-					form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String []{"text", "name", "name", "20", action.equals("edit")?bookmark.getName():""});
+					form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String []{"text", "name", "name", "20", "edit".equals(action)?bookmark.getName():""});
 
 					form.addChild("br");
-					if ((action.equals("edit") && bookmark instanceof BookmarkItem) || action.equals("addItem")) {
+					if (("edit".equals(action) && bookmark instanceof BookmarkItem) || "addItem".equals(action)) {
 						String key = (action.equals("edit") ? ((BookmarkItem) bookmark).getKey() : "");
 						form.addChild("label", "for", "key", (L10n.getString("BookmarkEditorToadlet.keyLabel") + ' '));
 						form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String []{"text", "key", "key", "50", key});
@@ -222,10 +222,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 					form.addChild("br");
 					form.addChild("input", new String[]{"type", "value"}, new String[]{"submit", L10n.getString("BookmarkEditorToadlet.save")});
-				} else if (action.equals("up") || action.equals("down")) {
-					if(action.equals("up"))
+				} else if ("up".equals(action)) {
 						bookmarkManager.moveBookmarkUp(bookmarkPath, true);
-					else
+				} else if("down".equals(action)) {
 						bookmarkManager.moveBookmarkDown(bookmarkPath, true);
 				}
 			}
@@ -283,13 +282,13 @@ public class BookmarkEditorToadlet extends Toadlet {
 			} else if (req.isPartSet("cancelCut")) {
 				cutedPath = null;
 
-			} else if (action.equals("edit") || action.equals("addItem") || action.equals("addCat")) {
+			} else if ("edit".equals(action) || "addItem".equals(action) || "addCat".equals(action)) {
 
 				String name = "unnamed";
 				if (req.getPartAsString("name", MAX_NAME_LENGTH).length() > 0)
 					name = req.getPartAsString("name", MAX_NAME_LENGTH);
 
-				if(action.equals("edit")) {
+				if("edit".equals(action)) {
 					bookmarkManager.renameBookmark(bookmarkPath, name);
 					if(bookmark instanceof BookmarkItem)
 						((BookmarkItem) bookmark).setKey(new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH)));
@@ -297,10 +296,10 @@ public class BookmarkEditorToadlet extends Toadlet {
 					HTMLNode successBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-success", L10n.getString("BookmarkEditorToadlet.changesSavedTitle")));
 					successBox.addChild("p", L10n.getString("BookmarkEditorToadlet.changesSaved"));
 
-				} else if (action.equals("addItem") || action.equals("addCat")) {
+				} else if ("addItem".equals(action) || "addCat".equals(action)) {
 
 					Bookmark newBookmark;
-					if(action.equals("addItem")) {
+					if("addItem".equals(action)) {
 						FreenetURI key = new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH));
 						newBookmark = new BookmarkItem(key, name, core.alerts);
 					} else
