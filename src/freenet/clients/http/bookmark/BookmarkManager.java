@@ -62,10 +62,7 @@ public class BookmarkManager {
 
 			sc.register("bookmarks", defaultRoot.toStrings(), 0, true, false,"BookmarkManager.list", "BookmarkManager.listLong", configCB);
 			
-			clear();
-			if(sc.getRawOption("bookmarks") == null)
-				configCB.set(defaultRoot.toStrings());
-			
+			configCB.set(sc.getStringArr("bookmarks"));
 		} catch (MalformedURLException mue) {
 		} catch (InvalidConfigValueException icve) {
 			icve.printStackTrace();
