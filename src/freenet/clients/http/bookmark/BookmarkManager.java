@@ -175,15 +175,16 @@ public class BookmarkManager {
 			node.storeConfig();
 	}
 
-	// TODO
 	public void renameBookmark(String path, String newName) {
 		Bookmark bookmark = getBookmarkByPath(path);
+		
+		String oldName = bookmark.getName();
 		bookmark.setName(newName);
-		if (bookmark instanceof BookmarkCategory) {
-			try {
-				configCB.set(configCB.get());
-			} catch (InvalidConfigValueException icve) {}
-		}
+		
+		bookmarks.remove(path);
+		bookmarks.put(path.replace(oldName, newName), bookmark);
+		
+		node.storeConfig();
 	}
 
 	public void moveBookmark(String bookmarkPath, String newParentPath, boolean store) {
