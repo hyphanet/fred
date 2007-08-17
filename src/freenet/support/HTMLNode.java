@@ -35,10 +35,6 @@ public class HTMLNode {
 		this(name, new String[] { attributeName }, new String[] { attributeValue }, content);
 	}
 
-	public HTMLNode(String name, String[] attributeNames, String[] attributeValues) {
-		this(name, attributeNames, attributeValues, null);
-	}
-
 	public HTMLNode(String name, String[] attributeNames, String[] attributeValues, String content) {
 		this.name = name.toLowerCase(Locale.ENGLISH);
 		if ((attributeNames != null) && (attributeValues != null)) {
@@ -62,13 +58,6 @@ public class HTMLNode {
 	}
 
 	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
-
-	/**
 	 * @return the content
 	 */
 	public String getContent() {
@@ -89,6 +78,13 @@ public class HTMLNode {
 
 	public HTMLNode addChild(HTMLNode childNode) {
 		if (childNode == null) throw new NullPointerException();
+		//since an efficient algorithm to check the loop presence 
+		//is not present, at least it checks if we are trying to
+		//addChild the node itself as a child
+		if (childNode.equals(this))	
+			throw new IllegalArgumentException("A HTMLNode cannot be child of himself");
+		if (children.contains(childNode))
+			throw new IllegalArgumentException("Cannot add twice the same HTMLNode as child");
 		children.add(childNode);
 		return childNode;
 	}
