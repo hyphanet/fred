@@ -44,9 +44,7 @@ public class URLEncoderDecoderTest extends TestCase {
 				//triple % char, if badly encoded it will generate an exception
 				"%%%",
 				//no chars
-				""
-		};
-		
+				""};
 		try {
 			assertTrue(areCorrectlyEncodedDecoded(toEncode));
 		} catch (URLEncodedFormatException anException) {
@@ -60,11 +58,11 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * characters and not safe "advanced" (i.e. not ASCII) chars .
 	 */
 	public void testEncodeDecodeString_notSafeAdvChars() {
-		//String[] toEncode = {stressedUTF_8Chars};
-		//try {
-		//	assertTrue(areCorrectlyEncodedDecoded(toEncode));
-		//} catch (URLEncodedFormatException anException) {
-		//	fail("Not expected exception thrown : " + anException.getMessage()); }
+		String[] toEncode = {stressedUTF_8Chars};
+		try {
+			assertTrue(areCorrectlyEncodedDecoded(toEncode));
+		} catch (URLEncodedFormatException anException) {
+			fail("Not expected exception thrown : " + anException.getMessage()); }
 	}
 
 	/**
@@ -79,7 +77,7 @@ public class URLEncoderDecoderTest extends TestCase {
 		boolean retValue = true;
 		String[] encoded = new String[toEncode.length];
 		//encoding
-		for (int i = 0; i < encoded.length; i++)	
+		for (int i = 0; i < encoded.length; i++)
 			encoded[i] = URLEncoder.encode(toEncode[i]);
 		//decoding
 		for (int i = 0; i < encoded.length; i++)
@@ -135,10 +133,8 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * verifies if it raises an exception
 	 */
 	public void testDecodeWrongString() {
-		//String toDecode = stressedUTF_8Chars+prtblAscii;
-		
-		//for (int i = 0; i<toDecode.length(); i++)
-		//	assertTrue(isDecodeRaisingEncodedException(toDecode.substring(i,i+1),false));
+		String toDecode = "%00";
+		assertTrue(isDecodeRaisingEncodedException(toDecode,false));
 	}
 	
 	/**
