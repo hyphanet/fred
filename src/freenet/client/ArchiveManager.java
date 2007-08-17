@@ -454,7 +454,7 @@ outer:		while(true) {
 				// Hard limits = delete file within lock, soft limits = delete outside of lock
 				// Here we use a hard limit
 			if(logMINOR)
-				Logger.minor(this, "Dropping "+item+" : cachedData="+cachedData+" of "+maxCachedData);
+				Logger.minor(this, "Dropping "+item+" : cachedData="+cachedData+" of "+maxCachedData+" stored items : "+storedData.size()+" of "+maxCachedElements);
 			item.close();
 		}
 		}
