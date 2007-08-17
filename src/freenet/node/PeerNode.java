@@ -2259,14 +2259,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 	
-	//FIXME: maybe return a copy insteed
-	public Hashtable getLocalNodeSentMessagesToStatistic () {
-		return localNodeSentMessageTypes;
+	public synchronized Hashtable getLocalNodeSentMessagesToStatistic () {
+		return new Hashtable(localNodeSentMessageTypes);
 	}
 	
-	//FIXME: maybe return a copy insteed
 	public Hashtable getLocalNodeReceivedMessagesFromStatistic () {
-		return localNodeReceivedMessageTypes;
+		return new Hashtable(localNodeReceivedMessageTypes);
 	}
 
 	synchronized USK getARK() {

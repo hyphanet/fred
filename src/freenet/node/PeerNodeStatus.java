@@ -108,8 +108,8 @@ public class PeerNodeStatus {
 		this.timeLastRoutable = peerNode.timeLastRoutable();
 		this.timeLastConnectionCompleted = peerNode.timeLastConnectionCompleted();
 		this.peerAddedTime = peerNode.getPeerAddedTime();
-		this.localMessagesReceived = new Hashtable(peerNode.getLocalNodeReceivedMessagesFromStatistic());
-		this.localMessagesSent = new Hashtable(peerNode.getLocalNodeSentMessagesToStatistic());
+		this.localMessagesReceived = peerNode.getLocalNodeReceivedMessagesFromStatistic();
+		this.localMessagesSent = peerNode.getLocalNodeSentMessagesToStatistic();
 		this.hashCode = peerNode.hashCode;
 		this.pReject = peerNode.getPRejected();
 		this.totalBytesIn = peerNode.getTotalInputBytes();
