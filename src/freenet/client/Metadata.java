@@ -849,6 +849,7 @@ public class Metadata implements Cloneable {
 						unresolvedMetadata = new LinkedList();
 					for(int j=0;j<m.length;j++)
 						unresolvedMetadata.addFirst(m[j]);
+					kill = true;
 				}
 			}
 			if(kill) {
