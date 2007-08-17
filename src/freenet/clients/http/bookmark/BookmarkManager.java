@@ -179,11 +179,14 @@ public class BookmarkManager {
 		Bookmark bookmark = getBookmarkByPath(path);
 		
 		String oldName = bookmark.getName();
+		String oldPath = '/' + oldName + '/';
+		String newPath = oldPath.substring(0, oldPath.indexOf(oldName)) + newName + '/';
+
 		bookmark.setName(newName);
 		
 		bookmarks.remove(path);
-		bookmarks.put(path.replace(oldName, newName), bookmark);
-		
+		bookmarks.put(newPath, bookmark);
+
 		node.storeConfig();
 	}
 
