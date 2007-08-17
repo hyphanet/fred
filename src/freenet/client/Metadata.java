@@ -157,8 +157,9 @@ public class Metadata implements Cloneable {
 	}
 	
 	/** Parse some metadata from a byte[]. 
-	 * @throws IOException If the data is incomplete, or something wierd happens. */
-	private Metadata(byte[] data) throws IOException {
+	 * @throws IOException If the data is incomplete, or something wierd happens. 
+	 * @throws MetadataParseException */
+	private Metadata(byte[] data) throws IOException, MetadataParseException {
 		this(new DataInputStream(new ByteArrayInputStream(data)), data.length);
 	}
 

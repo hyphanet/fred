@@ -610,6 +610,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		public void onSuccess(FetchResult result, ClientGetState state) {
 			try {
 				metadata = Metadata.construct(result.asBucket());
+			} catch (MetadataParseException e) {
+				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e));
+				return;
 			} catch (IOException e) {
 				// Bucket error?
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e));
