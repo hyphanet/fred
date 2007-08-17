@@ -187,7 +187,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("SHUTDOWN - exit the program\r\n");
         if(n.isUsingWrapper())
         	sb.append("RESTART - restart the program\r\n");
-        if(core.directTMCI != this) {
+        if(core != null && core.directTMCI != this) {
           sb.append("QUIT - close the socket\r\n");
         }
         if(n.testnetEnabled) {
