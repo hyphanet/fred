@@ -111,7 +111,7 @@ public class NodeClientCore implements Persistable {
 	static final long MAX_CACHED_ARCHIVE_DATA = 32*1024*1024; // make a fixed fraction of the store by default? FIXME
 	static final long MAX_ARCHIVE_SIZE = 2*1024*1024; // ??? FIXME
 	static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
-	static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
+	static final int MAX_CACHED_ELEMENTS = 256*1024; // equally arbitrary! FIXME hopefully we can cache many of these though
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS) throws NodeInitException {
 		this.node = node;
