@@ -1806,7 +1806,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				Logger.error(this, "Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
 				System.err.println("Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
 				System.exit(freenet.node.NodeInitException.EXIT_DATABASE_REQUIRES_RESTART);
-			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException || ex instanceof LogFileNotFoundException) {
+			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException || ex instanceof LogFileNotFoundException ||
+					// UGH! We really shouldn't have to do this ... :(
+					(msg != null && 
+							(msg.indexOf("LogFileNotFoundException") >= 0 || msg.indexOf("DbChecksumException") >= 0))) {
 				System.err.println("Corrupt database! Will be reconstructed on restart");
 				try {
 					reconstructFile.createNewFile();
