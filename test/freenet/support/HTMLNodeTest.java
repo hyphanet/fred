@@ -172,6 +172,124 @@ public class HTMLNodeTest extends TestCase {
 	}
 	
 	/**
+	 * Fetches the first line of a String
+	 * @param aString the String to consider
+	 * @return the first line of the String
+	 */
+	private String readFirstLine(String aString) {
+		int newLineIndex = aString.indexOf("\n");
+		if ( newLineIndex == -1)
+			return aString;
+		return aString.substring(0,newLineIndex);
+	}
+	
+	/**
+	 * Tests generate() method with a
+	 * HTMLNode with only the name.
+	 * The resulting string should be in the form:
+	 * <node_name />
+	 */
+	public void testGenerate_fromHTMLNode_String() {
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		assertEquals(("<"+SAMPLE_NODE_NAME+" />").toLowerCase(),
+					methodHTMLNode.generate());
+	}
+	
+	/**
+	 * Tests generate() method with a
+	 * HTMLNode with the name and content.
+	 * The resulting string should be in the form:
+	 * <node_name>Node_Content</node_name>
+	 */
+	public void testGenerate_fromHTMLNode_StringString() {
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,SAMPLE_NODE_CONTENT);
+		assertEquals(("<"+SAMPLE_NODE_NAME+">").toLowerCase() + 
+					 SAMPLE_NODE_CONTENT +
+					 ("</"+SAMPLE_NODE_NAME+">").toLowerCase(),
+					methodHTMLNode.generate());
+	}
+	
+	/**
+	 * Tests generate() method with a
+	 * HTMLNode with the name, an attribute and its value.
+	 * The resulting string should be in the form:
+	 * <node_name Attribute_Name="Attribute_Value" />
+	 */
+	public void testGenerate_fromHTMLNode_StringStringString() {
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,
+				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
+		assertEquals(("<"+SAMPLE_NODE_NAME+" ").toLowerCase() + 
+					 SAMPLE_ATTRIBUTE_NAME + "=" +
+					 "\""+SAMPLE_ATTRIBUTE_VALUE+"\""+
+					 " />",
+					methodHTMLNode.generate());
+	}
+	
+	/**
+	 * Tests generate() method with a
+	 * HTMLNode with the name, an attribute and its value.
+	 * The resulting string should be in the form:
+	 * <node_name Attribute_Name="Attribute_Value">Node_Content</node_name>
+	 */
+	public void testGenerate_fromHTMLNode_StringStringStringString() {
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,
+				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+				SAMPLE_NODE_CONTENT);
+		assertEquals(generateFullNodeOutput(SAMPLE_NODE_NAME,
+				SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
+				SAMPLE_NODE_CONTENT),
+					methodHTMLNode.generate());
+	}
+	
+	/**
+	 * Generates the correct output for the HTMLNode.generate() method
+	 * when called from a single node having the specified parameters
+	 * @param aName the HTMLNode name
+	 * @param aAttributeName the HTMLNode attribute name
+	 * @param aAttributeValue the HTMLNode attribute value
+	 * @param aContent the HTMLNode content
+	 * @return the correct output expected by HTMLNode.generate() method
+	 */
+	private String generateFullNodeOutput(String aName, String aAttributeName, String aAttributeValue, String aContent) {
+		return ("<"+aName+" ").toLowerCase() + 
+		aAttributeName + "=" +
+		 "\""+aAttributeValue+"\">" +
+		 aContent +
+		 ("</"+aName+">").toLowerCase();
+	}
+	
+	/**
+	 * Tests generate() method with a
+	 * HTMLNode that has a child.
+	 * <node_name Attribute_Name="Attribute_Value">Node_Content
+	 * <child_node_name child_Attribute_Name="child_Attribute_Value">child_Node_Content</child_node_name>
+	 * </node_name>
+	 */
+	public void testGenerate_HTMLNode_withChild() {
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,
+				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+				SAMPLE_NODE_CONTENT);
+		HTMLNode methodHTMLNodeChild = new HTMLNode(SAMPLE_NODE_NAME,
+				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+				SAMPLE_NODE_CONTENT);
+		
+		methodHTMLNode.addChild(methodHTMLNodeChild);
+		
+		assertEquals(("<"+SAMPLE_NODE_NAME+" ").toLowerCase() + 
+				 SAMPLE_ATTRIBUTE_NAME + "=" +
+				 "\""+SAMPLE_ATTRIBUTE_VALUE+"\">" +
+				 SAMPLE_NODE_CONTENT +
+				 
+				 //child
+				 generateFullNodeOutput(SAMPLE_NODE_NAME,
+							SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
+							SAMPLE_NODE_CONTENT) +
+				 
+				 ("</"+SAMPLE_NODE_NAME+">").toLowerCase(),
+				 methodHTMLNode.generate());
+	}
+	
+	/**
 	 * Tests HTMLDoctype.generate() method
 	 * comparing the result with the expected
 	 * String. It is useful for regression tests.
@@ -184,7 +302,7 @@ public class HTMLNodeTest extends TestCase {
 		String generatedString = methodHTMLNodeDoc.generate();
 		//consider only the HTMLDocType generated text
 		assertEquals("<!DOCTYPE "+sampleDocType+" PUBLIC \""+sampleSystemUri+"\">", 	
-				generatedString.substring(0, generatedString.indexOf("\n")));
+				readFirstLine(generatedString));
 		
 	}
 
