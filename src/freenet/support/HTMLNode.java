@@ -45,16 +45,11 @@ public class HTMLNode {
 				attributes.put(attributeNames[attributeIndex], attributeValues[attributeIndex]);
 			}
 		}
-		if (content != null) {
-			if (!name.equals("#") && !name.equals("%")) {
-				addChild(new HTMLNode("#", content));
-				this.content = null;
-			} else {
-				this.content = content;
-			}
-		} else {
+		if (content != null && !name.equals("#") && !name.equals("%")) {
+			addChild(new HTMLNode("#", content));
 			this.content = null;
-		}
+		} else
+			this.content = content;
 	}
 
 	/**
