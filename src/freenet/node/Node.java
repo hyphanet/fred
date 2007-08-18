@@ -727,7 +727,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		// Directory for node-related files other than store
 		
-		nodeConfig.register("nodeDir", ".", sortOrder++, true, false, "Node.nodeDir", "Node.nodeDirLong", 
+		nodeConfig.register("nodeDir", ".", sortOrder++, true, true /* because can't be changed on the fly, also for packages */, "Node.nodeDir", "Node.nodeDirLong", 
 				new StringCallback() {
 					public String get() {
 						return nodeDir.getPath();
@@ -838,7 +838,7 @@ public class Node implements TimeSkewDetectorCallback {
 		passOpennetRefsThroughDarknet = nodeConfig.getBoolean("passOpennetPeersThroughDarknet");
 		
 		// Extra Peer Data Directory
-		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+getDarknetPortNumber()).toString(), sortOrder++, true, false, "Node.extraPeerDir", "Node.extraPeerDirLong",
+		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+getDarknetPortNumber()).toString(), sortOrder++, true, true /* can't be changed on the fly, also for packages */, "Node.extraPeerDir", "Node.extraPeerDirLong",
 				new StringCallback() {
 					public String get() {
 						return extraPeerDataDir.getPath();

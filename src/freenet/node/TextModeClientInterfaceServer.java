@@ -63,7 +63,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		
 		SubConfig TMCIConfig = new SubConfig("console", config);
 		
-		TMCIConfig.register("enabled", true, 1, true, false, "TextModeClientInterfaceServer.enabled", "TextModeClientInterfaceServer.enabledLong", new TMCIEnabledCallback(core));
+		TMCIConfig.register("enabled", true, 1, true, true /* FIXME only because can't be changed on the fly */, "TextModeClientInterfaceServer.enabled", "TextModeClientInterfaceServer.enabledLong", new TMCIEnabledCallback(core));
 		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, false, "TextModeClientInterfaceServer.bindTo", "TextModeClientInterfaceServer.bindToLong", new TMCIBindtoCallback(core));
 		TMCIConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", 2, true, false, "TextModeClientInterfaceServer.allowedHosts", "TextModeClientInterfaceServer.allowedHostsLong", new TMCIAllowedHostsCallback(core));
 		TMCIConfig.register("port", 2323, 1, true, false, "TextModeClientInterfaceServer.telnetPortNumber", "TextModeClientInterfaceServer.telnetPortNumberLong", new TCMIPortNumberCallback(core));
