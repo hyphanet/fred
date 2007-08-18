@@ -175,7 +175,7 @@ public class HTMLNode {
 	 */
 	public static class HTMLDoctype extends HTMLNode {
 
-		protected final String systemUri;
+		private final String systemUri;
 
 		/**
 		 * 
