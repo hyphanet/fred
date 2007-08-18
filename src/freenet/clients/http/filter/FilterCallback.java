@@ -23,7 +23,11 @@ public interface FilterCallback {
 	/**
 	 * Process plain-text. Notification only; can't modify.
 	 * Type can be null, or can correspond, for example to HTML tag name around text
-	 *    (for example: "title")
+	 * (for example: "title").
+	 *    
+	 * Note that the string will have been fed through the relevant decoder if 
+	 * necessary (e.g. HTMLDecoder). It must be re-encoded if it is sent out as
+	 * text to a browser.
 	 */
 	public void onText(String s, String type);
 

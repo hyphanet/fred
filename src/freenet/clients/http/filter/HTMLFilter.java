@@ -367,7 +367,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 		String sout = out.toString();
 		if(pc.cb != null)
-			pc.cb.onText(sout, tagName); /* Tag name is given as type for the text */
+			pc.cb.onText(HTMLDecoder.decode(sout), tagName); /* Tag name is given as type for the text */
 		
 		w.write(sout);
 	}
