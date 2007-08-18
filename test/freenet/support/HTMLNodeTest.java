@@ -27,20 +27,20 @@ public class HTMLNodeTest extends TestCase {
 	private HTMLNode exampleNode;
 	
 	//example node name that includes a not ASCII char [greek alpha]
-	private static final String EXAMPLE_NODE_NAME = "ex\u03b1mpleNode";
+	private static final String SAMPLE_NODE_NAME = "s\u03b1mpleNode";
 	
 	//example node attribute that includes a not ASCII char [greek beta]
-	private static final String EXAMPLE_ATTRIBUTE_NAME = "exampleAttri\u03b2uteName";
+	private static final String SAMPLE_ATTRIBUTE_NAME = "sampleAttri\u03b2uteName";
 	
 	//example node attribute value that includes a not ASCII char [greek epsilon]
-	private static final String EXAMPLE_ATTRIBUTE_VALUE = "exampleAttribut\u03b5Value";
+	private static final String SAMPLE_ATTRIBUTE_VALUE = "sampleAttribut\u03b5Value";
 	
 	//example node content that includes a not ASCII char [greek omicron]
-	private static final String EXAMPLE_NODE_CONTENT = "exampleNodeC\u03bfntent";
+	private static final String SAMPLE_NODE_CONTENT = "sampleNodeC\u03bfntent";
 	
 	protected void setUp() throws Exception {
 		super.setUp();
-		exampleNode = new HTMLNode(EXAMPLE_NODE_NAME);
+		exampleNode = new HTMLNode(SAMPLE_NODE_NAME);
 	}
 	
 	/**
@@ -48,9 +48,9 @@ public class HTMLNodeTest extends TestCase {
 	 * using non-ASCII chars
 	 */
 	public void testNotAsciiHTMLNode_StringStringStringString() {
-		HTMLNode methodHTMLNode = new HTMLNode(EXAMPLE_NODE_NAME,
-				EXAMPLE_ATTRIBUTE_NAME,EXAMPLE_ATTRIBUTE_VALUE,
-				EXAMPLE_NODE_CONTENT);
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,
+				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+				SAMPLE_NODE_CONTENT);
 		assertFalse(exampleNode.children.contains(methodHTMLNode));
 		exampleNode.addChild(methodHTMLNode);
 		assertTrue(exampleNode.children.contains(methodHTMLNode));
@@ -91,9 +91,9 @@ public class HTMLNodeTest extends TestCase {
 	 * child. The method should rise an exception
 	 */
 	public void testAddChildrenUsingTheNodeItselfAsChild() {
-		HTMLNode[] methodHTMLNodesArray = {new HTMLNode(EXAMPLE_NODE_NAME),
+		HTMLNode[] methodHTMLNodesArray = {new HTMLNode(SAMPLE_NODE_NAME),
 										   exampleNode,
-										   new HTMLNode(EXAMPLE_NODE_NAME+"1")};
+										   new HTMLNode(SAMPLE_NODE_NAME+"1")};
 		try {
 			exampleNode.addChildren(methodHTMLNodesArray);
 			fail("Expected Exception Error Not Thrown!"); } 
@@ -110,7 +110,7 @@ public class HTMLNodeTest extends TestCase {
 	public void testAddChildSameName() {
 		int times = 100;
 		for (int i = 1; i<=times; i++) {
-			exampleNode.addChild(EXAMPLE_NODE_NAME);
+			exampleNode.addChild(SAMPLE_NODE_NAME);
 			assertEquals(exampleNode.children.size(),i);
 		}
 	}
@@ -122,7 +122,7 @@ public class HTMLNodeTest extends TestCase {
 	 * It should raise an IllegalArgument exception.
 	 */
 	public void testAddChildSameObject() {
-		HTMLNode methodHTMLNode = new HTMLNode(EXAMPLE_NODE_NAME);
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
 		exampleNode.addChild(methodHTMLNode);
 		try {
 			exampleNode.addChild(methodHTMLNode);
@@ -137,7 +137,7 @@ public class HTMLNodeTest extends TestCase {
 	 * the same HTMLNode instance two times.
 	 */
 	public void testAddChildrenSameObject() {
-		HTMLNode methodHTMLNode = new HTMLNode(EXAMPLE_NODE_NAME);
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
 		HTMLNode[] methodHTMLNodesArray = {methodHTMLNode,
 										   methodHTMLNode};
 		try {
@@ -145,6 +145,46 @@ public class HTMLNodeTest extends TestCase {
 			fail("Expected Exception Error Not Thrown!"); } 
 		catch (IllegalArgumentException anException) {
 			assertNotNull(anException); }
+	}
+	
+	/**
+	 * Tests getContent() method using
+	 * common sample HTMLNode, and "#"
+	 * "%" named nodes
+	 */
+	public void testGetContent() {
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		assertNull(methodHTMLNode.getContent());
+		
+		methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,SAMPLE_NODE_CONTENT);
+		//since the HTMLNode name is not "#", or "%",
+		//the content will be a new child with the "#" name
+		assertEquals(SAMPLE_NODE_CONTENT,
+				((HTMLNode)(methodHTMLNode.children.get(0))).getContent());
+		assertNull(methodHTMLNode.getContent());
+		
+		methodHTMLNode = new HTMLNode("#",SAMPLE_NODE_CONTENT);
+		assertEquals(SAMPLE_NODE_CONTENT,
+				methodHTMLNode.getContent());
+		methodHTMLNode = new HTMLNode("%",SAMPLE_NODE_CONTENT);
+		assertEquals(SAMPLE_NODE_CONTENT,
+				methodHTMLNode.getContent());
+	}
+	
+	/**
+	 * Tests HTMLDoctype.generate() method
+	 * comparing the result with the expected
+	 * String. It is useful for regression tests.
+	 */
+	public void testHTMLDoctype_generate() {
+		String sampleDocType = "html";
+		String sampleSystemUri = "-//W3C//DTD XHTML 1.1//EN";
+		HTMLNode methodHTMLNodeDoc = new HTMLNode.HTMLDoctype(sampleDocType,sampleSystemUri);
+		methodHTMLNodeDoc.addChild(SAMPLE_NODE_NAME);
+		String generatedString = methodHTMLNodeDoc.generate();
+		//consider only the HTMLDocType generated text
+		assertEquals("<!DOCTYPE "+sampleDocType+" PUBLIC \""+sampleSystemUri+"\">", 	
+				generatedString.substring(0, generatedString.indexOf("\n")));
 		
 	}
 
