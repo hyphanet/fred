@@ -305,6 +305,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		secDbConfig.setKeyCreator(accessTimeKeyCreator);
 		try {
 		try {
+			System.err.println("Opening access times database for "+prefix);
 			atime = environment.openSecondaryDatabase
 								(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
 			// The below is too slow to be useful, because SecondaryDatabase.count() isn't optimised.
@@ -316,7 +317,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 //				throw new DatabaseException("Needs repopulation");
 //			}
 		} catch (DatabaseException e) {
-			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+chkDB.count()*100)));
+			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000L+chkDB.count()*100L)));
 			// Of course it's not a solution but a quick fix
 			// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
 			// Either we find out what the maximum value is and we do a static method somewhere ensuring
