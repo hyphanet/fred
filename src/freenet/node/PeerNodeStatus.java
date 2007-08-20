@@ -46,6 +46,8 @@ public class PeerNodeStatus {
 
 	private final boolean isFetchingARK;
 
+	private final boolean isOpennet;
+
 	private final double averagePingTime;
 
 	private final boolean publicInvalidVersion;
@@ -100,6 +102,7 @@ public class PeerNodeStatus {
 		this.connected = peerNode.isConnected();
 		this.routable = peerNode.isRoutable();
 		this.isFetchingARK = peerNode.isFetchingARK();
+		this.isOpennet = peerNode.isOpennet();
 		this.averagePingTime = peerNode.averagePingTime();
 		this.publicInvalidVersion = peerNode.publicInvalidVersion();
 		this.publicReverseInvalidVersion = peerNode.publicReverseInvalidVersion();
@@ -288,6 +291,13 @@ public class PeerNodeStatus {
 	 */
 	public boolean isFetchingARK() {
 		return isFetchingARK;
+	}
+
+	/**
+	 * @return the isOpennet
+	 */
+	public boolean isOpennet() {
+		return isOpennet;
 	}
 
 	/**
