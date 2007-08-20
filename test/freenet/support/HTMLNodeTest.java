@@ -26,16 +26,16 @@ public class HTMLNodeTest extends TestCase {
 	
 	private HTMLNode exampleNode;
 	
-	//example node name that includes a not ASCII char [greek alpha]
+	//example node name that includes a not ASCII char [Greek alpha]
 	private static final String SAMPLE_NODE_NAME = "s\u03b1mpleNode";
 	
-	//example node attribute that includes a not ASCII char [greek beta]
+	//example node attribute that includes a not ASCII char [Greek beta]
 	private static final String SAMPLE_ATTRIBUTE_NAME = "sampleAttri\u03b2uteName";
 	
-	//example node attribute value that includes a not ASCII char [greek epsilon]
+	//example node attribute value that includes a not ASCII char [Greek epsilon]
 	private static final String SAMPLE_ATTRIBUTE_VALUE = "sampleAttribut\u03b5Value";
 	
-	//example node content that includes a not ASCII char [greek omicron]
+	//example node content that includes a not ASCII char [Greek omicron]
 	private static final String SAMPLE_NODE_CONTENT = "sampleNodeC\u03bfntent";
 	
 	protected void setUp() throws Exception {
@@ -44,7 +44,7 @@ public class HTMLNodeTest extends TestCase {
 	}
 	
 	/**
-	 * Test HTMLNode(String,String,String,String) constructor
+	 * Tests HTMLNode(String,String,String,String) constructor
 	 * using non-ASCII chars
 	 */
 	public void testNotAsciiHTMLNode_StringStringStringString() {
@@ -54,6 +54,29 @@ public class HTMLNodeTest extends TestCase {
 		assertFalse(exampleNode.children.contains(methodHTMLNode));
 		exampleNode.addChild(methodHTMLNode);
 		assertTrue(exampleNode.children.contains(methodHTMLNode));
+	}
+	
+	/**
+	 * Tests HTMLNode(String,String[],String[],String) constructor
+	 * verifying if all attributes are correctly inserted
+	 */
+	public void testHTMLNode_AttributesArray() {
+		int size = 100;
+		String[] methodAttributesName = new String[size];
+		String[] methodAttributesValue = new String[size];
+		for (int i=0;i<size;i++) {
+			methodAttributesName[i] = "AttributeName " + i;
+			methodAttributesValue[i] = "Value " + i;
+		}
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,
+				methodAttributesName,methodAttributesValue,
+				SAMPLE_NODE_CONTENT);
+		//checks presence
+		for(int i=0;i<size;i++)
+			assertEquals(methodAttributesValue[i],
+					methodHTMLNode.getAttribute(methodAttributesName[i]));
+		//checks size
+		assertEquals(size,methodHTMLNode.getAttributes().size());
 	}
 	
 	/**
@@ -233,6 +256,93 @@ public class HTMLNodeTest extends TestCase {
 		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
 		try {
 			methodHTMLNode.addAttribute(SAMPLE_ATTRIBUTE_NAME,null);
+			fail("Expected Exception Error Not Thrown!"); } 
+		catch (IllegalArgumentException anException) {
+			assertNotNull(anException); }
+	}
+	
+	/**
+	 * Tests HTMLNode(String,String,String,String) and
+	 * HTMLNode(String,String,String) constructors 
+	 * trying to create a node that has attribute name 
+	 * null. It should raise an IllegalArgument exception
+	 */
+	public void testHTMLNode_nullAttributeName() {
+		try {
+			new HTMLNode(SAMPLE_NODE_NAME,
+					null,SAMPLE_ATTRIBUTE_VALUE,
+					SAMPLE_NODE_CONTENT);
+			fail("Expected Exception Error Not Thrown!"); } 
+		catch (IllegalArgumentException anException) {
+			assertNotNull(anException); }
+		try {
+			new HTMLNode(SAMPLE_NODE_NAME,
+					null,SAMPLE_ATTRIBUTE_VALUE);
+			fail("Expected Exception Error Not Thrown!"); } 
+		catch (IllegalArgumentException anException) {
+			assertNotNull(anException); }
+	}
+	
+	/**
+	 * Tests HTMLNode(String,String,String,String) and
+	 * HTMLNode(String,String,String) constructors 
+	 * trying to create a node that has attribute value 
+	 * null. It should raise an IllegalArgument exception
+	 */
+	public void testHTMLNode_nullAttributeValue() {
+		try {
+			new HTMLNode(SAMPLE_NODE_NAME,
+					SAMPLE_ATTRIBUTE_NAME,null,
+					SAMPLE_NODE_CONTENT);
+			fail("Expected Exception Error Not Thrown!"); } 
+		catch (IllegalArgumentException anException) {
+			assertNotNull(anException); }
+		try {
+			new HTMLNode(SAMPLE_NODE_NAME,
+					SAMPLE_ATTRIBUTE_NAME,null);
+			fail("Expected Exception Error Not Thrown!"); } 
+		catch (IllegalArgumentException anException) {
+			assertNotNull(anException); }
+	}
+	
+	/**
+	 * Tests HTMLNode(String,String[],String[],String) 
+	 * constructor trying to create a node that has
+	 * attributes name null. It should raise an
+	 * IllegalArgument exception
+	 */
+	public void testHTMLNodeArray_nullAttributeName() {
+		String[] methodAttributesNameArray = {"first",null,"after"};
+		String[] methodAttributesValueArray = {SAMPLE_ATTRIBUTE_VALUE,
+				SAMPLE_ATTRIBUTE_VALUE,SAMPLE_ATTRIBUTE_VALUE};
+		testHTMLNodeArray_null(methodAttributesNameArray, methodAttributesValueArray);
+	}
+	
+	/**
+	 * Tests HTMLNode(String,String[],String[],String) 
+	 * constructor trying to create a node that has
+	 * attributes value null. It should raise an
+	 * IllegalArgument exception
+	 */
+	public void testHTMLNodeArray_nullAttributeValue() {
+		String[] methodAttributesNameArray = {SAMPLE_ATTRIBUTE_NAME,
+				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_NAME};
+		String[] methodAttributesValueArray = {"first",null,"after"};
+		testHTMLNodeArray_null(methodAttributesNameArray, methodAttributesValueArray);
+	}
+	
+	/**
+	 * Tests if the passed arrays raise an IllegalArgumentException
+	 * using them to create a new HTMLNode (i.e. one of the name or value
+	 * must be null)
+	 * @param attributesNames the array of attribute names
+	 * @param attributesValues the array of attribute values
+	 */
+	private void testHTMLNodeArray_null(String[] attributesNames, String[] attributesValues) {
+		try {
+			new HTMLNode(SAMPLE_NODE_NAME,
+					attributesNames,attributesValues,
+					SAMPLE_NODE_CONTENT);
 			fail("Expected Exception Error Not Thrown!"); } 
 		catch (IllegalArgumentException anException) {
 			assertNotNull(anException); }
