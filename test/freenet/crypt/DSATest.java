@@ -16,7 +16,6 @@
 package freenet.crypt;
 
 import java.math.BigInteger;
-import junit.framework.Test;
 import junit.framework.TestCase;
 import net.i2p.util.NativeBigInteger;
 
