@@ -51,7 +51,7 @@ public class HTMLNode {
 				throw new IllegalArgumentException("attribute names and values differ");
 			}
 			for (int attributeIndex = 0, attributeCount = attributeNames.length; attributeIndex < attributeCount; attributeIndex++) {
-				attributes.put(attributeNames[attributeIndex], attributeValues[attributeIndex]);
+				addAttribute(attributeNames[attributeIndex], attributeValues[attributeIndex]);
 			}
 		}
 		if (content != null && !name.equals("#") && !name.equals("%")) {
@@ -69,6 +69,10 @@ public class HTMLNode {
 	}
 
 	public void addAttribute(String attributeName, String attributeValue) {
+		if (attributeName == null)
+			throw new IllegalArgumentException("Cannot add an attribute with a null name");
+		if (attributeValue == null)
+			throw new IllegalArgumentException("Cannot add an attribute with a null value");
 		attributes.put(attributeName, attributeValue);
 	}
 
