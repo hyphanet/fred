@@ -22,7 +22,7 @@ import freenet.support.SimpleFieldSet;
  * ClientGet
  * IgnoreDS=false // true = ignore the datastore
  * DSOnly=false // true = only check the datastore, don't route (~= htl 0)
- * URI=KSK@gpl.txt
+ * URI=KSK@sample.txt
  * Identifier=Request Number One
  * Verbosity=0 // no status, just tell us when it's done
  * ReturnType=direct // return all at once over the FCP connection
@@ -55,6 +55,7 @@ public class ClientGetMessage extends FCPMessage {
 	final String clientToken;
 	final boolean global;
 	final boolean binaryBlob;
+	final String[] allowedMIMETypes;
 	
 	// FIXME move these to the actual getter process
 	static final short RETURN_TYPE_DIRECT = 0; // over FCP
@@ -69,6 +70,7 @@ public class ClientGetMessage extends FCPMessage {
 		ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
 		dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		identifier = fs.get("Identifier");
+		allowedMIMETypes = fs.getAll("AllowedMIMETypes");
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
 		try {

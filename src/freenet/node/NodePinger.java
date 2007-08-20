@@ -22,7 +22,7 @@ public class NodePinger implements Runnable {
 	NodePinger(Node n) {
 		this.node = n;
 		this.tdra = new TimeDecayingRunningAverage(0.0, 30*1000, // 30 seconds
-				0.0, CRAZY_MAX_PING_TIME);
+				0.0, CRAZY_MAX_PING_TIME, node);
 	}
 
 	void start() {
@@ -32,8 +32,11 @@ public class NodePinger implements Runnable {
 	final Node node;
 	
 	public void run() {
-		node.ps.queueTimedJob(this, 200);
-		recalculateMean(node.peers.connectedPeers);
+		try {
+			recalculateMean(node.peers.connectedPeers);
+		} finally {
+			node.ps.queueTimedJob(this, 200);
+		}
 	}
 
 	/** Recalculate the mean ping time */

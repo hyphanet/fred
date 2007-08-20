@@ -30,7 +30,7 @@ public class IPUndetectedUserAlert implements UserAlert {
 		if(node.ipDetector.isDetecting())
 			return l10n("detecting");
 		else
-			return l10n("unknownAddress", "port", Integer.toString(node.getPortNumber()));
+			return l10n("unknownAddress", "port", Integer.toString(node.getDarknetPortNumber()));
 	}
 
 	private String l10n(String key) {
@@ -48,7 +48,7 @@ public class IPUndetectedUserAlert implements UserAlert {
 		HTMLNode textNode = new HTMLNode("div");
 		L10n.addL10nSubstitution(textNode, "IPUndetectedUserAlert."+(node.ipDetector.isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink"), 
 				new String[] { "link", "/link", "port" }, 
-				new String[] { "<a href=\"/config/\">", "</a>", Integer.toString(node.getPortNumber()) });
+				new String[] { "<a href=\"/config/\">", "</a>", Integer.toString(node.getDarknetPortNumber()) });
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
@@ -56,7 +56,7 @@ public class IPUndetectedUserAlert implements UserAlert {
 		itemNode.addChild("span", "class", "configshortdesc", L10n.getString(o.getShortDesc())).addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", sc.getPrefix() + ".tempIPAddressHint", o.getValueString() });
 		itemNode.addChild("span", "class", "configlongdesc", L10n.getString(o.getLongDesc()));
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("UserAlert.apply") });
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", L10n.getString("UserAlert.apply") });
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", L10n.getString("UserAlert.reset") });
 		return textNode;
 	}
 

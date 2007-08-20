@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class SemiOrderedShutdownHook extends Thread {
 	
-	static final int TIMEOUT = 100*1000;
+	private static final int TIMEOUT = 100*1000;
 	private final ArrayList earlyJobs;
 	private final ArrayList lateJobs;
 	
@@ -54,5 +54,4 @@ public class SemiOrderedShutdownHook extends Thread {
 		}
 		
 	}
-
 }

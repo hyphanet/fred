@@ -3,8 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -20,9 +23,7 @@ public class FCPConnectionInputHandler implements Runnable {
 	}
 
 	void start() {
-		Thread t = new Thread(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress());
-		t.setDaemon(true);
-		t.start();
+		handler.server.node.executor.execute(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress());
 	}
 	
 	public void run() {
@@ -42,13 +43,23 @@ public class FCPConnectionInputHandler implements Runnable {
 	}
 	
 	public void realRun() throws IOException {
-		InputStream is = handler.sock.getInputStream();
+		InputStream is = new BufferedInputStream(handler.sock.getInputStream(), 4096);
 		LineReadingInputStream lis = new LineReadingInputStream(is);
 		
 		boolean firstMessage = true;
 		
 		while(true) {
 			SimpleFieldSet fs;
+			if(WrapperManager.hasShutdownHookBeenTriggered()) {
+				FCPMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.SHUTTING_DOWN,true,"The node is shutting down","Node",false);
+				handler.outputHandler.queue(msg);
+				try {
+					is.close();
+				} catch (IOException e) {
+					// Don't care
+				}
+				return;
+			}
 			// Read a message
 			String messageType = lis.readLine(128, 128, true);
 			if(messageType == null) {
@@ -60,7 +71,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			
 			// check for valid endmarker
 			if (fs.getEndMarker() != null && (!fs.getEndMarker().startsWith("End")) && (!"Data".equals(fs.getEndMarker()))) {
-				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "Invalid end marker: "+fs.getEndMarker(), fs.get("Identifer"), false);
+				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "Invalid end marker: "+fs.getEndMarker(), fs.get("Identifer"), fs.getBoolean("Global", false));
 				handler.outputHandler.queue(err);
 				continue;
 			}
@@ -72,7 +83,7 @@ public class FCPConnectionInputHandler implements Runnable {
 				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.core.persistentTempBucketFactory);
 				if(msg == null) continue;
 			} catch (MessageInvalidException e) {
-				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, false);
+				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
 				handler.outputHandler.queue(err);
 				continue;
 			}

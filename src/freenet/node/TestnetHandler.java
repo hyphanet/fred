@@ -22,7 +22,6 @@ import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
-import freenet.node.Node.NodeInitException;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -83,7 +82,7 @@ public class TestnetHandler implements Runnable {
 				Logger.normal(this,"Starting testnet server on port"+testnetPort);
 			} catch (IOException e) {
 				Logger.error(this, "Could not bind to testnet port: "+testnetPort);
-				node.exit(Node.EXIT_TESTNET_FAILED);
+				node.exit(NodeInitException.EXIT_TESTNET_FAILED);
 				return;
 			}
 			while(!server.isClosed()) {
@@ -106,7 +105,7 @@ public class TestnetHandler implements Runnable {
 				this.testnetPort=port;
 			}catch( IOException e){
 				Logger.error(this, "Error while stopping the testnet handler.");
-				node.exit(Node.EXIT_TESTNET_FAILED);
+				node.exit(NodeInitException.EXIT_TESTNET_FAILED);
 				return;
 			}
 		}
@@ -125,9 +124,7 @@ public class TestnetHandler implements Runnable {
 		}
 
 		void start() {
-			Thread t = new Thread(this, "Testnet handler for "+s.getInetAddress()+" at "+System.currentTimeMillis());
-			t.setDaemon(true);
-			t.start();
+			node.executor.execute(this, "Testnet handler for "+s.getInetAddress()+" at "+System.currentTimeMillis());
 		}
 		
 		public void run() {
@@ -178,9 +175,14 @@ public class TestnetHandler implements Runnable {
 					if(logMINOR) Logger.minor(this, "Sending references");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
 					BufferedWriter bw = new BufferedWriter(osw);
-					bw.write("My ref:\n\n");
-					SimpleFieldSet fs = node.exportPublicFieldSet();
+					bw.write("My darknet ref:\n\n");
+					SimpleFieldSet fs = node.exportDarknetPublicFieldSet();
 					fs.writeTo(bw);
+					if(node.isOpennetEnabled()) {
+						bw.write("My opennet ref:\n\n");
+						fs = node.exportOpennetPublicFieldSet();
+						fs.writeTo(bw);
+					}
 					bw.write("\n\nMy peers:\n");
 					node.peers.writePeers(bw);
 					bw.close();
@@ -255,7 +257,7 @@ public class TestnetHandler implements Runnable {
         if(enabled) {
         	// Get the testnet port
 
-        	testnetConfig.register("port", node.portNumber+1000, 2, true, false, "TestnetHandler.port", "TestnetHandler.portLong",
+        	testnetConfig.register("port", node.getDarknetPortNumber()+1000, 2, true, false, "TestnetHandler.port", "TestnetHandler.portLong",
         			new TestnetPortNumberCallback(node));
 
         	int port = testnetConfig.getInt("port");

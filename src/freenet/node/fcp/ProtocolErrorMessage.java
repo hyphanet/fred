@@ -51,6 +51,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int REF_SIGNATURE_INVALID = 27;
 	static final int CANNOT_PEER_WITH_SELF = 28;
 	static final int DUPLICATE_PEER_REF = 29;
+	static final int OPENNET_DISABLED = 30;
+	static final int DARKNET_ONLY = 31;
 	
 	final int code;
 	final String extra;
@@ -118,6 +120,10 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Node cannot peer with itself";
 		case DUPLICATE_PEER_REF:
 			return "Node already has a peer with that ref";
+		case OPENNET_DISABLED:
+			return "Opennet is currently disabled in the node's configuration";
+		case DARKNET_ONLY:
+			return "Operation only available on a darknet peer";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";

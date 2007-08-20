@@ -29,18 +29,18 @@ public class NodeARKInserter implements ClientCallback {
 	 * 
 	 */
 	private final Node node;
-	private final NodeIPDetector detector;
+	private final NodeCrypto crypto;
+	private final NodeIPPortDetector detector;
 	private static boolean logMINOR;
-	private final boolean old;
 
 	/**
 	 * @param node
 	 * @param old If true, use the old ARK rather than the new ARK
 	 */
-	NodeARKInserter(Node node, NodeIPDetector detector, boolean old) {
+	NodeARKInserter(Node node, NodeCrypto crypto, NodeIPPortDetector detector) {
 		this.node = node;
+		this.crypto = crypto;
 		this.detector = detector;
-		this.old = old;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -82,7 +82,7 @@ public class NodeARKInserter implements ClientCallback {
 	}
 
 	private boolean checkIPUpdated() {
-		Peer[] p = detector.getPrimaryIPAddress();
+		Peer[] p = detector.detectPrimaryPeers();
 		if(p == null) {
 			if(logMINOR) Logger.minor(this, "Not inserting because no IP address");
 			return false; // no point inserting
@@ -109,7 +109,7 @@ public class NodeARKInserter implements ClientCallback {
 		
 		if(logMINOR) Logger.minor(this, "starting inserter");
 		
-		SimpleFieldSet fs = this.node.exportPublicFieldSet(true); // More or less
+		SimpleFieldSet fs = crypto.exportPublicFieldSet(true); // More or less
 		
 		// Remove some unnecessary fields that only cause collisions.
 		
@@ -130,8 +130,8 @@ public class NodeARKInserter implements ClientCallback {
 		
 		Bucket b = new SimpleReadOnlyArrayBucket(buf);
 		
-		long number = old ? node.myOldARKNumber : node.myARKNumber;
-		InsertableClientSSK ark = old ? node.myOldARK : node.myARK;
+		long number = crypto.myARKNumber;
+		InsertableClientSSK ark = crypto.myARK;
 		FreenetURI uri = ark.getInsertURI().setKeyType("USK").setSuggestedEdition(number);
 		
 		if(logMINOR) Logger.minor(this, "Inserting ARK: "+uri);
@@ -212,12 +212,12 @@ public class NodeARKInserter implements ClientCallback {
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		if(logMINOR) Logger.minor(this, "Generated URI for ARK: "+uri);
 		long l = uri.getSuggestedEdition();
-		if(l < this.node.myARKNumber) {
-			Logger.error(this, "Inserted edition # lower than attempted: "+l+" expected "+this.node.myARKNumber);
-		} else if(l > this.node.myARKNumber) {
-			if(logMINOR) Logger.minor(this, "ARK number moving from "+this.node.myARKNumber+" to "+l);
-			this.node.myARKNumber = l;
-			this.node.writeNodeFile();
+		if(l < crypto.myARKNumber) {
+			Logger.error(this, "Inserted edition # lower than attempted: "+l+" expected "+crypto.myARKNumber);
+		} else if(l > crypto.myARKNumber) {
+			if(logMINOR) Logger.minor(this, "ARK number moving from "+crypto.myARKNumber+" to "+l);
+			crypto.myARKNumber = l;
+			node.writeNodeFile();
 		}
 	}
 

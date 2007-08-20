@@ -187,7 +187,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("SHUTDOWN - exit the program\r\n");
         if(n.isUsingWrapper())
         	sb.append("RESTART - restart the program\r\n");
-        if(core.directTMCI != this) {
+        if(core != null && core.directTMCI != this) {
           sb.append("QUIT - close the socket\r\n");
         }
         if(n.testnetEnabled) {
@@ -647,8 +647,14 @@ public class TextModeClientInterface implements Runnable {
 			}
         	
         } else if(uline.startsWith("STATUS")) {
-            SimpleFieldSet fs = n.exportPublicFieldSet();
+        	outsb.append("DARKNET:\n");
+            SimpleFieldSet fs = n.exportDarknetPublicFieldSet();
             outsb.append(fs.toString());
+            if(n.isOpennetEnabled()) {
+            	outsb.append("OPENNET:\n");
+            	fs = n.exportOpennetPublicFieldSet();
+                outsb.append(fs.toString());
+            }
             outsb.append(n.getStatus());
             if(Version.buildNumber()<Version.highestSeenBuild){
                 outsb.append("The latest version is : ").append(Version.highestSeenBuild);
@@ -675,6 +681,7 @@ public class TextModeClientInterface implements Runnable {
                     URL url = new URL(key);
                     URLConnection uc = url.openConnection();
                 	in = new BufferedReader(
+                			// FIXME get charset from uc.getContentType()
                 			new InputStreamReader(uc.getInputStream()));
                 }
                 content = readLines(in, true);
@@ -738,7 +745,13 @@ public class TextModeClientInterface implements Runnable {
         		out.flush();
         		return false;
         	}
-			pn.setListenOnly(true);
+			if(!(pn instanceof DarknetPeerNode)) {
+				out.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n").getBytes());
+				out.flush();
+				return false;
+			}
+			DarknetPeerNode dpn = (DarknetPeerNode) pn;
+			dpn.setListenOnly(true);
             outsb.append("set ListenOnly suceeded for ").append(nodeIdentifier).append("\r\n");
 		} else if(uline.startsWith("UNSETPEERLISTENONLY:")) {
 			String nodeIdentifier = (line.substring("UNSETPEERLISTENONLY:".length())).trim();
@@ -753,7 +766,13 @@ public class TextModeClientInterface implements Runnable {
         		out.flush();
         		return false;
         	}
-			pn.setListenOnly(false);
+			if(!(pn instanceof DarknetPeerNode)) {
+				out.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n").getBytes());
+				out.flush();
+				return false;
+			}
+			DarknetPeerNode dpn = (DarknetPeerNode) pn;
+			dpn.setListenOnly(false);
             outsb.append("unset ListenOnly suceeded for ").append(nodeIdentifier).append("\r\n");
         } else if(uline.startsWith("HAVEPEER:")) {
         	String nodeIdentifier = (line.substring("HAVEPEER:".length())).trim();
@@ -816,8 +835,8 @@ public class TextModeClientInterface implements Runnable {
         	String s = uline.substring("PROBE:".length()).trim();
         	double d = Double.parseDouble(s);
         	ProbeCallback cb = new ProbeCallback() {
-				public void onCompleted(String reason, double target, double best, double nearest, long id, short counter) {
-					String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" hops, id "+id+"\r\n";
+				public void onCompleted(String reason, double target, double best, double nearest, long id, short counter, short linearCounter) {
+					String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" nodes ("+linearCounter+" hops), id "+id+"\r\n";
 					try {
 						out.write(msg.getBytes());
 						out.flush();
@@ -830,11 +849,17 @@ public class TextModeClientInterface implements Runnable {
 					}
 				}
 
-				public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs) {
-					String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+"node UID="+nodeUID+" peer locs="+StringArray.toString(peerLocs)+" peer UIDs="+StringArray.toString(peerUIDs);
-					System.err.println(msg);
+				public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs, double[] locsNotVisited, short forkCount, short linearCounter, String reason, long prevUID) {
+					String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" linear="+linearCounter+" location="+location+"node UID="+nodeUID+" prev UID="+prevUID+" peer locs="+StringArray.toString(peerLocs)+" peer UIDs="+StringArray.toString(peerUIDs)+" locs not visited = "+StringArray.toString(locsNotVisited)+" forks: "+forkCount+" reason="+reason+'\n';
+					try {
+						out.write(msg.toString().getBytes());
+						out.flush();
+					} catch (IOException e) {
+						// Ignore
+					}
 				}
         	};
+        	System.err.println("Probing keyspace around "+d+" ...");
         	n.dispatcher.startProbe(d, cb);
         	synchronized(this) {
         		while(!doneSomething) {
@@ -883,9 +908,7 @@ public class TextModeClientInterface implements Runnable {
 
     private void probeAll() {
     	GlobalProbe p = new GlobalProbe(n);
-    	Thread t = new Thread(p);
-    	t.setDaemon(true);
-    	t.start();
+    	n.executor.execute(p, "GlobalProbe");
 	}
 
 	/**
@@ -1009,7 +1032,7 @@ public class TextModeClientInterface implements Runnable {
         }
         PeerNode pn;
         try {
-            pn = new PeerNode(fs, n, n.peers, false);
+            pn = n.createNewDarknetNode(fs);
         } catch (FSParseException e1) {
             System.err.println("Did not parse: "+e1);
             Logger.error(this, "Did not parse: "+e1, e1);
@@ -1033,7 +1056,7 @@ public class TextModeClientInterface implements Runnable {
 	 * Report peer success as boolean
 	 */
 	private boolean disablePeer(String nodeIdentifier) {
-		PeerNode[] pn = n.peers.myPeers;
+		DarknetPeerNode[] pn = n.peers.getDarknetPeers();
 		for(int i=0;i<pn.length;i++)
 		{
 			Peer peer = pn[i].getPeer();
@@ -1056,7 +1079,7 @@ public class TextModeClientInterface implements Runnable {
 	 * Report peer success as boolean
 	 */
 	private boolean enablePeer(String nodeIdentifier) {
-		PeerNode[] pn = n.peers.myPeers;
+		DarknetPeerNode[] pn = n.peers.getDarknetPeers();
 		for(int i=0;i<pn.length;i++)
 		{
 			Peer peer = pn[i].getPeer();
@@ -1079,7 +1102,7 @@ public class TextModeClientInterface implements Runnable {
      * Report peer existence as boolean
      */
     private boolean havePeer(String nodeIdentifier) {
-    	PeerNode[] pn = n.peers.myPeers;
+    	DarknetPeerNode[] pn = n.peers.getDarknetPeers();
     	for(int i=0;i<pn.length;i++)
     	{
     		Peer peer = pn[i].getPeer();
@@ -1103,7 +1126,7 @@ public class TextModeClientInterface implements Runnable {
      */
     private boolean removePeer(String nodeIdentifier) {
     	System.out.println("Removing peer from node for: "+nodeIdentifier);
-    	PeerNode[] pn = n.peers.myPeers;
+    	DarknetPeerNode[] pn = n.peers.getDarknetPeers();
     	for(int i=0;i<pn.length;i++)
     	{
     		Peer peer = pn[i].getPeer();
@@ -1115,7 +1138,7 @@ public class TextModeClientInterface implements Runnable {
     		String identity = pn[i].getIdentityString();
     		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
     		{
-    			n.removeDarknetConnection(pn[i]);
+    			n.removePeerConnection(pn[i]);
     			return true;
     		}
     	}

@@ -13,13 +13,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
 import java.util.ArrayList;
 
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
@@ -50,7 +53,8 @@ public class PeerManager {
     /** All the peers we are actually connected to */
     PeerNode[] connectedPeers;
     
-    final String filename;
+    private String darkFilename;
+    private String openFilename;
 
     private PeerManagerUserAlert ua;
     
@@ -83,6 +87,8 @@ public class PeerManager {
 	public static final int PEER_NODE_STATUS_BURSTING = 8;
 	public static final int PEER_NODE_STATUS_LISTENING = 9;
 	public static final int PEER_NODE_STATUS_LISTEN_ONLY = 10;
+	public static final int PEER_NODE_STATUS_CLOCK_PROBLEM = 11;
+	public static final int PEER_NODE_STATUS_CONN_ERROR = 12;
 	
     /**
      * Create a PeerManager by reading a list of peers from
@@ -90,22 +96,37 @@ public class PeerManager {
      * @param node
      * @param filename
      */
-    public PeerManager(Node node, String filename) {
+    public PeerManager(Node node) {
         Logger.normal(this, "Creating PeerManager");
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		peerNodeStatuses = new HashMap();
 		peerNodeRoutingBackoffReasons = new HashMap();
         System.out.println("Creating PeerManager");
-        this.filename = filename;
         myPeers = new PeerNode[0];
         connectedPeers = new PeerNode[0];
         this.node = node;
+    }
+
+    void tryReadPeers(String filename, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet) {
+    	synchronized(writePeersSync) {
+    		if(isOpennet) {
+    			openFilename = filename;
+    		} else {
+    			darkFilename = filename;
+    		}
+    	}
+    	OutgoingPacketMangler mangler = crypto.packetMangler;
         File peersFile = new File(filename);
         File backupFile = new File(filename+".bak");
         // Try to read the node list from disk
      	if(peersFile.exists()) {
-      		if(readPeers(peersFile)) {
-      			String msg = "Read "+myPeers.length+" peers from "+peersFile;
+      		if(readPeers(peersFile, mangler, crypto, opennet, isOpennet)) {
+      		    String msg;
+      		    if(isOpennet) {
+      			    msg = "Read "+getOpennetPeers().length+" peers from "+peersFile;
+				} else {
+      			    msg = "Read "+getDarknetPeers().length+" peers from "+peersFile;
+				}
       			Logger.normal(this, msg);
       			System.out.println(msg);
       			return;
@@ -113,8 +134,13 @@ public class PeerManager {
        	}
      	// Try the backup
      	if(backupFile.exists()) {
-        	if(readPeers(backupFile)) {
-      			String msg = "Read "+myPeers.length+" peers from "+backupFile;
+        	if(readPeers(backupFile, mangler, crypto, opennet, isOpennet)) {
+      		    String msg;
+      		    if(isOpennet) {
+      			    msg = "Read "+getOpennetPeers().length+" peers from "+backupFile;
+				} else {
+      			    msg = "Read "+getDarknetPeers().length+" peers from "+backupFile;
+				}
       			Logger.normal(this, msg);
       			System.out.println(msg);
         	} else {
@@ -122,9 +148,9 @@ public class PeerManager {
         		System.err.println("No (readable) peers file with peers in it found");
         	}
      	}     		
-    }
+	}
 
-    private boolean readPeers(File peersFile) {
+	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet) {
     	boolean gotSome = false;
     	FileInputStream fis;
 		try {
@@ -133,7 +159,12 @@ public class PeerManager {
 			Logger.normal(this, "Peers file not found: "+peersFile);
 			return false;
 		}
-        InputStreamReader ris = new InputStreamReader(fis);
+        InputStreamReader ris;
+		try {
+			ris = new InputStreamReader(fis, "UTF-8");
+		} catch (UnsupportedEncodingException e4) {
+			throw new Error("UTF-8 not supported!: "+e4, e4);
+		}
         BufferedReader br = new BufferedReader(ris);
         try { // FIXME: no better way?
             while(true) {
@@ -142,7 +173,7 @@ public class PeerManager {
                 fs = new SimpleFieldSet(br, false, true);
                 PeerNode pn;
                 try {
-                    pn = new PeerNode(fs, node, this, true);
+                    pn = PeerNode.create(fs, node, crypto, opennet, this, true, mangler);
                 } catch (FSParseException e2) {
                     Logger.error(this, "Could not parse peer: "+e2+ '\n' +fs.toString(),e2);
                     continue;
@@ -164,7 +195,7 @@ public class PeerManager {
         try {
         	br.close();
         } catch (IOException e3) {
-        	Logger.error(this, "Ignoring "+e3+" caught reading "+filename, e3);
+        	Logger.error(this, "Ignoring "+e3+" caught reading "+peersFile, e3);
         }
         return gotSome;
 	}
@@ -182,6 +213,8 @@ public class PeerManager {
         myPeers = newMyPeers;
         Logger.normal(this, "Added "+pn);
     	}
+    	this.addPeerNodeStatus(pn.getPeerNodeStatus(), pn);
+    	pn.setPeerNodeStatus(System.currentTimeMillis());
         updatePMUserAlert();
         return true;
     }
@@ -198,7 +231,8 @@ public class PeerManager {
         if(peerNodePreviousRoutingBackoffReason != null) {
         	removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
         }
-        pn.removeExtraPeerDataDir();
+        if(pn instanceof DarknetPeerNode)
+        	((DarknetPeerNode)pn).removeExtraPeerDataDir();
         if(!isInPeers) return false;
                 
         // removing from connectedPeers
@@ -225,6 +259,7 @@ public class PeerManager {
         
         Logger.normal(this, "Removed "+pn);
     	}
+    	pn.onRemove();
         updatePMUserAlert();
         return true;
     }
@@ -318,8 +353,8 @@ public class PeerManager {
     /**
      * Connect to a node provided the fieldset representing it.
      */
-    public void connect(SimpleFieldSet noderef) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-        PeerNode pn = new PeerNode(noderef, node, this, false);
+    public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+        PeerNode pn = node.createNewDarknetNode(noderef);
         for(int i=0;i<myPeers.length;i++) {
             if(Arrays.equals(myPeers[i].identity, pn.identity)) return;
         }
@@ -339,7 +374,7 @@ public class PeerManager {
     	long uid;
     	
     	LocationUIDPair(PeerNode pn) {
-    		location = pn.getLocation().getValue();
+    		location = pn.getLocation();
     		uid = pn.swapIdentifier;
     	}
 
@@ -366,7 +401,7 @@ public class PeerManager {
         int x = 0;
         for(int i=0;i<conns.length;i++) {
             if(conns[i].isRoutable())
-                locs[x++] = conns[i].getLocation().getValue();
+                locs[x++] = conns[i].getLocation();
         }
         // Wipe out any information contained in the order
         java.util.Arrays.sort(locs, 0, x);
@@ -441,13 +476,20 @@ public class PeerManager {
     /**
      * Asynchronously send this message to every connected peer.
      */
-    public void localBroadcast(Message msg) {
+    public void localBroadcast(Message msg, boolean ignoreRoutability) {
         PeerNode[] peers;
         synchronized (this) {
-			peers = connectedPeers;
+        	// myPeers not connectedPeers as connectedPeers only contains
+        	// ROUTABLE peers, and we may want to send to non-routable peers
+			peers = myPeers;
 		}
         for(int i=0;i<peers.length;i++) {
-            if(peers[i].isRoutable()) try {
+        	if(ignoreRoutability) {
+        		if(!peers[i].isConnected()) continue;
+        	} else {
+        		if(!peers[i].isRoutable()) continue;
+        	}
+        	try {
                 peers[i].sendAsync(msg, null, 0, null);
             } catch (NotConnectedException e) {
                 // Ignore
@@ -471,10 +513,10 @@ public class PeerManager {
             PeerNode p = peers[i];
             if(!p.isRoutable()) continue;
             if(p.isRoutingBackedOff()) continue;
-            double peerloc = p.getLocation().getValue();
+            double peerloc = p.getLocation();
             if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
             	continue;
-            double diff = distance(peerloc, loc);
+            double diff = Location.distance(peerloc, loc);
             if(diff < bestDiff) {
             	foundOne = true;
                 bestDiff = diff;
@@ -486,10 +528,10 @@ public class PeerManager {
                 PeerNode p = peers[i];
                 if(!p.isRoutable()) continue;
                 // Ignore backoff state
-                double peerloc = p.getLocation().getValue();
+                double peerloc = p.getLocation();
                 if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
                 	continue;
-                double diff = distance(peerloc, loc);
+                double diff = Location.distance(peerloc, loc);
                 if(diff < bestDiff) {
                 	foundOne = true;
                     bestDiff = diff;
@@ -501,49 +543,33 @@ public class PeerManager {
     }
 
     public boolean isCloserLocation(double loc) {
-    	double nodeLoc = node.lm.getLocation().getValue();
-    	double nodeDist = distance(nodeLoc, loc);
+    	double nodeLoc = node.lm.getLocation();
+    	double nodeDist = Location.distance(nodeLoc, loc);
     	double closest = closestPeerLocation(loc, nodeLoc);
     	if(closest > 1.0) {
     		// No peers found
     		return false;
     	}
-    	double closestDist = distance(closest, loc);
+    	double closestDist = Location.distance(closest, loc);
     	return closestDist < nodeDist;
     }
     
-    static double distance(PeerNode p, double loc) {
-    	double d = distance(p.getLocation().getValue(), loc);
-    	return d;
-    	//return d * p.getBias();
+    public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo) {
+    	return closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0);
     }
     
-    /**
-     * Distance between two locations.
-     * Both parameters must be in [0.0, 1.0].
-     */
-    public static double distance(double a, double b) {
-        if((a < 0.0 || a > 1.0)||(b < 0.0 || b > 1.0)) {
-        	Logger.error(PeerManager.class, "Invalid Location ! a = "+a +" b = "+ b + "Please report this bug!", new Exception("error"));
-        	throw new NullPointerException();
-        }
-        // Circular keyspace
-    	if (a > b) return Math.min (a - b, 1.0 - a + b);
-    	else return Math.min (b - a, 1.0 - b + a);
-    }
-
     /*
      * FIXME
      * This scans the same array 4 times.  It would be better to scan once and execute 4 callbacks...
      * For this reason the metrics are only updated if advanced mode is enabled
      */
-    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion) {
-    	PeerNode best = closerPeerBackoff(pn, routedTo, notIgnored, loc, ignoreSelf, minVersion);
+    public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
+    	PeerNode best = closerPeerBackoff(pn, routedTo, notIgnored, loc, ignoreSelf, minVersion, addUnpickedLocsTo, maxDistance);
     		
     	if (calculateMisrouting) {
-    		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion);
+    		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, null, maxDistance);
     		if(nbo != null) {
-    			node.nodeStats.routingMissDistance.report(distance(best, nbo.getLocation().getValue()));
+    			node.nodeStats.routingMissDistance.report(Location.distance(best, nbo.getLocation()));
     			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
     			int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF);
     			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
@@ -554,10 +580,10 @@ public class PeerManager {
     	return best;
     }
 	    
-    private PeerNode closerPeerBackoff(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, int minVersion) {
-    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false, minVersion);
+    private PeerNode closerPeerBackoff(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
+    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false, minVersion, addUnpickedLocsTo, maxDistance);
     	if(best == null) {
-    		best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion);
+    		best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, addUnpickedLocsTo, maxDistance);
     	}
     	return best;
 	}
@@ -565,8 +591,10 @@ public class PeerManager {
 	/**
      * Find the peer, if any, which is closer to the target location
      * than we are, and is not included in the provided set.
+	 * @param addUnpickedLocsTo Add all locations we didn't choose which we could have routed to to 
+	 * this array. Remove the location of the peer we pick from it.
      */
-    private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion) {
+    private PeerNode _closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double target, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
         PeerNode[] peers;  
         synchronized (this) {
 			peers = connectedPeers;
@@ -575,8 +603,9 @@ public class PeerManager {
         double bestDiff = Double.MAX_VALUE;
         double maxDiff = 0.0;
         if(!ignoreSelf)
-            maxDiff = distance(node.lm.getLocation().getValue(), loc);
+            maxDiff = Location.distance(node.lm.getLocation(), target);
         PeerNode best = null;
+        double bestLoc = -2;
         int count = 0;
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
@@ -601,18 +630,29 @@ public class PeerManager {
             	continue;
             }
             count++;
-            double diff = distance(p, loc);
-            if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff+" for "+p.getPeer());
+            double diff = Location.distance(p, target);
+            if(diff > maxDistance) continue;
+            if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation()+", target="+target+", d="+Location.distance(p.getLocation(), target)+" usedD="+diff+" for "+p.getPeer());
             if((!ignoreSelf) && (diff > maxDiff)) {
             	if(logMINOR) Logger.minor(this, "Ignoring because >maxDiff="+maxDiff);
             	continue;
             }
+            double loc = p.getLocation();
             if(diff < bestDiff) {
+            	bestLoc = loc;
                 best = p;
                 bestDiff = diff;
-                if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+p.getLocation().getValue()+" for "+p.getPeer());
+                if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+p.getLocation()+" for "+p.getPeer());
             }
+           	if(addUnpickedLocsTo != null) {
+           		Double d = new Double(loc);
+           		// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
+           		if(!addUnpickedLocsTo.contains(d))
+           			addUnpickedLocsTo.add(d);
+           	}
         }
+        if(addUnpickedLocsTo != null && bestLoc >= 0)
+        	addUnpickedLocsTo.remove(new Double(bestLoc));
         return best;
     }
 
@@ -689,11 +729,20 @@ public class PeerManager {
 			}
     	}, 0);
     }
+
+    private void writePeersInner() {
+    	synchronized(writePeersSync) {
+    		if(darkFilename != null)
+    			writePeersInner(darkFilename, getDarknetPeers());
+    		if(openFilename != null)
+    			writePeersInner(openFilename, getOpennetPeers());
+    	}
+    }
     
     /**
      * Write the peers file to disk
      */
-    private void writePeersInner() {
+    private void writePeersInner(String filename, PeerNode[] peers) {
         synchronized (writePeersSync) {
             FileOutputStream fos;
             String f = filename + ".bak";
@@ -704,10 +753,15 @@ public class PeerManager {
                         + f + " - " + e2, e2);
                 return;
             }
-            OutputStreamWriter w = new OutputStreamWriter(fos);
+            OutputStreamWriter w;
+			try {
+				w = new OutputStreamWriter(fos, "UTF-8");
+			} catch (UnsupportedEncodingException e2) {
+				throw new Error("UTF-8 unsupported!: "+e2, e2);
+			}
             BufferedWriter bw = new BufferedWriter(w);
             try {
-            	boolean succeeded = writePeers(bw);
+            	boolean succeeded = writePeers(bw, peers);
                 bw.close();
                 if(!succeeded) return;
             } catch (IOException e) {
@@ -719,9 +773,10 @@ public class PeerManager {
                 Logger.error(this, "Cannot write file: " + e, e);
                 return; // don't overwrite old file!
             }
-            if (!new File(f).renameTo(new File(filename))) {
-                new File(filename).delete();
-                if (!new File(f).renameTo(new File(filename))) {
+            File fnam = new File(filename);
+            if (!new File(f).renameTo(fnam)) {
+                fnam.delete();
+                if (!new File(f).renameTo(fnam)) {
                     Logger.error(this, "Could not rename " + f + " to "
                             + filename + " writing peers");
                 }
@@ -729,11 +784,13 @@ public class PeerManager {
         }
     }
 
-	public boolean writePeers(Writer bw) {
-        PeerNode[] peers;
-        synchronized (this) {
-			peers = myPeers;
-		}
+    public boolean writePeers(Writer bw) {
+    	if(!writePeers(bw, getDarknetPeers())) return false;
+    	if(!writePeers(bw, getOpennetPeers())) return false;
+    	return true;
+    }
+    
+	public boolean writePeers(Writer bw, PeerNode[] peers) {
         for (int i = 0; i < peers.length; i++) {
             try {
                 peers[i].write(bw);
@@ -766,6 +823,8 @@ public class PeerManager {
 			ua.conns = conns;
 			ua.peers = peers;
 			ua.neverConn = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED);
+			ua.clockProblem = getPeerNodeStatusSize(PEER_NODE_STATUS_CLOCK_PROBLEM);
+			ua.connError = getPeerNodeStatusSize(PEER_NODE_STATUS_CONN_ERROR);
 		}
 		if(anyConnectedPeers())
 			node.onConnectedPeer();
@@ -786,10 +845,7 @@ public class PeerManager {
 	 * Ask each PeerNode to read in it's extra peer data
 	 */
 	public void readExtraPeerData() {
-		PeerNode[] peers;
-		synchronized (this) {
-			peers = myPeers;
-		}
+		DarknetPeerNode[] peers = getDarknetPeers();
 		for (int i = 0; i < peers.length; i++) {
 			try {
 				peers[i].readExtraPeerData();
@@ -868,6 +924,8 @@ public class PeerManager {
 		int numberOfListenOnly = 0;
 		int numberOfListening = 0;
 		int numberOfBursting = 0;
+		int numberOfClockProblem = 0;
+		int numberOfConnError = 0;
 		
 		PeerNodeStatus[] pns = getPeerNodeStatuses();
 		
@@ -903,12 +961,18 @@ public class PeerManager {
 			case PEER_NODE_STATUS_BURSTING:
 				numberOfBursting++;
 				break;
+			case PEER_NODE_STATUS_CLOCK_PROBLEM:
+				numberOfClockProblem++;
+				break;
+			case PEER_NODE_STATUS_CONN_ERROR:
+				numberOfConnError++;
+				break;
 			default:
 				Logger.error(this, "Unknown peer status value : "+pns[i].getStatusValue());
 				break;
 			}
 		}
-		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Bursting: "+numberOfBursting+"  Listening: "+numberOfListening+"  Listen Only: "+numberOfListenOnly);
+		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Bursting: "+numberOfBursting+"  Listening: "+numberOfListening+"  Listen Only: "+numberOfListenOnly+"  Clock Problem: "+numberOfClockProblem+"  Connection Problem: "+numberOfConnError);
 		nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 		}
 	}
@@ -923,14 +987,14 @@ public class PeerManager {
 			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
 				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
 				if(statusSet.contains(peerNode)) {
-					Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode+" with status code "+peerNodeStatus);
+					Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode.getPeer()+" with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'");
 					return;
 				}
 				peerNodeStatuses.remove(peerNodeStatus);
 			} else {
 				statusSet = new HashSet();
 			}
-			if(logMINOR) Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
+			if(logMINOR) Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'");
 			statusSet.add(peerNode);
 			peerNodeStatuses.put(peerNodeStatus, statusSet);
 		}
@@ -962,14 +1026,14 @@ public class PeerManager {
 			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
 				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
 				if(!statusSet.contains(peerNode)) {
-					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status code "+peerNodeStatus);
+					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
 					return;
 				}
 				peerNodeStatuses.remove(peerNodeStatus);
 			} else {
 				statusSet = new HashSet();
 			}
-			if(logMINOR) Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
+			if(logMINOR) Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'");
 			if(statusSet.contains(peerNode)) {
 				statusSet.remove(peerNode);
 			}
@@ -986,7 +1050,7 @@ public class PeerManager {
 			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
 				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
 				if(reasonSet.contains(peerNode)) {
-					Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' already in peerNodeRoutingBackoffReasons as "+peerNode+" with status code "+peerNodeRoutingBackoffReason);
+					Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' already in peerNodeRoutingBackoffReasons as "+peerNode.getPeer()+" with status code "+peerNodeRoutingBackoffReason);
 					return;
 				}
 				peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
@@ -1064,6 +1128,24 @@ public class PeerManager {
 		return peerNodeStatuses;
 	}
 
+	public DarknetPeerNodeStatus[] getDarknetPeerNodeStatuses() {
+        DarknetPeerNode[] peers = getDarknetPeers();
+		DarknetPeerNodeStatus[] peerNodeStatuses = new DarknetPeerNodeStatus[peers.length];
+		for (int peerIndex = 0, peerCount = peers.length; peerIndex < peerCount; peerIndex++) {
+			peerNodeStatuses[peerIndex] = (DarknetPeerNodeStatus) peers[peerIndex].getStatus();
+		}
+		return peerNodeStatuses;
+	}
+
+	public OpennetPeerNodeStatus[] getOpennetPeerNodeStatuses() {
+        OpennetPeerNode[] peers = getOpennetPeers();
+		OpennetPeerNodeStatus[] peerNodeStatuses = new OpennetPeerNodeStatus[peers.length];
+		for (int peerIndex = 0, peerCount = peers.length; peerIndex < peerCount; peerIndex++) {
+			peerNodeStatuses[peerIndex] = (OpennetPeerNodeStatus) peers[peerIndex].getStatus();
+		}
+		return peerNodeStatuses;
+	}
+
 	/**
 	 * Update hadRoutableConnectionCount/routableConnectionCheckCount on peers if the timer has expired
 	 */
@@ -1081,4 +1163,76 @@ public class PeerManager {
 	 	}
 	}
 
+	/**
+	 * Get the darknet peers list.
+	 * FIXME: optimise
+	 */
+	public DarknetPeerNode[] getDarknetPeers() {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		// FIXME optimise! Maybe maintain as a separate list?
+		Vector v = new Vector(myPeers.length);
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] instanceof DarknetPeerNode)
+				v.add(peers[i]);
+		}
+		return (DarknetPeerNode[])v.toArray(new DarknetPeerNode[v.size()]);
+	}
+
+	/**
+	 * Get the opennet peers list.
+	 */
+	public OpennetPeerNode[] getOpennetPeers() {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		// FIXME optimise! Maybe maintain as a separate list?
+		Vector v = new Vector(myPeers.length);
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] instanceof OpennetPeerNode)
+				v.add(peers[i]);
+		}
+		return (OpennetPeerNode[])v.toArray(new OpennetPeerNode[v.size()]);
+	}
+
+	public boolean anyConnectedPeerHasAddress(FreenetInetAddress addr, PeerNode pn) {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] == pn) continue;
+			if(!peers[i].isConnected()) continue;
+			if(peers[i].getPeer().getFreenetAddress().equals(addr)) return true;
+		}
+		return false;
+	}
+
+	public void removeOpennetPeers() {
+		synchronized(this) {
+			Vector keep = new Vector();
+			Vector conn = new Vector();
+			for(int i=0;i<myPeers.length;i++) {
+				PeerNode pn = myPeers[i];
+				if(pn instanceof OpennetPeerNode) continue;
+				keep.add(pn);
+				if(pn.isConnected()) conn.add(pn);
+			}
+			myPeers = (PeerNode[]) keep.toArray(new PeerNode[keep.size()]);
+			connectedPeers = (PeerNode[]) keep.toArray(new PeerNode[conn.size()]);
+		}
+		updatePMUserAlert();
+	}
+
+	public PeerNode containsPeer(PeerNode pn) {
+		PeerNode[] peers = pn.isOpennet() ? ((PeerNode[])getOpennetPeers()) : ((PeerNode[])getDarknetPeers());
+		
+		for(int i=0;i<peers.length;i++)
+			if(Arrays.equals(pn.getIdentity(), peers[i].getIdentity())) return peers[i];
+		
+		return null;
+	}
 }

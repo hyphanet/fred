@@ -115,10 +115,20 @@ public class FCPServer implements Runnable {
 		
 		globalClient = new FCPClient("Global Queue", this, null, true);
 		
+		NetworkInterface tempNetworkInterface = null;
+		try {
+			tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts, node.executor);
+		} catch (BindException be) {
+			Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
+			System.out.println("Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
+		}
+		
+		this.networkInterface = tempNetworkInterface;
+		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
-	public void maybeStart(String allowedHosts) throws IOException, InvalidConfigValueException {
+	public void maybeStart() {
 		if (this.enabled) {
 			
 			if(enablePersistentDownloads) {
@@ -127,15 +137,6 @@ public class FCPServer implements Runnable {
 			
 			Logger.normal(this, "Starting FCP server on "+bindTo+ ':' +port+ '.');
 			System.out.println("Starting FCP server on "+bindTo+ ':' +port+ '.');
-			NetworkInterface tempNetworkInterface = null;
-			try {
-				tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts);
-			} catch (BindException be) {
-				Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
-				System.out.println("Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
-			}
-			
-			this.networkInterface = tempNetworkInterface;
 			
 			if (this.networkInterface != null) {
 				Thread t = new Thread(this, "FCP server");
@@ -245,13 +246,17 @@ public class FCPServer implements Runnable {
 	static class FCPAllowedHostsCallback implements StringCallback {
 
 		private final NodeClientCore node;
+		public static final String DEFAULT = "127.0.0.1,0:0:0:0:0:0:0:1";
 		
 		public FCPAllowedHostsCallback(NodeClientCore node) {
 			this.node = node;
 		}
 		
 		public String get() {
-			return node.getFCPServer().networkInterface.getAllowedHosts();
+			FCPServer server = node.getFCPServer();
+			if(server == null) return DEFAULT;
+			NetworkInterface netIface = server.networkInterface;
+			return (netIface == null ? DEFAULT : netIface.getAllowedHosts());
 		}
 
 		public void set(String val) {
@@ -382,7 +387,6 @@ public class FCPServer implements Runnable {
 		fcpConfig.register("assumeUploadDDAIsAllowed", true, sortOrder++, true, false, "FcpServer.assumeUploadDDAIsAllowed", "FcpServer.assumeUploadDDAIsAllowedLong", cb5 = new AssumeDDAUploadIsAllowedCallback());
 		
 		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"));
-		core.setFCPServer(fcp);	
 		
 		if(fcp != null) {
 			cb1.server = fcp;
@@ -391,9 +395,6 @@ public class FCPServer implements Runnable {
 			cb4.server = fcp;
 			cb5.server = fcp;
 		}
-		
-		if(fcp != null)
-			fcp.maybeStart(fcpConfig.getString("allowedHosts"));
 		
 		fcpConfig.finishedInitialization();
 		return fcp;
@@ -445,10 +446,6 @@ public class FCPServer implements Runnable {
 	
 	private static String l10n(String key, String pattern, String value) {
 		return L10n.getString("FcpServer."+key, pattern, value);
-	}
-
-	private static String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("FcpServer."+key, patterns, values);
 	}
 
 	public void setPersistentDownloadsEnabled(boolean set) {
@@ -585,7 +582,7 @@ public class FCPServer implements Runnable {
 					FileOutputStream fos = new FileOutputStream(compressedTemp);
 					BufferedOutputStream bos = new BufferedOutputStream(fos);
 					GZIPOutputStream gos = new GZIPOutputStream(bos);
-					OutputStreamWriter osw = new OutputStreamWriter(gos);
+					OutputStreamWriter osw = new OutputStreamWriter(gos, "UTF-8");
 					BufferedWriter w = new BufferedWriter(osw);
 					w.write(Integer.toString(persistentRequests.length)+ '\n');
 					for(int i=0;i<persistentRequests.length;i++)
@@ -657,7 +654,7 @@ public class FCPServer implements Runnable {
 	
 	private void loadPersistentRequests(InputStream is) throws IOException {
 		synchronized(persistenceSync) {
-			InputStreamReader ris = new InputStreamReader(is);
+			InputStreamReader ris = new InputStreamReader(is, "UTF-8");
 			BufferedReader br = new BufferedReader(ris);
 			String r = br.readLine();
 			int count;

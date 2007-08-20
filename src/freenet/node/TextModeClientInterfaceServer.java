@@ -35,9 +35,9 @@ public class TextModeClientInterfaceServer implements Runnable {
     String bindTo;
     String allowedHosts;
     boolean isEnabled;
-    NetworkInterface networkInterface;
+    final NetworkInterface networkInterface;
 
-    TextModeClientInterfaceServer(Node node, int port, String bindTo, String allowedHosts) {
+    TextModeClientInterfaceServer(Node node, NodeClientCore core, int port, String bindTo, String allowedHosts) throws IOException {
     	this.n = node;
     	this.core = n.clientCore;
         this.r = n.random;
@@ -47,21 +47,23 @@ public class TextModeClientInterfaceServer implements Runnable {
         this.bindTo=bindTo;
         this.allowedHosts = allowedHosts;
         this.isEnabled=true;
-        core.setTMCI(this);
+		networkInterface = NetworkInterface.create(port, bindTo, allowedHosts, n.executor);
     }
     
     void start() {
-        Thread t = new Thread(this, "Text mode client interface");
-        t.setDaemon(true);
-        t.start();
+		Logger.normal(core, "TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
+		System.out.println("TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
+		
+		n.executor.execute(this, "Text mode client interface");
     }
     
-	public static void maybeCreate(Node node, Config config) throws IOException {
+	public static TextModeClientInterfaceServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException {
+		
+		TextModeClientInterfaceServer server = null;
+		
 		SubConfig TMCIConfig = new SubConfig("console", config);
 		
-		NodeClientCore core = node.clientCore;
-		
-		TMCIConfig.register("enabled", true, 1, true, false, "TextModeClientInterfaceServer.enabled", "TextModeClientInterfaceServer.enabledLong", new TMCIEnabledCallback(core));
+		TMCIConfig.register("enabled", true, 1, true, true /* FIXME only because can't be changed on the fly */, "TextModeClientInterfaceServer.enabled", "TextModeClientInterfaceServer.enabledLong", new TMCIEnabledCallback(core));
 		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, false, "TextModeClientInterfaceServer.bindTo", "TextModeClientInterfaceServer.bindToLong", new TMCIBindtoCallback(core));
 		TMCIConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", 2, true, false, "TextModeClientInterfaceServer.allowedHosts", "TextModeClientInterfaceServer.allowedHostsLong", new TMCIAllowedHostsCallback(core));
 		TMCIConfig.register("port", 2323, 1, true, false, "TextModeClientInterfaceServer.telnetPortNumber", "TextModeClientInterfaceServer.telnetPortNumberLong", new TCMIPortNumberCallback(core));
@@ -73,15 +75,8 @@ public class TextModeClientInterfaceServer implements Runnable {
 		String allowedHosts = TMCIConfig.getString("allowedHosts");
 		boolean direct = TMCIConfig.getBoolean("directEnabled");
 
-		if(TMCIEnabled){
-			new TextModeClientInterfaceServer(node, port, bind_ip, allowedHosts).start();
-			Logger.normal(core, "TMCI started on "+bind_ip+ ':' +port);
-			System.out.println("TMCI started on "+bind_ip+ ':' +port);
-		}
-		else{
-			Logger.normal(core, "Not starting TMCI as it's disabled");
-			System.out.println("Not starting TMCI as it's disabled");
-		}
+		if(TMCIEnabled)
+			server = new TextModeClientInterfaceServer(node, core, port, bind_ip, allowedHosts);
 		
 		if(direct) {
 	        HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
@@ -94,6 +89,8 @@ public class TextModeClientInterfaceServer implements Runnable {
 		}
 		
 		TMCIConfig.finishedInitialization();
+		
+		return server; // caller must call start()
 	}
 
     
@@ -215,13 +212,6 @@ public class TextModeClientInterfaceServer implements Runnable {
     		int curPort = port;
     		String tempBindTo = this.bindTo;
     		try {
-    			networkInterface = NetworkInterface.create(curPort, tempBindTo, allowedHosts);
-    		} catch (IOException e) {
-    			Logger.error(this, "Could not bind to TMCI port: "+tempBindTo+ ':' +port);
-    			System.err.println("Could not bind to TMCI port: "+tempBindTo+ ':' +port);
-    			return;
-    		}
-    		try {
     			networkInterface.setSoTimeout(1000);
     		} catch (SocketException e1) {
     			Logger.error(this, "Could not set timeout: "+e1, e1);
@@ -241,9 +231,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     				TextModeClientInterface tmci = 
 					new TextModeClientInterface(this, in, out);
     				
-    				Thread t = new Thread(tmci, "Text mode client interface handler for "+s.getPort());
-    				t.setDaemon(true);
-    				t.start();
+    				n.executor.execute(tmci, "Text mode client interface handler for "+s.getPort());
     				
     			} catch (SocketTimeoutException e) {
     				// Ignore and try again

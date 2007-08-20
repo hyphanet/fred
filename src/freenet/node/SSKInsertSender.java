@@ -97,9 +97,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
     }
 
     void start() {
-        Thread t = new Thread(this, "SSKInsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
-        t.setDaemon(true);
-        t.start();
+    	node.executor.execute(this, "SSKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
     }
     
 	public void run() {
@@ -137,9 +135,9 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             // Can backtrack, so only route to nodes closer than we are to target.
             double nextValue;
             synchronized(node.peers) {
-                next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1);
+                next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
                 if(next != null)
-                    nextValue = next.getLocation().getValue();
+                    nextValue = next.getLocation();
                 else
                     nextValue = -1.0;
             }
@@ -152,7 +150,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             if(logMINOR) Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
             
-            if(PeerManager.distance(target, nextValue) > PeerManager.distance(target, closestLocation)) {
+            if(Location.distance(target, nextValue) > Location.distance(target, closestLocation)) {
             	if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
                 htl = node.decrementHTL(source, htl);
             }
@@ -454,6 +452,9 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             notifyAll();
         }
 
+        if(status == SUCCESS && next != null)
+        	next.onSuccess(true, true);
+        
         if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString());
         // Nothing to wait for, no downstream transfers, just exit.
     }

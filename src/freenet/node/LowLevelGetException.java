@@ -29,6 +29,8 @@ public class LowLevelGetException extends Exception {
 	public static final int VERIFY_FAILED = 8;
 	/** Request cancelled by user */
 	public static final int CANCELLED = 9;
+	/** Ran into a failure table */
+	public static final int RECENTLY_FAILED = 10;
 	
 	static final String getMessage(int reason) {
 		switch(reason) {
@@ -50,6 +52,8 @@ public class LowLevelGetException extends Exception {
 			return "Node sent us invalid data";
 		case CANCELLED:
 			return "Request cancelled";
+		case RECENTLY_FAILED:
+			return "Request killed by failure table due to recently DNFing on a downstream node";
 		default:
 			return "Unknown error code: "+reason;
 		}

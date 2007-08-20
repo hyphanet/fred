@@ -11,7 +11,6 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
-import freenet.io.comm.UdpSocketManager;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
@@ -24,12 +23,15 @@ import freenet.support.api.StringCallback;
 import freenet.support.transport.ip.IPAddressDetector;
 import freenet.support.transport.ip.IPUtil;
 
+/**
+ * Detect the IP address of the node. Doesn't return port numbers, doesn't have access to per-port
+ * information (NodeCrypto - UdpSocketHandler etc).
+ */
 public class NodeIPDetector {
 
 	/** Parent node */
 	final Node node;
 	/** Ticker */
-	final Ticker ticker;
 	/** Explicit forced IP address */
 	FreenetInetAddress overrideIPAddress;
 	/** IP address from last time */
@@ -37,74 +39,66 @@ public class NodeIPDetector {
 	/** Detected IP's and their NAT status from plugins */
 	DetectedIP[] pluginDetectedIPs;
 	/** Last detected IP address */
-	Peer[] lastIPAddress;
+	FreenetInetAddress[] lastIPAddress;
 	/** The minimum reported MTU on all detected interfaces */
 	private int minimumMTU;
 	/** IP address detector */
 	private final IPAddressDetector ipDetector;
 	/** Plugin manager for plugin IP address detectors e.g. STUN */
-	private final IPDetectorPluginManager ipDetectorManager;
+	final IPDetectorPluginManager ipDetectorManager;
 	/** UserAlert shown when we can't detect an IP address */
 	private static IPUndetectedUserAlert primaryIPUndetectedAlert;
 	// FIXME redundant? see lastIPAddress
-	Peer[] lastIP;
+	FreenetInetAddress[] lastIP;
 	/** If true, include local addresses on noderefs */
 	public boolean includeLocalAddressesInNoderefs;
-	/** ARK inserter. */
-	private final NodeARKInserter arkPutter;
-	// FIXME remove old ARK support
-	private final NodeARKInserter oldARKPutter;
 	/** Set when we have grounds to believe that we may be behind a symmetric NAT. */
 	boolean maybeSymmetric;
 	private boolean hasDetectedPM;
 	private boolean hasDetectedIAD;
+	/** Subsidiary detectors: NodeIPPortDetector's which rely on this object */
+	private NodeIPPortDetector[] portDetectors;
 	
 	SimpleUserAlert maybeSymmetricAlert;
 	
 	public NodeIPDetector(Node node) {
 		this.node = node;
-		this.ticker = node.ps;
 		ipDetectorManager = new IPDetectorPluginManager(node, this);
 		ipDetector = new IPAddressDetector(10*1000, this);
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
-		arkPutter = new NodeARKInserter(node, this, false);
-		if(node.myOldARK != null)
-			oldARKPutter = new NodeARKInserter(node, this, true);
-		else
-			oldARKPutter = null;
+		portDetectors = new NodeIPPortDetector[0];
 	}
 
+	public synchronized void addPortDetector(NodeIPPortDetector detector) {
+		NodeIPPortDetector[] newDetectors = new NodeIPPortDetector[portDetectors.length+1];
+		System.arraycopy(portDetectors, 0, newDetectors, 0, portDetectors.length);
+		newDetectors[portDetectors.length] = detector;
+		portDetectors = newDetectors;
+	}
+	
 	/**
-	 * @return Our current main IP address.
-	 * FIXME - we should support more than 1, and we should do the
-	 * detection properly with NetworkInterface, and we should use
-	 * third parties if available and UP&P if available.
+	 * What is my IP address? Use all globally available information (everything which isn't
+	 * specific to a given port i.e. opennet or darknet) to determine our current IP addresses.
+	 * Will include more than one IP in many cases when we are not strictly multi-homed. For 
+	 * example, if we have a DNS name set, we will usually return an IP as well.
+	 * 
+	 * Will warn the user with a UserAlert if we don't have sufficient information.
 	 */
-	Peer[] detectPrimaryIPAddress() {
+	FreenetInetAddress[] detectPrimaryIPAddress() {
 		boolean addedValidIP = false;
 		Logger.minor(this, "Redetecting IPs...");
 		Vector addresses = new Vector();
 		if(overrideIPAddress != null) {
 			// If the IP is overridden, the override has to be the first element.
-			Peer p = new Peer(overrideIPAddress, node.portNumber);
-			addresses.add(p);
-			if(p.getFreenetAddress().isRealInternetAddress(false, true))
+			addresses.add(overrideIPAddress);
+			if(overrideIPAddress.isRealInternetAddress(false, true))
 				addedValidIP = true;
 		}
-		boolean dontDetect = false;
-		UdpSocketManager usm = node.usm;
-		if(usm != null) {
-			InetAddress addr = node.usm.getBindTo();
-			if(addr != null && (IPUtil.isValidAddress(addr, false))) {
-				dontDetect = true;
-				Peer p = new Peer(addr, node.portNumber);
-				if(!addresses.contains(p)) addresses.add(p);
-				dontDetect = true;
-			}
+		
+		if(!node.dontDetect()) {
+			addedValidIP |= innerDetect(addresses);
 		}
-		if(!dontDetect) {
-			addedValidIP = innerDetect(addresses, addedValidIP);
-		}
+		
 	   	if(node.clientCore != null) {
 	   		if (addedValidIP) {
 	   			node.clientCore.alerts.unregister(primaryIPUndetectedAlert);
@@ -112,24 +106,29 @@ public class NodeIPDetector {
 	   			node.clientCore.alerts.register(primaryIPUndetectedAlert);
 	   		}
 	   	}
-	   	lastIPAddress = (Peer[]) addresses.toArray(new Peer[addresses.size()]);
+	   	lastIPAddress = (FreenetInetAddress[]) addresses.toArray(new FreenetInetAddress[addresses.size()]);
 	   	return lastIPAddress;
 	}
 
-	private boolean innerDetect(Vector addresses, boolean addedValidIP) {
-		boolean setMaybeSymmetric = false;
+	/**
+	 * Core of the IP detection algorithm.
+	 * @param addresses
+	 * @param addedValidIP
+	 * @return
+	 */
+	private boolean innerDetect(Vector addresses) {
+		boolean addedValidIP = false;
 		InetAddress[] detectedAddrs = ipDetector.getAddress();
 		assert(detectedAddrs != null);
 		synchronized(this) {
 			hasDetectedIAD = true;
 		}
-		
 		for(int i=0;i<detectedAddrs.length;i++) {
-			Peer p = new Peer(detectedAddrs[i], node.portNumber);
-			if(!addresses.contains(p)) {
-				Logger.normal(this, "Detected IP address: "+p);
-				addresses.add(p);
-				if(p.getFreenetAddress().isRealInternetAddress(false, false))
+			FreenetInetAddress addr = new FreenetInetAddress(detectedAddrs[i]);
+			if(!addresses.contains(addr)) {
+				Logger.normal(this, "Detected IP address: "+addr);
+				addresses.add(addr);
+				if(addr.isRealInternetAddress(false, false))
 					addedValidIP = true;
 			}
 		}
@@ -138,7 +137,7 @@ public class NodeIPDetector {
 			for(int i=0;i<pluginDetectedIPs.length;i++) {
 				InetAddress addr = pluginDetectedIPs[i].publicAddress;
 				if(addr == null) continue;
-				Peer a = new Peer(new FreenetInetAddress(addr), node.portNumber);
+				FreenetInetAddress a = new FreenetInetAddress(addr);
 				if(!addresses.contains(a)) {
 					Logger.normal(this, "Plugin detected IP address: "+a);
 					addresses.add(a);
@@ -146,8 +145,10 @@ public class NodeIPDetector {
 				}
 			}
 		}
+		
 		if(addresses.isEmpty() && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
-			addresses.add(new Peer(oldIPAddress, node.portNumber));
+			addresses.add(oldIPAddress);
+		
 		// Try to pick it up from our connections
 		if(node.peers != null) {
 			PeerNode[] peerList = node.peers.connectedPeers;
@@ -155,36 +156,37 @@ public class NodeIPDetector {
 			// FIXME use a standard mutable int object, we have one somewhere
 			for(int i=0;i<peerList.length;i++) {
 				Peer p = peerList[i].getRemoteDetectedPeer();
-				if((p == null) || p.isNull()) continue;
-				// DNSRequester doesn't deal with our own node
-				if(!IPUtil.isValidAddress(p.getAddress(true), false)) continue;
-				Logger.normal(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
-				if(countsByPeer.containsKey(p)) {
-					Integer count = (Integer) countsByPeer.get(p);
+				if(p == null || p.isNull()) continue;
+				FreenetInetAddress addr = p.getFreenetAddress();
+				if(addr == null) continue;
+				if(!IPUtil.isValidAddress(addr.getAddress(false), false)) continue;
+				Logger.normal(this, "Peer "+peerList[i].getPeer()+" thinks we are "+addr);
+				if(countsByPeer.containsKey(addr)) {
+					Integer count = (Integer) countsByPeer.get(addr);
 					Integer newCount = new Integer(count.intValue()+1);
-					countsByPeer.put(p, newCount);
+					countsByPeer.put(addr, newCount);
 				} else {
-					countsByPeer.put(p, new Integer(1));
+					countsByPeer.put(addr, new Integer(1));
 				}
 			}
 			if(countsByPeer.size() == 1) {
 				Iterator it = countsByPeer.keySet().iterator();
-				Peer p = (Peer) (it.next());
-				Logger.minor(this, "Everyone agrees we are "+p);
-				if(!addresses.contains(p)) {
-					if(p.getFreenetAddress().isRealInternetAddress(false, false))
+				FreenetInetAddress addr = (FreenetInetAddress) (it.next());
+				Logger.minor(this, "Everyone agrees we are "+addr);
+				if(!addresses.contains(addr)) {
+					if(addr.isRealInternetAddress(false, false))
 						addedValidIP = true;
-					addresses.add(p);
+					addresses.add(addr);
 				}
 			} else if(countsByPeer.size() > 1) {
 				Iterator it = countsByPeer.keySet().iterator();
 				// Take two most popular addresses.
-				Peer best = null;
-				Peer secondBest = null;
+				FreenetInetAddress best = null;
+				FreenetInetAddress secondBest = null;
 				int bestPopularity = 0;
 				int secondBestPopularity = 0;
 				while(it.hasNext()) {
-					Peer cur = (Peer) (it.next());
+					FreenetInetAddress cur = (FreenetInetAddress) (it.next());
 					int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
 					Logger.normal(this, "Detected peer: "+cur+" popularity "+curPop);
 					if(curPop >= bestPopularity) {
@@ -199,46 +201,24 @@ public class NodeIPDetector {
  						if(!addresses.contains(best)) {
 							Logger.normal(this, "Adding best peer "+best+" ("+bestPopularity+ ')');
 							addresses.add(best);
-							if(best.getFreenetAddress().isRealInternetAddress(false, false))
+							if(best.isRealInternetAddress(false, false))
 								addedValidIP = true;
 						}
 						if((secondBest != null) && (secondBestPopularity > 1)) {
 							if(!addresses.contains(secondBest)) {
 								Logger.normal(this, "Adding second best peer "+secondBest+" ("+secondBest+ ')');
 								addresses.add(secondBest);
-								if(secondBest.getFreenetAddress().isRealInternetAddress(false, false))
+								if(secondBest.isRealInternetAddress(false, false))
 									addedValidIP = true;
-							}
-							if(best.getAddress().equals(secondBest.getAddress()) && bestPopularity == 1) {
-								Logger.error(this, "Hrrrm, maybe this is a symmetric NAT? Expect trouble connecting!");
-								System.err.println("Hrrrm, maybe this is a symmetric NAT? Expect trouble connecting!");
-								setMaybeSymmetric = true;
-								
-								if(ipDetectorManager != null && ipDetectorManager.isEmpty()) {
-									if(maybeSymmetricAlert == null) {
-										maybeSymmetricAlert = new SimpleUserAlert(true, l10n("maybeSymmetricTitle"), 
-												l10n("maybeSymmetric"), UserAlert.ERROR);
-									}
-									if(node.clientCore != null && node.clientCore.alerts != null)
-										node.clientCore.alerts.register(maybeSymmetricAlert);
-								} else {
-									if(maybeSymmetricAlert != null)
-										node.clientCore.alerts.unregister(maybeSymmetricAlert);
-								}
-								
-								Peer p = new Peer(best.getFreenetAddress(), node.portNumber);
-								if(!addresses.contains(p))
-									addresses.add(p);
 							}
 						}
 					}
 				}
 			}
 		}
-	   	this.maybeSymmetric = setMaybeSymmetric;
 	   	return addedValidIP;
 	}
-
+	
 	private String l10n(String key) {
 		return L10n.getString("NodeIPDetector."+key);
 	}
@@ -247,7 +227,7 @@ public class NodeIPDetector {
 		return L10n.getString("NodeIPDetector."+key, pattern, value);
 	}
 
-	Peer[] getPrimaryIPAddress() {
+	FreenetInetAddress[] getPrimaryIPAddress() {
 		if(lastIPAddress == null) return detectPrimaryIPAddress();
 		return lastIPAddress;
 	}
@@ -280,20 +260,18 @@ public class NodeIPDetector {
 			}
 		}
 		redetectAddress();
-		arkPutter.update();
-		if(oldARKPutter != null)
-			oldARKPutter.update();
 	}
 
 	public void redetectAddress() {
-		Peer[] newIP = detectPrimaryIPAddress();
+		FreenetInetAddress[] newIP = detectPrimaryIPAddress();
+		NodeIPPortDetector[] detectors;
 		synchronized(this) {
 			if(Arrays.equals(newIP, lastIP)) return;
 			lastIP = newIP;
+			detectors = portDetectors;
 		}
-		arkPutter.update();
-		if(oldARKPutter != null)
-			oldARKPutter.update();
+		for(int i=0;i<detectors.length;i++)
+			detectors[i].update();
 		node.writeNodeFile();
 	}
 
@@ -411,15 +389,18 @@ public class NodeIPDetector {
 	/** Start all IP detection related processes */
 	public void start() {
 		ipDetectorManager.start();
-		Thread t = new Thread(ipDetector, "IP address re-detector");
-		t.setDaemon(true);
-		t.start();
+		node.executor.execute(ipDetector, "IP address re-detector");
 		redetectAddress();
 		// 60 second delay for inserting ARK to avoid reinserting more than necessary if we don't detect IP on startup.
-		ticker.queueTimedJob(new FastRunnable() {
+		// Not a FastRunnable as it can take a while to start the insert
+		node.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
-				arkPutter.start();
-				if(oldARKPutter != null) oldARKPutter.start();
+				NodeIPPortDetector[] detectors;
+				synchronized(this) {
+					detectors = portDetectors;
+				}
+				for(int i=0;i<detectors.length;i++)
+					detectors[i].startARK();
 			}
 		}, 60*1000);
 	}
@@ -444,6 +425,20 @@ public class NodeIPDetector {
 
 	public int getMinimumDetectedMTU() {
 		return minimumMTU > 0 ? minimumMTU : 1500;
+	}
+
+	public void setMaybeSymmetric() {
+		if(ipDetectorManager != null && ipDetectorManager.isEmpty()) {
+			if(maybeSymmetricAlert == null) {
+				maybeSymmetricAlert = new SimpleUserAlert(true, l10n("maybeSymmetricTitle"), 
+						l10n("maybeSymmetric"), UserAlert.ERROR);
+			}
+			if(node.clientCore != null && node.clientCore.alerts != null)
+				node.clientCore.alerts.register(maybeSymmetricAlert);
+		} else {
+			if(maybeSymmetricAlert != null)
+				node.clientCore.alerts.unregister(maybeSymmetricAlert);
+		}
 	}
 	
 }

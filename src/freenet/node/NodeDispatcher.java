@@ -3,8 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Vector;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.Dispatcher;
@@ -17,6 +21,8 @@ import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
+import freenet.support.StringArray;
+import freenet.support.WeakHashSet;
 
 /**
  * @author amphibian
@@ -32,9 +38,6 @@ import freenet.support.ShortBuffer;
  * InsertRequests
  * 
  * Probably a few others; those are the important bits.
- * 
- * Note that if in response to these we have to send a packet,
- * IT MUST BE DONE OFF-THREAD. Because sends will normally block.
  */
 public class NodeDispatcher implements Dispatcher {
 
@@ -80,11 +83,23 @@ public class NodeDispatcher implements Dispatcher {
 			source.setRemoteDetectedPeer(p);
 			node.ipDetector.redetectAddress();
 			return true;
+		} else if(spec == DMT.FNPTime) {
+			return handleTime(m, source);
 		} else if(spec == DMT.FNPVoid) {
 			return true;
 		} else if(spec == DMT.nodeToNodeMessage) {
 			node.receivedNodeToNodeMessage(m);
 			return true;
+		} else if(spec == DMT.UOMAnnounce) {
+			return node.nodeUpdater.uom.handleAnnounce(m, source);
+		} else if(spec == DMT.UOMRequestRevocation) {
+			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
+		} else if(spec == DMT.UOMSendingRevocation) {
+			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
+		} else if(spec == DMT.UOMRequestMain) {
+			return node.nodeUpdater.uom.handleRequestMain(m, source);
+		} else if(spec == DMT.UOMSendingMain) {
+			return node.nodeUpdater.uom.handleSendingMain(m, source);
 		}
 
 		if(!source.isRoutable()) return false;
@@ -129,6 +144,12 @@ public class NodeDispatcher implements Dispatcher {
 		return false;
 	}
 
+	private boolean handleTime(Message m, PeerNode source) {
+		long delta = m.getLong(DMT.TIME) - System.currentTimeMillis();
+		source.setTimeDelta(delta);
+		return true;
+	}
+
 	/**
 	 * Handle an incoming FNPDataRequest.
 	 */
@@ -165,14 +186,12 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+m.getSource().getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, false);
+			node.unlockUID(id, isSSK, false, false);
 			return true;
 		}
 		//if(!node.lockUID(id)) return false;
 		RequestHandler rh = new RequestHandler(m, id, node);
-		Thread t = new Thread(rh, "RequestHandler for UID "+id);
-		t.setDaemon(true);
-		t.start();
+		node.executor.execute(rh, "RequestHandler for UID "+id);
 		return true;
 	}
 
@@ -207,20 +226,16 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+m.getSource().getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, true);
+			node.unlockUID(id, isSSK, true, false);
 			return true;
 		}
 		long now = System.currentTimeMillis();
 		if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
 			SSKInsertHandler rh = new SSKInsertHandler(m, id, node, now);
-			Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.portNumber);
-			t.setDaemon(true);
-			t.start();
+			node.executor.execute(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
 			InsertHandler rh = new InsertHandler(m, id, node, now);
-			Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.portNumber);
-			t.setDaemon(true);
-			t.start();
+			node.executor.execute(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
 		return true;
@@ -304,8 +319,8 @@ public class NodeDispatcher implements Dispatcher {
 		// pn == null => originated locally, keep full htl
 		double target = m.getDouble(DMT.TARGET_LOCATION);
 		if(logMINOR) Logger.minor(this, "id "+id+" from "+pn+" htl "+htl+" target "+target);
-		if(Math.abs(node.lm.getLocation().getValue() - target) <= Double.MIN_VALUE) {
-			if(logMINOR) Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.portNumber);
+		if(Math.abs(node.lm.getLocation() - target) <= Double.MIN_VALUE) {
+			if(logMINOR) Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.getDarknetPortNumber());
 			// Handle locally
 			// Message type specific processing
 			dispatchRoutedMessage(m, pn, id);
@@ -347,7 +362,7 @@ public class NodeDispatcher implements Dispatcher {
 		// Forward
 		m = preForward(m, htl);
 		while(true) {
-			PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, ctx.notIgnored, target, true, node.isAdvancedModeEnabled(), -1);
+			PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, ctx.notIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
 			if(logMINOR) Logger.minor(this, "Next: "+next+" message: "+m);
 			if(next != null) {
 				// next is connected, or at least has been => next.getPeer() CANNOT be null.
@@ -359,7 +374,7 @@ public class NodeDispatcher implements Dispatcher {
 					continue;
 				}
 			} else {
-				if(logMINOR) Logger.minor(this, "Reached dead end for "+m.getSpec()+" on "+node.portNumber);
+				if(logMINOR) Logger.minor(this, "Reached dead end for "+m.getSpec()+" on "+node.getDarknetPortNumber());
 				// Reached a dead end...
 				Message reject = DMT.createFNPRoutedRejected(id, htl);
 				if(pn != null) try {
@@ -416,22 +431,30 @@ public class NodeDispatcher implements Dispatcher {
 
 	class ProbeContext {
 
-		final PeerNode src; // FIXME make this a weak reference or something ? - Memory leak with high connection churn
-		final HashSet visitedPeers;
+		private final WeakReference /* <PeerNode> */ srcRef;
+		final WeakHashSet visitedPeers;
 		final ProbeCallback cb;
 		short counter;
+		short linearCounter;
 		short htl;
 		double nearest;
 		double best;
+		Vector notVisitedList; // List of best locations not yet visited by this request
+		short forkCount;
 
 		public ProbeContext(long id, double target, double best, double nearest, short htl, short counter, PeerNode src, ProbeCallback cb) {
-			visitedPeers = new HashSet();
+			visitedPeers = new WeakHashSet();
 			this.counter = counter;
 			this.htl = htl;
 			this.nearest = nearest;
 			this.best = best;
-			this.src = src;
+			this.srcRef = (src == null) ? null : src.myRef;
 			this.cb = cb;
+		}
+
+		public PeerNode getSource() {
+			if(srcRef != null) return (PeerNode) srcRef.get();
+			return null;
 		}
 
 	}
@@ -455,12 +478,13 @@ public class NodeDispatcher implements Dispatcher {
 		double nearest = m.getDouble(DMT.NEAREST_LOCATION);
 		short htl = m.getShort(DMT.HTL);
 		short counter = m.getShort(DMT.COUNTER);
+		short linearCounter = m.getShort(DMT.LINEAR_COUNTER);
 		if(logMINOR)
 			Logger.minor(this, "Probe request: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest+ ' ' +htl+ ' ' +counter);
 		synchronized(recentProbeContexts) {
 			if(recentProbeRequestIDs.contains(lid)) {
 				// Reject: Loop
-				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_LOOP);
+				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_LOOP, linearCounter);
 				try {
 					src.sendAsync(reject, null, 0, null);
 				} catch (NotConnectedException e) {
@@ -475,84 +499,125 @@ public class NodeDispatcher implements Dispatcher {
 				Logger.minor(this, "Probe request popped "+o);
 			}
 		}
-		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, null);
+		Message notVisited = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
+		double[] locsNotVisited = null;
+		Vector notVisitedList = new Vector();
+		if(notVisited != null) {
+			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
+			for(int i=0;i<locsNotVisited.length;i++)
+				notVisitedList.add(new Double(locsNotVisited[i]));
+		}
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, false, true, null, notVisitedList, 2.0, false, ++linearCounter, "request");
+		return true;
 	}
 
-	private boolean innerHandleProbeRequest(PeerNode src, long id, Long lid, double target, double best, 
-			double nearest, short htl, short counter, boolean checkRecent, boolean canReject, ProbeCallback cb) {
+	static final int MAX_LOCS_NOT_VISITED = 10;
+	static final int MAX_FORKS = 2;
+	
+	/**
+	 * 
+	 * @param src
+	 * @param id
+	 * @param lid
+	 * @param target
+	 * @param best
+	 * @param nearest Best-so-far for normal routing purposes.
+	 * @param htl
+	 * @param counter
+	 * @param checkRecent
+	 * @param loadLimitRequest True if this is a new request which can be rejected due to load, false if it's an existing
+	 * request which we should handle anyway.
+	 * @param cb
+	 * @param locsNotVisited 
+	 * @param maxDistance 
+	 * @param dontReject If true, don't reject the request, simply return false and the caller will handle it.
+	 * @return True unless we rejected the request (due to load, route not found etc), or would have if it weren't for dontReject.
+	 */
+	private boolean innerHandleProbeRequest(PeerNode src, long id, Long lid, final double target, double best, 
+			double nearest, short htl, short counter, boolean checkRecent, boolean loadLimitRequest, 
+			boolean fromRejection, boolean isNew, ProbeCallback cb, Vector locsNotVisited, double maxDistance, boolean dontReject,
+			short linearCounter, String callerReason) {
+		if(fromRejection) {
+			nearest = furthestLoc(target); // reject CANNOT change nearest, because it's from a dead-end; "improving"
+			// nearest will only result in the request being truncated
+			// However it CAN improve best, because we want an accurate "best"
+		}
 		short max = node.maxHTL();
 		if(htl > max) htl = max;
 		if(htl <= 1) htl = 1;
 		ProbeContext ctx = null;
 		boolean rejected = false;
-		boolean isNew = false;
 		synchronized(recentProbeContexts) {
 			if(checkRecent) {
 				long now = System.currentTimeMillis();
-				if(now - tLastReceivedProbeRequest < 500) {
+				if(now - tLastReceivedProbeRequest < 500 && loadLimitRequest) {
 					rejected = true;
 				} else {
 					tLastReceivedProbeRequest = now;
-					counter++; // Accepted it; another hop
 				}
 			}
+			counter++; // Increment on every hop even if we reject it, this makes it easier to read the trace
 			if(!rejected) {
 				ctx = (ProbeContext) recentProbeContexts.get(lid);
 				if(ctx == null) {
-					ctx = new ProbeContext(id, target, best, nearest, htl, counter, src, cb);
-					isNew = true;
+					if(isNew) {
+						ctx = new ProbeContext(id, target, best, nearest, htl, counter, src, cb);
+					} else {
+						Logger.error(this, "Not creating new context for: "+id);
+						return false;
+					}
 				}
 				recentProbeContexts.push(lid, ctx); // promote or add
 				while(recentProbeContexts.size() > MAX_PROBE_CONTEXTS)
 					recentProbeContexts.popValue();
 			}
 		}
+		PeerNode origSource = ctx.getSource();
+		if(linearCounter < 0) linearCounter = ctx.linearCounter;
+		ctx.linearCounter = linearCounter;
+		if(locsNotVisited != null) {
+			if(logMINOR)
+				Logger.minor(this, "Locs not visited: "+locsNotVisited);
+		}
+		if(fromRejection) {
+			// Rejected by a dead-end, will not return us a notVisitedList.
+			// Would be pointless.
+			locsNotVisited = ctx.notVisitedList;
+		}
+		
 		// Add source
 		if(src != null) ctx.visitedPeers.add(src);
 		if(rejected) {
-			// Reject: rate limit
-			Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_OVERLOAD);
-			try {
-				src.sendAsync(reject, null, 0, null);
-			} catch (NotConnectedException e) {
-				Logger.error(this, "Not connected rejecting a probe request from "+src);
+			if(!dontReject) {
+				// Reject: rate limit
+				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_OVERLOAD, linearCounter);
+				try {
+					src.sendAsync(reject, null, 0, null);
+				} catch (NotConnectedException e) {
+					Logger.error(this, "Not connected rejecting a probe request from "+src);
+				}
 			}
-			return true;
+			return false;
 		}
-		// FIXME Update any important values on ctx
 		if(ctx.counter < counter) ctx.counter = counter;
-		double oldDist = Math.abs(PeerManager.distance(ctx.nearest, target));
-		double newDist = Math.abs(PeerManager.distance(nearest, target));
-		// FIXME use this elsewhere? Does it make sense?
 		if(logMINOR)
-			Logger.minor(this, "ctx.nearest="+ctx.nearest+", nearest="+nearest+", target="+target+", oldDist="+oldDist+", newDist="+newDist+", htl="+htl+", ctx.htl="+ctx.htl);
-		if(oldDist > newDist) {
+			Logger.minor(this, "ctx.nearest="+ctx.nearest+", nearest="+nearest+", target="+target+", htl="+htl+", ctx.htl="+ctx.htl);
+		if(ctx.htl > htl) {
+			// Rejected can reduce HTL
 			ctx.htl = htl;
-			ctx.nearest = nearest;
-			if(logMINOR)
-				Logger.minor(this, "oldDist ("+oldDist+") > newDist ("+newDist+ ')');
-		} else if(Math.abs(oldDist - newDist) < Double.MIN_VALUE*2) {
-			// oldDist == newDist
-			if(!isNew) {
-				// Rejected. DO NOT DECREMENT: Will be decremented later.
-				// A rejector cannot increase the HTL unless it moves us closer to the target.
-				if(htl > ctx.htl)
-					htl = ctx.htl;
-				else
-					ctx.htl = htl;
-			}
-			if(logMINOR)
-				Logger.minor(this, "Rejected (or new): htl="+htl);
-		} else {
-			Logger.error(this, "Distance increased: "+oldDist+" -> "+newDist+" htl: "+ctx.htl+" -> "+htl+" , using old HTL and dist");
-			htl = ctx.htl;
-			nearest = ctx.nearest;
 		}
 		Logger.minor(this, "htl="+htl+", nearest="+nearest+", ctx.htl="+ctx.htl+", ctx.nearest="+ctx.nearest);
 
 		PeerNode[] peers = node.peers.connectedPeers;
 
 		double myLoc = node.getLocation();
+		for(int i=0;i<locsNotVisited.size();i++) {
+			double loc = ((Double) locsNotVisited.get(i)).doubleValue();
+			if(Math.abs(loc - myLoc) < Double.MIN_VALUE * 2) {
+				locsNotVisited.remove(i);
+				break;
+			}
+		}
 		// Update best
 
 		if(myLoc > target && myLoc < best)
@@ -562,7 +627,7 @@ public class NodeDispatcher implements Dispatcher {
 			best = ctx.best;
 
 		for(int i=0;i<peers.length;i++) {
-			double loc = peers[i].getLocation().getValue();
+			double loc = peers[i].getLocation();
 			if(logMINOR) Logger.minor(this, "Location: "+loc);
 			// We are only interested in locations greater than the target
 			if(loc <= (target + 2*Double.MIN_VALUE)) {
@@ -577,15 +642,24 @@ public class NodeDispatcher implements Dispatcher {
 
 		// Update nearest, htl
 
-		if(PeerManager.distance(myLoc, target) < PeerManager.distance(nearest, target)) {
+		// Rejected, or even reply, cannot make nearest *worse* and thereby prolong the request.
+		// In fact, rejected probe requests result in clearing nearest at the beginning of the function, so it is vital
+		// that we restore it here.
+		if(Location.distance(ctx.nearest, target, true) < Location.distance(nearest, target, true)) {
+			nearest = ctx.nearest;
+		}
+		
+		// If we are closer to the target than nearest, update nearest and reset HTL, else decrement HTL
+		if(Location.distance(myLoc, target, true) < Location.distance(nearest, target, true)) {
 			if(logMINOR)
 				Logger.minor(this, "Updating nearest to "+myLoc+" from "+nearest+" for "+target+" and resetting htl from "+htl+" to "+max);
-			nearest = myLoc;
+			if(Math.abs(nearest - myLoc) > Double.MIN_VALUE * 2)
+				nearest = myLoc;
 			htl = max;
 			ctx.nearest = nearest;
 			ctx.htl = htl;
 		} else {
-			htl = node.decrementHTL(src, htl);
+			htl = node.decrementHTL(origSource, htl);
 			ctx.htl = htl;
 			if(logMINOR)
 				Logger.minor(this, "Updated htl to "+htl+" - myLoc="+myLoc+", target="+target+", nearest="+nearest);
@@ -593,58 +667,93 @@ public class NodeDispatcher implements Dispatcher {
 
 		// Complete ?
 		if(htl == 0) {
-			if(src != null) {
+			if(origSource != null) {
 				// Complete
-				Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++);
+				Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++, linearCounter);
+				Message sub = DMT.createFNPBestRoutesNotTaken((Double[])locsNotVisited.toArray(new Double[locsNotVisited.size()]));
+				complete.addSubMessage(sub);
 				try {
-					src.sendAsync(complete, null, 0, null);
+					origSource.sendAsync(complete, null, 0, null);
 				} catch (NotConnectedException e) {
 					Logger.error(this, "Not connected completing a probe request from "+src);
 				}
-				return true;
+				return true; // counts as success
 			} else {
-				complete("success", target, best, nearest, id, ctx, counter);
+				complete("success", target, best, nearest, id, ctx, counter, linearCounter);
 			}
 		}
 
 		// Otherwise route it
 
-		HashSet visited = ctx.visitedPeers;
+		WeakHashSet visited = ctx.visitedPeers;
 
 		while(true) {
 
-			PeerNode pn = node.peers.closerPeer(src, visited, null, target, true, false, 965);
+			Vector newBestLocs = new Vector();
+			newBestLocs.addAll(locsNotVisited);
+			PeerNode pn = node.peers.closerPeer(src, visited, null, target, true, false, 965, newBestLocs, maxDistance);
+			
+			if(logMINOR)
+				Logger.minor(this, "newBestLocs (unsorted): "+newBestLocs);
+			
+			Double[] locs = (Double[]) newBestLocs.toArray(new Double[newBestLocs.size()]);
+			Arrays.sort(locs, new Comparator() {
+				public int compare(Object arg0, Object arg1) {
+					double d0 = ((Double) arg0).doubleValue();
+					double d1 = ((Double) arg1).doubleValue();
+					double dist0 = Location.distance(d0, target, true);
+					double dist1 = Location.distance(d1, target, true);
+					if(dist0 < dist1) return -1; // best at the beginning
+					if(dist0 > dist1) return 1;
+					return 0; // should not happen
+				}
+			});
+			locsNotVisited.clear();
+			for(int i=0;i<Math.min(MAX_LOCS_NOT_VISITED, locs.length);i++)
+				locsNotVisited.add(locs[i]);
+			
+			if(logMINOR)
+				Logger.minor(this, "newBestLocs: "+locsNotVisited);
+			
+			Message sub = DMT.createFNPBestRoutesNotTaken((Double[])locsNotVisited.toArray(new Double[locsNotVisited.size()]));
+			
+			ctx.notVisitedList = locsNotVisited;
 
 			if(pn == null) {
 				// Can't complete, because some HTL left
 				// Reject: RNF
-				if(canReject) {
-					Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_RNF);
-					try {
-						src.sendAsync(reject, null, 0, null);
-					} catch (NotConnectedException e) {
-						Logger.error(this, "Not connected rejecting a probe request from "+src);
+				if(!dontReject) {
+					if(src != null) {
+						Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_RNF, linearCounter);
+						reject.addSubMessage(sub);
+						try {
+							src.sendAsync(reject, null, 0, null);
+						} catch (NotConnectedException e) {
+							Logger.error(this, "Not connected rejecting a probe request from "+src);
+						}
+					} else {
+						complete("RNF", target, best, nearest, id, ctx, counter, linearCounter);
 					}
-				} else {
-					complete("RNF", target, best, nearest, id, ctx, counter);
 				}
-				return true;
+				return false;
 			}
 
 			visited.add(pn);
 
-			if(src != null) {
+			if(origSource != null) {
 				Message trace =
-					DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers));
+					DMT.createFNPProbeTrace(id, target, nearest, best, htl, counter, myLoc, node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), ctx.forkCount, linearCounter, callerReason, src == null ? -1 : src.swapIdentifier);
+				trace.addSubMessage(sub);
 				try {
-					src.sendAsync(trace, null, 0, null);
+					origSource.sendAsync(trace, null, 0, null);
 				} catch (NotConnectedException e1) {
 					// Ignore
 				}
 			}
 			
 			Message forwarded =
-				DMT.createFNPProbeRequest(id, target, nearest, best, htl, counter++);
+				DMT.createFNPProbeRequest(id, target, nearest, best, htl, counter++, linearCounter);
+			forwarded.addSubMessage(sub);
 			try {
 				pn.sendAsync(forwarded, null, 0, null);
 				return true;
@@ -656,9 +765,9 @@ public class NodeDispatcher implements Dispatcher {
 
 	}
 
-	private void complete(String msg, double target, double best, double nearest, long id, ProbeContext ctx, short counter) {
+	private void complete(String msg, double target, double best, double nearest, long id, ProbeContext ctx, short counter, short linearHops) {
 		Logger.normal(this, "Completed Probe request # "+id+" - RNF - "+msg+": "+best);
-		ctx.cb.onCompleted(msg, target, best, nearest, id, counter);
+		ctx.cb.onCompleted(msg, target, best, nearest, id, counter, linearHops);
 	}
 
 	private void reportTrace(ProbeContext ctx, Message msg) {
@@ -670,21 +779,47 @@ public class NodeDispatcher implements Dispatcher {
 		short counter = msg.getShort(DMT.COUNTER);
 		double location = msg.getDouble(DMT.LOCATION);
 		long nodeUID = msg.getLong(DMT.MY_UID);
+		short linearCount = msg.getShort(DMT.LINEAR_COUNTER);
 		double[] peerLocs = Fields.bytesToDoubles(((ShortBuffer)msg.getObject(DMT.PEER_LOCATIONS)).getData());
 		long[] peerUIDs = Fields.bytesToLongs(((ShortBuffer)msg.getObject(DMT.PEER_UIDS)).getData());
-		ctx.cb.onTrace(uid, target, nearest, best, htl, counter, location, nodeUID, peerLocs, peerUIDs);
+		Message notVisited = msg.getSubMessage(DMT.FNPBestRoutesNotTaken);
+		double[] locsNotVisited = null;
+		if(notVisited != null) {
+			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
+		}
+		short forkCount = msg.getShort(DMT.FORK_COUNT);
+		String reason = msg.getString(DMT.REASON);
+		long prevUID = msg.getLong(DMT.PREV_UID);
+		ctx.cb.onTrace(uid, target, nearest, best, htl, counter, location, nodeUID, peerLocs, peerUIDs, locsNotVisited, forkCount, linearCount, reason, prevUID);
 	}
 
 	private boolean handleProbeReply(Message m, PeerNode src) {
 		long id = m.getLong(DMT.UID);
 		Long lid = new Long(id);
-		double target = m.getDouble(DMT.TARGET_LOCATION);
+		final double target = m.getDouble(DMT.TARGET_LOCATION);
 		double best = m.getDouble(DMT.BEST_LOCATION);
 		double nearest = m.getDouble(DMT.NEAREST_LOCATION);
 		short counter = m.getShort(DMT.COUNTER);
+		short linearCounter = m.getShort(DMT.LINEAR_COUNTER);
 		if(logMINOR)
 			Logger.minor(this, "Probe reply: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest);
-		// Just propagate back to source
+		
+		// New backtracking algorithm
+		
+		// Allow forking on the way home - but only if the location we'd fork to would be at least as good as the third best location seen but not visited so far.
+		
+		// First get the list of not visited so far nodes
+		
+		Message notVisited = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
+		double[] locsNotVisited = null;
+		Vector notVisitedList = new Vector();
+		if(notVisited != null) {
+			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
+			for(int i=0;i<locsNotVisited.length;i++)
+				notVisitedList.add(new Double(locsNotVisited[i]));
+		}
+
+		// Find it
 		ProbeContext ctx;
 		synchronized(recentProbeContexts) {
 			ctx = (ProbeContext) recentProbeContexts.get(lid);
@@ -692,21 +827,82 @@ public class NodeDispatcher implements Dispatcher {
 				Logger.normal(this, "Could not forward probe reply back to source for ID "+id);
 				return false;
 			}
-			recentProbeContexts.push(lid, ctx); // promote or add
+			recentProbeContexts.push(lid, ctx); // promote
 			while(recentProbeContexts.size() > MAX_PROBE_CONTEXTS)
 				recentProbeContexts.popValue();
 		}
+		PeerNode origSource = (PeerNode) ctx.getSource();
 
-		if(ctx.src != null) {
-			Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++);
+		Message sub = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
+
+		try {
+			// Send a completion trace
+			PeerNode[] peers = node.getConnectedPeers();
+			Message trace =
+				DMT.createFNPProbeTrace(id, target, nearest, best, ctx.htl, counter, node.getLocation(), node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), ctx.forkCount, linearCounter, "replying", src == null ? -1 : src.swapIdentifier);
+			trace.addSubMessage(sub);
 			try {
-				ctx.src.sendAsync(complete, null, 0, null);
+				origSource.sendAsync(trace, null, 0, null);
+			} catch (NotConnectedException e1) {
+				// Ignore
+			}
+		} catch (Throwable t) {
+			Logger.error(this, "Could not send completion trace: "+t, t);
+		}
+		
+		// Maybe fork
+		
+		
+		
+		try {
+			double furthestDist = 0.0;
+			if(notVisitedList.size() > 0) {
+				if(ctx.forkCount < MAX_FORKS) {
+					ctx.forkCount++;
+					
+					Double[] locs = (Double[]) notVisitedList.toArray(new Double[notVisitedList.size()]);
+					Arrays.sort(locs, new Comparator() {
+						public int compare(Object arg0, Object arg1) {
+							double d0 = ((Double) arg0).doubleValue();
+							double d1 = ((Double) arg1).doubleValue();
+							double dist0 = Location.distance(d0, target, true);
+							double dist1 = Location.distance(d1, target, true);
+							if(dist0 < dist1) return -1; // best at the beginning
+							if(dist0 > dist1) return 1;
+							return 0; // should not happen
+						}
+					});
+					
+					double mustBeBetterThan = ((Double)locs[Math.min(3,locs.length)]).doubleValue();
+					
+					for(int i=0;i<notVisitedList.size();i++) {
+						double loc = ((Double)(notVisitedList.get(i))).doubleValue();
+						double dist = Location.distance(loc, target);
+						if(dist > furthestDist) {
+							furthestDist = dist;
+						}
+					}
+					if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, false, null, notVisitedList, mustBeBetterThan, true, linearCounter, "backtracking"))
+						return true;
+				}
+			}
+		} catch (Throwable t) {
+			// If something happens during the fork attempt, just propagate it
+			Logger.error(this, "Caught "+t+" while trying to fork", t);
+		}
+		
+		// Just propagate back to source
+		if(origSource != null) {
+			Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++, linearCounter);
+			if(sub != null) complete.addSubMessage(sub);
+			try {
+				origSource.sendAsync(complete, null, 0, null);
 			} catch (NotConnectedException e) {
-				Logger.error(this, "Not connected completing a probe request from "+ctx.src+" (forwarding completion from "+src+ ')');
+				Logger.error(this, "Not connected completing a probe request from "+origSource+" (forwarding completion from "+src+ ')');
 			}
 		} else {
 			if(ctx.cb != null)
-				complete("Completed", target, best, nearest, id, ctx, counter);
+				complete("Completed", target, best, nearest, id, ctx, counter, linearCounter);
 		}
 		return true;
 	}
@@ -718,8 +914,17 @@ public class NodeDispatcher implements Dispatcher {
 		double best = m.getDouble(DMT.BEST_LOCATION);
 		double nearest = m.getDouble(DMT.NEAREST_LOCATION);
 		short counter = m.getShort(DMT.COUNTER);
+		Message notVisited = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
+		double[] locsNotVisited = null;
+		if(notVisited != null) {
+			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
+		}
 		if(logMINOR)
-			Logger.minor(this, "Probe trace: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest);
+			Logger.minor(this, "Probe trace: "+id+ ' ' +target+ ' ' +best+ ' ' +nearest+' '+counter);
+		if(locsNotVisited != null) {
+			if(logMINOR)
+				Logger.minor(this, "Locs not visited: "+StringArray.toString(locsNotVisited));
+		}
 		// Just propagate back to source
 		ProbeContext ctx;
 		synchronized(recentProbeContexts) {
@@ -733,11 +938,12 @@ public class NodeDispatcher implements Dispatcher {
 				recentProbeContexts.popValue();
 		}
 
-		if(ctx.src != null) {
+		PeerNode origSource = ctx.getSource();
+		if(origSource != null) {
 			try {
-				ctx.src.sendAsync(m, null, 0, null);
+				origSource.sendAsync(m, null, 0, null);
 			} catch (NotConnectedException e) {
-				Logger.error(this, "Not connected forwarding trace to "+ctx.src+" (from "+src+ ')');
+				Logger.error(this, "Not connected forwarding trace to "+origSource+" (from "+src+ ')');
 			}
 		} else {
 			if(ctx.cb != null)
@@ -770,7 +976,16 @@ public class NodeDispatcher implements Dispatcher {
 				recentProbeContexts.popValue();
 		}
 
-		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, null);
+		Message notVisited = m.getSubMessage(DMT.FNPBestRoutesNotTaken);
+		double[] locsNotVisited = null;
+		Vector notVisitedList = new Vector();
+		if(notVisited != null) {
+			locsNotVisited = Fields.bytesToDoubles(((ShortBuffer)notVisited.getObject(DMT.BEST_LOCATIONS_NOT_VISITED)).getData());
+			for(int i=0;i<locsNotVisited.length;i++)
+				notVisitedList.add(new Double(locsNotVisited[i]));
+		}
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, false, null, notVisitedList, 2.0, true, (short)-1, "rejected");
+		return true;
 	}
 
 	public void startProbe(double d, ProbeCallback cb) {
@@ -780,10 +995,46 @@ public class NodeDispatcher implements Dispatcher {
 			recentProbeRequestIDs.push(ll);
 		}
 		double nodeLoc = node.getLocation();
-		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : 1.0, nodeLoc, node.maxHTL(), (short)0, false, false, cb);
+		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : furthestGreater(d), nodeLoc, node.maxHTL(), (short)0, false, false, false, true, cb, new Vector(), 2.0, false, (short)-1, "start");
 	}
 	
+	private double furthestLoc(double d) {
+		if(d > 0.5) return d - 0.5;
+		return d + 0.5;
+	}
+	
+	private double furthestGreater(double d) {
+		if(d < 0.5) return d + 0.5;
+		return 1.0;
+	}
+
 	void start(NodeStats stats) {
 		this.nodeStats = stats;
+	}
+
+	public static String peersUIDsToString(long[] peerUIDs, double[] peerLocs) {
+		StringBuffer sb = new StringBuffer(peerUIDs.length*23+peerLocs.length*26);
+		int min=Math.min(peerUIDs.length, peerLocs.length);
+		for(int i=0;i<min;i++) {
+			double loc = peerLocs[i];
+			long uid = peerUIDs[i];
+			sb.append(loc);
+			sb.append('=');
+			sb.append(uid);
+			if(i != min-1)
+				sb.append('|');
+		}
+		if(peerUIDs.length > min) {
+			for(int i=min;i<peerUIDs.length;i++) {
+				sb.append("|U:");
+				sb.append(peerUIDs[i]);
+			}
+		} else if(peerLocs.length > min) {
+			for(int i=min;i<peerLocs.length;i++) {
+				sb.append("|L:");
+				sb.append(peerLocs[i]);
+			}
+		}
+		return sb.toString();
 	}
 }

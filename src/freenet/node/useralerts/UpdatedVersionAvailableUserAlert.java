@@ -7,6 +7,7 @@ import freenet.l10n.L10n;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.RevocationChecker;
 import freenet.support.HTMLNode;
+import freenet.support.TimeUtil;
 
 public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	private final NodeUpdateManager updater;
@@ -82,9 +83,9 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 		sb.append(' ');
 		
 		if(updater.isArmed() && updater.inFinalCheck()) {
-			sb.append(l10n("finalCheck", new String[] { "count", "max" }, 
+			sb.append(l10n("finalCheck", new String[] { "count", "max", "time" }, 
 					new String[] { Integer.toString(updater.getRevocationDNFCounter()), 
-						Integer.toString(RevocationChecker.REVOCATION_DNF_MIN) }));
+						Integer.toString(RevocationChecker.REVOCATION_DNF_MIN), TimeUtil.formatTime(updater.timeRemainingOnCheck()) }));
 			sb.append(' ');
 		} else if(updater.isArmed()) {
 			sb.append(l10n("armed"));

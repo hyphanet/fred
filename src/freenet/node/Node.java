@@ -8,7 +8,6 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -16,10 +15,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -28,10 +24,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.MissingResourceException;
-import java.util.zip.DeflaterOutputStream;
+import java.util.Random;
 
-import net.i2p.util.NativeBigInteger;
-
+import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.sleepycat.je.DatabaseException;
@@ -48,23 +43,19 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.LongOption;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
-import freenet.crypt.DSA;
-import freenet.crypt.DSAGroup;
-import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DSASignature;
-import freenet.crypt.Global;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
+import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
+import freenet.io.comm.MessageCore;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.io.comm.UdpSocketManager;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -74,8 +65,6 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
-import freenet.keys.FreenetURI;
-import freenet.keys.InsertableClientSSK;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
@@ -88,24 +77,25 @@ import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
-import freenet.node.useralerts.N2NTMUserAlert;
+import freenet.node.useralerts.OpennetUserAlert;
+import freenet.node.useralerts.TimeSkewDetectedUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
-import freenet.support.Base64;
 import freenet.support.DoubleTokenBucket;
+import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
-import freenet.support.IllegalBase64Exception;
 import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
@@ -117,34 +107,13 @@ import freenet.support.api.StringCallback;
 /**
  * @author amphibian
  */
-public class Node {
+public class Node implements TimeSkewDetectorCallback {
 
 	private static boolean logMINOR;
 	
-	static class NodeBindtoCallback implements StringCallback {
-		
-		final Node node;
-		
-		NodeBindtoCallback(Node n) {
-			this.node = n;
-		}
-		
-		public String get() {
-			if(node.getBindTo()!=null)
-				return node.getBindTo();
-			else
-				return "0.0.0.0";
-		}
-		
-		public void set(String val) throws InvalidConfigValueException {
-			if(val.equals(get())) return;
-			// FIXME why not? Can't we use freenet.io.NetworkInterface like everywhere else, just adapt it for UDP?
-			throw new InvalidConfigValueException("Cannot be updated on the fly");
-		}
-	}
-	
 	private static MeaningfulNodeNameUserAlert nodeNameUserAlert;
 	private static BuildOldAgeUserAlert buildOldAgeUserAlert;
+	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
 	
 	public class NodeNameCallback implements StringCallback{
 			Node node;
@@ -162,12 +131,12 @@ public class Node {
 			}
 
 			public void set(String val) throws InvalidConfigValueException {
+				if(get().equals(val)) return;
+				else if(val.length() > 128)
+					throw new InvalidConfigValueException("The given node name is too long ("+val+')');
+				else if("".equals(val))
+					val = "~none~";
 				myName = val;
-				if(myName.startsWith("Node id|")|| myName.equals("MyFirstFreenetNode")){
-					clientCore.alerts.register(nodeNameUserAlert);
-				}else{
-					clientCore.alerts.unregister(nodeNameUserAlert);
-				}
 			}
 	}
 	
@@ -256,9 +225,6 @@ public class Node {
 	static final long TESTNET_MIN_MAX_ZIPPED_LOGFILES = 512*1024*1024;
 	static final String TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING = "512M";
 	
-	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
-	final int portNumber;
-
 	/** Datastore directory */
 	private final File storeDir;
 
@@ -311,22 +277,6 @@ public class Node {
 	private final HashSet transferringRequestHandlers;
 	/** CHKInsertSender's currently running, by KeyHTLPair */
 	private final HashMap insertSenders;
-	/** My crypto group */
-	private DSAGroup myCryptoGroup;
-	/** My private key */
-	private DSAPrivateKey myPrivKey;
-	/** My public key */
-	private DSAPublicKey myPubKey;
-	
-	/** My ARK SSK private key */
-	InsertableClientSSK myARK;
-	/** My ARK sequence number */
-	long myARKNumber;
-	// FIXME remove old ARK support
-	/** My old ARK SSK private key */
-	InsertableClientSSK myOldARK;
-	/** My old ARK sequence number */
-	long myOldARKNumber;
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
 	
@@ -345,20 +295,9 @@ public class Node {
 	private final HashSet runningCHKPutUIDs;
 	private final HashSet runningSSKPutUIDs;
 	
-	byte[] myIdentity; // FIXME: simple identity block; should be unique
-	/** Hash of identity. Used as setup key. */
-	byte[] identityHash;
-	/** Hash of hash of identity i.e. hash of setup key. */
-	byte[] identityHashHash;
 	/** Semi-unique ID for swap requests. Used to identify us so that the
 	 * topology can be reconstructed. */
 	public long swapIdentifier;
-	/** The signature of the above fieldset */
-	private DSASignature myReferenceSignature = null;
-	/** A synchronization object used while signing the reference fiedlset */
-	private volatile Object referenceSync = new Object();
-	/** An ordered version of the FieldSet, without the signature */
-	private String mySignedReference = null;
 	private String myName;
 	final LocationManager lm;
 	/** My peers */
@@ -369,10 +308,26 @@ public class Node {
 	final File extraPeerDataDir;
 	/** Strong RNG */
 	public final RandomSource random;
-	final UdpSocketManager usm;
-	final FNPPacketMangler packetMangler;
-	final DNSRequester dnsr;
+	/** Weak but fast RNG */
+	public final Random fastWeakRandom;
+	/** The object which handles incoming messages and allows us to wait for them */
+	final MessageCore usm;
+	
+	// Darknet stuff
+	
+	private NodeCrypto darknetCrypto;
+	
+	// Opennet stuff
+	
+	private final NodeCryptoConfig opennetCryptoConfig;
+	private OpennetManager opennet;
+	private boolean passOpennetRefsThroughDarknet;
+	
+	// General stuff
+	
+	public final Executor executor;
 	public final PacketSender ps;
+	final DNSRequester dnsr;
 	final NodeDispatcher dispatcher;
 	static final int MAX_MEMORY_CACHED_PUBKEYS = 1000;
 	final LRUHashtable cachedPubKeys;
@@ -386,35 +341,6 @@ public class Node {
 	public static final short DEFAULT_MAX_HTL = (short)10;
 	public static final int DEFAULT_SWAP_INTERVAL = 2000;
 	private short maxHTL;
-	public static final int EXIT_STORE_FILE_NOT_FOUND = 1;
-	public static final int EXIT_STORE_IOEXCEPTION = 2;
-	public static final int EXIT_STORE_OTHER = 3;
-	public static final int EXIT_STORE_RECONSTRUCT = 27;
-	public static final int EXIT_USM_DIED = 4;
-	public static final int EXIT_YARROW_INIT_FAILED = 5;
-	public static final int EXIT_TEMP_INIT_ERROR = 6;
-	public static final int EXIT_TESTNET_FAILED = 7;
-	public static final int EXIT_MAIN_LOOP_LOST = 8;
-	public static final int EXIT_COULD_NOT_BIND_USM = 9;
-	public static final int EXIT_IMPOSSIBLE_USM_PORT = 10;
-	public static final int EXIT_NO_AVAILABLE_UDP_PORTS = 11;
-	public static final int EXIT_TESTNET_DISABLED_NOT_SUPPORTED = 12;
-	public static final int EXIT_INVALID_STORE_SIZE = 13;
-	public static final int EXIT_BAD_DOWNLOADS_DIR = 14;
-	public static final int EXIT_BAD_NODE_DIR = 15;
-	public static final int EXIT_BAD_TEMP_DIR = 16;
-	public static final int EXIT_COULD_NOT_START_FCP = 17;
-	public static final int EXIT_COULD_NOT_START_FPROXY = 18;
-	public static final int EXIT_COULD_NOT_START_TMCI = 19;
-	public static final int EXIT_CRAPPY_JVM = 255;
-	public static final int EXIT_DATABASE_REQUIRES_RESTART = 20;
-	public static final int EXIT_COULD_NOT_START_UPDATER = 21;
-	public static final int EXIT_EXTRA_PEER_DATA_DIR = 22;
-	public static final int EXIT_THROTTLE_FILE_ERROR = 23;
-	public static final int EXIT_RESTART_FAILED = 24;
-	public static final int EXIT_TEST_ERROR = 25;
-	public static final int EXIT_BAD_BWLIMIT = 26;
-	
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
 	/** Identifier within fproxy messages for simple, short text messages to be displayed on the homepage as useralerts */
@@ -422,7 +348,9 @@ public class Node {
 	/** Identifier within fproxy messages for an offer to transfer a file */
 	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER = 2;
 	/** Identifier within fproxy messages for accepting an offer to transfer a file */
-	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED = 2;
+	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED = 3;
+	/** Identifier within fproxy messages for rejecting an offer to transfer a file */
+	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED = 4;
 	public static final int EXTRA_PEER_DATA_TYPE_N2NTM = 1;
 	public static final int EXTRA_PEER_DATA_TYPE_PEER_NOTE = 2;
 	public static final int EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM = 3;
@@ -432,13 +360,12 @@ public class Node {
 	public final long startupTime;
 	
 	public final NodeClientCore clientCore;
-	final String bindto;
 	
 	// The version we were before we restarted.
 	public int lastVersion;
 	
 	/** NodeUpdater **/
-	public NodeUpdateManager nodeUpdater;
+	public final NodeUpdateManager nodeUpdater;
 	
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
@@ -467,7 +394,7 @@ public class Node {
 	private void readNodeFile(String filename, RandomSource r) throws IOException {
 		// REDFLAG: Any way to share this code with NodePeer?
 		FileInputStream fis = new FileInputStream(filename);
-		InputStreamReader isr = new InputStreamReader(fis);
+		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
 		BufferedReader br = new BufferedReader(isr);
 		SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
 		br.close();
@@ -484,34 +411,25 @@ public class Node {
 					e1.initCause(e);
 					throw e1;
 				}
-				if(p.getPort() == portNumber) {
+				if(p.getPort() == getDarknetPortNumber()) {
 					// DNSRequester doesn't deal with our own node
 					ipDetector.setOldIPAddress(p.getFreenetAddress());
 					break;
 				}
 			}
 		}
-		String identity = fs.get("identity");
-		if(identity == null)
-			throw new IOException();
-		try {
-			myIdentity = Base64.decode(identity);
-		} catch (IllegalBase64Exception e2) {
-			throw new IOException();
-		}
-		identityHash = SHA256.digest(myIdentity);
-		identityHashHash = SHA256.digest(identityHash);
-		swapIdentifier = Fields.bytesToLong(identityHashHash);
+		
+		darknetCrypto.readCrypto(fs);
+		
+		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
 		String loc = fs.get("location");
-		Location l;
 		try {
-			l = new Location(loc);
+			lm.setLocation(Location.getLocation(loc));
 		} catch (FSParseException e) {
 			IOException e1 = new IOException();
 			e1.initCause(e);
 			throw e1;
 		}
-		lm.setLocation(l);
 		myName = fs.get("myName");
 		if(myName == null) {
 			myName = newName();
@@ -524,97 +442,6 @@ public class Node {
 		} else {
 			lastVersion = Version.getArbitraryBuildNumber(verString);
 		}
-
-		// FIXME: Back compatibility; REMOVE !!
-		try {
-			this.myCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
-			this.myPrivKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup);
-			this.myPubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup);
-		} catch (NullPointerException e) {
-			if(logMINOR) Logger.minor(this, "Caught "+e, e);
-			this.myCryptoGroup = Global.DSAgroupBigA;
-			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
-			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
-		} catch (IllegalBase64Exception e) {
-			if(logMINOR) Logger.minor(this, "Caught "+e, e);
-			this.myCryptoGroup = Global.DSAgroupBigA;
-			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
-			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
-		}
-		InsertableClientSSK ark = null;
-		
-		// ARK
-		
-		boolean arkIsOld = false;
-		
-		String s = fs.get("ark.number");
-		
-		String privARK = fs.get("ark.privURI");
-		try {
-			if(privARK != null) {
-				FreenetURI uri = new FreenetURI(privARK);
-				ark = InsertableClientSSK.create(uri);
-				arkIsOld = ark.isInsecure();
-				if(s == null) {
-					ark = null;
-				} else {
-					try {
-						myARKNumber = Long.parseLong(s);
-					} catch (NumberFormatException e) {
-						myARKNumber = 0;
-						ark = null;
-					}
-				}
-			}
-		} catch (MalformedURLException e) {
-			Logger.minor(this, "Caught "+e, e);
-			ark = null;
-		}
-		if(ark == null) {
-			ark = InsertableClientSSK.createRandom(r, "ark");
-			myARKNumber = 0;
-		}
-		this.myARK = ark;
-		
-		if(arkIsOld) {
-			System.out.println("Creating new ARK, old is insecure");
-			myOldARKNumber = myARKNumber;
-			myOldARK = myARK;
-			myARK = InsertableClientSSK.createRandom(r, "ark");
-			myARKNumber = 0;
-		} else {
-			ark = null;
-			// FIXME remove in a few versions; back compat support for 1012 only
-			// and not very important; remove in 1014??
-			// Note that "old-ark" doesn't work because it is stripped by the manually
-			// posted references filter.
-			s = fs.get("oldark.number");
-			if(s == null) s = fs.get("old-ark.number");
-			privARK = fs.get("oldark.privURI");
-			if(privARK == null) privARK = fs.get("old-ark.privURI");
-			try {
-				if(privARK != null) {
-					FreenetURI uri = new FreenetURI(privARK);
-					ark = InsertableClientSSK.create(uri);
-					arkIsOld = ark.isInsecure();
-					if(s == null) {
-						ark = null;
-					} else {
-						try {
-							myOldARKNumber = Long.parseLong(s);
-						} catch (NumberFormatException e) {
-							myOldARKNumber = 0;
-							ark = null;
-						}
-					}
-				}
-			} catch (MalformedURLException e) {
-				Logger.minor(this, "Caught "+e, e);
-				ark = null;
-			}
-			this.myOldARK = ark;
-			
-		}
 		
 		wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
 	}
@@ -624,18 +451,18 @@ public class Node {
 	}
 
 	public void writeNodeFile() {
-		writeNodeFile(new File(nodeDir, "node-"+portNumber), new File(nodeDir, "node-"+portNumber+".bak"));
+		writeNodeFile(new File(nodeDir, "node-"+getDarknetPortNumber()), new File(nodeDir, "node-"+getDarknetPortNumber()+".bak"));
 	}
 	
 	private void writeNodeFile(File orig, File backup) {
-		SimpleFieldSet fs = exportPrivateFieldSet();
+		SimpleFieldSet fs = darknetCrypto.exportPrivateFieldSet();
 		
 		if(orig.exists()) backup.delete();
 		
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(backup);
-			OutputStreamWriter osr = new OutputStreamWriter(fos);
+			OutputStreamWriter osr = new OutputStreamWriter(fos, "UTF-8");
 			BufferedWriter bw = new BufferedWriter(osr);
 			fs.writeTo(bw);
 			bw.close();
@@ -658,21 +485,11 @@ public class Node {
 
 	private void initNodeFileSettings(RandomSource r) {
 		Logger.normal(this, "Creating new node file from scratch");
-		// Don't need to set portNumber
+		// Don't need to set getDarknetPortNumber()
 		// FIXME use a real IP!
-		myIdentity = new byte[32];
-		r.nextBytes(myIdentity);
-		MessageDigest md = SHA256.getMessageDigest();
-		identityHash = md.digest(myIdentity);
-		identityHashHash = md.digest(identityHash);
-		swapIdentifier = Fields.bytesToLong(identityHashHash);
+		darknetCrypto.initCrypto();
+		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
 		myName = newName();
-		this.myCryptoGroup = Global.DSAgroupBigA;
-		this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
-		this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
-		myARK = InsertableClientSSK.createRandom(r, "ark");
-		myARKNumber = 0;
-		SHA256.returnMessageDigest(md);
 	}
 
 	/**
@@ -682,17 +499,6 @@ public class Node {
 	 */
 	public static void main(String[] args) throws IOException {
 		NodeStarter.main(args);
-	}
-	
-	public static class NodeInitException extends Exception {
-		// One of the exit codes from above
-		public final int exitCode;
-		private static final long serialVersionUID = -1;
-		
-		NodeInitException(int exitCode, String msg) {
-			super(msg+" ("+exitCode+ ')');
-			this.exitCode = exitCode;
-		}
 	}
 	
 	public boolean isUsingWrapper(){
@@ -715,12 +521,13 @@ public class Node {
 	 * @param the loggingHandler
 	 * @throws NodeInitException If the node initialization fails.
 	 */
-	 Node(PersistentConfig config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
+	 Node(PersistentConfig config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
 		// Easy stuff
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vm.vendor")+" JVM version "+System.getProperty("java.vm.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
+		this.executor = executor;
 	  	nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
@@ -729,6 +536,9 @@ public class Node {
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
 		this.random = random;
+		byte buffer[] = new byte[16];
+		random.nextBytes(buffer);
+		this.fastWeakRandom = new MersenneTwister(buffer);
 		cachedPubKeys = new LRUHashtable();
 		lm = new LocationManager(random);
 
@@ -748,8 +558,6 @@ public class Node {
 		runningSSKGetUIDs = new HashSet();
 		runningCHKPutUIDs = new HashSet();
 		runningSSKPutUIDs = new HashSet();
-		dnsr = new DNSRequester(this);
-		ps = new PacketSender(this);
 		bootID = random.nextLong();
 		
 		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
@@ -791,90 +599,23 @@ public class Node {
 		decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
 		decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
 		
+		// Determine where to bind to
+		
+		usm = new MessageCore();
+		
 		// FIXME maybe these configs should actually be under a node.ip subconfig?
 		ipDetector = new NodeIPDetector(this);
 		sortOrder = ipDetector.registerConfigs(nodeConfig, sortOrder);
 		
-		// Determine where to bind to
-		
-		nodeConfig.register("bindTo", "0.0.0.0", sortOrder++, true, true, "Node.bindTo", "Node.bindToLong", new NodeBindtoCallback(this));
-		
-		this.bindto = nodeConfig.getString("bindTo");
-		
 		// Determine the port number
 		
-		nodeConfig.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
-					public int get() {
-						return portNumber;
-					}
-					public void set(int val) throws InvalidConfigValueException {
-						// FIXME implement on the fly listenPort changing
-						// Note that this sort of thing should be the exception rather than the rule!!!!
-						String msg = "Switching listenPort on the fly not yet supported!";
-						Logger.error(this, msg);
-						throw new InvalidConfigValueException(msg);
-					}
-		});
-		
-		int port=-1;
-		try{
-			port=nodeConfig.getInt("listenPort");
-		}catch (Exception e){
-			Logger.error(this, "Caught "+e, e);
-			System.err.println(e);
-			e.printStackTrace();
-			port=-1;
-		}
-		
-		UdpSocketManager u = null;
-		
-		if(port > 65535) {
-			throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Impossible port number: "+port);
-		} else if(port == -1) {
-			// Pick a random port
-			for(int i=0;i<200000;i++) {
-				int portNo = 1024 + random.nextInt(65535-1024);
-				try {
-					u = new UdpSocketManager(portNo, InetAddress.getByName(bindto), this);
-					port = u.getPortNumber();
-					break;
-				} catch (Exception e) {
-					Logger.normal(this, "Could not use port: "+bindto+ ':' +portNo+": "+e, e);
-					System.err.println("Could not use port: "+bindto+ ':' +portNo+": "+e);
-					e.printStackTrace();
-					continue;
-				}
-			}
-			if(u == null)
-				throw new NodeInitException(EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
-		} else {
-			try {
-				u = new UdpSocketManager(port, InetAddress.getByName(bindto), this);
-			} catch (Exception e) {
-				throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
-			}
-		}
-		usm = u;
-		
-		Logger.normal(this, "FNP port created on "+bindto+ ':' +port);
-		System.out.println("FNP port created on "+bindto+ ':' +port);
-		portNumber = port;
+		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false);
+		sortOrder += NodeCryptoConfig.OPTION_COUNT;
+		darknetCrypto = new NodeCrypto(this, false, darknetConfig);
 
-		nodeConfig.register("testingDropPacketsEvery", 0, sortOrder++, true, false, "Node.dropPacketEvery", "Node.dropPacketEveryLong",
-				new IntCallback() {
-
-					public int get() {
-						return usm.getDropProbability();
-					}
-
-					public void set(int val) throws InvalidConfigValueException {
-						usm.setDropProbability(val);
-					}
-			
-		});
-		
-		int dropProb = nodeConfig.getInt("testingDropPacketsEvery");
-		usm.setDropProbability(dropProb);
+		// Must be created after darknetCrypto
+		dnsr = new DNSRequester(this);
+		ps = new PacketSender(this);
 		
 		Logger.normal(Node.class, "Creating node...");
 
@@ -897,7 +638,7 @@ public class Node {
 		
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
 		if(obwLimit <= 0)
-			throw new NodeInitException(EXIT_BAD_BWLIMIT, "Invalid outputBandwidthLimit");
+			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, "Invalid outputBandwidthLimit");
 		outputBandwidthLimit = obwLimit;
 		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) /  obwLimit, obwLimit, (obwLimit * 2) / 5);
 		
@@ -923,7 +664,7 @@ public class Node {
 		
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
 		if(obwLimit <= 0)
-			throw new NodeInitException(EXIT_BAD_BWLIMIT, "Invalid inputBandwidthLimit");
+			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, "Invalid inputBandwidthLimit");
 		inputBandwidthLimit = ibwLimit;
 		if(ibwLimit == -1) {
 			inputLimitDefault = true;
@@ -974,7 +715,7 @@ public class Node {
 		} else {
 			String s = "Testnet mode DISABLED. You may have some level of anonymity. :)\n"+
 				"Note that this version of Freenet is still a very early alpha, and may well have numerous bugs and design flaws.\n"+
-				"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE DARKNET PEERS! They can eavesdrop on your requests with relatively little difficulty at present (correlation attacks etc).";
+				"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE PEERS! They can eavesdrop on your requests with relatively little difficulty at present (correlation attacks etc).";
 			Logger.normal(this, s);
 			System.err.println(s);
 			testnetEnabled = false;
@@ -986,7 +727,7 @@ public class Node {
 		
 		// Directory for node-related files other than store
 		
-		nodeConfig.register("nodeDir", ".", sortOrder++, true, false, "Node.nodeDir", "Node.nodeDirLong", 
+		nodeConfig.register("nodeDir", ".", sortOrder++, true, true /* because can't be changed on the fly, also for packages */, "Node.nodeDir", "Node.nodeDirLong", 
 				new StringCallback() {
 					public String get() {
 						return nodeDir.getPath();
@@ -1002,38 +743,102 @@ public class Node {
 		nodeDir = new File(nodeConfig.getString("nodeDir"));
 		if(!((nodeDir.exists() && nodeDir.isDirectory()) || (nodeDir.mkdir()))) {
 			String msg = "Could not find or create datastore directory";
-			throw new NodeInitException(EXIT_BAD_NODE_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
 		}
 
 		// After we have set up testnet and IP address, load the node file
 		try {
 			// FIXME should take file directly?
-			readNodeFile(new File(nodeDir, "node-"+portNumber).getPath(), random);
+			readNodeFile(new File(nodeDir, "node-"+getDarknetPortNumber()).getPath(), random);
 		} catch (IOException e) {
 			try {
-				readNodeFile(new File("node-"+portNumber+".bak").getPath(), random);
+				System.err.println("Trying to read node file backup ...");
+				readNodeFile(new File(nodeDir, "node-"+getDarknetPortNumber()+".bak").getPath(), random);
 			} catch (IOException e1) {
+				System.err.println("No node file or cannot read, (re)initialising crypto etc");
 				initNodeFileSettings(random);
 			}
 		}
 
 		if(wasTestnet != testnetEnabled) {
 			Logger.error(this, "Switched from testnet mode to non-testnet mode or vice versa! Regenerating pubkey, privkey, and deleting logs.");
-			this.myCryptoGroup = Global.DSAgroupBigA;
-			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, random);
-			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+			// FIXME do we delete logs?
+			darknetCrypto.initCrypto();
 		}
 
+		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
+		
 		// Then read the peers
-		peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
+		peers = new PeerManager(this);
+		peers.tryReadPeers(new File(nodeDir, "peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false);
 		peers.writePeers();
 		peers.updatePMUserAlert();
 
-		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
-		usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
+		// Opennet
+		
+		final SubConfig opennetConfig = new SubConfig("node.opennet", config);
+		
+		// Can be enabled on the fly
+		opennetConfig.register("enabled", false, 0, false, true, "Node.opennetEnabled", "Node.opennetEnabledLong", new BooleanCallback() {
+			public boolean get() {
+				synchronized(Node.this) {
+					return opennet != null;
+				}
+			}
+			public void set(boolean val) throws InvalidConfigValueException {
+				OpennetManager o;
+				synchronized(Node.this) {
+					if(val == (opennet != null)) return;
+					if(val) {
+						try {
+							o = opennet = new OpennetManager(Node.this, opennetCryptoConfig);
+						} catch (NodeInitException e) {
+							throw new InvalidConfigValueException(e.getMessage());
+						}
+					} else {
+						o = opennet;
+						opennet = null;
+					}
+				}
+				if(val) o.start();
+				else o.stop();
+			}
+		});
+		
+		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
+		
+		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 1 /* 0 = enabled */, true);
+		
+		if(opennetEnabled) {
+			opennet = new OpennetManager(this, opennetCryptoConfig);
+			// Will be started later
+		} else {
+			opennet = null;
+		}
+		
+		opennetConfig.finishedInitialization();
+		
+		nodeConfig.register("passOpennetPeersThroughDarknet", true, sortOrder++, true, false, "Node.passOpennetPeersThroughDarknet", "Node.passOpennetPeersThroughDarknetLong",
+				new BooleanCallback() {
+
+					public boolean get() {
+						synchronized(Node.this) {
+							return passOpennetRefsThroughDarknet;
+						}
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						synchronized(Node.this) {
+							passOpennetRefsThroughDarknet = val;
+						}
+					}
+			
+		});
+
+		passOpennetRefsThroughDarknet = nodeConfig.getBoolean("passOpennetPeersThroughDarknet");
 		
 		// Extra Peer Data Directory
-		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+portNumber).toString(), sortOrder++, true, false, "Node.extraPeerDir", "Node.extraPeerDirLong",
+		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+getDarknetPortNumber()).toString(), sortOrder++, true, true /* can't be changed on the fly, also for packages */, "Node.extraPeerDir", "Node.extraPeerDirLong",
 				new StringCallback() {
 					public String get() {
 						return extraPeerDataDir.getPath();
@@ -1047,7 +852,7 @@ public class Node {
 		extraPeerDataDir = new File(nodeConfig.getString("extraPeerDataDir"));
 		if(!((extraPeerDataDir.exists() && extraPeerDataDir.isDirectory()) || (extraPeerDataDir.mkdir()))) {
 			String msg = "Could not find or create extra peer data directory";
-			throw new NodeInitException(EXIT_EXTRA_PEER_DATA_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_EXTRA_PEER_DATA_DIR, msg);
 		}
 		
 		// Name 	 
@@ -1116,12 +921,12 @@ public class Node {
 		maxTotalDatastoreSize = nodeConfig.getLong("storeSize");
 		
 		if(maxTotalDatastoreSize < 0 || maxTotalDatastoreSize < (32 * 1024 * 1024)) { // totally arbitrary minimum!
-			throw new NodeInitException(EXIT_INVALID_STORE_SIZE, "Invalid store size");
+			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid store size");
 		}
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
 		
-		nodeConfig.register("storeDir", ".", sortOrder++, true, false, "Node.storeDirectory", "Node.storeDirectoryLong", 
+		nodeConfig.register("storeDir", ".", sortOrder++, true, true, "Node.storeDirectory", "Node.storeDirectoryLong", 
 				new StringCallback() {
 					public String get() {
 						return storeDir.getPath();
@@ -1136,7 +941,7 @@ public class Node {
 		storeDir = new File(nodeConfig.getString("storeDir"));
 		if(!((storeDir.exists() && storeDir.isDirectory()) || (storeDir.mkdir()))) {
 			String msg = "Could not find or create datastore directory";
-			throw new NodeInitException(EXIT_STORE_OTHER, msg);
+			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, msg);
 		}
 
 		maxStoreKeys = maxTotalKeys / 2;
@@ -1158,7 +963,7 @@ public class Node {
 		envConfig.setLockTimeout(600*1000*1000); // should be long enough even for severely overloaded nodes!
 		// Note that the above is in *MICRO*seconds.
 		
-		File dbDir = new File(storeDir, "database-"+portNumber);
+		File dbDir = new File(storeDir, "database-"+getDarknetPortNumber());
 		dbDir.mkdirs();
 		
 		File reconstructFile = new File(dbDir, "reconstruct");
@@ -1168,7 +973,7 @@ public class Node {
 		
 		boolean tryDbLoad = false;
 		
-		String suffix = "-" + portNumber;
+		String suffix = "-" + getDarknetPortNumber();
 		
 		// This can take some time
 		System.out.println("Starting database...");
@@ -1261,7 +1066,7 @@ public class Node {
 				e1.printStackTrace();
 				System.err.println("Previous error was (tried deleting database and retrying): "+e);
 				e.printStackTrace();
-				throw new NodeInitException(EXIT_STORE_OTHER, e1.getMessage());
+				throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e1.getMessage());
 			}
 		}
 		storeEnvironment = env;
@@ -1326,7 +1131,7 @@ public class Node {
 		} catch (DatabaseException e) {
 			System.err.println("Could not set the database configuration: "+e);
 			e.printStackTrace();
-			throw new NodeInitException(EXIT_STORE_OTHER, e.getMessage());			
+			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());			
 		}
 		
 		try {
@@ -1359,13 +1164,13 @@ public class Node {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
 			System.err.println(msg);
-			throw new NodeInitException(EXIT_STORE_FILE_NOT_FOUND, msg);
+			throw new NodeInitException(NodeInitException.EXIT_STORE_FILE_NOT_FOUND, msg);
 		} catch (IOException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
 			System.err.println(msg);
 			e1.printStackTrace();
-			throw new NodeInitException(EXIT_STORE_IOEXCEPTION, msg);
+			throw new NodeInitException(NodeInitException.EXIT_STORE_IOEXCEPTION, msg);
 		} catch (DatabaseException e1) {
 			try {
 				reconstructFile.createNewFile();
@@ -1377,7 +1182,7 @@ public class Node {
 			Logger.error(this, msg, e1);
 			System.err.println(msg);
 			e1.printStackTrace();
-			throw new NodeInitException(EXIT_STORE_RECONSTRUCT, msg);
+			throw new NodeInitException(NodeInitException.EXIT_STORE_RECONSTRUCT, msg);
 		}
 
 		// FIXME back compatibility
@@ -1398,7 +1203,7 @@ public class Node {
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit);
 		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"));
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"));
 
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
@@ -1433,7 +1238,7 @@ public class Node {
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
 		
-		// And finally, Initialize the plugin manager
+		// Initialize the plugin manager
 		Logger.normal(this, "Initializing Plugin Manager");
 		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this);
@@ -1451,6 +1256,16 @@ public class Node {
 		ctx.maxTempLength = 4096;
 		
 		this.arkFetcherContext = ctx;
+		
+		// Node updater support
+		
+		try {
+			nodeUpdater = NodeUpdateManager.maybeCreate(this, config);
+		} catch (InvalidConfigValueException e) {
+			e.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not create Updater: "+e);
+		}
+		
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
 	}
@@ -1464,7 +1279,11 @@ public class Node {
 		ps.start(nodeStats);
 		peers.start(); // must be before usm
 		nodeStats.start();
-		usm.start(disableHangCheckers);
+		
+		usm.start(ps);
+		darknetCrypto.start(disableHangCheckers);
+		if(opennet != null)
+			opennet.start();
 		
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
@@ -1475,8 +1294,8 @@ public class Node {
 		}
 		Logger.normal(this, "Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
 		System.out.println("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
-		Logger.normal(this, "FNP port is on "+bindto+ ':' +portNumber);
-		System.out.println("FNP port is on "+bindto+ ':' +portNumber);
+		Logger.normal(this, "FNP port is on "+darknetCrypto.bindto+ ':' +getDarknetPortNumber());
+		System.out.println("FNP port is on "+darknetCrypto.bindto+ ':' +getDarknetPortNumber());
 		// Start services
 		
 //		SubConfig pluginManagerConfig = new SubConfig("pluginmanager3", config);
@@ -1486,12 +1305,11 @@ public class Node {
 
 		// Node Updater
 		try{
-			nodeUpdater = NodeUpdateManager.maybeCreate(this, config);
 			Logger.normal(this, "Starting the node updater");
 			nodeUpdater.start();
 		}catch (Exception e) {
 			e.printStackTrace();
-			throw new NodeInitException(EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
 		}
 		
 		// Start testnet handler
@@ -1500,13 +1318,13 @@ public class Node {
 		
 		checkForEvilJVMBug();
 		
-		this.nodeStats.start();
-		
 		// TODO: implement a "required" version if needed
 		if(!nodeUpdater.isEnabled() && (NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER > NodeStarter.extBuildNumber))
 			clientCore.alerts.register(new ExtOldAgeUserAlert());
 		else if(NodeStarter.extBuildNumber == -1)
 			clientCore.alerts.register(new ExtOldAgeUserAlert());
+		
+		clientCore.alerts.register(new OpennetUserAlert(this));
 		
 		this.clientCore.start(config);
 		
@@ -1706,90 +1524,6 @@ public class Node {
 		return L10n.getString("Node."+key, pattern, value);
 	}
 
-	public SimpleFieldSet exportPrivateFieldSet() {
-		SimpleFieldSet fs = exportPublicFieldSet(false);
-		fs.put("dsaPrivKey", myPrivKey.asFieldSet());
-		fs.putSingle("ark.privURI", this.myARK.getInsertURI().toString(false, false));
-		if(myOldARK != null) {
-			fs.putSingle("oldark.privURI", this.myOldARK.getInsertURI().toString(false, false));
-		}
-		return fs;
-	}
-	
-	/**
-	 * Export my node reference so that another node can connect to me.
-	 * Public version, includes everything apart from private keys.
-	 * @see exportPublicFieldSet(boolean forSetup).
-	 */
-	public SimpleFieldSet exportPublicFieldSet() {
-		return exportPublicFieldSet(false);
-	}
-	
-	/**
-	 * Export my reference so that another node can connect to me.
-	 * @param forSetup If true, strip out everything that isn't needed for the references
-	 * exchanged immediately after connection setup. I.e. strip out everything that is invariant,
-	 * or that can safely be exchanged later.
-	 */
-	SimpleFieldSet exportPublicFieldSet(boolean forSetup) {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		// IP addresses
-		Peer[] ips = ipDetector.getPrimaryIPAddress();
-		if(ips != null) {
-			for(int i=0;i<ips.length;i++)
-				fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
-		}
-		// Negotiation types
-		int[] negTypes = packetMangler.supportedNegTypes();
-		fs.put("auth.negTypes", negTypes);
-		fs.putSingle("identity", Base64.encode(myIdentity)); // FIXME !forSetup after 11104 is mandatory
-		fs.put("location", lm.getLocation().getValue()); // FIXME maybe !forSetup; see #943
-		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
-		fs.put("testnet", testnetEnabled); // Vital that peer know this!
-		fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
-		if(testnetEnabled)
-			fs.put("testnetPort", testnetHandler.getPort()); // Useful, saves a lot of complexity
-		fs.putSingle("myName", myName); // FIXME see #942
-		if(!forSetup) {
-			// These are invariant. They cannot change on connection setup. They can safely be excluded.
-			fs.put("dsaGroup", myCryptoGroup.asFieldSet());
-			fs.put("dsaPubKey", myPubKey.asFieldSet());
-		}
-		fs.put("ark.number", myARKNumber); // Can be changed on setup
-		fs.putSingle("ark.pubURI", this.myARK.getURI().toString(false, false)); // Can be changed on setup
-		if(myOldARK != null) {
-			fs.put("oldark.number", myOldARKNumber);
-			fs.putSingle("oldark.pubURI", this.myOldARK.getURI().toString(false, false));
-		}
-		
-		synchronized (referenceSync) {
-			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
-				mySignedReference = fs.toOrderedString();
-				if(logMINOR) Logger.minor(this, "Signing reference:\n"+mySignedReference);
-
-				try{
-					byte[] ref = mySignedReference.getBytes("UTF-8");
-					BigInteger m = new BigInteger(1, SHA256.digest(ref));
-					if(logMINOR) Logger.minor(this, "m = "+m.toString(16));
-					myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, m, random);
-					// FIXME remove this ... eventually
-					if(!DSA.verify(myPubKey, myReferenceSignature, m, false))
-						Logger.error(this, "Signature failed!");
-				} catch(UnsupportedEncodingException e){
-					//duh ?
-					Logger.error(this, "Error while signing the node identity!"+e);
-					System.err.println("Error while signing the node identity!"+e);
-					e.printStackTrace();
-					exit(EXIT_CRAPPY_JVM);
-				}
-			}
-			fs.putSingle("sig", myReferenceSignature.toLongString());
-		}
-		
-		if(logMINOR) Logger.minor(this, "My reference: "+fs.toOrderedString());
-		return fs;
-	}
-
 	/**
 	 * Export volatile data about the node as a SimpleFieldSet
 	 */
@@ -1839,7 +1573,7 @@ public class Node {
 	 */
 	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean resetClosestLocation, boolean localOnly, boolean cache, boolean ignoreStore) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+portNumber);
+		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+getDarknetPortNumber());
 		// In store?
 		KeyBlock chk = null;
 		if(!ignoreStore) {
@@ -2055,8 +1789,16 @@ public class Node {
 				chkDatastore.put(block);
 			}
 			chkDatacache.put(block);
+			if(clientCore != null && clientCore.requestStarters != null)
+				clientCore.requestStarters.chkFetchScheduler.tripPendingKey(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
+		} catch (Throwable t) {
+			System.err.println(t);
+			t.printStackTrace();
+			Logger.error(this, "Caught "+t+" storing data", t);
 		}
 	}
 	
@@ -2078,8 +1820,19 @@ public class Node {
 			}
 			sskDatacache.put(block, false);
 			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey(), deep);
+			if(clientCore != null && clientCore.requestStarters != null)
+				clientCore.requestStarters.sskFetchScheduler.tripPendingKey(block);
+			
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
+		} catch (KeyCollisionException e) {
+			throw e;
+		} catch (Throwable t) {
+			System.err.println(t);
+			t.printStackTrace();
+			Logger.error(this, "Caught "+t+" storing data", t);
 		}
 	}
 	
@@ -2244,7 +1997,7 @@ public class Node {
 		}
 	}
 	
-	public void unlockUID(long uid, boolean ssk, boolean insert) {
+	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail) {
 		if(logMINOR) Logger.minor(this, "Unlocking "+uid);
 		Long l = new Long(uid);
 		completed(uid);
@@ -2253,7 +2006,7 @@ public class Node {
 			set.remove(l);
 		}
 		synchronized(runningUIDs) {
-			if(!runningUIDs.remove(l))
+			if(!runningUIDs.remove(l) && !canFail)
 				throw new IllegalStateException("Could not unlock "+uid+ '!');
 		}
 	}
@@ -2372,34 +2125,6 @@ public class Node {
 			sb.append(peers.getFreevizOutput());
 		  						
 		return sb.toString();
-	}
-
-	/**
-	 * The part of our node reference which is exchanged in the connection setup, compressed.
-	 * @see exportSetupFieldSet()
-	 */
-	public byte[] myCompressedSetupRef() {
-		SimpleFieldSet fs = exportPublicFieldSet(true);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		DeflaterOutputStream gis;
-		gis = new DeflaterOutputStream(baos);
-		OutputStreamWriter osw = new OutputStreamWriter(gis);
-		BufferedWriter bw = new BufferedWriter(osw);
-		try {
-			fs.writeTo(bw);
-		} catch (IOException e) {
-			throw new Error(e);
-		}
-		try {
-			bw.close();
-		} catch (IOException e1) {
-			throw new Error(e1);
-		}
-		byte[] buf = baos.toByteArray();
-		byte[] obuf = new byte[buf.length + 1];
-		obuf[0] = 1;
-		System.arraycopy(buf, 0, obuf, 1, buf.length);
-		return obuf;
 	}
 
 	final LRUQueue recentlyCompletedIDs;
@@ -2526,7 +2251,7 @@ public class Node {
 		// Move the pubkey to the top of the LRU, and fix it if it
 		// was corrupt.
 		cacheKey(clientSSK.pubKeyHash, key, false);
-		return new ClientSSKBlock(block, clientSSK);
+		return ClientSSKBlock.construct(block, clientSSK);
 	}
 
 	private ClientKeyBlock fetch(ClientCHK clientCHK, boolean dontPromote) throws CHKVerifyException {
@@ -2564,23 +2289,27 @@ public class Node {
 		isStopping = true;
 		
 		config.store();
+		
+		// TODO: find a smarter way of doing it not involving any casting
+		Yarrow myRandom = (Yarrow) random;
+		myRandom.write_seed(myRandom.seedfile, true);
 	}
 
 	public NodeUpdateManager getNodeUpdater(){
 		return nodeUpdater;
 	}
 	
-	public PeerNode[] getDarknetConnections() {
-		return peers.myPeers;
+	public DarknetPeerNode[] getDarknetConnections() {
+		return peers.getDarknetPeers();
 	}
 	
-	public boolean addDarknetConnection(PeerNode pn) {
+	public boolean addPeerConnection(PeerNode pn) {
 		boolean retval = peers.addPeer(pn);
 		peers.writePeers();
 		return retval;
 	}
 	
-	public void removeDarknetConnection(PeerNode pn) {
+	public void removePeerConnection(PeerNode pn) {
 		peers.disconnect(pn);
 	}
 
@@ -2589,16 +2318,8 @@ public class Node {
 		ipDetector.onConnectedPeer();
 	}
 	
-	public String getBindTo(){
-		return this.bindto;
-	}
-	
 	public int getFNPPort(){
-		return this.portNumber;
-	}
-	
-	public int getIdentityHash(){
-		return Fields.hashCode(identityHash);
+		return this.getDarknetPortNumber();
 	}
 	
 	public synchronized boolean setNewestPeerLastGoodVersion( int version ) {
@@ -2616,7 +2337,12 @@ public class Node {
 	 * Handle a received node to node message
 	 */
 	public void receivedNodeToNodeMessage(Message m) {
-	  PeerNode source = (PeerNode)m.getSource();
+	  PeerNode src = (PeerNode) m.getSource();
+	  if(!(src instanceof DarknetPeerNode)) {
+		Logger.error(this, "Got N2NTM from opennet node ?!?!?!: "+m+" from "+src);
+		return;
+	  }
+	  DarknetPeerNode source = (DarknetPeerNode)m.getSource();
 	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
 	  if(type == Node.N2N_MESSAGE_TYPE_FPROXY) {
 		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
@@ -2628,10 +2354,10 @@ public class Node {
 			Logger.error(this, "IOException while parsing node to node message data", e);
 			return;
 		}
-		if(fs.get("type") != null) {
-			fs.removeValue("type");
+		if(fs.get("n2nType") != null) {
+			fs.removeValue("n2nType");
 		}
-		fs.putOverwrite("type", Integer.toString(type));
+		fs.putOverwrite("n2nType", Integer.toString(type));
 		if(fs.get("receivedTime") != null) {
 			fs.removeValue("receivedTime");
 		}
@@ -2660,8 +2386,11 @@ public class Node {
 	 * Handle a node to node text message SimpleFieldSet
 	 * @throws FSParseException 
 	 */
-	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, PeerNode source, int fileNumber) throws FSParseException {
+	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, DarknetPeerNode source, int fileNumber) throws FSParseException {
+	  if(logMINOR)
+		  Logger.minor(this, "Got node to node message: \n"+fs);
 	  int overallType = fs.getInt("n2nType", 1); // FIXME remove default
+	  fs.removeValue("n2nType");
 	  if(overallType == Node.N2N_MESSAGE_TYPE_FPROXY) {
 		  handleFproxyNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
 	  } else {
@@ -2669,7 +2398,7 @@ public class Node {
 	  }
 	}
 
-	private void handleFproxyNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, PeerNode source, int fileNumber) throws FSParseException {
+	private void handleFproxyNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, DarknetPeerNode source, int fileNumber) throws FSParseException {
 		int type = fs.getInt("type");
 		if(type == Node.N2N_TEXT_MESSAGE_TYPE_USERALERT) {
 			source.handleFproxyN2NTM(fs, fileNumber);
@@ -2677,6 +2406,8 @@ public class Node {
 			source.handleFproxyFileOffer(fs, fileNumber);
 		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED) {
 			source.handleFproxyFileOfferAccepted(fs, fileNumber);
+		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED) {
+			source.handleFproxyFileOfferRejected(fs, fileNumber);
 		} else {
 			Logger.error(this, "Received unknown fproxy node to node message sub-type '"+type+"' from "+source.getPeer());
 		}
@@ -2686,7 +2417,7 @@ public class Node {
 	  return myName;
 	}
 
-	public UdpSocketManager getUSM() {
+	public MessageCore getUSM() {
 	  return usm;
 	}
 
@@ -2742,11 +2473,17 @@ public class Node {
 			if(peer != null) {
 				nodeIpAndPort = peer.toString();
 			}
-			String name = pn[i].myName;
 			String identity = pn[i].getIdentityString();
-			if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
-			{
-				return pn[i];
+			if(pn[i] instanceof DarknetPeerNode) {
+				DarknetPeerNode dpn = (DarknetPeerNode) pn[i];
+				String name = dpn.myName;
+				if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
+					return pn[i];
+				}
+			} else {
+				if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier)) {
+					return pn[i];
+				}
 			}
 		}
 		return null;
@@ -2769,11 +2506,11 @@ public class Node {
 	}
 
 	public double getLocation() {
-		return lm.loc.getValue();
+		return lm.getLocation();
 	}
 
 	public double getLocationChangeSession() {
-		return lm.locChangeSession;
+		return lm.getLocChangeSession();
 	}
 	
 	public int getNumberOfRemotePeerLocationsSeenInSwaps() {
@@ -2821,14 +2558,6 @@ public class Node {
 		 config.get("node").getOption("name").setValue(key);
 	}
 
-	protected DSAPrivateKey getMyPrivKey() {
-		return myPrivKey;
-	}
-
-	protected DSAPublicKey getMyPubKey() {
-		return myPubKey;
-	}
-
 	public Ticker getTicker() {
 		return ps;
 	}
@@ -2841,15 +2570,15 @@ public class Node {
 	 * Connect this node to another node (for purposes of testing) 
 	 */
 	public void connect(Node node) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		peers.connect(node.exportPublicFieldSet());
+		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler);
 	}
 	
 	public short maxHTL() {
 		return maxHTL;
 	}
 
-	public int getPortNumber() {
-		return portNumber;
+	public int getDarknetPortNumber() {
+		return darknetCrypto.portNumber;
 	}
 
 	public void JEStatsDump() {
@@ -2871,9 +2600,88 @@ public class Node {
 		return inputBandwidthLimit;
 	}
 
-	/** Sign a hash */
-	DSASignature sign(byte[] hash) {
-		return DSA.sign(myCryptoGroup, myPrivKey, new NativeBigInteger(1, hash), random);
+	public synchronized void setTimeSkewDetectedUserAlert() {
+		if(timeSkewDetectedUserAlert == null) {
+			timeSkewDetectedUserAlert = new TimeSkewDetectedUserAlert();
+			clientCore.alerts.register(timeSkewDetectedUserAlert);
+		}
+	}
+
+	public File getNodeDir() {
+		return nodeDir;
+	}
+
+	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+    	return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler);
+	}
+
+	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
+		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
+    	return new OpennetPeerNode(fs, this, opennet.crypto, opennet, peers, false, opennet.crypto.packetMangler);
+	}
+	
+	public boolean addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		// FIXME: perhaps this should throw OpennetDisabledExcemption rather than returing false?
+		if(opennet == null) return false;
+		return opennet.addNewOpennetNode(fs);
+	}
+	
+	public byte[] getOpennetIdentity() {
+		return opennet.crypto.myIdentity;
+	}
+	
+	public byte[] getDarknetIdentity() {
+		return darknetCrypto.myIdentity;
+	}
+
+	public int estimateFullHeadersLengthOneMessage() {
+		return darknetCrypto.packetMangler.fullHeadersLengthOneMessage();
+	}
+
+	public synchronized boolean isOpennetEnabled() {
+		return opennet != null;
+	}
+
+	public SimpleFieldSet exportDarknetPublicFieldSet() {
+		return darknetCrypto.exportPublicFieldSet();
+	}
+
+	public SimpleFieldSet exportOpennetPublicFieldSet() {
+		return opennet.crypto.exportPublicFieldSet();
+	}
+
+	public SimpleFieldSet exportDarknetPrivateFieldSet() {
+		return darknetCrypto.exportPrivateFieldSet();
+	}
+
+	public SimpleFieldSet exportOpennetPrivateFieldSet() {
+		return opennet.crypto.exportPrivateFieldSet();
+	}
+
+	/**
+	 * Should the IP detection code only use the IP address override and the bindTo information,
+	 * rather than doing a full detection?
+	 */
+	public synchronized boolean dontDetect() {
+		// Only return true if bindTo is set on all ports which are in use
+		if(!darknetCrypto.bindto.isRealInternetAddress(false, true)) return false;
+		if(opennet != null) {
+			if(opennet.crypto.bindto.isRealInternetAddress(false, true)) return false;
+		}
+		return true;
+	}
+
+	public int getOpennetFNPPort() {
+		if(opennet == null) return -1;
+		return opennet.crypto.portNumber;
+	}
+
+	OpennetManager getOpennet() {
+		return opennet;
+	}
+	
+	public synchronized boolean passOpennetRefsThroughDarknet() {
+		return passOpennetRefsThroughDarknet;
 	}
 
 }

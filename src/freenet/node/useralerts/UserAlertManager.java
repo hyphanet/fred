@@ -6,6 +6,7 @@ package freenet.node.useralerts;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 import freenet.support.HTMLNode;
 import freenet.l10n.L10n;
@@ -17,16 +18,17 @@ import freenet.node.NodeClientCore;
 public class UserAlertManager implements Comparator {
 
 	private final HashSet alerts;
-	private NodeClientCore core;
+	private final NodeClientCore core;
 
 	public UserAlertManager(NodeClientCore core) {
 		this.core = core;
-		alerts = new HashSet();
+		alerts = new LinkedHashSet();
 	}
 
 	public void register(UserAlert alert) {
 		synchronized (alerts) {
-			alerts.add(alert);
+			if(!alerts.contains(alert))
+				alerts.add(alert);
 		}
 	}
 
@@ -91,7 +93,7 @@ public class UserAlertManager implements Comparator {
 			HTMLNode alertContentNode = alertNode.addChild("div", "class", "infobox-content");
 			alertContentNode.addChild(alert.getHTMLText());
 			if (alert.userCanDismiss()) {
-				HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+				HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" }).addChild("div");
 				dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(alert.hashCode()) });
 				dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 				dismissFormNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", alert.dismissButtonText() });

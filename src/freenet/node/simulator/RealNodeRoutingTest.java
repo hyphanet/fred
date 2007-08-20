@@ -12,9 +12,11 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.LocationManager;
 import freenet.node.Node;
+import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
-import freenet.node.Node.NodeInitException;
+import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
@@ -33,7 +35,7 @@ public class RealNodeRoutingTest {
     static final short MAX_HTL = (short)6;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
-        Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
+        Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         System.out.println("Routing test using real nodes:");
         System.out.println();
         String wd = "realNodeRequestInsertTest";
@@ -43,9 +45,10 @@ public class RealNodeRoutingTest {
         DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
+        Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, /* Node.DEFAULT_SWAP_INTERVAL */ 0, random);
+            	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, /* Node.DEFAULT_SWAP_INTERVAL */ 0, random, executor);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");
@@ -121,7 +124,7 @@ public class RealNodeRoutingTest {
                 Node randomNode2 = randomNode;
                 while(randomNode2 == randomNode)
                     randomNode2 = nodes[random.nextInt(NUMBER_OF_NODES)];
-                Logger.normal(RealNodeRoutingTest.class, "Pinging "+randomNode2.getPortNumber()+" from "+randomNode.getPortNumber());
+                Logger.normal(RealNodeRoutingTest.class, "Pinging "+randomNode2.getDarknetPortNumber()+" from "+randomNode.getDarknetPortNumber());
                 double loc2 = randomNode2.getLocation();
                 int hopsTaken = randomNode.routedPing(loc2);
                 pings++;
@@ -130,13 +133,13 @@ public class RealNodeRoutingTest {
                     avg.report(0.0);
                     avg2.report(0.0);
                     double ratio = (double)successes / ((double)(failures+successes));
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" FAILED from "+randomNode.getPortNumber()+" to "+randomNode2.getPortNumber()+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
+                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" FAILED from "+randomNode.getDarknetPortNumber()+" to "+randomNode2.getDarknetPortNumber()+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
                 } else {
                     successes++;
                     avg.report(1.0);
                     avg2.report(1.0);
                     double ratio = (double)successes / ((double)(failures+successes));
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" success: "+hopsTaken+ ' ' +randomNode.getPortNumber()+" to "+randomNode2.getPortNumber()+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
+                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" success: "+hopsTaken+ ' ' +randomNode.getDarknetPortNumber()+" to "+randomNode2.getDarknetPortNumber()+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
                 }
                 } catch (Throwable t) {
                     Logger.error(RealNodeRoutingTest.class, "Caught "+t, t);

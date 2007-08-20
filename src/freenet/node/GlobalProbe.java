@@ -19,8 +19,8 @@ public class GlobalProbe implements Runnable {
 	GlobalProbe(Node n) {
 		this.node = n;
     	cb = new ProbeCallback() {
-			public void onCompleted(String reason, double target, double best, double nearest, long id, short counter) {
-				String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" hops in "+(System.currentTimeMillis() - lastTime)+", id "+id+"\r\n";
+			public void onCompleted(String reason, double target, double best, double nearest, long id, short counter, short linearCount) {
+				String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" nodes ("+linearCount+" hops) in "+(System.currentTimeMillis() - lastTime)+", id "+id+"\r\n";
 				Logger.error(this, msg);
 				synchronized(GlobalProbe.this) {
 					doneSomething = true;
@@ -30,9 +30,9 @@ public class GlobalProbe implements Runnable {
 				}
 			}
 
-			public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs) {
-				String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+" node UID="+nodeUID+" peer locs="+StringArray.toString(peerLocs)+" peer UIDs="+StringArray.toString(peerUIDs);
-				Logger.error(this, msg);
+			public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs, double[] locsNotVisited, short forkCount, short linearCount, String reason, long prevUID) {
+				String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+" node UID="+nodeUID+" prev UID="+prevUID+" peers="+NodeDispatcher.peersUIDsToString(peerUIDs, peerLocs)+" locs not visited: "+StringArray.toString(locsNotVisited)+" fork count: "+forkCount+" linear count: "+linearCount+" from "+reason;
+				Logger.normal(this, msg);
 			}
     	};
 		

@@ -6,6 +6,7 @@ package freenet.node.fcp;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashSet;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -108,7 +109,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				else
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
-				onFailure(new FetchException(FetchException.BUCKET_ERROR), null);
+				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);
 				getter = null;
 				returnBucket = null;
 				return;
@@ -145,6 +147,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Has already been checked
 		fctx.maxOutputLength = message.maxSize;
 		fctx.maxTempLength = message.maxTempSize;
+		
+		if(message.allowedMIMETypes != null) {
+			fctx.allowedMIMETypes = new HashSet();
+			for(int i=0;i<message.allowedMIMETypes.length;i++) fctx.allowedMIMETypes.add(message.allowedMIMETypes[i]);
+		}
+		
 		this.returnType = message.returnType;
 		this.binaryBlob = message.binaryBlob;
 		Bucket ret = null;
@@ -169,12 +177,15 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				else
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
-				onFailure(new FetchException(FetchException.BUCKET_ERROR), null);
+				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);
 				getter = null;
 				returnBucket = null;
 				return;
 			}
 		}
+		if(ret == null)
+			Logger.error(this, "Impossible: ret = null in FCP constructor for "+this, new Exception("debug"));
 		returnBucket = ret;
 		if(persistenceType != PERSIST_CONNECTION)
 			try {
@@ -250,11 +261,22 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 			try {
 				ret = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), fctx.random, client.server.core.persistentTempBucketFactory);
+				if(ret == null) throw new CannotCreateFromFieldSetException("ret == null");
 			} catch (CannotCreateFromFieldSetException e) {
 				Logger.error(this, "Cannot read: "+this+" : "+e, e);
-				ret = null;
-				finished = false;
-				succeeded = false;
+				try {
+					// Create a new temp bucket
+					if(persistenceType == PERSIST_FOREVER)
+						ret = client.server.core.persistentTempBucketFactory.makeEncryptedBucket();
+					else
+						ret = fctx.bucketFactory.makeBucket(-1);
+				} catch (IOException e1) {
+					Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
+					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);
+					getter = null;
+					returnBucket = null;
+					return;
+				}
 			}
 		} else {
 			throw new IllegalArgumentException();
@@ -265,8 +287,16 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				succeeded = false;
 			}
 		}
+		if(ret == null)
+			Logger.error(this, "Impossible: ret = null in SFS constructor for "+this, new Exception("debug"));
 		returnBucket = ret;
 
+		String[] allowed = fs.getAll("AllowedMIMETypes");
+		if(allowed != null) {
+			fctx.allowedMIMETypes = new HashSet();
+			for(int i=0;i<allowed.length;i++) fctx.allowedMIMETypes.add(allowed[i]);
+		}
+		
 		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
 				client.core.requestStarters.sskFetchScheduler, uri, 
 				fctx, priorityClass, client.lowLevelClient, 
@@ -322,10 +352,26 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		Logger.minor(this, "Succeeded: "+identifier);
 		Bucket data = result.asBucket();
 		if(returnBucket != data && !binaryBlob) {
-			Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data);
-			// Caller guarantees that data == returnBucket
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null);
-			return;
+			boolean failed = true;
+			synchronized(this) {
+				if(finished) {
+					Logger.error(this, "Already finished but onSuccess() for "+this+" data = "+data, new Exception("debug"));
+					data.free();
+					return; // Already failed - bucket error maybe??
+				}
+				if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && returnBucket == null) {
+					// Lost bucket for some reason e.g. bucket error (caused by IOException) on previous try??
+					// Recover...
+					returnBucket = data;
+					failed = false;
+				}
+			}
+			if(failed) {
+				Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data, new Exception("debug"));
+				// Caller guarantees that data == returnBucket
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null);
+				return;
+			}
 		}
 		boolean dontFree = false;
 		// FIXME I don't think this is a problem in this case...? (Disk write while locked..)
@@ -527,6 +573,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fs.putSingle("MaxRetries", Integer.toString(fctx.maxNonSplitfileRetries));
 		fs.putSingle("Finished", Boolean.toString(finished));
 		fs.putSingle("Succeeded", Boolean.toString(succeeded));
+		if(fctx.allowedMIMETypes != null)
+			fs.putOverwrite("AllowedMIMETypes", (String[]) fctx.allowedMIMETypes.toArray(new String[fctx.allowedMIMETypes.size()]));
 		if(finished) {
 			if(succeeded) {
 				fs.putSingle("FoundDataLength", Long.toString(foundDataLength));

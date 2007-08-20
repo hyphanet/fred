@@ -9,11 +9,13 @@ import freenet.support.SimpleFieldSet;
 
 public class GetNode extends FCPMessage {
 
+	final boolean giveOpennetRef;
 	final boolean withPrivate;
 	final boolean withVolatile;
 	static final String NAME = "GetNode";
 	
 	public GetNode(SimpleFieldSet fs) {
+		giveOpennetRef = Fields.stringToBool(fs.get("GiveOpennetRef"), false);
 		withPrivate = Fields.stringToBool(fs.get("WithPrivate"), false);
 		withVolatile = Fields.stringToBool(fs.get("WithVolatile"), false);
 	}
@@ -31,7 +33,7 @@ public class GetNode extends FCPMessage {
 		if(!handler.hasFullAccess()) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetNode requires full access", null, false);
 		}
-		handler.outputHandler.queue(new NodeData(node, withPrivate, withVolatile));
+		handler.outputHandler.queue(new NodeData(node, giveOpennetRef, withPrivate, withVolatile));
 	}
 	
 }

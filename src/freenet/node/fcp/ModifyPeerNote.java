@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import freenet.node.DarknetPeerNode;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
@@ -43,6 +44,10 @@ public class ModifyPeerNote extends FCPMessage {
 			handler.outputHandler.queue(msg);
 			return;
 		}
+		if(!(pn instanceof DarknetPeerNode)) {
+			throw new MessageInvalidException(ProtocolErrorMessage.DARKNET_ONLY, "ModifyPeerNote only available for darknet peers", fs.get("Identifier"), false);
+		}
+		DarknetPeerNode dpn = (DarknetPeerNode) pn;
 		int peerNoteType;
 		try {
 			peerNoteType = fs.getInt("PeerNoteType");
@@ -62,7 +67,7 @@ public class ModifyPeerNote extends FCPMessage {
 			return;
 		}
 		if(peerNoteType == Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT) {
-			pn.setPrivateDarknetCommentNote(noteText);
+			dpn.setPrivateDarknetCommentNote(noteText);
 		} else {
 			FCPMessage msg = new UnknownPeerNoteTypeMessage(peerNoteType);
 			handler.outputHandler.queue(msg);

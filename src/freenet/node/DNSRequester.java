@@ -19,7 +19,7 @@ public class DNSRequester implements Runnable {
 
     DNSRequester(Node node) {
         this.node = node;
-        myThread = new Thread(this, "DNSRequester thread for "+node.portNumber);
+        myThread = new Thread(this, "DNSRequester thread for "+node.getDarknetPortNumber());
         myThread.setDaemon(true);
     }
 

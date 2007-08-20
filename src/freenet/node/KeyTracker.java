@@ -407,8 +407,8 @@ public class KeyTracker {
             super(packetNumber);
             this.createdTime = System.currentTimeMillis();
             if(sendSoon) {
-                activeTime -= 500;
-                urgentTime -= 500;
+                activeTime -= activeDelay;
+                urgentTime -= activeDelay;
             }
         }
         

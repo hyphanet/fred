@@ -18,6 +18,7 @@ import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 
@@ -27,15 +28,17 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		
 		final AwaitingCompletion completion;
 		final BlockTransmitter bt;
+		final Executor executor;
 		
-		public Sender(AwaitingCompletion ac) {
+		public Sender(AwaitingCompletion ac, Executor executor) {
 			this.bt = ac.bt;
 			this.completion = ac;
+			this.executor = executor;
 		}
 		
 		public void run() {
 			try {
-				bt.send();
+				bt.send(executor);
 				if(bt.failedDueToOverload()) {
 					completion.completedTransfer(false);
 				} else {
@@ -75,10 +78,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 		
 		void start() {
-			Sender s = new Sender(this);
-            Thread senderThread = new Thread(s, "Sender for "+uid+" to "+pn.getPeer());
-            senderThread.setDaemon(true);
-            senderThread.start();
+			Sender s = new Sender(this, node.executor);
+			node.executor.execute(s, "Sender for "+uid+" to "+pn.getPeer());
 		}
 		
 		void completed(boolean timeout, boolean success) {
@@ -137,9 +138,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     }
 
 	void start() {
-        Thread t = new Thread(this, "CHKInsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
-        t.setDaemon(true);
-        t.start();
+		node.executor.execute(this, "CHKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
 	}
 
 	static boolean logMINOR;
@@ -247,9 +246,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             PeerNode next;
             // Can backtrack, so only route to nodes closer than we are to target.
             double nextValue;
-            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1);
+            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
             if(next != null)
-                nextValue = next.getLocation().getValue();
+                nextValue = next.getLocation();
             else
                 nextValue = -1.0;
             
@@ -263,7 +262,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             
             Message req;
             synchronized (this) {
-            	if(PeerManager.distance(target, nextValue) > PeerManager.distance(target, closestLocation)) {
+            	if(Location.distance(target, nextValue) > Location.distance(target, closestLocation)) {
             		if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
             		htl = node.decrementHTL(source, htl);
             	}
@@ -572,6 +571,10 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         		notifyAll();
         	}
         }
+        
+        if(status == SUCCESS && next != null)
+        	next.onSuccess(true, false);
+        
         if(logMINOR) Logger.minor(this, "Returning from finish()");
     }
 
@@ -622,16 +625,13 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	private void makeCompletionWaiter() {
 		if(logMINOR)
 			Logger.minor(this, "Creating completion waiter for "+uid);
-		Thread t;
 		synchronized (this) {
 			if(cw == null)
 				cw = new CompletionWaiter();
 			else
 				return;
 		}
-		t = new Thread(cw, "Completion waiter for "+uid);
-		t.setDaemon(true);
-		t.start();
+		node.executor.execute(cw, "Completion waiter for "+uid);
 	}
 	
 	private class CompletionWaiter implements Runnable {

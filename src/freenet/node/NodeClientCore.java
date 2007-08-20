@@ -36,14 +36,15 @@ import freenet.keys.ClientSSKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
+import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
-import freenet.node.Node.NodeInitException;
 import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
+import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
@@ -89,11 +90,11 @@ public class NodeClientCore implements Persistable {
 	public final PersistentEncryptedTempBucketFactory persistentEncryptedTempBucketFactory;
 	
 	public final UserAlertManager alerts;
-	TextModeClientInterfaceServer tmci;
+	final TextModeClientInterfaceServer tmci;
 	TextModeClientInterface directTMCI;
-	FCPServer fcpServer;
+	final FCPServer fcpServer;
 	FProxyToadlet fproxyServlet;
-	SimpleToadletServer toadletContainer;
+	final SimpleToadletServer toadletContainer;
 	// FIXME why isn't this just in fproxy?
 	public BookmarkManager bookmarkManager;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
@@ -110,7 +111,7 @@ public class NodeClientCore implements Persistable {
 	static final long MAX_CACHED_ARCHIVE_DATA = 32*1024*1024; // make a fixed fraction of the store by default? FIXME
 	static final long MAX_ARCHIVE_SIZE = 2*1024*1024; // ??? FIXME
 	static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
-	static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
+	static final int MAX_CACHED_ELEMENTS = 256*1024; // equally arbitrary! FIXME hopefully we can cache many of these though
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS) throws NodeInitException {
 		this.node = node;
@@ -142,7 +143,7 @@ public class NodeClientCore implements Persistable {
 		
 		// Temp files
 		
-		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, false, "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", 
+		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, true, "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", 
 				new StringCallback() {
 					public String get() {
 						return tempDir.getPath();
@@ -157,14 +158,14 @@ public class NodeClientCore implements Persistable {
 		tempDir = new File(nodeConfig.getString("tempDir"));
 		if(!((tempDir.exists() && tempDir.isDirectory()) || (tempDir.mkdir()))) {
 			String msg = "Could not find or create temporary directory";
-			throw new NodeInitException(Node.EXIT_BAD_TEMP_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 		
 		try {
 			tempFilenameGenerator = new FilenameGenerator(random, true, tempDir, "temp-");
 		} catch (IOException e) {
 			String msg = "Could not find or create temporary directory (filename generator)";
-			throw new NodeInitException(Node.EXIT_BAD_TEMP_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
 		// Persistent temp files
@@ -185,7 +186,7 @@ public class NodeClientCore implements Persistable {
 			persistentEncryptedTempBucketFactory = new PersistentEncryptedTempBucketFactory(persistentTempBucketFactory);
 		} catch (IOException e2) {
 			String msg = "Could not find or create persistent temporary directory";
-			throw new NodeInitException(Node.EXIT_BAD_TEMP_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
 		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, 1024);
@@ -214,7 +215,7 @@ public class NodeClientCore implements Persistable {
 		String val = nodeConfig.getString("downloadsDir");
 		downloadDir = new File(val);
 		if(!((downloadDir.exists() && downloadDir.isDirectory()) || (downloadDir.mkdir()))) {
-			throw new NodeInitException(Node.EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
+			throw new NodeInitException(NodeInitException.EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
 		}
 
 		// Downloads allowed, uploads allowed
@@ -273,7 +274,7 @@ public class NodeClientCore implements Persistable {
 		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
 						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
-						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, backgroundBlockEncoder), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, backgroundBlockEncoder, node.executor), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 		// FIXME remove this code, the new behaviour should be handled by all clients
 		
@@ -330,7 +331,7 @@ public class NodeClientCore implements Persistable {
 		// REDFLAG normally we wouldn't use static variables to carry important non-final data, but in this
 		// case it's temporary code which will be removed before 0.7.0.
 		
-		nodeConfig.register("allowInsecureCHKs", true, sortOrder++, true, false, "NodeClientCore.allowInsecureCHK", "NodeClientCore.allowInsecureCHKLong",
+		nodeConfig.register("allowInsecureCHKs", false, sortOrder++, true, false, "NodeClientCore.allowInsecureCHK", "NodeClientCore.allowInsecureCHKLong",
 				new BooleanCallback() {
 
 					public boolean get() {
@@ -345,7 +346,7 @@ public class NodeClientCore implements Persistable {
 		
 		Key.ALLOW_INSECURE_CLIENT_CHKS = nodeConfig.getBoolean("allowInsecureCHKs");
 		
-		nodeConfig.register("allowInsecureSSKs", true, sortOrder++, true, false, "NodeClientCore.allowInsecureSSK", "NodeClientCore.allowInsecureSSKLong",
+		nodeConfig.register("allowInsecureSSKs", false, sortOrder++, true, false, "NodeClientCore.allowInsecureSSK", "NodeClientCore.allowInsecureSSKLong",
 				new BooleanCallback() {
 
 					public boolean get() {
@@ -360,6 +361,40 @@ public class NodeClientCore implements Persistable {
 		
 		Key.ALLOW_INSECURE_CLIENT_SSKS = nodeConfig.getBoolean("allowInsecureSSKs");
 		
+		// This is all part of construction, not of start().
+		// Some plugins depend on it, so it needs to be *created* before they are started.
+		
+		// TMCI
+		try{
+			tmci = TextModeClientInterfaceServer.maybeCreate(node, this, config);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);
+		}
+		
+		// FCP (including persistent requests so needs to start before FProxy)
+		try {
+			fcpServer = FCPServer.maybeCreate(node, this, node.config);
+		} catch (IOException e) {
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
+		} catch (InvalidConfigValueException e) {
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
+		}
+		
+		SubConfig fproxyConfig = new SubConfig("fproxy", config);
+		bookmarkManager = new BookmarkManager(this, fproxyConfig);
+		
+		// FProxy
+		// FIXME this is a hack, the real way to do this is plugins
+		try {
+			toadletContainer = FProxyToadlet.maybeCreateFProxyEtc(this, node, config, fproxyConfig);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
+		} catch (InvalidConfigValueException e) {
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
+		}
+
 	}
 
 	private static String l10n(String key) {
@@ -410,39 +445,14 @@ public class NodeClientCore implements Persistable {
 	public void start(Config config) throws NodeInitException {
 
 		persister.start();
+		if(fcpServer != null)
+			fcpServer.maybeStart();
+		if(toadletContainer != null)
+			toadletContainer.start();
+		if(tmci != null)
+			tmci.start();
 		
-		// TMCI
-		try{
-			TextModeClientInterfaceServer.maybeCreate(node, config);
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new NodeInitException(Node.EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);
-		}
-		
-		// FCP (including persistent requests so needs to start before FProxy)
-		try {
-			fcpServer = FCPServer.maybeCreate(node, this, node.config);
-		} catch (IOException e) {
-			throw new NodeInitException(Node.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
-		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(Node.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
-		}
-		
-		SubConfig fproxyConfig = new SubConfig("fproxy", config);
-		bookmarkManager = new BookmarkManager(this, fproxyConfig);
-		
-		// FProxy
-		// FIXME this is a hack, the real way to do this is plugins
-		try {
-			FProxyToadlet.maybeCreateFProxyEtc(this, node, config, fproxyConfig);
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new NodeInitException(Node.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
-		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(Node.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
-		}
-
-		Thread completer = new Thread(new Runnable() {
+		node.executor.execute(new Runnable() {
 			public void run() {
 				System.out.println("Resuming persistent requests");
 				Logger.normal(this, "Resuming persistent requests");
@@ -454,8 +464,6 @@ public class NodeClientCore implements Persistable {
 				Logger.normal(this, "Completed startup: All persistent requests resumed or restarted");
 			}
 		}, "Startup completion thread");
-		completer.setDaemon(true);
-		completer.start();
 	}
 	
 	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
@@ -525,6 +533,7 @@ public class NodeClientCore implements Persistable {
 			} else {
 				if(rs.hasForwarded() &&
 						((status == RequestSender.DATA_NOT_FOUND) ||
+						(status == RequestSender.RECENTLY_FAILED) ||
 						(status == RequestSender.SUCCESS) ||
 						(status == RequestSender.ROUTE_NOT_FOUND) ||
 						(status == RequestSender.VERIFY_FAILURE))) {
@@ -552,6 +561,8 @@ public class NodeClientCore implements Persistable {
 					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 				case RequestSender.DATA_NOT_FOUND:
 					throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
+				case RequestSender.RECENTLY_FAILED:
+					throw new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED);
 				case RequestSender.ROUTE_NOT_FOUND:
 					throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
 				case RequestSender.TRANSFER_FAILED:
@@ -570,7 +581,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, false, false);
+			node.unlockUID(uid, false, false, true);
 		}
 	}
 
@@ -588,7 +599,7 @@ public class NodeClientCore implements Persistable {
 			try {
 				SSKBlock block = (SSKBlock)o;
 				key.setPublicKey(block.getPubKey());
-				return new ClientSSKBlock(block, key);
+				return ClientSSKBlock.construct(block, key);
 			} catch (SSKVerifyException e) {
 				Logger.error(this, "Does not verify: "+e, e);
 				throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
@@ -633,6 +644,7 @@ public class NodeClientCore implements Persistable {
 			} else {
 				if(rs.hasForwarded() &&
 						((status == RequestSender.DATA_NOT_FOUND) ||
+						(status == RequestSender.RECENTLY_FAILED) ||
 						(status == RequestSender.SUCCESS) ||
 						(status == RequestSender.ROUTE_NOT_FOUND) ||
 						(status == RequestSender.VERIFY_FAILURE))) {
@@ -648,7 +660,7 @@ public class NodeClientCore implements Persistable {
 				try {
 					SSKBlock block = rs.getSSKBlock();
 					key.setPublicKey(block.getPubKey());
-					return new ClientSSKBlock(block, key);
+					return ClientSSKBlock.construct(block, key);
 				} catch (SSKVerifyException e) {
 					Logger.error(this, "Does not verify: "+e, e);
 					throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
@@ -660,6 +672,8 @@ public class NodeClientCore implements Persistable {
 					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 				case RequestSender.DATA_NOT_FOUND:
 					throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
+				case RequestSender.RECENTLY_FAILED:
+					throw new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED);
 				case RequestSender.ROUTE_NOT_FOUND:
 					throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
 				case RequestSender.TRANSFER_FAILED:
@@ -678,7 +692,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, true, false);
+			node.unlockUID(uid, true, false, true);
 		}
 	}
 
@@ -806,7 +820,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, false, true);
+			node.unlockUID(uid, false, true, true);
 		}
 	}
 
@@ -932,7 +946,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, true, true);
+			node.unlockUID(uid, true, true, true);
 		}
 	}
 
@@ -946,10 +960,6 @@ public class NodeClientCore implements Persistable {
 	
 	public FCPServer getFCPServer() {
 		return fcpServer;
-	}
-
-	public void setToadletContainer(SimpleToadletServer server) {
-		toadletContainer = server;
 	}
 
 	public FProxyToadlet getFProxy() {
@@ -966,14 +976,6 @@ public class NodeClientCore implements Persistable {
 
 	public void setFProxy(FProxyToadlet fproxy) {
 		this.fproxyServlet = fproxy;
-	}
-
-	public void setFCPServer(FCPServer fcp) {
-		this.fcpServer = fcp;
-	}
-	
-	public void setTMCI(TextModeClientInterfaceServer server) {
-		this.tmci = server;
 	}
 
 	public TextModeClientInterface getDirectTMCI() {
@@ -1055,5 +1057,33 @@ public class NodeClientCore implements Persistable {
 
 	public SimpleFieldSet persistThrottlesToFieldSet() {
 		return requestStarters.persistToFieldSet();
+	}
+	
+	public Ticker getTicker() {
+		return node.ps;
+	}
+	
+	public Executor getExecutor() {
+		return node.executor;
+	}
+
+	public File getPersistentTempDir() {
+		return persistentTempBucketFactory.getDir();
+	}
+	
+	public File getTempDir() {
+		return tempDir;
+	}
+
+	/**
+	 * Has any client registered an interest in this particular key?
+	 */
+	public boolean clientWantKey(Key key) {
+		if(key instanceof NodeCHK)
+			return requestStarters.chkFetchScheduler.anyWantKey(key);
+		else if(key instanceof NodeSSK)
+			return requestStarters.sskFetchScheduler.anyWantKey(key);
+		else
+			throw new IllegalArgumentException("Not a CHK and not an SSK!");
 	}
 }

@@ -90,10 +90,8 @@ public class RequestStarter implements Runnable {
 				// Create a thread to handle starting the request, and the resulting feedback
 				while(true) {
 					try {
-						Thread t = new Thread(new SenderThread(req), "RequestStarter$SenderThread for "+req);
-						t.setDaemon(true);
-						t.start();
-						if(logMINOR) Logger.minor(this, "Started "+req+" on "+t);
+						core.getExecutor().execute(new SenderThread(req), "RequestStarter$SenderThread for "+req);
+						if(logMINOR) Logger.minor(this, "Started "+req);
 						break;
 					} catch (OutOfMemoryError e) {
 						OOMHandler.handleOOM(e);

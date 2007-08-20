@@ -14,6 +14,7 @@ public class DiskDirPutFile extends DirPutFile {
 
 	final File file;
 	
+	// FIXME implement FileHash support
 	public DiskDirPutFile(SimpleFieldSet subset, String identifier, boolean global) throws MessageInvalidException {
 		super(subset, identifier, global);
 		String s = subset.get("Filename");

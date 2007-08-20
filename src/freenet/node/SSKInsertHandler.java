@@ -55,8 +55,8 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         htl = req.getShort(DMT.HTL);
         closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
         double targetLoc = key.toNormalizedDouble();
-        double myLoc = node.lm.getLocation().getValue();
-        if(PeerManager.distance(targetLoc, myLoc) < PeerManager.distance(targetLoc, closestLoc)) {
+        double myLoc = node.lm.getLocation();
+        if(Location.distance(targetLoc, myLoc) < Location.distance(targetLoc, closestLoc)) {
             closestLoc = myLoc;
             htl = node.maxHTL();
             resetClosestLoc = true;
@@ -83,7 +83,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             Logger.error(this, "Caught "+t, t);
         } finally {
             if(logMINOR) Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
-            node.unlockUID(uid, true, true);
+            node.unlockUID(uid, true, true, false);
         }
     }
 

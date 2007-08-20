@@ -1,34 +1,24 @@
 package freenet.node;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 import net.i2p.util.NativeBigInteger;
-
-import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchResult;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
@@ -53,14 +43,12 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.io.xfer.BulkReceiver;
-import freenet.io.xfer.BulkTransmitter;
+import freenet.io.comm.SocketHandler;
 import freenet.io.xfer.PacketThrottle;
-import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
+import freenet.keys.Key;
 import freenet.keys.USK;
-import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -69,9 +57,6 @@ import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.WouldBlockException;
-import freenet.support.io.FileUtil;
-import freenet.support.io.RandomAccessFileWrapper;
-import freenet.support.io.RandomAccessThing;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -86,37 +71,34 @@ import freenet.support.math.TimeDecayingRunningAverage;
  * code into KeyTracker, which handles all communications to and
  * from this peer over the duration of a single key.
  */
-public class PeerNode implements PeerContext, USKRetrieverCallback {
+public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
-    /** Set to true when we complete a handshake. */
-    private boolean completedHandshake;
-    
     private String lastGoodVersion; 
 	
     /** Set to true based on a relevant incoming handshake from this peer
      *  Set true if this peer has a incompatible older build than we are
      */
-    private boolean verifiedIncompatibleOlderVersion;
+    protected boolean verifiedIncompatibleOlderVersion;
 	
     /** Set to true based on a relevant incoming handshake from this peer
      *  Set true if this peer has a incompatible newer build than we are
      */
-    private boolean verifiedIncompatibleNewerVersion;
+    protected boolean verifiedIncompatibleNewerVersion;
 	
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;
     
+    /** My OutgoingPacketMangler i.e. the object which encrypts packets sent to this node */
+    private final OutgoingPacketMangler outgoingMangler;
+    
     /** Advertised addresses */
-    private Vector nominalPeer;
+    protected Vector nominalPeer;
     
     /** The PeerNode's report of our IP address */
     private Peer remoteDetectedPeer;
     
     /** Is this a testnet node? */
     public final boolean testnetEnabled;
-    
-    /** Name of this node */
-    String myName;
     
     /** Packets sent/received on the current preferred key */
     private KeyTracker currentTracker;
@@ -140,6 +122,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
        
     /** When was isRoutingCompatible() last true? */
     private long timeLastRoutable;
+    
+    /** Time added or restarted (reset on startup unlike peerAddedTime) */
+    private long timeAddedOrRestarted;
     
     /** Are we connected? If not, we need to start trying to
      * handshake.
@@ -165,14 +150,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /** After this many failed handshakes, we start the ARK fetcher. */
     private static final int MAX_HANDSHAKE_COUNT = 2;
     
-    /** Number of handshake attempts (while in ListenOnly mode) since the beginning of this burst */
-    private int listeningHandshakeBurstCount;
-    
-    /** Total number of handshake attempts (while in ListenOnly mode) to be in this burst */
-    private int listeningHandshakeBurstSize;
-    
     /** Current location in the keyspace */
-    private Location currentLocation;
+    private double currentLocation;
     
     /** Node identity; for now a block of data, in future a
      * public key (FIXME). Cannot be changed.
@@ -221,7 +200,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     final boolean decrementHTLAtMinimum;
 
     /** Time at which we should send the next handshake request */
-    private long sendHandshakeTime;
+    protected long sendHandshakeTime;
     
     /** Time after which we log message requeues while rate limiting */
     private long nextMessageRequeueLogTime;
@@ -294,43 +273,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /** When this peer was added to this node */
     private long peerAddedTime = 1;
     
-    /** True if this peer is not to be connected with */
-    private boolean isDisabled;
-    
-    /** True if we don't send handshake requests to this peer, but will connect if we receive one */
-    private boolean isListenOnly;
-    
-    /** True if we send handshake requests to this peer in infrequent bursts */
-    private boolean isBurstOnly;
-    
-    /** True if we are currently sending this peer a burst of handshake requests */
-    private boolean isBursting;
-
-    /** True if we want to ignore the source port of the node's sent packets.
-     * This is normally set when dealing with an Evil Corporate Firewall which rewrites the port on outgoing
-     * packets but does not redirect incoming packets destined to the rewritten port.
-     * What it does is this: If we have an address with the same IP but a different port, to the detectedPeer,
-     * we use that instead. */
-    private boolean ignoreSourcePort;
-    
-    /** True if we want to allow LAN/localhost addresses. */
-    private boolean allowLocalAddresses;
-    
-    /** Extra peer data file numbers */
-    private LinkedHashSet extraPeerDataFileNumbers;
-
     /** Average proportion of requests which are rejected or timed out */
     private TimeDecayingRunningAverage pRejected;
     
-    /** Private comment on the peer for /friends/ page */
-    private String privateDarknetComment;
-    
-    /** Private comment on the peer for /friends/ page's extra peer data file number */
-    private int privateDarknetCommentFileNumber;
-    
-    /** Queued-to-send N2NTM extra peer data file numbers */
-    private LinkedHashSet queuedToSendN2NTMExtraPeerDataFileNumbers;
-
     /** Total low-level input bytes */
     private long totalBytesIn;
     
@@ -343,6 +288,17 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /** Times checked for routable connection */
     private long routableConnectionCheckCount;
     
+    /** Delta between our clock and his clock (positive = his clock is fast, negative = our clock is fast) */
+    private long clockDelta;
+
+    /** If the clock delta is more than this constant, we don't talk to the node. Reason: It may not be up to date,
+     * it will have difficulty resolving date-based content etc. */
+	private static final long MAX_CLOCK_DELTA = 24L*60L*60L*1000L;
+    
+	/** A WeakReference to this object. Can be taken whenever a node object needs to refer to this object for a 
+	 * long time, but without preventing it from being GC'ed. */
+	final WeakReference myRef;
+	
     private static boolean logMINOR;
     
     /**
@@ -358,15 +314,18 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * @param fs The SimpleFieldSet to parse
      * @param node2 The running Node we are part of.
      */
-    public PeerNode(SimpleFieldSet fs, Node node2, PeerManager peers, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
+    public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+    	logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
+    	myRef = new WeakReference(this);
+    	this.outgoingMangler = mangler;
         this.node = node2;
         this.peers = peers;
+        this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
         String identityString = fs.get("identity");
     	if(identityString == null)
     		throw new PeerParseException("No identity!");
         try {	
-        		identity = Base64.decode(identityString);
+			identity = Base64.decode(identityString);
         } catch (NumberFormatException e) {
             throw new FSParseException(e);
         } catch (IllegalBase64Exception e) {
@@ -381,17 +340,18 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         version = fs.get("version");
         Version.seenVersion(version);
         String locationString = fs.get("location");
-        if(locationString == null) throw new FSParseException("No location");
-        currentLocation = new Location(locationString);
+        try {
+        	currentLocation = Location.getLocation(locationString);
+        } catch (FSParseException e) {
+        	// Wait for them to send us an FNPLocChangeNotification
+        	currentLocation = -1.0;
+        }
 
         // FIXME make mandatory once everyone has upgraded
         lastGoodVersion = fs.get("lastGoodVersion");
         
         updateShouldDisconnectNow();
         
-        String name = fs.get("myName");
-        if(name == null) throw new FSParseException("No name");
-        myName = name;
         String testnet = fs.get("testnet");
         testnetEnabled = Fields.stringToBool(fs.get("testnet"), true);
         if(node.testnetEnabled != testnetEnabled) {
@@ -401,15 +361,15 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         }
         
         nominalPeer=new Vector();
-        try{
+        try {
         	String physical[]=fs.getAll("physical.udp");
-        	if(physical==null){
+        	if(physical==null) {
         		// Be tolerant of nonexistent domains.
         		Peer p = new Peer(fs.get("physical.udp"), true);
         		if(p != null)
         			nominalPeer.addElement(p);
-        	}else{
-	    		for(int i=0;i<physical.length;i++){		
+        	} else {
+	    		for(int i=0;i<physical.length;i++) {
 					Peer p = new Peer(physical[i], true);
 				    if(!nominalPeer.contains(p)) 
 				    	nominalPeer.addElement(p);
@@ -419,7 +379,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
                 throw new FSParseException(e1);
         }
         if(nominalPeer.isEmpty()) {
-        	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation.getValue())+"' with name '"+getName()+ '\'');
+        	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation)+": "+userToString());
         	detectedPeer = null;
         } else {
         	detectedPeer = (Peer) nominalPeer.firstElement();
@@ -428,6 +388,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         negTypes = fs.getIntArray("auth.negTypes");
         if(negTypes == null || negTypes.length == 0)
         	negTypes = new int[] { 0 };
+        
+        if((!fromLocal) && fs.getBoolean("opennet", false) != isOpennet)
+        	throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet");
         
         /* Read the DSA key material for the peer */
         try {
@@ -445,8 +408,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         	
     		String signature = fs.get("sig");
     		fs.removeValue("sig"); 
-    		if(!fromLocal){
-    			try{
+    		if(!fromLocal) {
+    			try {
     				boolean failed = false;
     				if(signature == null || peerCryptoGroup == null || peerPubKey == null || 
     						(failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(fs.toOrderedString().getBytes("UTF-8"))), false)))) {
@@ -459,7 +422,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     					this.isSignatureVerificationSuccessfull = false;
     					fs.putSingle("sig", signature);
    						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!"+errCause);
-    				}else
+    				} else
     					this.isSignatureVerificationSuccessfull = true;
     			} catch (NumberFormatException e) {
     				Logger.error(this, "Invalid reference: "+e, e);
@@ -469,9 +432,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     				Logger.error(this, "Error while signing the node identity!"+e);
     				System.err.println("Error while signing the node identity!"+e);
     				e.printStackTrace();
-    				node.exit(Node.EXIT_CRAPPY_JVM);
+    				node.exit(NodeInitException.EXIT_CRAPPY_JVM);
 				}
-    		}else // Local is always good (assumed)
+    		} else // Local is always good (assumed)
     			this.isSignatureVerificationSuccessfull = true;
         } catch (IllegalBase64Exception e) {
         	Logger.error(this, "Caught "+e, e);
@@ -479,8 +442,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         }
 
         // Setup incoming and outgoing setup ciphers
-        byte[] nodeKey = node.identityHash;
-        byte[] nodeKeyHash = node.identityHashHash;
+        byte[] nodeKey = crypto.identityHash;
+        byte[] nodeKeyHash = crypto.identityHashHash;
         
         int digestLength = SHA256.getDigestLength();
         incomingSetupKey = new byte[digestLength];
@@ -490,7 +453,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         for(int i=0;i<outgoingSetupKey.length;i++)
             outgoingSetupKey[i] = (byte) (nodeKeyHash[i] ^ identityHash[i]);
         if(logMINOR)
-        	Logger.minor(this, "Keys:\nIdentity:  "+HexUtil.bytesToHex(node.myIdentity)+
+        	Logger.minor(this, "Keys:\nIdentity:  "+HexUtil.bytesToHex(crypto.myIdentity)+
         			"\nThisIdent: "+HexUtil.bytesToHex(identity)+
         			"\nNode:      "+HexUtil.bytesToHex(nodeKey)+
         			"\nNode hash: "+HexUtil.bytesToHex(nodeKeyHash)+
@@ -517,13 +480,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         timeLastReceivedSwapRequest = -1;
         timeLastConnected = -1;
         timeLastRoutable = -1;
+        timeAddedOrRestarted = System.currentTimeMillis();
         
-        randomizeMaxTimeBetweenPacketSends();
         swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
         
         // Not connected yet; need to handshake
         isConnected = false;
-        peers.addPeerNodeStatus(PeerManager.PEER_NODE_STATUS_DISCONNECTED, this);
                
         messagesToSendNow = new LinkedList();
         
@@ -535,11 +497,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         // A SimpleRunningAverage would be a bad choice because it would cause oscillations.
         // So go for a filter.
         pingAverage = 
-        	new TimeDecayingRunningAverage(1, 600*1000 /* should be significantly longer than a typical transfer */, 0, NodePinger.CRAZY_MAX_PING_TIME);
+        	new TimeDecayingRunningAverage(1, 600*1000 /* should be significantly longer than a typical transfer */, 0, NodePinger.CRAZY_MAX_PING_TIME, node);
 
         // TDRA for probability of rejection
         pRejected =
-        	new TimeDecayingRunningAverage(0, 600*1000, 0.0, 1.0);
+        	new TimeDecayingRunningAverage(0, 600*1000, 0.0, 1.0, node);
         
         // ARK stuff.
 
@@ -608,11 +570,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             	if(!neverConnected) {
             		peerAddedTime = 0;  // don't store anymore
             	}
-            	isDisabled = Fields.stringToBool(metadata.get("isDisabled"), false);
-            	isListenOnly = Fields.stringToBool(metadata.get("isListenOnly"), false);
-            	isBurstOnly = Fields.stringToBool(metadata.get("isBurstOnly"), false);
-            	ignoreSourcePort = Fields.stringToBool(metadata.get("ignoreSourcePort"), false);
-            	allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
             	String tempHadRoutableConnectionCountString = metadata.get("hadRoutableConnectionCount");
             	if(tempHadRoutableConnectionCountString != null) {
             		long tempHadRoutableConnectionCount = Long.parseLong(tempHadRoutableConnectionCountString);
@@ -638,25 +595,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         
         sendHandshakeTime = now;  // Be sure we're ready to handshake right away
     
-		listeningHandshakeBurstCount = 0;
-		listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
-				+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
-		if(isBurstOnly) {
-			Logger.minor(this, "First BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')');
-		}
-
         // status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
-        setPeerNodeStatus(now);
-        
-		// Setup the private darknet comment note
-        privateDarknetComment = "";
-        privateDarknetCommentFileNumber = -1;
-
-		// Setup the extraPeerDataFileNumbers
-		extraPeerDataFileNumbers = new LinkedHashSet();
-		
-		// Setup the queuedToSendN2NTMExtraPeerDataFileNumbers
-		queuedToSendN2NTMExtraPeerDataFileNumbers = new LinkedHashSet();
     }
 
     private boolean parseARK(SimpleFieldSet fs, boolean onStartup) {
@@ -693,31 +632,14 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         return false;
 	}
 
-    //FIXME: Huh wtf ?
-	private void randomizeMaxTimeBetweenPacketSends() {
-        int x = Node.KEEPALIVE_INTERVAL;
-        x += node.random.nextInt(x);
-    }
-
     /**
-     * Get my low-level address.
+     * Get my low-level address. This is the address that packets have been received from from this node.
      * 
      * Normally this is the address that packets have been received from from this node.
      * However, if ignoreSourcePort is set, we will search for a similar address with a different port 
      * number in the node reference.
      */
     public synchronized Peer getPeer(){
-    	if(ignoreSourcePort) {
-    		FreenetInetAddress addr = detectedPeer == null ? null : detectedPeer.getFreenetAddress();
-    		int port = detectedPeer == null ? -1 : detectedPeer.getPort();
-    		if(nominalPeer == null) return detectedPeer;
-    		for(int i=0;i<nominalPeer.size();i++) {
-    			Peer p = (Peer) nominalPeer.get(i);
-    			if(p.getPort() != port && p.getFreenetAddress().equals(addr)) {
-    				return p;
-    			}
-    		}
-    	}
     	return detectedPeer;
     }
     
@@ -760,23 +682,23 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
       * Do the maybeUpdateHandshakeIPs DNS requests, but only if ignoreHostnames is false
       * This method should only be called by maybeUpdateHandshakeIPs
       */
-    private Peer[] updateHandshakeIPs(Peer[] localHandshakeIPs, boolean ignoreHostnames) {
-        for(int i=0;i<localHandshakeIPs.length;i++) {
-          if(ignoreHostnames) {
-            // Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
-            // upon startup (I suspect the following won't do anything, but just in case)
-        	if(logMINOR)
-        		Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+ ')');
-            localHandshakeIPs[i].getAddress(false);
-          } else {
-            // Actually do the DNS request for the member Peer of localHandshakeIPs
-        	if(logMINOR)
-        		Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+ ')');
-            localHandshakeIPs[i].getHandshakeAddress();
-          }
-        }
-        return localHandshakeIPs;
-    }
+	private Peer[] updateHandshakeIPs(Peer[] localHandshakeIPs, boolean ignoreHostnames) {
+		for(int i=0;i<localHandshakeIPs.length;i++) {
+			if(ignoreHostnames) {
+				// Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
+				// upon startup (I suspect the following won't do anything, but just in case)
+				if(logMINOR)
+					Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '"+localHandshakeIPs[i]+"' for "+shortToString()+" ("+ignoreHostnames+ ')');
+				localHandshakeIPs[i].getAddress(false);
+			} else {
+				// Actually do the DNS request for the member Peer of localHandshakeIPs
+				if(logMINOR)
+					Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '"+localHandshakeIPs[i]+"' for "+shortToString()+" ("+ignoreHostnames+ ')');
+				localHandshakeIPs[i].getHandshakeAddress();
+			}
+		}
+		return localHandshakeIPs;
+	}
 
     /**
       * Do occasional DNS requests, but ignoreHostnames should be true
@@ -796,7 +718,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				lastAttemptedHandshakeIPUpdateTime = now;
 			}
 	    }
-    	if(logMINOR) Logger.minor(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+ ')');
+    	if(logMINOR) Logger.minor(this, "Updating handshake IPs for peer '"+shortToString()+"' ("+ignoreHostnames+ ')');
     	Peer[] localHandshakeIPs;
     	Peer[] myNominalPeer;
     	
@@ -825,8 +747,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
     	// Hack for two nodes on the same IP that can't talk over inet for routing reasons
     	FreenetInetAddress localhost = node.fLocalhostAddress;
-    	Peer[] nodePeers = node.ipDetector.getPrimaryIPAddress();
-//    	FreenetInetAddress nodeAddr = node.getPrimaryIPAddress();
+    	Peer[] nodePeers = outgoingMangler.getPrimaryIPAddress();
     	
     	Vector peers = null;
     	synchronized(this) {
@@ -850,7 +771,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     			addedLocalhost = true;
     		}
     		for(int j=0;j<nodePeers.length;j++) {
-    			if(nodePeers[j].getFreenetAddress().equals(addr)) {
+    			// REDFLAG - Two lines so we can see which variable is null when it NPEs
+    			FreenetInetAddress myAddr = nodePeers[j].getFreenetAddress();
+    			if(myAddr.equals(addr)) {
         			if(!addedLocalhost)
         				peers.add(new Peer(localhost, p.getPort()));
     				addedLocalhost = true;
@@ -877,7 +800,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /**
      * What is my current keyspace location?
      */
-    public synchronized Location getLocation() {
+    public synchronized double getLocation() {
         return currentLocation;
     }
     
@@ -912,7 +835,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * PeerManager in e.g. verified.
      */
     public boolean isRoutable() {
-        return isConnected() && isRoutingCompatible();
+        return isConnected() && isRoutingCompatible() &&
+        	!(currentLocation < 0.0 || currentLocation > 1.0);
     }
     
     public boolean isRoutingCompatible(){
@@ -948,6 +872,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException {
     	if(logMINOR) Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
         if(!isConnected()) throw new NotConnectedException();
+		addToLocalNodeSentMessagesToStatistic(msg);
         MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb}, alreadyReportedBytes, ctr);
         item.getData(this);
         long now = System.currentTimeMillis();
@@ -987,12 +912,19 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     }
 
     /**
-     * @return The time this PeerNode was added to the node
+     * @return The time this PeerNode was added to the node (persistent across restarts).
      */
     public synchronized long getPeerAddedTime() {
         return peerAddedTime;
     }
 
+    /**
+     * @return The time elapsed since this PeerNode was added to the node, or the node started up.
+     */
+    public synchronized long timeSinceAddedOrRestarted() {
+    	return System.currentTimeMillis() - timeAddedOrRestarted;
+    }
+    
     /**
      * Disconnected e.g. due to not receiving a packet for ages.
      */
@@ -1005,7 +937,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         	// Force renegotiation.
             isConnected = false;
             isRoutable = false;
-            completedHandshake = false;
             // Prevent sending packets to the node until that happens.
             if(currentTracker != null)
             	currentTracker.disconnected();
@@ -1106,19 +1037,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         boolean tempShouldSendHandshake = false;
         synchronized(this) {
         	tempShouldSendHandshake = (!isConnected()) &&
-				(!isDisabled) &&  // don't connect to disabled peers
-				(!isListenOnly) &&  // don't send handshake requests to isListenOnly peers
                 (handshakeIPs != null) &&
                 (now > sendHandshakeTime);
 		}
 		if(tempShouldSendHandshake && (hasLiveHandshake(now))) {
 			tempShouldSendHandshake = false;
-		}
-		if(tempShouldSendHandshake && isBurstOnly()) {
-			synchronized(this) {
-				isBursting = true;
-			}
-			setPeerNodeStatus(now);
 		}
 		return tempShouldSendHandshake;
     }
@@ -1139,50 +1062,32 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
     boolean firstHandshake = true;
 
-    private void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK) {
+    /**
+     * Set sendHandshakeTime, and return whether to fetch the ARK.
+     */
+    protected synchronized boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
+		if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
+			// Let them know we're here, but have no hope of connecting
+			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
+				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
+		} else if(invalidVersion() && !firstHandshake) {
+			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
+				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
+		} else {
+			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
+				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+		}
+		if(successfulHandshakeSend) {
+			firstHandshake = false;
+		}
+		handshakeCount++;
+		return ((handshakeCount == MAX_HANDSHAKE_COUNT) && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion));
+    }
+    
+    protected void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK) {
         long now = System.currentTimeMillis();
         boolean fetchARKFlag = false;
-        synchronized(this) {
-			if(!isBurstOnly) {
-				if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
-					// Let them know we're here, but have no hope of connecting
-					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
-						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
-				} else if(invalidVersion() && !firstHandshake) {
-					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
-						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
-				} else {
-					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
-				}
-				if(successfulHandshakeSend) {
-					firstHandshake = false;
-				}
-				handshakeCount++;
-				fetchARKFlag = ((handshakeCount == MAX_HANDSHAKE_COUNT) && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion));
-			} else {
-				listeningHandshakeBurstCount++;
-				if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
-					// Let them know we're here, but have no hope of connecting
-					// Send one packet only.
-					listeningHandshakeBurstCount = 0;
-				} else if(listeningHandshakeBurstCount >= listeningHandshakeBurstSize) {
-					listeningHandshakeBurstCount = 0;
-					fetchARKFlag = true;
-				}
-				if(listeningHandshakeBurstCount == 0) {  // 0 only if we just reset it above
-					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS
-						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS);
-					listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
-							+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
-					isBursting = false;
-				} else {
-					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
-				}
-				if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')', new Exception("double-called debug"));
-			}
-        }
+        fetchARKFlag = innerCalcNextHandshake(successfulHandshakeSend, dontFetchARK, now);
 		setPeerNodeStatus(now);  // Because of isBursting being set above and it can't hurt others
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
         if(fetchARKFlag && !dontFetchARK) {
@@ -1190,7 +1095,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			startARKFetcher();
 			long arkFetcherStartTime2 = System.currentTimeMillis();
 			if((arkFetcherStartTime2 - arkFetcherStartTime1) > 500) {
-				Logger.normal(this, "arkFetcherStartTime2 is more than half a second after arkFetcherStartTime1 ("+(arkFetcherStartTime2 - arkFetcherStartTime1)+") working on "+getName());
+				Logger.normal(this, "arkFetcherStartTime2 is more than half a second after arkFetcherStartTime1 ("+(arkFetcherStartTime2 - arkFetcherStartTime1)+") working on "+shortToString());
 			}
         }
     }
@@ -1330,9 +1235,14 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * Update the Location to a new value.
      */
     public void updateLocation(double newLoc) {
-    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
+    	logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
+    	if(newLoc < 0.0 || newLoc > 1.0) {
+    		Logger.error(this, "Invalid location update for "+this, new Exception("error"));
+    		// Ignore it
+    		return;
+    	}
     	synchronized(this) {
-			currentLocation.setValue(newLoc);
+			currentLocation = newLoc;
 		}
         node.peers.writePeers();
     }
@@ -1448,7 +1358,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     public void sentPacket() {
         timeLastSentPacket = System.currentTimeMillis();
-        randomizeMaxTimeBetweenPacketSends();
     }
 
     public synchronized KeyAgreementSchemeContext getKeyAgreementSchemeContext() {
@@ -1473,7 +1382,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * @return True unless we rejected the handshake, or it failed to parse.
      */
     public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
-    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
+    	logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
     	long now = System.currentTimeMillis();
     	
     	// Update sendHandshakeTime; don't send another handshake for a while.
@@ -1496,7 +1405,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean routable = true;
 		boolean newer = false;
 		boolean older = false;
-		if(reverseInvalidVersion()) {
+		if(bogusNoderef) {
+			Logger.normal(this, "Not connecting to "+this+" - bogus noderef");
+			routable = false;
+		} else if(reverseInvalidVersion()) {
 			try {
 				node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(getLastGoodVersion()));
 			} catch (NumberFormatException e) {
@@ -1507,7 +1419,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else {
 			newer = false;
 		}
-		if(invalidVersion()) {
+		if(forwardInvalidVersion()) {
 			Logger.normal(this, "Not connecting to "+this+" - invalid version "+getVersion());
 			older = true;
 			routable = false;
@@ -1521,7 +1433,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		KeyTracker oldCur = null;
 		KeyTracker prev = null;
     	synchronized(this) {
-    		completedHandshake = true;
     		handshakeCount = 0;
         	bogusNoderef = false;
 			isConnected = true;
@@ -1567,7 +1478,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(oldCur != null) oldCur.completelyDeprecated(newTracker);
 		if(prev != null) prev.deprecated();
 		Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+
-				" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" getName(): "+getName());
+				" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" for "+shortToString());
 		
 		// Received a packet
 		receivedPacket(unverified);
@@ -1596,17 +1507,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.minor(this, "No ARK for "+this+" !!!!");
 				return;
 			}
-			if(isListenOnly){
-				Logger.minor(this, "Not starting ark fetcher for "+this+" as it's in listen-only mode.");
-			}else{
-				Logger.minor(this, "Starting ARK fetcher for "+this+" : "+myARK);
-				if(arkFetcher == null)
-					arkFetcher = node.clientCore.uskManager.subscribeContent(myARK, this, true, node.arkFetcherContext, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, node);
-			}
+			Logger.minor(this, "Starting ARK fetcher for "+this+" : "+myARK);
+			if(arkFetcher == null)
+				arkFetcher = node.clientCore.uskManager.subscribeContent(myARK, this, true, node.arkFetcherContext, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, node);
 		}
     }
 
-    private void stopARKFetcher() {
+    protected void stopARKFetcher() {
     	Logger.minor(this, "Stopping ARK fetcher for "+this+" : "+myARK);
     	// FIXME any way to reduce locking here?
     	synchronized(arkFetcherSync) {
@@ -1634,16 +1541,21 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * Send any high level messages that need to be sent on connect.
      */
     private void sendInitialMessages() {
-        Message locMsg = DMT.createFNPLocChangeNotification(node.lm.loc.getValue());
+        Message locMsg = DMT.createFNPLocChangeNotification(node.lm.getLocation());
         Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
+        Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
         
         try {
         	if(isRoutable())
         		 sendAsync(locMsg, null, 0, null);
             sendAsync(ipMsg, null, 0, null);
+            sendAsync(timeMsg, null, 0, null);
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected ("+isConnected+ ':' +currentTracker+"!!!: "+e, e);
         }
+        
+        if(node.nodeUpdater != null)
+        	node.nodeUpdater.maybeSendUOMAnnounce(this);
     }
     
     private void sendIPAddressMessage() {
@@ -1687,11 +1599,15 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     }
     
     private synchronized boolean invalidVersion() {
-        return bogusNoderef || (!Version.checkGoodVersion(version));
+    	return bogusNoderef || forwardInvalidVersion() || reverseInvalidVersion();
+    }
+    
+    private synchronized boolean forwardInvalidVersion() {
+        return !Version.checkGoodVersion(version);
     }
     
     private synchronized boolean reverseInvalidVersion() {
-        return bogusNoderef || (!Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion));
+        return !Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion);
     }
     
     public boolean publicInvalidVersion() {
@@ -1707,6 +1623,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * The identity must not change, or we throw.
      */
     private void processNewNoderef(byte[] data, int offset, int length) throws FSParseException {
+    	SimpleFieldSet fs = compressedNoderefToFieldSet(data, offset, length);
+    	processNewNoderef(fs, false);
+    }
+    
+    static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
         if(length == 0) throw new FSParseException("Too short");
         // Firstly, is it compressed?
         if(data[offset] == 1) {
@@ -1735,7 +1656,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
                 }
             }
         }
-        if(logMINOR) Logger.minor(this, "Reference: "+new String(data, offset, length)+ '(' +length+ ')');
+        if(logMINOR) Logger.minor(PeerNode.class, "Reference: "+new String(data, offset, length)+ '(' +length+ ')');
         // Now decode it
         ByteArrayInputStream bais = new ByteArrayInputStream(data, offset+1, length-1);
         InputStreamReader isr;
@@ -1745,15 +1666,14 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             throw new Error(e1);
         }
         BufferedReader br = new BufferedReader(isr);
-        SimpleFieldSet fs;
         try {
-            fs = new SimpleFieldSet(br, false, true);
+            return new SimpleFieldSet(br, false, true);
         } catch (IOException e) {
-            Logger.error(this, "Impossible: e", e);
-            return;
+        	FSParseException ex = new FSParseException("Impossible: "+e);
+        	ex.initCause(e);
+        	throw ex;
         }
-        processNewNoderef(fs, false);
-    }
+	}
 
     /**
      * Process a new nodereference, as a SimpleFieldSet.
@@ -1766,23 +1686,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
     /** The synchronized part of processNewNoderef 
      * @throws FSParseException */
-    private synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
+    protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
         boolean changedAnything = false;
-        String identityString = fs.get("identity");
-        if(identityString != null) {
-        	// REDFLAG this is optional now, because it is invariant.
-        	// But if it IS there, check it.
-        	try {
-        		byte[] newIdentity = Base64.decode(identityString);
-        		if(!Arrays.equals(newIdentity, identity))
-        			throw new FSParseException("Identity changed!!");
-        		
-        	} catch (NumberFormatException e) {
-        		throw new FSParseException(e);
-        	} catch (IllegalBase64Exception e) {
-        		throw new FSParseException(e);
-        	}
-        }        
         if(node.testnetEnabled != Fields.stringToBool(fs.get("testnet"), true)) {
         	String err = "Preventing connection to node "+detectedPeer+" - peer.testnet="+!node.testnetEnabled+'(' +fs.get("testnet")+") but node.testnet="+node.testnetEnabled;
         	Logger.error(this, err);
@@ -1810,9 +1715,17 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         	if(!forARK)
         		throw new FSParseException("No location");
         } else {
-        	Location loc = new Location(locationString);
-        	if(!loc.equals(currentLocation)) changedAnything = true;
-        	currentLocation = loc;
+        	try {
+        		double newLoc = Location.getLocation(locationString);
+        		if(!Location.equals(newLoc, currentLocation)) {
+        			changedAnything = true;
+        			currentLocation = newLoc;
+        		}
+        	} catch (FSParseException e) {
+        		// Location is optional, we will wait for FNPLocChangeNotification
+        		if(logMINOR)
+        			Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: "+e);
+        	}
         }
 
         Vector oldNominalPeer = nominalPeer;
@@ -1823,13 +1736,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         
         Peer[] oldPeers = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
         
-        try{
+        try {
         	String physical[]=fs.getAll("physical.udp");
-        	if(physical==null){
+        	if(physical==null) {
         		Peer p = new Peer(fs.get("physical.udp"), true);
         		nominalPeer.addElement(p);
-        	}else{
-	    		for(int i=0;i<physical.length;i++){		
+        	} else {
+	    		for(int i=0;i<physical.length;i++) {
 					Peer p = new Peer(physical[i], true);
 				    if(!nominalPeer.contains(p)) {
 				    	if(oldNominalPeer.contains(p)) {
@@ -1853,8 +1766,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         // DO NOT change detectedPeer !!!
         // The given physical.udp may be WRONG!!!
         
-        String name = fs.get("myName");
-        
         // In future, ARKs may support automatic transition when the ARK key is changed.
         // So parse it anyway. If it fails, no big loss; it won't even log an error.
         
@@ -1870,11 +1781,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         
         if(parseARK(fs, false))
         	changedAnything = true;
-        if(name != null && !name.equals(myName)) {
-        	changedAnything = true;
-            myName = name;
-        }
-        
 		return changedAnything;
 	}
 
@@ -1896,7 +1802,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             long t = tracker.getNextUrgentTime();
             if(t < now) {
                 try {
-                    node.packetMangler.processOutgoing(null, 0, 0, tracker, 0);
+                    outgoingMangler.processOutgoing(null, 0, 0, tracker, 0);
                 } catch (NotConnectedException e) {
                     // Ignore
                 } catch (KeyChangedException e) {
@@ -1911,7 +1817,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             long t = tracker.getNextUrgentTime();
             if(t < now) {
                 try {
-                    node.packetMangler.processOutgoing(null, 0, 0, tracker, 0);
+                    outgoingMangler.processOutgoing(null, 0, 0, tracker, 0);
                 } catch (NotConnectedException e) {
                     // Ignore
                 } catch (KeyChangedException e) {
@@ -1923,9 +1829,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         }
     }
 
-    public synchronized PeerNodeStatus getStatus() {
-    	return new PeerNodeStatus(this);
-    }
+    public abstract PeerNodeStatus getStatus();
     
     public String getTMCIPeerInfo() {
 		long now = System.currentTimeMillis();
@@ -1935,7 +1839,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         }
         if((getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED) && (getPeerAddedTime() > 1))
             idle = (int) ((now - getPeerAddedTime()) / 1000);
-        return getName()+ '\t' +getPeer()+ '\t' +getIdentityString()+ '\t' +getLocation().getValue()+ '\t' +getPeerNodeStatusString()+ '\t' +idle;
+        return String.valueOf(getPeer())+ '\t' +getIdentityString()+ '\t' +getLocation()+ '\t' +getPeerNodeStatusString()+ '\t' +idle;
     }
     
     public String getFreevizOutput() {
@@ -1971,7 +1875,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     public synchronized SimpleFieldSet exportMetadataFieldSet() {
     	SimpleFieldSet fs = new SimpleFieldSet(true);
     	if(detectedPeer != null)
-    		fs.putSingle("detected.udp", detectedPeer.toString());
+    		fs.putSingle("detected.udp", detectedPeer.toStringPrefNumeric());
     	if(lastReceivedPacketTime() > 0)
     		fs.putSingle("timeLastReceivedPacket", Long.toString(timeLastReceivedPacket));
     	if(timeLastConnected() > 0)
@@ -1982,16 +1886,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     		fs.putSingle("peerAddedTime", Long.toString(peerAddedTime));
     	if(neverConnected)
     		fs.putSingle("neverConnected", "true");
-    	if(isDisabled)
-    		fs.putSingle("isDisabled", "true");
-    	if(isListenOnly)
-    		fs.putSingle("isListenOnly", "true");
-    	if(isBurstOnly)
-    		fs.putSingle("isBurstOnly", "true");
-    	if(ignoreSourcePort)
-    		fs.putSingle("ignoreSourcePort", "true");
-    	if(allowLocalAddresses)
-    		fs.putSingle("allowLocalAddresses", "true");
     	if(hadRoutableConnectionCount > 0)
     		fs.putSingle("hadRoutableConnectionCount", Long.toString(hadRoutableConnectionCount));
     	if(routableConnectionCheckCount > 0)
@@ -2039,10 +1933,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		fs.put("auth.negTypes", negTypes);
         fs.putSingle("identity", getIdentityString());
-        fs.putSingle("location", Double.toString(currentLocation.getValue()));
+        fs.putSingle("location", Double.toString(currentLocation));
         fs.putSingle("testnet", Boolean.toString(testnetEnabled));
         fs.putSingle("version", version);
-        fs.putSingle("myName", getName());
         if(peerCryptoGroup != null)
         	fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
         if(peerPubKey != null)
@@ -2052,10 +1945,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.putSingle("ark.number", Long.toString(myARK.suggestedEdition - 1));
 			fs.putSingle("ark.pubURI", myARK.getBaseSSK().toString(false, false));
 		}
+		fs.put("opennet", isOpennet());
         return fs;
     }
 
-    /**
+    public abstract boolean isOpennet();
+
+	/**
      * @return The time at which we last connected (or reconnected).
      */
     public synchronized long timeLastConnectionCompleted() {
@@ -2099,7 +1995,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
                 continue;
             }
             MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0, null);
-            requeueMessageItems(new MessageItem[] {mi}, 0, 1, true);
+            requeueMessageItems(new MessageItem[] { mi }, 0, 1, true);
         }
     }
     
@@ -2118,10 +2014,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean isRoutingBackedOff() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			if(now < routingBackedOffUntil) {
-				if(logMINOR) Logger.minor(this, "Routing is backed off");
-				return true;
-			} else return false;
+			return now < routingBackedOffUntil;
 		}
 	}
 	
@@ -2139,7 +2032,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Previous backoff reason (used by setPeerNodeStatus)*/
 	String previousRoutingBackoffReason;
 	/* percent of time this peer is backed off */
-	public RunningAverage backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
+	public final RunningAverage backedOffPercent;
 	/* time of last sample */
 	private long lastSampleTime = Long.MAX_VALUE;
     
@@ -2232,6 +2125,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	// Relatively few as we only get one every 200ms*#nodes
 	// We want to get reasonably early feedback if it's dropping all of them...
 	final static int MAX_PINGS = 5;
+
 	final LRUHashtable pingsSentTimes = new LRUHashtable();
 	long pingNumber;
 	final RunningAverage pingAverage;
@@ -2288,7 +2182,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(logMINOR) Logger.minor(this, "Reporting ping time to "+this+" : "+(now - startTime));
 		}
 		
-		if(shouldDisconnectNow()){
+		if(noLongerRoutable()){
 			invalidate();
 			setPeerNodeStatus(now);
 		}
@@ -2311,10 +2205,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		return remoteDetectedPeer;
 	}
 
-	public synchronized String getName() {
-		return myName;
-	}
-
 	public synchronized int getRoutingBackoffLength() {
 		return routingBackoffLength;
 	}
@@ -2335,10 +2225,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		lastRoutingBackoffReason = s;
 	}
 
-	public synchronized boolean hasCompletedHandshake() {
-		return completedHandshake;
-	}
-	
 	public void addToLocalNodeSentMessagesToStatistic (Message m) {
 		String messageSpecName;
 		Long count;
@@ -2373,14 +2259,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 	
-	//FIXME: maybe return a copy insteed
-	public Hashtable getLocalNodeSentMessagesToStatistic () {
-		return localNodeSentMessageTypes;
+	public synchronized Hashtable getLocalNodeSentMessagesToStatistic () {
+		return new Hashtable(localNodeSentMessageTypes);
 	}
 	
-	//FIXME: maybe return a copy insteed
 	public Hashtable getLocalNodeReceivedMessagesFromStatistic () {
-		return localNodeReceivedMessageTypes;
+		return new Hashtable(localNodeReceivedMessageTypes);
 	}
 
 	synchronized USK getARK() {
@@ -2406,108 +2290,126 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 
-  public synchronized int getPeerNodeStatus() {
+	public synchronized int getPeerNodeStatus() {
 		return peerNodeStatus;
-  }
+	}
 
-  public String getPeerNodeStatusString() {
-  	int status = getPeerNodeStatus();
-  	if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
-  		return "CONNECTED";
-  	if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
-  		return "BACKED OFF";
-  	if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
-  		return "TOO NEW";
-  	if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
-  		return "TOO OLD";
-  	if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
-  		return "DISCONNECTED";
-  	if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
-  		return "NEVER CONNECTED";
-  	if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
-  		return "DISABLED";
-  	if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
-  		return "LISTEN ONLY";
-  	if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
-  		return "LISTENING";
-  	if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
-  		return "BURSTING";
-  	return "UNKNOWN STATUS";
-  }
+	public String getPeerNodeStatusString() {
+		int status = getPeerNodeStatus();
+		return getPeerNodeStatusString(status);
+	}
 
-  public String getPeerNodeStatusCSSClassName() {
-  	int status = getPeerNodeStatus();
-  	if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
-  		return "peer_connected";
-  	if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
-  		return "peer_backed_off";
-  	if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
-  		return "peer_too_new";
-  	if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
-  		return "peer_too_old";
-  	if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
-  		return "peer_disconnected";
-  	if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
-  		return "peer_never_connected";
-  	if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
-  		return "peer_disabled";
-  	if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
-  		return "peer_bursting";
-  	if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
-  		return "peer_listening";
-  	if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
-  		return "peer_listen_only";
-  	return "peer_unknown_status";
-  }
+	public static String getPeerNodeStatusString(int status) {
+		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
+			return "CONNECTED";
+		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+			return "BACKED OFF";
+		if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
+			return "TOO NEW";
+		if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
+			return "TOO OLD";
+		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
+			return "DISCONNECTED";
+		if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
+			return "NEVER CONNECTED";
+		if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
+			return "DISABLED";
+		if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
+			return "LISTEN ONLY";
+		if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
+			return "LISTENING";
+		if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
+			return "BURSTING";
+		if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
+			return "CLOCK PROBLEM";
+		if(status == PeerManager.PEER_NODE_STATUS_CONN_ERROR)
+			return "CONNECTION ERROR";
+		return "UNKNOWN STATUS";
+	}
 
-	public void setPeerNodeStatus(long now) {
-		long localRoutingBackedOffUntil = getRoutingBackedOffUntil();
-		synchronized(this) {
-			checkConnectionsAndTrackers();
-			int oldPeerNodeStatus = peerNodeStatus;
-			if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
-				if(now < localRoutingBackedOffUntil ) {
-					peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
-					if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason) || (previousRoutingBackoffReason == null)) {
-						if(previousRoutingBackoffReason != null) {
-							peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
-						}
-						peers.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReason, this);
-						previousRoutingBackoffReason = lastRoutingBackoffReason;
-					}
-				} else {
+	public String getPeerNodeStatusCSSClassName() {
+		int status = getPeerNodeStatus();
+		return getPeerNodeStatusCSSClassName(status);
+	}
+
+	public static String getPeerNodeStatusCSSClassName(int status) {
+		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
+			return "peer_connected";
+		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+			return "peer_backed_off";
+		if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
+			return "peer_too_new";
+		if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
+			return "peer_too_old";
+		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
+			return "peer_disconnected";
+		if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
+			return "peer_never_connected";
+		if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
+			return "peer_disabled";
+		if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
+			return "peer_bursting";
+		if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
+			return "peer_listening";
+		if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
+			return "peer_listen_only";
+		if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
+			return "peer_clock_problem";
+		return "peer_unknown_status";
+	}
+
+	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntil) {
+		checkConnectionsAndTrackers();
+		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
+			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
+			if(now < routingBackedOffUntil) {
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
+				if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason) || (previousRoutingBackoffReason == null)) {
 					if(previousRoutingBackoffReason != null) {
 						peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
-						previousRoutingBackoffReason = null;
 					}
+					peers.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReason, this);
+					previousRoutingBackoffReason = lastRoutingBackoffReason;
 				}
-			} else if(isDisabled) {
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISABLED;
-			} else if(isConnected() && verifiedIncompatibleNewerVersion) {
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_NEW;
-			} else if(isConnected && verifiedIncompatibleOlderVersion) {
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_OLD;
-			} else if(neverConnected) {
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED;
-			} else if(isListenOnly) {
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_LISTEN_ONLY;
-			} else if(isBursting) {
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_BURSTING;
-			} else if(isBurstOnly) {
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_LISTENING;
 			} else {
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
+				if(previousRoutingBackoffReason != null) {
+					peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+					previousRoutingBackoffReason = null;
+				}
 			}
-			if(!isConnected && (previousRoutingBackoffReason != null)) {
-				peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
-				previousRoutingBackoffReason = null;
-			}
+		} else if(isConnected() && bogusNoderef) {
+			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONN_ERROR;
+		} else if(isConnected() && verifiedIncompatibleNewerVersion) {
+			peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_NEW;
+		} else if(isConnected && verifiedIncompatibleOlderVersion) {
+			peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_OLD;
+		} else if(isConnected && Math.abs(clockDelta) > MAX_CLOCK_DELTA) {
+			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM;
+		} else if(neverConnected) {
+			peerNodeStatus = PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED;
+		} else {
+			peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
+		}
+		if(!isConnected && (previousRoutingBackoffReason != null)) {
+			peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+			previousRoutingBackoffReason = null;
+		}
+		return peerNodeStatus;
+	}
+
+	public int setPeerNodeStatus(long now) {
+		long routingBackedOffUntil = getRoutingBackedOffUntil();
+		synchronized(this) {
+			int oldPeerNodeStatus = peerNodeStatus;
+			peerNodeStatus = getPeerNodeStatus(now, routingBackedOffUntil);
+			
 			if(peerNodeStatus != oldPeerNodeStatus) {
 				peers.removePeerNodeStatus( oldPeerNodeStatus, this );
-			  peers.addPeerNodeStatus( peerNodeStatus, this );
+				peers.addPeerNodeStatus( peerNodeStatus, this );
 			}
+
 		}
+		return peerNodeStatus;
 	}
 
 	private synchronized void checkConnectionsAndTrackers() {
@@ -2536,8 +2438,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public String getIdentityString() {
-    	return Base64.encode(identity);
-    }
+		return Base64.encode(identity);
+	}
 
 	public boolean isFetchingARK() {
 		return arkFetcher != null;
@@ -2547,90 +2449,16 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		return handshakeCount;
 	}
 	
-	public void enablePeer() {
-		synchronized(this) {
-			isDisabled = false;
-		}
-		setPeerNodeStatus(System.currentTimeMillis());
-        node.peers.writePeers();
-	}
-	
-	public void disablePeer() {
-		synchronized(this) {
-			isDisabled = true;
-		}
-		if(isConnected()) {
-			forceDisconnect();
-		}
-		stopARKFetcher();
-		setPeerNodeStatus(System.currentTimeMillis());
-        node.peers.writePeers();
-	}
-
-	public synchronized boolean isDisabled() {
-		return isDisabled;
-	}
-	
-	public void setListenOnly(boolean setting) {
-		synchronized(this) {
-			isListenOnly = setting;
-		}
-		if(setting && isBurstOnly()) {
-			setBurstOnly(false);
-		}
-		if(setting) {
-			stopARKFetcher();
-		}
-		setPeerNodeStatus(System.currentTimeMillis());
-        node.peers.writePeers();
-	}
-
-	public synchronized boolean isListenOnly() {
-		return isListenOnly;
-	}
-	
-	public void setBurstOnly(boolean setting) {
-		synchronized(this) {
-			isBurstOnly = setting;
-		}
-		if(setting && isListenOnly()) {
-			setListenOnly(false);
-		}
-		long now = System.currentTimeMillis();
-		if(!setting) {
-			synchronized(this) {
-				sendHandshakeTime = now;  // don't keep any long handshake delays we might have had under BurstOnly
-			}
-		}
-		setPeerNodeStatus(now);
-		node.peers.writePeers();
-	}
-
-	public void setIgnoreSourcePort(boolean setting) {
-		synchronized(this) {
-			ignoreSourcePort = setting;
-		}
-	}
-	
-
-	public boolean isIgnoreSourcePort() {
-		return ignoreSourcePort;
-	}
-	
-	public synchronized boolean isBurstOnly() {
-		return isBurstOnly;
-	}
-
 	synchronized void updateShouldDisconnectNow() {
-		verifiedIncompatibleOlderVersion = invalidVersion();
+		verifiedIncompatibleOlderVersion = forwardInvalidVersion();
 		verifiedIncompatibleNewerVersion = reverseInvalidVersion();
 	}
 	
 	/**
-	 * Should the node be disconnected from immediately?
+	 * Has the node gone from being routable to being non-routable?
 	 * This will return true if our lastGoodBuild has changed due to a timed mandatory.
 	 */
-	public synchronized boolean shouldDisconnectNow() {
+	public synchronized boolean noLongerRoutable() {
 		// TODO: We should disconnect here if "protocol version mismatch", maybe throwing an exception
 		// TODO: shouldDisconnectNow() is hopefully only called when we're connected, otherwise we're breaking the meaning of verifiedIncompable[Older|Newer]Version
 		if(verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion) return true;
@@ -2642,398 +2470,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		Logger.normal(this, "Invalidated "+this);
 	}
 	
-	public synchronized boolean allowLocalAddresses() {
-		return allowLocalAddresses;
-	}
-
-	public boolean readExtraPeerData() {
-		String extraPeerDataDirPath = node.getExtraPeerDataDir();
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
-	 	if(!extraPeerDataPeerDir.exists()) {
-	 		return false;
-	 	}
-	 	if(!extraPeerDataPeerDir.isDirectory()) {
-	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
-	 		return false;
-	 	}
-	 	File[] extraPeerDataFiles = extraPeerDataPeerDir.listFiles();
-	 	if(extraPeerDataFiles == null) {
-	 		return false;
-	 	}
-		boolean gotError = false;
-		boolean readResult = false;
-		for (int i = 0; i < extraPeerDataFiles.length; i++) {
-			Integer fileNumber;
-			try {
-				fileNumber = new Integer(extraPeerDataFiles[i].getName());
-			} catch (NumberFormatException e) {
-				gotError = true;
-				continue;
-			}
-			synchronized(extraPeerDataFileNumbers) {
-				extraPeerDataFileNumbers.add(fileNumber);
-			}
-			readResult = readExtraPeerDataFile(extraPeerDataFiles[i], fileNumber.intValue());
-			if(!readResult) {
-				gotError = true;
-			}
-		}
-		return !gotError;
-	}
-
-	public boolean rereadExtraPeerDataFile(int fileNumber) {
-		if(logMINOR)
-			Logger.minor(this, "Rereading peer data file "+fileNumber+" for "+shortToString());
-		String extraPeerDataDirPath = node.getExtraPeerDataDir();
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
-		if(!extraPeerDataPeerDir.exists()) {
-			Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
-			return false;
-		}
-		if(!extraPeerDataPeerDir.isDirectory()) {
-			Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
-			return false;
-		}
-		File extraPeerDataFile = new File(extraPeerDataDirPath+File.separator+getIdentityString()+File.separator+fileNumber);
-		if(!extraPeerDataFile.exists()) {
-			Logger.error(this, "Extra peer data file for peer does not exist: "+extraPeerDataFile.getPath());
-			return false;
-		}
-		return readExtraPeerDataFile(extraPeerDataFile, fileNumber);
-	}
-
-	public boolean readExtraPeerDataFile(File extraPeerDataFile, int fileNumber) {
-		if(logMINOR) Logger.minor(this, "Reading "+extraPeerDataFile+" : "+fileNumber+" for "+shortToString());
-		boolean gotError = false;
-	 	if(!extraPeerDataFile.exists()) {
-	 		if(logMINOR)
-	 			Logger.minor(this, "Does not exist");
-	 		return false;
-	 	}
-		Logger.normal(this, "extraPeerDataFile: "+extraPeerDataFile.getPath());
-		FileInputStream fis;
-		try {
-			fis = new FileInputStream(extraPeerDataFile);
-		} catch (FileNotFoundException e1) {
-			Logger.normal(this, "Extra peer data file not found: "+extraPeerDataFile.getPath());
-			return false;
-		}
-		InputStreamReader isr = new InputStreamReader(fis);
-		BufferedReader br = new BufferedReader(isr);
-		SimpleFieldSet fs = null;
-		try {
-			// Read in the single SimpleFieldSet
-			fs = new SimpleFieldSet(br, false, true);
-		} catch (EOFException e3) {
-			// End of file, fine
-		} catch (IOException e4) {
-			Logger.error(this, "Could not read extra peer data file: "+e4, e4);
-		} finally {
-			try {
-				br.close();
-			} catch (IOException e5) {
-				Logger.error(this, "Ignoring "+e5+" caught reading "+extraPeerDataFile.getPath(), e5);
-			}
-		}
-		if(fs == null) {
-			Logger.normal(this, "Deleting corrupt (too short?) file: "+extraPeerDataFile);
-			deleteExtraPeerDataFile(fileNumber);
-			return true;
-		}
-		boolean parseResult = false;
-		try {
-			parseResult = parseExtraPeerData(fs, extraPeerDataFile, fileNumber);
-			if(!parseResult) {
-				gotError = true;
-			}
-		} catch (FSParseException e2) {
-			Logger.error(this, "Could not parse extra peer data: "+e2+ '\n' +fs.toString(),e2);
-			gotError = true;
-		}
-		return !gotError;
-	}
-
-	private boolean parseExtraPeerData(SimpleFieldSet fs, File extraPeerDataFile, int fileNumber) throws FSParseException {
-		String extraPeerDataTypeString = fs.get("extraPeerDataType");
-		int extraPeerDataType = -1;
-		try {
-			extraPeerDataType = Integer.parseInt(extraPeerDataTypeString);
-		} catch (NumberFormatException e) {
-			Logger.error(this, "NumberFormatException parsing extraPeerDataType ("+extraPeerDataTypeString+") in file "+extraPeerDataFile.getPath());
-			return false;
-		}
-		if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_N2NTM) {
-			node.handleNodeToNodeTextMessageSimpleFieldSet(fs, this, fileNumber);
-			return true;
-		} else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE) {
-			String peerNoteTypeString = fs.get("peerNoteType");
-			int peerNoteType = -1;
-			try {
-				peerNoteType = Integer.parseInt(peerNoteTypeString);
-			} catch (NumberFormatException e) {
-				Logger.error(this, "NumberFormatException parsing peerNoteType ("+peerNoteTypeString+") in file "+extraPeerDataFile.getPath());
-				return false;
-			}
-			if(peerNoteType == Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT) {
-				synchronized(privateDarknetComment) {
-				  	try {
-						privateDarknetComment = new String(Base64.decode(fs.get("privateDarknetComment")));
-					} catch (IllegalBase64Exception e) {
-						Logger.error(this, "Bad Base64 encoding when decoding a private darknet comment SimpleFieldSet", e);
-						return false;
-					}
-					privateDarknetCommentFileNumber = fileNumber;
-				}
-				return true;
-			}
-			Logger.error(this, "Read unknown peer note type '"+peerNoteType+"' from file "+extraPeerDataFile.getPath());
-			return false;
-		} else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM) {
-			boolean sendSuccess = false;
-			int type = fs.getInt("n2nType", 1); // FIXME remove default
-			fs.putOverwrite("n2nType", Integer.toString(type));
-			if(isConnected()) {
-				Message n2ntm;
-				if(fs.get("extraPeerDataType") != null) {
-					fs.removeValue("extraPeerDataType");
-				}
-				if(fs.get("senderFileNumber") != null) {
-					fs.removeValue("senderFileNumber");
-				}
-				fs.putOverwrite("senderFileNumber", String.valueOf(fileNumber));
-				if(fs.get("sentTime") != null) {
-					fs.removeValue("sentTime");
-				}
-				fs.putOverwrite("sentTime", Long.toString(System.currentTimeMillis()));
-				
-				try {
-					n2ntm = DMT.createNodeToNodeMessage(type, fs.toString().getBytes("UTF-8"));
-				} catch (UnsupportedEncodingException e) {
-					Logger.error(this, "UnsupportedEncodingException processing extraPeerDataType ("+extraPeerDataTypeString+") in file "+extraPeerDataFile.getPath(), e);
-					return false;
-				}
-
-				try {
-					synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
-						node.usm.send(this, n2ntm, null);
-						Logger.normal(this, "Sent queued ("+fileNumber+") N2NTM to '"+getName()+"': "+n2ntm);
-						sendSuccess = true;
-						queuedToSendN2NTMExtraPeerDataFileNumbers.remove(new Integer(fileNumber));
-					}
-					deleteExtraPeerDataFile(fileNumber);
-				} catch (NotConnectedException e) {
-					sendSuccess = false;  // redundant, but clear
-				}
-			}
-			if(!sendSuccess) {
-				synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
-					fs.putOverwrite("extraPeerDataType", Integer.toString(extraPeerDataType));
-					fs.removeValue("sentTime");
-					queuedToSendN2NTMExtraPeerDataFileNumbers.add(new Integer(fileNumber));
-				}
-			}
-			return true;
-		}
-		Logger.error(this, "Read unknown extra peer data type '"+extraPeerDataType+"' from file "+extraPeerDataFile.getPath());
-		return false;
-	}
-
-	public int writeNewExtraPeerDataFile(SimpleFieldSet fs, int extraPeerDataType) {
-		String extraPeerDataDirPath = node.getExtraPeerDataDir();
-		if(extraPeerDataType > 0)
-			fs.putOverwrite("extraPeerDataType", Integer.toString(extraPeerDataType));
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
-	 	if(!extraPeerDataPeerDir.exists()) {
-	 		if(!extraPeerDataPeerDir.mkdir()) {
-		   		Logger.error(this, "Extra peer data directory for peer could not be created: "+extraPeerDataPeerDir.getPath());
-		 		return -1;
-		 	}
-	 	}
-	 	if(!extraPeerDataPeerDir.isDirectory()) {
-	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
-	 		return -1;
-	 	}
-		Integer[] localFileNumbers = null;
-		int nextFileNumber = 0;
-		synchronized(extraPeerDataFileNumbers) {
-			// Find the first free slot
-			localFileNumbers = (Integer[]) extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
-			Arrays.sort(localFileNumbers);
-			for (int i = 0; i < localFileNumbers.length; i++) {
-				if(localFileNumbers[i].intValue() > nextFileNumber) {
-					break;
-				}
-				nextFileNumber = localFileNumbers[i].intValue() + 1;
-			}
-			extraPeerDataFileNumbers.add(new Integer(nextFileNumber));
-		}
-		FileOutputStream fos;
-		File extraPeerDataFile = new File(extraPeerDataPeerDir.getPath()+File.separator+nextFileNumber);
-	 	if(extraPeerDataFile.exists()) {
-   			Logger.error(this, "Extra peer data file already exists: "+extraPeerDataFile.getPath());
-		 	return -1;
-	 	}
-		String f = extraPeerDataFile.getPath();
-		try {
-			fos = new FileOutputStream(f);
-		} catch (FileNotFoundException e2) {
-			Logger.error(this, "Cannot write extra peer data file to disk: Cannot create "
-					+ f + " - " + e2, e2);
-			return -1;
-		}
-		OutputStreamWriter w = new OutputStreamWriter(fos);
-		BufferedWriter bw = new BufferedWriter(w);
-		try {
-			fs.writeTo(bw);
-			bw.close();
-		} catch (IOException e) {
-			try {
-				fos.close();
-			} catch (IOException e1) {
-				Logger.error(this, "Cannot close extra peer data file: "+e, e);
-			}
-			Logger.error(this, "Cannot write file: " + e, e);
-			return -1;
-		}
-		return nextFileNumber;
-	}
-
-	public void deleteExtraPeerDataFile(int fileNumber) {
-		String extraPeerDataDirPath = node.getExtraPeerDataDir();
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath, getIdentityString());
-	 	if(!extraPeerDataPeerDir.exists()) {
-	   		Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
-	 		return;
-	 	}
-	 	if(!extraPeerDataPeerDir.isDirectory()) {
-	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
-	 		return;
-	 	}
-		File extraPeerDataFile = new File(extraPeerDataPeerDir, Integer.toString(fileNumber));
-	 	if(!extraPeerDataFile.exists()) {
-	   		Logger.error(this, "Extra peer data file for peer does not exist: "+extraPeerDataFile.getPath());
-	 		return;
-	 	}
-		synchronized(extraPeerDataFileNumbers) {
-			extraPeerDataFileNumbers.remove(new Integer(fileNumber));
-		}
-		if(!extraPeerDataFile.delete()) {
-			if(extraPeerDataFile.exists()) {
-				Logger.error(this, "Cannot delete file "+extraPeerDataFile+" after sending message to "+getPeer()+" - it may be resent on resting the node");
-			} else {
-				Logger.normal(this, "File does not exist when deleting: "+extraPeerDataFile+" after sending message to "+getPeer());
-			}
-		}
-	}
-
-	public void removeExtraPeerDataDir() {
-		String extraPeerDataDirPath = node.getExtraPeerDataDir();
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
-	 	if(!extraPeerDataPeerDir.exists()) {
-			Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
-			return;
-	 	}
-	 	if(!extraPeerDataPeerDir.isDirectory()) {
-	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
-	 		return;
-	 	}
-		Integer[] localFileNumbers = null;
-		synchronized(extraPeerDataFileNumbers) {
-			localFileNumbers = (Integer[]) extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
-		}
-		for (int i = 0; i < localFileNumbers.length; i++) {
-			deleteExtraPeerDataFile(localFileNumbers[i].intValue());
-		}
-		extraPeerDataPeerDir.delete();
-	}
-
-	public boolean rewriteExtraPeerDataFile(SimpleFieldSet fs, int extraPeerDataType, int fileNumber) {
-		String extraPeerDataDirPath = node.getExtraPeerDataDir();
-		if(extraPeerDataType > 0)
-			fs.putOverwrite("extraPeerDataType", Integer.toString(extraPeerDataType));
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
-	 	if(!extraPeerDataPeerDir.exists()) {
-	   		Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
-	 		return false;
-	 	}
-	 	if(!extraPeerDataPeerDir.isDirectory()) {
-	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
-	 		return false;
-	 	}
-		File extraPeerDataFile = new File(extraPeerDataDirPath+File.separator+getIdentityString()+File.separator+fileNumber);
-	 	if(!extraPeerDataFile.exists()) {
-	   		Logger.error(this, "Extra peer data file for peer does not exist: "+extraPeerDataFile.getPath());
-	 		return false;
-	 	}
-		String f = extraPeerDataFile.getPath();
-		FileOutputStream fos;
-		try {
-			fos = new FileOutputStream(f);
-		} catch (FileNotFoundException e2) {
-			Logger.error(this, "Cannot write extra peer data file to disk: Cannot open "
-					+ f + " - " + e2, e2);
-			return false;
-		}
-		OutputStreamWriter w = new OutputStreamWriter(fos);
-		BufferedWriter bw = new BufferedWriter(w);
-		try {
-			fs.writeTo(bw);
-			bw.close();
-		} catch (IOException e) {
-			try {
-				fos.close();
-			} catch (IOException e1) {
-				Logger.error(this, "Cannot close extra peer data file: "+e, e);
-			}
-			Logger.error(this, "Cannot write file: " + e, e);
-			return false;
-		}
-		return true;
-	}
-	
-	public synchronized String getPrivateDarknetCommentNote() {
-		return privateDarknetComment;
-	}
-	
-	public synchronized void setPrivateDarknetCommentNote(String comment) {
-		int localFileNumber;
-		synchronized(privateDarknetComment) {
-			privateDarknetComment = comment;
-			localFileNumber = privateDarknetCommentFileNumber;
-		}
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("peerNoteType", Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT);
-		fs.putSingle("privateDarknetComment", Base64.encode(comment.getBytes()));
-		if(localFileNumber == -1) {
-			localFileNumber = writeNewExtraPeerDataFile(fs, Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE);
-			synchronized(privateDarknetComment) {
-				privateDarknetCommentFileNumber = localFileNumber;
-			}
-		} else {
-			rewriteExtraPeerDataFile(fs, Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE, localFileNumber);
-		}
-	}
-
-	public void queueN2NTM(SimpleFieldSet fs) {
-		int fileNumber = writeNewExtraPeerDataFile( fs, Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM);
-		synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
-			queuedToSendN2NTMExtraPeerDataFileNumbers.add(new Integer(fileNumber));
-		}
-	}
-
-	public void sendQueuedN2NTMs() {
-		if(logMINOR)
-			Logger.minor(this, "Sending queued N2NTMs for "+shortToString());
-		Integer[] localFileNumbers = null;
-		synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
-			localFileNumbers = (Integer[]) queuedToSendN2NTMExtraPeerDataFileNumbers.toArray(new Integer[queuedToSendN2NTMExtraPeerDataFileNumbers.size()]);
-		}
-		Arrays.sort(localFileNumbers);
-		for (int i = 0; i < localFileNumbers.length; i++) {
-			rereadExtraPeerDataFile(localFileNumbers[i].intValue());
-		}
-	}
-
 	public void maybeOnConnect() {
 		if(wasDisconnected && isConnected()) {
 			synchronized(this) {
@@ -3050,8 +2486,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	/**
 	 * A method to be called once at the beginning of every time isConnected() is true
 	 */
-	private void onConnect() {
-		sendQueuedN2NTMs();
+	protected void onConnect() {
+		// Do nothing in the default impl
 	}
 
 	public void onFound(long edition, FetchResult result) {
@@ -3110,13 +2546,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public boolean isSignatureVerificationSuccessfull() {
 		return isSignatureVerificationSuccessfull;
-	}
-	
-	public void setAllowLocalAddresses(boolean setting) {
-		synchronized(this) {
-			allowLocalAddresses = setting;
-		}
-        node.peers.writePeers();
 	}
 	
 	public void checkRoutableConnectionStatus() {
@@ -3182,284 +2611,81 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		return DSA.verify(peerPubKey, sig, new NativeBigInteger(1, hash), false);
 	}
 	
-	// File transfer offers
-	// FIXME this should probably be somewhere else, along with the N2NTM stuff... but where?
-	// FIXME this should be persistent across node restarts
+	public String userToString() {
+		return ""+getPeer();
+	}
 
-	/** Files I have offered to this peer */
-	private final HashMap myFileOffersByUID = new HashMap();
-	/** Files this peer has offered to me */
-	private final HashMap hisFileOffersByUID = new HashMap();
+	public void setTimeDelta(long delta) {
+		synchronized(this) {
+			clockDelta = delta;
+			if(Math.abs(clockDelta) > MAX_CLOCK_DELTA)
+				isRoutable = false;
+		}
+		setPeerNodeStatus(System.currentTimeMillis());
+	}
+
+	public long getClockDelta() {
+		return clockDelta;
+	}
+
+	/** Offer a key to this node */
+	public void offer(Key key) {
+		Message msg = DMT.createFNPOfferKey(key);
+		try {
+			sendAsync(msg, null, 0, null);
+		} catch (NotConnectedException e) {
+			// Ignore
+		}
+	}
+
+	public OutgoingPacketMangler getOutgoingMangler() {
+		return outgoingMangler;
+	}
+
+	public SocketHandler getSocketHandler() {
+		return outgoingMangler.getSocketHandler();
+	}
+
+	/** Is this peer disabled? I.e. has the user explicitly disabled it? */
+	public boolean isDisabled() {
+		return false;
+	}
+
+	/** Is this peer allowed local addresses? If false, we will never connect to this peer via
+	 * a local address even if it advertises them.
+	 */
+	public boolean allowLocalAddresses() {
+		return this.outgoingMangler.alwaysAllowLocalAddresses();
+	}
+
+	/** Is this peer set to ignore source address? If so, we will always reply to the peer's official
+	 * address, even if we get packets from somewhere else. @see DarknetPeerNode.isIgnoreSourcePort().
+	 */
+	public boolean isIgnoreSource() {
+		return false;
+	}
+
+	/**
+	 * Create a DarknetPeerNode or an OpennetPeerNode as appropriate
+	 */
+	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager, boolean b, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		if(crypto.isOpennet)
+			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, b, mangler);
+		else
+			return new DarknetPeerNode(fs, node2, crypto, manager, b, mangler);
+	}
+
+	public byte[] getIdentity() {
+		return identity;
+	}
+
+	public boolean neverConnected() {
+		return neverConnected;
+	}
 	
-	private void storeOffers() {
-		// FIXME do something
-	}
-	
-	class FileOffer {
-		final long uid;
-		final String filename;
-		final String mimeType;
-		final String comment;
-		private RandomAccessThing data;
-		final long size;
-		/** Who is offering it? True = I am offering it, False = I am being offered it */
-		final boolean amIOffering;
-		private PartiallyReceivedBulk prb;
-		private BulkTransmitter transmitter;
-		private BulkReceiver receiver;
-		
-		FileOffer(long uid, RandomAccessThing data, String filename, String mimeType, String comment) throws IOException {
-			this.uid = uid;
-			this.data = data;
-			this.filename = filename;
-			this.mimeType = mimeType;
-			this.comment = comment;
-			size = data.size();
-			amIOffering = true;
-		}
+	/** Called when a request or insert succeeds. Used by opennet. */
+	public abstract void onSuccess(boolean insert, boolean ssk);
 
-		public FileOffer(SimpleFieldSet fs, boolean amIOffering) throws FSParseException {
-			uid = fs.getLong("uid");
-			size = fs.getLong("size");
-			mimeType = fs.get("metadata.contentType");
-			filename = FileUtil.sanitize(fs.get("filename"), mimeType);
-			comment = fs.get("comment");
-			this.amIOffering = amIOffering;
-		}
-
-		public void toFieldSet(SimpleFieldSet fs) {
-			fs.put("uid", uid);
-			fs.putSingle("filename", filename);
-			fs.putSingle("metadata.contentType", mimeType);
-			fs.putSingle("comment", comment);
-			fs.put("size", size);
-		}
-
-		public void accept() {
-			File dest = new File(node.clientCore.downloadDir, "direct-"+FileUtil.sanitize(getName())+filename);
-			try {
-				data = new RandomAccessFileWrapper(dest, "rw");
-			} catch (FileNotFoundException e) {
-				// Impossible
-				throw new Error("Impossible: FileNotFoundException opening with RAF with rw! "+e, e);
-			}
-			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, false);
-			receiver = new BulkReceiver(prb, PeerNode.this, uid);
-			// FIXME make this persistent
-			Thread t = new Thread(new Runnable() {
-				public void run() {
-					if(!receiver.receive()) {
-						String err = "Failed to receive "+this;
-						Logger.error(this, err);
-						System.err.println(err);
-					}
-				}
-			}, "Receiver for bulk transfer "+uid+":"+filename);
-			t.setDaemon(true);
-			t.start();
-			sendFileOfferAccepted(uid);
-		}
-
-		public void send() throws DisconnectedException {
-			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, true);
-			transmitter = new BulkTransmitter(prb, PeerNode.this, uid, node.outputThrottle);
-			Thread t = new Thread(new Runnable() {
-				public void run() {
-					if(!transmitter.send()) {
-						String err = "Failed to send "+this;
-						Logger.error(this, err);
-						System.err.println(err);
-					}
-				}
-			}, "Sender for bulk transfer "+uid+":"+filename);
-			t.setDaemon(true);
-			t.start();
-		}
-	}
-
-	public int sendTextMessage(String message) {
-		long now = System.currentTimeMillis();
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
-		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_USERALERT);
-		try {
-			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
-			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
-			fs.putSingle("text", Base64.encode(message.getBytes("UTF-8")));
-			fs.put("composedTime", now);
-			fs.put("sentTime", now);
-			Message n2ntm;
-			int status = getPeerNodeStatus();
-			if(status == PeerManager.PEER_NODE_STATUS_CONNECTED || 
-					status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-				n2ntm = DMT.createNodeToNodeMessage(
-						Node.N2N_MESSAGE_TYPE_FPROXY, fs
-								.toString().getBytes("UTF-8"));
-				try {
-					sendAsync(n2ntm, null, 0, null);
-				} catch (NotConnectedException e) {
-					fs.removeValue("sentTime");
-					queueN2NTM(fs);
-					setPeerNodeStatus(System.currentTimeMillis());
-					return getPeerNodeStatus();
-				}
-			} else {
-				fs.removeValue("sentTime");
-				queueN2NTM(fs);
-			}
-			return status;
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: "+e, e);
-		}
-	}
-
-	public int sendFileOfferAccepted(long uid) {
-		storeOffers();
-		long now = System.currentTimeMillis();
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
-		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED);
-		try {
-			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
-			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
-			fs.put("composedTime", now);
-			fs.put("sentTime", now);
-			fs.put("uid", uid);
-			Message n2ntm;
-			int status = getPeerNodeStatus();
-			if(status == PeerManager.PEER_NODE_STATUS_CONNECTED || 
-					status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-				n2ntm = DMT.createNodeToNodeMessage(
-						Node.N2N_MESSAGE_TYPE_FPROXY, fs
-								.toString().getBytes("UTF-8"));
-				try {
-					sendAsync(n2ntm, null, 0, null);
-				} catch (NotConnectedException e) {
-					fs.removeValue("sentTime");
-					queueN2NTM(fs);
-					setPeerNodeStatus(System.currentTimeMillis());
-					return getPeerNodeStatus();
-				}
-			} else {
-				fs.removeValue("sentTime");
-				queueN2NTM(fs);
-			}
-			return status;
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: "+e, e);
-		}
-	}
-
-	public int sendFileOffer(File filename, String message) throws IOException {
-		String fnam = filename.getName();
-		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
-		long uid = node.random.nextLong();
-		RandomAccessThing data = new RandomAccessFileWrapper(filename, "r");
-		FileOffer fo = new FileOffer(uid, data, fnam, mime, message);
-		synchronized(this) {
-			myFileOffersByUID.put(new Long(uid), fo);
-		}
-		storeOffers();
-		long now = System.currentTimeMillis();
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
-		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER);
-		try {
-			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
-			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
-			fs.put("composedTime", now);
-			fs.put("sentTime", now);
-			fo.toFieldSet(fs);
-			Message n2ntm;
-			int status = getPeerNodeStatus();
-			if(status == PeerManager.PEER_NODE_STATUS_CONNECTED || 
-					status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-				n2ntm = DMT.createNodeToNodeMessage(
-						Node.N2N_MESSAGE_TYPE_FPROXY, fs
-								.toString().getBytes("UTF-8"));
-				try {
-					sendAsync(n2ntm, null, 0, null);
-				} catch (NotConnectedException e) {
-					fs.removeValue("sentTime");
-					queueN2NTM(fs);
-					setPeerNodeStatus(System.currentTimeMillis());
-					return getPeerNodeStatus();
-				}
-			} else {
-				fs.removeValue("sentTime");
-				queueN2NTM(fs);
-			}
-			return status;
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: "+e, e);
-		}
-	}
-
-	public void handleFproxyN2NTM(SimpleFieldSet fs, int fileNumber) {
-		String source_nodename = null;
-		String target_nodename = null;
-		String text = null;
-		long composedTime;
-		long sentTime;
-		long receivedTime;
-	  	try {
-			source_nodename = new String(Base64.decode(fs.get("source_nodename")));
-			target_nodename = new String(Base64.decode(fs.get("target_nodename")));
-			text = new String(Base64.decode(fs.get("text")));
-			composedTime = fs.getLong("composedTime", -1);
-			sentTime = fs.getLong("sentTime", -1);
-			receivedTime = fs.getLong("receivedTime", -1);
-		} catch (IllegalBase64Exception e) {
-			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
-			return;
-		}
-		N2NTMUserAlert userAlert = new N2NTMUserAlert(this, source_nodename, target_nodename, text, fileNumber, composedTime, sentTime, receivedTime);
-		node.clientCore.alerts.register(userAlert);
-	}
-
-	public void handleFproxyFileOffer(SimpleFieldSet fs, int fileNumber) {
-		FileOffer offer;
-		try {
-			offer = new FileOffer(fs, false);
-		} catch (FSParseException e) {
-			Logger.error(this, "Could not parse offer: "+e+" on "+this+" :\n"+fs, e);
-			return;
-		}
-		Long u = new Long(offer.uid);
-		synchronized(this) {
-			if(hisFileOffersByUID.containsKey(u)) return; // Ignore re-advertisement
-			hisFileOffersByUID.put(u, offer);
-		}
-		// Auto-accept : FIXME
-		offer.accept();
-	}
-
-	public void handleFproxyFileOfferAccepted(SimpleFieldSet fs, int fileNumber) {
-		long uid;
-		try {
-			uid = fs.getLong("uid");
-		} catch (FSParseException e) {
-			Logger.error(this, "Could not parse offer accepted: "+e+" on "+this+" :\n"+fs, e);
-			return;
-		}
-		Long u = new Long(uid);
-		FileOffer fo;
-		synchronized(this) {
-			fo = (FileOffer) (myFileOffersByUID.get(u));
-		}
-		if(fo == null) {
-			Logger.error(this, "No such offer: "+uid);
-			try {
-				sendAsync(DMT.createFNPBulkSendAborted(uid), null, fileNumber, null);
-			} catch (NotConnectedException e) {
-				// Fine by me!
-			}
-			return;
-		}
-		try {
-			fo.send();
-		} catch (DisconnectedException e) {
-			Logger.error(this, "Cannot send because node disconnected: "+e+" for "+uid+":"+fo.filename, e);
-		}
-	}
+	/** Called when the peer is removed from the PeerManager */
+	public abstract void onRemove();
 }

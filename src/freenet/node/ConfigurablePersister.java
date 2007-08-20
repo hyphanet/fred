@@ -6,7 +6,6 @@ import java.io.IOException;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
-import freenet.node.Node.NodeInitException;
 import freenet.support.api.StringCallback;
 
 public class ConfigurablePersister extends Persister {
@@ -30,7 +29,7 @@ public class ConfigurablePersister extends Persister {
 		try {
 			setThrottles(throttleFile);
 		} catch (InvalidConfigValueException e2) {
-			throw new NodeInitException(Node.EXIT_THROTTLE_FILE_ERROR, e2.getMessage());
+			throw new NodeInitException(NodeInitException.EXIT_THROTTLE_FILE_ERROR, e2.getMessage());
 		}
 	}
 
@@ -44,7 +43,10 @@ public class ConfigurablePersister extends Persister {
 				break;
 			} else {
 				try {
-					f.createNewFile();
+					if(!f.createNewFile()) {
+						if(f.exists()) continue;
+						throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate"));
+					}
 				} catch (IOException e) {
 					throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate"));
 				}

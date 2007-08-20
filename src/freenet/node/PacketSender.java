@@ -28,7 +28,7 @@ public class PacketSender implements Runnable, Ticker {
 
 	private static boolean logMINOR;
 	
-	static final int MAX_COALESCING_DELAY = 100;
+	static final int MAX_COALESCING_DELAY = 200;
 	
     final LinkedList resendPackets;
     /** ~= Ticker :) */
@@ -49,7 +49,7 @@ public class PacketSender implements Runnable, Ticker {
         resendPackets = new LinkedList();
         timedJobsByTime = new TreeMap();
         this.node = node;
-        myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
+        myThread = new Thread(this, "PacketSender thread for "+node.getDarknetPortNumber());
         myThread.setDaemon(true);
         myThread.setPriority(Thread.MAX_PRIORITY);
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -183,7 +183,7 @@ public class PacketSender implements Runnable, Ticker {
 			pn.maybeOnConnect();
             if(pn.isConnected()) {
             	
-            	if(pn.isRoutable() && pn.shouldDisconnectNow()) {
+            	if(pn.isRoutable() && pn.noLongerRoutable()) {
             		// we don't disconnect but we mark it incompatible
             		pn.invalidate();
             		pn.setPeerNodeStatus(now);
@@ -198,19 +198,15 @@ public class PacketSender implements Runnable, Ticker {
                     continue;
                 }
                 
+                boolean mustSend = false;
+                
                 // Any urgent notifications to send?
                 long urgentTime = pn.getNextUrgentTime();
                 // Should spam the logs, unless there is a deadlock
                 if(urgentTime < Long.MAX_VALUE && logMINOR)
                 	Logger.minor(this, "Next urgent time: "+urgentTime+" for "+pn.getPeer());
                 if(urgentTime <= now) {
-                    // Send them
-                    try {
-						pn.sendAnyUrgentNotifications();
-					} catch (PacketSequenceException e) {
-                    	Logger.error(this, "Caught "+e+" - while sending urgent notifications : disconnecting", e);
-                    	pn.forceDisconnect();
-					}
+                	mustSend = true;
                 } else {
                     nextActionTime = Math.min(nextActionTime, urgentTime);
                 }
@@ -230,7 +226,8 @@ public class PacketSender implements Runnable, Ticker {
                         if(item == null) continue;
                         try {
                             if(logMINOR) Logger.minor(this, "Resending "+item.packetNumber+" to "+item.kt);
-                            node.packetMangler.resend(item);
+                            pn.getOutgoingMangler().resend(item);
+                            mustSend = false;
                         } catch (KeyChangedException e) {
                             Logger.error(this, "Caught "+e+" resending packets to "+kt);
                             pn.requeueResendItems(rpiTemp);
@@ -249,7 +246,6 @@ public class PacketSender implements Runnable, Ticker {
                     
                 }
 
-                if(node.packetMangler == null) continue;
                 // Any messages to send?
                 MessageItem[] messages = null;
                 messages = pn.grabQueuedMessageItems();
@@ -268,14 +264,21 @@ public class PacketSender implements Runnable, Ticker {
                 	} else {
                 		for(int j=0;j<messages.length;j++) {
                 			if(logMINOR) Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));
-                			if (messages[j].msg != null) {
-                				pn.addToLocalNodeSentMessagesToStatistic(messages[j].msg);
-                			}
                 		}
                 		// Send packets, right now, blocking, including any active notifications
-                		node.packetMangler.processOutgoingOrRequeue(messages, pn, true, false);
+                		pn.getOutgoingMangler().processOutgoingOrRequeue(messages, pn, true, false);
                 		continue;
                 	}
+                }
+                
+                if(mustSend) {
+                    // Send them
+                    try {
+						pn.sendAnyUrgentNotifications();
+					} catch (PacketSequenceException e) {
+                    	Logger.error(this, "Caught "+e+" - while sending urgent notifications : disconnecting", e);
+                    	pn.forceDisconnect();
+					}
                 }
                 
                 // Need to send a keepalive packet?
@@ -284,23 +287,23 @@ public class PacketSender implements Runnable, Ticker {
                    	// Force packet to have a sequence number.
                    	Message m = DMT.createFNPVoid();
                    	pn.addToLocalNodeSentMessagesToStatistic(m);
-                   	node.packetMangler.processOutgoingOrRequeue(new MessageItem[] { new MessageItem(m, null, 0, null) }, pn, true, true);
+                   	pn.getOutgoingMangler().processOutgoingOrRequeue(new MessageItem[] { new MessageItem(m, null, 0, null) }, pn, true, true);
                 }
             } else {
                 // Not connected
                 // Send handshake if necessary
                 long beforeHandshakeTime = System.currentTimeMillis();
                 if(pn.shouldSendHandshake())
-                    node.packetMangler.sendHandshake(pn);
+                    pn.getOutgoingMangler().sendHandshake(pn);
                 if(pn.noContactDetails())
                 	pn.startARKFetcher();
                 long afterHandshakeTime = System.currentTimeMillis();
                 if((afterHandshakeTime - beforeHandshakeTime) > (2*1000))
-                    Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime ("+(afterHandshakeTime - beforeHandshakeTime)+") in PacketSender working with "+pn.getPeer()+" named "+pn.getName());
+                    Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime ("+(afterHandshakeTime - beforeHandshakeTime)+") in PacketSender working with "+pn.userToString());
             }
     		long tempNow = System.currentTimeMillis();
     		if((tempNow - oldTempNow) > (5*1000))
-    			Logger.error(this, "tempNow is more than 5 seconds past oldTempNow ("+(tempNow - oldTempNow)+") in PacketSender working with "+pn.getPeer()+" named "+pn.getName());
+    			Logger.error(this, "tempNow is more than 5 seconds past oldTempNow ("+(tempNow - oldTempNow)+") in PacketSender working with "+pn.userToString());
     		oldTempNow = tempNow;
     	}
     	
@@ -355,9 +358,7 @@ public class PacketSender implements Runnable, Ticker {
         			}
         		} else {
         			try {
-						Thread t = new Thread(r, "Scheduled job: "+r);
-						t.setDaemon(true);
-						t.start();
+        				node.executor.execute(r, "Scheduled job: "+r);
 					} catch (OutOfMemoryError e) {
 						OOMHandler.handleOOM(e);
 						System.err.println("Will retry above failed operation...");

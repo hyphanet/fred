@@ -11,7 +11,6 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.DMT;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.l10n.L10n;
-import freenet.node.Node.NodeInitException;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -136,8 +135,8 @@ public class NodeStats implements Persistable {
 	final TokenBucket requestInputThrottle;
 
 	// various metrics
-	public RunningAverage routingMissDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
-	public RunningAverage backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
+	public final RunningAverage routingMissDistance;
+	public final RunningAverage backedOffPercent;
 	protected final Persister persister;
 	
 	// ThreadCounting stuffs
@@ -167,13 +166,15 @@ public class NodeStats implements Persistable {
 		this.node = node;
 		this.peers = node.peers;
 		this.hardRandom = node.random;
+		this.routingMissDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		preemptiveRejectReasons = new StringCounter();
-		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0);
+		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0, node);
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
 		this.rootThreadGroup = tg;
 		throttledPacketSendAverage =
-			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
+			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
 		nodePinger = new NodePinger(node);
 
 		previous_input_stat = 0;
@@ -269,37 +270,40 @@ public class NodeStats implements Persistable {
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
 		// Guesstimates. Hopefully well over the reality.
-		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesSentAverage"));
-		localSskFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesSentAverage"));
-		localChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesSentAverage"));
-		localSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalSskInsertBytesSentAverage"));
-		localChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesReceivedAverage"));
-		localSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesReceivedAverage"));
-		localChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"));
-		localSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"));
+		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesSentAverage"), node);
+		localSskFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesSentAverage"), node);
+		localChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesSentAverage"), node);
+		localSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalSskInsertBytesSentAverage"), node);
+		localChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+2048/*path folding*/, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesReceivedAverage"), node);
+		localSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesReceivedAverage"), node);
+		localChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"), node);
+		localSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"), node);
 
-		remoteChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesSentAverage"));
-		remoteSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesSentAverage"));
-		remoteChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesSentAverage"));
-		remoteSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesSentAverage"));
-		remoteChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesReceivedAverage"));
-		remoteSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesReceivedAverage"));
-		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesReceivedAverage"));
-		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesReceivedAverage"));
+		remoteChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesSentAverage"), node);
+		remoteSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesSentAverage"), node);
+		remoteChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesSentAverage"), node);
+		remoteSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesSentAverage"), node);
+		remoteChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesReceivedAverage"), node);
+		remoteSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesReceivedAverage"), node);
+		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesReceivedAverage"), node);
+		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesReceivedAverage"), node);
 		
-		successfulChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkFetchBytesSentAverage"));
-		successfulSskFetchBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskFetchBytesSentAverage"));
-		successfulChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesSentAverage"));
-		successfulSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskInsertBytesSentAverage"));
-		successfulChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkFetchBytesReceivedAverage"));
-		successfulSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskFetchBytesReceivedAverage"));
-		successfulChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesReceivedAverage"));
-		successfulSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskInsertBytesReceivedAverage"));
+		successfulChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkFetchBytesSentAverage"), node);
+		successfulSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskFetchBytesSentAverage"), node);
+		successfulChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesSentAverage"), node);
+		successfulSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskInsertBytesSentAverage"), node);
+		successfulChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkFetchBytesReceivedAverage"), node);
+		successfulSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskFetchBytesReceivedAverage"), node);
+		successfulChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesReceivedAverage"), node);
+		successfulSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskInsertBytesReceivedAverage"), node);
 		
 		requestOutputThrottle = 
 			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), 0);
 		requestInputThrottle = 
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), 0);
+		
+		estimatedSizeOfOneThrottledPacket = 1024 + DMT.packetTransmitSize(1024, 32) + 
+			node.estimateFullHeadersLengthOneMessage();
 	}
 	
 	protected String l10n(String key) {
@@ -309,22 +313,50 @@ public class NodeStats implements Persistable {
 	public void start() throws NodeInitException {
 		nodePinger.start();
 		persister.start();
+		node.getTicker().queueTimedJob(throttledPacketSendAverageIdleUpdater, CHECK_THROTTLE_TIME);
 	}
+	
+	/** Every 60 seconds, check whether we need to adjust the bandwidth delay time because of idleness.
+	 * (If no packets have been sent, the throttledPacketSendAverage should decrease; if it doesn't, it may go high,
+	 * and then no requests will be accepted, and it will stay high forever. */
+	static final int CHECK_THROTTLE_TIME = 60 * 1000;
 	
 	private long lastAcceptedRequest = -1;
 	
-	private long lastCheckedUncontended = -1;
+	final int estimatedSizeOfOneThrottledPacket;
 	
-	static final int ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET = 
-		1024 + DMT.packetTransmitSize(1024, 32)
-		+ FNPPacketMangler.FULL_HEADERS_LENGTH_ONE_MESSAGE;
+	final Runnable throttledPacketSendAverageIdleUpdater =
+		new Runnable() {
+			public void run() {
+				long now = System.currentTimeMillis();
+				try {
+					if(throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
+						// shouldn't take long
+						node.outputThrottle.blockingGrab(estimatedSizeOfOneThrottledPacket);
+						node.outputThrottle.recycle(estimatedSizeOfOneThrottledPacket);
+						long after = System.currentTimeMillis();
+						// Report time it takes to grab the bytes.
+						throttledPacketSendAverage.report(after - now);
+					}
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+				} finally {
+					node.getTicker().queueTimedJob(this, CHECK_THROTTLE_TIME);
+					long end = System.currentTimeMillis();
+					if(logMINOR)
+						Logger.minor(this, "Throttle check took "+TimeUtil.formatTime(end-now,2,true));
+				}
+			}
+	};
 	
 	/* return reject reason as string if should reject, otherwise return null */
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) dumpByteCostAverages();
 		
 		int threadCount = getActiveThreadCount();
 		if(threadLimit < threadCount) {
+			pInstantRejectIncoming.report(1.0);
 			preemptiveRejectReasons.inc(">threadLimit");
 			return ">threadLimit ("+threadCount+'/'+threadLimit+')';
 		}
@@ -333,27 +365,6 @@ public class NodeStats implements Persistable {
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.
 		long now = System.currentTimeMillis();
-		boolean checkUncontended = false;
-		synchronized(this) {
-			if(now - lastCheckedUncontended > 1000) {
-				checkUncontended = true;
-				lastCheckedUncontended = now;
-			}
-		}
-		if(checkUncontended && throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
-			// shouldn't take long
-			node.outputThrottle.blockingGrab(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
-			node.outputThrottle.recycle(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
-			long after = System.currentTimeMillis();
-			// Report time it takes to grab the bytes.
-			throttledPacketSendAverage.report(after - now);
-			now = after;
-			// will have changed, use new value
-			synchronized(this) {
-				bwlimitDelayTime = throttledPacketSendAverage.currentValue();
-			}
-		}
-		
 		double pingTime = nodePinger.averagePingTime();
 		synchronized(this) {
 			// Round trip time
@@ -398,24 +409,29 @@ public class NodeStats implements Persistable {
 		// Reject request if the result of all our current requests completing simultaneously would be that
 		// some of them timeout.
 		
-		// Increment each running count unless it is the one we are currently processing.
-		// Purpose: Don't allow an SSK request (e.g.) unless there is space for a CHK insert *as well*.
+		// Never reject a CHK and accept an SSK. Because if we do that, we would be constantly accepting SSKs, as there
+		// would never be enough space for a CHK. So we add 1 to each type of request's count before computing the 
+		// bandwidth liability. Thus, if we have exactly enough space for 1 SSK and 1 CHK, we can accept either, and
+		// when one of either type completes, we can accept one of either type again: We never let SSKs drain the 
+		// "bucket" and block CHKs.
 		
-		int numCHKRequests = node.getNumCHKRequests() + ((!isInsert) && (!isSSK) ? 0 : 1);
-		int numSSKRequests = node.getNumSSKRequests() + ((!isInsert) && isSSK ? 0 : 1);
-		int numCHKInserts = node.getNumCHKInserts() + (isInsert && (!isSSK) ? 0 : 1);
-		int numSSKInserts = node.getNumSSKInserts() + (isInsert && isSSK ? 0 : 1);
+		int numCHKRequests = node.getNumCHKRequests() + 1;
+		int numSSKRequests = node.getNumSSKRequests() + 1;
+		int numCHKInserts = node.getNumCHKInserts() + 1;
+		int numSSKInserts = node.getNumSSKInserts() + 1;
+		if(logMINOR)
+			Logger.minor(this, "Running (adjusted): CHK fetch "+numCHKRequests+" SSK fetch "+numSSKRequests+" CHK insert "+numCHKInserts+" SSK insert "+numSSKInserts);
 		
 		double bandwidthLiabilityOutput =
 			successfulChkFetchBytesSentAverage.currentValue() * numCHKRequests +
 			successfulSskFetchBytesSentAverage.currentValue() * numSSKRequests +
 			successfulChkInsertBytesSentAverage.currentValue() * numCHKInserts +
 			successfulSskInsertBytesSentAverage.currentValue() * numSSKInserts;
-		bandwidthLiabilityOutput += getSuccessfulBytes(isSSK, isInsert, false).currentValue();
 		double bandwidthAvailableOutput =
 			node.getOutputBandwidthLimit() * 90; // 90 seconds at full power; we have to leave some time for the search as well
 		bandwidthAvailableOutput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutput) {
+			pInstantRejectIncoming.report(1.0);
 			preemptiveRejectReasons.inc("Output bandwidth liability");
 			return "Output bandwidth liability";
 		}
@@ -425,10 +441,11 @@ public class NodeStats implements Persistable {
 			successfulSskFetchBytesReceivedAverage.currentValue() * numSSKRequests +
 			successfulChkInsertBytesReceivedAverage.currentValue() * numCHKInserts +
 			successfulSskInsertBytesReceivedAverage.currentValue() * numSSKInserts;
-		bandwidthLiabilityInput += getSuccessfulBytes(isSSK, isInsert, true).currentValue();
 		double bandwidthAvailableInput =
 			node.getInputBandwidthLimit() * 90; // 90 seconds at full power
+		bandwidthAvailableInput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
 		if(bandwidthLiabilityInput > bandwidthAvailableInput) {
+			pInstantRejectIncoming.report(1.0);
 			preemptiveRejectReasons.inc("Input bandwidth liability");
 			return "Input bandwidth liability";
 		}
@@ -439,6 +456,8 @@ public class NodeStats implements Persistable {
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
 					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
 		int expectedSent = (int)Math.max(expected, 0);
+		if(logMINOR)
+			Logger.minor(this, "Expected sent bytes: "+expectedSent);
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
 			pInstantRejectIncoming.report(1.0);
 			preemptiveRejectReasons.inc("Insufficient output bandwidth");
@@ -448,6 +467,8 @@ public class NodeStats implements Persistable {
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
 					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
 		int expectedReceived = (int)Math.max(expected, 0);
+		if(logMINOR)
+			Logger.minor(this, "Expected received bytes: "+expectedSent);
 		if(!requestInputThrottle.instantGrab(expectedReceived)) {
 			requestOutputThrottle.recycle(expectedSent);
 			pInstantRejectIncoming.report(1.0);
@@ -653,7 +674,7 @@ public class NodeStats implements Persistable {
 
 	
 	public int getActiveThreadCount() {
-		return rootThreadGroup.activeCount();
+		return rootThreadGroup.activeCount() - node.executor.waitingThreads();
 	}
 
 	public int getThreadLimit() {
@@ -683,11 +704,11 @@ public class NodeStats implements Persistable {
 		fs.put("unclaimedFIFOSize", node.usm.getUnclaimedFIFOSize());
 		
 		/* gather connection statistics */
-		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses();
+		DarknetPeerNodeStatus[] peerNodeStatuses = peers.getDarknetPeerNodeStatuses();
 		Arrays.sort(peerNodeStatuses, new Comparator() {
 			public int compare(Object first, Object second) {
-				PeerNodeStatus firstNode = (PeerNodeStatus) first;
-				PeerNodeStatus secondNode = (PeerNodeStatus) second;
+				DarknetPeerNodeStatus firstNode = (DarknetPeerNodeStatus) first;
+				DarknetPeerNodeStatus secondNode = (DarknetPeerNodeStatus) second;
 				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
 				if (statusDifference != 0) {
 					return statusDifference;
@@ -729,88 +750,85 @@ public class NodeStats implements Persistable {
 		fs.put("numberOfTransferringRequestSenders", node.getNumTransferringRequestSenders());
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
 
+		long[] total = IOStatisticCollector.getTotalIO();
+		long total_output_rate = (total[0]) / nodeUptimeSeconds;
+		long total_input_rate = (total[1]) / nodeUptimeSeconds;
+		long totalPayloadOutput = node.getTotalPayloadSent();
+		long total_payload_output_rate = totalPayloadOutput / nodeUptimeSeconds;
+		int total_payload_output_percent = (int) (100 * totalPayloadOutput / total[0]);
+		fs.put("totalOutputBytes", total[0]);
+		fs.put("totalOutputRate", total_output_rate);
+		fs.put("totalPayloadOutputBytes", totalPayloadOutput);
+		fs.put("totalPayloadOutputRate", total_payload_output_rate);
+		fs.put("totalPayloadOutputPercent", total_payload_output_percent);
+		fs.put("totalInputBytes", total[1]);
+		fs.put("totalInputRate", total_input_rate);
 
-		if(numberOfConnected > 0) { // it clashes if there is no peer )> no traffic
-			long[] total = IOStatisticCollector.getTotalIO();
-			long total_output_rate = (total[0]) / nodeUptimeSeconds;
-			long total_input_rate = (total[1]) / nodeUptimeSeconds;
-			long totalPayloadOutput = node.getTotalPayloadSent();
-			long total_payload_output_rate = totalPayloadOutput / nodeUptimeSeconds;
-			int total_payload_output_percent = (int) (100 * totalPayloadOutput / total[0]);
-			fs.put("totalOutputBytes", total[0]);
-			fs.put("totalOutputRate", total_output_rate);
-			fs.put("totalPayloadOutputBytes", totalPayloadOutput);
-			fs.put("totalPayloadOutputRate", total_payload_output_rate);
-			fs.put("totalPayloadOutputPercent", total_payload_output_percent);
-			fs.put("totalInputBytes", total[1]);
-			fs.put("totalInputRate", total_input_rate);
+		long[] rate = getNodeIOStats();
+		long deltaMS = (rate[5] - rate[2]);
+		double recent_output_rate = 1000.0 * (rate[3] - rate[0]) / deltaMS;
+		double recent_input_rate = 1000.0 * (rate[4] - rate[1]) / deltaMS;
+		fs.put("recentOutputRate", recent_output_rate);
+		fs.put("recentInputRate", recent_input_rate);
 
-			long[] rate = getNodeIOStats();
-			long deltaMS = (rate[5] - rate[2]);
-			double recent_output_rate = 1000.0 * (rate[3] - rate[0]) / deltaMS;
-			double recent_input_rate = 1000.0 * (rate[4] - rate[1]) / deltaMS;
-			fs.put("recentOutputRate", recent_output_rate);
-			fs.put("recentInputRate", recent_input_rate);
-
-			String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
-			if(routingBackoffReasons.length != 0) {
-				for(int i=0;i<routingBackoffReasons.length;i++) {
-					fs.put("numberWithRoutingBackoffReasons." + routingBackoffReasons[i], peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]));
-				}
+		String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
+		if(routingBackoffReasons.length != 0) {
+			for(int i=0;i<routingBackoffReasons.length;i++) {
+				fs.put("numberWithRoutingBackoffReasons." + routingBackoffReasons[i], peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]));
 			}
-
-			double swaps = (double)node.getSwaps();
-			double noSwaps = (double)node.getNoSwaps();
-			double numberOfRemotePeerLocationsSeenInSwaps = (double)node.getNumberOfRemotePeerLocationsSeenInSwaps();
-			fs.putSingle("numberOfRemotePeerLocationsSeenInSwaps", Double.toString(numberOfRemotePeerLocationsSeenInSwaps));
-			double avgConnectedPeersPerNode = 0.0;
-			if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
-				avgConnectedPeersPerNode = numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps);
-			}
-			fs.putSingle("avgConnectedPeersPerNode", Double.toString(avgConnectedPeersPerNode));
-
-			int startedSwaps = node.getStartedSwaps();
-			int swapsRejectedAlreadyLocked = node.getSwapsRejectedAlreadyLocked();
-			int swapsRejectedNowhereToGo = node.getSwapsRejectedNowhereToGo();
-			int swapsRejectedRateLimit = node.getSwapsRejectedRateLimit();
-			int swapsRejectedLoop = node.getSwapsRejectedLoop();
-			int swapsRejectedRecognizedID = node.getSwapsRejectedRecognizedID();
-			double locationChangePerSession = node.getLocationChangeSession();
-			double locationChangePerSwap = 0.0;
-			double locationChangePerMinute = 0.0;
-			double swapsPerMinute = 0.0;
-			double noSwapsPerMinute = 0.0;
-			double swapsPerNoSwaps = 0.0;
-			if (swaps > 0) {
-				locationChangePerSwap = locationChangePerSession/swaps;
-			}
-			if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-				locationChangePerMinute = locationChangePerSession/(double)(nodeUptimeSeconds/60.0);
-			}
-			if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-				swapsPerMinute = swaps/(double)(nodeUptimeSeconds/60.0);
-			}
-			if ((noSwaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-				noSwapsPerMinute = noSwaps/(double)(nodeUptimeSeconds/60.0);
-			}
-			if ((swaps > 0.0) && (noSwaps > 0.0)) {
-				swapsPerNoSwaps = swaps/noSwaps;
-			}
-			fs.put("locationChangePerSession", locationChangePerSession);
-			fs.put("locationChangePerSwap", locationChangePerSwap);
-			fs.put("locationChangePerMinute", locationChangePerMinute);
-			fs.put("swapsPerMinute", swapsPerMinute);
-			fs.put("noSwapsPerMinute", noSwapsPerMinute);
-			fs.put("swapsPerNoSwaps", swapsPerNoSwaps);
-			fs.put("swaps", swaps);
-			fs.put("noSwaps", noSwaps);
-			fs.put("startedSwaps", startedSwaps);
-			fs.put("swapsRejectedAlreadyLocked", swapsRejectedAlreadyLocked);
-			fs.put("swapsRejectedNowhereToGo", swapsRejectedNowhereToGo);
-			fs.put("swapsRejectedRateLimit", swapsRejectedRateLimit);
-			fs.put("swapsRejectedLoop", swapsRejectedLoop);
-			fs.put("swapsRejectedRecognizedID", swapsRejectedRecognizedID);
 		}
+
+		double swaps = (double)node.getSwaps();
+		double noSwaps = (double)node.getNoSwaps();
+		double numberOfRemotePeerLocationsSeenInSwaps = (double)node.getNumberOfRemotePeerLocationsSeenInSwaps();
+		fs.putSingle("numberOfRemotePeerLocationsSeenInSwaps", Double.toString(numberOfRemotePeerLocationsSeenInSwaps));
+		double avgConnectedPeersPerNode = 0.0;
+		if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
+			avgConnectedPeersPerNode = numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps);
+		}
+		fs.putSingle("avgConnectedPeersPerNode", Double.toString(avgConnectedPeersPerNode));
+
+		int startedSwaps = node.getStartedSwaps();
+		int swapsRejectedAlreadyLocked = node.getSwapsRejectedAlreadyLocked();
+		int swapsRejectedNowhereToGo = node.getSwapsRejectedNowhereToGo();
+		int swapsRejectedRateLimit = node.getSwapsRejectedRateLimit();
+		int swapsRejectedLoop = node.getSwapsRejectedLoop();
+		int swapsRejectedRecognizedID = node.getSwapsRejectedRecognizedID();
+		double locationChangePerSession = node.getLocationChangeSession();
+		double locationChangePerSwap = 0.0;
+		double locationChangePerMinute = 0.0;
+		double swapsPerMinute = 0.0;
+		double noSwapsPerMinute = 0.0;
+		double swapsPerNoSwaps = 0.0;
+		if (swaps > 0) {
+			locationChangePerSwap = locationChangePerSession/swaps;
+		}
+		if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
+			locationChangePerMinute = locationChangePerSession/(double)(nodeUptimeSeconds/60.0);
+		}
+		if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
+			swapsPerMinute = swaps/(double)(nodeUptimeSeconds/60.0);
+		}
+		if ((noSwaps > 0.0) && (nodeUptimeSeconds >= 60)) {
+			noSwapsPerMinute = noSwaps/(double)(nodeUptimeSeconds/60.0);
+		}
+		if ((swaps > 0.0) && (noSwaps > 0.0)) {
+			swapsPerNoSwaps = swaps/noSwaps;
+		}
+		fs.put("locationChangePerSession", locationChangePerSession);
+		fs.put("locationChangePerSwap", locationChangePerSwap);
+		fs.put("locationChangePerMinute", locationChangePerMinute);
+		fs.put("swapsPerMinute", swapsPerMinute);
+		fs.put("noSwapsPerMinute", noSwapsPerMinute);
+		fs.put("swapsPerNoSwaps", swapsPerNoSwaps);
+		fs.put("swaps", swaps);
+		fs.put("noSwaps", noSwaps);
+		fs.put("startedSwaps", startedSwaps);
+		fs.put("swapsRejectedAlreadyLocked", swapsRejectedAlreadyLocked);
+		fs.put("swapsRejectedNowhereToGo", swapsRejectedNowhereToGo);
+		fs.put("swapsRejectedRateLimit", swapsRejectedRateLimit);
+		fs.put("swapsRejectedLoop", swapsRejectedLoop);
+		fs.put("swapsRejectedRecognizedID", swapsRejectedRecognizedID);
 		long fix32kb = 32 * 1024;
 		long cachedKeys = node.getChkDatacache().keyCount();
 		long cachedSize = cachedKeys * fix32kb;

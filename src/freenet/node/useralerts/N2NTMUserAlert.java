@@ -7,25 +7,23 @@ import java.text.DateFormat;
 import java.util.Date;
 
 import freenet.l10n.L10n;
-import freenet.node.PeerNode;
+import freenet.node.DarknetPeerNode;
 import freenet.support.HTMLNode;
 
 // Node To Node Text Message User Alert
 public class N2NTMUserAlert implements UserAlert {
 	private boolean isValid=true;
-	private PeerNode sourcePeerNode;
+	private DarknetPeerNode sourcePeerNode;
 	private String sourceNodename;
-	private String targetNodename;
 	private String messageText;
 	private int fileNumber;
 	private long composedTime;
 	private long sentTime;
 	private long receivedTime;
 
-	public N2NTMUserAlert(PeerNode sourcePeerNode, String source, String target, String message, int fileNumber, long composedTime, long  sentTime, long receivedTime) {
+	public N2NTMUserAlert(DarknetPeerNode sourcePeerNode, String source, String target, String message, int fileNumber, long composedTime, long  sentTime, long receivedTime) {
 		this.sourcePeerNode = sourcePeerNode;
 		this.sourceNodename = source;
-		this.targetNodename = target;
 		this.messageText = message;
 		this.fileNumber = fileNumber;
 		this.composedTime = composedTime;
@@ -59,7 +57,9 @@ public class N2NTMUserAlert implements UserAlert {
 						DateFormat.getInstance().format(new Date(sentTime)), DateFormat.getInstance().format(new Date(receivedTime)) }));
 		String[] lines = messageText.split("\n");
 		for (int i = 0, c = lines.length; i < c; i++) {
-			alertNode.addChild("div", lines[i]);
+			alertNode.addChild("#", lines[i]);
+			if(i != lines.length - 1)
+				alertNode.addChild("br");
 		}
 		alertNode.addChild("p").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + sourcePeerNode.hashCode(), l10n("reply"));
 		return alertNode;

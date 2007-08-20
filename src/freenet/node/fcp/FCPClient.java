@@ -10,7 +10,6 @@ import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertContext;
 import freenet.node.NodeClientCore;
-import freenet.support.LRUQueue;
 import freenet.support.Logger;
 
 /**
@@ -22,15 +21,12 @@ public class FCPClient {
 	// FIXME frost-specific hack
 	private static final Object frostClient = new Object();
 	
-	/** Maximum number of unacknowledged completed requests */
-	private static final int MAX_UNACKED_REQUESTS = 256;
-	
 	public FCPClient(String name2, FCPServer server, FCPConnectionHandler handler, boolean isGlobalQueue) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
 		this.runningPersistentRequests = new HashSet();
-		this.completedUnackedRequests = new LRUQueue();
+		this.completedUnackedRequests = new Vector();
 		this.clientRequestsByIdentifier = new HashMap();
 		this.server = server;
 		this.core = server.core;
@@ -58,7 +54,7 @@ public class FCPClient {
 	/** Currently running persistent requests */
 	private final HashSet runningPersistentRequests;
 	/** Completed unacknowledged persistent requests */
-	private final LRUQueue completedUnackedRequests;
+	private final Vector completedUnackedRequests;
 	/** ClientRequest's by identifier */
 	private final HashMap clientRequestsByIdentifier;
 	/** Client (one FCPClient = one HighLevelSimpleClient = one round-robin slot) */
@@ -101,12 +97,8 @@ public class FCPClient {
 		ClientRequest dropped = null;
 		synchronized(this) {
 			if(runningPersistentRequests.remove(get)) {
-				completedUnackedRequests.push(get);
+				completedUnackedRequests.add(get);
 			}	
-			if(completedUnackedRequests.size() > MAX_UNACKED_REQUESTS) {
-				dropped = (ClientRequest) completedUnackedRequests.pop();
-				clientRequestsByIdentifier.remove(dropped.getIdentifier());
-			}
 		}
 		if(dropped != null) {
 			dropped.dropped();
@@ -151,7 +143,7 @@ public class FCPClient {
 			if((old != null) && (old != cg))
 				throw new IdentifierCollisionException();
 			if(cg.hasFinished()) {
-				completedUnackedRequests.push(cg);
+				completedUnackedRequests.add(cg);
 			} else {
 				runningPersistentRequests.add(cg);
 				if(startLater) toStart.add(cg);

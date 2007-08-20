@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.Vector;
 
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.ProxyUserAlert;
@@ -45,7 +46,7 @@ public class IPDetectorPluginManager {
 			div.addChild("#", text);
 			if(suggestPortForward) {
 				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardPortWithLink", new String[] { "link", "/link", "port" },
-						new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(node.portNumber) });
+						new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(node.getDarknetPortNumber()) });
 			}
 			return div;
 		}
@@ -58,7 +59,7 @@ public class IPDetectorPluginManager {
 			if(!suggestPortForward) return text;
 			StringBuffer sb = new StringBuffer();
 			sb.append(text);
-			sb.append(l10n("suggestForwardPort", "port", Integer.toString(node.portNumber)));
+			sb.append(l10n("suggestForwardPort", "port", Integer.toString(node.getDarknetPortNumber())));
 			return sb.toString();
 		}
 
@@ -90,7 +91,6 @@ public class IPDetectorPluginManager {
 
 	static boolean logMINOR;
 	private final NodeIPDetector detector;
-	private final Ticker ticker;
 	private final Node node;
 	FredPluginIPDetector[] plugins;
 	private final MyUserAlert noConnectionAlert;
@@ -105,7 +105,6 @@ public class IPDetectorPluginManager {
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
 		plugins = new FredPluginIPDetector[0];
 		this.node = node;
-		this.ticker = node.ps;
 		this.detector = detector;
 		noConnectionAlert = new MyUserAlert( l10n("noConnectivityTitle"), l10n("noConnectivity"), 
 				true, UserAlert.ERROR);
@@ -151,7 +150,7 @@ public class IPDetectorPluginManager {
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 		}
-		ticker.queueTimedJob(new Runnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
 				tryMaybeRun();
 			}
@@ -239,7 +238,7 @@ public class IPDetectorPluginManager {
 		if(logMINOR) Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getConnectedPeers();
-		Peer[] nodeAddrs = detector.getPrimaryIPAddress();
+		FreenetInetAddress[] nodeAddrs = detector.getPrimaryIPAddress();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(plugins.length == 0) {
@@ -407,7 +406,7 @@ public class IPDetectorPluginManager {
 	 * @param nodeAddrs Our peers' addresses.
 	 * @return True if we should run a detection.
 	 */
-	private boolean shouldDetectDespiteRealIP(long now, PeerNode[] peers, Peer[] nodeAddrs) {
+	private boolean shouldDetectDespiteRealIP(long now, PeerNode[] peers, FreenetInetAddress[] nodeAddrs) {
 		// We might still be firewalled?
 		// First, check only once per day or startup
 		if(now - lastDetectAttemptEndedTime < 12*60*60*1000) {
@@ -432,7 +431,7 @@ public class IPDetectorPluginManager {
 						// Is it internal?
 						boolean internal = false;
 						for(int j=0;j<nodeAddrs.length;j++) {
-							if(addr.equals(nodeAddrs[j].getAddress())) {
+							if(addr.equals(nodeAddrs[j])) {
 								// Internal
 								internal = true;
 								break;
@@ -469,9 +468,7 @@ public class IPDetectorPluginManager {
 		if(logMINOR) Logger.minor(this, "Detecting...");
 		synchronized(this) {
 			runner = new DetectorRunner();
-			Thread t = new Thread(runner);
-			t.setDaemon(true);
-			t.start();
+			node.executor.execute(runner, "Plugin detector runner");
 		}
 	}
 

@@ -172,7 +172,7 @@ public class FCPConnectionHandler {
 				} catch (IdentifierCollisionException e) {
 					success = false;
 				} catch (MessageInvalidException e) {
-					outputHandler.queue(new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, false));
+					outputHandler.queue(new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global));
 					return;
 				}
 			}
@@ -214,7 +214,7 @@ public class FCPConnectionHandler {
 				} catch (IdentifierCollisionException e) {
 					success = false;
 				} catch (MessageInvalidException e) {
-					outputHandler.queue(new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, false));
+					outputHandler.queue(new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global));
 					return;
 				} catch (MalformedURLException e) {
 					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);

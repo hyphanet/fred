@@ -57,8 +57,8 @@ public class InsertHandler implements Runnable, ByteCounter {
         htl = req.getShort(DMT.HTL);
         closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
         double targetLoc = key.toNormalizedDouble();
-        double myLoc = node.lm.getLocation().getValue();
-        if(PeerManager.distance(targetLoc, myLoc) < PeerManager.distance(targetLoc, closestLoc)) {
+        double myLoc = node.lm.getLocation();
+        if(Location.distance(targetLoc, myLoc) < Location.distance(targetLoc, closestLoc)) {
             closestLoc = myLoc;
             htl = node.maxHTL();
         }
@@ -79,7 +79,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             Logger.error(this, "Caught in run() "+t, t);
         } finally {
         	if(logMINOR) Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
-            node.unlockUID(uid, false, true);
+            node.unlockUID(uid, false, true, false);
         }
     }
 
@@ -147,9 +147,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         // Receive the data, off thread
         
         Runnable dataReceiver = new DataReceiver();
-        Thread t = new Thread(dataReceiver, "InsertHandler$DataReceiver for UID "+uid);
-        t.setDaemon(true);
-        t.start();
+        node.executor.execute(dataReceiver, "InsertHandler$DataReceiver for UID "+uid);
 
         if(htl == 0) {
             canCommit = true;

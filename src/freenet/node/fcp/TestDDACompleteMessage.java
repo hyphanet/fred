@@ -63,6 +63,7 @@ public class TestDDACompleteMessage extends FCPMessage {
 			sfs.putSingle(WRITE_ALLOWED, String.valueOf(isWriteAllowed));
 		}
 		
+		// FIXME this really shouldn't be a side-effect!
 		handler.registerTestDDAResult(checkJob.directory.toString(), isReadAllowed, isWriteAllowed);
 		
 		return sfs;

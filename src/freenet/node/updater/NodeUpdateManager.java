@@ -9,10 +9,16 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
+import freenet.io.comm.NotConnectedException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.node.ExtVersion;
 import freenet.node.Node;
+import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
+import freenet.node.PeerNode;
 import freenet.node.Version;
 import freenet.node.updater.UpdateDeployContext.UpdateCatastropheException;
 import freenet.node.useralerts.RevocationKeyFoundUserAlert;
@@ -33,6 +39,9 @@ public class NodeUpdateManager {
 	public final static String UPDATE_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/update/"+Version.buildNumber();
 	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
 	public final static String EXT_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/ext/"+NodeStarter.extBuildNumber;
+
+	public static final long MAX_REVOCATION_KEY_LENGTH = 4*1024*1024; // 4MB
+	public static final long MAX_MAIN_JAR_LENGTH = 16*1024*1024; // 16MB
 	
 	FreenetURI updateURI;
 	FreenetURI extURI;
@@ -51,12 +60,15 @@ public class NodeUpdateManager {
 	final boolean shouldUpdateExt;
 	/** Currently deploying an update? */
 	boolean isDeployingUpdate;
+	final Object broadcastUOMAnnouncesSync = new Object();
+	boolean broadcastUOMAnnounces = false;
 	
 	Node node;
 	
 	final RevocationChecker revocationChecker;
 	private String revocationMessage;
 	private boolean hasBeenBlown;
+	private boolean peersSayBlown;
 	
 	/** Is there a new main jar ready to deploy? */
 	private boolean hasNewMainJar;
@@ -66,12 +78,15 @@ public class NodeUpdateManager {
 	private long startedFetchingNextMainJar;
 	/** If another ext jar is being fetched, when did the fetch start? */
 	private long startedFetchingNextExtJar;
+	private long gotJarTime;
 
 	// Revocation alert
 	private RevocationKeyFoundUserAlert revocationAlert;
 	// Update alert
 	private final UpdatedVersionAvailableUserAlert alert;
-
+	
+	public final UpdateOverMandatoryManager uom;
+	
 	private boolean logMINOR;
 	
 	public NodeUpdateManager(Node node, Config config) throws InvalidConfigValueException {
@@ -127,8 +142,9 @@ public class NodeUpdateManager {
 
         updaterConfig.finishedInitialization();
         
-        this.revocationChecker = new RevocationChecker(this);
+        this.revocationChecker = new RevocationChecker(this, new File(node.clientCore.getPersistentTempDir(), "revocation-key.fblob"));
         
+        this.uom = new UpdateOverMandatoryManager(this);
 	}
 
 	public void start() throws InvalidConfigValueException {
@@ -136,16 +152,51 @@ public class NodeUpdateManager {
 		node.clientCore.alerts.register(alert);
         
         enable(wasEnabledOnStartup);
-		
+	}
+	
+	void broadcastUOMAnnounces() {
+		synchronized(broadcastUOMAnnouncesSync) {
+			Message msg = getUOMAnnouncement();
+			node.peers.localBroadcast(msg, true);
+			broadcastUOMAnnounces = true;
+		}
+	}
+
+	private Message getUOMAnnouncement() {
+		return DMT.createUOMAnnounce(updateURI.toString(), extURI.toString(), revocationURI.toString(), hasBeenBlown, 
+				mainUpdater == null ? -1 : mainUpdater.getFetchedVersion(),
+				extUpdater == null ? -1 : extUpdater.getFetchedVersion(),
+				revocationChecker.lastSucceededDelta(), revocationChecker.getRevocationDNFCounter(), 
+				revocationChecker.getBlobSize(), 
+				mainUpdater == null ? -1 : mainUpdater.getBlobSize(),
+				extUpdater == null ? -1 : extUpdater.getBlobSize(), 
+				(int)node.nodeStats.getNodeAveragePingTime(), (int)node.nodeStats.getBwlimitDelayTime());
+	}
+
+	public void maybeSendUOMAnnounce(PeerNode peer) {
+		synchronized(broadcastUOMAnnouncesSync) {
+			if(!broadcastUOMAnnounces) return; // nothing worth announcing yet
+		}
+		synchronized(this) {
+			if((!hasBeenBlown) && (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0)) return;
+		}
+		try {
+			peer.sendAsync(getUOMAnnouncement(), null, 0, null);
+		} catch (NotConnectedException e) {
+			// Sad, but ignore it
+		}
 	}
 	
 	/**
 	 * Is auto-update enabled?
 	 */
 	public boolean isEnabled() {
+		NodeUpdater updater;
 		synchronized(this) {
-			return mainUpdater != null && mainUpdater.isRunning();
+			updater = mainUpdater;
+			if(updater == null) return false;
 		}
+		return updater.isRunning();
 	}
 
 	/**
@@ -178,9 +229,9 @@ public class NodeUpdateManager {
 					throw new InvalidConfigValueException(l10n("noUpdateWithoutWrapper"));
 				}
 				// Start it
-				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber());
+				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber(), "main-jar-");
 				if(shouldUpdateExt)
-					extUpdater = new NodeUpdater(this, extURI, true, NodeStarter.extBuildNumber);
+					extUpdater = new NodeUpdater(this, extURI, true, NodeStarter.extBuildNumber, "ext-jar-");
 			}
 		}
 		if(!enable) {
@@ -279,25 +330,43 @@ public class NodeUpdateManager {
 
 	private static final int WAIT_FOR_SECOND_FETCH_TO_COMPLETE = 240*1000;
 	private static final int RECENT_REVOCATION_INTERVAL = 120*1000;
+	/** After 5 minutes, deploy the update even if we haven't got 3 DNFs on the revocation key yet.
+	 * Reason: we want to be able to deploy UOM updates on nodes with all TOO NEW or leaf nodes 
+	 * whose peers are overloaded/broken. Note that with UOM, revocation certs are automatically
+	 * propagated node to node, so this should be *relatively* safe. Any better ideas, tell us. */
+	private static final int REVOCATION_FETCH_TIMEOUT = 5*60*1000;
 	
 	/** Does the updater have an update ready to deploy? May be called synchronized(this) */
 	private boolean isReadyToDeployUpdate(boolean ignoreRevocation) {
 		long now = System.currentTimeMillis();
 		long startedMillisAgo;
 		synchronized(this) {
-			if(!(hasNewMainJar || hasNewExtJar)) return false; // no jar
+			if(!(hasNewMainJar || hasNewExtJar)) {
+				if(logMINOR) Logger.minor(this, "hasNewMainJar="+hasNewMainJar+" hasNewExtJar="+hasNewExtJar);
+				return false; // no jar
+			}
 			if(hasBeenBlown) return false; // Duh
+			if(peersSayBlown) return false;
 			// Don't immediately deploy if still fetching
 			startedMillisAgo = now - Math.max(startedFetchingNextMainJar, startedFetchingNextExtJar);
-			if(startedMillisAgo < WAIT_FOR_SECOND_FETCH_TO_COMPLETE)
+			if(startedMillisAgo < WAIT_FOR_SECOND_FETCH_TO_COMPLETE) {
+				if(logMINOR) Logger.minor(this, "Not ready: Still fetching");
 				return false; // Wait for running fetch to complete
+			}
 			if(!ignoreRevocation) {
 				if(now - revocationChecker.lastSucceeded() < RECENT_REVOCATION_INTERVAL)
 					return true;
+				if(gotJarTime > 0 && now - gotJarTime >= REVOCATION_FETCH_TIMEOUT)
+					return true;
 			}
 		}
+		if(logMINOR) Logger.minor(this, "Still here in isReadyToDeployUpdate");
+		// Apparently everything is ready except the revocation fetch. So start it.
 		revocationChecker.start(true);
-		if(ignoreRevocation) return true;
+		if(ignoreRevocation) {
+			if(logMINOR) Logger.minor(this, "Returning true because of ignoreRevocation");
+			return true;
+		}
 		deployOffThread(WAIT_FOR_SECOND_FETCH_TO_COMPLETE - startedMillisAgo);
 		return false;
 	}
@@ -308,15 +377,34 @@ public class NodeUpdateManager {
 		try {
 			synchronized(this) {
 				if(hasBeenBlown) {
-					String msg = "Trying to update but key has been blown! Message was "+revocationMessage;
+					String msg = "Trying to update but key has been blown! Not updating, message was "+revocationMessage;
 					Logger.error(this, msg);
 					System.err.println(msg);
 					return;
 				}
-				if(!isEnabled()) return;
-				if(!(isAutoUpdateAllowed || armed)) return;
-				if(!isReadyToDeployUpdate(false)) return;
-				if(isDeployingUpdate) return;
+				if(peersSayBlown) {
+					String msg = "Trying to update but at least one peer says the key has been blown! Not updating.";
+					Logger.error(this, msg);
+					System.err.println(msg);
+					return;
+					
+				}
+				if(!isEnabled()) {
+					if(logMINOR) Logger.minor(this, "Not enabled");
+					return;
+				}
+				if(!(isAutoUpdateAllowed || armed)) {
+					if(logMINOR) Logger.minor(this, "Not armed");
+					return;
+				}
+				if(!isReadyToDeployUpdate(false)) {
+					if(logMINOR) Logger.minor(this, "Not ready to deploy update");
+					return;
+				}
+				if(isDeployingUpdate) {
+					if(logMINOR) Logger.minor(this, "Already deploying update");
+					return;
+				}
 				isDeployingUpdate = true;
 			}
 			
@@ -345,6 +433,9 @@ public class NodeUpdateManager {
 
 		if(writeJars(ctx)) 
 			restart(ctx);
+		else {
+			if(logMINOR) Logger.minor(this, "Did not write jars");
+		}
 	}
 
 	/**
@@ -469,6 +560,8 @@ public class NodeUpdateManager {
 
 	/** Restart the node. Does not return. */
 	private void restart(UpdateDeployContext ctx) {
+		if(logMINOR)
+			Logger.minor(this, "Restarting...");
 		node.getNodeStarter().restart();
 		try {
 			Thread.sleep(5*60*1000);
@@ -476,7 +569,7 @@ public class NodeUpdateManager {
 			// Break
 		} // in case it's still restarting
 		System.err.println("Failed to restart. Exiting, please restart the node.");
-		System.exit(Node.EXIT_RESTART_FAILED);
+		System.exit(NodeInitException.EXIT_RESTART_FAILED);
 	}
 
 	private void failUpdate(String reason) {
@@ -501,14 +594,23 @@ public class NodeUpdateManager {
 	void onDownloadedNewJar(boolean isExt) {
 		synchronized(this) {
 			if(isExt) {
-				hasNewExtJar = true;
-				startedFetchingNextExtJar = -1;
+				if(extUpdater.getFetchedVersion() > ExtVersion.buildNumber) {
+					hasNewExtJar = true;
+					startedFetchingNextExtJar = -1;
+					gotJarTime = System.currentTimeMillis();
+				}
 			} else {
-				hasNewMainJar = true;
-				startedFetchingNextMainJar = -1;
+				if(mainUpdater.getFetchedVersion() > Version.buildNumber()) {
+					hasNewMainJar = true;
+					startedFetchingNextMainJar = -1;
+					gotJarTime = System.currentTimeMillis();
+				}
 			}
 		}
 		revocationChecker.start(true);
+		deployOffThread(REVOCATION_FETCH_TIMEOUT);
+		if(!isAutoUpdateAllowed)
+			broadcastUOMAnnounces();
 	}
 
 	/**
@@ -560,6 +662,8 @@ public class NodeUpdateManager {
 			// we don't need to advertize updates : we are not going to do them
 			killUpdateAlerts();
 		}
+		uom.killAlert();
+		broadcastUOMAnnounces();
 	}
 
 	/**
@@ -573,6 +677,7 @@ public class NodeUpdateManager {
 	public void noRevocationFound() {
 		deployUpdate(); // May have been waiting for the revocation.
 		// If we're still here, we didn't update.
+		broadcastUOMAnnounces();
 		node.ps.queueTimedJob(new Runnable() {
 			public void run() {
 				revocationChecker.start(false);
@@ -590,7 +695,13 @@ public class NodeUpdateManager {
 	void deployOffThread(long delay) {
 		node.ps.queueTimedJob(new Runnable() {
 			public void run() {
-				deployUpdate();
+				if(logMINOR) Logger.minor(this, "Running deployOffThread");
+				try {
+					deployUpdate();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t+" trying to deployOffThread", t);
+				}
+				if(logMINOR) Logger.minor(this, "Run deployOffThread");
 			}
 		}, delay);
 	}
@@ -733,6 +844,35 @@ public class NodeUpdateManager {
 			setRevocationURI(uri);
 		}
 		
+	}
+
+	/** Called when a peer indicates in its UOMAnnounce that it has fetched the revocation key
+	 * (or failed to do so in a way suggesting that somebody knows the key).
+	 * @param source The node which is claiming this.
+	 */
+	void peerClaimsKeyBlown(PeerNode source) {
+		// Note that UpdateOverMandatoryManager manages the list of peers who think this.
+		// All we have to do is cancel the update.
+		
+		synchronized(this) {
+			peersSayBlown = false;
+			armed = false;
+		}
+	}
+
+	public File getMainBlob(int version) {
+		NodeUpdater updater;
+		synchronized(this) {
+			if(hasBeenBlown) return null;
+			updater = mainUpdater;
+			if(updater == null) return null;
+		}
+		return updater.getBlobFile(version);
+	}
+
+	public synchronized long timeRemainingOnCheck() {
+		long now = System.currentTimeMillis();
+		return Math.max(0, REVOCATION_FETCH_TIMEOUT - (now - gotJarTime));
 	}
 
 }

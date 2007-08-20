@@ -20,8 +20,6 @@ import freenet.io.xfer.PacketThrottle;
  */
 public class PeerNodeStatus {
 
-	private final String name;
-
 	private final String peerAddress;
 
 	private final int peerPort;
@@ -41,12 +39,6 @@ public class PeerNodeStatus {
 	private final int routingBackoffLength;
 
 	private final long routingBackedOffUntil;
-
-	private final boolean burstOnly;
-
-	private final boolean listening;
-
-	private final boolean disabled;
 
 	private final boolean connected;
 
@@ -78,8 +70,6 @@ public class PeerNodeStatus {
 	
 	private final double pReject;
 
-	private final String privateDarknetCommentNote;
-	
 	private long totalBytesIn;
 	
 	private long totalBytesOut;
@@ -87,9 +77,10 @@ public class PeerNodeStatus {
 	private double percentTimeRoutableConnection;
 	
 	private PacketThrottle throttle;
+	
+	private long clockDelta;
 
-	public PeerNodeStatus(PeerNode peerNode) {
-		this.name = peerNode.getName();
+	PeerNodeStatus(PeerNode peerNode) {
 		Peer p = peerNode.getPeer();
 		if(p == null) {
 			peerAddress = null;
@@ -101,14 +92,11 @@ public class PeerNodeStatus {
 		this.statusValue = peerNode.getPeerNodeStatus();
 		this.statusName = peerNode.getPeerNodeStatusString();
 		this.statusCSSName = peerNode.getPeerNodeStatusCSSClassName();
-		this.location = peerNode.getLocation().getValue();
+		this.location = peerNode.getLocation();
 		this.version = peerNode.getVersion();
 		this.simpleVersion = peerNode.getSimpleVersion();
 		this.routingBackoffLength = peerNode.getRoutingBackoffLength();
 		this.routingBackedOffUntil = peerNode.getRoutingBackedOffUntil();
-		this.burstOnly = peerNode.isBurstOnly();
-		this.listening = peerNode.isListenOnly();
-		this.disabled = peerNode.isDisabled();
 		this.connected = peerNode.isConnected();
 		this.routable = peerNode.isRoutable();
 		this.isFetchingARK = peerNode.isFetchingARK();
@@ -120,15 +108,15 @@ public class PeerNodeStatus {
 		this.timeLastRoutable = peerNode.timeLastRoutable();
 		this.timeLastConnectionCompleted = peerNode.timeLastConnectionCompleted();
 		this.peerAddedTime = peerNode.getPeerAddedTime();
-		this.localMessagesReceived = new Hashtable(peerNode.getLocalNodeReceivedMessagesFromStatistic());
-		this.localMessagesSent = new Hashtable(peerNode.getLocalNodeSentMessagesToStatistic());
+		this.localMessagesReceived = peerNode.getLocalNodeReceivedMessagesFromStatistic();
+		this.localMessagesSent = peerNode.getLocalNodeSentMessagesToStatistic();
 		this.hashCode = peerNode.hashCode;
 		this.pReject = peerNode.getPRejected();
-		this.privateDarknetCommentNote = peerNode.getPrivateDarknetCommentNote();
 		this.totalBytesIn = peerNode.getTotalInputBytes();
 		this.totalBytesOut = peerNode.getTotalOutputBytes();
 		this.percentTimeRoutableConnection = peerNode.getPercentTimeRoutableConnection();
 		this.throttle = peerNode.getThrottle();
+		this.clockDelta = peerNode.getClockDelta();
 	}
 
 	/**
@@ -233,13 +221,6 @@ public class PeerNodeStatus {
 	}
 
 	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
-
-	/**
 	 * @return the peerAddress
 	 */
 	public String getPeerAddress() {
@@ -289,13 +270,6 @@ public class PeerNodeStatus {
 	}
 
 	/**
-	 * @return the burstOnly
-	 */
-	public boolean isBurstOnly() {
-		return burstOnly;
-	}
-
-	/**
 	 * @return the connected
 	 */
 	public boolean isConnected() {
@@ -310,24 +284,10 @@ public class PeerNodeStatus {
 	}
 
 	/**
-	 * @return the disabled
-	 */
-	public boolean isDisabled() {
-		return disabled;
-	}
-
-	/**
 	 * @return the isFetchingARK
 	 */
 	public boolean isFetchingARK() {
 		return isFetchingARK;
-	}
-
-	/**
-	 * @return the listening
-	 */
-	public boolean isListening() {
-		return listening;
 	}
 
 	/**
@@ -338,7 +298,7 @@ public class PeerNodeStatus {
 	}
 
 	public String toString() {
-		return statusName + ' ' + peerAddress + ':' + peerPort + ' ' + name + ' ' + location + ' ' + version + " backoff: " + routingBackoffLength + " (" + (Math.max(routingBackedOffUntil - System.currentTimeMillis(), 0)) + ')';
+		return statusName + ' ' + peerAddress + ':' + peerPort + ' ' + location + ' ' + version + " backoff: " + routingBackoffLength + " (" + (Math.max(routingBackedOffUntil - System.currentTimeMillis(), 0)) + ')';
 	}
 
 	public int hashCode() {
@@ -347,13 +307,6 @@ public class PeerNodeStatus {
 
 	public double getPReject() {
 		return pReject;
-	}
-
-	/**
-	 * @return the privateDarknetCommentNote
-	 */
-	public String getPrivateDarknetCommentNote() {
-		return privateDarknetCommentNote;
 	}
 
 	public long getTotalInputBytes() {
@@ -370,5 +323,9 @@ public class PeerNodeStatus {
 
 	public PacketThrottle getThrottle() {
 		return throttle;
+	}
+
+	public long getClockDelta() {
+		return clockDelta;
 	}
 }
