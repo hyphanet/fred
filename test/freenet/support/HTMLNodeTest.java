@@ -172,6 +172,73 @@ public class HTMLNodeTest extends TestCase {
 	}
 	
 	/**
+	 * Tests getAttribute() method using
+	 * common sample HTMLNode, and "#"
+	 * "%" named nodes
+	 */
+	public void testGetAttribute() {
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		assertNull(methodHTMLNode.getAttribute(SAMPLE_ATTRIBUTE_NAME));
+		
+		methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
+		assertEquals(SAMPLE_ATTRIBUTE_VALUE,methodHTMLNode.getAttribute(SAMPLE_ATTRIBUTE_NAME));
+		methodHTMLNode = new HTMLNode("#",SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
+		assertEquals(SAMPLE_ATTRIBUTE_VALUE,methodHTMLNode.getAttribute(SAMPLE_ATTRIBUTE_NAME));
+		methodHTMLNode = new HTMLNode("%",SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
+		assertEquals(SAMPLE_ATTRIBUTE_VALUE,methodHTMLNode.getAttribute(SAMPLE_ATTRIBUTE_NAME));
+	}
+	
+	/**
+	 * Tests getAttributes() and setAttribute(String,String)
+	 * methods verifying if attributes are correctly
+	 * inserted and fetched.
+	 */
+	public void testAddGetAttributes() {
+		int attributesNumber = 100;
+		String methodAttributeName = "";
+		String counterString = "";
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		for (int i=0; i<attributesNumber; i++) {
+			counterString = String.valueOf(i);
+			methodAttributeName = "attribute " + counterString; 
+			assertEquals(i,methodHTMLNode.getAttributes().size());
+			methodHTMLNode.addAttribute(methodAttributeName,counterString);
+			assertEquals(counterString,methodHTMLNode.getAttribute(methodAttributeName));
+			assertEquals(counterString,methodHTMLNode.getAttributes().get(methodAttributeName));
+		}
+	}
+	
+	/**
+	 * Tests addAttribute(String,String) method
+	 * trying to insert an attribute with a null
+	 * as name value. It should rise an
+	 * IllegalArgument exception 
+	 */
+	public void testAddAttribute_nullAttributeName() {
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		try {
+			methodHTMLNode.addAttribute(null,SAMPLE_ATTRIBUTE_VALUE);
+			fail("Expected Exception Error Not Thrown!"); } 
+		catch (IllegalArgumentException anException) {
+			assertNotNull(anException); }
+	}
+	
+	/**
+	 * Tests addAttribute(String,String) method
+	 * trying to insert an attribute with a null
+	 * as attribute value. It should rise an
+	 * IllegalArgument exception 
+	 */
+	public void testAddAttribute_nullAttributeValue() {
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		try {
+			methodHTMLNode.addAttribute(SAMPLE_ATTRIBUTE_NAME,null);
+			fail("Expected Exception Error Not Thrown!"); } 
+		catch (IllegalArgumentException anException) {
+			assertNotNull(anException); }
+	}
+	
+	/**
 	 * Fetches the first line of a String
 	 * @param aString the String to consider
 	 * @return the first line of the String
