@@ -665,7 +665,7 @@ public class FCPServer implements Runnable {
 				throw new IOException(e.toString());
 			}
 			for(int i=0;i<count;i++) {
-				WrapperManager.signalStarting(5*60*1000);  // 5 minutes per request
+				WrapperManager.signalStarting(20*60*1000);  // 20 minutes per request; must be >ds lock timeout (10 minutes)
 				System.out.println("Loading persistent request "+(i+1)+" of "+count+"..."); // humans count from 1..
 				ClientRequest.readAndRegister(br, this);
 			}
