@@ -1,14 +1,11 @@
 package freenet.crypt;
 import java.io.*;
 import java.util.*;
-import java.lang.*;
+import java.lang.Integer;
+import freenet.crypt.HMAC;
 public class session_Key
 {
-	/*
-	 * Constructor
-	 */
-	private session_Key{
-	}
+	
 	/**
           *Session key.
           *The key is generated from Hash of Message:(Ni, Nr, 0) using the DF exponentials
@@ -22,7 +19,7 @@ public class session_Key
             		byte[] byteArray=new byte[Ni.length + Nr.length + 1];
             		System.arraycopy(Ni,0,byteArray,0,Ni.length);
             		System.arraycopy(Nr,0,byteArray,Ni.length,Nr.length);
-            		byteArray[Ni.length + Nr.length]=Integer(0).byteValue();
+            		byteArray[Ni.length + Nr.length]=(new Integer(0)).byteValue();
 			HMAC s = new HMAC(SHA1.getInstance());
 			return s.mac(DFExp,byteArray,DFExp.length);
         	}catch(Exception e){
