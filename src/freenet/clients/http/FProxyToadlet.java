@@ -359,7 +359,7 @@ public class FProxyToadlet extends Toadlet {
 			return;
 		}
 		String requestedMimeType = httprequest.getParam("type", null);
-		String override = (requestedMimeType == null) ? "" : "?type="+URLEncoder.encode(requestedMimeType);
+		String override = (requestedMimeType == null) ? "" : "?type="+URLEncoder.encode(requestedMimeType,true);
 		try {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
@@ -512,7 +512,7 @@ public class FProxyToadlet extends Toadlet {
 		sb.append(uri.toACIIString());
 		char c = '?';
 		if(requestedMimeType != null) {
-			sb.append(c).append("type=").append(URLEncoder.encode(requestedMimeType)); c = '&';
+			sb.append(c).append("type=").append(URLEncoder.encode(requestedMimeType,false)); c = '&';
 		}
 		if(maxSize > 0) {
 			sb.append(c).append("max-size=").append(maxSize); c = '&';
