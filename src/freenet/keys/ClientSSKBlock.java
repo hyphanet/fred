@@ -34,8 +34,12 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		this.key = key;
 	}
 	
-	public ClientSSKBlock(SSKBlock block, ClientSSK key) throws SSKVerifyException {
-		this(block.data, block.headers, key, false);
+	public static ClientSSKBlock construct(SSKBlock block, ClientSSK key) throws SSKVerifyException {
+		// Constructor expects clientkey to have the pubkey.
+		// In the case of binary blobs, the block may have it instead.
+		if(key.getPubKey() == null && block.getPubKey() != null)
+			key.setPublicKey(block.getPubKey());
+		return new ClientSSKBlock(block.data, block.headers, key, false);
 	}
 	
 	/**

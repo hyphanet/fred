@@ -22,6 +22,7 @@ import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -190,13 +191,6 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		// Now decode
 		if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
 
-		boolean[] dataBlocksSucceeded = new boolean[dataBuckets.length];
-		boolean[] checkBlocksSucceeded = new boolean[checkBuckets.length];
-		for(int i=0;i<dataBuckets.length;i++)
-			dataBlocksSucceeded[i] = dataBuckets[i].data != null;
-		for(int i=0;i<checkBuckets.length;i++)
-			checkBlocksSucceeded[i] = checkBuckets[i].data != null;
-
 		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
 		
 		if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
@@ -210,7 +204,12 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			if(isCollectingBinaryBlob()) {
 				for(int i=0;i<dataBuckets.length;i++) {
 					Bucket data = dataBuckets[i].getData();
-					maybeAddToBinaryBlob(data, i, false);
+					try {
+						maybeAddToBinaryBlob(data, i, false);
+					} catch (FetchException e) {
+						fail(e);
+						return;
+					}
 				}
 			}
 			decodedData = fetchContext.bucketFactory.makeBucket(-1);
@@ -268,7 +267,12 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		for(int i=0;i<checkBuckets.length;i++) {
 			boolean heal = false;
 			Bucket data = checkBuckets[i].getData();
-			maybeAddToBinaryBlob(data, i, true);
+			try {
+				maybeAddToBinaryBlob(data, i, true);
+			} catch (FetchException e) {
+				fail(e);
+				return;
+			}
 			if(checkRetries[i] > 0)
 				heal = true;
 			if(heal) {
@@ -291,7 +295,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		} else return false;
 	}
 	
-	private void maybeAddToBinaryBlob(Bucket data, int i, boolean check) {
+	private void maybeAddToBinaryBlob(Bucket data, int i, boolean check) throws FetchException {
 		if(parentFetcher.parent instanceof ClientGetter) {
 			ClientGetter getter = (ClientGetter) (parentFetcher.parent);
 			if(getter.collectingBinaryBlob()) {
@@ -301,11 +305,9 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					getter.addKeyToBinaryBlob(block);
 				} catch (CHKEncodeException e) {
 					Logger.error(this, "Failed to encode (collecting binary blob) "+(check?"check":"data")+" block "+i+": "+e, e);
-					fail(new FetchException(FetchException.INTERNAL_ERROR, "Failed to encode for binary blob: "+e));
-					return;
+					throw new FetchException(FetchException.INTERNAL_ERROR, "Failed to encode for binary blob: "+e);
 				} catch (IOException e) {
-					fail(new FetchException(FetchException.BUCKET_ERROR, "Failed to encode for binary blob: "+e));
-					return;
+					throw new FetchException(FetchException.BUCKET_ERROR, "Failed to encode for binary blob: "+e);
 				}
 			}
 		}
@@ -321,6 +323,9 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		boolean allFailed;
+		// Since we can't keep the key, we need to unregister for it at this point to avoid a memory leak
+		NodeCHK key = getBlockNodeKey(blockNo);
+		if(key != null) seg.unregisterKey(key);
 		synchronized(this) {
 			if(isFinishing()) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
 			if(blockNo < dataKeys.length) {
@@ -345,11 +350,13 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				failedBlocks++;
 				parentFetcher.parent.failedBlock();
 			}
-			allFailed = failedBlocks + fatallyFailedBlocks <= (dataKeys.length + checkKeys.length - minFetched);
+			// Once it is no longer possible to have a successful fetch, fail...
+			allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
 		}
 		if(allFailed)
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
-		seg.possiblyRemoveFromParent();
+		else
+			seg.possiblyRemoveFromParent();
 	}
 	
 	/** A request has failed non-fatally, so the block may be retried */
@@ -418,6 +425,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				checkBuckets[i] = null;
 			}
 		}
+		removeSubSegments();
 		parentFetcher.segmentFinished(this);
 	}
 
@@ -449,10 +457,18 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 
 	public ClientCHK getBlockKey(int blockNum) {
-		if(blockNum < dataKeys.length)
+		if(blockNum < 0) return null;
+		else if(blockNum < dataKeys.length)
 			return dataKeys[blockNum];
-		else
+		else if(blockNum < dataKeys.length + checkKeys.length)
 			return checkKeys[blockNum - dataKeys.length];
+		else return null;
+	}
+	
+	public NodeCHK getBlockNodeKey(int blockNum) {
+		ClientCHK key = getBlockKey(blockNum);
+		if(key != null) return key.getNodeCHK();
+		else return null;
 	}
 
 	public synchronized void removeSeg(SplitFileFetcherSubSegment segment) {
@@ -461,6 +477,13 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				subSegments.remove(i);
 				i--;
 			}
+		}
+	}
+
+	private void removeSubSegments() {
+		for(int i=0;i<subSegments.size();i++) {
+			SplitFileFetcherSubSegment seg = (SplitFileFetcherSubSegment) subSegments.get(i);
+			seg.kill();
 		}
 	}
 

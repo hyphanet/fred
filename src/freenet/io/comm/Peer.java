@@ -92,6 +92,7 @@ public class Peer {
     
     public Peer(FreenetInetAddress addr, int port) {
     	this.addr = addr;
+    	if(addr == null) throw new NullPointerException();
     	this._port = port;
 	}
 
@@ -193,5 +194,12 @@ public class Peer {
 
 	public boolean isRealInternetAddress(boolean lookup, boolean defaultVal) {
 		return addr.isRealInternetAddress(lookup, defaultVal);
+	}
+
+	/**
+	 * Get the address:port string, but prefer numeric IPs - don't return the name.
+	 */
+	public String toStringPrefNumeric() {
+		return addr.toStringPrefNumeric()+':'+_port;
 	}
 }

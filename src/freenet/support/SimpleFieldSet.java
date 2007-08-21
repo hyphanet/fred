@@ -33,6 +33,21 @@ public class SimpleFieldSet {
     private String endMarker;
     private final boolean shortLived;
     static public final char MULTI_LEVEL_CHAR = '.';
+    static public final char MULTI_VALUE_CHAR = ';';
+    static public final char KEYVALUE_SEPARATOR_CHAR = '=';
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+    
+    /**
+     * Create a SimpleFieldSet.
+     * @param shortLived If false, strings will be interned to ensure that they use as
+     * little memory as possible. Only set to true if the SFS will be short-lived or
+     * small.
+     */
+    public SimpleFieldSet(boolean shortLived) {
+        values = new HashMap();
+       	subsets = null;
+       	this.shortLived = shortLived;
+    }
     
     /**
      * Construct a SimpleFieldSet from reading a BufferedReader.
@@ -46,9 +61,7 @@ public class SimpleFieldSet {
      * problem.
      */
     public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
-        values = new HashMap();
-       	subsets = null;
-       	this.shortLived = shortLived;
+        this(shortLived);
         read(br, allowMultiple);
     }
 
@@ -61,35 +74,23 @@ public class SimpleFieldSet {
     }
 
     public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean tolerant, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived) throws IOException {
-    	values = new HashMap();
-       	subsets = null;
-       	this.shortLived = shortLived;
+    	this(shortLived);
     	read(lis, maxLineLength, lineBufferSize, tolerant, utf8OrIso88591, allowMultiple);
-    }
-    
-    /**
-     * Create a SimpleFieldSet.
-     * @param shortLived If false, strings will be interned to ensure that they use as
-     * little memory as possible. Only set to true if the SFS will be short-lived or
-     * small.
-     */
-    public SimpleFieldSet(boolean shortLived) {
-        values = new HashMap();
-       	subsets = null;
-       	this.shortLived = shortLived;
     }
 
     /**
      * Construct from a string.
+     * String format:
+     * blah=blah
+     * blah=blah
+     * End
      * @param shortLived If false, strings will be interned to ensure that they use as
      * little memory as possible. Only set to true if the SFS will be short-lived or
      * small.
      * @throws IOException if the string is too short or invalid.
      */
     public SimpleFieldSet(String content, boolean allowMultiple, boolean shortLived) throws IOException {
-    	values = new HashMap();
-    	subsets = null;
-    	this.shortLived = shortLived;
+    	this(shortLived);
         StringReader sr = new StringReader(content);
         BufferedReader br = new BufferedReader(sr);
 	    read(br, allowMultiple);
@@ -112,7 +113,7 @@ public class SimpleFieldSet {
                 throw new IOException(); // No end marker!
             }
             firstLine = false;
-            int index = line.indexOf('=');
+            int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
             if(index >= 0) {
                 // Mapping
                 String before = line.substring(0, index);
@@ -149,7 +150,7 @@ public class SimpleFieldSet {
             }
             if((line.length() == 0) && tolerant) continue; // ignore
             firstLine = false;
-            int index = line.indexOf('=');
+            int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
             if(index >= 0) {
                 // Mapping
                 String before = line.substring(0, index);
@@ -169,8 +170,8 @@ public class SimpleFieldSet {
    		if(idx == -1)
    			return (String) values.get(key);
    		else if(idx == 0)
-   			return null;
-   		else {
+			return (subset("") == null) ? null : subset("").get(key.substring(1));
+		else {
    			if(subsets == null) return null;
    			String before = key.substring(0, idx);
    			String after = key.substring(idx+1);
@@ -181,12 +182,14 @@ public class SimpleFieldSet {
     }
     
     public String[] getAll(String key) {
-    	return split(get(key));
+    	String k = get(key);
+    	if(k == null) return null;
+    	return split(k);
     }
 
     private static final String[] split(String string) {
     	if(string == null) return new String[0];
-    	return string.split(";"); // slower???
+    	return string.split(String.valueOf(MULTI_VALUE_CHAR)); // slower???
 //    	int index = string.indexOf(';');
 //    	if(index == -1) return null;
 //    	Vector v=new Vector();
@@ -203,6 +206,39 @@ public class SimpleFieldSet {
 //    	return (String[]) v.toArray();
 	}
 
+    private static final String unsplit(String[] strings) {
+    	StringBuffer sb = new StringBuffer();
+    	for(int i=0;i<strings.length;i++) {
+    		if(i != 0) sb.append(MULTI_VALUE_CHAR);
+    		sb.append(strings[i]);
+    	}
+    	return sb.toString();
+    }
+    
+    /**
+     * Put contents of a fieldset, overwrite old values.
+     */
+    public void putAllOverwrite(SimpleFieldSet fs) {
+    	Iterator i = fs.values.keySet().iterator();
+    	while(i.hasNext()) {
+    		String key = (String) i.next();
+    		String hisVal = (String) fs.values.get(key);
+    		values.put(key, hisVal); // overwrite old
+    	}
+    	if(fs.subsets == null) return;
+    	i = fs.subsets.keySet().iterator();
+    	while(i.hasNext()) {
+    		String key = (String) i.next();
+    		SimpleFieldSet hisFS = (SimpleFieldSet) fs.subsets.get(key);
+    		SimpleFieldSet myFS = (SimpleFieldSet) subsets.get(key);
+    		if(myFS != null) {
+    			myFS.putAllOverwrite(hisFS);
+    		} else {
+    			subsets.put(key, hisFS);
+    		}
+    	}
+    }
+    
     /**
      * Set a key to a value. If the value already exists, throw IllegalStateException.
      * @param key The key.
@@ -250,7 +286,7 @@ public class SimpleFieldSet {
 	private synchronized final boolean put(String key, String value, boolean allowMultiple, boolean overwrite) {
 		int idx;
 		if(value == null) return true; // valid no-op
-		if(value.indexOf('\n') != -1) throw new IllegalArgumentException("A simplefieldSet can't accept \n !");
+		if(value.indexOf('\n') != -1) throw new IllegalArgumentException("A simplefieldSet can't accept newlines !");
 		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
 			String x = (String) values.get(key);
 			
@@ -259,7 +295,7 @@ public class SimpleFieldSet {
 				values.put(key, value);
 			} else {
 				if(!allowMultiple) return false;
-				values.put(key, ((String)values.get(key))+ ';' +value);
+				values.put(key, ((String)values.get(key))+ MULTI_VALUE_CHAR +value);
 			}
 		} else {
 			String before = key.substring(0, idx);
@@ -325,7 +361,7 @@ public class SimpleFieldSet {
             String value = (String) entry.getValue();
             w.write(prefix);
             w.write(key);
-            w.write('=');
+            w.write(KEYVALUE_SEPARATOR_CHAR);
             w.write(value);
             w.write('\n');
     	}
@@ -361,7 +397,7 @@ public class SimpleFieldSet {
     	
     	// Output
     	for(i=0; i < keys.length; i++)
-    		w.write(prefix+keys[i]+'='+get(keys[i])+'\n');
+    		w.write(prefix+keys[i]+KEYVALUE_SEPARATOR_CHAR+get(keys[i])+'\n');
     	
     	if(subsets != null) {
     		String[] orderedPrefixes = (String[]) subsets.keySet().toArray(new String[subsets.size()]);
@@ -438,6 +474,15 @@ public class SimpleFieldSet {
     	KeyIterator subIterator;
     	String prefix;
     	
+    	/**
+    	 * It provides an iterator for the SimpleSetField
+    	 * which passes through every key.
+    	 * (e.g. for key1=value1 key2.sub2=value2 key1.sub=value3
+    	 * it will provide key1,key2.sub2,key1.sub)
+    	 * @param a prefix to put BEFORE every key
+    	 * (e.g. for key1=value, if the iterator is created with prefix "aPrefix",
+    	 * it will provide aPrefixkey1
+    	 */
     	public KeyIterator(String prefix) {
     		synchronized(SimpleFieldSet.this) {
     			valuesIterator = values.keySet().iterator();
@@ -463,10 +508,18 @@ public class SimpleFieldSet {
 
 		public boolean hasNext() {
 			synchronized(SimpleFieldSet.this) {
-				if(valuesIterator.hasNext()) return true;
-				if((subIterator != null) && subIterator.hasNext()) return true;
-				if(subIterator != null) subIterator = null;
-				return false;
+				while(true) {
+					if(valuesIterator.hasNext()) return true;
+					if((subIterator != null) && subIterator.hasNext()) return true;
+					if(subIterator != null) subIterator = null;
+					if(subsetIterator != null && subsetIterator.hasNext()) {
+						String key = (String) subsetIterator.next();
+						SimpleFieldSet fs = (SimpleFieldSet) subsets.get(key);
+						String newPrefix = prefix + key + MULTI_LEVEL_CHAR;
+						subIterator = fs.keyIterator(newPrefix);
+					} else
+						return false;
+				}
 			}
 		}
 
@@ -551,6 +604,16 @@ public class SimpleFieldSet {
 		}
 	}
 
+	/**
+	 * It removes the specified subset.
+	 * For example, in a SimpleFieldSet like this:
+	 * foo=bar
+	 * foo.bar=foobar
+	 * foo.bar.boo=foobarboo
+	 * calling it with the parameter "foo"
+	 * means to drop the second and the third line.
+	 * @param is the subset to remove
+	 */
 	public synchronized void removeSubset(String key) {
 		if(subsets == null) return;
 		int idx;
@@ -578,11 +641,11 @@ public class SimpleFieldSet {
 	}
 
 	public Iterator directSubsetNameIterator() {
-		return subsets.keySet().iterator();
+		return (subsets == null) ? null : subsets.keySet().iterator();
 	}
 
 	public String[] namesOfDirectSubsets() {
-		return (String[]) subsets.keySet().toArray(new String[subsets.size()]);
+		return (subsets == null) ? EMPTY_STRING_ARRAY : (String[]) subsets.keySet().toArray(new String[subsets.size()]);
 	}
 
 	public static SimpleFieldSet readFrom(InputStream is, boolean allowMultiple, boolean shortLived) throws IOException {
@@ -645,6 +708,16 @@ public class SimpleFieldSet {
 		}
 	}
 
+	public double getDouble(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No key "+key);
+		try {
+			return Double.parseDouble(s);
+		} catch (NumberFormatException e) {
+			throw new FSParseException("Cannot parse "+s+" for integer "+key);
+		}
+	}
+	
 	public long getLong(String key, long def) {
 		String s = get(key);
 		if(s == null) return def;
@@ -664,6 +737,44 @@ public class SimpleFieldSet {
 			throw new FSParseException("Cannot parse "+s+" for long "+key);
 		}
 	}
+	
+	public short getShort(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No key "+key);
+		try {
+			return Short.parseShort(s);
+		} catch (NumberFormatException e) {
+			throw new FSParseException("Cannot parse "+s+" for short "+key);
+		}
+	}
+	
+	public short getShort(String key, short def) {
+		String s = get(key);
+		if(s == null) return def;
+		try {
+			return Short.parseShort(s);
+		} catch (NumberFormatException e) {
+			return def;
+		}
+	}
+	
+	public char getChar(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No key "+key);
+			if (s.length() == 1)
+				return s.charAt(0);
+			else
+				throw new FSParseException("Cannot parse "+s+" for char "+key);
+	} 
+	
+	public char getChar(String key, char def) {
+		String s = get(key);
+		if(s == null) return def;
+			if (s.length() == 1)
+				return s.charAt(0);
+			else
+				return def;
+	} 
 
 	public boolean getBoolean(String key, boolean def) {
 		return Fields.stringToBool(get(key), def);
@@ -678,6 +789,7 @@ public class SimpleFieldSet {
 
 	public int[] getIntArray(String key) {
 		String[] strings = getAll(key);
+		if(strings == null) return null;
 		int[] ret = new int[strings.length];
 		for(int i=0;i<strings.length;i++) {
 			try {
@@ -688,6 +800,10 @@ public class SimpleFieldSet {
 			}
 		}
 		return ret;
+	}
+
+	public void putOverwrite(String key, String[] strings) {
+		putOverwrite(key, unsplit(strings));
 	}
 
 }

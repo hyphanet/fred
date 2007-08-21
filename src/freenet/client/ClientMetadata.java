@@ -52,4 +52,18 @@ public class ClientMetadata implements Cloneable {
 	public String toString() {
 		return getMIMEType();
 	}
+
+	public void clear() {
+		mimeType = null;
+	}
+
+	public String getMIMETypeNoParams() {
+		String s = mimeType;
+		if(s == null) return null;
+		int i = s.indexOf(';');
+		if(i > -1) {
+			s = s.substring(i);
+		}
+		return s;
+	}
 }

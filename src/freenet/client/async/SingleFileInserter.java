@@ -106,10 +106,7 @@ class SingleFileInserter implements ClientPutState {
 		if(data.size() > COMPRESS_OFF_THREAD_LIMIT) {
 			// Run off thread
 			OffThreadCompressor otc = new OffThreadCompressor();
-			Thread t = new Thread(otc, "Compressor for "+this);
-			if(logMINOR) Logger.minor(this, "Compressing off-thread: "+t);
-			t.setDaemon(true);
-			t.start();
+			ctx.executor.execute(otc, "Compressor for "+this);
 		} else {
 			tryCompress();
 		}
@@ -214,7 +211,7 @@ class SingleFileInserter implements ClientPutState {
 		boolean fitsInOneBlockAsIs = bestCodec == null ? compressedDataSize < blockSize : compressedDataSize < oneBlockCompressedSize;
 		boolean fitsInOneCHK = bestCodec == null ? compressedDataSize < CHKBlock.DATA_LENGTH : compressedDataSize < CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
 
-		if(block.getData().size() > Integer.MAX_VALUE)
+		if((fitsInOneBlockAsIs || fitsInOneCHK) && block.getData().size() > Integer.MAX_VALUE)
 			throw new InsertException(InsertException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
 
 		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;

@@ -20,7 +20,7 @@ public class StringArray {
 		if((array != null) && (array.length > 0)){
 			StringBuffer sb = new StringBuffer();
 			for(int i=0; i<array.length; i++)
-				sb.append(array.toString()+'|');
+				sb.append(array[i].toString()+'|');
 			return '[' + sb.substring(0, sb.length() - 1).toString() + ']';
 		}else
 			return "";
@@ -81,6 +81,20 @@ public class StringArray {
 	}
 	
 	public static String toString(long[] array) {
+		return toString(toArray(array));
+	}
+
+	public static String[] toArray(int[] array) {
+		if((array != null) && (array.length > 0)){
+			String[] result = new String[array.length];
+			for(int i=0; i<array.length; i++)
+				result[i] = Long.toString(array[i]);
+			return result;
+		}else
+			return null;
+	}
+	
+	public static String toString(int[] array) {
 		return toString(toArray(array));
 	}
 	

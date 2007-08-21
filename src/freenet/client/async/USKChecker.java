@@ -26,6 +26,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 	
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, int token) {
+		unregister();
 		cb.onSuccess((ClientSSKBlock)block);
 	}
 
@@ -42,6 +43,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			break;
 		case LowLevelGetException.DATA_NOT_FOUND:
 		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
+		case LowLevelGetException.RECENTLY_FAILED:
 			dnfs++;
 			canRetry = true;
 			break;
@@ -61,7 +63,7 @@ class USKChecker extends BaseSingleFileFetcher {
 		if(canRetry && retry()) return;
 		
 		// Ran out of retries.
-		
+		unregister();
 		if(e.code == LowLevelGetException.CANCELLED){
 			cb.onCancelled();
 			return;

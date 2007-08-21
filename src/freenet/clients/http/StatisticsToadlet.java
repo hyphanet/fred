@@ -16,6 +16,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.l10n.L10n;
+import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
@@ -121,7 +122,7 @@ public class StatisticsToadlet extends Toadlet {
 				if (statusDifference != 0) {
 					return statusDifference;
 				}
-				return firstNode.getName().compareToIgnoreCase(secondNode.getName());
+				return 0;
 			}
 		});
 
@@ -288,7 +289,7 @@ public class StatisticsToadlet extends Toadlet {
 			addNodeCircle(nodeCircleTable);
 		}
 
-		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	private void drawRejectReasonsBox(HTMLNode nextTableCell) {
@@ -410,7 +411,7 @@ public class StatisticsToadlet extends Toadlet {
 					"\u00a0(" + ((storeHits*100) / (storeAccesses)) + "%)");
 
 		storeSizeList.addChild("li", 
-				"Avg. access rate:\u00a0" + thousendPoint.format(overallAccesses/nodeUptimeSeconds) + "/s");
+				"Avg. access rate:\u00a0" + thousendPoint.format(overallAccesses/nodeUptimeSeconds) + "/sec");
 		
 	}
 
@@ -870,7 +871,7 @@ public class StatisticsToadlet extends Toadlet {
 		for (int peerIndex = 0; peerIndex < peerCount; peerIndex++) {
 			peerNodeStatus = peerNodeStatuses[peerIndex];
 			peerLocation = peerNodeStatus.getLocation();
-			peerDistance = PeerManager.distance( myLocation, peerLocation );
+			peerDistance = Location.distance( myLocation, peerLocation );
 			histogramIndex = (int) (Math.floor(peerDistance * HISTOGRAM_LENGTH * 2));
 			if (peerNodeStatus.isConnected()) {
 				histogramConnected[histogramIndex]++;

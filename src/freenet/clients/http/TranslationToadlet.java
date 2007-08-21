@@ -83,7 +83,7 @@ public class TranslationToadlet extends Toadlet {
 			footer.addChild("%", "&nbsp;&nbsp;");
 			footer.addChild("a", "href", TOADLET_URL + (showEverything ? "" : "?toTranslateOnly")).addChild("#", l10n("returnToTranslations"));
 
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;				
 		} else if (request.isParameterSet("translate")) {
 			String key = request.getParam("translate");
@@ -126,7 +126,7 @@ public class TranslationToadlet extends Toadlet {
 				updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "toTranslateOnly", key });
 			
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if (request.isParameterSet("remove")) {
 			String key = request.getParam("remove");
@@ -145,7 +145,7 @@ public class TranslationToadlet extends Toadlet {
 			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_confirmed", l10n("remove") });
 			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 			
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
 		
@@ -188,7 +188,7 @@ public class TranslationToadlet extends Toadlet {
 			}
 		}
 		
-		this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {

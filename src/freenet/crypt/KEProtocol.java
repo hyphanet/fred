@@ -9,7 +9,7 @@ import java.io.OutputStream;
 
 /**
  * Defines the interface that must be implemented by key-exchange protocols
- * such as RSA and Diffie-Helman
+ * such as RSA and Diffie-Hellman
  */
 public abstract class KEProtocol {
     protected RandomSource randomSource;

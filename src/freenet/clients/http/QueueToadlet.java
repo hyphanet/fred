@@ -106,6 +106,7 @@ public class QueueToadlet extends Toadlet {
 									new String[]{ "id", "message" },
 									new String[]{ identifier, e.getMessage()}
 							));
+					return;
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
@@ -207,7 +208,10 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					insertURI = new FreenetURI("CHK@");
 				} else if ("ksk".equals(keyType)) {
 					try {
-						insertURI = new FreenetURI(request.getPartAsString("key", 128));
+						String u = request.getPartAsString("key", 128);
+						insertURI = new FreenetURI(u);
+						if(logMINOR)
+							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+")");
 					} catch (MalformedURLException mue1) {
 						writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
 						return;
@@ -293,12 +297,12 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 									HTMLNode alertContent = ctx.getPageMaker().getContentNode(alertNode);
 									alertContent.addChild("#", L10n.getString("QueueToadlet.warningUnsafeContentExplanation"));
 									HTMLNode optionListNode = alertContent.addChild("ul");
-									HTMLNode optionForm = ctx.addFormChild(optionListNode, "/queue/", "queueDownloadNotFilteredConfirmForm");
+									HTMLNode optionForm = ctx.addFormChild(optionListNode, "/queue/", "queueDownloadNotFilteredConfirmForm-" + identifier.hashCode());
 									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceDownload", String.valueOf(System.currentTimeMillis()) });
 									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "get", "Download anyway" });
 									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "return", "Return to queue page" });
-									writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+									writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 									return;
 								}
 							}
@@ -326,7 +330,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 		infoboxContent.addChild("#", message);
 		infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", "/queue/", "queue page"), new HTMLNode("#", ".") });
-		writeReply(context, 400, "text/html; charset=utf-8", "Error", pageNode.generate());
+		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
 	}
 
 	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) 
@@ -396,7 +400,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 			infoboxContent.addChild("#", L10n.getString("QueueToadlet.noTaskOnGlobalQueue"));
 			contentNode.addChild(createInsertBox(pageMaker, ctx));
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
 
@@ -578,7 +582,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
 
 		if (!completedDownloadToTemp.isEmpty()) {
-			contentNode.addChild("a", "name", "completedDownloadToTemp");
+			contentNode.addChild("a", "id", "completedDownloadToTemp");
 			HTMLNode completedDownloadsTempInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedDinTempDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToTemp.size()) })));
 			HTMLNode completedDownloadsToTempContent = pageMaker.getContentNode(completedDownloadsTempInfobox);
 			if (advancedModeEnabled) {
@@ -589,7 +593,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		
 		if (!completedDownloadToDisk.isEmpty()) {
-			contentNode.addChild("a", "name", "completedDownloadToDisk");
+			contentNode.addChild("a", "id", "completedDownloadToDisk");
 			HTMLNode completedToDiskInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedDinDownloadDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToDisk.size()) })));
 			HTMLNode completedToDiskInfoboxContent = pageMaker.getContentNode(completedToDiskInfobox);
 			if (advancedModeEnabled) {
@@ -600,7 +604,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 
 		if (!completedUpload.isEmpty()) {
-			contentNode.addChild("a", "name", "completedUpload");
+			contentNode.addChild("a", "id", "completedUpload");
 			HTMLNode completedUploadInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedU", new String[]{ "size" }, new String[]{ String.valueOf(completedUpload.size()) })));
 			HTMLNode completedUploadInfoboxContent = pageMaker.getContentNode(completedUploadInfobox);
 			if (advancedModeEnabled) {
@@ -611,7 +615,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		
 		if (!completedDirUpload.isEmpty()) {
-			contentNode.addChild("a", "name", "completedDirUpload");
+			contentNode.addChild("a", "id", "completedDirUpload");
 			HTMLNode completedUploadDirInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedUDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDirUpload.size()) })));
 			HTMLNode completedUploadDirContent = pageMaker.getContentNode(completedUploadDirInfobox);
 			if (advancedModeEnabled) {
@@ -622,7 +626,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 				
 		if (!failedDownload.isEmpty()) {
-			contentNode.addChild("a", "name", "failedDownload");
+			contentNode.addChild("a", "id", "failedDownload");
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedD", new String[]{ "size" }, new String[]{ String.valueOf(failedDownload.size()) })));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
 			if (advancedModeEnabled) {
@@ -633,7 +637,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		
 		if (!failedUpload.isEmpty()) {
-			contentNode.addChild("a", "name", "failedUpload");
+			contentNode.addChild("a", "id", "failedUpload");
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedU", new String[]{ "size" }, new String[]{ String.valueOf(failedUpload.size()) })));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
 			if (advancedModeEnabled) {
@@ -644,7 +648,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		
 		if (!failedDirUpload.isEmpty()) {
-			contentNode.addChild("a", "name", "failedDirUpload");
+			contentNode.addChild("a", "id", "failedDirUpload");
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedU", new String[]{ "size" }, new String[]{ String.valueOf(failedDirUpload.size()) })));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
 			if (advancedModeEnabled) {
@@ -655,7 +659,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		
 		if (!uncompletedDownload.isEmpty()) {
-			contentNode.addChild("a", "name", "uncompletedDownload");
+			contentNode.addChild("a", "id", "uncompletedDownload");
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipD", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDownload.size()) })));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedModeEnabled) {
@@ -666,7 +670,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		
 		if (!uncompletedUpload.isEmpty()) {
-			contentNode.addChild("a", "name", "uncompletedUpload");
+			contentNode.addChild("a", "id", "uncompletedUpload");
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipU", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedUpload.size()) })));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedModeEnabled) {
@@ -677,7 +681,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		
 		if (!uncompletedDirUpload.isEmpty()) {
-			contentNode.addChild("a", "name", "uncompletedDirUpload");
+			contentNode.addChild("a", "id", "uncompletedDirUpload");
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipDU", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDirUpload.size()) })));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedModeEnabled) {
@@ -688,7 +692,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		
 		MultiValueTable pageHeaders = new MultiValueTable();
-		this.writeReply(ctx, 200, "text/html", "OK", pageHeaders, pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
 	}
 
 	
@@ -761,7 +765,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	private HTMLNode createPriorityCell(PageMaker pageMaker, String identifier, short priorityClass, ToadletContext ctx, String[] priorityClasses) {
 		
 		HTMLNode priorityCell = new HTMLNode("td", "class", "request-priority nowrap");
-		HTMLNode priorityForm = ctx.addFormChild(priorityCell, "/queue/", "queueChangePriorityCell");
+		HTMLNode priorityForm = ctx.addFormChild(priorityCell, "/queue/", "queueChangePriorityCell-" + identifier.hashCode());
 		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		HTMLNode prioritySelect = priorityForm.addChild("select", "name", "priority");
 		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
@@ -777,14 +781,14 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 
 	private HTMLNode createDeleteCell(PageMaker pageMaker, String identifier, ClientRequest clientRequest, ToadletContext ctx) {
 		HTMLNode deleteNode = new HTMLNode("td", "class", "request-delete");
-		HTMLNode deleteForm = ctx.addFormChild(deleteNode, "/queue/", "queueDeleteForm");
+		HTMLNode deleteForm = ctx.addFormChild(deleteNode, "/queue/", "queueDeleteForm-" + identifier.hashCode());
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("QueueToadlet.remove") });
 		
 		// If it's failed, offer to restart it
 		
 		if(clientRequest.hasFinished() && !clientRequest.hasSucceeded() && clientRequest.canRestart()) {
-			HTMLNode retryForm = ctx.addFormChild(deleteNode, "/queue/", "queueRestartForm");
+			HTMLNode retryForm = ctx.addFormChild(deleteNode, "/queue/", "queueRestartForm-" + identifier.hashCode());
 			String restartName = L10n.getString(clientRequest instanceof ClientGet && ((ClientGet)clientRequest).hasPermRedirect() ? "QueueToadlet.follow" : "QueueToadlet.restart");
 			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", restartName });

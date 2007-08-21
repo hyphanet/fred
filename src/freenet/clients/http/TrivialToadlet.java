@@ -19,7 +19,7 @@ public class TrivialToadlet extends Toadlet {
 		String reply = "<html><head><title>You requested "+encFetched+
 			"</title></head><body>You fetched <a href=\""+encFetched+"\">"+
 			encFetched+"</a>.</body></html>";
-		this.writeReply(ctx, 200, "text/html", "OK", reply);
+		this.writeHTMLReply(ctx, 200, "OK", reply);
 	}
 	
 	public String supportedMethods() {

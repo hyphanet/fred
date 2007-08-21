@@ -29,6 +29,7 @@ import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.StringArray;
@@ -339,9 +340,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");		
 		toadlets = new LinkedList();
-		core.setToadletContainer(this); // even if not enabled, because of config
 		
-		this.networkInterface = NetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"));
+		this.networkInterface = NetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor());
+		
 		if(!enabled) {
 			Logger.normal(core, "Not starting FProxy as it's disabled");
 			System.out.println("Not starting FProxy as it's disabled");
@@ -349,6 +350,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			myThread = new Thread(this, "SimpleToadletServer");
 			myThread.setDaemon(true);
 		}
+
 	}
 
 	public boolean doRobots() {
@@ -364,16 +366,16 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public void register(Toadlet t, String urlPrefix, boolean atFront, boolean fullOnly) {
-		register(t, urlPrefix, atFront, null, null, fullOnly);
+		register(t, urlPrefix, atFront, null, null, fullOnly, null);
 	}
 	
-	public void register(Toadlet t, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly) {
+	public void register(Toadlet t, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
 		ToadletElement te = new ToadletElement(t, urlPrefix);
 		if(atFront) toadlets.addFirst(te);
 		else toadlets.addLast(te);
 		t.container = this;
 		if (name != null) {
-			pageMaker.addNavigationLink(urlPrefix, name, title, fullOnly);
+			pageMaker.addNavigationLink(urlPrefix, name, title, fullOnly, cb);
 		}
 	}
 
@@ -419,9 +421,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 
 		void start() {
-			Thread t = new Thread(this, "SimpleToadletServer$SocketHandler");
-			t.setDaemon(true);
-			t.start();
+			core.getExecutor().execute(this, "SimpleToadletServer$SocketHandler@"+hashCode());
 		}
 		
 		public void run() {
@@ -480,6 +480,16 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	private static String l10n(String key) {
 		return L10n.getString("SimpleToadletServer."+key);
+	}
+
+	public HTMLNode addFormChild(HTMLNode parentNode, String target, String id) {
+		HTMLNode formNode =
+			parentNode.addChild("form", new String[] { "action", "method", "enctype", "id",  "accept-charset" }, 
+					new String[] { target, "post", "multipart/form-data", id, "utf-8"} ).addChild("div");
+		formNode.addChild("input", new String[] { "type", "name", "value" }, 
+				new String[] { "hidden", "formPassword", getFormPassword() });
+		
+		return formNode;
 	}
 
 }

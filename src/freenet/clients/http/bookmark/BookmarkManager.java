@@ -20,106 +20,65 @@ import freenet.support.api.StringArrCallback;
 public class BookmarkManager {
 
 	private final NodeClientCore node;
-
-	private USKUpdatedCallback uskcb;
-
-	private boolean started;
-
-	private BookmarkCategory mainCategory;
-
-	private HashMap bookmarks;
-
-	private SubConfig sc;
+	private final USKUpdatedCallback uskCB = new USKUpdatedCallback();
+	private final StringArrCallback configCB = new BookmarkCallback();
+	private static final BookmarkCategory MAIN_CATEGORY = new BookmarkCategory("/");;
+	private final HashMap bookmarks = new HashMap();
 
 	public BookmarkManager(NodeClientCore n, SubConfig sc) {
-
-		bookmarks = new HashMap();
-		mainCategory = new BookmarkCategory("/");
-		bookmarks.put("/", mainCategory);
-
-		this.uskcb = new USKUpdatedCallback();
+		bookmarks.put("/", MAIN_CATEGORY);
 		this.node = n;
-		this.sc = sc;
 
 		try {
-
 			BookmarkCategory defaultRoot = new BookmarkCategory("/");
-
-			BookmarkCategory indexes = (BookmarkCategory) defaultRoot
-					.addBookmark(new BookmarkCategory("Indexes"));
-			indexes
-					.addBookmark(new BookmarkItem(
-							new FreenetURI(
-									"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/25/"),
+			BookmarkCategory indexes = (BookmarkCategory) defaultRoot.addBookmark(new BookmarkCategory("Indexes"));
+			indexes.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/25/"),
 							"Entry point (freesites with descriptions but no categories)",
 							node.alerts));
 
-			indexes
-					.addBookmark(new BookmarkItem(
-							new FreenetURI(
-									"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/3/"),
+			indexes.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/3/"),
 							"Another Index (freesites with categories but no descriptions)",
 							node.alerts));
 
-			BookmarkCategory flog = (BookmarkCategory) defaultRoot
-					.addBookmark(new BookmarkCategory("Freenet devel's flogs"));
-			flog
-					.addBookmark(new BookmarkItem(
-							new FreenetURI(
-									"USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/2/"),
+			BookmarkCategory flog = (BookmarkCategory) defaultRoot.addBookmark(new BookmarkCategory("Freenet devel's flogs"));
+			flog.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/2/"),
 							"Toad", node.alerts));
-			flog
-					.addBookmark(new BookmarkItem(
-							new FreenetURI(
-									"USK@hM9XRwjXIzU8xTSBXNZvTn2KuvTSRFnVn4EER9FQnpM,gsth24O7ud4gL4NwNuYJDUqfaWASOG2zxZY~ChtgPxc,AQACAAE/Flog/4/"),
+			flog.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@hM9XRwjXIzU8xTSBXNZvTn2KuvTSRFnVn4EER9FQnpM,gsth24O7ud4gL4NwNuYJDUqfaWASOG2zxZY~ChtgPxc,AQACAAE/Flog/4/"),
 							"Nextgen$", node.alerts));
 
-			BookmarkCategory apps = (BookmarkCategory) defaultRoot
-					.addBookmark(new BookmarkCategory(
-							"Freenet related software"));
-			apps
-					.addBookmark(new BookmarkItem(
-							new FreenetURI(
-									"USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/1"),
+			BookmarkCategory apps = (BookmarkCategory) defaultRoot.addBookmark(new BookmarkCategory("Freenet related software"));
+			apps.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/1"),
 							"Frost", node.alerts));
 
-			sc.register("bookmarks", defaultRoot.toStrings(), 0, true, false,
-					"BookmarkManager.list", "BookmarkManager.listLong",
-					makeCB());
-
-			if (!importOldBookmarks())
-				makeCB().set(
-						(sc.getStringArr("bookmarks").length == 0 ? defaultRoot
-								.toStrings() : sc.getStringArr("bookmarks")));
-
+			sc.register("bookmarks", defaultRoot.toStrings(), 0, true, false,"BookmarkManager.list", "BookmarkManager.listLong", configCB);
+			
+			configCB.set(sc.getStringArr("bookmarks"));
 		} catch (MalformedURLException mue) {
-			// just ignore that one
 		} catch (InvalidConfigValueException icve) {
-			// TODO
 			icve.printStackTrace();
-		}
-
-		synchronized (this) {
-			started = true;
 		}
 	}
 
 	public class BookmarkCallback implements StringArrCallback {
-		private final Pattern pattern = Pattern
-				.compile("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
+		private final Pattern pattern = Pattern.compile("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
 
 		public String[] get() {
-
 			synchronized (BookmarkManager.this) {
-
-				return mainCategory.toStrings();
-
+				return MAIN_CATEGORY.toStrings();
 			}
 		}
 
 		public void set(String[] newVals) throws InvalidConfigValueException {
-			clear();
-
 			FreenetURI key;
 			for (int i = 0; i < newVals.length; i++) {
 				try {
@@ -143,10 +102,9 @@ public class BookmarkManager {
 
 	private class USKUpdatedCallback implements USKCallback {
 		public void onFoundEdition(long edition, USK key) {
-			BookmarkItems items = mainCategory.getAllItems();
+			BookmarkItems items = MAIN_CATEGORY.getAllItems();
 			for (int i = 0; i < items.size(); i++) {
-
-				if (!items.get(i).getKeyType().equals("USK"))
+				if (!"USK".equals(items.get(i).getKeyType()))
 					continue;
 
 				try {
@@ -164,39 +122,12 @@ public class BookmarkManager {
 		}
 	}
 
-	private boolean importOldBookmarks() {
-		String[] strs = sc.getStringArr("bookmarks");
-
-		final Pattern pattern = Pattern.compile("([A-Z]{3}@.*)=(.*)");
-		for (int i = 0; i < strs.length; i++) {
-			Matcher matcher = pattern.matcher(strs[i]);
-			if (matcher.matches() && matcher.groupCount() == 2) {
-				if (getCategoryByPath("/Imported/") == null)
-					addBookmark("/", new BookmarkCategory("Imported"), false);
-				try {
-					addBookmark("/Imported/", new BookmarkItem(new FreenetURI(
-							matcher.group(1)), matcher.group(2), node.alerts),
-							false);
-				} catch (MalformedURLException mue) {
-				}
-			} else
-				return false;
-		}
-
-		node.storeConfig();
-		return true;
-	}
-
 	public String l10n(String key) {
 		return L10n.getString("BookmarkManager."+key);
 	}
 
-	public BookmarkCallback makeCB() {
-		return new BookmarkCallback();
-	}
-
 	public BookmarkCategory getMainCategory() {
-		return mainCategory;
+		return MAIN_CATEGORY;
 	}
 
 	public String parentPath(String path) {
@@ -226,45 +157,40 @@ public class BookmarkManager {
 		return null;
 	}
 
-	public void addBookmark(String parentPath, Bookmark bookmark, boolean store)
-			throws NullPointerException {
+	public void addBookmark(String parentPath, Bookmark bookmark, boolean store) {
 		BookmarkCategory parent = getCategoryByPath(parentPath);
-		if (parent == null)
-			throw new NullPointerException();
-		else {
-			parent.addBookmark(bookmark);
-			putPaths(parentPath + bookmark.getName()
-					+ ((bookmark instanceof BookmarkCategory) ? "/" : ""),
-					bookmark);
+		parent.addBookmark(bookmark);
+		putPaths(parentPath + bookmark.getName()
+				+ ((bookmark instanceof BookmarkCategory) ? "/" : ""),
+				bookmark);
 
-			if (bookmark instanceof BookmarkItem && ((BookmarkItem) bookmark).getKeyType().equals("USK")) {
-				try {
-					USK u = ((BookmarkItem) bookmark).getUSK();
-					this.node.uskManager.subscribe(u, this.uskcb, true, this);
-				} catch (MalformedURLException mue) {
-				}
+		if (bookmark instanceof BookmarkItem && ((BookmarkItem) bookmark).getKeyType().equals("USK")) {
+			try {
+				USK u = ((BookmarkItem) bookmark).getUSK();
+				this.node.uskManager.subscribe(u, this.uskCB, true, this);
+			} catch (MalformedURLException mue) {
 			}
 		}
 		if (store)
 			node.storeConfig();
 	}
 
-	// TODO
 	public void renameBookmark(String path, String newName) {
 		Bookmark bookmark = getBookmarkByPath(path);
+		
+		String oldName = bookmark.getName();
+		String oldPath = '/' + oldName + '/';
+		String newPath = oldPath.substring(0, oldPath.indexOf(oldName)) + newName + '/';
+
 		bookmark.setName(newName);
-		if (bookmark instanceof BookmarkCategory) {
-			try {
-				makeCB().set(makeCB().get());
+		
+		bookmarks.remove(path);
+		bookmarks.put(newPath, bookmark);
 
-			} catch (InvalidConfigValueException icve) {
-			}
-		}
-
+		node.storeConfig();
 	}
 
-	public void moveBookmark(String bookmarkPath, String newParentPath,
-			boolean store) {
+	public void moveBookmark(String bookmarkPath, String newParentPath, boolean store) {
 		Bookmark b = getBookmarkByPath(bookmarkPath);
 		addBookmark(newParentPath, b, false);
 
@@ -273,7 +199,6 @@ public class BookmarkManager {
 
 		if (store)
 			node.storeConfig();
-
 	}
 
 	public void removeBookmark(String path, boolean store) {
@@ -286,15 +211,15 @@ public class BookmarkManager {
 			for (int i = 0; i < cat.size(); i++) {
 				removeBookmark(
 						path
-								+ cat.get(i).getName()
-								+ ((cat.get(i) instanceof BookmarkCategory) ? "/"
-										: ""), false);
+						+ cat.get(i).getName()
+						+ ((cat.get(i) instanceof BookmarkCategory) ? "/"
+								: ""), false);
 			}
 		} else {
 			if (((BookmarkItem) bookmark).getKeyType().equals("USK")) {
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
-					this.node.uskManager.unsubscribe(u, this.uskcb, true);
+					this.node.uskManager.unsubscribe(u, this.uskCB, true);
 				} catch (MalformedURLException mue) {
 				}
 			}
@@ -306,7 +231,6 @@ public class BookmarkManager {
 
 		if (store)
 			node.storeConfig();
-
 	}
 
 	public void moveBookmarkUp(String path, boolean store) {
@@ -366,17 +290,13 @@ public class BookmarkManager {
 	}
 
 	public void clear() {
-
 		removeBookmark("/", false);
 		bookmarks.clear();
-
-		mainCategory = new BookmarkCategory("/");
-		bookmarks.put("/", mainCategory);
-
+		bookmarks.put("/", MAIN_CATEGORY);
 	}
 
 	public FreenetURI[] getBookmarkURIs() {
-		BookmarkItems items = mainCategory.getAllItems();
+		BookmarkItems items = MAIN_CATEGORY.getAllItems();
 		FreenetURI[] uris = new FreenetURI[items.size()];
 		for (int i = 0; i < items.size(); i++) {
 			uris[i] = items.get(i).getURI();
@@ -384,36 +304,4 @@ public class BookmarkManager {
 
 		return uris;
 	}
-
-	/*
-	 * public void addBookmark(Bookmark b, boolean store) {
-	 * this.bookmarks.add(b); if (b.getKeyType().equals("USK")) { try { USK u =
-	 * b.getUSK(); this.node.uskManager.subscribe(u, this.uskcb, true, this); }
-	 * catch (MalformedURLException mue) {
-	 *  } } if(store && started) node.storeConfig(); }
-	 * 
-	 * public void removeBookmark(Bookmark b, boolean store) { if
-	 * (b.getKeyType().equals("USK")) { try { USK u = b.getUSK();
-	 * this.node.uskManager.unsubscribe(u, this.uskcb, true); } catch
-	 * (MalformedURLException mue) {
-	 *  } } this.bookmarks.remove(b); if(store && started) node.storeConfig(); }
-	 * 
-	 * public void moveBookmarkDown (Bookmark b, boolean store) { int i =
-	 * this.bookmarks.indexOf(b); if (i == -1) return;
-	 * 
-	 * Bookmark bk = (Bookmark)this.bookmarks.get(i); this.bookmarks.remove(i);
-	 * this.bookmarks.add((i+1)%(this.bookmarks.size()+1), bk);
-	 * 
-	 * if(store && started) node.storeConfig(); }
-	 * 
-	 * public void moveBookmarkUp (Bookmark b, boolean store) { int i =
-	 * this.bookmarks.indexOf(b); if (i == -1) return;
-	 * 
-	 * Bookmark bk = (Bookmark)this.bookmarks.get(i); this.bookmarks.remove(i);
-	 * if (--i < 0) i = this.bookmarks.size(); this.bookmarks.add(i, bk);
-	 * 
-	 * if(store && started) node.storeConfig(); }
-	 * 
-	 * public int getSize() { return this.bookmarks.size(); }
-	 */
 }

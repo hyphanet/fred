@@ -35,7 +35,7 @@ public class DSAPrivateKey extends CryptoKey {
         BigInteger tempX;
         do {
             tempX = new NativeBigInteger(256, r);
-        } while (tempX.compareTo(g.getQ()) > -1);
+        } while (tempX.compareTo(g.getQ()) > -1 || tempX.equals(BigInteger.ZERO));
         this.x = tempX;
     }
 

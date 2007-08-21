@@ -1,22 +1,18 @@
 package freenet.clients.http.bookmark;
 
 import java.util.Vector;
-import java.util.Iterator;
 
 import freenet.support.StringArray;
 
-public class BookmarkCategory extends Bookmark // implements Iterator
-{
+public class BookmarkCategory extends Bookmark {
 
-	private final Vector bookmarks;
+	private final Vector bookmarks = new Vector();
 
 	public BookmarkCategory(String name) {
-		bookmarks = new Vector();
 		setName(name);
 	}
 
 	public BookmarkCategory(String name, String desc) {
-		bookmarks = new Vector();
 		setName(name);
 		setDesc(desc);
 	}
@@ -127,9 +123,4 @@ public class BookmarkCategory extends Bookmark // implements Iterator
 		for (int i = 0; i < size(); i++)
 			subCategories.get(i).setPrivate(bool);
 	}
-
-	public Iterator iterator() {
-		return bookmarks.iterator();
-	}
-
 }

@@ -1,6 +1,5 @@
 package freenet.support;
 
-import java.io.DataInputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -143,6 +142,18 @@ public abstract class Fields {
 	public static final boolean stringToBool(String s, boolean def) {
 		if(s == null) return def;
 		return (def ? !s.equalsIgnoreCase("false") : s.equalsIgnoreCase("true"));
+	}
+
+	/**
+	 * Find the boolean value of the field. Throw if the string is neither "yes"/"true" nor "no"/"false".
+	 * @param s
+	 * @return
+	 */
+	public static boolean stringToBool(String s) throws NumberFormatException {
+		if(s == null) throw new NumberFormatException("Null");
+		if(s.equalsIgnoreCase("false") || s.equalsIgnoreCase("no")) return false;
+		if(s.equalsIgnoreCase("true") || s.equalsIgnoreCase("yes")) return true;
+		throw new NumberFormatException("Invalid boolean: "+s);
 	}
 
 	/**

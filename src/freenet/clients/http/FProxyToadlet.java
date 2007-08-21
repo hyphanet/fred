@@ -241,6 +241,7 @@ public class FProxyToadlet extends Toadlet {
 		if(checkForString(buf, "<rss")) return true;
 		if(checkForString(buf, "<feed")) return true;
 		if(checkForString(buf, "<rdf:RDF")) return true;
+		is.close();
 		return false;
 	}
 
@@ -318,11 +319,16 @@ public class FProxyToadlet extends Toadlet {
 			}
 			return;
 		}else if(ks.equals("/robots.txt") && ctx.doRobots()){
-			this.writeReply(ctx, 200, "text/plain", "Ok", "User-agent: *\nDisallow: /");
+			this.writeTextReply(ctx, 200, "Ok", "User-agent: *\nDisallow: /");
 			return;
 		}else if(ks.startsWith("/darknet/")) { //TODO: remove when obsolete
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/friends/");
+			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
+			return;
+		}else if(ks.startsWith("/opennet/")) { //TODO: remove when obsolete
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/strangers/");
 			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
 			return;
 		}
@@ -349,7 +355,7 @@ public class FProxyToadlet extends Toadlet {
 			errorContent.addChild("br");
 			addHomepageLink(errorContent);
 
-			this.writeReply(ctx, 400, "text/html", l10n("invalidKeyTitle"), pageNode.generate());
+			this.writeHTMLReply(ctx, 400, l10n("invalidKeyTitle"), pageNode.generate());
 			return;
 		}
 		String requestedMimeType = httprequest.getParam("type", null);
@@ -372,9 +378,7 @@ public class FProxyToadlet extends Toadlet {
 			String msg = e.getMessage();
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Failed to fetch "+uri+" : "+e);
-			if(e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) {
-				this.writePermanentRedirect(ctx, l10n("notEnoughMetaStrings"), '/' + key.toString() + '/' + override);
-			} else if(e.newURI != null) {
+			if(e.newURI != null) {
 				this.writePermanentRedirect(ctx, msg, '/' +e.newURI.toString() + override);
 			} else if(e.mode == FetchException.TOO_BIG) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fileInformationTitle"), ctx);
@@ -412,7 +416,7 @@ public class FProxyToadlet extends Toadlet {
 				}
 				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, l10n("abortToHomepage"));
 
-				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			} else {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(FetchException.getShortMessage(e.mode), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -460,8 +464,8 @@ public class FProxyToadlet extends Toadlet {
 				option = optionList.addChild("li");
 				option.addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
 				
-				this.writeReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
-						"text/html", FetchException.getShortMessage(e.mode), pageNode.generate());
+				this.writeHTMLReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
+						"Internal Error", pageNode.generate());
 			}
 		} catch (SocketException e) {
 			// Probably irrelevant
@@ -562,34 +566,35 @@ public class FProxyToadlet extends Toadlet {
 		return f;
 	}
 
-	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SubConfig fproxyConfig) throws IOException, InvalidConfigValueException {
+	public static SimpleToadletServer maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SubConfig fproxyConfig) throws IOException, InvalidConfigValueException {
+		
+		SimpleToadletServer server = null;
 		
 		// FIXME how to change these on the fly when the interface language is changed?
 		
 		try {
 			
-			SimpleToadletServer server = new SimpleToadletServer(fproxyConfig, core);
+			server = new SimpleToadletServer(fproxyConfig, core);
 			
 			HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
 			
-			core.setToadletContainer(server);
 			random = new byte[32];
 			core.random.nextBytes(random);
 			FProxyToadlet fproxy = new FProxyToadlet(client, core);
 			core.setFProxy(fproxy);
-			server.register(fproxy, "/", false, l10n("welcomeTitle"), l10n("welcome"), false);
+			server.register(fproxy, "/", false, "FProxyToadlet.welcomeTitle", "FProxyToadlet.welcome", false, null);
 			
-			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager, core);
-			server.register(pproxy, "/plugins/", true, l10n("pluginsTitle"), l10n("plugins"), true);
+			PproxyToadlet pproxy = new PproxyToadlet(client, node, core);
+			server.register(pproxy, "/plugins/", true, "FProxyToadlet.pluginsTitle", "FProxyToadlet.plugins", true, null);
 			
-			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node);
+			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node);
 			server.register(welcometoadlet, "/welcome/", true, false);
 			
 			PluginToadlet pluginToadlet = new PluginToadlet(client, node.pluginManager2, core);
 			server.register(pluginToadlet, "/plugin/", true, true);
 			
 			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
-			server.register(configtoadlet, "/config/", true, l10n("configTitle"), l10n("config"), true);
+			server.register(configtoadlet, "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);
 			
 			StaticToadlet statictoadlet = new StaticToadlet(client);
 			server.register(statictoadlet, "/static/", true, false);
@@ -599,16 +604,20 @@ public class FProxyToadlet extends Toadlet {
 			
 			DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
 //			server.register(friendsToadlet, "/darknet/", true, l10n("friendsTitle"), l10n("friends"), true);
-			server.register(friendsToadlet, "/friends/", true, l10n("friendsTitle"), l10n("friends"), true);
+			server.register(friendsToadlet, "/friends/", true, "FProxyToadlet.friendsTitle", "FProxyToadlet.friends", true, null);
+			
+			OpennetConnectionsToadlet opennetToadlet = new OpennetConnectionsToadlet(node, core, client);
+//			server.register(opennetToadlet, "/opennet/", true, l10n("opennetTitle"), l10n("opennet"), true, opennetToadlet);
+			server.register(opennetToadlet, "/strangers/", true, "FProxyToadlet.opennetTitle", "FProxyToadlet.opennet", true, opennetToadlet);
 			
 			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 			server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
 			
 			QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
-			server.register(queueToadlet, "/queue/", true, l10n("queueTitle"), l10n("queue"), false);
+			server.register(queueToadlet, "/queue/", true, "FProxyToadlet.queueTitle", "FProxyToadlet.queue", false, null);
 			
 			StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
-			server.register(statisticsToadlet, "/stats/", true, l10n("statsTitle"), l10n("stats"), true);
+			server.register(statisticsToadlet, "/stats/", true, "FProxyToadlet.statsTitle", "FProxyToadlet.stats", true, null);
 			
 			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
 			server.register(localFileInsertToadlet, "/files/", true, false);
@@ -620,13 +629,10 @@ public class FProxyToadlet extends Toadlet {
 			server.register(browsertTestToadlet, "/test/", true, false);
 			
 			TranslationToadlet translationToadlet = new TranslationToadlet(client, core);
-			server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, l10n("translationTitle"), l10n("translation"), true);
+			server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, true);
 			
-			FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node);
+			FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node, core);
 			server.register(firstTimeWizardToadlet, FirstTimeWizardToadlet.TOADLET_URL, true, false);
-			
-			// Now start the server.
-			server.start();
 			
 		}catch (BindException e){
 			Logger.error(core,"Failed to start FProxy port already bound: isn't Freenet already running ?");
@@ -637,6 +643,8 @@ public class FProxyToadlet extends Toadlet {
 		}
 		
 		fproxyConfig.finishedInitialization();
+		
+		return server; // caller must start server
 	}
 	
 	/**

@@ -78,6 +78,7 @@ public class DMT {
 	public static final String TYPE = "type";
 	public static final String PAYLOAD = "payload";
 	public static final String COUNTER = "counter";
+	public static final String LINEAR_COUNTER = "linearCounter";
 	public static final String RETURN_LOCATION = "returnLocation";
 	public static final String BLOCK_HEADERS = "blockHeaders";
 	public static final String DATA_INSERT_REJECTED_REASON = "dataInsertRejectedReason";
@@ -96,7 +97,26 @@ public class DMT {
 	public static final String MY_UID = "myUID";
 	public static final String PEER_LOCATIONS = "peerLocations";
 	public static final String PEER_UIDS = "peerUIDs";
-
+	public static final String BEST_LOCATIONS_NOT_VISITED = "bestLocationsNotVisited";
+	public static final String MAIN_JAR_KEY = "mainJarKey";
+	public static final String EXTRA_JAR_KEY = "extraJarKey";
+	public static final String REVOCATION_KEY = "revocationKey";
+	public static final String HAVE_REVOCATION_KEY = "haveRevocationKey";
+	public static final String MAIN_JAR_VERSION = "mainJarVersion";
+	public static final String EXTRA_JAR_VERSION = "extJarVersion";
+	public static final String REVOCATION_KEY_TIME_LAST_TRIED = "revocationKeyTimeLastTried";
+	public static final String REVOCATION_KEY_DNF_COUNT = "revocationKeyDNFCount";
+	public static final String REVOCATION_KEY_FILE_LENGTH = "revocationKeyFileLength";
+	public static final String MAIN_JAR_FILE_LENGTH = "mainJarFileLength";
+	public static final String EXTRA_JAR_FILE_LENGTH = "extraJarFileLength";
+	public static final String PING_TIME = "pingTime";
+	public static final String BWLIMIT_DELAY_TIME = "bwlimitDelayTime";
+	public static final String TIME = "time";
+	public static final String FORK_COUNT = "forkCount";
+	public static final String TIME_LEFT = "timeLeft";
+	public static final String PREV_UID = "prevUID";
+	public static final String OPENNET_NODEREF = "opennetNoderef";
+	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
 		addField(SEND_TIME, Long.class);
@@ -505,6 +525,18 @@ public class DMT {
 		return msg;
 	}
 	
+	public static final MessageType FNPRecentlyFailed = new MessageType("FNPRecentlyFailed") {{
+		addField(UID, Long.class);
+		addField(TIME_LEFT, Integer.class);
+	}};
+	
+	public static final Message createFNPRecentlyFailed(long id, int timeLeft) {
+		Message msg = new Message(FNPRecentlyFailed);
+		msg.set(UID, id);
+		msg.set(TIME_LEFT, timeLeft);
+		return msg;
+	}
+	
 	public static final MessageType FNPCHKDataFound = new MessageType("FNPCHKDataFound") {{
 		addField(UID, Long.class);
 		addField(BLOCK_HEADERS, ShortBuffer.class);
@@ -685,6 +717,58 @@ public class DMT {
 		return msg;
 	}
 	
+	// Opennet completions (not sent to darknet nodes)
+	
+	/** Sent when a request to an opennet node is completed, but the data source does not want to 
+	 * path fold */
+	public static MessageType FNPOpennetCompletedAck = new MessageType("FNPOpennetCompletedAck") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static Message createFNPOpennetCompletedAck(long uid) {
+		Message msg = new Message(FNPOpennetCompletedAck);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
+	/** Sent when a request completes and the data source does want to path fold */
+	public static MessageType FNPOpennetConnectDestination = new MessageType("FNPOpennetConnectDestination") {{
+		addField(UID, Long.class);
+		addField(OPENNET_NODEREF, ShortBuffer.class);
+	}};
+	
+	public static Message createFNPOpennetConnectDestination(long uid, ShortBuffer buf) {
+		Message msg = new Message(FNPOpennetConnectDestination);
+		msg.set(UID, uid);
+		msg.set(OPENNET_NODEREF, buf);
+		return msg;
+	}
+	
+	/** Path folding response */
+	public static MessageType FNPOpennetConnectReply = new MessageType("FNPOpennetConnectReply") {{
+		addField(UID, Long.class);
+		addField(OPENNET_NODEREF, ShortBuffer.class);
+	}};
+	
+	public static Message createFNPOpennetConnectReply(long uid, ShortBuffer buf) {
+		Message msg = new Message(FNPOpennetConnectReply);
+		msg.set(UID, uid);
+		msg.set(OPENNET_NODEREF, buf);
+		return msg;
+	}
+	
+	// Key offers (ULPRs)
+	
+	public static MessageType FNPOfferKey = new MessageType("FNPOfferKey") {{
+		addField(KEY, Key.class);
+	}};
+	
+	public static Message createFNPOfferKey(Key key) {
+		Message msg = new Message(FNPOfferKey);
+		msg.set(KEY, key);
+		return msg;
+	}
+	
 	public static final MessageType FNPPing = new MessageType("FNPPing") {{
 		addField(PING_SEQNO, Integer.class);
 	}};
@@ -732,10 +816,11 @@ public class DMT {
 		addField(BEST_LOCATION, Double.class);
 		addField(HTL, Short.class);
 		addField(COUNTER, Short.class);
+		addField(LINEAR_COUNTER, Short.class);
 	}};
 	
 	public static final Message createFNPProbeRequest(long uid, double target, double nearest, 
-			double best, short htl, short counter) {
+			double best, short htl, short counter, short linearCounter) {
 		Message msg = new Message(FNPProbeRequest);
 		msg.set(UID, uid);
 		msg.set(TARGET_LOCATION, target);
@@ -743,6 +828,7 @@ public class DMT {
 		msg.set(BEST_LOCATION, best);
 		msg.set(HTL, htl);
 		msg.set(COUNTER, counter);
+		msg.set(LINEAR_COUNTER, linearCounter);
 		return msg;
 	}
 
@@ -757,9 +843,13 @@ public class DMT {
 		addField(MY_UID, Long.class);
 		addField(PEER_LOCATIONS, ShortBuffer.class);
 		addField(PEER_UIDS, ShortBuffer.class);
+		addField(FORK_COUNT, Short.class);
+		addField(LINEAR_COUNTER, Short.class);
+		addField(REASON, String.class);
+		addField(PREV_UID, Long.class);
 	}};
 	
-	public static Message createFNPProbeTrace(long uid, double target, double nearest, double best, short htl, short counter, double myLoc, long swapIdentifier, double[] peerLocs, long[] peerUIDs) {
+	public static Message createFNPProbeTrace(long uid, double target, double nearest, double best, short htl, short counter, double myLoc, long swapIdentifier, double[] peerLocs, long[] peerUIDs, short forkCount, short linearCounter, String reason, long prevUID) {
 		Message msg = new Message(FNPProbeTrace);
 		msg.set(UID, uid);
 		msg.set(TARGET_LOCATION, target);
@@ -771,6 +861,10 @@ public class DMT {
 		msg.set(MY_UID, swapIdentifier);
 		msg.set(PEER_LOCATIONS, new ShortBuffer(Fields.doublesToBytes(peerLocs)));
 		msg.set(PEER_UIDS, new ShortBuffer(Fields.longsToBytes(peerUIDs)));
+		msg.set(FORK_COUNT, forkCount);
+		msg.set(LINEAR_COUNTER, linearCounter);
+		msg.set(REASON, reason);
+		msg.set(PREV_UID, prevUID);
 		return msg;
 	}
 
@@ -780,16 +874,18 @@ public class DMT {
 		addField(NEAREST_LOCATION, Double.class);
 		addField(BEST_LOCATION, Double.class);
 		addField(COUNTER, Short.class);
+		addField(LINEAR_COUNTER, Short.class);
 	}};
 	
 	public static final Message createFNPProbeReply(long uid, double target, double nearest, 
-			double best, short counter) {
+			double best, short counter, short linearCounter) {
 		Message msg = new Message(FNPProbeReply);
 		msg.set(UID, uid);
 		msg.set(TARGET_LOCATION, target);
 		msg.set(NEAREST_LOCATION, nearest);
 		msg.set(BEST_LOCATION, best);
 		msg.set(COUNTER, counter);
+		msg.set(LINEAR_COUNTER, linearCounter);
 		return msg;
 	}
 	
@@ -801,10 +897,11 @@ public class DMT {
 		addField(HTL, Short.class);
 		addField(COUNTER, Short.class);
 		addField(REASON, Short.class);
+		addField(LINEAR_COUNTER, Short.class);
 	}};
 	
 	public static final Message createFNPProbeRejected(long uid, double target, double nearest, 
-			double best, short counter, short htl, short reason) {
+			double best, short counter, short htl, short reason, short linearCounter) {
 		Message msg = new Message(FNPProbeRejected);
 		msg.set(UID, uid);
 		msg.set(TARGET_LOCATION, target);
@@ -813,6 +910,7 @@ public class DMT {
 		msg.set(HTL, htl);
 		msg.set(COUNTER, counter);
 		msg.set(REASON, reason);
+		msg.set(LINEAR_COUNTER, linearCounter);
 		return msg;
 	}
 
@@ -936,11 +1034,145 @@ public class DMT {
 		return msg;
 	}
 
+	public static final MessageType FNPTime = new MessageType("FNPTime") {{
+		addField(TIME, Long.class);
+	}};
+	
+	public static final Message createFNPTime(long time) {
+		Message msg = new Message(FNPTime);
+		msg.set(TIME, time);
+		return msg;
+	}
+	
 	public static final MessageType FNPVoid = new MessageType("FNPVoid") {{
 	}};
 	
 	public static final Message createFNPVoid() {
 		Message msg = new Message(FNPVoid);
+		return msg;
+	}
+	
+	// Update over mandatory. Not strictly part of FNP. Only goes between nodes at the link
+	// level, and will be sent, and parsed, even if the node is out of date. Should be stable 
+	// long-term.
+	
+	// Sent on connect
+	public static final MessageType UOMAnnounce = new MessageType("UOMAnnounce") {{
+		addField(MAIN_JAR_KEY, String.class);
+		addField(EXTRA_JAR_KEY, String.class);
+		addField(REVOCATION_KEY, String.class);
+		addField(HAVE_REVOCATION_KEY, Boolean.class);
+		addField(MAIN_JAR_VERSION, Long.class);
+		addField(EXTRA_JAR_VERSION, Long.class);
+		// Last time (ms ago) we had 3 DNFs in a row on the revocation checker.
+		addField(REVOCATION_KEY_TIME_LAST_TRIED, Long.class);
+		// Number of DNFs so far this time.
+		addField(REVOCATION_KEY_DNF_COUNT, Integer.class);
+		// For convenience, may change
+		addField(REVOCATION_KEY_FILE_LENGTH, Long.class);
+		addField(MAIN_JAR_FILE_LENGTH, Long.class);
+		addField(EXTRA_JAR_FILE_LENGTH, Long.class);
+		addField(PING_TIME, Integer.class);
+		addField(BWLIMIT_DELAY_TIME, Integer.class);
+	}};
+
+	public static final Message createUOMAnnounce(String mainKey, String extraKey, String revocationKey,
+			boolean haveRevocation, long mainJarVersion, long extraJarVersion, long timeLastTriedRevocationFetch,
+			int revocationDNFCount, long revocationKeyLength, long mainJarLength, long extraJarLength, int pingTime, int bwlimitDelayTime) {
+		Message msg = new Message(UOMAnnounce);
+		
+		msg.set(MAIN_JAR_KEY, mainKey);
+		msg.set(EXTRA_JAR_KEY, extraKey);
+		msg.set(REVOCATION_KEY, revocationKey);
+		msg.set(HAVE_REVOCATION_KEY, haveRevocation);
+		msg.set(MAIN_JAR_VERSION, mainJarVersion);
+		msg.set(EXTRA_JAR_VERSION, extraJarVersion);
+		msg.set(REVOCATION_KEY_TIME_LAST_TRIED, timeLastTriedRevocationFetch);
+		msg.set(REVOCATION_KEY_DNF_COUNT, revocationDNFCount);
+		msg.set(REVOCATION_KEY_FILE_LENGTH, revocationKeyLength);
+		msg.set(MAIN_JAR_FILE_LENGTH, mainJarLength);
+		msg.set(EXTRA_JAR_FILE_LENGTH, extraJarLength);
+		msg.set(PING_TIME, pingTime);
+		msg.set(BWLIMIT_DELAY_TIME, bwlimitDelayTime);
+		
+		return msg;
+	}
+	
+	public static final MessageType UOMRequestRevocation = new MessageType("UOMRequestRevocation") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static final Message createUOMRequestRevocation(long uid) {
+		Message msg = new Message(UOMRequestRevocation);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
+	public static final MessageType UOMRequestMain = new MessageType("UOMRequestMain") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static final Message createUOMRequestMain(long uid) {
+		Message msg = new Message(UOMRequestMain);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
+	public static final MessageType UOMRequestExtra = new MessageType("UOMRequestExtra") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static final Message createUOMRequestExtra(long uid) {
+		Message msg = new Message(UOMRequestExtra);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
+	public static final MessageType UOMSendingRevocation = new MessageType("UOMSendingRevocation") {{
+		addField(UID, Long.class);
+		// Probably excessive, but lengths are always long's, and wasting a few bytes here
+		// doesn't matter in the least, as it's very rarely called.
+		addField(FILE_LENGTH, Long.class);
+		addField(REVOCATION_KEY, String.class);
+	}};
+	
+	public static final Message createUOMSendingRevocation(long uid, long length, String key) {
+		Message msg = new Message(UOMSendingRevocation);
+		msg.set(UID, uid);
+		msg.set(FILE_LENGTH, length);
+		msg.set(REVOCATION_KEY, key);
+		return msg;
+	}
+	
+	public static final MessageType UOMSendingMain = new MessageType("UOMSendingMain") {{
+		addField(UID, Long.class);
+		addField(FILE_LENGTH, Long.class);
+		addField(MAIN_JAR_KEY, String.class);
+		addField(MAIN_JAR_VERSION, Integer.class);
+	}};
+	
+	public static final Message createUOMSendingMain(long uid, long length, String key, int version) {
+		Message msg = new Message(UOMSendingMain);
+		msg.set(UID, uid);
+		msg.set(FILE_LENGTH, length);
+		msg.set(MAIN_JAR_KEY, key);
+		msg.set(MAIN_JAR_VERSION, version);
+		return msg;
+	}
+	
+	public static final MessageType UOMSendingExtra = new MessageType("UOMSendingExtra") {{
+		addField(UID, Long.class);
+		addField(FILE_LENGTH, Long.class);
+		addField(EXTRA_JAR_KEY, String.class);
+		addField(EXTRA_JAR_VERSION, Integer.class);
+	}};
+	
+	public static final Message createUOMSendingExtra(long uid, long length, String key, int version) {
+		Message msg = new Message(UOMSendingExtra);
+		msg.set(UID, uid);
+		msg.set(FILE_LENGTH, length);
+		msg.set(EXTRA_JAR_KEY, key);
+		msg.set(EXTRA_JAR_VERSION, version);
 		return msg;
 	}
 	
@@ -956,6 +1188,36 @@ public class DMT {
 		return msg;
 	}
 	
+	public static final Message createFNPSwapLocations(long[] uids) {
+		Message msg = new Message(FNPSwapNodeUIDs);
+		msg.set(NODE_UIDS, new ShortBuffer(Fields.longsToBytes(uids)));
+		return msg;
+	}
+	
+	// More permanent secondary messages (should perhaps be replaced by new main messages when stable)
+	
+	public static final MessageType FNPBestRoutesNotTaken = new MessageType("FNPBestRoutesNotTaken") {{
+		// Maybe this should be some sort of typed array?
+		// It's just a bunch of double's anyway.
+		addField(BEST_LOCATIONS_NOT_VISITED, ShortBuffer.class);
+	}};
+	
+	public static final Message createFNPBestRoutesNotTaken(byte[] locs) {
+		Message msg = new Message(FNPBestRoutesNotTaken);
+		msg.set(BEST_LOCATIONS_NOT_VISITED, new ShortBuffer(locs));
+		return msg;
+	}
+	
+	public static final Message createFNPBestRoutesNotTaken(double[] locs) {
+		return createFNPBestRoutesNotTaken(Fields.doublesToBytes(locs));
+	}
+	
+	public static Message createFNPBestRoutesNotTaken(Double[] doubles) {
+		double[] locs = new double[doubles.length];
+		for(int i=0;i<locs.length;i++) locs[i] = doubles[i].doubleValue();
+		return createFNPBestRoutesNotTaken(locs);
+	}
+
 	public static void init() { }
 
 }

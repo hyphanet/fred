@@ -178,7 +178,7 @@ public class BrowserTestToadlet extends Toadlet {
 		// Yes, we need that in order to test the browser (number of connections per server)
 		if (request.isParameterSet("wontload")) return;
 		else if (request.isParameterSet("mimeTest")){
-			this.writeReply(ctx, 200, "text/html", "OK", imgWarningMime);
+			this.writeHTMLReply(ctx, 200, "OK", imgWarningMime);
 			return;		
 		}
 		
@@ -210,7 +210,7 @@ public class BrowserTestToadlet extends Toadlet {
 		jsTest.addChild("img", new String[]{"id", "src", "alt"}, new String[]{"JSTEST", "/static/themes/clean/success.gif", "fail!"});
 		jsTest.addChild("script", "type", "text/javascript").addChild("%", "document.getElementById('JSTEST').src = '/static/themes/clean/warning.gif';");
 		
-		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
 	public String supportedMethods() {

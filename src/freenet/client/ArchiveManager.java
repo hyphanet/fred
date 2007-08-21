@@ -17,11 +17,12 @@ import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.MutableBoolean;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FileBucket;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
+import freenet.support.io.TempFileBucket;
 
 /**
  * Cache of recently decoded archives:
@@ -34,11 +35,33 @@ import freenet.support.io.PaddedEphemerallyEncryptedBucket;
  */
 public class ArchiveManager {
 
+	public static final String METADATA_NAME = ".metadata";
 	private static boolean logMINOR;
 	
+	final RandomSource random;
+	final long maxArchiveSize;
+	final long maxArchivedFileSize;
+	
+	// ArchiveHandler's
+	final int maxArchiveHandlers;
+	private final LRUHashtable archiveHandlers;
+	
+	// Data cache
+	/** Maximum number of cached ArchiveStoreItems */
+	final int maxCachedElements;
+	/** Maximum cached data in bytes */
+	final long maxCachedData;
+	/** Currently cached data in bytes */
+	private long cachedData;
+	/** Map from ArchiveKey to ArchiveStoreElement */
+	private final LRUHashtable storedData;
+	/** Filename generator */
+	private final FilenameGenerator filenameGenerator;
+
 	/**
 	 * Create an ArchiveManager.
-	 * @param maxHandlers The maximum number of cached ArchiveHandler's.
+	 * @param maxHandlers The maximum number of cached ArchiveHandler's i.e. the
+	 * maximum number of containers to track.
 	 * @param maxCachedData The maximum size of the cache directory, in bytes.
 	 * @param maxArchiveSize The maximum size of an archive.
 	 * @param maxArchivedFileSize The maximum extracted size of a single file in any
@@ -52,7 +75,6 @@ public class ArchiveManager {
 	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, RandomSource random, FilenameGenerator filenameGenerator) {
 		maxArchiveHandlers = maxHandlers;
 		archiveHandlers = new LRUHashtable();
-		cachedElements = new LRUHashtable();
 		this.maxCachedElements = maxCachedElements;
 		this.maxCachedData = maxCachedData;
 		storedData = new LRUHashtable();
@@ -63,16 +85,6 @@ public class ArchiveManager {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
-	final RandomSource random;
-	final long maxArchiveSize;
-	final long maxArchivedFileSize;
-	
-	
-	// ArchiveHandler's
-	
-	final int maxArchiveHandlers;
-	final LRUHashtable archiveHandlers;
-	
 	/** Add an ArchiveHandler by key */
 	private synchronized void putCached(FreenetURI key, ArchiveHandler zip) {
 		if(logMINOR) Logger.minor(this, "Put cached AH for "+key+" : "+zip);
@@ -89,24 +101,6 @@ public class ArchiveManager {
 		archiveHandlers.push(key, handler);
 		return handler;
 	}
-
-	// Element cache
-	
-	/** Cache of ArchiveElement's by MyKey */
-	final LRUHashtable cachedElements;
-	/** Maximum number of cached ArchiveElement's */
-	final int maxCachedElements;
-
-	// Data cache
-	
-	/** Maximum cached data in bytes */
-	final long maxCachedData;
-	/** Currently cached data in bytes */
-	private long cachedData;
-	/** Map from ArchiveKey to ArchiveStoreElement */
-	final LRUHashtable storedData;
-	/** Filename generator */
-	final FilenameGenerator filenameGenerator;
 
 	/**
 	 * Create an archive handler. This does not need to know how to
@@ -138,24 +132,30 @@ public class ArchiveManager {
 		if(logMINOR) Logger.minor(this, "Fetch cached: "+key+ ' ' +filename);
 		ArchiveKey k = new ArchiveKey(key, filename);
 		ArchiveStoreItem asi = null;
-		synchronized (storedData) {
+		synchronized (this) {
 			asi = (ArchiveStoreItem) storedData.get(k);	
 			if(asi == null) return null;
 			// Promote to top of LRU
 			storedData.push(k, asi);
 		}
 		if(logMINOR) Logger.minor(this, "Found data");
-		return asi.getDataOrThrow();
+		return asi.getReaderBucket();
 	}
 	
 	/**
-	 * Remove a file from the cache.
+	 * Remove a file from the cache. Called after it has been removed from its 
+	 * ArchiveHandler.
 	 * @param item The ArchiveStoreItem to remove.
 	 */
-	void removeCachedItem(ArchiveStoreItem item) {
-		synchronized (storedData) {
-			storedData.removeKey(item.key);	
-		}
+	synchronized void removeCachedItem(ArchiveStoreItem item) {
+		long size = item.spaceUsed();
+		storedData.removeKey(item.key);
+		// Hard disk space limit = remove it here.
+		// Soft disk space limit would be to remove it outside the lock.
+		// Soft disk space limit = we go over the limit significantly when we
+		// are overloaded.
+		cachedData -= size;
+		item.close();
 	}
 	
 	/**
@@ -165,14 +165,18 @@ public class ArchiveManager {
 	 * @param data The actual data fetched.
 	 * @param archiveContext The context for the whole fetch process.
 	 * @param ctx The ArchiveStoreContext for this key.
+	 * @param element A particular element that the caller is especially interested in, or null.
+	 * @param callback A callback to be called if we find that element, or if we don't.
 	 * @throws ArchiveFailureException If we could not extract the data, or it was too big, etc.
 	 * @throws ArchiveRestartException 
 	 * @throws ArchiveRestartException If the request needs to be restarted because the archive
 	 * changed.
 	 */
-	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx) throws ArchiveFailureException, ArchiveRestartException {
+	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		
+		MutableBoolean gotElement = element != null ? new MutableBoolean() : null;
 		
 		if(logMINOR) Logger.minor(this, "Extracting "+key);
 		ctx.onExtract();
@@ -211,7 +215,7 @@ public class ArchiveManager {
 			// MINOR: Assumes the first entry in the zip is a directory. 
 			ZipEntry entry;
 			
-			byte[] buf = new byte[4096];
+			byte[] buf = new byte[32768];
 			HashSet names = new HashSet();
 			boolean gotMetadata = false;
 			
@@ -249,16 +253,22 @@ outer:		while(true) {
 					out.close();
 					if(name.equals(".metadata"))
 						gotMetadata = true;
-					addStoreElement(ctx, key, name, temp);
+					addStoreElement(ctx, key, name, temp, gotElement, element, callback);
 					names.add(name);
+					trimStoredData();
 				}
 			}
 
 			// If no metadata, generate some
 			if(!gotMetadata) {
-				generateMetadata(ctx, key, names);
+				generateMetadata(ctx, key, names, gotElement, element, callback);
+				trimStoredData();
 			}
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
+			
+			if((!gotElement.value) && element != null)
+				callback.notInArchive();
+			
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
 		} finally {
@@ -277,9 +287,12 @@ outer:		while(true) {
 	 * @param ctx The context object.
 	 * @param key The key from which the archive we are unpacking was fetched.
 	 * @param names Set of names in the archive.
+	 * @param element2 
+	 * @param gotElement 
+	 * @param callbackName If we generate a 
 	 * @throws ArchiveFailureException 
 	 */
-	private void generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names) throws ArchiveFailureException {
+	private ArchiveStoreItem generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback) throws ArchiveFailureException {
 		/* What we have to do is to:
 		 * - Construct a filesystem tree of the names.
 		 * - Turn each level of the tree into a Metadata object, including those below it, with
@@ -304,21 +317,21 @@ outer:		while(true) {
 				OutputStream os = element.bucket.getOutputStream();
 				os.write(buf);
 				os.close();
-				addStoreElement(ctx, key, ".metadata", element);
-				break;
+				return addStoreElement(ctx, key, ".metadata", element, gotElement, element2, callback);
 			} catch (MetadataUnresolvedException e) {
 				try {
-					x = resolve(e, x, element, ctx, key);
+					x = resolve(e, x, element, ctx, key, gotElement, element2, callback);
 				} catch (IOException e1) {
 					throw new ArchiveFailureException("Failed to create metadata: "+e1, e1);
 				}
 			} catch (IOException e1) {
+				Logger.error(this, "Failed to create metadata: "+e1, e1);
 				throw new ArchiveFailureException("Failed to create metadata: "+e1, e1);
 			}
 		}
 	}
 	
-	private int resolve(MetadataUnresolvedException e, int x, TempStoreElement element, ArchiveStoreContext ctx, FreenetURI key) throws IOException {
+	private int resolve(MetadataUnresolvedException e, int x, TempStoreElement element, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback) throws IOException, ArchiveFailureException {
 		Metadata[] m = e.mustResolve;
 		for(int i=0;i<m.length;i++) {
 			try {
@@ -326,9 +339,9 @@ outer:		while(true) {
 				OutputStream os = element.bucket.getOutputStream();
 				os.write(buf);
 				os.close();
-				addStoreElement(ctx, key, ".metadata-"+(x++), element);
+				addStoreElement(ctx, key, ".metadata-"+(x++), element, gotElement, element2, callback);
 			} catch (MetadataUnresolvedException e1) {
-				x = resolve(e, x, element, ctx, key);
+				x = resolve(e, x, element, ctx, key, gotElement, element2, callback);
 			}
 		}
 		return x;
@@ -350,7 +363,7 @@ outer:		while(true) {
 			} else
 				after = name.substring(x+1, name.length());
 			Object o = dir.get(before);
-			HashMap map;
+			HashMap map = (HashMap) o;
 			if(o == null) {
 				map = new HashMap();
 				dir.put(before, map);
@@ -358,7 +371,6 @@ outer:		while(true) {
 			if(o instanceof String) {
 				throw new ArchiveFailureException("Invalid archive: contains "+name+" as both file and dir");
 			}
-			map = (HashMap) o;
 			addToDirectory(map, after, prefix + before + '/');
 		}
 	}
@@ -375,21 +387,51 @@ outer:		while(true) {
 	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error) {
 		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error);
 		if(logMINOR) Logger.minor(this, "Adding error element: "+element+" for "+key+ ' ' +name);
-		synchronized (storedData) {
+		ArchiveStoreItem oldItem;
+		synchronized (this) {
+			oldItem = (ArchiveStoreItem) storedData.get(element.key);
 			storedData.push(element.key, element);	
+			if(oldItem != null) {
+				oldItem.close();
+				cachedData -= oldItem.spaceUsed();
+			}
 		}
 	}
 
 	/**
 	 * Add a store element.
+	 * @param callbackName If set, the name of the file for which we must call the callback if this file happens to
+	 * match.
+	 * @param gotElement Flag indicating whether we've already found the file for the callback. If so we must not call
+	 * it again.
+	 * @param callback Callback to be called if we do find it. We must getReaderBucket() before adding the data to the 
+	 * LRU, otherwise it may be deleted before it reaches the client.
+	 * @throws ArchiveFailureException If a failure occurred resulting in the data not being readable. Only happens if
+	 * callback != null.
 	 */
-	private void addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp) {
-		RealArchiveStoreItem element = new RealArchiveStoreItem(this, ctx, key, name, temp);
+	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp, MutableBoolean gotElement, String callbackName, ArchiveExtractCallback callback) throws ArchiveFailureException {
+		RealArchiveStoreItem element = new RealArchiveStoreItem(ctx, key, name, temp);
 		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
-		synchronized (storedData) {
-			storedData.push(element.key, element);
+		ArchiveStoreItem oldItem;
+		// Let it throw, if it does something is drastically wrong
+		Bucket matchBucket = null;
+		if((!gotElement.value) && name.equals(callbackName)) {
+			matchBucket = element.getReaderBucket();
 		}
-		trimStoredData();
+		synchronized (this) {
+			oldItem = (ArchiveStoreItem) storedData.get(element.key);
+			storedData.push(element.key, element);
+			cachedData += element.spaceUsed();
+			if(oldItem != null) {
+				cachedData -= oldItem.spaceUsed();
+				oldItem.close();
+			}
+		}
+		if(matchBucket != null) {
+			callback.gotBucket(matchBucket);
+			gotElement.value = true;
+		}
+		return element;
 	}
 
 	/**
@@ -397,14 +439,24 @@ outer:		while(true) {
 	 * Call synchronized on storedData.
 	 */
 	private void trimStoredData() {
+		synchronized(this) {
 		while(true) {
-			synchronized(this) {
+			ArchiveStoreItem item;
 				if(cachedData <= maxCachedData && storedData.size() <= maxCachedElements) return;
-			}
-			ArchiveStoreItem e = (ArchiveStoreItem) storedData.popValue();	
+				if(storedData.isEmpty()) {
+					// Race condition? cachedData out of sync?
+					Logger.error(this, "storedData is empty but still over limit: cachedData="+cachedData+" / "+maxCachedData);
+					return;
+				}
+				item = (ArchiveStoreItem) storedData.popValue();
+				long space = item.spaceUsed();
+				cachedData -= space;
+				// Hard limits = delete file within lock, soft limits = delete outside of lock
+				// Here we use a hard limit
 			if(logMINOR)
-				Logger.minor(this, "Dropping "+e+" : cachedData="+cachedData+" of "+maxCachedData);
-			e.close();
+				Logger.minor(this, "Dropping "+item+" : cachedData="+cachedData+" of "+maxCachedData+" stored items : "+storedData.size()+" of "+maxCachedElements);
+			item.close();
+		}
 		}
 	}
 
@@ -415,12 +467,13 @@ outer:		while(true) {
 	 * go over the maximum size. Will obviously keep its key when we move it to main.
 	 */
 	private TempStoreElement makeTempStoreBucket(long size) {
-		File myFile = filenameGenerator.makeRandomFilename();
-		FileBucket fb = new FileBucket(myFile, false, false, true, true, true);
+		long id = filenameGenerator.makeRandomFilename();
+		File myFile = filenameGenerator.getFilename(id);
+		TempFileBucket fb = new TempFileBucket(id, filenameGenerator);
 		
 		byte[] cipherKey = new byte[32];
 		random.nextBytes(cipherKey);
-		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, random, true);
+		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, random);
 		return new TempStoreElement(myFile, fb, encryptedBucket);
 	}
 
@@ -439,13 +492,5 @@ outer:		while(true) {
 		if(type.equals("application/zip") || type.equals("application/x-zip"))
 			return Metadata.ARCHIVE_ZIP;
 		else throw new IllegalArgumentException(); 
-	}
-
-	synchronized void decrementSpace(long spaceUsed) {
-		cachedData -= spaceUsed;
-	}
-
-	synchronized void incrementSpace(long spaceUsed) {
-		cachedData += spaceUsed;
 	}
 }

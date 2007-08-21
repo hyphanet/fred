@@ -147,6 +147,22 @@ public abstract class Toadlet {
 		writeReply(ctx, code, mimeType, desc, null, reply);
 	}
 	
+	protected void writeHTMLReply(ToadletContext ctx, int code, String desc, String reply) throws ToadletContextClosedException, IOException {
+		writeReply(ctx, code, "text/html; charset=utf-8", desc, null, reply);
+	}
+	
+	protected void writeTextReply(ToadletContext ctx, int code, String desc, String reply) throws ToadletContextClosedException, IOException {
+		writeReply(ctx, code, "text/plain; charset=utf-8", desc, null, reply);
+	}
+	
+	protected void writeHTMLReply(ToadletContext ctx, int code, String desc, MultiValueTable headers, String reply) throws ToadletContextClosedException, IOException {
+		writeReply(ctx, code, "text/html; charset=utf-8", desc, headers, reply);
+	}
+	
+	protected void writeTextReply(ToadletContext ctx, int code, String desc, MultiValueTable headers, String reply) throws ToadletContextClosedException, IOException {
+		writeReply(ctx, code, "text/plain; charset=utf-8", desc, headers, reply);
+	}
+	
 	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable headers, String reply) throws ToadletContextClosedException, IOException {
 		byte[] buffer = reply.getBytes("UTF-8");
 		writeReply(context, code, mimeType, desc, headers, buffer, 0, buffer.length);
@@ -219,7 +235,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
 		addHomepageLink(infoboxContent);
 		
-		writeReply(ctx, code, "text/html; charset=UTF-8", desc, pageNode.generate());
+		writeHTMLReply(ctx, code, desc, pageNode.generate());
 	}
 
 	/**
@@ -250,7 +266,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
 		addHomepageLink(infoboxContent);
 		
-		writeReply(ctx, 500, "text/html; charset=UTF-8", desc, pageNode.generate());
+		writeHTMLReply(ctx, 500, desc, pageNode.generate());
 	}
 
 	protected void writeInternalError(Throwable t, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -262,7 +278,7 @@ public abstract class Toadlet {
 		t.printStackTrace(pw);
 		pw.flush();
 		msg = msg + sw.toString() + "</pre></body></html>";
-		writeReply(ctx, 500, "text/html", "Internal Error", msg);
+		writeHTMLReply(ctx, 500, "Internal Error", msg);
 	}
 	
 	protected static void addHomepageLink(HTMLNode content) {

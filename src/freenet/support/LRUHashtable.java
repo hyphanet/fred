@@ -58,6 +58,14 @@ public class LRUHashtable {
         }
     }
     
+	public final synchronized Object peekValue() {
+        if ( list.size() > 0 ) {
+            return ((QItem)hash.get(((QItem)list.tail()).obj)).value;
+        } else {
+            return null;
+        }
+	}
+
     public final int size() {
         return list.size();
     }
@@ -120,5 +128,9 @@ public class LRUHashtable {
         	return super.toString()+": "+obj+ ' ' +value;
         }
     }
+
+	public boolean isEmpty() {
+		return list.isEmpty();
+	}
 
 }

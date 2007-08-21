@@ -37,7 +37,7 @@ public class L10n {
 	
 	// English has to remain the first one!
 	public static final String FALLBACK_DEFAULT = "en";
-	public static final String[] AVAILABLE_LANGUAGES = { "en", "fr", "pl", "it", "se", "no", "unlisted" };
+	public static final String[] AVAILABLE_LANGUAGES = { "en", "de", "fr", "it", "no", "pl", "se", "unlisted" };
 	private final String selectedLanguage;
 	
 	private static SimpleFieldSet currentTranslation = null;
@@ -223,8 +223,10 @@ public class L10n {
 		}
 		if(result != null)
 			return result;
-		else
+		else {
+			Logger.normal(CLASS_NAME, "The translation for " + key + " hasn't been found ("+getSelectedLanguage()+")! please tell the maintainer.");
 			return (returnNullIfNotFound ? null : getDefaultString(key));
+		}
 	}
 	
 	/**
@@ -262,11 +264,10 @@ public class L10n {
 		}
 		
 		if(result != null) {
-			Logger.normal(CLASS_NAME, "The translation for " + key + " hasn't been found! please tell the maintainer.");
 			return result;
 		}
-		Logger.error(CLASS_NAME, "The translation for " + key + " hasn't been found!");
-		System.err.println("The translation for " + key + " hasn't been found!");
+		Logger.error(CLASS_NAME, "The default translation for " + key + " hasn't been found!");
+		System.err.println("The default translation for " + key + " hasn't been found!");
 		new Exception().printStackTrace();
 		return key;
 	}
@@ -316,6 +317,7 @@ public class L10n {
 	*/
 	public static String getSelectedLanguage() {
 		synchronized (sync) {
+			if(currentClass == null) return null;
 			return currentClass.selectedLanguage;	
 		}
 	}
@@ -339,7 +341,7 @@ public class L10n {
 			if(in != null)
 				result = SimpleFieldSet.readFrom(in, false, false);
 		} catch (Exception e) {
-			Logger.error("L10n", "Error while loading the l10n file from " + name + " :" + e.getMessage());
+			Logger.error("L10n", "Error while loading the l10n file from " + name + " :" + e.getMessage(), e);
 			result = null;
 		} finally {
 			if (in != null) try { in.close(); } catch (Throwable ignore) {}

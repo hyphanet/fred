@@ -21,7 +21,7 @@ public class HexUtil {
 	
 
 	/**
-	 * Converts a byte array into a string of upper case hex chars.
+	 * Converts a byte array into a string of lower case hex chars.
 	 * 
 	 * @param bs
 	 *            A byte array
@@ -32,6 +32,8 @@ public class HexUtil {
 	 * @return the string of hex chars.
 	 */
 	public static final String bytesToHex(byte[] bs, int off, int length) {
+		if (bs.length <= off || bs.length < off+length)
+			throw new IllegalArgumentException();
 		StringBuffer sb = new StringBuffer(length * 2);
 		bytesToHexAppend(bs, off, length, sb);
 		return sb.toString();
@@ -42,8 +44,10 @@ public class HexUtil {
 		int off,
 		int length,
 		StringBuffer sb) {
+		if (bs.length <= off || bs.length < off+length)
+			throw new IllegalArgumentException();
 		sb.ensureCapacity(sb.length() + length * 2);
-		for (int i = off; (i < (off + length)) && (i < bs.length); i++) {
+		for (int i = off; i < (off + length); i++) {
 			sb.append(Character.forDigit((bs[i] >>> 4) & 0xf, 16));
 			sb.append(Character.forDigit(bs[i] & 0xf, 16));
 		}
@@ -76,6 +80,7 @@ public class HexUtil {
 	 */
 	public static final void hexToBytes(String s, byte[] out, int off)
 		throws NumberFormatException, IndexOutOfBoundsException {
+		
 		int slen = s.length();
 		if ((slen % 2) != 0) {
 			s = '0' + s;
@@ -105,6 +110,9 @@ public class HexUtil {
 
 	/**
 	 * Pack the bits in ba into a byte[].
+	 *
+	 * @param ba : the BitSet
+	 * @param size : How many bits shall be taken into account starting from the LSB?
 	 */
 	public final static byte[] bitsToBytes(BitSet ba, int size) {
 		int bytesAlloc = countBytesForBits(size);
@@ -116,10 +124,10 @@ public class HexUtil {
 			for(int j=0;j<8;j++) {
 				int idx = i*8+j;
 				boolean val = 
-					idx > size ? false :
+					idx > size - 1 ? false :
 						ba.get(idx);
 				s |= val ? (1<<j) : 0;
-				if(sb != null) sb.append(val ? '1' : '0');
+				if(logDEBUG) sb.append(val ? '1' : '0');
 			}
 			if(s > 255) throw new IllegalStateException("WTF? s = "+s);
 			b[i] = (byte)s;

@@ -25,7 +25,7 @@ import java.security.InvalidKeyException;
  *
  * License is apparently available from http://www.cryptix.org/docs/license.html
  */
-public final class Rijndael_Algorithm // implicit no-argument constructor
+final class Rijndael_Algorithm // implicit no-argument constructor
 {
 //	Debugging methods and variables
 //	...........................................................................
@@ -291,17 +291,6 @@ public final class Rijndael_Algorithm // implicit no-argument constructor
 
 //	Basic API methods
 //	...........................................................................
-
-	/**
-	 * Convenience method to expand a user-supplied key material into a
-	 * session key, assuming Rijndael's default block size (128-bit).
-	 *
-	 * @param k The 128/192/256-bit user-key to use.
-	 * @exception  InvalidKeyException  If the key is invalid.
-	 */
-	private static final Object makeKey (byte[] k) throws InvalidKeyException {
-		return makeKey(k, BLOCK_SIZE);
-	}
 
 	/**
 	 * Convenience method to encrypt exactly one block of plaintext, assuming

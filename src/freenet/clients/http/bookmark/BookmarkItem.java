@@ -17,12 +17,9 @@ import java.net.MalformedURLException;
 public class BookmarkItem extends Bookmark {
 
 	private FreenetURI key;
-
 	private boolean updated;
-
 	private final BookmarkUpdatedUserAlert alert;
-
-	private UserAlertManager alerts;
+	private final UserAlertManager alerts;
 
 	public BookmarkItem(FreenetURI k, String n, UserAlertManager uam)
 			throws MalformedURLException {
@@ -135,11 +132,7 @@ public class BookmarkItem extends Bookmark {
 	}
 
 	public String getName() {
-		if (name.equals("")) {
-			return l10n("unnamedBookmark");
-		} else {
-			return name;
-		}
+		return ("".equals(name) ? l10n("unnamedBookmark") : name);
 	}
 
 	public void setPrivate(boolean bool) {
@@ -147,7 +140,7 @@ public class BookmarkItem extends Bookmark {
 	}
 
 	public String toString() {
-		return this.name + "=" + this.key.toString();
+		return this.name + '=' + this.key.toString();
 	}
 
 	public synchronized void setEdition(long ed, NodeClientCore node) {

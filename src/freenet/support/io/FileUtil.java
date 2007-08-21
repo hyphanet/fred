@@ -4,10 +4,14 @@
 package freenet.support.io;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import freenet.client.DefaultMIMETypes;
@@ -72,6 +76,7 @@ final public class FileUtil {
 		return result;
 	}
 	
+	// FIXME: this is called readUTF but it reads in the default charset ... eh??
 	public static String readUTF(File file) throws FileNotFoundException, IOException {
 		StringBuffer result = new StringBuffer();
 		FileInputStream fis = null;
@@ -85,9 +90,8 @@ final public class FileUtil {
 
 			char[] buf = new char[4096];
 			int length = 0;
-			
-			while(length != -1) {
-				length = isr.read(buf);
+
+			while((length = isr.read(buf)) > 0) {
 				result.append(buf, 0, length);
 			}
 
@@ -99,6 +103,36 @@ final public class FileUtil {
 			} catch (IOException e) {}
 		}
 		return result.toString();
+	}
+	
+	public static boolean writeTo(InputStream input, File target) throws FileNotFoundException, IOException {
+		BufferedInputStream bis = null;
+		DataInputStream dis = null;
+		FileOutputStream fos = null;
+		BufferedOutputStream bos = null;
+		File file = File.createTempFile("temp", ".tmp");
+		
+		try {
+			bis = new BufferedInputStream(input);
+			dis = new DataInputStream(bis);
+			fos = new FileOutputStream(file);
+			bos= new BufferedOutputStream(fos);
+
+			int len = 0;
+			byte[] buffer = new byte[4096];
+			while ((len = dis.read(buffer)) > 0) {
+				bos.write(buffer, 0, len);
+			}
+		} catch (IOException e) {
+			throw e;
+		} finally {
+			if(dis != null) dis.close();
+			if(bis != null) bis.close();
+			if(fos != null) fos.close();
+			if(bos != null) bos.close();	
+		}
+		
+		return file.renameTo(target);
 	}
 
 	public static String sanitize(String s) {
@@ -125,8 +159,10 @@ final public class FileUtil {
 		if(filename.indexOf('.') >= 0) {
 			String oldExt = filename.substring(filename.lastIndexOf('.'));
 			if(DefaultMIMETypes.isValidExt(mimeType, oldExt)) return filename;
-		} 
-		return filename + '.' + DefaultMIMETypes.getExtension(filename);
+		}
+		String defaultExt = DefaultMIMETypes.getExtension(filename);
+		if(defaultExt == null) return filename;
+		else return filename + '.' + defaultExt;
 	}
 	
 }

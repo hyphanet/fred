@@ -11,7 +11,7 @@ package freenet.pluginmanager;
 public class NotFoundPluginHTTPException extends PluginHTTPException {
 	private static final long serialVersionUID = -1;
 	
-	public final short code = 404; // Not Found
+	public static final short code = 404; // Not Found
 
 	public NotFoundPluginHTTPException(String errorMessage, String location) {
 		super(errorMessage, location);

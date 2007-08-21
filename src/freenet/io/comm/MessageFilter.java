@@ -29,7 +29,7 @@ import freenet.support.Logger;
  * To change the template for this generated type comment go to Window - Preferences - Java - Code Generation - Code and
  * Comments
  */
-public class MessageFilter {
+public final class MessageFilter {
 
     public static final String VERSION = "$Id: MessageFilter.java,v 1.7 2005/08/25 17:28:19 amphibian Exp $";
 
@@ -41,6 +41,9 @@ public class MessageFilter {
     private Vector _fieldList = new Vector(1,1);
     PeerContext _source;
     private long _timeout;
+    /** If true, timeouts are relative to the start of waiting, if false, they are relative to
+     * the time of calling setTimeout() */
+    private boolean _timeoutFromWait;
     private int _initialTimeout;
     private MessageFilter _or;
     private Message _message;
@@ -52,12 +55,33 @@ public class MessageFilter {
         setTimeout(DEFAULT_TIMEOUT);
         _matchesDroppedConnections = true; // on by default
         _matchesRestartedConnections = true; // also on by default
+        _timeoutFromWait = true;
     }
 
     public static MessageFilter create() {
         return new MessageFilter();
     }
 
+    void onStartWaiting() {
+    	synchronized(this) {
+    		if(_initialTimeout > 0 && _timeoutFromWait)
+    			_timeout = System.currentTimeMillis() + _initialTimeout;
+    	}
+    	if(_or != null)
+    		_or.onStartWaiting();
+    }
+    
+    /**
+     * Set whether the timeout is relative to the creation of the filter, or the start of
+     * waitFor().
+     * @param b If true, the timeout is relative to the time at which setTimeout() was called,
+     * if false, it's relative to the start of waitFor().
+     */
+    public MessageFilter setTimeoutRelativeToCreation(boolean b) {
+    	_timeoutFromWait = !b;
+    	return this;
+    }
+    
     /**
      * This filter will expire after the specificed amount of time. Note also that where two or more filters match the
      * same message, the one with the nearer expiry time will get priority
@@ -118,7 +142,7 @@ public class MessageFilter {
 	}
 
 	public MessageFilter or(MessageFilter or) {
-		if((or != null) && (_or != null)) {
+		if((or != null) && (_or != null) && or != _or) {
 			// FIXME maybe throw? this is almost certainly a bug, and a nasty one too!
 			Logger.error(this, "or() replacement: "+_or+" -> "+or, new Exception("error"));
 		}
@@ -142,6 +166,7 @@ public class MessageFilter {
 	}
 	
 	public boolean match(Message m) {
+		if(timedOut()) return false;
 		if ((_or != null) && (_or.match(m))) {
 			_matched = true;
 			return true;
@@ -171,11 +196,15 @@ public class MessageFilter {
 		return _matched;
 	}
 
+	/**
+	 * Which connection dropped or was restarted?
+	 */
 	public PeerContext droppedConnection() {
 	    return _droppedConnection;
 	}
 	
 	public boolean timedOut() {
+		if(_matched) return false;
 		if(_callback != null && _callback.shouldTimeout())
 			_timeout = -1; // timeout immediately
 		return _timeout < System.currentTimeMillis();
@@ -225,6 +254,7 @@ public class MessageFilter {
      * @param ctx
      */
     public synchronized void onDroppedConnection(PeerContext ctx) {
+    	_droppedConnection = ctx;
    		notifyAll();
     }
 
@@ -234,6 +264,7 @@ public class MessageFilter {
      * @param ctx
      */
     public synchronized void onRestartedConnection(PeerContext ctx) {
+    	_droppedConnection = ctx;
    		notifyAll();
     }
 

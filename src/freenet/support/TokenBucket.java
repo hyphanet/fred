@@ -34,7 +34,11 @@ public class TokenBucket {
 	 * @return True if we could acquire the tokens.
 	 */
 	public synchronized boolean instantGrab(long tokens) {
+		if(logMINOR)
+			Logger.minor(this, "instant grab: "+tokens+" current="+current+" max="+max);
 		addTokens();
+		if(logMINOR)
+			Logger.minor(this, "instant grab: "+tokens+" current="+current+" max="+max);
 		if(current > tokens) {
 			current -= tokens;
 			if(current > max) current = max;
@@ -173,6 +177,8 @@ public class TokenBucket {
 	public synchronized void addTokens() {
 		addTokensNoClip();
 		if(current > max) current = max;
+		if(logMINOR)
+			Logger.minor(this, "addTokens: Clipped, current="+current);
 	}
 	
 	/**
@@ -182,6 +188,8 @@ public class TokenBucket {
 		long add = tokensToAdd();
 		current += add;
 		timeLastTick += add * nanosPerTick;
+		if(logMINOR)
+			Logger.minor(this, "addTokensNoClip: Added "+add+" tokens, current="+current);
 		// Deliberately do not clip to size at this point; caller must do this, but it is usually beneficial for the caller to do so.
 	}
 	

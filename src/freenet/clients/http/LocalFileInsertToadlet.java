@@ -140,7 +140,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 			ulNode.addChild("li", l10n("checkPathReadable"));
 		}
 
-		writeReply(toadletContext, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+		writeHTMLReply(toadletContext, 200, "OK", pageNode.generate());
 	}
 
 	private String l10n(String key, String pattern, String value) {

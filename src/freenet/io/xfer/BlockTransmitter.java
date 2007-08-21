@@ -26,16 +26,17 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
+import freenet.io.comm.MessageCore;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
-import freenet.io.comm.UdpSocketManager;
-import freenet.node.FNPPacketMangler;
 import freenet.node.PeerNode;
 import freenet.support.BitArray;
 import freenet.support.DoubleTokenBucket;
+import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
+import freenet.support.transport.ip.IPUtil;
 
 /**
  * @author ian
@@ -45,22 +46,22 @@ public class BlockTransmitter {
 	public static final int SEND_TIMEOUT = 60000;
 	public static final int PING_EVERY = 8;
 	
-	UdpSocketManager _usm;
-	PeerContext _destination;
-	boolean _sendComplete;
-	long _uid;
-	PartiallyReceivedBlock _prb;
-	LinkedList _unsent;
-	Thread _receiverThread, _senderThread;
-	BitArray _sentPackets;
+	final MessageCore _usm;
+	final PeerContext _destination;
+	private boolean _sendComplete;
+	final long _uid;
+	final PartiallyReceivedBlock _prb;
+	private LinkedList _unsent;
+	private Runnable _senderThread;
+	private BitArray _sentPackets;
 	boolean failedByOverload;
 	final PacketThrottle throttle;
-	long timeAllSent = -1;
+	private long timeAllSent = -1;
 	final DoubleTokenBucket _masterThrottle;
 	final ByteCounter _ctr;
 	final int PACKET_SIZE;
 	
-	public BlockTransmitter(UdpSocketManager usm, PeerContext destination, long uid, PartiallyReceivedBlock source, DoubleTokenBucket masterThrottle, ByteCounter ctr) {
+	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, DoubleTokenBucket masterThrottle, ByteCounter ctr) {
 		_usm = usm;
 		_destination = destination;
 		_uid = uid;
@@ -68,7 +69,7 @@ public class BlockTransmitter {
 		_ctr = ctr;
 		_masterThrottle = masterThrottle;
 		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets)
-			+ FNPPacketMangler.FULL_HEADERS_LENGTH_ONE_MESSAGE;
+			+ destination.getOutgoingMangler().fullHeadersLengthOneMessage();
 		try {
 			_sentPackets = new BitArray(_prb.getNumPackets());
 		} catch (AbortedException e) {
@@ -76,7 +77,7 @@ public class BlockTransmitter {
 			// Will throw on running
 		}
 		throttle = _destination.getThrottle();
-		_senderThread = new Thread("_senderThread for "+_uid+ " to "+_destination.getPeer()) {
+		_senderThread = new Runnable() {
 		
 			public void run() {
 				while (!_sendComplete) {
@@ -144,7 +145,8 @@ public class BlockTransmitter {
 				// Get the current inter-packet delay
 				long end = throttle.scheduleDelay(startThrottle);
 
-				_masterThrottle.blockingGrab(PACKET_SIZE);
+				if(IPUtil.isValidAddress(_destination.getPeer().getAddress(), false))
+					_masterThrottle.blockingGrab(PACKET_SIZE);
 				
 				long now = System.currentTimeMillis();
 				
@@ -172,16 +174,13 @@ public class BlockTransmitter {
 				}
 			}
 		};
-		_senderThread.setDaemon(true);
 	}
 
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
 		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc), _ctr);
 	}
 	
-	public boolean send() {
-		_receiverThread = Thread.currentThread();
-		
+	public boolean send(Executor executor) {
 		PartiallyReceivedBlock.PacketReceivedListener myListener;
 		
 		try {
@@ -206,7 +205,7 @@ public class BlockTransmitter {
 					}
 				});
 			}
-			_senderThread.start();
+			executor.execute(_senderThread, "BlockTransmitter sender for "+_uid);
 			
 			while (true) {
 				if (_prb.isAborted()) {
@@ -230,7 +229,7 @@ public class BlockTransmitter {
 				}
 				if(logMINOR) Logger.minor(this, "Got "+msg);
 				if(!_destination.isConnected()) {
-					Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" because node disconnected while waiting");
+					Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" because node disconnected while waiting");
 					synchronized(_senderThread) {
 						_sendComplete = true;
 						_senderThread.notifyAll();
@@ -247,7 +246,7 @@ public class BlockTransmitter {
 							_sendComplete = true;
 							_senderThread.notifyAll();
 						}
-						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+TimeUtil.formatTime((now - timeAllSent), 2, true)+ '.');
+						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+TimeUtil.formatTime((now - timeAllSent), 2, true)+ '.');
 						return false;
 					} else {
 						if(logMINOR) Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+ '/' +_prb.getNumPackets());
@@ -310,12 +309,10 @@ public class BlockTransmitter {
 	/**
 	 * Send the data, off-thread.
 	 */
-	public void sendAsync() {
-		Runnable r = new Runnable() {
-			public void run() { send(); } };
-		Thread t = new Thread(r, "BlockTransmitter:sendAsync() for "+this);
-		t.setDaemon(true);
-		t.start();
+	public void sendAsync(final Executor executor) {
+		executor.execute(new Runnable() {
+			public void run() { send(executor); } },
+			"BlockTransmitter:sendAsync() for "+this);
 	}
 
 	public void waitForComplete() {

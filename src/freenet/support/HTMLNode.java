@@ -9,15 +9,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import freenet.l10n.L10n;
-
 public class HTMLNode {
 
 	protected final String name;
 
 	private final String content;
 
-	protected final Map attributes = new HashMap();
+	private final Map attributes = new HashMap();
 
 	protected final List children = new ArrayList();
 
@@ -37,10 +35,6 @@ public class HTMLNode {
 		this(name, new String[] { attributeName }, new String[] { attributeValue }, content);
 	}
 
-	public HTMLNode(String name, String[] attributeNames, String[] attributeValues) {
-		this(name, attributeNames, attributeValues, null);
-	}
-
 	public HTMLNode(String name, String[] attributeNames, String[] attributeValues, String content) {
 		this.name = name.toLowerCase(Locale.ENGLISH);
 		if ((attributeNames != null) && (attributeValues != null)) {
@@ -51,23 +45,11 @@ public class HTMLNode {
 				attributes.put(attributeNames[attributeIndex], attributeValues[attributeIndex]);
 			}
 		}
-		if (content != null) {
-			if (!name.equals("#") && !name.equals("%")) {
-				addChild(new HTMLNode("#", content));
-				this.content = null;
-			} else {
-				this.content = content;
-			}
-		} else {
+		if (content != null && !name.equals("#") && !name.equals("%")) {
+			addChild(new HTMLNode("#", content));
 			this.content = null;
-		}
-	}
-
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
+		} else
+			this.content = content;
 	}
 
 	/**
@@ -75,10 +57,6 @@ public class HTMLNode {
 	 */
 	public String getContent() {
 		return content;
-	}
-
-	public void addAttribute(String attributeName) {
-		addAttribute(attributeName, attributeName);
 	}
 
 	public void addAttribute(String attributeName, String attributeValue) {
@@ -95,6 +73,13 @@ public class HTMLNode {
 
 	public HTMLNode addChild(HTMLNode childNode) {
 		if (childNode == null) throw new NullPointerException();
+		//since an efficient algorithm to check the loop presence 
+		//is not present, at least it checks if we are trying to
+		//addChild the node itself as a child
+		if (childNode.equals(this))	
+			throw new IllegalArgumentException("A HTMLNode cannot be child of himself");
+		if (children.contains(childNode))
+			throw new IllegalArgumentException("Cannot add twice the same HTMLNode as child");
 		children.add(childNode);
 		return childNode;
 	}
@@ -190,7 +175,7 @@ public class HTMLNode {
 	 */
 	public static class HTMLDoctype extends HTMLNode {
 
-		protected final String systemUri;
+		private final String systemUri;
 
 		/**
 		 * 
@@ -205,6 +190,9 @@ public class HTMLNode {
 		 */
 		public StringBuffer generate(StringBuffer tagBuffer) {
 			tagBuffer.append("<!DOCTYPE ").append(name).append(" PUBLIC \"").append(systemUri).append("\">\n");
+			//TODO A meaningful exception should be raised 
+			// when trying to call the method for a HTMLDoctype 
+			// with number of child != 1 
 			return ((HTMLNode) children.get(0)).generate(tagBuffer);
 		}
 

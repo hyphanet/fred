@@ -7,7 +7,10 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.Key;
+import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
+import freenet.keys.KeyVerifyException;
 import freenet.keys.TooBigException;
 import freenet.node.LowLevelGetException;
 import freenet.node.SendableGet;
@@ -95,6 +98,9 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			return;
 		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
 			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token);
+			return;
+		case LowLevelGetException.RECENTLY_FAILED:
+			onFailure(new FetchException(FetchException.RECENTLY_FAILED), token);
 			return;
 		case LowLevelGetException.DECODE_FAILED:
 			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token);
@@ -253,9 +259,46 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return super.toString()+":"+retryCount+"/"+segment+'('+blockNums.size()+')';
 	}
 
-	public synchronized void possiblyRemoveFromParent() {
-		if(blockNums.isEmpty())
-			segment.removeSeg(this);
+	public void possiblyRemoveFromParent() {
+		synchronized(this) {
+			if(!blockNums.isEmpty()) return;
+		}
+		segment.removeSeg(this);
+		unregister();
+	}
+
+	public void onGotKey(Key key, KeyBlock block) {
+		int blockNum = -1;
+		ClientKey ckey = null;
+		synchronized(this) {
+			for(int i=0;i<blockNums.size();i++) {
+				int num = ((Integer)blockNums.get(i)).intValue();
+				ckey = segment.getBlockKey(num);
+				if(ckey == null) return; // Already got this key
+				Key k = ckey.getNodeKey();
+				if(k.equals(key)) {
+					blockNum = num;
+					blockNums.remove(i);
+					break;
+				}
+			}
+		}
+		if(blockNum == -1) return;
+		try {
+			onSuccess(Key.createKeyBlock(ckey, block), false, blockNum);
+		} catch (KeyVerifyException e) {
+			// FIXME if we ever abolish the direct route, this must be turned into an onFailure().
+			Logger.error(this, "Failed to parse in onGotKey("+key+","+block+") - believed to be "+ckey+" (block #"+blockNum+")");
+		}
 	}
 	
+	public void kill() {
+		// Do unregister() first so can get and unregister each key and avoid a memory leak
+		unregister();
+		synchronized(this) {
+			blockNums.clear();
+		}
+		segment.removeSeg(this);
+	}
+
 }

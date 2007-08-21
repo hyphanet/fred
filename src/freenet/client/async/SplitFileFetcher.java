@@ -46,10 +46,6 @@ public class SplitFileFetcher implements ClientGetState {
 	final int segmentCount;
 	/** The detailed information on each segment */
 	final SplitFileFetcherSegment[] segments;
-	/** The splitfile data blocks. */
-	final ClientCHK[] splitfileDataBlocks;
-	/** The splitfile check blocks. */
-	final ClientCHK[] splitfileCheckBlocks;
 	/** Maximum temporary length */
 	final long maxTempLength;
 	/** Have all segments finished? Access synchronized. */
@@ -77,8 +73,8 @@ public class SplitFileFetcher implements ClientGetState {
 			throw new FetchException(FetchException.CANCELLED);
 		overrideLength = metadata.dataLength();
 		this.splitfileType = metadata.getSplitfileType();
-		splitfileDataBlocks = metadata.getSplitfileDataKeys();
-		splitfileCheckBlocks = metadata.getSplitfileCheckKeys();
+		ClientCHK[] splitfileDataBlocks = metadata.getSplitfileDataKeys();
+		ClientCHK[] splitfileCheckBlocks = metadata.getSplitfileCheckKeys();
 		for(int i=0;i<splitfileDataBlocks.length;i++)
 			if(splitfileDataBlocks[i] == null) throw new MetadataParseException("Null: data block "+i+" of "+splitfileDataBlocks.length);
 		for(int i=0;i<splitfileCheckBlocks.length;i++)
@@ -283,13 +279,11 @@ public class SplitFileFetcher implements ClientGetState {
 	}
 
 	public void scheduleOffThread() {
-		Thread t = new Thread(new Runnable() {
+		fetchContext.executor.execute(new Runnable() {
 			public void run() {
 				schedule();
 			}
 		}, "Splitfile scheduler thread for "+this);
-		t.setDaemon(true);
-		t.start();
 	}
 
 }

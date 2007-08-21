@@ -48,6 +48,7 @@ import java.util.Vector;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.node.Node;
+import freenet.node.NodeInitException;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
@@ -372,7 +373,7 @@ public class SHA256 implements Digest {
 	    	System.err.println("Check your JVM settings especially the JCE!"+e2);
 	    	e2.printStackTrace();
 		}
-		WrapperManager.stop(Node.EXIT_CRAPPY_JVM);
+		WrapperManager.stop(NodeInitException.EXIT_CRAPPY_JVM);
 		throw new RuntimeException();
 	}
 
@@ -386,8 +387,6 @@ public class SHA256 implements Digest {
 		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
 			throw new IllegalArgumentException("Should be SHA-256 but is "+algo);
 		md256.reset();
-		if(Logger.shouldLog(Logger.DEBUG, SHA256.class))
-			Logger.debug(SHA256.class, "Returning message digest "+md256, new Exception());
 		digests.add(md256);
 	}
 

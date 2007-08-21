@@ -13,6 +13,7 @@ import freenet.io.comm.PeerContext;
 import freenet.support.BitArray;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Logger;
+import freenet.support.transport.ip.IPUtil;
 
 /**
  * Bulk data transfer (not block). Bulk transfer is designed for files which may be much bigger than a 
@@ -40,6 +41,7 @@ public class BulkTransmitter {
 	final DoubleTokenBucket masterThrottle;
 	private boolean sentCancel;
 	private boolean finished;
+	final int packetSize;
 	
 	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, DoubleTokenBucket masterThrottle) throws DisconnectedException {
 		this.prb = prb;
@@ -87,6 +89,8 @@ public class BulkTransmitter {
 			cancel();
 			throw e;
 		}
+		packetSize = DMT.bulkPacketTransmitSize(prb.blockSize) +
+			peer.getOutgoingMangler().fullHeadersLengthOneMessage();
 	}
 
 	/**
@@ -145,7 +149,6 @@ public class BulkTransmitter {
 	 * @return True if the file was successfully sent. False otherwise.
 	 */
 	public boolean send() {
-		int packetSize = prb.getPacketSize();
 		long lastSentPacket = System.currentTimeMillis();
 		while(true) {
 			if(prb.isAborted()) return false;
@@ -191,7 +194,8 @@ public class BulkTransmitter {
 			long now = System.currentTimeMillis();
 			long waitUntil = peer.getThrottle().scheduleDelay(now);
 			
-			masterThrottle.blockingGrab(packetSize);
+			if(IPUtil.isValidAddress(peer.getPeer().getAddress(), false))
+				masterThrottle.blockingGrab(packetSize);
 			
 			while((now = System.currentTimeMillis()) < waitUntil) {
 				long sleepTime = waitUntil - now;

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -55,7 +56,7 @@ public class Yarrow extends RandomSource {
 	private static final int Pg = 10;
 	private final SecureRandom sr;
 
-	private final File seedfile; //A file to which seed data should be dumped periodically
+	public final File seedfile; //A file to which seed data should be dumped periodically
 
 	public Yarrow() {
 		this("prng.seed", "SHA1", "Rijndael",true);
@@ -121,6 +122,7 @@ public class Yarrow extends RandomSource {
 		        }
 	        }
 
+	        boolean isSystemEntropyAvailable = true;
 	        // Read some bits from /dev/urandom
 	        try {
 	            fis = new FileInputStream("/dev/urandom");
@@ -131,6 +133,9 @@ public class Yarrow extends RandomSource {
 	            consumeBytes(buf);
 	        } catch (Throwable t) {
 	            Logger.normal(this, "Can't read /dev/urandom: "+t, t);
+	            // We can't read it; let's skip /dev/random and seed from SecureRandom.generateSeed()
+	            canBlock = true;
+	            isSystemEntropyAvailable = false;
 	        } finally {
 	            try {
 	            	if(fis != null)
@@ -139,7 +144,7 @@ public class Yarrow extends RandomSource {
 	                    dis.close();
 	            } catch (IOException e) {}
 	        }
-	        if(canBlock) {
+	        if(canBlock && isSystemEntropyAvailable) {
 	            // Read some bits from /dev/random
 	            try {
 	                fis = new FileInputStream("/dev/random");
@@ -214,40 +219,70 @@ public class Yarrow extends RandomSource {
 	 */
 	private void read_seed(File filename) {
 		try {
-			DataInputStream dis =
-				new DataInputStream(new FileInputStream(filename));
-			EntropySource seedFile = new EntropySource();
+			FileInputStream fis = null;
+			BufferedInputStream bis = null;
+			DataInputStream dis = null;
+			
 			try {
-				for (int i = 0; i < 32; i++)
-					acceptEntropy(seedFile, dis.readLong(), 64);
-			} catch (EOFException f) {
+				fis = new FileInputStream(filename);
+				bis = new BufferedInputStream(fis);
+				dis = new DataInputStream(bis);
+				
+				EntropySource seedFile = new EntropySource();
+				try {
+					for (int i = 0; i < 32; i++)
+						acceptEntropy(seedFile, dis.readLong(), 64);
+				} catch (EOFException f) {}
+
+			} catch (IOException e) {
+				Logger.error(this, "IOE trying to read the seedfile from disk : " + e.getMessage());
+			} finally {
+				if(dis != null) dis.close();
+				if(bis != null) bis.close();
+				if(fis != null) fis.close();
 			}
-			dis.close();
-		} catch (Exception e) {
-		}
+		} catch (Exception e) {}
 		fast_pool_reseed();
 	}
 
 	private long timeLastWroteSeed = -1;
 	
-	private void write_seed(File filename) {
-		synchronized(this) {
-			long now = System.currentTimeMillis();
-			if(now - timeLastWroteSeed <= 60*1000) {
-				return;
-			} else
-				timeLastWroteSeed = now;
+	public void write_seed(File filename) {
+		write_seed(filename, false);
+	}
+	
+	public void write_seed(File filename, boolean force) {
+		if(!force) {
+			synchronized(this) {
+				long now = System.currentTimeMillis();
+				if(now - timeLastWroteSeed <= 60*60*1000 /* once per hour */) {
+					return;
+				} else
+					timeLastWroteSeed = now;
+			}
 		}
 		
 		try {
-			DataOutputStream dos =
-				new DataOutputStream(new BufferedOutputStream(new FileOutputStream(filename)));
-			for (int i = 0; i < 32; i++)
-				dos.writeLong(nextLong());
-			dos.close();
-		} catch (Exception e) {
-		}
-		
+			FileOutputStream fos = null;
+			BufferedOutputStream bos = null;
+			DataOutputStream dos = null;
+
+			try {
+				fos = new FileOutputStream(filename);
+				bos = new BufferedOutputStream(fos);
+				dos = new DataOutputStream(bos);
+
+				for (int i = 0; i < 32; i++)
+					dos.writeLong(nextLong());
+
+			}catch (IOException e) {
+				Logger.error(this, "IOE while saving the seed file! : "+e.getMessage());
+			} finally {
+				if(dos != null) dos.close();
+				if(bos != null) bos.close();
+				if(fos != null) fos.close();
+			}
+		} catch (Exception e) {}
 	}
 
 	/**

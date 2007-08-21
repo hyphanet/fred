@@ -11,7 +11,7 @@ package freenet.pluginmanager;
 public class DownloadPluginHTTPException extends PluginHTTPException {
 	private static final long serialVersionUID = -1;
 	
-	public final short code = 200; // Found
+	public static final short CODE = 200; // Found
 	public final String filename;
 	public final String mimeType;
 	public final byte[] data;

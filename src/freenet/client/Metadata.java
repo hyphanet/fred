@@ -157,8 +157,9 @@ public class Metadata implements Cloneable {
 	}
 	
 	/** Parse some metadata from a byte[]. 
-	 * @throws IOException If the data is incomplete, or something wierd happens. */
-	private Metadata(byte[] data) throws IOException {
+	 * @throws IOException If the data is incomplete, or something wierd happens. 
+	 * @throws MetadataParseException */
+	private Metadata(byte[] data) throws IOException, MetadataParseException {
 		this(new DataInputStream(new ByteArrayInputStream(data)), data.length);
 	}
 
@@ -848,6 +849,7 @@ public class Metadata implements Cloneable {
 						unresolvedMetadata = new LinkedList();
 					for(int j=0;j<m.length;j++)
 						unresolvedMetadata.addFirst(m[j]);
+					kill = true;
 				}
 			}
 			if(kill) {
@@ -915,5 +917,11 @@ public class Metadata implements Cloneable {
 
 	public boolean isResolved() {
 		return resolvedURI != null;
+	}
+
+	public void setArchiveManifest() {
+		archiveType = ArchiveManager.getArchiveType(clientMetadata.getMIMEType());
+		clientMetadata.clear();
+		documentType = ZIP_MANIFEST;
 	}
 }

@@ -8,7 +8,9 @@ import java.net.MalformedURLException;
 import java.util.LinkedList;
 
 import freenet.client.ArchiveContext;
+import freenet.client.ArchiveExtractCallback;
 import freenet.client.ArchiveFailureException;
+import freenet.client.ArchiveManager;
 import freenet.client.ArchiveRestartException;
 import freenet.client.ArchiveStoreContext;
 import freenet.client.ClientMetadata;
@@ -158,23 +160,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e));
 				return;
 			}
-			try {
-				handleMetadata();
-			} catch (MetadataParseException e) {
-				onFailure(new FetchException(e));
-				return;
-			} catch (FetchException e) {
-				onFailure(e);
-				return;
-			} catch (ArchiveFailureException e) {
-				onFailure(new FetchException(e));
-			} catch (ArchiveRestartException e) {
-				onFailure(new FetchException(e));
-			}
+			wrapHandleMetadata(false);
 		}
 	}
 
 	protected void onSuccess(FetchResult result) {
+		unregister();
 		if(parent.isCancelled()) {
 			if(logMINOR)
 				Logger.minor(this, "Parent is cancelled");
@@ -227,20 +218,29 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 	}
 
-	private void handleMetadata() throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
+	/**
+	 * Handle the current metadata. I.e. do something with it: transition to a splitfile, look up a manifest, etc.
+	 * LOCKING: Synchronized as it changes so many variables; if we want to write the structure to disk, we don't
+	 * want this running at the same time.
+	 * @throws FetchException
+	 * @throws MetadataParseException
+	 * @throws ArchiveFailureException
+	 * @throws ArchiveRestartException
+	 */
+	private synchronized void handleMetadata() throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
 		while(true) {
 			if(metadata.isSimpleManifest()) {
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
 				String name;
 				if(metaStrings.isEmpty())
-					throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS);
+					throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, thisKey.addMetaStrings(new String[] { "" }));
 				else name = removeMetaString();
 				// Since metadata is a document, we just replace metadata here
 				if(logMINOR) Logger.minor(this, "Next meta-string: "+name);
 				if(name == null) {
 					metadata = metadata.getDefaultDocument();
 					if(metadata == null)
-						throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS);
+						throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, thisKey.addMetaStrings(new String[] { "" }));
 				} else {
 					metadata = metadata.getDocument(name);
 					thisKey = thisKey.pushMetaString(name);
@@ -274,13 +274,35 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						throw new FetchException(FetchException.BUCKET_ERROR, e);
 					}
 				} else {
-					fetchArchive(false, archiveMetadata); // will result in this function being called again
+					fetchArchive(false, archiveMetadata, ArchiveManager.METADATA_NAME, new ArchiveExtractCallback() {
+						public void gotBucket(Bucket data) {
+							try {
+								metadata = Metadata.construct(data);
+							} catch (MetadataParseException e) {
+								// Invalid metadata
+								onFailure(new FetchException(FetchException.INVALID_METADATA, e));
+								return;
+							} catch (IOException e) {
+								// Bucket error?
+								onFailure(new FetchException(FetchException.BUCKET_ERROR, e));
+								return;
+							}
+							wrapHandleMetadata(true);
+						}
+						public void notInArchive() {
+							onFailure(new FetchException(FetchException.INTERNAL_ERROR, "No metadata in container! Cannot happen as ArchiveManager should synthesise some!"));
+						}
+					}); // will result in this function being called again
 					return;
 				}
 				continue;
 			} else if(metadata.isArchiveInternalRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is archive-internal redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
+				if(metaStrings.isEmpty() && isFinal && clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
+						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
+					throw new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType());
+				}
 				// Fetch it from the archive
 				if(ah == null)
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
@@ -289,30 +311,56 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				Bucket dataBucket = ah.get(filename, actx, null, recursionLevel+1, true);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
-					// The client may free it, which is bad, or it may hang on to it for so long that it gets
-					// freed by us, which is also bad.
-					// So copy it.
-					// FIXME this is stupid, reconsider how we determine when to free buckets; refcounts maybe?
-					Bucket out;
+					final Bucket out;
 					try {
-						if(returnBucket != null)
+						// Data will not be freed until client is finished with it.
+						if(returnBucket != null) {
 							out = returnBucket;
-						else
-							out = ctx.bucketFactory.makeBucket(dataBucket.size());
-						BucketTools.copy(dataBucket, out);
+							BucketTools.copy(dataBucket, out);
+							dataBucket.free();
+						} else {
+							out = dataBucket;
+						}
 					} catch (IOException e) {
-						onFailure(new FetchException(FetchException.BUCKET_ERROR));
-						return;
+						throw new FetchException(FetchException.BUCKET_ERROR);
 					}
 					// Return the data
-					onSuccess(new FetchResult(this.clientMetadata, out));
+					ctx.executor.execute(new Runnable() {
+						public void run() {
+							onSuccess(new FetchResult(clientMetadata, out));
+						}
+					}, "SingleFileFetcher onSuccess callback for "+this);
+					
 					return;
 				} else {
 					if(logMINOR) Logger.minor(this, "Fetching archive (thisKey="+thisKey+ ')');
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
-					fetchArchive(true, archiveMetadata);
+					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
+						public void gotBucket(Bucket data) {
+							if(logMINOR) Logger.minor(this, "Returning data");
+							Bucket out;
+							try {
+								// Data will not be freed until client is finished with it.
+								if(returnBucket != null) {
+									out = returnBucket;
+									BucketTools.copy(data, out);
+									data.free();
+								} else {
+									out = data;
+								}
+							} catch (IOException e) {
+								onFailure(new FetchException(FetchException.BUCKET_ERROR));
+								return;
+							}
+							// Return the data
+							onSuccess(new FetchResult(clientMetadata, out));
+						}
+						public void notInArchive() {
+							onFailure(new FetchException(FetchException.NOT_IN_ARCHIVE));
+						}
+					});
 					// Will call back into this function when it has been fetched.
 					return;
 				}
@@ -321,13 +369,30 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Fetch on a second SingleFileFetcher, like with archives.
 				Metadata newMeta = (Metadata) metadata.clone();
 				newMeta.setSimpleRedirect();
-				SingleFileFetcher f = new SingleFileFetcher(this, newMeta, new MultiLevelMetadataCallback(), ctx);
-				f.handleMetadata();
+				final SingleFileFetcher f = new SingleFileFetcher(this, newMeta, new MultiLevelMetadataCallback(), ctx);
+				ctx.ticker.queueTimedJob(new Runnable() {
+					public void run() {
+						f.wrapHandleMetadata(true);
+					}
+				}, 0);
 				return;
 			} else if(metadata.isSingleFileRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
-				// FIXME implement implicit archive support
+
+				String mimeType = clientMetadata.getMIMETypeNoParams();
+				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+					// Looks like an implicit archive, handle as such
+					metadata.setArchiveManifest();
+					// Pick up MIME type from inside archive
+					clientMetadata.clear();
+					continue;
+				}
+				
+				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null && 
+						!ctx.allowedMIMETypes.contains(mimeType)) {
+					throw new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType());
+				}
 				
 				// Simple redirect
 				// Just create a new SingleFileFetcher
@@ -358,7 +423,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 
 				// **FIXME** Is key in the call to SingleFileFetcher here supposed to be this.key or the same key used in the try block above?  MultiLevelMetadataCallback.onSuccess() below uses this.key, thus the question
-				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, this.uri, addedMetaStrings, ctx, actx, ah, maxRetries, recursionLevel, false, token, true, returnBucket, isFinal);
+				final SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, this.uri, addedMetaStrings, ctx, actx, ah, maxRetries, recursionLevel, false, token, true, returnBucket, isFinal);
 				if((key instanceof ClientCHK) && !((ClientCHK)key).isMetadata())
 					rcb.onBlockSetFinished(this);
 				if(metadata.isCompressed()) {
@@ -366,14 +431,31 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					f.addDecompressor(codec);
 				}
 				parent.onTransition(this, f);
-				f.schedule();
+				ctx.executor.execute(new Runnable() {
+					public void run() {
+						f.schedule();
+					}
+				}, "Schedule");
 				// All done! No longer our problem!
 				return;
 			} else if(metadata.isSplitfile()) {
 				if(logMINOR) Logger.minor(this, "Fetching splitfile");
-				// FIXME implicit archive support
 				
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
+				
+				String mimeType = clientMetadata.getMIMETypeNoParams();
+				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+					// Looks like an implicit archive, handle as such
+					metadata.setArchiveManifest();
+					// Pick up MIME type from inside archive
+					clientMetadata.clear();
+					continue;
+				}
+				
+				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null &&
+						!ctx.allowedMIMETypes.contains(mimeType)) {
+					throw new FetchException(FetchException.WRONG_MIME_TYPE, metadata.uncompressedDataLength(), false, clientMetadata.getMIMEType());
+				}
 				
 				// Splitfile (possibly compressed)
 				
@@ -410,8 +492,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if((len > ctx.maxOutputLength) ||
 						(len > ctx.maxTempLength)) {
 					
-					onFailure(new FetchException(FetchException.TOO_BIG, len, isFinal && decompressors.size() <= (metadata.isCompressed() ? 1 : 0), clientMetadata.getMIMEType()));
-					return;
+					throw new FetchException(FetchException.TOO_BIG, len, isFinal && decompressors.size() <= (metadata.isCompressed() ? 1 : 0), clientMetadata.getMIMEType());
 				}
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
@@ -440,7 +521,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		decompressors.addLast(codec);
 	}
 
-	private void fetchArchive(boolean forData, Metadata meta) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
+	private void fetchArchive(boolean forData, Metadata meta, String element, ArchiveExtractCallback callback) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
 		if(logMINOR) Logger.minor(this, "fetchArchive()");
 		// Fetch the archive
 		// How?
@@ -450,42 +531,61 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// reschedules us.
 		Metadata newMeta = (Metadata) meta.clone();
 		newMeta.setSimpleRedirect();
-		SingleFileFetcher f;
-		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true));
-		f.handleMetadata();
-		// When it is done (if successful), the ArchiveCallback will re-call this function.
-		// Which will then discover that the metadata *is* available.
-		// And will also discover that the data is available, and will complete.
+		final SingleFileFetcher f;
+		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true));
+		ctx.ticker.queueTimedJob(new Runnable() {
+			public void run() {
+				// Fetch the archive. The archive fetcher callback will unpack it, and either call the element 
+				// callback, or just go back around handleMetadata() on this, which will see that the data is now
+				// available.
+				f.wrapHandleMetadata(true);
+			}
+		}, 0);
 	}
 
+	/**
+	 * Call handleMetadata(), and deal with any resulting exceptions
+	 */
+	private void wrapHandleMetadata(boolean notFinalizedSize) {
+		try {
+			handleMetadata();
+		} catch (MetadataParseException e) {
+			onFailure(new FetchException(e));
+		} catch (FetchException e) {
+			if(notFinalizedSize)
+				e.setNotFinalizedSize();
+			onFailure(e);
+		} catch (ArchiveFailureException e) {
+			onFailure(new FetchException(e));
+		} catch (ArchiveRestartException e) {
+			onFailure(new FetchException(e));
+		}
+	}
+	
 	class ArchiveFetcherCallback implements GetCompletionCallback {
 
 		private final boolean wasFetchingFinalData;
+		private final String element;
+		private final ArchiveExtractCallback callback;
 		
-		ArchiveFetcherCallback(boolean wasFetchingFinalData) {
+		ArchiveFetcherCallback(boolean wasFetchingFinalData, String element, ArchiveExtractCallback cb) {
 			this.wasFetchingFinalData = wasFetchingFinalData;
+			this.element = element;
+			this.callback = cb;
 		}
 		
 		public void onSuccess(FetchResult result, ClientGetState state) {
 			try {
-				ah.extractToCache(result.asBucket(), actx);
+				ah.extractToCache(result.asBucket(), actx, element, callback);
 			} catch (ArchiveFailureException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e));
+				return;
 			} catch (ArchiveRestartException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e));
+				return;
 			}
-			try {
-				handleMetadata();
-			} catch (MetadataParseException e) {
-				SingleFileFetcher.this.onFailure(new FetchException(e));
-			} catch (FetchException e) {
-				e.setNotFinalizedSize();
-				SingleFileFetcher.this.onFailure(e);
-			} catch (ArchiveFailureException e) {
-				SingleFileFetcher.this.onFailure(new FetchException(e));
-			} catch (ArchiveRestartException e) {
-				SingleFileFetcher.this.onFailure(new FetchException(e));
-			}
+			if(callback != null) return;
+			wrapHandleMetadata(true);
 		}
 
 		public void onFailure(FetchException e, ClientGetState state) {
@@ -510,22 +610,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		public void onSuccess(FetchResult result, ClientGetState state) {
 			try {
 				metadata = Metadata.construct(result.asBucket());
-				handleMetadata();
 			} catch (MetadataParseException e) {
-				SingleFileFetcher.this.onFailure(new FetchException(e));
+				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e));
 				return;
 			} catch (IOException e) {
 				// Bucket error?
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e));
 				return;
-			} catch (FetchException e) {
-				e.setNotFinalizedSize();
-				onFailure(e, SingleFileFetcher.this);
-			} catch (ArchiveFailureException e) {
-				onFailure(new FetchException(FetchException.ARCHIVE_FAILURE), SingleFileFetcher.this);
-			} catch (ArchiveRestartException e) {
-				onFailure(new FetchException(FetchException.ARCHIVE_RESTART), SingleFileFetcher.this);
 			}
+			wrapHandleMetadata(true);
 		}
 		
 		public void onFailure(FetchException e, ClientGetState state) {

@@ -3,11 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.util.Set;
+
+import freenet.client.async.BlockSet;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
+import freenet.node.Ticker;
+import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
@@ -45,6 +50,11 @@ public class FetchContext implements Cloneable {
 	public boolean returnZIPManifests;
 	public final HealingQueue healingQueue;
 	public final boolean ignoreTooManyPathComponents;
+	/** If set, contains a set of blocks to be consulted before checking the datastore. */
+	public BlockSet blocks;
+	public Set allowedMIMETypes;
+	public final Ticker ticker;
+	public final Executor executor;
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -53,7 +63,10 @@ public class FetchContext implements Cloneable {
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
-			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, HealingQueue hq, boolean ignoreTooManyPathComponents) {
+			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, 
+			HealingQueue hq, boolean ignoreTooManyPathComponents, Ticker ticker, Executor executor) {
+		this.ticker = ticker;
+		this.executor = executor;
 		this.maxOutputLength = curMaxLength;
 		this.uskManager = uskManager;
 		this.maxTempLength = curMaxTempLength;
@@ -85,8 +98,12 @@ public class FetchContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 		else
 			this.eventProducer = new SimpleEventProducer();
+		this.ticker = ctx.ticker;
+		this.executor = ctx.executor;
 		this.uskManager = ctx.uskManager;
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
+		this.blocks = ctx.blocks;
+		this.allowedMIMETypes = ctx.allowedMIMETypes;
 		if(maskID == IDENTICAL_MASK) {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;

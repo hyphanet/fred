@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -10,14 +11,13 @@ import java.util.HashSet;
 
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetchContext;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
-import freenet.keys.KeyBlock;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -41,7 +41,7 @@ public class ClientGetter extends BaseClientGetter {
 	/** If not null, HashSet to track keys already added for a binary blob */
 	final HashSet binaryBlobKeysAddedAlready;
 	private DataOutputStream binaryBlobStream;
-
+	
 	/**
 	 * Fetch a key.
 	 * @param client
@@ -98,10 +98,10 @@ public class ClientGetter extends BaseClientGetter {
 			if(currentState != null && !finished) {
 				if(binaryBlobBucket != null) {
 					try {
-						binaryBlobStream = new DataOutputStream(binaryBlobBucket.getOutputStream());
+						binaryBlobStream = new DataOutputStream(new BufferedOutputStream(binaryBlobBucket.getOutputStream()));
 						BinaryBlob.writeBinaryBlobHeader(binaryBlobStream);
 					} catch (IOException e) {
-						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket"), null);
+						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e), null);
 						return false;
 					}
 				}
@@ -142,7 +142,13 @@ public class ClientGetter extends BaseClientGetter {
 			if(returnBucket != null && Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "client.async returned data in returnBucket");
 		}
-		client.onSuccess(result, this);
+		final FetchResult res = result;
+		ctx.executor.execute(new Runnable() {
+			public void run() {
+				client.onSuccess(res, ClientGetter.this);
+			}
+		}, "ClientGetter onSuccess callback");
+		
 	}
 
 	public void onFailure(FetchException e, ClientGetState state) {
@@ -170,13 +176,20 @@ public class ClientGetter extends BaseClientGetter {
 			}
 			synchronized(this) {
 				finished = true;
+				currentState = null;
 			}
 			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
 				e = new FetchException(e.errorCodes.getFirstCode(), e);
 			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
 			Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
-			client.onFailure(e, this);
+			final FetchException e1 = e;
+			ctx.executor.execute(new Runnable() {
+				public void run() {
+					client.onFailure(e1, ClientGetter.this);
+				}
+			}, "ClientGetter onFailure callback");
+			
 			return;
 		}
 	}
@@ -267,8 +280,9 @@ public class ClientGetter extends BaseClientGetter {
 	 * called onFailure() with an appropriate error.
 	 */
 	private boolean closeBinaryBlobStream() {
-		if(binaryBlobBucket == null) return true;
+		if(binaryBlobKeysAddedAlready == null) return true;
 		synchronized(binaryBlobKeysAddedAlready) {
+			if(binaryBlobStream == null) return true;
 			try {
 				BinaryBlob.writeEndBlob(binaryBlobStream);
 				binaryBlobStream.close();

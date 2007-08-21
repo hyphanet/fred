@@ -4,6 +4,7 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.URI;
@@ -16,6 +17,7 @@ import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.Base64;
+import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -32,9 +34,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	private final Config config;
 	
 	
-	FirstTimeWizardToadlet(HighLevelSimpleClient client, Node node) {
+	FirstTimeWizardToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
 		super(client);
-		this.core = node.clientCore;
+		this.core = core;
 		this.config = node.config;
 	}
 	
@@ -52,6 +54,26 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step1Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
+			HTMLNode opennetInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode opennetInfoboxHeader = opennetInfobox.addChild("div", "class", "infobox-header");
+			HTMLNode opennetInfoboxContent = opennetInfobox.addChild("div", "class", "infobox-content");
+			
+			opennetInfoboxHeader.addChild("#", l10n("connectToStrangers"));
+			opennetInfoboxContent.addChild("#", l10n("connectToStrangersLong"));
+			HTMLNode opennetForm = ctx.addFormChild(opennetInfoboxContent, ".", "opennetForm");
+			
+			HTMLNode opennetDiv = opennetForm.addChild("div", "class", "opennetDiv");
+			opennetDiv.addChild("#", l10n("enableOpennet"));
+			opennetDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "enableOpennet", "true" }, L10n.getString("Toadlet.yes"));
+			opennetDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "enableOpennet", "false" }, L10n.getString("Toadlet.no"));
+			opennetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "opennetF", L10n.getString("FirstTimeWizardToadlet.continue")});
+			opennetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			return;
+		} else if(currentStep == 2) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step2Title"), false, ctx);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			
 			HTMLNode nnameInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode nnameInfoboxHeader = nnameInfobox.addChild("div", "class", "infobox-header");
 			HTMLNode nnameInfoboxContent = nnameInfobox.addChild("div", "class", "infobox-content");
@@ -61,12 +83,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode nnameForm = ctx.addFormChild(nnameInfoboxContent, ".", "nnameForm");
 			nnameForm.addChild("input", "name", "nname");
 			
-			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "nnameF", L10n.getString("Toadlet.clickHere")});
+			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "nnameF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if(currentStep == 2) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step2Title"), false, ctx);
+		} else if(currentStep == 3) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -78,20 +100,20 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "bw");
 			
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { "15", "selected" }, "I don't know");
+			result.addChild("option", new String[] { "value", "selected" }, new String[] { "15K", "selected" }, "I don't know");
 			result.addChild("option", "value", "8K", "lower speed");
-			result.addChild("option", "value", "12K", "1024+/128 kbps");
+			result.addChild("option", "value", "12K", "512+/128 kbps");
 			result.addChild("option", "value", "24K", "1024+/256 kbps");
 			result.addChild("option", "value", "48K", "1024+/512 kbps");
 			result.addChild("option", "value", "96K", "1024+/1024 kbps");
 			result.addChild("option", "value", "1000K", "higher speed");
 			
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", L10n.getString("Toadlet.clickHere")});
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if(currentStep == 3) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx);
+		} else if(currentStep == 4) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -113,12 +135,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			result.addChild("option", "value", "50G", "50GiB");
 			result.addChild("option", "value", "100G", "100GiB");
 			
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dsF", L10n.getString("Toadlet.clickHere")});
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dsF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if(currentStep == 4) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
+		} else if(currentStep == 5) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step5Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode networkInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -156,12 +178,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			ctx.addFormChild(networkInfoboxContent, ".", "networkForm").addChild(networkForm);
 			
-			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkF", L10n.getString("Toadlet.clickHere")});
+			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		}else if(currentStep == 5) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step5Title"), true, ctx);
+		}else if(currentStep == 6) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step6Title"), true, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode congratzInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -171,7 +193,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			congratzInfoboxHeader.addChild("#", l10n("congratz"));
 			congratzInfoboxContent.addChild("#", l10n("congratzLong"));
 
-			this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
 		
@@ -185,12 +207,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
 		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1") + ' ');
-		firstParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("Toadlet.clickHere"));
+		firstParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("FirstTimeWizardToadlet.continue"));
 		
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
 		secondParagraph.addChild("a", "href", "/").addChild("#", l10n("skipWizard"));
 		
-		this.writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -208,7 +230,27 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		}
 		
-		if(request.isPartSet("nnameF")) {
+		
+		if(request.isPartSet("enableOpennet")) {
+			String isOpennetEnabled = request.getPartAsString("enableOpennet", 255);
+			boolean enable;
+			try {
+				enable = Fields.stringToBool(isOpennetEnabled);
+			} catch (NumberFormatException e) {
+				Logger.error(this, "Invalid opennetEnabled: "+isOpennetEnabled);
+				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step=1");
+				return;
+			}
+			try {
+				config.get("node.opennet").set("enabled", enable);
+			} catch (InvalidConfigValueException e) {
+				Logger.error(this, "Should not happen setting opennet.enabled="+enable+" please repot: "+e, e);
+				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step=1");
+				return;
+			}
+			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step=2");
+			return;
+		} else if(request.isPartSet("nnameF")) {
 			String selectedNName = request.getPartAsString("nname", 255);
 			
 			try {
@@ -217,7 +259,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e);
 			}
-			super.writeTemporaryRedirect(ctx, "step2", TOADLET_URL+"?step=2");
+			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=3");
 			return;
 		} else if(request.isPartSet("bwF")) {
 			String selectedUploadSpeed =request.getPartAsString("bw", 6);
@@ -228,7 +270,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e);
 			}
-			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=3");
+			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step=4");
 			return;
 		} else if(request.isPartSet("dsF")) {
 			String selectedStoreSize =request.getPartAsString("ds", 6);
@@ -239,13 +281,14 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e);
 			}
-			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=4");
+			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step=5");
 			return;
 		} else if(request.isPartSet("networkF")) {
 			StringBuffer sb = new StringBuffer();
 			// prevent the user from locking himself out
-			sb.append("127.0.0.1,0:0:0:0:0:0:0:1");
+			sb.append("127.0.0.1");
 			short ifCount = 0;
+			boolean hasIPV6 = false;
 			
 			Enumeration interfaces = NetworkInterface.getNetworkInterfaces();
 			while(interfaces.hasMoreElements()) {
@@ -255,6 +298,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				Enumeration ipAddresses = currentIF.getInetAddresses();
 				while(ipAddresses.hasMoreElements()) {
 					InetAddress currentInetAddress = (InetAddress) ipAddresses.nextElement();
+					if(currentInetAddress instanceof Inet6Address)
+						hasIPV6 = true;
+					
 					if((currentInetAddress == null) || (currentInetAddress.isLoopbackAddress())) continue;
 					
 					String isIFSelected =request.getPartAsString(Base64.encode(currentInetAddress.getAddress()), 255);
@@ -265,6 +311,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					}
 				}
 			}
+			
+			if(hasIPV6)
+				sb.append(",0:0:0:0:0:0:0:1");
 			
 			if(ifCount > 0) {
 				try {
@@ -284,7 +333,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				}
 			}
 
-			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step=5");
+			super.writeTemporaryRedirect(ctx, "step6", TOADLET_URL+"?step=6");
 			return;
 		}
 		

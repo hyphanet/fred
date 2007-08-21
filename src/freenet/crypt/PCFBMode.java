@@ -11,6 +11,11 @@ import freenet.crypt.ciphers.Rijndael;
  * Control mechanism for the Periodic Cipher Feed Back mode.  This is
  * a CFB variant used apparently by a number of programs, including PGP. 
  * Thanks to Hal for suggesting it.
+ * 
+ * http://www.streamsec.com/pcfb1.pdf
+ * 
+ * NOTE: This is identical to CFB if block size = key size. As of Freenet 0.7, 
+ * we use it with block size = key size.
  *
  * @author Scott
  */

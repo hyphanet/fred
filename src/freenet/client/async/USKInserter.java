@@ -69,11 +69,13 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	 * The Fetcher must be insert-mode, in other words, it must know that we want the latest edition,
 	 * including author errors and so on.
 	 */
-	private synchronized void scheduleFetcher() {
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
-		if(finished) return;
-		fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient());
+	private void scheduleFetcher() {
+		synchronized(this) {
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
+			if(finished) return;
+			fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient());
+		}
 		fetcher.schedule();
 	}
 

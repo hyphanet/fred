@@ -693,7 +693,7 @@ public class FileLoggerHook extends LoggerHook {
 		if (rotate) {
 			this.baseFilename = baseFilename;
 		} else {
-			logStream = new FileOutputStream(baseFilename, !logOverwrite);
+			logStream = new BufferedOutputStream(new FileOutputStream(baseFilename, !logOverwrite), 65536);
 		}
 	}
 	
@@ -822,18 +822,20 @@ public class FileLoggerHook extends LoggerHook {
 
 		if (e != null) {
 
-			// Convert the stack trace to a string.
-			ByteArrayOutputStream bos = new ByteArrayOutputStream(350);
-			PrintWriter bpw = new PrintWriter(bos);
-			try {
-				e.printStackTrace(bpw);
-			} catch (NullPointerException ex) {
-				log(this, getClass(), "Got evil NPE-in-stack-trace bug", null, ERROR);
-				bpw.println("[ evil NPE-in-stack-trace triggered ]");
+			sb.append(e.toString());
+			
+			StackTraceElement[] trace = e.getStackTrace();
+			
+			if(trace == null)
+				sb.append("(null)");
+			else {
+				sb.append('\n');
+				for(int i=0;i<trace.length;i++) {
+					sb.append("\tat ");
+					sb.append(trace[i].toString());
+					sb.append('\n');
+				}
 			}
-			bpw.flush();
-
-			sb.append(bos.toString());
 		}
 
 		logString(sb.toString().getBytes());

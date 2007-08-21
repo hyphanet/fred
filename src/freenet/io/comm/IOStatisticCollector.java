@@ -16,6 +16,7 @@ public class IOStatisticCollector {
 	private long lastrotate;
 	
 	private static IOStatisticCollector _currentSC;
+	private static boolean logDEBUG;
 	private long totalbytesin;
 	private long totalbytesout;
 	private final LinkedHashMap targets;
@@ -28,6 +29,7 @@ public class IOStatisticCollector {
 		// This should only happen once
 		//SNMPAgent.create();
 		//SNMPStarter.initialize();
+		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 	}
 	
 	private static IOStatisticCollector getSC() {
@@ -59,8 +61,8 @@ public class IOStatisticCollector {
 		synchronized(this) {
 			totalbytesout += (outbytes>0)?outbytes:0;
 			totalbytesin += (inbytes>0)?inbytes:0;
-			if(Logger.shouldLog(Logger.MINOR, IOStatisticCollector.class))
-				Logger.minor(IOStatisticCollector.class, "Add("+key+ ',' +inbytes+ ',' +outbytes+" -> "+totalbytesin+" : "+totalbytesout);
+			if(logDEBUG)
+				Logger.debug(IOStatisticCollector.class, "Add("+key+ ',' +inbytes+ ',' +outbytes+" -> "+totalbytesin+" : "+totalbytesout);
 		}
 	}
 	

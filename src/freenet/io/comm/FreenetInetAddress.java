@@ -248,6 +248,13 @@ public class FreenetInetAddress {
 			return _address.getHostAddress();
 		}
 	}
+	
+	public String toStringPrefNumeric() {
+		if(_address != null)
+			return _address.getHostAddress();
+		else
+			return hostname;
+	}
 
 	public void writeToDataOutputStream(DataOutputStream dos, boolean oldForm) throws IOException {
 		InetAddress addr = this.getAddress();

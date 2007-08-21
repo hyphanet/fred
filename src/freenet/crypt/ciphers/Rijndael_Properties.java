@@ -26,7 +26,7 @@ import java.util.Properties;
  * @author  Jill Baker
  * @author  Raif S. Naffah
  */
-public class Rijndael_Properties // implicit no-argument constructor
+class Rijndael_Properties // implicit no-argument constructor
 {
 //	Constants and variables with relevant static code
 //	...........................................................................

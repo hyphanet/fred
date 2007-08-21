@@ -118,7 +118,7 @@ public class SymlinkerToadlet extends Toadlet {
 		
 		// TODO redirect to errorpage
 		if ((foundtarget == null) || (foundkey == null)) {
-			writeReply(ctx, 404, "text/html", L10n.getString("StaticToadlet.pathNotFoundTitle"), 
+			writeTextReply(ctx, 404, "Not found", 
 					L10n.getString("StaticToadlet.pathNotFound"));
 			return;
 		}
@@ -130,7 +130,7 @@ public class SymlinkerToadlet extends Toadlet {
 			         path, uri.getQuery(), uri.getFragment());
 		} catch (URISyntaxException e) {
 			// TODO Handle error somehow
-			writeReply(ctx, 200, "text/html", "OK", e.getMessage());
+			writeHTMLReply(ctx, 200, "OK", e.getMessage());
 			return;
 		}
 		

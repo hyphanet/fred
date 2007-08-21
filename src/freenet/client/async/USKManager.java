@@ -10,6 +10,7 @@ import freenet.client.FetchContext;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
+import freenet.node.Ticker;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 
@@ -40,6 +41,8 @@ public class USKManager {
 	final FetchContext backgroundFetchContext;
 	final ClientRequestScheduler chkRequestScheduler;
 	final ClientRequestScheduler sskRequestScheduler;
+	
+	final Ticker ticker;
 
 	
 	public USKManager(NodeClientCore core) {
@@ -54,6 +57,7 @@ public class USKManager {
 		checkersByUSK = new HashMap();
 		backgroundFetchersByClearUSK = new HashMap();
 		temporaryBackgroundFetchersLRU = new LRUQueue();
+		ticker = core.getTicker();
 	}
 
 	/**
@@ -125,11 +129,11 @@ public class USKManager {
 		if(sched != null) sched.schedule();
 	}
 	
-	void update(USK origUSK, long number) {
+	void update(final USK origUSK, final long number) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
-		USKCallback[] callbacks;
+		final USKCallback[] callbacks;
 		synchronized(this) {
 			Long l = (Long) latestVersionByClearUSK.get(clear);
 			if(logMINOR) Logger.minor(this, "Old value: "+l);
@@ -141,9 +145,14 @@ public class USKManager {
 			callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
 		}
 		if(callbacks != null) {
-			USK usk = origUSK.copy(number);
-			for(int i=0;i<callbacks.length;i++)
-				callbacks[i].onFoundEdition(number, usk);
+			// Run off-thread, because of locking, and because client callbacks may take some time
+			ticker.queueTimedJob(new Runnable() {
+				public void run() {
+					USK usk = origUSK.copy(number);
+					for(int i=0;i<callbacks.length;i++)
+						callbacks[i].onFoundEdition(number, usk);
+				}
+			}, 0);
 		}
 	}
 	
@@ -163,6 +172,8 @@ public class USKManager {
 			if(callbacks == null)
 				callbacks = new USKCallback[1];
 			else {
+				for(int i=0;i<callbacks.length;i++)
+					if(callbacks[i] == cb) return;
 				USKCallback[] newCallbacks = new USKCallback[callbacks.length+1];
 				System.arraycopy(callbacks, 0, newCallbacks, 0, callbacks.length);
 				callbacks = newCallbacks;
@@ -181,8 +192,14 @@ public class USKManager {
 		}
 		if(curEd > ed)
 			cb.onFoundEdition(curEd, origUSK.copy(curEd));
-		if(sched != null)
-			sched.schedule();
+		final USKFetcher fetcher = sched;
+		if(fetcher != null) {
+			ticker.queueTimedJob(new Runnable() {
+				public void run() {
+					fetcher.schedule();
+				}
+			}, 0);
+		}
 	}
 	
 	public void unsubscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch) {

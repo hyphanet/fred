@@ -11,7 +11,7 @@ package freenet.pluginmanager;
 public class RedirectPluginHTTPException extends PluginHTTPException {
 	private static final long serialVersionUID = -1;
 	
-	public final short code = 302; // Found
+	public static final short code = 302; // Found
 	public final String newLocation;
 
 	public RedirectPluginHTTPException(String message, String location, String newLocation) {

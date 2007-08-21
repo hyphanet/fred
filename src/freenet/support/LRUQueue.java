@@ -34,6 +34,21 @@ public class LRUQueue {
     } 
 
     /**
+     * push to bottom (least recently used position)
+     */
+	public synchronized void pushLeast(Object obj) {
+        QItem insert = (QItem)hash.get(obj);        
+        if (insert == null) {
+            insert = new QItem(obj);
+            hash.put(obj,insert);
+        } else {
+            list.remove(insert);
+        }
+
+        list.push(insert);
+	}
+	
+    /**
      *  @return Least recently pushed Object.
      */
     public final synchronized Object pop() {
@@ -95,6 +110,34 @@ public class LRUQueue {
 		return hash.keySet().toArray();
 	}
 
+	public synchronized Object[] toArray(Object[] array) {
+		return hash.keySet().toArray(array);
+	}
+	
+	public synchronized Object[] toArrayOrdered() {
+		Object[] array = new Object[list.size()];
+		int x = 0;
+		for(Enumeration e = list.reverseElements();e.hasMoreElements();) {
+			array[x++] = ((QItem)e.nextElement()).obj;
+		}
+		return array;
+	}
+
+	/**
+	 * @param array The array to fill in. If it is too small a new array of the same type will be allocated.
+	 */
+	public synchronized Object[] toArrayOrdered(Object[] array) {
+		array = toArray(array);
+		int listSize = list.size();
+		if(array.length != listSize)
+			throw new IllegalStateException("array.length="+array.length+" but list.size="+listSize);
+		int x = 0;
+		for(Enumeration e = list.reverseElements();e.hasMoreElements();) {
+			array[x++] = ((QItem)e.nextElement()).obj;
+		}
+		return array;
+	}
+	
 	public synchronized boolean isEmpty() {
 		return hash.isEmpty();
 	}

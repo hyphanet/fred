@@ -39,6 +39,7 @@ public class RetrievalException extends Exception {
     public static final int ALREADY_CACHED = 6;
     public static final int SENDER_DISCONNECTED = 7;
     public static final int NO_DATAINSERT = 8;
+    public static final int CANCELLED_BY_RECEIVER = 9;
 	
 	int _reason;
 	String _cause;

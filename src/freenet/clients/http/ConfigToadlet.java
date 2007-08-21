@@ -11,6 +11,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.config.BooleanOption;
 import freenet.config.Config;
 import freenet.config.EnumerableOptionCallback;
+import freenet.config.InvalidConfigValueException;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -73,7 +74,9 @@ public class ConfigToadlet extends Toadlet {
 						if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName+" to "+value);
 						try{
 							o[j].setValue(value);
-						}catch(Exception e){
+						} catch (InvalidConfigValueException e) {
+							errbuf.append(o[j].getName()).append(' ').append(e.getMessage()).append('\n');
+						} catch (Exception e){
                             errbuf.append(o[j].getName()).append(' ').append(e).append('\n');
 							Logger.error(this, "Caught "+e, e);
 						}
@@ -103,7 +106,7 @@ public class ConfigToadlet extends Toadlet {
 		content.addChild("br");
 		addHomepageLink(content);
 
-		writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		
 	}
 	
@@ -130,6 +133,7 @@ public class ConfigToadlet extends Toadlet {
 		if(advancedModeEnabled){
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
+			navigationContent.addChild("a", "href", TranslationToadlet.TOADLET_URL, l10n("contributeTranslation"));
 			HTMLNode navigationTable = navigationContent.addChild("table", "class", "config_navigation");
 			HTMLNode navigationTableRow = navigationTable.addChild("tr");
 			HTMLNode nextTableCell = navigationTableRow;
@@ -158,7 +162,7 @@ public class ConfigToadlet extends Toadlet {
 					
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
-							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }), 
+							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (advancedModeEnabled ? " ["+sc[i].getPrefix() + '.' + o[j].getName() + ']' : ""), 
 							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc()));
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
@@ -179,7 +183,7 @@ public class ConfigToadlet extends Toadlet {
 			
 			if(displayedConfigElements>0) {
 				formNode.addChild("div", "class", "configprefix", sc[i].getPrefix());
-				formNode.addChild("a", "name", sc[i].getPrefix());
+				formNode.addChild("a", "id", sc[i].getPrefix());
 				formNode.addChild(configGroupUlNode);
 			}
 		}
@@ -187,7 +191,7 @@ public class ConfigToadlet extends Toadlet {
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
 		
-		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
 	public String supportedMethods() {

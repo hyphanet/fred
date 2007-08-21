@@ -26,6 +26,15 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	private FreenetURI key;
 	private short archiveType;
 	private boolean forceRefetchArchive;
+	/** Archive size */
+	private long lastSize = -1;
+	/** Archive hash */
+	private byte[] lastHash;
+	/** Index of still-cached ArchiveStoreItems with this key.
+	 * Note that we never ever hold this and then take another lock! In particular
+	 * we must not take the ArchiveManager lock while holding this lock. It must be
+	 * the inner lock to avoid deadlocks. */
+	private final DoublyLinkedListImpl myItems;
 	
 	public ArchiveStoreContext(ArchiveManager manager, FreenetURI key, short archiveType, boolean forceRefetchArchive) {
 		this.manager = manager;
@@ -46,6 +55,8 @@ public class ArchiveStoreContext implements ArchiveHandler {
 
 	/**
 	 * Fetch a file in an archive.
+	 * @return A Bucket containing the data. This will not be freed until the 
+	 * client is finished with it i.e. calls free() or it is finalized.
 	 */
 	public Bucket get(String internalName, ArchiveContext archiveContext, ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
@@ -67,9 +78,6 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		return null;
 	}
 
-	// Archive size
-	long lastSize = -1;
-	
 	/** Returns the size of the archive last time we fetched it, or -1 */
 	long getLastSize() {
 		return lastSize;
@@ -80,9 +88,6 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		lastSize = size;
 	}
 
-	// Archive hash
-	
-	byte[] lastHash;
 	
 	/** Returns the hash of the archive last time we fetched it, or null */
 	public byte[] getLastHash() {
@@ -93,11 +98,6 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	public void setLastHash(byte[] realHash) {
 		lastHash = realHash;
 	}
-	
-	// Index of still-cached ArchiveStoreItems with this key
-	
-	/** Index of still-cached ArchiveStoreItems with this key */
-	final DoublyLinkedListImpl myItems;
 
 	/**
 	 * Remove all ArchiveStoreItems with this key from the cache.
@@ -110,7 +110,6 @@ public class ArchiveStoreContext implements ArchiveHandler {
 			}
 			if(item == null) break;
 			manager.removeCachedItem(item);
-			item.context.removeItem(item);
 		}
 	}
 
@@ -121,14 +120,14 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		}
 	}
 
-	/** Notify that an archive store item with this key has been expelled from the cache. */
+	/** Notify that an archive store item with this key has been expelled from the 
+	 * cache. Remove it from our local cache and ask it to free the bucket if 
+	 * necessary. */
 	public void removeItem(ArchiveStoreItem item) {
-		long spaceUsed = item.spaceUsed();
 		synchronized(myItems) {
 			if(myItems.remove(item) == null) return; // only removed once
 		}
 		item.innerClose();
-		manager.decrementSpace(spaceUsed);
 	}
 
 	public short getArchiveType() {
@@ -139,10 +138,11 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		return key;
 	}
 
-	public void extractToCache(Bucket bucket, ArchiveContext actx) throws ArchiveFailureException, ArchiveRestartException {
-		manager.extractToCache(key, archiveType, bucket, actx, this);
+	public void extractToCache(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
+		manager.extractToCache(key, archiveType, bucket, actx, this, element, callback);
 	}
 
+	/** Called just before extracting this container to the cache */
 	public void onExtract() {
 		forceRefetchArchive = false;
 	}

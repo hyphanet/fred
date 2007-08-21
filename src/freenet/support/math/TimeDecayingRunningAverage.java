@@ -7,6 +7,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import freenet.node.TimeSkewDetectorCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -40,6 +41,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     double minReport;
     double maxReport;
     boolean logDEBUG;
+    private final TimeSkewDetectorCallback timeSkewCallback;
     
     public String toString() {
 		long now = System.currentTimeMillis();
@@ -53,7 +55,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     }
     
     public TimeDecayingRunningAverage(double defaultValue, long halfLife,
-            double min, double max) {
+            double min, double max, TimeSkewDetectorCallback callback) {
     	curValue = defaultValue;
         this.defaultValue = defaultValue;
         started = false;
@@ -66,10 +68,11 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         if(logDEBUG)
         	Logger.debug(this, "Created "+this,
         			new Exception("debug"));
+        this.timeSkewCallback = callback;
     }
     
     public TimeDecayingRunningAverage(double defaultValue, long halfLife,
-            double min, double max, SimpleFieldSet fs) {
+            double min, double max, SimpleFieldSet fs, TimeSkewDetectorCallback callback) {
     	curValue = defaultValue;
         this.defaultValue = defaultValue;
         started = false;
@@ -87,7 +90,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         	started = fs.getBoolean("Started", false);
         	if(started) {
         		curValue = fs.getDouble("CurrentValue", curValue);
-        		if(curValue > maxReport || curValue < minReport) {
+        		if(curValue > maxReport || curValue < minReport || Double.isNaN(curValue)) {
         			curValue = defaultValue;
         			totalReports = 0;
         			createdTime = System.currentTimeMillis();
@@ -98,9 +101,10 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         		}
         	}
         }
+        this.timeSkewCallback = callback;
     }
     
-    public TimeDecayingRunningAverage(double defaultValue, double halfLife, double min, double max, DataInputStream dis) throws IOException {
+    public TimeDecayingRunningAverage(double defaultValue, double halfLife, double min, double max, DataInputStream dis, TimeSkewDetectorCallback callback) throws IOException {
         int m = dis.readInt();
         if(m != MAGIC) throw new IOException("Invalid magic "+m);
         int v = dis.readInt();
@@ -120,6 +124,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         lastReportTime = -1;
         createdTime = System.currentTimeMillis() - priorExperienceTime;
         totalReports = dis.readLong();
+        this.timeSkewCallback = callback;
     }
 
     public TimeDecayingRunningAverage(TimeDecayingRunningAverage a) {
@@ -132,6 +137,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         this.started = a.started;
         this.totalReports = a.totalReports;
         this.curValue = a.curValue;
+        this.timeSkewCallback = a.timeSkewCallback;
     }
 
     public synchronized double currentValue() {
@@ -165,13 +171,17 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 					 now - lastReportTime;
 				long uptime = now - createdTime;
 				if(thisInterval < 0) {
-					Logger.error(this, "Clock (reporting) went back in time, ignoring report: "+now+" was "+lastReportTime+" (back "+(-thisInterval)+"ms");
+					Logger.error(this, "Clock (reporting) went back in time, ignoring report: "+now+" was "+lastReportTime+" (back "+(-thisInterval)+"ms)");
 					lastReportTime = now;
+					if(timeSkewCallback != null)
+						timeSkewCallback.setTimeSkewDetectedUserAlert();
 					return;
 				}
 				double thisHalfLife = halfLife;
 				if(uptime < 0) {
-					Logger.error(this, "Clock (uptime) went back in time, ignoring report: "+now+" was "+createdTime+" (back "+(-uptime)+"ms");
+					Logger.error(this, "Clock (uptime) went back in time, ignoring report: "+now+" was "+createdTime+" (back "+(-uptime)+"ms)");
+					if(timeSkewCallback != null)
+						timeSkewCallback.setTimeSkewDetectedUserAlert();
 					return;
 				} else {
 					if((uptime / 4) < thisHalfLife) thisHalfLife = (uptime / 4);

@@ -32,6 +32,7 @@ import com.sleepycat.je.SecondaryDatabase;
 import com.sleepycat.je.SecondaryKeyCreator;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.log.DbChecksumException;
+import com.sleepycat.je.log.LogFileNotFoundException;
 import com.sleepycat.je.util.DbLoad;
 
 import freenet.crypt.CryptFormatException;
@@ -182,23 +183,32 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				System.err.println("Failed to reload database "+dbName+": "+e);
 				e.printStackTrace();
 			}
+			
+			// Should just open now, although it will need to reconstruct the secondary indexes.
 		}
 		
 		try {
+			// First try just opening it.
 			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile,
 					maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
 					reconstructFile);
 		} catch (DatabaseException e) {
 			
+			// Try a reconstruct
+			
 			System.err.println("Could not open store: "+e);
 			e.printStackTrace();
 			
 			if(type == TYPE_SSK) {
-				System.err.println("Cannot reconstruct SSK store/cache. Move the old store/cache out of the way, and report to developers.");
-				throw e;
+				System.err.println("Cannot reconstruct SSK store/cache! Sorry, your SSK store will now be deleted...");
+				BerkeleyDBFreenetStore.wipeOldDatabases(storeEnvironment, newDBPrefix);
+				newStoreFile.delete();
+				return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile,
+						maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
+						reconstructFile);
 			}
 			
-			System.err.println("Attempting to reconstruct...");
+			System.err.println("Attempting to reconstruct index...");
 			WrapperManager.signalStarting(5*60*60*1000);
 			
 			// Reconstruct
@@ -246,7 +256,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		dbConfig.setTransactional(true);
 		if(wipe) {
 			System.err.println("Wiping old database for "+prefix);
-			wipeOldDatabases(prefix);
+			wipeOldDatabases(environment, prefix);
 		}
 		
 		chkDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
@@ -410,7 +420,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			boolean dontCheckForHolesShrinking = false;
 			
-			long chkBlocksInDatabase = chkDB.count();
+			long chkBlocksInDatabase = highestBlockNumberInDatabase();
 			chkBlocksInStore = chkBlocksInDatabase;
 			long chkBlocksFromFile = countCHKBlocksFromFile();
 			lastRecentlyUsed = getMaxRecentlyUsed();
@@ -955,7 +965,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.reconstructFile = reconstructFile;
 		name = prefix;
 		
-		wipeOldDatabases(prefix);
+		wipeOldDatabases(environment, prefix);
 		
 		// Delete old database(s).
 		
@@ -1022,22 +1032,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		storeShutdownHook.addEarlyJob(new ShutdownHook());
 	}
 	
-	private void wipeOldDatabases(String prefix) {
-		wipeDatabase(prefix+"CHK");
-		wipeDatabase(prefix+"CHK_accessTime");
-		wipeDatabase(prefix+"CHK_blockNum");
+	private static void wipeOldDatabases(Environment env, String prefix) {
+		wipeDatabase(env, prefix+"CHK");
+		wipeDatabase(env, prefix+"CHK_accessTime");
+		wipeDatabase(env, prefix+"CHK_blockNum");
 		System.err.println("Removed old database "+prefix);
 	}
 
-	private void wipeDatabase(String name) {
+	private static void wipeDatabase(Environment env, String name) {
 		WrapperManager.signalStarting(5*60*60*1000);
-		Logger.normal(this, "Wiping database "+name);
+		Logger.normal(BerkeleyDBFreenetStore.class, "Wiping database "+name);
 		try {
-			environment.removeDatabase(null, name);
+			env.removeDatabase(null, name);
 		} catch (DatabaseNotFoundException e) {
 			System.err.println("Database "+name+" does not exist deleting it");
 		} catch (DatabaseException e) {
-			Logger.error(this, "Could not remove old database: "+name+": "+e, e);
+			Logger.error(BerkeleyDBFreenetStore.class, "Could not remove old database: "+name+": "+e, e);
 			System.err.println("Could not remove old database: "+name+": "+e);
 			e.printStackTrace();
 		}
@@ -1320,7 +1330,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 				
 				
-				block = new SSKBlock(data,header,chk, true);
+				block = new SSKBlock(data,header,chk, false);
 				
 				if(!dontPromote) {
 					storeBlock.updateRecentlyUsed();
@@ -1751,8 +1761,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				chkDB_blockNum.get(t, blockNumEntry, found, LockMode.DEFAULT);
 
 			if(success == OperationStatus.KEYEXIST || success == OperationStatus.SUCCESS) {
-				System.err.println("Trying to overwrite block "+blockNum+" but already used: "+getName());
-				Logger.error(this, "Trying to overwrite block "+blockNum+" but already used: "+getName());
+				System.err.println("Trying to overwrite block "+blockNum+" but already used: "+getName()+" for "+e);
+				e.printStackTrace();
+				Logger.error(this, "Trying to overwrite block "+blockNum+" but already used: "+getName()+" for "+e);
 				return false;
 			} else {
 				Logger.minor(this, "Key doesn't exist for block num "+blockNum+" but caught "+e, e);
@@ -1794,8 +1805,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 				Logger.error(this, "Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
 				System.err.println("Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
-				System.exit(freenet.node.Node.EXIT_DATABASE_REQUIRES_RESTART);
-			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException) {
+				WrapperManager.restart();
+				System.exit(freenet.node.NodeInitException.EXIT_DATABASE_REQUIRES_RESTART);
+			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException || ex instanceof LogFileNotFoundException ||
+					// UGH! We really shouldn't have to do this ... :(
+					(msg != null && 
+							(msg.indexOf("LogFileNotFoundException") >= 0 || msg.indexOf("DbChecksumException") >= 0)
+							|| msg.indexOf("RunRecoveryException") >= 0)) {
 				System.err.println("Corrupt database! Will be reconstructed on restart");
 				try {
 					reconstructFile.createNewFile();
@@ -1804,6 +1820,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					System.err.println("Corrupt database ("+getName()+") but could not create flag file "+reconstructFile);
 					return; // Not sure what else we can do
 				}
+			} else {
+				if(ex.getCause() != null)
+					checkSecondaryDatabaseError(ex.getCause());
 			}
 		}
 	}
@@ -2063,29 +2082,37 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					if(chkStore != null)
 						chkStore.close();
 				} catch (Throwable t) {
-					System.err.println("Caught closing database: "+t);
-					t.printStackTrace();
+					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
+						System.err.println("Caught closing database: "+t);
+						t.printStackTrace();
+					}
 				}
 				try {
 					if(chkDB_accessTime != null)
 						chkDB_accessTime.close();
 				} catch (Throwable t) {
-					System.err.println("Caught closing database: "+t);
-					t.printStackTrace();
+					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
+						System.err.println("Caught closing database: "+t);
+						t.printStackTrace();
+					}
 				}
 				try {
 					if(chkDB_blockNum != null)
 						chkDB_blockNum.close();
 				} catch (Throwable t) {
-					System.err.println("Caught closing database: "+t);
-					t.printStackTrace();
+					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
+						System.err.println("Caught closing database: "+t);
+						t.printStackTrace();
+					}
 				}
 				try {	
 					if(chkDB != null)
 						chkDB.close();
 				} catch (Throwable t) {
-					System.err.println("Caught closing database: "+t);
-					t.printStackTrace();
+					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
+						System.err.println("Caught closing database: "+t);
+						t.printStackTrace();
+					}
 				}
 				if(logMINOR) Logger.minor(this, "Closing database finished.");
 				System.err.println("Closed database");

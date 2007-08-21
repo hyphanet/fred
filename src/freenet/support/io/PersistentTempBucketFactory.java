@@ -91,22 +91,24 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		Iterator i = originalFiles.iterator();
 		while(i.hasNext()) {
 			File f = (File) (i.next());
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Deleting old tempfile "+f);
 			f.delete();
 		}
 	}
 
 	private Bucket makeRawBucket(long size) throws IOException {
-		return new FileBucket(fg.makeRandomFilename(), false, true, false, false, true);
+		return new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
 		Bucket b = makeRawBucket(size);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false));
+		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand));
 	}
 	
 	public Bucket makeEncryptedBucket() throws IOException {
 		Bucket b = makeRawBucket(-1);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false));
+		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand));
 	}
 
 	/**
@@ -128,6 +130,18 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	public File getDir() {
 		return dir;
+	}
+
+	public FilenameGenerator getGenerator() {
+		return fg;
+	}
+
+	public boolean matches(File file) {
+		return fg.matches(file);
+	}
+
+	public long getID(File file) {
+		return fg.getID(file);
 	}
 
 }

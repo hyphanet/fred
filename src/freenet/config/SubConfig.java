@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import freenet.l10n.L10n;
 import freenet.support.Logger;
@@ -199,13 +200,16 @@ public class SubConfig implements Comparable {
 
 	public SimpleFieldSet exportFieldSet(int configRequestType, boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		Set entrySet = map.entrySet();
-		Iterator i = entrySet.iterator();
+		// FIXME is any locking at all necessary here? After it has finished init, it's constant...
+		Map.Entry[] entries;
+		synchronized(this) {
+			entries = (Entry[]) map.entrySet().toArray(new Map.Entry[map.size()]);
+		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Prefix="+prefix);
-		while(i.hasNext()) {
-			Map.Entry entry = (Map.Entry) i.next();
+		for(int i=0;i<entries.length;i++) {
+			Map.Entry entry = (Map.Entry) entries[i];
 			String key = (String) entry.getKey();
 			Option o = (Option) entry.getValue();
 //			if(logMINOR)
@@ -261,6 +265,11 @@ public class SubConfig implements Comparable {
 		o.setValue(value);
 	}
 
+	public void set(String name, boolean value) throws InvalidConfigValueException {
+		BooleanOption o = (BooleanOption) map.get(name);
+		o.set(value);
+	}
+
 	/**
 	 * If the option's value is equal to the provided old default, then set it to the
 	 * new default. Used to deal with changes to important options where this is not
@@ -303,9 +312,14 @@ public class SubConfig implements Comparable {
 	}
 
 	public String getRawOption(String name) {
-		if(config instanceof PersistentConfig)
-			return ((PersistentConfig) config).origConfigFileContents.get(prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + name);
-		else return null;
+		if(config instanceof PersistentConfig) {
+			PersistentConfig pc = (PersistentConfig) config;
+			if(pc.finishedInit)
+				throw new IllegalStateException("getRawOption("+name+") on "+this+" but persistent config has been finishedInit() already!");
+			SimpleFieldSet fs = pc.origConfigFileContents;
+			if(fs == null) return null;
+			return fs.get(prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + name);
+		} else return null;
 	}
 
 }

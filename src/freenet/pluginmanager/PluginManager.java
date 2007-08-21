@@ -1,15 +1,11 @@
 /* This code is part of Freenet. It is distributed under the GNU General
-* Public License, version 2 (or at your option any later version). See
-* http://www.gnu.org/ for further details of the GPL. */
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,6 +27,7 @@ import freenet.config.SubConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.Ticker;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Logger;
@@ -42,15 +39,15 @@ import freenet.support.io.FileUtil;
 public class PluginManager {
 
 	/*
-	*
-	* TODO: Synchronize
-	* TODO: Synchronize
-	* TODO: Synchronize
-	* TODO: Synchronize
-	* TODO: Synchronize
-	*
-	*/
-	
+	 *
+	 * TODO: Synchronize
+	 * TODO: Synchronize
+	 * TODO: Synchronize
+	 * TODO: Synchronize
+	 * TODO: Synchronize
+	 *
+	 */
+
 	private HashMap toadletList;
 	private HashMap pluginInfo;
 	private PluginRespirator pluginRespirator = null;
@@ -58,7 +55,7 @@ public class PluginManager {
 	private final NodeClientCore core;
 	SubConfig pmconfig;
 	private boolean logMINOR;
-	
+
 	public PluginManager(Node node) {
 		pluginInfo = new HashMap();
 		toadletList = new HashMap();
@@ -66,7 +63,7 @@ public class PluginManager {
 		this.core = node.clientCore;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		pluginRespirator = new PluginRespirator(node, this);
-		
+
 		pmconfig = new SubConfig("pluginmanager", node.config);
 		// Start plugins in the config
 		pmconfig.register("loadplugin", null, 9, true, false, "PluginManager.loadedOnStartup", "PluginManager.loadedOnStartupLong",
@@ -79,8 +76,8 @@ public class PluginManager {
 						// FIXME
 						throw new InvalidConfigValueException(L10n.getString("PluginManager.cannotSetOnceLoaded"));
 					}
-		});
-		
+				});
+
 		String fns[] = pmconfig.getStringArr("loadplugin");
 		if (fns != null) {
 			for (int i = 0 ; i < fns.length ; i++) {
@@ -88,33 +85,33 @@ public class PluginManager {
 				startPlugin(fns[i], false);
 			}
 		}
-			
+
 		pmconfig.finishedInitialization();
 		/*System.err.println("=================================");
-		pmconfig.finishedInitialization();
-		fns = pmconfig.getStringArr("loadplugin");
-		for (int i = 0 ; i < fns.length ; i++)
-			System.err.println("Load: " + StringArrOption.decode(fns[i]));
-		System.err.println("=================================");
-		*/
+		  pmconfig.finishedInitialization();
+		  fns = pmconfig.getStringArr("loadplugin");
+		  for (int i = 0 ; i < fns.length ; i++)
+		  System.err.println("Load: " + StringArrOption.decode(fns[i]));
+		  System.err.println("=================================");
+		  */
 	}
-	
+
 	private String[] getConfigLoadString() {
 		try{
 			Iterator it = getPlugins().iterator();
 
 			Vector v = new Vector();
-			
+
 			while(it.hasNext())
 				v.add(((PluginInfoWrapper)it.next()).getFilename());
-			
+
 			return (String[]) v.toArray(new String[v.size()]);
 		}catch (NullPointerException e){
 			Logger.error(this, "error while loading plugins: disabling them:"+e);
 			return new String[0];
 		}
 	}
-	
+
 	public void startPlugin(String filename, boolean store) {
 		if (filename.trim().length() == 0)
 			return;
@@ -124,14 +121,14 @@ public class PluginManager {
 			plug = LoadPlugin(filename);
 			PluginInfoWrapper pi = PluginHandler.startPlugin(this, filename, plug, pluginRespirator);
 			// handles FProxy? If so, register
-			
+
 			if (pi.isPproxyPlugin())
 				registerToadlet(plug);
 
 			if(pi.isIPDetectorPlugin()) {
 				node.ipDetector.registerIPDetectorPlugin((FredPluginIPDetector) plug);
 			}
-			
+
 			synchronized (pluginInfo) {
 				pluginInfo.put(pi.getThreadName(), pi);
 			}
@@ -147,14 +144,14 @@ public class PluginManager {
 				System.err.println("Plugin "+filename+" appears to require a later JVM");
 				Logger.error(this, "Plugin "+filename+" appears to require a later JVM");
 				core.alerts.register(new SimpleUserAlert(true, 
-						l10n("pluginReqNewerJVMTitle", "name", filename),
-						l10n("pluginReqNewerJVM", "name", filename),
-						UserAlert.ERROR));
+							l10n("pluginReqNewerJVMTitle", "name", filename),
+							l10n("pluginReqNewerJVM", "name", filename),
+							UserAlert.ERROR));
 			}
 		}
 		if(store) core.storeConfig();
 	}
-	
+
 	private String l10n(String key, String pattern, String value) {
 		return L10n.getString("PluginManager."+key, pattern, value);
 	}
@@ -166,7 +163,7 @@ public class PluginManager {
 		}
 		Logger.normal(this, "Added HTTP handler for /plugins/"+pl.getClass().getName()+ '/');
 	}
-	
+
 	public void removePlugin(Thread t) {
 		Object removeKey = null;
 		synchronized (pluginInfo) {
@@ -180,28 +177,28 @@ public class PluginManager {
 						try {
 							toadletList.remove(pi.getPluginClassName());
 							Logger.normal(this, "Removed HTTP handler for /plugins/"+
-									pi.getPluginClassName()+ '/');
+									pi.getPluginClassName()+ '/', new Exception("debug"));
 						} catch (Throwable ex) {
 							Logger.error(this, "removing Plugin", ex);
 						}
 					}
 				}
 			}
-			
+
 			if (removeKey != null)
 				pluginInfo.remove(removeKey);
 		}
 		if(removeKey != null)
 			core.storeConfig();
 	}
-	
+
 	public void addToadletSymlinks(PluginInfoWrapper pi) {
 		synchronized (toadletList) {
 			try {
 				String targets[] = pi.getPluginToadletSymlinks();
 				if (targets == null)
 					return;
-				
+
 				for (int i = 0 ; i < targets.length ; i++) {
 					toadletList.remove(targets[i]);
 					Logger.normal(this, "Removed HTTP symlink: " + targets[i] +
@@ -212,7 +209,7 @@ public class PluginManager {
 			}
 		}
 	}
-	
+
 	public void removeToadletSymlinks(PluginInfoWrapper pi) {
 		synchronized (toadletList) {
 			String rm = null;
@@ -220,7 +217,7 @@ public class PluginManager {
 				String targets[] = pi.getPluginToadletSymlinks();
 				if (targets == null)
 					return;
-				
+
 				for (int i = 0 ; i < targets.length ; i++) {
 					rm = targets[i];
 					toadletList.remove(targets[i]);
@@ -246,7 +243,7 @@ public class PluginManager {
 		}
 		return out.toString();
 	}
-	
+
 	public Set getPlugins() {
 		HashSet out = new HashSet();
 		synchronized (pluginInfo) {
@@ -258,37 +255,37 @@ public class PluginManager {
 		}
 		return out;
 	}
-	
+
 	public String handleHTTPGet(String plugin, HTTPRequest request) throws PluginHTTPException {
 		FredPlugin handler = null;
 		synchronized (toadletList) {
 			handler = (FredPlugin)toadletList.get(plugin);
 		}
 		/*if (handler == null)
-			return null;
-			*/
-		
+		  return null;
+		  */
+
 		if (handler instanceof FredPluginHTTP)
 			return ((FredPluginHTTP)handler).handleHTTPGet(request);
-		
+
 		throw new NotFoundPluginHTTPException("Plugin not found!", "/plugins");
 	}
-	
+
 	public String handleHTTPPost(String plugin, HTTPRequest request) throws PluginHTTPException {
 		FredPlugin handler = null;
 		synchronized (toadletList) {
 			handler = (FredPlugin)toadletList.get(plugin);
 		}
 		/*if (handler == null)
-			return null;
-			*/
-		
+		  return null;
+		  */
+
 		if (handler instanceof FredPluginHTTP)
 			return ((FredPluginHTTP)handler).handleHTTPPost(request);
-		
+
 		throw new NotFoundPluginHTTPException("Plugin not found!", "/plugins");
 	}
-	
+
 	public void killPlugin(String name) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
@@ -306,18 +303,18 @@ public class PluginManager {
 			else
 				pi.stopPlugin();
 	}
-	
-	
+
+
 	/**
-	* Method to load a plugin from the given path and return is as an object.
-	* Will accept filename to be of one of the following forms:
-	* "classname" to load a class from the current classpath
-	* "classame@file:/path/to/jarfile.jar" to load class from an other jarfile.
-	*
-	* @param filename 	The filename to load from
-	* @return			An instanciated object of the plugin
-	* @throws PluginNotFoundException	If anything goes wrong.
-	*/
+	 * Method to load a plugin from the given path and return is as an object.
+	 * Will accept filename to be of one of the following forms:
+	 * "classname" to load a class from the current classpath
+	 * "classame@file:/path/to/jarfile.jar" to load class from an other jarfile.
+	 *
+	 * @param filename 	The filename to load from
+	 * @return			An instanciated object of the plugin
+	 * @throws PluginNotFoundException	If anything goes wrong.
+	 */
 	private FredPlugin LoadPlugin(String filename) throws PluginNotFoundException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Class cls = null;
@@ -334,41 +331,29 @@ public class PluginManager {
 			}
 			String pluginname = filename.substring(0, filename.length()-1);
 			filename = null;
-			
+
 			URL url;
-			DataInputStream dis;
-            InputStream is = null;
-            BufferedInputStream bis = null;
-            FileOutputStream fos = null;
-            BufferedOutputStream bos = null;
-			
+			InputStream is = null;
+
 			try {
 				url = new URL("http://downloads.freenetproject.org/alpha/plugins/" + pluginname + ".jar.url");
 				if(logMINOR) Logger.minor(this, "Downloading "+url);
 				is = url.openStream();
-				bis = new BufferedInputStream(is);
-                dis = new DataInputStream(bis);
-                
-                File pluginsDirectory = new File("plugins");
-                if(!pluginsDirectory.exists()) {
-                	Logger.normal(this, "The plugin directory hasn't been found, let's create it");
-                	if(!pluginsDirectory.mkdir())
-                		return null;
-                }
-                
-                File finalFile = new File("plugins/" + pluginname + ".jar");
-                File f = File.createTempFile(pluginname, ".tmp", pluginsDirectory);
-                fos = new FileOutputStream(f);
-                bos = new BufferedOutputStream(fos);
-                int len = 0, writenBytes = 0;
-                byte[] buffer = new byte[4096];
-                while ((len = dis.read(buffer)) != -1) {
-                        bos.write(buffer, writenBytes, len);
-                        writenBytes +=len;
-                }
-                f.renameTo(finalFile);
-    			filename = "*@file://" + FileUtil.getCanonicalFile(f);
-    			if(logMINOR) Logger.minor(this, "Rewritten to "+filename);
+				
+				File pluginsDirectory = new File("plugins");
+				if(!pluginsDirectory.exists()) {
+					Logger.normal(this, "The plugin directory hasn't been found, let's create it");
+					if(!pluginsDirectory.mkdir())
+						return null;
+				}
+
+				File finalFile = new File("plugins/" + pluginname + ".jar");
+				if(!FileUtil.writeTo(is, finalFile))
+					Logger.error(this, "Failed to rename the temporary file into "+finalFile);
+					
+				filename = "*@file://" + FileUtil.getCanonicalFile(finalFile);
+				if(logMINOR) Logger.minor(this, "Rewritten to "+filename);
+				
 			} catch (MalformedURLException mue) {
 				Logger.error(this, "MAlformedURLException has occured : "+ mue, mue);
 				return null;
@@ -381,16 +366,13 @@ public class PluginManager {
 				return null;
 			} finally {
 				try {
-					if(bis != null) bis.close();
 					if(is != null) is.close();
-					if(bos != null) bos.close();
-					if(fos != null) fos.close();
 				} catch (IOException ioe) {}
 			}
 			if(filename == null)
 				return null;
 		}
-		
+
 		BufferedReader in = null;
 		InputStream is = null;
 		if ((filename.indexOf("@") >= 0)) {
@@ -400,7 +382,7 @@ public class PluginManager {
 				try {
 					String realURL = null;
 					String realClass = null;
-					
+
 					// Load the jar-file
 					String[] parts = filename.split("@");
 					if (parts.length != 2) {
@@ -409,7 +391,7 @@ public class PluginManager {
 					realClass = parts[0];
 					realURL = parts[1];
 					if(logMINOR) Logger.minor(this, "Class: "+realClass+" URL: "+realURL);
-					
+
 					if (filename.endsWith(".url")) {
 						if(!assumeURLRedirect) {
 							// Load the txt-file
@@ -417,7 +399,7 @@ public class PluginManager {
 							URLConnection uc = url.openConnection();
 							in = new BufferedReader(
 									new InputStreamReader(uc.getInputStream()));
-							
+
 							realURL = in.readLine();
 							if(realURL == null)
 								throw new PluginNotFoundException("Initialization error: " + url +
@@ -428,21 +410,21 @@ public class PluginManager {
 						}
 						assumeURLRedirect = !assumeURLRedirect;
 					}
-					
+
 					// Load the class inside file
 					URL[] serverURLs = new URL[]{new URL(realURL)};
 					ClassLoader cl = new URLClassLoader(serverURLs);
-					
-					
+
+
 					// Handle automatic fetching of pluginclassname
 					if (realClass.equals("*")) {
-						
+
 						// Clean URL
 						URI liburi = URIPreEncoder.encodeURI(realURL);
 						if(logMINOR)
 							Logger.minor(this, "cleaned url: "+realURL+" -> "+liburi.toString());
 						realURL = liburi.toString();
-						
+
 						URL url = new URL("jar:"+realURL+"!/");
 						JarURLConnection jarConnection = (JarURLConnection)url.openConnection();
 						// Java seems to cache even file: urls...
@@ -450,12 +432,12 @@ public class PluginManager {
 						JarFile jf = jarConnection.getJarFile();
 						//URLJarFile jf = new URLJarFile(new File(liburi));
 						//is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
-						
+
 						//BufferedReader manifest = new BufferedReader(new InputStreamReader(cl.getResourceAsStream("/META-INF/MANIFEST.MF")));
-						
+
 						//URL url = new URL(parts[1]);
 						//URLConnection uc = cl.getResource("/META-INF/MANIFEST.MF").openConnection();
-						
+
 						is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
 						in = new BufferedReader(new InputStreamReader(is));	
 						String line;
@@ -468,14 +450,14 @@ public class PluginManager {
 						}
 						//System.err.println("Real classname: " + realClass);
 					}
-					
+
 					cls = cl.loadClass(realClass);
-					
+
 				} catch (Exception e) {
 					if (tries >= 5)
 						throw new PluginNotFoundException("Initialization error:"
 								+ filename, e);
-					
+
 					try {
 						Thread.sleep(100);
 					} catch (Exception ee) {}
@@ -495,10 +477,10 @@ public class PluginManager {
 				throw new PluginNotFoundException(filename);
 			}
 		}
-		
+
 		if(cls == null)
 			throw new PluginNotFoundException("Unknown error");
-		
+
 		// Class loaded... Objectize it!
 		Object o = null;
 		try {
@@ -507,12 +489,16 @@ public class PluginManager {
 			throw new PluginNotFoundException("Could not re-create plugin:" +
 					filename, e);
 		}
-		
+
 		// See if we have the right type
 		if (!(o instanceof FredPlugin)) {
 			throw new PluginNotFoundException("Not a plugin: " + filename);
 		}
-		
+
 		return (FredPlugin)o;
+	}
+	
+	Ticker getTicker() {
+		return node.getTicker();
 	}
 }

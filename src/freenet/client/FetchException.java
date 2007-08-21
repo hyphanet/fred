@@ -127,6 +127,18 @@ public class FetchException extends Exception {
 			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+t.getMessage(),t);
 	}
 
+	public FetchException(int mode, String reason, Throwable t) {
+		super(reason+" : "+getMessage(mode)+": "+t.getMessage());
+		extraMessage = t.getMessage();
+		this.mode = mode;
+		errorCodes = null;
+		initCause(t);
+		newURI = null;
+		expectedSize = -1;
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+t.getMessage(),t);
+	}
+
 	public FetchException(int mode, FailureCodeTracker errorCodes) {
 		super(getMessage(mode));
 		extraMessage = null;
@@ -175,6 +187,18 @@ public class FetchException extends Exception {
 		super(getMessage(newMode)+(e.extraMessage != null ? ": "+e.extraMessage : ""));
 		this.mode = newMode;
 		this.newURI = e.newURI;
+		this.errorCodes = e.errorCodes;
+		this.expectedMimeType = e.expectedMimeType;
+		this.expectedSize = e.expectedSize;
+		this.extraMessage = e.extraMessage;
+		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
+	}
+
+	public FetchException(FetchException e, FreenetURI uri) {
+		super(e.getMessage());
+		initCause(e);
+		this.mode = e.mode;
+		this.newURI = uri;
 		this.errorCodes = e.errorCodes;
 		this.expectedMimeType = e.expectedMimeType;
 		this.expectedSize = e.expectedSize;
@@ -273,6 +297,10 @@ public class FetchException extends Exception {
 	public static final int ARCHIVE_RESTART = 26;
 	/** There is a more recent version of the USK, ~= HTTP 301; FProxy will turn this into a 301 */
 	public static final int PERMANENT_REDIRECT = 27;
+	/** Requestor specified a list of allowed MIME types, and the key's type wasn't in the list */
+	public static final int WRONG_MIME_TYPE = 29;
+	/** A node killed the request because it had recently been tried and had DNFed */
+	public static final int RECENTLY_FAILED = 30;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -307,6 +335,7 @@ public class FetchException extends Exception {
 		case REJECTED_OVERLOAD:
 		case TRANSFER_FAILED:
 		case ALL_DATA_NOT_FOUND:
+		case RECENTLY_FAILED: // wait a bit, but fine
 		// Not usually fatal
 		case SPLITFILE_ERROR:
 			return false;
@@ -320,6 +349,7 @@ public class FetchException extends Exception {
 		case CANCELLED:
 		case ARCHIVE_RESTART:
 		case PERMANENT_REDIRECT:
+		case WRONG_MIME_TYPE:
 			// Fatal
 			return true;
 			

@@ -14,6 +14,8 @@ import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.Key;
+import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
@@ -24,8 +26,8 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
-import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SectoredRandomGrabArrayWithInt;
+import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SortedVectorByNumber;
 import freenet.support.api.StringCallback;
 
@@ -94,6 +96,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public final String name;
 	private final LinkedList /* <WeakReference <RandomGrabArray> > */ recentSuccesses = new LinkedList();
 	
+	/** All pending gets by key. Used to automatically satisfy pending requests when either the key is fetched by
+	 * an overlapping request, or it is fetched by a request from another node. Operations on this are synchronized on
+	 * itself. */
+	private final HashMap /* <Key, SendableGet[]> */ pendingKeys;
+	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
 	public static final String PRIORITY_HARD = "HARD";
@@ -159,6 +166,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.isSSKScheduler = forSSKs;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		allRequestsByClientRequest = new HashMap();
+		if(forInserts)
+			pendingKeys = null;
+		else
+			pendingKeys = new HashMap();
 		
 		this.name = name;
 		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
@@ -190,15 +201,22 @@ public class ClientRequestScheduler implements RequestScheduler {
 				int[] keyTokens = getter.allKeys();
 				for(int i=0;i<keyTokens.length;i++) {
 					int tok = keyTokens[i];
-					ClientKeyBlock block;
+					ClientKeyBlock block = null;
 					try {
 						ClientKey key = getter.getKey(tok);
 						if(key == null) {
 							if(logMINOR)
 								Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
 							continue;
-						} else
-							block = node.fetchKey(key, getter.dontCache());
+						} else {
+							if(getter.getContext().blocks != null)
+								block = getter.getContext().blocks.get(key);
+							if(block == null)
+								block = node.fetchKey(key, getter.dontCache());
+							if(block == null) {
+								addPendingKey(key, getter);
+							}
+						}
 					} catch (KeyVerifyException e) {
 						// Verify exception, probably bogus at source;
 						// verifies at low-level, but not at decode.
@@ -223,6 +241,36 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	private void addPendingKey(ClientKey key, SendableGet getter) {
+		Key nodeKey = key.getNodeKey();
+		synchronized(pendingKeys) {
+			Object o = pendingKeys.get(nodeKey);
+			if(o == null) {
+				pendingKeys.put(nodeKey, getter);
+			} else if(o instanceof SendableGet) {
+				SendableGet oldGet = (SendableGet) o;
+				if(oldGet != getter) {
+					pendingKeys.put(nodeKey, new SendableGet[] { oldGet, getter });
+				}
+			} else {
+				SendableGet[] gets = (SendableGet[]) o;
+				boolean found = false;
+				for(int j=0;j<gets.length;j++) {
+					if(gets[j] == getter) {
+						found = true;
+						break;
+					}
+				}
+				if(!found) {
+					SendableGet[] newGets = new SendableGet[gets.length+1];
+					System.arraycopy(gets, 0, newGets, 0, gets.length);
+					newGets[gets.length] = getter;
+					pendingKeys.put(nodeKey, newGets);
+				}
+			}
+		}
+	}
+
 	private synchronized void innerRegister(SendableRequest req) {
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount());
 		addToGrabArray(req.getPriorityClass(), req.getRetryCount(), req.getClient(), req.getClientRequest(), req);
@@ -384,6 +432,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 							allRequestsByClientRequest.remove(cr);
 						if(logMINOR) Logger.minor(this, "Removed from HashSet for "+cr+" which now has "+v.size()+" elements");
 					}
+					if(!isInsertScheduler) {
+						removePendingKeys((SendableGet) req, true);
+					}
 				}
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req);
 				return req;
@@ -393,6 +444,71 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return null;
 	}
 	
+	public void removePendingKey(SendableGet getter, boolean complain, Key key) {
+		synchronized(pendingKeys) {
+			Object o = pendingKeys.get(key);
+			if(o == null) {
+				if(complain)
+					Logger.normal(this, "Not found: "+getter+" for "+key+" removing (no such key)");
+			} else if(o instanceof SendableGet) {
+				SendableGet oldGet = (SendableGet) o;
+				if(oldGet != getter) {
+					if(complain)
+						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
+				} else {
+					pendingKeys.remove(key);
+				}
+			} else {
+				SendableGet[] gets = (SendableGet[]) o;
+				SendableGet[] newGets = new SendableGet[gets.length-1];
+				boolean found = false;
+				int x = 0;
+				for(int j=0;j<gets.length;j++) {
+					if(j > newGets.length) {
+						if(!found) {
+							if(complain)
+								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+gets.length+" getters)");
+							return; // not here
+						}
+						if(gets[j] == getter || gets[j] == null || gets[j].isCancelled()) continue;
+						newGets[x++] = gets[j];
+					}
+				}
+				if(x != gets.length-1) {
+					SendableGet[] newNewGets = new SendableGet[x];
+					System.arraycopy(newGets, 0, newNewGets, 0, x);
+					newGets = newNewGets;
+				}
+				if(newGets.length == 0) {
+					pendingKeys.remove(key);
+				} else if(newGets.length == 1) {
+					pendingKeys.put(key, newGets[0]);
+				} else {
+					pendingKeys.put(key, newGets);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Remove a SendableGet from the list of getters we maintain for each key, indicating that we are no longer interested
+	 * in that key.
+	 * @param getter
+	 * @param complain
+	 */
+	public void removePendingKeys(SendableGet getter, boolean complain) {
+		int[] keyTokens = getter.allKeys();
+		for(int i=0;i<keyTokens.length;i++) {
+			int tok = keyTokens[i];
+			ClientKey ckey = getter.getKey(tok);
+			if(ckey == null) {
+				Logger.error(this, "Key "+tok+" is null for "+getter);
+				continue;
+			}
+			removePendingKey(getter, complain, ckey.getNodeKey());
+		}
+	}
+
 	public void reregisterAll(ClientRequester request) {
 		SendableRequest[] reqs;
 		synchronized(this) {
@@ -403,8 +519,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
-			RandomGrabArray array = req.getParentGrabArray();
-			if(array != null) array.remove(req);
+			req.unregister();
 			innerRegister(req);
 		}
 		synchronized(starter) {
@@ -423,6 +538,36 @@ public class ClientRequestScheduler implements RequestScheduler {
 			recentSuccesses.addFirst(new WeakReference(parentGrabArray));
 			while(recentSuccesses.size() > 8)
 				recentSuccesses.removeLast();
+		}
+	}
+
+	public void tripPendingKey(final KeyBlock block) {
+		final Key key = block.getKey();
+		final SendableGet[] gets;
+		Object o;
+		synchronized(pendingKeys) {
+			o = pendingKeys.get(key);
+		}
+		if(o == null) return;
+		if(o instanceof SendableGet) {
+			gets = new SendableGet[] { (SendableGet) o };
+		} else {
+			gets = (SendableGet[]) o;
+		}
+		if(gets == null) return;
+		Runnable r = new Runnable() {
+			public void run() {
+				for(int i=0;i<gets.length;i++) {
+					gets[i].onGotKey(key, block);
+				}
+			}
+		};
+		node.getTicker().queueTimedJob(r, 0); // FIXME ideally these would be completed on a single thread; when we have 1.5, use a dedicated non-parallel Executor
+	}
+
+	public boolean anyWantKey(Key key) {
+		synchronized(pendingKeys) {
+			return pendingKeys.get(key) != null;
 		}
 	}
 }

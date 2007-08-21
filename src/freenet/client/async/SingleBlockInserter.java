@@ -21,7 +21,6 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
 import freenet.support.Logger;
-import freenet.support.RandomGrabArray;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
@@ -163,7 +162,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code);
 			errors.inc(InsertException.INTERNAL_ERROR);
 		}
-		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND) {
+		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND || e.code == LowLevelPutException.ROUTE_REALLY_NOT_FOUND) {
 			consecutiveRNFs++;
 			if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+ctx.consecutiveRNFsCountAsSuccess);
 			if(consecutiveRNFs == ctx.consecutiveRNFsCountAsSuccess) {
@@ -276,8 +275,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 			finished = true;
 		}
-		RandomGrabArray arr = getParentGrabArray();
-		if(arr != null) arr.remove(this);
+		super.unregister();
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this);
 	}
 

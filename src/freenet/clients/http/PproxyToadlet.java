@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.L10n;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.AccessDeniedPluginHTTPException;
 import freenet.pluginmanager.DownloadPluginHTTPException;
@@ -22,12 +23,12 @@ import freenet.support.api.HTTPRequest;
 
 public class PproxyToadlet extends Toadlet {
 	private static final int MAX_PLUGIN_NAME_LENGTH = 1024;
-	private final PluginManager pm;
+	private final Node node;
 	private final NodeClientCore core;
 
-	public PproxyToadlet(HighLevelSimpleClient client, PluginManager pm, NodeClientCore core) {
+	public PproxyToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
 		super(client);
-		this.pm = pm;
+		this.node = node;
 		this.core = core;
 	}
 
@@ -61,6 +62,8 @@ public class PproxyToadlet extends Toadlet {
 
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Pproxy received POST on "+path);
 
+		PluginManager pm = node.pluginManager;
+		
 		if(path.length()>0)
 		{
 			try
@@ -77,28 +80,28 @@ public class PproxyToadlet extends Toadlet {
 					plugin = path.substring(0, to);
 				}
 
-				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPPost(plugin, request));
+				writeHTMLReply(ctx, 200, "OK", pm.handleHTTPPost(plugin, request));
 			}
 			catch (RedirectPluginHTTPException e) {
 				writeTemporaryRedirect(ctx, e.message, e.newLocation);
 			}
 			catch (NotFoundPluginHTTPException e) {
-				sendErrorPage(ctx, e.code, e.message, e.location);
+				sendErrorPage(ctx, NotFoundPluginHTTPException.code, e.message, e.location);
 			}
 			catch (AccessDeniedPluginHTTPException e) {
-				sendErrorPage(ctx, e.code, e.message, e.location);
+				sendErrorPage(ctx, AccessDeniedPluginHTTPException.code, e.message, e.location);
 			}
 			catch (DownloadPluginHTTPException e) {
 				// FIXME: maybe it ought to be defined like sendErrorPage : in toadlets
 
 				MultiValueTable head = new MultiValueTable();
 				head.put("Content-Disposition", "attachment; filename=\"" + e.filename + '"');
-				ctx.sendReplyHeaders(e.code, "Found", head, e.mimeType, e.data.length);
+				ctx.sendReplyHeaders(DownloadPluginHTTPException.CODE, "Found", head, e.mimeType, e.data.length);
 				ctx.writeData(e.data);
 			}
 			catch(PluginHTTPException e)
 			{
-				sendErrorPage(ctx, e.code, e.message, e.location);
+				sendErrorPage(ctx, PluginHTTPException.code, e.message, e.location);
 			}
 			catch(Throwable t)
 			{
@@ -130,7 +133,7 @@ public class PproxyToadlet extends Toadlet {
 				infoboxContent.addChild("#", l10n("pluginUnloadedWithName", "name", request.getPartAsString("remove", MAX_PLUGIN_NAME_LENGTH)));
 				infoboxContent.addChild("br");
 				infoboxContent.addChild("a", "href", "/plugins/", l10n("returnToPluginPage"));
-				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}if (request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
@@ -144,7 +147,7 @@ public class PproxyToadlet extends Toadlet {
 				unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 				unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unloadconfirm", request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH) });
 				unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n("unload") });
-				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}else if (request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				String fn = null;
@@ -196,11 +199,13 @@ public class PproxyToadlet extends Toadlet {
 		if(path.startsWith("/")) path = path.substring(1);
 		if(path.startsWith("plugins/")) path = path.substring("plugins/".length());
 
+		PluginManager pm = node.pluginManager;
+		
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Pproxy fetching "+path);
 		try {
 			if (path.equals("")) {
-				this.showPluginList(ctx, request);
+				this.showPluginList(ctx, request, pm);
 			} else {
 				// split path into plugin class name and 'data' path for plugin
 				int to = path.indexOf("/");
@@ -213,7 +218,7 @@ public class PproxyToadlet extends Toadlet {
 
 				// Plugin may need to know where it was accessed from, so it can e.g. produce relative URLs.
 				//writeReply(ctx, 200, "text/html", "OK", mkPage("plugin", pm.handleHTTPGet(plugin, data)));
-				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPGet(plugin, request));				
+				writeHTMLReply(ctx, 200, "OK", pm.handleHTTPGet(plugin, request));				
 			}
 
 			//FetchResult result = fetch(key);
@@ -221,24 +226,24 @@ public class PproxyToadlet extends Toadlet {
 		} catch (RedirectPluginHTTPException e) {
 			writeTemporaryRedirect(ctx, e.message, e.newLocation);
 		} catch (NotFoundPluginHTTPException e) {
-			sendErrorPage(ctx, e.code, e.message, e.location);
+			sendErrorPage(ctx, NotFoundPluginHTTPException.code, e.message, e.location);
 		} catch (AccessDeniedPluginHTTPException e) {
-			sendErrorPage(ctx, e.code, e.message, e.location);
+			sendErrorPage(ctx, AccessDeniedPluginHTTPException.code, e.message, e.location);
 		} catch (DownloadPluginHTTPException e) {
 			// FIXME: maybe it ought to be defined like sendErrorPage : in toadlets
 
 			MultiValueTable head = new MultiValueTable();
 			head.put("Content-Disposition", "attachment; filename=\"" + e.filename + '"');
-			ctx.sendReplyHeaders(e.code, "Found", head, e.mimeType, e.data.length);
+			ctx.sendReplyHeaders(DownloadPluginHTTPException.CODE, "Found", head, e.mimeType, e.data.length);
 			ctx.writeData(e.data);
 		} catch(PluginHTTPException e) {
-			sendErrorPage(ctx, e.code, e.message, e.location);
+			sendErrorPage(ctx, PluginHTTPException.code, e.message, e.location);
 		} catch (Throwable t) {
 			writeInternalError(t, ctx);
 		}
 	}
 
-	private void showPluginList(ToadletContext ctx, HTTPRequest request) throws ToadletContextClosedException, IOException {
+	private void showPluginList(ToadletContext ctx, HTTPRequest request, PluginManager pm) throws ToadletContextClosedException, IOException {
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
 			return;
@@ -289,7 +294,7 @@ public class PproxyToadlet extends Toadlet {
 			loadDiv.addChild("#", (l10n("loadPluginLabel") + ' '));
 			loadDiv.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "load", "40" });
 			loadDiv.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Load" });
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		} 
 	}
 }

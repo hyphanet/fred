@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import freenet.io.AddressIdentifier.AddressType;
+import freenet.support.Executor;
 import freenet.support.Logger;
 
 /**
@@ -60,9 +61,11 @@ public class NetworkInterface {
 
 	/** The number of running acceptors. */
 	private int runningAcceptors = 0;
+	
+	private final Executor executor;
 
-	public static NetworkInterface create(int port, String bindTo, String allowedHosts) throws IOException {
-		NetworkInterface iface = new NetworkInterface(port, allowedHosts);
+	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor) throws IOException {
+		NetworkInterface iface = new NetworkInterface(port, allowedHosts, executor);
 		try {
 			iface.setBindTo(bindTo);
 		} catch (IOException e) {
@@ -86,9 +89,10 @@ public class NetworkInterface {
 	 * @param allowedHosts
 	 *            A comma-separated list of allowed addresses
 	 */
-	private NetworkInterface(int port, String allowedHosts) throws IOException {
+	private NetworkInterface(int port, String allowedHosts, Executor executor) throws IOException {
 		this.port = port;
 		this.allowedHosts = new AllowedHosts(allowedHosts);
+		this.executor = executor;
 	}
 
 	/**
@@ -128,18 +132,11 @@ public class NetworkInterface {
 			acceptors.add(acceptor);
 		}
 		setSoTimeout(timeout);
-		List tempThreads = new ArrayList();
 		synchronized (syncObject) {
 			Iterator acceptors = this.acceptors.iterator();
 			while (acceptors.hasNext()) {
-				Thread t = new Thread((Acceptor) acceptors.next(), "Network Interface Acceptor");
-				t.setDaemon(true);
-				tempThreads.add(t);
+				executor.execute((Acceptor) acceptors.next(), "Network Interface Acceptor");
 			}
-		}
-		for (Iterator i = tempThreads.iterator(); i.hasNext();) {
-			((Thread) i.next()).start();
-			runningAcceptors++;
 		}
 	}
 

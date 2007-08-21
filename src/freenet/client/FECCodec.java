@@ -343,7 +343,7 @@ public abstract class FECCodec {
 		synchronized (_awaitingJobs) {
 			if(fecRunnerThread == null) {
 				if(fecRunnerThread != null) Logger.error(FECCodec.class, "The callback died!! restarting a new one, please report that error.");
-				fecRunnerThread = new Thread(fecRunner, "FEC Pool");
+				fecRunnerThread = new Thread(fecRunner, "FEC Pool "+(fecPoolCounter++));
 				fecRunnerThread.setDaemon(true);
 				fecRunnerThread.setPriority(Thread.MIN_PRIORITY);
 				
@@ -361,6 +361,7 @@ public abstract class FECCodec {
 	private static final LinkedList _awaitingJobs = new LinkedList();
 	private static final FECRunner fecRunner = new FECRunner();
 	private static Thread fecRunnerThread;
+	private static int fecPoolCounter;
 	
 	/**
 	 * A private Thread started by {@link FECCodec}...

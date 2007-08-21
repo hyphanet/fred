@@ -19,7 +19,7 @@ public class SerializableToFieldSetBucketUtil {
 	public static Bucket create(SimpleFieldSet fs, RandomSource random, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		if(fs == null) {
 			if(Logger.shouldLog(Logger.MINOR, SerializableToFieldSetBucketUtil.class))
-				Logger.minor(SerializableToFieldSetBucketUtil.class, "fs = null");
+				Logger.minor(SerializableToFieldSetBucketUtil.class, "fs = null", new Exception("debug"));
 			return null;
 		}
 		String type = fs.get("Type");
@@ -56,17 +56,17 @@ public class SerializableToFieldSetBucketUtil {
 			
 			throw new CannotCreateFromFieldSetException("No type");
 		} else if(type.equals("FileBucket")) {
-			return new FileBucket(fs, f);
+			return BaseFileBucket.create(fs, f);
 		} else if(type.equals("PaddedEphemerallyEncryptedBucket")) {
 			return new PaddedEphemerallyEncryptedBucket(fs, random, f);
 		} else if(type.equals("NullBucket")) {
 			return new NullBucket();
-		} else if(type.equals("RandomAccessFileBucket")) {
-			return new RandomAccessFileBucket(fs, f);
 		} else if(type.equals("ReadOnlyFileSliceBucket")) {
 			return new ReadOnlyFileSliceBucket(fs);
 		} else if(type.equals("DelayedFreeBucket")) {
 			return new DelayedFreeBucket(fs, random, f);
+		} else if(type.equals("PersistentTempFileBucket")) {
+			return PersistentTempFileBucket.create(fs, f);
 		} else
 			throw new CannotCreateFromFieldSetException("Unrecognized type "+type);
 	}
