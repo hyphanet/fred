@@ -982,6 +982,8 @@ public class Node implements TimeSkewDetectorCallback {
 				reconstructFile.delete();
 				throw new DatabaseException();
 			}
+			// Auto-recovery can take a long time
+			WrapperManager.signalStarting(60*60*1000);
 			env = new Environment(dbDir, envConfig);
 			mutableConfig = env.getConfig();
 		} catch (DatabaseException e) {
