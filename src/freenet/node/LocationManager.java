@@ -50,6 +50,9 @@ public class LocationManager {
     
     static final int TIMEOUT = 60*1000;
     static final int SWAP_MAX_HTL = 10;
+    /** Number of swap evaluations between resetting our location. Since we do it on both incoming and
+     * outgoing swaps, the probability is 1 in 2*SWAP_MAX_HTL on each. */
+    static final int SWAP_RESET = 1000;
     private static boolean logMINOR;
     final RandomSource r;
     final SwapRequestSender sender;
@@ -349,6 +352,13 @@ public class LocationManager {
             	if(logMINOR) Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
                 noSwaps++;
             }
+            // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
+            if(node.random.nextInt(2*SWAP_RESET) == 0) {
+                setLocation(node.random.nextDouble());
+                announceLocChange();
+                node.writeNodeFile();
+            }
+
             SHA256.returnMessageDigest(md);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
@@ -529,6 +539,14 @@ public class LocationManager {
                 	if(logMINOR) Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
                     noSwaps++;
                 }
+                
+                // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
+                if(node.random.nextInt(2*SWAP_RESET) == 0) {
+                    setLocation(node.random.nextDouble());
+                    announceLocChange();
+                    node.writeNodeFile();
+                }
+
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t, t);
             } finally {
