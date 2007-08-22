@@ -538,7 +538,7 @@ public class Node implements TimeSkewDetectorCallback {
 		random.nextBytes(buffer);
 		this.fastWeakRandom = new MersenneTwister(buffer);
 		cachedPubKeys = new LRUHashtable();
-		lm = new LocationManager(random);
+		lm = new LocationManager(random, this);
 
 		try {
 			localhostAddress = InetAddress.getByName("127.0.0.1");
@@ -1285,6 +1285,9 @@ public class Node implements TimeSkewDetectorCallback {
 //		pluginManager3 = new freenet.plugin_new.PluginManager(pluginManagerConfig);
 		
 		ipDetector.start();
+		
+		// Start sending swaps
+		lm.startSender();
 
 		// Node Updater
 		try{

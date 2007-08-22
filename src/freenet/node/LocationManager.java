@@ -64,13 +64,14 @@ public class LocationManager {
     private static boolean logMINOR;
     final RandomSource r;
     final SwapRequestSender sender;
-    Node node;
+    final Node node;
     long timeLastSuccessfullySwapped;
     
-    public LocationManager(RandomSource r) {
+    public LocationManager(RandomSource r, Node node) {
         loc = r.nextDouble();
         sender = new SwapRequestSender();
         this.r = r;
+        this.node = node;
         recentlyForwardedIDs = new Hashtable();
         // FIXME persist to disk!
         averageSwapTime = new BootstrappingDecayingRunningAverage(SEND_SWAP_INTERVAL, 0, Integer.MAX_VALUE, 20, null);
@@ -131,9 +132,8 @@ public class LocationManager {
      * Start a thread to send FNPSwapRequests every second when
      * we are not locked.
      */
-    public void startSender(Node n) {
-        this.node = n;
-        n.executor.execute(sender, "SwapRequest sender");
+    public void startSender() {
+        node.executor.execute(sender, "SwapRequest sender");
     }
 
     /**
