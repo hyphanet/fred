@@ -740,7 +740,7 @@ public class LocationManager {
             return true;
         }
         if(logMINOR) Logger.minor(this, "SwapRequest from "+pn+" - uid="+uid);
-        int htl = m.getInt(DMT.HTL)-1;
+        int htl = Math.min(m.getInt(DMT.HTL),SWAP_MAX_HTL)-1;
         // Either forward it or handle it
         if(htl == 0) {
         	if(logMINOR) Logger.minor(this, "Accepting?... "+uid);
