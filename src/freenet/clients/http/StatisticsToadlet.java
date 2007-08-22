@@ -502,9 +502,8 @@ public class StatisticsToadlet extends Toadlet {
 		if (swapsRejectedRecognizedID > 0) {
 			locationSwapList.addChild("li", "swapsRejectedRecognizedID:\u00a0" + swapsRejectedRecognizedID);
 		}
-		locationSwapList.addChild("li", "averageSwapTime:\u00a0" + averageSwapTime);
-		locationSwapList.addChild("li", "sendSwapInterval:\u00a0" + sendSwapInterval);
-		
+		locationSwapList.addChild("li", "averageSwapTime:\u00a0" + TimeUtil.formatTime(averageSwapTime, 2, true));
+		locationSwapList.addChild("li", "sendSwapInterval:\u00a0" + TimeUtil.formatTime(sendSwapInterval, 2, true));
 	}
 
 	private void drawPeerStatsBox(HTMLNode peerStatsInfobox, boolean advancedModeEnabled, int numberOfConnected, 
