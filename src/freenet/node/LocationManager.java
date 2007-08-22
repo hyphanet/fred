@@ -740,9 +740,14 @@ public class LocationManager {
             return true;
         }
         if(logMINOR) Logger.minor(this, "SwapRequest from "+pn+" - uid="+uid);
-        int htl = Math.min(m.getInt(DMT.HTL),SWAP_MAX_HTL)-1;
+        int htl = m.getInt(DMT.HTL);
+        if(htl > SWAP_MAX_HTL) {
+        	Logger.error(this, "Bogus swap HTL: "+htl+" from "+pn+" uid="+uid);
+        	htl = SWAP_MAX_HTL;
+        }
+        htl--;
         // Either forward it or handle it
-        if(htl == 0) {
+        if(htl <= 0) {
         	if(logMINOR) Logger.minor(this, "Accepting?... "+uid);
             // Accept - handle locally
             if(!lock()) {
