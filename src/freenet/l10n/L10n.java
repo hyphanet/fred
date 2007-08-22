@@ -37,7 +37,7 @@ public class L10n {
 	
 	// English has to remain the first one!
 	public static final String FALLBACK_DEFAULT = "en";
-	public static final String[] AVAILABLE_LANGUAGES = { "en", "de", "fr", "it", "no", "pl", "se", "unlisted" };
+	public static final String[] AVAILABLE_LANGUAGES = { "en", "de", "fr", "it", "no", "pl", "se", "es", "unlisted" };
 	private final String selectedLanguage;
 	
 	private static SimpleFieldSet currentTranslation = null;
