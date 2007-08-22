@@ -49,7 +49,7 @@ public class LocationManager {
     }
     
     static final int TIMEOUT = 60*1000;
-    static final int SWAP_MAX_HTL = 6;
+    static final int SWAP_MAX_HTL = 10;
     private static boolean logMINOR;
     final RandomSource r;
     final SwapRequestSender sender;
