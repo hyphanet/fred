@@ -49,6 +49,7 @@ public class LocationManager {
     }
     
     static final int TIMEOUT = 60*1000;
+    static final int SWAP_MAX_HTL = 6;
     private static boolean logMINOR;
     final RandomSource r;
     final SwapRequestSender sender;
@@ -388,7 +389,7 @@ public class LocationManager {
                 
                 byte[] myHash = SHA256.digest(myValue);
                 
-                Message m = DMT.createFNPSwapRequest(uid, myHash, 6);
+                Message m = DMT.createFNPSwapRequest(uid, myHash, SWAP_MAX_HTL);
                 
                 PeerNode pn = node.peers.getRandomPeer();
                 if(pn == null) {
