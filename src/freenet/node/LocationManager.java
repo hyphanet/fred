@@ -130,7 +130,8 @@ public class LocationManager {
      */
     public class SwapRequestSender implements Runnable {
 
-        int sendInterval = 2000;
+    	// FIXME vary automatically
+        int sendInterval = 5000;
         
         public void run() {
             while(true) {
