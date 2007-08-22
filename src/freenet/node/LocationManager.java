@@ -706,9 +706,9 @@ public class LocationManager {
      */
     public boolean handleSwapRequest(Message m) {
         PeerNode pn = (PeerNode)m.getSource();
-        long uid = m.getLong(DMT.UID);
-        Long luid = new Long(uid);
-        long oid = uid+1;
+        long oldID = m.getLong(DMT.UID);
+        Long luid = new Long(oldID);
+        long newID = oldID+1;
         // We have two separate IDs so we can deal with two visits
         // separately. This is because we want it to be as random 
         // as possible.
@@ -718,7 +718,7 @@ public class LocationManager {
         if(item != null) {
         	if(logMINOR) Logger.minor(this, "Rejecting - same ID as previous request");
             // Reject
-            Message reject = DMT.createFNPSwapRejected(uid);
+            Message reject = DMT.createFNPSwapRejected(oldID);
             try {
                 pn.sendAsync(reject, null, 0, null);
             } catch (NotConnectedException e) {
@@ -730,7 +730,7 @@ public class LocationManager {
         if(pn.shouldRejectSwapRequest()) {
         	if(logMINOR) Logger.minor(this, "Advised to reject SwapRequest by PeerNode - rate limit");
             // Reject
-            Message reject = DMT.createFNPSwapRejected(uid);
+            Message reject = DMT.createFNPSwapRejected(oldID);
             try {
                 pn.sendAsync(reject, null, 0, null);
             } catch (NotConnectedException e) {
@@ -739,21 +739,21 @@ public class LocationManager {
             swapsRejectedRateLimit++;
             return true;
         }
-        if(logMINOR) Logger.minor(this, "SwapRequest from "+pn+" - uid="+uid);
+        if(logMINOR) Logger.minor(this, "SwapRequest from "+pn+" - uid="+oldID);
         int htl = m.getInt(DMT.HTL);
         if(htl > SWAP_MAX_HTL) {
-        	Logger.error(this, "Bogus swap HTL: "+htl+" from "+pn+" uid="+uid);
+        	Logger.error(this, "Bogus swap HTL: "+htl+" from "+pn+" uid="+oldID);
         	htl = SWAP_MAX_HTL;
         }
         htl--;
         // Either forward it or handle it
         if(htl <= 0) {
-        	if(logMINOR) Logger.minor(this, "Accepting?... "+uid);
+        	if(logMINOR) Logger.minor(this, "Accepting?... "+oldID);
             // Accept - handle locally
             if(!lock()) {
-            	if(logMINOR) Logger.minor(this, "Can't obtain lock on "+uid+" - rejecting to "+pn);
+            	if(logMINOR) Logger.minor(this, "Can't obtain lock on "+oldID+" - rejecting to "+pn);
                 // Reject
-                Message reject = DMT.createFNPSwapRejected(uid);
+                Message reject = DMT.createFNPSwapRejected(oldID);
                 try {
                     pn.sendAsync(reject, null, 0, null);
                 } catch (NotConnectedException e1) {
@@ -763,11 +763,11 @@ public class LocationManager {
                 return true;
             }
             try {
-                item = addForwardedItem(uid, oid, pn, null);
+                item = addForwardedItem(oldID, newID, pn, null);
                 // Locked, do it
                 IncomingSwapRequestHandler isrh =
                     new IncomingSwapRequestHandler(m, pn, item);
-                if(logMINOR) Logger.minor(this, "Handling... "+uid);
+                if(logMINOR) Logger.minor(this, "Handling... "+oldID);
                 node.executor.execute(isrh, "Incoming swap request handler for port "+node.getDarknetPortNumber());
                 return true;
             } catch (Error e) {
@@ -779,14 +779,14 @@ public class LocationManager {
             }
         } else {
             m.set(DMT.HTL, htl);
-            m.set(DMT.UID, oid);
-            if(logMINOR) Logger.minor(this, "Forwarding... "+uid);
+            m.set(DMT.UID, newID);
+            if(logMINOR) Logger.minor(this, "Forwarding... "+oldID);
             while(true) {
                 // Forward
                 PeerNode randomPeer = node.peers.getRandomPeer(pn);
                 if(randomPeer == null) {
-                	if(logMINOR) Logger.minor(this, "Late reject "+uid);
-                    Message reject = DMT.createFNPSwapRejected(uid);
+                	if(logMINOR) Logger.minor(this, "Late reject "+oldID);
+                    Message reject = DMT.createFNPSwapRejected(oldID);
                     try {
                         pn.sendAsync(reject, null, 0, null);
                     } catch (NotConnectedException e1) {
@@ -795,14 +795,14 @@ public class LocationManager {
                     swapsRejectedNowhereToGo++;
                     return true;
                 }
-                if(logMINOR) Logger.minor(this, "Forwarding "+uid+" to "+randomPeer);
-                item = addForwardedItem(uid, oid, pn, randomPeer);
+                if(logMINOR) Logger.minor(this, "Forwarding "+oldID+" to "+randomPeer);
+                item = addForwardedItem(oldID, newID, pn, randomPeer);
                 item.successfullyForwarded = false;
                 try {
                     // Forward the request.
                     // Note that we MUST NOT send this blocking as we are on the
                     // receiver thread.
-                    randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(uid), pn, item), 0, null);
+                    randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(oldID), pn, item), 0, null);
                 } catch (NotConnectedException e) {
                     // Try a different node
                     continue;
