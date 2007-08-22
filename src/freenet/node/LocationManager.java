@@ -51,7 +51,7 @@ public class LocationManager {
     static final int TIMEOUT = 60*1000;
     static final int SWAP_MAX_HTL = 10;
     /** Number of swap evaluations, either incoming or outgoing, between resetting our location. */
-    static final int SWAP_RESET = 2000;
+    static final int SWAP_RESET = 4000;
     private static boolean logMINOR;
     final RandomSource r;
     final SwapRequestSender sender;
