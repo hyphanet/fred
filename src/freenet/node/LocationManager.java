@@ -709,11 +709,13 @@ public class LocationManager {
         long oldID = m.getLong(DMT.UID);
         Long luid = new Long(oldID);
         long newID = oldID+1;
-        // We have two separate IDs so we can deal with two visits
-        // separately. This is because we want it to be as random 
-        // as possible.
-        // This means we can and should check for the same ID being
-        // sent twice.
+        /**
+         * UID is used to record the state i.e. UID x, came in from node a, forwarded to node b.
+         * We increment it on each hop, because in order for the node selection to be as random as
+         * possible we *must allow loops*! I.e. the same swap chain may pass over the same node 
+         * twice or more. However, if we get a request with either the incoming or the outgoing 
+         * UID, we can safely kill it as it's clearly the result of a bug.
+         */
         RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
         if(item != null) {
         	if(logMINOR) Logger.minor(this, "Rejecting - same ID as previous request");
