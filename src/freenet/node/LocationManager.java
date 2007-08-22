@@ -52,10 +52,11 @@ public class LocationManager {
     static final int SWAP_MAX_HTL = 10;
     /** Number of swap evaluations, either incoming or outgoing, between resetting our location. */
     static final int SWAP_RESET = 4000;
+	// FIXME vary automatically
+    static final int SEND_SWAP_INTERVAL = 8000;
     private static boolean logMINOR;
     final RandomSource r;
     final SwapRequestSender sender;
-    SwapRequestInterval interval;
     Node node;
     long timeLastSuccessfullySwapped;
     
@@ -120,9 +121,8 @@ public class LocationManager {
      * Start a thread to send FNPSwapRequests every second when
      * we are not locked.
      */
-    public void startSender(Node n, SwapRequestInterval interval) {
+    public void startSender(Node n) {
         this.node = n;
-        this.interval = interval;
         n.executor.execute(sender, "SwapRequest sender");
     }
 
@@ -132,16 +132,13 @@ public class LocationManager {
      */
     public class SwapRequestSender implements Runnable {
 
-    	// FIXME vary automatically
-        int sendInterval = 8000;
-        
         public void run() {
             while(true) {
                 try {
                     long startTime = System.currentTimeMillis();
                     double nextRandom = r.nextDouble();
                     while(true) {
-                        int sleepTime = interval.getValue();
+                        int sleepTime = SEND_SWAP_INTERVAL;
                         sleepTime *= nextRandom;
                         sleepTime = Math.min(sleepTime, Integer.MAX_VALUE);
                         long endTime = startTime + (int)sleepTime;

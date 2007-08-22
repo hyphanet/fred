@@ -331,7 +331,7 @@ public class NodeStarter
 	 */
 	public static Node createTestNode(int port, String testName, boolean doClient, 
 			boolean doSwapping, boolean disableProbabilisticHTLs, short maxHTL,
-			int dropProb, int swapInterval, RandomSource random, Executor executor) throws NodeInitException {
+			int dropProb, RandomSource random, Executor executor) throws NodeInitException {
 		
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -356,7 +356,6 @@ public class NodeStarter
 		configFS.putSingle("node.nodeDir", portDir.toString());
 		configFS.put("node.maxHTL", maxHTL);
 		configFS.put("node.testingDropPacketsEvery", dropProb);
-		configFS.put("node.swapRequestSendInterval", swapInterval);
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 		

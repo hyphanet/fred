@@ -333,13 +333,11 @@ public class Node implements TimeSkewDetectorCallback {
 	final LRUHashtable cachedPubKeys;
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
-	final StaticSwapRequestInterval swapInterval;
 	public final DoubleTokenBucket outputThrottle;
 	private int outputBandwidthLimit;
 	private int inputBandwidthLimit;
 	boolean inputLimitDefault;
 	public static final short DEFAULT_MAX_HTL = (short)10;
-	public static final int DEFAULT_SWAP_INTERVAL = 2000;
 	private short maxHTL;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
@@ -670,21 +668,6 @@ public class Node implements TimeSkewDetectorCallback {
 			inputLimitDefault = true;
 			ibwLimit = obwLimit * 4;
 		}
-		
-		// SwapRequestInterval
-		
-		nodeConfig.register("swapRequestSendInterval", DEFAULT_SWAP_INTERVAL, sortOrder++, true, false,
-				"Node.swapRInterval", "Node.swapRIntervalLong",
-				new IntCallback() {
-					public int get() {
-						return swapInterval.fixedInterval;
-					}
-					public void set(int val) throws InvalidConfigValueException {
-						swapInterval.set(val);
-					}
-		});
-		
-		swapInterval = new StaticSwapRequestInterval(nodeConfig.getInt("swapRequestSendInterval"));
 		
 		// Testnet.
 		// Cannot be enabled/disabled on the fly.
@@ -1274,8 +1257,6 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	public void start(boolean noSwaps) throws NodeInitException {
 		
-		if(!noSwaps)
-			lm.startSender(this, this.swapInterval);
 		dispatcher.start(nodeStats); // must be before usm
 		dnsr.start();
 		ps.start(nodeStats);
