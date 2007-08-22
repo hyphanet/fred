@@ -618,6 +618,9 @@ public class LocationManager {
         // all multiplied together
 
         // Dump
+    	
+    	if(Math.abs(hisLoc - myLoc) <= Double.MIN_VALUE * 2)
+    		return false; // Probably swapping with self
 
         StringBuffer sb = new StringBuffer();
         
