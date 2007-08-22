@@ -2496,6 +2496,10 @@ public class Node implements TimeSkewDetectorCallback {
 		return lm.getLocChangeSession();
 	}
 	
+	public int getAverageOutgoingSwapTime() {
+		return lm.getAverageSwapTime();
+	}
+
 	public int getNumberOfRemotePeerLocationsSeenInSwaps() {
 		return lm.numberOfRemotePeerLocationsSeenInSwaps;
 	}

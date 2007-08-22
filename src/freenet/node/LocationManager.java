@@ -20,6 +20,7 @@ import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.TimeSortedHashtable;
+import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 /**
  * @author amphibian
@@ -54,6 +55,8 @@ public class LocationManager {
     static final int SWAP_RESET = 4000;
 	// FIXME vary automatically
     static final int SEND_SWAP_INTERVAL = 8000;
+    /** The average time between sending a swap request, and completion. */
+    final BootstrappingDecayingRunningAverage averageSwapTime;
     private static boolean logMINOR;
     final RandomSource r;
     final SwapRequestSender sender;
@@ -65,6 +68,9 @@ public class LocationManager {
         sender = new SwapRequestSender();
         this.r = r;
         recentlyForwardedIDs = new Hashtable();
+        // FIXME persist to disk!
+        averageSwapTime = new BootstrappingDecayingRunningAverage(SEND_SWAP_INTERVAL, 0, Integer.MAX_VALUE, 20, null);
+        
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
@@ -179,13 +185,13 @@ public class LocationManager {
                                     node.writeNodeFile();
                                 }
                             } finally {
-                                unlock();
+                                unlock(false);
                             }
-                        } else unlock();
+                        } else unlock(false);
                     } else {
                         continue;
                     }
-                    // Check the 
+                    // Send a swap request
                     startSwapRequest();
                 } catch (Throwable t) {
                     Logger.error(this, "Caught "+t, t);
@@ -226,6 +232,7 @@ public class LocationManager {
         public void run() {
             MessageDigest md = SHA256.getMessageDigest();
             
+            boolean reachedEnd = false;
             try {
             // We are already locked by caller
             // Because if we can't get lock they need to send a reject
@@ -348,6 +355,9 @@ public class LocationManager {
             	if(logMINOR) Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
                 noSwaps++;
             }
+            
+            reachedEnd = true;
+            
             // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
             if(node.random.nextInt(SWAP_RESET) == 0) {
                 setLocation(node.random.nextDouble());
@@ -359,7 +369,7 @@ public class LocationManager {
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
-            unlock();
+            unlock(reachedEnd); // we only count the time taken by our outgoing swap requests
             removeRecentlyForwardedItem(item);
         }
         }
@@ -379,6 +389,7 @@ public class LocationManager {
         public void run() {
             long uid = r.nextLong();            
             if(!lock()) return;
+            boolean reachedEnd = false;
             try {
                 startedSwaps++;
                 // We can't lock friends_locations, so lets just
@@ -536,6 +547,8 @@ public class LocationManager {
                     noSwaps++;
                 }
                 
+                reachedEnd = true;
+                
                 // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
                 if(node.random.nextInt(SWAP_RESET) == 0) {
                     setLocation(node.random.nextDouble());
@@ -546,7 +559,7 @@ public class LocationManager {
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t, t);
             } finally {
-                unlock();
+                unlock(reachedEnd);
                 if(item != null)
                     removeRecentlyForwardedItem(item);
             }
@@ -591,7 +604,10 @@ public class LocationManager {
         return true;
     }
     
-    synchronized void unlock() {
+    /**
+     * Unlock the node for swapping.
+     * @param logSwapTime If true, log the swap time. */
+    synchronized void unlock(boolean logSwapTime) {
         if(!locked)
             throw new IllegalStateException("Unlocking when not locked!");
         locked = false;
@@ -600,6 +616,7 @@ public class LocationManager {
         	Logger.minor(this, "Unlocking on port "+node.getDarknetPortNumber());
         	Logger.minor(this, "lockTime: "+lockTime);
         }
+        averageSwapTime.report(lockTime);
     }
 
     /**
@@ -791,10 +808,10 @@ public class LocationManager {
                 node.executor.execute(isrh, "Incoming swap request handler for port "+node.getDarknetPortNumber());
                 return true;
             } catch (Error e) {
-                unlock();
+                unlock(false);
                 throw e;
             } catch (RuntimeException e) {
-                unlock();
+                unlock(false);
                 throw e;
             }
         } else {
@@ -1170,5 +1187,9 @@ public class LocationManager {
 
 	public synchronized double getLocChangeSession() {
 		return locChangeSession;
+	}
+	
+	public int getAverageSwapTime() {
+		return (int) averageSwapTime.currentValue();
 	}
 }
