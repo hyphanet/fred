@@ -2500,6 +2500,10 @@ public class Node implements TimeSkewDetectorCallback {
 		return lm.getAverageSwapTime();
 	}
 
+	public int getSendSwapInterval() {
+		return lm.getSendSwapInterval();
+	}
+	
 	public int getNumberOfRemotePeerLocationsSeenInSwaps() {
 		return lm.numberOfRemotePeerLocationsSeenInSwaps;
 	}

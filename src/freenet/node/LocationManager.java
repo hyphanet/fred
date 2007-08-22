@@ -57,6 +57,10 @@ public class LocationManager {
     static final int SEND_SWAP_INTERVAL = 8000;
     /** The average time between sending a swap request, and completion. */
     final BootstrappingDecayingRunningAverage averageSwapTime;
+    /** Minimum swap delay */
+    static final int MIN_SWAP_TIME = Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS;
+    /** Maximum swap delay */
+    static final int MAX_SWAP_TIME = 60*1000;
     private static boolean logMINOR;
     final RandomSource r;
     final SwapRequestSender sender;
@@ -144,7 +148,7 @@ public class LocationManager {
                     long startTime = System.currentTimeMillis();
                     double nextRandom = r.nextDouble();
                     while(true) {
-                        int sleepTime = SEND_SWAP_INTERVAL;
+                        int sleepTime = getSendSwapInterval();
                         sleepTime *= nextRandom;
                         sleepTime = Math.min(sleepTime, Integer.MAX_VALUE);
                         long endTime = startTime + (int)sleepTime;
@@ -209,7 +213,16 @@ public class LocationManager {
                 "Outgoing swap request handler for port "+node.getDarknetPortNumber());
     }
     
-    /**
+    public int getSendSwapInterval() {
+    	int interval = (int) averageSwapTime.currentValue();
+    	if(interval < MIN_SWAP_TIME)
+    		interval = MIN_SWAP_TIME;
+    	if(interval > MAX_SWAP_TIME)
+    		interval = MAX_SWAP_TIME;
+    	return interval;
+	}
+
+	/**
      * Similar to OutgoingSwapRequestHandler, except that we did
      * not initiate the SwapRequest.
      */
