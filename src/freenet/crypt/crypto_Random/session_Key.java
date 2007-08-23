@@ -6,6 +6,9 @@ import freenet.crypt.HMAC;
 public class session_Key
 {
 	
+        public session_Key(){
+            
+        }
 	/**
           *Session key.
           *The key is generated from Hash of Message:(Ni, Nr, 0) using the DF exponentials

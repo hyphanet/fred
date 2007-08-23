@@ -4,34 +4,38 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import com.sun.java_cup.internal.version;
+import freenet.io.comm.SocketHandler;
 import java.security.MessageDigest;
 import java.util.Arrays;
-import java.lang.*;
-import java.util.ArrayList;
-import java.util.*;
 import net.i2p.util.NativeBigInteger;
-import freenet.crypt.crypto_Random.*;
 import freenet.crypt.BlockCipher;
-import freenet.crypt.DSAGroup;
-import freenet.crypt.DSAPrivateKey;
-import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanContext;
-import freenet.crypt.DummyRandomSource;
 import freenet.crypt.EntropySource;
-import freenet.crypt.Global;
+import freenet.crypt.HMAC;
+import freenet.crypt.SHA1;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
-import freenet.crypt.crypto_Random.*;
+import freenet.io.comm.AsyncMessageCallback;
+import freenet.io.comm.FreenetInetAddress;
+import freenet.io.comm.IncomingPacketFilter;
+import freenet.io.comm.Message;
 import freenet.io.comm.*;
+import freenet.io.comm.MessageCore;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Fields;
+import freenet.io.comm.PacketSocketHandler;
+import freenet.io.comm.Peer;
+import freenet.io.comm.PeerContext;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.StringArray;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
+
 
 /**
  * @author amphibian
@@ -51,7 +55,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     final PacketSocketHandler sock;
     final EntropySource fnpTimingSource;
     final EntropySource myPacketDataSource;
-    final nonceGen ng;
+    
     private static final int MAX_PACKETS_IN_FLIGHT = 256; 
     private static final int RANDOM_BYTES_LENGTH = 12;
     private static final int HASH_LENGTH = 32;
@@ -330,8 +334,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         }
         else if (negType==2){
     		/*
-    		 * We implement Just Fast Keying key management protocol with active identity     		  * protection for the initiator and no identity protection for the responder
-    		 * Refer devNotes for detailed explanation of the protocol
+    		 * We implement Just Fast Keying key management protocol with active identity protection for the initiator and no identity protection for the responder
+    		 * M1:
+                 * This is a straightforward DiffieHellman exponential.
+                 * The Initiator Nonce serves two purposes;it allows the initiator to use the same exponentials during different sessions while ensuring that the resulting session key will be different,can be used to differentiate between parallel sessions 
+                 * M2:
+                 * Responder replies with a signed copy of his own exponential, a random nonce and an authenticator calculated from a transient hash key private to the responder.
+                 * We slightly deviate JFK here;we do not send any public key information as specified in the JFK docs 
+                 * M3:
+                 * Initiator echoes the data sent by the responder including the authenticator. 
+                 * This helps the responder verify the authenticity of the returned data. 
+                 * M4:
+                 * Encrypted message of the signature on both nonces, both exponentials using the same keys as in the previous message
     		 */ 
     		if(packetType<0 || packetType>3){
     			Logger.error(this,"Unknown PacketType" + packetType + "from" + replyTo + "from" +pn); 
@@ -343,7 +357,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                        * The Initiator Nonce serves two purposes;it allows the initiator to use the same 			 * exponentials during different sessions while ensuring that the resulting 			  * session key will be different,can be used to differentiate between
     		       * parallel sessions
     		       */
-    			ProcessMessage1(pn,payload,0);			
+    			ProcessMessage1(pn,replyTo,payload,0);			
     			
     		}
     		else if(packetType==1){
@@ -353,21 +367,21 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     		       * to the responder. We slightly deviate JFK here;we do not send any public
                        * key information as specified in the JFK docs
     		       */
-    			ProcessMessage2(pn,payload,1);
+    			ProcessMessage2(pn,replyTo,payload,1);
     		}
     		else if(packetType==2){
     		      /* Initiator echoes the data sent by the responder.These messages are
                        * cached by the Responder.Receiving a duplicate message simply causes
                        * the responder to Re-transmit the corresponding message4
                        */
-                        ProcessMessage3(pn,payload,2);
+                        ProcessMessage3(pn,replyTo,payload,2);
     		}
     		else if(packetType==3){
     		      /*
     		       * Encrypted message of the signature on both nonces, both exponentials 
     		       * using the same keys as in the previous message
     		       */
-    			ProcessMessage4(pn,payload,3);
+    			ProcessMessage4(pn,replyTo,payload,3);
     		}
         }
         else {
@@ -378,7 +392,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     /*
      * Initiator DH Exponential
      */
-    private byte[] Gi(){
+    private byte[] Gi(PeerNode pn){
                 DiffieHellmanContext dh=(DiffieHellmanContext)pn.getKeyAgreementSchemeContext();
                 if(dh==null)
                 {
@@ -391,7 +405,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     /*
      * Responder DH Exponential
      */
-    private byte[] Gr(){
+    private byte[] Gr(PeerNode pn){
                 DiffieHellmanContext dh=(DiffieHellmanContext)pn.getKeyAgreementSchemeContext();
                 if(dh==null)
                 {
@@ -420,31 +434,33 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param The peerNode we are talking to
      * @param Payload
      */	
-    private void ProcessMessage1(PeerNode pn,byte[] payload,int phase)
+    private void ProcessMessage1(PeerNode pn,Peer replyTo,byte[] payload,int phase)
     {
                 long t1=System.currentTimeMillis();
-                byte[] message1=new byte[iNonce().length + Gi().length+1];
+                              
+                byte[] message1=new byte[iNonce().length + Gi(pn).length+1];
                 System.arraycopy(iNonce(),0,message1,0,iNonce().length);
-                System.arraycopy(Gi(),0,message1,iNonce().length+1,Gi().length);
+                System.arraycopy(Gi(pn),0,message1,iNonce().length+1,Gi(pn).length);
                 //Send params:Version,negType,phase,data,peernode,peer
                 sendMessage1or2Packet(1,2,0,message1,pn,replyTo);
                 long t2=System.currentTimeMillis();
                 if((t2-t1)>500)
-                        Logger.error(this,"Message1 timeout error "+" replyto "+pn.getName());
+                        Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
 
     }
     /*
      * Authenticator computed over the Responder exponentials and the Nonces
      * Used by the responder to verify the authenticity of the received data
      */
-    private void sendMessage2and3Auth(){
-                byte[] authData=new byte[iNonce().length+rNonce().length+Gr().length+1];
+    private byte[] processMessageAuth(PeerNode pn){
+                byte[] authData=new byte[iNonce().length+rNonce().length+Gr(pn).length+1];
                 System.arraycopy(iNonce(),0,authData,0,iNonce().length);
                 System.arraycopy(rNonce(),0,authData,iNonce().length+1,rNonce().length);
-		System.arraycopy(Gr(),0,authData,iNonce().length+rNonce().length+1,Gr().length);
+		System.arraycopy(Gr(pn),0,authData,iNonce().length+rNonce().length+1,Gr(pn).length);
 		//Calculate the Hash of the Concatenated data(Responder exponentials and nonces
 		//using a key that will be private to the responder
-		HKrGenerator trKey=new HKrGenerator(20);
+		HKrGenerator trKey=new HKrGenerator();
+                byte[] hkr=new byte[16];
 		hkr=trKey.getNewHKr();
 		HMAC hash=new HMAC(SHA1.getInstance());
                 /*
@@ -465,10 +481,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param Payload
      */
 
-    private void ProcessMessage2(PeerNode pn,byte[] payload,int phase)
+    private void ProcessMessage2(PeerNode pn,Peer replyTo,byte[] payload,int phase)
     {
 		long t1=System.currentTimeMillis();
-		byte[] signData=new byte[Gr().length+1];
+		byte[] signData=new byte[Gr(pn).length+1];
 		//COmpute the Signature:DSA
 		DSASignature sig = crypto.sign(signData);
                 byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
@@ -477,25 +493,25 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 if(r.length > 255 || s.length > 255)
                     throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
 		//Data sent in the clear
-		byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr().length+1];
+		byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr(pn).length+1];
                 System.arraycopy(iNonce(),0,unVerifiedData,0,iNonce().length);
                 System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
-		System.arraycopy(Gr(),0,unVerifiedData,iNonce().length+rNonce().length+1,Gr().length);
+		System.arraycopy(Gr(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gr(pn).length);
 		/*
                  * Compute the authenticator
                  * Used by the responder in Message3 to verify the authenticity of the message
                  */
-		byte[] authenticator=sendMessage2and3Auth();
+		byte[] authenticator=processMessageAuth(pn);
 		byte[] Message2=new byte[authenticator.length+unVerifiedData.length+s.length+r.length+1];
 		byte[] signedData=new byte[s.length+r.length];
 		System.arraycopy(signedData,0,Message2,0,signedData.length);
 		System.arraycopy(unVerifiedData,0,Message2,signData.length+1,unVerifiedData.length);
 		System.arraycopy(authenticator,0,Message2,signedData.length+unVerifiedData.length+1,authenticator.length);
-		sendMessage1or2Packet(1,negType,phase,message2,pn,replyTo);
+                //Send params:Version,negType,phase,data,peernode,peer
+		sendMessage1or2Packet(1,2,1,Message2,pn,replyTo);
 		long t2=System.currentTimeMillis();
                 if((t2-t1)>500)
-                        Logger.error(this,"Message2 timeout error "+" replyto "+pn.getName());
-
+                        Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
 		
 }
    /*
@@ -509,19 +525,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     * @param The peerNode we are talking to
     * @param Payload
     */
-    private void ProcessMessage3(PeerNode pn,byte[] payload,int phase)			
+    private void ProcessMessage3(PeerNode pn,Peer replyTo,byte[] payload,int phase)			
     {
-    	
-	byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr().length+Gi().length+1];
+
+        long t1=System.currentTimeMillis();
+	byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr(pn).length+Gi(pn).length+1];
         System.arraycopy(iNonce(),0,unVerifiedData,0,iNonce().length);
         System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
-	System.arraycopy(Gi(),0,unVerifiedData,iNonce().length+rNonce().length+1,Gi().length);
-        System.arraycopy(Gr(),0,unVerifiedData,iNonce().length+rNonce().length+Gi().length+1,Gr().length);
+	System.arraycopy(Gi(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gi(pn).length);
+        System.arraycopy(Gr(pn),0,unVerifiedData,iNonce().length+rNonce().length+Gi(pn).length+1,Gr(pn).length);
         DSASignature sig = crypto.sign(unVerifiedData);
         byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
-        byte[] authenticator=sendMessage2and3Auth();
+        byte[] authenticator=processMessageAuth(pn);
         BlockCipher c=pn.outgoingSetupCipher;
         if(logMINOR)
             Logger.minor(this,"Cipher"+HexUtil.bytesToHex(pn.outgoingSetupKey));
@@ -547,7 +564,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(output,0,message3,0,output.length);
         System.arraycopy(authenticator,0,message3,output.length+1,authenticator.length);
 	System.arraycopy(unVerifiedData,0,message3,output.length+authenticator.length+1,unVerifiedData.length);
-        sendMessage3and4Packet(version,negType,phase,message3,pn,replyTo);
+        //Send params:Version,negType,phase,data,peernode,peer
+        sendMessage3or4Packet(1,2,2,message3,pn,replyTo);
+        long t2=System.currentTimeMillis();
+        if((t2-t1)>500)
+                Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
+
     }
     /*
      * Responder Method:Message4
@@ -561,17 +583,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param Payload
      */
  	
-    private void ProcessMessage4(PeerNode pn,byte[] payload,int phase)
+    private void ProcessMessage4(PeerNode pn,Peer replyTo,byte[] payload,int phase)
     {
 	//Responder keeps a copy of recently received message3 and corresponding message4
         //Receiving a duplicated message simply causes the responder to retransmit the
 	//corresponding message4 without creating a new state
     	
-        byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr().length+Gi().length+1];
+        byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr(pn).length+Gi(pn).length+1];
         System.arraycopy(iNonce(),0,unVerifiedData,0,iNonce().length);
         System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
-	System.arraycopy(Gi(),0,unVerifiedData,iNonce().length+rNonce().length+1,Gi().length);
-        System.arraycopy(Gr(),0,unVerifiedData,iNonce().length+rNonce().length+Gi().length+1,Gr().length);
+	System.arraycopy(Gi(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gi(pn).length);
+        System.arraycopy(Gr(pn),0,unVerifiedData,iNonce().length+rNonce().length+Gi(pn).length+1,Gr(pn).length);
         DSASignature sig = crypto.sign(unVerifiedData);
         byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
@@ -583,18 +605,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         byte[] iv=new byte[pk.lengthIV()];
         int message4Length = r.length + s.length + 2;
         byte[] message4 = new byte[message4Length];
-        System.arraycopy(iv, 0, output, 0, iv.length);
+        System.arraycopy(iv, 0, message4, 0, iv.length);
         int count = iv.length;
         if(r.length > 255 || s.length > 255)
         	throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
         message4[count++] = (byte) r.length;
         System.arraycopy(r, 0, message4, count, r.length);
         count += r.length;
-        message[count++] = (byte) s.length;
+        message4[count++] = (byte) s.length;
         System.arraycopy(s, 0, message4, count, s.length);
         count += s.length;
         pk.blockEncipher(message4, 0, message4.length);
-        sendMessage3and4Packet(version,negType,phase,message3,pn,replyTo);
+        //Send params:Version,negType,phase,data,peernode,peer 
+        sendMessage3or4Packet(1,2,3,message4,pn,replyTo);
     }	
 			
     /*
@@ -634,13 +657,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param The peer to which we need to send the packet
      */
 
-    private void sendMessage3and4Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+    private void sendMessage3or4Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
     {
                 long now = System.currentTimeMillis();
                 long delta = now - pn.lastSentPacketTime();
                 byte[] output = new byte[data.length+3];
-                if(data.length > node.usm.getMaxPacketSize())
+                if(data.length > sock.getMaxPacketSize())
                     throw new IllegalStateException("Packet length too long");
+                                  
                 output[0] = (byte) version;
                 output[1] = (byte) negType;
                 output[2] = (byte) phase;
@@ -651,7 +675,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                         sendPacket(output,replyTo,pn,0);
                 }catch(LocalAddressException e)
                 {
-                        Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
+                        Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn.getPeer());
                 }
                                   
     }
