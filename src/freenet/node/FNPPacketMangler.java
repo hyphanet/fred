@@ -459,7 +459,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(Gr(pn),0,authData,iNonce().length+rNonce().length+1,Gr(pn).length);
 		//Calculate the Hash of the Concatenated data(Responder exponentials and nonces
 		//using a key that will be private to the responder
-		HKrGenerator trKey=new HKrGenerator();
+		HKrGenerator trKey=new HKrGenerator(node);
                 byte[] hkr=new byte[16];
 		hkr=trKey.getNewHKr();
 		HMAC hash=new HMAC(SHA1.getInstance());

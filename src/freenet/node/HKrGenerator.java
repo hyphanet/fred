@@ -1,17 +1,9 @@
-/*
- * HKrGenerator.java
- *
- * Created on August 23, 2007, 5:36 PM
- *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
- */
 
 package freenet.node;
 
 /**
  *
- * @author root
+ * @author kryptos
  */
 public class HKrGenerator {
     
