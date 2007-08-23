@@ -5,6 +5,7 @@ package freenet.node.fcp;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -65,11 +66,11 @@ public class ClientPutDir extends ClientPutBase {
 	/**
 	*	Puts a disk dir
 	*/
-	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean global, boolean earlyEncode) throws IdentifierCollisionException, MalformedURLException {
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
 		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode);
 
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		this.manifestElements = makeDiskDirManifest(dir, "");
+		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles);
 		this.defaultName = defaultName;
 		makePutter();
 		if(persistenceType != PERSIST_CONNECTION) {
@@ -87,7 +88,7 @@ public class ClientPutDir extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
 	}
 
-	private HashMap makeDiskDirManifest(File dir, String prefix) {
+	private HashMap makeDiskDirManifest(File dir, String prefix, boolean allowUnreadableFiles) throws FileNotFoundException {
 
 		HashMap map = new HashMap();
 		File[] files = dir.listFiles();
@@ -98,14 +99,25 @@ public class ClientPutDir extends ClientPutBase {
 		for(int i=0; i < files.length; i++) {
 
 			File f = files[i];
-			if (f.canRead() && f.exists()) {
+			if (f.exists() && f.canRead()) {
 				if(f.isFile()) {
 					FileBucket bucket = new FileBucket(f, true, false, false, false, false);
+					if(logMINOR)
+						Logger.minor(this, "Add file : " + f.getAbsolutePath());
+					
 					map.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, DefaultMIMETypes.guessMIMEType(f.getName(), true), f.length()));
 				} else if(f.isDirectory()) {
-					map.put(f.getName(), makeDiskDirManifest(f, prefix + f.getName() + "/"));
+					if(logMINOR)
+						Logger.minor(this, "Add dir : " + f.getAbsolutePath());
+					
+					map.put(f.getName(), makeDiskDirManifest(f, prefix + f.getName() + "/", allowUnreadableFiles));
+				} else {
+					if(!allowUnreadableFiles)
+						throw new FileNotFoundException("Not a file and not a directory : " + f);
 				}
-			}
+			} else if (!allowUnreadableFiles)
+				throw new FileNotFoundException("The file does not exist or is unreadable : " + f);
+			
 		}
 
 		return map;
