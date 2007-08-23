@@ -36,7 +36,7 @@ public class NodeStarter
     private Node node;
 	private static LoggingConfigHandler logConfigHandler;
 	//TODO: cleanup
-	public static int RECOMMENDED_EXT_BUILD_NUMBER = 16;
+	public static int RECOMMENDED_EXT_BUILD_NUMBER = 17;
 	
 	/*
 		(File.separatorChar == '\\') &&
