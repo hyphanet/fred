@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
+import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertException;
@@ -61,6 +62,55 @@ public class ClientPutDir extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
 	}
 
+	/**
+	*	Puts a disk dir
+	*/
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean global, boolean earlyEncode) throws IdentifierCollisionException, MalformedURLException {
+		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode);
+
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.manifestElements = makeDiskDirManifest(dir, "");
+		this.defaultName = defaultName;
+		makePutter();
+		if(persistenceType != PERSIST_CONNECTION) {
+			client.register(this, false);
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+		}
+		if(putter != null) {
+			numberOfFiles = putter.countFiles();
+			totalSize = putter.totalSize();
+		} else {
+			numberOfFiles = -1;
+			totalSize = -1;
+		}
+		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
+	}
+
+	private HashMap makeDiskDirManifest(File dir, String prefix) {
+
+		HashMap map = new HashMap();
+		File[] files = dir.listFiles();
+		
+		if(files == null)
+			throw new IllegalArgumentException("No such directory");
+
+		for(int i=0; i < files.length; i++) {
+
+			File f = files[i];
+			if (f.canRead() && f.exists()) {
+				if(f.isFile()) {
+					FileBucket bucket = new FileBucket(f, true, false, false, false, false);
+					map.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, DefaultMIMETypes.guessMIMEType(f.getName(), true), f.length()));
+				} else if(f.isDirectory()) {
+					map.put(f.getName(), makeDiskDirManifest(f, prefix + f.getName() + "/"));
+				}
+			}
+		}
+
+		return map;
+	}
+	
 	private void makePutter() {
 		SimpleManifestPutter p;
 		try {
@@ -72,6 +122,8 @@ public class ClientPutDir extends ClientPutBase {
 		}
 		putter = p;
 	}
+
+
 
 	public ClientPutDir(SimpleFieldSet fs, FCPClient client) throws PersistenceParseException, IOException {
 		super(fs, client);
