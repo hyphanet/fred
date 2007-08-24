@@ -4,7 +4,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import com.sun.java_cup.internal.version;
+
 import freenet.io.comm.SocketHandler;
 import java.security.MessageDigest;
 import java.util.Arrays;
