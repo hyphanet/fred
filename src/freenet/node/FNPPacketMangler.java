@@ -4,7 +4,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-
 import freenet.io.comm.SocketHandler;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -22,7 +21,6 @@ import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.IncomingPacketFilter;
 import freenet.io.comm.Message;
-import freenet.io.comm.*;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer.LocalAddressException;
@@ -31,11 +29,14 @@ import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.support.HexUtil;
+import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.StringArray;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
-
+import java.util.Map;
+import java.util.HashMap;
+import java.util.*;
 
 /**
  * @author amphibian
@@ -55,6 +56,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     final PacketSocketHandler sock;
     final EntropySource fnpTimingSource;
     final EntropySource myPacketDataSource;
+    static HashMap message3Cache;
+    static HashMap message4Cache;
     
     private static final int MAX_PACKETS_IN_FLIGHT = 256; 
     private static final int RANDOM_BYTES_LENGTH = 12;
@@ -564,8 +567,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(output,0,message3,0,output.length);
         System.arraycopy(authenticator,0,message3,output.length+1,authenticator.length);
 	System.arraycopy(unVerifiedData,0,message3,output.length+authenticator.length+1,unVerifiedData.length);
-        //Send params:Version,negType,phase,data,peernode,peer
-        sendMessage3or4Packet(1,2,2,message3,pn,replyTo);
+        if(message3Duplicate(1,2,2,message3,pn,replyTo))
+            System.out.println("Send message4 directly");
+        else
+            //Send params:Version,negType,phase,data,peernode,peer
+            sendMessage3Packet(1,2,2,message3,pn,replyTo);
         long t2=System.currentTimeMillis();
         if((t2-t1)>500)
                 Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
@@ -585,10 +591,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
  	
     private void ProcessMessage4(PeerNode pn,Peer replyTo,byte[] payload,int phase)
     {
-	//Responder keeps a copy of recently received message3 and corresponding message4
-        //Receiving a duplicated message simply causes the responder to retransmit the
-	//corresponding message4 without creating a new state
-    	
+	    	
         byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr(pn).length+Gi(pn).length+1];
         System.arraycopy(iNonce(),0,unVerifiedData,0,iNonce().length);
         System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
@@ -617,11 +620,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         count += s.length;
         pk.blockEncipher(message4, 0, message4.length);
         //Send params:Version,negType,phase,data,peernode,peer 
-        sendMessage3or4Packet(1,2,3,message4,pn,replyTo);
+        sendMessage4Packet(1,2,3,message4,pn,replyTo);
     }	
 			
     /*
-     * Send Message1 packet
+     * Send Message1or2 packet
      * @param version
      * @param negType
      * @param The packet phase number
@@ -646,9 +649,43 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		{
 			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
 		}
-     }
+    }
     /*
-     * Send Message2 or 4 packet
+     * Caching recent messages
+     * @param version
+     * @param negType
+     * @param The packet phase number
+     * @param Concatenated data
+     * @param The peerNode we are talking to
+     * @param The peer to which we need to send the packet
+     * @return boolean
+     */
+    private boolean message3Duplicate(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+    {
+                //All recent messages 3 and 4 are cached
+                message3Cache = new HashMap();
+                message4Cache = new HashMap();
+                if(phase==2){
+                    message3Cache.put(data.hashCode()+"",data);
+                    for (Iterator i=message3Cache.keySet().iterator();i.hasNext();){
+                        //if duplicate message3; send corresponding message4
+                        if(data.toString().equalsIgnoreCase(i.next().toString())){
+                            sendMessage4Packet(1,2,3,data,pn,replyTo);
+                            return true;
+                        }
+                    }
+                }
+                else if(phase==3){
+                    message4Cache.put(data.toString().hashCode()+"",data.toString());
+                }
+                else{ 
+                    System.err.println("Wrong message");
+                    return false;
+                }
+                return false;
+    }
+    /*
+     * Send Message3 packet
      * @param version
      * @param negType
      * @param The packet phase number
@@ -657,14 +694,45 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param The peer to which we need to send the packet
      */
 
-    private void sendMessage3or4Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+    private void sendMessage3Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
     {
                 long now = System.currentTimeMillis();
                 long delta = now - pn.lastSentPacketTime();
                 byte[] output = new byte[data.length+3];
                 if(data.length > sock.getMaxPacketSize())
                     throw new IllegalStateException("Packet length too long");
+                          
+                output[0] = (byte) version;
+                output[1] = (byte) negType;
+                output[2] = (byte) phase;
+                System.arraycopy(data, 0, output, 3, data.length);
+                if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
+                try
+                {
+                        sendPacket(output,replyTo,pn,0);
+                }catch(LocalAddressException e)
+                {
+                        Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn.getPeer());
+                }
                                   
+    }
+    /*
+     * Send Message4 packet
+     * @param version
+     * @param negType
+     * @param The packet phase number
+     * @param Concatenated data
+     * @param The peerNode we are talking to
+     * @param The peer to which we need to send the packet
+     */
+
+    private void sendMessage4Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+    {
+                long now = System.currentTimeMillis();
+                long delta = now - pn.lastSentPacketTime();
+                byte[] output = new byte[data.length+3];
+                if(data.length > sock.getMaxPacketSize())
+                    throw new IllegalStateException("Packet length too long");
                 output[0] = (byte) version;
                 output[1] = (byte) negType;
                 output[2] = (byte) phase;
