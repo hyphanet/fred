@@ -56,8 +56,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     final PacketSocketHandler sock;
     final EntropySource fnpTimingSource;
     final EntropySource myPacketDataSource;
-    static HashMap message3Cache;
-    static HashMap message4Cache;
+    final HashMap message3Cache;
+    final HashMap message4Cache;
     
     private static final int MAX_PACKETS_IN_FLIGHT = 256; 
     private static final int RANDOM_BYTES_LENGTH = 12;
@@ -92,6 +92,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         this.sock = sock;
         fnpTimingSource = new EntropySource();
         myPacketDataSource = new EntropySource();
+        message3Cache = new HashMap();
+        message4Cache = new HashMap();
         fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
         fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -568,7 +570,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(authenticator,0,message3,output.length+1,authenticator.length);
 	System.arraycopy(unVerifiedData,0,message3,output.length+authenticator.length+1,unVerifiedData.length);
         if(message3Duplicate(1,2,2,message3,pn,replyTo))
-            System.out.println("Send message4 directly");
+            Logger.minor(this,"Duplicate message3; Send cached message 4 is retransmitted ");
         else
             //Send params:Version,negType,phase,data,peernode,peer
             sendMessage3Packet(1,2,2,message3,pn,replyTo);
@@ -651,7 +653,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
     }
     /*
-     * Caching recent messages
+     * Caching recent messages to check for duplicate/resent message3
      * @param version
      * @param negType
      * @param The packet phase number
@@ -660,13 +662,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param The peer to which we need to send the packet
      * @return boolean
      */
-    private boolean message3Duplicate(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+    private synchronized boolean message3Duplicate(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
     {
+                /*
+                 * The key for looking up messages in the cache is the authenticator
+                 * This prevents DOS attacks where the attacker randomly tries to replace encrypted blocks 
+                 * of a valid message causing a cache miss
+                 * This would result in increased processing on the Responder side->CPU exhaustion attacks
+                 */
+                byte[] cacheKey=processMessageAuth(pn);
                 //All recent messages 3 and 4 are cached
-                message3Cache = new HashMap();
-                message4Cache = new HashMap();
                 if(phase==2){
-                    message3Cache.put(data.hashCode()+"",data);
+                    message3Cache.put(cacheKey,data);
                     for (Iterator i=message3Cache.keySet().iterator();i.hasNext();){
                         //if duplicate message3; send corresponding message4
                         if(data.toString().equalsIgnoreCase(i.next().toString())){
@@ -676,10 +683,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                     }
                 }
                 else if(phase==3){
-                    message4Cache.put(data.toString().hashCode()+"",data.toString());
+                    message4Cache.put(cacheKey,data.toString());
                 }
                 else{ 
-                    System.err.println("Wrong message");
+                    Logger.error(this,"Wrong message phase");
                     return false;
                 }
                 return false;
@@ -699,7 +706,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 long now = System.currentTimeMillis();
                 long delta = now - pn.lastSentPacketTime();
                 byte[] output = new byte[data.length+3];
-                if(data.length > sock.getMaxPacketSize())
+                if((data.length+3) > sock.getMaxPacketSize())
                     throw new IllegalStateException("Packet length too long");
                           
                 output[0] = (byte) version;
@@ -731,7 +738,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 long now = System.currentTimeMillis();
                 long delta = now - pn.lastSentPacketTime();
                 byte[] output = new byte[data.length+3];
-                if(data.length > sock.getMaxPacketSize())
+                if((data.length+3) > sock.getMaxPacketSize())
                     throw new IllegalStateException("Packet length too long");
                 output[0] = (byte) version;
                 output[1] = (byte) negType;
