@@ -332,6 +332,21 @@ public class HTMLNodeTest extends TestCase {
 	}
 	
 	/**
+	 * Tests HTMLNode(String,String[],String[],String) 
+	 * constructor trying to create a node that has
+	 * different length for attributes names array and
+	 * attributes values array. It should raise an
+	 * IllegalArgument exception
+	 */
+	public void testHTMLNode_attributeArrays_differentLengths() {
+		String[] methodAttributesNameArray = {SAMPLE_ATTRIBUTE_NAME,
+				SAMPLE_ATTRIBUTE_NAME};
+		String[] methodAttributesValueArray = {SAMPLE_ATTRIBUTE_VALUE,
+				SAMPLE_ATTRIBUTE_VALUE,SAMPLE_ATTRIBUTE_VALUE};
+		testHTMLNodeArray_null(methodAttributesNameArray, methodAttributesValueArray);
+	}
+	
+	/**
 	 * Tests if the passed arrays raise an IllegalArgumentException
 	 * using them to create a new HTMLNode (i.e. one of the name or value
 	 * must be null)
@@ -464,6 +479,19 @@ public class HTMLNodeTest extends TestCase {
 				 
 				 ("</"+SAMPLE_NODE_NAME+">").toLowerCase(),
 				 methodHTMLNode.generate());
+	}
+	
+	/**
+	 * Tests generate() method with a
+	 * HTMLNode that has "%" as name.
+	 * The expected output is just the HTMLNode content
+	 */
+	public void testGenerate_fromHTMLNode_percentName() {
+		HTMLNode methodHTMLNode = new HTMLNode("%",
+				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+				SAMPLE_NODE_CONTENT);
+		assertEquals(SAMPLE_NODE_CONTENT,
+				methodHTMLNode.generate());
 	}
 	
 	/**
