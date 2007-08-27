@@ -672,15 +672,21 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                  * This would result in increased processing on the Responder side->CPU exhaustion attacks
                  */
                 byte[] cacheKey=processMessageAuth(pn);
+                Object result;
                 //All recent messages 3 and 4 are cached
                 if(phase==2){
-                    message3Cache.put(cacheKey,data);
-                    //if duplicate message3; send corresponding message4
-                    if(data.toString().equalsIgnoreCase(message3Cache.get(cacheKey).toString())){
-                     sendMessage4Packet(1,2,3,data,pn,replyTo);
-                     return true;
-                    
+                    synchronized(message3Cache) {
+                    result = message3Cache.get(cacheKey);
                     }
+                    if(result != null) {
+                        synchronized(message3Cache) {
+                        message3Cache.put(cacheKey,data);
+                    }
+                    // We don't want to keep the lock while sending
+                    sendMessage4Packet(1,2,3,data,pn,replyTo);
+                    return true;
+                    }
+                           
                 }
                 else if(phase==3){
                     message4Cache.put(cacheKey,data.toString());
