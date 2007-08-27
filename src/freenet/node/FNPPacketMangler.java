@@ -7,6 +7,7 @@ package freenet.node;
 import freenet.io.comm.SocketHandler;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Collections;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSASignature;
@@ -36,7 +37,7 @@ import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * @author amphibian
@@ -56,8 +57,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     final PacketSocketHandler sock;
     final EntropySource fnpTimingSource;
     final EntropySource myPacketDataSource;
-    final HashMap message3Cache;
-    final HashMap message4Cache;
+    final Map message3Cache;
+    final Map message4Cache;
     
     private static final int MAX_PACKETS_IN_FLIGHT = 256; 
     private static final int RANDOM_BYTES_LENGTH = 12;
@@ -92,8 +93,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         this.sock = sock;
         fnpTimingSource = new EntropySource();
         myPacketDataSource = new EntropySource();
-        message3Cache = new HashMap();
-        message4Cache = new HashMap();
+        message3Cache = Collections.synchronizedMap(new HashMap());
+        message4Cache = Collections.synchronizedMap(new HashMap());
         fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
         fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -674,12 +675,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 //All recent messages 3 and 4 are cached
                 if(phase==2){
                     message3Cache.put(cacheKey,data);
-                    for (Iterator i=message3Cache.keySet().iterator();i.hasNext();){
-                        //if duplicate message3; send corresponding message4
-                        if(data.toString().equalsIgnoreCase(i.next().toString())){
-                            sendMessage4Packet(1,2,3,data,pn,replyTo);
-                            return true;
-                        }
+                    //if duplicate message3; send corresponding message4
+                    if(data.toString().equalsIgnoreCase(message3Cache.get(cacheKey).toString())){
+                     sendMessage4Packet(1,2,3,data,pn,replyTo);
+                     return true;
+                    
                     }
                 }
                 else if(phase==3){
