@@ -175,7 +175,7 @@ public class LRUHashtableTest extends TestCase {
 	}
 	
 	/**
-	 * Tests popKey() method pushing
+	 * Tests popValue() method pushing
 	 * and popping objects and
 	 * verifying if their values are correctly 
 	 * (in a FIFO manner) fetched and the
@@ -192,6 +192,16 @@ public class LRUHashtableTest extends TestCase {
 			assertEquals(sampleObjects[i][1],methodLRUht.popValue());
 		//the HashTable must be empty
 		assertNull(methodLRUht.popKey());
+	}
+	
+	/**
+	 * Tests popValue() method
+	 * popping a value from an empty
+	 * LRUHashtable.
+	 */
+	public void testPopValueFromEmpty() {
+		LRUHashtable methodLRUht = new LRUHashtable();
+		assertNull(methodLRUht.popValue());
 	}
 
 	/**
