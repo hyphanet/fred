@@ -15,6 +15,8 @@
  */
 package freenet.support;
 
+import java.util.List;
+
 import junit.framework.TestCase;
 
 /**
@@ -168,6 +170,87 @@ public class HTMLNodeTest extends TestCase {
 			fail("Expected Exception Error Not Thrown!"); } 
 		catch (IllegalArgumentException anException) {
 			assertNotNull(anException); }
+	}
+	
+	/**
+	 * Tests addChildren(String,String,String) method
+	 * verifying if the child is correctly added
+	 * and if it generates good output using generate() method.
+	 */
+	public void testAddChild_StringStringString() {
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		methodHTMLNode.addChild(SAMPLE_NODE_NAME, 
+				SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE);
+		List childrenList = methodHTMLNode.children;
+		assertEquals(1,childrenList.size());
+		assertEquals(generateNoContentNodeOutput(SAMPLE_NODE_NAME,
+				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE),
+				((HTMLNode)childrenList.get(0)).generate());
+	}
+	
+	/**
+	 * Tests addChildren(String,String,String,String) method
+	 * verifying if the child is correctly added
+	 * and if it generates good output using generate() method.
+	 */
+	public void testAddChild_StringStringStringString() {
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		methodHTMLNode.addChild(SAMPLE_NODE_NAME, 
+				SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE,
+				SAMPLE_NODE_CONTENT);
+		List childrenList = methodHTMLNode.children;
+		assertEquals(1,childrenList.size());
+		assertEquals(generateFullNodeOutput(SAMPLE_NODE_NAME,
+				SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
+				SAMPLE_NODE_CONTENT),
+					((HTMLNode)childrenList.get(0)).generate());
+	}
+	
+	/**
+	 * Tests addChildren(String,String[],String[]) method
+	 * verifying if the child is correctly added
+	 * and the child attributes are corrects.
+	 */
+	public void testAddChild_StringArrayArray() {
+		String[] methodAttributesNamesArray = {"firstName","secondName","thirdName"};
+		String[] methodAttributesValuesArray = {"firstValue","secondValue","thirdValue"};
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		methodHTMLNode.addChild(SAMPLE_NODE_NAME, 
+				methodAttributesNamesArray, methodAttributesValuesArray);
+		testSingleChildAttributes(methodHTMLNode, 
+				methodAttributesNamesArray, methodAttributesValuesArray);
+	}
+	
+	/**
+	 * Tests addChildren(String,String[],String[],String) method
+	 * verifying if the child is correctly added
+	 * and the child attributes are corrects.
+	 */
+	public void testAddChild_StringArrayArrayString() {
+		String[] methodAttributesNamesArray = {"firstName","secondName","thirdName"};
+		String[] methodAttributesValuesArray = {"firstValue","secondValue","thirdValue"};
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		methodHTMLNode.addChild(SAMPLE_NODE_NAME, 
+				methodAttributesNamesArray, methodAttributesValuesArray,
+				SAMPLE_NODE_CONTENT);
+		testSingleChildAttributes(methodHTMLNode, 
+				methodAttributesNamesArray, methodAttributesValuesArray);
+	}
+	
+	/**
+	 * Check the passed HTMLNode only child attributes
+	 * @param aHTMLNode where we fetch the only child
+	 * @param attibutesNames the attributes names to check
+	 * @param attributesValues the attributes values to check
+	 */
+	private void testSingleChildAttributes(HTMLNode aHTMLNode,String[] attibutesNames, String[] attributesValues) {
+		List childrenList = aHTMLNode.children;
+		assertEquals(1,childrenList.size());
+		HTMLNode childHTMLNode = (HTMLNode)childrenList.get(0);
+		assertEquals(attibutesNames.length,childHTMLNode.getAttributes().size());
+		for(int i = 0 ; i<attibutesNames.length;i++)
+			assertEquals(attributesValues[i],
+					childHTMLNode.getAttribute(attibutesNames[i]));
 	}
 	
 	/**
@@ -377,6 +460,58 @@ public class HTMLNodeTest extends TestCase {
 	
 	/**
 	 * Tests generate() method with a
+	 * HTMLNode that has "textarea","div","a"
+	 * as node name, since they generates a different
+	 * output from all other names.
+	 */
+	public void testGenerate_fromHTMLNode_textareaDivA() {
+		HTMLNode methodHTMLNode;
+		String[] nodeNamesArray = {"textarea","div","a"};
+		for(int i=0;i<nodeNamesArray.length;i++) {
+			methodHTMLNode = new HTMLNode(nodeNamesArray[i],
+					SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
+			assertEquals(generateFullNodeOutput(nodeNamesArray[i], 
+					SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,""),
+					methodHTMLNode.generate());
+		}	
+	}
+	
+	/**
+	 * Tests generate() method when the
+	 * node has a special name
+	 * (i.e. "div","form","input","script","table","tr","td")
+	 * and a child
+	 */
+	public void testGenerate_fromHTMLNodeWithChild_SpecialNames() {
+		HTMLNode methodHTMLNode;
+		String[] nodeNamesArray = {"div","form","input",
+				"script","table","tr","td"};
+		HTMLNode methodChildNode = new HTMLNode(SAMPLE_NODE_NAME,
+				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+				SAMPLE_NODE_CONTENT);
+		for(int i=0;i<nodeNamesArray.length;i++) {
+			methodHTMLNode = new HTMLNode(nodeNamesArray[i],
+					SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+					SAMPLE_NODE_CONTENT);
+			methodHTMLNode.addChild(methodChildNode);
+			
+			assertEquals(("<"+nodeNamesArray[i]+" ").toLowerCase() + 
+					 SAMPLE_ATTRIBUTE_NAME + "=" +
+					 "\""+SAMPLE_ATTRIBUTE_VALUE+"\">" + '\n' +
+					 SAMPLE_NODE_CONTENT +
+					 
+					 //child
+					 generateFullNodeOutput(SAMPLE_NODE_NAME,
+								SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
+								SAMPLE_NODE_CONTENT) +
+					 
+					 ("</"+nodeNamesArray[i]+">").toLowerCase() + '\n',
+					 methodHTMLNode.generate());
+		}
+	}
+	
+	/**
+	 * Tests generate() method with a
 	 * HTMLNode with only the name.
 	 * The resulting string should be in the form:
 	 * <node_name />
@@ -410,10 +545,8 @@ public class HTMLNodeTest extends TestCase {
 	public void testGenerate_fromHTMLNode_StringStringString() {
 		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,
 				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
-		assertEquals(("<"+SAMPLE_NODE_NAME+" ").toLowerCase() + 
-					 SAMPLE_ATTRIBUTE_NAME + "=" +
-					 "\""+SAMPLE_ATTRIBUTE_VALUE+"\""+
-					 " />",
+		assertEquals(generateNoContentNodeOutput(SAMPLE_NODE_NAME,
+				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE),
 					methodHTMLNode.generate());
 	}
 	
@@ -431,6 +564,22 @@ public class HTMLNodeTest extends TestCase {
 				SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
 				SAMPLE_NODE_CONTENT),
 					methodHTMLNode.generate());
+	}
+	
+	/**
+	 * Generates the correct output for the HTMLNode.generate() method
+	 * when called from a single node having only a name and an attribute
+	 * name and value
+	 * @param aName the HTMLNode name
+	 * @param aAttributeName the HTMLNode attribute name
+	 * @param aAttributeValue the HTMLNode attribute value
+	 * @return the correct output expected by HTMLNode.generate() method
+	 */
+	private String generateNoContentNodeOutput(String aName, String aAttributeName, String aAttributeValue) {
+		return ("<"+aName+" ").toLowerCase() + 
+		aAttributeName + "=" +
+		 "\""+aAttributeValue+"\""+
+		 " />";
 	}
 	
 	/**
