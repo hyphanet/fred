@@ -15,10 +15,10 @@ public class sharedSecretKey1
         {
                 try
                 {
-                        byte[] byteArray=new byte[Ni.length + Nr.length + 1];
+                        byte[] byteArray = new byte[Ni.length + Nr.length + 1];
                         System.arraycopy(Ni,0,byteArray,0,Ni.length);
                         System.arraycopy(Nr,0,byteArray,Ni.length,Nr.length);
-                        byteArray[Ni.length + Nr.length]=(new Integer(1)).byteValue();
+                        byteArray[Ni.length + Nr.length] = (byte)1;
                         HMAC s = new HMAC(SHA1.getInstance());
                         return s.mac(DFExp,byteArray,DFExp.length);
                 }catch(Exception e){

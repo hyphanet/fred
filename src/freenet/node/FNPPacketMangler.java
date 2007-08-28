@@ -7,7 +7,6 @@ package freenet.node;
 import freenet.io.comm.SocketHandler;
 import java.security.MessageDigest;
 import java.util.Arrays;
-import java.util.Collections;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSASignature;
@@ -30,14 +29,15 @@ import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.support.HexUtil;
-import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.StringArray;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.concurrent.*;
 
 /**
  * @author amphibian
@@ -93,8 +93,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         this.sock = sock;
         fnpTimingSource = new EntropySource();
         myPacketDataSource = new EntropySource();
-        message3Cache = Collections.synchronizedMap(new HashMap());
-        message4Cache = Collections.synchronizedMap(new HashMap());
+        message3Cache = new HashMap();
+        message4Cache = new HashMap();
         fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
         fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -363,7 +363,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                        * The Initiator Nonce serves two purposes;it allows the initiator to use the same 			 * exponentials during different sessions while ensuring that the resulting 			  * session key will be different,can be used to differentiate between
     		       * parallel sessions
     		       */
-    			ProcessMessage1(pn,replyTo,payload,0);			
+    			ProcessMessage1(pn,replyTo,0);			
     			
     		}
     		else if(packetType==1){
@@ -373,21 +373,21 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     		       * to the responder. We slightly deviate JFK here;we do not send any public
                        * key information as specified in the JFK docs
     		       */
-    			ProcessMessage2(pn,replyTo,payload,1);
+    			ProcessMessage2(pn,replyTo,1);
     		}
     		else if(packetType==2){
     		      /* Initiator echoes the data sent by the responder.These messages are
                        * cached by the Responder.Receiving a duplicate message simply causes
                        * the responder to Re-transmit the corresponding message4
                        */
-                        ProcessMessage3(pn,replyTo,payload,2);
+                        sendProcessMessage3(pn,replyTo,2);
     		}
     		else if(packetType==3){
     		      /*
     		       * Encrypted message of the signature on both nonces, both exponentials 
     		       * using the same keys as in the previous message
     		       */
-    			ProcessMessage4(pn,replyTo,payload,3);
+    			ProcessMessage4(pn,replyTo,3);
     		}
         }
         else {
@@ -438,9 +438,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * Send the Initiator nonce and DiffieHellman Exponential
      * @param The packet phase number
      * @param The peerNode we are talking to
-     * @param Payload
+     * @param The peer to which we need to send the packet
      */	
-    private void ProcessMessage1(PeerNode pn,Peer replyTo,byte[] payload,int phase)
+    private void ProcessMessage1(PeerNode pn,Peer replyTo,int phase)
     {
                 long t1=System.currentTimeMillis();
                               
@@ -452,7 +452,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 long t2=System.currentTimeMillis();
                 if((t2-t1)>500)
                         Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
-
     }
     /*
      * Authenticator computed over the Responder exponentials and the Nonces
@@ -483,15 +482,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * Send a signed copy of his own exponential and grpInfo details.
      * Send an authenticator which is a hash of Ni,Nr,g^r calculated over the transient key HKr
      * @param The packet phase number
+     * @param The peer to which we need to send the packet
      * @param The peerNode we are talking to
-     * @param Payload
      */
 
-    private void ProcessMessage2(PeerNode pn,Peer replyTo,byte[] payload,int phase)
+    private void ProcessMessage2(PeerNode pn,Peer replyTo,int phase)
     {
 		long t1=System.currentTimeMillis();
 		byte[] signData=new byte[Gr(pn).length+1];
-		//COmpute the Signature:DSA
+		//Compute the Signature:DSA
 		DSASignature sig = crypto.sign(signData);
                 byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
                 byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
@@ -528,14 +527,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     * Compute a signed copy of his own exponential and grpInfo and encrypt it using a shared key
     * which is derived from DHExponentials and the nonces
     * @param The packet phase number
+    * @param The peer to which we need to send the packet
     * @param The peerNode we are talking to
-    * @param Payload
+    * @return byte Message3
     */
-    private void ProcessMessage3(PeerNode pn,Peer replyTo,byte[] payload,int phase)			
+    private byte[] ProcessMessage3(PeerNode pn,Peer replyTo,int phase)			
     {
 
-        long t1=System.currentTimeMillis();
-	byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr(pn).length+Gi(pn).length+1];
+        byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr(pn).length+Gi(pn).length+1];
         System.arraycopy(iNonce(),0,unVerifiedData,0,iNonce().length);
         System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
 	System.arraycopy(Gi(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gi(pn).length);
@@ -550,51 +549,58 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             Logger.minor(this,"Cipher"+HexUtil.bytesToHex(pn.outgoingSetupKey));
         PCFBMode pk=PCFBMode.create(c);
         byte[] iv=new byte[pk.lengthIV()];
-        int outputLength = iv.length + r.length + s.length + 2;
+        int encryptedDataLength = iv.length + r.length + s.length + 2;
         /*
          * The signature of the data sent in the clear is encrypted using PCFB and rijndael
          */
-        byte[] output = new byte[outputLength];
-        System.arraycopy(iv, 0, output, 0, iv.length);
+        byte[] encryptedData = new byte[encryptedDataLength];
+        System.arraycopy(iv, 0, encryptedData, 0, iv.length);
         int count = iv.length;
         if(r.length > 255 || s.length > 255)
         	throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
-        output[count++] = (byte) r.length;
-        System.arraycopy(r, 0, output, count, r.length);
+        encryptedData[count++] = (byte) r.length;
+        System.arraycopy(r, 0, encryptedData, count, r.length);
         count += r.length;
-        output[count++] = (byte) s.length;
-        System.arraycopy(s, 0, output, count, s.length);
+        encryptedData[count++] = (byte) s.length;
+        System.arraycopy(s, 0, encryptedData, count, s.length);
         count += s.length;
-        pk.blockEncipher(output, 0, output.length);
-        byte[] message3=new byte[output.length+authenticator.length+unVerifiedData.length+1];
-        System.arraycopy(output,0,message3,0,output.length);
-        System.arraycopy(authenticator,0,message3,output.length+1,authenticator.length);
-	System.arraycopy(unVerifiedData,0,message3,output.length+authenticator.length+1,unVerifiedData.length);
-        if(message3Duplicate(1,2,2,message3,pn,replyTo))
-            Logger.minor(this,"Duplicate message3; Send cached message 4 is retransmitted ");
-        else
-            //Send params:Version,negType,phase,data,peernode,peer
-            sendMessage3Packet(1,2,2,message3,pn,replyTo);
-        long t2=System.currentTimeMillis();
-        if((t2-t1)>500)
-                Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
-
+        pk.blockEncipher(encryptedData, 0, encryptedData.length);
+        byte[] message3=new byte[encryptedData.length+authenticator.length+unVerifiedData.length+1];
+        System.arraycopy(encryptedData,0,message3,0,encryptedData.length);
+        System.arraycopy(authenticator,0,message3,encryptedData.length+1,authenticator.length);
+	System.arraycopy(unVerifiedData,0,message3,encryptedData.length+authenticator.length+1,unVerifiedData.length);
+        return message3;
+        
     }
-    /*
-     * Responder Method:Message4
-     * Process Message4
-     * Encrypted message of the signature on both nonces, both exponentials using the same
-     * keys as in the previous message.The Initiator can verify that the Responder is present
-     * and participating in the session, by decrypting the message and verifying the enclosed
-     * signature.
-     * @param The packet phase number
-     * @param The peerNode we are talking to
-     * @param Payload
-     */
+    
+   /*
+    * Send computed Message3
+    * @param The packet phase number
+    * @param The peer to which we need to send the packet
+    * @param The peerNode we are talking to
+    */
+    private void sendProcessMessage3(PeerNode pn,Peer replyTo,int phase){
+        
+        byte[] data = ProcessMessage3(pn,replyTo,phase);
+        sendMessage3Packet(1,2,2,data,pn,replyTo);
+    }
+    
+   /*
+    * Responder Method:Message4
+    * Process Message4
+    * Encrypted message of the signature on both nonces, both exponentials using the same
+    * keys as in the previous message.The Initiator can verify that the Responder is present
+    * and participating in the session, by decrypting the message and verifying the enclosed
+    * signature.
+    * @param The packet phase number
+    * @param The peer to which we need to send the packet
+    * @param The peerNode we are talking to
+    */
  	
-    private void ProcessMessage4(PeerNode pn,Peer replyTo,byte[] payload,int phase)
+    private void ProcessMessage4(PeerNode pn,Peer replyTo,int phase)
     {
 	    	
+        long t1=System.currentTimeMillis();
         byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr(pn).length+Gi(pn).length+1];
         System.arraycopy(iNonce(),0,unVerifiedData,0,iNonce().length);
         System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
@@ -624,6 +630,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         pk.blockEncipher(message4, 0, message4.length);
         //Send params:Version,negType,phase,data,peernode,peer 
         sendMessage4Packet(1,2,3,message4,pn,replyTo);
+        long t2=System.currentTimeMillis();
+        if((t2-t1)>500)
+                Logger.error(this,"Message4 timeout error:Sending packet for"+pn.getPeer());
+
     }	
 			
     /*
@@ -637,68 +647,40 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      */
     private void sendMessage1or2Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
     {
-                long now = System.currentTimeMillis();
-                long delta = now - pn.lastSentPacketTime();
-                byte[] output = new byte[data.length+3];
-                output[0] = (byte) version;
-                output[1] = (byte) negType;
-                output[2] = (byte) phase;
-                System.arraycopy(data, 0, output, 3, data.length);
-                if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
-		try
-		{
-			sendPacket(output,replyTo,pn,0);
-		}catch(LocalAddressException e)
-		{
-			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
-		}
+        long now = System.currentTimeMillis();
+        long delta = now - pn.lastSentPacketTime();
+        byte[] output = new byte[data.length+3];
+        output[0] = (byte) version;
+        output[1] = (byte) negType;
+        output[2] = (byte) phase;
+        System.arraycopy(data, 0, output, 3, data.length);
+        if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
+	try
+	{
+            sendPacket(output,replyTo,pn,0);
+	}catch(LocalAddressException e)
+	{
+            Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
+	}
     }
     /*
-     * Caching recent messages to check for duplicate/resent message3
-     * @param version
-     * @param negType
-     * @param The packet phase number
-     * @param Concatenated data
-     * @param The peerNode we are talking to
-     * @param The peer to which we need to send the packet
-     * @return boolean
+     * Convert Object to byteArray
      */
-    private synchronized boolean message3Duplicate(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+    private byte[] getBytes(Object o) throws IOException
     {
-                /*
-                 * The key for looking up messages in the cache is the authenticator
-                 * This prevents DOS attacks where the attacker randomly tries to replace encrypted blocks 
-                 * of a valid message causing a cache miss
-                 * This would result in increased processing on the Responder side->CPU exhaustion attacks
-                 */
-                byte[] cacheKey=processMessageAuth(pn);
-                Object result;
-                //All recent messages 3 and 4 are cached
-                if(phase==2){
-                    synchronized(message3Cache) {
-                    result = message3Cache.get(cacheKey);
-                    }
-                    if(result != null) {
-                        synchronized(message3Cache) {
-                        message3Cache.put(cacheKey,data);
-                    }
-                    // We don't want to keep the lock while sending
-                    sendMessage4Packet(1,2,3,data,pn,replyTo);
-                    return true;
-                    }
-                           
-                }
-                else if(phase==3){
-                    message4Cache.put(cacheKey,data.toString());
-                }
-                else{ 
-                    Logger.error(this,"Wrong message phase");
-                    return false;
-                }
-                return false;
+        ByteArrayOutputStream bs = new ByteArrayOutputStream();
+        ObjectOutputStream os = new ObjectOutputStream(bs);
+        os.writeObject(o);
+        os.flush();
+        os.close();
+        bs.close();
+        byte [] output = bs.toByteArray();
+        return output;
     }
+    
     /*
      * Send Message3 packet
+     * Also check for duplicate message
      * @param version
      * @param negType
      * @param The packet phase number
@@ -714,7 +696,41 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 byte[] output = new byte[data.length+3];
                 if((data.length+3) > sock.getMaxPacketSize())
                     throw new IllegalStateException("Packet length too long");
-                          
+                /*
+                 * The key for looking up messages in the cache is the authenticator
+                 * This prevents DOS attacks where the attacker randomly tries to replace encrypted blocks 
+                 * of a valid message causing a cache miss
+                 * This would result in increased processing on the Responder side->CPU exhaustion attacks
+                 */
+                byte[] cacheKey=processMessageAuth(pn);
+                Object result;
+                //All recent messages 3 and 4 are cached
+                if(phase==2){
+                    synchronized(message3Cache) {
+                    result = message3Cache.get(cacheKey);
+                    }
+                    if(result != null) {
+                        synchronized(message3Cache) {
+                            message3Cache.put(cacheKey,data);
+                        }
+                        // We don't want to keep the lock while sending
+                        try
+                        {
+                            sendMessage4Packet(1,2,3,getBytes(message4Cache.get(cacheKey)),pn,replyTo);
+                        }
+                        catch(IOException e){
+                            Logger.error(this,"Error getting bytes");
+                        }
+                    }
+                    sendProcessMessage3(pn,replyTo,phase);       
+                }
+                else if(phase==3){
+                    message4Cache.put(cacheKey,data.toString());
+                }
+                else{ 
+                    Logger.error(this,"Wrong message phase");
+                    
+                }   
                 output[0] = (byte) version;
                 output[1] = (byte) negType;
                 output[2] = (byte) phase;
@@ -727,8 +743,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 {
                         Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn.getPeer());
                 }
-                                  
+                        
     }
+
     /*
      * Send Message4 packet
      * @param version
@@ -761,7 +778,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                                   
     }
      
-
     /**
      * Send a signed DH completion message.
      * Format:
