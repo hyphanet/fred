@@ -45,6 +45,7 @@ public class BackgroundBlockEncoder implements Runnable {
 	}
 	
 	public void run() {
+	    freenet.support.OSThread.logPID(this);
 		while(true) {
 			SingleBlockInserter sbi = null;
 			synchronized(this) {
