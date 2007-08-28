@@ -30,6 +30,7 @@ public class DNSRequester implements Runnable {
     }
 
     public void run() {
+	    freenet.support.OSThread.logPID(this);
         while(true) {
             try {
                 realRun();

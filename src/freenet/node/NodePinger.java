@@ -32,6 +32,7 @@ public class NodePinger implements Runnable {
 	final Node node;
 	
 	public void run() {
+	    //freenet.support.OSThread.logPID(this);
 		try {
 			recalculateMean(node.peers.connectedPeers);
 		} finally {

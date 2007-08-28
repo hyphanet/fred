@@ -151,6 +151,7 @@ public class FCPServer implements Runnable {
 	}
 	
 	public void run() {
+	    freenet.support.OSThread.logPID(this);
 		while(true) {
 			try {
 				realRun();
@@ -525,6 +526,7 @@ public class FCPServer implements Runnable {
 		}
 		
 		public void run() {
+		    freenet.support.OSThread.logPID(this);
 			while(true) {
 				long startTime = System.currentTimeMillis();
 				try {

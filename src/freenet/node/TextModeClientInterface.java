@@ -95,6 +95,7 @@ public class TextModeClientInterface implements Runnable {
     }
     
     public void run() {
+	    freenet.support.OSThread.logPID(this);
     	try {
     		realRun();
     	} catch (IOException e) {
@@ -337,6 +338,7 @@ public class TextModeClientInterface implements Runnable {
     	// FIXME run on separate thread
     	n.ps.queueTimedJob(new Runnable() {
     		public void run() {
+    		    freenet.support.OSThread.logPID(this);
     			n.getNodeUpdater().arm();
     		}
     	}, 0);

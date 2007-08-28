@@ -211,6 +211,7 @@ public class IPAddressDetector implements Runnable {
 	}
 
 	public void run() {
+		freenet.support.OSThread.logPID(this);
 		while(true) {
 			try {
 				Thread.sleep(interval);

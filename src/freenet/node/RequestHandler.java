@@ -73,6 +73,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     }
 
     public void run() {
+	    freenet.support.OSThread.logPID(this);
     	boolean thrown = false;
         try {
         	realRun();

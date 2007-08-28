@@ -18,6 +18,8 @@ public class OSThread {
 
     public static boolean getPIDEnabled = false;
     public static boolean getPPIDEnabled = false;
+    public static boolean logToFileEnabled = false;
+    public static boolean logToStdOutEnabled = false;
     public static boolean procSelfStatEnabled = false;
 
     /**
@@ -84,9 +86,6 @@ public class OSThread {
 					sb.append( (char) b );
 				}
 				try {
-				    msg = "DEBUG: Gonna parse ["+sb.toString()+"]";
-					System.out.println(msg + ": " + o);
-			        Logger.normal(o, msg);
 					String[] procStrings = sb.toString().trim().split(" ");
 					if(4 <= procStrings.length) {
 						String pidString = procStrings[ 0 ];
@@ -148,9 +147,6 @@ public class OSThread {
 					sb.append( (char) b );
 				}
 				try {
-				    msg = "DEBUG: Gonna parse ["+sb.toString()+"]";
-					System.out.println(msg + ": " + o);
-			        Logger.normal(o, msg);
 					String[] procStrings = sb.toString().trim().split(" ");
 					if(4 <= procStrings.length) {
 						String ppidString = procStrings[ 3 ];
@@ -182,8 +178,12 @@ public class OSThread {
 		} else {
 			msg = "This thread's OS PID could not be determined";
 		}
-		System.out.println(msg + ": " + o);
-        Logger.normal(o, msg);
+		if(logToStdOutEnabled) {
+			System.out.println(msg + ": " + o);
+		}
+		if(logToFileEnabled) {
+	        Logger.normal(o, msg);
+		}
         return pid;
 	}
 
@@ -201,8 +201,12 @@ public class OSThread {
 		} else {
 			msg = "This thread's OS PPID could not be determined";
 		}
-		System.out.println(msg + ": "+o);
-        Logger.normal(o, msg);
+		if(logToStdOutEnabled) {
+			System.out.println(msg + ": " + o);
+		}
+		if(logToFileEnabled) {
+	        Logger.normal(o, msg);
+		}
         return ppid;
 	}
 }

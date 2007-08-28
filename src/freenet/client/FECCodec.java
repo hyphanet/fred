@@ -373,6 +373,7 @@ public abstract class FECCodec {
 	private static class FECRunner implements Runnable {
 		
 		public void run(){
+		    freenet.support.OSThread.logPID(this);
 			try {
 			while(true){
 				FECJob job = null;

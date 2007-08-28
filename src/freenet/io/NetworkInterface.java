@@ -277,6 +277,7 @@ public class NetworkInterface {
 		 * @see NetworkInterface#allowedHosts
 		 */
 		public void run() {
+		    freenet.support.OSThread.logPID(this);
 			while (!closed) {
 				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				try {

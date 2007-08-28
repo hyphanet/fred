@@ -142,6 +142,7 @@ public class RequestStarter implements Runnable {
 	}
 	
 	public void run() {
+	    freenet.support.OSThread.logPID(this);
 		while(true) {
 			try {
 				realRun();
@@ -162,6 +163,7 @@ public class RequestStarter implements Runnable {
 		}
 
 		public void run() {
+		    freenet.support.OSThread.logPID(this);
 			if(!req.send(core, sched))
 				Logger.normal(this, "run() not able to send a request");
 			if(Logger.shouldLog(Logger.MINOR, this)) 

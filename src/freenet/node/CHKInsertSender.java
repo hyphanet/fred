@@ -37,6 +37,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 		
 		public void run() {
+		    freenet.support.OSThread.logPID(this);
 			try {
 				bt.send(executor);
 				if(bt.failedDueToOverload()) {
@@ -199,6 +200,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     }
     
     public void run() {
+	    freenet.support.OSThread.logPID(this);
         short origHTL;
     	synchronized (this) {
             origHTL = htl;
@@ -637,6 +639,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	private class CompletionWaiter implements Runnable {
 		
 		public void run() {
+		    freenet.support.OSThread.logPID(this);
 			if(logMINOR) Logger.minor(this, "Starting "+this);
 			
 			// Wait for the request to reach a terminal stage.

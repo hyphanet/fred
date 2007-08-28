@@ -302,6 +302,7 @@ public class LoggingConfigHandler {
 		}
 		
 		public void run() {
+		    freenet.support.OSThread.logPID(this);
 			fileLoggerHook.waitForSwitch();
 			delete(logDir);
 		}

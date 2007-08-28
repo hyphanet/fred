@@ -32,6 +32,7 @@ public class MemoryChecker implements Runnable {
 	}
 
 	public void run() {
+		freenet.support.OSThread.logPID(this);
 		if(!goon){
 			Logger.normal(this, "Goon is false ; killing MemoryChecker");
 			return;

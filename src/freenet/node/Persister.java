@@ -41,6 +41,7 @@ class Persister implements Runnable {
 	}
 
 	public void run() {
+		freenet.support.OSThread.logPID(this);
 		try {
 			persistThrottle();
 		} catch (OutOfMemoryError e) {

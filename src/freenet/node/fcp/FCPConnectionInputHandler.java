@@ -27,6 +27,7 @@ public class FCPConnectionInputHandler implements Runnable {
 	}
 	
 	public void run() {
+	    freenet.support.OSThread.logPID(this);
 		try {
 			realRun();
 		} catch (IOException e) {
