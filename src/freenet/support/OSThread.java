@@ -3,8 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.regex.PatternSyntaxException;
@@ -19,6 +20,7 @@ public class OSThread {
     public static boolean getPIDEnabled = false;
     public static boolean getPPIDEnabled = false;
     public static boolean logToFileEnabled = false;
+    public static int logToFileVerbosity = Logger.DEBUG;
     public static boolean logToStdOutEnabled = false;
     public static boolean procSelfStatEnabled = false;
 
@@ -49,7 +51,7 @@ public class OSThread {
 	 * Linux without using JNI.
      */
 	public synchronized static int getPIDFromProcSelfStat(Object o) {
-		StringBuffer sb = null;
+		String readLine = null;
 		int b = -1;
 		int pid = -1;
 		String msg = null;
@@ -62,41 +64,38 @@ public class OSThread {
 		}
 
 		// read /proc/self/stat and parse for the PID
-		FileInputStream fis = null;
+		BufferedReader br = null;
+		FileReader fr = null;
 		File procFile = new File("/proc/self/stat");
 		if(procFile.exists()) {
 			try {
-				fis = new FileInputStream(procFile);
+				fr = new FileReader(procFile);
+				br = new BufferedReader(fr);
 			} catch (FileNotFoundException e1) {
-				Logger.normal(o, "'/proc/self/stat' not found");
-				fis = null;
+				Logger.logStatic(o, "'/proc/self/stat' not found", logToFileVerbosity);
+				fr = null;
 			}
-			if(null != fis) {
-				sb = new StringBuffer();
-				while( true ) {
-					try {
-						b = fis.read();
-					} catch (IOException e) {
-						Logger.error(o, "Caught IOException in fis.read() of OSThread.getPIDFromProcSelfStat()", e);
-						b = -1;
-					}
-					if( -1 == b ) {
-						break;
-					}
-					sb.append( (char) b );
-				}
+			if(null != br) {
 				try {
-					String[] procStrings = sb.toString().trim().split(" ");
-					if(4 <= procStrings.length) {
-						String pidString = procStrings[ 0 ];
-						try {
-							pid = Integer.parseInt( pidString.trim() );
-						} catch (NumberFormatException e) {
-							Logger.error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPIDFromProcSelfStat() while parsing '"+pidString+"'", e);
+					readLine = br.readLine();
+				} catch (IOException e) {
+					Logger.error(o, "Caught IOException in br.readLine() of OSThread.getPIDFromProcSelfStat()", e);
+					readLine = null;
+				}
+				if(null != readLine) {
+					try {
+						String[] procStrings = readLine.trim().split(" ");
+						if(4 <= procStrings.length) {
+							String pidString = procStrings[ 0 ];
+							try {
+								pid = Integer.parseInt( pidString.trim() );
+							} catch (NumberFormatException e) {
+								Logger.error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPIDFromProcSelfStat() while parsing '"+pidString+"'", e);
+							}
 						}
+					} catch (PatternSyntaxException e) {
+						Logger.error(o, "Caught PatternSyntaxException in readLine.trim().split(\" \") of OSThread.getPIDFromProcSelfStat() while parsing '"+readLine+"'", e);
 					}
-				} catch (PatternSyntaxException e) {
-					Logger.error(o, "Caught PatternSyntaxException in sb.toString().trim().split(\" \") of OSThread.getPIDFromProcSelfStat() while parsing '"+sb.toString()+"'", e);
 				}
 			}
 		}
@@ -110,7 +109,7 @@ public class OSThread {
 	 * a thread on Linux without using JNI.
      */
 	public synchronized static int getPPIDFromProcSelfStat(Object o) {
-		StringBuffer sb = null;
+		String readLine = null;
 		int b = -1;
 		int ppid = -1;
 		String msg = null;
@@ -123,41 +122,38 @@ public class OSThread {
 		}
 
 		// read /proc/self/stat and parse for the PPID
-		FileInputStream fis = null;
+		BufferedReader br = null;
+		FileReader fr = null;
 		File procFile = new File("/proc/self/stat");
 		if(procFile.exists()) {
 			try {
-				fis = new FileInputStream(procFile);
+				fr = new FileReader(procFile);
+				br = new BufferedReader(fr);
 			} catch (FileNotFoundException e1) {
-				Logger.normal(o, "'/proc/self/stat' not found");
-				fis = null;
+				Logger.logStatic(o, "'/proc/self/stat' not found", logToFileVerbosity);
+				fr = null;
 			}
-			if(null != fis) {
-				sb = new StringBuffer();
-				while( true ) {
-					try {
-						b = fis.read();
-					} catch (IOException e) {
-						Logger.error(o, "Caught IOException in fis.read() of OSThread.getPPIDFromProcSelfStat()", e);
-						b = -1;
-					}
-					if( -1 == b ) {
-						break;
-					}
-					sb.append( (char) b );
-				}
+			if(null != br) {
 				try {
-					String[] procStrings = sb.toString().trim().split(" ");
-					if(4 <= procStrings.length) {
-						String ppidString = procStrings[ 3 ];
-						try {
-							ppid = Integer.parseInt( ppidString.trim() );
-						} catch (NumberFormatException e) {
-							Logger.error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPPIDFromProcSelfStat() while parsing '"+ppidString+"'", e);
+					readLine = br.readLine();
+				} catch (IOException e) {
+					Logger.error(o, "Caught IOException in br.readLine() of OSThread.getPPIDFromProcSelfStat()", e);
+					readLine = null;
+				}
+				if(null != readLine) {
+					try {
+						String[] procStrings = readLine.trim().split(" ");
+						if(4 <= procStrings.length) {
+							String ppidString = procStrings[ 3 ];
+							try {
+								ppid = Integer.parseInt( ppidString.trim() );
+							} catch (NumberFormatException e) {
+								Logger.error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPPIDFromProcSelfStat() while parsing '"+ppidString+"'", e);
+							}
 						}
+					} catch (PatternSyntaxException e) {
+						Logger.error(o, "Caught PatternSyntaxException in readLine.trim().split(\" \") of OSThread.getPPIDFromProcSelfStat() while parsing '"+readLine+"'", e);
 					}
-				} catch (PatternSyntaxException e) {
-					Logger.error(o, "Caught PatternSyntaxException in sb.toString().trim().split(\" \") of OSThread.getPPIDFromProcSelfStat() while parsing '"+sb.toString()+"'", e);
 				}
 			}
 		}
@@ -182,7 +178,7 @@ public class OSThread {
 			System.out.println(msg + ": " + o);
 		}
 		if(logToFileEnabled) {
-	        Logger.normal(o, msg);
+	        Logger.logStatic(o, msg, logToFileVerbosity);
 		}
         return pid;
 	}
@@ -205,7 +201,7 @@ public class OSThread {
 			System.out.println(msg + ": " + o);
 		}
 		if(logToFileEnabled) {
-	        Logger.normal(o, msg);
+	        Logger.logStatic(o, msg, logToFileVerbosity);
 		}
         return ppid;
 	}
