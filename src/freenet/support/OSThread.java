@@ -45,25 +45,17 @@ public class OSThread {
 	}
 
     /**
-     * Get the thread's process ID using the /proc/self/stat method or
-	 * return -1 if it's unavailable for some reason.  This is an ugly
-	 * hack required by Java to get the OS process ID of a thread on
-	 * Linux without using JNI.
+     * Get a specified field from /proc/self/stat or return null if
+	 * it's unavailable for some reason.
      */
-	public synchronized static int getPIDFromProcSelfStat(Object o) {
+	public synchronized static String getFieldFromProcSelfStat(int fieldNumber, Object o) {
 		String readLine = null;
-		int b = -1;
-		int pid = -1;
-		String msg = null;
 
-		if(!getPIDEnabled) {
-			return -1;
-		}
 		if(!procSelfStatEnabled) {
-			return -1;
+			return null;
 		}
 
-		// read /proc/self/stat and parse for the PID
+		// read /proc/self/stat and parse for the specified field
 		BufferedReader br = null;
 		FileReader fr = null;
 		File procFile = new File("/proc/self/stat");
@@ -73,31 +65,54 @@ public class OSThread {
 				br = new BufferedReader(fr);
 			} catch (FileNotFoundException e1) {
 				Logger.logStatic(o, "'/proc/self/stat' not found", logToFileVerbosity);
+				procSelfStatEnabled = false;
 				fr = null;
 			}
 			if(null != br) {
 				try {
 					readLine = br.readLine();
 				} catch (IOException e) {
-					Logger.error(o, "Caught IOException in br.readLine() of OSThread.getPIDFromProcSelfStat()", e);
+					Logger.error(o, "Caught IOException in br.readLine() of OSThread.getFieldFromProcSelfStat()", e);
 					readLine = null;
 				}
 				if(null != readLine) {
 					try {
-						String[] procStrings = readLine.trim().split(" ");
-						if(4 <= procStrings.length) {
-							String pidString = procStrings[ 0 ];
-							try {
-								pid = Integer.parseInt( pidString.trim() );
-							} catch (NumberFormatException e) {
-								Logger.error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPIDFromProcSelfStat() while parsing '"+pidString+"'", e);
-							}
+						String[] procFields = readLine.trim().split(" ");
+						if(4 <= procFields.length) {
+							return procFields[ fieldNumber ];
 						}
 					} catch (PatternSyntaxException e) {
-						Logger.error(o, "Caught PatternSyntaxException in readLine.trim().split(\" \") of OSThread.getPIDFromProcSelfStat() while parsing '"+readLine+"'", e);
+						Logger.error(o, "Caught PatternSyntaxException in readLine.trim().split(\" \") of OSThread.getFieldFromProcSelfStat() while parsing '"+readLine+"'", e);
 					}
 				}
 			}
+		}
+		return null;
+	}
+
+    /**
+     * Get the thread's process ID using the /proc/self/stat method or
+	 * return -1 if it's unavailable for some reason.  This is an ugly
+	 * hack required by Java to get the OS process ID of a thread on
+	 * Linux without using JNI.
+     */
+	public synchronized static int getPIDFromProcSelfStat(Object o) {
+		int pid = -1;
+
+		if(!getPIDEnabled) {
+			return -1;
+		}
+		if(!procSelfStatEnabled) {
+			return -1;
+		}
+		String pidString = getFieldFromProcSelfStat(0, o);
+		if(null == pidString) {
+			return -1;
+		}
+		try {
+			pid = Integer.parseInt( pidString.trim() );
+		} catch (NumberFormatException e) {
+			Logger.error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPIDFromProcSelfStat() while parsing '"+pidString+"'", e);
 		}
 		return pid;
 	}
@@ -109,10 +124,7 @@ public class OSThread {
 	 * a thread on Linux without using JNI.
      */
 	public synchronized static int getPPIDFromProcSelfStat(Object o) {
-		String readLine = null;
-		int b = -1;
 		int ppid = -1;
-		String msg = null;
 
 		if(!getPPIDEnabled) {
 			return -1;
@@ -120,42 +132,14 @@ public class OSThread {
 		if(!procSelfStatEnabled) {
 			return -1;
 		}
-
-		// read /proc/self/stat and parse for the PPID
-		BufferedReader br = null;
-		FileReader fr = null;
-		File procFile = new File("/proc/self/stat");
-		if(procFile.exists()) {
-			try {
-				fr = new FileReader(procFile);
-				br = new BufferedReader(fr);
-			} catch (FileNotFoundException e1) {
-				Logger.logStatic(o, "'/proc/self/stat' not found", logToFileVerbosity);
-				fr = null;
-			}
-			if(null != br) {
-				try {
-					readLine = br.readLine();
-				} catch (IOException e) {
-					Logger.error(o, "Caught IOException in br.readLine() of OSThread.getPPIDFromProcSelfStat()", e);
-					readLine = null;
-				}
-				if(null != readLine) {
-					try {
-						String[] procStrings = readLine.trim().split(" ");
-						if(4 <= procStrings.length) {
-							String ppidString = procStrings[ 3 ];
-							try {
-								ppid = Integer.parseInt( ppidString.trim() );
-							} catch (NumberFormatException e) {
-								Logger.error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPPIDFromProcSelfStat() while parsing '"+ppidString+"'", e);
-							}
-						}
-					} catch (PatternSyntaxException e) {
-						Logger.error(o, "Caught PatternSyntaxException in readLine.trim().split(\" \") of OSThread.getPPIDFromProcSelfStat() while parsing '"+readLine+"'", e);
-					}
-				}
-			}
+		String ppidString = getFieldFromProcSelfStat(3, o);
+		if(null == ppidString) {
+			return -1;
+		}
+		try {
+			ppid = Integer.parseInt( ppidString.trim() );
+		} catch (NumberFormatException e) {
+			Logger.error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPPIDFromProcSelfStat() while parsing '"+ppidString+"'", e);
 		}
 		return ppid;
 	}
