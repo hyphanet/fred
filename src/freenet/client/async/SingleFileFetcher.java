@@ -129,6 +129,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		Bucket data = extract(block);
 		if(data == null) {
+			if(logMINOR)
+				Logger.minor(this, "No data");
 			// Already failed: if extract returns null it will call onFailure first.
 			return;
 		}

@@ -2233,7 +2233,11 @@ public class Node implements TimeSkewDetectorCallback {
 		if(key == null) return null;
 		clientSSK.setPublicKey(key);
 		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(), dontPromote);
-		if(block == null) return null;
+		if(block == null) {
+			if(logMINOR)
+				Logger.minor(this, "Could not find key for "+clientSSK+" (dontPromote="+dontPromote+")");
+			return null;
+		}
 		// Move the pubkey to the top of the LRU, and fix it if it
 		// was corrupt.
 		cacheKey(clientSSK.pubKeyHash, key, false);

@@ -232,7 +232,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 						anyValid = true;
 					}
 				}
-				if(!anyValid) return;
+				if(!anyValid) {
+					if(logMINOR)
+						Logger.minor(this, "No valid keys, returning without registering");
+					return;
+				}
 			}
 		}
 		innerRegister(req);
