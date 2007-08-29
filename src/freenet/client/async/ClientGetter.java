@@ -149,7 +149,7 @@ public class ClientGetter extends BaseClientGetter {
 			public void run() {
 				client.onSuccess(res, ClientGetter.this);
 			}
-		}, "ClientGetter onSuccess callback");
+		}, "ClientGetter onSuccess callback for "+this);
 		
 	}
 

@@ -215,6 +215,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 								block = node.fetchKey(key, getter.dontCache());
 							if(block == null) {
 								addPendingKey(key, getter);
+							} else {
+								if(logMINOR)
+									Logger.minor(this, "Got "+block);
 							}
 						}
 					} catch (KeyVerifyException e) {
