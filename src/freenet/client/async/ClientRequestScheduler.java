@@ -223,7 +223,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(logMINOR)
 							Logger.minor(this, "Decode failed: "+e, e);
 						getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok);
-						return;
+						continue; // other keys might be valid
 					}
 					if(block != null) {
 						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" ("+tok+") immediately from store");
