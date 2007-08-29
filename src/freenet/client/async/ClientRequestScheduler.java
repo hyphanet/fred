@@ -307,12 +307,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(clientGrabber == null) {
 			clientGrabber = new SectoredRandomGrabArrayWithInt(random, rc);
 			prio.add(clientGrabber);
-			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass);
+			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass+" on "+clientGrabber+" for "+prio);
 		}
 		// Request
 		SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
 		if(requestGrabber == null) {
 			requestGrabber = new SectoredRandomGrabArrayWithObject(client, random);
+			if(logMINOR)
+				Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : "+prio+" : prio="+priorityClass+", rc="+rc);
 			clientGrabber.addGrabber(client, requestGrabber);
 		}
 		requestGrabber.add(cr, req);
@@ -381,7 +383,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					Logger.minor(this, "Got retry count tracker "+rga);
 				SendableRequest req = (SendableRequest) rga.removeRandom();
 				if(rga.isEmpty()) {
-					if(logMINOR) Logger.minor(this, "Removing retrycount "+rga.getNumber());
+					if(logMINOR) Logger.minor(this, "Removing retrycount "+rga.getNumber()+" : "+rga);
 					s.remove(rga.getNumber());
 					if(s.isEmpty()) {
 						if(logMINOR) Logger.minor(this, "Should remove priority ");
