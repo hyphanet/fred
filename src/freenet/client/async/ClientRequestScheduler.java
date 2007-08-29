@@ -242,6 +242,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	private void addPendingKey(ClientKey key, SendableGet getter) {
+		if(logMINOR)
+			Logger.minor(this, "Adding pending key "+key+" for "+getter);
 		Key nodeKey = key.getNodeKey();
 		synchronized(pendingKeys) {
 			Object o = pendingKeys.get(nodeKey);
