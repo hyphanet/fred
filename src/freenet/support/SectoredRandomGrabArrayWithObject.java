@@ -15,4 +15,8 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 		return object;
 	}
 	
+	public String toString() {
+		return super.toString()+":"+object;
+	}
+	
 }

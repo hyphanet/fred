@@ -40,6 +40,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		if(logMINOR)
 			Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
 		rga.add(item);
+		if(logMINOR)
+			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
 	}
 
 	/**
