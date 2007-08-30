@@ -386,7 +386,10 @@ class NodeCrypto {
 	DSASignature sign(byte[] hash) {
 		return DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
 	}
-
+        // Sign a hash with a specified PrivateKey
+        DSASignature sign(byte[] hash,DSAGroup g,DSAPrivateKey pk,RandomSource r) {
+		return DSA.sign(g, pk, new NativeBigInteger(1, hash), r);
+	}
 	public void onSetDropProbability(int val) {
 		synchronized(this) {
 			if(socket == null) return;

@@ -9,14 +9,19 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
+import freenet.crypt.DSAGroup;
+import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.EntropySource;
+import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.SHA1;
 import freenet.crypt.PCFBMode;
+import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
+import freenet.crypt.crypto_Random.eKey;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.IncomingPacketFilter;
@@ -59,7 +64,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     final EntropySource myPacketDataSource;
     final Map message3Cache;
     final Map message4Cache;
-    
+    final eKey encryptionKey;
+    final DSAGroup g;
+    final RandomSource r;
     private static final int MAX_PACKETS_IN_FLIGHT = 256; 
     private static final int RANDOM_BYTES_LENGTH = 12;
     private static final int HASH_LENGTH = 32;
@@ -95,6 +102,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         myPacketDataSource = new EntropySource();
         message3Cache = new HashMap();
         message4Cache = new HashMap();
+        encryptionKey = new eKey();
+        g = Global.DSAgroupBigA;
+        r=node.random;
         fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
         fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -398,7 +408,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     /*
      * Initiator DH Exponential
      */
-    private byte[] Gi(PeerNode pn){
+    private synchronized byte[] Gi(PeerNode pn){
                 DiffieHellmanContext dh=(DiffieHellmanContext)pn.getKeyAgreementSchemeContext();
                 if(dh==null)
                 {
@@ -408,26 +418,47 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 }
                 return dh.getOurExponential().toByteArray();
     }
+    
     /*
      * Responder DH Exponential
      */
-    private byte[] Gr(PeerNode pn){
-                DiffieHellmanContext dh=(DiffieHellmanContext)pn.getKeyAgreementSchemeContext();
-                if(dh==null)
-                {
-                        if(shouldLogErrorInHandshake())
-                                Logger.error(this,"Failed getting exponentials");
+    private synchronized byte[] Gr(PeerNode pn){
+        DiffieHellmanContext dh=(DiffieHellmanContext)pn.getKeyAgreementSchemeContext();
+        if(dh==null)
+        {
+                if(shouldLogErrorInHandshake())
+                    Logger.error(this,"Failed getting exponentials");
                        
-                }
-                return dh.getHisExponential().toByteArray();
+        }
+        return dh.getHisExponential().toByteArray();
     }
-    private byte[] iNonce(){
+    
+    /*
+     * Shared Secret key
+     * Alice generates random number x and computes exponential g^x
+     * Bob generates random number y and computes exponential g^y
+     * Shared secret key= (g^x)^y used as key for computing hash of the encryption key
+     */
+    private synchronized byte[] sharedSecretKey(PeerNode pn){
+        DiffieHellmanContext dh=(DiffieHellmanContext)pn.getKeyAgreementSchemeContext();
+        if(dh==null)
+        {
+                if(shouldLogErrorInHandshake())
+                    Logger.error(this,"Failed getting exponentials");
+                       
+        }
+        return dh.getKey();
+    }
+    /*
+     * The Initiator and Responder nonce are random bytes used to provide key independence
+     */
+    private synchronized byte[] iNonce(){
                 
                 byte[] n=new byte[16];
                 node.random.nextBytes(n);
                 return n;
     }
-    private byte[] rNonce(){
+    private synchronized byte[] rNonce(){
                 byte[] n=new byte[16];
                 node.random.nextBytes(n);
                 return n;
@@ -468,18 +499,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 byte[] hkr=new byte[16];
 		hkr=trKey.getNewHKr();
 		HMAC hash=new HMAC(SHA1.getInstance());
-                /*
-                 * Compute the authenticator
-                 * Used by the responder in Message3 to verify the authenticity of the message
-                 */
-		return hash.mac(hkr,authData,20);
+                return hash.mac(hkr,authData,20);
     }
     /*
      * Responder Method:Message2
-     * Process Message2
+     * Process Message2: Must involve only minimal work for the responder since at that point
+     * no round trip has yet occured with the initiator. Thus, he must not be allowed to perform 
+     * expensive calculations. In message2, his cost will be a single authentication operation
+     * the cost is invocations of 2 cryptographic hash functions and computation of a random nonce.
      * Send the Initiator nonce,Responder nonce and DiffieHellman Exponential of the responder
      * in the clear.
-     * Send a signed copy of his own exponential and grpInfo details.
+     * Send a signed copy of his own exponential
      * Send an authenticator which is a hash of Ni,Nr,g^r calculated over the transient key HKr
      * @param The packet phase number
      * @param The peer to which we need to send the packet
@@ -504,7 +534,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(Gr(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gr(pn).length);
 		/*
                  * Compute the authenticator
-                 * Used by the responder in Message3 to verify the authenticity of the message
+                 * Used by the responder in Message4 to verify the authenticity of the message
                  */
 		byte[] authenticator=processMessageAuth(pn);
 		byte[] Message2=new byte[authenticator.length+unVerifiedData.length+s.length+r.length+1];
@@ -523,8 +553,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     * Initiator Method:Message3
     * Process Message3
     * Send the Initiator nonce,Responder nonce and DiffieHellman Exponential of the responder
-    * and initiator in the clear.
-    * Compute a signed copy of his own exponential and grpInfo and encrypt it using a shared key
+    * and initiator in the clear.(unVerifiedData)
+    * Send the authenticator which allows the responder to verify the legality of the message
+    * Compute the signature of the unVerifiedData and encrypt it using a shared key
     * which is derived from DHExponentials and the nonces
     * @param The packet phase number
     * @param The peer to which we need to send the packet
@@ -539,7 +570,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
 	System.arraycopy(Gi(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gi(pn).length);
         System.arraycopy(Gr(pn),0,unVerifiedData,iNonce().length+rNonce().length+Gi(pn).length+1,Gr(pn).length);
-        DSASignature sig = crypto.sign(unVerifiedData);
+        DSAPrivateKey pkMessage3=new DSAPrivateKey(g, r);
+        DSASignature sig = crypto.sign(unVerifiedData,g,pkMessage3,r);
         byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
@@ -547,11 +579,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         BlockCipher c=pn.outgoingSetupCipher;
         if(logMINOR)
             Logger.minor(this,"Cipher"+HexUtil.bytesToHex(pn.outgoingSetupKey));
+        /*
+         * Initializes the cipher context with the given key
+         * This would avoid the computation of key using the Rijndael key schedule(S boxes,Rcon etc)
+         * The key used is generated from Hash of Message:(Ni, Nr, 1) over the shared key of DH
+         */
+        c.initialize(encryptionKey.getEncKey(sharedSecretKey(pn),iNonce(),rNonce()));
         PCFBMode pk=PCFBMode.create(c);
         byte[] iv=new byte[pk.lengthIV()];
         int encryptedDataLength = iv.length + r.length + s.length + 2;
         /*
-         * The signature of the data sent in the clear is encrypted using PCFB and rijndael
+         * Data sent in the clear is signed and encrypted using PCFB and rijndael
          */
         byte[] encryptedData = new byte[encryptedDataLength];
         System.arraycopy(iv, 0, encryptedData, 0, iv.length);
@@ -581,6 +619,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     */
     private void sendProcessMessage3(PeerNode pn,Peer replyTo,int phase){
         
+        /*
+         * The identifying information of the inititator is sent encrypted hence protected
+         * from both passive and active attackers. The initiator's identity cannot be retrived
+         * from message3 because an active attacker cannot complete the DH computation.
+         */
         byte[] data = ProcessMessage3(pn,replyTo,phase);
         sendMessage3Packet(1,2,2,data,pn,replyTo);
     }
@@ -606,13 +649,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
 	System.arraycopy(Gi(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gi(pn).length);
         System.arraycopy(Gr(pn),0,unVerifiedData,iNonce().length+rNonce().length+Gi(pn).length+1,Gr(pn).length);
-        DSASignature sig = crypto.sign(unVerifiedData);
+        DSAPrivateKey pkMessage4=new DSAPrivateKey(g, r);
+        DSASignature sig = crypto.sign(unVerifiedData,g,pkMessage4,r);
         byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
         BlockCipher c=pn.outgoingSetupCipher;
         if(logMINOR)
             Logger.minor(this,"Cipher"+HexUtil.bytesToHex(pn.outgoingSetupKey));
+        /*
+         * Initializes the cipher context with the given key
+         * This would avoid the computation of key using the Rijndael key schedule(S boxes,Rcon etc)
+         * The key used is generated from Hash of Message:(Ni, Nr, 1) over the shared key of DH
+         */
+        c.initialize(encryptionKey.getEncKey(sharedSecretKey(pn),iNonce(),rNonce()));
         PCFBMode pk=PCFBMode.create(c);
         byte[] iv=new byte[pk.lengthIV()];
         int message4Length = r.length + s.length + 2;
@@ -663,6 +713,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
 	}
     }
+    
     /*
      * Convert Object to byteArray
      */
@@ -706,6 +757,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 Object result;
                 //All recent messages 3 and 4 are cached
                 if(phase==2){
+                    // Intrinsic lock provided by the object message3Cache
                     synchronized(message3Cache) {
                     result = message3Cache.get(cacheKey);
                     }
@@ -728,7 +780,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                     message4Cache.put(cacheKey,data.toString());
                 }
                 else{ 
-                    Logger.error(this,"Wrong message phase");
+                    Logger.error(this,"Wrong message");
                     
                 }   
                 output[0] = (byte) version;

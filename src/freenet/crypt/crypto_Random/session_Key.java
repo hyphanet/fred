@@ -1,8 +1,6 @@
-package freenet.crypt;
-import java.io.*;
-import java.util.*;
-import java.lang.Integer;
+package freenet.crypt.crypto_Random;
 import freenet.crypt.HMAC;
+import freenet.crypt.SHA1;
 public class session_Key
 {
 	
