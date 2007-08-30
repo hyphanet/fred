@@ -41,8 +41,10 @@ import freenet.support.WouldBlockException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author amphibian
@@ -64,6 +66,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     final EntropySource myPacketDataSource;
     final Map message3Cache;
     final Map message4Cache;
+    final List authenticatorCache;
     final eKey encryptionKey;
     final DSAGroup g;
     final RandomSource r;
@@ -92,7 +95,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	final int fullHeadersLengthMinimum;
 	final int fullHeadersLengthOneMessage;
-        private static byte[] AUTHENTICATOR;
+        
 	
     public FNPPacketMangler(Node node, NodeCrypto crypt, PacketSocketHandler sock) {
         this.node = node;
@@ -103,6 +106,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         myPacketDataSource = new EntropySource();
         message3Cache = new HashMap();
         message4Cache = new HashMap();
+        authenticatorCache = new ArrayList();
         encryptionKey = new eKey();
         g = Global.DSAgroupBigA;
         r=node.random;
@@ -538,12 +542,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		HKrGenerator trKey=new HKrGenerator(node);
                 byte[] hkr=trKey.getNewHKr();
 		HMAC hash=new HMAC(SHA1.getInstance());
-                AUTHENTICATOR=hash.mac(hkr,processMessageAuth(pn),hkr.length);
-		byte[] Message2=new byte[AUTHENTICATOR.length+unVerifiedData.length+s.length+r.length+1];
+                byte[] authenticator = hash.mac(hkr,processMessageAuth(pn),hkr.length);
+                authenticatorCache.add(authenticator);
+		byte[] Message2=new byte[authenticator.length+unVerifiedData.length+s.length+r.length+1];
 		byte[] signedData=new byte[s.length+r.length];
 		System.arraycopy(signedData,0,Message2,0,signedData.length);
 		System.arraycopy(unVerifiedData,0,Message2,signData.length+1,unVerifiedData.length);
-		System.arraycopy(AUTHENTICATOR,0,Message2,signedData.length+unVerifiedData.length+1,AUTHENTICATOR.length);
+		System.arraycopy(authenticator,0,Message2,signedData.length+unVerifiedData.length+1,authenticator.length);
                 //Send params:Version,negType,phase,data,peernode,peer
 		sendMessage1or2Packet(1,2,1,Message2,pn,replyTo);
 		long t2=System.currentTimeMillis();
@@ -567,6 +572,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     private byte[] ProcessMessage3(PeerNode pn,Peer replyTo,int phase)			
     {
 
+        // Get the authenticator,which is the latest entry into the cache
+        // It is basically a keyed hash(HMAC); size of output is that of the underlying hash function 
+        byte[] authenticator = new byte[16];
+        try{
+            authenticator = getBytes(authenticatorCache.get(authenticatorCache.size()));
+        }
+        catch(IOException e){
+            Logger.error(this,"Error getting bytes");
+        }
         byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr(pn).length+Gi(pn).length+1];
         System.arraycopy(iNonce(),0,unVerifiedData,0,iNonce().length);
         System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
@@ -604,10 +618,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(s, 0, encryptedData, count, s.length);
         count += s.length;
         pk.blockEncipher(encryptedData, 0, encryptedData.length);
-        byte[] message3=new byte[encryptedData.length+AUTHENTICATOR.length+unVerifiedData.length+1];
+        byte[] message3=new byte[encryptedData.length+authenticator.length+unVerifiedData.length+1];
         System.arraycopy(encryptedData,0,message3,0,encryptedData.length);
-        System.arraycopy(AUTHENTICATOR,0,message3,encryptedData.length+1,AUTHENTICATOR.length);
-	System.arraycopy(unVerifiedData,0,message3,encryptedData.length+AUTHENTICATOR.length+1,unVerifiedData.length);
+        System.arraycopy(authenticator,0,message3,encryptedData.length+1,authenticator.length);
+	System.arraycopy(unVerifiedData,0,message3,encryptedData.length+authenticator.length+1,unVerifiedData.length);
         return message3;
         
     }
