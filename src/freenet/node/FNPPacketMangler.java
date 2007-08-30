@@ -92,6 +92,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	final int fullHeadersLengthMinimum;
 	final int fullHeadersLengthOneMessage;
+        private static byte[] AUTHENTICATOR;
 	
     public FNPPacketMangler(Node node, NodeCrypto crypt, PacketSocketHandler sock) {
         this.node = node;
@@ -493,13 +494,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 System.arraycopy(iNonce(),0,authData,0,iNonce().length);
                 System.arraycopy(rNonce(),0,authData,iNonce().length+1,rNonce().length);
 		System.arraycopy(Gr(pn),0,authData,iNonce().length+rNonce().length+1,Gr(pn).length);
-		//Calculate the Hash of the Concatenated data(Responder exponentials and nonces
-		//using a key that will be private to the responder
-		HKrGenerator trKey=new HKrGenerator(node);
-                byte[] hkr=new byte[16];
-		hkr=trKey.getNewHKr();
-		HMAC hash=new HMAC(SHA1.getInstance());
-                return hash.mac(hkr,authData,20);
+		/*
+                 * Calculate the Hash of the Concatenated data(Responder exponentials, nonces)
+		 * using a key that will be private to the responder
+                 */
+		return authData;
     }
     /*
      * Responder Method:Message2
@@ -536,12 +535,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                  * Compute the authenticator
                  * Used by the responder in Message4 to verify the authenticity of the message
                  */
-		byte[] authenticator=processMessageAuth(pn);
-		byte[] Message2=new byte[authenticator.length+unVerifiedData.length+s.length+r.length+1];
+		HKrGenerator trKey=new HKrGenerator(node);
+                byte[] hkr=trKey.getNewHKr();
+		HMAC hash=new HMAC(SHA1.getInstance());
+                AUTHENTICATOR=hash.mac(hkr,processMessageAuth(pn),hkr.length);
+		byte[] Message2=new byte[AUTHENTICATOR.length+unVerifiedData.length+s.length+r.length+1];
 		byte[] signedData=new byte[s.length+r.length];
 		System.arraycopy(signedData,0,Message2,0,signedData.length);
 		System.arraycopy(unVerifiedData,0,Message2,signData.length+1,unVerifiedData.length);
-		System.arraycopy(authenticator,0,Message2,signedData.length+unVerifiedData.length+1,authenticator.length);
+		System.arraycopy(AUTHENTICATOR,0,Message2,signedData.length+unVerifiedData.length+1,AUTHENTICATOR.length);
                 //Send params:Version,negType,phase,data,peernode,peer
 		sendMessage1or2Packet(1,2,1,Message2,pn,replyTo);
 		long t2=System.currentTimeMillis();
@@ -575,7 +577,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
-        byte[] authenticator=processMessageAuth(pn);
         BlockCipher c=pn.outgoingSetupCipher;
         if(logMINOR)
             Logger.minor(this,"Cipher"+HexUtil.bytesToHex(pn.outgoingSetupKey));
@@ -603,10 +604,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(s, 0, encryptedData, count, s.length);
         count += s.length;
         pk.blockEncipher(encryptedData, 0, encryptedData.length);
-        byte[] message3=new byte[encryptedData.length+authenticator.length+unVerifiedData.length+1];
+        byte[] message3=new byte[encryptedData.length+AUTHENTICATOR.length+unVerifiedData.length+1];
         System.arraycopy(encryptedData,0,message3,0,encryptedData.length);
-        System.arraycopy(authenticator,0,message3,encryptedData.length+1,authenticator.length);
-	System.arraycopy(unVerifiedData,0,message3,encryptedData.length+authenticator.length+1,unVerifiedData.length);
+        System.arraycopy(AUTHENTICATOR,0,message3,encryptedData.length+1,AUTHENTICATOR.length);
+	System.arraycopy(unVerifiedData,0,message3,encryptedData.length+AUTHENTICATOR.length+1,unVerifiedData.length);
         return message3;
         
     }
