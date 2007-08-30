@@ -34,24 +34,30 @@ public class BookmarkManager {
 			BookmarkCategory indexes = (BookmarkCategory) defaultRoot.addBookmark(new BookmarkCategory("Indexes"));
 			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
-							"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/25/"),
+							"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/36/"),
 							"Entry point (freesites with descriptions but no categories)",
 							node.alerts));
 
 			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
-							"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/3/"),
+							"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/20/"),
 							"Another Index (freesites with categories but no descriptions)",
+							node.alerts));
+
+			indexes.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@RJnh1EnvOSPwOWVRS2nyhC4eIQkKoNE5hcTv7~yY-sM,pOloLxnKWM~AL24iDMHOAvTvCqMlB-p2BO9zK96TOZA,AQACAAE/index_fr/8/"),
+							"Index des sites Français (french freesites with descriptions but no categories)",
 							node.alerts));
 
 			BookmarkCategory flog = (BookmarkCategory) defaultRoot.addBookmark(new BookmarkCategory("Freenet devel's flogs"));
 			flog.addBookmark(new BookmarkItem(
 					new FreenetURI(
-							"USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/2/"),
+							"USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/5/"),
 							"Toad", node.alerts));
 			flog.addBookmark(new BookmarkItem(
 					new FreenetURI(
-							"USK@hM9XRwjXIzU8xTSBXNZvTn2KuvTSRFnVn4EER9FQnpM,gsth24O7ud4gL4NwNuYJDUqfaWASOG2zxZY~ChtgPxc,AQACAAE/Flog/4/"),
+							"USK@hM9XRwjXIzU8xTSBXNZvTn2KuvTSRFnVn4EER9FQnpM,gsth24O7ud4gL4NwNuYJDUqfaWASOG2zxZY~ChtgPxc,AQACAAE/Flog/7/"),
 							"Nextgen$", node.alerts));
 
 			BookmarkCategory apps = (BookmarkCategory) defaultRoot.addBookmark(new BookmarkCategory("Freenet related software"));
