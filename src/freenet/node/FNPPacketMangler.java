@@ -64,6 +64,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     final PacketSocketHandler sock;
     final EntropySource fnpTimingSource;
     final EntropySource myPacketDataSource;
+    /*
+     * Objects cached during JFK message exchange: Message3,Message4 and authenticator
+     * The messages are cached in hashmaps because the message retrieval from the cache 
+     * can be performed in constant time( given the key)
+     * For the authenticator we used a arrayList. This is a better option when we just have 
+     * to insert into the end of the list and perform a simple 'get'. Usage of a linkedList 
+     * could prove to be much slower due to the allocation time for each node in the list.
+     */
     final Map message3Cache;
     final Map message4Cache;
     final List authenticatorCache;
@@ -576,7 +584,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         // It is basically a keyed hash(HMAC); size of output is that of the underlying hash function 
         byte[] authenticator = new byte[16];
         try{
-            authenticator = getBytes(authenticatorCache.get(authenticatorCache.size()));
+            // Intrinsic lock provided by the object authenticatorCache
+            synchronized(authenticatorCache){
+                authenticator = getBytes(authenticatorCache.get(authenticatorCache.size()));
+            }
         }
         catch(IOException e){
             Logger.error(this,"Error getting bytes");
@@ -774,7 +785,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 if(phase==2){
                     // Intrinsic lock provided by the object message3Cache
                     synchronized(message3Cache) {
-                    result = message3Cache.get(cacheKey);
+                        result = message3Cache.get(cacheKey);
                     }
                     if(result != null) {
                         synchronized(message3Cache) {
@@ -806,8 +817,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 try
                 {
                         sendPacket(output,replyTo,pn,0);
-                }catch(LocalAddressException e)
-                {
+                }catch(LocalAddressException e) {
                         Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn.getPeer());
                 }
                         
