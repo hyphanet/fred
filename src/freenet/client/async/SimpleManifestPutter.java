@@ -239,32 +239,34 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	public void start() throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Starting "+this);
+		if (logMINOR)
+			Logger.minor(this, "Starting " + this);
 		PutHandler[] running;
 
-		synchronized(this) {
-				running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
+		synchronized (this) {
+			running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 		}
-				try {
-					for(int i=0;i<running.length;i++) {
-						running[i].start();
-						if(logMINOR)
-							Logger.minor(this, "Started "+i+" of "+running.length);
-						if(isFinished()) {
-							if(logMINOR)
-								Logger.minor(this, "Already finished, killing start() on "+this);
-							return;
-						}
-					}
-					if(logMINOR) Logger.minor(this, "Started "+running.length+" PutHandler's for "+this);
-					if(running.length == 0) {
-						insertedAllFiles = true;
-						gotAllMetadata();
-					}
-				} catch (InsertException e) {
-					cancelAndFinish();
-					throw e;
+		try {
+			for (int i = 0; i < running.length; i++) {
+				running[i].start();
+				if (logMINOR)
+					Logger.minor(this, "Started " + i + " of " + running.length);
+				if (isFinished()) {
+					if (logMINOR)
+						Logger.minor(this, "Already finished, killing start() on " + this);
+					return;
 				}
+			}
+			if (logMINOR)
+				Logger.minor(this, "Started " + running.length + " PutHandler's for " + this);
+			if (running.length == 0) {
+				insertedAllFiles = true;
+				gotAllMetadata();
+			}
+		} catch (InsertException e) {
+			cancelAndFinish();
+			throw e;
+		}
 	}
 	
 	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) throws InsertException {
