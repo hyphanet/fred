@@ -530,7 +530,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		
 		cb.onFailure(e, this);
 	}
-
+	
+	/**
+	 * Cancel all running inserters and set finished to true.
+	 */
 	private void cancelAndFinish() {
 		PutHandler[] running;
 		synchronized(this) {
