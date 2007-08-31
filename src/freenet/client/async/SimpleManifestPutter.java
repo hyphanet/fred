@@ -244,6 +244,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 		synchronized(this) {
 				running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
+		}
 				try {
 					for(int i=0;i<running.length;i++) {
 						running[i].start();
@@ -264,7 +265,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					cancelAndFinish();
 					throw e;
 				}
-		}
 	}
 	
 	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) throws InsertException {
