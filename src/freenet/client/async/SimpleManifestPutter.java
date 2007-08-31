@@ -253,6 +253,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 						running[i].start();
 						if(logMINOR)
 							Logger.minor(this, "Started "+i+" of "+running.length);
+						if(isFinished()) {
+							if(logMINOR)
+								Logger.minor(this, "Already finished, killing start() on "+this);
+							return;
+						}
 					}
 					if(logMINOR) Logger.minor(this, "Started "+running.length+" PutHandler's for "+this);
 					if(cancelled) cancel();
