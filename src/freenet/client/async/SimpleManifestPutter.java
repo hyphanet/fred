@@ -550,6 +550,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	public void cancel() {
+		super.cancel();
 		fail(new InsertException(InsertException.CANCELLED));
 	}
 	
