@@ -242,11 +242,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(logMINOR) Logger.minor(this, "Starting "+this);
 		PutHandler[] running;
 
-		boolean cancel = false;
-		
 		synchronized(this) {
-			cancel = cancelled;
-			if(!cancelled) {
 				running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 				try {
 					for(int i=0;i<running.length;i++) {
@@ -260,7 +256,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 						}
 					}
 					if(logMINOR) Logger.minor(this, "Started "+running.length+" PutHandler's for "+this);
-					if(cancelled) cancel();
 					if(running.length == 0) {
 						insertedAllFiles = true;
 						gotAllMetadata();
@@ -269,9 +264,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					cancelAndFinish();
 					throw e;
 				}
-			}
 		}
-		if(cancel) cancel();
 	}
 	
 	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) throws InsertException {
