@@ -30,7 +30,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
 	private int VERBOSITY_PUT_FETCHABLE = 256;
 	private int VERBOSITY_COMPRESSION_START_END = 512;
-	
+
 	// Stuff waiting for reconnection
 	/** Has the request succeeded? */
 	protected boolean succeeded;
@@ -48,12 +48,12 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	/** Whether to force an early generation of the CHK */
 	protected final boolean earlyEncode;
-	
+
 	protected final FreenetURI publicURI;
-	
+
 	public final static String SALT = "Salt";
 	public final static String FILE_HASH = "FileHash";
-	
+
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler, 
 			short priorityClass, short persistenceType, String clientToken, boolean global, boolean getCHKOnly,
 			boolean dontCompress, int maxRetries, boolean earlyEncode) throws MalformedURLException {
@@ -125,7 +125,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			cancel();
 		// otherwise ignore
 	}
-	
+
 	public void onSuccess(BaseClientPutter state) {
 		synchronized(this) {
 			// Including this helps with certain bugs...
@@ -141,7 +141,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	}
 
 	public void onFailure(InsertException e, BaseClientPutter state) {
-        if(finished) return;
+		if(finished) return;
 		synchronized(this) {
 			finished = true;
 			putFailedMessage = new PutFailedMessage(e, identifier, global);
@@ -161,24 +161,24 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 		trySendGeneratedURIMessage(null);
 	}
-    
-    public void requestWasRemoved() {
-        // if request is still running, send a PutFailed with code=cancelled
-        if( !finished ) {
-            synchronized(this) {
-                finished = true;
-                InsertException cancelled = new InsertException(InsertException.CANCELLED);
-                putFailedMessage = new PutFailedMessage(cancelled, identifier, global);
-            }
-            trySendFinalMessage(null);
-        }
-        // notify client that request was removed
-        FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
-        client.queueClientRequestMessage(msg, 0);
 
-        freeData();
-        finish();
-    }
+	public void requestWasRemoved() {
+		// if request is still running, send a PutFailed with code=cancelled
+		if( !finished ) {
+			synchronized(this) {
+				finished = true;
+				InsertException cancelled = new InsertException(InsertException.CANCELLED);
+				putFailedMessage = new PutFailedMessage(cancelled, identifier, global);
+			}
+			trySendFinalMessage(null);
+		}
+		// notify client that request was removed
+		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
+		client.queueClientRequestMessage(msg, 0);
+
+		freeData();
+		finish();
+	}
 
 	public void receive(ClientEvent ce) {
 		if(finished) return;
@@ -215,9 +215,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			trySendProgressMessage(msg, VERBOSITY_PUT_FETCHABLE, null);
 		}
 	}
-	
+
 	private void trySendFinalMessage(FCPConnectionOutputHandler handler) {
-		
+
 		FCPMessage msg;
 		synchronized (this) {
 			if(succeeded) {
@@ -226,7 +226,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 				msg = putFailedMessage;
 			}
 		}
-		
+
 		if(msg == null) {
 			Logger.error(this, "Trying to send null message on "+this, new Exception("error"));
 		} else {
@@ -258,7 +258,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		else
 			client.queueClientRequestMessage(msg, verbosity);
 	}
-	
+
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
 		if(persistenceType == PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
@@ -268,7 +268,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			FCPMessage msg = persistentTagMessage();
 			handler.queue(msg);
 		}
-		
+
 		boolean generated = false;
 		FCPMessage msg = null;
 		boolean fin = false;
@@ -312,7 +312,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		
 		return fs;
 	}
-	
+
 	protected abstract String getTypeName();
 
 	public synchronized double getSuccessFraction() {
@@ -324,7 +324,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
-	
+
 	public synchronized double getTotalBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
@@ -333,7 +333,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		} else
 			return -1;
 	}
-	
+
 	public synchronized double getMinBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
@@ -342,7 +342,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		} else
 			return -1;
 	}
-	
+
 	public synchronized double getFailedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
@@ -351,7 +351,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		} else
 			return -1;
 	}
-	
+
 	public synchronized double getFatalyFailedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
@@ -360,7 +360,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		} else
 			return -1;
 	}
-	
+
 	public synchronized double getFetchedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
@@ -369,12 +369,12 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		} else
 			return -1;
 	}
-	
+
 	public synchronized boolean isTotalFinalized() {
 		if(!(progressMessage instanceof SimpleProgressMessage)) return false;
 		else return ((SimpleProgressMessage)progressMessage).isTotalFinalized();
 	}
-	
+
 	public synchronized String getFailureReason() {
 		if(putFailedMessage == null)
 			return null;
@@ -383,7 +383,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			s += ": "+putFailedMessage.extraDescription;
 		return s;
 	}
-	
+
 	public void setVarsRestart() {
 		synchronized(this) {
 			finished = false;

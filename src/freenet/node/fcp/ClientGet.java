@@ -77,7 +77,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			File returnFilename, File returnTempFilename) throws IdentifierCollisionException, NotAllowedException {
 		super(uri, identifier, verbosity, null, globalClient, prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
-						null, true);
+				null, true);
 
 		fctx = new FetchContext(client.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
 		fctx.eventProducer.addEventListener(this);
@@ -124,11 +124,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ret.free();
 				throw e;
 			}
-		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket, null);
-		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
-		}
+			getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket, null);
+			if(persistenceType != PERSIST_CONNECTION) {
+				FCPMessage msg = persistentTagMessage();
+				client.queueClientRequestMessage(msg, 0);
+			}
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException, MessageInvalidException {
@@ -147,12 +147,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Has already been checked
 		fctx.maxOutputLength = message.maxSize;
 		fctx.maxTempLength = message.maxTempSize;
-		
+
 		if(message.allowedMIMETypes != null) {
 			fctx.allowedMIMETypes = new HashSet();
 			for(int i=0;i<message.allowedMIMETypes.length;i++) fctx.allowedMIMETypes.add(message.allowedMIMETypes[i]);
 		}
-		
+
 		this.returnType = message.returnType;
 		this.binaryBlob = message.binaryBlob;
 		Bucket ret = null;
@@ -194,16 +194,16 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ret.free();
 				throw e;
 			}
-		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
-				client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
-				client.lowLevelClient, binaryBlob ? new NullBucket() : returnBucket, 
-						binaryBlob ? returnBucket : null);
-		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
-			if(handler != null && (!handler.isGlobalSubscribed()))
-				handler.outputHandler.queue(msg);
-		}
+			getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
+					client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
+					client.lowLevelClient, binaryBlob ? new NullBucket() : returnBucket, 
+							binaryBlob ? returnBucket : null);
+			if(persistenceType != PERSIST_CONNECTION) {
+				FCPMessage msg = persistentTagMessage();
+				client.queueClientRequestMessage(msg, 0);
+				if(handler != null && (!handler.isGlobalSubscribed()))
+					handler.outputHandler.queue(msg);
+			}
 	}
 
 	/**
@@ -296,18 +296,18 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			fctx.allowedMIMETypes = new HashSet();
 			for(int i=0;i<allowed.length;i++) fctx.allowedMIMETypes.add(allowed[i]);
 		}
-		
+
 		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
 				client.core.requestStarters.sskFetchScheduler, uri, 
 				fctx, priorityClass, client.lowLevelClient, 
 				binaryBlob ? new NullBucket() : returnBucket, 
-				binaryBlob ? returnBucket : null);
+						binaryBlob ? returnBucket : null);
 
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
 		}
-		
+
 		if(finished){
 			if(succeeded) 
 				allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
@@ -390,10 +390,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				if(persistenceType == PERSIST_CONNECTION)
 					adm.setFreeOnSent();
 				dontFree = true;
-			/* 
-			 * } else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
+				/* 
+				 * } else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 				// Do nothing
-			 */
+				 */
 			} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 				// Write to temp file, then rename over filename
 				FileOutputStream fos = null;
@@ -496,7 +496,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {
-        if(finished) return;
+		if(finished) return;
 		synchronized(this) {
 			succeeded = false;
 			getFailedMessage = new GetFailedMessage(e, identifier, global);
@@ -521,25 +521,25 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		// Ignore
 	}
-    
-    public void requestWasRemoved() {
-        // if request is still running, send a GetFailed with code=cancelled
-        if( !finished ) {
-            synchronized(this) {
-                succeeded = false;
-                finished = true;
-                FetchException cancelled = new FetchException(FetchException.CANCELLED);
-                getFailedMessage = new GetFailedMessage(cancelled, identifier, global);
-            }
-            trySendDataFoundOrGetFailed(null);
-        }
-        // notify client that request was removed
-        FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
-        client.queueClientRequestMessage(msg, 0);
 
-        freeData();
-        finish();
-    }
+	public void requestWasRemoved() {
+		// if request is still running, send a GetFailed with code=cancelled
+		if( !finished ) {
+			synchronized(this) {
+				succeeded = false;
+				finished = true;
+				FetchException cancelled = new FetchException(FetchException.CANCELLED);
+				getFailedMessage = new GetFailedMessage(cancelled, identifier, global);
+			}
+			trySendDataFoundOrGetFailed(null);
+		}
+		// notify client that request was removed
+		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
+		client.queueClientRequestMessage(msg, 0);
+
+		freeData();
+		finish();
+	}
 
 	public void receive(ClientEvent ce) {
 		// Don't need to lock, verbosity is final and finished is never unset.
