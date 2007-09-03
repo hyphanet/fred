@@ -17,12 +17,15 @@ public class AllDataMessage extends DataCarryingMessage {
 	final long dataLength;
 	final boolean global;
 	final String identifier;
+	final String startupTime, completionTime;
 	
-	public AllDataMessage(Bucket bucket, String identifier, boolean global) {
+	public AllDataMessage(Bucket bucket, String identifier, boolean global, long startupTime, long completionTime) {
 		this.bucket = bucket;
 		this.dataLength = bucket.size();
 		this.identifier = identifier;
 		this.global = global;
+		this.startupTime = String.valueOf(startupTime);
+		this.completionTime = String.valueOf(completionTime);
 	}
 
 	long dataLength() {
@@ -34,6 +37,8 @@ public class AllDataMessage extends DataCarryingMessage {
 		fs.putSingle("DataLength", Long.toString(dataLength));
 		fs.putSingle("Identifier", identifier);
 		if(global) fs.putSingle("Global", "true");
+		fs.putSingle("StartuptTime", startupTime);
+		fs.putSingle("CompletionTime", completionTime);
 		return fs;
 	}
 

@@ -12,11 +12,14 @@ public class PutSuccessfulMessage extends FCPMessage {
 	public final String identifier;
 	public final boolean global;
 	public final FreenetURI uri;
+	public final String startupTime, completionTime;
 	
-	public PutSuccessfulMessage(String identifier, boolean global, FreenetURI uri) {
+	public PutSuccessfulMessage(String identifier, boolean global, FreenetURI uri, long startupTime, long completionTime) {
 		this.identifier = identifier;
 		this.global = global;
 		this.uri = uri;
+		this.startupTime = String.valueOf(startupTime);
+		this.completionTime = String.valueOf(completionTime);
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -26,6 +29,8 @@ public class PutSuccessfulMessage extends FCPMessage {
 		// FIXME debug and remove!
 		if(uri != null)
 			fs.putSingle("URI", uri.toString());
+		fs.putSingle("StartuptTime", startupTime);
+		fs.putSingle("CompletionTime", completionTime);
 		return fs;
 	}
 

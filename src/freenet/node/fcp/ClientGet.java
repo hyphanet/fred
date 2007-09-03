@@ -310,7 +310,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		
 		if(finished){
 			if(succeeded) 
-				allDataPending = new AllDataMessage(returnBucket, identifier, global);
+				allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
 			else
 				started = true;
 		}
@@ -384,7 +384,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 				// Send all the data at once
 				// FIXME there should be other options
-				adm = new AllDataMessage(returnBucket, identifier, global);
+				// FIXME: CompletionTime is set on finish() : we need to give it current time here
+				// but it means we won't always return the same value to clients... Does it matter ?
+				adm = new AllDataMessage(returnBucket, identifier, global, startupTime, System.currentTimeMillis());
 				if(persistenceType == PERSIST_CONNECTION)
 					adm.setFreeOnSent();
 				dontFree = true;
@@ -594,6 +596,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		fs.putSingle("Global", Boolean.toString(client.isGlobalQueue));
 		fs.put("BinaryBlob", binaryBlob);
+		fs.put("StartupTime", startupTime);
+		if(finished)
+			fs.put("CompletionTime", completionTime);
+
 		return fs;
 	}
 

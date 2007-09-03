@@ -221,7 +221,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		FCPMessage msg;
 		synchronized (this) {
 			if(succeeded) {
-				msg = new PutSuccessfulMessage(identifier, global, generatedURI);
+				msg = new PutSuccessfulMessage(identifier, global, generatedURI, startupTime, completionTime);
 			} else {
 				msg = putFailedMessage;
 			}
@@ -306,6 +306,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			// Should have a putFailedMessage... unless there is a race condition.
 			fs.put("PutFailed", putFailedMessage.getFieldSet(false));
 		fs.putSingle("Global", Boolean.toString(client.isGlobalQueue));
+		fs.put("StartupTime", startupTime);
+		if(finished)
+			fs.put("CompletionTime", completionTime);
+		
 		return fs;
 	}
 	

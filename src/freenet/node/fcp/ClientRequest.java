@@ -37,6 +37,10 @@ public abstract class ClientRequest {
 	protected String clientToken;
 	/** Is the request on the global queue? */
 	protected final boolean global;
+	/** Timestamp : startup time */
+	protected final long startupTime;
+	/** Timestamp : completion time */
+	protected long completionTime = Long.MAX_VALUE;
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
 			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
@@ -56,6 +60,7 @@ public abstract class ClientRequest {
 		else
 			origHandler = null;
 		this.client = client;
+		this.startupTime = System.currentTimeMillis();
 	}
 	
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
@@ -80,6 +85,7 @@ public abstract class ClientRequest {
 		} else {
 			client = handler.getClient();
 		}
+		this.startupTime = System.currentTimeMillis();
 	}
 
 	public ClientRequest(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
@@ -98,6 +104,11 @@ public abstract class ClientRequest {
 		clientToken = fs.get("ClientToken");
 		finished = Fields.stringToBool(fs.get("Finished"), false);
 		global = Fields.stringToBool(fs.get("Global"), false);
+		final String stime = fs.get("StartupTime");
+		this.startupTime = stime == null ? System.currentTimeMillis() : Fields.parseLong(stime);
+		final String ctime = fs.get("CompletionTime");
+		if(ctime != null)
+			completionTime = Fields.parseLong(ctime);
 	}
 
 	/** Lost connection */
@@ -229,6 +240,7 @@ public abstract class ClientRequest {
 
 	/** Request completed. But we may have to stick around until we are acked. */
 	protected void finish() {
+		completionTime = System.currentTimeMillis();
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
 		else
