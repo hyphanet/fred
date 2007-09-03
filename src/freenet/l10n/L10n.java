@@ -21,9 +21,7 @@ import freenet.support.SimpleFieldSet;
 *
 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
 *
-* TODO: Maybe we ought to use the locale to set the default language.
 * TODO: Maybe base64 the override file ?
-* TODO: Add support for "custom", unknown languages ?
 *
 * comment(mario): for www interface we might detect locale from http requests?
 * for other access (telnet) using system locale would probably be good, but
