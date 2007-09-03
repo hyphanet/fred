@@ -1,0 +1,17 @@
+1 Initiator-Responder:
+This is a straightforward DiffieHellman exponential along with a random nonce.
+The Initiator Nonce serves two purposes;it allows the initiator to use the same exponentials during different sessions while ensuring that the resulting session key will be different,can be used to differentiate between parallel sessions
+2 Responder-Initiator:
+Responder replies with a signed copy of his own exponential, a random nonce and an authenticator calculated from a transient hash key private to the responder.
+3 Initiator-Responder:
+Initiator echoes the data sent by the responder including the authenticator. This helps the responder verify the authenticity of the returned data. The authenticator is sufficient defense against forgery; replays, however, could cause considerable computation. The defense against this is to cache the corresponding Message (4); if a duplicate Message (3) is seen, the cached response is retransmitted; The key for looking up Message 3's in the cache is the authenticator; this prevents DoS attacks where the attacker randomly modifies the encrypted
+blocks of a valid message, causing a cache miss and thus more processing to be done at the Responder. Rejection messages do not concern us because group information which is sent in Message2 indicates which groups and algorithms are acceptable avoiding the need for explicit message rejection.
+4 Responder-Initiator:
+Encrypted message of the signature on both nonces, both exponentials using the same keys as in the previous message.The Initiator can verify that the Responder is present and participating in the session, by decrypting the message and verifying the enclosed signature.
+
+DOS Mitigation
+Responder does not keep state on receiving Msg 1
+HMAC is produced/verified by the Responder only
+HMAC is used to quickly discard DoS packets
+This lookup can done in O(n) using a Patricia trie (Specialized Set data structure based on a prefix tree,they find particular application in the area of IP routing where the ability to contain large ranges of values with a few exceptions is particularly suited to the hierarchical organization of IP Addresses)
+Responder (and Initiator) can reuse g^r and g^i, key but material still changes
