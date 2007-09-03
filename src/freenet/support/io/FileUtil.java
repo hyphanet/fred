@@ -12,7 +12,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 
 import freenet.client.DefaultMIMETypes;
 
@@ -25,7 +24,7 @@ final public class FileUtil {
 	}
 
 	/**
-	 * Guesstimate real disk usage for a file with a given filename, of a given length.
+	 * Guess estimate real disk usage for a file with a given filename, of a given length.
 	 */
 	public static long estimateUsage(File file, long flen) {
 		/**
@@ -76,33 +75,24 @@ final public class FileUtil {
 		return result;
 	}
 	
-	// FIXME: this is called readUTF but it reads in the default charset ... eh??
 	public static String readUTF(File file) throws FileNotFoundException, IOException {
-		StringBuffer result = new StringBuffer();
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
-		InputStreamReader isr = null;
+		DataInputStream dis = null;
 		
 		try {
 			fis = new FileInputStream(file);
 			bis = new BufferedInputStream(fis);
-			isr = new InputStreamReader(bis);
+			dis = new DataInputStream(bis);
 
-			char[] buf = new char[4096];
-			int length = 0;
-
-			while((length = isr.read(buf)) > 0) {
-				result.append(buf, 0, length);
-			}
-
+			return dis.readUTF();
 		} finally {
 			try {
-				if(isr != null) isr.close();
+				if(dis != null) dis.close();
 				if(bis != null) bis.close();
 				if(fis != null) fis.close();
 			} catch (IOException e) {}
 		}
-		return result.toString();
 	}
 	
 	public static boolean writeTo(InputStream input, File target) throws FileNotFoundException, IOException {
