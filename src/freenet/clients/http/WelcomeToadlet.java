@@ -8,8 +8,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.StringWriter;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -34,6 +32,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.FileUtil;
 
 
 import freenet.frost.message.*;
@@ -404,16 +403,9 @@ public class WelcomeToadlet extends Toadlet {
 		if(ctx.isAllowedFullAccess()) {
 
 			if(request.isParameterSet("latestlog")) {
-
-				FileReader reader = new FileReader(node.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
-
-				StringWriter sw = new StringWriter();
-				char[] buffer = new char[1024];
-				int read;
-				while((read = reader.read(buffer)) != -1)
-					sw.write(buffer, 0, read);
-
-				this.writeHTMLReply(ctx, 200, "OK", sw.toString());
+				final File logs = new File(node.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
+				
+				this.writeHTMLReply(ctx, 200, "OK", FileUtil.readUTF(logs));
 				return;
 			} else if (request.isParameterSet("terminated")) {
 				if((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(core.formPassword)) {
@@ -442,19 +434,19 @@ public class WelcomeToadlet extends Toadlet {
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				Logger.normal(this, "Node is restarting");
 				return;
-                        } else if (request.getParam("newbookmark").length() > 0) {
+			} else if (request.getParam("newbookmark").length() > 0) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("confirmAddBookmarkTitle"), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox(l10n("confirmAddBookmarkSubTitle")));
 				HTMLNode addForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(infobox), "/bookmarkEditor/", "editBookmarkForm");
 				addForm.addChild("#", l10n("confirmAddBookmarkWithKey", "key", request.getParam("newbookmark")));
 				addForm.addChild("br");
-                                String key  = request.getParam("newbookmark");
-                                if(key.startsWith("freenet:"))
-                                    key = key.substring(8);
+				String key  = request.getParam("newbookmark");
+				if(key.startsWith("freenet:"))
+					key = key.substring(8);
 				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key});
 				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", request.getParam("desc") });
-                                addForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "bookmark", "/"});
+				addForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "bookmark", "/"});
 				addForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "action", "addItem"});
 				addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addbookmark", L10n.getString("BookmarkEditorToadlet.addBookmark") });
 				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
