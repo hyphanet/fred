@@ -208,7 +208,7 @@ public class TextModeClientInterfaceServer implements Runnable {
      * Read commands, run them
      */
     public void run() {
-	    freenet.support.OSThread.logPID(this);
+	    freenet.support.Logger.OSThread.logPID(this);
     	while(true) {
     		int curPort = port;
     		String tempBindTo = this.bindTo;

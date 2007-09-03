@@ -75,7 +75,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
     }
     
     public void run() {
-	    freenet.support.OSThread.logPID(this);
+	    freenet.support.Logger.OSThread.logPID(this);
         try {
         	realRun();
 		} catch (OutOfMemoryError e) {

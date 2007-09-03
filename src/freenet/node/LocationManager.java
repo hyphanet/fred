@@ -144,7 +144,7 @@ public class LocationManager {
     public class SwapRequestSender implements Runnable {
 
         public void run() {
-		    freenet.support.OSThread.logPID(this);
+		    freenet.support.Logger.OSThread.logPID(this);
             while(true) {
                 try {
                     long startTime = System.currentTimeMillis();
@@ -245,7 +245,7 @@ public class LocationManager {
         }
         
         public void run() {
-		    freenet.support.OSThread.logPID(this);
+		    freenet.support.Logger.OSThread.logPID(this);
             MessageDigest md = SHA256.getMessageDigest();
             
             boolean reachedEnd = false;
@@ -403,7 +403,7 @@ public class LocationManager {
         RecentlyForwardedItem item;
         
         public void run() {
-		    freenet.support.OSThread.logPID(this);
+		    freenet.support.Logger.OSThread.logPID(this);
             long uid = r.nextLong();            
             if(!lock()) return;
             boolean reachedEnd = false;

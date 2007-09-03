@@ -30,8 +30,7 @@ import freenet.support.LoggerHook.InvalidThresholdException;
  *	A class to tie the wrapper and the node (needed for self-restarting support)
  *
  */
-public class NodeStarter
-    implements WrapperListener
+public class NodeStarter implements WrapperListener
 {
     private Node node;
 	private static LoggingConfigHandler logConfigHandler;

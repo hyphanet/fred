@@ -152,7 +152,7 @@ public class IPDetectorPluginManager {
 		}
 		node.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
-				freenet.support.OSThread.logPID(this);
+				freenet.support.Logger.OSThread.logPID(this);
 				tryMaybeRun();
 			}
 		}, 60*1000);
@@ -476,7 +476,7 @@ public class IPDetectorPluginManager {
 	public class DetectorRunner implements Runnable {
 
 		public void run() {
-			freenet.support.OSThread.logPID(this);
+			freenet.support.Logger.OSThread.logPID(this);
 			try {
 				realRun();
 			} catch (OutOfMemoryError e) {

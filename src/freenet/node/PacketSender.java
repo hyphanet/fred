@@ -70,7 +70,7 @@ public class PacketSender implements Runnable, Ticker {
     private class Watchdog implements Runnable {
     	
     	public void run() {
-		    freenet.support.OSThread.logPID(this);
+		    freenet.support.Logger.OSThread.logPID(this);
     		// Do not lock anything, or we may be caught up with a lost-lock deadlock.
     		while(true) {
     			try {
@@ -121,7 +121,7 @@ public class PacketSender implements Runnable, Ticker {
     	if(now < transition) {
     		queueTimedJob(new Runnable() {
     			public void run() {
-				    freenet.support.OSThread.logPID(this);
+				    freenet.support.Logger.OSThread.logPID(this);
     				PeerNode[] nodes = node.peers.myPeers;
     				for(int i=0;i<nodes.length;i++) {
     					PeerNode pn = nodes[i];
@@ -141,7 +141,7 @@ public class PacketSender implements Runnable, Ticker {
     }
     
     public void run() {
-	    freenet.support.OSThread.logPID(this);
+	    freenet.support.Logger.OSThread.logPID(this);
         while(true) {
             lastReceivedPacketFromAnyNode = lastReportedNoPackets;
             try {

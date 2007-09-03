@@ -45,7 +45,7 @@ public class TestnetStatusUploader implements Runnable {
 	private Socket client;
 	
 	public void run() {
-		    freenet.support.OSThread.logPID(this);
+		    freenet.support.Logger.OSThread.logPID(this);
 			//thread loop
 			
 			while(true){

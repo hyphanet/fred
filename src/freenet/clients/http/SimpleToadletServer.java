@@ -425,7 +425,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 		public void run() {
-		    freenet.support.OSThread.logPID(this);
+		    freenet.support.Logger.OSThread.logPID(this);
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {

@@ -75,7 +75,7 @@ public class TestnetHandler implements Runnable {
 	private int testnetPort;
 	
 	public void run() {
-	    freenet.support.OSThread.logPID(this);
+	    freenet.support.Logger.OSThread.logPID(this);
 		while(true){
 			// Set up server socket
 			try {
@@ -129,7 +129,7 @@ public class TestnetHandler implements Runnable {
 		}
 		
 		public void run() {
-		    freenet.support.OSThread.logPID(this);
+		    freenet.support.Logger.OSThread.logPID(this);
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			InputStream is = null;
 			OutputStream os = null;

@@ -71,7 +71,7 @@ public class InsertHandler implements Runnable, ByteCounter {
     }
     
     public void run() {
-	    freenet.support.OSThread.logPID(this);
+	    freenet.support.Logger.OSThread.logPID(this);
         try {
         	realRun();
 		} catch (OutOfMemoryError e) {
@@ -401,7 +401,7 @@ public class InsertHandler implements Runnable, ByteCounter {
     public class DataReceiver implements Runnable {
 
         public void run() {
-		    freenet.support.OSThread.logPID(this);
+		    freenet.support.Logger.OSThread.logPID(this);
         	synchronized(this) {
         		receiveStarted = true;
         	}

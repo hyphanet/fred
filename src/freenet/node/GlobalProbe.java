@@ -39,7 +39,7 @@ public class GlobalProbe implements Runnable {
 	}
 	
 	public void run() {
-		freenet.support.OSThread.logPID(this);
+		freenet.support.Logger.OSThread.logPID(this);
 		synchronized(this) {
 			lastLocation = 0.0;
 			double prevLoc = lastLocation;

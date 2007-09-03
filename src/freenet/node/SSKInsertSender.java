@@ -101,7 +101,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
     }
     
 	public void run() {
-	    freenet.support.OSThread.logPID(this);
+	    freenet.support.Logger.OSThread.logPID(this);
         short origHTL = htl;
         node.addInsertSender(myKey, htl, this);
         try {

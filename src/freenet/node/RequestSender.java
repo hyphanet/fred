@@ -117,7 +117,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     }
     
     public void run() {
-	    freenet.support.OSThread.logPID(this);
+	    freenet.support.Logger.OSThread.logPID(this);
         if((key instanceof NodeSSK) && (pubKey == null)) {
         	pubKey = ((NodeSSK)key).getPubKey();
         }
