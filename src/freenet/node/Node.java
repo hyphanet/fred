@@ -839,7 +839,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		
 		// Name 	 
-		nodeConfig.register("name", myName, sortOrder++, false, true, "Node.nodeName", "Node.nodeNameLong", 	 
+		nodeConfig.register("name", myName, sortOrder++, false, true, "MeaningfulNodeNameUserAlert.noNodeNickTitle", "MeaningfulNodeNameUserAlert.noNodeNick", 	 
 						new NodeNameCallback(this)); 	 
 		myName = nodeConfig.getString("name"); 	 
 
