@@ -47,6 +47,8 @@ public class BinaryBlobInserter implements ClientPutState {
 		
 		BinaryBlob.readBinaryBlob(dis, blocks, tolerant);
 		
+		dis.close();
+		
 		Vector myInserters = new Vector();
 		Iterator i = blocks.keys().iterator();
 		

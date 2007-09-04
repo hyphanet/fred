@@ -359,6 +359,7 @@ public class TextModeClientInterface implements Runnable {
     		while(bis.available() > 0){
     			outsb.append((char)bis.read());
     		}
+    		bis.close();
     		output.data.free();
     	} catch (IOException e) {
     		outsb.append("Bucket error?: " + e.getMessage());
