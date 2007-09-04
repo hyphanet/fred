@@ -234,8 +234,8 @@ public class CPUID {
 				}
 			}
 			if(getCPUFamily() == 15){ // Must check Extended Family
-				if(getCPUExtendedFamily() == 0){ AMD K8
-					// Tgis just tells us socket type and chip die technology
+				if(getCPUExtendedFamily() == 0){ // AMD K8
+					// This just tells us socket type and chip die technology
 					// see BrandID both the ID and NN portions
 					// If you need to determine a specific chip brand
 					switch(getCPUModel()){
