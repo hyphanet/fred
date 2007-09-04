@@ -233,15 +233,26 @@ public class CPUID {
 						return "Athlon (Barton)";
 				}
 			}
-			if(getCPUFamily() == 15){
-				if(getCPUExtendedFamily() == 0){
+			if(getCPUFamily() == 15){ // Must check Extended Family
+				if(getCPUExtendedFamily() == 0){ AMD K8
+					// Tgis just tells us socket type and chip die technology
+					// see BrandID both the ID and NN portions
+					// If you need to determine a specific chip brand
 					switch(getCPUModel()){
 						case 4:
 							return "Athlon 64";
 						case 5:
 							return "Athlon 64 FX Opteron";
+						case 7:
+							return "Athlon 64 (0.13 um 939)";
+						case 8:
+							return "Athlon 64 (0.13 um 754)";
+						case 11:
+							return "Athlon 64 (0.13 um 939)";
 						case 12:
-							return "AMD Athlon(tm) 64 Processor 3000+";
+							return "Athlon 64 (0.13 um 754)";
+						case 15:
+							return "Athlon 64 (0.13 um 939)";
 					}
 				}
 			}
@@ -373,6 +384,7 @@ public class CPUID {
 		System.out.println("**CPUInfo**");
 		System.out.println("CPU Vendor: " + getCPUVendorID());
 		System.out.println("CPU Family: " + getCPUFamily());
+		System.out.println("CPU Extended Family: " + getCPUExtendedFamily());
 		System.out.println("CPU Model: " + getCPUModel());
 		System.out.println("CPU Stepping: " + getCPUStepping());
 		System.out.println("CPU Flags: " + getCPUFlags());
