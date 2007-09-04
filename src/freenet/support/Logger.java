@@ -15,8 +15,6 @@ import freenet.support.LoggerHook.InvalidThresholdException;
 */
 public abstract class Logger {
 
-	/** These indicate the verbosity levels for calls to log() * */
-
 	public final static class OSThread {
 		
 		public static boolean getPIDEnabled = false;
@@ -192,6 +190,8 @@ public abstract class Logger {
 			return ppid;
 		}
 	}
+
+	/** These indicate the verbosity levels for calls to log() * */
 
 	/** This message indicates an error which prevents correct functionality* */
 	public static final int ERROR = 16;
