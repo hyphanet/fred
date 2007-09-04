@@ -367,4 +367,15 @@ public abstract class ClientRequest {
 		SerializableToFieldSetBucket bucket = (SerializableToFieldSetBucket) data;
 		fs.put(name, bucket.toFieldSet());
 	}
+
+	public void restartAsync() {
+		synchronized(this) {
+			this.started = false;
+		}
+		client.core.getExecutor().execute(new Runnable() {
+			public void run() {
+				restart();
+			}
+		}, "Restarting "+this);
+	}
 }

@@ -117,14 +117,7 @@ public class QueueToadlet extends Toadlet {
 				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
 					ClientRequest clientRequest = clientRequests[requestIndex];
 					if (clientRequest.getIdentifier().equals(identifier)) {
-						if(!clientRequest.restart()) {
-							sendErrorPage(ctx, 200, 
-									L10n.getString("QueueToadlet.failedToRestartRequest"),
-									L10n.getString("QueueToadlet.failedToRestart", 
-											new String[]{ "id" },
-											new String[] { identifier}
-							));
-						}
+						clientRequest.restartAsync();
 					}
 				}
 				fcp.forceStorePersistentRequests();
