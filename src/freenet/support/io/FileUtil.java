@@ -76,7 +76,6 @@ final public class FileUtil {
 		return result;
 	}
 	
-	// FIXME: this is called readUTF but it reads in the default charset ... eh??
 	public static String readUTF(File file) throws FileNotFoundException, IOException {
 		StringBuffer result = new StringBuffer();
 		FileInputStream fis = null;
@@ -86,7 +85,7 @@ final public class FileUtil {
 		try {
 			fis = new FileInputStream(file);
 			bis = new BufferedInputStream(fis);
-			isr = new InputStreamReader(bis);
+			isr = new InputStreamReader(bis, "UTF-8");
 
 			char[] buf = new char[4096];
 			int length = 0;
