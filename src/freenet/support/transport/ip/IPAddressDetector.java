@@ -75,9 +75,6 @@ public class IPAddressDetector implements Runnable {
 		Enumeration interfaces = null;
 		try {
 			interfaces = java.net.NetworkInterface.getNetworkInterfaces();
-		} catch (NoClassDefFoundError e) {
-			addrs.add(oldDetect());
-			old = true;
 		} catch (SocketException e) {
 			Logger.error(
 				this,
