@@ -17,15 +17,15 @@ public class AllDataMessage extends DataCarryingMessage {
 	final long dataLength;
 	final boolean global;
 	final String identifier;
-	final String startupTime, completionTime;
+	final long startupTime, completionTime;
 	
 	public AllDataMessage(Bucket bucket, String identifier, boolean global, long startupTime, long completionTime) {
 		this.bucket = bucket;
 		this.dataLength = bucket.size();
 		this.identifier = identifier;
 		this.global = global;
-		this.startupTime = String.valueOf(startupTime);
-		this.completionTime = String.valueOf(completionTime);
+		this.startupTime = startupTime;
+		this.completionTime = completionTime;
 	}
 
 	long dataLength() {
@@ -34,11 +34,11 @@ public class AllDataMessage extends DataCarryingMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.putSingle("DataLength", Long.toString(dataLength));
+		fs.put("DataLength", dataLength);
 		fs.putSingle("Identifier", identifier);
 		if(global) fs.putSingle("Global", "true");
-		fs.putSingle("StartuptTime", startupTime);
-		fs.putSingle("CompletionTime", completionTime);
+		fs.put("StartuptTime", startupTime);
+		fs.put("CompletionTime", completionTime);
 		return fs;
 	}
 
