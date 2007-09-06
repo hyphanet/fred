@@ -753,7 +753,9 @@ public final class RequestSender implements Runnable, ByteCounter {
 					wait(OPENNET_TIMEOUT);
 				} catch (InterruptedException e) {
 					// Ignore
+					continue;
 				}
+				return null;
     		}
     	}
     }
