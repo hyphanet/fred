@@ -625,9 +625,9 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	public void registerPortForwardPlugin(FredPluginPortForward forward) {
 		if(forward == null) throw new NullPointerException();
 		synchronized(this) {
-			FredPluginPortForward[] newForwardPlugins = new FredPluginPortForward[plugins.length+1];
-			System.arraycopy(plugins, 0, newForwardPlugins, 0, plugins.length);
-			newForwardPlugins[plugins.length] = forward;
+			FredPluginPortForward[] newForwardPlugins = new FredPluginPortForward[portForwardPlugins.length+1];
+			System.arraycopy(portForwardPlugins, 0, newForwardPlugins, 0, portForwardPlugins.length);
+			newForwardPlugins[portForwardPlugins.length] = forward;
 			portForwardPlugins = newForwardPlugins;
 		}
 		if(logMINOR) Logger.minor(this, "Registering a new port forward plugin : " + forward);
