@@ -594,16 +594,20 @@ public class NodeUpdateManager {
 	void onDownloadedNewJar(boolean isExt) {
 		synchronized(this) {
 			if(isExt) {
-				if(extUpdater.getFetchedVersion() > ExtVersion.buildNumber) {
+				if(extUpdater.getFetchedVersion() > NodeStarter.extBuildNumber) {
 					hasNewExtJar = true;
 					startedFetchingNextExtJar = -1;
 					gotJarTime = System.currentTimeMillis();
+					if(logMINOR)
+						Logger.minor(this, "Got ext jar: "+extUpdater.getFetchedVersion());
 				}
 			} else {
 				if(mainUpdater.getFetchedVersion() > Version.buildNumber()) {
 					hasNewMainJar = true;
 					startedFetchingNextMainJar = -1;
 					gotJarTime = System.currentTimeMillis();
+					if(logMINOR)
+						Logger.minor(this, "Got main jar: "+mainUpdater.getFetchedVersion());
 				}
 			}
 		}
