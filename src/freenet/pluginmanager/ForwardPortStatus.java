@@ -21,8 +21,13 @@ public class ForwardPortStatus {
 	
 	public final String reasonString;
 	
-	public ForwardPortStatus(int status, String reason) {
+	/** Some plugins may need to change the external port. They can return it
+	 * to the node here. */
+	public final int externalPort;
+	
+	public ForwardPortStatus(int status, String reason, int externalPort) {
 		this.status = status;
 		this.reasonString = reason;
+		this.externalPort = externalPort;
 	}
 }

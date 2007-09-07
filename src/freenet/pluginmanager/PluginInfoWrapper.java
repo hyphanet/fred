@@ -17,6 +17,7 @@ public class PluginInfoWrapper {
 	private boolean isPproxyPlugin;
 	private boolean isThreadlessPlugin;
 	private boolean isIPDetectorPlugin;
+	private boolean isPortForwardPlugin;
 	private String filename;
 	private HashSet toadletLinks=new HashSet(); 
 	//public String 
@@ -34,6 +35,7 @@ public class PluginInfoWrapper {
 		isPproxyPlugin = (plug instanceof FredPluginHTTP);
 		isThreadlessPlugin = (plug instanceof FredPluginThreadless);
 		isIPDetectorPlugin = (plug instanceof FredPluginIPDetector);
+		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
 	}
 	
 	public String toString() {
@@ -97,6 +99,10 @@ public class PluginInfoWrapper {
 
 	public boolean isIPDetectorPlugin() {
 		return isIPDetectorPlugin;
+	}
+	
+	public boolean isPortForwardPlugin() {
+		return isPortForwardPlugin;
 	}
 	
 	public Thread getThread() {

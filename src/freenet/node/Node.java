@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Random;
+import java.util.Set;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -80,6 +81,7 @@ import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.OpennetUserAlert;
 import freenet.node.useralerts.TimeSkewDetectedUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
@@ -785,6 +787,7 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				if(val) o.start();
 				else o.stop();
+				ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
 			}
 		});
 		
@@ -2680,6 +2683,25 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	public synchronized boolean passOpennetRefsThroughDarknet() {
 		return passOpennetRefsThroughDarknet;
+	}
+
+	/**
+	 * Get the set of public ports that need to be forwarded. These are internal
+	 * ports, not necessarily external - they may be rewritten by the NAT.
+	 * @return A Set of ForwardPort's to be fed to port forward plugins.
+	 */
+	public Set getPublicInterfacePorts() {
+		HashSet set = new HashSet();
+		// FIXME IPv6 support
+		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.portNumber));
+		OpennetManager opennet = this.opennet;
+		if(opennet != null) {
+			NodeCrypto crypto = opennet.crypto;
+			if(crypto != null) {
+				set.add(new ForwardPort("opennet", false, ForwardPort.PROTOCOL_UDP_IPV4, crypto.portNumber));
+			}
+		}
+		return set;
 	}
 
 }

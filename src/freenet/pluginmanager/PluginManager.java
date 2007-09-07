@@ -128,6 +128,9 @@ public class PluginManager {
 			if(pi.isIPDetectorPlugin()) {
 				node.ipDetector.registerIPDetectorPlugin((FredPluginIPDetector) plug);
 			}
+			if(pi.isPortForwardPlugin()) {
+				node.ipDetector.registerPortForwardPlugin((FredPluginPortForward) plug);
+			}
 
 			synchronized (pluginInfo) {
 				pluginInfo.put(pi.getThreadName(), pi);

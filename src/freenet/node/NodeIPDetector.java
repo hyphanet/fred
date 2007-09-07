@@ -17,6 +17,7 @@ import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
+import freenet.pluginmanager.FredPluginPortForward;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
@@ -439,6 +440,10 @@ public class NodeIPDetector {
 			if(maybeSymmetricAlert != null)
 				node.clientCore.alerts.unregister(maybeSymmetricAlert);
 		}
+	}
+
+	public void registerPortForwardPlugin(FredPluginPortForward forward) {
+		ipDetectorManager.registerPortForwardPlugin(forward);
 	}
 	
 }

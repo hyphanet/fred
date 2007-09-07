@@ -20,11 +20,23 @@ public class ForwardPort {
 	// We don't currently support binding to a specific internal interface.
 	// It would be complicated: Different interfaces may be on different LANs,
 	// and an IGD is normally on only one LAN.
+	private final int hashCode;
 	
 	public ForwardPort(String name, boolean isIP6, int protocol, int portNumber) {
 		this.name = name;
 		this.isIP6 = isIP6;
 		this.protocol = protocol;
 		this.portNumber = portNumber;
+		hashCode = name.hashCode() | (isIP6 ? 1 : 0) | protocol | portNumber;
+	}
+	
+	public int hashCode() {
+		return hashCode;
+	}
+	
+	public boolean equals(Object o) {
+		if(!(o instanceof ForwardPort)) return false;
+		ForwardPort f = (ForwardPort) o;
+		return (f.name.equals(name)) && f.isIP6 == isIP6 && f.protocol == protocol && f.portNumber == portNumber;
 	}
 }
