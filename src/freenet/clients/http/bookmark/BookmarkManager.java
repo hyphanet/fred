@@ -47,7 +47,7 @@ public class BookmarkManager {
 			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
 							"USK@RJnh1EnvOSPwOWVRS2nyhC4eIQkKoNE5hcTv7~yY-sM,pOloLxnKWM~AL24iDMHOAvTvCqMlB-p2BO9zK96TOZA,AQACAAE/index_fr/8/"),
-							"Index des sites Fran�ais (french freesites with descriptions but no categories)",
+							"Index des sites Français (french freesites with descriptions but no categories)",
 							node.alerts));
 
 			indexes.addBookmark(new BookmarkItem(
