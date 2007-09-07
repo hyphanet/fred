@@ -120,7 +120,7 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 						sb.append(l10n("fetchingNewNode", "nodeVersion", Integer.toString(updater.fetchingNewMainJarVersion())));
 				} else {
 					if(fetchingNewExt)
-						sb.append(l10n("fetchingNewExt", "extVersion", Integer.toString(updater.fetchingNewMainJarVersion())));
+						sb.append(l10n("fetchingNewExt", "extVersion", Integer.toString(updater.fetchingNewExtJarVersion())));
 				}
 				sb.append(l10n("updateASAPQuestion"));
 				formText = l10n("updateASAPButton");
