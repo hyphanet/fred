@@ -669,15 +669,15 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			ForwardPort p = (ForwardPort) i.next();
 			ForwardPortStatus status = (ForwardPortStatus) statuses.get(p);
 			if(status == null) continue;
-			if(status.status == status.DEFINITE_SUCCESS) {
+			if(status.status == ForwardPortStatus.DEFINITE_SUCCESS) {
 				Logger.normal(this, "Succeeded forwarding "+p.name+" port "+p.portNumber+" for "+p.protocol+" - port forward definitely succeeded "+status.reasonString);
-			} else if(status.status == status.PROBABLE_SUCCESS) {
+			} else if(status.status == ForwardPortStatus.PROBABLE_SUCCESS) {
 				Logger.normal(this, "Probably succeeded forwarding "+p.name+" port "+p.portNumber+" for "+p.protocol+" - port forward probably succeeded "+status.reasonString);
-			} else if(status.status == status.MAYBE_SUCCESS) {
+			} else if(status.status == ForwardPortStatus.MAYBE_SUCCESS) {
 				Logger.normal(this, "Maybe succeeded forwarding "+p.name+" port "+p.portNumber+" for "+p.protocol+" - port forward may have succeeded but strongly recommend out of band verification "+status.reasonString);
-			} else if(status.status == status.DEFINITE_FAILURE) {
+			} else if(status.status == ForwardPortStatus.DEFINITE_FAILURE) {
 				Logger.error(this, "Failed forwarding "+p.name+" port "+p.portNumber+" for "+p.protocol+" - port forward definitely failed "+status.reasonString);
-			} else if(status.status == status.PROBABLE_FAILURE) {
+			} else if(status.status == ForwardPortStatus.PROBABLE_FAILURE) {
 				Logger.error(this, "Probably failed forwarding "+p.name+" port "+p.portNumber+" for "+p.protocol+" - port forward probably failed "+status.reasonString);
 			}
 			// Not much more we can do / want to do for now
