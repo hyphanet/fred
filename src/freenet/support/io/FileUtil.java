@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.support.Logger;
 
 final public class FileUtil {
 
@@ -107,7 +108,9 @@ final public class FileUtil {
 	public static boolean writeTo(InputStream input, File target) throws FileNotFoundException, IOException {
 		DataInputStream dis = null;
 		FileOutputStream fos = null;
-		File file = File.createTempFile("temp", ".tmp");
+		File file = File.createTempFile("temp", ".tmp", target.getParentFile());
+		if(Logger.shouldLog(Logger.MINOR, FileUtil.class))
+			Logger.minor(FileUtil.class, "Writing to "+file+" to be renamed to "+target);
 		
 		try {
 			dis = new DataInputStream(input);
@@ -125,7 +128,12 @@ final public class FileUtil {
 			if(fos != null) fos.close();
 		}
 		
-		return file.renameTo(target);
+		if(file.renameTo(target))
+			return true;
+		else {
+			file.delete();
+			return false;
+		}
 	}
 
 	public static String sanitize(String s) {
