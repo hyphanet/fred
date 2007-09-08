@@ -51,7 +51,7 @@ public class PluginManager {
 	private final HashMap toadletList;
 	private final Vector/*<PluginInfoWrapper>*/ pluginWrappers;
 	private PluginRespirator pluginRespirator = null;
-	private final Node node;
+	final Node node;
 	private final NodeClientCore core;
 	SubConfig pmconfig;
 	private boolean logMINOR;

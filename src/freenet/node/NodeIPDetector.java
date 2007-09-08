@@ -412,8 +412,12 @@ public class NodeIPDetector {
 
 	public void registerIPDetectorPlugin(FredPluginIPDetector detector) {
 		ipDetectorManager.register(detector);
-	} // FIXME what about unloading?
+	}
 
+	public void unregisterIPDetectorPlugin(FredPluginIPDetector detector) {
+		ipDetectorManager.remove(detector);
+	}
+	
 	public synchronized boolean isDetecting() {
 		return !(hasDetectedPM && hasDetectedIAD);
 	}
@@ -445,5 +449,8 @@ public class NodeIPDetector {
 	public void registerPortForwardPlugin(FredPluginPortForward forward) {
 		ipDetectorManager.registerPortForwardPlugin(forward);
 	}
-	
+
+	public void unregisterPortForwardPlugin(FredPluginPortForward forward) {
+		ipDetectorManager.remove(forward);
+	}
 }

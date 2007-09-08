@@ -126,6 +126,10 @@ public class PluginInfoWrapper {
 			unregistered = true;
 		}
 		manager.unregisterPluginToadlet(this);
+		if(isIPDetectorPlugin)
+			manager.node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
+		if(isPortForwardPlugin)
+			manager.node.ipDetector.unregisterPortForwardPlugin((FredPluginPortForward)plug);
 	}
 
 	public boolean isPproxyPlugin() {
