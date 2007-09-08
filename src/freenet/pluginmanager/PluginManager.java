@@ -448,6 +448,7 @@ public class PluginManager {
 					cls = cl.loadClass(realClass);
 
 				} catch (Exception e) {
+					Logger.normal(this, "Failed to load plugin "+filename+" : "+e, e);
 					if (tries >= 5)
 						throw new PluginNotFoundException("Initialization error:"
 								+ filename, e);
