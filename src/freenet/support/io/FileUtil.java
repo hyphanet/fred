@@ -105,30 +105,24 @@ final public class FileUtil {
 	}
 	
 	public static boolean writeTo(InputStream input, File target) throws FileNotFoundException, IOException {
-		BufferedInputStream bis = null;
 		DataInputStream dis = null;
 		FileOutputStream fos = null;
-		BufferedOutputStream bos = null;
 		File file = File.createTempFile("temp", ".tmp");
 		
 		try {
-			bis = new BufferedInputStream(input);
-			dis = new DataInputStream(bis);
+			dis = new DataInputStream(input);
 			fos = new FileOutputStream(file);
-			bos= new BufferedOutputStream(fos);
 
 			int len = 0;
 			byte[] buffer = new byte[4096];
 			while ((len = dis.read(buffer)) > 0) {
-				bos.write(buffer, 0, len);
+				fos.write(buffer, 0, len);
 			}
 		} catch (IOException e) {
 			throw e;
 		} finally {
 			if(dis != null) dis.close();
-			if(bis != null) bis.close();
 			if(fos != null) fos.close();
-			if(bos != null) bos.close();	
 		}
 		
 		return file.renameTo(target);
