@@ -168,14 +168,21 @@ public class PluginManager {
 	}
 
 	/**
-	 * Remove a plugin from the plugin list, unregister it from anywhere it may 
-	 * have registered. This is eventually called whenever any plugin is removed.
-	 * @param t
+	 * Remove a plugin from the plugin list.
 	 */
 	public void removePlugin(PluginInfoWrapper pi) {
 		synchronized (pluginWrappers) {
 			if(!pluginWrappers.remove(pi)) return;
 		}
+		core.storeConfig();
+	}
+	
+	/**
+	 * Unregister a plugin from any user interface or other callbacks it may be
+	 * registered with. Call this before removePlugin(): the plugin becomes
+	 * unvisitable immediately, but it may take time for it to shut down completely.
+	 */
+	public void unregisterPlugin(PluginInfoWrapper pi) {
 		synchronized (toadletList) {
 			try {
 				toadletList.remove(pi.getPluginClassName());

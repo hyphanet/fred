@@ -81,6 +81,7 @@ public class PluginHandler {
 					System.err.println("Caught Throwable while running plugin: "+t);
 					t.printStackTrace();
 				}
+				pm.unregisterPlugin(pi); // If not already unregistered
 				if(!(plugin instanceof FredPluginThreadless))
 					pm.removePlugin(pi);
 			} else {

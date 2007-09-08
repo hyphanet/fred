@@ -93,6 +93,7 @@ public class PluginInfoWrapper {
 	 * or else a value in milliseconds.
 	 **/
 	public void stopPlugin(PluginManager manager, int maxWaitTime) {
+		manager.unregisterPlugin(this);
 		plug.terminate();
 		stopping = true;
 		if(thread != null) {
