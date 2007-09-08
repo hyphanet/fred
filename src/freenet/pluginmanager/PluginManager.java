@@ -167,6 +167,11 @@ public class PluginManager {
 		Logger.normal(this, "Added HTTP handler for /plugins/"+pl.getClass().getName()+ '/');
 	}
 
+	/**
+	 * Remove a plugin from the plugin list, unregister it from anywhere it may 
+	 * have registered. This is eventually called whenever any plugin is removed.
+	 * @param t
+	 */
 	public void removePlugin(Thread t) {
 		Object removeKey = null;
 		synchronized (pluginInfo) {
