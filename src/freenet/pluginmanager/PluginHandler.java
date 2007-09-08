@@ -20,8 +20,9 @@ public class PluginHandler {
 	 * @param plug
 	 */
 	public static PluginInfoWrapper startPlugin(PluginManager pm, String filename, FredPlugin plug, PluginRespirator pr) {
-		final PluginStarter ps = new PluginStarter(pr);
-		final PluginInfoWrapper pi = new PluginInfoWrapper(plug, ps, filename);
+		final PluginInfoWrapper pi = new PluginInfoWrapper(plug, filename);
+		final PluginStarter ps = new PluginStarter(pr, pi);
+		pi.setThread(ps);
 		
 		// This is an ugly trick... sorry ;o)
 		// The thread still exists as an identifier, but is never started if the
@@ -45,9 +46,11 @@ public class PluginHandler {
 		private Object plugin = null;
 		private PluginRespirator pr;
 		private PluginManager pm = null;
+		final PluginInfoWrapper pi;
 		
-		public PluginStarter(PluginRespirator pr) {
+		public PluginStarter(PluginRespirator pr, PluginInfoWrapper pi) {
 			this.pr = pr;
+			this.pi = pi;
 			setDaemon(true);
 		}
 		

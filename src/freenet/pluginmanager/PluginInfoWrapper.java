@@ -22,20 +22,25 @@ public class PluginInfoWrapper {
 	private HashSet toadletLinks=new HashSet(); 
 	//public String 
 	
-	public PluginInfoWrapper(FredPlugin plug, Thread ps, String filename) {
+	public PluginInfoWrapper(FredPlugin plug, String filename) {
 		if (fedPluginThread) return;
 		className = plug.getClass().toString();
-		thread = ps;
 		this.plug = plug;
 		this.filename = filename;
-		threadName = 'p' + className.replaceAll("^class ", "") + '_' + ps.hashCode();
+		threadName = 'p' + className.replaceAll("^class ", "") + '_' + hashCode();
 		start = System.currentTimeMillis();
-		ps.setName(threadName);
 		fedPluginThread = true;
 		isPproxyPlugin = (plug instanceof FredPluginHTTP);
 		isThreadlessPlugin = (plug instanceof FredPluginThreadless);
 		isIPDetectorPlugin = (plug instanceof FredPluginIPDetector);
 		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
+	}
+	
+	void setThread(Thread ps) {
+		if(thread != null)
+			throw new IllegalStateException("Already set a thread");
+		thread = ps;
+		thread.setName(threadName);
 	}
 	
 	public String toString() {
