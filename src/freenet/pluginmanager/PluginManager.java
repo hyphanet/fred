@@ -292,7 +292,6 @@ public class PluginManager {
 		}
 		if (found) {
 			pi.stopPlugin(this);
-			removePlugin(pi);
 		}
 	}
 
