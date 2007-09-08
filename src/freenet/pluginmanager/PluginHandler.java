@@ -82,7 +82,7 @@ public class PluginHandler {
 					t.printStackTrace();
 				}
 				if(!(plugin instanceof FredPluginThreadless))
-					pm.removePlugin(this);
+					pm.removePlugin(pi);
 			} else {
 				// If not FredPlugin, then the whole thing is aborted,
 				// and then this method will return, killing the thread

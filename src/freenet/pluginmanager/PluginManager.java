@@ -172,24 +172,17 @@ public class PluginManager {
 	 * have registered. This is eventually called whenever any plugin is removed.
 	 * @param t
 	 */
-	public void removePlugin(Thread t) {
+	public void removePlugin(PluginInfoWrapper pi) {
 		PluginInfoWrapper removed = null;
 		synchronized (pluginWrappers) {
-			for(int i=0;i<pluginWrappers.size();i++) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
-				if (pi.sameThread(t)) {
-					removed = pi;
-					synchronized (toadletList) {
-						try {
-							toadletList.remove(pi.getPluginClassName());
-							Logger.normal(this, "Removed HTTP handler for /plugins/"+
-									pi.getPluginClassName()+ '/', new Exception("debug"));
-						} catch (Throwable ex) {
-							Logger.error(this, "removing Plugin", ex);
-						}
-					}
-					pluginWrappers.remove(i);
-					i--;
+			pluginWrappers.remove(pi);
+			synchronized (toadletList) {
+				try {
+					toadletList.remove(pi.getPluginClassName());
+					Logger.normal(this, "Removed HTTP handler for /plugins/"+
+							pi.getPluginClassName()+ '/', new Exception("debug"));
+				} catch (Throwable ex) {
+					Logger.error(this, "removing Plugin", ex);
 				}
 			}
 		}
@@ -301,7 +294,7 @@ public class PluginManager {
 		}
 		if (found)
 			if (pi.isThreadlessPlugin())
-				removePlugin(pi.getThread());
+				removePlugin(pi);
 			else
 				pi.stopPlugin();
 	}
