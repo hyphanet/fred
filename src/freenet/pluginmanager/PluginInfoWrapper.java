@@ -81,9 +81,13 @@ public class PluginInfoWrapper {
 		}
 	}
 	
+	/**
+	 * Tell the plugin to quit. Interrupt it if it's a thread-based plugin which
+	 * might be sleeping. */
 	public void stopPlugin() {
 		plug.terminate();
-		thread.interrupt();
+		if(thread != null)
+			thread.interrupt();
 	}
 	
 	public boolean isPproxyPlugin() {

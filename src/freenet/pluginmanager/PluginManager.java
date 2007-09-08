@@ -290,11 +290,10 @@ public class PluginManager {
 					found = true;
 			}
 		}
-		if (found)
-			if (pi.isThreadlessPlugin())
-				removePlugin(pi);
-			else
-				pi.stopPlugin();
+		if (found) {
+			pi.stopPlugin();
+			removePlugin(pi);
+		}
 	}
 
 
