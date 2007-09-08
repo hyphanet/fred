@@ -342,7 +342,7 @@ public class PluginManager {
 				File finalFile = new File("plugins/" + pluginname + ".jar");
 				if(!FileUtil.writeTo(is, finalFile)) {
 					Logger.error(this, "Failed to rename the temporary file into "+finalFile);
-					throw new PluginNotFoundException("Cannot write plugin to "+finalFile+" - check for permissions problem and disk full!");
+					throw new PluginNotFoundException("Cannot write plugin to "+finalFile+" from "+url+" - check for permissions problem and disk full!");
 				}
 					
 				filename = "*@file://" + FileUtil.getCanonicalFile(finalFile);
