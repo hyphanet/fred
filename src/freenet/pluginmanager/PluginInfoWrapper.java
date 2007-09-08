@@ -3,6 +3,7 @@ package freenet.pluginmanager;
 import java.util.Date;
 import java.util.HashSet;
 
+import freenet.support.Logger;
 import freenet.support.StringArray;
 
 public class PluginInfoWrapper {
@@ -20,6 +21,7 @@ public class PluginInfoWrapper {
 	private boolean isPortForwardPlugin;
 	private String filename;
 	private HashSet toadletLinks=new HashSet(); 
+	private boolean isExiting = false;
 	//public String 
 	
 	public PluginInfoWrapper(FredPlugin plug, String filename) {
@@ -86,12 +88,28 @@ public class PluginInfoWrapper {
 	 * might be sleeping. Then call removePlugin() on it on the manager - either
 	 * now, if it's threadless, or after it terminates, if it's thread based.
 	 * @param manager The plugin manager object.
+	 * @param maxWaitTime If a plugin is thread-based, we can wait for it to
+	 * terminate. Set to -1 if you don't want to wait at all, 0 to wait forever
+	 * or else a value in milliseconds.
 	 **/
-	public void stopPlugin(PluginManager manager) {
+	public void stopPlugin(PluginManager manager, int maxWaitTime) {
 		plug.terminate();
 		if(thread != null) {
 			thread.interrupt();
 			// Will be removed when the thread exits.
+			if(maxWaitTime >= 0) {
+				try {
+					thread.join(maxWaitTime);
+				} catch (InterruptedException e) {
+					Logger.normal(this, "stopPlugin interrupted while join()ed to terminating plugin thread - maybe one plugin stopping another???");
+				}
+				if(thread.isAlive()) {
+					String error = "Waited for "+thread+" for "+plug+" to exit for "+maxWaitTime+"ms, and it is still alive!";
+					Logger.error(this, error);
+					System.err.println(error);
+					// Dump the thread? Would require post-1.4 features...
+				}
+			}
 		} else {
 			// Remove immediately
 			manager.removePlugin(this);

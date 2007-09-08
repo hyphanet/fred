@@ -898,7 +898,7 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PLUGLIST")) {
         	outsb.append(n.pluginManager.dumpPlugins());
         } else if(uline.startsWith("PLUGKILL:")) {
-        	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim());
+        	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim(), 60*1000);
         } else {
         	if(uline.length() > 0)
         		printHeader(out);

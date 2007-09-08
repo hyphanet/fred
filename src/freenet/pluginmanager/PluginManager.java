@@ -280,7 +280,7 @@ public class PluginManager {
 		throw new NotFoundPluginHTTPException("Plugin not found!", "/plugins");
 	}
 
-	public void killPlugin(String name) {
+	public void killPlugin(String name, int maxWaitTime) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized (pluginWrappers) {
@@ -291,7 +291,7 @@ public class PluginManager {
 			}
 		}
 		if (found) {
-			pi.stopPlugin(this);
+			pi.stopPlugin(this, maxWaitTime);
 		}
 	}
 

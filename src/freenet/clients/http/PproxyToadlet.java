@@ -23,6 +23,8 @@ import freenet.support.api.HTTPRequest;
 
 public class PproxyToadlet extends Toadlet {
 	private static final int MAX_PLUGIN_NAME_LENGTH = 1024;
+	/** Maximum time to wait for a threaded plugin to exit */
+	private static final int MAX_THREADED_UNLOAD_WAIT_TIME = 60*1000;
 	private final Node node;
 	private final NodeClientCore core;
 
@@ -124,7 +126,7 @@ public class PproxyToadlet extends Toadlet {
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}if (request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
-				pm.killPlugin(request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH));
+				pm.killPlugin(request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH), MAX_THREADED_UNLOAD_WAIT_TIME);
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-success");
@@ -164,7 +166,7 @@ public class PproxyToadlet extends Toadlet {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundReloadTitle"), 
 							L10n.getString("PluginToadlet.pluginNotFoundReload"));
 				} else {
-					pm.killPlugin(request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH));
+					pm.killPlugin(request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH), MAX_THREADED_UNLOAD_WAIT_TIME);
 					pm.startPlugin(fn, true);
 
 					headers.put("Location", ".");
