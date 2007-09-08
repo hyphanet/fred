@@ -291,7 +291,7 @@ public class PluginManager {
 			}
 		}
 		if (found) {
-			pi.stopPlugin();
+			pi.stopPlugin(this);
 			removePlugin(pi);
 		}
 	}

@@ -83,11 +83,19 @@ public class PluginInfoWrapper {
 	
 	/**
 	 * Tell the plugin to quit. Interrupt it if it's a thread-based plugin which
-	 * might be sleeping. */
-	public void stopPlugin() {
+	 * might be sleeping. Then call removePlugin() on it on the manager - either
+	 * now, if it's threadless, or after it terminates, if it's thread based.
+	 * @param manager The plugin manager object.
+	 **/
+	public void stopPlugin(PluginManager manager) {
 		plug.terminate();
-		if(thread != null)
+		if(thread != null) {
 			thread.interrupt();
+			// Will be removed when the thread exits.
+		} else {
+			// Remove immediately
+			manager.removePlugin(this);
+		}
 	}
 	
 	public boolean isPproxyPlugin() {
