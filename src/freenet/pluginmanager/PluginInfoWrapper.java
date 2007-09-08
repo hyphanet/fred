@@ -62,26 +62,20 @@ public class PluginInfoWrapper {
 		return plug.getClass().getName();
 	}
 	
-	public String[] getPluginToadletSymlinks(){
-		synchronized (toadletLinks) {
-			return StringArray.toArray(toadletLinks.toArray());
-		}
+	public synchronized String[] getPluginToadletSymlinks(){
+		return StringArray.toArray(toadletLinks.toArray());
 	}
 	
-	public boolean addPluginToadletSymlink(String linkfrom){
-		synchronized (toadletLinks) {
-			if (toadletLinks.size() < 1)
-				toadletLinks = new HashSet();
-			return toadletLinks.add(linkfrom);
-		}
+	public synchronized boolean addPluginToadletSymlink(String linkfrom){
+		if (toadletLinks.size() < 1)
+			toadletLinks = new HashSet();
+		return toadletLinks.add(linkfrom);
 	}
 	
-	public boolean removePluginToadletSymlink(String linkfrom){
-		synchronized (toadletLinks) {
-			if (toadletLinks.size() < 1)
-				return false;
-			return toadletLinks.remove(linkfrom);
-		}
+	public synchronized boolean removePluginToadletSymlink(String linkfrom){
+		if (toadletLinks.size() < 1)
+			return false;
+		return toadletLinks.remove(linkfrom);
 	}
 	
 	/**
