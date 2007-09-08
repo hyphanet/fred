@@ -173,9 +173,8 @@ public class PluginManager {
 	 * @param t
 	 */
 	public void removePlugin(PluginInfoWrapper pi) {
-		PluginInfoWrapper removed = null;
 		synchronized (pluginWrappers) {
-			pluginWrappers.remove(pi);
+			if(!pluginWrappers.remove(pi)) return;
 		}
 		synchronized (toadletList) {
 			try {
@@ -186,8 +185,7 @@ public class PluginManager {
 				Logger.error(this, "removing Plugin", ex);
 			}
 		}
-		if(removed != null)
-			core.storeConfig();
+		core.storeConfig();
 	}
 
 	public void addToadletSymlinks(PluginInfoWrapper pi) {
