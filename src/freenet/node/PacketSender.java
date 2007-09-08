@@ -182,20 +182,17 @@ public class PacketSender implements Runnable, Ticker {
                 Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
             if(pn.isConnected()) {
-            	
-            	if(pn.isRoutable() && pn.noLongerRoutable()) {
-            		// we don't disconnect but we mark it incompatible
-            		pn.invalidate();
-            		pn.setPeerNodeStatus(now);
-            		Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible");
-            		continue;
-            	}
-            	
                 // Is the node dead?
-                if(pn.isRoutable() && now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
+                if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
                 	Logger.normal(this, "Disconnecting from "+pn+" - haven't received packets recently");
                     pn.disconnected();
                     continue;
+                } else if(pn.isRoutable() && pn.noLongerRoutable()) {
+                	// we don't disconnect but we mark it incompatible
+                	pn.invalidate();
+                	pn.setPeerNodeStatus(now);
+                	Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible");
+                	continue;
                 }
                 
                 boolean mustSend = false;
