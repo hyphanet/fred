@@ -20,8 +20,8 @@ public class PluginInfoWrapper {
 	private boolean isIPDetectorPlugin;
 	private boolean isPortForwardPlugin;
 	private String filename;
-	private HashSet toadletLinks=new HashSet(); 
-	private boolean isExiting = false;
+	private HashSet toadletLinks=new HashSet();
+	private boolean stopping = false;
 	//public String 
 	
 	public PluginInfoWrapper(FredPlugin plug, String filename) {
@@ -94,6 +94,7 @@ public class PluginInfoWrapper {
 	 **/
 	public void stopPlugin(PluginManager manager, int maxWaitTime) {
 		plug.terminate();
+		stopping = true;
 		if(thread != null) {
 			thread.interrupt();
 			// Will be removed when the thread exits.
@@ -136,4 +137,7 @@ public class PluginInfoWrapper {
 		return isPortForwardPlugin;
 	}
 	
+	public boolean isStopping() {
+		return stopping;
+	}
 }

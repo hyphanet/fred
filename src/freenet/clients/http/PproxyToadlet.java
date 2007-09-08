@@ -277,6 +277,9 @@ public class PproxyToadlet extends Toadlet {
 					pluginRow.addChild("td", pi.getThreadName());
 					pluginRow.addChild("td", new Date(pi.getStarted()).toString());
 					HTMLNode actionCell = pluginRow.addChild("td");
+					if(pi.isStopping()) {
+						actionCell.addChild("#", l10n("pluginStopping"));
+					} else {
 					if (pi.isPproxyPlugin()) {
 						HTMLNode visitForm = actionCell.addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_new" });
 						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
@@ -288,6 +291,7 @@ public class PproxyToadlet extends Toadlet {
 					HTMLNode reloadForm = ctx.addFormChild(actionCell, ".", "reloadPluginForm");
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reload", pi.getThreadName() });
 					reloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("reload") });
+					}
 				}
 			}
 
