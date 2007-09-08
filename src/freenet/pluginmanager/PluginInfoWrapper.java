@@ -90,7 +90,9 @@ public class PluginInfoWrapper {
 	public void stopPlugin(PluginManager manager, int maxWaitTime) {
 		unregister(manager);
 		plug.terminate();
-		stopping = true;
+		synchronized(this) {
+			stopping = true;
+		}
 		if(thread != null) {
 			thread.interrupt();
 			// Will be removed when the thread exits.
@@ -119,8 +121,10 @@ public class PluginInfoWrapper {
 	 * unvisitable immediately, but it may take time for it to shut down completely.
 	 */
 	void unregister(PluginManager manager) {
-		if(unregistered) return;
-		unregistered = true;
+		synchronized(this) {
+			if(unregistered) return;
+			unregistered = true;
+		}
 		manager.unregisterPluginToadlet(this);
 	}
 
@@ -144,7 +148,7 @@ public class PluginInfoWrapper {
 		return isPortForwardPlugin;
 	}
 	
-	public boolean isStopping() {
+	public synchronized boolean isStopping() {
 		return stopping;
 	}
 }
