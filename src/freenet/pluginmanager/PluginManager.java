@@ -309,11 +309,12 @@ public class PluginManager {
 	 * @return			An instanciated object of the plugin
 	 * @throws PluginNotFoundException	If anything goes wrong.
 	 */
-	private FredPlugin LoadPlugin(String filename)
+	private FredPlugin LoadPlugin(String origFilename)
 			throws PluginNotFoundException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Class cls = null;
-		for (int tries = 0; (tries <= 5) && (cls == null); tries++)
+		for (int tries = 0; (tries <= 5) && (cls == null); tries++) {
+			String filename = origFilename;
 			try {
 				if (filename.endsWith("*")) {
 					filename = "*@http://downloads.freenetproject.org/alpha/plugins/"
@@ -529,6 +530,7 @@ public class PluginManager {
 				} catch (Exception ee) {
 				}
 			}
+		}
 
 		// Class loaded... Objectize it!
 		Object o = null;
@@ -536,12 +538,12 @@ public class PluginManager {
 			o = cls.newInstance();
 		} catch (Exception e) {
 			throw new PluginNotFoundException("Could not re-create plugin:"
-					+ filename, e);
+					+ origFilename, e);
 		}
 
 		// See if we have the right type
 		if (!(o instanceof FredPlugin)) {
-			throw new PluginNotFoundException("Not a plugin: " + filename);
+			throw new PluginNotFoundException("Not a plugin: " + origFilename);
 		}
 
 		return (FredPlugin) o;
