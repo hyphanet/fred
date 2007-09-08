@@ -331,35 +331,35 @@ public class NodeClientCore implements Persistable {
 		// REDFLAG normally we wouldn't use static variables to carry important non-final data, but in this
 		// case it's temporary code which will be removed before 0.7.0.
 		
-		nodeConfig.register("allowInsecureCHKs", false, sortOrder++, true, false, "NodeClientCore.allowInsecureCHK", "NodeClientCore.allowInsecureCHKLong",
-				new BooleanCallback() {
+		//nodeConfig.register("allowInsecureCHKs", false, sortOrder++, true, false, "NodeClientCore.allowInsecureCHK", "NodeClientCore.allowInsecureCHKLong",
+		//		new BooleanCallback() {
 
-					public boolean get() {
-						return Key.ALLOW_INSECURE_CLIENT_CHKS;
-					}
+		//			public boolean get() {
+		//				return Key.ALLOW_INSECURE_CLIENT_CHKS;
+		//			}
 
-					public void set(boolean val) throws InvalidConfigValueException {
-						Key.ALLOW_INSECURE_CLIENT_CHKS = val;
-					}
-			
-		});
+		//			public void set(boolean val) throws InvalidConfigValueException {
+		//				Key.ALLOW_INSECURE_CLIENT_CHKS = val;
+		//			}
+		//	
+		//});
 		
-		Key.ALLOW_INSECURE_CLIENT_CHKS = nodeConfig.getBoolean("allowInsecureCHKs");
+		Key.ALLOW_INSECURE_CLIENT_CHKS = false;
 		
-		nodeConfig.register("allowInsecureSSKs", false, sortOrder++, true, false, "NodeClientCore.allowInsecureSSK", "NodeClientCore.allowInsecureSSKLong",
-				new BooleanCallback() {
+		//nodeConfig.register("allowInsecureSSKs", false, sortOrder++, true, false, "NodeClientCore.allowInsecureSSK", "NodeClientCore.allowInsecureSSKLong",
+		//		new BooleanCallback() {
 
-					public boolean get() {
-						return Key.ALLOW_INSECURE_CLIENT_SSKS;
-					}
+		//			public boolean get() {
+		//				return Key.ALLOW_INSECURE_CLIENT_SSKS;
+		//			}
 
-					public void set(boolean val) throws InvalidConfigValueException {
-						Key.ALLOW_INSECURE_CLIENT_SSKS = val;
-					}
-			
-		});
+		//			public void set(boolean val) throws InvalidConfigValueException {
+		//				Key.ALLOW_INSECURE_CLIENT_SSKS = val;
+		//			}
+		//	
+		//});
 		
-		Key.ALLOW_INSECURE_CLIENT_SSKS = nodeConfig.getBoolean("allowInsecureSSKs");
+		Key.ALLOW_INSECURE_CLIENT_SSKS = false;
 		
 		// This is all part of construction, not of start().
 		// Some plugins depend on it, so it needs to be *created* before they are started.
