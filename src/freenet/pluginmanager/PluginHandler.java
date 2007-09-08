@@ -43,7 +43,7 @@ public class PluginHandler {
 	}
 	
 	private static class PluginStarter implements Runnable {
-		private Object plugin = null;
+		private FredPlugin plugin = null;
 		private PluginRespirator pr;
 		private PluginManager pm = null;
 		final PluginInfoWrapper pi;
@@ -53,15 +53,20 @@ public class PluginHandler {
 			this.pi = pi;
 		}
 		
-		public void setPlugin(PluginManager pm, Object plugin) {
+		public void setPlugin(PluginManager pm, FredPlugin plugin) {
 			this.plugin = plugin;
 			this.pm = pm;
 		}
 		
 		public void run() {
+			boolean threadless = plugin instanceof FredPluginThreadless;
 			if (plugin instanceof FredPlugin) {
 				try {
+					if(!threadless) // Have to do it now because threaded
+						pm.register(plugin, pi);
 					((FredPlugin)plugin).runPlugin(pr);
+					if(threadless) // Don't want it to receive callbacks until after it has the PluginRespirator, else get NPEs
+						pm.register(plugin, pi);
 				} catch (OutOfMemoryError e) {
 					OOMHandler.handleOOM(e);
 				} catch (Throwable t) {

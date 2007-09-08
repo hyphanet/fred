@@ -120,18 +120,6 @@ public class PluginManager {
 		try {
 			plug = LoadPlugin(filename);
 			PluginInfoWrapper pi = PluginHandler.startPlugin(this, filename, plug, pluginRespirator);
-			// handles FProxy? If so, register
-
-			if (pi.isPproxyPlugin())
-				registerToadlet(plug);
-
-			if(pi.isIPDetectorPlugin()) {
-				node.ipDetector.registerIPDetectorPlugin((FredPluginIPDetector) plug);
-			}
-			if(pi.isPortForwardPlugin()) {
-				node.ipDetector.registerPortForwardPlugin((FredPluginPortForward) plug);
-			}
-
 			synchronized (pluginWrappers) {
 				pluginWrappers.add(pi);
 			}
@@ -155,6 +143,20 @@ public class PluginManager {
 		if(store) core.storeConfig();
 	}
 
+	void register(FredPlugin plug, PluginInfoWrapper pi) {
+		// handles FProxy? If so, register
+
+		if (pi.isPproxyPlugin())
+			registerToadlet(plug);
+
+		if(pi.isIPDetectorPlugin()) {
+			node.ipDetector.registerIPDetectorPlugin((FredPluginIPDetector) plug);
+		}
+		if(pi.isPortForwardPlugin()) {
+			node.ipDetector.registerPortForwardPlugin((FredPluginPortForward) plug);
+		}
+	}
+	
 	private String l10n(String key, String pattern, String value) {
 		return L10n.getString("PluginManager."+key, pattern, value);
 	}
