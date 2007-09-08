@@ -60,17 +60,6 @@ public class PluginHandler {
 		}
 		
 		public void run() {
-			int seconds = 120; // give up after 2 min
-			while (plugin == null) {
-				// 1s polling
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-				}
-				if (seconds-- <= 0)
-					return;
-			}
-			
 			if (plugin instanceof FredPlugin) {
 				try {
 					((FredPlugin)plugin).runPlugin(pr);
