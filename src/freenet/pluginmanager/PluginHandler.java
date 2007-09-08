@@ -22,25 +22,27 @@ public class PluginHandler {
 	public static PluginInfoWrapper startPlugin(PluginManager pm, String filename, FredPlugin plug, PluginRespirator pr) {
 		final PluginInfoWrapper pi = new PluginInfoWrapper(plug, filename);
 		final PluginStarter ps = new PluginStarter(pr, pi);
-		if(!pi.isThreadlessPlugin()) // No point otherwise
-			pi.setThread(ps);
-		
 		ps.setPlugin(pm, plug);
-		// Run after startup
-		// FIXME this is horrible, wastes a thread, need to make PluginStarter a Runnable 
-		// not a Thread, and then deal with the consequences of that (removePlugin(Thread)) ...
-		pm.getTicker().queueTimedJob(new Runnable() {
-			public void run() {
-				if (!pi.isThreadlessPlugin())
-					ps.start();
-				else
-					ps.run();
-			}
-		}, 0);
+		// We must start the plugin *after startup has finished*
+		Runnable job;
+		if(!pi.isThreadlessPlugin()) {
+			final Thread t = new Thread(ps);
+			t.setDaemon(true);
+			pi.setThread(t);
+			job = new Runnable() {
+				public void run() {
+					t.start();
+				}
+			};
+		} else {
+			job = ps;
+		}
+		// Run immediately after startup
+		pm.getTicker().queueTimedJob(job, 0);
 		return pi;
 	}
 	
-	private static class PluginStarter extends Thread {
+	private static class PluginStarter implements Runnable {
 		private Object plugin = null;
 		private PluginRespirator pr;
 		private PluginManager pm = null;
@@ -49,7 +51,6 @@ public class PluginHandler {
 		public PluginStarter(PluginRespirator pr, PluginInfoWrapper pi) {
 			this.pr = pr;
 			this.pi = pi;
-			setDaemon(true);
 		}
 		
 		public void setPlugin(PluginManager pm, Object plugin) {
