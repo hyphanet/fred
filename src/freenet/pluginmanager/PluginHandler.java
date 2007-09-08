@@ -22,8 +22,6 @@ public class PluginHandler {
 	public static PluginInfoWrapper startPlugin(PluginManager pm, String filename, FredPlugin plug, PluginRespirator pr) {
 		final PluginInfoWrapper pi = new PluginInfoWrapper(plug, filename);
 		final PluginStarter ps = new PluginStarter(pr, pi);
-		if(!pi.isThreadlessPlugin()) // No point otherwise
-			pi.setThread(ps);
 		
 		ps.setPlugin(pm, plug);
 		// Run after startup
@@ -58,6 +56,8 @@ public class PluginHandler {
 		}
 		
 		public void run() {
+			if(!pi.isThreadlessPlugin()) // No point otherwise
+				pi.setThread(this);
 			if (plugin instanceof FredPlugin) {
 				try {
 					((FredPlugin)plugin).runPlugin(pr);
