@@ -310,6 +310,8 @@ public class PluginManager {
 	private FredPlugin LoadPlugin(String filename) throws PluginNotFoundException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Class cls = null;
+		for (int tries = 0 ; (tries <= 5) && (cls == null) ; tries++)
+		try {
 		if (filename.endsWith("*")) {
 			filename = "*@http://downloads.freenetproject.org/alpha/plugins/" +
 				filename.substring(filename.lastIndexOf(".")+1, filename.length()-1) +
@@ -372,7 +374,6 @@ public class PluginManager {
 		if ((filename.indexOf("@") >= 0)) {
 			boolean assumeURLRedirect = true;
 			// Open from external file
-			for (int tries = 0 ; (tries <= 5) && (cls == null) ; tries++)
 				try {
 					String realURL = null;
 					String realClass = null;
@@ -447,15 +448,6 @@ public class PluginManager {
 
 					cls = cl.loadClass(realClass);
 
-				} catch (Exception e) {
-					Logger.normal(this, "Failed to load plugin "+filename+" : "+e, e);
-					if (tries >= 5)
-						throw new PluginNotFoundException("Initialization error:"
-								+ filename, e);
-
-					try {
-						Thread.sleep(100);
-					} catch (Exception ee) {}
 				} finally {
 					try {
 						if(is != null)
@@ -475,7 +467,18 @@ public class PluginManager {
 
 		if(cls == null)
 			throw new PluginNotFoundException("Unknown error");
+		
+		} catch (Exception e) {
+			Logger.normal(this, "Failed to load plugin "+filename+" : "+e, e);
+			if (tries >= 5)
+				throw new PluginNotFoundException("Initialization error:"
+						+ filename, e);
 
+			try {
+				Thread.sleep(100);
+			} catch (Exception ee) {}
+		}
+		
 		// Class loaded... Objectize it!
 		Object o = null;
 		try {
