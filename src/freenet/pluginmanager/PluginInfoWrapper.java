@@ -86,10 +86,6 @@ public class PluginInfoWrapper {
 		thread.interrupt();
 	}
 	
-	public boolean sameThread(Thread t){
-		return (t == thread);
-	}
-
 	public boolean isPproxyPlugin() {
 		return isPproxyPlugin;
 	}
@@ -108,10 +104,6 @@ public class PluginInfoWrapper {
 	
 	public boolean isPortForwardPlugin() {
 		return isPortForwardPlugin;
-	}
-	
-	public Thread getThread() {
-		return thread;
 	}
 	
 }
