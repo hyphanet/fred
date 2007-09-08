@@ -22,6 +22,7 @@ public class PluginInfoWrapper {
 	private String filename;
 	private HashSet toadletLinks=new HashSet();
 	private boolean stopping = false;
+	private boolean unregistered = false;
 	//public String 
 	
 	public PluginInfoWrapper(FredPlugin plug, String filename) {
@@ -93,7 +94,7 @@ public class PluginInfoWrapper {
 	 * or else a value in milliseconds.
 	 **/
 	public void stopPlugin(PluginManager manager, int maxWaitTime) {
-		manager.unregisterPlugin(this);
+		unregister(manager);
 		plug.terminate();
 		stopping = true;
 		if(thread != null) {
@@ -118,6 +119,17 @@ public class PluginInfoWrapper {
 		}
 	}
 	
+	/**
+	 * Unregister the plugin from any user interface or other callbacks it may be
+	 * registered with. Call this before manager.removePlugin(): the plugin becomes
+	 * unvisitable immediately, but it may take time for it to shut down completely.
+	 */
+	void unregister(PluginManager manager) {
+		if(unregistered) return;
+		unregistered = true;
+		manager.unregisterPluginToadlet(this);
+	}
+
 	public boolean isPproxyPlugin() {
 		return isPproxyPlugin;
 	}

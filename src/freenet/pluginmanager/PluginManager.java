@@ -177,12 +177,7 @@ public class PluginManager {
 		core.storeConfig();
 	}
 	
-	/**
-	 * Unregister a plugin from any user interface or other callbacks it may be
-	 * registered with. Call this before removePlugin(): the plugin becomes
-	 * unvisitable immediately, but it may take time for it to shut down completely.
-	 */
-	public void unregisterPlugin(PluginInfoWrapper pi) {
+	public void unregisterPluginToadlet(PluginInfoWrapper pi) {
 		synchronized (toadletList) {
 			try {
 				toadletList.remove(pi.getPluginClassName());
@@ -192,7 +187,6 @@ public class PluginManager {
 				Logger.error(this, "removing Plugin", ex);
 			}
 		}
-		core.storeConfig();
 	}
 
 	public void addToadletSymlinks(PluginInfoWrapper pi) {
