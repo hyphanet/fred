@@ -376,7 +376,7 @@ public class PluginManager {
 
 					} catch (MalformedURLException mue) {
 						Logger.error(this,
-								"MAlformedURLException has occured : " + mue,
+								"MalformedURLException has occured : " + mue,
 								mue);
 						return null;
 					} catch (FileNotFoundException e) {
