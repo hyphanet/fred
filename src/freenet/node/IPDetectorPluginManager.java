@@ -195,7 +195,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			FredPluginIPDetector[] newPlugins = new FredPluginIPDetector[plugins.length - count];
 			int x = 0;
 			for(int i=0;i<plugins.length;i++) {
-				if(newPlugins[i] != d) newPlugins[x++] = plugins[i];
+				if(plugins[i] != d) newPlugins[x++] = plugins[i];
 			}
 			plugins = newPlugins;
 		}
@@ -647,7 +647,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			FredPluginPortForward[] newPlugins = new FredPluginPortForward[portForwardPlugins.length - count];
 			int x = 0;
 			for(int i=0;i<portForwardPlugins.length;i++) {
-				if(newPlugins[i] != forward) newPlugins[x++] = portForwardPlugins[i];
+				if(portForwardPlugins[i] != forward) newPlugins[x++] = portForwardPlugins[i];
 			}
 			portForwardPlugins = newPlugins;
 		}
