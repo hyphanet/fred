@@ -81,9 +81,10 @@ public class PluginHandler {
 					System.err.println("Caught Throwable while running plugin: "+t);
 					t.printStackTrace();
 				}
-				pi.unregister(pm); // If not already unregistered
-				if(!(plugin instanceof FredPluginThreadless))
+				if(!(plugin instanceof FredPluginThreadless)) {
+					pi.unregister(pm); // If not already unregistered
 					pm.removePlugin(pi);
+				}
 			} else {
 				// If not FredPlugin, then the whole thing is aborted,
 				// and then this method will return, killing the thread
