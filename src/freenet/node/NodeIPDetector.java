@@ -411,11 +411,11 @@ public class NodeIPDetector {
 	}
 
 	public void registerIPDetectorPlugin(FredPluginIPDetector detector) {
-		ipDetectorManager.register(detector);
+		ipDetectorManager.registerDetectorPlugin(detector);
 	}
 
 	public void unregisterIPDetectorPlugin(FredPluginIPDetector detector) {
-		ipDetectorManager.remove(detector);
+		ipDetectorManager.unregisterDetectorPlugin(detector);
 	}
 	
 	public synchronized boolean isDetecting() {
@@ -451,6 +451,6 @@ public class NodeIPDetector {
 	}
 
 	public void unregisterPortForwardPlugin(FredPluginPortForward forward) {
-		ipDetectorManager.remove(forward);
+		ipDetectorManager.unregisterPortForwardPlugin(forward);
 	}
 }

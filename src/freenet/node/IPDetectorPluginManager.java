@@ -170,7 +170,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	/**
 	 * Register a plugin.
 	 */
-	public void register(FredPluginIPDetector d) {
+	public void registerDetectorPlugin(FredPluginIPDetector d) {
 		if(d == null) throw new NullPointerException();
 		synchronized(this) {
 			FredPluginIPDetector[] newPlugins = new FredPluginIPDetector[plugins.length+1];
@@ -185,7 +185,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	/**
 	 * Remove a plugin.
 	 */
-	public void remove(FredPluginIPDetector d) {
+	public void unregisterDetectorPlugin(FredPluginIPDetector d) {
 		synchronized(this) {
 			int count = 0;
 			for(int i=0;i<plugins.length;i++) {
@@ -637,7 +637,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	/**
 	 * Remove a plugin.
 	 */
-	public void remove(FredPluginPortForward forward) {
+	public void unregisterPortForwardPlugin(FredPluginPortForward forward) {
 		synchronized(this) {
 			int count = 0;
 			for(int i=0;i<portForwardPlugins.length;i++) {
