@@ -48,8 +48,8 @@ public class PluginManager {
 	 *
 	 */
 
-	private HashMap toadletList;
-	private HashMap pluginInfo;
+	private final HashMap toadletList;
+	private final Vector/*<PluginInfoWrapper>*/ pluginWrappers;
 	private PluginRespirator pluginRespirator = null;
 	private final Node node;
 	private final NodeClientCore core;
@@ -57,8 +57,8 @@ public class PluginManager {
 	private boolean logMINOR;
 
 	public PluginManager(Node node) {
-		pluginInfo = new HashMap();
 		toadletList = new HashMap();
+		pluginWrappers = new Vector();
 		this.node = node;
 		this.core = node.clientCore;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -132,8 +132,8 @@ public class PluginManager {
 				node.ipDetector.registerPortForwardPlugin((FredPluginPortForward) plug);
 			}
 
-			synchronized (pluginInfo) {
-				pluginInfo.put(pi.getThreadName(), pi);
+			synchronized (pluginWrappers) {
+				pluginWrappers.add(pi);
 			}
 			Logger.normal(this, "Plugin loaded: " + filename);
 		} catch (PluginNotFoundException e) {
@@ -173,14 +173,12 @@ public class PluginManager {
 	 * @param t
 	 */
 	public void removePlugin(Thread t) {
-		Object removeKey = null;
-		synchronized (pluginInfo) {
-			Iterator it = pluginInfo.keySet().iterator();
-			while (it.hasNext() && (removeKey == null)) {
-				Object key = it.next();
-				PluginInfoWrapper pi = (PluginInfoWrapper) pluginInfo.get(key);
+		PluginInfoWrapper removed = null;
+		synchronized (pluginWrappers) {
+			for(int i=0;i<pluginWrappers.size();i++) {
+				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
 				if (pi.sameThread(t)) {
-					removeKey = key;
+					removed = pi;
 					synchronized (toadletList) {
 						try {
 							toadletList.remove(pi.getPluginClassName());
@@ -190,13 +188,12 @@ public class PluginManager {
 							Logger.error(this, "removing Plugin", ex);
 						}
 					}
+					pluginWrappers.remove(i);
+					i--;
 				}
 			}
-
-			if (removeKey != null)
-				pluginInfo.remove(removeKey);
 		}
-		if(removeKey != null)
+		if(removed != null)
 			core.storeConfig();
 	}
 
@@ -241,10 +238,9 @@ public class PluginManager {
 
 	public String dumpPlugins() {
 		StringBuffer out= new StringBuffer();
-		synchronized (pluginInfo) {
-			Iterator it = pluginInfo.keySet().iterator();
-			while (it.hasNext()) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) pluginInfo.get(it.next());
+		synchronized (pluginWrappers) {
+			for(int i=0;i<pluginWrappers.size();i++) {
+				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
 				out.append(pi.toString());
 				out.append('\n');
 			}
@@ -254,10 +250,9 @@ public class PluginManager {
 
 	public Set getPlugins() {
 		HashSet out = new HashSet();
-		synchronized (pluginInfo) {
-			Iterator it = pluginInfo.keySet().iterator();
-			while (it.hasNext()) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) pluginInfo.get(it.next());
+		synchronized (pluginWrappers) {
+			for(int i=0;i<pluginWrappers.size();i++) {
+				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
 				out.add(pi);
 			}
 		}
@@ -297,10 +292,9 @@ public class PluginManager {
 	public void killPlugin(String name) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
-		synchronized (pluginInfo) {
-			Iterator it = pluginInfo.keySet().iterator();
-			while (it.hasNext() && !found) {
-				pi = (PluginInfoWrapper) pluginInfo.get(it.next());
+		synchronized (pluginWrappers) {
+			for(int i=0;i<pluginWrappers.size() && !found;i++) {
+				pi = (PluginInfoWrapper) pluginWrappers.get(i);
 				if (pi.getThreadName().equals(name))
 					found = true;
 			}
