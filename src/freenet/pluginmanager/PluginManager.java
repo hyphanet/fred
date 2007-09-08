@@ -176,14 +176,14 @@ public class PluginManager {
 		PluginInfoWrapper removed = null;
 		synchronized (pluginWrappers) {
 			pluginWrappers.remove(pi);
-			synchronized (toadletList) {
-				try {
-					toadletList.remove(pi.getPluginClassName());
-					Logger.normal(this, "Removed HTTP handler for /plugins/"+
-							pi.getPluginClassName()+ '/', new Exception("debug"));
-				} catch (Throwable ex) {
-					Logger.error(this, "removing Plugin", ex);
-				}
+		}
+		synchronized (toadletList) {
+			try {
+				toadletList.remove(pi.getPluginClassName());
+				Logger.normal(this, "Removed HTTP handler for /plugins/"+
+						pi.getPluginClassName()+ '/', new Exception("debug"));
+			} catch (Throwable ex) {
+				Logger.error(this, "removing Plugin", ex);
 			}
 		}
 		if(removed != null)
