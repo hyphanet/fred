@@ -11,6 +11,7 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
+import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSASignature;
@@ -526,17 +527,34 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	// FIXME: IDr' ?
 	private void sendMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo) {
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
+		byte[] idR = new byte[0];
 		byte[] myDHGroup = dhContext.group.asBytes();
 		byte[] myNonce = new byte[NONCE_SIZE];
 		byte[] myExponential = dhContext.myExponential.toByteArray();
 		node.random.nextBytes(myNonce);
-		
-		byte[] authenticator = computeJFKAuthenticator(myExponential, myNonce, nonceInitator, null);
+		byte[] signature = dhContext.signature.toString().getBytes("UTF-8");
+		byte[] authenticator = computeHashedJFKAuthenticator(myExponential, myNonce, nonceInitator, idR);
 		
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+myDHGroup.length+
-		                           authenticator.length+
-		                           ];
-		                           
+		                           signature.length+
+		                           SHA256.getDigestLength()];
+
+		int offset = 0;
+		System.arraycopy(nonceInitator, 0, message2, offset, NONCE_SIZE);
+		offset += NONCE_SIZE;
+		System.arraycopy(myNonce, 0, message2, offset, NONCE_SIZE);
+		offset += NONCE_SIZE;
+		System.arraycopy(myExponential, 0, message2, offset, myExponential.length);
+		offset += myExponential.length;
+		System.arraycopy(idR, 0, message2, offset, idR.length);
+		offset += idR.length;
+		
+		System.arraycopy(signature, 0, message2, offset, signature.length);
+		offset += signature.length;
+		
+		System.arraycopy(authenticator, 0, message2, offset, authenticator.length);
+		
+		sendMessage1or2Packet(1,2,2,message2,pn,replyTo);
 	}
 	
 	/*
@@ -545,7 +563,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * 
 	 * (costs a HMAC and the allocation of a few bytes)
 	 */
-	private byte[] computeJFKAuthenticator(byte[] gR, byte[] nR, byte[] nI, byte[] address){
+	private byte[] computeJFKAuthenticator(byte[] gR, byte[] nR, byte[] nI, byte[] address) {
 		byte[] authData=new byte[gR.length+nR.length+nI.length+address.length];
 		int offset = 0;
 		
@@ -564,6 +582,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		HMAC hash = new HMAC(SHA1.getInstance());
 		// TODO: is that 512 LSB ?
 		return hash.mac(gR, authData, 9);
+	}
+	/*
+	 * Hash the authenticator using SHA256
+	 */
+	private byte[] computeHashedJFKAuthenticator(byte[] gR, byte[] nR, byte[] nI, byte[] address) {
+		return SHA256.digest(computeJFKAuthenticator(gR, nR, nI, address));
 	}
 
 	/*
@@ -728,8 +752,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		byte[] address = replyTo.getAddress().getAddress();
 		// FIXME: feed computeJFKAuthenticator with the right parameters ^-^
-		byte[] authenticator = computeJFKAuthenticator(data, data, data, address);
-		sendMessage3Packet(1,2,2,data,pn,replyTo, SHA256.digest(authenticator));
+		sendMessage3Packet(1,2,2,data,pn,replyTo, computeHashedJFKAuthenticator(null, null, null, null));
 	}
 
 	/*
@@ -2186,7 +2209,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 	
 	private synchronized DiffieHellmanLightContext getLightDiffieHellmanContext() {
-		if(currentDHContext == null)
+		if(currentDHContext == null){
 			currentDHContext = DiffieHellman.generateLightContext();
 		return currentDHContext;
 	}

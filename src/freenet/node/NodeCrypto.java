@@ -37,7 +37,7 @@ import freenet.support.SimpleFieldSet;
  * Cryptographic and transport level node identity. 
  * @author toad
  */
-class NodeCrypto {
+public class NodeCrypto {
 
 	final Node node;
 	final boolean isOpennet;
@@ -383,7 +383,7 @@ class NodeCrypto {
 	}
 
 	/** Sign a hash */
-	DSASignature sign(byte[] hash) {
+	public DSASignature sign(byte[] hash) {
 		return DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
 	}
         // Sign a hash with a specified PrivateKey
