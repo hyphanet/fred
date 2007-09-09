@@ -573,7 +573,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		System.arraycopy(authenticator, 0, message2, offset, HASH_LENGTH);
 		
-		sendMessage1or2Packet(1,2,2,message2,pn,replyTo);
+		sendAuthMessagePacket(1,2,2,message2,pn,replyTo);
 	}
 	
 	/*
@@ -770,26 +770,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	/*
-	 * Send computed Message3
-	 * @param The packet phase number
-	 * @param The peer to which we need to send the packet
-	 * @param The peerNode we are talking to
-	 */
-	private void sendProcessMessage3(PeerNode pn,Peer replyTo,int phase){
-
-		/*
-		 * The identifying information of the inititator is sent encrypted hence protected
-		 * from both passive and active attackers. The initiator's identity cannot be retrived
-		 * from message3 because an active attacker cannot complete the DH computation.
-		 */
-		byte[] data = ProcessMessage3(pn,replyTo,phase);
-		
-		byte[] address = replyTo.getAddress().getAddress();
-		// FIXME: feed computeJFKAuthenticator with the right parameters ^-^
-		sendMessage3Packet(1,2,2,data,null,null, null, computeHashedJFKAuthenticator(null, null, null, null), pn, replyTo);
-	}
-
-	/*
 	 * Responder Method:Message4
 	 * Process Message4
 	 * Encrypted message of the signature on both nonces, both exponentials using the same
@@ -851,7 +831,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}	
 
 	/*
-	 * Send Message1or2 packet
+	 * Send AuthMessagePacket
 	 * @param version
 	 * @param negType
 	 * @param The packet phase number
@@ -859,7 +839,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * @param The peer to which we need to send the packet
 	 */
-	private void sendMessage1or2Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+	private void sendAuthMessagePacket(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
 	{
 		long now = System.currentTimeMillis();
 		long delta = now - pn.lastSentPacketTime();
@@ -941,7 +921,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					Logger.error(this,"Error getting bytes");
 				}
 			}
-			sendProcessMessage3(pn,replyTo,phase);       
+			sendAuthMessagePacket(version, negType, 4, null, pn, replyTo);
 		}
 		else if(phase==3){
 			message4Cache.put(hashedAuthenticator,nonceInitiator.toString());
