@@ -41,10 +41,8 @@ import freenet.support.WouldBlockException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * @author amphibian
@@ -68,15 +66,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * Objects cached during JFK message exchange: Message3,Message4 and authenticator
      * The messages are cached in hashmaps because the message retrieval from the cache 
      * can be performed in constant time( given the key)
-     * For the authenticator we used a arrayList. This is a better option when we just have 
-     * to insert into the end of the list and perform a simple 'get'. Usage of a linkedList 
-     * could prove to be much slower due to the allocation time for each node in the list.
+     * Usage of a linkedList could prove to be much slower due to the allocation time
+     * for each node in the list.
      */
     final Map message3Cache;
     final Map message4Cache;
-    final List authenticatorCache;
+    final Map authenticatorCache;
     final eKey encryptionKey;
     final DSAGroup g;
+    static DSAPrivateKey PKR,PKI;
     final RandomSource r;
     private static final int MAX_PACKETS_IN_FLIGHT = 256; 
     private static final int RANDOM_BYTES_LENGTH = 12;
@@ -114,7 +112,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         myPacketDataSource = new EntropySource();
         message3Cache = new HashMap();
         message4Cache = new HashMap();
-        authenticatorCache = new ArrayList();
+        authenticatorCache = new HashMap();
         encryptionKey = new eKey();
         g = Global.DSAgroupBigA;
         r=node.random;
@@ -363,12 +361,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         }
         else if (negType==2){
     		/*
-    		 * We implement Just Fast Keying key management protocol with active identity protection for the initiator and no identity protection for the responder
+    		 * We implement Just Fast Keying key management protocol with active identity protection
+                 * for the initiator and no identity protection for the responder
     		 * M1:
                  * This is a straightforward DiffieHellman exponential.
-                 * The Initiator Nonce serves two purposes;it allows the initiator to use the same exponentials during different sessions while ensuring that the resulting session key will be different,can be used to differentiate between parallel sessions 
+                 * The Initiator Nonce serves two purposes;it allows the initiator to use the same
+                 * exponentials during different sessions while ensuring that the resulting session
+                 * key will be different,can be used to differentiate between parallel sessions 
                  * M2:
-                 * Responder replies with a signed copy of his own exponential, a random nonce and an authenticator calculated from a transient hash key private to the responder.
+                 * Responder replies with a signed copy of his own exponential, a random nonce and 
+                 * an authenticator which provides sufficient defense against forgeries,replays
                  * We slightly deviate JFK here;we do not send any public key information as specified in the JFK docs 
                  * M3:
                  * Initiator echoes the data sent by the responder including the authenticator. 
@@ -386,20 +388,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                        * The Initiator Nonce serves two purposes;it allows the initiator to use the same 			 * exponentials during different sessions while ensuring that the resulting 			  * session key will be different,can be used to differentiate between
     		       * parallel sessions
     		       */
-    			ProcessMessage1(pn,replyTo,0);			
+    			ProcessMessage1(payload,pn,replyTo,0);			
     			
     		}
     		else if(packetType==1){
     		      /*
     		       * Responder replies with a signed copy of his own exponential, a random
     		       * nonce and an authenticator calculated from a transient hash key private
-    		       * to the responder. We slightly deviate JFK here;we do not send any public
-                       * key information as specified in the JFK docs
+    		       * to the responder.
     		       */
-    			ProcessMessage2(pn,replyTo,1);
+    			ProcessMessage2(payload,pn,replyTo,1);
     		}
     		else if(packetType==2){
-    		      /* Initiator echoes the data sent by the responder.These messages are
+    		      /*
+                       * Initiator echoes the data sent by the responder.These messages are
                        * cached by the Responder.Receiving a duplicate message simply causes
                        * the responder to Re-transmit the corresponding message4
                        */
@@ -410,7 +412,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     		       * Encrypted message of the signature on both nonces, both exponentials 
     		       * using the same keys as in the previous message
     		       */
-    			ProcessMessage4(pn,replyTo,3);
+    			ProcessMessage4(payload,pn,replyTo,3);
     		}
         }
         else {
@@ -484,13 +486,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param The peerNode we are talking to
      * @param The peer to which we need to send the packet
      */	
-    private void ProcessMessage1(PeerNode pn,Peer replyTo,int phase)
+    private void ProcessMessage1(byte[] payload,PeerNode pn,Peer replyTo,int phase)
     {
                 long t1=System.currentTimeMillis();
-                              
-                byte[] message1=new byte[iNonce().length + Gi(pn).length+1];
-                System.arraycopy(iNonce(),0,message1,0,iNonce().length);
-                System.arraycopy(Gi(pn),0,message1,iNonce().length+1,Gi(pn).length);
+                byte[] Ni = iNonce();
+                byte[] DHExpi = Gi(pn);
+                byte[] message1=new byte[Ni.length + DHExpi.length+1];
+                System.arraycopy(Ni,0,message1,0,Ni.length);
+                System.arraycopy(DHExpi,0,message1,Ni.length+1,DHExpi.length);
                 //Send params:Version,negType,phase,data,peernode,peer
                 sendMessage1or2Packet(1,2,0,message1,pn,replyTo);
                 long t2=System.currentTimeMillis();
@@ -502,10 +505,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * Used by the responder to verify the authenticity of the received data
      */
     private byte[] processMessageAuth(PeerNode pn){
-                byte[] authData=new byte[iNonce().length+rNonce().length+Gr(pn).length+1];
-                System.arraycopy(iNonce(),0,authData,0,iNonce().length);
-                System.arraycopy(rNonce(),0,authData,iNonce().length+1,rNonce().length);
-		System.arraycopy(Gr(pn),0,authData,iNonce().length+rNonce().length+1,Gr(pn).length);
+                byte[] Ni = iNonce();
+                byte[] Nr = rNonce();
+                byte[] DHExpr = Gr(pn);
+                byte[] authData=new byte[Ni.length+Nr.length+DHExpr.length+1];
+                System.arraycopy(Ni,0,authData,0,Ni.length);
+                System.arraycopy(Nr,0,authData,Ni.length+1,Nr.length);
+		System.arraycopy(DHExpr,0,authData,Ni.length+Nr.length+1,DHExpr.length);
 		/*
                  * Calculate the Hash of the Concatenated data(Responder exponentials, nonces)
 		 * using a key that will be private to the responder
@@ -527,31 +533,42 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param The peerNode we are talking to
      */
 
-    private void ProcessMessage2(PeerNode pn,Peer replyTo,int phase)
+    private void ProcessMessage2(byte[] payload,PeerNode pn,Peer replyTo,int phase)
     {
 		long t1=System.currentTimeMillis();
-		byte[] signData=new byte[Gr(pn).length+1];
+                byte[] Ni = iNonce();
+                byte[] Nr = rNonce();
+                byte[] DHExpr = Gr(pn);
+                byte[] authData=new byte[Ni.length+Nr.length+DHExpr.length+1];
+                System.arraycopy(Ni,0,authData,0,Ni.length);
+                System.arraycopy(Nr,0,authData,Ni.length+1,Nr.length);
+		System.arraycopy(DHExpr,0,authData,Ni.length+Nr.length+1,DHExpr.length);
+		byte[] signData=new byte[DHExpr.length+1];
+                System.arraycopy(DHExpr,0,signData,0,DHExpr.length);
 		//Compute the Signature:DSA
-		DSASignature sig = crypto.sign(signData);
-                byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+                PKR=new DSAPrivateKey(g, r);
+                //Params: Data,DSAGroup,DSAPrivateKey,randomSource
+                DSASignature sig = crypto.sign(signData,g,PKR,r);
+		byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
                 byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
                 Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
                 if(r.length > 255 || s.length > 255)
                     throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
 		//Data sent in the clear
-		byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr(pn).length+1];
-                System.arraycopy(iNonce(),0,unVerifiedData,0,iNonce().length);
-                System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
-		System.arraycopy(Gr(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gr(pn).length);
+		byte[] unVerifiedData=new byte[Ni.length+Nr.length+DHExpr.length+1];
+                System.arraycopy(Ni,0,unVerifiedData,0,Ni.length);
+                System.arraycopy(Nr,0,unVerifiedData,Ni.length+1,Nr.length);
+		System.arraycopy(DHExpr,0,unVerifiedData,Ni.length+Nr.length+1,DHExpr.length);
 		/*
                  * Compute the authenticator
                  * Used by the responder in Message4 to verify the authenticity of the message
+                 * The same authenticator is used in Message3 and identified using the DSAPrivateKey 
                  */
 		HKrGenerator trKey=new HKrGenerator(node);
                 byte[] hkr=trKey.getNewHKr();
 		HMAC hash=new HMAC(SHA1.getInstance());
-                byte[] authenticator = hash.mac(hkr,processMessageAuth(pn),hkr.length);
-                authenticatorCache.add(authenticator);
+                byte[] authenticator = hash.mac(hkr,authData,hkr.length);
+                authenticatorCache.put(PKR,authenticator);
 		byte[] Message2=new byte[authenticator.length+unVerifiedData.length+s.length+r.length+1];
 		byte[] signedData=new byte[s.length+r.length];
 		System.arraycopy(signedData,0,Message2,0,signedData.length);
@@ -586,7 +603,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         try{
             // Intrinsic lock provided by the object authenticatorCache
             synchronized(authenticatorCache){
-                authenticator = getBytes(authenticatorCache.get(authenticatorCache.size()));
+                authenticator = getBytes(authenticatorCache.get(PKR));
             }
         }
         catch(IOException e){
@@ -597,8 +614,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
 	System.arraycopy(Gi(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gi(pn).length);
         System.arraycopy(Gr(pn),0,unVerifiedData,iNonce().length+rNonce().length+Gi(pn).length+1,Gr(pn).length);
-        DSAPrivateKey pkMessage3=new DSAPrivateKey(g, r);
-        DSASignature sig = crypto.sign(unVerifiedData,g,pkMessage3,r);
+        PKI=new DSAPrivateKey(g, r);
+        //Params: Data,DSAGroup,DSAPrivateKey,randomSource
+        DSASignature sig = crypto.sign(unVerifiedData,g,PKI,r);
         byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
@@ -666,7 +684,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     * @param The peerNode we are talking to
     */
  	
-    private void ProcessMessage4(PeerNode pn,Peer replyTo,int phase)
+    private void ProcessMessage4(byte[] payload,PeerNode pn,Peer replyTo,int phase)
     {
 	    	
         long t1=System.currentTimeMillis();
@@ -675,8 +693,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
 	System.arraycopy(Gi(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gi(pn).length);
         System.arraycopy(Gr(pn),0,unVerifiedData,iNonce().length+rNonce().length+Gi(pn).length+1,Gr(pn).length);
-        DSAPrivateKey pkMessage4=new DSAPrivateKey(g, r);
-        DSASignature sig = crypto.sign(unVerifiedData,g,pkMessage4,r);
+        DSASignature sig = crypto.sign(unVerifiedData,g,PKR,r);
         byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
