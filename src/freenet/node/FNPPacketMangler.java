@@ -393,10 +393,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			else if(packetType==0){
 				/*
 				 * Initiator- This is a straightforward DiffieHellman exponential.
-				 * The Initiator Nonce serves two purposes;it allows the initiator to use the same 			 * exponentials during different sessions while ensuring that the resulting 			  * session key will be different,can be used to differentiate between
+				 * The Initiator Nonce serves two purposes;it allows the initiator to use the same
+				 * exponentials during different sessions while ensuring that the resulting
+				 * session key will be different,can be used to differentiate between
 				 * parallel sessions
 				 */
-				ProcessMessage1(payload,pn,replyTo,0);			
+				ProcessMessage1(payload,pn,replyTo,0);
 
 			}
 			else if(packetType==1){
