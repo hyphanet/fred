@@ -405,7 +405,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * cached by the Responder.Receiving a duplicate message simply causes
 				 * the responder to Re-transmit the corresponding message4
 				 */
-				sendProcessMessage3(pn,replyTo,2);
+				ProcessMessage3(pn, replyTo, version);
 			}
 			else if(packetType==3){
 				/*
@@ -504,24 +504,30 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/*
 	 * Authenticator computed over the Responder exponentials and the Nonces
 	 * Used by the responder to verify the authenticity of the received data
+	 * 
+	 * (costs a HMAC and the allocation of a few bytes)
 	 */
-	private byte[] processMessageAuth(PeerNode pn){
-		byte[] Ni = iNonce();
-		byte[] Nr = rNonce();
-		byte[] DHExpr = Gr(pn);
-		byte[] authData=new byte[Ni.length+Nr.length+DHExpr.length+1];
+	private byte[] computeJFKAuthenticator(byte[] gR, byte[] nR, byte[] nI, byte[] address){
+		byte[] authData=new byte[gR.length+nR.length+nI.length+address.length];
 		int offset = 0;
-		System.arraycopy(Ni,0,authData,offset,Ni.length);
-		offset += Ni.length+1;
-		System.arraycopy(Nr,0,authData,offset,Nr.length);
-		offset += Nr.length+1;
-		System.arraycopy(DHExpr,0,authData,offset,DHExpr.length);
+		
+		System.arraycopy(gR,0,authData,offset,gR.length);
+		offset += gR.length;
+		System.arraycopy(nR,0,authData,offset,nR.length);
+		offset += nR.length+1;
+		System.arraycopy(nI,0,authData,offset,nI.length);
+		offset += nI.length+1;
+		System.arraycopy(address, 0, authData, offset, address.length);
+		
 		/*
 		 * Calculate the Hash of the Concatenated data(Responder exponentials, nonces)
 		 * using a key that will be private to the responder
 		 */
-		return authData;
+		HMAC hash = new HMAC(SHA1.getInstance());
+		// TODO: is that 512 LSB ?
+		return hash.mac(gR, authData, 9);
 	}
+
 	/*
 	 * Responder Method:Message2
 	 * Process Message2: Must involve only minimal work for the responder since at that point
@@ -681,7 +687,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * from message3 because an active attacker cannot complete the DH computation.
 		 */
 		byte[] data = ProcessMessage3(pn,replyTo,phase);
-		sendMessage3Packet(1,2,2,data,pn,replyTo);
+		
+		byte[] address = replyTo.getAddress().getAddress();
+		// FIXME: feed computeJFKAuthenticator with the right parameters ^-^
+		byte[] authenticator = computeJFKAuthenticator(data, data, data, address);
+		sendMessage3Packet(1,2,2,data,pn,replyTo, SHA256.digest(authenticator));
 	}
 
 	/*
@@ -799,7 +809,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peer to which we need to send the packet
 	 */
 
-	private void sendMessage3Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
+	private void sendMessage3Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo, byte[] hashedAuthenticator)
 	{
 		long now = System.currentTimeMillis();
 		long delta = now - pn.lastSentPacketTime();
@@ -812,22 +822,21 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * of a valid message causing a cache miss
 		 * This would result in increased processing on the Responder side->CPU exhaustion attacks
 		 */
-		byte[] cacheKey=processMessageAuth(pn);
 		Object result;
 		//All recent messages 3 and 4 are cached
 		if(phase==2){
 			// Intrinsic lock provided by the object message3Cache
 			synchronized(message3Cache) {
-				result = message3Cache.get(cacheKey);
+				result = message3Cache.get(hashedAuthenticator);
 			}
 			if(result != null) {
 				synchronized(message3Cache) {
-					message3Cache.put(cacheKey,data);
+					message3Cache.put(hashedAuthenticator,data);
 				}
 				// We don't want to keep the lock while sending
 				try
 				{
-					sendMessage4Packet(1,2,3,getBytes(message4Cache.get(cacheKey)),pn,replyTo);
+					sendMessage4Packet(1,2,3,getBytes(message4Cache.get(hashedAuthenticator)),pn,replyTo);
 				}
 				catch(IOException e){
 					Logger.error(this,"Error getting bytes");
@@ -836,7 +845,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			sendProcessMessage3(pn,replyTo,phase);       
 		}
 		else if(phase==3){
-			message4Cache.put(cacheKey,data.toString());
+			message4Cache.put(hashedAuthenticator,data.toString());
 		}
 		else{ 
 			Logger.error(this,"Wrong message");
