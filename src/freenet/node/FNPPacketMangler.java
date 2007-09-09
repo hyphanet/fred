@@ -75,15 +75,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	final Map message3Cache;
 	final Map message4Cache;
-	final HashMap authenticatorCache;
+	private byte[] transitentKey = null;
+	private final HashMap authenticatorCache;
 	final eKey encryptionKey;
 	final DSAGroup g;
 	static DSAPrivateKey PKR,PKI;
 	final RandomSource r;
 	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
+	private static final int TRANSITENT_KEY_SIZE = 12;
 	// TODO: is 64 bits enough ?
-	public static final int NONCE_SIZE = 6;
+	private static final int NONCE_SIZE = 6;
 	private static final int MAX_PACKETS_IN_FLIGHT = 256; 
 	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
@@ -588,7 +590,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// FIXME: SHA1 or SHA256 there ? does it matter ?
 		HMAC hash = new HMAC(SHA1.getInstance());
 		// TODO: is that 512 LSB ?
-		return hash.mac(gR, authData, 9);
+		return hash.mac(getTransitentKey(), authData, 9);
 	}
 	/*
 	 * Hash the authenticator using SHA256
@@ -2216,8 +2218,28 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 	
 	private synchronized DiffieHellmanLightContext getLightDiffieHellmanContext() {
-		if(currentDHContext == null){
+		if(currentDHContext == null)
 			currentDHContext = DiffieHellman.generateLightContext();
 		return currentDHContext;
+	}
+	
+	private byte[] getTransitentKey() {
+		synchronized (authenticatorCache) {
+			if(transitentKey == null){
+				transitentKey = new byte[TRANSITENT_KEY_SIZE];
+				node.random.nextBytes(transitentKey);
+
+				// reset the authenticator cache
+				authenticatorCache.clear();
+			}
+			return transitentKey;
+		}
+	}
+
+	//TODO: when shall that be called ? what about DH exponentials ?
+	private void resetTransitentKey() {
+		synchronized (authenticatorCache) {
+			transitentKey = null;
+		}
 	}
 }
