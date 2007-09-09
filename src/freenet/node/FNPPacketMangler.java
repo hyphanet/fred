@@ -517,7 +517,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, 4 + NONCE_SIZE, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
 		
-		sendMessage2(nonceInitiator, hisExponential, pn, replyTo);
+		NativeBigInteger _hisExponential = new NativeBigInteger(hisExponential);
+		if(_hisExponential.compareTo(NativeBigInteger.ONE) > 0)
+			sendMessage2(nonceInitiator, hisExponential, pn, replyTo);
+		else
+			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
 		
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
