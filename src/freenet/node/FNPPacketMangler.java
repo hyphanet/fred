@@ -519,7 +519,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// get g^i
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
-		System.arraycopy(payload, 0, hisExponential, NONCE_SIZE, DiffieHellman.modulusLengthInBytes());
+		System.arraycopy(payload, NONCE_SIZE, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
 		
 		NativeBigInteger _hisExponential = new NativeBigInteger(1, hisExponential);
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) > 0)
