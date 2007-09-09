@@ -510,9 +510,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 byte[] Nr = rNonce();
                 byte[] DHExpr = Gr(pn);
                 byte[] authData=new byte[Ni.length+Nr.length+DHExpr.length+1];
-                System.arraycopy(Ni,0,authData,0,Ni.length);
-                System.arraycopy(Nr,0,authData,Ni.length+1,Nr.length);
-		System.arraycopy(DHExpr,0,authData,Ni.length+Nr.length+1,DHExpr.length);
+                int offset = 0;
+                System.arraycopy(Ni,0,authData,offset,Ni.length);
+                offset += Ni.length+1;
+                System.arraycopy(Nr,0,authData,offset,Nr.length);
+                offset += Nr.length+1;
+		System.arraycopy(DHExpr,0,authData,offset,DHExpr.length);
 		/*
                  * Calculate the Hash of the Concatenated data(Responder exponentials, nonces)
 		 * using a key that will be private to the responder
