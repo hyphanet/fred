@@ -86,7 +86,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	public static final int NONCE_SIZE = 6;
 	private static final int MAX_PACKETS_IN_FLIGHT = 256; 
 	private static final int RANDOM_BYTES_LENGTH = 12;
-	private static final int HASH_LENGTH = 32;
+	private static final int HASH_LENGTH = SHA256.getDigestLength();
 	/** Minimum headers overhead */
 	private static final int HEADERS_LENGTH_MINIMUM =
 		4 + // sequence number
@@ -541,7 +541,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+myDHGroup.length+
 		                           signature.length+
-		                           SHA256.getDigestLength()];
+		                           HASH_LENGTH];
 
 		int offset = 0;
 		System.arraycopy(nonceInitator, 0, message2, offset, NONCE_SIZE);
@@ -556,7 +556,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(signature, 0, message2, offset, signature.length);
 		offset += signature.length;
 		
-		System.arraycopy(authenticator, 0, message2, offset, authenticator.length);
+		System.arraycopy(authenticator, 0, message2, offset, HASH_LENGTH);
 		
 		sendMessage1or2Packet(1,2,2,message2,pn,replyTo);
 	}
@@ -583,6 +583,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * Calculate the Hash of the Concatenated data(Responder exponentials, nonces)
 		 * using a key that will be private to the responder
 		 */
+		// FIXME: SHA1 or SHA256 there ? does it matter ?
 		HMAC hash = new HMAC(SHA1.getInstance());
 		// TODO: is that 512 LSB ?
 		return hash.mac(gR, authData, 9);
