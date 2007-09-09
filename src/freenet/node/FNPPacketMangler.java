@@ -45,6 +45,7 @@ import freenet.support.WouldBlockException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -540,7 +541,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] myNonce = new byte[NONCE_SIZE];
 		byte[] myExponential = dhContext.myExponential.toByteArray();
 		node.random.nextBytes(myNonce);
-		byte[] signature = dhContext.signature.toString().getBytes("UTF-8");
+		byte[] signature;
+		try {
+			signature = dhContext.signature.toString().getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			Logger.error(this, "HUH ??, please report it :"+ e.getMessage(),e);
+			return;
+		}
 		byte[] authenticator = computeHashedJFKAuthenticator(myExponential, myNonce, nonceInitator, idR);
 		
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+myDHGroup.length+
