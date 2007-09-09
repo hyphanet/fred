@@ -507,19 +507,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void ProcessMessage1(byte[] payload,PeerNode pn,Peer replyTo,int phase)
 	{
 		long t1=System.currentTimeMillis();
-		
+		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it");
 		// FIXME: follow the spec and send IDr' ?
-		if(payload.length-3 < NONCE_SIZE + DiffieHellman.modulusLengthInBytes()) {
+		if(payload.length < NONCE_SIZE + DiffieHellman.modulusLengthInBytes()) {
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK("+phase+"), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
 			return;
 		}
 		// get Ni
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
-		System.arraycopy(payload, 3, nonceInitiator, 0, NONCE_SIZE);
+		System.arraycopy(payload, 0, nonceInitiator, 0, NONCE_SIZE);
 		
 		// get g^i
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
-		System.arraycopy(payload, 4 + NONCE_SIZE, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
+		System.arraycopy(payload, 0, hisExponential, NONCE_SIZE, DiffieHellman.modulusLengthInBytes());
 		
 		NativeBigInteger _hisExponential = new NativeBigInteger(1, hisExponential);
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) > 0)
@@ -534,6 +534,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	// FIXME: IDr' ?
 	private void sendMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo) {
+		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
 		byte[] idR = new byte[0];
 		byte[] myDHGroup = dhContext.group.asBytes();
@@ -572,7 +573,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		System.arraycopy(authenticator, 0, message2, offset, HASH_LENGTH);
 		
-		sendAuthMessagePacket(1,2,2,message2,pn,replyTo);
+		sendAuthPacket(1,2,2,message2,pn,replyTo);
 	}
 	
 	/*
@@ -627,13 +628,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void ProcessMessage2(byte[] payload,PeerNode pn,Peer replyTo,int phase)
 	{
 		long t1=System.currentTimeMillis();
+		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it");
 		// FIXME: follow the spec and send IDr' ?
-		if(payload.length-3 < NONCE_SIZE + DiffieHellman.modulusLengthInBytes()) {
+		if(payload.length < NONCE_SIZE + DiffieHellman.modulusLengthInBytes()) {
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK("+phase+"), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
 			return;
 		}
 		
-		int inputOffset=3;
+		int inputOffset=0;
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
@@ -702,6 +704,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private byte[] ProcessMessage3(byte[] payload, PeerNode pn,Peer replyTo,int phase)			
 	{
+		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it");
 		// Get the authenticator,which is the latest entry into the cache
 		// It is basically a keyed hash(HMAC); size of output is that of the underlying hash function 
 		byte[] authenticator = new byte[16];
@@ -782,7 +785,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	private void ProcessMessage4(byte[] payload,PeerNode pn,Peer replyTo,int phase)
 	{
-
+		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it");
 		long t1=System.currentTimeMillis();
 		byte[] Ni = iNonce();
 		byte[] Nr = rNonce();
@@ -826,36 +829,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
 			Logger.error(this,"Message4 timeout error:Sending packet for"+pn.getPeer());
-
 	}	
-
-	/*
-	 * Send AuthMessagePacket
-	 * @param version
-	 * @param negType
-	 * @param The packet phase number
-	 * @param Concatenated data
-	 * @param The peerNode we are talking to
-	 * @param The peer to which we need to send the packet
-	 */
-	private void sendAuthMessagePacket(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
-	{
-		long now = System.currentTimeMillis();
-		long delta = now - pn.lastSentPacketTime();
-		byte[] output = new byte[data.length+3];
-		output[0] = (byte) version;
-		output[1] = (byte) negType;
-		output[2] = (byte) phase;
-		System.arraycopy(data, 0, output, 3, data.length);
-		if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
-		try
-		{
-			sendPacket(output,replyTo,pn,0);
-		}catch(LocalAddressException e)
-		{
-			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
-		}
-	}
 
 	/*
 	 * Convert Object to byteArray
@@ -885,6 +859,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	private void sendMessage3Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] hashedAuthenticator, PeerNode pn, Peer replyTo)
 	{
+		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn);
 		long now = System.currentTimeMillis();
 		long delta = now - pn.lastSentPacketTime();
 		
@@ -920,7 +895,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					Logger.error(this,"Error getting bytes");
 				}
 			}
-			sendAuthMessagePacket(version, negType, 4, null, pn, replyTo);
+			sendAuthPacket(version, negType, 4, null, pn, replyTo);
 		}
 		else if(phase==3){
 			message4Cache.put(hashedAuthenticator,nonceInitiator.toString());
@@ -955,6 +930,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	private void sendMessage4Packet(int version,int negType,int phase,byte[] data,PeerNode pn,Peer replyTo)
 	{
+		if(logMINOR) Logger.minor(this, "Sending a JFK(4) message to "+pn);
 		long now = System.currentTimeMillis();
 		long delta = now - pn.lastSentPacketTime();
 		byte[] output = new byte[data.length+3];
