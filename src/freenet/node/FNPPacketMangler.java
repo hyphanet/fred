@@ -6,7 +6,6 @@ package freenet.node;
 
 import freenet.io.comm.SocketHandler;
 
-import java.net.Inet4Address;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import net.i2p.util.NativeBigInteger;
@@ -2227,8 +2226,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 	
 	private synchronized DiffieHellmanLightContext getLightDiffieHellmanContext() {
-		if(currentDHContext == null)
+		if(currentDHContext == null) {
 			currentDHContext = DiffieHellman.generateLightContext();
+			
+			byte[] _myExponential = currentDHContext.myExponential.toByteArray();
+			byte[] _myGroup = currentDHContext.group.asBytes();
+			byte[] toSign = new byte[_myExponential.length + _myGroup.length];
+			System.arraycopy(_myExponential, 0, toSign, 0, _myExponential.length);
+			System.arraycopy(_myGroup, 0, toSign, _myExponential.length, _myGroup.length);
+			currentDHContext.setSignature(crypto.sign(SHA256.digest(toSign)));
+		}
 		return currentDHContext;
 	}
 	

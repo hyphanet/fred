@@ -1,6 +1,5 @@
 package freenet.crypt;
 
-import freenet.node.NodeCrypto;
 import net.i2p.util.NativeBigInteger;
 
 public class DiffieHellmanLightContext {
@@ -12,7 +11,7 @@ public class DiffieHellmanLightContext {
 	/** The group we both share */
 	public final DHGroup group;
 	/** The signature of (g^r, grpR) */
-	public final DSASignature signature;
+	public DSASignature signature = null;
 
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
@@ -25,17 +24,13 @@ public class DiffieHellmanLightContext {
 		return sb.toString();
 	}
 
-	// FIXME: remove the layering violation, sign it *before* the constructor so that it doesn't need NodeCrypto
-	public DiffieHellmanLightContext(NodeCrypto crypto, NativeBigInteger myExponent, NativeBigInteger myExponential, DHGroup group) {
+	public DiffieHellmanLightContext(NativeBigInteger myExponent, NativeBigInteger myExponential, DHGroup group) {
 		this.myExponent = myExponent;
 		this.myExponential = myExponential;
 		this.group = group;
-		
-		byte[] _myExponential = myExponential.toByteArray();
-		byte[] _myGroup = group.asBytes();
-		byte[] toSign = new byte[_myExponential.length + _myGroup.length];
-		System.arraycopy(_myExponential, 0, toSign, 0, _myExponential.length);
-		System.arraycopy(_myGroup, 0, toSign, _myExponential.length, _myGroup.length);
-		this.signature = crypto.sign(SHA256.digest(toSign));
+	}
+	
+	public void setSignature(DSASignature sig) {
+		this.signature = sig;
 	}
 }
