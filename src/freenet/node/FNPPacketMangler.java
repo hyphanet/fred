@@ -5,6 +5,8 @@
 package freenet.node;
 
 import freenet.io.comm.SocketHandler;
+
+import java.net.Inet4Address;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import net.i2p.util.NativeBigInteger;
@@ -14,6 +16,7 @@ import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanContext;
+import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.EntropySource;
 import freenet.crypt.Global;
 import freenet.crypt.HMAC;
@@ -71,11 +74,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	final Map message3Cache;
 	final Map message4Cache;
-	final Map authenticatorCache;
+	final HashMap authenticatorCache;
 	final eKey encryptionKey;
 	final DSAGroup g;
 	static DSAPrivateKey PKR,PKI;
 	final RandomSource r;
+	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
+	private DiffieHellmanLightContext currentDHContext = null;
+	// TODO: is 64 bits enough ?
+	public static final int NONCE_SIZE = 6;
 	private static final int MAX_PACKETS_IN_FLIGHT = 256; 
 	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = 32;
@@ -405,7 +412,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * cached by the Responder.Receiving a duplicate message simply causes
 				 * the responder to Re-transmit the corresponding message4
 				 */
-				ProcessMessage3(pn, replyTo, version);
+				ProcessMessage3(payload, pn, replyTo, 2);
 			}
 			else if(packetType==3){
 				/*
@@ -486,21 +493,52 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The packet phase number
 	 * @param The peerNode we are talking to
 	 * @param The peer to which we need to send the packet
+	 * 
+	 * format :
+	 * Ni
+	 * g^i
+	 * IDr'
 	 */	
 	private void ProcessMessage1(byte[] payload,PeerNode pn,Peer replyTo,int phase)
 	{
 		long t1=System.currentTimeMillis();
-		byte[] Ni = iNonce();
-		byte[] DHExpi = Gi(pn);
-		byte[] message1=new byte[Ni.length + DHExpi.length+1];
-		System.arraycopy(Ni,0,message1,0,Ni.length);
-		System.arraycopy(DHExpi,0,message1,Ni.length+1,DHExpi.length);
-		//Send params:Version,negType,phase,data,peernode,peer
-		sendMessage1or2Packet(1,2,0,message1,pn,replyTo);
+		
+		// FIXME: follow the spec and send IDr' ?
+		if(payload.length-3 < NONCE_SIZE + DiffieHellman.modulusLengthInBytes()) {
+			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK("+phase+"), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
+			return;
+		}
+		// get Ni
+		byte[] nonceInitiator = new byte[NONCE_SIZE];
+		System.arraycopy(payload, 3, nonceInitiator, 0, NONCE_SIZE);
+		
+		// get g^i
+		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
+		System.arraycopy(payload, 4 + NONCE_SIZE, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
+		
+		sendMessage2(nonceInitiator, hisExponential, pn, replyTo);
+		
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
 			Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
 	}
+	
+	// FIXME: IDr' ?
+	private void sendMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo) {
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
+		byte[] myDHGroup = dhContext.group.asBytes();
+		byte[] myNonce = new byte[NONCE_SIZE];
+		byte[] myExponential = dhContext.myExponential.toByteArray();
+		node.random.nextBytes(myNonce);
+		
+		byte[] authenticator = computeJFKAuthenticator(myExponential, myNonce, nonceInitator, null);
+		
+		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+myDHGroup.length+
+		                           authenticator.length+
+		                           ];
+		                           
+	}
+	
 	/*
 	 * Authenticator computed over the Responder exponentials and the Nonces
 	 * Used by the responder to verify the authenticity of the received data
@@ -546,6 +584,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void ProcessMessage2(byte[] payload,PeerNode pn,Peer replyTo,int phase)
 	{
 		long t1=System.currentTimeMillis();
+		
 		byte[] Ni = iNonce();
 		byte[] Nr = rNonce();
 		byte[] DHExpr = Gr(pn);
@@ -604,9 +643,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * @return byte Message3
 	 */
-	private byte[] ProcessMessage3(PeerNode pn,Peer replyTo,int phase)			
+	private byte[] ProcessMessage3(byte[] payload, PeerNode pn,Peer replyTo,int phase)			
 	{
-
 		// Get the authenticator,which is the latest entry into the cache
 		// It is basically a keyed hash(HMAC); size of output is that of the underlying hash function 
 		byte[] authenticator = new byte[16];
@@ -2145,5 +2183,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	public boolean alwaysAllowLocalAddresses() {
 		return crypto.config.alwaysAllowLocalAddresses();
+	}
+	
+	private synchronized DiffieHellmanLightContext getLightDiffieHellmanContext() {
+		if(currentDHContext == null)
+			currentDHContext = DiffieHellman.generateLightContext();
+		return currentDHContext;
 	}
 }
