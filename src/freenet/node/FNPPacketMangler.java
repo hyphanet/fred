@@ -410,7 +410,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     		else if(packetType==3){
     		      /*
     		       * Encrypted message of the signature on both nonces, both exponentials 
-    		       * using the same keys as in the previous message
+    		       * using the same keys as in the previous message.
+                       * The signature is non-message recovering
     		       */
     			ProcessMessage4(payload,pn,replyTo,3);
     		}
@@ -609,11 +610,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         catch(IOException e){
             Logger.error(this,"Error getting bytes");
         }
-        byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr(pn).length+Gi(pn).length+1];
-        System.arraycopy(iNonce(),0,unVerifiedData,0,iNonce().length);
-        System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
-	System.arraycopy(Gi(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gi(pn).length);
-        System.arraycopy(Gr(pn),0,unVerifiedData,iNonce().length+rNonce().length+Gi(pn).length+1,Gr(pn).length);
+        byte[] Ni = iNonce();
+        byte[] Nr = rNonce();
+        byte[] DHExpi = Gi(pn);
+        byte[] DHExpr = Gr(pn);
+        byte[] unVerifiedData=new byte[Ni.length+Nr.length+DHExpr.length+DHExpi.length+1];
+        System.arraycopy(Ni,0,unVerifiedData,0,Ni.length);
+        System.arraycopy(Nr,0,unVerifiedData,Ni.length+1,Nr.length);
+	System.arraycopy(DHExpi,0,unVerifiedData,Ni.length+Nr.length+1,DHExpi.length);
+        System.arraycopy(DHExpr,0,unVerifiedData,Ni.length+Nr.length+DHExpi.length+1,DHExpr.length);
+        /*
+         * Digital Signature of the message with the private key belonging to the initiator/responder
+         * It is assumed to be non-message recovering
+         */
         PKI=new DSAPrivateKey(g, r);
         //Params: Data,DSAGroup,DSAPrivateKey,randomSource
         DSASignature sig = crypto.sign(unVerifiedData,g,PKI,r);
@@ -688,12 +697,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
     {
 	    	
         long t1=System.currentTimeMillis();
-        byte[] unVerifiedData=new byte[iNonce().length+rNonce().length+Gr(pn).length+Gi(pn).length+1];
-        System.arraycopy(iNonce(),0,unVerifiedData,0,iNonce().length);
-        System.arraycopy(rNonce(),0,unVerifiedData,iNonce().length+1,rNonce().length);
-	System.arraycopy(Gi(pn),0,unVerifiedData,iNonce().length+rNonce().length+1,Gi(pn).length);
-        System.arraycopy(Gr(pn),0,unVerifiedData,iNonce().length+rNonce().length+Gi(pn).length+1,Gr(pn).length);
-        DSASignature sig = crypto.sign(unVerifiedData,g,PKR,r);
+        byte[] Ni = iNonce();
+        byte[] Nr = rNonce();
+        byte[] DHExpi = Gi(pn);
+        byte[] DHExpr = Gr(pn);
+        byte[] Data=new byte[Ni.length+Nr.length+DHExpr.length+DHExpi.length+1];
+        System.arraycopy(Ni,0,Data,0,Ni.length);
+        System.arraycopy(Nr,0,Data,Ni.length+1,Nr.length);
+	System.arraycopy(DHExpi,0,Data,Ni.length+Nr.length+1,DHExpi.length);
+        System.arraycopy(DHExpr,0,Data,Ni.length+Nr.length+DHExpi.length+1,DHExpr.length);
+        DSASignature sig = crypto.sign(Data,g,PKR,r);
         byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
         Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
