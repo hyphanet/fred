@@ -36,6 +36,7 @@ import freenet.support.Fields;
 import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
+import freenet.support.BitArray;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.StringArray;
@@ -45,6 +46,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -401,7 +403,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * session key will be different,can be used to differentiate between
 				 * parallel sessions
 				 */
-				ProcessMessage1(payload,pn,replyTo,0);
+				ProcessMessage1(payload,pn,replyTo);
 
 			}
 			else if(packetType==1){
@@ -410,7 +412,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * nonce and an authenticator calculated from a transient hash key private
 				 * to the responder.
 				 */
-				ProcessMessage2(payload,pn,replyTo,1);
+				ProcessMessage2(payload,pn,replyTo);
 			}
 			else if(packetType==2){
 				/*
@@ -418,7 +420,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * cached by the Responder.Receiving a duplicate message simply causes
 				 * the responder to Re-transmit the corresponding message4
 				 */
-				ProcessMessage3(payload, pn, replyTo, 2);
+				ProcessMessage3(payload, pn, replyTo);
 			}
 			else if(packetType==3){
 				/*
@@ -426,40 +428,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				ProcessMessage4(payload,pn,replyTo,3);
+				ProcessMessage4(payload,pn,replyTo);
 			}
 		}
 		else {
 			Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
 			return;
 		}
-	}
-	/*
-	 * Initiator DH Exponential
-	 */
-	private synchronized byte[] Gi(PeerNode pn){
-		DiffieHellmanContext dh=(DiffieHellmanContext)pn.getKeyAgreementSchemeContext();
-		if(dh==null)
-		{
-			if(shouldLogErrorInHandshake())
-				Logger.error(this,"Failed getting exponentials");
-
-		}
-		return dh.getOurExponential().toByteArray();
-	}
-
-	/*
-	 * Responder DH Exponential
-	 */
-	private synchronized byte[] Gr(PeerNode pn){
-		DiffieHellmanContext dh=(DiffieHellmanContext)pn.getKeyAgreementSchemeContext();
-		if(dh==null)
-		{
-			if(shouldLogErrorInHandshake())
-				Logger.error(this,"Failed getting exponentials");
-
-		}
-		return dh.getHisExponential().toByteArray();
 	}
 
 	/*
@@ -478,20 +453,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		return dh.getKey();
 	}
-	/*
-	 * The Initiator and Responder nonce are random bytes used to provide key independence
-	 */
-	private synchronized byte[] iNonce(){
-
-		byte[] n=new byte[16];
-		node.random.nextBytes(n);
-		return n;
-	}
-	private synchronized byte[] rNonce(){
-		byte[] n=new byte[16];
-		node.random.nextBytes(n);
-		return n;
-	}
+	
 	/*
 	 * Initiator Method:Message1
 	 * Process Message1
@@ -505,27 +467,29 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * g^i
 	 * IDr'
 	 */	
-	private void ProcessMessage1(byte[] payload,PeerNode pn,Peer replyTo,int phase)
+	private void ProcessMessage1(byte[] payload,PeerNode pn,Peer replyTo)
 	{
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it");
 		// FIXME: follow the spec and send IDr' ?
-		if(payload.length < NONCE_SIZE + DiffieHellman.modulusLengthInBytes()) {
-			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK("+phase+"), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
+		if(payload.length < NONCE_SIZE + DiffieHellman.modulusLengthInBytes() + 3) {
+			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
 			return;
 		}
+		int offset=3;
 		// get Ni
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
-		System.arraycopy(payload, 0, nonceInitiator, 0, NONCE_SIZE);
+		System.arraycopy(payload, offset, nonceInitiator, 0, NONCE_SIZE);
+		offset += NONCE_SIZE;
 		
 		// get g^i
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
-		System.arraycopy(payload, NONCE_SIZE, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
-
-		NativeBigInteger _hisExponential = new NativeBigInteger(1, hisExponential);
-		if(_hisExponential.compareTo(NativeBigInteger.ONE) > 0)
-			sendMessage2(nonceInitiator, hisExponential, pn, replyTo);
-		else
+		System.arraycopy(payload, offset, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
+		NativeBigInteger _hisExponential = new NativeBigInteger(hisExponential);
+		if(logMINOR) Logger.minor(this, "his exponential from message1 length="+DiffieHellman.modulusLengthInBytes() +" value=" + _hisExponential.toHexString());
+		if(_hisExponential.compareTo(NativeBigInteger.ONE) > 0) {
+			sendMessage2(nonceInitiator, pn, replyTo);
+		}else
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
 		
 		long t2=System.currentTimeMillis();
@@ -534,19 +498,46 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 	
 	/*
-         * format:
-         * Ni,Nr,g^r,GrpInfo(r),IDr
-         * Signature[g^r,grpInfo(r)]
-         * Hashed JFKAuthenticator
-         * FIXME: IDr' not sent during JFK(1) ?
-         */
-	private void sendMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo) {
+	 * format:
+	 * Ni,g^i,IDr'
+	 * FIXME: IDr' not sent?
+	 */
+	private void sendMessage1(PeerNode pn, Peer replyTo) {
+		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+pn);
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
+		int offset = 0;
+		byte[] idR = new byte[0];
+		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
+		byte[] myNonce = new byte[NONCE_SIZE];
+		node.random.nextBytes(myNonce);
+		
+		byte[] message1 = new byte[NONCE_SIZE+DiffieHellman.modulusLengthInBytes()+idR.length];
+
+		System.arraycopy(myNonce, 0, message1, offset, NONCE_SIZE);
+		offset += NONCE_SIZE;
+		if(logMINOR) Logger.minor(this, "My Exponential (message1), length ="+DiffieHellman.modulusLengthInBytes()+" value ="+ dhContext.myExponential.toHexString());
+		System.arraycopy(myExponential, 0, message1, offset, DiffieHellman.modulusLengthInBytes());
+		offset += DiffieHellman.modulusLengthInBytes();
+		System.arraycopy(idR, 0, message1, offset, idR.length);
+		offset += idR.length;
+		
+		sendAuthPacket(1,2,0,message1,pn,replyTo);
+	}
+	
+	/*
+	 * format:
+	 * Ni,Nr,g^r,GrpInfo(r),IDr
+	 * Signature[g^r,grpInfo(r)]
+	 * Hashed JFKAuthenticator
+	 * FIXME: IDr' not sent during JFK(1) ?
+	 */
+	private void sendMessage2(byte[] nonceInitator, PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
 		byte[] idR = new byte[0];
 		byte[] myDHGroup = dhContext.group.asBytes();
 		byte[] myNonce = new byte[NONCE_SIZE];
-		byte[] myExponential = dhContext.myExponential.toByteArray();
+		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
 		node.random.nextBytes(myNonce);
 		byte[] signature;
 		try {
@@ -566,8 +557,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		offset += NONCE_SIZE;
 		System.arraycopy(myNonce, 0, message2, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
-		System.arraycopy(myExponential, 0, message2, offset, myExponential.length);
-		offset += myExponential.length;
+		System.arraycopy(myExponential, 0, message2, offset, DiffieHellman.modulusLengthInBytes());
+		offset += DiffieHellman.modulusLengthInBytes();
 		// TODO: are groups modulo something ?
 		message2[offset++] = Integer.valueOf(myDHGroup.length).byteValue();
 		System.arraycopy(myDHGroup, 0, message2, offset, myDHGroup.length);
@@ -580,7 +571,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		System.arraycopy(authenticator, 0, message2, offset, HASH_LENGTH);
 		
-		sendAuthPacket(1,2,2,message2,pn,replyTo);
+		sendAuthPacket(1,2,1,message2,pn,replyTo);
 	}
 	
 	/*
@@ -614,7 +605,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Hash the authenticator using SHA256
 	 */
 	private byte[] computeHashedJFKAuthenticator(byte[] gR, byte[] nR, byte[] nI, byte[] address) {
-		return SHA256.digest(computeJFKAuthenticator(gR, nR, nI, address));
+		byte[] result = SHA256.digest(computeJFKAuthenticator(gR, nR, nI, address));
+		assert(result.length == HASH_LENGTH);
+		return result;
 	}
 
 	/*
@@ -634,18 +627,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 */
 
-	private void ProcessMessage2(byte[] payload,PeerNode pn,Peer replyTo,int phase)
+	private void ProcessMessage2(byte[] payload,PeerNode pn,Peer replyTo)
 	{
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it");
 		// FIXME: follow the spec and send IDr' ?
-                // FIXME: Are we checking for the right condition here?
-		if(payload.length < NONCE_SIZE + DiffieHellman.modulusLengthInBytes()) {
-			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK("+phase+"), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
+		if(payload.length < NONCE_SIZE + DiffieHellman.modulusLengthInBytes() + 3) {
+			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(2), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
 			return;
 		}
 		
-		int inputOffset=0;
+		int inputOffset=3;
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
@@ -656,7 +648,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, inputOffset, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
-		NativeBigInteger _hisExponential = new NativeBigInteger(1, hisExponential);
+		NativeBigInteger _hisExponential = new NativeBigInteger(hisExponential);
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) < 1) {
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
 			return;
@@ -682,8 +674,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] locallyExpectedExponentials = new byte[hisExponential.length+hisGroupLength];
 		System.arraycopy(hisExponential, 0, locallyExpectedExponentials, 0, hisExponential.length);
 		System.arraycopy(hisGroup, 0, locallyExpectedExponentials, hisExponential.length, hisGroupLength);
-		DSASignature signatureToCheck = new DSASignature(new String(remoteSignedExponentials));
-		if(!DSA.verify(pn.peerPubKey, signatureToCheck, new NativeBigInteger(1,locallyExpectedExponentials), false)) {
+		String sigToCheckAsString = null;
+		try {
+			sigToCheckAsString = new String(remoteSignedExponentials, "UTF-8");
+		} catch (UnsupportedEncodingException e) {}
+		if(logMINOR) Logger.minor(this, "His signedExponentials :"+ HexUtil.bytesToHex(hisExponential));
+		DSASignature signatureToCheck = new DSASignature(sigToCheckAsString);
+		if(!DSA.verify(pn.peerPubKey, signatureToCheck, new NativeBigInteger(locallyExpectedExponentials), false)) {
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}
@@ -712,7 +709,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * @return byte Message3
 	 */
-	private void ProcessMessage3(byte[] payload, PeerNode pn,Peer replyTo,int phase)			
+	private void ProcessMessage3(byte[] payload, PeerNode pn,Peer replyTo)			
 	{
 		long t1 = System.currentTimeMillis();
                 if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it");
@@ -780,7 +777,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 */
 
-	private void ProcessMessage4(byte[] payload,PeerNode pn,Peer replyTo,int phase)
+	private void ProcessMessage4(byte[] payload,PeerNode pn,Peer replyTo)
 	{
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it");
 		long t1=System.currentTimeMillis();
@@ -934,7 +931,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				// We don't want to keep the lock while sending
 				try
 				{
-					sendAuthPacket(1,2,3,getBytes(message4Cache.get(hashedAuthenticator)),pn,replyTo);
+					sendAuthPacket(1,2,2,getBytes(message4Cache.get(hashedAuthenticator)),pn,replyTo);
 				}
 				catch(IOException e){
 					Logger.error(this,"Error getting bytes");
@@ -1062,20 +1059,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void sendFirstHalfDHPacket(int phase, int negType, NativeBigInteger integer, PeerNode pn, Peer replyTo) {
 		long time1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Sending ("+phase+") "+integer.toHexString()+" to "+pn.getPeer());
-		byte[] data = integer.toByteArray();
-		int targetLength = DiffieHellman.modulusLengthInBytes();
-		if(data.length != targetLength) {
-			byte[] newData = new byte[targetLength];
-			if((data.length == targetLength+1) && (data[0] == 0)) {
-				// Sign bit
-				System.arraycopy(data, 1, newData, 0, targetLength);
-			} else if(data.length < targetLength) {
-				System.arraycopy(data, 0, newData, targetLength-data.length, data.length);
-			} else {
-				throw new IllegalStateException("Too long!");
-			}
-			data = newData;
-		}
+		byte[] data = stripBigIntegerToNetworkFormat(integer);
 		if(logMINOR) Logger.minor(this, "Processed: "+HexUtil.bytesToHex(data));
 		long time2 = System.currentTimeMillis();
 		if((time2 - time1) > 200) {
@@ -2151,7 +2135,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn+" negotiation type "+negType);
-		DiffieHellmanContext ctx;
+		DiffieHellmanContext ctx = null;
 		Peer[] handshakeIPs;
 		if(!pn.shouldSendHandshake()) {
 			if(logMINOR) Logger.minor(this, "Not sending handshake to "+pn.getPeer()+" because pn.shouldSendHandshake() returned false");
@@ -2168,7 +2152,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if((thirdTime - secondTime) > 1000)
 				Logger.error(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+pn.userToString());
 			return;
-		} else {
+		} else if(negType < 2){
 			long DHTime1 = System.currentTimeMillis();
 			ctx = DiffieHellman.generateContext();
 			long DHTime2 = System.currentTimeMillis();
@@ -2196,7 +2180,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
 				continue;
 			}
-			sendFirstHalfDHPacket(0, negType, ctx.getOurExponential(), pn, peer);
+			if(negType == 1)
+				sendFirstHalfDHPacket(0, negType, ctx.getOurExponential(), pn, peer);
+			else
+				sendMessage1(pn, peer);
 			pn.sentHandshake();
 			sentCount += 1;
 		}
@@ -2273,5 +2260,24 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// reset the authenticator cache
 			authenticatorCache.clear();
 		}
+	}
+	
+	private byte[] stripBigIntegerToNetworkFormat(BigInteger exponential) {
+		byte[] data = exponential.toByteArray();
+		int targetLength = DiffieHellman.modulusLengthInBytes();
+		
+		if(data.length != targetLength) {
+			byte[] newData = new byte[targetLength];
+			if((data.length == targetLength+1) && (data[0] == 0)) {
+				// Sign bit
+				System.arraycopy(data, 1, newData, 0, targetLength);
+			} else if(data.length < targetLength) {
+				System.arraycopy(data, 0, newData, targetLength-data.length, data.length);
+			} else {
+				throw new IllegalStateException("Too long!");
+			}
+			data = newData;
+		}
+		return data;
 	}
 }
