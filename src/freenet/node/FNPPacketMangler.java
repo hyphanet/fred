@@ -714,17 +714,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it");
 		// Get the authenticator,which is the latest entry into the cache
 		// It is basically a keyed hash(HMAC); size of output is that of the underlying hash function 
-		byte[] authenticator;
-		try{
-			// Intrinsic lock provided by the object authenticatorCache
-			synchronized(authenticatorCache){
-				authenticator = getBytes(authenticatorCache.get(nonceInitiator));
-			}
-		}
-		catch(IOException e){
-			Logger.error(this,"Error getting bytes");
-		}
-		byte[] Ni = iNonce();
+		byte[] authenticator = new byte[16];
+                byte[] Ni = iNonce();
 		byte[] Nr = rNonce();
 		byte[] DHExpi = Gi(pn);
 		byte[] DHExpr = Gr(pn);
