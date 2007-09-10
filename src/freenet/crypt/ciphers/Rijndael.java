@@ -37,9 +37,6 @@ public class Rijndael implements BlockCipher {
 	 * Create a Rijndael instance.
 	 * @param keysize The key size.
 	 * @param blocksize The block size.
-	 * @param fakeInsecure If true, only encrypt the first 128 bits of any block. This
-	 * is insecure! It is used for backwards compatibility with old data encrypted with
-	 * the old code.
 	 * @throws UnsupportedCipherException
 	 */
 	public Rijndael(int keysize, int blocksize) throws UnsupportedCipherException {
