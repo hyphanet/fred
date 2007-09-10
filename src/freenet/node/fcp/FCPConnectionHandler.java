@@ -97,6 +97,7 @@ public class FCPConnectionHandler {
 			requests = new ClientRequest[requestsByIdentifier.size()];
 			requests = (ClientRequest[]) requestsByIdentifier.values().toArray(requests);
 		}
+		try { sock.close(); } catch (IOException e) {}
 		for(int i=0;i<requests.length;i++)
 			requests[i].onLostConnection();
 		if((client != null) && !client.hasPersistentRequests())

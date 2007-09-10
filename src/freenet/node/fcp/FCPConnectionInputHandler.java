@@ -67,11 +67,12 @@ public class FCPConnectionInputHandler implements Runnable {
 				is.close();
 				return;
 			}
-			if(messageType.equals("")) continue;
+			if(messageType.equals(""))
+				continue;
 			fs = new SimpleFieldSet(lis, 4096, 128, true, true, true, true);
 			
 			// check for valid endmarker
-			if (fs.getEndMarker() != null && (!fs.getEndMarker().startsWith("End")) && (!"Data".equals(fs.getEndMarker()))) {
+			if (!firstMessage && fs.getEndMarker() != null && (!fs.getEndMarker().startsWith("End")) && (!"Data".equals(fs.getEndMarker()))) {
 				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "Invalid end marker: "+fs.getEndMarker(), fs.get("Identifer"), fs.getBoolean("Global", false));
 				handler.outputHandler.queue(err);
 				continue;
@@ -84,8 +85,15 @@ public class FCPConnectionInputHandler implements Runnable {
 				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.core.persistentTempBucketFactory);
 				if(msg == null) continue;
 			} catch (MessageInvalidException e) {
-				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
-				handler.outputHandler.queue(err);
+				if(firstMessage) {
+					FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.CLIENT_HELLO_MUST_BE_FIRST_MESSAGE, true, null, null, false);
+					handler.outputHandler.queue(err);
+					handler.close();
+					continue;
+				} else {
+					FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
+					handler.outputHandler.queue(err);
+				}
 				continue;
 			}
 			if(firstMessage && !(msg instanceof ClientHelloMessage)) {
