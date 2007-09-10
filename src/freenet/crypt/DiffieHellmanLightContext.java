@@ -1,5 +1,7 @@
 package freenet.crypt;
 
+import freenet.support.Logger;
+
 import net.i2p.util.NativeBigInteger;
 
 public class DiffieHellmanLightContext {
@@ -12,6 +14,8 @@ public class DiffieHellmanLightContext {
 	public final DHGroup group;
 	/** The signature of (g^r, grpR) */
 	public DSASignature signature = null;
+	
+	private final boolean logMINOR;
 
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
@@ -28,9 +32,24 @@ public class DiffieHellmanLightContext {
 		this.myExponent = myExponent;
 		this.myExponential = myExponential;
 		this.group = group;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	public void setSignature(DSASignature sig) {
 		this.signature = sig;
+	}
+	
+	/*
+	 * Calling the following is costy; avoid
+	 */
+	public NativeBigInteger getHMACKey(NativeBigInteger peerExponential, NativeBigInteger groupP) {		
+		if(logMINOR)
+			Logger.minor(this, "My exponent: "+myExponent.toHexString()+", my exponential: "+myExponential.toHexString()+", peer's exponential: "+peerExponential.toHexString());
+		NativeBigInteger sharedSecret =
+			(NativeBigInteger) peerExponential.modPow(myExponent, groupP);
+		if(logMINOR)
+			Logger.minor(this, "g^ir mod p = " + sharedSecret.toString());
+		
+		return sharedSecret;
 	}
 }
