@@ -48,6 +48,8 @@ public class InsertableClientSSK extends ClientSSK {
 
 		byte[] extra = uri.getExtra();
 		if(uri.getKeyType().equals("SSK")) {
+			if(extra == null)
+				throw new MalformedURLException("Inserting pre-1010 keys not supported");
 			// Formatted exactly as ,extra on fetching
 			if(extra.length < 5)
 				throw new MalformedURLException("SSK private key ,extra too short");
