@@ -89,7 +89,8 @@ public class FCPConnectionInputHandler implements Runnable {
 					FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.CLIENT_HELLO_MUST_BE_FIRST_MESSAGE, true, null, null, false);
 					handler.outputHandler.queue(err);
 					handler.close();
-					continue;
+					is.close();
+					return;
 				} else {
 					FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
 					handler.outputHandler.queue(err);
@@ -100,7 +101,8 @@ public class FCPConnectionInputHandler implements Runnable {
 				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.CLIENT_HELLO_MUST_BE_FIRST_MESSAGE, true, null, null, false);
 				handler.outputHandler.queue(err);
 				handler.close();
-				continue;
+				is.close();
+				return;
 			}
 			if(msg instanceof BaseDataCarryingMessage) {
 				// FIXME tidy up - coalesce with above and below try { } catch (MIE) {}'s?
@@ -127,7 +129,10 @@ public class FCPConnectionInputHandler implements Runnable {
 				continue;
 			}
 			firstMessage = false;
-			if(handler.isClosed()) return;
+			if(handler.isClosed()) {
+				is.close();
+				return;
+			}
 		}
 	}
 }
