@@ -32,7 +32,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	private SoftReference /* <Rijndael> */ aesRef;
 	/** The decryption key. */
 	private final byte[] key;
-	/** Broken (old) encryption? */
 	private long dataLength;
 	private boolean readOnly;
 	private int lastOutputStream;
@@ -68,7 +67,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	 * @param origRandom
 	 * @throws IOException 
 	 */
-	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, long knownSize, byte[] key, RandomSource origRandom, boolean oldCrypto) throws IOException {
+	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, long knownSize, byte[] key, RandomSource origRandom) throws IOException {
 		if(bucket.size() < knownSize)
 			throw new IOException("Bucket "+bucket+" is too small on disk - knownSize="+knownSize+" but bucket.size="+bucket.size()+" for "+bucket);
 		this.dataLength = knownSize;
