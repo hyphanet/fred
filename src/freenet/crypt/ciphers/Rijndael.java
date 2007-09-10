@@ -53,12 +53,7 @@ public class Rijndael implements BlockCipher {
 			throw new UnsupportedCipherException("Invalid blocksize");
 		this.keysize=keysize;
 		this.blocksize=blocksize;
-		// FIXME This is deliberate insecurity! It is used for backwards compatibility *ONLY*!
-		// FIXME IT MUST BE REMOVED SOON!
-		if(fakeInsecure)
-			this.cryptBlockSize = 128;
-		else
-			this.cryptBlockSize = blocksize;
+		this.cryptBlockSize = blocksize;
 	}
 
 	public Rijndael() {
