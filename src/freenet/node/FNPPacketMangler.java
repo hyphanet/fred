@@ -36,7 +36,6 @@ import freenet.support.Fields;
 import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
-import freenet.support.BitArray;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.StringArray;
@@ -684,7 +683,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(payload, inputOffset, remoteHashedAuthenticator, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 		// FIXME: maybe the cache should be checked before verifying the signature
-		sendMessage3Packet(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, remoteHashedAuthenticator, pn, replyTo);
+		sendMessage3Packet(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, _hisGroup, remoteHashedAuthenticator, pn, replyTo);
 		
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
@@ -846,7 +845,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peer to which we need to send the packet
 	 */
 
-	private void sendMessage3Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] hashedAuthenticator, PeerNode pn, Peer replyTo)
+	private void sendMessage3Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, BigInteger hisGroup, byte[] hashedAuthenticator, PeerNode pn, Peer replyTo)
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn);
 		long now = System.currentTimeMillis();
