@@ -113,7 +113,7 @@ public class InsertableClientSSK extends ClientSSK {
 
         Rijndael aes;
         try {
-			aes = new Rijndael(256, 256, cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256);
+			aes = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new Error("256/256 Rijndael not supported!");
 		}

@@ -80,7 +80,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new UnsupportedOperationException();
         BlockCipher cipher;
         try {
-            cipher = new Rijndael(256, 256, key.cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256);
+            cipher = new Rijndael(256, 256);
         } catch (UnsupportedCipherException e) {
             // FIXME - log this properly
             throw new Error(e);
@@ -180,7 +180,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // Now encrypt the header, then the data, using the same PCFB instance
         BlockCipher cipher;
         try {
-            cipher = new Rijndael(256, 256, false);
+            cipher = new Rijndael(256, 256);
         } catch (UnsupportedCipherException e) {
             // FIXME - log this properly
             throw new Error(e);

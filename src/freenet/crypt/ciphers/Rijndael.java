@@ -30,7 +30,7 @@ public class Rijndael implements BlockCipher {
 	}
 
 	public Rijndael(int keysize) throws UnsupportedCipherException {
-		this(keysize, 128, false);
+		this(keysize, 128);
 	}
 
 	/**
@@ -42,7 +42,7 @@ public class Rijndael implements BlockCipher {
 	 * the old code.
 	 * @throws UnsupportedCipherException
 	 */
-	public Rijndael(int keysize, int blocksize, boolean fakeInsecure) throws UnsupportedCipherException {
+	public Rijndael(int keysize, int blocksize) throws UnsupportedCipherException {
 		if (! ((keysize == 128) ||
 				(keysize == 192) ||
 				(keysize == 256)))

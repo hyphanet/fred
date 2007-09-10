@@ -66,7 +66,7 @@ public class ClientSSK extends ClientKey {
 		}
 		byte[] buf = md.digest();
 		try {
-			Rijndael aes = new Rijndael(256,256,cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256);
+			Rijndael aes = new Rijndael(256,256);
 			aes.initialize(cryptoKey);
 			aes.encipher(buf, buf);
 			ehDocname = buf;

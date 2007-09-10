@@ -298,7 +298,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			if(aes != null) return aes;
 		}
 		try {
-			aes = new Rijndael(256, 256, false);
+			aes = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
