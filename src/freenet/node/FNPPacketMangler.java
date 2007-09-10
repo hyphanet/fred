@@ -75,7 +75,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	final Map message3Cache;
 	final Map message4Cache;
-	private byte[] transitentKey = null;
+	private byte[] transientKey = null;
 	private final HashMap authenticatorCache;
 	final eKey encryptionKey;
 	final DSAGroup g;
@@ -83,7 +83,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	final RandomSource r;
 	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
-	private static final int TRANSITENT_KEY_SIZE = 12;
+	private static final int TRANSIENT_KEY_SIZE = 12;
 	// TODO: is 64 bits enough ?
 	private static final int NONCE_SIZE = 6;
 	private static final int MAX_PACKETS_IN_FLIGHT = 256; 
@@ -532,7 +532,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
 	}
 	
-	// FIXME: IDr' ?
+	/*
+         * format:
+         * Ni,Nr,g^r,GrpInfo(r),IDr
+         * Signature[g^r,grpInfo(r)]
+         * Hashed JFKAuthenticator
+         * FIXME: IDr' not sent during JFK(1) ?
+         */
 	private void sendMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
@@ -601,7 +607,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// FIXME: SHA1 or SHA256 there ? does it matter ?
 		HMAC hash = new HMAC(SHA1.getInstance());
 		// TODO: is that 512 LSB ?
-		return hash.mac(getTransitentKey(), authData, 9);
+		return hash.mac(getTransientKey(), authData, 9);
 	}
 	/*
 	 * Hash the authenticator using SHA256
@@ -620,6 +626,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * in the clear.
 	 * Send a signed copy of his own exponential
 	 * Send an authenticator which is a hash of Ni,Nr,g^r calculated over the transient key HKr
+         * Format of JFK(2) as specified above
 	 * @param The packet phase number
 	 * @param The peer to which we need to send the packet
 	 * @param The peerNode we are talking to
@@ -707,11 +714,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it");
 		// Get the authenticator,which is the latest entry into the cache
 		// It is basically a keyed hash(HMAC); size of output is that of the underlying hash function 
-		byte[] authenticator = new byte[16];
+		byte[] authenticator;
 		try{
 			// Intrinsic lock provided by the object authenticatorCache
 			synchronized(authenticatorCache){
-				authenticator = getBytes(authenticatorCache.get(PKR));
+				authenticator = getBytes(authenticatorCache.get(nonceInitiator));
 			}
 		}
 		catch(IOException e){
@@ -2215,23 +2222,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return currentDHContext;
 	}
 	
-	private byte[] getTransitentKey() {
+	private byte[] getTransientKey() {
 		synchronized (authenticatorCache) {
-			if(transitentKey == null){
-				transitentKey = new byte[TRANSITENT_KEY_SIZE];
-				node.random.nextBytes(transitentKey);
+			if(transientKey == null){
+				transientKey = new byte[TRANSIENT_KEY_SIZE];
+				node.random.nextBytes(transientKey);
 
 				// reset the authenticator cache
 				authenticatorCache.clear();
 			}
-			return transitentKey;
+			return transientKey;
 		}
 	}
 
 	//TODO: when shall that be called ? what about DH exponentials ?
-	private void resetTransitentKey() {
+	private void resetTransientKey() {
 		synchronized (authenticatorCache) {
-			transitentKey = null;
+			transientKey = null;
 		}
 	}
 }
