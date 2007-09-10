@@ -75,7 +75,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	final Map message3Cache;
 	final Map message4Cache;
-	private byte[] transientKey = null;
+	private final byte[] transientKey = new byte[TRANSIENT_KEY_SIZE];;
 	private final HashMap authenticatorCache;
 	final eKey encryptionKey;
 	final DSAGroup g;
@@ -129,6 +129,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		resetTransientKey();
 	}
 
 	/**
@@ -2259,13 +2260,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	private byte[] getTransientKey() {
 		synchronized (authenticatorCache) {
-			if(transientKey == null){
-				transientKey = new byte[TRANSIENT_KEY_SIZE];
-				node.random.nextBytes(transientKey);
-
-				// reset the authenticator cache
-				authenticatorCache.clear();
-			}
 			return transientKey;
 		}
 	}
@@ -2273,7 +2267,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	//TODO: when shall that be called ? what about DH exponentials ?
 	private void resetTransientKey() {
 		synchronized (authenticatorCache) {
-			transientKey = null;
+			node.random.nextBytes(transientKey);
+
+			// reset the authenticator cache
+			authenticatorCache.clear();
 		}
 	}
 }

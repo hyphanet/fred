@@ -383,7 +383,7 @@ class NodeCrypto {
 	}
 
 	/** Sign a hash */
-	protected DSASignature sign(byte[] hash) {
+	DSASignature sign(byte[] hash) {
 		return DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
 	}
         // Sign a hash with a specified PrivateKey
