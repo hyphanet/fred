@@ -485,7 +485,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// get g^i
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, offset, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
-		NativeBigInteger _hisExponential = new NativeBigInteger(hisExponential);
+		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		if(logMINOR) Logger.minor(this, "his exponential from message1 length="+DiffieHellman.modulusLengthInBytes() +" value=" + _hisExponential.toHexString());
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) > 0) {
 			sendMessage2(nonceInitiator, pn, replyTo);
@@ -527,7 +527,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/*
 	 * format:
 	 * Ni,Nr,g^r,GrpInfo(r),IDr
-	 * Signature[g^r,grpInfo(r)]
+	 * Signature[g^r,grpInfo(r)] - R, S
 	 * Hashed JFKAuthenticator
 	 * FIXME: IDr' not sent during JFK(1) ?
 	 */
@@ -535,21 +535,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
 		byte[] idR = new byte[0];
-		byte[] myDHGroup = dhContext.group.asBytes();
+		byte[] myDHGroup = stripBigIntegerToNetworkFormat(dhContext.group.p);
 		byte[] myNonce = new byte[NONCE_SIZE];
 		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
 		node.random.nextBytes(myNonce);
-		byte[] signature;
-		try {
-			signature = dhContext.signature.toString().getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			Logger.error(this, "HUH ??, please report it :"+ e.getMessage(),e);
-			return;
-		}
+		// FIXME: can we do that ? is it (mod p) as well ?
+		byte[] r = dhContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] s = dhContext.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] authenticator = computeHashedJFKAuthenticator(myExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress());
 		
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+myDHGroup.length+
-		                           signature.length+
+		                           Node.SIGNATURE_PARAMETER_LENGTH*2+
 		                           HASH_LENGTH];
 
 		int offset = 0;
@@ -559,15 +555,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		offset += NONCE_SIZE;
 		System.arraycopy(myExponential, 0, message2, offset, DiffieHellman.modulusLengthInBytes());
 		offset += DiffieHellman.modulusLengthInBytes();
-		// TODO: are groups modulo something ?
-		message2[offset++] = Integer.valueOf(myDHGroup.length).byteValue();
 		System.arraycopy(myDHGroup, 0, message2, offset, myDHGroup.length);
 		offset += myDHGroup.length;
 		System.arraycopy(idR, 0, message2, offset, idR.length);
 		offset += idR.length;
 		
-		System.arraycopy(signature, 0, message2, offset, signature.length);
-		offset += signature.length;
+		System.arraycopy(r, 0, message2, offset, Node.SIGNATURE_PARAMETER_LENGTH);
+		offset += Node.SIGNATURE_PARAMETER_LENGTH;
+		System.arraycopy(s, 0, message2, offset, Node.SIGNATURE_PARAMETER_LENGTH);
+		offset += Node.SIGNATURE_PARAMETER_LENGTH;
 		
 		System.arraycopy(authenticator, 0, message2, offset, HASH_LENGTH);
 		
@@ -648,39 +644,38 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, inputOffset, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
-		NativeBigInteger _hisExponential = new NativeBigInteger(hisExponential);
+		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
+		if(logMINOR) Logger.minor(this, "his exponential from message2 length="+DiffieHellman.modulusLengthInBytes() +" value=" + _hisExponential.toHexString());
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) < 1) {
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
 			return;
 		}
 		
-		int hisGroupLength = payload[inputOffset++];
-		// FIXME: arbitrary
-		if((hisGroupLength < 1) || (hisGroupLength > 256)) {
-			Logger.error(this, "The proposed group length is too big! ("+hisGroupLength+')');
+		byte[] hisGroup = new byte[DiffieHellman.modulusLengthInBytes()];
+		System.arraycopy(payload, inputOffset, hisGroup, 0, DiffieHellman.modulusLengthInBytes());
+		inputOffset += DiffieHellman.modulusLengthInBytes();
+		NativeBigInteger _hisGroup = new NativeBigInteger(1,hisGroup);
+		if(logMINOR) Logger.minor(this, "his group from message2 length="+DiffieHellman.modulusLengthInBytes() +" value=" + _hisGroup.toHexString());
+		if(_hisGroup.compareTo(NativeBigInteger.ONE) < 1) {
+			Logger.error(this, "We can't accept the group "+pn+" sent us; it's smaller than 1!!");
 			return;
 		}
-		byte[] hisGroup = new byte[hisGroupLength];
-		System.arraycopy(payload, inputOffset, hisGroup, 0, hisGroupLength);
-		inputOffset += hisGroupLength;
 		
 		//TODO: implement
 		byte[] hisID = new byte[0];
 		
-		byte[] remoteSignedExponentials = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		System.arraycopy(payload, inputOffset, remoteSignedExponentials, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
+		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
+		System.arraycopy(payload, inputOffset, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
+		if(logMINOR) Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
 		// At that point we don't know if it's "him"; let's check it out
-		byte[] locallyExpectedExponentials = new byte[hisExponential.length+hisGroupLength];
-		System.arraycopy(hisExponential, 0, locallyExpectedExponentials, 0, hisExponential.length);
-		System.arraycopy(hisGroup, 0, locallyExpectedExponentials, hisExponential.length, hisGroupLength);
-		String sigToCheckAsString = null;
-		try {
-			sigToCheckAsString = new String(remoteSignedExponentials, "UTF-8");
-		} catch (UnsupportedEncodingException e) {}
-		if(logMINOR) Logger.minor(this, "His signedExponentials :"+ HexUtil.bytesToHex(hisExponential));
-		DSASignature signatureToCheck = new DSASignature(sigToCheckAsString);
-		if(!DSA.verify(pn.peerPubKey, signatureToCheck, new NativeBigInteger(locallyExpectedExponentials), false)) {
+		byte[] locallyExpectedExponentials = assembleDHParams(_hisExponential, _hisGroup);
+		
+		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}
@@ -2235,14 +2230,29 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(currentDHContext == null) {
 			currentDHContext = DiffieHellman.generateLightContext();
 			
-			byte[] _myExponential = currentDHContext.myExponential.toByteArray();
-			byte[] _myGroup = currentDHContext.group.asBytes();
-			byte[] toSign = new byte[_myExponential.length + _myGroup.length];
-			System.arraycopy(_myExponential, 0, toSign, 0, _myExponential.length);
-			System.arraycopy(_myGroup, 0, toSign, _myExponential.length, _myGroup.length);
-			currentDHContext.setSignature(crypto.sign(SHA256.digest(toSign)));
+			currentDHContext.setSignature(signDHParams(currentDHContext.myExponential, currentDHContext.group.p));
 		}
 		return currentDHContext;
+	}
+	
+	/*
+	 * Prepare DH parameters of message2 for them to be signed (useful in message3 to check the sig)
+	 */
+	private byte[] assembleDHParams(BigInteger exponential, BigInteger group) {
+		byte[] _myExponential = stripBigIntegerToNetworkFormat(exponential);
+		byte[] _myGroup = stripBigIntegerToNetworkFormat(group);
+		byte[] toSign = new byte[_myExponential.length + _myGroup.length];
+		
+		System.arraycopy(_myExponential, 0, toSign, 0, _myExponential.length);
+		System.arraycopy(_myGroup, 0, toSign, _myExponential.length, _myGroup.length);
+		
+		return SHA256.digest(toSign);
+	}
+	/*
+	 * Actually sign the DH parameters for message2
+	 */
+	private DSASignature signDHParams(BigInteger exponential, BigInteger group) {
+		return crypto.sign(assembleDHParams(exponential, group));
 	}
 	
 	private byte[] getTransientKey() {
