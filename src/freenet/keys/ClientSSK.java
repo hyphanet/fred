@@ -42,8 +42,7 @@ public class ClientSSK extends ClientKey {
 		if(extras.length < 5)
 			throw new MalformedURLException("Extra bytes too short: "+extras.length+" bytes");
 		this.cryptoAlgorithm = extras[2];
-		if(!(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 ||
-				(Key.ALLOW_INSECURE_CLIENT_SSKS && cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256)))
+		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
 			throw new MalformedURLException("Unknown encryption algorithm "+cryptoAlgorithm);
 		if(!Arrays.equals(extras, getExtraBytes()))
 			throw new MalformedURLException("Wrong extra bytes");
