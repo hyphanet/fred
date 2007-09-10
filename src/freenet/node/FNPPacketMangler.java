@@ -784,44 +784,44 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	{
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it");
 		long t1=System.currentTimeMillis();
-		byte[] Ni = iNonce();
-		byte[] Nr = rNonce();
-		byte[] DHExpi = Gi(pn);
-		byte[] DHExpr = Gr(pn);
-		byte[] Data=new byte[Ni.length+Nr.length+DHExpr.length+DHExpi.length+1];
-		System.arraycopy(Ni,0,Data,0,Ni.length);
-		System.arraycopy(Nr,0,Data,Ni.length+1,Nr.length);
-		System.arraycopy(DHExpi,0,Data,Ni.length+Nr.length+1,DHExpi.length);
-		System.arraycopy(DHExpr,0,Data,Ni.length+Nr.length+DHExpi.length+1,DHExpr.length);
-		DSASignature sig = crypto.sign(Data,g,PKR,r);
-		byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
-		BlockCipher c=pn.outgoingSetupCipher;
-		if(logMINOR)
-			Logger.minor(this,"Cipher"+HexUtil.bytesToHex(pn.outgoingSetupKey));
-		/*
-		 * Initializes the cipher context with the given key
-		 * This would avoid the computation of key using the Rijndael key schedule(S boxes,Rcon etc)
-		 * The key used is generated from Hash of Message:(Ni, Nr, 1) over the shared key of DH
-		 */
-		c.initialize(encryptionKey.getEncKey(sharedSecretKey(pn),iNonce(),rNonce()));
-		PCFBMode pk=PCFBMode.create(c);
-		byte[] iv=new byte[pk.lengthIV()];
-		int message4Length = r.length + s.length + 2;
-		byte[] message4 = new byte[message4Length];
-		System.arraycopy(iv, 0, message4, 0, iv.length);
-		int count = iv.length;
-		if(r.length > 255 || s.length > 255)
-			throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
-		message4[count++] = (byte) r.length;
-		System.arraycopy(r, 0, message4, count, r.length);
-		count += r.length;
-		message4[count++] = (byte) s.length;
-		System.arraycopy(s, 0, message4, count, s.length);
-		count += s.length;
-		pk.blockEncipher(message4, 0, message4.length);
-		//Send params:Version,negType,phase,data,peernode,peer 
+//		byte[] Ni = iNonce();
+//		byte[] Nr = rNonce();
+//		byte[] DHExpi = Gi(pn);
+//		byte[] DHExpr = Gr(pn);
+//		byte[] Data=new byte[Ni.length+Nr.length+DHExpr.length+DHExpi.length+1];
+//		System.arraycopy(Ni,0,Data,0,Ni.length);
+//		System.arraycopy(Nr,0,Data,Ni.length+1,Nr.length);
+//		System.arraycopy(DHExpi,0,Data,Ni.length+Nr.length+1,DHExpi.length);
+//		System.arraycopy(DHExpr,0,Data,Ni.length+Nr.length+DHExpi.length+1,DHExpr.length);
+//		DSASignature sig = crypto.sign(Data,g,PKR,r);
+//		byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+//		byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+//		Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
+//		BlockCipher c=pn.outgoingSetupCipher;
+//		if(logMINOR)
+//			Logger.minor(this,"Cipher"+HexUtil.bytesToHex(pn.outgoingSetupKey));
+//		/*
+//		 * Initializes the cipher context with the given key
+//		 * This would avoid the computation of key using the Rijndael key schedule(S boxes,Rcon etc)
+//		 * The key used is generated from Hash of Message:(Ni, Nr, 1) over the shared key of DH
+//		 */
+//		c.initialize(encryptionKey.getEncKey(sharedSecretKey(pn),iNonce(),rNonce()));
+//		PCFBMode pk=PCFBMode.create(c);
+//		byte[] iv=new byte[pk.lengthIV()];
+//		int message4Length = r.length + s.length + 2;
+//		byte[] message4 = new byte[message4Length];
+//		System.arraycopy(iv, 0, message4, 0, iv.length);
+//		int count = iv.length;
+//		if(r.length > 255 || s.length > 255)
+//			throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
+//		message4[count++] = (byte) r.length;
+//		System.arraycopy(r, 0, message4, count, r.length);
+//		count += r.length;
+//		message4[count++] = (byte) s.length;
+//		System.arraycopy(s, 0, message4, count, s.length);
+//		count += s.length;
+//		pk.blockEncipher(message4, 0, message4.length);
+//		//Send params:Version,negType,phase,data,peernode,peer 
 		
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
