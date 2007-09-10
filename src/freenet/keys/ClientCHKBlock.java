@@ -75,8 +75,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      */
     public Bucket decode(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
         // Overall hash already verified, so first job is to decrypt.
-		if((!(key.cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 ||
-				key.cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256)))
+		if(key.cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
             throw new UnsupportedOperationException();
         BlockCipher cipher;
         try {
