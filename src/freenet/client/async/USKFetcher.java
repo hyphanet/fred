@@ -303,7 +303,7 @@ public class USKFetcher implements ClientGetState {
 	void onSuccess(USKAttempt att, boolean dontUpdate, ClientSSKBlock block) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		LinkedList l = null;
-		long lastEd = uskManager.lookup(origUSK);
+		final long lastEd = uskManager.lookup(origUSK);
 		synchronized(this) {
 			runningAttempts.remove(att);
 			long curLatest = att.number;
@@ -340,21 +340,27 @@ public class USKFetcher implements ClientGetState {
 			cancelBefore(curLatest);
 		}
 		if(l == null) return;
+		final LinkedList toSched = l;
 		// If we schedule them here, we don't get icky recursion problems.
-		else if(!cancelled) {
-			for(Iterator i=l.iterator();i.hasNext();) {
-				// We may be called recursively through onSuccess().
-				// So don't start obsolete requests.
-				USKAttempt a = (USKAttempt) i.next();
-				lastEd = uskManager.lookup(origUSK);
-				if((lastEd <= a.number) && !a.cancelled)
-					a.schedule();
-				else {
-					synchronized(this) {
-						runningAttempts.remove(a);
+		if(!cancelled) {
+			ctx.executor.execute(new Runnable() {
+				public void run() {
+					long last = lastEd;
+					for(Iterator i=toSched.iterator();i.hasNext();) {
+						// We may be called recursively through onSuccess().
+						// So don't start obsolete requests.
+						USKAttempt a = (USKAttempt) i.next();
+						last = uskManager.lookup(origUSK);
+						if((last <= a.number) && !a.cancelled)
+							a.schedule();
+						else {
+							synchronized(this) {
+								runningAttempts.remove(a);
+							}
+						}
 					}
 				}
-			}
+			}, "USK scheduler"); // Run on separate thread because otherwise can get loooong recursions
 		}
 	}
 
