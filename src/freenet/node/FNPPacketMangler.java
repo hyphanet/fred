@@ -521,7 +521,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// get g^i
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, NONCE_SIZE, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
-		
+
 		NativeBigInteger _hisExponential = new NativeBigInteger(1, hisExponential);
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) > 0)
 			sendMessage2(nonceInitiator, hisExponential, pn, replyTo);
@@ -2266,6 +2266,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	//TODO: when shall that be called ? what about DH exponentials ?
 	private void resetTransientKey() {
+		Logger.normal(this, "JFK's TransientKey has been changed and the message cache flushed.");
 		synchronized (authenticatorCache) {
 			node.random.nextBytes(transientKey);
 
