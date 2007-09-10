@@ -1795,8 +1795,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private void checkSecondaryDatabaseError(Throwable ex) {
 		String msg = ex.getMessage();
 		if(ex instanceof DatabaseException) {
-			if(msg != null && (msg.indexOf("missing key in the primary database") > -1) ||
-					msg.indexOf("the primary record contains a key that is not present in the secondary") > -1) {
+			if(msg != null && ((msg.indexOf("missing key in the primary database") > -1) ||
+					msg.indexOf("the primary record contains a key that is not present in the secondary") > -1)) {
 				try {
 					fixSecondaryFile.createNewFile();
 				} catch (IOException e) {
