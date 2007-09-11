@@ -20,7 +20,6 @@ import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.EntropySource;
 import freenet.crypt.Global;
 import freenet.crypt.HMAC;
-import freenet.crypt.SHA1;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
@@ -76,7 +75,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	final Map message3Cache;
 	final Map message4Cache;
-	private final byte[] transientKey = new byte[TRANSIENT_KEY_SIZE];;
 	private final HashMap authenticatorCache;
 	final eKey encryptionKey;
 	final DSAGroup g;
@@ -84,12 +82,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	final RandomSource r;
 	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
-	private static final int TRANSIENT_KEY_SIZE = 12;
 	// TODO: is 64 bits enough ?
 	private static final int NONCE_SIZE = 6;
 	private static final int MAX_PACKETS_IN_FLIGHT = 256; 
 	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
+	/** The size of the key used to authenticate the hmac */
+	private static final int TRANSIENT_KEY_SIZE = HASH_LENGTH;
+	/** The key used to authenticate the hmac */
+	private final byte[] transientKey = new byte[TRANSIENT_KEY_SIZE];
 	/** Minimum headers overhead */
 	private static final int HEADERS_LENGTH_MINIMUM =
 		4 + // sequence number
@@ -541,7 +542,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// FIXME: can we do that ? is it (mod p) as well ?
 		byte[] r = dhContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = dhContext.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] authenticator = computeHashedJFKAuthenticator(myExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress());
+		byte[] authenticator = computeJFKAuthenticator(myExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress());
 		
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+myDHGroup.length+
 		                           Node.SIGNATURE_PARAMETER_LENGTH*2+
@@ -571,7 +572,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	/*
 	 * Authenticator computed over the Responder exponentials and the Nonces
-	 * Used by the responder to verify the authenticity of the received data
+	 * Used by the responder to verify that the round-trip has been done
 	 * 
 	 * (costs a HMAC and the allocation of a few bytes)
 	 */
@@ -591,18 +592,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * Calculate the Hash of the Concatenated data(Responder exponentials, nonces)
 		 * using a key that will be private to the responder
 		 */
-		// FIXME: SHA1 or SHA256 there ? does it matter ?
-		HMAC hash = new HMAC(SHA1.getInstance());
+		HMAC hash = new HMAC(SHA256.getInstance());
+
 		// TODO: is that 512 LSB ?
 		return hash.mac(getTransientKey(), authData, 9);
-	}
-	/*
-	 * Hash the authenticator using SHA256
-	 */
-	private byte[] computeHashedJFKAuthenticator(byte[] gR, byte[] nR, byte[] nI, byte[] address) {
-		byte[] result = SHA256.digest(computeJFKAuthenticator(gR, nR, nI, address));
-		assert(result.length == HASH_LENGTH);
-		return result;
 	}
 
 	/*
