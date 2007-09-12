@@ -542,7 +542,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// FIXME: can we do that ? is it (mod p) as well ?
 		byte[] r = dhContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = dhContext.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] authenticator = computeJFKAuthenticator(myExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress());
+		HMAC hash = new HMAC(SHA256.getInstance());
+		byte[] authenticator = hash.mac(getTransientKey(),assembleJFKAuthenticator(myExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
 		
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+myDHGroup.length+
 		                           Node.SIGNATURE_PARAMETER_LENGTH*2+
@@ -571,12 +572,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 	
 	/*
-	 * Authenticator computed over the Responder exponentials and the Nonces
-	 * Used by the responder to verify that the round-trip has been done
+	 * Assemble what will be the jfk-Authenticator : 
+	 * computed over the Responder exponentials and the Nonces and
+	 * used by the responder to verify that the round-trip has been done
 	 * 
-	 * (costs a HMAC and the allocation of a few bytes)
 	 */
-	private byte[] computeJFKAuthenticator(byte[] gR, byte[] nR, byte[] nI, byte[] address) {
+	private byte[] assembleJFKAuthenticator(byte[] gR, byte[] nR, byte[] nI, byte[] address) {
 		byte[] authData=new byte[gR.length+nR.length+nI.length+address.length];
 		int offset = 0;
 		
@@ -588,14 +589,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		offset += nI.length;
 		System.arraycopy(address, 0, authData, offset, address.length);
 		
-		/*
-		 * Calculate the Hash of the Concatenated data(Responder exponentials, nonces)
-		 * using a key that will be private to the responder
-		 */
-		HMAC hash = new HMAC(SHA256.getInstance());
-
-		// TODO: is that 512 LSB ?
-		return hash.mac(getTransientKey(), authData, 9);
+		return authData;
 	}
 
 	/*
@@ -699,54 +693,55 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void ProcessMessage3(byte[] payload, PeerNode pn,Peer replyTo)			
 	{
 		long t1 = System.currentTimeMillis();
-                if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it");
-		int inputOffset=0;
+		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it");
+		int inputOffset=3;
+		
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
 		byte[] nonceResponder = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceResponder, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
-		byte[] ourExponential = new byte[DiffieHellman.modulusLengthInBytes()];
-		System.arraycopy(payload, inputOffset, ourExponential, 0, DiffieHellman.modulusLengthInBytes());
+		byte[] initiatorExponential = new byte[DiffieHellman.modulusLengthInBytes()];
+		System.arraycopy(payload, inputOffset, initiatorExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
-		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
-		System.arraycopy(payload, inputOffset, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
+		byte[] responderExponential = new byte[DiffieHellman.modulusLengthInBytes()];
+		System.arraycopy(payload, inputOffset, responderExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
-		NativeBigInteger _hisExponential = new NativeBigInteger(1, hisExponential);
+		byte[] authenticator = new byte[HASH_LENGTH];
+		System.arraycopy(payload, inputOffset, authenticator, 0, HASH_LENGTH);
+		inputOffset += HASH_LENGTH;
+		// FIXME: check the cache before or after the hmac verification ?
+		// is it cheaper to wait for the lock on authenticatorCache or to verify the hmac ?
+		HMAC mac = new HMAC(SHA256.getInstance());
+		if(!mac.verify(getTransientKey(), assembleJFKAuthenticator(responderExponential, nonceResponder, initiatorExponential, replyTo.getAddress().getAddress()) , authenticator)) {
+			Logger.error(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery)");
+			return;
+		}
+		// Check try to find the authenticator in the cache.
+		Object message4 = null;
+		synchronized (authenticatorCache) {
+			message4 = authenticatorCache.get(authenticator);
+		}
+		if(message4 != null) {
+			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often)");
+			//sendMessage3Packet(1, 2, 3, message4);
+			return;
+		}
+		
+		// some sanity checks
+		NativeBigInteger _hisExponential = new NativeBigInteger(1, initiatorExponential);
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) < 1) {
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
 			return;
 		}
-		byte[] remoteHashedAuthenticator = new byte[HASH_LENGTH];
-		System.arraycopy(payload, inputOffset, remoteHashedAuthenticator, 0, HASH_LENGTH);
-		inputOffset += HASH_LENGTH;
-                // FIXME: Is this the right way?
-                int cipherLength = payload.length-NONCE_SIZE*2-DiffieHellman.modulusLengthInBytes()*2-HASH_LENGTH;
-                byte[] encryptedData = new byte[cipherLength];
-                System.arraycopy(payload, inputOffset,encryptedData, 0, cipherLength);
-                inputOffset += cipherLength;
-                //Decrypt 
-                BlockCipher c=pn.outgoingSetupCipher;
-                PCFBMode pk=PCFBMode.create(c);
-		byte[] iv=new byte[pk.lengthIV()];
-                pk.blockDecipher(encryptedData,0,cipherLength);
-                byte[] signData = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
-		int offset = 0;
-		System.arraycopy(nonceInitiator, 0, signData, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
-		System.arraycopy(nonceResponder, 0,signData, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
-		System.arraycopy(ourExponential, 0,signData, offset, ourExponential.length);
-		offset += ourExponential.length;
-                System.arraycopy(hisExponential, 0,signData, offset, hisExponential.length);
-		offset += hisExponential.length;
-		DSASignature signatureToCheck = new DSASignature(new String(encryptedData));
-		if(!DSA.verify(pn.peerPubKey, signatureToCheck, new NativeBigInteger(1,signData), false)) {
-			Logger.error(this, "The signature verification has failed!!");
+		NativeBigInteger _ourExponential = new NativeBigInteger(1, responderExponential);
+		if(_ourExponential.compareTo(NativeBigInteger.ONE) < 1) {
+			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!! (our exponential?!?)");
 			return;
 		}
-                sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,ourExponential, hisExponential, remoteHashedAuthenticator, pn, replyTo);
+		
+		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, initiatorIdentity, authenticator, pn, replyTo);
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
 			Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
