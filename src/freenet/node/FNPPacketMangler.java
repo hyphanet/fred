@@ -753,9 +753,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		// Decrypt
-                // FIXME: How?
-                
-		byte[] idI = new byte[0];
+                BlockCipher c = pn.outgoingSetupCipher;
+                PCFBMode pk=PCFBMode.create(c);
+                int ivLength = pk.lengthIV();
+                pk.reset(payload,inputOffset);
+                // Decrypt the rest of the payload
+		pk.blockDecipher(payload,inputOffset,payload.length-inputOffset);
+                inputOffset += ivLength;
+                /*
+                 * DecipheredData Format:
+                 * idI
+                 * Signature-r,s
+                 */
+                byte[] idI = new byte[0];
                 System.arraycopy(payload,inputOffset , idI ,0, idI.length);
                 inputOffset += idI.length;
                 // Now verify signature
@@ -843,17 +853,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential);
                 byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-                if(r.length > 255 || s.length > 255)
-			throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
+                
 		// Encrypt idI,r,s
                 // Encryption is performed using HMAC[Ni,Nr,1] over the key g^ir
-                BlockCipher c=pn.outgoingSetupCipher;
+                BlockCipher c=pn.incomingSetupCipher;
 		/*
 		 * Initializes the cipher context with the given key
 		 * This would avoid the computation of key using the Rijndael key schedule(S boxes,Rcon etc)
 		 * The key used is generated from Hash of Message:(Ni, Nr, 1) over the shared key of DH
 		 */
-		// FIXME: How to convert NativeBigInteger to ByteArray?
+		
                 NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential,_hisGroup);
                 byte[] eKey = tempKey.toByteArray();
                 c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
