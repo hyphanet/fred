@@ -167,7 +167,6 @@ public final class MessageFilter {
 	
 	public boolean match(Message m) {
 		if ((_or != null) && (_or.match(m))) {
-			if(timedOut(System.currentTimeMillis())) return false;
 			_matched = true;
 			return true;
 		}
