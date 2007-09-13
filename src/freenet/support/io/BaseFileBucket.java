@@ -413,7 +413,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		File file = getFile();
 		if ((deleteOnFree() || forceFree) && file.exists()) {
 			Logger.debug(this,
-				"Deleting bucket " + file.getName());
+				"Deleting bucket " + file.getName(), new Exception("debug"));
 			deleteFile();
 			if (file.exists())
 				Logger.error(this,
