@@ -29,7 +29,7 @@ public class PutSuccessfulMessage extends FCPMessage {
 		// FIXME debug and remove!
 		if(uri != null)
 			fs.putSingle("URI", uri.toString());
-		fs.putSingle("StartuptTime", startupTime);
+		fs.putSingle("StartupTime", startupTime);
 		fs.putSingle("CompletionTime", completionTime);
 		return fs;
 	}
