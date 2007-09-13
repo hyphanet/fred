@@ -733,7 +733,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(message4 != null) {
 			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often)");
 			//sendMessage3Packet(1, 2, 3, message4);
-                        sendAuthPacket(1,2,3,getBytes(message4),pn,replyTo);
+                        try{
+                            sendAuthPacket(1,2,3,getBytes(message4),pn,replyTo);
+                        }catch(IOException e){
+                            Logger.error(this,"Error getting bytes");
+                        }
 			return;
 		}
 		
@@ -835,6 +839,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		//FIXME: IDr not signed?
                 NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
                 NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
+                NativeBigInteger _hisGroup = new NativeBigInteger(1,stripBigIntegerToNetworkFormat(hisGroup));
                 DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential);
                 byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
@@ -849,7 +854,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * The key used is generated from Hash of Message:(Ni, Nr, 1) over the shared key of DH
 		 */
 		// FIXME: How to convert NativeBigInteger to ByteArray?
-                byte[] eKey =  dhContext.getHMACKey(_hisExponential,hisGroup);
+                NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential,_hisGroup);
+                byte[] eKey = tempKey.toByteArray();
                 c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
 		PCFBMode pk=PCFBMode.create(c);
 		byte[] iv=new byte[pk.lengthIV()];
