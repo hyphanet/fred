@@ -193,7 +193,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
 		if(isInsertScheduler != (req instanceof SendableInsert))
-			throw new IllegalArgumentException("Expected a SendableGet: "+req);
+			throw new IllegalArgumentException("Expected a SendableInsert: "+req);
 		if(req instanceof SendableGet) {
 			SendableGet getter = (SendableGet)req;
 			if(!getter.ignoreStore()) {
