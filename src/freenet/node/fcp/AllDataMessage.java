@@ -37,7 +37,7 @@ public class AllDataMessage extends DataCarryingMessage {
 		fs.put("DataLength", dataLength);
 		fs.putSingle("Identifier", identifier);
 		if(global) fs.putSingle("Global", "true");
-		fs.put("StartuptTime", startupTime);
+		fs.put("StartupTime", startupTime);
 		fs.put("CompletionTime", completionTime);
 		return fs;
 	}
