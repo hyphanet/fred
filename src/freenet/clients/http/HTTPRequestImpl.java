@@ -533,6 +533,9 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * @see freenet.clients.http.HTTPRequest#isPartSet(java.lang.String)
 	 */
 	public boolean isPartSet(String name) {
+		if(parts == null)
+			return false;
+
 		return this.parts.containsKey(name);
 	}
 	
