@@ -166,8 +166,8 @@ public final class MessageFilter {
 	}
 	
 	public boolean match(Message m) {
-		if(timedOut()) return false;
 		if ((_or != null) && (_or.match(m))) {
+			if(timedOut(System.currentTimeMillis())) return false;
 			_matched = true;
 			return true;
 		}
@@ -188,6 +188,7 @@ public final class MessageFilter {
 				}
 			}
 		}
+		if(timedOut(System.currentTimeMillis())) return false;
 		_matched=true;
 		return true;
 	}
@@ -203,11 +204,11 @@ public final class MessageFilter {
 	    return _droppedConnection;
 	}
 	
-	public boolean timedOut() {
+	public boolean timedOut(long time) {
 		if(_matched) return false;
 		if(_callback != null && _callback.shouldTimeout())
 			_timeout = -1; // timeout immediately
-		return _timeout < System.currentTimeMillis();
+		return _timeout < time;
 	}
 
     public Message getMessage() {
