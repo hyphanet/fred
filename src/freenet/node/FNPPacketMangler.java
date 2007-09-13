@@ -73,13 +73,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Usage of a linkedList could prove to be much slower due to the allocation time
 	 * for each node in the list.
 	 */
-	final Map message3Cache;
-	final Map message4Cache;
+	
 	private final HashMap authenticatorCache;
 	final eKey encryptionKey;
-	final DSAGroup g;
-	static DSAPrivateKey PKR,PKI;
-	final RandomSource r;
+		
 	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
 	// TODO: is 64 bits enough ?
@@ -122,12 +119,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		this.sock = sock;
 		fnpTimingSource = new EntropySource();
 		myPacketDataSource = new EntropySource();
-		message3Cache = new HashMap();
-		message4Cache = new HashMap();
 		authenticatorCache = new HashMap();
 		encryptionKey = new eKey();
-		g = Global.DSAgroupBigA;
-		r=node.random;
+			
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -437,23 +431,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 	}
 
-	/*
-	 * Shared Secret key
-	 * Alice generates random number x and computes exponential g^x
-	 * Bob generates random number y and computes exponential g^y
-	 * Shared secret key= (g^x)^y used as key for computing hash of the encryption key
-	 */
-	private synchronized byte[] sharedSecretKey(PeerNode pn){
-		DiffieHellmanContext dh=(DiffieHellmanContext)pn.getKeyAgreementSchemeContext();
-		if(dh==null)
-		{
-			if(shouldLogErrorInHandshake())
-				Logger.error(this,"Failed getting exponentials");
-
-		}
-		return dh.getKey();
-	}
-	
 	/*
 	 * Initiator Method:Message1
 	 * Process Message1
