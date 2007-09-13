@@ -160,6 +160,7 @@
 
 	<target name="clean" description="Delete class files and docs dir.">
 		<delete dir="${build}"/>
+		<delete dir="${build-test}"/>
 	</target>
 	<target name="distclean" description="Delete class files, lib dir and docs dir.">
 		<delete file="${CSSTokenizerFilter.java}"/>
