@@ -420,7 +420,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * cached by the Responder.Receiving a duplicate message simply causes
 				 * the responder to Re-transmit the corresponding message4
 				 */
-				ProcessMessage3(payload, pn, replyTo);
+				//ProcessMessage3(payload, pn, replyTo);
 			}
 			else if(packetType==3){
 				/*
@@ -428,7 +428,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				ProcessMessage4(payload,pn,replyTo);
+				//ProcessMessage4(payload,pn,replyTo);
 			}
 		}
 		else {
@@ -536,8 +536,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
 		byte[] idR = new byte[0];
 		byte[] myDHGroup = stripBigIntegerToNetworkFormat(dhContext.group.p);
-		byte[] myNonce = new byte[NONCE_SIZE];
-		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
+		// g^r
+                byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
+                // Nr
+                byte[] myNonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(myNonce);
 		// FIXME: can we do that ? is it (mod p) as well ?
 		byte[] r = dhContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
@@ -604,7 +606,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Send an authenticator which is a hash of Ni,Nr,g^r calculated over the transient key HKr
          * Format of JFK(2) as specified above
          * @param Payload
-	 * @param The packet phase number
 	 * @param The peer to which we need to send the packet
 	 * @param The peerNode we are talking to
 	 */
@@ -675,8 +676,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
 			Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
+        }        
 
-	}
 	/*
 	 * Initiator Method:Message3
 	 * Process Message3
@@ -685,7 +686,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Send the authenticator which allows the responder to verify the legality of the message
 	 * Compute the signature of the unVerifiedData and encrypt it using a shared key
 	 * which is derived from DHExponentials and the nonces
-	 * @param The packet phase number
+	 * @param Payload
 	 * @param The peer to which we need to send the packet
 	 * @param The peerNode we are talking to
 	 * @return byte Message3
@@ -695,17 +696,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it");
 		int inputOffset=3;
-		
+		// Ni
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
-		byte[] nonceResponder = new byte[NONCE_SIZE];
+		// Nr
+                byte[] nonceResponder = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceResponder, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
-		byte[] initiatorExponential = new byte[DiffieHellman.modulusLengthInBytes()];
+		// g^i
+                byte[] initiatorExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, inputOffset, initiatorExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
-		byte[] responderExponential = new byte[DiffieHellman.modulusLengthInBytes()];
+		// g^r
+                byte[] responderExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, inputOffset, responderExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
 		byte[] authenticator = new byte[HASH_LENGTH];
@@ -718,7 +722,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery)");
 			return;
 		}
-		// Check try to find the authenticator in the cache.
+                // Check try to find the authenticator in the cache.
+                // If authenticator is already present, indicates duplicate/replayed message3
+                // Now simply transmit the corresponding message4
 		Object message4 = null;
 		synchronized (authenticatorCache) {
 			message4 = authenticatorCache.get(authenticator);
@@ -740,72 +746,27 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!! (our exponential?!?)");
 			return;
 		}
+		// Now verify signature
+                byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
+		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
+		System.arraycopy(payload, inputOffset, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
+		if(logMINOR)
+                    Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
+		byte[] locallyExpectedExponentials = assembleDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential);
 		
-		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, initiatorIdentity, authenticator, pn, replyTo);
+		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
+			Logger.error(this, "The signature verification has failed!!");
+			return;
+		}
+		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential,initiatorIdentity, pn, replyTo);
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
 			Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
 	}
-
-	/*
-	 * Responder Method:Message4
-	 * Process Message4
-	 * Encrypted message of the signature on both nonces, both exponentials using the same
-	 * keys as in the previous message.The Initiator can verify that the Responder is present
-	 * and participating in the session, by decrypting the message and verifying the enclosed
-	 * signature.
-	 * @param The packet phase number
-	 * @param The peer to which we need to send the packet
-	 * @param The peerNode we are talking to
-	 */
-
-	private void ProcessMessage4(byte[] payload,PeerNode pn,Peer replyTo)
-	{
-		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it");
-		long t1=System.currentTimeMillis();
-//		byte[] Ni = iNonce();
-//		byte[] Nr = rNonce();
-//		byte[] DHExpi = Gi(pn);
-//		byte[] DHExpr = Gr(pn);
-//		byte[] Data=new byte[Ni.length+Nr.length+DHExpr.length+DHExpi.length+1];
-//		System.arraycopy(Ni,0,Data,0,Ni.length);
-//		System.arraycopy(Nr,0,Data,Ni.length+1,Nr.length);
-//		System.arraycopy(DHExpi,0,Data,Ni.length+Nr.length+1,DHExpi.length);
-//		System.arraycopy(DHExpr,0,Data,Ni.length+Nr.length+DHExpi.length+1,DHExpr.length);
-//		DSASignature sig = crypto.sign(Data,g,PKR,r);
-//		byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-//		byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-//		Logger.minor(this, " r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
-//		BlockCipher c=pn.outgoingSetupCipher;
-//		if(logMINOR)
-//			Logger.minor(this,"Cipher"+HexUtil.bytesToHex(pn.outgoingSetupKey));
-//		/*
-//		 * Initializes the cipher context with the given key
-//		 * This would avoid the computation of key using the Rijndael key schedule(S boxes,Rcon etc)
-//		 * The key used is generated from Hash of Message:(Ni, Nr, 1) over the shared key of DH
-//		 */
-//		c.initialize(encryptionKey.getEncKey(sharedSecretKey(pn),iNonce(),rNonce()));
-//		PCFBMode pk=PCFBMode.create(c);
-//		byte[] iv=new byte[pk.lengthIV()];
-//		int message4Length = r.length + s.length + 2;
-//		byte[] message4 = new byte[message4Length];
-//		System.arraycopy(iv, 0, message4, 0, iv.length);
-//		int count = iv.length;
-//		if(r.length > 255 || s.length > 255)
-//			throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
-//		message4[count++] = (byte) r.length;
-//		System.arraycopy(r, 0, message4, count, r.length);
-//		count += r.length;
-//		message4[count++] = (byte) s.length;
-//		System.arraycopy(s, 0, message4, count, s.length);
-//		count += s.length;
-//		pk.blockEncipher(message4, 0, message4.length);
-//		//Send params:Version,negType,phase,data,peernode,peer 
-		
-		long t2=System.currentTimeMillis();
-		if((t2-t1)>500)
-			Logger.error(this,"Message4 timeout error:Sending packet for"+pn.getPeer());
-	}	
 
 	/*
 	 * Convert Object to byteArray
@@ -843,12 +804,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] ourExponential = dhContext.myExponential.toByteArray();
 		byte[] unVerifiedData=new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
 		int offset = 0;
-		System.arraycopy(nonceInitiator, 0, unVerifiedData, offset, NONCE_SIZE);
+		// Ni
+                System.arraycopy(nonceInitiator, 0, unVerifiedData, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
-		System.arraycopy(nonceResponder, 0, unVerifiedData, offset, NONCE_SIZE);
+		// Nr
+                System.arraycopy(nonceResponder, 0, unVerifiedData, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
-		System.arraycopy(ourExponential, 0,unVerifiedData, offset, ourExponential.length);
+		// g^i
+                System.arraycopy(ourExponential, 0,unVerifiedData, offset, ourExponential.length);
 		offset += ourExponential.length;
+                // g^r
                 System.arraycopy(hisExponential, 0,unVerifiedData, offset, hisExponential.length);
 		offset += hisExponential.length;
 		/*
@@ -857,13 +822,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 */
 		//FIXME: is this the correct way of generating Signatures?
                 //FIXME: IDr not signed?
-                byte[] signature;
-		try {
-			signature = dhContext.signature.toString().getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			Logger.error(this, "HUH ??, please report it :"+ e.getMessage(),e);
-			return;
-		}
+                byte[] r = dhContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] s = dhContext.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+                if(r.length > 255 || s.length > 255)
+			throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
 		BlockCipher c=pn.outgoingSetupCipher;
 		if(logMINOR)
 			Logger.minor(this,"Cipher"+HexUtil.bytesToHex(pn.outgoingSetupKey));
@@ -875,72 +837,29 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		c.initialize(encryptionKey.getEncKey(sharedSecretKey(pn),nonceInitiator,nonceResponder));
 		PCFBMode pk=PCFBMode.create(c);
 		byte[] iv=new byte[pk.lengthIV()];
-		int encryptedDataLength = iv.length + signature.length + 2;
+		int encryptedDataLength = iv.length + r.length + s.length + 2;
 		/*
 		 * Data sent in the clear is signed and encrypted using PCFB and rijndael
 		 */
 		byte[] encryptedData = new byte[encryptedDataLength];
 		System.arraycopy(iv, 0, encryptedData, 0, iv.length);
 		int count = iv.length;
-		encryptedData[count++] = (byte) signature.length;
-		System.arraycopy(signature, 0, encryptedData, count, signature.length);
-		count += signature.length;
+                encryptedData[count++] = (byte) r.length;
+		System.arraycopy(r, 0, encryptedData, count, r.length);
+		count += r.length;
+		encryptedData[count++] = (byte) s.length;
+		System.arraycopy(s, 0, encryptedData, count, s.length);
+		count += s.length;
 		pk.blockEncipher(encryptedData, 0, encryptedData.length);
 		byte[] message3=new byte[unVerifiedData.length+hashedAuthenticator.length+encryptedData.length];
 		System.arraycopy(unVerifiedData,0,message3,0,unVerifiedData.length);
 		System.arraycopy(hashedAuthenticator,0,message3,encryptedData.length,hashedAuthenticator.length);
 		System.arraycopy(encryptedData,0,message3,unVerifiedData.length+hashedAuthenticator.length,encryptedData.length);
-		byte[] output = new byte[message3.length+3];
-		if((message3.length+3) > sock.getMaxPacketSize())
-			throw new IllegalStateException("Packet length too long");
-		/*
-		 * The key for looking up messages in the cache is the authenticator
-		 * This prevents DOS attacks where the attacker randomly tries to replace encrypted blocks 
-		 * of a valid message causing a cache miss
-		 * This would result in increased processing on the Responder side->CPU exhaustion attacks
-		 */
-		Object result;
-		//All recent messages 3 and 4 are cached
-		if(phase==2){
-			// Intrinsic lock provided by the object message3Cache
-			synchronized(message3Cache) {
-				result = message3Cache.get(hashedAuthenticator);
-			}
-			if(result != null) {
-				synchronized(message3Cache) {
-					message3Cache.put(message3,hashedAuthenticator);
-				}
-				// We don't want to keep the lock while sending
-				try
-				{
-					sendAuthPacket(1,2,2,getBytes(message4Cache.get(hashedAuthenticator)),pn,replyTo);
-				}
-				catch(IOException e){
-					Logger.error(this,"Error getting bytes");
-				}
-			}
-			sendAuthPacket(version, negType, 4, null, pn, replyTo);
-		}
 		
-		else{ 
-			Logger.error(this,"Wrong message");
-
-		}   
-		output[0] = (byte) version;
-		output[1] = (byte) negType;
-		output[2] = (byte) phase;
-		System.arraycopy(message3, 0, output, 3, message3.length);
-		if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+nonceInitiator.length);
-		try
-		{
-			sendPacket(output,replyTo,pn,0);
-		}catch(LocalAddressException e) {
-			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn.getPeer());
-		}
-
+		sendAuthPacket(1,2,1,message3,pn,replyTo);
 	}
-
-	/*
+       
+        /*
 	 * Send Message4 packet
 	 * @param version
 	 * @param negType
@@ -2235,11 +2154,31 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		return SHA256.digest(toSign);
 	}
+        /*
+         * Prepare params for signing in Message3
+         */
+        private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential) {
+		byte[] _myExponential = stripBigIntegerToNetworkFormat(myExponential);
+		byte[] _hisExponential = stripBigIntegerToNetworkFormat(hisExponential);
+		byte[] toSign = new byte[nonceInitiator.length + nonceResponder.length + _myExponential.length + _hisExponential.length];
+		System.arraycopy(nonceInitiator, 0,toSign,0,nonceInitiator.length);
+                System.arraycopy(nonceResponder,0 ,toSign,nonceInitiator.length,nonceResponder.length);
+		System.arraycopy(_myExponential, 0, toSign,nonceInitiator.length+nonceResponder.length, _myExponential.length);
+		System.arraycopy(_hisExponential, 0, toSign, nonceInitiator.length+nonceResponder.length+_myExponential.length, _hisExponential.length);
+		// Why is the hash returned?
+		return SHA256.digest(toSign);
+	}
 	/*
 	 * Actually sign the DH parameters for message2
 	 */
 	private DSASignature signDHParams(BigInteger exponential, BigInteger group) {
 		return crypto.sign(assembleDHParams(exponential, group));
+	}
+        /*
+         * Sign the params for message3
+         */
+        private DSASignature signDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential) {
+		return crypto.sign(assembleDHParams(nonceInitiator,nonceResponder,myExponential,hisExponential));
 	}
 	
 	private byte[] getTransientKey() {
