@@ -547,7 +547,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		HMAC hash = new HMAC(SHA256.getInstance());
 		byte[] authenticator = hash.mac(getTransientKey(),assembleJFKAuthenticator(myExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
 		
-		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+myDHGroup.length+
+		
+                byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+myDHGroup.length+
 		                           Node.SIGNATURE_PARAMETER_LENGTH*2+
 		                           HASH_LENGTH];
 
@@ -732,6 +733,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(message4 != null) {
 			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often)");
 			//sendMessage3Packet(1, 2, 3, message4);
+                        sendAuthPacket(1,2,3,getBytes(message4),pn,replyTo);
 			return;
 		}
 		
@@ -746,7 +748,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!! (our exponential?!?)");
 			return;
 		}
-		// Now verify signature
+		// Decrypt
+                // FIXME: How?
+                
+		byte[] idI = new byte[0];
+                System.arraycopy(payload,inputOffset , idI ,0, idI.length);
+                inputOffset += idI.length;
+                // Now verify signature
                 byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
@@ -762,7 +770,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}
-		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential,initiatorIdentity, pn, replyTo);
+                // cache the message
+                // FIXME: Do we cache the entire payload?
+                authenticatorCache.put(authenticator,payload);
+                // Send reply
+		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, pn, replyTo);
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
 			Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
@@ -820,45 +832,55 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * Digital Signature of the message with the private key belonging to the initiator/responder
 		 * It is assumed to be non-message recovering
 		 */
-		//FIXME: is this the correct way of generating Signatures?
-                //FIXME: IDr not signed?
-                byte[] r = dhContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] s = dhContext.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		//FIXME: IDr not signed?
+                NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
+                NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
+                DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential);
+                byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
                 if(r.length > 255 || s.length > 255)
 			throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
-		BlockCipher c=pn.outgoingSetupCipher;
-		if(logMINOR)
-			Logger.minor(this,"Cipher"+HexUtil.bytesToHex(pn.outgoingSetupKey));
+		// Encrypt idI,r,s
+                // Encryption is performed using HMAC[Ni,Nr,1] over the key g^ir
+                BlockCipher c=pn.outgoingSetupCipher;
 		/*
 		 * Initializes the cipher context with the given key
 		 * This would avoid the computation of key using the Rijndael key schedule(S boxes,Rcon etc)
 		 * The key used is generated from Hash of Message:(Ni, Nr, 1) over the shared key of DH
 		 */
-		c.initialize(encryptionKey.getEncKey(sharedSecretKey(pn),nonceInitiator,nonceResponder));
+		// FIXME: How to convert NativeBigInteger to ByteArray?
+                byte[] eKey =  dhContext.getHMACKey(_hisExponential,hisGroup);
+                c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
 		PCFBMode pk=PCFBMode.create(c);
 		byte[] iv=new byte[pk.lengthIV()];
+                node.random.nextBytes(iv);
 		int encryptedDataLength = iv.length + r.length + s.length + 2;
-		/*
-		 * Data sent in the clear is signed and encrypted using PCFB and rijndael
-		 */
 		byte[] encryptedData = new byte[encryptedDataLength];
 		System.arraycopy(iv, 0, encryptedData, 0, iv.length);
 		int count = iv.length;
-                encryptedData[count++] = (byte) r.length;
-		System.arraycopy(r, 0, encryptedData, count, r.length);
+                byte[] idI = new byte[0];
+                System.arraycopy(idI,0, encryptedData,count,idI.length);               
+		count += idI.length;
+                System.arraycopy(r, 0, encryptedData, count, r.length);
 		count += r.length;
-		encryptedData[count++] = (byte) s.length;
+		
 		System.arraycopy(s, 0, encryptedData, count, s.length);
 		count += s.length;
 		pk.blockEncipher(encryptedData, 0, encryptedData.length);
-		byte[] message3=new byte[unVerifiedData.length+hashedAuthenticator.length+encryptedData.length];
+		/*
+                 * Message Format:
+                 * [Ni,Nr,g^i,g^r]
+                 * Authenticator
+                 * Encrypted data
+                 */
+                byte[] message3=new byte[unVerifiedData.length+hashedAuthenticator.length+encryptedData.length];
 		System.arraycopy(unVerifiedData,0,message3,0,unVerifiedData.length);
 		System.arraycopy(hashedAuthenticator,0,message3,encryptedData.length,hashedAuthenticator.length);
 		System.arraycopy(encryptedData,0,message3,unVerifiedData.length+hashedAuthenticator.length,encryptedData.length);
 		
-		sendAuthPacket(1,2,1,message3,pn,replyTo);
+		sendAuthPacket(1,2,2,message3,pn,replyTo);
 	}
-       
+        
         /*
 	 * Send Message4 packet
 	 * @param version
@@ -869,27 +891,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peer to which we need to send the packet
 	 */
 
-	private void sendMessage4Packet(int version,int negType,int phase,byte[] data,byte[] nonceInitiator,byte[] nonceResponder,byte[] ourExponential,byte[] hisExponential,PeerNode pn,Peer replyTo)
+	private void sendMessage4Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] ourExponential,byte[] hisExponential,PeerNode pn,Peer replyTo)
 	{
-		if(logMINOR) Logger.minor(this, "Sending a JFK(4) message to "+pn);
-		long now = System.currentTimeMillis();
-		long delta = now - pn.lastSentPacketTime();
-		byte[] output = new byte[data.length+3];
-		if((data.length+3) > sock.getMaxPacketSize())
-			throw new IllegalStateException("Packet length too long");
-		output[0] = (byte) version;
-		output[1] = (byte) negType;
-		output[2] = (byte) phase;
-		System.arraycopy(data, 0, output, 3, data.length);
-		if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
-		try
-		{
-			sendPacket(output,replyTo,pn,0);
-		}catch(LocalAddressException e)
-		{
-			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn.getPeer());
-		}
-
+		
+                
+                
 	}
 
 	/**
