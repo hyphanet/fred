@@ -317,7 +317,7 @@ public class FCPConnectionHandler {
 	 * @return boolean : allowed or not
 	 */
 	protected boolean allowDDAFrom(File filename, boolean writeRequest) {
-		String parentDirectory = FileUtil.getCanonicalFile(filename).getPath();
+		String parentDirectory = FileUtil.getCanonicalFile(filename).getParent();
 		DirectoryAccess da = null;
 		
 		synchronized (checkedDirectories) {
