@@ -66,7 +66,17 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(!suggestPortForward) return text;
 			StringBuffer sb = new StringBuffer();
 			sb.append(text);
-			sb.append(l10n("suggestForwardPort", "port", Integer.toString(node.getDarknetPortNumber())));
+			// FIXME we should support any number of ports, UDP or TCP, and pick them up from the node as we do with the forwarding plugin ... that would be a bit of a pain for L10n though ...
+			int darknetPort = node.getDarknetPortNumber();
+			int opennetPort = node.getOpennetFNPPort();
+			sb.append(" ");
+			if(opennetPort <= 0) {
+				sb.append(l10n("suggestForwardPort", "port", Integer.toString(darknetPort)));
+			} else {
+				sb.append(l10n("suggestForwardTwoPorts", new String[] { "port1", "port2" }, 
+						new String[] { Integer.toString(darknetPort), Integer.toString(opennetPort) }));
+			}
+			
 			return sb.toString();
 		}
 
