@@ -295,7 +295,7 @@ public class OpennetManager {
 		for(int i=0;i<dropList.size();i++) {
 			OpennetPeerNode pn = (OpennetPeerNode) dropList.get(i);
 			if(logMINOR) Logger.minor(this, "Dropping LRU opennet peer: "+pn);
-			node.peers.disconnect(pn);
+			node.peers.disconnect(pn, true, true);
 		}
 		return ret;
 	}
@@ -306,7 +306,7 @@ public class OpennetManager {
 			toDrop = peerToDrop(false);
 			if(toDrop == null) return;
 			peersLRU.remove(toDrop);
-			node.peers.disconnect(toDrop);
+			node.peers.disconnect(toDrop, true, true);
 		}
 	}
 	
@@ -357,7 +357,7 @@ public class OpennetManager {
 			}
 		}
 		if(!wantPeer(pn, false)) // Start at top as it just succeeded
-			node.peers.disconnect(pn);
+			node.peers.disconnect(pn, true, false);
 	}
 
 	public synchronized void onRemove(OpennetPeerNode pn) {

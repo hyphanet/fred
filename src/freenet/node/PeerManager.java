@@ -22,6 +22,8 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.ArrayList;
 
+import freenet.io.comm.AsyncMessageCallback;
+import freenet.io.comm.DMT;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
@@ -30,6 +32,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.Logger;
+import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -222,6 +225,13 @@ public class PeerManager {
         return true;
     }
     
+	synchronized boolean havePeer(PeerNode pn) {
+		for(int i=0;i<myPeers.length;i++) {
+			if(myPeers[i] == pn) return true;
+		}
+		return false;
+	}
+	
     private boolean removePeer(PeerNode pn) {
     	synchronized(this) {
     	boolean isInPeers = false;
@@ -367,9 +377,51 @@ public class PeerManager {
     /**
      * Disconnect from a specified node
      */
-    public void disconnect(PeerNode pn){
-    	if(removePeer(pn))
-    		writePeers();
+    public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck) {
+    	synchronized(this) {
+    		if(!havePeer(pn)) return;
+    	}
+    	if(sendDisconnectMessage) {
+    		Message msg = DMT.createFNPDisconnect(true, false, -1, new ShortBuffer(new byte[0]));
+   			try {
+				pn.sendAsync(msg, new AsyncMessageCallback() {
+					boolean done = false;
+					public void acknowledged() {
+						done();
+					}
+					public void disconnected() {
+						done();
+					}
+					public void fatalError() {
+						done();
+					}
+					public void sent() {
+						if(!waitForAck) done();
+					}
+					void done() {
+						synchronized(this) {
+							if(done) return;
+							done = true;
+						}
+				    	if(removePeer(pn))
+				    		writePeers();
+					}
+				}, 0, null);
+			} catch (NotConnectedException e) {
+		    	if(removePeer(pn))
+		    		writePeers();
+		    	return;
+			}
+   			node.getTicker().queueTimedJob(new Runnable() {
+   				public void run() {
+			    	if(removePeer(pn))
+			    		writePeers();
+   				}
+  			}, 60*1000);
+    	} else {
+    		if(removePeer(pn))
+    			writePeers();
+    	}
     }
 
     class LocationUIDPair implements Comparable {

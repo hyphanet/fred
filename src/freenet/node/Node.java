@@ -2303,7 +2303,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public void removePeerConnection(PeerNode pn) {
-		peers.disconnect(pn);
+		peers.disconnect(pn, true, false);
 	}
 
 	public void onConnectedPeer() {
@@ -2329,16 +2329,22 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Handle a received node to node message
 	 */
-	public void receivedNodeToNodeMessage(Message m, boolean parting) {
+	public void receivedNodeToNodeMessage(Message m) {
 	  PeerNode src = (PeerNode) m.getSource();
+	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+	  ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
+	  receivedNodeToNodeMessage(src, type, messageData, false);
+	}
+	
+	public void receivedNodeToNodeMessage(PeerNode src, int type, ShortBuffer messageData, boolean partingMessage) {
 	  if(!(src instanceof DarknetPeerNode)) {
-		Logger.error(this, "Got N2NTM from opennet node ?!?!?!: "+m+" from "+src);
+		Logger.error(this, "Got N2NTM from opennet node ?!?!?!: from "+src);
 		return;
 	  }
-	  DarknetPeerNode source = (DarknetPeerNode)m.getSource();
-	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+	  DarknetPeerNode source = (DarknetPeerNode)src;
+	  
 	  if(type == Node.N2N_MESSAGE_TYPE_FPROXY) {
-		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
+		
 		Logger.normal(this, "Received N2NM from '"+source.getPeer()+"'");
 		SimpleFieldSet fs = null;
 		try {

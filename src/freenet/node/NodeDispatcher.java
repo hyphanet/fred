@@ -91,7 +91,7 @@ public class NodeDispatcher implements Dispatcher {
 			handleDisconnect(m, source);
 			return true;
 		} else if(spec == DMT.nodeToNodeMessage) {
-			node.receivedNodeToNodeMessage(m, false);
+			node.receivedNodeToNodeMessage(m);
 			return true;
 		} else if(spec == DMT.UOMAnnounce) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
@@ -153,14 +153,17 @@ public class NodeDispatcher implements Dispatcher {
 		// Otherwise just dump all current connection state and keep trying to connect.
 		boolean remove = m.getBoolean(DMT.REMOVE);
 		if(remove)
-			node.peers.disconnect(source);
+			node.peers.disconnect(source, false, false);
 		// If true, purge all references to this node. Otherwise, we can keep the node
 		// around in secondary tables etc in order to more easily reconnect later. 
 		// (Mostly used on opennet)
 		// Not used at the moment - FIXME
 		boolean purge = m.getBoolean(DMT.PURGE);
 		// Process parting message
-		node.receivedNodeToNodeMessage(m, true);
+		int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
+		if(messageData.getLength() == 0) return;
+		node.receivedNodeToNodeMessage(source, type, messageData, true);
 	}
 
 	private boolean handleTime(Message m, PeerNode source) {
