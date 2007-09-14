@@ -863,6 +863,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             tracker.destForgotPacket(realSeqNo);
         }
 
+		tracker.pn.receivedPacket(false); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
+		
         if(seqNumber == -1) {
         	if(logMINOR) Logger.minor(this, "Returning because seqno = "+seqNumber);
         	return;
@@ -870,8 +872,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         // No sequence number == no messages
 
         if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
-            tracker.queueAck(seqNumber);
-			tracker.pn.receivedPacket(false);
+            tracker.queueAck(seqNumber); // Must keep the connection open!
             Logger.error(this, "Received packet twice ("+seqNumber+") from "+tracker.pn.getPeer()+": "+seqNumber+" ("+TimeUtil.formatTime((long) tracker.pn.pingAverage.currentValue(), 2, true)+" ping avg)");
             return;
         }
