@@ -153,4 +153,14 @@ public class BookmarkItem extends Bookmark {
 	public USK getUSK() throws MalformedURLException {
 		return USK.create(key);
 	}
+	
+	public boolean equals(Object o) {
+		if(o instanceof BookmarkItem) {
+			BookmarkItem b = (BookmarkItem) o;
+			if(!super.equals(o)) return false;
+			if(!b.key.equals(key)) return false;
+			if(b.alerts != alerts) return false; // Belongs to a different node???
+			return true;
+		} else return false;
+	}
 }
