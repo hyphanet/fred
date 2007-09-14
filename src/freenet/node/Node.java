@@ -2329,7 +2329,7 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Handle a received node to node message
 	 */
-	public void receivedNodeToNodeMessage(Message m) {
+	public void receivedNodeToNodeMessage(Message m, boolean parting) {
 	  PeerNode src = (PeerNode) m.getSource();
 	  if(!(src instanceof DarknetPeerNode)) {
 		Logger.error(this, "Got N2NTM from opennet node ?!?!?!: "+m+" from "+src);

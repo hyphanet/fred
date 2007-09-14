@@ -87,8 +87,11 @@ public class NodeDispatcher implements Dispatcher {
 			return handleTime(m, source);
 		} else if(spec == DMT.FNPVoid) {
 			return true;
+		} else if(spec == DMT.FNPDisconnect) {
+			handleDisconnect(m, source);
+			return true;
 		} else if(spec == DMT.nodeToNodeMessage) {
-			node.receivedNodeToNodeMessage(m);
+			node.receivedNodeToNodeMessage(m, false);
 			return true;
 		} else if(spec == DMT.UOMAnnounce) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
@@ -142,6 +145,22 @@ public class NodeDispatcher implements Dispatcher {
 			return handleProbeTrace(m, source);
 		}
 		return false;
+	}
+
+	private void handleDisconnect(Message m, PeerNode source) {
+		source.disconnected();
+		// If true, remove from active routing table, likely to be down for a while.
+		// Otherwise just dump all current connection state and keep trying to connect.
+		boolean remove = m.getBoolean(DMT.REMOVE);
+		if(remove)
+			node.peers.disconnect(source);
+		// If true, purge all references to this node. Otherwise, we can keep the node
+		// around in secondary tables etc in order to more easily reconnect later. 
+		// (Mostly used on opennet)
+		// Not used at the moment - FIXME
+		boolean purge = m.getBoolean(DMT.PURGE);
+		// Process parting message
+		node.receivedNodeToNodeMessage(m, true);
 	}
 
 	private boolean handleTime(Message m, PeerNode source) {
