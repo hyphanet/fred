@@ -71,6 +71,8 @@ public class PeerManager {
 	private static final long peerNodeStatusLogInterval = 5000;
 	/** PeerNode statuses, by status */
 	private final HashMap peerNodeStatuses;
+	/** DarknetPeerNode statuses, by status */
+	private final HashMap peerNodeStatusesDarknet;
 	/** PeerNode routing backoff reasons, by reason */
 	private final HashMap peerNodeRoutingBackoffReasons;
 	/** Next time to update routableConnectionStats */
@@ -100,6 +102,7 @@ public class PeerManager {
         Logger.normal(this, "Creating PeerManager");
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		peerNodeStatuses = new HashMap();
+		peerNodeStatusesDarknet = new HashMap();
 		peerNodeRoutingBackoffReasons = new HashMap();
         System.out.println("Creating PeerManager");
         myPeers = new PeerNode[0];
@@ -817,7 +820,7 @@ public class PeerManager {
 		int conns, peers;
 		synchronized(this) {
 			conns = this.connectedPeers.length;
-			peers = this.myPeers.length;
+			peers = this.getDarknetPeers().length;
 		}
 		synchronized(ua) {
 			ua.conns = conns;
@@ -982,6 +985,12 @@ public class PeerManager {
 	 */
 	public void addPeerNodeStatus(int pnStatus, PeerNode peerNode) {
 		Integer peerNodeStatus = new Integer(pnStatus);
+		addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatuses);
+		if(!peerNode.isOpennet())
+			addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatusesDarknet);
+	}
+
+	private void addPeerNodeStatuses(int pnStatus, PeerNode peerNode, Integer peerNodeStatus, HashMap peerNodeStatuses) {
 		HashSet statusSet = null;
 		synchronized(peerNodeStatuses) {
 			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
