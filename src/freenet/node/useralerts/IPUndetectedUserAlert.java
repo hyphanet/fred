@@ -30,7 +30,7 @@ public class IPUndetectedUserAlert implements UserAlert {
 		if(node.ipDetector.isDetecting())
 			return l10n("detecting");
 		else
-			return l10n("unknownAddress", "port", Integer.toString(node.getDarknetPortNumber()));
+			return l10n("unknownAddress", "port", Integer.toString(node.getDarknetPortNumber())) + ' ' + textPortForwardSuggestion();
 	}
 
 	private String l10n(String key) {
@@ -41,14 +41,19 @@ public class IPUndetectedUserAlert implements UserAlert {
 		return L10n.getString("IPUndetectedUserAlert."+key, pattern, value);
 	}
 
+	private String l10n(String key, String[] patterns, String[] values) {
+		return L10n.getString("IPUndetectedUserAlert."+key, patterns, values);
+	}
+
 	public HTMLNode getHTMLText() {
 		SubConfig sc = node.config.get("node");
 		Option o = sc.getOption("tempIPAddressHint");
 		
 		HTMLNode textNode = new HTMLNode("div");
 		L10n.addL10nSubstitution(textNode, "IPUndetectedUserAlert."+(node.ipDetector.isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink"), 
-				new String[] { "link", "/link", "port" }, 
-				new String[] { "<a href=\"/config/\">", "</a>", Integer.toString(node.getDarknetPortNumber()) });
+				new String[] { "link", "/link" }, 
+				new String[] { "<a href=\"/config/\">", "</a>" });
+		addPortForwardSuggestion(textNode);
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
@@ -58,6 +63,30 @@ public class IPUndetectedUserAlert implements UserAlert {
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("UserAlert.apply") });
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", L10n.getString("UserAlert.reset") });
 		return textNode;
+	}
+
+	private void addPortForwardSuggestion(HTMLNode textNode) {
+		// FIXME we should support any number of ports, UDP or TCP, and pick them up from the node as we do with the forwarding plugin ... that would be a bit of a pain for L10n though ...
+		int darknetPort = node.getDarknetPortNumber();
+		int opennetPort = node.getOpennetFNPPort();
+		if(opennetPort <= 0) {
+			textNode.addChild("#", " "+l10n("suggestForwardPort", "port", Integer.toString(darknetPort)));
+		} else {
+			textNode.addChild("#", " "+l10n("suggestForwardTwoPorts", new String[] { "port1", "port2" }, 
+					new String[] { Integer.toString(darknetPort), Integer.toString(opennetPort) }));
+		}
+	}
+
+	private String textPortForwardSuggestion() {
+		// FIXME we should support any number of ports, UDP or TCP, and pick them up from the node as we do with the forwarding plugin ... that would be a bit of a pain for L10n though ...
+		int darknetPort = node.getDarknetPortNumber();
+		int opennetPort = node.getOpennetFNPPort();
+		if(opennetPort <= 0) {
+			return l10n("suggestForwardPort", "port", Integer.toString(darknetPort));
+		} else {
+			return " "+l10n("suggestForwardTwoPorts", new String[] { "port1", "port2" }, 
+					new String[] { Integer.toString(darknetPort), Integer.toString(opennetPort) });
+		}
 	}
 
 	public short getPriorityClass() {
