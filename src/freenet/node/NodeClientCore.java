@@ -278,22 +278,22 @@ public class NodeClientCore implements Persistable {
 		
 		// FIXME remove this code, the new behaviour should be handled by all clients
 		
-		nodeConfig.register("ignoreTooManyPathComponents", false, sortOrder++, true, false, "NodeClientCore.ignoreTooManyPathComponents", 
-				"NodeClientCore.ignoreTooManyPathComponentsLong", new BooleanCallback() {
+//		nodeConfig.register("ignoreTooManyPathComponents", false, sortOrder++, true, false, "NodeClientCore.ignoreTooManyPathComponents", 
+//				"NodeClientCore.ignoreTooManyPathComponentsLong", new BooleanCallback() {
 
-					public boolean get() {
-						return ignoreTooManyPathComponents;
-					}
+//					public boolean get() {
+//						return ignoreTooManyPathComponents;
+//					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
-						synchronized(NodeClientCore.this) {
-							ignoreTooManyPathComponents = val;
-						}
-					}
-			
-		});
+//					public void set(boolean val) throws InvalidConfigValueException {
+//						synchronized(NodeClientCore.this) {
+//							ignoreTooManyPathComponents = val;
+//						}
+//					}
+//			
+//		});
 		
-		ignoreTooManyPathComponents = nodeConfig.getBoolean("ignoreTooManyPathComponents");
+		ignoreTooManyPathComponents = false;
 		
 		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
 				"NodeClientCore.lazyResumeLong", new BooleanCallback() {
