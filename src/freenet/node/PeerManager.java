@@ -573,8 +573,8 @@ public class PeerManager {
     		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, null, maxDistance);
     		if(nbo != null) {
     			node.nodeStats.routingMissDistance.report(Location.distance(best, nbo.getLocation()));
-    			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
-    			int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+    			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
+    			int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
     			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
     				node.nodeStats.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
     			}
@@ -817,17 +817,14 @@ public class PeerManager {
 	 */
 	public void updatePMUserAlert() {
 		if(ua == null) return;
-		int conns, peers;
-		synchronized(this) {
-			conns = this.connectedPeers.length;
-			peers = this.getDarknetPeers().length;
-		}
+		int peers = this.getDarknetPeers().length;
 		synchronized(ua) {
-			ua.conns = conns;
+			ua.conns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, true) +
+				getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, true);
 			ua.peers = peers;
-			ua.neverConn = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED);
-			ua.clockProblem = getPeerNodeStatusSize(PEER_NODE_STATUS_CLOCK_PROBLEM);
-			ua.connError = getPeerNodeStatusSize(PEER_NODE_STATUS_CONN_ERROR);
+			ua.neverConn = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED, true);
+			ua.clockProblem = getPeerNodeStatusSize(PEER_NODE_STATUS_CLOCK_PROBLEM, true);
+			ua.connError = getPeerNodeStatusSize(PEER_NODE_STATUS_CONN_ERROR, true);
 		}
 		if(anyConnectedPeers())
 			node.onConnectedPeer();
@@ -1011,10 +1008,12 @@ public class PeerManager {
 
 	/**
 	 * How many PeerNodes have a particular status?
+	 * @param darknet If true, only count darknet nodes, if false, count all nodes.
 	 */
-	public int getPeerNodeStatusSize(int pnStatus) {
+	public int getPeerNodeStatusSize(int pnStatus, boolean darknet) {
 		Integer peerNodeStatus = new Integer(pnStatus);
 		HashSet statusSet = null;
+		HashMap peerNodeStatuses = darknet ? peerNodeStatusesDarknet : this.peerNodeStatuses;
 		synchronized(peerNodeStatuses) {
 			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
 				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
