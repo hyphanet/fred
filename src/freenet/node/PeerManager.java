@@ -817,10 +817,17 @@ public class PeerManager {
 	 */
 	public void updatePMUserAlert() {
 		if(ua == null) return;
-		int peers = this.getDarknetPeers().length;
+		int peers, darknetPeers;
+		synchronized(this) {
+			peers = this.myPeers.length;
+			darknetPeers = this.getDarknetPeers().length;
+		}
 		synchronized(ua) {
-			ua.conns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, true) +
+			ua.darknetConns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, true) +
 				getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, true);
+			ua.conns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false) +
+			getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
+			ua.darknetPeers = darknetPeers;
 			ua.peers = peers;
 			ua.neverConn = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED, true);
 			ua.clockProblem = getPeerNodeStatusSize(PEER_NODE_STATUS_CLOCK_PROBLEM, true);

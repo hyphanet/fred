@@ -19,6 +19,8 @@ public class PeerManagerUserAlert implements UserAlert {
 	int bwlimitDelayTime = 1;
 	int nodeAveragePingTime = 1;
 	long oldestNeverConnectedPeerAge = 0;
+	public int darknetConns = 0;
+	public int darknetPeers = 0;
 	
 	/** How many connected peers we need to not get alert about not enough */
 	static final int MIN_CONN_ALERT_THRESHOLD = 3;
