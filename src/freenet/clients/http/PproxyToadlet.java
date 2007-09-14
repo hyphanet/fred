@@ -189,12 +189,12 @@ public class PproxyToadlet extends Toadlet {
 							} catch (IOException ioe) {
 							}
 						}
-						if (filename == null)
-							return;
-						else if(!downloaded) {
-							Logger.error(this, "Can't load the given plugin; giving up");
-							return;
-						}
+					}
+					if (filename == null)
+						return;
+					else if(!downloaded) {
+						Logger.error(this, "Can't load the given plugin; giving up");
+						return;
 					}
 				}
 
