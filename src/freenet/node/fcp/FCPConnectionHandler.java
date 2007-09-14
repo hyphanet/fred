@@ -63,6 +63,7 @@ public class FCPConnectionHandler {
 	final BucketFactory bf;
 	final HashMap requestsByIdentifier;
 	protected final String connectionIdentifier;
+	static boolean logMINOR;
 
 	// We are confident that the given client can access those
 	private final HashMap checkedDirectories = new HashMap();
@@ -70,6 +71,7 @@ public class FCPConnectionHandler {
 	private final HashMap inTestDirectories = new HashMap();
 	
 	public FCPConnectionHandler(Socket s, FCPServer server) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.sock = s;
 		this.server = server;
 		isClosed = false;
@@ -322,6 +324,9 @@ public class FCPConnectionHandler {
 				da = (DirectoryAccess) checkedDirectories.get(parentDirectory);
 		}
 		
+		if(logMINOR)
+			Logger.minor(this, "Checking DDA: "+da+" for "+parentDirectory);
+		
 		if(writeRequest)
 			return (da == null ? server.isDownloadDDAAlwaysAllowed() : da.canWrite);
 		else
@@ -340,6 +345,9 @@ public class FCPConnectionHandler {
 		synchronized (checkedDirectories) {
 				checkedDirectories.put(path, da);
 		}
+		
+		if(logMINOR)
+			Logger.minor(this, "DDA: read="+read+" write="+write+" for "+path);
 	}
 	
 	/**
