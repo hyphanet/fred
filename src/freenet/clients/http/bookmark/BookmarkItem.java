@@ -158,7 +158,8 @@ public class BookmarkItem extends Bookmark {
 		if(o instanceof BookmarkItem) {
 			BookmarkItem b = (BookmarkItem) o;
 			if(!super.equals(o)) return false;
-			if(!b.key.equals(key)) return false;
+			if(!b.key.equals(key) || b.key.getKeyType().equals("USK") && 
+					b.key.setSuggestedEdition(key.getSuggestedEdition()).equals(key)) return false;
 			if(b.alerts != alerts) return false; // Belongs to a different node???
 			return true;
 		} else return false;
