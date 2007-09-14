@@ -508,22 +508,6 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 	
-	private TimeDecayingRunningAverage getSuccessfulBytes(boolean isSSK, boolean isInsert, boolean isReceived) {
-		if(isSSK) {
-			if(isInsert) {
-				return isReceived ? successfulSskInsertBytesReceivedAverage : successfulSskInsertBytesSentAverage;
-			} else {
-				return isReceived ? successfulSskFetchBytesReceivedAverage : successfulSskFetchBytesSentAverage;
-			}
-		} else {
-			if(isInsert) {
-				return isReceived ? successfulChkInsertBytesReceivedAverage : successfulChkInsertBytesSentAverage;
-			} else {
-				return isReceived ? successfulChkFetchBytesReceivedAverage : successfulChkFetchBytesSentAverage;
-			}
-		}
-	}
-
 	private void dumpByteCostAverages() {
 		Logger.minor(this, "Byte cost averages: REMOTE:"+
 				" CHK insert "+remoteChkInsertBytesSentAverage.currentValue()+ '/' +remoteChkInsertBytesReceivedAverage.currentValue()+

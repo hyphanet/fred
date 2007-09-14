@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import java.io.IOException;
-
 /** Thrown when Metadata parse fails. */
 public class MetadataParseException extends Exception {
 
