@@ -990,22 +990,22 @@ public class PeerManager {
 			addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatusesDarknet);
 	}
 
-	private void addPeerNodeStatuses(int pnStatus, PeerNode peerNode, Integer peerNodeStatus, HashMap peerNodeStatuses) {
+	private void addPeerNodeStatuses(int pnStatus, PeerNode peerNode, Integer peerNodeStatus, HashMap statuses) {
 		HashSet statusSet = null;
-		synchronized(peerNodeStatuses) {
-			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
-				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
+		synchronized(statuses) {
+			if(statuses.containsKey(peerNodeStatus)) {
+				statusSet = (HashSet) statuses.get(peerNodeStatus);
 				if(statusSet.contains(peerNode)) {
 					Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode.getPeer()+" with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'");
 					return;
 				}
-				peerNodeStatuses.remove(peerNodeStatus);
+				statuses.remove(peerNodeStatus);
 			} else {
 				statusSet = new HashSet();
 			}
 			if(logMINOR) Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'");
 			statusSet.add(peerNode);
-			peerNodeStatuses.put(peerNodeStatus, statusSet);
+			statuses.put(peerNodeStatus, statusSet);
 		}
 	}
 
