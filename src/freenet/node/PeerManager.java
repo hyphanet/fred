@@ -1013,10 +1013,10 @@ public class PeerManager {
 	public int getPeerNodeStatusSize(int pnStatus, boolean darknet) {
 		Integer peerNodeStatus = new Integer(pnStatus);
 		HashSet statusSet = null;
-		HashMap peerNodeStatuses = darknet ? peerNodeStatusesDarknet : this.peerNodeStatuses;
-		synchronized(peerNodeStatuses) {
-			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
-				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
+		HashMap statuses = darknet ? peerNodeStatusesDarknet : this.peerNodeStatuses;
+		synchronized(statuses) {
+			if(statuses.containsKey(peerNodeStatus)) {
+				statusSet = (HashSet) statuses.get(peerNodeStatus);
 			} else {
 				statusSet = new HashSet();
 			}
