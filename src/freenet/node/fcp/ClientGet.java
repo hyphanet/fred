@@ -381,6 +381,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				Logger.error(this, "onSuccess called twice for "+this+" ("+identifier+ ')');
 				return; // We might be called twice; ignore it if so.
 			}
+			started = true;
 			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 				// Send all the data at once
 				// FIXME there should be other options
@@ -501,6 +502,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			succeeded = false;
 			getFailedMessage = new GetFailedMessage(e, identifier, global);
 			finished = true;
+			started = true;
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Caught "+e, e);
