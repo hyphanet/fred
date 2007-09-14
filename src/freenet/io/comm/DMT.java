@@ -116,6 +116,8 @@ public class DMT {
 	public static final String TIME_LEFT = "timeLeft";
 	public static final String PREV_UID = "prevUID";
 	public static final String OPENNET_NODEREF = "opennetNoderef";
+	public static final String REMOVE = "remove";
+	public static final String PURGE = "purge";
 	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -1049,6 +1051,29 @@ public class DMT {
 	
 	public static final Message createFNPVoid() {
 		Message msg = new Message(FNPVoid);
+		return msg;
+	}
+	
+	public static final MessageType FNPDisconnect = new MessageType("FNPDisconnect") {{
+		// If true, remove from active routing table, likely to be down for a while.
+		// Otherwise just dump all current connection state and keep trying to connect.
+		addField(REMOVE, Boolean.class);
+		// If true, purge all references to this node. Otherwise, we can keep the node
+		// around in secondary tables etc in order to more easily reconnect later. 
+		// (Mostly used on opennet)
+		addField(PURGE, Boolean.class);
+		// Parting message, may be empty. A SimpleFieldSet in exactly the same format 
+		// as an N2NTM.
+		addField(NODE_TO_NODE_MESSAGE_TYPE, Integer.class);
+		addField(NODE_TO_NODE_MESSAGE_DATA, ShortBuffer.class);
+	}};
+	
+	public static final Message createFNPDisconnect(boolean remove, boolean purge, int messageType, ShortBuffer messageData) {
+		Message msg = new Message(FNPDisconnect);
+		msg.set(REMOVE, remove);
+		msg.set(PURGE, purge);
+		msg.set(NODE_TO_NODE_MESSAGE_TYPE, messageType);
+		msg.set(NODE_TO_NODE_MESSAGE_DATA, messageData);
 		return msg;
 	}
 	
