@@ -92,6 +92,7 @@ public class BookmarkManager {
 
 		public void set(String[] newVals) throws InvalidConfigValueException {
 			FreenetURI key;
+			clear();
 			for (int i = 0; i < newVals.length; i++) {
 				try {
 					Matcher matcher = pattern.matcher(newVals[i]);
