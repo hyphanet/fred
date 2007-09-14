@@ -414,7 +414,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * cached by the Responder.Receiving a duplicate message simply causes
 				 * the responder to Re-transmit the corresponding message4
 				 */
-				//ProcessMessage3(payload, pn, replyTo);
+				ProcessMessage3(payload, pn, replyTo);
 			}
 			else if(packetType==3){
 				/*
@@ -422,7 +422,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				//ProcessMessage4(payload,pn,replyTo);
+				ProcessMessage4(payload,pn,replyTo);
 			}
 		}
 		else {
@@ -762,10 +762,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
                 // cache the message
-                // FIXME: Do we cache the entire payload?
                 authenticatorCache.put(authenticator,payload);
                 // Send reply
-		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, pn, replyTo);
+		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential,idI,c, pn, replyTo);
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
 			Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
@@ -787,14 +786,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	/*
-	 * Send Message3 packet
-	 * Also check for duplicate message
-	 * @param version
-	 * @param negType
-	 * @param The packet phase number
-	 * @param Concatenated data
-	 * @param The peerNode we are talking to
-	 * @param The peer to which we need to send the packet
+	 * Format:
+         * Ni
+         * Nr
+         * g^i
+         * g^r
+         * Authenticator
+         * E[idI,S[Ni,Nr,g^i,g^r]] over the key Ka
 	 */
 
 	private void sendMessage3Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, BigInteger hisGroup, byte[] hashedAuthenticator, PeerNode pn, Peer replyTo)
@@ -846,11 +844,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		PCFBMode pk=PCFBMode.create(c);
 		byte[] iv=new byte[pk.lengthIV()];
                 node.random.nextBytes(iv);
-		int encryptedDataLength = iv.length + r.length + s.length + 2;
+		byte[] idI = new byte[0];
+                int encryptedDataLength = iv.length + idI.length + r.length + s.length + 2;
 		byte[] encryptedData = new byte[encryptedDataLength];
 		System.arraycopy(iv, 0, encryptedData, 0, iv.length);
 		int count = iv.length;
-                byte[] idI = new byte[0];
+                
                 System.arraycopy(idI,0, encryptedData,count,idI.length);               
 		count += idI.length;
                 System.arraycopy(r, 0, encryptedData, count, r.length);
@@ -874,20 +873,67 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
         
         /*
-	 * Send Message4 packet
-	 * @param version
-	 * @param negType
-	 * @param The packet phase number
-	 * @param Concatenated data
-	 * @param The peerNode we are talking to
+	 * Process Message4 packet
+	 * @param Payload 
+         * @param The peerNode we are talking to
 	 * @param The peer to which we need to send the packet
 	 */
-
-	private void sendMessage4Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] ourExponential,byte[] hisExponential,PeerNode pn,Peer replyTo)
+        private void ProcessMessage4( byte[] payload,PeerNode pn,Peer replyTo) 
+        {
+                long t1 = System.currentTimeMillis();
+		if(logMINOR)
+                    Logger.minor(this, "Got a JFK(4) message, processing it");
+		int inputOffset=3;
+                // Decrypt
+                BlockCipher c = pn.outgoingSetupCipher;
+                PCFBMode pk=PCFBMode.create(c);
+                int ivLength = pk.lengthIV();
+                pk.reset(payload,inputOffset);
+                // Decrypt the rest of the payload
+		pk.blockDecipher(payload,inputOffset,payload.length-inputOffset);
+                inputOffset += ivLength;
+                // Now verify signature
+                // FIXME: How do we verify the signature?
+                
+                // FIXME: cache JFK(4)?
+                
+                // FIXME: JFK handshake completion?
+        }
+	/*
+         * FOrmat:
+         * E[S[Ni,Nr,g^i,g^r,idI]] 
+         */
+        private void sendMessage4Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] ourExponential,byte[] hisExponential,byte[] idI, BlockCipher c ,PeerNode pn,Peer replyTo)
 	{
-		
-                
-                
+		if(logMINOR)
+                    Logger.minor(this, "Sending a JFK(4) message to "+pn);
+		long now = System.currentTimeMillis();
+		long delta = now - pn.lastSentPacketTime();
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
+                BigInteger hisGroup = dhContext.group.p;
+                NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
+                NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
+                NativeBigInteger _hisGroup = new NativeBigInteger(1,stripBigIntegerToNetworkFormat(hisGroup));
+                DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential,idI);
+                byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+                NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential,_hisGroup);
+                byte[] eKey = tempKey.toByteArray();
+                c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
+		PCFBMode pk=PCFBMode.create(c);
+		byte[] iv=new byte[pk.lengthIV()];
+                node.random.nextBytes(iv);
+                int message4Length = iv.length + r.length + s.length + 2;
+		byte[] message4 = new byte[message4Length];
+		System.arraycopy(iv, 0, message4, 0, iv.length);
+		int count = iv.length;
+                               
+		System.arraycopy(r, 0, message4, count, r.length);
+		count += r.length;
+		System.arraycopy(s, 0, message4, count, s.length);
+		count += s.length;
+		pk.blockEncipher(message4, 0, message4Length);
+                // FIXME: How to get completed handshake?
 	}
 
 	/**
@@ -2166,6 +2212,21 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// Why is the hash returned?
 		return SHA256.digest(toSign);
 	}
+        /*
+         * Prepare params for signing in Message4
+         */
+        private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential, byte[] idI) {
+		byte[] _myExponential = stripBigIntegerToNetworkFormat(myExponential);
+		byte[] _hisExponential = stripBigIntegerToNetworkFormat(hisExponential);
+		byte[] toSign = new byte[nonceInitiator.length + nonceResponder.length + _myExponential.length + _hisExponential.length];
+		System.arraycopy(nonceInitiator, 0,toSign,0,nonceInitiator.length);
+                System.arraycopy(nonceResponder,0 ,toSign,nonceInitiator.length,nonceResponder.length);
+		System.arraycopy(_myExponential, 0, toSign,nonceInitiator.length+nonceResponder.length, _myExponential.length);
+		System.arraycopy(_hisExponential, 0, toSign, nonceInitiator.length+nonceResponder.length+_myExponential.length, _hisExponential.length);
+                System.arraycopy(idI, 0, toSign , nonceInitiator.length+nonceResponder.length+_myExponential.length+ _hisExponential.length,idI.length);
+		
+		return SHA256.digest(toSign);
+	}
 	/*
 	 * Actually sign the DH parameters for message2
 	 */
@@ -2178,7 +2239,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         private DSASignature signDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential) {
 		return crypto.sign(assembleDHParams(nonceInitiator,nonceResponder,myExponential,hisExponential));
 	}
-	
+	/*
+         * Sign the params for message4
+         */
+         private DSASignature signDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential,byte[] idI) {
+		return crypto.sign(assembleDHParams(nonceInitiator,nonceResponder,myExponential,hisExponential,idI));
+	}
 	private byte[] getTransientKey() {
 		synchronized (authenticatorCache) {
 			return transientKey;
