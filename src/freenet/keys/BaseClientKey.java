@@ -13,13 +13,13 @@ import java.net.MalformedURLException;
 public abstract class BaseClientKey {
 
 	public static BaseClientKey getBaseKey(FreenetURI origURI) throws MalformedURLException {
-		if(origURI.getKeyType().equals("CHK"))
+		if("CHK".equals(origURI.getKeyType()))
 			return new ClientCHK(origURI);
-		if(origURI.getKeyType().equals("SSK"))
+		if("SSK".equals(origURI.getKeyType()))
 			return new ClientSSK(origURI);
-		if(origURI.getKeyType().equals("KSK"))
+		if("KSK".equals(origURI.getKeyType()))
 			return ClientKSK.create(origURI.getDocName());
-		if(origURI.getKeyType().equals("USK"))
+		if("USK".equals(origURI.getKeyType()))
 			return USK.create(origURI);
 		throw new UnsupportedOperationException("Unknown keytype from "+origURI);
 	}
