@@ -60,7 +60,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			strm.close();
 			throw UnknownCharsetException.create(e, charset);
 		}
-		HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb);
+		HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb, false);
 		pc.run(temp);
 		r.close();
 		w.close();
@@ -88,7 +88,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			strm.close();
 			throw e;
 		}
-		HTMLParseContext pc = new HTMLParseContext(r, w, null, new NullFilterCallback());
+		HTMLParseContext pc = new HTMLParseContext(r, w, null, new NullFilterCallback(), true);
 		try {
 			pc.run(null);
 		} catch (IOException e) {
@@ -114,12 +114,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String charset;
 		String detectedCharset;
 		final FilterCallback cb;
+		final boolean noOutput;
 
-		HTMLParseContext(Reader r, Writer w, String charset, FilterCallback cb) {
+		HTMLParseContext(Reader r, Writer w, String charset, FilterCallback cb, boolean noOutput) {
 			this.r = r;
 			this.w = w;
 			this.charset = charset;
 			this.cb = cb;
+			this.noOutput = noOutput;
 		}
 
 		Bucket run(Bucket temp) throws IOException, DataFilterException {
@@ -335,6 +337,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	void saveText(StringBuffer s, String tagName, Writer w, HTMLParseContext pc)
 		throws IOException {
+		
+		if(pc.noOutput) return;
 
 		if(logDEBUG) Logger.debug(this, "Saving text: "+s.toString());
 		if (pc.killText) {
@@ -382,6 +386,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		ParsedTag t = new ParsedTag(splitTag);
 		if (!pc.killTag) {
 			t = t.sanitize(pc);
+			if(pc.noOutput) return; // sanitize has done all the work we are interested in
 			if (t != null) {
 				if (pc.writeStyleScriptWithTag) {
 					pc.writeStyleScriptWithTag = false;
@@ -407,6 +412,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	void saveComment(StringBuffer s, Writer w, HTMLParseContext pc)
 		throws IOException {
+		if(pc.noOutput) return;
 		if((s.length() > 3) && (s.charAt(0) == '!') && (s.charAt(1) == '-') && (s.charAt(2) == '-')) {
 			s.delete(0, 3);
 			if(s.charAt(s.length()-1) == '-')
@@ -1303,7 +1309,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		void processStyle(HTMLParseContext pc) {
 			try {
 				pc.currentStyleScriptChunk =
-					sanitizeStyle(pc.currentStyleScriptChunk, pc.cb);
+					sanitizeStyle(pc.currentStyleScriptChunk, pc.cb, pc);
 			} catch (DataFilterException e) {
 				Logger.error(this, "Error parsing style: "+e, e);
 				pc.currentStyleScriptChunk = "";
@@ -1380,7 +1386,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			String style = getHashString(h, "style");
 			if (style != null) {
-				style = sanitizeStyle(style, pc.cb);
+				style = sanitizeStyle(style, pc.cb, pc);
 				if (style != null)
 					style = escapeQuotes(style);
 				if (style != null)
@@ -1828,8 +1834,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	}
 	
-	static String sanitizeStyle(String style, FilterCallback cb) throws DataFilterException {
+	static String sanitizeStyle(String style, FilterCallback cb, HTMLParseContext hpc) throws DataFilterException {
 		if(style == null) return null;
+		if(hpc.noOutput) return null;
 		Reader r = new StringReader(style);
 		Writer w = new StringWriter();
 		style = style.trim();
