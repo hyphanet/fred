@@ -2283,6 +2283,18 @@ public class Node implements TimeSkewDetectorCallback {
 			isStopping = true;
 		}
 		
+		try {
+			Message msg = DMT.createFNPDisconnect(false, false, -1, new ShortBuffer(new byte[0]));
+			peers.localBroadcast(msg, true);
+		} catch (Throwable t) {
+			try {
+				// E.g. if we haven't finished startup
+				Logger.error(this, "Failed to tell peers we are going down: "+t, t);
+			} catch (Throwable t1) {
+				// Ignore. We don't want to mess up the exit process!
+			}
+		}
+		
 		config.store();
 		
 		// TODO: find a smarter way of doing it not involving any casting
