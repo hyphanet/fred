@@ -1093,16 +1093,16 @@ public class PeerManager {
 			removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatusesDarknet);
 	}
 
-	private void removePeerNodeStatus(int pnStatus, Integer peerNodeStatus, PeerNode peerNode, HashMap peerNodeStatuses) {
+	private void removePeerNodeStatus(int pnStatus, Integer peerNodeStatus, PeerNode peerNode, HashMap statuses) {
 		HashSet statusSet = null;
-		synchronized(peerNodeStatuses) {
-			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
-				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
+		synchronized(statuses) {
+			if(statuses.containsKey(peerNodeStatus)) {
+				statusSet = (HashSet) statuses.get(peerNodeStatus);
 				if(!statusSet.contains(peerNode)) {
 					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
 					return;
 				}
-				peerNodeStatuses.remove(peerNodeStatus);
+				statuses.remove(peerNodeStatus);
 			} else {
 				statusSet = new HashSet();
 			}
@@ -1110,7 +1110,7 @@ public class PeerManager {
 			if(statusSet.contains(peerNode)) {
 				statusSet.remove(peerNode);
 			}
-			peerNodeStatuses.put(peerNodeStatus, statusSet);
+			statuses.put(peerNodeStatus, statusSet);
 		}
 	}
 
