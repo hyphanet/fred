@@ -2272,6 +2272,10 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 	
+	public synchronized boolean isStopping() {
+		return isStopping;
+	}
+	
 	/**
 	 * Get the node into a state where it can be stopped safely
 	 * May be called twice - once in exit (above) and then again

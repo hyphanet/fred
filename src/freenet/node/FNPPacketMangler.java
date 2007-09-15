@@ -155,6 +155,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 }
             }
         }
+        if(node.isStopping()) return;
         if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
             for(int i=0;i<peers.length;i++) {
                 pn = peers[i];
