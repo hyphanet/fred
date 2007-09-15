@@ -1088,6 +1088,12 @@ public class PeerManager {
 	 */
 	public void removePeerNodeStatus(int pnStatus, PeerNode peerNode) {
 		Integer peerNodeStatus = new Integer(pnStatus);
+		removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatuses);
+		if(!peerNode.isOpennet())
+			removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatusesDarknet);
+	}
+
+	private void removePeerNodeStatus(int pnStatus, Integer peerNodeStatus, PeerNode peerNode, HashMap peerNodeStatuses) {
 		HashSet statusSet = null;
 		synchronized(peerNodeStatuses) {
 			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
