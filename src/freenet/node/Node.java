@@ -2277,9 +2277,11 @@ public class Node implements TimeSkewDetectorCallback {
 	 * May be called twice - once in exit (above) and then again
 	 * from the wrapper triggered by calling System.exit(). Beware!
 	 */
-	public synchronized void park() {
-		if(isStopping) return;
-		isStopping = true;
+	public void park() {
+		synchronized(this) {
+			if(isStopping) return;
+			isStopping = true;
+		}
 		
 		config.store();
 		
