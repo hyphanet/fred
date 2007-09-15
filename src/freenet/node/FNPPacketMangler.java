@@ -128,7 +128,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 // Try with unverified key
                 if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker())) return;
             }
-            if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
+            if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2 && !node.isStopping()) {
                 // Might be an auth packet
                 if(tryProcessAuth(buf, offset, length, opn, peer)) return;
             }
