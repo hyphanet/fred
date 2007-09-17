@@ -126,7 +126,7 @@
 
 	<!-- ================================================== -->
 
-	<target name="unit-build" depends="compile">
+	<target name="unit-build" depends="compile" if="junit.present">
 		<javac srcdir="${test}" destdir="${build-test}" debug="on" optimize="on" source="1.4">
 			<classpath>
 				<pathelement path="${build}"/>
