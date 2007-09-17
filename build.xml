@@ -131,6 +131,7 @@
 			<classpath>
 				<pathelement path="${build}"/>
 				<pathelement location="${freenet-ext.location}"/>
+				<pathelement location="${junit.location}"/>
 			</classpath>
 			<include name="**/*.java"/>
 			<exclude name="*.java"/>
