@@ -437,7 +437,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					public void run() {
 						f.schedule();
 					}
-				}, "Schedule");
+				}, "Schedule "+this);
 				// All done! No longer our problem!
 				return;
 			} else if(metadata.isSplitfile()) {
