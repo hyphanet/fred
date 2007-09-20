@@ -878,8 +878,9 @@ public class PeerManager {
 			ua.darknetConns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, true) +
 				getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, true);
 			ua.conns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false) +
-			getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
+				getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
 			ua.darknetPeers = darknetPeers;
+			ua.disconnDarknetPeers = darknetPeers - ua.darknetConns;
 			ua.peers = peers;
 			ua.neverConn = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED, true);
 			ua.clockProblem = getPeerNodeStatusSize(PEER_NODE_STATUS_CLOCK_PROBLEM, false);

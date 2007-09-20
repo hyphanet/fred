@@ -15,6 +15,7 @@ public class PeerManagerUserAlert implements UserAlert {
 	public int neverConn = 0;
 	public int clockProblem = 0;
 	public int connError = 0;
+	public int disconnDarknetPeers = 0;
 	boolean isValid=true;
 	int bwlimitDelayTime = 1;
 	int nodeAveragePingTime = 1;
@@ -67,7 +68,7 @@ public class PeerManagerUserAlert implements UserAlert {
 			return l10n("clockProblemTitle");
 		if(connError > MIN_CONN_ERROR_ALERT_THRESHOLD)
 			return l10n("connErrorTitle");
-		if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD)
+		if(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD)
 			return l10n("tooManyDisconnectedTitle");
 		if(conns > MAX_CONN_ALERT_THRESHOLD)
 			return l10n("tooManyConnsTitle");
@@ -118,7 +119,7 @@ public class PeerManagerUserAlert implements UserAlert {
 			s = l10n("clockProblem", "count", Integer.toString(clockProblem));
 		} else if(connError > MIN_CONN_ERROR_ALERT_THRESHOLD) {
 			s = l10n("connError", "count", Integer.toString(connError));
-		} else if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD){
+		} else if(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD){
 			s = l10n("tooManyDisconnected", new String[] { "count", "max" }, 
 					new String[] { Integer.toString(disconnected), Integer.toString(MAX_DISCONN_PEER_ALERT_THRESHOLD)});
 		} else if(conns > MAX_CONN_ALERT_THRESHOLD) {
@@ -190,7 +191,7 @@ public class PeerManagerUserAlert implements UserAlert {
 			alertNode.addChild("#", l10n("clockProblem", "count", Integer.toString(clockProblem)));
 		} else if(connError > MIN_CONN_ERROR_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("connError", "count", Integer.toString(connError)));
-		} else if ((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) {
+		} else if (disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("tooManyDisconnected", new String[] { "count", "max" }, new String[] { Integer.toString(disconnected), Integer.toString(MAX_DISCONN_PEER_ALERT_THRESHOLD)}));
 		} else if (conns > MAX_CONN_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("tooManyConns", new String[] { "count", "max" }, 
@@ -215,7 +216,7 @@ public class PeerManagerUserAlert implements UserAlert {
 		if((peers == 0) ||
 				(conns == 0) ||
 				(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) ||
-				((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
+				(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
 				(peers > MAX_PEER_ALERT_THRESHOLD) ||
 				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
@@ -232,7 +233,7 @@ public class PeerManagerUserAlert implements UserAlert {
 		return ((peers == 0) ||
 				(conns < 3) ||
 				(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) ||
-				((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
+				(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
 				(peers > MAX_PEER_ALERT_THRESHOLD) ||
 				(clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) ||
