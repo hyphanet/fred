@@ -94,6 +94,7 @@ public class PeerManager {
 	public static final int PEER_NODE_STATUS_LISTEN_ONLY = 10;
 	public static final int PEER_NODE_STATUS_CLOCK_PROBLEM = 11;
 	public static final int PEER_NODE_STATUS_CONN_ERROR = 12;
+	public static final int PEER_NODE_STATUS_DISCONNECTING = 13;
 	
     /**
      * Create a PeerManager by reading a list of peers from
@@ -381,6 +382,7 @@ public class PeerManager {
     	synchronized(this) {
     		if(!havePeer(pn)) return;
     	}
+    	pn.notifyDisconnecting();
     	if(sendDisconnectMessage) {
     		Message msg = DMT.createFNPDisconnect(true, false, -1, new ShortBuffer(new byte[0]));
    			try {

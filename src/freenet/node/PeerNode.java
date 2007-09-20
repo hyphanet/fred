@@ -299,6 +299,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * long time, but without preventing it from being GC'ed. */
 	final WeakReference myRef;
 	
+	/** The node is being disconnected, but it may take a while. */
+	private boolean disconnecting;
+	
     private static boolean logMINOR;
     
     /**
@@ -2324,6 +2327,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return "CLOCK PROBLEM";
 		if(status == PeerManager.PEER_NODE_STATUS_CONN_ERROR)
 			return "CONNECTION ERROR";
+		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
+			return "DISCONNECTING";
 		return "UNKNOWN STATUS";
 	}
 
@@ -2355,11 +2360,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return "peer_listen_only";
 		if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
 			return "peer_clock_problem";
+		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
+			return "peer_disconnecting";
 		return "peer_unknown_status";
 	}
 
 	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntil) {
 		checkConnectionsAndTrackers();
+		if(disconnecting)
+			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
 			if(now < routingBackedOffUntil) {
@@ -2688,4 +2697,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/** Called when the peer is removed from the PeerManager */
 	public abstract void onRemove();
+
+	/** Called when a delayed disconnect is occurring. Tell the node that it is being disconnected, but
+	 * that the process may take a while. */
+	public void notifyDisconnecting() {
+		synchronized(this) {
+			disconnecting = true;
+		}
+		setPeerNodeStatus(System.currentTimeMillis());
+	}
 }
