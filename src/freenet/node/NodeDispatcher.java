@@ -160,7 +160,7 @@ public class NodeDispatcher implements Dispatcher {
 		// Not used at the moment - FIXME
 		boolean purge = m.getBoolean(DMT.PURGE);
 		// Process parting message
-		int type = m.getInt(DMT.NODE_TO_NODE_MESSAGE_TYPE));
+		int type = m.getInt(DMT.NODE_TO_NODE_MESSAGE_TYPE);
 		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
 		if(messageData.getLength() == 0) return;
 		node.receivedNodeToNodeMessage(source, type, messageData, true);
