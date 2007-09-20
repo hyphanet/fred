@@ -27,7 +27,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 	 */
 	public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
 		if(maxLength < bufferSize)
-			bufferSize = maxLength + 1;
+			bufferSize = maxLength + 1; // Buffer too big, shrink it (add 1 for the optional \r)
 		if(buf == null)
 			buf = new byte[Math.max(Math.min(128,maxLength), Math.min(1024, bufferSize))];
 		int ctr = 0;
