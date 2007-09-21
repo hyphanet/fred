@@ -841,6 +841,7 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
+		// notVisitedList == locsNotVisited
 
 		// Find it
 		ProbeContext ctx;
@@ -875,23 +876,19 @@ public class NodeDispatcher implements Dispatcher {
 		
 		// Maybe fork
 		
-		
-		
 		try {
 			double furthestDist = 0.0;
-			if(notVisitedList.size() > 0) {
+			if(locsNotVisited.length > 0) {
 				if(ctx.forkCount < MAX_FORKS) {
 					ctx.forkCount++;
 					
-					Double[] dists = (Double[]) notVisitedList.toArray(new Double[notVisitedList.size()]);
+					double[] dists = new double[locsNotVisited.length];
 					for(int i=0;i<dists.length;i++) {
-						Double loc = dists[i];
-						double l = loc.doubleValue();
-						dists[i] = new Double(Location.distance(l, target, true));
+						dists[i] = Location.distance(locsNotVisited[i], target, true);
 					}
 					Arrays.sort(dists);
 					
-					double mustBeBetterThan = ((Double)dists[Math.min(3,dists.length)]).doubleValue();
+					double mustBeBetterThan = dists[Math.min(3,dists.length)];
 					double maxDistance = Location.distance(mustBeBetterThan, target, true);
 					
 					for(int i=0;i<notVisitedList.size();i++) {
