@@ -877,7 +877,6 @@ public class NodeDispatcher implements Dispatcher {
 		// Maybe fork
 		
 		try {
-			double furthestDist = 0.0;
 			if(locsNotVisited.length > 0) {
 				if(ctx.forkCount < MAX_FORKS) {
 					ctx.forkCount++;
@@ -891,13 +890,6 @@ public class NodeDispatcher implements Dispatcher {
 					double mustBeBetterThan = dists[Math.min(3,dists.length)];
 					double maxDistance = Location.distance(mustBeBetterThan, target, true);
 					
-					for(int i=0;i<notVisitedList.size();i++) {
-						double loc = ((Double)(notVisitedList.get(i))).doubleValue();
-						double dist = Location.distance(loc, target);
-						if(dist > furthestDist) {
-							furthestDist = dist;
-						}
-					}
 					if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, false, null, notVisitedList, maxDistance, true, linearCounter, "backtracking"))
 						return true;
 				}
