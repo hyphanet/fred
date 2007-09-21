@@ -207,6 +207,16 @@ public class OpennetManager {
 	/** When did we last offer our noderef to some other node? */
 	private long timeLastOffered;
 	
+	void forceAddPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
+		synchronized(this) {
+			if(addAtLRU)
+				peersLRU.pushLeast(nodeToAddNow);
+			else
+				peersLRU.push(nodeToAddNow);
+		}
+		dropExcessPeers();
+	}
+	
 	/**
 	 * Trim the peers list and possibly add a new node. Note that if we are not adding a new node,
 	 * we will only return true every MIN_TIME_BETWEEN_OFFERS, to prevent problems caused by many

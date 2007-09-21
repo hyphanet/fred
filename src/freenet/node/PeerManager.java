@@ -191,7 +191,7 @@ public class PeerManager {
                 	Logger.error(this, "Could not parse peer: "+e2+ '\n' +fs.toString(),e2);
                     continue;
 				}
-                addPeer(pn);
+                addPeer(pn, true);
                 gotSome = true;
             }
         } catch (EOFException e) {
@@ -208,6 +208,10 @@ public class PeerManager {
 	}
 
 	public boolean addPeer(PeerNode pn) {
+		return addPeer(pn, false);
+	}
+	
+	boolean addPeer(PeerNode pn, boolean ignoreOpennet) {
 		synchronized (this) {
 			for (int i = 0; i < myPeers.length; i++) {
 				if (myPeers[i].equals(pn)) {
@@ -223,6 +227,15 @@ public class PeerManager {
 		this.addPeerNodeStatus(pn.getPeerNodeStatus(), pn);
 		pn.setPeerNodeStatus(System.currentTimeMillis());
 		updatePMUserAlert();
+		if((!ignoreOpennet) && pn instanceof OpennetPeerNode) {
+			OpennetManager opennet = node.getOpennet();
+			if(opennet != null) {
+				opennet.forceAddPeer(pn, true);
+			} else {
+				
+			}
+		}
+		
 		return true;
 	}
     
