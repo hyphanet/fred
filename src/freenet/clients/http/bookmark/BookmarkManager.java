@@ -238,8 +238,7 @@ public class BookmarkManager {
 			}
 		}
 
-		getCategoryByPath(parentPath(path)).removeBookmark(
-				getBookmarkByPath(path));
+		getCategoryByPath(parentPath(path)).removeBookmark(bookmark);
 		bookmarks.remove(path);
 
 		if (store)
