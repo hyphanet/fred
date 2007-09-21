@@ -264,7 +264,7 @@ public class OpennetManager {
 			} else while(peersLRU.size() > MAX_PEERS - (nodeToAddNow == null ? 0 : 1)) {
 				PeerNode toDrop;
 				// can drop peers which are over the limit
-				toDrop = peerToDrop(noDisconnect && nodeToAddNow != null && peersLRU.size() == MAX_PEERS);
+				toDrop = peerToDrop(noDisconnect && nodeToAddNow != null && peersLRU.size() >= MAX_PEERS);
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
