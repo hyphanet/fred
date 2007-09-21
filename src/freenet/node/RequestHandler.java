@@ -353,6 +353,13 @@ public class RequestHandler implements Runnable, ByteCounter {
 					// Oh well...
 				}
 			}
+		} else {
+			Message msg = DMT.createFNPOpennetCompletedAck(uid);
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Oh well...
+			}
 		}
     }
     
