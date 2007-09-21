@@ -570,8 +570,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         long bootID = Fields.bytesToLong(data);
         
         // Promote if necessary
-        if(oldOpennetPeer)
+        boolean dontWant = false;
+        if(oldOpennetPeer) {
+        	OpennetManager opennet = node.getOpennet();
+        	if(opennet == null) {
+        		Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
+        		return null;
+        	}
+       		if(!opennet.wantPeer(pn, true)) {
+       			Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
+       			dontWant = true;
+        	}
         	node.peers.addPeer(pn);
+        }
         
         // Send the completion before parsing the data, because this is easiest
         // Doesn't really matter - if it fails, we get loads of errors anyway...
@@ -582,7 +593,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         if(pn.completedHandshake(bootID, data, 8, data.length-8, cipher, encKey, replyTo, phase == 2)) {
         	if(sendCompletion)
         		sendSignedDHCompletion(3, ctx.getCipher(), pn, replyTo, ctx);
-        	pn.maybeSendInitialMessages();
+        	if(dontWant)
+        		node.peers.disconnect(pn, true, false);
+        	else
+        		pn.maybeSendInitialMessages();
         } else {
         	Logger.error(this, "Handshake not completed");
         }
