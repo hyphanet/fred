@@ -60,6 +60,21 @@ public class AddressIdentifier {
 	 *         otherwise
 	 */
 	public static AddressType getAddressType(String address) {
+		return AddressIdentifier.getAddressType(address,false);
+	}
+
+	/**
+	 * Tries to detemine the address type of the given address.
+	 * 
+	 * @param address
+	 *            The address to determine the type of
+	 * @param allowIPv6PercentScopeID
+	 *            If true, match %<scope-id> suffixed IPv6 IP addresses
+	 * @return {@link AddressType#OTHER} if <code>address</code> is a
+	 *         hostname, {@link AddressType#IPv4} or {@link AddressType#IPv6}
+	 *         otherwise
+	 */
+	public static AddressType getAddressType(String address, boolean allowIPv6PercentScopeID) {
 		String byteRegex = "([01]?[0-9]?[0-9]?|2[0-4][0-9]|25[0-5])";
 		String ipv4AddressRegex = byteRegex + "\\.(" + byteRegex + "\\.)?(" + byteRegex + "\\.)?" + byteRegex;
 		if (Pattern.matches(ipv4AddressRegex, address)) {
@@ -67,6 +82,9 @@ public class AddressIdentifier {
 		}
 		String wordRegex = "([0-9a-fA-F]{1,4})";
 		String ipv6AddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex;
+		if (allowIPv6PercentScopeID) {
+			ipv6AddressRegex = ipv6AddressRegex + "(?:%[0-9]{1,3})?";
+		}
 		if (Pattern.matches(ipv6AddressRegex, address)) {
 			return AddressType.IPv6;
 		}

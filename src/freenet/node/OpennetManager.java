@@ -21,6 +21,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
  * Central location for all things opennet.
@@ -164,7 +165,11 @@ public class OpennetManager {
 				// Just keep the first one with the correct port number.
 				Peer p;
 				try {
-					p = new Peer(udp[i], false);
+					p = new Peer(udp[i], false, true);
+				} catch (HostnameSyntaxException e) {
+					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing opennet node reference: "+udp[i]);
+					System.err.println("Invalid hostname or IP Address syntax error while parsing opennet node reference: "+udp[i]);
+					continue;
 				} catch (PeerParseException e) {
 					IOException e1 = new IOException();
 					e1.initCause(e);

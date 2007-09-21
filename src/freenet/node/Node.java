@@ -105,6 +105,7 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.ShortCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
  * @author amphibian
@@ -405,7 +406,11 @@ public class Node implements TimeSkewDetectorCallback {
 				// Just keep the first one with the correct port number.
 				Peer p;
 				try {
-					p = new Peer(udp[i], false);
+					p = new Peer(udp[i], false, true);
+				} catch (HostnameSyntaxException e) {
+					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing darknet node reference: "+udp[i]);
+					System.err.println("Invalid hostname or IP Address syntax error while parsing darknet node reference: "+udp[i]);
+					continue;
 				} catch (PeerParseException e) {
 					IOException e1 = new IOException();
 					e1.initCause(e);

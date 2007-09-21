@@ -60,6 +60,7 @@ import freenet.support.WouldBlockException;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
+import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
  * @author amphibian
@@ -368,14 +369,26 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         	String physical[]=fs.getAll("physical.udp");
         	if(physical==null) {
         		// Be tolerant of nonexistent domains.
-        		Peer p = new Peer(fs.get("physical.udp"), true);
-        		if(p != null)
-        			nominalPeer.addElement(p);
+        		try {
+        			Peer p = new Peer(fs.get("physical.udp"), true, true);
+	        		if(p != null)
+    	    			nominalPeer.addElement(p);
+				} catch (HostnameSyntaxException e) {
+					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference: "+fs.get("physical.udp"));
+					System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: "+fs.get("physical.udp"));
+				}
         	} else {
 	    		for(int i=0;i<physical.length;i++) {
-					Peer p = new Peer(physical[i], true);
-				    if(!nominalPeer.contains(p)) 
-				    	nominalPeer.addElement(p);
+	    			Peer p;
+	    			try {
+						p = new Peer(physical[i], true, true);
+					} catch (HostnameSyntaxException e) {
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
+						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
+						continue;
+					}
+					if(!nominalPeer.contains(p)) 
+						nominalPeer.addElement(p);
 	    		}
         	}
         } catch (Exception e1) {
@@ -1742,11 +1755,23 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         try {
         	String physical[]=fs.getAll("physical.udp");
         	if(physical==null) {
-        		Peer p = new Peer(fs.get("physical.udp"), true);
-        		nominalPeer.addElement(p);
+        		try {
+        			Peer p = new Peer(fs.get("physical.udp"), true, true);
+        			nominalPeer.addElement(p);
+				} catch (HostnameSyntaxException e) {
+					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference: "+fs.get("physical.udp"));
+					System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: "+fs.get("physical.udp"));
+				}
         	} else {
 	    		for(int i=0;i<physical.length;i++) {
-					Peer p = new Peer(physical[i], true);
+	    			Peer p;
+	    			try {
+						p = new Peer(physical[i], true, true);
+					} catch (HostnameSyntaxException e) {
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
+						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
+						continue;
+					}
 				    if(!nominalPeer.contains(p)) {
 				    	if(oldNominalPeer.contains(p)) {
 				    		// Do nothing
