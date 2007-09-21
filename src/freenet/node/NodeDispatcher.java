@@ -883,15 +883,15 @@ public class NodeDispatcher implements Dispatcher {
 				if(ctx.forkCount < MAX_FORKS) {
 					ctx.forkCount++;
 					
-					Double[] locs = (Double[]) notVisitedList.toArray(new Double[notVisitedList.size()]);
-					for(int i=0;i<locs.length;i++) {
-						Double loc = locs[i];
+					Double[] dists = (Double[]) notVisitedList.toArray(new Double[notVisitedList.size()]);
+					for(int i=0;i<dists.length;i++) {
+						Double loc = dists[i];
 						double l = loc.doubleValue();
-						locs[i] = new Double(Location.distance(l, target, true));
+						dists[i] = new Double(Location.distance(l, target, true));
 					}
-					Arrays.sort(locs);
+					Arrays.sort(dists);
 					
-					double mustBeBetterThan = ((Double)locs[Math.min(3,locs.length)]).doubleValue();
+					double mustBeBetterThan = ((Double)dists[Math.min(3,dists.length)]).doubleValue();
 					double maxDistance = Location.distance(mustBeBetterThan, target, true);
 					
 					for(int i=0;i<notVisitedList.size();i++) {
