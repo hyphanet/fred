@@ -251,25 +251,28 @@ public class FCPConnectionHandler {
 		ClientPutDir cp = null;
 		FCPMessage failedMessage = null;
 		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
+		// We need to track non-persistent requests anyway, so we may as well check
+		boolean success;
 		synchronized(this) {
 			if(isClosed) return;
-			// We need to track non-persistent requests anyway, so we may as well check
-			boolean success;
 			if(!persistent)
 				success = true;
 			else
 				success = !requestsByIdentifier.containsKey(id);
-			if(success) {
-				try {
-					cp = new ClientPutDir(this, message, buckets);
-				} catch (IdentifierCollisionException e) {
-					success = false;
-				} catch (MalformedURLException e) {
-					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
-				}
-				if(!persistent)
+		}
+		if(success) {
+			try {
+				cp = new ClientPutDir(this, message, buckets);
+			} catch (IdentifierCollisionException e) {
+				success = false;
+			} catch (MalformedURLException e) {
+				failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
+			}
+			if(!persistent) {
+				synchronized(this) {
 					requestsByIdentifier.put(id, cp);
-				
+				}
+				// FIXME register non-persistent requests in the constructors also, we already register persistent ones...
 			}
 			if(!success) {
 				Logger.normal(this, "Identifier collision on "+this);
@@ -278,6 +281,8 @@ public class FCPConnectionHandler {
 		}
 		if(failedMessage != null) {
 			outputHandler.queue(failedMessage);
+			if(cp != null)
+				cp.cancel();
 			return;
 		} else {
 			// Register before starting, because it may complete immediately, and if it does,
