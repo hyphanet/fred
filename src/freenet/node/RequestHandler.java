@@ -262,7 +262,15 @@ public class RequestHandler implements Runnable, ByteCounter {
 	}
 
 	private void finishOpennetChecked() {
-		if(!(node.passOpennetRefsThroughDarknet() || source.isOpennet())) return;
+		if(!(node.passOpennetRefsThroughDarknet() || source.isOpennet())) {
+			Message msg = DMT.createFNPOpennetCompletedAck(uid);
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Oh well...
+			}
+			return;
+		}
 		finishOpennetInner();
 	}
 	
@@ -282,7 +290,15 @@ public class RequestHandler implements Runnable, ByteCounter {
     }
     
 	private void finishOpennetNoRelayChecked() {
-		if(!(node.passOpennetRefsThroughDarknet() || source.isOpennet())) return;
+		if(!(node.passOpennetRefsThroughDarknet() || source.isOpennet())) {
+			Message msg = DMT.createFNPOpennetCompletedAck(uid);
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Oh well...
+			}
+			return;
+		}
 		finishOpennetNoRelayInner();
 	}
 	
