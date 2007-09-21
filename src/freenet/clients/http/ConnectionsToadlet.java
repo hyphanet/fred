@@ -311,13 +311,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			if (numberOfConnError > 0) {
 				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_clock_problem", l10n("connError"), "border-bottom: 1px dotted; cursor: help;" }, l10n("connErrorShort"));
+				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_conn_error", l10n("connError"), "border-bottom: 1px dotted; cursor: help;" }, l10n("connErrorShort"));
 				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfConnError);
 			}
 			if (numberOfDisconnecting > 0) {
 				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_clock_problem", l10n("connError"), "border-bottom: 1px dotted; cursor: help;" }, l10n("disconnectingShort"));
-				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfConnError);
+				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnecting", l10n("disconnecting"), "border-bottom: 1px dotted; cursor: help;" }, l10n("disconnectingShort"));
+				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfDisconnecting);
 			}
 
 			// Peer routing backoff reason box
