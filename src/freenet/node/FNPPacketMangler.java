@@ -134,6 +134,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             }
         }
         PeerNode[] peers = crypto.getPeerNodes();
+        // Existing connection, changed IP address?
         if(length > HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6) {
             for(int i=0;i<peers.length;i++) {
                 pn = peers[i];
@@ -156,6 +157,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             }
         }
         if(node.isStopping()) return;
+        // Disconnected node connecting on a new IP address?
         if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
             for(int i=0;i<peers.length;i++) {
                 pn = peers[i];
