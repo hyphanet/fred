@@ -208,23 +208,23 @@ public class PeerManager {
 	}
 
 	public boolean addPeer(PeerNode pn) {
-    	synchronized(this) {
-        for(int i=0;i<myPeers.length;i++) {
-            if(myPeers[i].equals(pn)) {
-            	return false;
-            }
-        }
-        PeerNode[] newMyPeers = new PeerNode[myPeers.length+1];
-        System.arraycopy(myPeers, 0, newMyPeers, 0, myPeers.length);
-        newMyPeers[myPeers.length] = pn;
-        myPeers = newMyPeers;
-        Logger.normal(this, "Added "+pn);
-    	}
-    	this.addPeerNodeStatus(pn.getPeerNodeStatus(), pn);
-    	pn.setPeerNodeStatus(System.currentTimeMillis());
-        updatePMUserAlert();
-        return true;
-    }
+		synchronized (this) {
+			for (int i = 0; i < myPeers.length; i++) {
+				if (myPeers[i].equals(pn)) {
+					return false;
+				}
+			}
+			PeerNode[] newMyPeers = new PeerNode[myPeers.length + 1];
+			System.arraycopy(myPeers, 0, newMyPeers, 0, myPeers.length);
+			newMyPeers[myPeers.length] = pn;
+			myPeers = newMyPeers;
+			Logger.normal(this, "Added " + pn);
+		}
+		this.addPeerNodeStatus(pn.getPeerNodeStatus(), pn);
+		pn.setPeerNodeStatus(System.currentTimeMillis());
+		updatePMUserAlert();
+		return true;
+	}
     
 	synchronized boolean havePeer(PeerNode pn) {
 		for(int i=0;i<myPeers.length;i++) {
