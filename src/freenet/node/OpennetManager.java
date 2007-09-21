@@ -37,6 +37,11 @@ public class OpennetManager {
 	/** Our peers. PeerNode's are promoted when they successfully fetch a key. Normally we take
 	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
 	private final LRUQueue peersLRU;
+	/** Old peers. Opennet peers which we dropped but would still like to talk to
+	 * if we have no other option. */
+	private final LRUQueue oldPeers;
+	/** Maximum number of old peers */
+	static final int MAX_OLD_PEERS = 50;
 	/** Time at which last dropped a peer */
 	private long timeLastDropped;
 	/** Number of successful CHK requests since last added a node */
@@ -86,6 +91,7 @@ public class OpennetManager {
 			}
 		}
 		peersLRU = new LRUQueue();
+		oldPeers = new LRUQueue();
 		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, this, true);
 		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
 		Arrays.sort(nodes, new Comparator() {
@@ -373,8 +379,18 @@ public class OpennetManager {
 			node.peers.disconnect(pn, true, false);
 	}
 
-	public synchronized void onRemove(OpennetPeerNode pn) {
+	public void onRemove(OpennetPeerNode pn) {
+		synchronized(this) {
 		peersLRU.remove(pn);
+		oldPeers.push(pn);
+		while(oldPeers.size() > MAX_OLD_PEERS)
+			oldPeers.pop();
+		}
+		pn.disconnected();
+	}
+
+	public synchronized PeerNode[] getOldPeers() {
+		return (PeerNode[]) oldPeers.toArray(new PeerNode[oldPeers.size()]);
 	}
 
 }

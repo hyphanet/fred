@@ -130,7 +130,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             }
             if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2 && !node.isStopping()) {
                 // Might be an auth packet
-                if(tryProcessAuth(buf, offset, length, opn, peer)) return;
+                if(tryProcessAuth(buf, offset, length, opn, peer, false)) return;
             }
         }
         PeerNode[] peers = crypto.getPeerNodes();
@@ -160,8 +160,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
             for(int i=0;i<peers.length;i++) {
                 pn = peers[i];
                 if(pn == opn) continue;
-                if(tryProcessAuth(buf, offset, length, pn, peer)) return;
+                if(tryProcessAuth(buf, offset, length, pn, peer, false)) return;
             }
+        }
+        OpennetManager opennet = node.getOpennet();
+        if(opennet != null) {
+        	// Try old opennet connections.
+        	if(opennet.wantPeer(null, false)) {
+        		// We want a peer.
+        		// Try old connections.
+        		PeerNode[] oldPeers = opennet.getOldPeers();
+        		for(int i=0;i<oldPeers.length;i++) {
+        			if(tryProcessAuth(buf, offset, length, oldPeers[i], peer, true)) return;
+        		}
+        	}
         }
         Logger.normal(this,"Unmatchable packet from "+peer);
     }
@@ -175,7 +187,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * @param peer The Peer to send a reply to
      * @return True if we handled a negotiation packet, false otherwise.
      */
-    private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode opn, Peer peer) {
+    private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode opn, Peer peer, boolean oldOpennetPeer) {
         BlockCipher authKey = opn.incomingSetupCipher;
         if(logMINOR) Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(opn.incomingSetupKey)+" for "+peer+" : "+opn+" in tryProcessAuth");
         // Does the packet match IV E( H(data) data ) ?
@@ -219,7 +231,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         
         if(Arrays.equals(realHash, hash)) {
             // Got one
-            processDecryptedAuth(payload, opn, peer);
+            processDecryptedAuth(payload, opn, peer, oldOpennetPeer);
             opn.reportIncomingBytes(length);
             return true;
         } else {
@@ -232,7 +244,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * Process a decrypted, authenticated auth packet.
      * @param payload The packet payload, after it has been decrypted.
      */
-    private void processDecryptedAuth(byte[] payload, PeerNode pn, Peer replyTo) {
+    private void processDecryptedAuth(byte[] payload, PeerNode pn, Peer replyTo, boolean oldOpennetPeer) {
         if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" for "+pn);
         if(pn.isDisabled()) {
         	if(logMINOR) Logger.minor(this, "Won't connect to a disabled peer ("+pn+ ')');
@@ -313,10 +325,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         		// Verify the packet, then complete
         		// Format: IV E_K ( H(data) data )
         		// Where data = [ long: bob's startup number ]
-        		processSignedDHTwoOrThree(2, payload, pn, replyTo, true);
+        		processSignedDHTwoOrThree(2, payload, pn, replyTo, true, oldOpennetPeer);
         	} else if(packetType == 3) {
         		// We are Alice
-        		processSignedDHTwoOrThree(3, payload, pn, replyTo, false);
+        		processSignedDHTwoOrThree(3, payload, pn, replyTo, false, oldOpennetPeer);
         	}
         }else {
             Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
@@ -492,8 +504,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
      * Data
      * 
      * May decrypt in place.
+     * @param oldOpennetPeer If true, the peer we are negotiating with is not in
+     * the primary routing table, it needs to be promoted from the list of old opennet
+     * nodes.
      */
-    private DiffieHellmanContext processSignedDHTwoOrThree(int phase, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion) {
+    private DiffieHellmanContext processSignedDHTwoOrThree(int phase, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion, boolean oldOpennetPeer) {
     	if(logMINOR) Logger.minor(this, "Handling signed stage "+phase+" auth packet");
     	// Get context, cipher, IV
         DiffieHellmanContext ctx = (DiffieHellmanContext) pn.getKeyAgreementSchemeContext();
@@ -551,6 +566,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         
         // Success!
         long bootID = Fields.bytesToLong(data);
+        
+        // Promote if necessary
+        if(oldOpennetPeer)
+        	node.peers.addPeer(pn);
+        
         // Send the completion before parsing the data, because this is easiest
         // Doesn't really matter - if it fails, we get loads of errors anyway...
         // Only downside is that the other side might still think we are connected for a while.
