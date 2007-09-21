@@ -165,9 +165,10 @@ public class USKFetcher implements ClientGetState {
 			if(backgroundPoll) {
 				if(minFailures == origMinFailures && minFailures != maxMinFailures) {
 					// Either just started, or just advanced, either way boost the priority.
-					return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+					return RequestStarter.UPDATE_PRIORITY_CLASS;
+				} else {
+					return RequestStarter.PREFETCH_PRIORITY_CLASS;
 				}
-				return RequestStarter.UPDATE_PRIORITY_CLASS;
 			} else
 				return parent.getPriorityClass();
 		}
