@@ -24,7 +24,7 @@ import freenet.support.api.Bucket;
  * we are talking about. If this is fast enough then people will use the "-" form.
  * 
  * FProxy should cause USKs with negative edition numbers to be redirected to USKs
- * with negative edition numbers.
+ * with positive edition numbers.
  * 
  * If the number specified is up to date, we just do the fetch. If a more recent
  * USK can be found, then we fail with an exception with the new version. The
@@ -256,7 +256,7 @@ public class USKFetcher implements ClientGetState {
 					minFailures = origMinFailures;
 					sleepTime = origSleepTime;
 				} else {
-					// Not exponential; it is more likely that it is close to the known edition than not.
+					// Increase exponentially but relatively slowly
 					long newMinFailures = Math.max(((int)(minFailures * 1.25)), minFailures+1);
 					if(newMinFailures > maxMinFailures)
 						newMinFailures = maxMinFailures;
