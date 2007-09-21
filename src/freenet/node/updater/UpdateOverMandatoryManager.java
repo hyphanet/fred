@@ -223,8 +223,8 @@ public class UpdateOverMandatoryManager {
 	protected void sendUOMRequestMain(final PeerNode source) {
 		synchronized(this) {
 			if(nodesAskedSendMainJar.size() + nodesSendingMainJar.size() >= MAX_NODES_SENDING_MAIN_JAR) {
-				nodesOfferedMainJar.add(source);
-				System.err.println("Offered main jar by "+source.userToString()+" (already fetching from "+nodesSendingMainJar.size()+"), but will use this offer if our current fetches fail).");
+				if(nodesOfferedMainJar.add(source))
+					System.err.println("Offered main jar by "+source.userToString()+" (already fetching from "+nodesSendingMainJar.size()+"), but will use this offer if our current fetches fail).");
 				return;
 			} else {
 				if(nodesSendingMainJar.contains(source)) {
