@@ -948,6 +948,7 @@ public class Node implements TimeSkewDetectorCallback {
 		envConfig.setTxnWriteNoSync(true);
 		envConfig.setLockTimeout(600*1000*1000); // should be long enough even for severely overloaded nodes!
 		// Note that the above is in *MICRO*seconds.
+		envConfig.setConfigParam("je.log.faultReadSize", "6144");
 		
 		File dbDir = new File(storeDir, "database-"+getDarknetPortNumber());
 		dbDir.mkdirs();
