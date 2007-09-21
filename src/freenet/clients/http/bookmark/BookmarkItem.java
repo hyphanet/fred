@@ -155,6 +155,7 @@ public class BookmarkItem extends Bookmark {
 	}
 	
 	public boolean equals(Object o) {
+		if(o == this) return true;
 		if(o instanceof BookmarkItem) {
 			BookmarkItem b = (BookmarkItem) o;
 			if(!super.equals(o)) return false;
