@@ -897,6 +897,7 @@ public class NodeDispatcher implements Dispatcher {
 					});
 					
 					double mustBeBetterThan = ((Double)locs[Math.min(3,locs.length)]).doubleValue();
+					double maxDistance = Location.distance(mustBeBetterThan, target, true);
 					
 					for(int i=0;i<notVisitedList.size();i++) {
 						double loc = ((Double)(notVisitedList.get(i))).doubleValue();
@@ -905,7 +906,7 @@ public class NodeDispatcher implements Dispatcher {
 							furthestDist = dist;
 						}
 					}
-					if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, false, null, notVisitedList, mustBeBetterThan, true, linearCounter, "backtracking"))
+					if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, false, null, notVisitedList, maxDistance, true, linearCounter, "backtracking"))
 						return true;
 				}
 			}
