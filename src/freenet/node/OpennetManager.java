@@ -380,11 +380,11 @@ public class OpennetManager {
 	}
 
 	public void onRemove(OpennetPeerNode pn) {
-		synchronized(this) {
-		peersLRU.remove(pn);
-		oldPeers.push(pn);
-		while(oldPeers.size() > MAX_OLD_PEERS)
-			oldPeers.pop();
+		synchronized (this) {
+			peersLRU.remove(pn);
+			oldPeers.push(pn);
+			while (oldPeers.size() > MAX_OLD_PEERS)
+				oldPeers.pop();
 		}
 		pn.disconnected();
 	}
