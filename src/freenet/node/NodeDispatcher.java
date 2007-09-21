@@ -551,7 +551,8 @@ public class NodeDispatcher implements Dispatcher {
 	 * request which we should handle anyway.
 	 * @param cb
 	 * @param locsNotVisited 
-	 * @param maxDistance 
+	 * @param maxDistance Don't route to any nodes further away from the target than this distance.
+	 * Note that it is a distance, NOT A LOCATION.
 	 * @param dontReject If true, don't reject the request, simply return false and the caller will handle it.
 	 * @return True unless we rejected the request (due to load, route not found etc), or would have if it weren't for dontReject.
 	 */

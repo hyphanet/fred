@@ -650,6 +650,7 @@ public class PeerManager {
      * than we are, and is not included in the provided set.
 	 * @param addUnpickedLocsTo Add all locations we didn't choose which we could have routed to to 
 	 * this array. Remove the location of the peer we pick from it.
+	 * @param maxDistance If a node is further away from the target than this distance, ignore it.
      */
     private PeerNode _closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double target, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
         PeerNode[] peers;  
