@@ -949,6 +949,8 @@ public class Node implements TimeSkewDetectorCallback {
 		envConfig.setLockTimeout(600*1000*1000); // should be long enough even for severely overloaded nodes!
 		// Note that the above is in *MICRO*seconds.
 		envConfig.setConfigParam("je.log.faultReadSize", "6144");
+		envConfig.setConfigParam("je.evictor.lruOnly", "false");  //Is not a mutable config option and must be set before opening of environment.
+		envConfig.setConfigParam("je.evictor.nodesPerScan", "100");  //Is not a mutable config option and must be set before opening of environment.
 		
 		File dbDir = new File(storeDir, "database-"+getDarknetPortNumber());
 		dbDir.mkdirs();
@@ -1111,9 +1113,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		envMutableConfig.setCacheSize(databaseMaxMemory);
 		// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
-		// FIXME is this the correct place to set these parameters?
-		envMutableConfig.setConfigParam("je.evictor.lruOnly", "false");
-		envMutableConfig.setConfigParam("je.evictor.nodesPerScan", "100");
 		
 		try {
 			storeEnvironment.setMutableConfig(envMutableConfig);
