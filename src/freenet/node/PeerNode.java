@@ -1388,7 +1388,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     /**
      * Called when we have completed a handshake, and have a new session key.
      * Creates a new tracker and demotes the old one. Deletes the old one if
-     * the bootID isn't recognized.
+     * the bootID isn't recognized, since if the node has restarted we cannot
+     * recover old messages. In more detail:
+     * <ul>
+     * <li>Process the new noderef (check if it's valid, pick up any new information etc).</li>
+     * <li>Handle version conflicts (if the node is too old, or we are too old, we mark it as 
+     * non-routable, but some messages will still be exchanged e.g. Update Over Mandatory stuff).</li>
+     * <li>Deal with key trackers (if we just got message 4, the new key tracker becomes current; 
+     * if we just got message 3, it's possible that our message 4 will be lost in transit, so we 
+     * make the new tracker unverified. It will be promoted to current if we get a packet on it..
+     * if the node has restarted, we dump the old key trackers, otherwise current becomes previous).</li>
+     * <li>Complete the connection process: update the node's status, send initial messages, update
+     * the last-received-packet timestamp, etc.</li>
      * @param thisBootID The boot ID of the peer we have just connected to.
      * This is simply a random number regenerated on every startup of the node.
      * We use it to determine whether the node has restarted since we last saw 
