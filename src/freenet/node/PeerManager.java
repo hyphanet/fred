@@ -828,8 +828,12 @@ public class PeerManager {
     	synchronized(writePeersSync) {
     		if(darkFilename != null)
     			writePeersInner(darkFilename, getDarknetPeers());
-    		if(openFilename != null)
-    			writePeersInner(openFilename, getOpennetPeers());
+    		OpennetManager om = node.getOpennet();
+    		if(om != null) {
+        		if(openFilename != null)
+        			writePeersInner(openFilename, getOpennetPeers());
+    			writePeersInner(om.getOldPeersFilename(), om.getOldPeers());
+    		}
     	}
     }
     
