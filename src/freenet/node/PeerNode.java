@@ -1389,11 +1389,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      * Called when we have completed a handshake, and have a new session key.
      * Creates a new tracker and demotes the old one. Deletes the old one if
      * the bootID isn't recognized.
-     * @param thisBootID The boot ID of the peer we have just connected to
+     * @param thisBootID The boot ID of the peer we have just connected to.
+     * This is simply a random number regenerated on every startup of the node.
+     * We use it to determine whether the node has restarted since we last saw 
+     * it.
      * @param data Byte array from which to read the new noderef.
      * @param offset Offset to start reading at.
      * @param length Number of bytes to read.
-     * @param encKey The encryption key which we negotiated.
+     * @param encKey The new session key.
      * @param replyTo The IP the handshake came in on.
      * @return True unless we rejected the handshake, or it failed to parse.
      */
