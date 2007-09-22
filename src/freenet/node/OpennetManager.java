@@ -422,4 +422,14 @@ public class OpennetManager {
 		return new File(node.nodeDir, "openpeers-old-"+crypto.portNumber).toString();
 	}
 
+	synchronized int countOldOpennetPeers() {
+		return oldPeers.size();
+	}
+
+	PeerNode randomOldOpennetNode() {
+		PeerNode[] nodes = getOldPeers();
+		if(nodes.length == 0) return null;
+		return nodes[node.random.nextInt(nodes.length)];
+	}
+
 }

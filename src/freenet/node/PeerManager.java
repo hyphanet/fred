@@ -1356,4 +1356,10 @@ public class PeerManager {
 		
 		return null;
 	}
+
+	public int quickCountConnectedPeers() {
+		PeerNode[] conns = connectedPeers;
+		if(conns == null) return 0;
+		return connectedPeers.length;
+	}
 }
