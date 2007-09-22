@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.Hashtable;
 import java.util.Map;
 
 import freenet.clients.http.DarknetConnectionsToadlet;
