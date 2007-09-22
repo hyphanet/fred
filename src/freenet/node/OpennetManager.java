@@ -302,6 +302,8 @@ public class OpennetManager {
 							peersLRU.push(nodeToAddNow);
 						if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");
 						oldPeers.remove(nodeToAddNow);
+						// Always take OpennetManager lock before PeerManager
+						node.peers.addPeer(nodeToAddNow, true);
 					}
 					if(!dropList.isEmpty())
 						timeLastDropped = now;
