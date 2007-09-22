@@ -405,11 +405,11 @@ public class OpennetManager {
 		pn.disconnected();
 	}
 
-	public synchronized PeerNode[] getOldPeers() {
+	synchronized PeerNode[] getOldPeers() {
 		return (PeerNode[]) oldPeers.toArrayOrdered(new PeerNode[oldPeers.size()]);
 	}
 	
-	public synchronized PeerNode[] getUnsortedOldPeers() {
+	synchronized PeerNode[] getUnsortedOldPeers() {
 		return (PeerNode[]) oldPeers.toArray(new PeerNode[oldPeers.size()]);
 	}
 	
@@ -422,7 +422,7 @@ public class OpennetManager {
 		oldPeers.push(pn);
 	}
 
-	public String getOldPeersFilename() {
+	String getOldPeersFilename() {
 		return new File(node.nodeDir, "openpeers-old-"+crypto.portNumber).toString();
 	}
 
