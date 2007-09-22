@@ -114,7 +114,17 @@ public class PeerManager {
         this.node = node;
     }
 
-    void tryReadPeers(String filename, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet) {
+    /**
+     * Attempt to read a file full of noderefs. Try the file as named first, then the .bak if it is empty or
+     * otherwise doesn't work.
+     * @param filename The filename to read from. If this doesn't work, we try the .bak file.
+     * @param crypto The cryptographic identity which these nodes are connected to.
+     * @param opennet The opennet manager for the nodes. Only needed (for constructing the nodes) if isOpennet.
+     * @param isOpennet Whether the file contains opennet peers.
+     * @param oldOpennetPeers If true, don't add the nodes to the routing table, pass them to the opennet
+     * manager as "old peers" i.e. inactive nodes which may try to reconnect.
+     */
+    void tryReadPeers(String filename, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet, boolean oldOpennetPeers) {
     	synchronized(writePeersSync) {
     		if(isOpennet) {
     			openFilename = filename;
@@ -127,7 +137,7 @@ public class PeerManager {
         File backupFile = new File(filename+".bak");
         // Try to read the node list from disk
      	if(peersFile.exists()) {
-      		if(readPeers(peersFile, mangler, crypto, opennet, isOpennet)) {
+      		if(readPeers(peersFile, mangler, crypto, opennet, isOpennet, oldOpennetPeers)) {
       		    String msg;
       		    if(isOpennet) {
       			    msg = "Read "+getOpennetPeers().length+" peers from "+peersFile;
@@ -141,7 +151,7 @@ public class PeerManager {
        	}
      	// Try the backup
      	if(backupFile.exists()) {
-        	if(readPeers(backupFile, mangler, crypto, opennet, isOpennet)) {
+        	if(readPeers(backupFile, mangler, crypto, opennet, isOpennet, oldOpennetPeers)) {
       		    String msg;
       		    if(isOpennet) {
       			    msg = "Read "+getOpennetPeers().length+" peers from "+backupFile;
@@ -157,7 +167,7 @@ public class PeerManager {
      	}     		
 	}
 
-	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet) {
+	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet, boolean oldOpennetPeers) {
     	boolean gotSome = false;
     	FileInputStream fis;
 		try {
@@ -191,7 +201,10 @@ public class PeerManager {
                 	Logger.error(this, "Could not parse peer: "+e2+ '\n' +fs.toString(),e2);
                     continue;
 				}
-                addPeer(pn, true);
+                if(oldOpennetPeers)
+                	opennet.addOldOpennetNode(pn);
+                else
+                	addPeer(pn, true);
                 gotSome = true;
             }
         } catch (EOFException e) {

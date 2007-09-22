@@ -93,7 +93,7 @@ public class OpennetManager {
 		}
 		peersLRU = new LRUQueue();
 		oldPeers = new LRUQueue();
-		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, this, true);
+		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
 		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
 		Arrays.sort(nodes, new Comparator() {
 			public int compare(Object arg0, Object arg1) {
@@ -119,6 +119,8 @@ public class OpennetManager {
 			peersLRU.push(nodes[i]);
 		dropExcessPeers();
 		writeFile(nodeFile, backupNodeFile);
+		// Read old peers
+		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
 	}
 
 	private void writeFile(File orig, File backup) {
@@ -405,6 +407,15 @@ public class OpennetManager {
 
 	public synchronized PeerNode[] getOldPeers() {
 		return (PeerNode[]) oldPeers.toArray(new PeerNode[oldPeers.size()]);
+	}
+
+	/**
+	 * Add an old opennet node - a node which might try to reconnect, and which we should accept
+	 * if we are desperate.
+	 * @param pn The node to add to the old opennet nodes LRU.
+	 */
+	synchronized void addOldOpennetNode(PeerNode pn) {
+		oldPeers.push(pn);
 	}
 
 }
