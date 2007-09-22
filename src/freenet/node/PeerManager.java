@@ -211,6 +211,14 @@ public class PeerManager {
 		return addPeer(pn, false);
 	}
 	
+	/**
+	 * Add a peer.
+	 * @param pn The node to add to the routing table.
+	 * @param ignoreOpennet If true, don't check for opennet peers. If false, check for opennet peers and if so,
+	 * if opennet is enabled auto-add them to the opennet LRU, otherwise fail.
+	 * @return True if the node was successfully added. False if it was already present, or if we tried to add
+	 * an opennet peer when opennet was disabled.
+	 */
 	boolean addPeer(PeerNode pn, boolean ignoreOpennet) {
 		synchronized (this) {
 			for (int i = 0; i < myPeers.length; i++) {
@@ -232,7 +240,9 @@ public class PeerManager {
 			if(opennet != null) {
 				opennet.forceAddPeer(pn, true);
 			} else {
-				
+				Logger.error(this, "Adding opennet peer when no opennet enabled!!!: "+pn+" - removing...");
+				removePeer(pn);
+				return false;
 			}
 		}
 		
