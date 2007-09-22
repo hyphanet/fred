@@ -224,6 +224,7 @@ public class OpennetManager {
 				peersLRU.pushLeast(nodeToAddNow);
 			else
 				peersLRU.push(nodeToAddNow);
+			oldPeers.remove(nodeToAddNow);
 		}
 		dropExcessPeers();
 	}
@@ -251,6 +252,7 @@ public class OpennetManager {
 						peersLRU.push(nodeToAddNow);
 					// Always take OpennetManager lock before PeerManager
 					node.peers.addPeer(nodeToAddNow);
+					oldPeers.remove(nodeToAddNow);
 				} else {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
@@ -298,7 +300,8 @@ public class OpennetManager {
 							peersLRU.pushLeast(nodeToAddNow);
 						else
 							peersLRU.push(nodeToAddNow);
-						if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");					
+						if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");
+						oldPeers.remove(nodeToAddNow);
 					}
 					if(!dropList.isEmpty())
 						timeLastDropped = now;
