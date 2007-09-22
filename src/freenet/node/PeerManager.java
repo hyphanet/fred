@@ -1012,6 +1012,7 @@ public class PeerManager {
 		int numberOfBursting = 0;
 		int numberOfClockProblem = 0;
 		int numberOfConnError = 0;
+		int numberOfDisconnecting = 0;
 		
 		PeerNodeStatus[] pns = getPeerNodeStatuses();
 		
@@ -1053,12 +1054,15 @@ public class PeerManager {
 			case PEER_NODE_STATUS_CONN_ERROR:
 				numberOfConnError++;
 				break;
+			case PEER_NODE_STATUS_DISCONNECTING:
+				numberOfDisconnecting++;
+				break;
 			default:
 				Logger.error(this, "Unknown peer status value : "+pns[i].getStatusValue());
 				break;
 			}
 		}
-		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Bursting: "+numberOfBursting+"  Listening: "+numberOfListening+"  Listen Only: "+numberOfListenOnly+"  Clock Problem: "+numberOfClockProblem+"  Connection Problem: "+numberOfConnError);
+		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Bursting: "+numberOfBursting+"  Listening: "+numberOfListening+"  Listen Only: "+numberOfListenOnly+"  Clock Problem: "+numberOfClockProblem+"  Connection Problem: "+numberOfConnError+"  Disconnecting: "+numberOfDisconnecting);
 		nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 		}
 	}
