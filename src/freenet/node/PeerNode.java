@@ -1390,11 +1390,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      * Creates a new tracker and demotes the old one. Deletes the old one if
      * the bootID isn't recognized.
      * @param thisBootID The boot ID of the peer we have just connected to
-     * @param data Byte array from which to read the new noderef
-     * @param offset Offset to start reading at
-     * @param length Number of bytes to read
-     * @param encKey
-     * @param replyTo
+     * @param data Byte array from which to read the new noderef.
+     * @param offset Offset to start reading at.
+     * @param length Number of bytes to read.
+     * @param encKey The encryption key which we negotiated.
+     * @param replyTo The IP to which we should send traffic. Usually this is 
+     * the IP the handshake came in on, which allows us to pick up an IP change
+     * in the common case. We have to mess with it in some rare nasty PAT cases 
+     * (see DarknetPeerNode.getPeer()). 
      * @return True unless we rejected the handshake, or it failed to parse.
      */
     public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
