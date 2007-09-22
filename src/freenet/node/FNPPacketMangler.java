@@ -581,7 +581,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
        			Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
        			dontWant = true;
         	}
-        	node.peers.addPeer(pn);
+       		// wantPeer will call node.peers.addPeer(), we don't have to.
         }
         
         // Send the completion before parsing the data, because this is easiest
