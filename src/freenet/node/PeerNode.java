@@ -368,15 +368,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         try {
         	String physical[]=fs.getAll("physical.udp");
         	if(physical==null) {
-        		// Be tolerant of nonexistent domains.
-        		try {
-        			Peer p = new Peer(fs.get("physical.udp"), true, true);
-	        		if(p != null)
-    	    			nominalPeer.addElement(p);
-				} catch (HostnameSyntaxException e) {
-					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference: "+fs.get("physical.udp"));
-					System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: "+fs.get("physical.udp"));
-				}
+        		// Leave it empty
         	} else {
 	    		for(int i=0;i<physical.length;i++) {
 	    			Peer p;
