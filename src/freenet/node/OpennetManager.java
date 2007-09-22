@@ -408,7 +408,11 @@ public class OpennetManager {
 	public synchronized PeerNode[] getOldPeers() {
 		return (PeerNode[]) oldPeers.toArrayOrdered(new PeerNode[oldPeers.size()]);
 	}
-
+	
+	public synchronized PeerNode[] getUnsortedOldPeers() {
+		return (PeerNode[]) oldPeers.toArray(new PeerNode[oldPeers.size()]);
+	}
+	
 	/**
 	 * Add an old opennet node - a node which might try to reconnect, and which we should accept
 	 * if we are desperate.
@@ -427,7 +431,7 @@ public class OpennetManager {
 	}
 
 	PeerNode randomOldOpennetNode() {
-		PeerNode[] nodes = getOldPeers();
+		PeerNode[] nodes = getUnsortedOldPeers();
 		if(nodes.length == 0) return null;
 		return nodes[node.random.nextInt(nodes.length)];
 	}
