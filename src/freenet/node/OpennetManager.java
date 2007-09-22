@@ -250,16 +250,19 @@ public class OpennetManager {
 						peersLRU.pushLeast(nodeToAddNow);
 					else
 						peersLRU.push(nodeToAddNow);
-					// Always take OpennetManager lock before PeerManager
-					node.peers.addPeer(nodeToAddNow, true);
 					oldPeers.remove(nodeToAddNow);
 				} else {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
 				timeLastOffered = System.currentTimeMillis();
-				return true;
+				ret = true;
 			}
 			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS;
+		}
+		if(ret) {
+			if(nodeToAddNow != null)
+				node.peers.addPeer(nodeToAddNow, true); // Add to peers outside the OM lock
+			return true;
 		}
 		Vector dropList = new Vector();
 		synchronized(this) {
@@ -288,6 +291,7 @@ public class OpennetManager {
 			if(ret) {
 				long now = System.currentTimeMillis();
 				if(nodeToAddNow != null) {
+					// Here we can't avoid nested locks. So always take the OpennetManager lock first.
 					if(!node.peers.addPeer(nodeToAddNow)) {
 						// Can't add it, already present (some sort of race condition)
 						PeerNode readd = (PeerNode) dropList.remove(dropList.size()-1);
