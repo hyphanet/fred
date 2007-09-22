@@ -11,17 +11,13 @@ import java.util.Arrays;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
-import freenet.crypt.DSAGroup;
-import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.EntropySource;
-import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
-import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.crypto_Random.eKey;
 import freenet.io.comm.AsyncMessageCallback;
@@ -43,10 +39,10 @@ import freenet.support.WouldBlockException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author amphibian
@@ -75,6 +71,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	
 	private final HashMap authenticatorCache;
+        private final List buffer;
 	final eKey encryptionKey;
 		
 	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
@@ -120,6 +117,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		fnpTimingSource = new EntropySource();
 		myPacketDataSource = new EntropySource();
 		authenticatorCache = new HashMap();
+                buffer = new ArrayList();
 		encryptionKey = new eKey();
 			
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
@@ -804,7 +802,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
 		byte[] ourExponential = dhContext.myExponential.toByteArray();
 		byte[] unVerifiedData=new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
-		int offset = 0;
+		int offset = 0;http://www.google.co.in/search?q=inline+gpg&ie=utf-8&oe=utf-8&aq=t&rls=com.ubuntu:en-US:official&client=firefox-a
 		// Ni
                 System.arraycopy(nonceInitiator, 0, unVerifiedData, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
@@ -845,6 +843,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] iv=new byte[pk.lengthIV()];
                 node.random.nextBytes(iv);
 		byte[] idI = new byte[0];
+                // Buffer of Ni,Nr,g^i,g^r,IDi
+                byte[] buf =  new byte[unVerifiedData.length+idI.length];
+                System.arraycopy(unVerifiedData,0,buf,0,unVerifiedData.length);
+                System.arraycopy(idI,0,buf,unVerifiedData.length,idI.length);
+                // Store buf in a List for use in JFK(4)
+                synchronized(buffer){
+                    buffer.add(buf);
+                }
                 int encryptedDataLength = iv.length + idI.length + r.length + s.length + 2;
 		byte[] encryptedData = new byte[encryptedDataLength];
 		System.arraycopy(iv, 0, encryptedData, 0, iv.length);
@@ -894,8 +900,30 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 inputOffset += ivLength;
                 // Now verify signature
                 // FIXME: How do we verify the signature?
-                
-                // FIXME: cache JFK(4)?
+                byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
+		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
+		System.arraycopy(payload, inputOffset, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
+		if(logMINOR)
+                    Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
+		// Since we need the params only for signature verification, we can immediately remove them from the List
+                // Thus, at any point of time, the list will only contain only one entry
+                byte[] locallyExpectedExponentials = new byte[Node.SIGNATURE_PARAMETER_LENGTH*2];
+                synchronized(buffer){
+                    try{
+                        locallyExpectedExponentials = SHA256.digest(getBytes(buffer.get(0)));
+                    }catch(IOException e){
+                        Logger.error(this,"Error getting signData in bytes");
+                    }
+                }
+                buffer.remove(0);
+		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
+			Logger.error(this, "The signature verification has failed!!");
+			return;
+		}          
                 
                 // FIXME: JFK handshake completion?
         }
@@ -2227,6 +2255,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		return SHA256.digest(toSign);
 	}
+       
 	/*
 	 * Actually sign the DH parameters for message2
 	 */
