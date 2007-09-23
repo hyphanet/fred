@@ -71,8 +71,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	
 	private final HashMap authenticatorCache;
-        private final List buffer;
-	final eKey encryptionKey;
+       	final eKey encryptionKey;
 		
 	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
@@ -117,9 +116,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		fnpTimingSource = new EntropySource();
 		myPacketDataSource = new EntropySource();
 		authenticatorCache = new HashMap();
-                buffer = new ArrayList();
-		encryptionKey = new eKey();
-			
+               	encryptionKey = new eKey();
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -843,14 +840,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] iv=new byte[pk.lengthIV()];
                 node.random.nextBytes(iv);
 		byte[] idI = new byte[0];
-                // Buffer of Ni,Nr,g^i,g^r,IDi
-                byte[] buf =  new byte[unVerifiedData.length+idI.length];
-                System.arraycopy(unVerifiedData,0,buf,0,unVerifiedData.length);
-                System.arraycopy(idI,0,buf,unVerifiedData.length,idI.length);
-                // Store buf in a List for use in JFK(4)
-                synchronized(buffer){
-                    buffer.add(buf);
-                }
+                
                 int encryptedDataLength = iv.length + idI.length + r.length + s.length + 2;
 		byte[] encryptedData = new byte[encryptedDataLength];
 		System.arraycopy(iv, 0, encryptedData, 0, iv.length);
@@ -909,23 +899,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
 		if(logMINOR)
                     Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
-		// Since we need the params only for signature verification, we can immediately remove them from the List
-                // Thus, at any point of time, the list will only contain only one entry
+		// FIXME: How do we save state?
                 byte[] locallyExpectedExponentials = new byte[Node.SIGNATURE_PARAMETER_LENGTH*2];
-                synchronized(buffer){
-                    try{
-                        locallyExpectedExponentials = SHA256.digest(getBytes(buffer.get(0)));
-                    }catch(IOException e){
-                        Logger.error(this,"Error getting signData in bytes");
-                    }
-                }
-                buffer.remove(0);
+                
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}          
-                
-                // FIXME: JFK handshake completion?
+                // FIXME: When do we send the Handshake?
+                // FIXME: What about noderef?
         }
 	/*
          * FOrmat:
@@ -961,7 +943,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(s, 0, message4, count, s.length);
 		count += s.length;
 		pk.blockEncipher(message4, 0, message4Length);
-                // FIXME: How to get completed handshake?
+                sendAuthPacket(1,2,3,message4,pn,replyTo);
 	}
 
 	/**
@@ -984,7 +966,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] data = new byte[myRef.length + 8];
 		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
 		System.arraycopy(myRef, 0, data, 8, myRef.length);
-
 		byte[] myExp = ctx.getOurExponential().toByteArray();
 		byte[] hisExp = ctx.getHisExponential().toByteArray();
 
