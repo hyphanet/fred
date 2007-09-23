@@ -441,8 +441,7 @@ public class KeyTracker {
      */
     public synchronized void receivedPacket(int seqNumber) {
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
-    	if(logMINOR) Logger.minor(this, "Received packet "+seqNumber);
-		pn.receivedPacket(false);
+    	if(logMINOR) Logger.minor(this, "Received packet "+seqNumber+" from "+pn.shortToString());
         if(seqNumber == -1) return;
         // FIXME delete this log statement
         if(logMINOR) Logger.minor(this, "Still received packet: "+seqNumber);

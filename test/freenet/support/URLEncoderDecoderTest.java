@@ -78,7 +78,7 @@ public class URLEncoderDecoderTest extends TestCase {
 		String[] encoded = new String[toEncode.length];
 		//encoding
 		for (int i = 0; i < encoded.length; i++)
-			encoded[i] = URLEncoder.encode(toEncode[i]);
+			encoded[i] = URLEncoder.encode(toEncode[i],false);
 		//decoding
 		for (int i = 0; i < encoded.length; i++)
 			retValue &= (URLDecoder.decode(encoded[i],false)).equals(toEncode[i]);

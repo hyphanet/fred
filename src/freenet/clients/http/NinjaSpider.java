@@ -53,6 +53,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.NullBucketFactory;
 
 /**
  * FIXME move to a proper plugin.
@@ -192,7 +193,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		mimeOfURIs.put(uri.toString(), mimeType);
 
 		try {
-			ContentFilter.filter(data, ctx.bucketFactory, mimeType, new URI("http://127.0.0.1:8888/" + uri.toString()), this);
+			ContentFilter.filter(data, new NullBucketFactory(), mimeType, new URI("http://127.0.0.1:8888/" + uri.toString()), this);
 		} catch (UnsafeContentTypeException e) {
 			return; // Ignore
 		} catch (IOException e) {

@@ -56,7 +56,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 		for(int i = 0; i < items.size(); i++) {
 
-			String itemPath = URLEncoder.encode(path + items.get(i).getName());
+			String itemPath = URLEncoder.encode(path + items.get(i).getName(), false);
 			HTMLNode li = new HTMLNode("li", "class", "item" , items.get(i).getName());
 
 			HTMLNode actions = new HTMLNode("span", "class", "actions");
@@ -80,7 +80,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		BookmarkCategories cats = cat.getSubCategories();
 		for(int i = 0; i < cats.size(); i++) {
 
-			String catPath = URLEncoder.encode(path + cats.get(i).getName() + "/");
+			String catPath = URLEncoder.encode(path + cats.get(i).getName() + "/", false);
 
 			HTMLNode subCat = list.addChild("li", "class", "cat", cats.get(i).getName());
 

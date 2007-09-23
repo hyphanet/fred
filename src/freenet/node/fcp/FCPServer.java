@@ -151,6 +151,7 @@ public class FCPServer implements Runnable {
 	}
 	
 	public void run() {
+	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {
 				realRun();
@@ -383,8 +384,8 @@ public class FCPServer implements Runnable {
 		
 		AssumeDDADownloadIsAllowedCallback cb4;
 		AssumeDDAUploadIsAllowedCallback cb5;
-		fcpConfig.register("assumeDownloadDDAIsAllowed", true, sortOrder++, true, false, "FcpServer.assumeDownloadDDAIsAllowed", "FcpServer.assumeDownloadDDAIsAllowedLong", cb4 = new AssumeDDADownloadIsAllowedCallback());
-		fcpConfig.register("assumeUploadDDAIsAllowed", true, sortOrder++, true, false, "FcpServer.assumeUploadDDAIsAllowed", "FcpServer.assumeUploadDDAIsAllowedLong", cb5 = new AssumeDDAUploadIsAllowedCallback());
+		fcpConfig.register("assumeDownloadDDAIsAllowed", false, sortOrder++, true, false, "FcpServer.assumeDownloadDDAIsAllowed", "FcpServer.assumeDownloadDDAIsAllowedLong", cb4 = new AssumeDDADownloadIsAllowedCallback());
+		fcpConfig.register("assumeUploadDDAIsAllowed", false, sortOrder++, true, false, "FcpServer.assumeUploadDDAIsAllowed", "FcpServer.assumeUploadDDAIsAllowedLong", cb5 = new AssumeDDAUploadIsAllowedCallback());
 		
 		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"));
 		
@@ -525,6 +526,7 @@ public class FCPServer implements Runnable {
 		}
 		
 		public void run() {
+		    freenet.support.Logger.OSThread.logPID(this);
 			while(true) {
 				long startTime = System.currentTimeMillis();
 				try {
@@ -665,7 +667,7 @@ public class FCPServer implements Runnable {
 				throw new IOException(e.toString());
 			}
 			for(int i=0;i<count;i++) {
-				WrapperManager.signalStarting(5*60*1000);  // 5 minutes per request
+				WrapperManager.signalStarting(20*60*1000);  // 20 minutes per request; must be >ds lock timeout (10 minutes)
 				System.out.println("Loading persistent request "+(i+1)+" of "+count+"..."); // humans count from 1..
 				ClientRequest.readAndRegister(br, this);
 			}

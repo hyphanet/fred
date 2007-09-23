@@ -48,22 +48,19 @@ public class InsertableClientSSK extends ClientSSK {
 
 		byte[] extra = uri.getExtra();
 		if(uri.getKeyType().equals("SSK")) {
-			// FIXME: Remove once all SSKs migrated.
-			if(extra == null) {
-				keyType = Key.ALGO_INSECURE_AES_PCFB_256_SHA256;
-			} else {
-				// Formatted exactly as ,extra on fetching
-				if(extra.length < 5)
-					throw new MalformedURLException("SSK private key ,extra too short");
-				if(extra[1] != 1) {
-					throw new MalformedURLException("SSK not a private key");
-				}
-				keyType = extra[2];
-				if(!(keyType == Key.ALGO_AES_PCFB_256_SHA256 ||
-						keyType == Key.ALGO_INSECURE_AES_PCFB_256_SHA256))
-					throw new MalformedURLException("Unrecognized crypto type in SSK private key");
+			if(extra == null)
+				throw new MalformedURLException("Inserting pre-1010 keys not supported");
+			// Formatted exactly as ,extra on fetching
+			if(extra.length < 5)
+				throw new MalformedURLException("SSK private key ,extra too short");
+			if(extra[1] != 1) {
+				throw new MalformedURLException("SSK not a private key");
 			}
-		} else {
+			keyType = extra[2];
+			if(keyType != Key.ALGO_AES_PCFB_256_SHA256)
+				throw new MalformedURLException("Unrecognized crypto type in SSK private key");
+		}
+		else {
 			throw new MalformedURLException("Not a valid SSK insert URI type: "+uri.getKeyType());
 		}
 		
@@ -113,7 +110,7 @@ public class InsertableClientSSK extends ClientSSK {
 
         Rijndael aes;
         try {
-			aes = new Rijndael(256, 256, cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256);
+			aes = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new Error("256/256 Rijndael not supported!");
 		}
@@ -232,11 +229,6 @@ public class InsertableClientSSK extends ClientSSK {
 
 	public DSAGroup getCryptoGroup() {
 		return Global.DSAgroupBigA;
-	}
-
-	/** If true, this SSK is using the old, back compatible, insecure crypto algorithm. FIXME remove with support for old crypto. */
-	public boolean isInsecure() {
-		return cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256;
 	}
 	
 }

@@ -241,8 +241,6 @@ public class NodeClientCore implements Persistable {
 					}
 			
 		});
-		if(node.lastVersion <= 1024)
-			nodeConfig.fixOldDefault("downloadAllowedDirs", "downloads");
 		setDownloadAllowedDirs(nodeConfig.getStringArr("downloadAllowedDirs"));
 		
 		nodeConfig.register("uploadAllowedDirs", new String[] {"all"}, sortOrder++, true, true, "NodeClientCore.uploadAllowedDirs", 
@@ -278,22 +276,22 @@ public class NodeClientCore implements Persistable {
 		
 		// FIXME remove this code, the new behaviour should be handled by all clients
 		
-		nodeConfig.register("ignoreTooManyPathComponents", false, sortOrder++, true, false, "NodeClientCore.ignoreTooManyPathComponents", 
-				"NodeClientCore.ignoreTooManyPathComponentsLong", new BooleanCallback() {
+//		nodeConfig.register("ignoreTooManyPathComponents", false, sortOrder++, true, false, "NodeClientCore.ignoreTooManyPathComponents", 
+//				"NodeClientCore.ignoreTooManyPathComponentsLong", new BooleanCallback() {
 
-					public boolean get() {
-						return ignoreTooManyPathComponents;
-					}
+//					public boolean get() {
+//						return ignoreTooManyPathComponents;
+//					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
-						synchronized(NodeClientCore.this) {
-							ignoreTooManyPathComponents = val;
-						}
-					}
-			
-		});
+//					public void set(boolean val) throws InvalidConfigValueException {
+//						synchronized(NodeClientCore.this) {
+//							ignoreTooManyPathComponents = val;
+//						}
+//					}
+//			
+//		});
 		
-		ignoreTooManyPathComponents = nodeConfig.getBoolean("ignoreTooManyPathComponents");
+		ignoreTooManyPathComponents = false;
 		
 		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
 				"NodeClientCore.lazyResumeLong", new BooleanCallback() {
@@ -326,40 +324,6 @@ public class NodeClientCore implements Persistable {
 		
 		maxBackgroundUSKFetchers = nodeConfig.getInt("maxBackgroundUSKFetchers");
 		
-		
-		// FIXME remove and remove related code when we can just block them.
-		// REDFLAG normally we wouldn't use static variables to carry important non-final data, but in this
-		// case it's temporary code which will be removed before 0.7.0.
-		
-		nodeConfig.register("allowInsecureCHKs", false, sortOrder++, true, false, "NodeClientCore.allowInsecureCHK", "NodeClientCore.allowInsecureCHKLong",
-				new BooleanCallback() {
-
-					public boolean get() {
-						return Key.ALLOW_INSECURE_CLIENT_CHKS;
-					}
-
-					public void set(boolean val) throws InvalidConfigValueException {
-						Key.ALLOW_INSECURE_CLIENT_CHKS = val;
-					}
-			
-		});
-		
-		Key.ALLOW_INSECURE_CLIENT_CHKS = nodeConfig.getBoolean("allowInsecureCHKs");
-		
-		nodeConfig.register("allowInsecureSSKs", false, sortOrder++, true, false, "NodeClientCore.allowInsecureSSK", "NodeClientCore.allowInsecureSSKLong",
-				new BooleanCallback() {
-
-					public boolean get() {
-						return Key.ALLOW_INSECURE_CLIENT_SSKS;
-					}
-
-					public void set(boolean val) throws InvalidConfigValueException {
-						Key.ALLOW_INSECURE_CLIENT_SSKS = val;
-					}
-			
-		});
-		
-		Key.ALLOW_INSECURE_CLIENT_SSKS = nodeConfig.getBoolean("allowInsecureSSKs");
 		
 		// This is all part of construction, not of start().
 		// Some plugins depend on it, so it needs to be *created* before they are started.

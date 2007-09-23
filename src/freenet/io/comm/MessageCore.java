@@ -102,7 +102,7 @@ public class MessageCore {
 		synchronized (_filters) {
 			for (ListIterator i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = (MessageFilter) i.next();
-				if (f.timedOut()) {
+				if (f.timedOut(tStart)) {
 					i.remove();
 					_timedOutFilters.add(f);
 				} else { // Because _filters are in order of timeout, we

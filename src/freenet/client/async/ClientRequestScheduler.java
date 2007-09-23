@@ -193,7 +193,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
 		if(isInsertScheduler != (req instanceof SendableInsert))
-			throw new IllegalArgumentException("Expected a SendableGet: "+req);
+			throw new IllegalArgumentException("Expected a SendableInsert: "+req);
 		if(req instanceof SendableGet) {
 			SendableGet getter = (SendableGet)req;
 			if(!getter.ignoreStore()) {
@@ -215,6 +215,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 								block = node.fetchKey(key, getter.dontCache());
 							if(block == null) {
 								addPendingKey(key, getter);
+							} else {
+								if(logMINOR)
+									Logger.minor(this, "Got "+block);
 							}
 						}
 					} catch (KeyVerifyException e) {
@@ -223,7 +226,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(logMINOR)
 							Logger.minor(this, "Decode failed: "+e, e);
 						getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok);
-						return;
+						continue; // other keys might be valid
 					}
 					if(block != null) {
 						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" ("+tok+") immediately from store");
@@ -232,7 +235,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 						anyValid = true;
 					}
 				}
-				if(!anyValid) return;
+				if(!anyValid) {
+					if(logMINOR)
+						Logger.minor(this, "No valid keys, returning without registering");
+					return;
+				}
 			}
 		}
 		innerRegister(req);
@@ -242,6 +249,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	private void addPendingKey(ClientKey key, SendableGet getter) {
+		if(logMINOR)
+			Logger.minor(this, "Adding pending key "+key+" for "+getter);
 		Key nodeKey = key.getNodeKey();
 		synchronized(pendingKeys) {
 			Object o = pendingKeys.get(nodeKey);
@@ -298,12 +307,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(clientGrabber == null) {
 			clientGrabber = new SectoredRandomGrabArrayWithInt(random, rc);
 			prio.add(clientGrabber);
-			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass);
+			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass+" on "+clientGrabber+" for "+prio);
 		}
 		// Request
 		SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
 		if(requestGrabber == null) {
 			requestGrabber = new SectoredRandomGrabArrayWithObject(client, random);
+			if(logMINOR)
+				Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : "+prio+" : prio="+priorityClass+", rc="+rc);
 			clientGrabber.addGrabber(client, requestGrabber);
 		}
 		requestGrabber.add(cr, req);
@@ -372,7 +383,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					Logger.minor(this, "Got retry count tracker "+rga);
 				SendableRequest req = (SendableRequest) rga.removeRandom();
 				if(rga.isEmpty()) {
-					if(logMINOR) Logger.minor(this, "Removing retrycount "+rga.getNumber());
+					if(logMINOR) Logger.minor(this, "Removing retrycount "+rga.getNumber()+" : "+rga);
 					s.remove(rga.getNumber());
 					if(s.isEmpty()) {
 						if(logMINOR) Logger.minor(this, "Should remove priority ");

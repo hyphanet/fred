@@ -44,13 +44,8 @@ public class CHKBlock implements KeyBlock {
     }
     
     public static CHKBlock construct(byte[] data, byte[] header) throws CHKVerifyException {
-    	try {
-    		return new CHKBlock(data, header, null, true, Key.ALGO_AES_PCFB_256_SHA256);
-    	} catch (CHKVerifyException e) {
-    		// FIXME remove back compatibility code
-    		return new CHKBlock(data, header, null, true, Key.ALGO_INSECURE_AES_PCFB_256_SHA256);
-    	}
-    }
+    	return new CHKBlock(data, header, null, true, Key.ALGO_AES_PCFB_256_SHA256);
+     }
     
     public CHKBlock(byte[] data2, byte[] header2, NodeCHK key) throws CHKVerifyException {
     	this(data2, header2, key, key.cryptoAlgorithm);

@@ -37,6 +37,10 @@ public abstract class ClientRequest {
 	protected String clientToken;
 	/** Is the request on the global queue? */
 	protected final boolean global;
+	/** Timestamp : startup time */
+	protected final long startupTime;
+	/** Timestamp : completion time */
+	protected long completionTime = Long.MAX_VALUE;
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
 			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
@@ -56,8 +60,9 @@ public abstract class ClientRequest {
 		else
 			origHandler = null;
 		this.client = client;
+		this.startupTime = System.currentTimeMillis();
 	}
-	
+
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
 			short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
 		this.uri = uri2;
@@ -80,6 +85,7 @@ public abstract class ClientRequest {
 		} else {
 			client = handler.getClient();
 		}
+		this.startupTime = System.currentTimeMillis();
 	}
 
 	public ClientRequest(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
@@ -98,20 +104,25 @@ public abstract class ClientRequest {
 		clientToken = fs.get("ClientToken");
 		finished = Fields.stringToBool(fs.get("Finished"), false);
 		global = Fields.stringToBool(fs.get("Global"), false);
+		final String stime = fs.get("StartupTime");
+		this.startupTime = stime == null ? System.currentTimeMillis() : Fields.parseLong(stime);
+		final String ctime = fs.get("CompletionTime");
+		if(ctime != null)
+			completionTime = Fields.parseLong(ctime);
 	}
 
 	/** Lost connection */
 	public abstract void onLostConnection();
-	
+
 	/** Send any pending messages for a persistent request e.g. after reconnecting */
 	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData);
 
 	// Persistence
-	
+
 	public static final short PERSIST_CONNECTION = 0;
 	public static final short PERSIST_REBOOT = 1;
 	public static final short PERSIST_FOREVER = 2;
-	
+
 	public static String persistenceTypeString(short type) {
 		switch(type) {
 		case PERSIST_CONNECTION:
@@ -212,13 +223,13 @@ public abstract class ClientRequest {
 	}
 
 	protected abstract ClientRequester getClientRequest();
-	
+
 	/** Completed request dropped off the end without being acknowledged */
 	public void dropped() {
 		cancel();
 		freeData();
 	}
-	
+
 	/** Return the priority class */
 	public short getPriority(){
 		return priorityClass;
@@ -229,13 +240,14 @@ public abstract class ClientRequest {
 
 	/** Request completed. But we may have to stick around until we are acked. */
 	protected void finish() {
+		completionTime = System.currentTimeMillis();
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
 		else
 			client.server.forceStorePersistentRequests();
 		client.finishedClientRequest(this);
 	}
-	
+
 	/**
 	 * Write a persistent request to disk.
 	 * @throws IOException 
@@ -249,14 +261,14 @@ public abstract class ClientRequest {
 		SimpleFieldSet fs = getFieldSet();
 		fs.writeTo(w);
 	}
-	
+
 	/**
 	 * Get a SimpleFieldSet representing this request.
 	 */
 	public abstract SimpleFieldSet getFieldSet() throws IOException;
 
 	public abstract double getSuccessFraction();
-	
+
 	public abstract double getTotalBlocks();
 	public abstract double getMinBlocks();
 	public abstract double getFetchedBlocks();
@@ -269,7 +281,7 @@ public abstract class ClientRequest {
 	 * Has the total number of blocks to insert been determined yet?
 	 */
 	public abstract boolean isTotalFinalized();
-	
+
 	public void onMajorProgress() {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			if(client != null)
@@ -281,7 +293,7 @@ public abstract class ClientRequest {
 	public abstract void start();
 
 	protected boolean started;
-	
+
 	public boolean isStarted() {
 		return started;
 	}
@@ -292,67 +304,78 @@ public abstract class ClientRequest {
 
 	public abstract boolean restart();
 
-    protected abstract FCPMessage persistentTagMessage();
+	protected abstract FCPMessage persistentTagMessage();
 
-    /**
-     * Called after a ModifyPersistentRequest.
-     * Sends a PersistentRequestModified message to clients if any value changed. 
-     */
-    public void modifyRequest(String newClientToken, short newPriorityClass) {
+	/**
+	 * Called after a ModifyPersistentRequest.
+	 * Sends a PersistentRequestModified message to clients if any value changed. 
+	 */
+	public void modifyRequest(String newClientToken, short newPriorityClass) {
 
-        boolean clientTokenChanged = false;
-        boolean priorityClassChanged = false;
-        
-        if(newClientToken != null) {
-            if( clientToken != null ) {
-                if( !newClientToken.equals(clientToken) ) {
-                    this.clientToken = newClientToken; // token changed
-                    clientTokenChanged = true;
-                }
-            } else {
-                this.clientToken = newClientToken; // first time the token is set
-                clientTokenChanged = true;
-            }
-        }
+		boolean clientTokenChanged = false;
+		boolean priorityClassChanged = false;
 
-        if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
-            this.priorityClass = newPriorityClass;
-            getClientRequest().setPriorityClass(priorityClass);
-            priorityClassChanged = true;
-        }
+		if(newClientToken != null) {
+			if( clientToken != null ) {
+				if( !newClientToken.equals(clientToken) ) {
+					this.clientToken = newClientToken; // token changed
+					clientTokenChanged = true;
+				}
+			} else {
+				this.clientToken = newClientToken; // first time the token is set
+				clientTokenChanged = true;
+			}
+		}
 
-        if( clientTokenChanged || priorityClassChanged ) {
-            if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
-                if(client != null) {
-                    client.server.forceStorePersistentRequests();
-                }
-            }
-        } else {
-            return; // quick return, nothing was changed
-        }
+		if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
+			this.priorityClass = newPriorityClass;
+			getClientRequest().setPriorityClass(priorityClass);
+			priorityClassChanged = true;
+		}
 
-        // this could become too complex with more parameters, but for now its ok
-        final PersistentRequestModifiedMessage modifiedMsg;
-        if( clientTokenChanged && priorityClassChanged ) {
-            modifiedMsg = new PersistentRequestModifiedMessage(identifier, global, priorityClass, clientToken);
-        } else if( priorityClassChanged ) {
-            modifiedMsg = new PersistentRequestModifiedMessage(identifier, global, priorityClass);
-        } else if( clientTokenChanged ) {
-            modifiedMsg = new PersistentRequestModifiedMessage(identifier, global, clientToken);
-        } else {
-            return; // paranoia, we should not be here if nothing was changed!
-        }
-        client.queueClientRequestMessage(modifiedMsg, 0);
-    }
+		if( clientTokenChanged || priorityClassChanged ) {
+			if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
+				if(client != null) {
+					client.server.forceStorePersistentRequests();
+				}
+			}
+		} else {
+			return; // quick return, nothing was changed
+		}
 
-    /**
-     * Called after a RemovePersistentRequest. Send a PersistentRequestRemoved to the clients.
-     */
-    public abstract void requestWasRemoved();
-    
+		// this could become too complex with more parameters, but for now its ok
+		final PersistentRequestModifiedMessage modifiedMsg;
+		if( clientTokenChanged && priorityClassChanged ) {
+			modifiedMsg = new PersistentRequestModifiedMessage(identifier, global, priorityClass, clientToken);
+		} else if( priorityClassChanged ) {
+			modifiedMsg = new PersistentRequestModifiedMessage(identifier, global, priorityClass);
+		} else if( clientTokenChanged ) {
+			modifiedMsg = new PersistentRequestModifiedMessage(identifier, global, clientToken);
+		} else {
+			return; // paranoia, we should not be here if nothing was changed!
+		}
+		client.queueClientRequestMessage(modifiedMsg, 0);
+	}
+
+	/**
+	 * Called after a RemovePersistentRequest. Send a PersistentRequestRemoved to the clients.
+	 */
+	public abstract void requestWasRemoved();
+
 	/** Utility method for storing details of a possibly encrypted bucket. */
 	protected void bucketToFS(SimpleFieldSet fs, String name, boolean includeSize, Bucket data) {
 		SerializableToFieldSetBucket bucket = (SerializableToFieldSetBucket) data;
 		fs.put(name, bucket.toFieldSet());
+	}
+
+	public void restartAsync() {
+		synchronized(this) {
+			this.started = false;
+		}
+		client.core.getExecutor().execute(new Runnable() {
+			public void run() {
+				restart();
+			}
+		}, "Restarting "+this);
 	}
 }

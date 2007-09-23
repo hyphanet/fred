@@ -8,8 +8,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HTMLNode {
+	
+	private static final Pattern namePattern = Pattern.compile("^[a-zA-Z][a-zA-Z_0-9]+$");
 
 	protected final String name;
 
@@ -36,13 +40,18 @@ public class HTMLNode {
 	}
 
 	public HTMLNode(String name, String[] attributeNames, String[] attributeValues, String content) {
+		
+		Matcher nameMatcher = namePattern.matcher(name);
+		
+		assert nameMatcher.matches();
+		
 		this.name = name.toLowerCase(Locale.ENGLISH);
 		if ((attributeNames != null) && (attributeValues != null)) {
 			if (attributeNames.length != attributeValues.length) {
 				throw new IllegalArgumentException("attribute names and values differ");
 			}
 			for (int attributeIndex = 0, attributeCount = attributeNames.length; attributeIndex < attributeCount; attributeIndex++) {
-				attributes.put(attributeNames[attributeIndex], attributeValues[attributeIndex]);
+				addAttribute(attributeNames[attributeIndex], attributeValues[attributeIndex]);
 			}
 		}
 		if (content != null && !name.equals("#") && !name.equals("%")) {
@@ -60,6 +69,10 @@ public class HTMLNode {
 	}
 
 	public void addAttribute(String attributeName, String attributeValue) {
+		if (attributeName == null)
+			throw new IllegalArgumentException("Cannot add an attribute with a null name");
+		if (attributeValue == null)
+			throw new IllegalArgumentException("Cannot add an attribute with a null value");
 		attributes.put(attributeName, attributeValue);
 	}
 

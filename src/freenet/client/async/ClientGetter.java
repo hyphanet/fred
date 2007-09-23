@@ -115,6 +115,8 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetState state) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Succeeded from "+state);
 		if(!closeBinaryBlobStream()) return;
 		synchronized(this) {
 			finished = true;
@@ -147,11 +149,13 @@ public class ClientGetter extends BaseClientGetter {
 			public void run() {
 				client.onSuccess(res, ClientGetter.this);
 			}
-		}, "ClientGetter onSuccess callback");
+		}, "ClientGetter onSuccess callback for "+this);
 		
 	}
 
 	public void onFailure(FetchException e, ClientGetState state) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Failed from "+state+" : "+e, e);
 		closeBinaryBlobStream();
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {

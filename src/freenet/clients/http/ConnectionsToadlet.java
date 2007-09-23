@@ -173,6 +173,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		int numberOfListenOnly = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTEN_ONLY);
 		int numberOfClockProblem = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM);
 		int numberOfConnError = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONN_ERROR);
+		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 		
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly + numberOfClockProblem + numberOfConnError;
@@ -310,8 +311,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			if (numberOfConnError > 0) {
 				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_clock_problem", l10n("connError"), "border-bottom: 1px dotted; cursor: help;" }, l10n("connErrorShort"));
+				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_conn_error", l10n("connError"), "border-bottom: 1px dotted; cursor: help;" }, l10n("connErrorShort"));
 				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfConnError);
+			}
+			if (numberOfDisconnecting > 0) {
+				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnecting", l10n("disconnecting"), "border-bottom: 1px dotted; cursor: help;" }, l10n("disconnectingShort"));
+				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfDisconnecting);
 			}
 
 			// Peer routing backoff reason box
@@ -676,10 +682,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		peerAdditionForm.addChild("#", (l10n("fileReference") + ' '));
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
 		peerAdditionForm.addChild("br");
-		if(!isOpennet())
+		if(!isOpennet()) {
 			peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
-		peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
-		peerAdditionForm.addChild("br");
+			peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
+			peerAdditionForm.addChild("br");
+		}
 		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", l10n("add") });
 	}
 

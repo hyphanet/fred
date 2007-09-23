@@ -20,10 +20,14 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 
 	/**
 	 * Read a \n or \r\n terminated line of UTF-8 or ISO-8859-1.
+	 * @param maxLength The maximum length of a line. If a line is longer than this, we throw IOException rather
+	 * than keeping on reading it forever.
+	 * @param bufferSize The initial size of the read buffer.
+	 * @param utf If true, read as UTF-8, if false, read as ISO-8859-1.
 	 */
 	public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
 		if(maxLength < bufferSize)
-			bufferSize = maxLength;
+			bufferSize = maxLength + 1; // Buffer too big, shrink it (add 1 for the optional \r)
 		if(buf == null)
 			buf = new byte[Math.max(Math.min(128,maxLength), Math.min(1024, bufferSize))];
 		int ctr = 0;

@@ -43,6 +43,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.NullBucketFactory;
 
 /**
  * Spider. Produces an index.
@@ -136,7 +137,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		Bucket data = result.asBucket();
 		String mimeType = cm.getMIMEType();
 		try {
-			ContentFilter.filter(data, ctx.bucketFactory, mimeType, uri.toURI("http://127.0.0.1:8888/"), this);
+			ContentFilter.filter(data, new NullBucketFactory(), mimeType, uri.toURI("http://127.0.0.1:8888/"), this);
 		} catch (UnsafeContentTypeException e) {
 			return; // Ignore
 		} catch (IOException e) {

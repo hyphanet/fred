@@ -2,6 +2,9 @@ package freenet.node;
 
 import java.net.InetAddress;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import freenet.io.comm.FreenetInetAddress;
@@ -10,7 +13,11 @@ import freenet.l10n.L10n;
 import freenet.node.useralerts.ProxyUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
+import freenet.pluginmanager.ForwardPort;
+import freenet.pluginmanager.ForwardPortCallback;
+import freenet.pluginmanager.ForwardPortStatus;
 import freenet.pluginmanager.FredPluginIPDetector;
+import freenet.pluginmanager.FredPluginPortForward;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -20,7 +27,7 @@ import freenet.support.transport.ip.IPUtil;
  * Tracks all known IP address detection plugins, and runs them when appropriate.
  * Normally there would only be one, but sometimes there may be more than one.
  */
-public class IPDetectorPluginManager {
+public class IPDetectorPluginManager implements ForwardPortCallback {
 	
 	public class MyUserAlert implements UserAlert {
 
@@ -59,7 +66,17 @@ public class IPDetectorPluginManager {
 			if(!suggestPortForward) return text;
 			StringBuffer sb = new StringBuffer();
 			sb.append(text);
-			sb.append(l10n("suggestForwardPort", "port", Integer.toString(node.getDarknetPortNumber())));
+			// FIXME we should support any number of ports, UDP or TCP, and pick them up from the node as we do with the forwarding plugin ... that would be a bit of a pain for L10n though ...
+			int darknetPort = node.getDarknetPortNumber();
+			int opennetPort = node.getOpennetFNPPort();
+			sb.append(" ");
+			if(opennetPort <= 0) {
+				sb.append(l10n("suggestForwardPort", "port", Integer.toString(darknetPort)));
+			} else {
+				sb.append(l10n("suggestForwardTwoPorts", new String[] { "port1", "port2" }, 
+						new String[] { Integer.toString(darknetPort), Integer.toString(opennetPort) }));
+			}
+			
 			return sb.toString();
 		}
 
@@ -93,6 +110,7 @@ public class IPDetectorPluginManager {
 	private final NodeIPDetector detector;
 	private final Node node;
 	FredPluginIPDetector[] plugins;
+	FredPluginPortForward[] portForwardPlugins;
 	private final MyUserAlert noConnectionAlert;
 	private final MyUserAlert symmetricAlert;
 	private final MyUserAlert portRestrictedAlert;
@@ -104,6 +122,7 @@ public class IPDetectorPluginManager {
 	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
 		plugins = new FredPluginIPDetector[0];
+		portForwardPlugins = new FredPluginPortForward[0];
 		this.node = node;
 		this.detector = detector;
 		noConnectionAlert = new MyUserAlert( l10n("noConnectivityTitle"), l10n("noConnectivity"), 
@@ -152,6 +171,7 @@ public class IPDetectorPluginManager {
 		}
 		node.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
+				freenet.support.Logger.OSThread.logPID(this);
 				tryMaybeRun();
 			}
 		}, 60*1000);
@@ -160,7 +180,7 @@ public class IPDetectorPluginManager {
 	/**
 	 * Register a plugin.
 	 */
-	public void register(FredPluginIPDetector d) {
+	public void registerDetectorPlugin(FredPluginIPDetector d) {
 		if(d == null) throw new NullPointerException();
 		synchronized(this) {
 			FredPluginIPDetector[] newPlugins = new FredPluginIPDetector[plugins.length+1];
@@ -175,7 +195,7 @@ public class IPDetectorPluginManager {
 	/**
 	 * Remove a plugin.
 	 */
-	public void remove(FredPluginIPDetector d) {
+	public void unregisterDetectorPlugin(FredPluginIPDetector d) {
 		synchronized(this) {
 			int count = 0;
 			for(int i=0;i<plugins.length;i++) {
@@ -185,7 +205,7 @@ public class IPDetectorPluginManager {
 			FredPluginIPDetector[] newPlugins = new FredPluginIPDetector[plugins.length - count];
 			int x = 0;
 			for(int i=0;i<plugins.length;i++) {
-				if(newPlugins[i] != d) newPlugins[x++] = plugins[i];
+				if(plugins[i] != d) newPlugins[x++] = plugins[i];
 			}
 			plugins = newPlugins;
 		}
@@ -475,6 +495,7 @@ public class IPDetectorPluginManager {
 	public class DetectorRunner implements Runnable {
 
 		public void run() {
+			freenet.support.Logger.OSThread.logPID(this);
 			try {
 				realRun();
 			} catch (OutOfMemoryError e) {
@@ -611,4 +632,67 @@ public class IPDetectorPluginManager {
 		return plugins.length == 0;
 	}
 
+	public void registerPortForwardPlugin(FredPluginPortForward forward) {
+		if(forward == null) throw new NullPointerException();
+		synchronized(this) {
+			FredPluginPortForward[] newForwardPlugins = new FredPluginPortForward[portForwardPlugins.length+1];
+			System.arraycopy(portForwardPlugins, 0, newForwardPlugins, 0, portForwardPlugins.length);
+			newForwardPlugins[portForwardPlugins.length] = forward;
+			portForwardPlugins = newForwardPlugins;
+		}
+		if(logMINOR) Logger.minor(this, "Registering a new port forward plugin : " + forward);
+		forward.onChangePublicPorts(node.getPublicInterfacePorts(), this);
+	}
+
+	/**
+	 * Remove a plugin.
+	 */
+	public void unregisterPortForwardPlugin(FredPluginPortForward forward) {
+		synchronized(this) {
+			int count = 0;
+			for(int i=0;i<portForwardPlugins.length;i++) {
+				if(portForwardPlugins[i] == forward) count++;
+			}
+			if(count == 0) return;
+			FredPluginPortForward[] newPlugins = new FredPluginPortForward[portForwardPlugins.length - count];
+			int x = 0;
+			for(int i=0;i<portForwardPlugins.length;i++) {
+				if(portForwardPlugins[i] != forward) newPlugins[x++] = portForwardPlugins[i];
+			}
+			portForwardPlugins = newPlugins;
+		}
+	}
+
+	void notifyPortChange(Set newPorts) {
+		FredPluginPortForward[] plugins;
+		synchronized(this) {
+			plugins = portForwardPlugins;
+		}
+		for(int i=0;i<plugins.length;i++)
+			plugins[i].onChangePublicPorts(newPorts, this);
+	}
+
+	public void portForwardStatus(Map statuses) {
+		Set currentPorts = node.getPublicInterfacePorts();
+		Iterator i = currentPorts.iterator();
+		while(i.hasNext()) {
+			ForwardPort p = (ForwardPort) i.next();
+			ForwardPortStatus status = (ForwardPortStatus) statuses.get(p);
+			if(status == null) continue;
+			if(status.status == ForwardPortStatus.DEFINITE_SUCCESS) {
+				Logger.normal(this, "Succeeded forwarding "+p.name+" port "+p.portNumber+" for "+p.protocol+" - port forward definitely succeeded "+status.reasonString);
+			} else if(status.status == ForwardPortStatus.PROBABLE_SUCCESS) {
+				Logger.normal(this, "Probably succeeded forwarding "+p.name+" port "+p.portNumber+" for "+p.protocol+" - port forward probably succeeded "+status.reasonString);
+			} else if(status.status == ForwardPortStatus.MAYBE_SUCCESS) {
+				Logger.normal(this, "Maybe succeeded forwarding "+p.name+" port "+p.portNumber+" for "+p.protocol+" - port forward may have succeeded but strongly recommend out of band verification "+status.reasonString);
+			} else if(status.status == ForwardPortStatus.DEFINITE_FAILURE) {
+				Logger.error(this, "Failed forwarding "+p.name+" port "+p.portNumber+" for "+p.protocol+" - port forward definitely failed "+status.reasonString);
+			} else if(status.status == ForwardPortStatus.PROBABLE_FAILURE) {
+				Logger.error(this, "Probably failed forwarding "+p.name+" port "+p.portNumber+" for "+p.protocol+" - port forward probably failed "+status.reasonString);
+			}
+			// Not much more we can do / want to do for now
+			// FIXME use status.externalPort.
+		}
+	}
+	
 }

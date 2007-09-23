@@ -188,9 +188,7 @@ class NodeCrypto {
 			if(privARK != null) {
 				FreenetURI uri = new FreenetURI(privARK);
 				ark = InsertableClientSSK.create(uri);
-				if(ark.isInsecure() || s == null) {
-					if(ark.isInsecure())
-						System.out.println("Creating new ARK, old is insecure");
+				if(s == null) {
 					ark = null;
 					myARKNumber = 0;
 				} else {

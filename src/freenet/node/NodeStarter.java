@@ -30,13 +30,12 @@ import freenet.support.LoggerHook.InvalidThresholdException;
  *	A class to tie the wrapper and the node (needed for self-restarting support)
  *
  */
-public class NodeStarter
-    implements WrapperListener
+public class NodeStarter implements WrapperListener
 {
     private Node node;
 	private static LoggingConfigHandler logConfigHandler;
 	//TODO: cleanup
-	public static int RECOMMENDED_EXT_BUILD_NUMBER = 13;
+	public static int RECOMMENDED_EXT_BUILD_NUMBER = 17;
 	
 	/*
 		(File.separatorChar == '\\') &&
@@ -331,7 +330,7 @@ public class NodeStarter
 	 */
 	public static Node createTestNode(int port, String testName, boolean doClient, 
 			boolean doSwapping, boolean disableProbabilisticHTLs, short maxHTL,
-			int dropProb, int swapInterval, RandomSource random, Executor executor) throws NodeInitException {
+			int dropProb, RandomSource random, Executor executor) throws NodeInitException {
 		
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -356,7 +355,6 @@ public class NodeStarter
 		configFS.putSingle("node.nodeDir", portDir.toString());
 		configFS.put("node.maxHTL", maxHTL);
 		configFS.put("node.testingDropPacketsEvery", dropProb);
-		configFS.put("node.swapRequestSendInterval", swapInterval);
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 		

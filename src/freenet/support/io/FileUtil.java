@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.support.Logger;
 
 final public class FileUtil {
 
@@ -76,7 +77,6 @@ final public class FileUtil {
 		return result;
 	}
 	
-	// FIXME: this is called readUTF but it reads in the default charset ... eh??
 	public static String readUTF(File file) throws FileNotFoundException, IOException {
 		StringBuffer result = new StringBuffer();
 		FileInputStream fis = null;
@@ -86,7 +86,7 @@ final public class FileUtil {
 		try {
 			fis = new FileInputStream(file);
 			bis = new BufferedInputStream(fis);
-			isr = new InputStreamReader(bis);
+			isr = new InputStreamReader(bis, "UTF-8");
 
 			char[] buf = new char[4096];
 			int length = 0;
@@ -106,33 +106,34 @@ final public class FileUtil {
 	}
 	
 	public static boolean writeTo(InputStream input, File target) throws FileNotFoundException, IOException {
-		BufferedInputStream bis = null;
 		DataInputStream dis = null;
 		FileOutputStream fos = null;
-		BufferedOutputStream bos = null;
-		File file = File.createTempFile("temp", ".tmp");
+		File file = File.createTempFile("temp", ".tmp", target.getParentFile());
+		if(Logger.shouldLog(Logger.MINOR, FileUtil.class))
+			Logger.minor(FileUtil.class, "Writing to "+file+" to be renamed to "+target);
 		
 		try {
-			bis = new BufferedInputStream(input);
-			dis = new DataInputStream(bis);
+			dis = new DataInputStream(input);
 			fos = new FileOutputStream(file);
-			bos= new BufferedOutputStream(fos);
 
 			int len = 0;
 			byte[] buffer = new byte[4096];
 			while ((len = dis.read(buffer)) > 0) {
-				bos.write(buffer, 0, len);
+				fos.write(buffer, 0, len);
 			}
 		} catch (IOException e) {
 			throw e;
 		} finally {
 			if(dis != null) dis.close();
-			if(bis != null) bis.close();
 			if(fos != null) fos.close();
-			if(bos != null) bos.close();	
 		}
 		
-		return file.renameTo(target);
+		if(file.renameTo(target))
+			return true;
+		else {
+			file.delete();
+			return false;
+		}
 	}
 
 	public static String sanitize(String s) {

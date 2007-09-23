@@ -29,6 +29,13 @@ public interface ToadletContext {
 	void writeData(byte[] data, int offset, int length) throws ToadletContextClosedException, IOException;
 
 	/**
+	 * Force a disconnection after handling this request. Used only when a throwable was thrown and we don't know
+	 * what the state of the connection is. FIXME we could handle this better by remembering whether headers have
+	 * been sent, how long the attached data should be, how much data has been sent etc.
+	 */
+	void forceDisconnect();
+	
+	/**
 	 * Convenience method that simply calls {@link #writeData(byte[], int, int)}.
 	 * 
 	 * @param data

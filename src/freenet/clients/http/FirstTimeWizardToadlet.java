@@ -251,11 +251,13 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step=2");
 			return;
 		} else if(request.isPartSet("nnameF")) {
-			String selectedNName = request.getPartAsString("nname", 255);
+			String selectedNName = request.getPartAsString("nname", 128);
 			
 			try {
 				config.get("node").set("name", selectedNName);
-				Logger.normal(this, "The node name has been set to "+ selectedNName);
+				// We call the callback once again to ensure MeaningfulNodeNameUserAlert
+				// has been unregistered ... see #1595
+				Logger.normal(this, "The node name has been set to "+ config.get("node.name"));
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e);
 			}

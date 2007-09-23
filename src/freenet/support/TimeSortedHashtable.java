@@ -32,7 +32,7 @@ public class TimeSortedHashtable {
 	private class MyComparator implements Comparator {
 
 		public int compare(Object arg0, Object arg1) {
-			if(arg0 instanceof Long && arg1 instanceof Long) return ((Long)arg0).compareTo(arg1);
+			if(arg0 instanceof Long && arg1 instanceof Long) return ((Long)arg0).compareTo((Long)arg1);
 			if(arg0 instanceof Element && arg1 instanceof Element) return ((Element)arg0).compareTo(arg1);
 			// Comparing a Long with an Element, because we are searching for an Element by the value of a Long.
 			// Hence we do not need to consider the element value.

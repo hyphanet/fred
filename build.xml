@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!-- ant build file for Freenet -->
 
 <project name="Freenet" default="dist" basedir=".">
@@ -126,11 +126,12 @@
 
 	<!-- ================================================== -->
 
-	<target name="unit-build" depends="compile">
+	<target name="unit-build" depends="compile" if="junit.present">
 		<javac srcdir="${test}" destdir="${build-test}" debug="on" optimize="on" source="1.4">
 			<classpath>
 				<pathelement path="${build}"/>
 				<pathelement location="${freenet-ext.location}"/>
+				<pathelement location="${junit.location}"/>
 			</classpath>
 			<include name="**/*.java"/>
 			<exclude name="*.java"/>
@@ -160,6 +161,7 @@
 
 	<target name="clean" description="Delete class files and docs dir.">
 		<delete dir="${build}"/>
+		<delete dir="${build-test}"/>
 	</target>
 	<target name="distclean" description="Delete class files, lib dir and docs dir.">
 		<delete file="${CSSTokenizerFilter.java}"/>

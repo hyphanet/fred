@@ -117,6 +117,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     }
     
     public void run() {
+	    freenet.support.Logger.OSThread.logPID(this);
         if((key instanceof NodeSSK) && (pubKey == null)) {
         	pubKey = ((NodeSSK)key).getPubKey();
         }
@@ -691,7 +692,8 @@ public final class RequestSender implements Runnable, ByteCounter {
     	
 		OpennetManager om = node.getOpennet();
     	try {
-			if(om != null /* prevent race */ && !node.addNewOpennetNode(ref)) {
+			if(om == null || 
+					(om != null /* prevent race */ && !node.addNewOpennetNode(ref))) {
 				// If we don't want it let somebody else have it
 				synchronized(this) {
 					opennetNoderef = noderef;
@@ -751,7 +753,9 @@ public final class RequestSender implements Runnable, ByteCounter {
 					wait(OPENNET_TIMEOUT);
 				} catch (InterruptedException e) {
 					// Ignore
+					continue;
 				}
+				return null;
     		}
     	}
     }

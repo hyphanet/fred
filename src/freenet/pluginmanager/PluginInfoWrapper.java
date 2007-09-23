@@ -3,6 +3,7 @@ package freenet.pluginmanager;
 import java.util.Date;
 import java.util.HashSet;
 
+import freenet.support.Logger;
 import freenet.support.StringArray;
 
 public class PluginInfoWrapper {
@@ -17,23 +18,32 @@ public class PluginInfoWrapper {
 	private boolean isPproxyPlugin;
 	private boolean isThreadlessPlugin;
 	private boolean isIPDetectorPlugin;
+	private boolean isPortForwardPlugin;
 	private String filename;
-	private HashSet toadletLinks=new HashSet(); 
+	private HashSet toadletLinks=new HashSet();
+	private boolean stopping = false;
+	private boolean unregistered = false;
 	//public String 
 	
-	public PluginInfoWrapper(FredPlugin plug, Thread ps, String filename) {
+	public PluginInfoWrapper(FredPlugin plug, String filename) {
 		if (fedPluginThread) return;
 		className = plug.getClass().toString();
-		thread = ps;
 		this.plug = plug;
 		this.filename = filename;
-		threadName = 'p' + className.replaceAll("^class ", "") + '_' + ps.hashCode();
+		threadName = 'p' + className.replaceAll("^class ", "") + '_' + hashCode();
 		start = System.currentTimeMillis();
-		ps.setName(threadName);
 		fedPluginThread = true;
 		isPproxyPlugin = (plug instanceof FredPluginHTTP);
 		isThreadlessPlugin = (plug instanceof FredPluginThreadless);
 		isIPDetectorPlugin = (plug instanceof FredPluginIPDetector);
+		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
+	}
+	
+	void setThread(Thread ps) {
+		if(thread != null)
+			throw new IllegalStateException("Already set a thread");
+		thread = ps;
+		thread.setName(threadName);
 	}
 	
 	public String toString() {
@@ -52,35 +62,74 @@ public class PluginInfoWrapper {
 		return plug.getClass().getName();
 	}
 	
-	public String[] getPluginToadletSymlinks(){
-		synchronized (toadletLinks) {
-			return StringArray.toArray(toadletLinks.toArray());
-		}
+	public synchronized String[] getPluginToadletSymlinks(){
+		return StringArray.toArray(toadletLinks.toArray());
 	}
 	
-	public boolean addPluginToadletSymlink(String linkfrom){
-		synchronized (toadletLinks) {
-			if (toadletLinks.size() < 1)
-				toadletLinks = new HashSet();
-			return toadletLinks.add(linkfrom);
-		}
+	public synchronized boolean addPluginToadletSymlink(String linkfrom){
+		if (toadletLinks.size() < 1)
+			toadletLinks = new HashSet();
+		return toadletLinks.add(linkfrom);
 	}
 	
-	public boolean removePluginToadletSymlink(String linkfrom){
-		synchronized (toadletLinks) {
-			if (toadletLinks.size() < 1)
-				return false;
-			return toadletLinks.remove(linkfrom);
-		}
+	public synchronized boolean removePluginToadletSymlink(String linkfrom){
+		if (toadletLinks.size() < 1)
+			return false;
+		return toadletLinks.remove(linkfrom);
 	}
 	
-	public void stopPlugin() {
+	/**
+	 * Tell the plugin to quit. Interrupt it if it's a thread-based plugin which
+	 * might be sleeping. Then call removePlugin() on it on the manager - either
+	 * now, if it's threadless, or after it terminates, if it's thread based.
+	 * @param manager The plugin manager object.
+	 * @param maxWaitTime If a plugin is thread-based, we can wait for it to
+	 * terminate. Set to -1 if you don't want to wait at all, 0 to wait forever
+	 * or else a value in milliseconds.
+	 **/
+	public void stopPlugin(PluginManager manager, int maxWaitTime) {
+		unregister(manager);
 		plug.terminate();
-		thread.interrupt();
+		synchronized(this) {
+			stopping = true;
+		}
+		if(thread != null) {
+			thread.interrupt();
+			// Will be removed when the thread exits.
+			if(maxWaitTime >= 0) {
+				try {
+					thread.join(maxWaitTime);
+				} catch (InterruptedException e) {
+					Logger.normal(this, "stopPlugin interrupted while join()ed to terminating plugin thread - maybe one plugin stopping another???");
+				}
+				if(thread.isAlive()) {
+					String error = "Waited for "+thread+" for "+plug+" to exit for "+maxWaitTime+"ms, and it is still alive!";
+					Logger.error(this, error);
+					System.err.println(error);
+					// Dump the thread? Would require post-1.4 features...
+				}
+			}
+		} else {
+			// Remove immediately
+			manager.removePlugin(this);
+		}
 	}
 	
-	public boolean sameThread(Thread t){
-		return (t == thread);
+	/**
+	 * Unregister the plugin from any user interface or other callbacks it may be
+	 * registered with. Call this before manager.removePlugin(): the plugin becomes
+	 * unvisitable immediately, but it may take time for it to shut down completely.
+	 */
+	void unregister(PluginManager manager) {
+		synchronized(this) {
+			if(unregistered) return;
+			unregistered = true;
+		}
+		manager.unregisterPluginToadlet(this);
+		if(isIPDetectorPlugin)
+			manager.node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
+		if(isPortForwardPlugin)
+			manager.node.ipDetector.unregisterPortForwardPlugin((FredPluginPortForward)plug);
 	}
 
 	public boolean isPproxyPlugin() {
@@ -99,8 +148,11 @@ public class PluginInfoWrapper {
 		return isIPDetectorPlugin;
 	}
 	
-	public Thread getThread() {
-		return thread;
+	public boolean isPortForwardPlugin() {
+		return isPortForwardPlugin;
 	}
 	
+	public synchronized boolean isStopping() {
+		return stopping;
+	}
 }

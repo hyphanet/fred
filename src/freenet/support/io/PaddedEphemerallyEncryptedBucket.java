@@ -32,8 +32,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	private SoftReference /* <Rijndael> */ aesRef;
 	/** The decryption key. */
 	private final byte[] key;
-	/** Broken (old) encryption? */
-	private final boolean brokenEncryption;
 	private long dataLength;
 	private boolean readOnly;
 	private int lastOutputStream;
@@ -50,7 +48,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		this.origRandom = origRandom;
 		this.bucket = bucket;
 		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");
-		brokenEncryption = false;
 		byte[] tempKey = new byte[32];
 		origRandom.nextBytes(tempKey);
 		this.key = tempKey;
@@ -70,13 +67,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	 * @param origRandom
 	 * @throws IOException 
 	 */
-	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, long knownSize, byte[] key, RandomSource origRandom, boolean oldCrypto) throws IOException {
+	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, long knownSize, byte[] key, RandomSource origRandom) throws IOException {
 		if(bucket.size() < knownSize)
 			throw new IOException("Bucket "+bucket+" is too small on disk - knownSize="+knownSize+" but bucket.size="+bucket.size()+" for "+bucket);
 		this.dataLength = knownSize;
 		this.origRandom = origRandom;
 		this.bucket = bucket;
-		brokenEncryption = oldCrypto;
 		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
 		this.key = key;
 		this.minPaddedSize = minSize;
@@ -101,7 +97,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		tmp = fs.get("DecryptKey");
 		if(tmp == null)
 			throw new CannotCreateFromFieldSetException("No key");
-		brokenEncryption = fs.get("CryptoType") == null;
 		key = HexUtil.hexToBytes(tmp);
 		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
 		tmp = fs.get("MinPaddedSize");
@@ -298,7 +293,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			if(aes != null) return aes;
 		}
 		try {
-			aes = new Rijndael(256, 256, false);
+			aes = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
@@ -364,8 +359,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			return null;
 		}
 		fs.put("MinPaddedSize", minPaddedSize);
-		if(!brokenEncryption)
-			fs.putSingle("CryptoType", "aes256");
 		return fs;
 	}
 

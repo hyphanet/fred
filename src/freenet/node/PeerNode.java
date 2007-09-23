@@ -60,6 +60,7 @@ import freenet.support.WouldBlockException;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
+import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
  * @author amphibian
@@ -299,6 +300,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * long time, but without preventing it from being GC'ed. */
 	final WeakReference myRef;
 	
+	/** The node is being disconnected, but it may take a while. */
+	private boolean disconnecting;
+	
     private static boolean logMINOR;
     
     /**
@@ -364,15 +368,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         try {
         	String physical[]=fs.getAll("physical.udp");
         	if(physical==null) {
-        		// Be tolerant of nonexistent domains.
-        		Peer p = new Peer(fs.get("physical.udp"), true);
-        		if(p != null)
-        			nominalPeer.addElement(p);
+        		// Leave it empty
         	} else {
 	    		for(int i=0;i<physical.length;i++) {
-					Peer p = new Peer(physical[i], true);
-				    if(!nominalPeer.contains(p)) 
-				    	nominalPeer.addElement(p);
+	    			Peer p;
+	    			try {
+						p = new Peer(physical[i], true, true);
+					} catch (HostnameSyntaxException e) {
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
+						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
+						continue;
+					}
+					if(!nominalPeer.contains(p)) 
+						nominalPeer.addElement(p);
 	    		}
         	}
         } catch (Exception e1) {
@@ -462,9 +470,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         			"\nFor:       "+getPeer());
         
         try {
-            incomingSetupCipher = new Rijndael(256,256,false);
+            incomingSetupCipher = new Rijndael(256,256);
             incomingSetupCipher.initialize(incomingSetupKey);
-            outgoingSetupCipher = new Rijndael(256,256,false);
+            outgoingSetupCipher = new Rijndael(256,256);
             outgoingSetupCipher.initialize(outgoingSetupKey);
         } catch (UnsupportedCipherException e1) {
             Logger.error(this, "Caught: "+e1);
@@ -1372,13 +1380,27 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     /**
      * Called when we have completed a handshake, and have a new session key.
      * Creates a new tracker and demotes the old one. Deletes the old one if
-     * the bootID isn't recognized.
-     * @param thisBootID The boot ID of the peer we have just connected to
-     * @param data Byte array from which to read the new noderef
-     * @param offset Offset to start reading at
-     * @param length Number of bytes to read
-     * @param encKey
-     * @param replyTo
+     * the bootID isn't recognized, since if the node has restarted we cannot
+     * recover old messages. In more detail:
+     * <ul>
+     * <li>Process the new noderef (check if it's valid, pick up any new information etc).</li>
+     * <li>Handle version conflicts (if the node is too old, or we are too old, we mark it as 
+     * non-routable, but some messages will still be exchanged e.g. Update Over Mandatory stuff).</li>
+     * <li>Deal with key trackers (if we just got message 4, the new key tracker becomes current; 
+     * if we just got message 3, it's possible that our message 4 will be lost in transit, so we 
+     * make the new tracker unverified. It will be promoted to current if we get a packet on it..
+     * if the node has restarted, we dump the old key trackers, otherwise current becomes previous).</li>
+     * <li>Complete the connection process: update the node's status, send initial messages, update
+     * the last-received-packet timestamp, etc.</li>
+     * @param thisBootID The boot ID of the peer we have just connected to.
+     * This is simply a random number regenerated on every startup of the node.
+     * We use it to determine whether the node has restarted since we last saw 
+     * it.
+     * @param data Byte array from which to read the new noderef.
+     * @param offset Offset to start reading at.
+     * @param length Number of bytes to read.
+     * @param encKey The new session key.
+     * @param replyTo The IP the handshake came in on.
      * @return True unless we rejected the handshake, or it failed to parse.
      */
     public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
@@ -1739,11 +1761,23 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         try {
         	String physical[]=fs.getAll("physical.udp");
         	if(physical==null) {
-        		Peer p = new Peer(fs.get("physical.udp"), true);
-        		nominalPeer.addElement(p);
+        		try {
+        			Peer p = new Peer(fs.get("physical.udp"), true, true);
+        			nominalPeer.addElement(p);
+				} catch (HostnameSyntaxException e) {
+					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference: "+fs.get("physical.udp"));
+					System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: "+fs.get("physical.udp"));
+				}
         	} else {
 	    		for(int i=0;i<physical.length;i++) {
-					Peer p = new Peer(physical[i], true);
+	    			Peer p;
+	    			try {
+						p = new Peer(physical[i], true, true);
+					} catch (HostnameSyntaxException e) {
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
+						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
+						continue;
+					}
 				    if(!nominalPeer.contains(p)) {
 				    	if(oldNominalPeer.contains(p)) {
 				    		// Do nothing
@@ -2324,6 +2358,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return "CLOCK PROBLEM";
 		if(status == PeerManager.PEER_NODE_STATUS_CONN_ERROR)
 			return "CONNECTION ERROR";
+		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
+			return "DISCONNECTING";
 		return "UNKNOWN STATUS";
 	}
 
@@ -2355,11 +2391,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return "peer_listen_only";
 		if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
 			return "peer_clock_problem";
+		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
+			return "peer_disconnecting";
 		return "peer_unknown_status";
 	}
 
 	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntil) {
 		checkConnectionsAndTrackers();
+		if(disconnecting)
+			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
 			if(now < routingBackedOffUntil) {
@@ -2688,4 +2728,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/** Called when the peer is removed from the PeerManager */
 	public abstract void onRemove();
+
+	/** Called when a delayed disconnect is occurring. Tell the node that it is being disconnected, but
+	 * that the process may take a while. */
+	public void notifyDisconnecting() {
+		synchronized(this) {
+			disconnecting = true;
+		}
+		setPeerNodeStatus(System.currentTimeMillis());
+	}
 }

@@ -48,7 +48,7 @@ public class RealNodeRoutingTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, /* Node.DEFAULT_SWAP_INTERVAL */ 0, random, executor);
+            	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");

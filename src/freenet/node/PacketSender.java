@@ -28,7 +28,21 @@ public class PacketSender implements Runnable, Ticker {
 
 	private static boolean logMINOR;
 	
+	/** Maximum time we will queue a message for in millseconds */
 	static final int MAX_COALESCING_DELAY = 200;
+	
+	/** If opennet is enabled, and there are fewer than this many connections,
+	 * we MAY attempt to contact old opennet peers (opennet peers we have 
+	 * dropped from the routing table but kept around in case we can't connect). */
+	static final int MIN_CONNECTIONS_TRY_OLD_OPENNET_PEERS = 5;
+	
+	/** We send connect attempts to old-opennet-peers no more than once every
+	 * this many milliseconds. */
+	static final int MIN_OLD_OPENNET_CONNECT_DELAY_NO_CONNS = 10*1000;
+	
+	/** We send connect attempts to old-opennet-peers no more than once every
+	 * this many milliseconds. */
+	static final int MIN_OLD_OPENNET_CONNECT_DELAY = 60*1000;
 	
     final LinkedList resendPackets;
     /** ~= Ticker :) */
@@ -41,6 +55,7 @@ public class PacketSender implements Runnable, Ticker {
     long lastReceivedPacketFromAnyNode;
     /** For watchdog. 32-bit to avoid locking. */
     volatile int lastTimeInSeconds;
+    private long timeLastSentOldOpennetConnectAttempt;
     
     private Vector rpiTemp;
     private int[] rpiIntTemp;
@@ -70,6 +85,7 @@ public class PacketSender implements Runnable, Ticker {
     private class Watchdog implements Runnable {
     	
     	public void run() {
+		    freenet.support.Logger.OSThread.logPID(this);
     		// Do not lock anything, or we may be caught up with a lost-lock deadlock.
     		while(true) {
     			try {
@@ -120,6 +136,7 @@ public class PacketSender implements Runnable, Ticker {
     	if(now < transition) {
     		queueTimedJob(new Runnable() {
     			public void run() {
+				    freenet.support.Logger.OSThread.logPID(this);
     				PeerNode[] nodes = node.peers.myPeers;
     				for(int i=0;i<nodes.length;i++) {
     					PeerNode pn = nodes[i];
@@ -139,6 +156,7 @@ public class PacketSender implements Runnable, Ticker {
     }
     
     public void run() {
+	    freenet.support.Logger.OSThread.logPID(this);
         while(true) {
             lastReceivedPacketFromAnyNode = lastReportedNoPackets;
             try {
@@ -180,20 +198,20 @@ public class PacketSender implements Runnable, Ticker {
             PeerNode pn = nodes[i];
             lastReceivedPacketFromAnyNode =
                 Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
-			pn.maybeOnConnect();
+            pn.maybeOnConnect();
             if(pn.isConnected()) {
-                // Is the node dead?
-                if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
-                	Logger.normal(this, "Disconnecting from "+pn+" - haven't received packets recently");
-                    pn.disconnected();
-                    continue;
-                } else if(pn.isRoutable() && pn.noLongerRoutable()) {
-                	// we don't disconnect but we mark it incompatible
-                	pn.invalidate();
-                	pn.setPeerNodeStatus(now);
-                	Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible");
-                	continue;
-                }
+            	// Is the node dead?
+            	if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
+            		Logger.normal(this, "Disconnecting from "+pn+" - haven't received packets recently");
+            		pn.disconnected();
+            		continue;
+            	} else if(pn.isRoutable() && pn.noLongerRoutable()) {
+            		// we don't disconnect but we mark it incompatible
+            		pn.invalidate();
+            		pn.setPeerNodeStatus(now);
+            		Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible");
+            		continue;
+            	}
                 
                 boolean mustSend = false;
                 
@@ -303,6 +321,26 @@ public class PacketSender implements Runnable, Ticker {
     			Logger.error(this, "tempNow is more than 5 seconds past oldTempNow ("+(tempNow - oldTempNow)+") in PacketSender working with "+pn.userToString());
     		oldTempNow = tempNow;
     	}
+        
+        // Consider sending connect requests to our opennet old-peers.
+        // No point if they are NATed, of course... but we don't know whether they are.
+        OpennetManager om = node.getOpennet();
+        if(om != null) {
+        	int connCount = node.peers.quickCountConnectedPeers();
+        	int minDelay = connCount == 0 ? MIN_OLD_OPENNET_CONNECT_DELAY_NO_CONNS : MIN_OLD_OPENNET_CONNECT_DELAY;
+        	if(now - timeLastSentOldOpennetConnectAttempt > minDelay &&
+        			connCount <= MIN_CONNECTIONS_TRY_OLD_OPENNET_PEERS &&
+        			om.countOldOpennetPeers() > 0 &&
+        			now - node.startupTime > OpennetManager.DROP_STARTUP_DELAY) {
+            	PeerNode pn = om.randomOldOpennetNode();
+            	if(pn != null) {
+            		pn.getOutgoingMangler().sendHandshake(pn);
+            		timeLastSentOldOpennetConnectAttempt = now;
+            		if(pn.noContactDetails() && node.getPeerNodes().length > 0 && connCount > 0 && node.random.nextBoolean())
+            			pn.startARKFetcher();
+            	}
+        	}
+        }
     	
         if(now - lastClearedOldSwapChains > 10000) {
             node.lm.clearOldSwapChains();

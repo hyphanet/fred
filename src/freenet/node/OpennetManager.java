@@ -21,6 +21,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
  * Central location for all things opennet.
@@ -37,6 +38,11 @@ public class OpennetManager {
 	/** Our peers. PeerNode's are promoted when they successfully fetch a key. Normally we take
 	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
 	private final LRUQueue peersLRU;
+	/** Old peers. Opennet peers which we dropped but would still like to talk to
+	 * if we have no other option. */
+	private final LRUQueue oldPeers;
+	/** Maximum number of old peers */
+	static final int MAX_OLD_PEERS = 50;
 	/** Time at which last dropped a peer */
 	private long timeLastDropped;
 	/** Number of successful CHK requests since last added a node */
@@ -86,7 +92,8 @@ public class OpennetManager {
 			}
 		}
 		peersLRU = new LRUQueue();
-		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, this, true);
+		oldPeers = new LRUQueue();
+		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
 		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
 		Arrays.sort(nodes, new Comparator() {
 			public int compare(Object arg0, Object arg1) {
@@ -112,6 +119,8 @@ public class OpennetManager {
 			peersLRU.push(nodes[i]);
 		dropExcessPeers();
 		writeFile(nodeFile, backupNodeFile);
+		// Read old peers
+		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
 	}
 
 	private void writeFile(File orig, File backup) {
@@ -158,7 +167,11 @@ public class OpennetManager {
 				// Just keep the first one with the correct port number.
 				Peer p;
 				try {
-					p = new Peer(udp[i], false);
+					p = new Peer(udp[i], false, true);
+				} catch (HostnameSyntaxException e) {
+					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing opennet node reference: "+udp[i]);
+					System.err.println("Invalid hostname or IP Address syntax error while parsing opennet node reference: "+udp[i]);
+					continue;
 				} catch (PeerParseException e) {
 					IOException e1 = new IOException();
 					e1.initCause(e);
@@ -207,6 +220,17 @@ public class OpennetManager {
 	/** When did we last offer our noderef to some other node? */
 	private long timeLastOffered;
 	
+	void forceAddPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
+		synchronized(this) {
+			if(addAtLRU)
+				peersLRU.pushLeast(nodeToAddNow);
+			else
+				peersLRU.push(nodeToAddNow);
+			oldPeers.remove(nodeToAddNow);
+		}
+		dropExcessPeers();
+	}
+	
 	/**
 	 * Trim the peers list and possibly add a new node. Note that if we are not adding a new node,
 	 * we will only return true every MIN_TIME_BETWEEN_OFFERS, to prevent problems caused by many
@@ -224,16 +248,23 @@ public class OpennetManager {
 			if(peersLRU.size() < MAX_PEERS) {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
-					peersLRU.push(nodeToAddNow);
-					// Always take OpennetManager lock before PeerManager
-					node.peers.addPeer(nodeToAddNow);
+					if(addAtLRU)
+						peersLRU.pushLeast(nodeToAddNow);
+					else
+						peersLRU.push(nodeToAddNow);
+					oldPeers.remove(nodeToAddNow);
 				} else {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
 				timeLastOffered = System.currentTimeMillis();
-				return true;
+				ret = true;
 			}
 			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS;
+		}
+		if(ret) {
+			if(nodeToAddNow != null)
+				node.peers.addPeer(nodeToAddNow, true); // Add to peers outside the OM lock
+			return true;
 		}
 		Vector dropList = new Vector();
 		synchronized(this) {
@@ -245,7 +276,7 @@ public class OpennetManager {
 			} else while(peersLRU.size() > MAX_PEERS - (nodeToAddNow == null ? 0 : 1)) {
 				PeerNode toDrop;
 				// can drop peers which are over the limit
-				toDrop = peerToDrop(noDisconnect && nodeToAddNow != null && peersLRU.size() == MAX_PEERS);
+				toDrop = peerToDrop(noDisconnect && nodeToAddNow != null && peersLRU.size() >= MAX_PEERS);
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
@@ -262,6 +293,7 @@ public class OpennetManager {
 			if(ret) {
 				long now = System.currentTimeMillis();
 				if(nodeToAddNow != null) {
+					// Here we can't avoid nested locks. So always take the OpennetManager lock first.
 					if(!node.peers.addPeer(nodeToAddNow)) {
 						// Can't add it, already present (some sort of race condition)
 						PeerNode readd = (PeerNode) dropList.remove(dropList.size()-1);
@@ -274,7 +306,10 @@ public class OpennetManager {
 							peersLRU.pushLeast(nodeToAddNow);
 						else
 							peersLRU.push(nodeToAddNow);
-						if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");					
+						if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");
+						oldPeers.remove(nodeToAddNow);
+						// Always take OpennetManager lock before PeerManager
+						node.peers.addPeer(nodeToAddNow, true);
 					}
 					if(!dropList.isEmpty())
 						timeLastDropped = now;
@@ -295,7 +330,7 @@ public class OpennetManager {
 		for(int i=0;i<dropList.size();i++) {
 			OpennetPeerNode pn = (OpennetPeerNode) dropList.get(i);
 			if(logMINOR) Logger.minor(this, "Dropping LRU opennet peer: "+pn);
-			node.peers.disconnect(pn);
+			node.peers.disconnect(pn, true, true);
 		}
 		return ret;
 	}
@@ -306,7 +341,7 @@ public class OpennetManager {
 			toDrop = peerToDrop(false);
 			if(toDrop == null) return;
 			peersLRU.remove(toDrop);
-			node.peers.disconnect(toDrop);
+			node.peers.disconnect(toDrop, true, true);
 		}
 	}
 	
@@ -357,11 +392,48 @@ public class OpennetManager {
 			}
 		}
 		if(!wantPeer(pn, false)) // Start at top as it just succeeded
-			node.peers.disconnect(pn);
+			node.peers.disconnect(pn, true, false);
 	}
 
-	public synchronized void onRemove(OpennetPeerNode pn) {
-		peersLRU.remove(pn);
+	public void onRemove(OpennetPeerNode pn) {
+		synchronized (this) {
+			peersLRU.remove(pn);
+			oldPeers.push(pn);
+			while (oldPeers.size() > MAX_OLD_PEERS)
+				oldPeers.pop();
+		}
+		pn.disconnected();
+	}
+
+	synchronized PeerNode[] getOldPeers() {
+		return (PeerNode[]) oldPeers.toArrayOrdered(new PeerNode[oldPeers.size()]);
+	}
+	
+	synchronized PeerNode[] getUnsortedOldPeers() {
+		return (PeerNode[]) oldPeers.toArray(new PeerNode[oldPeers.size()]);
+	}
+	
+	/**
+	 * Add an old opennet node - a node which might try to reconnect, and which we should accept
+	 * if we are desperate.
+	 * @param pn The node to add to the old opennet nodes LRU.
+	 */
+	synchronized void addOldOpennetNode(PeerNode pn) {
+		oldPeers.push(pn);
+	}
+
+	String getOldPeersFilename() {
+		return new File(node.nodeDir, "openpeers-old-"+crypto.portNumber).toString();
+	}
+
+	synchronized int countOldOpennetPeers() {
+		return oldPeers.size();
+	}
+
+	PeerNode randomOldOpennetNode() {
+		PeerNode[] nodes = getUnsortedOldPeers();
+		if(nodes.length == 0) return null;
+		return nodes[node.random.nextInt(nodes.length)];
 	}
 
 }

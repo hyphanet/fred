@@ -87,6 +87,9 @@ public class NodeDispatcher implements Dispatcher {
 			return handleTime(m, source);
 		} else if(spec == DMT.FNPVoid) {
 			return true;
+		} else if(spec == DMT.FNPDisconnect) {
+			handleDisconnect(m, source);
+			return true;
 		} else if(spec == DMT.nodeToNodeMessage) {
 			node.receivedNodeToNodeMessage(m);
 			return true;
@@ -142,6 +145,25 @@ public class NodeDispatcher implements Dispatcher {
 			return handleProbeTrace(m, source);
 		}
 		return false;
+	}
+
+	private void handleDisconnect(Message m, PeerNode source) {
+		source.disconnected();
+		// If true, remove from active routing table, likely to be down for a while.
+		// Otherwise just dump all current connection state and keep trying to connect.
+		boolean remove = m.getBoolean(DMT.REMOVE);
+		if(remove)
+			node.peers.disconnect(source, false, false);
+		// If true, purge all references to this node. Otherwise, we can keep the node
+		// around in secondary tables etc in order to more easily reconnect later. 
+		// (Mostly used on opennet)
+		// Not used at the moment - FIXME
+		boolean purge = m.getBoolean(DMT.PURGE);
+		// Process parting message
+		int type = m.getInt(DMT.NODE_TO_NODE_MESSAGE_TYPE);
+		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
+		if(messageData.getLength() == 0) return;
+		node.receivedNodeToNodeMessage(source, type, messageData, true);
 	}
 
 	private boolean handleTime(Message m, PeerNode source) {
@@ -529,7 +551,8 @@ public class NodeDispatcher implements Dispatcher {
 	 * request which we should handle anyway.
 	 * @param cb
 	 * @param locsNotVisited 
-	 * @param maxDistance 
+	 * @param maxDistance Don't route to any nodes further away from the target than this distance.
+	 * Note that it is a distance, NOT A LOCATION.
 	 * @param dontReject If true, don't reject the request, simply return false and the caller will handle it.
 	 * @return True unless we rejected the request (due to load, route not found etc), or would have if it weren't for dontReject.
 	 */
@@ -818,6 +841,7 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
+		// notVisitedList == locsNotVisited
 
 		// Find it
 		ProbeContext ctx;
@@ -852,37 +876,21 @@ public class NodeDispatcher implements Dispatcher {
 		
 		// Maybe fork
 		
-		
-		
 		try {
-			double furthestDist = 0.0;
-			if(notVisitedList.size() > 0) {
+			if(locsNotVisited.length > 0) {
 				if(ctx.forkCount < MAX_FORKS) {
 					ctx.forkCount++;
 					
-					Double[] locs = (Double[]) notVisitedList.toArray(new Double[notVisitedList.size()]);
-					Arrays.sort(locs, new Comparator() {
-						public int compare(Object arg0, Object arg1) {
-							double d0 = ((Double) arg0).doubleValue();
-							double d1 = ((Double) arg1).doubleValue();
-							double dist0 = Location.distance(d0, target, true);
-							double dist1 = Location.distance(d1, target, true);
-							if(dist0 < dist1) return -1; // best at the beginning
-							if(dist0 > dist1) return 1;
-							return 0; // should not happen
-						}
-					});
-					
-					double mustBeBetterThan = ((Double)locs[Math.min(3,locs.length)]).doubleValue();
-					
-					for(int i=0;i<notVisitedList.size();i++) {
-						double loc = ((Double)(notVisitedList.get(i))).doubleValue();
-						double dist = Location.distance(loc, target);
-						if(dist > furthestDist) {
-							furthestDist = dist;
-						}
+					double[] dists = new double[locsNotVisited.length];
+					for(int i=0;i<dists.length;i++) {
+						dists[i] = Location.distance(locsNotVisited[i], target, true);
 					}
-					if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, false, null, notVisitedList, mustBeBetterThan, true, linearCounter, "backtracking"))
+					Arrays.sort(dists);
+					
+					double mustBeBetterThan = dists[Math.min(3,dists.length)];
+					double maxDistance = Location.distance(mustBeBetterThan, target, true);
+					
+					if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, false, null, notVisitedList, maxDistance, true, linearCounter, "backtracking"))
 						return true;
 				}
 			}

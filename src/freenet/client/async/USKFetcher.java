@@ -24,7 +24,7 @@ import freenet.support.api.Bucket;
  * we are talking about. If this is fast enough then people will use the "-" form.
  * 
  * FProxy should cause USKs with negative edition numbers to be redirected to USKs
- * with negative edition numbers.
+ * with positive edition numbers.
  * 
  * If the number specified is up to date, we just do the fetch. If a more recent
  * USK can be found, then we fail with an exception with the new version. The
@@ -165,9 +165,10 @@ public class USKFetcher implements ClientGetState {
 			if(backgroundPoll) {
 				if(minFailures == origMinFailures && minFailures != maxMinFailures) {
 					// Either just started, or just advanced, either way boost the priority.
-					return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+					return RequestStarter.UPDATE_PRIORITY_CLASS;
+				} else {
+					return RequestStarter.PREFETCH_PRIORITY_CLASS;
 				}
-				return RequestStarter.UPDATE_PRIORITY_CLASS;
 			} else
 				return parent.getPriorityClass();
 		}
@@ -183,8 +184,8 @@ public class USKFetcher implements ClientGetState {
 	long minFailures;
 	final long origMinFailures;
 	
-	static final long origSleepTime = 1000;
-	static final long maxSleepTime = 60 * 60 * 1000;
+	static final long origSleepTime = 5 * 60 * 1000;
+	static final long maxSleepTime = 24 * 60 * 60 * 1000;
 	long sleepTime = origSleepTime;
 
 	/** Maximum number of editions to probe ahead. */
@@ -256,7 +257,7 @@ public class USKFetcher implements ClientGetState {
 					minFailures = origMinFailures;
 					sleepTime = origSleepTime;
 				} else {
-					// Not exponential; it is more likely that it is close to the known edition than not.
+					// Increase exponentially but relatively slowly
 					long newMinFailures = Math.max(((int)(minFailures * 1.25)), minFailures+1);
 					if(newMinFailures > maxMinFailures)
 						newMinFailures = maxMinFailures;
@@ -303,7 +304,7 @@ public class USKFetcher implements ClientGetState {
 	void onSuccess(USKAttempt att, boolean dontUpdate, ClientSSKBlock block) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		LinkedList l = null;
-		long lastEd = uskManager.lookup(origUSK);
+		final long lastEd = uskManager.lookup(origUSK);
 		synchronized(this) {
 			runningAttempts.remove(att);
 			long curLatest = att.number;
@@ -340,21 +341,27 @@ public class USKFetcher implements ClientGetState {
 			cancelBefore(curLatest);
 		}
 		if(l == null) return;
+		final LinkedList toSched = l;
 		// If we schedule them here, we don't get icky recursion problems.
-		else if(!cancelled) {
-			for(Iterator i=l.iterator();i.hasNext();) {
-				// We may be called recursively through onSuccess().
-				// So don't start obsolete requests.
-				USKAttempt a = (USKAttempt) i.next();
-				lastEd = uskManager.lookup(origUSK);
-				if((lastEd <= a.number) && !a.cancelled)
-					a.schedule();
-				else {
-					synchronized(this) {
-						runningAttempts.remove(a);
+		if(!cancelled) {
+			ctx.executor.execute(new Runnable() {
+				public void run() {
+					long last = lastEd;
+					for(Iterator i=toSched.iterator();i.hasNext();) {
+						// We may be called recursively through onSuccess().
+						// So don't start obsolete requests.
+						USKAttempt a = (USKAttempt) i.next();
+						last = uskManager.lookup(origUSK);
+						if((last <= a.number) && !a.cancelled)
+							a.schedule();
+						else {
+							synchronized(this) {
+								runningAttempts.remove(a);
+							}
+						}
 					}
 				}
-			}
+			}, "USK scheduler"); // Run on separate thread because otherwise can get loooong recursions
 		}
 	}
 

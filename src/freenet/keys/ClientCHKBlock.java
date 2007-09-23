@@ -75,12 +75,11 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      */
     public Bucket decode(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
         // Overall hash already verified, so first job is to decrypt.
-		if((!(key.cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 ||
-				key.cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256)))
+		if(key.cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
             throw new UnsupportedOperationException();
         BlockCipher cipher;
         try {
-            cipher = new Rijndael(256, 256, key.cryptoAlgorithm == Key.ALGO_INSECURE_AES_PCFB_256_SHA256);
+            cipher = new Rijndael(256, 256);
         } catch (UnsupportedCipherException e) {
             // FIXME - log this properly
             throw new Error(e);
@@ -180,7 +179,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // Now encrypt the header, then the data, using the same PCFB instance
         BlockCipher cipher;
         try {
-            cipher = new Rijndael(256, 256, false);
+            cipher = new Rijndael(256, 256);
         } catch (UnsupportedCipherException e) {
             // FIXME - log this properly
             throw new Error(e);

@@ -38,12 +38,6 @@ public abstract class Key implements WritableToDataOutputStream {
     
     /** Code for 256-bit AES with PCFB and SHA-256 */
     static final byte ALGO_AES_PCFB_256_SHA256 = 2;
-    /** Code for old, insecure (only encrypts first 128 bits of block) 256-bit AES with PCFB and SHA-256.
-     * FIXME: REMOVE!! */
-	static final byte ALGO_INSECURE_AES_PCFB_256_SHA256 = 1;
-	
-	public static boolean ALLOW_INSECURE_CLIENT_CHKS;
-	public static boolean ALLOW_INSECURE_CLIENT_SSKS;
 
     protected Key(byte[] routingKey) {
     	this.routingKey = routingKey;

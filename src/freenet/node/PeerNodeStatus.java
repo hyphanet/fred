@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.Hashtable;
 import java.util.Map;
 
 import freenet.clients.http.DarknetConnectionsToadlet;
@@ -45,6 +44,8 @@ public class PeerNodeStatus {
 	private final boolean routable;
 
 	private final boolean isFetchingARK;
+
+	private final boolean isOpennet;
 
 	private final double averagePingTime;
 
@@ -100,6 +101,7 @@ public class PeerNodeStatus {
 		this.connected = peerNode.isConnected();
 		this.routable = peerNode.isRoutable();
 		this.isFetchingARK = peerNode.isFetchingARK();
+		this.isOpennet = peerNode.isOpennet();
 		this.averagePingTime = peerNode.averagePingTime();
 		this.publicInvalidVersion = peerNode.publicInvalidVersion();
 		this.publicReverseInvalidVersion = peerNode.publicReverseInvalidVersion();
@@ -288,6 +290,13 @@ public class PeerNodeStatus {
 	 */
 	public boolean isFetchingARK() {
 		return isFetchingARK;
+	}
+
+	/**
+	 * @return the isOpennet
+	 */
+	public boolean isOpennet() {
+		return isOpennet;
 	}
 
 	/**

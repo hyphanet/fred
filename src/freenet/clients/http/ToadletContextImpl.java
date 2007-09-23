@@ -270,10 +270,10 @@ public class ToadletContextImpl implements ToadletContext {
 					headers.put(before, after);
 				}
 				
-				boolean shouldDisconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers);
+				boolean disconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers);
 				
 				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, container.getCSSName(), bf, pageMaker, container);
-				ctx.shouldDisconnect = shouldDisconnect;
+				ctx.shouldDisconnect = disconnect;
 				
 				/*
 				 * if we're handling a POST, copy the data into a bucket now,
@@ -313,7 +313,7 @@ public class ToadletContextImpl implements ToadletContext {
 					Toadlet t = container.findToadlet(uri);
 					
 					if(t == null) {
-						ctx.sendNoToadletError(shouldDisconnect);
+						ctx.sendNoToadletError(ctx.shouldDisconnect);
 						break;
 					}
 					
@@ -346,11 +346,11 @@ public class ToadletContextImpl implements ToadletContext {
 						}
 						
 					} else {
-						ctx.sendMethodNotAllowed(method, shouldDisconnect);
+						ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
 						ctx.close();
 					}
 				}
-				if(shouldDisconnect) {
+				if(ctx.shouldDisconnect) {
 					sock.close();
 					return;
 				}
@@ -437,5 +437,9 @@ public class ToadletContextImpl implements ToadletContext {
 
 	public boolean doRobots() {
 		return container.doRobots();
+	}
+
+	public void forceDisconnect() {
+		this.shouldDisconnect = true;
 	}
 }

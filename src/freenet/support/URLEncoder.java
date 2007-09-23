@@ -19,7 +19,9 @@ public class URLEncoder {
 	 *
 	 * @param  URL  String to encode
 	 * @param force List of characters (in the form of a string) which must be encoded as well as the built-in.
-	 * @return      HTML-safe version of string
+	 * @param ascii If true, encode all foreign letters, if false, leave them as is. Set to true if you are
+	 * passing to something that needs ASCII (e.g. HTTP headers), set to false if you are using in an HTML page.
+	 * @return      Encoded version of string
 	 */
 	public final static String encode(String URL, String force, boolean ascii) {
 		StringBuffer enc = new StringBuffer(URL.length());
@@ -48,7 +50,15 @@ public class URLEncoder {
 		return enc.toString();
 	}
 
-	public static String encode(String s) {
+	/**
+	 * Encode a string for inclusion in a URI.
+	 *
+	 * @param  URL  String to encode
+	 * @param ascii If true, encode all foreign letters, if false, leave them as is. Set to true if you are
+	 * passing to something that needs ASCII (e.g. HTTP headers), set to false if you are using in an HTML page.
+	 * @return      Encoded version of string
+	 */
+	public static String encode(String s, boolean ascii) {
 		return encode(s, null, false);
 	}
 

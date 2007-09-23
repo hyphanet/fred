@@ -73,6 +73,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     }
 
     public void run() {
+	    freenet.support.Logger.OSThread.logPID(this);
     	boolean thrown = false;
         try {
         	realRun();
@@ -147,9 +148,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             	node.addTransferringRequestHandler(uid);
             	if(bt.send(node.executor)) {
             		status = RequestSender.SUCCESS; // for byte logging
-            		if(source.isOpennet()) {
-            			finishOpennetNoRelay();
-            		}
+           			finishOpennetNoRelayChecked();
             	}
             }
             return;
@@ -188,7 +187,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             		finalTransferFailed = true;
             	} else {
     				// Successful CHK transfer, maybe path fold
-    				finishOpennet();
+    				finishOpennetChecked();
             	}
 				status = rs.getStatus();
         	    return;
@@ -262,23 +261,48 @@ public class RequestHandler implements Runnable, ByteCounter {
         }
 	}
 
-	private void finishOpennet() {
-		if(!(node.passOpennetRefsThroughDarknet() || source.isOpennet())) return;
+	private void finishOpennetChecked() {
+		if(!(node.passOpennetRefsThroughDarknet() || source.isOpennet())) {
+			Message msg = DMT.createFNPOpennetCompletedAck(uid);
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Oh well...
+			}
+			return;
+		}
+		finishOpennetInner();
+	}
+	
+	private void finishOpennetInner() {
 		byte[] noderef = rs.waitForOpennetNoderef();
 		if(noderef == null) {
-			finishOpennetNoRelay();
+			finishOpennetNoRelayInner();
 			return;
 		}
 		
 		if(node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0) {
-			finishOpennetNoRelay();
+			finishOpennetNoRelayInner();
 			return;
 		}
 		
     	finishOpennetRelay(noderef);
     }
     
-    private void finishOpennetNoRelay() {
+	private void finishOpennetNoRelayChecked() {
+		if(!(node.passOpennetRefsThroughDarknet() || source.isOpennet())) {
+			Message msg = DMT.createFNPOpennetCompletedAck(uid);
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Oh well...
+			}
+			return;
+		}
+		finishOpennetNoRelayInner();
+	}
+	
+    private void finishOpennetNoRelayInner() {
     	if(logMINOR)
     		Logger.minor(this, "Finishing opennet: sending own reference");
 		OpennetManager om = node.getOpennet();
@@ -344,6 +368,13 @@ public class RequestHandler implements Runnable, ByteCounter {
 				} catch (NotConnectedException e) {
 					// Oh well...
 				}
+			}
+		} else {
+			Message msg = DMT.createFNPOpennetCompletedAck(uid);
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Oh well...
 			}
 		}
     }

@@ -30,19 +30,16 @@ public class Rijndael implements BlockCipher {
 	}
 
 	public Rijndael(int keysize) throws UnsupportedCipherException {
-		this(keysize, 128, false);
+		this(keysize, 128);
 	}
 
 	/**
 	 * Create a Rijndael instance.
 	 * @param keysize The key size.
 	 * @param blocksize The block size.
-	 * @param fakeInsecure If true, only encrypt the first 128 bits of any block. This
-	 * is insecure! It is used for backwards compatibility with old data encrypted with
-	 * the old code.
 	 * @throws UnsupportedCipherException
 	 */
-	public Rijndael(int keysize, int blocksize, boolean fakeInsecure) throws UnsupportedCipherException {
+	public Rijndael(int keysize, int blocksize) throws UnsupportedCipherException {
 		if (! ((keysize == 128) ||
 				(keysize == 192) ||
 				(keysize == 256)))
@@ -53,12 +50,7 @@ public class Rijndael implements BlockCipher {
 			throw new UnsupportedCipherException("Invalid blocksize");
 		this.keysize=keysize;
 		this.blocksize=blocksize;
-		// FIXME This is deliberate insecurity! It is used for backwards compatibility *ONLY*!
-		// FIXME IT MUST BE REMOVED SOON!
-		if(fakeInsecure)
-			this.cryptBlockSize = 128;
-		else
-			this.cryptBlockSize = blocksize;
+		this.cryptBlockSize = blocksize;
 	}
 
 	public Rijndael() {

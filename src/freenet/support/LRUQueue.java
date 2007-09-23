@@ -106,14 +106,27 @@ public class LRUQueue {
         }
     }
 
+    /**
+     * Return the objects in the queue as an array in an arbitrary and meaningless
+     * order.
+     */
 	public synchronized Object[] toArray() {
 		return hash.keySet().toArray();
 	}
 
+    /**
+     * Return the objects in the queue as an array in an arbitrary and meaningless
+     * order.
+	 * @param array The array to fill in. If it is too small a new array of the same type will be allocated.
+     */
 	public synchronized Object[] toArray(Object[] array) {
 		return hash.keySet().toArray(array);
 	}
 	
+	/**
+	 * Return the objects in the queue as an array. The least recently used object
+	 * is in [0], the most recently used object is in [array.length-1].
+	 */
 	public synchronized Object[] toArrayOrdered() {
 		Object[] array = new Object[list.size()];
 		int x = 0;
@@ -124,6 +137,8 @@ public class LRUQueue {
 	}
 
 	/**
+	 * Return the objects in the queue as an array. The least recently used object
+	 * is in [0], the most recently used object is in [array.length-1].
 	 * @param array The array to fill in. If it is too small a new array of the same type will be allocated.
 	 */
 	public synchronized Object[] toArrayOrdered(Object[] array) {

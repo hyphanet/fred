@@ -95,6 +95,7 @@ public class TextModeClientInterface implements Runnable {
     }
     
     public void run() {
+	    freenet.support.Logger.OSThread.logPID(this);
     	try {
     		realRun();
     	} catch (IOException e) {
@@ -337,6 +338,7 @@ public class TextModeClientInterface implements Runnable {
     	// FIXME run on separate thread
     	n.ps.queueTimedJob(new Runnable() {
     		public void run() {
+    		    freenet.support.Logger.OSThread.logPID(this);
     			n.getNodeUpdater().arm();
     		}
     	}, 0);
@@ -357,6 +359,7 @@ public class TextModeClientInterface implements Runnable {
     		while(bis.available() > 0){
     			outsb.append((char)bis.read());
     		}
+    		bis.close();
     		output.data.free();
     	} catch (IOException e) {
     		outsb.append("Bucket error?: " + e.getMessage());
@@ -895,7 +898,7 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PLUGLIST")) {
         	outsb.append(n.pluginManager.dumpPlugins());
         } else if(uline.startsWith("PLUGKILL:")) {
-        	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim());
+        	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim(), 60*1000);
         } else {
         	if(uline.length() > 0)
         		printHeader(out);

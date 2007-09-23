@@ -119,6 +119,7 @@ public class ContentFilter {
 	
 	/**
 	 * Filter some data.
+	 * @param bf The bucket factory used to create the bucket to return the filtered data in.
 	 * @throws IOException If an internal error involving buckets occurred.
 	 */
 	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb) throws UnsafeContentTypeException, IOException {

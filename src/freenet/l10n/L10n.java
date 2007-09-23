@@ -21,9 +21,7 @@ import freenet.support.SimpleFieldSet;
 *
 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
 *
-* TODO: Maybe we ought to use the locale to set the default language.
 * TODO: Maybe base64 the override file ?
-* TODO: Add support for "custom", unknown languages ?
 *
 * comment(mario): for www interface we might detect locale from http requests?
 * for other access (telnet) using system locale would probably be good, but
@@ -37,7 +35,7 @@ public class L10n {
 	
 	// English has to remain the first one!
 	public static final String FALLBACK_DEFAULT = "en";
-	public static final String[] AVAILABLE_LANGUAGES = { "en", "de", "fr", "it", "no", "pl", "se", "unlisted" };
+	public static final String[] AVAILABLE_LANGUAGES = { "en", "de", "fr", "it", "no", "pl", "se", "es", "unlisted" };
 	private final String selectedLanguage;
 	
 	private static SimpleFieldSet currentTranslation = null;

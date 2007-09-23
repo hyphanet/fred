@@ -6,6 +6,7 @@ package freenet.node.fcp;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
@@ -231,7 +232,9 @@ public class ClientPut extends ClientPutBase {
 				md.update(salt.getBytes("UTF-8"));
 			} catch (UnsupportedEncodingException e) {}
 			try {
-				SHA256.hash(data.getInputStream(), md);
+				InputStream is = data.getInputStream();
+				SHA256.hash(is, md);
+				is.close();
 			} catch (IOException e) {
 				SHA256.returnMessageDigest(md);
 				Logger.error(this, "Got IOE: " +e.getMessage(), e);

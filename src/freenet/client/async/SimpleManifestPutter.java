@@ -239,32 +239,34 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	public void start() throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Starting "+this);
+		if (logMINOR)
+			Logger.minor(this, "Starting " + this);
 		PutHandler[] running;
 
-		boolean cancel = false;
-		
-		synchronized(this) {
-			cancel = cancelled;
-			if(!cancelled) {
-				running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
-				try {
-					for(int i=0;i<running.length;i++) {
-						running[i].start();
-					}
-					if(logMINOR) Logger.minor(this, "Started "+running.length+" PutHandler's for "+this);
-					if(cancelled) cancel();
-					if(running.length == 0) {
-						insertedAllFiles = true;
-						gotAllMetadata();
-					}
-				} catch (InsertException e) {
-					cancelAndFinish();
-					throw e;
+		synchronized (this) {
+			running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
+		}
+		try {
+			for (int i = 0; i < running.length; i++) {
+				running[i].start();
+				if (logMINOR)
+					Logger.minor(this, "Started " + i + " of " + running.length);
+				if (isFinished()) {
+					if (logMINOR)
+						Logger.minor(this, "Already finished, killing start() on " + this);
+					return;
 				}
 			}
+			if (logMINOR)
+				Logger.minor(this, "Started " + running.length + " PutHandler's for " + this);
+			if (running.length == 0) {
+				insertedAllFiles = true;
+				gotAllMetadata();
+			}
+		} catch (InsertException e) {
+			cancelAndFinish();
+			throw e;
 		}
-		if(cancel) cancel();
 	}
 	
 	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) throws InsertException {
@@ -530,7 +532,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		
 		cb.onFailure(e, this);
 	}
-
+	
+	/**
+	 * Cancel all running inserters and set finished to true.
+	 */
 	private void cancelAndFinish() {
 		PutHandler[] running;
 		synchronized(this) {
@@ -545,6 +550,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	public void cancel() {
+		super.cancel();
 		fail(new InsertException(InsertException.CANCELLED));
 	}
 	

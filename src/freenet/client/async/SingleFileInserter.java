@@ -114,6 +114,7 @@ class SingleFileInserter implements ClientPutState {
 
 	private class OffThreadCompressor implements Runnable {
 		public void run() {
+		    freenet.support.Logger.OSThread.logPID(this);
 			try {
 				tryCompress();
 			} catch (InsertException e) {

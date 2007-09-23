@@ -11,15 +11,18 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
+import freenet.io.comm.PeerParseException;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
+import freenet.pluginmanager.FredPluginPortForward;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPAddressDetector;
 import freenet.support.transport.ip.IPUtil;
 
@@ -303,6 +306,17 @@ public class NodeIPDetector {
 					redetectAddress();
 					return;
 				}
+				// Try making a dummy Peer, which will allow us to do a syntax check on the given hostname/IP address
+				try {
+					String hostAndDummyPort = val + ":8888";  // add a dummy port so our string can be parsed by Peer's constructor
+					new Peer(hostAndDummyPort, false, true);
+				} catch (HostnameSyntaxException e) {
+					throw new InvalidConfigValueException(l10n("unknownHostErrorInIPOverride", "error", "hostname or IP address syntax error"));
+				} catch (PeerParseException e) {
+					throw new InvalidConfigValueException(l10n("unknownHostErrorInIPOverride", "error", "parse error"));
+				} catch (UnknownHostException e) {
+					throw new InvalidConfigValueException(l10n("unknownHostErrorInIPOverride", "error", e.getMessage()));
+				}
 				FreenetInetAddress addr;
 				try {
 					addr = new FreenetInetAddress(val, false);
@@ -410,9 +424,13 @@ public class NodeIPDetector {
 	}
 
 	public void registerIPDetectorPlugin(FredPluginIPDetector detector) {
-		ipDetectorManager.register(detector);
-	} // FIXME what about unloading?
+		ipDetectorManager.registerDetectorPlugin(detector);
+	}
 
+	public void unregisterIPDetectorPlugin(FredPluginIPDetector detector) {
+		ipDetectorManager.unregisterDetectorPlugin(detector);
+	}
+	
 	public synchronized boolean isDetecting() {
 		return !(hasDetectedPM && hasDetectedIAD);
 	}
@@ -440,5 +458,12 @@ public class NodeIPDetector {
 				node.clientCore.alerts.unregister(maybeSymmetricAlert);
 		}
 	}
-	
+
+	public void registerPortForwardPlugin(FredPluginPortForward forward) {
+		ipDetectorManager.registerPortForwardPlugin(forward);
+	}
+
+	public void unregisterPortForwardPlugin(FredPluginPortForward forward) {
+		ipDetectorManager.unregisterPortForwardPlugin(forward);
+	}
 }

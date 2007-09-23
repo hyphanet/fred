@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Random;
+import java.util.Set;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -80,6 +81,7 @@ import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.OpennetUserAlert;
 import freenet.node.useralerts.TimeSkewDetectedUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
@@ -103,6 +105,7 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.ShortCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
  * @author amphibian
@@ -333,13 +336,11 @@ public class Node implements TimeSkewDetectorCallback {
 	final LRUHashtable cachedPubKeys;
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
-	final StaticSwapRequestInterval swapInterval;
 	public final DoubleTokenBucket outputThrottle;
 	private int outputBandwidthLimit;
 	private int inputBandwidthLimit;
 	boolean inputLimitDefault;
 	public static final short DEFAULT_MAX_HTL = (short)10;
-	public static final int DEFAULT_SWAP_INTERVAL = 2000;
 	private short maxHTL;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
@@ -405,7 +406,11 @@ public class Node implements TimeSkewDetectorCallback {
 				// Just keep the first one with the correct port number.
 				Peer p;
 				try {
-					p = new Peer(udp[i], false);
+					p = new Peer(udp[i], false, true);
+				} catch (HostnameSyntaxException e) {
+					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing darknet node reference: "+udp[i]);
+					System.err.println("Invalid hostname or IP Address syntax error while parsing darknet node reference: "+udp[i]);
+					continue;
 				} catch (PeerParseException e) {
 					IOException e1 = new IOException();
 					e1.initCause(e);
@@ -540,7 +545,7 @@ public class Node implements TimeSkewDetectorCallback {
 		random.nextBytes(buffer);
 		this.fastWeakRandom = new MersenneTwister(buffer);
 		cachedPubKeys = new LRUHashtable();
-		lm = new LocationManager(random);
+		lm = new LocationManager(random, this);
 
 		try {
 			localhostAddress = InetAddress.getByName("127.0.0.1");
@@ -671,21 +676,6 @@ public class Node implements TimeSkewDetectorCallback {
 			ibwLimit = obwLimit * 4;
 		}
 		
-		// SwapRequestInterval
-		
-		nodeConfig.register("swapRequestSendInterval", DEFAULT_SWAP_INTERVAL, sortOrder++, true, false,
-				"Node.swapRInterval", "Node.swapRIntervalLong",
-				new IntCallback() {
-					public int get() {
-						return swapInterval.fixedInterval;
-					}
-					public void set(int val) throws InvalidConfigValueException {
-						swapInterval.set(val);
-					}
-		});
-		
-		swapInterval = new StaticSwapRequestInterval(nodeConfig.getInt("swapRequestSendInterval"));
-		
 		// Testnet.
 		// Cannot be enabled/disabled on the fly.
 		// If enabled, forces certain other config options.
@@ -770,7 +760,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		// Then read the peers
 		peers = new PeerManager(this);
-		peers.tryReadPeers(new File(nodeDir, "peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false);
+		peers.tryReadPeers(new File(nodeDir, "peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
 		peers.writePeers();
 		peers.updatePMUserAlert();
 
@@ -802,6 +792,7 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				if(val) o.start();
 				else o.stop();
+				ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
 			}
 		});
 		
@@ -962,6 +953,9 @@ public class Node implements TimeSkewDetectorCallback {
 		envConfig.setTxnWriteNoSync(true);
 		envConfig.setLockTimeout(600*1000*1000); // should be long enough even for severely overloaded nodes!
 		// Note that the above is in *MICRO*seconds.
+		envConfig.setConfigParam("je.log.faultReadSize", "6144");
+		envConfig.setConfigParam("je.evictor.lruOnly", "false");  //Is not a mutable config option and must be set before opening of environment.
+		envConfig.setConfigParam("je.evictor.nodesPerScan", "100");  //Is not a mutable config option and must be set before opening of environment.
 		
 		File dbDir = new File(storeDir, "database-"+getDarknetPortNumber());
 		dbDir.mkdirs();
@@ -982,6 +976,8 @@ public class Node implements TimeSkewDetectorCallback {
 				reconstructFile.delete();
 				throw new DatabaseException();
 			}
+			// Auto-recovery can take a long time
+			WrapperManager.signalStarting(60*60*1000);
 			env = new Environment(dbDir, envConfig);
 			mutableConfig = env.getConfig();
 		} catch (DatabaseException e) {
@@ -1122,9 +1118,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		envMutableConfig.setCacheSize(databaseMaxMemory);
 		// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
-		// FIXME is this the correct place to set these parameters?
-		envMutableConfig.setConfigParam("je.evictor.lruOnly", "false");
-		envMutableConfig.setConfigParam("je.evictor.nodesPerScan", "100");
 		
 		try {
 			storeEnvironment.setMutableConfig(envMutableConfig);
@@ -1272,8 +1265,6 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	public void start(boolean noSwaps) throws NodeInitException {
 		
-		if(!noSwaps)
-			lm.startSender(this, this.swapInterval);
 		dispatcher.start(nodeStats); // must be before usm
 		dnsr.start();
 		ps.start(nodeStats);
@@ -1302,6 +1293,9 @@ public class Node implements TimeSkewDetectorCallback {
 //		pluginManager3 = new freenet.plugin_new.PluginManager(pluginManagerConfig);
 		
 		ipDetector.start();
+		
+		// Start sending swaps
+		lm.startSender();
 
 		// Node Updater
 		try{
@@ -2247,7 +2241,11 @@ public class Node implements TimeSkewDetectorCallback {
 		if(key == null) return null;
 		clientSSK.setPublicKey(key);
 		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(), dontPromote);
-		if(block == null) return null;
+		if(block == null) {
+			if(logMINOR)
+				Logger.minor(this, "Could not find key for "+clientSSK+" (dontPromote="+dontPromote+")");
+			return null;
+		}
 		// Move the pubkey to the top of the LRU, and fix it if it
 		// was corrupt.
 		cacheKey(clientSSK.pubKeyHash, key, false);
@@ -2279,14 +2277,32 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 	
+	public synchronized boolean isStopping() {
+		return isStopping;
+	}
+	
 	/**
 	 * Get the node into a state where it can be stopped safely
 	 * May be called twice - once in exit (above) and then again
 	 * from the wrapper triggered by calling System.exit(). Beware!
 	 */
-	public synchronized void park() {
-		if(isStopping) return;
-		isStopping = true;
+	public void park() {
+		synchronized(this) {
+			if(isStopping) return;
+			isStopping = true;
+		}
+		
+		try {
+			Message msg = DMT.createFNPDisconnect(false, false, -1, new ShortBuffer(new byte[0]));
+			peers.localBroadcast(msg, true);
+		} catch (Throwable t) {
+			try {
+				// E.g. if we haven't finished startup
+				Logger.error(this, "Failed to tell peers we are going down: "+t, t);
+			} catch (Throwable t1) {
+				// Ignore. We don't want to mess up the exit process!
+			}
+		}
 		
 		config.store();
 		
@@ -2310,7 +2326,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public void removePeerConnection(PeerNode pn) {
-		peers.disconnect(pn);
+		peers.disconnect(pn, true, false);
 	}
 
 	public void onConnectedPeer() {
@@ -2338,14 +2354,20 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	public void receivedNodeToNodeMessage(Message m) {
 	  PeerNode src = (PeerNode) m.getSource();
+	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+	  ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
+	  receivedNodeToNodeMessage(src, type, messageData, false);
+	}
+	
+	public void receivedNodeToNodeMessage(PeerNode src, int type, ShortBuffer messageData, boolean partingMessage) {
 	  if(!(src instanceof DarknetPeerNode)) {
-		Logger.error(this, "Got N2NTM from opennet node ?!?!?!: "+m+" from "+src);
+		Logger.error(this, "Got N2NTM from opennet node ?!?!?!: from "+src);
 		return;
 	  }
-	  DarknetPeerNode source = (DarknetPeerNode)m.getSource();
-	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+	  DarknetPeerNode source = (DarknetPeerNode)src;
+	  
 	  if(type == Node.N2N_MESSAGE_TYPE_FPROXY) {
-		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
+		
 		Logger.normal(this, "Received N2NM from '"+source.getPeer()+"'");
 		SimpleFieldSet fs = null;
 		try {
@@ -2511,6 +2533,14 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public double getLocationChangeSession() {
 		return lm.getLocChangeSession();
+	}
+	
+	public int getAverageOutgoingSwapTime() {
+		return lm.getAverageSwapTime();
+	}
+
+	public int getSendSwapInterval() {
+		return lm.getSendSwapInterval();
 	}
 	
 	public int getNumberOfRemotePeerLocationsSeenInSwaps() {
@@ -2682,6 +2712,25 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	public synchronized boolean passOpennetRefsThroughDarknet() {
 		return passOpennetRefsThroughDarknet;
+	}
+
+	/**
+	 * Get the set of public ports that need to be forwarded. These are internal
+	 * ports, not necessarily external - they may be rewritten by the NAT.
+	 * @return A Set of ForwardPort's to be fed to port forward plugins.
+	 */
+	public Set getPublicInterfacePorts() {
+		HashSet set = new HashSet();
+		// FIXME IPv6 support
+		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.portNumber));
+		OpennetManager opennet = this.opennet;
+		if(opennet != null) {
+			NodeCrypto crypto = opennet.crypto;
+			if(crypto != null) {
+				set.add(new ForwardPort("opennet", false, ForwardPort.PROTOCOL_UDP_IPV4, crypto.portNumber));
+			}
+		}
+		return set;
 	}
 
 }

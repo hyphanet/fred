@@ -17,12 +17,14 @@ public class BookmarkCategory extends Bookmark {
 		setDesc(desc);
 	}
 
-	protected Bookmark addBookmark(Bookmark b) {
+	protected synchronized Bookmark addBookmark(Bookmark b) {
+		int x = bookmarks.indexOf(b);
+		if(x >= 0) return (Bookmark) bookmarks.get(x);
 		bookmarks.add(b);
 		return b;
 	}
 
-	protected void removeBookmark(Bookmark b) {
+	protected synchronized void removeBookmark(Bookmark b) {
 		bookmarks.remove(b);
 	}
 
@@ -123,4 +125,6 @@ public class BookmarkCategory extends Bookmark {
 		for (int i = 0; i < size(); i++)
 			subCategories.get(i).setPrivate(bool);
 	}
+	
+	// Don't override equals(), two categories are equal if they have the same name and description.
 }

@@ -20,57 +20,53 @@ public class PluginHandler {
 	 * @param plug
 	 */
 	public static PluginInfoWrapper startPlugin(PluginManager pm, String filename, FredPlugin plug, PluginRespirator pr) {
-		final PluginStarter ps = new PluginStarter(pr);
-		final PluginInfoWrapper pi = new PluginInfoWrapper(plug, ps, filename);
-		
-		// This is an ugly trick... sorry ;o)
-		// The thread still exists as an identifier, but is never started if the
-		// plugin doesn't require it
+		final PluginInfoWrapper pi = new PluginInfoWrapper(plug, filename);
+		final PluginStarter ps = new PluginStarter(pr, pi);
 		ps.setPlugin(pm, plug);
-		// Run after startup
-		// FIXME this is horrible, wastes a thread, need to make PluginStarter a Runnable 
-		// not a Thread, and then deal with the consequences of that (removePlugin(Thread)) ...
-		pm.getTicker().queueTimedJob(new Runnable() {
-			public void run() {
-				if (!pi.isThreadlessPlugin())
-					ps.start();
-				else
-					ps.run();
-			}
-		}, 0);
+		// We must start the plugin *after startup has finished*
+		Runnable job;
+		if(!pi.isThreadlessPlugin()) {
+			final Thread t = new Thread(ps);
+			t.setDaemon(true);
+			pi.setThread(t);
+			job = new Runnable() {
+				public void run() {
+					t.start();
+				}
+			};
+		} else {
+			job = ps;
+		}
+		// Run immediately after startup
+		pm.getTicker().queueTimedJob(job, 0);
 		return pi;
 	}
 	
-	private static class PluginStarter extends Thread {
-		private Object plugin = null;
+	private static class PluginStarter implements Runnable {
+		private FredPlugin plugin = null;
 		private PluginRespirator pr;
 		private PluginManager pm = null;
+		final PluginInfoWrapper pi;
 		
-		public PluginStarter(PluginRespirator pr) {
+		public PluginStarter(PluginRespirator pr, PluginInfoWrapper pi) {
 			this.pr = pr;
-			setDaemon(true);
+			this.pi = pi;
 		}
 		
-		public void setPlugin(PluginManager pm, Object plugin) {
+		public void setPlugin(PluginManager pm, FredPlugin plugin) {
 			this.plugin = plugin;
 			this.pm = pm;
 		}
 		
 		public void run() {
-			int seconds = 120; // give up after 2 min
-			while (plugin == null) {
-				// 1s polling
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-				}
-				if (seconds-- <= 0)
-					return;
-			}
-			
+			boolean threadless = plugin instanceof FredPluginThreadless;
 			if (plugin instanceof FredPlugin) {
 				try {
+					if(!threadless) // Have to do it now because threaded
+						pm.register(plugin, pi);
 					((FredPlugin)plugin).runPlugin(pr);
+					if(threadless) // Don't want it to receive callbacks until after it has the PluginRespirator, else get NPEs
+						pm.register(plugin, pi);
 				} catch (OutOfMemoryError e) {
 					OOMHandler.handleOOM(e);
 				} catch (Throwable t) {
@@ -78,8 +74,10 @@ public class PluginHandler {
 					System.err.println("Caught Throwable while running plugin: "+t);
 					t.printStackTrace();
 				}
-				if(!(plugin instanceof FredPluginThreadless))
-					pm.removePlugin(this);
+				if(!threadless) {
+					pi.unregister(pm); // If not already unregistered
+					pm.removePlugin(pi);
+				}
 			} else {
 				// If not FredPlugin, then the whole thing is aborted,
 				// and then this method will return, killing the thread
