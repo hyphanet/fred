@@ -15,9 +15,6 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.HashMap;
 
-import freenet.l10n.L10n;
-import freenet.support.HTMLEncoder;
-import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;

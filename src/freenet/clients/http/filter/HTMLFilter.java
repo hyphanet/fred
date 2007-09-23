@@ -36,12 +36,14 @@ import freenet.support.io.NullWriter;
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	private static boolean logMINOR;
+	private static boolean logDEBUG;
 	
 	private static boolean deleteWierdStuff = true;
 	private static boolean deleteErrors = true;
 
 	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap otherParams, FilterCallback cb) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
 		InputStream strm = bucket.getInputStream();
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
@@ -80,13 +82,27 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
 		Writer w = new NullWriter();
 		Reader r;
-		r = new BufferedReader(new InputStreamReader(bis, parseCharset), 4096);
+		try {
+			r = new BufferedReader(new InputStreamReader(bis, parseCharset), 4096);
+		} catch (UnsupportedEncodingException e) {
+			strm.close();
+			throw e;
+		}
 		HTMLParseContext pc = new HTMLParseContext(r, w, null, new NullFilterCallback(), true);
 		try {
 			pc.run(null);
+		} catch (IOException e) {
+			throw e;
 		} catch (Throwable t) {
 			// Ignore ALL errors
 			if(logMINOR) Logger.minor(this, "Caught "+t+" trying to detect MIME type with "+parseCharset);
+		}
+		try {
+			r.close();
+		} catch (IOException e) {
+			throw e;
+		} catch (Throwable t) {
+			if(logMINOR) Logger.minor(this, "Caught "+t+" closing stream after trying to detect MIME type with "+parseCharset);
 		}
 		if(logMINOR) Logger.minor(this, "Returning charset "+pc.detectedCharset);
 		return pc.detectedCharset;
@@ -324,7 +340,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		
 		if(pc.noOutput) return;
 
-		if(logMINOR) Logger.minor(this, "Saving text: "+s.toString());
+		if(logDEBUG) Logger.debug(this, "Saving text: "+s.toString());
 		if (pc.killText) {
 			return;
 		}
@@ -355,7 +371,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 		String sout = out.toString();
 		if(pc.cb != null)
-			pc.cb.onText(sout, tagName); /* Tag name is given as type for the text */
+			pc.cb.onText(HTMLDecoder.decode(sout), tagName); /* Tag name is given as type for the text */
 		
 		w.write(sout);
 	}
@@ -363,9 +379,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	void processTag(Vector splitTag, Writer w, HTMLParseContext pc)
 		throws IOException, DataFilterException {
 		// First, check that it is a recognized tag
-		if(logMINOR) {
+		if(logDEBUG) {
 			for(int i=0;i<splitTag.size();i++)
-				Logger.minor(this, "Tag["+i+"]="+splitTag.get(i));
+				Logger.debug(this, "Tag["+i+"]="+splitTag.get(i));
 		}
 		ParsedTag t = new ParsedTag(splitTag);
 		if (!pc.killTag) {
@@ -404,7 +420,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if(s.charAt(s.length()-1) == '-')
 				s.setLength(s.length()-1);
 		}
-		if(logMINOR) Logger.minor(this, "Saving comment: "+s.toString());
+		if(logDEBUG) Logger.debug(this, "Saving comment: "+s.toString());
 		if (pc.expectingBadComment)
 			return; // ignore it
 
@@ -486,13 +502,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					unparsedAttrs[x - 1] = (String) v.elementAt(x);
 			} else
 				unparsedAttrs = new String[0];
-			if(logMINOR) Logger.minor(this, "Element = "+element);
+			if(logDEBUG) Logger.debug(this, "Element = "+element);
 		}
 
 		public ParsedTag sanitize(HTMLParseContext pc) throws DataFilterException {
 			TagVerifier tv =
 				(TagVerifier) allowedTagsVerifiers.get(element.toLowerCase());
-			if(logMINOR) Logger.minor(this, "Got verifier: "+tv+" for "+element);
+			if(logDEBUG) Logger.debug(this, "Got verifier: "+tv+" for "+element);
 			if (tv == null) {
 				if (deleteWierdStuff) {
 					return null;
@@ -596,7 +612,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"u",
 				"noframes",
 				"fieldset",
-				"noscript",
+// Delete <noscript> / </noscript>. So we can at least see the non-scripting code.
+//				"noscript",
 				"xmp",
 				"listing",
 				"plaintext",
@@ -1224,7 +1241,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Hashtable h,
 			Hashtable hn,
 			HTMLParseContext pc) throws DataFilterException {
-			if(logMINOR) Logger.minor(this, "Finishing script/style");
+			if(logDEBUG) Logger.debug(this, "Finishing script/style");
 			// Finishing
 			setStyle(false, pc);
 			pc.styleScriptRecurseCount--;
@@ -1249,7 +1266,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		Hashtable start(Hashtable h, Hashtable hn, HTMLParseContext pc) throws DataFilterException {
-			if(logMINOR) Logger.minor(this, "Starting script/style");
+			if(logDEBUG) Logger.debug(this, "Starting script/style");
 			pc.styleScriptRecurseCount++;
 			if (pc.styleScriptRecurseCount > 1) {
 				if (deleteErrors)
@@ -1481,7 +1498,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				type = typesplit[0];
 				if ((typesplit[1] != null) && (typesplit[1].length() > 0))
 					charset = typesplit[1];
-				if(logMINOR)
+				if(logDEBUG)
 					Logger.debug(
 							this,
 							"Processing link tag, type="
@@ -1676,9 +1693,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					} else if (http_equiv.equalsIgnoreCase("Content-Type")) {
 						if(logMINOR) Logger.minor(this, "Found http-equiv content-type="+content);
 						String[] typesplit = splitType(content);
-						if(logMINOR) {
+						if(logDEBUG) {
 							for(int i=0;i<typesplit.length;i++)
-								Logger.minor(this, "["+i+"] = "+typesplit[i]);
+								Logger.debug(this, "["+i+"] = "+typesplit[i]);
 						}
 						if (typesplit[0].equalsIgnoreCase("text/html")
 							&& ((typesplit[1] == null)
@@ -1846,7 +1863,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if ((s == null) || (s.length() == 0))
 			return null;
 		//		Core.logger.log(SaferFilter.class, "Style now: " + s, Logger.DEBUG);
-		if(logMINOR) Logger.debug(HTMLFilter.class, "Style finally: " + s);
+		if(logMINOR) Logger.minor(HTMLFilter.class, "Style finally: " + s);
 		return s;
 	}
 
