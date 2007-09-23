@@ -413,8 +413,10 @@ public class SHA256 implements Digest {
     }
 
 	public static int getDigestLength() {
-		return 32;
+		return HASH_SIZE;
 	}
 
-	    
+	public static Digest getInstance() {
+		return new SHA256();
+	}
 }
