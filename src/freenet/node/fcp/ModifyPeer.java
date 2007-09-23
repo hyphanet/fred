@@ -76,7 +76,7 @@ public class ModifyPeer extends FCPMessage {
 				dpn.setAllowLocalAddresses(Fields.stringToBool(allowLocalAddressesString, false));
 			}
 		}
-		handler.outputHandler.queue(new Peer(pn, true, true));
+		handler.outputHandler.queue(new PeerMessage(pn, true, true));
 	}
 
 }
