@@ -11,6 +11,8 @@ import java.net.UnknownHostException;
 
 import freenet.io.AddressIdentifier;
 import freenet.support.Logger;
+import freenet.support.transport.ip.HostnameSyntaxException;
+import freenet.support.transport.ip.HostnameUtil;
 import freenet.support.transport.ip.IPUtil;
 
 /**
@@ -58,6 +60,39 @@ public class FreenetInetAddress {
 	}
 
 	/**
+	 * Create from serialized form on a DataInputStream.
+	 */
+	public FreenetInetAddress(DataInputStream dis, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, IOException {
+		int firstByte = dis.readUnsignedByte();
+		byte[] ba;
+		if(firstByte == 255) {
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "New format IPv6 address");
+			// New format IPv6 address
+			ba = new byte[16];
+			dis.readFully(ba);
+		} else if(firstByte == 0) {
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "New format IPv4 address");
+			// New format IPv4 address
+			ba = new byte[4];
+			dis.readFully(ba);
+		} else {
+			// Old format IPv4 address
+			ba = new byte[4];
+			ba[0] = (byte)firstByte;
+			dis.readFully(ba, 1, 3);
+		}
+		_address = InetAddress.getByAddress(ba);
+		String name = null;
+		String s = dis.readUTF();
+		if(s.length() > 0)
+			name = s;
+		hostname = name;
+        if(checkHostnameOrIPSyntax && null != hostname) {
+        	if(!HostnameUtil.isValidHostname(hostname, true)) throw new HostnameSyntaxException();
+		}
+	}
+
+	/**
 	 * Create from an InetAddress. The IP address is primary i.e. fixed.
 	 * The hostname either doesn't exist, or is looked up.
 	 */
@@ -97,6 +132,44 @@ public class FreenetInetAddress {
         }
         this._address = addr;
         this.hostname = host;
+        // we're created with a hostname so delay the lookup of the address
+        // until it's needed to work better with dynamic DNS hostnames
+	}
+
+	public FreenetInetAddress(String host, boolean allowUnknown, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, UnknownHostException {
+        InetAddress addr = null;
+        if(host != null){
+        	if(host.startsWith("/")) host = host.substring(1);
+        	host = host.trim();
+        }
+        // if we were created with an explicit IP address, use it as such
+        // debugging log messages because AddressIdentifier doesn't appear to handle all IPv6 literals correctly, such as "fe80::204:1234:dead:beef"
+        AddressIdentifier.AddressType addressType = AddressIdentifier.getAddressType(host);
+        boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+        if(logDEBUG) Logger.debug(this, "Address type of '"+host+"' appears to be '"+addressType+ '\'');
+        if(!addressType.toString().equals("Other")) {
+            try {
+                addr = InetAddress.getByName(host);
+            } catch (UnknownHostException e) {
+            	if(!allowUnknown) throw e;
+                addr = null;
+            }
+            if(logDEBUG) Logger.debug(this, "host is '"+host+"' and addr.getHostAddress() is '"+addr.getHostAddress()+ '\'');
+            if(addr != null && addr.getHostAddress().equals(host)) {
+            	if(logDEBUG) Logger.debug(this, '\'' +host+"' looks like an IP address");
+                host = null;
+            } else {
+                addr = null;
+            }
+        }
+        if( addr == null ) {
+        	if(logDEBUG) Logger.debug(this, '\'' +host+"' does not look like an IP address");
+        }
+        this._address = addr;
+        this.hostname = host;
+        if(checkHostnameOrIPSyntax && null != this.hostname) {
+        	if(!HostnameUtil.isValidHostname(this.hostname, true)) throw new HostnameSyntaxException();
+		}
         // we're created with a hostname so delay the lookup of the address
         // until it's needed to work better with dynamic DNS hostnames
 	}
