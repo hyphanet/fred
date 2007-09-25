@@ -242,6 +242,12 @@ public class OpennetManager {
 		boolean ret = true;
 		boolean noDisconnect;
 		synchronized(this) {
+			if(nodeToAddNow != null &&
+					peersLRU.contains(nodeToAddNow)) {
+				if(logMINOR)
+					Logger.minor(this, "Opennet peer already present in LRU: "+nodeToAddNow);
+				return true;
+			}
 			if(peersLRU.size() < MAX_PEERS) {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
@@ -281,7 +287,7 @@ public class OpennetManager {
 					break;
 				}
 				if(logMINOR)
-					Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+")");
+					Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size());
 				if(!toDrop.isConnected())
 					hasDisconnected = true;
 				peersLRU.remove(toDrop);
@@ -292,12 +298,10 @@ public class OpennetManager {
 				if(nodeToAddNow != null) {
 					// Here we can't avoid nested locks. So always take the OpennetManager lock first.
 					if(!node.peers.addPeer(nodeToAddNow)) {
-						// Can't add it, already present (some sort of race condition)
-						PeerNode readd = (PeerNode) dropList.remove(dropList.size()-1);
-						peersLRU.pushLeast(readd);
-						ret = false;
-						if(logMINOR) Logger.minor(this, "Could not add opennet peer "+nodeToAddNow+" because already in list");
-					} else {
+						if(logMINOR)
+							Logger.minor(this, "Already in global peers list: "+nodeToAddNow+" when adding opennet node");
+						// Just because it's in the global peers list doesn't mean its in the LRU, it may be an old-opennet-peers reconnection.
+					}
 						successCount = 0;
 						if(addAtLRU)
 							peersLRU.pushLeast(nodeToAddNow);
@@ -307,7 +311,6 @@ public class OpennetManager {
 						oldPeers.remove(nodeToAddNow);
 						// Always take OpennetManager lock before PeerManager
 						node.peers.addPeer(nodeToAddNow, true);
-					}
 					if(!dropList.isEmpty())
 						timeLastDropped = now;
 				} else {
