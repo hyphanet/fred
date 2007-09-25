@@ -44,6 +44,9 @@ public class PacketSender implements Runnable, Ticker {
 	 * this many milliseconds. */
 	static final int MIN_OLD_OPENNET_CONNECT_DELAY = 60*1000;
 	
+	/** Wait this long before trying any old-opennet-peers */
+	static final int TRY_OLD_OPENNET_PEERS_STARTUP_DELAY = 30*1000;
+	
     final LinkedList resendPackets;
     /** ~= Ticker :) */
     private final TreeMap timedJobsByTime;
@@ -331,7 +334,7 @@ public class PacketSender implements Runnable, Ticker {
         	if(now - timeLastSentOldOpennetConnectAttempt > minDelay &&
         			connCount <= MIN_CONNECTIONS_TRY_OLD_OPENNET_PEERS &&
         			om.countOldOpennetPeers() > 0 &&
-        			now - node.startupTime > OpennetManager.DROP_STARTUP_DELAY) {
+        			now - node.startupTime > TRY_OLD_OPENNET_PEERS_STARTUP_DELAY) {
             	PeerNode pn = om.randomOldOpennetNode();
             	if(pn != null) {
             		pn.getOutgoingMangler().sendHandshake(pn);
