@@ -814,7 +814,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
 		byte[] ourExponential = dhContext.myExponential.toByteArray();
 		byte[] unVerifiedData=new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
-		int offset = 0;http://www.google.co.in/search?q=inline+gpg&ie=utf-8&oe=utf-8&aq=t&rls=com.ubuntu:en-US:official&client=firefox-a
+		int offset = 0;
 		// Ni
                 System.arraycopy(nonceInitiator, 0, unVerifiedData, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
@@ -855,7 +855,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] iv=new byte[pk.lengthIV()];
                 node.random.nextBytes(iv);
 		byte[] idI = new byte[0];
-                
+                /*
+                 * Save state at this point for signature verification in JFK(4)
+                 * Ni,Nr,g^i,g^r,Idi
+                 */
+                System.arraycopy(unVerifiedData,0,pn.bufferJFK,0,unVerifiedData.length);
+                System.arraycopy(idI,0,pn.bufferJFK,unVerifiedData.length,idI.length);
                 int encryptedDataLength = iv.length + idI.length + r.length + s.length + 2;
 		byte[] encryptedData = new byte[encryptedDataLength];
 		System.arraycopy(iv, 0, encryptedData, 0, iv.length);
@@ -904,7 +909,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pk.blockDecipher(payload,inputOffset,payload.length-inputOffset);
                 inputOffset += ivLength;
                 // Now verify signature
-                // FIXME: How do we verify the signature?
+                
                 byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
@@ -914,13 +919,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
 		if(logMINOR)
                     Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
-		// FIXME: How do we save state?
-                byte[] locallyExpectedExponentials = new byte[Node.SIGNATURE_PARAMETER_LENGTH*2];
+		
+                byte[] locallyExpectedExponentials = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
+                System.arraycopy(pn.bufferJFK,0,locallyExpectedExponentials,0,pn.bufferJFK.length);
                 
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
 			Logger.error(this, "The signature verification has failed!!");
 			return;
-		}          
+		}       
+                Logger.normal(this,"Reached end of JFK. Now send completed handshake");
                 // FIXME: When do we send the Handshake?
                 // FIXME: What about noderef?
         }
