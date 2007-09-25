@@ -60,7 +60,7 @@ public class OpennetManager {
 	/** Don't drop a node until it's at least this old */
 	static final int DROP_MIN_AGE = 300*1000;
 	/** Don't drop a node until this long after startup */
-	static final int DROP_STARTUP_DELAY = 300*1000;
+	static final int DROP_STARTUP_DELAY = 120*1000;
 	/** Don't drop a node until this long after losing connection to it */
 	static final int DROP_DISCONNECT_DELAY = 300*1000;
 	/** But if it has disconnected more than once in this period, allow it to be dropped anyway */
