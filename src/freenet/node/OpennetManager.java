@@ -206,7 +206,7 @@ public class OpennetManager {
 			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
 			return false; // Equal to myself
 		}
-		if(node.peers.containsPeer(pn) != null) {
+		if(peersLRU.contains(pn)) {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return false;
 		}
