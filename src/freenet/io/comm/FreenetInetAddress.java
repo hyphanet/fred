@@ -46,10 +46,7 @@ public class FreenetInetAddress {
 			ba = new byte[4];
 			dis.readFully(ba);
 		} else {
-			// Old format IPv4 address
-			ba = new byte[4];
-			ba[0] = (byte)firstByte;
-			dis.readFully(ba, 1, 3);
+			throw new IOException("Unknown type byte (old form? corrupt stream? too short/long prev field?): "+(int)firstByte);
 		}
 		_address = InetAddress.getByAddress(ba);
 		String name = null;
@@ -329,19 +326,14 @@ public class FreenetInetAddress {
 			return hostname;
 	}
 
-	public void writeToDataOutputStream(DataOutputStream dos, boolean oldForm) throws IOException {
+	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
 		InetAddress addr = this.getAddress();
 		if (addr == null) throw new UnknownHostException();
 		byte[] data = addr.getAddress();
-		if(oldForm) {
-			if(data.length != 4)
-				throw new IllegalArgumentException("IPv6 not supported at present");
-		} else {
-			if(data.length == 4)
-				dos.write(0);
-			else
-				dos.write(255);
-		}
+		if(data.length == 4)
+			dos.write(0);
+		else
+			dos.write(255);
 		dos.write(data);
 		if(hostname != null)
 			dos.writeUTF(hostname);

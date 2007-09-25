@@ -219,8 +219,8 @@ public class Peer {
 		return addr.toString() + ':' + _port;
 	}
 
-	public void writeToDataOutputStream(DataOutputStream dos, boolean oldForm) throws IOException {
-		addr.writeToDataOutputStream(dos, oldForm);
+	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
+		addr.writeToDataOutputStream(dos);
 		dos.writeInt(_port);
 	}
 
