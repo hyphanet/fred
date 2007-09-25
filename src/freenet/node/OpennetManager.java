@@ -297,12 +297,6 @@ public class OpennetManager {
 				long now = System.currentTimeMillis();
 				if(nodeToAddNow != null) {
 					// Here we can't avoid nested locks. So always take the OpennetManager lock first.
-					if(!node.peers.addPeer(nodeToAddNow)) {
-						if(logMINOR)
-							Logger.minor(this, "Already in global peers list: "+nodeToAddNow+" when adding opennet node");
-						// Just because it's in the global peers list doesn't mean its in the LRU, it may be an old-opennet-peers reconnection.
-						// In which case we add it to the global peers list *before* adding it here.
-					}
 					successCount = 0;
 					if(addAtLRU)
 						peersLRU.pushLeast(nodeToAddNow);
@@ -325,6 +319,12 @@ public class OpennetManager {
 					}
 				}
 			}
+		}
+		if(!node.peers.addPeer(nodeToAddNow)) {
+			if(logMINOR)
+				Logger.minor(this, "Already in global peers list: "+nodeToAddNow+" when adding opennet node");
+			// Just because it's in the global peers list doesn't mean its in the LRU, it may be an old-opennet-peers reconnection.
+			// In which case we add it to the global peers list *before* adding it here.
 		}
 		for(int i=0;i<dropList.size();i++) {
 			OpennetPeerNode pn = (OpennetPeerNode) dropList.get(i);
