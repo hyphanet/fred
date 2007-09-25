@@ -233,6 +233,7 @@ public class PeerManager {
 	 * an opennet peer when opennet was disabled.
 	 */
 	boolean addPeer(PeerNode pn, boolean ignoreOpennet) {
+		assert(pn != null);
 		synchronized (this) {
 			for (int i = 0; i < myPeers.length; i++) {
 				if (myPeers[i].equals(pn)) {
