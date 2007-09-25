@@ -240,7 +240,6 @@ public class OpennetManager {
 	 */
 	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
 		boolean notMany = false;
-		boolean canAdd = true;
 		boolean noDisconnect;
 		synchronized(this) {
 			if(nodeToAddNow != null &&
@@ -270,6 +269,7 @@ public class OpennetManager {
 				node.peers.addPeer(nodeToAddNow, true); // Add to peers outside the OM lock
 			return true;
 		}
+		boolean canAdd = true;
 		Vector dropList = new Vector();
 		synchronized(this) {
 			boolean hasDisconnected = false;
