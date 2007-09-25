@@ -37,15 +37,12 @@ public class PacketSender implements Runnable, Ticker {
 	static final int MIN_CONNECTIONS_TRY_OLD_OPENNET_PEERS = 5;
 	
 	/** We send connect attempts to old-opennet-peers no more than once every
-	 * this many milliseconds, if we have no connections at all. */
+	 * this many milliseconds. */
 	static final int MIN_OLD_OPENNET_CONNECT_DELAY_NO_CONNS = 10*1000;
 	
 	/** We send connect attempts to old-opennet-peers no more than once every
 	 * this many milliseconds. */
 	static final int MIN_OLD_OPENNET_CONNECT_DELAY = 60*1000;
-	
-	/** Wait this long before trying any old-opennet-peers */
-	static final int TRY_OLD_OPENNET_PEERS_STARTUP_DELAY = 30*1000;
 	
     final LinkedList resendPackets;
     /** ~= Ticker :) */
@@ -334,7 +331,7 @@ public class PacketSender implements Runnable, Ticker {
         	if(now - timeLastSentOldOpennetConnectAttempt > minDelay &&
         			connCount <= MIN_CONNECTIONS_TRY_OLD_OPENNET_PEERS &&
         			om.countOldOpennetPeers() > 0 &&
-        			now - node.startupTime > TRY_OLD_OPENNET_PEERS_STARTUP_DELAY) {
+        			now - node.startupTime > OpennetManager.DROP_STARTUP_DELAY) {
             	PeerNode pn = om.randomOldOpennetNode();
             	if(pn != null) {
             		pn.getOutgoingMangler().sendHandshake(pn);
