@@ -52,7 +52,7 @@ public class OpennetManager {
 	// FIXME should be a function of # opennet peers? max # opennet peers? ...
 	static final int MIN_SUCCESS_BETWEEN_DROP_CONNS = 10;
 	// FIXME make this configurable
-	static final int MAX_PEERS = 15;
+	static final int MAX_PEERS = 20;
 	/** Chance of resetting path folding (for plausible deniability) is 1 in this number. */
 	static final int RESET_PATH_FOLDING_PROB = 20;
 	/** Don't re-add a node until it's been up and disconnected for at least this long */
