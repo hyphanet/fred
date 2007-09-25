@@ -37,7 +37,7 @@ public class PacketSender implements Runnable, Ticker {
 	static final int MIN_CONNECTIONS_TRY_OLD_OPENNET_PEERS = 5;
 	
 	/** We send connect attempts to old-opennet-peers no more than once every
-	 * this many milliseconds. */
+	 * this many milliseconds, if we have no connections at all. */
 	static final int MIN_OLD_OPENNET_CONNECT_DELAY_NO_CONNS = 10*1000;
 	
 	/** We send connect attempts to old-opennet-peers no more than once every
