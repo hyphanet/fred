@@ -240,7 +240,7 @@ public class OpennetManager {
 	 */
 	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
 		boolean notMany = false;
-		boolean ret = true;
+		boolean canAdd = true;
 		boolean noDisconnect;
 		synchronized(this) {
 			if(nodeToAddNow != null &&
@@ -284,7 +284,7 @@ public class OpennetManager {
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
-					ret = false;
+					canAdd = false;
 					break;
 				}
 				if(logMINOR)
@@ -294,7 +294,7 @@ public class OpennetManager {
 				peersLRU.remove(toDrop);
 				dropList.add(toDrop);
 			}
-			if(ret) {
+			if(canAdd) {
 				long now = System.currentTimeMillis();
 				if(nodeToAddNow != null) {
 					// Here we can't avoid nested locks. So always take the OpennetManager lock first.
@@ -312,7 +312,7 @@ public class OpennetManager {
 						if(logMINOR)
 							Logger.minor(this, "Cannot accept peer because of minimum time between offers (last offered "+(now-timeLastOffered)+" ms ago)");
 						// Cancel
-						ret = false;
+						canAdd = false;
 					} else {
 						if(!dropList.isEmpty())
 							timeLastDropped = now;
@@ -332,7 +332,7 @@ public class OpennetManager {
 			if(logMINOR) Logger.minor(this, "Dropping LRU opennet peer: "+pn);
 			node.peers.disconnect(pn, true, true);
 		}
-		return ret;
+		return canAdd;
 	}
 
 	private void dropExcessPeers() {
