@@ -303,15 +303,13 @@ public class OpennetManager {
 						// Just because it's in the global peers list doesn't mean its in the LRU, it may be an old-opennet-peers reconnection.
 						// In which case we add it to the global peers list *before* adding it here.
 					}
-						successCount = 0;
-						if(addAtLRU)
-							peersLRU.pushLeast(nodeToAddNow);
-						else
-							peersLRU.push(nodeToAddNow);
-						if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");
-						oldPeers.remove(nodeToAddNow);
-						// Always take OpennetManager lock before PeerManager
-						node.peers.addPeer(nodeToAddNow, true);
+					successCount = 0;
+					if(addAtLRU)
+						peersLRU.pushLeast(nodeToAddNow);
+					else
+						peersLRU.push(nodeToAddNow);
+					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");
+					oldPeers.remove(nodeToAddNow);
 					if(!dropList.isEmpty())
 						timeLastDropped = now;
 				} else {
