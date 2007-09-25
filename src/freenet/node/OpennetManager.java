@@ -301,6 +301,7 @@ public class OpennetManager {
 						if(logMINOR)
 							Logger.minor(this, "Already in global peers list: "+nodeToAddNow+" when adding opennet node");
 						// Just because it's in the global peers list doesn't mean its in the LRU, it may be an old-opennet-peers reconnection.
+						// In which case we add it to the global peers list *before* adding it here.
 					}
 						successCount = 0;
 						if(addAtLRU)
