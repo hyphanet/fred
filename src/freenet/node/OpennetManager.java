@@ -239,6 +239,7 @@ public class OpennetManager {
 	 * @return True if the node was added / should be added.
 	 */
 	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
+		boolean notMany = false;
 		boolean ret = true;
 		boolean noDisconnect;
 		synchronized(this) {
@@ -260,11 +261,11 @@ public class OpennetManager {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
 				timeLastOffered = System.currentTimeMillis();
-				ret = true;
+				notMany = true;
 			}
 			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS;
 		}
-		if(ret) {
+		if(notMany) {
 			if(nodeToAddNow != null)
 				node.peers.addPeer(nodeToAddNow, true); // Add to peers outside the OM lock
 			return true;
