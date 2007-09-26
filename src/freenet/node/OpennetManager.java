@@ -283,7 +283,7 @@ public class OpennetManager {
 				toDrop = peerToDrop(noDisconnect || nodeToAddNow == null);
 				if(toDrop == null) {
 					if(logMINOR)
-						Logger.minor(this, "No more peers to drop, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
+						Logger.minor(this, "No more peers to drop, still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
 					canAdd = false;
 					break;
 				}
