@@ -68,10 +68,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Usage of a linkedList could prove to be much slower due to the allocation time
 	 * for each node in the list.
 	 */
-	
+
 	private final HashMap authenticatorCache;
-       	final eKey encryptionKey;
-		
+	final eKey encryptionKey;
+
 	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
 	// TODO: is 64 bits enough ?
@@ -115,7 +115,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		fnpTimingSource = new EntropySource();
 		myPacketDataSource = new EntropySource();
 		authenticatorCache = new HashMap();
-               	encryptionKey = new eKey();
+		encryptionKey = new eKey();
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -467,7 +467,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
 		System.arraycopy(payload, offset, nonceInitiator, 0, NONCE_SIZE);
 		offset += NONCE_SIZE;
-		
+
 		// get g^i
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, offset, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
@@ -477,12 +477,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			sendMessage2(nonceInitiator, pn, replyTo);
 		}else
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
-		
+
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
 			Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
 	}
-	
+
 	/*
 	 * format:
 	 * Ni,g^i
@@ -495,7 +495,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
 		byte[] myNonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(myNonce);
-		
+
 		byte[] message1 = new byte[NONCE_SIZE+DiffieHellman.modulusLengthInBytes()];
 
 		System.arraycopy(myNonce, 0, message1, offset, NONCE_SIZE);
@@ -503,10 +503,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "My Exponential (message1), length ="+DiffieHellman.modulusLengthInBytes()+" value ="+ dhContext.myExponential.toHexString());
 		System.arraycopy(myExponential, 0, message1, offset, DiffieHellman.modulusLengthInBytes());
 		offset += DiffieHellman.modulusLengthInBytes();
-		
+
 		sendAuthPacket(1,2,0,message1,pn,replyTo);
 	}
-	
+
 	/*
 	 * format:
 	 * Ni,Nr,g^r
@@ -527,8 +527,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] s = dhContext.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		HMAC hash = new HMAC(SHA256.getInstance());
 		byte[] authenticator = hash.mac(getTransientKey(),assembleJFKAuthenticator(myExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
-		
-		
+
+
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+
 		                           Node.SIGNATURE_PARAMETER_LENGTH*2+
 		                           HASH_LENGTH];
@@ -540,17 +540,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		offset += NONCE_SIZE;
 		System.arraycopy(myExponential, 0, message2, offset, DiffieHellman.modulusLengthInBytes());
 		offset += DiffieHellman.modulusLengthInBytes();
-		
+
 		System.arraycopy(r, 0, message2, offset, Node.SIGNATURE_PARAMETER_LENGTH);
 		offset += Node.SIGNATURE_PARAMETER_LENGTH;
 		System.arraycopy(s, 0, message2, offset, Node.SIGNATURE_PARAMETER_LENGTH);
 		offset += Node.SIGNATURE_PARAMETER_LENGTH;
-		
+
 		System.arraycopy(authenticator, 0, message2, offset, HASH_LENGTH);
-		
+
 		sendAuthPacket(1,2,1,message2,pn,replyTo);
 	}
-	
+
 	/*
 	 * Assemble what will be the jfk-Authenticator : 
 	 * computed over the Responder exponentials and the Nonces and
@@ -560,7 +560,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private byte[] assembleJFKAuthenticator(byte[] gR, byte[] nR, byte[] nI, byte[] address) {
 		byte[] authData=new byte[gR.length+nR.length+nI.length+address.length];
 		int offset = 0;
-		
+
 		System.arraycopy(gR,0,authData,offset,gR.length);
 		offset += gR.length;
 		System.arraycopy(nR,0,authData,offset,nR.length);
@@ -568,7 +568,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(nI,0,authData,offset,nI.length);
 		offset += nI.length;
 		System.arraycopy(address, 0, authData, offset, address.length);
-		
+
 		return authData;
 	}
 
@@ -582,8 +582,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * in the clear.
 	 * Send a signed copy of his own exponential
 	 * Send an authenticator which is a hash of Ni,Nr,g^r calculated over the transient key HKr
-         * Format of JFK(2) as specified above
-         * @param Payload
+	 * Format of JFK(2) as specified above
+	 * @param Payload
 	 * @param The peer to which we need to send the packet
 	 * @param The peerNode we are talking to
 	 */
@@ -598,7 +598,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(2), should be "+(expectedLength + 3));
 			return;
 		}
-		
+
 		int inputOffset=3;
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
@@ -606,7 +606,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] nonceResponder = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceResponder, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
-		
+
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, inputOffset, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
@@ -616,7 +616,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
 			return;
 		}
-		
+
 		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
@@ -627,22 +627,22 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
 		// At that point we don't know if it's "him"; let's check it out
 		byte[] locallyExpectedExponentials = assembleDHParams(_hisExponential, pn.peerCryptoGroup);
-		
+
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}
-		
+
 		byte[] remoteHashedAuthenticator = new byte[HASH_LENGTH];
 		System.arraycopy(payload, inputOffset, remoteHashedAuthenticator, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 		// FIXME: maybe the cache should be checked before verifying the signature
 		sendMessage3Packet(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, remoteHashedAuthenticator, pn, replyTo);
-		
+
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
 			Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
-        }        
+	}        
 
 	/*
 	 * Initiator Method:Message3
@@ -667,15 +667,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
 		// Nr
-                byte[] nonceResponder = new byte[NONCE_SIZE];
+		byte[] nonceResponder = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceResponder, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
 		// g^i
-                byte[] initiatorExponential = new byte[DiffieHellman.modulusLengthInBytes()];
+		byte[] initiatorExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, inputOffset, initiatorExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
 		// g^r
-                byte[] responderExponential = new byte[DiffieHellman.modulusLengthInBytes()];
+		byte[] responderExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, inputOffset, responderExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
 		byte[] authenticator = new byte[HASH_LENGTH];
@@ -688,9 +688,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery)");
 			return;
 		}
-                // Check try to find the authenticator in the cache.
-                // If authenticator is already present, indicates duplicate/replayed message3
-                // Now simply transmit the corresponding message4
+		// Check try to find the authenticator in the cache.
+		// If authenticator is already present, indicates duplicate/replayed message3
+		// Now simply transmit the corresponding message4
 		Object message4 = null;
 		synchronized (authenticatorCache) {
 			message4 = authenticatorCache.get(authenticator);
@@ -698,14 +698,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(message4 != null) {
 			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often)");
 			//sendMessage3Packet(1, 2, 3, message4);
-                        try{
-                            sendAuthPacket(1,2,3,getBytes(message4),pn,replyTo);
-                        }catch(IOException e){
-                            Logger.error(this,"Error getting bytes");
-                        }
+			try{
+				sendAuthPacket(1,2,3,getBytes(message4),pn,replyTo);
+			}catch(IOException e){
+				Logger.error(this,"Error getting bytes");
+			}
 			return;
 		}
-		
+
 		// some sanity checks
 		NativeBigInteger _hisExponential = new NativeBigInteger(1, initiatorExponential);
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) < 1) {
@@ -718,23 +718,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		// Decrypt
-                BlockCipher c = pn.outgoingSetupCipher;
-                PCFBMode pk=PCFBMode.create(c);
-                int ivLength = pk.lengthIV();
-                pk.reset(payload,inputOffset);
-                // Decrypt the rest of the payload
+		BlockCipher c = pn.outgoingSetupCipher;
+		PCFBMode pk=PCFBMode.create(c);
+		int ivLength = pk.lengthIV();
+		pk.reset(payload,inputOffset);
+		// Decrypt the rest of the payload
 		pk.blockDecipher(payload,inputOffset,payload.length-inputOffset);
-                inputOffset += ivLength;
-                /*
-                 * DecipheredData Format:
-                 * idI
-                 * Signature-r,s
-                 */
-                byte[] idI = new byte[0];
-                System.arraycopy(payload,inputOffset , idI ,0, idI.length);
-                inputOffset += idI.length;
-                // Now verify signature
-                byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
+		inputOffset += ivLength;
+		/*
+		 * DecipheredData Format:
+		 * idI
+		 * Signature-r,s
+		 */
+		byte[] idI = new byte[0];
+		System.arraycopy(payload,inputOffset , idI ,0, idI.length);
+		inputOffset += idI.length;
+		// Now verify signature
+		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
@@ -742,16 +742,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
 		if(logMINOR)
-                    Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
+			Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
 		byte[] locallyExpectedExponentials = assembleDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential);
-		
+
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}
-                // cache the message
-                authenticatorCache.put(authenticator,payload);
-                // Send reply
+		// cache the message
+		authenticatorCache.put(authenticator,payload);
+		// Send reply
 		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential,idI,c, pn, replyTo);
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
@@ -775,12 +775,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	/*
 	 * Format:
-         * Ni
-         * Nr
-         * g^i
-         * g^r
-         * Authenticator
-         * E[idI,S[Ni,Nr,g^i,g^r]] over the key Ka
+	 * Ni
+	 * Nr
+	 * g^i
+	 * g^r
+	 * Authenticator
+	 * E[idI,S[Ni,Nr,g^i,g^r]] over the key Ka
 	 */
 
 	private void sendMessage3Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] hashedAuthenticator, PeerNode pn, Peer replyTo)
@@ -788,106 +788,106 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn);
 		long now = System.currentTimeMillis();
 		long delta = now - pn.lastSentPacketTime();
-		
+
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		byte[] ourExponential = dhContext.myExponential.toByteArray();
 		byte[] unVerifiedData=new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
 		int offset = 0;
 		// Ni
-                System.arraycopy(nonceInitiator, 0, unVerifiedData, offset, NONCE_SIZE);
+		System.arraycopy(nonceInitiator, 0, unVerifiedData, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
 		// Nr
-                System.arraycopy(nonceResponder, 0, unVerifiedData, offset, NONCE_SIZE);
+		System.arraycopy(nonceResponder, 0, unVerifiedData, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
 		// g^i
-                System.arraycopy(ourExponential, 0,unVerifiedData, offset, ourExponential.length);
+		System.arraycopy(ourExponential, 0,unVerifiedData, offset, ourExponential.length);
 		offset += ourExponential.length;
-                // g^r
-                System.arraycopy(hisExponential, 0,unVerifiedData, offset, hisExponential.length);
+		// g^r
+		System.arraycopy(hisExponential, 0,unVerifiedData, offset, hisExponential.length);
 		offset += hisExponential.length;
 		/*
 		 * Digital Signature of the message with the private key belonging to the initiator/responder
 		 * It is assumed to be non-message recovering
 		 */
 		//FIXME: IDr not signed?
-                NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
-                NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-                DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential);
-                byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
+		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
+		DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential);
+		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-                
+
 		// Encrypt idI,r,s
-                // Encryption is performed using HMAC[Ni,Nr,1] over the key g^ir
-                BlockCipher c=pn.incomingSetupCipher;
+		// Encryption is performed using HMAC[Ni,Nr,1] over the key g^ir
+		BlockCipher c=pn.incomingSetupCipher;
 		/*
 		 * Initializes the cipher context with the given key
 		 * This would avoid the computation of key using the Rijndael key schedule(S boxes,Rcon etc)
 		 * The key used is generated from Hash of Message:(Ni, Nr, 1) over the shared key of DH
 		 */
-		
-                NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential, pn.peerCryptoGroup);
-                byte[] eKey = tempKey.toByteArray();
-                c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
+
+		NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential, pn.peerCryptoGroup);
+		byte[] eKey = tempKey.toByteArray();
+		c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
 		PCFBMode pk=PCFBMode.create(c);
 		byte[] iv=new byte[pk.lengthIV()];
-                node.random.nextBytes(iv);
+		node.random.nextBytes(iv);
 		byte[] idI = new byte[0];
-                /*
-                 * Save state at this point for signature verification in JFK(4)
-                 * Ni,Nr,g^i,g^r,Idi
-                 */
-                System.arraycopy(unVerifiedData,0,pn.bufferJFK,0,unVerifiedData.length);
-                System.arraycopy(idI,0,pn.bufferJFK,unVerifiedData.length,idI.length);
-                int encryptedDataLength = iv.length + idI.length + r.length + s.length + 2;
+		/*
+		 * Save state at this point for signature verification in JFK(4)
+		 * Ni,Nr,g^i,g^r,Idi
+		 */
+		System.arraycopy(unVerifiedData,0,pn.bufferJFK,0,unVerifiedData.length);
+		System.arraycopy(idI,0,pn.bufferJFK,unVerifiedData.length,idI.length);
+		int encryptedDataLength = iv.length + idI.length + r.length + s.length + 2;
 		byte[] encryptedData = new byte[encryptedDataLength];
 		System.arraycopy(iv, 0, encryptedData, 0, iv.length);
 		int count = iv.length;
-                
-                System.arraycopy(idI,0, encryptedData,count,idI.length);               
+
+		System.arraycopy(idI,0, encryptedData,count,idI.length);               
 		count += idI.length;
-                System.arraycopy(r, 0, encryptedData, count, r.length);
+		System.arraycopy(r, 0, encryptedData, count, r.length);
 		count += r.length;
-		
+
 		System.arraycopy(s, 0, encryptedData, count, s.length);
 		count += s.length;
 		pk.blockEncipher(encryptedData, 0, encryptedData.length);
 		/*
-                 * Message Format:
-                 * [Ni,Nr,g^i,g^r]
-                 * Authenticator
-                 * Encrypted data
-                 */
-                byte[] message3=new byte[unVerifiedData.length+hashedAuthenticator.length+encryptedData.length];
+		 * Message Format:
+		 * [Ni,Nr,g^i,g^r]
+		 * Authenticator
+		 * Encrypted data
+		 */
+		byte[] message3=new byte[unVerifiedData.length+hashedAuthenticator.length+encryptedData.length];
 		System.arraycopy(unVerifiedData,0,message3,0,unVerifiedData.length);
 		System.arraycopy(hashedAuthenticator,0,message3,encryptedData.length,hashedAuthenticator.length);
 		System.arraycopy(encryptedData,0,message3,unVerifiedData.length+hashedAuthenticator.length,encryptedData.length);
-		
+
 		sendAuthPacket(1,2,2,message3,pn,replyTo);
 	}
-        
-        /*
+
+	/*
 	 * Process Message4 packet
 	 * @param Payload 
-         * @param The peerNode we are talking to
+	 * @param The peerNode we are talking to
 	 * @param The peer to which we need to send the packet
 	 */
-        private void ProcessMessage4( byte[] payload,PeerNode pn,Peer replyTo) 
-        {
-                long t1 = System.currentTimeMillis();
+	private void ProcessMessage4( byte[] payload,PeerNode pn,Peer replyTo) 
+	{
+		long t1 = System.currentTimeMillis();
 		if(logMINOR)
-                    Logger.minor(this, "Got a JFK(4) message, processing it");
+			Logger.minor(this, "Got a JFK(4) message, processing it");
 		int inputOffset=3;
-                // Decrypt
-                BlockCipher c = pn.outgoingSetupCipher;
-                PCFBMode pk=PCFBMode.create(c);
-                int ivLength = pk.lengthIV();
-                pk.reset(payload,inputOffset);
-                // Decrypt the rest of the payload
+		// Decrypt
+		BlockCipher c = pn.outgoingSetupCipher;
+		PCFBMode pk=PCFBMode.create(c);
+		int ivLength = pk.lengthIV();
+		pk.reset(payload,inputOffset);
+		// Decrypt the rest of the payload
 		pk.blockDecipher(payload,inputOffset,payload.length-inputOffset);
-                inputOffset += ivLength;
-                // Now verify signature
-                
-                byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
+		inputOffset += ivLength;
+		// Now verify signature
+
+		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
@@ -895,52 +895,52 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
 		if(logMINOR)
-                    Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
-		
-                byte[] locallyExpectedExponentials = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
-                System.arraycopy(pn.bufferJFK,0,locallyExpectedExponentials,0,pn.bufferJFK.length);
-                
+			Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
+
+		byte[] locallyExpectedExponentials = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
+		System.arraycopy(pn.bufferJFK,0,locallyExpectedExponentials,0,pn.bufferJFK.length);
+
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}       
-                Logger.normal(this,"Reached end of JFK. Now send completed handshake");
-                // FIXME: When do we send the Handshake?
-                // FIXME: What about noderef?
-        }
+		Logger.normal(this,"Reached end of JFK. Now send completed handshake");
+		// FIXME: When do we send the Handshake?
+		// FIXME: What about noderef?
+	}
 	/*
-         * FOrmat:
-         * E[S[Ni,Nr,g^i,g^r,idI]] 
-         */
-        private void sendMessage4Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] ourExponential,byte[] hisExponential,byte[] idI, BlockCipher c ,PeerNode pn,Peer replyTo)
+	 * FOrmat:
+	 * E[S[Ni,Nr,g^i,g^r,idI]] 
+	 */
+	private void sendMessage4Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] ourExponential,byte[] hisExponential,byte[] idI, BlockCipher c ,PeerNode pn,Peer replyTo)
 	{
 		if(logMINOR)
-                    Logger.minor(this, "Sending a JFK(4) message to "+pn);
+			Logger.minor(this, "Sending a JFK(4) message to "+pn);
 		long now = System.currentTimeMillis();
 		long delta = now - pn.lastSentPacketTime();
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
-                NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
-                NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-                DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential,idI);
-                byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
+		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
+		DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential,idI);
+		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-                NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential, pn.peerCryptoGroup);
-                byte[] eKey = tempKey.toByteArray();
-                c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
+		NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential, pn.peerCryptoGroup);
+		byte[] eKey = tempKey.toByteArray();
+		c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
 		PCFBMode pk=PCFBMode.create(c);
 		byte[] iv=new byte[pk.lengthIV()];
-                node.random.nextBytes(iv);
-                int message4Length = iv.length + r.length + s.length + 2;
+		node.random.nextBytes(iv);
+		int message4Length = iv.length + r.length + s.length + 2;
 		byte[] message4 = new byte[message4Length];
 		System.arraycopy(iv, 0, message4, 0, iv.length);
 		int count = iv.length;
-                               
+
 		System.arraycopy(r, 0, message4, count, r.length);
 		count += r.length;
 		System.arraycopy(s, 0, message4, count, s.length);
 		count += s.length;
 		pk.blockEncipher(message4, 0, message4Length);
-                sendAuthPacket(1,2,3,message4,pn,replyTo);
+		sendAuthPacket(1,2,3,message4,pn,replyTo);
 	}
 
 	/**
@@ -2204,7 +2204,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	public boolean alwaysAllowLocalAddresses() {
 		return crypto.config.alwaysAllowLocalAddresses();
 	}
-	
+
 	private synchronized DiffieHellmanLightContext getLightDiffieHellmanContext(PeerNode pn) {
 		if(currentDHContext == null) {
 			currentDHContext = DiffieHellman.generateLightContext();
@@ -2212,7 +2212,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		return currentDHContext;
 	}
-	
+
 	/*
 	 * Prepare DH parameters of message2 for them to be signed (useful in message3 to check the sig)
 	 */
@@ -2220,58 +2220,58 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] _myExponential = stripBigIntegerToNetworkFormat(exponential);
 		byte[] _myGroup = group.getP().toByteArray();
 		byte[] toSign = new byte[_myExponential.length + _myGroup.length];
-		
+
 		System.arraycopy(_myExponential, 0, toSign, 0, _myExponential.length);
 		System.arraycopy(_myGroup, 0, toSign, _myExponential.length, _myGroup.length);
-		
+
 		return SHA256.digest(toSign);
 	}
-        /*
-         * Prepare params for signing in Message3
-         */
-        private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential) {
+	/*
+	 * Prepare params for signing in Message3
+	 */
+	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential) {
 		byte[] _myExponential = stripBigIntegerToNetworkFormat(myExponential);
 		byte[] _hisExponential = stripBigIntegerToNetworkFormat(hisExponential);
 		byte[] toSign = new byte[nonceInitiator.length + nonceResponder.length + _myExponential.length + _hisExponential.length];
 		System.arraycopy(nonceInitiator, 0,toSign,0,nonceInitiator.length);
-                System.arraycopy(nonceResponder,0 ,toSign,nonceInitiator.length,nonceResponder.length);
+		System.arraycopy(nonceResponder,0 ,toSign,nonceInitiator.length,nonceResponder.length);
 		System.arraycopy(_myExponential, 0, toSign,nonceInitiator.length+nonceResponder.length, _myExponential.length);
 		System.arraycopy(_hisExponential, 0, toSign, nonceInitiator.length+nonceResponder.length+_myExponential.length, _hisExponential.length);
 		// Why is the hash returned?
 		return SHA256.digest(toSign);
 	}
-        /*
-         * Prepare params for signing in Message4
-         */
-        private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential, byte[] idI) {
+	/*
+	 * Prepare params for signing in Message4
+	 */
+	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential, byte[] idI) {
 		byte[] _myExponential = stripBigIntegerToNetworkFormat(myExponential);
 		byte[] _hisExponential = stripBigIntegerToNetworkFormat(hisExponential);
 		byte[] toSign = new byte[nonceInitiator.length + nonceResponder.length + _myExponential.length + _hisExponential.length];
 		System.arraycopy(nonceInitiator, 0,toSign,0,nonceInitiator.length);
-                System.arraycopy(nonceResponder,0 ,toSign,nonceInitiator.length,nonceResponder.length);
+		System.arraycopy(nonceResponder,0 ,toSign,nonceInitiator.length,nonceResponder.length);
 		System.arraycopy(_myExponential, 0, toSign,nonceInitiator.length+nonceResponder.length, _myExponential.length);
 		System.arraycopy(_hisExponential, 0, toSign, nonceInitiator.length+nonceResponder.length+_myExponential.length, _hisExponential.length);
-                System.arraycopy(idI, 0, toSign , nonceInitiator.length+nonceResponder.length+_myExponential.length+ _hisExponential.length,idI.length);
-		
+		System.arraycopy(idI, 0, toSign , nonceInitiator.length+nonceResponder.length+_myExponential.length+ _hisExponential.length,idI.length);
+
 		return SHA256.digest(toSign);
 	}
-       
+
 	/*
 	 * Actually sign the DH parameters for message2
 	 */
 	private DSASignature signDHParams(BigInteger exponential, DSAGroup group) {
 		return crypto.sign(assembleDHParams(exponential, group));
 	}
-        /*
-         * Sign the params for message3
-         */
-        private DSASignature signDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential) {
+	/*
+	 * Sign the params for message3
+	 */
+	private DSASignature signDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential) {
 		return crypto.sign(assembleDHParams(nonceInitiator,nonceResponder,myExponential,hisExponential));
 	}
 	/*
-         * Sign the params for message4
-         */
-         private DSASignature signDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential,byte[] idI) {
+	 * Sign the params for message4
+	 */
+	private DSASignature signDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential,byte[] idI) {
 		return crypto.sign(assembleDHParams(nonceInitiator,nonceResponder,myExponential,hisExponential,idI));
 	}
 	private byte[] getTransientKey() {
@@ -2290,11 +2290,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			authenticatorCache.clear();
 		}
 	}
-	
+
 	private byte[] stripBigIntegerToNetworkFormat(BigInteger exponential) {
 		byte[] data = exponential.toByteArray();
 		int targetLength = DiffieHellman.modulusLengthInBytes();
-		
+
 		if(data.length != targetLength) {
 			byte[] newData = new byte[targetLength];
 			if((data.length == targetLength+1) && (data[0] == 0)) {
