@@ -126,10 +126,12 @@ public class PeerManager {
      */
     void tryReadPeers(String filename, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet, boolean oldOpennetPeers) {
     	synchronized(writePeersSync) {
-    		if(isOpennet) {
-    			openFilename = filename;
-    		} else {
-    			darkFilename = filename;
+    		if(!oldOpennetPeers) {
+    			if(isOpennet) {
+    				openFilename = filename;
+    			} else {
+    				darkFilename = filename;
+    			}
     		}
     	}
     	OutgoingPacketMangler mangler = crypto.packetMangler;
@@ -139,10 +141,12 @@ public class PeerManager {
      	if(peersFile.exists()) {
       		if(readPeers(peersFile, mangler, crypto, opennet, isOpennet, oldOpennetPeers)) {
       		    String msg;
-      		    if(isOpennet) {
-      			    msg = "Read "+getOpennetPeers().length+" peers from "+peersFile;
+      		    if(oldOpennetPeers) {
+      		    	msg = "Read "+opennet.countOldOpennetPeers()+" old-opennet-peers from "+peersFile;
+      		    } else if(isOpennet) {
+      			    msg = "Read "+getOpennetPeers().length+" opennet peers from "+peersFile;
 				} else {
-      			    msg = "Read "+getDarknetPeers().length+" peers from "+peersFile;
+      			    msg = "Read "+getDarknetPeers().length+" darknet peers from "+peersFile;
 				}
       			Logger.normal(this, msg);
       			System.out.println(msg);
@@ -153,10 +157,12 @@ public class PeerManager {
      	if(backupFile.exists()) {
         	if(readPeers(backupFile, mangler, crypto, opennet, isOpennet, oldOpennetPeers)) {
       		    String msg;
-      		    if(isOpennet) {
-      			    msg = "Read "+getOpennetPeers().length+" peers from "+backupFile;
+      		    if(oldOpennetPeers) {
+      		    	msg = "Read "+opennet.countOldOpennetPeers()+" old-opennet-peers from "+peersFile;
+      		    } else if(isOpennet) {
+      			    msg = "Read "+getOpennetPeers().length+" opennet peers from "+peersFile;
 				} else {
-      			    msg = "Read "+getDarknetPeers().length+" peers from "+backupFile;
+      			    msg = "Read "+getDarknetPeers().length+" darknet peers from "+peersFile;
 				}
       			Logger.normal(this, msg);
       			System.out.println(msg);
