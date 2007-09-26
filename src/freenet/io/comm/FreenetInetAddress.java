@@ -109,16 +109,12 @@ public class FreenetInetAddress {
         AddressIdentifier.AddressType addressType = AddressIdentifier.getAddressType(host);
         boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
         if(logDEBUG) Logger.debug(this, "Address type of '"+host+"' appears to be '"+addressType+ '\'');
-        if(!addressType.toString().equals("Other")) {
-            try {
-                addr = InetAddress.getByName(host);
-            } catch (UnknownHostException e) {
-            	if(!allowUnknown) throw e;
-                addr = null;
-            }
+        if(addressType != AddressIdentifier.AddressType.OTHER) {
+        	// Is an IP address
+            addr = InetAddress.getByName(host);
+            // Don't catch UnknownHostException here, if it happens there's a bug in AddressIdentifier.
             if(logDEBUG) Logger.debug(this, "host is '"+host+"' and addr.getHostAddress() is '"+addr.getHostAddress()+ '\'');
-            if(addr != null && addr.getHostAddress().equals(host)) {
-            	if(logDEBUG) Logger.debug(this, '\'' +host+"' looks like an IP address");
+            if(addr != null) {
                 host = null;
             } else {
                 addr = null;
