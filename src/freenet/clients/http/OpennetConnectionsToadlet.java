@@ -115,7 +115,8 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 
 					protected void drawColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
 						OpennetPeerNodeStatus status = (OpennetPeerNodeStatus) peerNodeStatus;
-						peerRow.addChild("td", "class", "peer-last-success", TimeUtil.formatTime(System.currentTimeMillis() - status.timeLastSuccess));
+						long tLastSuccess = status.timeLastSuccess;
+						peerRow.addChild("td", "class", "peer-last-success", tLastSuccess > 0 ? TimeUtil.formatTime(System.currentTimeMillis() - tLastSuccess) : "NEVER");
 					}
 					public String getExplanationKey() {
 						return "OpennetConnectionsToadlet.successTime";
