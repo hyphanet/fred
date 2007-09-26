@@ -459,13 +459,13 @@ public class PeerManager {
 					}
 				}, 0, null);
 			} catch (NotConnectedException e) {
-		    	if(removePeer(pn))
+		    	if(pn.isDisconnecting() && removePeer(pn))
 		    		writePeers();
 		    	return;
 			}
    			node.getTicker().queueTimedJob(new Runnable() {
    				public void run() {
-			    	if(removePeer(pn))
+			    	if(pn.isDisconnecting() && removePeer(pn))
 			    		writePeers();
    				}
   			}, 60*1000);

@@ -2752,4 +2752,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public void onRemove() {
 		disconnected();
 	}
+
+	public synchronized boolean isDisconnecting() {
+		return disconnecting;
+	}
 }
