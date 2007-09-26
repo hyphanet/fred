@@ -285,8 +285,10 @@ public class PluginManager {
 		synchronized (pluginWrappers) {
 			for(int i=0;i<pluginWrappers.size() && !found;i++) {
 				pi = (PluginInfoWrapper) pluginWrappers.get(i);
-				if (pi.getThreadName().equals(name))
+				if (pi.getThreadName().equals(name)) {
 					found = true;
+					break;
+				}
 			}
 		}
 		if (found) {
