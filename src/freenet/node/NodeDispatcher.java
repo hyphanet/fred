@@ -157,8 +157,12 @@ public class NodeDispatcher implements Dispatcher {
 		// If true, purge all references to this node. Otherwise, we can keep the node
 		// around in secondary tables etc in order to more easily reconnect later. 
 		// (Mostly used on opennet)
-		// Not used at the moment - FIXME
 		boolean purge = m.getBoolean(DMT.PURGE);
+		if(purge) {
+			OpennetManager om = node.getOpennet();
+			if(om != null)
+				om.purgeOldOpennetPeer(source);
+		}
 		// Process parting message
 		int type = m.getInt(DMT.NODE_TO_NODE_MESSAGE_TYPE);
 		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
