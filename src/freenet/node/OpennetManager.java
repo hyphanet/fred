@@ -337,6 +337,8 @@ public class OpennetManager {
 
 	private void dropExcessPeers() {
 		while(peersLRU.size() > MAX_PEERS) {
+			if(logMINOR)
+				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
 			PeerNode toDrop;
 			toDrop = peerToDrop(false);
 			if(toDrop == null) return;
