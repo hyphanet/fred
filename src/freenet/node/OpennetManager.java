@@ -402,7 +402,6 @@ public class OpennetManager {
 			while (oldPeers.size() > MAX_OLD_PEERS)
 				oldPeers.pop();
 		}
-		pn.disconnected();
 	}
 
 	synchronized PeerNode[] getOldPeers() {
