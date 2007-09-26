@@ -128,7 +128,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		this.peers = n.peers;
 	}
 
-	abstract SimpleColumn[] endColumnHeaders();
+	abstract SimpleColumn[] endColumnHeaders(boolean advancedModeEnabled);
 	
 	abstract class SimpleColumn {
 		abstract protected void drawColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus);
@@ -434,7 +434,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th", "Time\u00a0Delta");
 				}
 				
-				SimpleColumn[] endCols = endColumnHeaders();
+				SimpleColumn[] endCols = endColumnHeaders(advancedModeEnabled);
 				if(endCols != null) {
 					for(int i=0;i<endCols.length;i++) {
 						SimpleColumn col = endCols[i];

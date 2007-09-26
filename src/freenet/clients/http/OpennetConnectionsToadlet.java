@@ -97,8 +97,8 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 			if(sortBy.equals("successTime")) {
 				long t1 = ((OpennetPeerNodeStatus)firstNode).timeLastSuccess;
 				long t2 = ((OpennetPeerNodeStatus)secondNode).timeLastSuccess;
-				if(t1 > t2) return reversed ? 1 : -1;
-				else if(t2 > t1) return reversed ? -1 : 1;
+				if(t1 > t2) return reversed ? -1 : 1;
+				else if(t2 > t1) return reversed ? 1 : -1;
 			}
 			return super.customCompare(firstNode, secondNode, sortBy);
 		}
@@ -108,7 +108,8 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		return new OpennetComparator(sortBy, reversed);
 	}
 
-	SimpleColumn[] endColumnHeaders() {
+	SimpleColumn[] endColumnHeaders(boolean advancedMode) {
+		if(!advancedMode) return null;
 		return new SimpleColumn[] { 
 				new SimpleColumn() {
 

@@ -377,7 +377,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		return false;
 	}
 
-	SimpleColumn[] endColumnHeaders() {
+	SimpleColumn[] endColumnHeaders(boolean advancedMode) {
 		return null;
 	}
 
