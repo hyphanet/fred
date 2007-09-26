@@ -425,6 +425,9 @@ public class PacketSender implements Runnable, Ticker {
         }
         
         if(sleepTime > 0) {
+        	// Update logging only when have time to do so
+            logMINOR = Logger.shouldLog(Logger.MINOR, this);
+            logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
             try {
                 synchronized(this) {
                 	if(logMINOR) Logger.minor(this, "Sleeping for "+sleepTime);
