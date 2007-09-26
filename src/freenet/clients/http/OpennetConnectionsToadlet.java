@@ -1,12 +1,19 @@
 package freenet.clients.http;
 
+import java.util.Comparator;
+
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.ConnectionsToadlet.ComparatorByStatus;
+import freenet.clients.http.DarknetConnectionsToadlet.DarknetComparator;
 import freenet.l10n.L10n;
+import freenet.node.DarknetPeerNodeStatus;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.OpennetPeerNodeStatus;
 import freenet.node.PeerNodeStatus;
 import freenet.support.HTMLNode;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TimeUtil;
 
 public class OpennetConnectionsToadlet extends ConnectionsToadlet implements LinkEnabledCallback {
 
@@ -80,4 +87,45 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		return true;
 	}
 
+	protected class OpennetComparator extends ComparatorByStatus {
+
+		OpennetComparator(String sortBy, boolean reversed) {
+			super(sortBy, reversed);
+		}
+	
+		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy) {
+			if(sortBy.equals("successTime")) {
+				long t1 = ((OpennetPeerNodeStatus)firstNode).timeLastSuccess;
+				long t2 = ((OpennetPeerNodeStatus)secondNode).timeLastSuccess;
+				if(t1 > t2) return reversed ? 1 : -1;
+				else if(t2 > t1) return reversed ? -1 : 1;
+			}
+			return super.customCompare(firstNode, secondNode, sortBy);
+		}
+	}
+	
+	protected Comparator comparator(String sortBy, boolean reversed) {
+		return new OpennetComparator(sortBy, reversed);
+	}
+
+	SimpleColumn[] endColumnHeaders() {
+		return new SimpleColumn[] { 
+				new SimpleColumn() {
+
+					protected void drawColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
+						OpennetPeerNodeStatus status = (OpennetPeerNodeStatus) peerNodeStatus;
+						peerRow.addChild("td", "class", "peer-last-success", TimeUtil.formatTime(System.currentTimeMillis() - status.timeLastSuccess));
+					}
+					public String getExplanationKey() {
+						return "OpennetConnectionsToadlet.successTime";
+					}
+					public String getSortString() {
+						return "successTime";
+					}
+					public String getTitleKey() {
+						return "OpennetConnectionsToadlet.successTimeTitle";
+					}
+				}};
+	}
+		
 }
