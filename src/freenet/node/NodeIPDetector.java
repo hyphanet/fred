@@ -148,8 +148,11 @@ public class NodeIPDetector {
 			}
 		}
 		
-		if(addresses.isEmpty() && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
+		if(addresses.isEmpty() && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress)) {
 			addresses.add(oldIPAddress);
+			if(oldIPAddress.isRealInternetAddress(false, true))
+				addedValidIP = true;
+		}
 		
 		// Try to pick it up from our connections
 		if(node.peers != null) {
