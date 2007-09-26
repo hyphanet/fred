@@ -479,7 +479,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         byte[] random = new byte[paddingLength];
         node.fastWeakRandom.nextBytes(random);
         System.arraycopy(random, 0, data, hash.length+iv.length+2+output.length, random.length);
-		if(logMINOR) Logger.minor(this, "Sending auth packet (long) to "+replyTo+" - size "+data.length+" data length: "+output.length);
         try {
         	sendPacket(data, replyTo, pn, 0);
 		} catch (LocalAddressException e) {
@@ -1563,6 +1562,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         		if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
         		continue;
         	}
+        	if(logMINOR)
+        		Logger.minor(this, "Sending handshake to "+peer+" for "+pn+" ("+i+" of "+handshakeIPs.length);
         	sendFirstHalfDHPacket(0, negType, ctx.getOurExponential(), pn, peer);
         	pn.sentHandshake();
         	sentCount += 1;
