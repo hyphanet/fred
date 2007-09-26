@@ -14,7 +14,7 @@ public class PluginInfoWrapper {
 	private Thread thread;
 	private long start;
 	private String threadName;
-	private FredPlugin plug;
+	final FredPlugin plug;
 	private boolean isPproxyPlugin;
 	private boolean isThreadlessPlugin;
 	private boolean isIPDetectorPlugin;
@@ -26,9 +26,9 @@ public class PluginInfoWrapper {
 	//public String 
 	
 	public PluginInfoWrapper(FredPlugin plug, String filename) {
+		this.plug = plug;
 		if (fedPluginThread) return;
 		className = plug.getClass().toString();
-		this.plug = plug;
 		this.filename = filename;
 		threadName = 'p' + className.replaceAll("^class ", "") + '_' + hashCode();
 		start = System.currentTimeMillis();
