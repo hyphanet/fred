@@ -241,7 +241,8 @@ public class PeerManager {
 	 */
 	boolean addPeer(PeerNode pn, boolean ignoreOpennet, boolean reactivate) {
 		assert(pn != null);
-		pn.forceCancelDisconnecting();
+		if(reactivate)
+			pn.forceCancelDisconnecting();
 		synchronized (this) {
 			for (int i = 0; i < myPeers.length; i++) {
 				if (myPeers[i].equals(pn)) {
