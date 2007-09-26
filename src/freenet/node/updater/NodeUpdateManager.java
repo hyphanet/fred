@@ -116,6 +116,10 @@ public class NodeUpdateManager {
 
         try {
 			updateURI = new FreenetURI(updaterConfig.getString("URI"));
+			long ver = updateURI.getSuggestedEdition();
+			if(ver < Version.buildNumber())
+				ver = Version.buildNumber();
+			updateURI = updateURI.setSuggestedEdition(ver);
 		} catch (MalformedURLException e) {
 			throw new InvalidConfigValueException(l10n("invalidUpdateURI", "error", e.getLocalizedMessage()));
 		}
@@ -135,6 +139,10 @@ public class NodeUpdateManager {
         
         try {
 			extURI = new FreenetURI(updaterConfig.getString("extURI"));
+			long ver = extURI.getSuggestedEdition();
+			if(ver < NodeStarter.extBuildNumber)
+				ver = NodeStarter.extBuildNumber;
+			extURI = extURI.setSuggestedEdition(ver);
 		} catch (MalformedURLException e) {
 			throw new InvalidConfigValueException(l10n("invalidExtURI", "error", e.getLocalizedMessage()));
 		}
