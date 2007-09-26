@@ -406,7 +406,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * session key will be different,can be used to differentiate between
 				 * parallel sessions
 				 */
-				ProcessMessage1(payload,pn,replyTo);
+				processMessage1(payload,pn,replyTo);
 
 			}
 			else if(packetType==1){
@@ -415,7 +415,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * nonce and an authenticator calculated from a transient hash key private
 				 * to the responder.
 				 */
-				ProcessMessage2(payload,pn,replyTo);
+				processMessage2(payload,pn,replyTo);
 			}
 			else if(packetType==2){
 				/*
@@ -423,7 +423,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * cached by the Responder.Receiving a duplicate message simply causes
 				 * the responder to Re-transmit the corresponding message4
 				 */
-				ProcessMessage3(payload, pn, replyTo);
+				processMessage3(payload, pn, replyTo);
 			}
 			else if(packetType==3){
 				/*
@@ -431,7 +431,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				ProcessMessage4(payload,pn,replyTo);
+				processMessage4(payload,pn,replyTo);
 			}
 		}
 		else {
@@ -453,7 +453,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * g^i
 	 * IDr'
 	 */	
-	private void ProcessMessage1(byte[] payload,PeerNode pn,Peer replyTo)
+	private void processMessage1(byte[] payload,PeerNode pn,Peer replyTo)
 	{
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it");
@@ -588,7 +588,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 */
 
-	private void ProcessMessage2(byte[] payload,PeerNode pn,Peer replyTo)
+	private void processMessage2(byte[] payload,PeerNode pn,Peer replyTo)
 	{
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it");
@@ -657,7 +657,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * @return byte Message3
 	 */
-	private void ProcessMessage3(byte[] payload, PeerNode pn,Peer replyTo)			
+	private void processMessage3(byte[] payload, PeerNode pn,Peer replyTo)			
 	{
 		long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it");
@@ -871,7 +871,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * @param The peer to which we need to send the packet
 	 */
-	private void ProcessMessage4( byte[] payload,PeerNode pn,Peer replyTo) 
+	private void processMessage4( byte[] payload,PeerNode pn,Peer replyTo) 
 	{
 		long t1 = System.currentTimeMillis();
 		if(logMINOR)
