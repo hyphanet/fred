@@ -11,6 +11,7 @@ import java.util.Arrays;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
+import freenet.crypt.DSAGroup;
 import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanContext;
@@ -484,47 +485,42 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	/*
 	 * format:
-	 * Ni,g^i,IDr'
-	 * FIXME: IDr' not sent?
+	 * Ni,g^i
+	 * NB: we don't send IDr as we know to who we are talking to (darknet)
 	 */
 	private void sendMessage1(PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+pn);
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		int offset = 0;
-		byte[] idR = new byte[0];
 		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
 		byte[] myNonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(myNonce);
 		
-		byte[] message1 = new byte[NONCE_SIZE+DiffieHellman.modulusLengthInBytes()+idR.length];
+		byte[] message1 = new byte[NONCE_SIZE+DiffieHellman.modulusLengthInBytes()];
 
 		System.arraycopy(myNonce, 0, message1, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
 		if(logMINOR) Logger.minor(this, "My Exponential (message1), length ="+DiffieHellman.modulusLengthInBytes()+" value ="+ dhContext.myExponential.toHexString());
 		System.arraycopy(myExponential, 0, message1, offset, DiffieHellman.modulusLengthInBytes());
 		offset += DiffieHellman.modulusLengthInBytes();
-		System.arraycopy(idR, 0, message1, offset, idR.length);
-		offset += idR.length;
 		
 		sendAuthPacket(1,2,0,message1,pn,replyTo);
 	}
 	
 	/*
 	 * format:
-	 * Ni,Nr,g^r,GrpInfo(r),IDr
+	 * Ni,Nr,g^r
 	 * Signature[g^r,grpInfo(r)] - R, S
 	 * Hashed JFKAuthenticator
-	 * FIXME: IDr' not sent during JFK(1) ?
+	 * NB: we don't send IDr nor groupinfo as we know them (darknet)
 	 */
 	private void sendMessage2(byte[] nonceInitator, PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
-		byte[] idR = new byte[0];
-		byte[] myDHGroup = stripBigIntegerToNetworkFormat(dhContext.group.p);
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		// g^r
-                byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
-                // Nr
-                byte[] myNonce = new byte[NONCE_SIZE];
+		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
+		// Nr
+		byte[] myNonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(myNonce);
 		// FIXME: can we do that ? is it (mod p) as well ?
 		byte[] r = dhContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
@@ -533,7 +529,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] authenticator = hash.mac(getTransientKey(),assembleJFKAuthenticator(myExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
 		
 		
-                byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+myDHGroup.length+
+		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+
 		                           Node.SIGNATURE_PARAMETER_LENGTH*2+
 		                           HASH_LENGTH];
 
@@ -544,10 +540,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		offset += NONCE_SIZE;
 		System.arraycopy(myExponential, 0, message2, offset, DiffieHellman.modulusLengthInBytes());
 		offset += DiffieHellman.modulusLengthInBytes();
-		System.arraycopy(myDHGroup, 0, message2, offset, myDHGroup.length);
-		offset += myDHGroup.length;
-		System.arraycopy(idR, 0, message2, offset, idR.length);
-		offset += idR.length;
 		
 		System.arraycopy(r, 0, message2, offset, Node.SIGNATURE_PARAMETER_LENGTH);
 		offset += Node.SIGNATURE_PARAMETER_LENGTH;
@@ -601,8 +593,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it");
 		// FIXME: follow the spec and send IDr' ?
-		if(payload.length < NONCE_SIZE + DiffieHellman.modulusLengthInBytes() + 3) {
-			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(2), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
+		int expectedLength = NONCE_SIZE*2 + DiffieHellman.modulusLengthInBytes() + HASH_LENGTH*2;
+		if(payload.length < expectedLength + 3) {
+			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(2), should be "+(expectedLength + 3));
 			return;
 		}
 		
@@ -624,19 +617,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		
-		byte[] hisGroup = new byte[DiffieHellman.modulusLengthInBytes()];
-		System.arraycopy(payload, inputOffset, hisGroup, 0, DiffieHellman.modulusLengthInBytes());
-		inputOffset += DiffieHellman.modulusLengthInBytes();
-		NativeBigInteger _hisGroup = new NativeBigInteger(1,hisGroup);
-		if(logMINOR) Logger.minor(this, "his group from message2 length="+DiffieHellman.modulusLengthInBytes() +" value=" + _hisGroup.toHexString());
-		if(_hisGroup.compareTo(NativeBigInteger.ONE) < 1) {
-			Logger.error(this, "We can't accept the group "+pn+" sent us; it's smaller than 1!!");
-			return;
-		}
-		
-		//TODO: implement
-		byte[] hisID = new byte[0];
-		
 		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
@@ -646,7 +626,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
 		if(logMINOR) Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
 		// At that point we don't know if it's "him"; let's check it out
-		byte[] locallyExpectedExponentials = assembleDHParams(_hisExponential, _hisGroup);
+		byte[] locallyExpectedExponentials = assembleDHParams(_hisExponential, pn.peerCryptoGroup);
 		
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
 			Logger.error(this, "The signature verification has failed!!");
@@ -657,7 +637,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(payload, inputOffset, remoteHashedAuthenticator, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 		// FIXME: maybe the cache should be checked before verifying the signature
-		sendMessage3Packet(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, _hisGroup, remoteHashedAuthenticator, pn, replyTo);
+		sendMessage3Packet(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, remoteHashedAuthenticator, pn, replyTo);
 		
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
@@ -803,13 +783,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
          * E[idI,S[Ni,Nr,g^i,g^r]] over the key Ka
 	 */
 
-	private void sendMessage3Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, BigInteger hisGroup, byte[] hashedAuthenticator, PeerNode pn, Peer replyTo)
+	private void sendMessage3Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] hashedAuthenticator, PeerNode pn, Peer replyTo)
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn);
 		long now = System.currentTimeMillis();
 		long delta = now - pn.lastSentPacketTime();
 		
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		byte[] ourExponential = dhContext.myExponential.toByteArray();
 		byte[] unVerifiedData=new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
 		int offset = 0;
@@ -832,7 +812,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		//FIXME: IDr not signed?
                 NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
                 NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-                NativeBigInteger _hisGroup = new NativeBigInteger(1,stripBigIntegerToNetworkFormat(hisGroup));
                 DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential);
                 byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
@@ -846,7 +825,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * The key used is generated from Hash of Message:(Ni, Nr, 1) over the shared key of DH
 		 */
 		
-                NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential,_hisGroup);
+                NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential, pn.peerCryptoGroup);
                 byte[] eKey = tempKey.toByteArray();
                 c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
 		PCFBMode pk=PCFBMode.create(c);
@@ -939,15 +918,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                     Logger.minor(this, "Sending a JFK(4) message to "+pn);
 		long now = System.currentTimeMillis();
 		long delta = now - pn.lastSentPacketTime();
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
-                BigInteger hisGroup = dhContext.group.p;
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
                 NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
                 NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-                NativeBigInteger _hisGroup = new NativeBigInteger(1,stripBigIntegerToNetworkFormat(hisGroup));
                 DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential,idI);
                 byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-                NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential,_hisGroup);
+                NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential, pn.peerCryptoGroup);
                 byte[] eKey = tempKey.toByteArray();
                 c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
 		PCFBMode pk=PCFBMode.create(c);
@@ -2228,11 +2205,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return crypto.config.alwaysAllowLocalAddresses();
 	}
 	
-	private synchronized DiffieHellmanLightContext getLightDiffieHellmanContext() {
+	private synchronized DiffieHellmanLightContext getLightDiffieHellmanContext(PeerNode pn) {
 		if(currentDHContext == null) {
 			currentDHContext = DiffieHellman.generateLightContext();
-			
-			currentDHContext.setSignature(signDHParams(currentDHContext.myExponential, currentDHContext.group.p));
+			currentDHContext.setSignature(signDHParams(currentDHContext.myExponential, pn.peerCryptoGroup));
 		}
 		return currentDHContext;
 	}
@@ -2240,9 +2216,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/*
 	 * Prepare DH parameters of message2 for them to be signed (useful in message3 to check the sig)
 	 */
-	private byte[] assembleDHParams(BigInteger exponential, BigInteger group) {
+	private byte[] assembleDHParams(BigInteger exponential, DSAGroup group) {
 		byte[] _myExponential = stripBigIntegerToNetworkFormat(exponential);
-		byte[] _myGroup = stripBigIntegerToNetworkFormat(group);
+		byte[] _myGroup = group.getP().toByteArray();
 		byte[] toSign = new byte[_myExponential.length + _myGroup.length];
 		
 		System.arraycopy(_myExponential, 0, toSign, 0, _myExponential.length);
@@ -2283,7 +2259,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/*
 	 * Actually sign the DH parameters for message2
 	 */
-	private DSASignature signDHParams(BigInteger exponential, BigInteger group) {
+	private DSASignature signDHParams(BigInteger exponential, DSAGroup group) {
 		return crypto.sign(assembleDHParams(exponential, group));
 	}
         /*

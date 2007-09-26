@@ -10,8 +10,6 @@ public class DiffieHellmanLightContext {
 	public final NativeBigInteger myExponent;
 	/** My exponential. This is group.g ^ myExponent mod group.p */
 	public final NativeBigInteger myExponential;
-	/** The group we both share */
-	public final DHGroup group;
 	/** The signature of (g^r, grpR) */
 	public DSASignature signature = null;
 	
@@ -28,10 +26,9 @@ public class DiffieHellmanLightContext {
 		return sb.toString();
 	}
 
-	public DiffieHellmanLightContext(NativeBigInteger myExponent, NativeBigInteger myExponential, DHGroup group) {
+	public DiffieHellmanLightContext(NativeBigInteger myExponent, NativeBigInteger myExponential) {
 		this.myExponent = myExponent;
 		this.myExponential = myExponential;
-		this.group = group;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
@@ -42,11 +39,11 @@ public class DiffieHellmanLightContext {
 	/*
 	 * Calling the following is costy; avoid
 	 */
-	public NativeBigInteger getHMACKey(NativeBigInteger peerExponential, NativeBigInteger groupP) {		
+	public NativeBigInteger getHMACKey(NativeBigInteger peerExponential, DSAGroup group) {		
 		if(logMINOR)
 			Logger.minor(this, "My exponent: "+myExponent.toHexString()+", my exponential: "+myExponential.toHexString()+", peer's exponential: "+peerExponential.toHexString());
 		NativeBigInteger sharedSecret =
-			(NativeBigInteger) peerExponential.modPow(myExponent, groupP);
+			(NativeBigInteger) peerExponential.modPow(myExponent, group.getP());
 		if(logMINOR)
 			Logger.minor(this, "g^ir mod p = " + sharedSecret.toString());
 		
