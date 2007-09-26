@@ -2737,4 +2737,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
+
+	/** Called to cancel a delayed disconnect. Always succeeds even if the node was not being 
+	 * disconnected. */
+	public void forceCancelDisconnecting() {
+		synchronized(this) {
+			disconnecting = false;
+		}
+		setPeerNodeStatus(System.currentTimeMillis());
+	}
 }

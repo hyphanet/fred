@@ -204,7 +204,7 @@ public class PeerManager {
                 if(oldOpennetPeers)
                 	opennet.addOldOpennetNode(pn);
                 else
-                	addPeer(pn, true);
+                	addPeer(pn, true, false);
                 gotSome = true;
             }
         } catch (EOFException e) {
@@ -221,7 +221,7 @@ public class PeerManager {
 	}
 
 	public boolean addPeer(PeerNode pn) {
-		return addPeer(pn, false);
+		return addPeer(pn, false, false);
 	}
 	
 	/**
@@ -229,11 +229,13 @@ public class PeerManager {
 	 * @param pn The node to add to the routing table.
 	 * @param ignoreOpennet If true, don't check for opennet peers. If false, check for opennet peers and if so,
 	 * if opennet is enabled auto-add them to the opennet LRU, otherwise fail.
+	 * @param reactivate If true, re-enable the peer if it is in state DISCONNECTING before re-adding it.
 	 * @return True if the node was successfully added. False if it was already present, or if we tried to add
 	 * an opennet peer when opennet was disabled.
 	 */
-	boolean addPeer(PeerNode pn, boolean ignoreOpennet) {
+	boolean addPeer(PeerNode pn, boolean ignoreOpennet, boolean reactivate) {
 		assert(pn != null);
+		pn.forceCancelDisconnecting();
 		synchronized (this) {
 			for (int i = 0; i < myPeers.length; i++) {
 				if (myPeers[i].equals(pn)) {

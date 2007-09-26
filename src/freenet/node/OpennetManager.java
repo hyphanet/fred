@@ -266,7 +266,7 @@ public class OpennetManager {
 		}
 		if(notMany) {
 			if(nodeToAddNow != null)
-				node.peers.addPeer(nodeToAddNow, true); // Add to peers outside the OM lock
+				node.peers.addPeer(nodeToAddNow, true, true); // Add to peers outside the OM lock
 			return true;
 		}
 		boolean canAdd = true;
@@ -321,7 +321,7 @@ public class OpennetManager {
 				}
 			}
 		}
-		if(nodeToAddNow != null && !node.peers.addPeer(nodeToAddNow)) {
+		if(nodeToAddNow != null && !node.peers.addPeer(nodeToAddNow, true, true)) {
 			if(logMINOR)
 				Logger.minor(this, "Already in global peers list: "+nodeToAddNow+" when adding opennet node");
 			// Just because it's in the global peers list doesn't mean its in the LRU, it may be an old-opennet-peers reconnection.
