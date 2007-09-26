@@ -479,12 +479,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
         byte[] random = new byte[paddingLength];
         node.fastWeakRandom.nextBytes(random);
         System.arraycopy(random, 0, data, hash.length+iv.length+2+output.length, random.length);
+		if(logMINOR) Logger.minor(this, "Sending auth packet (long) to "+replyTo+" - size "+data.length+" data length: "+output.length);
         try {
         	sendPacket(data, replyTo, pn, 0);
 		} catch (LocalAddressException e) {
 			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn+" - maybe you should set allowLocalAddresses for this peer??");
 		}
-		if(logMINOR) Logger.minor(this, "Sending auth packet (long) to "+replyTo+" - size "+data.length+" data length: "+output.length);
      }
 
     private void sendPacket(byte[] data, Peer replyTo, PeerNode pn, int alreadyReportedBytes) throws LocalAddressException {
