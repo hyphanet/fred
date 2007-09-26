@@ -27,6 +27,7 @@ import freenet.support.WouldBlockException;
 public class PacketSender implements Runnable, Ticker {
 
 	private static boolean logMINOR;
+	private static boolean logDEBUG;
 	
 	/** Maximum time we will queue a message for in millseconds */
 	static final int MAX_COALESCING_DELAY = 200;
@@ -68,6 +69,7 @@ public class PacketSender implements Runnable, Ticker {
         myThread.setDaemon(true);
         myThread.setPriority(Thread.MAX_PRIORITY);
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
+        logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
         rpiTemp = new Vector();
         rpiIntTemp = new int[64];
     }
@@ -328,12 +330,16 @@ public class PacketSender implements Runnable, Ticker {
         if(om != null) {
         	int connCount = node.peers.quickCountConnectedPeers();
         	int minDelay = connCount == 0 ? MIN_OLD_OPENNET_CONNECT_DELAY_NO_CONNS : MIN_OLD_OPENNET_CONNECT_DELAY;
+        	if(logDEBUG)
+        		Logger.debug(this, "Conns "+connCount+" minDelay "+minDelay+" old opennet peers "+om.countOldOpennetPeers()+" last sent "+(now - timeLastSentOldOpennetConnectAttempt)+" startup "+(now - node.startupTime));
         	if(now - timeLastSentOldOpennetConnectAttempt > minDelay &&
         			connCount <= MIN_CONNECTIONS_TRY_OLD_OPENNET_PEERS &&
         			om.countOldOpennetPeers() > 0 &&
         			now - node.startupTime > OpennetManager.DROP_STARTUP_DELAY) {
             	PeerNode pn = om.randomOldOpennetNode();
             	if(pn != null) {
+            		if(logMINOR)
+            			Logger.minor(this, "Sending old-opennet connect attempt to "+pn);
             		pn.getOutgoingMangler().sendHandshake(pn);
             		timeLastSentOldOpennetConnectAttempt = now;
             		if(pn.noContactDetails() && node.getPeerNodes().length > 0 && connCount > 0 && node.random.nextBoolean())
