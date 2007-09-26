@@ -271,8 +271,8 @@ public class PeerManager {
 	}
 	
     private boolean removePeer(PeerNode pn) {
+		boolean isInPeers = false;
     	synchronized(this) {
-    		boolean isInPeers = false;
     		for(int i=0;i<myPeers.length;i++) {
     			if(myPeers[i] == pn) isInPeers=true;
     		}
@@ -284,34 +284,37 @@ public class PeerManager {
     		}
     		if(pn instanceof DarknetPeerNode)
     			((DarknetPeerNode)pn).removeExtraPeerDataDir();
-    		if(!isInPeers) return false;
+    		
+    		if(isInPeers) {
                 
-    		// removing from connectedPeers
-    		ArrayList a = new ArrayList();
-    		for(int i=0;i<myPeers.length;i++) {
-    			if((myPeers[i]!=pn) && myPeers[i].isRoutable())
-    				a.add(myPeers[i]);
-    		}
-    		
-    		PeerNode[] newConnectedPeers = new PeerNode[a.size()];
-    		newConnectedPeers = (PeerNode[]) a.toArray(newConnectedPeers);
-    		connectedPeers = newConnectedPeers;
-    		
-    		// removing from myPeers
-    		PeerNode[] newMyPeers = new PeerNode[myPeers.length-1];
-    		int positionInNewArray = 0;
-    		for(int i=0;i<myPeers.length;i++) {
-    			if(myPeers[i]!=pn){
-    				newMyPeers[positionInNewArray] = myPeers[i];
-    				positionInNewArray++;
+    			// removing from connectedPeers
+    			ArrayList a = new ArrayList();
+    			for(int i=0;i<myPeers.length;i++) {
+    				if((myPeers[i]!=pn) && myPeers[i].isRoutable())
+    					a.add(myPeers[i]);
     			}
+    			
+    			PeerNode[] newConnectedPeers = new PeerNode[a.size()];
+    			newConnectedPeers = (PeerNode[]) a.toArray(newConnectedPeers);
+    			connectedPeers = newConnectedPeers;
+    			
+    			// removing from myPeers
+    			PeerNode[] newMyPeers = new PeerNode[myPeers.length-1];
+    			int positionInNewArray = 0;
+    			for(int i=0;i<myPeers.length;i++) {
+    				if(myPeers[i]!=pn){
+    					newMyPeers[positionInNewArray] = myPeers[i];
+    					positionInNewArray++;
+    				}
+    			}
+    			myPeers = newMyPeers;
+    			
+    			Logger.normal(this, "Removed "+pn);
     		}
-    		myPeers = newMyPeers;
-    		
-    		Logger.normal(this, "Removed "+pn);
     	}
     	pn.onRemove();
-        updatePMUserAlert();
+    	if(isInPeers)
+    		updatePMUserAlert();
         return true;
     }
 
