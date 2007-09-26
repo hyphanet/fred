@@ -40,9 +40,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * @author amphibian
@@ -76,7 +74,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
 	// TODO: is 64 bits enough ?
-	private static final int NONCE_SIZE = 6;
+	protected static final int NONCE_SIZE = 6;
 	private static final int MAX_PACKETS_IN_FLIGHT = 256; 
 	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();

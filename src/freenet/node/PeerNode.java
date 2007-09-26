@@ -92,7 +92,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      * Currently Idi is not being used, but may find use in opennet
      * Used to verify the signature in JFK(4)
      */
-    protected byte[] bufferJFK = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
+    protected byte[] bufferJFK = new byte[FNPPacketMangler.NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
 	
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;
@@ -303,7 +303,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     /** If the clock delta is more than this constant, we don't talk to the node. Reason: It may not be up to date,
      * it will have difficulty resolving date-based content etc. */
 	private static final long MAX_CLOCK_DELTA = 24L*60L*60L*1000L;
-        private static final int NONCE_SIZE = 6;
     
 	/** A WeakReference to this object. Can be taken whenever a node object needs to refer to this object for a 
 	 * long time, but without preventing it from being GC'ed. */
