@@ -139,7 +139,7 @@ public class PeerManager {
         File backupFile = new File(filename+".bak");
         // Try to read the node list from disk
      	if(peersFile.exists()) {
-      		if(readPeers(peersFile, mangler, crypto, opennet, isOpennet, oldOpennetPeers)) {
+      		if(readPeers(peersFile, mangler, crypto, opennet, oldOpennetPeers)) {
       		    String msg;
       		    if(oldOpennetPeers) {
       		    	msg = "Read "+opennet.countOldOpennetPeers()+" old-opennet-peers from "+peersFile;
@@ -155,7 +155,7 @@ public class PeerManager {
        	}
      	// Try the backup
      	if(backupFile.exists()) {
-        	if(readPeers(backupFile, mangler, crypto, opennet, isOpennet, oldOpennetPeers)) {
+        	if(readPeers(backupFile, mangler, crypto, opennet, oldOpennetPeers)) {
       		    String msg;
       		    if(oldOpennetPeers) {
       		    	msg = "Read "+opennet.countOldOpennetPeers()+" old-opennet-peers from "+peersFile;
@@ -173,7 +173,7 @@ public class PeerManager {
      	}     		
 	}
 
-	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet, boolean oldOpennetPeers) {
+	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
     	boolean gotSome = false;
     	FileInputStream fis;
 		try {
