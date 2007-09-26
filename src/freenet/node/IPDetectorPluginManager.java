@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -16,6 +17,7 @@ import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.ForwardPortCallback;
 import freenet.pluginmanager.ForwardPortStatus;
+import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.pluginmanager.FredPluginPortForward;
 import freenet.support.HTMLNode;
@@ -196,6 +198,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 * Remove a plugin.
 	 */
 	public void unregisterDetectorPlugin(FredPluginIPDetector d) {
+		DetectorRunner runningDetector;
 		synchronized(this) {
 			int count = 0;
 			for(int i=0;i<plugins.length;i++) {
@@ -208,7 +211,9 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				if(plugins[i] != d) newPlugins[x++] = plugins[i];
 			}
 			plugins = newPlugins;
+			runningDetector = (DetectorRunner) runners.get(d);
 		}
+		runningDetector.kill();
 	}
 
 	
@@ -244,7 +249,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 * (To detect new IP address)
 	 */ 
 	
-	private DetectorRunner runner;
+	private HashMap /*<FredIPDetectorPlugin,DetectorRunner>*/ runners;
 	private boolean lastDetectAttemptFailed;
 	private long lastDetectAttemptEndedTime;
 	private long firstTimeMaybeFakePeers;
@@ -266,10 +271,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				detector.hasDetectedPM();
 				return;
 			}
-			if(runner != null) {
+			if(runners.size() < plugins.length) {
 				if(logMINOR) Logger.minor(this, "Already running IP detection plugins");
 				return;
-			}
+			} // FIXME what about detectors that take ages vs detectors that are fast?
+			
 			// If detect attempt failed to produce an IP in the last 5 minutes, don't
 			// try again yet.
 			if(lastDetectAttemptFailed) {
@@ -487,12 +493,27 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	private void startDetect() {
 		if(logMINOR) Logger.minor(this, "Detecting...");
 		synchronized(this) {
-			runner = new DetectorRunner();
-			node.executor.execute(runner, "Plugin detector runner");
+			for(int i=0;i<plugins.length;i++) {
+				FredPluginIPDetector plugin = plugins[i];
+				if(runners.containsKey(plugin)) continue;
+				DetectorRunner d = new DetectorRunner(plugins[i]);
+				runners.put(plugin, d);
+				node.executor.execute(d, "Plugin detector runner for "+plugins[i].getClass());
+			}
 		}
 	}
 
 	public class DetectorRunner implements Runnable {
+		
+		final FredPluginIPDetector plugin;
+
+		public DetectorRunner(FredPluginIPDetector detector) {
+			plugin = detector;
+		}
+
+		public void kill() {
+			node.pluginManager.killPlugin((FredPlugin)plugin, 0);
+		}
 
 		public void run() {
 			freenet.support.Logger.OSThread.logPID(this);
@@ -508,12 +529,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		public void realRun() {
 			if(logMINOR) Logger.minor(this, "Running plugin detection");
 			try {
-				FredPluginIPDetector[] run = plugins;
 				Vector v = new Vector();
-				for(int i=0;i<run.length;i++) {
 					DetectedIP[] detected = null;
 					try {
-						detected = run[i].getAddress();
+						detected = plugin.getAddress();
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t, t);
 					}
@@ -521,7 +540,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						for(int j=0;j<detected.length;j++)
 							v.add(detected[j]);
 					}
-				}
 				synchronized(IPDetectorPluginManager.this) {
 					lastDetectAttemptEndedTime = System.currentTimeMillis();
 					boolean failed = false;
@@ -621,7 +639,9 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				}
 				detector.processDetectedIPs(list);
 			} finally {
-				runner = null;
+				synchronized(IPDetectorPluginManager.this) {
+					runners.remove(plugin);
+				}
 				detector.hasDetectedPM();
 			}
 		}
