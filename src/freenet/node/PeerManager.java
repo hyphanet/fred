@@ -272,43 +272,43 @@ public class PeerManager {
 	
     private boolean removePeer(PeerNode pn) {
     	synchronized(this) {
-    	boolean isInPeers = false;
-        for(int i=0;i<myPeers.length;i++) {
-            if(myPeers[i] == pn) isInPeers=true;
-        }
-        int peerNodeStatus = pn.getPeerNodeStatus();
-        removePeerNodeStatus( peerNodeStatus, pn );
-        String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
-        if(peerNodePreviousRoutingBackoffReason != null) {
-        	removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
-        }
-        if(pn instanceof DarknetPeerNode)
-        	((DarknetPeerNode)pn).removeExtraPeerDataDir();
-        if(!isInPeers) return false;
+    		boolean isInPeers = false;
+    		for(int i=0;i<myPeers.length;i++) {
+    			if(myPeers[i] == pn) isInPeers=true;
+    		}
+    		int peerNodeStatus = pn.getPeerNodeStatus();
+    		removePeerNodeStatus( peerNodeStatus, pn );
+    		String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
+    		if(peerNodePreviousRoutingBackoffReason != null) {
+    			removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
+    		}
+    		if(pn instanceof DarknetPeerNode)
+    			((DarknetPeerNode)pn).removeExtraPeerDataDir();
+    		if(!isInPeers) return false;
                 
-        // removing from connectedPeers
-        ArrayList a = new ArrayList();
-        for(int i=0;i<myPeers.length;i++) {
-        	if((myPeers[i]!=pn) && myPeers[i].isRoutable())
-        		a.add(myPeers[i]);
-        }
-        
-        PeerNode[] newConnectedPeers = new PeerNode[a.size()];
-        newConnectedPeers = (PeerNode[]) a.toArray(newConnectedPeers);
-	    connectedPeers = newConnectedPeers;
-        
-        // removing from myPeers
-        PeerNode[] newMyPeers = new PeerNode[myPeers.length-1];
-        int positionInNewArray = 0;
-        for(int i=0;i<myPeers.length;i++) {
-        	if(myPeers[i]!=pn){
-        		newMyPeers[positionInNewArray] = myPeers[i];
-        		positionInNewArray++;
-        	}
-        }
-        myPeers = newMyPeers;
-        
-        Logger.normal(this, "Removed "+pn);
+    		// removing from connectedPeers
+    		ArrayList a = new ArrayList();
+    		for(int i=0;i<myPeers.length;i++) {
+    			if((myPeers[i]!=pn) && myPeers[i].isRoutable())
+    				a.add(myPeers[i]);
+    		}
+    		
+    		PeerNode[] newConnectedPeers = new PeerNode[a.size()];
+    		newConnectedPeers = (PeerNode[]) a.toArray(newConnectedPeers);
+    		connectedPeers = newConnectedPeers;
+    		
+    		// removing from myPeers
+    		PeerNode[] newMyPeers = new PeerNode[myPeers.length-1];
+    		int positionInNewArray = 0;
+    		for(int i=0;i<myPeers.length;i++) {
+    			if(myPeers[i]!=pn){
+    				newMyPeers[positionInNewArray] = myPeers[i];
+    				positionInNewArray++;
+    			}
+    		}
+    		myPeers = newMyPeers;
+    		
+    		Logger.normal(this, "Removed "+pn);
     	}
     	pn.onRemove();
         updatePMUserAlert();
