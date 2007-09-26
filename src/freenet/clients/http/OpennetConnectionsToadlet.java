@@ -3,10 +3,7 @@ package freenet.clients.http;
 import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.ConnectionsToadlet.ComparatorByStatus;
-import freenet.clients.http.DarknetConnectionsToadlet.DarknetComparator;
 import freenet.l10n.L10n;
-import freenet.node.DarknetPeerNodeStatus;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.OpennetPeerNodeStatus;
