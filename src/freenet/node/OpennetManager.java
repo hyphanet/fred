@@ -343,6 +343,8 @@ public class OpennetManager {
 			toDrop = peerToDrop(false);
 			if(toDrop == null) return;
 			peersLRU.remove(toDrop);
+			if(logMINOR)
+				Logger.minor(this, "Dropping "+toDrop);
 			node.peers.disconnect(toDrop, true, true);
 		}
 	}
