@@ -297,7 +297,6 @@ public class OpennetManager {
 			if(canAdd) {
 				long now = System.currentTimeMillis();
 				if(nodeToAddNow != null) {
-					// Here we can't avoid nested locks. So always take the OpennetManager lock first.
 					successCount = 0;
 					if(addAtLRU)
 						peersLRU.pushLeast(nodeToAddNow);
