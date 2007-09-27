@@ -773,7 +773,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
 		if(logMINOR)
 			Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
-		byte[] locallyExpectedExponentials = assembleDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential);
+		byte[] locallyExpectedExponentials = assembleDHParams(nonceInitiator,nonceResponder, _hisExponential, _ourExponential);
 
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
 			Logger.error(this, "The signature verification has failed!!");
