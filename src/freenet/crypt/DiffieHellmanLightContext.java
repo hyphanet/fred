@@ -43,7 +43,7 @@ public class DiffieHellmanLightContext {
 		if(logMINOR)
 			Logger.minor(this, "My exponent: "+myExponent.toHexString()+", my exponential: "+myExponential.toHexString()+", peer's exponential: "+peerExponential.toHexString());
 		NativeBigInteger sharedSecret =
-			(NativeBigInteger) peerExponential.modPow(myExponent, group.getQ());
+			(NativeBigInteger) peerExponential.modPow(myExponent, group.getP());
 		if(logMINOR)
 			Logger.minor(this, "g^ir mod p = " + sharedSecret.toString());
 		
