@@ -17,9 +17,9 @@ import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.EntropySource;
+import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
-import freenet.crypt.RijndaelPCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
@@ -43,6 +43,7 @@ import freenet.support.WouldBlockException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.HashMap;
 
@@ -505,7 +506,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		offset += NONCE_SIZE;
 		if(logMINOR) Logger.minor(this, "My Exponential (message1), length ="+DiffieHellman.modulusLengthInBytes()+" value ="+ dhContext.myExponential.toHexString());
 		System.arraycopy(myExponential, 0, message1, offset, DiffieHellman.modulusLengthInBytes());
-		offset += DiffieHellman.modulusLengthInBytes();
 
 		sendAuthPacket(1,2,0,message1,pn,replyTo);
 	}
@@ -525,12 +525,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// Nr
 		byte[] myNonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(myNonce);
-		// FIXME: can we do that ? is it (mod p) as well ?
 		byte[] r = dhContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = dhContext.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		HMAC hash = new HMAC(SHA256.getInstance());
 		byte[] authenticator = hash.mac(getTransientKey(),assembleJFKAuthenticator(myExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
-
+		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
 
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+
 		                           Node.SIGNATURE_PARAMETER_LENGTH*2+
@@ -636,11 +635,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 
-		byte[] remoteHashedAuthenticator = new byte[HASH_LENGTH];
-		System.arraycopy(payload, inputOffset, remoteHashedAuthenticator, 0, HASH_LENGTH);
+		byte[] authenticator = new byte[HASH_LENGTH];
+		System.arraycopy(payload, inputOffset, authenticator, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 		// FIXME: maybe the cache should be checked before verifying the signature
-		sendMessage3Packet(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, remoteHashedAuthenticator, pn, replyTo);
+		sendMessage3Packet(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, authenticator, pn, replyTo);
 
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
@@ -672,7 +671,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		final int expectedLength =	NONCE_SIZE*2 + DiffieHellman.modulusLengthInBytes()*2 +
 									HASH_LENGTH + // authenticator
 									HASH_LENGTH + // HMAC of the cyphertext
-									(c.getBlockSize() >> 3) + // ugly way of getting the size of the IV
+									c.getBlockSize() + // IV
 									HASH_LENGTH; // it's at least a signature
 		if(payload.length < expectedLength + 3) {
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(3), should be "+(expectedLength + 3));
@@ -699,10 +698,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] authenticator = new byte[HASH_LENGTH];
 		System.arraycopy(payload, inputOffset, authenticator, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
+		if(logMINOR) Logger.minor(this, "We got the following HMAC : " + HexUtil.bytesToHex(authenticator));
 		// FIXME: check the cache before or after the hmac verification ?
 		// is it cheaper to wait for the lock on authenticatorCache or to verify the hmac ?
 		HMAC mac = new HMAC(SHA256.getInstance());
-		if(!mac.verify(getTransientKey(), assembleJFKAuthenticator(responderExponential, nonceResponder, initiatorExponential, replyTo.getAddress().getAddress()) , authenticator)) {
+		if(!mac.verify(getTransientKey(), assembleJFKAuthenticator(responderExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
 			Logger.error(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery)");
 			return;
 		}
@@ -738,17 +738,26 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] hmac = new byte[HASH_LENGTH];
 		System.arraycopy(payload, inputOffset, hmac, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
-		c.initialize();
+		
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
+		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DSAgroupBigA);
+		if(logMINOR) Logger.minor(this, "We have computed the following exponential : " + HexUtil.biToHex(computedExponential));
+		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
+		if(logMINOR) Logger.minor(this, "We are using Ke=" + HexUtil.bytesToHex(Ke));
+		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
+		if(logMINOR) Logger.minor(this, "We are using Ka=" + HexUtil.bytesToHex(Ka));
+		c.initialize(Ke);
 		final PCFBMode pk = PCFBMode.create(c);
 		int ivLength = pk.lengthIV();
 		int decypheredPayloadOffset = 0;
 		// We compute the HMAC of ("I"+cyphertext) : the cyphertext includes the IV!
-		byte[] prefix = "I".getBytes("UTF-8");
+		byte[] prefix = null;
+		try { prefix = "I".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
 		byte[] decypheredPayload = new byte[prefix.length + payload.length - inputOffset];
 		System.arraycopy(prefix, 0, decypheredPayload, decypheredPayloadOffset, prefix.length);
 		decypheredPayloadOffset += prefix.length;
 		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, payload.length - inputOffset);
-		if(!mac.verify(null /*FIXME*/, decypheredPayload, hmac)) {
+		if(!mac.verify(Ka, decypheredPayload, hmac)) {
 			Logger.error(this, "The digest-HMAC doesn't match; let's discard the packet");
 			return;
 		}
@@ -812,89 +821,92 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * g^i
 	 * g^r
 	 * Authenticator
-	 * E[idI,S[Ni,Nr,g^i,g^r]] over the key Ka
+	 * HMAC(cyphertext)
+	 * IV + E[S[Ni,Nr,g^i,g^r]]
 	 */
 
-	private void sendMessage3Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] hashedAuthenticator, PeerNode pn, Peer replyTo)
+	private void sendMessage3Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, PeerNode pn, Peer replyTo)
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn);
-		long now = System.currentTimeMillis();
-		long delta = now - pn.lastSentPacketTime();
-
+		BlockCipher c = null;
+		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
-		byte[] ourExponential = dhContext.myExponential.toByteArray();
-		byte[] unVerifiedData=new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
+		byte[] ourExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
+		byte[] message3 = new byte[NONCE_SIZE*2 + // nI, nR
+		                           DiffieHellman.modulusLengthInBytes()*2 + // g^i, g^r
+		                           HASH_LENGTH + // authenticator
+		                           HASH_LENGTH + // HMAC(cyphertext)
+		                           c.getBlockSize() + // IV
+		                           Node.SIGNATURE_PARAMETER_LENGTH * 2 // Signature (R,S)
+		                           ];
 		int offset = 0;
 		// Ni
-		System.arraycopy(nonceInitiator, 0, unVerifiedData, offset, NONCE_SIZE);
+		System.arraycopy(nonceInitiator, 0, message3, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
 		// Nr
-		System.arraycopy(nonceResponder, 0, unVerifiedData, offset, NONCE_SIZE);
+		System.arraycopy(nonceResponder, 0, message3, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
 		// g^i
-		System.arraycopy(ourExponential, 0,unVerifiedData, offset, ourExponential.length);
+		System.arraycopy(ourExponential, 0,message3, offset, ourExponential.length);
 		offset += ourExponential.length;
 		// g^r
-		System.arraycopy(hisExponential, 0,unVerifiedData, offset, hisExponential.length);
+		System.arraycopy(hisExponential, 0,message3, offset, hisExponential.length);
 		offset += hisExponential.length;
+		// Authenticator
+		System.arraycopy(authenticator, 0, message3, offset, HASH_LENGTH);
+		offset += HASH_LENGTH;
 		/*
 		 * Digital Signature of the message with the private key belonging to the initiator/responder
 		 * It is assumed to be non-message recovering
 		 */
-		//FIXME: IDr not signed?
 		NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential);
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 
-		// Encrypt idI,r,s
-		// Encryption is performed using HMAC[Ni,Nr,1] over the key g^ir
-		BlockCipher c=pn.incomingSetupCipher;
-		/*
-		 * Initializes the cipher context with the given key
-		 * This would avoid the computation of key using the Rijndael key schedule(S boxes,Rcon etc)
-		 * The key used is generated from Hash of Message:(Ni, Nr, 1) over the shared key of DH
-		 */
-
-		NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential, pn.peerCryptoGroup);
-		byte[] eKey = tempKey.toByteArray();
-		c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
-		PCFBMode pk=PCFBMode.create(c);
-		byte[] iv=new byte[pk.lengthIV()];
+		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DSAgroupBigA);
+		if(logMINOR) Logger.minor(this, "We have computed the following exponential : " + HexUtil.biToHex(computedExponential));
+		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
+		if(logMINOR) Logger.minor(this, "We are using Ke=" + HexUtil.bytesToHex(Ke));
+		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
+		if(logMINOR) Logger.minor(this, "We are using Ka=" + HexUtil.bytesToHex(Ka));
+		if(logMINOR) Logger.minor(this, "we are re-sending authenticator = " + HexUtil.bytesToHex(authenticator));
+		c.initialize(Ke);
+		PCFBMode pcfb = PCFBMode.create(c);
+		int ivLength = pcfb.lengthIV();
+		byte[] iv = new byte[ivLength];
 		node.random.nextBytes(iv);
-		byte[] idI = new byte[0];
-		/*
-		 * Save state at this point for signature verification in JFK(4)
-		 * Ni,Nr,g^i,g^r,Idi
-		 */
-		System.arraycopy(unVerifiedData,0,pn.bufferJFK,0,unVerifiedData.length);
-		System.arraycopy(idI,0,pn.bufferJFK,unVerifiedData.length,idI.length);
-		int encryptedDataLength = iv.length + idI.length + r.length + s.length + 2;
-		byte[] encryptedData = new byte[encryptedDataLength];
-		System.arraycopy(iv, 0, encryptedData, 0, iv.length);
-		int count = iv.length;
-
-		System.arraycopy(idI,0, encryptedData,count,idI.length);               
-		count += idI.length;
-		System.arraycopy(r, 0, encryptedData, count, r.length);
-		count += r.length;
-
-		System.arraycopy(s, 0, encryptedData, count, s.length);
-		count += s.length;
-		pk.blockEncipher(encryptedData, 0, encryptedData.length);
-		/*
-		 * Message Format:
-		 * [Ni,Nr,g^i,g^r]
-		 * Authenticator
-		 * Encrypted data
-		 */
-		byte[] message3=new byte[unVerifiedData.length+hashedAuthenticator.length+encryptedData.length];
-		System.arraycopy(unVerifiedData,0,message3,0,unVerifiedData.length);
-		System.arraycopy(hashedAuthenticator,0,message3,encryptedData.length,hashedAuthenticator.length);
-		System.arraycopy(encryptedData,0,message3,unVerifiedData.length+hashedAuthenticator.length,encryptedData.length);
-
-		sendAuthPacket(1,2,2,message3,pn,replyTo);
+		pcfb.reset(iv);
+		int cleartextOffset = 0;
+		byte[] prefix = null;
+		try { prefix = "I".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
+		
+		byte[] cleartext = new byte[prefix.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2];
+		System.arraycopy(prefix, 0, cleartext, cleartextOffset, prefix.length);
+		cleartextOffset += prefix.length;
+		System.arraycopy(iv, 0, cleartext, cleartextOffset, ivLength);
+		cleartextOffset += ivLength;
+		System.arraycopy(r, 0, cleartext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
+		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		System.arraycopy(s, 0, cleartext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
+		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		
+		// We compute the HMAC of ("I"+cyphertext) : the cyphertext includes the IV!
+		HMAC mac = new HMAC(SHA256.getInstance());
+		byte[] hmac = mac.mac(Ka, cleartext, HASH_LENGTH);
+		
+		int cleartextToEncypherOffset = prefix.length + ivLength;
+		pcfb.blockEncipher(cleartext, cleartextToEncypherOffset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
+		
+		// copy stuffs back to the message
+		System.arraycopy(hmac, 0, message3, offset, HASH_LENGTH);
+		offset += HASH_LENGTH;
+		System.arraycopy(iv, 0, message3, offset, ivLength);
+		offset += ivLength;
+		System.arraycopy(cleartext, cleartextToEncypherOffset, message3, offset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
+		
+		sendAuthPacket(1, 2, 2, message3, pn, replyTo);
 	}
 
 	/*
@@ -2314,6 +2326,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		synchronized (authenticatorCache) {
 			return transientKey;
 		}
+	}
+	
+	private byte[] computeJFKSharedKey(BigInteger exponential, byte[] nI, byte[] nR, String what) {
+		assert("0".equals(what) || "1".equals(what) || "2".equals(what));
+		HMAC mac = new HMAC(SHA256.getInstance());
+		byte[] number = null;
+		try { number = what.getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
+		
+		byte[] toHash = new byte[NONCE_SIZE * 2 + number.length];
+		int offset = 0;
+		System.arraycopy(nI, 0, toHash, offset, NONCE_SIZE);
+		offset += NONCE_SIZE;
+		System.arraycopy(nR, 0, toHash, offset, NONCE_SIZE);
+		offset += NONCE_SIZE;
+		System.arraycopy(number, 0, toHash, offset, number.length);
+		
+		return mac.mac(exponential.toByteArray(), toHash, HASH_LENGTH);
 	}
 
 	//TODO: when shall that be called ? what about DH exponentials ?

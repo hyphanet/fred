@@ -1,6 +1,7 @@
 package freenet.crypt.crypto_Random;
 import freenet.crypt.HMAC;
 import freenet.crypt.SHA1;
+import freenet.crypt.SHA256;
 public class eKey
 {
         
@@ -19,8 +20,9 @@ public class eKey
                         System.arraycopy(Ni,0,byteArray,0,Ni.length);
                         System.arraycopy(Nr,0,byteArray,Ni.length,Nr.length);
                         byteArray[Ni.length + Nr.length] = (byte)1;
-                        HMAC s = new HMAC(SHA1.getInstance());
+                        HMAC s = new HMAC(SHA256.getInstance());
                         return s.mac(DFExp,byteArray,DFExp.length);
+
                 }catch(Exception e){
                         System.err.println("Exception:" + e);
                         System.exit(1);
