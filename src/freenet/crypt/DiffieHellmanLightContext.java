@@ -1,5 +1,8 @@
 package freenet.crypt;
 
+import java.math.BigInteger;
+
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 
 import net.i2p.util.NativeBigInteger;
@@ -40,10 +43,12 @@ public class DiffieHellmanLightContext {
 	 * Calling the following is costy; avoid
 	 */
 	public NativeBigInteger getHMACKey(NativeBigInteger peerExponential, DSAGroup group) {
+		BigInteger P = group.getP();
 		NativeBigInteger sharedSecret =
-			(NativeBigInteger) peerExponential.modPow(myExponent, group.getP());
+			(NativeBigInteger) peerExponential.modPow(myExponent, P);
 		
 		if(logMINOR) {
+			Logger.minor(this, "P: "+HexUtil.biToHex(P));
 			Logger.minor(this, "My exponent: "+myExponent.toHexString());
 			Logger.minor(this, "My exponential: "+myExponential.toHexString());
 			Logger.minor(this, "Peer's exponential: "+peerExponential.toHexString());
