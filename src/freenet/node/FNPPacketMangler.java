@@ -434,7 +434,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				processMessage4(payload,pn,replyTo);
+				//processMessage4(payload,pn,replyTo);
 			}
 		}
 		else {
@@ -853,6 +853,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// g^r
 		System.arraycopy(hisExponential, 0,message3, offset, hisExponential.length);
 		offset += hisExponential.length;
+                
 		// Authenticator
 		System.arraycopy(authenticator, 0, message3, offset, HASH_LENGTH);
 		offset += HASH_LENGTH;
@@ -893,7 +894,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(s, 0, cleartext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
 		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 		
-		// We compute the HMAC of ("I"+cyphertext) : the cyphertext includes the IV!
+		// We compute the HMAC of (prefix + cyphertext) Includes the IV!
 		HMAC mac = new HMAC(SHA256.getInstance());
 		byte[] hmac = mac.mac(Ka, cleartext, HASH_LENGTH);
 		
@@ -910,49 +911,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		sendAuthPacket(1, 2, 2, message3, pn, replyTo);
 	}
 
-	/*
-	 * Process Message4 packet
-	 * @param Payload 
-	 * @param The peerNode we are talking to
-	 * @param The peer to which we need to send the packet
-	 */
-	private void processMessage4( byte[] payload,PeerNode pn,Peer replyTo) 
-	{
-		long t1 = System.currentTimeMillis();
-		if(logMINOR)
-			Logger.minor(this, "Got a JFK(4) message, processing it");
-		int inputOffset=3;
-		// Decrypt
-		BlockCipher c = pn.outgoingSetupCipher;
-		PCFBMode pk=PCFBMode.create(c);
-		int ivLength = pk.lengthIV();
-		pk.reset(payload,inputOffset);
-		// Decrypt the rest of the payload
-		pk.blockDecipher(payload,inputOffset,payload.length-inputOffset);
-		inputOffset += ivLength;
-		// Now verify signature
-
-		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
-		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		System.arraycopy(payload, inputOffset, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
-		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
-		if(logMINOR)
-			Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
-
-		byte[] locallyExpectedExponentials = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
-		System.arraycopy(pn.bufferJFK,0,locallyExpectedExponentials,0,pn.bufferJFK.length);
-
-		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
-			Logger.error(this, "The signature verification has failed!!");
-			return;
-		}       
-		Logger.normal(this,"Reached end of JFK. Now send completed handshake");
-		// FIXME: When do we send the Handshake?
-		// FIXME: What about noderef?
-	}
+	
 	/*
 	 * FOrmat:
 	 * E[S[Ni,Nr,g^i,g^r,idI]] 
@@ -977,7 +936,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "We are using Ka=" + HexUtil.bytesToHex(Ka));
 		c.initialize(Ke);
 		PCFBMode pk=PCFBMode.create(c);
-		byte[] iv=new byte[pk.lengthIV()];
+                int ivLength = pk.lengthIV();
+		byte[] iv=new byte[ivLength];
 		node.random.nextBytes(iv);
                 pk.reset(iv);
                 byte[] prefix = null;
@@ -1001,13 +961,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 pk.blockEncipher(cleartext, cleartextToEncypherOffset, Node.SIGNATURE_PARAMETER_LENGTH*2 );
 		
                 // Message4 = hmac + IV + encryptedSignature
-                byte message4 = new byte[HASH_LENGTH + (c.getBlockSize() >> 3) + Node.SIGNATURE_PARAMETER_LENGTH * 2]; 
+                byte[] message4 = new byte[HASH_LENGTH + (c.getBlockSize() >> 3) + Node.SIGNATURE_PARAMETER_LENGTH * 2]; 
                 int offset = 0;
-                System.arraycopy(hmac, 0, message3, offset, HASH_LENGTH);
+                System.arraycopy(hmac, 0, message4, offset, HASH_LENGTH);
 		offset += HASH_LENGTH;
-		System.arraycopy(iv, 0, message3, offset, ivLength);
+		System.arraycopy(iv, 0, message4, offset, ivLength);
 		offset += ivLength;
-		System.arraycopy(cleartext, cleartextToEncypherOffset, message3, offset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
+		System.arraycopy(cleartext, cleartextToEncypherOffset, message4, offset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
 		
 		sendAuthPacket(1,2,3,message4,pn,replyTo);
 	}

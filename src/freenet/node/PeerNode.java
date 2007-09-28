@@ -87,12 +87,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     protected boolean verifiedIncompatibleNewerVersion;
     
-    /*
-     * Buffer of Ni,Nr,g^i,g^r,Idi
-     * Currently Idi is not being used, but may find use in opennet
-     * Used to verify the signature in JFK(4)
-     */
-    protected byte[] bufferJFK = new byte[FNPPacketMangler.NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()*2];
+    
 	
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;
