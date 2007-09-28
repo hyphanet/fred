@@ -66,7 +66,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	final EntropySource fnpTimingSource;
 	final EntropySource myPacketDataSource;
 	/*
-	 * Objects cached during JFK message exchange: Message3,Message4 and authenticator
+	 * Objects cached during JFK message exchange: JFK(3,4) with authenticator as key
 	 * The messages are cached in hashmaps because the message retrieval from the cache 
 	 * can be performed in constant time( given the key)
 	 * Usage of a linkedList could prove to be much slower due to the allocation time
@@ -969,22 +969,46 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential, crypto.myIdentity);
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential, Global.DHgroupA);
-		byte[] eKey = tempKey.toByteArray();
-		c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
+		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DHgroupA);
+		if(logMINOR) Logger.minor(this, "We have computed the following exponential : " + HexUtil.biToHex(computedExponential));
+		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
+		if(logMINOR) Logger.minor(this, "We are using Ke=" + HexUtil.bytesToHex(Ke));
+		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
+		if(logMINOR) Logger.minor(this, "We are using Ka=" + HexUtil.bytesToHex(Ka));
+		c.initialize(Ke);
 		PCFBMode pk=PCFBMode.create(c);
 		byte[] iv=new byte[pk.lengthIV()];
 		node.random.nextBytes(iv);
-		int message4Length = iv.length + r.length + s.length + 2;
-		byte[] message4 = new byte[message4Length];
-		System.arraycopy(iv, 0, message4, 0, iv.length);
-		int count = iv.length;
-
-		System.arraycopy(r, 0, message4, count, r.length);
-		count += r.length;
-		System.arraycopy(s, 0, message4, count, s.length);
-		count += s.length;
-		pk.blockEncipher(message4, 0, message4Length);
+                pk.reset(iv);
+                byte[] prefix = null;
+		try { prefix = "R".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
+                
+		byte[] cleartext = new byte[prefix.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2];
+		int cleartextOffset = 0;
+		System.arraycopy(prefix, 0, cleartext, cleartextOffset, prefix.length);
+		cleartextOffset += prefix.length;
+		System.arraycopy(iv, 0, cleartext, cleartextOffset, ivLength);
+		cleartextOffset += ivLength;
+		System.arraycopy(r, 0, cleartext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
+		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		System.arraycopy(s, 0, cleartext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
+		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+                // We compute the HMAC of (prefix + iv + signature)
+		HMAC mac = new HMAC(SHA256.getInstance());
+		byte[] hmac = mac.mac(Ka, cleartext, HASH_LENGTH);
+                // Now encrypt the cleartext[Signature]
+                int cleartextToEncypherOffset = prefix.length + ivLength;
+                pk.blockEncipher(cleartext, cleartextToEncypherOffset, Node.SIGNATURE_PARAMETER_LENGTH*2 );
+		
+                // Message4 = hmac + IV + encryptedSignature
+                byte message4 = new byte[HASH_LENGTH + (c.getBlockSize() >> 3) + Node.SIGNATURE_PARAMETER_LENGTH * 2]; 
+                int offset = 0;
+                System.arraycopy(hmac, 0, message3, offset, HASH_LENGTH);
+		offset += HASH_LENGTH;
+		System.arraycopy(iv, 0, message3, offset, ivLength);
+		offset += ivLength;
+		System.arraycopy(cleartext, cleartextToEncypherOffset, message3, offset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
+		
 		sendAuthPacket(1,2,3,message4,pn,replyTo);
 	}
 
