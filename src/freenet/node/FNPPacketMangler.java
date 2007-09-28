@@ -672,7 +672,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		final int expectedLength =	NONCE_SIZE*2 + DiffieHellman.modulusLengthInBytes()*2 +
 									HASH_LENGTH + // authenticator
 									HASH_LENGTH + // HMAC of the cyphertext
-									c.getBlockSize() + // IV
+									(c.getBlockSize() >> 3) + // IV
 									HASH_LENGTH; // it's at least a signature
 		if(payload.length < expectedLength + 3) {
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(3), should be "+(expectedLength + 3));
@@ -837,7 +837,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		                           DiffieHellman.modulusLengthInBytes()*2 + // g^i, g^r
 		                           HASH_LENGTH + // authenticator
 		                           HASH_LENGTH + // HMAC(cyphertext)
-		                           c.getBlockSize() + // IV
+		                           (c.getBlockSize() >> 3) + // IV
 		                           Node.SIGNATURE_PARAMETER_LENGTH * 2 // Signature (R,S)
 		                           ];
 		int offset = 0;
