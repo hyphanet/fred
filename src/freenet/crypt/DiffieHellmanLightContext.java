@@ -42,11 +42,11 @@ public class DiffieHellmanLightContext {
 	/*
 	 * Calling the following is costy; avoid
 	 */
-	public NativeBigInteger getHMACKey(NativeBigInteger peerExponential, DSAGroup group) {
+	public NativeBigInteger getHMACKey(NativeBigInteger peerExponential, DHGroup group) {
 		BigInteger P = group.getP();
 		NativeBigInteger sharedSecret =
 			(NativeBigInteger) peerExponential.modPow(myExponent, P);
-		
+
 		if(logMINOR) {
 			Logger.minor(this, "P: "+HexUtil.biToHex(P));
 			Logger.minor(this, "My exponent: "+myExponent.toHexString());

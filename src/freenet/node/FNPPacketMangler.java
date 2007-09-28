@@ -741,7 +741,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		inputOffset += HASH_LENGTH;
 		
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
-		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DSAgroupBigA);
+		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DHgroupA);
 		if(logMINOR) Logger.minor(this, "We have computed the following exponential : " + HexUtil.biToHex(computedExponential));
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		if(logMINOR) Logger.minor(this, "We are using Ke=" + HexUtil.bytesToHex(Ke));
@@ -866,7 +866,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 
-		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DSAgroupBigA);
+		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DHgroupA);
 		if(logMINOR) Logger.minor(this, "We have computed the following exponential : " + HexUtil.biToHex(computedExponential));
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		if(logMINOR) Logger.minor(this, "We are using Ke=" + HexUtil.bytesToHex(Ke));
@@ -969,7 +969,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential, crypto.myIdentity);
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential, pn.peerCryptoGroup);
+		NativeBigInteger tempKey = dhContext.getHMACKey(_hisExponential, Global.DHgroupA);
 		byte[] eKey = tempKey.toByteArray();
 		c.initialize(encryptionKey.getEncKey(eKey,nonceInitiator,nonceResponder));
 		PCFBMode pk=PCFBMode.create(c);
