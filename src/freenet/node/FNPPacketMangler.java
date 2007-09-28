@@ -78,8 +78,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
-	// TODO: is 64 bits enough ?
-	protected static final int NONCE_SIZE = 6;
+	protected static final int NONCE_SIZE = 8;
 	private static final int MAX_PACKETS_IN_FLIGHT = 256; 
 	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
@@ -659,6 +658,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peer to which we need to send the packet
 	 * @param The peerNode we are talking to
 	 * @return byte Message3
+	 * 
+	 * TODO: cache hmac verification failures
 	 */
 	private void processMessage3(byte[] payload, PeerNode pn,Peer replyTo)			
 	{
