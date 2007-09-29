@@ -889,7 +889,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		final PCFBMode pk = PCFBMode.create(c);
 		int ivLength = pk.lengthIV();
 		int decypheredPayloadOffset = 0;
-		// We compute the HMAC of ("I"+cyphertext) : the cyphertext includes the IV!
+		// We compute the HMAC of ("R"+cyphertext) : the cyphertext includes the IV!
 		byte[] prefix = null;
 		try { prefix = "R".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
 		byte[] decypheredPayload = new byte[prefix.length + (payload.length-inputOffset)];
