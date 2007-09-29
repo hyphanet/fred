@@ -307,7 +307,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private boolean disconnecting;
 	
     private static boolean logMINOR;
-    
+    protected byte[] nonceInitiatorJFK = new byte[FNPPacketMangler.NONCE_SIZE];
+    protected byte[] nonceResponderJFK = new byte[FNPPacketMangler.NONCE_SIZE];
+    protected byte[] initiatorExponentialJFK = new byte[DiffieHellman.modulusLengthInBytes()];
+    protected byte[] responderExponentialJFK = new byte[DiffieHellman.modulusLengthInBytes()];
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
      * node reference for one. This must contain the following

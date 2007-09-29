@@ -682,19 +682,27 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
+                // Set Ni for the peerNode
+                System.arraycopy(nonceInitiator, 0, pn.nonceInitiatorJFK, 0,NONCE_SIZE);
 		// Nr
 		byte[] nonceResponder = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceResponder, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
+                // Set Nr for the peerNode
+                System.arraycopy(nonceResponder, 0, pn.nonceResponderJFK, 0, NONCE_SIZE);
 		// g^i
 		byte[] initiatorExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, inputOffset, initiatorExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
+                // Set g^i for the peerNode
+                System.arraycopy(initiatorExponential, 0, pn.initiatorExponentialJFK, 0, DiffieHellman.modulusLengthInBytes());
 		// g^r
 		byte[] responderExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, inputOffset, responderExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
-		
+		// Set g^r for the peerNode
+                System.arraycopy(responderExponential, 0, pn.responderExponentialJFK, 0, DiffieHellman.modulusLengthInBytes());
+                
 		byte[] authenticator = new byte[HASH_LENGTH];
 		System.arraycopy(payload, inputOffset, authenticator, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
