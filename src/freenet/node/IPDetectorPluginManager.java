@@ -530,16 +530,16 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(logMINOR) Logger.minor(this, "Running plugin detection");
 			try {
 				Vector v = new Vector();
-					DetectedIP[] detected = null;
-					try {
-						detected = plugin.getAddress();
-					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t, t);
-					}
-					if(detected != null) {
-						for(int j=0;j<detected.length;j++)
-							v.add(detected[j]);
-					}
+				DetectedIP[] detected = null;
+				try {
+					detected = plugin.getAddress();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+				}
+				if(detected != null) {
+					for(int j=0;j<detected.length;j++)
+						v.add(detected[j]);
+				}
 				synchronized(IPDetectorPluginManager.this) {
 					lastDetectAttemptEndedTime = System.currentTimeMillis();
 					boolean failed = false;
