@@ -211,7 +211,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				if(plugins[i] != d) newPlugins[x++] = plugins[i];
 			}
 			plugins = newPlugins;
-			runningDetector = (DetectorRunner) runners.get(d);
+			runningDetector = (DetectorRunner) runners.remove(d);
 		}
 		runningDetector.kill();
 	}
