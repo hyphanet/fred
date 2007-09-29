@@ -986,13 +986,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	/*
 	 * Format:
-	 * Ni
-	 * Nr
-	 * g^i
-	 * g^r
-	 * Authenticator
-	 * HMAC(cyphertext)
-	 * IV + E[S[Ni,Nr,g^i,g^r], bootid, znoderef]
+	 * Ni, Nr, g^i, g^r
+	 * Authenticator - HMAC{g^ir}(g^r, Nr, Ni, IP)
+	 * HMAC{Ka}(cyphertext)
+	 * IV + E{KE}[S{i}[Ni,Nr,g^i,g^r,idR], bootID, znoderef]
+	 * 
+	 * FIXME: neither the bootID nor the noderef are signed at that level; should they be ?
 	 */
 
 	private void sendJFKMessage3(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, PeerNode pn, Peer replyTo)
@@ -1096,7 +1095,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	/*
 	 * Format:
-	 * E[S[Ni,Nr,g^i,g^r,idI],bootID,znoderef] 
+	 * HMAC{Ka}(cyphertext)
+	 * IV, E{Ke}[Sr[Ni,Nr,g^i,g^r,idI],bootID,znoderef]
+	 * 
+	 * FIXME: neither bootID nor znoderef are signed; should they be?
 	 */
 	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, PeerNode pn, Peer replyTo)
 	{
