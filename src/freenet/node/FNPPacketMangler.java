@@ -78,6 +78,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
 	protected static final int NONCE_SIZE = 8;
+	/**
+	 * How big can the authenticator get before we flush it ?
+	 * roughly n*(sizeof(message3|message4) + H(authenticator))
+	 * 
+	 * We push to it until we reach the cap where we rekey
+	 */
+	private static final int AUTHENTICATOR_CACHE_SIZE = 50;
 	private static final int MAX_PACKETS_IN_FLIGHT = 256; 
 	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
@@ -458,7 +465,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void processMessage1(byte[] payload,PeerNode pn,Peer replyTo)
 	{
 		long t1=System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it");
+		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
 		// FIXME: follow the spec and send IDr' ?
 		if(payload.length < NONCE_SIZE + DiffieHellman.modulusLengthInBytes() + 3) {
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
@@ -502,7 +509,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		System.arraycopy(myNonce, 0, message1, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
-		if(logMINOR) Logger.minor(this, "My Exponential (message1), length ="+DiffieHellman.modulusLengthInBytes()+" value ="+ dhContext.myExponential.toHexString());
 		System.arraycopy(myExponential, 0, message1, offset, DiffieHellman.modulusLengthInBytes());
 
 		sendAuthPacket(1,2,0,message1,pn,replyTo);
@@ -583,6 +589,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Send a signed copy of his own exponential
 	 * Send an authenticator which is a hash of Ni,Nr,g^r calculated over the transient key HKr
 	 * Format of JFK(2) as specified above
+	 * 
 	 * @param Payload
 	 * @param The peer to which we need to send the packet
 	 * @param The peerNode we are talking to
@@ -591,7 +598,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void processMessage2(byte[] payload,PeerNode pn,Peer replyTo)
 	{
 		long t1=System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it");
+		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it - "+pn);
 		// FIXME: follow the spec and send IDr' ?
 		int expectedLength = NONCE_SIZE*2 + DiffieHellman.modulusLengthInBytes() + HASH_LENGTH*2;
 		if(payload.length < expectedLength + 3) {
@@ -611,7 +618,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(payload, inputOffset, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-		if(logMINOR) Logger.minor(this, "his exponential from message2 length="+DiffieHellman.modulusLengthInBytes() +" value=" + _hisExponential.toHexString());
 
 		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
@@ -632,7 +638,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			message3 = authenticatorCache.get(authenticator);
 		}
 		if(message3 != null) {
-			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often)");
+			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often) -"+pn);
 			try{
 				sendAuthPacket(1, 2, 3, getBytes(message3), pn, replyTo);
 			}catch(IOException e){
@@ -649,12 +655,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// Verify the DSA signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
-		if(logMINOR) Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
 		// At that point we don't know if it's "him"; let's check it out
 		byte[] locallyExpectedExponentials = assembleDHParams(_hisExponential, pn.peerCryptoGroup);
 
-		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
-			Logger.error(this, "The signature verification has failed!!");
+		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(locallyExpectedExponentials)), false)) {
+			Logger.error(this, "The signature verification has failed in JFK(2)!! "+pn);
 			return;
 		}
 		
@@ -670,21 +675,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Process Message3
 	 * Send the Initiator nonce,Responder nonce and DiffieHellman Exponential of the responder
 	 * and initiator in the clear.(unVerifiedData)
-	 * Send the authenticator which allows the responder to verify the legality of the message
+	 * Send the authenticator which allows the responder to verify that a roundtrip occured
 	 * Compute the signature of the unVerifiedData and encrypt it using a shared key
-	 * which is derived from DHExponentials and the nonces
+	 * which is derived from DHExponentials and the nonces; add a HMAC to protect it
 	 * 
 	 * @param Payload
 	 * @param The peer to which we need to send the packet
 	 * @param The peerNode we are talking to
 	 * @return byte Message3
-	 * 
-	 * TODO: cache hmac verification failures
 	 */
 	private void processMessage3(byte[] payload, PeerNode pn,Peer replyTo)			
 	{
 		final long t1 = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it");
+		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
 		int inputOffset=3;
@@ -720,7 +723,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] authenticator = new byte[HASH_LENGTH];
 		System.arraycopy(payload, inputOffset, authenticator, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
-		if(logMINOR) Logger.minor(this, "We got the following HMAC : " + HexUtil.bytesToHex(authenticator));
+
 		// FIXME: check the cache before or after the hmac verification ?
 		// is it cheaper to wait for the lock on authenticatorCache or to verify the hmac ?
 		HMAC mac = new HMAC(SHA256.getInstance());
@@ -736,7 +739,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			message4 = authenticatorCache.get(authenticator);
 		}
 		if(message4 != null) {
-			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often)");
+			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often) - "+pn);
 			try{
 				sendAuthPacket(1, 2, 3, getBytes(message4), pn, replyTo);
 			}catch(IOException e){
@@ -778,7 +781,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		decypheredPayloadOffset += prefix.length;
 		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, decypheredPayload.length-decypheredPayloadOffset);
 		if(!mac.verify(Ka, decypheredPayload, hmac)) {
-			Logger.error(this, "The digest-HMAC doesn't match; let's discard the packet");
+			Logger.error(this, "The digest-HMAC doesn't match; let's discard the packet JFK(3) - "+pn);
 			return;
 		}
 		
@@ -805,7 +808,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// verify the signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s)); 
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, _hisExponential, _ourExponential, crypto.myIdentity))), false)) {
-			Logger.error(this, "The signature verification has failed!!");
+			Logger.error(this, "The signature verification has failed!! JFK(3) - "+pn);
 			return;
 		}
 		
@@ -814,8 +817,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		//FIXME: rekey .... ?
 		c.initialize(Ks);
-		if(!pn.completedHandshake(bootID, data, 8, data.length-8, c, Ks, replyTo, false)) {
-			Logger.error(this, "Handshake failure!");
+		if(!pn.completedHandshake(bootID, data, 8, data.length-8, c, Ks, replyTo, true)) {
+			Logger.error(this, "Handshake failure! with "+pn);
 		}
 		
 		final long t2=System.currentTimeMillis();
@@ -829,12 +832,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * 
 	 * @param Payload
 	 * @param The peerNode we are talking to
-	 * 
+	 * @param replyTo the Peer we are replying to
 	 */
 	private void processMessage4(byte[] payload, PeerNode pn, Peer replyTo)			
 	{
 		final long t1 = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it");
+		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn);
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
 		int inputOffset=3;
@@ -849,8 +852,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		byte[] jfkBuffer = pn.getJFKBuffer();
+		// FIXME: is that needed ?
 		if(jfkBuffer == null) {
-			Logger.normal(this, "We have already handled this message... might be a replay or a bug");
+			Logger.normal(this, "We have already handled this message... might be a replay or a bug - "+pn);
 			return;
 		}
 
@@ -884,6 +888,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		/*
 		 * DecipheredData Format:
 		 * Signature-r,s
+		 * bootID, znoderef
 		 */
 		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
@@ -902,11 +907,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(jfkBuffer, 0, locallyGeneratedText, 0, bufferOffset);
 		System.arraycopy(crypto.myIdentity, 0, locallyGeneratedText, bufferOffset, crypto.myIdentity.length);
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(locallyGeneratedText)), false)) {
-			Logger.error(this, "The signature verification has failed!!");
+			Logger.error(this, "The signature verification has failed!! JFK(4) -"+pn);
 			return;
 		}
 		
-		//FIXME: when do we reset the buffer/rekey/DH/transientkey ?
 		// We change the key
 		c.initialize(pn.jfkKs);
 		if(!pn.completedHandshake(bootID, data, 8, data.length - 8, c, pn.jfkKs, replyTo, false)) {
@@ -946,7 +950,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * g^r
 	 * Authenticator
 	 * HMAC(cyphertext)
-	 * IV + E[S[Ni,Nr,g^i,g^r]]
+	 * IV + E[S[Ni,Nr,g^i,g^r], bootid, znoderef]
 	 */
 
 	private void sendMessage3Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, PeerNode pn, Peer replyTo)
@@ -1039,7 +1043,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// cache the message
 		synchronized (authenticatorCache) {
-			authenticatorCache.put(authenticator,message3);
+			if(authenticatorCache.size() > AUTHENTICATOR_CACHE_SIZE)
+				resetTransientKey();
+			else
+				authenticatorCache.put(authenticator,message3);
 		}		
 		sendAuthPacket(1, 2, 2, message3, pn, replyTo);
 	}
@@ -1047,7 +1054,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	/*
 	 * Format:
-	 * E[S[Ni,Nr,g^i,g^r,idI]] 
+	 * E[S[Ni,Nr,g^i,g^r,idI],bootID,znoderef] 
 	 */
 	private void sendMessage4Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, PeerNode pn, Peer replyTo)
 	{
@@ -1104,7 +1111,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// cache the message
 		synchronized (authenticatorCache) {
-			authenticatorCache.put(authenticator, message4);
+			if(authenticatorCache.size() > AUTHENTICATOR_CACHE_SIZE)
+				resetTransientKey();
+			else
+				authenticatorCache.put(authenticator, message4);
 		}
 		sendAuthPacket(1, 2, 3, message4, pn, replyTo);
 	}
@@ -2390,7 +2400,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(_myExponential, 0, toSign, 0, _myExponential.length);
 		System.arraycopy(_myGroup, 0, toSign, _myExponential.length, _myGroup.length);
 
-		return SHA256.digest(toSign);
+		return toSign;
 	}
 
 	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger initiatorExponential, BigInteger responderExponential, byte[] id) {
@@ -2416,7 +2426,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Actually sign the DH parameters for message2
 	 */
 	private DSASignature signDHParams(BigInteger exponential, DSAGroup group) {
-		return crypto.sign(assembleDHParams(exponential, group));
+		return crypto.sign(SHA256.digest(assembleDHParams(exponential, group)));
 	}
 	
 	private byte[] getTransientKey() {
@@ -2442,7 +2452,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return mac.mac(exponential.toByteArray(), toHash, HASH_LENGTH);
 	}
 
-	//TODO: when shall that be called ? what about DH exponentials ?
 	private void resetTransientKey() {
 		Logger.normal(this, "JFK's TransientKey has been changed and the message cache flushed.");
 		synchronized (authenticatorCache) {
