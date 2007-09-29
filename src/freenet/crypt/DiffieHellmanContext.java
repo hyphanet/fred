@@ -63,7 +63,7 @@ public class DiffieHellmanContext extends KeyAgreementSchemeContext {
             Logger.minor(this, "Key="+HexUtil.bytesToHex(key));
         return key;
     }
-    
+        
     public synchronized void setOtherSideExponential(NativeBigInteger a) {
         lastUsedTime = System.currentTimeMillis();
         if(peerExponential != null) {

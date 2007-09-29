@@ -110,6 +110,18 @@ public class DiffieHellman {
 		}
 		return new DiffieHellmanContext(params[0], params[1], group);
 	}
+	/**
+	 * Create a DiffieHellmanLightContext.
+	 */
+	public static DiffieHellmanLightContext generateLightContext() {
+		long time1 = System.currentTimeMillis();
+		NativeBigInteger[] params = getParams();
+		long time2 = System.currentTimeMillis();
+		if((time2 - time1) > 300) {
+			Logger.error(null, "DiffieHellman.generateLightContext(): time2 is more than 300ms after time1 ("+(time2 - time1)+ ')');
+		}
+		return new DiffieHellmanLightContext(params[0], params[1]);
+	}
 	
 	public static NativeBigInteger[] getParams() {
 		synchronized (precalcBuffer) {

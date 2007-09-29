@@ -85,6 +85,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      *  Set true if this peer has a incompatible newer build than we are
      */
     protected boolean verifiedIncompatibleNewerVersion;
+    
+    /*
+     * Buffer of Ni,Nr,g^i,g^r,ID
+     */
+    private byte[] jfkBuffer;
+    //TODO: sync ?
+    protected byte[] jfkKa;
+    protected byte[] jfkKe;
+    protected byte[] jfkKs;
 	
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;
@@ -2755,5 +2764,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public synchronized boolean isDisconnecting() {
 		return disconnecting;
+	}
+	
+	protected byte[] getJFKBuffer() {
+		return jfkBuffer;
+	}
+
+	protected void setJFKBuffer(byte[] bufferJFK) {
+		this.jfkBuffer = bufferJFK;
 	}
 }

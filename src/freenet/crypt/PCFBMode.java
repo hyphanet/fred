@@ -111,7 +111,7 @@ public class PCFBMode {
     }
 
     /**
-     * NOTE: As a sideeffect, this will decrypt the data in the array.
+     * NOTE: As a side effect, this will decrypt the data in the array.
      */
     //public synchronized byte[] blockDecipher(byte[] buf, int off, int len) {
     public byte[] blockDecipher(byte[] buf, int off, int len) {
