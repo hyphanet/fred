@@ -274,7 +274,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(runners.size() < plugins.length) {
 				if(logMINOR) Logger.minor(this, "Already running IP detection plugins");
 				return;
-			} // FIXME what about detectors that take ages vs detectors that are fast?
+			}
 			
 			// If detect attempt failed to produce an IP in the last 5 minutes, don't
 			// try again yet.
