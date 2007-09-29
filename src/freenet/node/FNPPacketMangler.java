@@ -612,10 +612,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		inputOffset += DiffieHellman.modulusLengthInBytes();
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		if(logMINOR) Logger.minor(this, "his exponential from message2 length="+DiffieHellman.modulusLengthInBytes() +" value=" + _hisExponential.toHexString());
-		if(_hisExponential.compareTo(NativeBigInteger.ONE) < 1) {
-			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
-			return;
-		}
 
 		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
@@ -623,6 +619,35 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(payload, inputOffset, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+
+		byte[] authenticator = new byte[HASH_LENGTH];
+		System.arraycopy(payload, inputOffset, authenticator, 0, HASH_LENGTH);
+		inputOffset += HASH_LENGTH;
+		
+		// Check try to find the authenticator in the cache.
+		// If authenticator is already present, indicates duplicate/replayed message2
+		// Now simply transmit the corresponding message3
+		Object message3 = null;
+		synchronized (authenticatorCache) {
+			message3 = authenticatorCache.get(authenticator);
+		}
+		if(message3 != null) {
+			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often)");
+			try{
+				sendAuthPacket(1, 2, 3, getBytes(message3), pn, replyTo);
+			}catch(IOException e){
+				Logger.error(this,"Error getting bytes... wtf ? "+e.getMessage(), e);
+			}
+			return;
+		}
+		
+		// sanity check
+		if(_hisExponential.compareTo(NativeBigInteger.ONE) < 1) {
+			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
+			return;
+		}
+		
+		// Verify the DSA signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
 		if(logMINOR) Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
 		// At that point we don't know if it's "him"; let's check it out
@@ -632,11 +657,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}
-
-		byte[] authenticator = new byte[HASH_LENGTH];
-		System.arraycopy(payload, inputOffset, authenticator, 0, HASH_LENGTH);
-		inputOffset += HASH_LENGTH;
-		// FIXME: maybe the cache should be checked before verifying the signature
+		
 		sendMessage3Packet(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, authenticator, pn, replyTo);
 
 		long t2=System.currentTimeMillis();
@@ -789,12 +810,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}
-		// cache the message
-		synchronized (authenticatorCache) {
-			authenticatorCache.put(authenticator,payload);
-		}
+		
 		// Send reply
-		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, c, Ke, Ka, pn, replyTo);
+		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, c, Ke, Ka, authenticator, pn, replyTo);
 		final long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
 			Logger.error(this,"Message3 timeout error:Sending packet for"+pn.getPeer());
@@ -915,6 +933,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		offset += ivLength;
 		System.arraycopy(cleartext, cleartextToEncypherOffset, message3, offset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
 		
+		// cache the message
+		synchronized (authenticatorCache) {
+			authenticatorCache.put(authenticator,message3);
+		}
 		sendAuthPacket(1, 2, 2, message3, pn, replyTo);
 	}
 
@@ -923,7 +945,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Format:
 	 * E[S[Ni,Nr,g^i,g^r,idI]] 
 	 */
-	private void sendMessage4Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka,PeerNode pn,Peer replyTo)
+	private void sendMessage4Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, PeerNode pn, Peer replyTo)
 	{
 		if(logMINOR)
 			Logger.minor(this, "Sending a JFK(4) message to "+pn);
@@ -970,6 +992,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(iv, 0, message4, offset, ivLength);
 		offset += ivLength;
 		System.arraycopy(cleartext, cleartextToEncypherOffset, message4, offset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
+		
+		// cache the message
+		synchronized (authenticatorCache) {
+			authenticatorCache.put(authenticator, message4);
+		}
 		
 		sendAuthPacket(1,2,3,message4,pn,replyTo);
 	}
