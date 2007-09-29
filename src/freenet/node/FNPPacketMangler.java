@@ -2258,15 +2258,21 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return SHA256.digest(toSign);
 	}
 
-	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential, byte[] id) {
-		byte[] _myExponential = stripBigIntegerToNetworkFormat(myExponential);
-		byte[] _hisExponential = stripBigIntegerToNetworkFormat(hisExponential);
-		byte[] toSign = new byte[nonceInitiator.length + nonceResponder.length + _myExponential.length + _hisExponential.length];
-		System.arraycopy(nonceInitiator, 0,toSign,0,nonceInitiator.length);
-		System.arraycopy(nonceResponder,0 ,toSign,nonceInitiator.length,nonceResponder.length);
-		System.arraycopy(_myExponential, 0, toSign,nonceInitiator.length+nonceResponder.length, _myExponential.length);
-		System.arraycopy(_hisExponential, 0, toSign, nonceInitiator.length+nonceResponder.length+_myExponential.length, _hisExponential.length);
-		System.arraycopy(id, 0, toSign , nonceInitiator.length+nonceResponder.length+_myExponential.length+ _hisExponential.length,id.length);
+	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger initiatorExponential, BigInteger responderExponential, byte[] id) {
+		byte[] _initiatorExponential = stripBigIntegerToNetworkFormat(initiatorExponential);
+		byte[] _responderExponential = stripBigIntegerToNetworkFormat(responderExponential);
+		byte[] toSign = new byte[nonceInitiator.length + nonceResponder.length + _initiatorExponential.length + _responderExponential.length + id.length];
+		int offset = 0;
+		
+		System.arraycopy(nonceInitiator, 0,toSign,offset,nonceInitiator.length);
+		offset += nonceInitiator.length;
+		System.arraycopy(nonceResponder,0 ,toSign,offset,nonceResponder.length);
+		offset += nonceResponder.length;
+		System.arraycopy(_initiatorExponential, 0, toSign,offset, _initiatorExponential.length);
+		offset += _initiatorExponential.length;
+		System.arraycopy(_responderExponential, 0, toSign, offset, _responderExponential.length);
+		offset += _responderExponential.length;
+		System.arraycopy(id, 0, toSign , offset,id.length);
 
 		return SHA256.digest(toSign);
 	}
