@@ -47,6 +47,8 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.HashMap;
 
+import sun.nio.cs.HistoricallyNamedCharset;
+
 /**
  * @author amphibian
  * 
@@ -682,27 +684,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
-                // Set Ni for the peerNode
-                System.arraycopy(nonceInitiator, 0, pn.nonceInitiatorJFK, 0,NONCE_SIZE);
 		// Nr
 		byte[] nonceResponder = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceResponder, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
-                // Set Nr for the peerNode
-                System.arraycopy(nonceResponder, 0, pn.nonceResponderJFK, 0, NONCE_SIZE);
 		// g^i
 		byte[] initiatorExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, inputOffset, initiatorExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
-                // Set g^i for the peerNode
-                System.arraycopy(initiatorExponential, 0, pn.initiatorExponentialJFK, 0, DiffieHellman.modulusLengthInBytes());
 		// g^r
 		byte[] responderExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, inputOffset, responderExponential, 0, DiffieHellman.modulusLengthInBytes());
 		inputOffset += DiffieHellman.modulusLengthInBytes();
-		// Set g^r for the peerNode
-                System.arraycopy(responderExponential, 0, pn.responderExponentialJFK, 0, DiffieHellman.modulusLengthInBytes());
-                
+		
 		byte[] authenticator = new byte[HASH_LENGTH];
 		System.arraycopy(payload, inputOffset, authenticator, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
@@ -742,6 +736,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!! (our exponential?!?)");
 			return;
 		}
+		
+		// Save the those values to verify message4
+		pn.setBufferJFK(assembleDHParams(nonceInitiator, nonceResponder, _hisExponential, _ourExponential, crypto.myIdentity));
 		
 		byte[] hmac = new byte[HASH_LENGTH];
 		System.arraycopy(payload, inputOffset, hmac, 0, HASH_LENGTH);
@@ -790,9 +787,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
 		if(logMINOR)
 			Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
-		byte[] locallyExpectedExponentials = assembleDHParams(nonceInitiator,nonceResponder, _hisExponential, _ourExponential);
-
-		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyExpectedExponentials), false)) {
+		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, pn.getBufferJFK()), false)) {
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}
@@ -870,7 +865,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 */
 		NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-		DSASignature localSignature = signDHParams(nonceInitiator,nonceResponder,_ourExponential,_hisExponential);
+		DSASignature localSignature = crypto.sign(assembleDHParams(nonceInitiator, nonceResponder, _ourExponential, _hisExponential, pn.identity));
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 
@@ -2262,27 +2257,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		return SHA256.digest(toSign);
 	}
-	/*
-	 * Prepare params for signing in Message3
-	 * 
-	 * @return a hash ready to be signed by DSASign
-	 */
-	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential) {
-		byte[] _myExponential = stripBigIntegerToNetworkFormat(myExponential);
-		byte[] _hisExponential = stripBigIntegerToNetworkFormat(hisExponential);
-		byte[] toSign = new byte[nonceInitiator.length + nonceResponder.length + _myExponential.length + _hisExponential.length];
-		
-		System.arraycopy(nonceInitiator, 0,toSign,0,nonceInitiator.length);
-		System.arraycopy(nonceResponder,0 ,toSign,nonceInitiator.length,nonceResponder.length);
-		System.arraycopy(_myExponential, 0, toSign,nonceInitiator.length+nonceResponder.length, _myExponential.length);
-		System.arraycopy(_hisExponential, 0, toSign, nonceInitiator.length+nonceResponder.length+_myExponential.length, _hisExponential.length);
-		
-		return SHA256.digest(toSign);
-	}
-	/*
-	 * Prepare params for signing in Message4
-	 */
-	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential, byte[] idI) {
+
+	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential, byte[] id) {
 		byte[] _myExponential = stripBigIntegerToNetworkFormat(myExponential);
 		byte[] _hisExponential = stripBigIntegerToNetworkFormat(hisExponential);
 		byte[] toSign = new byte[nonceInitiator.length + nonceResponder.length + _myExponential.length + _hisExponential.length];
@@ -2290,7 +2266,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(nonceResponder,0 ,toSign,nonceInitiator.length,nonceResponder.length);
 		System.arraycopy(_myExponential, 0, toSign,nonceInitiator.length+nonceResponder.length, _myExponential.length);
 		System.arraycopy(_hisExponential, 0, toSign, nonceInitiator.length+nonceResponder.length+_myExponential.length, _hisExponential.length);
-		System.arraycopy(idI, 0, toSign , nonceInitiator.length+nonceResponder.length+_myExponential.length+ _hisExponential.length,idI.length);
+		System.arraycopy(id, 0, toSign , nonceInitiator.length+nonceResponder.length+_myExponential.length+ _hisExponential.length,id.length);
 
 		return SHA256.digest(toSign);
 	}
@@ -2300,12 +2276,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private DSASignature signDHParams(BigInteger exponential, DSAGroup group) {
 		return crypto.sign(assembleDHParams(exponential, group));
-	}
-	/*
-	 * Sign the params for message3
-	 */
-	private DSASignature signDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger myExponential, BigInteger hisExponential) {
-		return crypto.sign(assembleDHParams(nonceInitiator,nonceResponder,myExponential,hisExponential));
 	}
 	/*
 	 * Sign the params for message4
