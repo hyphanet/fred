@@ -75,8 +75,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	private final HashMap authenticatorCache;
 	
-	/** We renew it on each *successful* run of the protocol (the spec. says "once a while") - access is synchronized! */
+	/** We renew it every 30mins (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
+	private long currentDHContextLifetime = 0;
+	
 	protected static final int NONCE_SIZE = 8;
 	/**
 	 * How big can the authenticator get before we flush it ?
@@ -815,7 +817,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// Send reply
 		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, c, Ke, Ka, authenticator, pn, replyTo);
 		
-		//FIXME: rekey .... ?
 		c.initialize(Ks);
 		if(!pn.completedHandshake(bootID, data, 8, data.length-8, c, Ks, replyTo, true)) {
 			Logger.error(this, "Handshake failure! with "+pn);
@@ -2381,10 +2382,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return crypto.config.alwaysAllowLocalAddresses();
 	}
 
-	private synchronized DiffieHellmanLightContext getLightDiffieHellmanContext(PeerNode pn) {
-		if(currentDHContext == null) {
-			currentDHContext = DiffieHellman.generateLightContext();
-			currentDHContext.setSignature(signDHParams(currentDHContext.myExponential, pn.peerCryptoGroup));
+	private DiffieHellmanLightContext getLightDiffieHellmanContext(PeerNode pn) {
+		final long now = System.currentTimeMillis();
+		
+		synchronized (this) {
+			if((currentDHContext == null) || (currentDHContextLifetime + 1800000 /*30mins*/) < now) {
+				currentDHContextLifetime = now;
+				currentDHContext = DiffieHellman.generateLightContext();
+				currentDHContext.setSignature(signDHParams(currentDHContext.myExponential, pn.peerCryptoGroup));
+			}
 		}
 		return currentDHContext;
 	}
