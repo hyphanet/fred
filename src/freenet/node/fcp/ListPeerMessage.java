@@ -36,7 +36,7 @@ public class ListPeerMessage extends FCPMessage {
 			handler.outputHandler.queue(msg);
 			return;
 		}
-		handler.outputHandler.queue(new Peer(pn, true, true));
+		handler.outputHandler.queue(new PeerMessage(pn, true, true));
 	}
 
 }

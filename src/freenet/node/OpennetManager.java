@@ -52,7 +52,7 @@ public class OpennetManager {
 	// FIXME should be a function of # opennet peers? max # opennet peers? ...
 	static final int MIN_SUCCESS_BETWEEN_DROP_CONNS = 10;
 	// FIXME make this configurable
-	static final int MAX_PEERS = 15;
+	static final int MAX_PEERS = 20;
 	/** Chance of resetting path folding (for plausible deniability) is 1 in this number. */
 	static final int RESET_PATH_FOLDING_PROB = 20;
 	/** Don't re-add a node until it's been up and disconnected for at least this long */
@@ -60,7 +60,7 @@ public class OpennetManager {
 	/** Don't drop a node until it's at least this old */
 	static final int DROP_MIN_AGE = 300*1000;
 	/** Don't drop a node until this long after startup */
-	static final int DROP_STARTUP_DELAY = 300*1000;
+	static final int DROP_STARTUP_DELAY = 120*1000;
 	/** Don't drop a node until this long after losing connection to it */
 	static final int DROP_DISCONNECT_DELAY = 300*1000;
 	/** But if it has disconnected more than once in this period, allow it to be dropped anyway */
@@ -206,10 +206,7 @@ public class OpennetManager {
 			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
 			return false; // Equal to myself
 		}
-		PeerNode match;
-		if(((match = node.peers.containsPeer(pn)) != null) && 
-				(match.isConnected() || (!match.neverConnected()) || 
-						match.timeSinceAddedOrRestarted() < DONT_READD_TIME)) {
+		if(peersLRU.contains(pn)) {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return false;
 		}
@@ -242,9 +239,15 @@ public class OpennetManager {
 	 * @return True if the node was added / should be added.
 	 */
 	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
-		boolean ret = true;
+		boolean notMany = false;
 		boolean noDisconnect;
 		synchronized(this) {
+			if(nodeToAddNow != null &&
+					peersLRU.contains(nodeToAddNow)) {
+				if(logMINOR)
+					Logger.minor(this, "Opennet peer already present in LRU: "+nodeToAddNow);
+				return true;
+			}
 			if(peersLRU.size() < MAX_PEERS) {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
@@ -257,15 +260,16 @@ public class OpennetManager {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
 				timeLastOffered = System.currentTimeMillis();
-				ret = true;
+				notMany = true;
 			}
 			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS;
 		}
-		if(ret) {
+		if(notMany) {
 			if(nodeToAddNow != null)
-				node.peers.addPeer(nodeToAddNow, true); // Add to peers outside the OM lock
+				node.peers.addPeer(nodeToAddNow, true, true); // Add to peers outside the OM lock
 			return true;
 		}
+		boolean canAdd = true;
 		Vector dropList = new Vector();
 		synchronized(this) {
 			boolean hasDisconnected = false;
@@ -276,41 +280,30 @@ public class OpennetManager {
 			} else while(peersLRU.size() > MAX_PEERS - (nodeToAddNow == null ? 0 : 1)) {
 				PeerNode toDrop;
 				// can drop peers which are over the limit
-				toDrop = peerToDrop(noDisconnect && nodeToAddNow != null && peersLRU.size() >= MAX_PEERS);
+				toDrop = peerToDrop(noDisconnect || nodeToAddNow == null);
 				if(toDrop == null) {
 					if(logMINOR)
-						Logger.minor(this, "No more peers to drop, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
-					ret = false;
+						Logger.minor(this, "No more peers to drop, still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
+					canAdd = false;
 					break;
 				}
 				if(logMINOR)
-					Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+")");
+					Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size());
 				if(!toDrop.isConnected())
 					hasDisconnected = true;
 				peersLRU.remove(toDrop);
 				dropList.add(toDrop);
 			}
-			if(ret) {
+			if(canAdd) {
 				long now = System.currentTimeMillis();
 				if(nodeToAddNow != null) {
-					// Here we can't avoid nested locks. So always take the OpennetManager lock first.
-					if(!node.peers.addPeer(nodeToAddNow)) {
-						// Can't add it, already present (some sort of race condition)
-						PeerNode readd = (PeerNode) dropList.remove(dropList.size()-1);
-						peersLRU.pushLeast(readd);
-						ret = false;
-						if(logMINOR) Logger.minor(this, "Could not add opennet peer "+nodeToAddNow+" because already in list");
-					} else {
-						successCount = 0;
-						if(addAtLRU)
-							peersLRU.pushLeast(nodeToAddNow);
-						else
-							peersLRU.push(nodeToAddNow);
-						if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items");
-						oldPeers.remove(nodeToAddNow);
-						// Always take OpennetManager lock before PeerManager
-						node.peers.addPeer(nodeToAddNow, true);
-					}
+					successCount = 0;
+					if(addAtLRU)
+						peersLRU.pushLeast(nodeToAddNow);
+					else
+						peersLRU.push(nodeToAddNow);
+					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items - now have "+peersLRU.size()+" opennet peers");
+					oldPeers.remove(nodeToAddNow);
 					if(!dropList.isEmpty())
 						timeLastDropped = now;
 				} else {
@@ -318,7 +311,7 @@ public class OpennetManager {
 						if(logMINOR)
 							Logger.minor(this, "Cannot accept peer because of minimum time between offers (last offered "+(now-timeLastOffered)+" ms ago)");
 						// Cancel
-						ret = false;
+						canAdd = false;
 					} else {
 						if(!dropList.isEmpty())
 							timeLastDropped = now;
@@ -327,20 +320,30 @@ public class OpennetManager {
 				}
 			}
 		}
+		if(nodeToAddNow != null && canAdd && !node.peers.addPeer(nodeToAddNow, true, true)) {
+			if(logMINOR)
+				Logger.minor(this, "Already in global peers list: "+nodeToAddNow+" when adding opennet node");
+			// Just because it's in the global peers list doesn't mean its in the LRU, it may be an old-opennet-peers reconnection.
+			// In which case we add it to the global peers list *before* adding it here.
+		}
 		for(int i=0;i<dropList.size();i++) {
 			OpennetPeerNode pn = (OpennetPeerNode) dropList.get(i);
 			if(logMINOR) Logger.minor(this, "Dropping LRU opennet peer: "+pn);
 			node.peers.disconnect(pn, true, true);
 		}
-		return ret;
+		return canAdd;
 	}
 
 	private void dropExcessPeers() {
 		while(peersLRU.size() > MAX_PEERS) {
+			if(logMINOR)
+				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
 			PeerNode toDrop;
 			toDrop = peerToDrop(false);
 			if(toDrop == null) return;
 			peersLRU.remove(toDrop);
+			if(logMINOR)
+				Logger.minor(this, "Dropping "+toDrop);
 			node.peers.disconnect(toDrop, true, true);
 		}
 	}
@@ -402,7 +405,6 @@ public class OpennetManager {
 			while (oldPeers.size() > MAX_OLD_PEERS)
 				oldPeers.pop();
 		}
-		pn.disconnected();
 	}
 
 	synchronized PeerNode[] getOldPeers() {
@@ -434,6 +436,10 @@ public class OpennetManager {
 		PeerNode[] nodes = getUnsortedOldPeers();
 		if(nodes.length == 0) return null;
 		return nodes[node.random.nextInt(nodes.length)];
+	}
+
+	public void purgeOldOpennetPeer(PeerNode source) {
+		oldPeers.remove(source);
 	}
 
 }

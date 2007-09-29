@@ -26,7 +26,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import freenet.support.transport.ip.HostnameSyntaxException;
-import freenet.support.transport.ip.HostnameUtil;
 import freenet.support.transport.ip.IPUtil;
 
 /**
@@ -56,6 +55,11 @@ public class Peer {
 		_port = dis.readInt();
 	}
 
+	public Peer(DataInputStream dis, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, IOException {
+		addr = new FreenetInetAddress(dis, checkHostnameOrIPSyntax);
+		_port = dis.readInt();
+	}
+
 	/**
 	 * Create a Peer from an InetAddress and a port. The IP address is primary; that is
 	 * to say, it will remain the same regardless of DNS changes. Don't do this if you
@@ -65,40 +69,6 @@ public class Peer {
 		addr = new FreenetInetAddress(address);
 		_port = port;
 	}
-
-	/**
-	 * Create a Peer from a string. This may be an IP address or a domain name. If it
-	 * is the latter, the name is primary rather than the IP address; 
-	 * getHandshakeAddress() will do a new lookup on the name, and change the IP address
-	 * if the domain name has changed.
-	 * @param physical The string to be parsed, in the format [ ip or domain name ]:[ port number].
-	 * @param allowUnknown If true, allow construction of the Peer even if the domain name
-	 * lookup fails.
-	 * @param checkHostname If true, validate the syntax of the given DNS hostname or IPv4
-	 * IP address
-	 * @throws HostSyntaxException If the string is not formatted as a proper DNS hostname
-	 * or IPv4 IP address
-	 * @throws PeerParseException If the string is not valid e.g. if it doesn't contain a 
-	 * port.
-	 * @throws UnknownHostException If allowUnknown is not set, and a domain name which does
-	 * not exist was passed in.
-	 */
-    public Peer(String physical, boolean allowUnknown, boolean checkHostname) throws HostnameSyntaxException, PeerParseException, UnknownHostException {
-        int offset = physical.lastIndexOf(':'); // ipv6
-        if(offset < 0) throw new PeerParseException();
-        String host = physical.substring(0, offset);
-        if(checkHostname) {
-        	if(!HostnameUtil.isValidHostname(host, true)) throw new HostnameSyntaxException();
-		}
-        addr = new FreenetInetAddress(host, allowUnknown);
-        String strport = physical.substring(offset+1);
-        try {
-            _port = Integer.parseInt(strport);
-        } catch (NumberFormatException e) {
-            throw new PeerParseException(e);
-        }
-    }
-
 
 	/**
 	 * Create a Peer from a string. This may be an IP address or a domain name. If it
@@ -125,6 +95,36 @@ public class Peer {
             throw new PeerParseException(e);
         }
 	}
+
+	/**
+	 * Create a Peer from a string. This may be an IP address or a domain name. If it
+	 * is the latter, the name is primary rather than the IP address; 
+	 * getHandshakeAddress() will do a new lookup on the name, and change the IP address
+	 * if the domain name has changed.
+	 * @param physical The string to be parsed, in the format [ ip or domain name ]:[ port number].
+	 * @param allowUnknown If true, allow construction of the Peer even if the domain name
+	 * lookup fails.
+	 * @param checkHostnameOrIPSyntax If true, validate the syntax of the given DNS hostname or IPv4
+	 * IP address
+	 * @throws HostSyntaxException If the string is not formatted as a proper DNS hostname
+	 * or IPv4 IP address
+	 * @throws PeerParseException If the string is not valid e.g. if it doesn't contain a 
+	 * port.
+	 * @throws UnknownHostException If allowUnknown is not set, and a domain name which does
+	 * not exist was passed in.
+	 */
+    public Peer(String physical, boolean allowUnknown, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, PeerParseException, UnknownHostException {
+        int offset = physical.lastIndexOf(':'); // ipv6
+        if(offset < 0) throw new PeerParseException();
+        String host = physical.substring(0, offset);
+        addr = new FreenetInetAddress(host, allowUnknown, checkHostnameOrIPSyntax);
+        String strport = physical.substring(offset+1);
+        try {
+            _port = Integer.parseInt(strport);
+        } catch (NumberFormatException e) {
+            throw new PeerParseException(e);
+        }
+    }
     
     public Peer(FreenetInetAddress addr, int port) {
     	this.addr = addr;
@@ -219,8 +219,8 @@ public class Peer {
 		return addr.toString() + ':' + _port;
 	}
 
-	public void writeToDataOutputStream(DataOutputStream dos, boolean oldForm) throws IOException {
-		addr.writeToDataOutputStream(dos, oldForm);
+	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
+		addr.writeToDataOutputStream(dos);
 		dos.writeInt(_port);
 	}
 

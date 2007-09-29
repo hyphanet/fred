@@ -11,7 +11,6 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
-import freenet.io.comm.PeerParseException;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
@@ -149,8 +148,11 @@ public class NodeIPDetector {
 			}
 		}
 		
-		if(addresses.isEmpty() && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
+		if(addresses.isEmpty() && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress)) {
 			addresses.add(oldIPAddress);
+			if(oldIPAddress.isRealInternetAddress(false, true))
+				addedValidIP = true;
+		}
 		
 		// Try to pick it up from our connections
 		if(node.peers != null) {
@@ -306,20 +308,11 @@ public class NodeIPDetector {
 					redetectAddress();
 					return;
 				}
-				// Try making a dummy Peer, which will allow us to do a syntax check on the given hostname/IP address
-				try {
-					String hostAndDummyPort = val + ":8888";  // add a dummy port so our string can be parsed by Peer's constructor
-					new Peer(hostAndDummyPort, false, true);
-				} catch (HostnameSyntaxException e) {
-					throw new InvalidConfigValueException(l10n("unknownHostErrorInIPOverride", "error", "hostname or IP address syntax error"));
-				} catch (PeerParseException e) {
-					throw new InvalidConfigValueException(l10n("unknownHostErrorInIPOverride", "error", "parse error"));
-				} catch (UnknownHostException e) {
-					throw new InvalidConfigValueException(l10n("unknownHostErrorInIPOverride", "error", e.getMessage()));
-				}
 				FreenetInetAddress addr;
 				try {
-					addr = new FreenetInetAddress(val, false);
+					addr = new FreenetInetAddress(val, false, true);
+				} catch (HostnameSyntaxException e) {
+					throw new InvalidConfigValueException(l10n("unknownHostErrorInIPOverride", "error", "hostname or IP address syntax error"));
 				} catch (UnknownHostException e) {
 					throw new InvalidConfigValueException(l10n("unknownHostErrorInIPOverride", "error", e.getMessage()));
 				}

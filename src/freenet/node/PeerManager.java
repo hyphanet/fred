@@ -126,10 +126,12 @@ public class PeerManager {
      */
     void tryReadPeers(String filename, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet, boolean oldOpennetPeers) {
     	synchronized(writePeersSync) {
-    		if(isOpennet) {
-    			openFilename = filename;
-    		} else {
-    			darkFilename = filename;
+    		if(!oldOpennetPeers) {
+    			if(isOpennet) {
+    				openFilename = filename;
+    			} else {
+    				darkFilename = filename;
+    			}
     		}
     	}
     	OutgoingPacketMangler mangler = crypto.packetMangler;
@@ -137,12 +139,14 @@ public class PeerManager {
         File backupFile = new File(filename+".bak");
         // Try to read the node list from disk
      	if(peersFile.exists()) {
-      		if(readPeers(peersFile, mangler, crypto, opennet, isOpennet, oldOpennetPeers)) {
+      		if(readPeers(peersFile, mangler, crypto, opennet, oldOpennetPeers)) {
       		    String msg;
-      		    if(isOpennet) {
-      			    msg = "Read "+getOpennetPeers().length+" peers from "+peersFile;
+      		    if(oldOpennetPeers) {
+      		    	msg = "Read "+opennet.countOldOpennetPeers()+" old-opennet-peers from "+peersFile;
+      		    } else if(isOpennet) {
+      			    msg = "Read "+getOpennetPeers().length+" opennet peers from "+peersFile;
 				} else {
-      			    msg = "Read "+getDarknetPeers().length+" peers from "+peersFile;
+      			    msg = "Read "+getDarknetPeers().length+" darknet peers from "+peersFile;
 				}
       			Logger.normal(this, msg);
       			System.out.println(msg);
@@ -151,12 +155,14 @@ public class PeerManager {
        	}
      	// Try the backup
      	if(backupFile.exists()) {
-        	if(readPeers(backupFile, mangler, crypto, opennet, isOpennet, oldOpennetPeers)) {
+        	if(readPeers(backupFile, mangler, crypto, opennet, oldOpennetPeers)) {
       		    String msg;
-      		    if(isOpennet) {
-      			    msg = "Read "+getOpennetPeers().length+" peers from "+backupFile;
+      		    if(oldOpennetPeers) {
+      		    	msg = "Read "+opennet.countOldOpennetPeers()+" old-opennet-peers from "+peersFile;
+      		    } else if(isOpennet) {
+      			    msg = "Read "+getOpennetPeers().length+" opennet peers from "+peersFile;
 				} else {
-      			    msg = "Read "+getDarknetPeers().length+" peers from "+backupFile;
+      			    msg = "Read "+getDarknetPeers().length+" darknet peers from "+peersFile;
 				}
       			Logger.normal(this, msg);
       			System.out.println(msg);
@@ -167,7 +173,7 @@ public class PeerManager {
      	}     		
 	}
 
-	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet, boolean oldOpennetPeers) {
+	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
     	boolean gotSome = false;
     	FileInputStream fis;
 		try {
@@ -204,7 +210,7 @@ public class PeerManager {
                 if(oldOpennetPeers)
                 	opennet.addOldOpennetNode(pn);
                 else
-                	addPeer(pn, true);
+                	addPeer(pn, true, false);
                 gotSome = true;
             }
         } catch (EOFException e) {
@@ -221,7 +227,7 @@ public class PeerManager {
 	}
 
 	public boolean addPeer(PeerNode pn) {
-		return addPeer(pn, false);
+		return addPeer(pn, false, false);
 	}
 	
 	/**
@@ -229,10 +235,14 @@ public class PeerManager {
 	 * @param pn The node to add to the routing table.
 	 * @param ignoreOpennet If true, don't check for opennet peers. If false, check for opennet peers and if so,
 	 * if opennet is enabled auto-add them to the opennet LRU, otherwise fail.
+	 * @param reactivate If true, re-enable the peer if it is in state DISCONNECTING before re-adding it.
 	 * @return True if the node was successfully added. False if it was already present, or if we tried to add
 	 * an opennet peer when opennet was disabled.
 	 */
-	boolean addPeer(PeerNode pn, boolean ignoreOpennet) {
+	boolean addPeer(PeerNode pn, boolean ignoreOpennet, boolean reactivate) {
+		assert(pn != null);
+		if(reactivate)
+			pn.forceCancelDisconnecting();
 		synchronized (this) {
 			for (int i = 0; i < myPeers.length; i++) {
 				if (myPeers[i].equals(pn)) {
@@ -270,47 +280,50 @@ public class PeerManager {
 	}
 	
     private boolean removePeer(PeerNode pn) {
+		boolean isInPeers = false;
     	synchronized(this) {
-    	boolean isInPeers = false;
-        for(int i=0;i<myPeers.length;i++) {
-            if(myPeers[i] == pn) isInPeers=true;
-        }
-        int peerNodeStatus = pn.getPeerNodeStatus();
-        removePeerNodeStatus( peerNodeStatus, pn );
-        String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
-        if(peerNodePreviousRoutingBackoffReason != null) {
-        	removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
-        }
-        if(pn instanceof DarknetPeerNode)
-        	((DarknetPeerNode)pn).removeExtraPeerDataDir();
-        if(!isInPeers) return false;
+    		for(int i=0;i<myPeers.length;i++) {
+    			if(myPeers[i] == pn) isInPeers=true;
+    		}
+    		int peerNodeStatus = pn.getPeerNodeStatus();
+    		removePeerNodeStatus( peerNodeStatus, pn );
+    		String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
+    		if(peerNodePreviousRoutingBackoffReason != null) {
+    			removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
+    		}
+    		if(pn instanceof DarknetPeerNode)
+    			((DarknetPeerNode)pn).removeExtraPeerDataDir();
+    		
+    		if(isInPeers) {
                 
-        // removing from connectedPeers
-        ArrayList a = new ArrayList();
-        for(int i=0;i<myPeers.length;i++) {
-        	if((myPeers[i]!=pn) && myPeers[i].isRoutable())
-        		a.add(myPeers[i]);
-        }
-        
-        PeerNode[] newConnectedPeers = new PeerNode[a.size()];
-        newConnectedPeers = (PeerNode[]) a.toArray(newConnectedPeers);
-	    connectedPeers = newConnectedPeers;
-        
-        // removing from myPeers
-        PeerNode[] newMyPeers = new PeerNode[myPeers.length-1];
-        int positionInNewArray = 0;
-        for(int i=0;i<myPeers.length;i++) {
-        	if(myPeers[i]!=pn){
-        		newMyPeers[positionInNewArray] = myPeers[i];
-        		positionInNewArray++;
-        	}
-        }
-        myPeers = newMyPeers;
-        
-        Logger.normal(this, "Removed "+pn);
+    			// removing from connectedPeers
+    			ArrayList a = new ArrayList();
+    			for(int i=0;i<myPeers.length;i++) {
+    				if((myPeers[i]!=pn) && myPeers[i].isRoutable())
+    					a.add(myPeers[i]);
+    			}
+    			
+    			PeerNode[] newConnectedPeers = new PeerNode[a.size()];
+    			newConnectedPeers = (PeerNode[]) a.toArray(newConnectedPeers);
+    			connectedPeers = newConnectedPeers;
+    			
+    			// removing from myPeers
+    			PeerNode[] newMyPeers = new PeerNode[myPeers.length-1];
+    			int positionInNewArray = 0;
+    			for(int i=0;i<myPeers.length;i++) {
+    				if(myPeers[i]!=pn){
+    					newMyPeers[positionInNewArray] = myPeers[i];
+    					positionInNewArray++;
+    				}
+    			}
+    			myPeers = newMyPeers;
+    			
+    			Logger.normal(this, "Removed "+pn);
+    		}
     	}
     	pn.onRemove();
-        updatePMUserAlert();
+    	if(isInPeers)
+    		updatePMUserAlert();
         return true;
     }
 
@@ -446,13 +459,13 @@ public class PeerManager {
 					}
 				}, 0, null);
 			} catch (NotConnectedException e) {
-		    	if(removePeer(pn))
+		    	if(pn.isDisconnecting() && removePeer(pn))
 		    		writePeers();
 		    	return;
 			}
    			node.getTicker().queueTimedJob(new Runnable() {
    				public void run() {
-			    	if(removePeer(pn))
+			    	if(pn.isDisconnecting() && removePeer(pn))
 			    		writePeers();
    				}
   			}, 60*1000);

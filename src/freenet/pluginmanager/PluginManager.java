@@ -285,8 +285,10 @@ public class PluginManager {
 		synchronized (pluginWrappers) {
 			for(int i=0;i<pluginWrappers.size() && !found;i++) {
 				pi = (PluginInfoWrapper) pluginWrappers.get(i);
-				if (pi.getThreadName().equals(name))
+				if (pi.getThreadName().equals(name)) {
 					found = true;
+					break;
+				}
 			}
 		}
 		if (found) {
@@ -294,6 +296,21 @@ public class PluginManager {
 		}
 	}
 
+	public void killPlugin(FredPlugin plugin, int maxWaitTime) {
+		PluginInfoWrapper pi = null;
+		boolean found = false;
+		synchronized (pluginWrappers) {
+			for(int i=0;i<pluginWrappers.size() && !found;i++) {
+				pi = (PluginInfoWrapper) pluginWrappers.get(i);
+				if (pi.plug == plugin) {
+					found = true;
+				}
+			}
+		}
+		if (found) {
+			pi.stopPlugin(this, maxWaitTime);
+		}
+	}
 
 	/**
 	 * Method to load a plugin from the given path and return is as an object.

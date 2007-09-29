@@ -57,6 +57,7 @@ public class OpennetPeerNode extends PeerNode {
 
 	public void onRemove() {
 		opennet.onRemove(this);
+		super.onRemove();
 	}
 	
     public synchronized SimpleFieldSet exportMetadataFieldSet() {
@@ -69,12 +70,14 @@ public class OpennetPeerNode extends PeerNode {
     	return timeLastSuccess;
     }
     
-    public void disconnected() {
-    	synchronized(this) {
-    		timePrevDisconnect = timeLastDisconnect;
-			timeLastDisconnect = System.currentTimeMillis();
-    	}
-    	super.disconnected();
+    public boolean disconnected() {
+    	if(super.disconnected()) {
+    		synchronized(this) {
+    			timePrevDisconnect = timeLastDisconnect;
+    			timeLastDisconnect = System.currentTimeMillis();
+    		}
+    		return true;
+    	} else return false;
     }
     
     public synchronized long timeLastDisconnect() {

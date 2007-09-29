@@ -7,14 +7,14 @@ import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.SimpleFieldSet;
 
-public class Peer extends FCPMessage {
+public class PeerMessage extends FCPMessage {
 	static final String name = "Peer";
 	
 	final PeerNode pn;
 	final boolean withMetadata;
 	final boolean withVolatile;
 	
-	public Peer(PeerNode pn, boolean withMetadata, boolean withVolatile) {
+	public PeerMessage(PeerNode pn, boolean withMetadata, boolean withVolatile) {
 		this.pn = pn;
 		this.withMetadata = withMetadata;
 		this.withVolatile = withVolatile;

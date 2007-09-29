@@ -35,7 +35,7 @@ public class ListPeersMessage extends FCPMessage {
 		PeerNode[] nodes = node.getPeerNodes();
 		for(int i = 0; i < nodes.length; i++) {
 			PeerNode pn = nodes[i];
-			handler.outputHandler.queue(new Peer(pn, withMetadata, withVolatile));
+			handler.outputHandler.queue(new PeerMessage(pn, withMetadata, withVolatile));
 		}
 		
 		handler.outputHandler.queue(new EndListPeersMessage());

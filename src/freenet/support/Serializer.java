@@ -95,17 +95,6 @@ public class Serializer {
 		}
 	}
 
-	private static boolean needOldPeerFormat(PeerContext ctx) {
-		int ver = ctx.getVersionNumber();
-		if(ver >= 1008) {
-			if(Logger.shouldLog(Logger.MINOR, Serializer.class)) Logger.minor(Serializer.class, "New format peer: "+ver+" : "+ctx);
-		} else {
-			if(Logger.shouldLog(Logger.MINOR, Serializer.class)) Logger.minor(Serializer.class, "Old format peer: "+ver+" : "+ctx);
-		}
-		
-		return ver < 1008;
-	}
-
 	public static void writeToDataOutputStream(Object object, DataOutputStream dos, PeerContext ctx) throws IOException {
 		Class type = object.getClass();
 		if (type.equals(Boolean.class)) {
@@ -135,7 +124,7 @@ public class Serializer {
 				}
 			}
 		} else if (type.equals(Peer.class)) {
-			((Peer)object).writeToDataOutputStream(dos, needOldPeerFormat(ctx));
+			((Peer)object).writeToDataOutputStream(dos);
 		} else if (WritableToDataOutputStream.class.isAssignableFrom(type)) {
 			WritableToDataOutputStream b = (WritableToDataOutputStream) object;
 			b.writeToDataOutputStream(dos);

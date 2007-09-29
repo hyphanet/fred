@@ -944,13 +944,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     
     /**
      * Disconnected e.g. due to not receiving a packet for ages.
+     * @return True if the node was connected, false if it was not.
      */
-    public void disconnected() {
+    public boolean disconnected() {
         long now = System.currentTimeMillis();
         Logger.normal(this, "Disconnected "+this);
         node.usm.onDisconnect(this);
         node.peers.disconnected(this);
+        boolean ret;
         synchronized(this) {
+        	ret = isConnected;
         	// Force renegotiation.
             isConnected = false;
             isRoutable = false;
@@ -966,6 +969,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         }
         node.lm.lostOrRestartedNode(this);
         setPeerNodeStatus(now);
+        return ret;
     }
 
     public void forceDisconnect() {
@@ -2735,9 +2739,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Called when a request or insert succeeds. Used by opennet. */
 	public abstract void onSuccess(boolean insert, boolean ssk);
 
-	/** Called when the peer is removed from the PeerManager */
-	public abstract void onRemove();
-
 	/** Called when a delayed disconnect is occurring. Tell the node that it is being disconnected, but
 	 * that the process may take a while. */
 	public void notifyDisconnecting() {
@@ -2747,6 +2748,24 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
+	/** Called to cancel a delayed disconnect. Always succeeds even if the node was not being 
+	 * disconnected. */
+	public void forceCancelDisconnecting() {
+		synchronized(this) {
+			disconnecting = false;
+		}
+		setPeerNodeStatus(System.currentTimeMillis());
+	}
+	
+	/** Called when the peer is removed from the PeerManager */
+	public void onRemove() {
+		disconnected();
+	}
+
+	public synchronized boolean isDisconnecting() {
+		return disconnecting;
+	}
+	
 	protected byte[] getJFKBuffer() {
 		return jfkBuffer;
 	}

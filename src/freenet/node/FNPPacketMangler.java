@@ -1252,7 +1252,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} catch (LocalAddressException e) {
 			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn+" - maybe you should set allowLocalAddresses for this peer??");
 		}
-		if(logMINOR) Logger.minor(this, "Sending auth packet (long) to "+replyTo+" - size "+data.length+" data length: "+output.length);
 	}
 
 	private void sendPacket(byte[] data, Peer replyTo, PeerNode pn, int alreadyReportedBytes) throws LocalAddressException {
@@ -2335,6 +2334,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				sendFirstHalfDHPacket(0, negType, ctx.getOurExponential(), pn, peer);
 			else
 				sendMessage1(pn, peer);
+			if(logMINOR)
+				Logger.minor(this, "Sending handshake to "+peer+" for "+pn+" ("+i+" of "+handshakeIPs.length);
 			pn.sentHandshake();
 			sentCount += 1;
 		}

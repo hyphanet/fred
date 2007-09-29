@@ -128,6 +128,15 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		this.peers = n.peers;
 	}
 
+	abstract SimpleColumn[] endColumnHeaders(boolean advancedModeEnabled);
+	
+	abstract class SimpleColumn {
+		abstract protected void drawColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus);
+		abstract public String getSortString();
+		abstract public String getTitleKey();
+		abstract public String getExplanationKey();
+	}
+	
 	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String path = uri.getPath();
 		if(path.endsWith("myref.fref")) {
@@ -425,10 +434,22 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th", "Time\u00a0Delta");
 				}
 				
+				SimpleColumn[] endCols = endColumnHeaders(advancedModeEnabled);
+				if(endCols != null) {
+					for(int i=0;i<endCols.length;i++) {
+						SimpleColumn col = endCols[i];
+						HTMLNode header = peerTableHeaderRow.addChild("th");
+						String sortString = col.getSortString();
+						if(sortString != null)
+							header = header.addChild("a", "href", sortString(isReversed, sortString));
+						header.addChild("span", new String[] { "title", "style" }, new String[] { L10n.getString(col.getExplanationKey()), "border-bottom: 1px dotted; cursor: help;" }, L10n.getString(col.getTitleKey()));
+					}
+				}
+				
 				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
 					
 					PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
-					drawRow(peerTable, peerNodeStatus, advancedModeEnabled, fProxyJavascriptEnabled, now, path, enablePeerActions);
+					drawRow(peerTable, peerNodeStatus, advancedModeEnabled, fProxyJavascriptEnabled, now, path, enablePeerActions, endCols);
 					
 				}
 
@@ -698,7 +719,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 	abstract protected SimpleFieldSet getNoderef();
 
-	private void drawRow(HTMLNode peerTable, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled, boolean fProxyJavascriptEnabled, long now, String path, boolean enablePeerActions) {
+	private void drawRow(HTMLNode peerTable, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled, boolean fProxyJavascriptEnabled, long now, String path, boolean enablePeerActions, SimpleColumn[] endCols) {
 		HTMLNode peerRow = peerTable.addChild("tr");
 
 		if(enablePeerActions) {
@@ -785,6 +806,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", val);
 			// time delta
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", TimeUtil.formatTime(peerNodeStatus.getClockDelta()));
+		}
+		
+		if(endCols != null) {
+			for(int i=0;i<endCols.length;i++) {
+				endCols[i].drawColumn(peerRow, peerNodeStatus);
+			}
 		}
 		
 		if (path.endsWith("displaymessagetypes.html")) {
