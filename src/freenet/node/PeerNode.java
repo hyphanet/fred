@@ -89,7 +89,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     /*
      * Buffer of Ni,Nr,g^i,g^r,ID
      */
-    private byte[] bufferJFK;
+    private byte[] jfkBuffer;
+    //TODO: sync ?
+    protected byte[] jfkKa;
+    protected byte[] jfkKe;
 	
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;
@@ -2743,11 +2746,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
-	protected byte[] getBufferJFK() {
-		return bufferJFK;
+	protected byte[] getJFKBuffer() {
+		return jfkBuffer;
 	}
 
-	protected void setBufferJFK(byte[] bufferJFK) {
-		this.bufferJFK = bufferJFK;
+	protected void setJFKBuffer(byte[] bufferJFK) {
+		this.jfkBuffer = bufferJFK;
 	}
 }
