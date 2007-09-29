@@ -795,6 +795,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		/*
 		 * DecipheredData Format:
 		 * Signature-r,s
+		 * Node Data (starting with BootID)
 		 */
 		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
