@@ -27,7 +27,6 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
-import freenet.crypt.DiffieHellman;
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
@@ -87,7 +86,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     protected boolean verifiedIncompatibleNewerVersion;
     
-    
+    /*
+     * Buffer of Ni,Nr,g^i,g^r,ID
+     */
+    private byte[] bufferJFK;
 	
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;
@@ -307,10 +309,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private boolean disconnecting;
 	
     private static boolean logMINOR;
-    protected byte[] nonceInitiatorJFK = new byte[FNPPacketMangler.NONCE_SIZE];
-    protected byte[] nonceResponderJFK = new byte[FNPPacketMangler.NONCE_SIZE];
-    protected byte[] initiatorExponentialJFK = new byte[DiffieHellman.modulusLengthInBytes()];
-    protected byte[] responderExponentialJFK = new byte[DiffieHellman.modulusLengthInBytes()];
+    
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
      * node reference for one. This must contain the following
@@ -2742,5 +2741,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			disconnecting = true;
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
+	}
+
+	protected byte[] getBufferJFK() {
+		return bufferJFK;
+	}
+
+	protected void setBufferJFK(byte[] bufferJFK) {
+		this.bufferJFK = bufferJFK;
 	}
 }
