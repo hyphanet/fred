@@ -433,7 +433,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				processMessage4(payload, pn);
+				processMessage4(payload, pn, replyTo);
 			}
 		}
 		else {
@@ -693,7 +693,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 									HASH_LENGTH + // authenticator
 									HASH_LENGTH + // HMAC of the cyphertext
 									(c.getBlockSize() >> 3) + // IV
-									HASH_LENGTH; // it's at least a signature
+									HASH_LENGTH + // it's at least a signature
+									8;			  // a bootid
 		if(payload.length < expectedLength + 3) {
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(3), should be "+(expectedLength + 3));
 			return;
@@ -762,6 +763,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DHgroupA);
+		byte[] Ks = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
 		c.initialize(Ke);
@@ -771,10 +773,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// We compute the HMAC of ("I"+cyphertext) : the cyphertext includes the IV!
 		byte[] prefix = null;
 		try { prefix = "I".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
-		byte[] decypheredPayload = new byte[prefix.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH*2];
+		byte[] decypheredPayload = new byte[prefix.length + payload.length - inputOffset];
 		System.arraycopy(prefix, 0, decypheredPayload, decypheredPayloadOffset, prefix.length);
 		decypheredPayloadOffset += prefix.length;
-		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, ivLength + Node.SIGNATURE_PARAMETER_LENGTH*2);
+		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, decypheredPayload.length-decypheredPayloadOffset);
 		if(!mac.verify(Ka, decypheredPayload, hmac)) {
 			Logger.error(this, "The digest-HMAC doesn't match; let's discard the packet");
 			return;
@@ -784,7 +786,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pk.reset(decypheredPayload, decypheredPayloadOffset);
 		decypheredPayloadOffset += ivLength;
 		// Decrypt the payload
-		pk.blockDecipher(decypheredPayload, decypheredPayloadOffset, Node.SIGNATURE_PARAMETER_LENGTH*2);
+		pk.blockDecipher(decypheredPayload, decypheredPayloadOffset, decypheredPayload.length-decypheredPayloadOffset);
 		/*
 		 * DecipheredData Format:
 		 * Signature-r,s
@@ -795,6 +797,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
 		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
+		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
+		long bootID = Fields.bytesToLong(data);
+
 		
 		// verify the signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s)); 
@@ -807,7 +813,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, c, Ke, Ka, authenticator, pn, replyTo);
 		
 		//FIXME: rekey .... ?
-		System.out.println("Time to call completedHandshake ^-^");
+		c.initialize(Ks);
+		if(!pn.completedHandshake(bootID, data, 8, data.length-8, c, Ks, replyTo, false)) {
+			Logger.error(this, "Handshake failure!");
+		}
 		
 		final long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
@@ -822,7 +831,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * 
 	 */
-	private void processMessage4(byte[] payload, PeerNode pn)			
+	private void processMessage4(byte[] payload, PeerNode pn, Peer replyTo)			
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it");
@@ -832,7 +841,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		final int expectedLength =	HASH_LENGTH + // HMAC of the cyphertext
 									(c.getBlockSize() >> 3) + // IV
-									HASH_LENGTH; // the signature
+									HASH_LENGTH + // the signature
+									8			  // the bootid; there should be the noderef too
+									;
 		if(payload.length < expectedLength + 3) {
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(4), should be "+(expectedLength + 3));
 			return;
@@ -855,10 +866,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// We compute the HMAC of ("I"+cyphertext) : the cyphertext includes the IV!
 		byte[] prefix = null;
 		try { prefix = "R".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
-		byte[] decypheredPayload = new byte[prefix.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH*2];
+		byte[] decypheredPayload = new byte[prefix.length + (payload.length-inputOffset)];
 		System.arraycopy(prefix, 0, decypheredPayload, decypheredPayloadOffset, prefix.length);
 		decypheredPayloadOffset += prefix.length;
-		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, ivLength + Node.SIGNATURE_PARAMETER_LENGTH*2);
+		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, payload.length-inputOffset);
 		HMAC mac = new HMAC(SHA256.getInstance());
 		if(!mac.verify(pn.jfkKa, decypheredPayload, hmac)) {
 			Logger.error(this, "The digest-HMAC doesn't match; let's discard the packet");
@@ -869,7 +880,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pk.reset(decypheredPayload, decypheredPayloadOffset);
 		decypheredPayloadOffset += ivLength;
 		// Decrypt the payload
-		pk.blockDecipher(decypheredPayload, decypheredPayloadOffset, Node.SIGNATURE_PARAMETER_LENGTH*2);
+		pk.blockDecipher(decypheredPayload, decypheredPayloadOffset, decypheredPayload.length - decypheredPayloadOffset);
 		/*
 		 * DecipheredData Format:
 		 * Signature-r,s
@@ -880,6 +891,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
 		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
+		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
+		long bootID = Fields.bytesToLong(data);
 		
 		// verify the signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
@@ -893,13 +907,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		//FIXME: when do we reset the buffer/rekey/DH/transientkey ?
-		System.out.println("time to call completedHandshake! ^-^");
-		// pn.completedHandshake(bufferOffset, locallyGeneratedText, decypheredPayloadOffset, ivLength, c, Ke, replyTo, false)
-		
+		// We change the key
+		c.initialize(pn.jfkKs);
+		if(!pn.completedHandshake(bootID, data, 8, data.length - 8, c, pn.jfkKs, replyTo, false)) {
+			Logger.error(this, "Handshake failed!");
+		}
 		// cleanup
 		pn.setJFKBuffer(null);
 		pn.jfkKa = null;
 		pn.jfkKe = null;
+		pn.jfkKs = null;
 		
 		final long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
@@ -939,13 +956,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		byte[] ourExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
+		byte[] myRef = crypto.myCompressedSetupRef();
+		byte[] data = new byte[8 + myRef.length];
+		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
+		System.arraycopy(myRef, 0, data, 8, myRef.length);
 		byte[] message3 = new byte[NONCE_SIZE*2 + // nI, nR
 		                           DiffieHellman.modulusLengthInBytes()*2 + // g^i, g^r
 		                           HASH_LENGTH + // authenticator
 		                           HASH_LENGTH + // HMAC(cyphertext)
 		                           (c.getBlockSize() >> 3) + // IV
-		                           Node.SIGNATURE_PARAMETER_LENGTH * 2 // Signature (R,S)
-		                           ];
+		                           Node.SIGNATURE_PARAMETER_LENGTH * 2 + // Signature (R,S)
+		                           data.length]; // The bootid+noderef
 		int offset = 0;
 		// Ni
 		System.arraycopy(nonceInitiator, 0, message3, offset, NONCE_SIZE);
@@ -975,8 +996,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DSASignature localSignature = crypto.sign(SHA256.digest(toSign));
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-
+		
 		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DHgroupA);
+		pn.jfkKs = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		pn.jfkKe = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		pn.jfkKa = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
 		c.initialize(pn.jfkKe);
@@ -989,7 +1011,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] prefix = null;
 		try { prefix = "I".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
 		
-		byte[] cleartext = new byte[prefix.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2];
+		byte[] cleartext = new byte[prefix.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2 + data.length];
 		System.arraycopy(prefix, 0, cleartext, cleartextOffset, prefix.length);
 		cleartextOffset += prefix.length;
 		System.arraycopy(iv, 0, cleartext, cleartextOffset, ivLength);
@@ -998,9 +1020,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 		System.arraycopy(s, 0, cleartext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
 		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		System.arraycopy(data, 0, cleartext, cleartextOffset, data.length);
+		cleartextOffset += data.length;
 		
 		int cleartextToEncypherOffset = prefix.length + ivLength;
-		pcfb.blockEncipher(cleartext, cleartextToEncypherOffset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
+		pcfb.blockEncipher(cleartext, cleartextToEncypherOffset, cleartext.length-cleartextToEncypherOffset);
 		
 		// We compute the HMAC of (prefix + cyphertext) Includes the IV!
 		HMAC mac = new HMAC(SHA256.getInstance());
@@ -1011,7 +1035,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		offset += HASH_LENGTH;
 		System.arraycopy(iv, 0, message3, offset, ivLength);
 		offset += ivLength;
-		System.arraycopy(cleartext, cleartextToEncypherOffset, message3, offset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
+		System.arraycopy(cleartext, cleartextToEncypherOffset, message3, offset, cleartext.length-cleartextToEncypherOffset);
 		
 		// cache the message
 		synchronized (authenticatorCache) {
@@ -1036,6 +1060,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		
+		byte[] myRef = crypto.myCompressedSetupRef();
+		byte[] data = new byte[8 + myRef.length];
+		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
+		System.arraycopy(myRef, 0, data, 8, myRef.length);
+		
 		PCFBMode pk=PCFBMode.create(c);
 		int ivLength = pk.lengthIV();
 		byte[] iv=new byte[ivLength];
@@ -1044,7 +1073,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] prefix = null;
 		try { prefix = "R".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
 
-		byte[] cyphertext = new byte[prefix.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2];
+		byte[] cyphertext = new byte[prefix.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2 + data.length];
 		int cleartextOffset = 0;
 		System.arraycopy(prefix, 0, cyphertext, cleartextOffset, prefix.length);
 		cleartextOffset += prefix.length;
@@ -1054,22 +1083,24 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 		System.arraycopy(s, 0, cyphertext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
 		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		System.arraycopy(data, 0, cyphertext, cleartextOffset, data.length);
+		cleartextOffset += data.length;
 		// Now encrypt the cleartext[Signature]
 		int cleartextToEncypherOffset = prefix.length + ivLength;
-		pk.blockEncipher(cyphertext, cleartextToEncypherOffset, Node.SIGNATURE_PARAMETER_LENGTH*2);
+		pk.blockEncipher(cyphertext, cleartextToEncypherOffset, cyphertext.length - cleartextToEncypherOffset);
 		
 		// We compute the HMAC of (prefix + iv + signature)
 		HMAC mac = new HMAC(SHA256.getInstance());
 		byte[] hmac = mac.mac(Ka, cyphertext, HASH_LENGTH);
 		
 		// Message4 = hmac + IV + encryptedSignature
-		byte[] message4 = new byte[HASH_LENGTH + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2]; 
+		byte[] message4 = new byte[HASH_LENGTH + ivLength + (cyphertext.length - cleartextToEncypherOffset)]; 
 		int offset = 0;
 		System.arraycopy(hmac, 0, message4, offset, HASH_LENGTH);
 		offset += HASH_LENGTH;
 		System.arraycopy(iv, 0, message4, offset, ivLength);
 		offset += ivLength;
-		System.arraycopy(cyphertext, cleartextToEncypherOffset, message4, offset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
+		System.arraycopy(cyphertext, cleartextToEncypherOffset, message4, offset, cyphertext.length - cleartextToEncypherOffset);
 		
 		// cache the message
 		synchronized (authenticatorCache) {
