@@ -434,7 +434,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * cached by the Responder.Receiving a duplicate message simply causes
 				 * the responder to Re-transmit the corresponding message4
 				 */
-				processJFKMessage3(payload, pn, replyTo);
+				processJFKMessage3(payload, pn, replyTo, oldOpennetPeer);
 			}
 			else if(packetType==3){
 				/*
@@ -442,7 +442,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				processJFKMessage4(payload, pn, replyTo);
+				processJFKMessage4(payload, pn, replyTo, oldOpennetPeer);
 			}
 		}
 		else {
@@ -686,7 +686,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * @return byte Message3
 	 */
-	private void processJFKMessage3(byte[] payload, PeerNode pn,Peer replyTo)			
+	private void processJFKMessage3(byte[] payload, PeerNode pn,Peer replyTo, boolean oldOpennetPeer)
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
@@ -816,9 +816,29 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// Send reply
 		sendJFKMessage4(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, c, Ke, Ka, authenticator, pn, replyTo);
-		
 		c.initialize(Ks);
-		if(!pn.completedHandshake(bootID, data, 8, data.length-8, c, Ks, replyTo, true)) {
+		
+		// Promote if necessary
+		boolean dontWant = false;
+		if(oldOpennetPeer) {
+			OpennetManager opennet = node.getOpennet();
+			if(opennet == null) {
+				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
+				return;
+			}
+			if(!opennet.wantPeer(pn, true)) {
+				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
+				dontWant = true;
+			}
+			// wantPeer will call node.peers.addPeer(), we don't have to.
+		}
+		
+		if(pn.completedHandshake(bootID, data, 8, data.length-8, c, Ks, replyTo, true)) {
+			if(dontWant)
+				node.peers.disconnect(pn, true, false);
+			else
+				pn.maybeSendInitialMessages();
+		} else {
 			Logger.error(this, "Handshake failure! with "+pn);
 		}
 		
@@ -835,7 +855,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * @param replyTo the Peer we are replying to
 	 */
-	private void processJFKMessage4(byte[] payload, PeerNode pn, Peer replyTo)			
+	private void processJFKMessage4(byte[] payload, PeerNode pn, Peer replyTo, boolean oldOpennetPeer)
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn);
@@ -912,11 +932,32 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		
+		// Promote if necessary
+		boolean dontWant = false;
+		if(oldOpennetPeer) {
+			OpennetManager opennet = node.getOpennet();
+			if(opennet == null) {
+				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
+				return;
+			}
+			if(!opennet.wantPeer(pn, true)) {
+				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
+				dontWant = true;
+			}
+			// wantPeer will call node.peers.addPeer(), we don't have to.
+		}
+		
 		// We change the key
 		c.initialize(pn.jfkKs);
-		if(!pn.completedHandshake(bootID, data, 8, data.length - 8, c, pn.jfkKs, replyTo, false)) {
+		if(pn.completedHandshake(bootID, data, 8, data.length - 8, c, pn.jfkKs, replyTo, false)) {
+			if(dontWant)
+				node.peers.disconnect(pn, true, false);
+			else
+				pn.maybeSendInitialMessages();
+		} else {
 			Logger.error(this, "Handshake failed!");
 		}
+		
 		// cleanup
 		pn.setJFKBuffer(null);
 		pn.jfkKa = null;
