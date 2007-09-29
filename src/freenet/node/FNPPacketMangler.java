@@ -417,7 +417,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * session key will be different,can be used to differentiate between
 				 * parallel sessions
 				 */
-				processMessage1(payload,pn,replyTo);
+				processJFKMessage1(payload,pn,replyTo);
 
 			}
 			else if(packetType==1){
@@ -426,7 +426,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * nonce and an authenticator calculated from a transient hash key private
 				 * to the responder.
 				 */
-				processMessage2(payload,pn,replyTo);
+				processJFKMessage2(payload,pn,replyTo);
 			}
 			else if(packetType==2){
 				/*
@@ -434,7 +434,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * cached by the Responder.Receiving a duplicate message simply causes
 				 * the responder to Re-transmit the corresponding message4
 				 */
-				processMessage3(payload, pn, replyTo);
+				processJFKMessage3(payload, pn, replyTo);
 			}
 			else if(packetType==3){
 				/*
@@ -442,7 +442,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				processMessage4(payload, pn, replyTo);
+				processJFKMessage4(payload, pn, replyTo);
 			}
 		}
 		else {
@@ -464,7 +464,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * g^i
 	 * IDr'
 	 */	
-	private void processMessage1(byte[] payload,PeerNode pn,Peer replyTo)
+	private void processJFKMessage1(byte[] payload,PeerNode pn,Peer replyTo)
 	{
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
@@ -485,7 +485,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		if(logMINOR) Logger.minor(this, "his exponential from message1 length="+DiffieHellman.modulusLengthInBytes() +" value=" + _hisExponential.toHexString());
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) > 0) {
-			sendMessage2(nonceInitiator, pn, replyTo);
+			sendJFKMessage2(nonceInitiator, pn, replyTo);
 		}else
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
 
@@ -499,7 +499,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Ni,g^i
 	 * NB: we don't send IDr as we know to who we are talking to (darknet)
 	 */
-	private void sendMessage1(PeerNode pn, Peer replyTo) {
+	private void sendJFKMessage1(PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+pn);
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		int offset = 0;
@@ -523,7 +523,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Hashed JFKAuthenticator
 	 * NB: we don't send IDr nor groupinfo as we know them (darknet)
 	 */
-	private void sendMessage2(byte[] nonceInitator, PeerNode pn, Peer replyTo) {
+	private void sendJFKMessage2(byte[] nonceInitator, PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		// g^r
@@ -597,7 +597,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 */
 
-	private void processMessage2(byte[] payload,PeerNode pn,Peer replyTo)
+	private void processJFKMessage2(byte[] payload,PeerNode pn,Peer replyTo)
 	{
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it - "+pn);
@@ -665,7 +665,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		
-		sendMessage3Packet(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, authenticator, pn, replyTo);
+		sendJFKMessage3(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, authenticator, pn, replyTo);
 
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
@@ -686,7 +686,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * @return byte Message3
 	 */
-	private void processMessage3(byte[] payload, PeerNode pn,Peer replyTo)			
+	private void processJFKMessage3(byte[] payload, PeerNode pn,Peer replyTo)			
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
@@ -815,7 +815,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// Send reply
-		sendMessage4Packet(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, c, Ke, Ka, authenticator, pn, replyTo);
+		sendJFKMessage4(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, c, Ke, Ka, authenticator, pn, replyTo);
 		
 		c.initialize(Ks);
 		if(!pn.completedHandshake(bootID, data, 8, data.length-8, c, Ks, replyTo, true)) {
@@ -835,7 +835,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * @param replyTo the Peer we are replying to
 	 */
-	private void processMessage4(byte[] payload, PeerNode pn, Peer replyTo)			
+	private void processJFKMessage4(byte[] payload, PeerNode pn, Peer replyTo)			
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn);
@@ -954,7 +954,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * IV + E[S[Ni,Nr,g^i,g^r], bootid, znoderef]
 	 */
 
-	private void sendMessage3Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, PeerNode pn, Peer replyTo)
+	private void sendJFKMessage3(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, PeerNode pn, Peer replyTo)
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn);
 		BlockCipher c = null;
@@ -1057,7 +1057,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Format:
 	 * E[S[Ni,Nr,g^i,g^r,idI],bootID,znoderef] 
 	 */
-	private void sendMessage4Packet(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, PeerNode pn, Peer replyTo)
+	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, PeerNode pn, Peer replyTo)
 	{
 		if(logMINOR)
 			Logger.minor(this, "Sending a JFK(4) message to "+pn);
@@ -2333,7 +2333,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(negType == 1)
 				sendFirstHalfDHPacket(0, negType, ctx.getOurExponential(), pn, peer);
 			else
-				sendMessage1(pn, peer);
+				sendJFKMessage1(pn, peer);
 			if(logMINOR)
 				Logger.minor(this, "Sending handshake to "+peer+" for "+pn+" ("+i+" of "+handshakeIPs.length);
 			pn.sentHandshake();
