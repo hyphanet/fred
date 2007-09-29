@@ -737,9 +737,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		
-		// Save the those values to verify message4
-		pn.setBufferJFK(assembleDHParams(nonceInitiator, nonceResponder, _hisExponential, _ourExponential, crypto.myIdentity));
-		
 		byte[] hmac = new byte[HASH_LENGTH];
 		System.arraycopy(payload, inputOffset, hmac, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
@@ -787,7 +784,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
 		if(logMINOR)
 			Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
-		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, pn.getBufferJFK()), false)) {
+		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, assembleDHParams(nonceInitiator, nonceResponder, _hisExponential, _ourExponential, crypto.myIdentity)), false)) {
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}
@@ -855,7 +852,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// g^r
 		System.arraycopy(hisExponential, 0,message3, offset, hisExponential.length);
 		offset += hisExponential.length;
-                
+
 		// Authenticator
 		System.arraycopy(authenticator, 0, message3, offset, HASH_LENGTH);
 		offset += HASH_LENGTH;
@@ -865,7 +862,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 */
 		NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-		DSASignature localSignature = crypto.sign(assembleDHParams(nonceInitiator, nonceResponder, _ourExponential, _hisExponential, pn.identity));
+		// save parameters so that we can verify message4
+		byte[] toSign = assembleDHParams(nonceInitiator, nonceResponder, _ourExponential, _hisExponential, pn.identity);
+		pn.setBufferJFK(toSign);
+		DSASignature localSignature = crypto.sign(SHA256.digest(toSign));
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 
@@ -2261,20 +2261,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger initiatorExponential, BigInteger responderExponential, byte[] id) {
 		byte[] _initiatorExponential = stripBigIntegerToNetworkFormat(initiatorExponential);
 		byte[] _responderExponential = stripBigIntegerToNetworkFormat(responderExponential);
-		byte[] toSign = new byte[nonceInitiator.length + nonceResponder.length + _initiatorExponential.length + _responderExponential.length + id.length];
+		byte[] result = new byte[nonceInitiator.length + nonceResponder.length + _initiatorExponential.length + _responderExponential.length + id.length];
 		int offset = 0;
 		
-		System.arraycopy(nonceInitiator, 0,toSign,offset,nonceInitiator.length);
+		System.arraycopy(nonceInitiator, 0,result,offset,nonceInitiator.length);
 		offset += nonceInitiator.length;
-		System.arraycopy(nonceResponder,0 ,toSign,offset,nonceResponder.length);
+		System.arraycopy(nonceResponder,0 ,result,offset,nonceResponder.length);
 		offset += nonceResponder.length;
-		System.arraycopy(_initiatorExponential, 0, toSign,offset, _initiatorExponential.length);
+		System.arraycopy(_initiatorExponential, 0, result,offset, _initiatorExponential.length);
 		offset += _initiatorExponential.length;
-		System.arraycopy(_responderExponential, 0, toSign, offset, _responderExponential.length);
+		System.arraycopy(_responderExponential, 0, result, offset, _responderExponential.length);
 		offset += _responderExponential.length;
-		System.arraycopy(id, 0, toSign , offset,id.length);
+		System.arraycopy(id, 0, result , offset,id.length);
 
-		return SHA256.digest(toSign);
+		return result;
 	}
 
 	/*
