@@ -755,10 +755,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// We compute the HMAC of ("I"+cyphertext) : the cyphertext includes the IV!
 		byte[] prefix = null;
 		try { prefix = "I".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
-		byte[] decypheredPayload = new byte[prefix.length + payload.length - inputOffset];
+		byte[] decypheredPayload = new byte[prefix.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH*2];
 		System.arraycopy(prefix, 0, decypheredPayload, decypheredPayloadOffset, prefix.length);
 		decypheredPayloadOffset += prefix.length;
-		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, payload.length - inputOffset);
+		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, ivLength + Node.SIGNATURE_PARAMETER_LENGTH*2);
 		if(!mac.verify(Ka, decypheredPayload, hmac)) {
 			Logger.error(this, "The digest-HMAC doesn't match; let's discard the packet");
 			return;
@@ -768,7 +768,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pk.reset(decypheredPayload, decypheredPayloadOffset);
 		decypheredPayloadOffset += ivLength;
 		// Decrypt the payload
-		pk.blockDecipher(decypheredPayload, decypheredPayloadOffset, payload.length-decypheredPayloadOffset);
+		pk.blockDecipher(decypheredPayload, decypheredPayloadOffset, Node.SIGNATURE_PARAMETER_LENGTH*2);
 		/*
 		 * DecipheredData Format:
 		 * Signature-r,s
@@ -896,12 +896,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(s, 0, cleartext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
 		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 		
+		int cleartextToEncypherOffset = prefix.length + ivLength;
+		pcfb.blockEncipher(cleartext, cleartextToEncypherOffset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
+		
 		// We compute the HMAC of (prefix + cyphertext) Includes the IV!
 		HMAC mac = new HMAC(SHA256.getInstance());
 		byte[] hmac = mac.mac(Ka, cleartext, HASH_LENGTH);
-		
-		int cleartextToEncypherOffset = prefix.length + ivLength;
-		pcfb.blockEncipher(cleartext, cleartextToEncypherOffset, Node.SIGNATURE_PARAMETER_LENGTH * 2);
 		
 		// copy stuffs back to the message
 		System.arraycopy(hmac, 0, message3, offset, HASH_LENGTH);
