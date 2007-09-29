@@ -1719,7 +1719,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
      * @throws FSParseException */
     protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
         boolean changedAnything = false;
-        if(node.testnetEnabled != Fields.stringToBool(fs.get("testnet"), false)) {
+        if(node.testnetEnabled != Fields.stringToBool(fs.get("testnet"), true)) {
         	String err = "Preventing connection to node "+detectedPeer+" - peer.testnet="+!node.testnetEnabled+'(' +fs.get("testnet")+") but node.testnet="+node.testnetEnabled;
         	Logger.error(this, err);
         	throw new FSParseException(err);
