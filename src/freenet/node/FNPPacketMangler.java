@@ -2401,7 +2401,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public int[] supportedNegTypes() {
-		return new int[] { 2 };
+		return new int[] { 2, 1 };
 	}
 
 	public int fullHeadersLengthOneMessage() {
