@@ -23,7 +23,6 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
-import freenet.crypt.crypto_Random.eKey;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.IncomingPacketFilter;
@@ -47,7 +46,6 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.HashMap;
 
-import sun.nio.cs.HistoricallyNamedCharset;
 
 /**
  * @author amphibian
@@ -782,9 +780,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// verify the signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
-		if(logMINOR)
+		byte[] locallyGeneratedText = SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, _hisExponential, _ourExponential, crypto.myIdentity));
+		if(logMINOR) {
 			Logger.minor(this, "Remote sent us the following sig :"+remoteSignature.toLongString());
-		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, assembleDHParams(nonceInitiator, nonceResponder, _hisExponential, _ourExponential, crypto.myIdentity)), false)) {
+			Logger.minor(this, "We are have the following locally :"+HexUtil.bytesToHex(locallyGeneratedText));
+		}
+		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, locallyGeneratedText), false)) {
 			Logger.error(this, "The signature verification has failed!!");
 			return;
 		}
@@ -870,12 +871,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 
 		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DHgroupA);
-		if(logMINOR) Logger.minor(this, "We have computed the following exponential : " + HexUtil.biToHex(computedExponential));
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
-		if(logMINOR) Logger.minor(this, "We are using Ke=" + HexUtil.bytesToHex(Ke));
 		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
-		if(logMINOR) Logger.minor(this, "We are using Ka=" + HexUtil.bytesToHex(Ka));
-		if(logMINOR) Logger.minor(this, "we are re-sending authenticator = " + HexUtil.bytesToHex(authenticator));
+		if(logMINOR) {
+			Logger.minor(this, "We have computed the following exponential : " + HexUtil.biToHex(computedExponential));
+			Logger.minor(this, "We are using Ke=" + HexUtil.bytesToHex(Ke));
+			Logger.minor(this, "We are using Ka=" + HexUtil.bytesToHex(Ka));
+			Logger.minor(this, "We are re-sending authenticator = " + HexUtil.bytesToHex(authenticator));
+			Logger.minor(this, "We send the following signature : "+localSignature.toLongString());
+			Logger.minor(this, "We have been signing "+ HexUtil.bytesToHex(toSign));
+		}
 		c.initialize(Ke);
 		PCFBMode pcfb = PCFBMode.create(c);
 		int ivLength = pcfb.lengthIV();
@@ -922,8 +927,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	{
 		if(logMINOR)
 			Logger.minor(this, "Sending a JFK(4) message to "+pn);
-		long now = System.currentTimeMillis();
-		long delta = now - pn.lastSentPacketTime();
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
