@@ -874,7 +874,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		byte[] jfkBuffer = pn.getJFKBuffer();
-		// FIXME: is that needed ?
 		if(jfkBuffer == null) {
 			Logger.normal(this, "We have already handled this message... might be a replay or a bug - "+pn);
 			return;
