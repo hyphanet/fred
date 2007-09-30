@@ -514,12 +514,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		int offset = 0;
 		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
-		pn.jfkNonceInitiator = new byte[NONCE_SIZE];
-		node.random.nextBytes(pn.jfkNonceInitiator);
+		byte[] nonce = new byte[NONCE_SIZE];
+		node.random.nextBytes(nonce);
+		
+		pn.jfkNonceInitiator.put(replyTo, nonce);
 		
 		byte[] message1 = new byte[NONCE_SIZE+DiffieHellman.modulusLengthInBytes()];
 
-		System.arraycopy(pn.jfkNonceInitiator, 0, message1, offset, NONCE_SIZE);
+		System.arraycopy(nonce, 0, message1, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
 		System.arraycopy(myExponential, 0, message1, offset, DiffieHellman.modulusLengthInBytes());
 
@@ -653,6 +655,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// sanity check
+		byte[] myNi = (byte[]) pn.jfkNonceInitiator.get(replyTo);
+		// We don't except such a message;
+		if(myNi == null) {
+			Logger.normal(this, "We received an unexpected JFK(3) message from "+pn);
+			return;
+		} else if(!Arrays.equals(myNi, nonceInitiator)){
+			Logger.error(this, "The responder has tampered the nonce in JFK(3)!! - "+pn);
+			return;
+		}
+		
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) < 1) {
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
 			return;
@@ -684,6 +696,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Compute the signature of the unVerifiedData and encrypt it using a shared key
 	 * which is derived from DHExponentials and the nonces; add a HMAC to protect it
 	 * 
+	 * Format:
+	 * Ni, Nr, g^i, g^r
+	 * Authenticator - HMAC{g^ir}(g^r, Nr, Ni, IP)
+	 * HMAC{Ka}(cyphertext)
+	 * IV + E{KE}[S{i}[Ni,Nr,g^i,g^r,idR, bootID, znoderefI], bootID, znoderefI]
+	 * 
+	 * 
 	 * @param Payload
 	 * @param The peer to which we need to send the packet
 	 * @param The peerNode we are talking to
@@ -693,11 +712,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
-		
-		byte[] myNi = pn.jfkNonceInitiator;
-		// We don't except such a message;
-		if(myNi == null)
-			return;
 		
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
@@ -758,12 +772,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			return;
 		}
-
-		// some sanity checks
-		if(!Arrays.equals(myNi, nonceInitiator)) {
-			Logger.error(this, "Huh? the responder sent us a different nonce back! -"+pn);
-			return;
-		}
 		
 		NativeBigInteger _hisExponential = new NativeBigInteger(1, initiatorExponential);
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) < 1) {
@@ -818,17 +826,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
 		long bootID = Fields.bytesToLong(data);
-
+		byte[] hisRef = new byte[data.length -8];
+		System.arraycopy(data, 8, hisRef, 0, hisRef.length);
 		
 		// verify the signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s)); 
-		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, _hisExponential, _ourExponential, crypto.myIdentity))), false)) {
+		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, _hisExponential, _ourExponential, crypto.myIdentity, data))), false)) {
 			Logger.error(this, "The signature verification has failed!! JFK(3) - "+pn);
 			return;
 		}
 		
 		// Send reply
-		sendJFKMessage4(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, c, Ke, Ka, authenticator, pn, replyTo);
+		sendJFKMessage4(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, c, Ke, Ka, authenticator, hisRef, pn, replyTo);
 		c.initialize(Ks);
 		
 		// Promote if necessary
@@ -846,7 +855,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
 		
-		if(pn.completedHandshake(bootID, data, 8, data.length-8, c, Ks, replyTo, true)) {
+		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, Ks, replyTo, true)) {
 			if(dontWant)
 				node.peers.disconnect(pn, true, false);
 			else
@@ -864,6 +873,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Responder Method:Message4
 	 * Process Message4
 	 * 
+	 * Format:
+	 * HMAC{Ka}[cyphertext]
+	 * IV + E{Ke}[S{R}[Ni, Nr, g^i, g^r, IDi, bootID, znoderefR, znoderefI], bootID, znoderefR]
+	 * 
 	 * @param Payload
 	 * @param The peerNode we are talking to
 	 * @param replyTo the Peer we are replying to
@@ -879,7 +892,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		final int expectedLength =	HASH_LENGTH + // HMAC of the cyphertext
 									(c.getBlockSize() >> 3) + // IV
 									HASH_LENGTH + // the signature
-									8			  // the bootid; there should be the noderef too
+									pn.jfkMyRef.length			  // the bootid + mynoderef
 									;
 		if(payload.length < expectedLength + 3) {
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(4), should be "+(expectedLength + 3));
@@ -895,7 +908,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(payload, inputOffset, hmac, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 		
-		//FIXME: do we need to "c.initialize(Ke);" ? I don't think so but I'm not sure - nextgens
 		c.initialize(pn.jfkKe);
 		final PCFBMode pk = PCFBMode.create(c);
 		int ivLength = pk.lengthIV();
@@ -930,13 +942,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
 		long bootID = Fields.bytesToLong(data);
+		byte[] hisRef = new byte[data.length - pn.jfkMyRef.length - 8];
+		System.arraycopy(data, 8, hisRef, 0, hisRef.length);
 		
 		// verify the signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
-		byte[] locallyGeneratedText = new byte[NONCE_SIZE * 2 + DiffieHellman.modulusLengthInBytes() * 2 + crypto.myIdentity.length];
+		byte[] locallyGeneratedText = new byte[NONCE_SIZE * 2 + DiffieHellman.modulusLengthInBytes() * 2 + crypto.myIdentity.length + 8 /*bootID*/ + hisRef.length + pn.jfkMyRef.length];
 		int bufferOffset = NONCE_SIZE * 2 + DiffieHellman.modulusLengthInBytes()*2;
 		System.arraycopy(jfkBuffer, 0, locallyGeneratedText, 0, bufferOffset);
 		System.arraycopy(crypto.myIdentity, 0, locallyGeneratedText, bufferOffset, crypto.myIdentity.length);
+		bufferOffset += crypto.myIdentity.length;
+		// bootID
+		System.arraycopy(data, 0, locallyGeneratedText, bufferOffset, data.length - pn.jfkMyRef.length);
+		bufferOffset += data.length - pn.jfkMyRef.length;
+		System.arraycopy(pn.jfkMyRef, 0, locallyGeneratedText, bufferOffset, pn.jfkMyRef.length);
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(locallyGeneratedText)), false)) {
 			Logger.error(this, "The signature verification has failed!! JFK(4) -"+pn);
 			return;
@@ -973,7 +992,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.jfkKa = null;
 		pn.jfkKe = null;
 		pn.jfkKs = null;
-		pn.jfkNonceInitiator = null;
+		pn.jfkNonceInitiator.clear();
 		
 		final long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
@@ -1000,9 +1019,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Ni, Nr, g^i, g^r
 	 * Authenticator - HMAC{g^ir}(g^r, Nr, Ni, IP)
 	 * HMAC{Ka}(cyphertext)
-	 * IV + E{KE}[S{i}[Ni,Nr,g^i,g^r,idR], bootID, znoderef]
+	 * IV + E{KE}[S{i}[Ni,Nr,g^i,g^r,idR, bootID, znoderefI], bootID, znoderefI]
 	 * 
-	 * FIXME: neither the bootID nor the noderef are signed at that level; should they be ?
 	 */
 
 	private void sendJFKMessage3(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, PeerNode pn, Peer replyTo)
@@ -1012,10 +1030,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		byte[] ourExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
-		byte[] myRef = crypto.myCompressedSetupRef();
-		byte[] data = new byte[8 + myRef.length];
+		pn.jfkMyRef = crypto.myCompressedSetupRef();
+		byte[] data = new byte[8 + pn.jfkMyRef.length];
 		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
-		System.arraycopy(myRef, 0, data, 8, myRef.length);
+		System.arraycopy(pn.jfkMyRef, 0, data, 8, pn.jfkMyRef.length);
 		byte[] message3 = new byte[NONCE_SIZE*2 + // nI, nR
 		                           DiffieHellman.modulusLengthInBytes()*2 + // g^i, g^r
 		                           HASH_LENGTH + // authenticator
@@ -1047,7 +1065,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		NativeBigInteger _ourExponential = new NativeBigInteger(1,ourExponential);
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		// save parameters so that we can verify message4
-		byte[] toSign = assembleDHParams(nonceInitiator, nonceResponder, _ourExponential, _hisExponential, pn.identity);
+		byte[] toSign = assembleDHParams(nonceInitiator, nonceResponder, _ourExponential, _hisExponential, pn.identity, data);
 		pn.setJFKBuffer(toSign);
 		DSASignature localSignature = crypto.sign(SHA256.digest(toSign));
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
@@ -1107,25 +1125,25 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/*
 	 * Format:
 	 * HMAC{Ka}(cyphertext)
-	 * IV, E{Ke}[Sr[Ni,Nr,g^i,g^r,idI],bootID,znoderef]
+	 * IV, E{Ke}[S{R}[Ni,Nr,g^i,g^r,idI, bootID, znoderefR, znoderefI],bootID,znoderefR]
 	 * 
-	 * FIXME: neither bootID nor znoderef are signed; should they be?
 	 */
-	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, PeerNode pn, Peer replyTo)
+	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo)
 	{
 		if(logMINOR)
 			Logger.minor(this, "Sending a JFK(4) message to "+pn);
 		NativeBigInteger _responderExponential = new NativeBigInteger(1,responderExponential);
 		NativeBigInteger _initiatorExponential = new NativeBigInteger(1,initiatorExponential);
 		
-		DSASignature localSignature = crypto.sign(SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, _initiatorExponential, _responderExponential, pn.identity)));
-		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		
 		byte[] myRef = crypto.myCompressedSetupRef();
-		byte[] data = new byte[8 + myRef.length];
+		byte[] data = new byte[8 + myRef.length + hisRef.length];
 		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
 		System.arraycopy(myRef, 0, data, 8, myRef.length);
+		System.arraycopy(hisRef, 0, data, 8 + myRef.length, hisRef.length);
+		
+		DSASignature localSignature = crypto.sign(SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, _initiatorExponential, _responderExponential, pn.identity, data)));
+		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		
 		PCFBMode pk=PCFBMode.create(c);
 		int ivLength = pk.lengthIV();
@@ -2414,7 +2432,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public int[] supportedNegTypes() {
-		return new int[] { 2, 1 };
+		return new int[] { 2 };
 	}
 
 	public int fullHeadersLengthOneMessage() {
@@ -2464,10 +2482,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return toSign;
 	}
 
-	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger initiatorExponential, BigInteger responderExponential, byte[] id) {
+	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,BigInteger initiatorExponential, BigInteger responderExponential, byte[] id, byte[] sa) {
 		byte[] _initiatorExponential = stripBigIntegerToNetworkFormat(initiatorExponential);
 		byte[] _responderExponential = stripBigIntegerToNetworkFormat(responderExponential);
-		byte[] result = new byte[nonceInitiator.length + nonceResponder.length + _initiatorExponential.length + _responderExponential.length + id.length];
+		byte[] result = new byte[nonceInitiator.length + nonceResponder.length + _initiatorExponential.length + _responderExponential.length + id.length + sa.length];
 		int offset = 0;
 		
 		System.arraycopy(nonceInitiator, 0,result,offset,nonceInitiator.length);
@@ -2479,6 +2497,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(_responderExponential, 0, result, offset, _responderExponential.length);
 		offset += _responderExponential.length;
 		System.arraycopy(id, 0, result , offset,id.length);
+		offset += id.length;
+		System.arraycopy(sa, 0, result , offset,sa.length);
 
 		return result;
 	}
