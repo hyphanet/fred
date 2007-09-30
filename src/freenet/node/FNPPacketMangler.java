@@ -74,6 +74,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 
 	private final HashMap authenticatorCache;
+	// The following is used in the HMAC calculation of JFK message3 and message4
+	private static final byte[] JFK_PREFIX_INITIATOR, JFK_PREFIX_RESPONDER;
+	static {
+		byte[] I = null,R = null;
+		try { I = "I".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
+		try { R = "R".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
+		
+		JFK_PREFIX_INITIATOR = I;
+		JFK_PREFIX_RESPONDER = R;
+	}
 	
 	/** We renew it every 30mins (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
@@ -780,11 +790,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int ivLength = pk.lengthIV();
 		int decypheredPayloadOffset = 0;
 		// We compute the HMAC of ("I"+cyphertext) : the cyphertext includes the IV!
-		byte[] prefix = null;
-		try { prefix = "I".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
-		byte[] decypheredPayload = new byte[prefix.length + payload.length - inputOffset];
-		System.arraycopy(prefix, 0, decypheredPayload, decypheredPayloadOffset, prefix.length);
-		decypheredPayloadOffset += prefix.length;
+		byte[] decypheredPayload = new byte[JFK_PREFIX_INITIATOR.length + payload.length - inputOffset];
+		System.arraycopy(JFK_PREFIX_INITIATOR, 0, decypheredPayload, decypheredPayloadOffset, JFK_PREFIX_INITIATOR.length);
+		decypheredPayloadOffset += JFK_PREFIX_INITIATOR.length;
 		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, decypheredPayload.length-decypheredPayloadOffset);
 		if(!mac.verify(Ka, decypheredPayload, hmac)) {
 			Logger.error(this, "The digest-HMAC doesn't match; let's discard the packet JFK(3) - "+pn);
@@ -893,11 +901,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int ivLength = pk.lengthIV();
 		int decypheredPayloadOffset = 0;
 		// We compute the HMAC of ("R"+cyphertext) : the cyphertext includes the IV!
-		byte[] prefix = null;
-		try { prefix = "R".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
-		byte[] decypheredPayload = new byte[prefix.length + (payload.length-inputOffset)];
-		System.arraycopy(prefix, 0, decypheredPayload, decypheredPayloadOffset, prefix.length);
-		decypheredPayloadOffset += prefix.length;
+		byte[] decypheredPayload = new byte[JFK_PREFIX_RESPONDER.length + (payload.length-inputOffset)];
+		System.arraycopy(JFK_PREFIX_RESPONDER, 0, decypheredPayload, decypheredPayloadOffset, JFK_PREFIX_RESPONDER.length);
+		decypheredPayloadOffset += JFK_PREFIX_RESPONDER.length;
 		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, payload.length-inputOffset);
 		HMAC mac = new HMAC(SHA256.getInstance());
 		if(!mac.verify(pn.jfkKa, decypheredPayload, hmac)) {
