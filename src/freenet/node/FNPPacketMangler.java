@@ -504,12 +504,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
 		int offset = 0;
 		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
-		byte[] myNonce = new byte[NONCE_SIZE];
-		node.random.nextBytes(myNonce);
-
+		pn.jfkNonceInitiator = new byte[NONCE_SIZE];
+		node.random.nextBytes(pn.jfkNonceInitiator);
+		
 		byte[] message1 = new byte[NONCE_SIZE+DiffieHellman.modulusLengthInBytes()];
 
-		System.arraycopy(myNonce, 0, message1, offset, NONCE_SIZE);
+		System.arraycopy(pn.jfkNonceInitiator, 0, message1, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
 		System.arraycopy(myExponential, 0, message1, offset, DiffieHellman.modulusLengthInBytes());
 
@@ -683,6 +683,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
+		
+		byte[] myNi = pn.jfkNonceInitiator;
+		// We don't except such a message;
+		if(myNi == null)
+			return;
+		
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
 		int inputOffset=3;
@@ -744,6 +750,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		// some sanity checks
+		if(!Arrays.equals(myNi, nonceInitiator)) {
+			Logger.error(this, "Huh? the responder sent us a different nonce back! -"+pn);
+			return;
+		}
+		
 		NativeBigInteger _hisExponential = new NativeBigInteger(1, initiatorExponential);
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) < 1) {
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
@@ -956,6 +967,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.jfkKa = null;
 		pn.jfkKe = null;
 		pn.jfkKs = null;
+		pn.jfkNonceInitiator = null;
 		
 		final long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
