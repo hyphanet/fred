@@ -521,6 +521,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Ni,Nr,g^r
 	 * Signature[g^r,grpInfo(r)] - R, S
 	 * Hashed JFKAuthenticator
+	 * 
 	 * NB: we don't send IDr nor groupinfo as we know them (darknet)
 	 */
 	private void sendJFKMessage2(byte[] nonceInitator, PeerNode pn, Peer replyTo) {
@@ -581,16 +582,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	/*
-	 * Responder Method:Message2
-	 * Process Message2: Must involve only minimal work for the responder since at that point
-	 * no round trip has yet occured with the initiator. Thus, he must not be allowed to perform 
-	 * expensive calculations. In message2, his cost will be a single authentication operation
-	 * the cost is invocations of 2 cryptographic hash functions and computation of a random nonce.
-	 * Send the Initiator nonce,Responder nonce and DiffieHellman Exponential of the responder
-	 * in the clear.
-	 * Send a signed copy of his own exponential
-	 * Send an authenticator which is a hash of Ni,Nr,g^r calculated over the transient key HKr
-	 * Format of JFK(2) as specified above
+	 * Initiator Method:Message2
+	 * @see{sendJFKMessage2} for packet format details
 	 * 
 	 * @param Payload
 	 * @param The peer to which we need to send the packet
