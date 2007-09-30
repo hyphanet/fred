@@ -2642,8 +2642,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return null;
 	}
 	
-	
-	public int bestNegType(OutgoingPacketMangler mangler) {
+	/**
+	 * Select the most appropriate negType, taking the user's preference into account
+	 * order matters
+	 * 
+	 * @param mangler
+	 * @return -1 if no common negType has been found
+	 */
+	public int selectNegType(OutgoingPacketMangler mangler) {
 		int[] hisNegTypes;
 		int[] myNegTypes = mangler.supportedNegTypes();
 		synchronized(this) {

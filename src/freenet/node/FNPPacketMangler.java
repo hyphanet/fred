@@ -2314,7 +2314,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
 	 */
 	public void sendHandshake(PeerNode pn) {
-		int negType = pn.bestNegType(this);
+		int negType = pn.selectNegType(this);
 		if(negType == -1) {
 			if(pn.isRoutingCompatible())
 				Logger.error(this, "Could not negotiate with "+pn+" : no common negTypes available!: his negTypes: "+StringArray.toString(pn.negTypes)+" my negTypes: "+StringArray.toString(supportedNegTypes())+" despite being up to date!!");
@@ -2398,7 +2398,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public int[] supportedNegTypes() {
-		return new int[] { 1, 2 };
+		return new int[] { 2, 1 };
 	}
 
 	public int fullHeadersLengthOneMessage() {
