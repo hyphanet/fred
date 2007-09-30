@@ -39,9 +39,6 @@ import freenet.support.Logger;
 import freenet.support.StringArray;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -646,11 +643,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		if(message3 != null) {
 			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often) -"+pn);
-			try{
-				sendAuthPacket(1, 2, 3, getBytes(message3), pn, replyTo);
-			}catch(IOException e){
-				Logger.error(this,"Error getting bytes... wtf ? "+e.getMessage(), e);
-			}
+			sendAuthPacket(1, 2, 3, (byte[]) message3, pn, replyTo);
 			return;
 		}
 		
@@ -765,11 +758,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		if(message4 != null) {
 			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often) - "+pn);
-			try{
-				sendAuthPacket(1, 2, 3, getBytes(message4), pn, replyTo);
-			}catch(IOException e){
-				Logger.error(this,"Error getting bytes... wtf ? "+e.getMessage(), e);
-			}
+			sendAuthPacket(1, 2, 3, (byte[]) message4, pn, replyTo);
 			return;
 		}
 		
@@ -997,21 +986,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		final long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
 			Logger.error(this,"Message3 timeout error:Sending packet for"+pn.getPeer());
-	}
-
-	/*
-	 * Convert Object to byteArray
-	 */
-	private byte[] getBytes(Object o) throws IOException
-	{
-		ByteArrayOutputStream bs = new ByteArrayOutputStream();
-		ObjectOutputStream os = new ObjectOutputStream(bs);
-		os.writeObject(o);
-		os.flush();
-		os.close();
-		bs.close();
-		byte [] output = bs.toByteArray();
-		return output;
 	}
 
 	/*
