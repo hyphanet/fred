@@ -508,7 +508,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private void sendJFKMessage1(PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+pn);
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
 		int offset = 0;
 		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
 		byte[] nonce = new byte[NONCE_SIZE];
@@ -535,7 +535,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private void sendJFKMessage2(byte[] nonceInitator, PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
 		// g^r
 		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
 		// Nr
@@ -777,7 +777,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(payload, inputOffset, hmac, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 		
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
 		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DHgroupA);
 		byte[] Ks = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
@@ -1002,7 +1002,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn);
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext(pn);
+		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
 		byte[] ourExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
 		pn.jfkMyRef = crypto.myCompressedSetupRef();
 		byte[] data = new byte[8 + pn.jfkMyRef.length];
@@ -2429,14 +2429,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return crypto.config.alwaysAllowLocalAddresses();
 	}
 
-	private DiffieHellmanLightContext getLightDiffieHellmanContext(PeerNode pn) {
+	private DiffieHellmanLightContext getLightDiffieHellmanContext() {
 		final long now = System.currentTimeMillis();
 		
 		synchronized (this) {
 			if((currentDHContext == null) || (currentDHContextLifetime + 1800000 /*30mins*/) < now) {
 				currentDHContextLifetime = now;
 				currentDHContext = DiffieHellman.generateLightContext();
-				currentDHContext.setSignature(signDHParams(currentDHContext.myExponential, pn.peerCryptoGroup));
+				currentDHContext.setSignature(signDHParams(currentDHContext.myExponential, Global.DSAgroupBigA));
 			}
 		}
 		return currentDHContext;

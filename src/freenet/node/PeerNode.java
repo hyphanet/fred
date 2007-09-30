@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -94,6 +95,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     protected byte[] jfkKa;
     protected byte[] jfkKe;
     protected byte[] jfkKs;
+    protected final HashMap jfkNonceInitiator = new HashMap();
+    protected byte[] jfkMyRef;
 	
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;
