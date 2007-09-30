@@ -43,7 +43,6 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.HashMap;
 
-
 /**
  * @author amphibian
  * 
@@ -490,9 +489,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, offset, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-		if(logMINOR) Logger.minor(this, "his exponential from message1 length="+DiffieHellman.modulusLengthInBytes() +" value=" + _hisExponential.toHexString());
 		if(_hisExponential.compareTo(NativeBigInteger.ONE) > 0) {
-			sendJFKMessage2(nonceInitiator, pn, replyTo);
+			sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo);
 		}else
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
 
@@ -529,11 +527,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * format:
 	 * Ni,Nr,g^r
 	 * Signature[g^r,grpInfo(r)] - R, S
-	 * Hashed JFKAuthenticator
+	 * Hashed JFKAuthenticator : HMAC{Hkr}[g^r, g^i, Nr, Ni, IPi]
 	 * 
 	 * NB: we don't send IDr nor groupinfo as we know them (darknet)
 	 */
-	private void sendJFKMessage2(byte[] nonceInitator, PeerNode pn, Peer replyTo) {
+	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
 		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
 		// g^r
@@ -544,7 +542,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] r = dhContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = dhContext.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		HMAC hash = new HMAC(SHA256.getInstance());
-		byte[] authenticator = hash.mac(getTransientKey(),assembleJFKAuthenticator(myExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
+		byte[] authenticator = hash.mac(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
 		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
 
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+
@@ -575,15 +573,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * used by the responder to verify that the round-trip has been done
 	 * 
 	 */
-	private byte[] assembleJFKAuthenticator(byte[] gR, byte[] nR, byte[] nI, byte[] address) {
-		byte[] authData=new byte[gR.length+nR.length+nI.length+address.length];
+	private byte[] assembleJFKAuthenticator(byte[] gR, byte[] gI, byte[] nR, byte[] nI, byte[] address) {
+		byte[] authData=new byte[gR.length + gI.length + nR.length + nI.length + address.length];
 		int offset = 0;
 
-		System.arraycopy(gR,0,authData,offset,gR.length);
+		System.arraycopy(gR, 0, authData, offset ,gR.length);
 		offset += gR.length;
-		System.arraycopy(nR,0,authData,offset,nR.length);
+		System.arraycopy(gI, 0, authData, offset, gI.length);
+		offset += gI.length;
+		System.arraycopy(nR, 0,authData, offset, nR.length);
 		offset += nR.length;
-		System.arraycopy(nI,0,authData,offset,nI.length);
+		System.arraycopy(nI, 0,authData, offset, nI.length);
 		offset += nI.length;
 		System.arraycopy(address, 0, authData, offset, address.length);
 
@@ -691,7 +691,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * 
 	 * Format:
 	 * Ni, Nr, g^i, g^r
-	 * Authenticator - HMAC{g^ir}(g^r, Nr, Ni, IP)
+	 * Authenticator - HMAC{g^ir}(g^r, g^i, Nr, Ni, IP)
 	 * HMAC{Ka}(cyphertext)
 	 * IV + E{KE}[S{i}[Ni,Nr,g^i,g^r,idR, bootID, znoderefI], bootID, znoderefI]
 	 * 
@@ -745,7 +745,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// FIXME: check the cache before or after the hmac verification ?
 		// is it cheaper to wait for the lock on authenticatorCache or to verify the hmac ?
 		HMAC mac = new HMAC(SHA256.getInstance());
-		if(!mac.verify(getTransientKey(), assembleJFKAuthenticator(responderExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
+		if(!mac.verify(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
 			Logger.error(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery)");
 			return;
 		}
@@ -763,15 +763,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		NativeBigInteger _hisExponential = new NativeBigInteger(1, initiatorExponential);
-		if(_hisExponential.compareTo(NativeBigInteger.ONE) < 1) {
-			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
-			return;
-		}
 		NativeBigInteger _ourExponential = new NativeBigInteger(1, responderExponential);
-		if(_ourExponential.compareTo(NativeBigInteger.ONE) < 1) {
-			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!! (our exponential?!?)");
-			return;
-		}
 		
 		byte[] hmac = new byte[HASH_LENGTH];
 		System.arraycopy(payload, inputOffset, hmac, 0, HASH_LENGTH);
