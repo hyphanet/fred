@@ -122,6 +122,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	final int fullHeadersLengthMinimum;
 	final int fullHeadersLengthOneMessage;
+	/**
+	 *  The initiator has to ensure that nonces send back by the
+	 *  responder in message2 match what was chosen in message 1
+	 */
+	protected final HashMap jfkNoncesSent = new HashMap();
 
 
 	public FNPPacketMangler(Node node, NodeCrypto crypt, PacketSocketHandler sock) {
@@ -512,7 +517,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] nonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(nonce);
 		
-		pn.jfkNonceInitiator.put(replyTo, nonce);
+		synchronized (jfkNoncesSent) {
+			jfkNoncesSent.put(replyTo, nonce);
+		}
 		
 		byte[] message1 = new byte[NONCE_SIZE+DiffieHellman.modulusLengthInBytes()];
 
@@ -648,7 +655,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// sanity check
-		byte[] myNi = (byte[]) pn.jfkNonceInitiator.get(replyTo);
+		byte[] myNi = null;
+		synchronized (jfkNoncesSent) {
+			myNi = (byte[]) jfkNoncesSent.get(replyTo);
+		}
 		// We don't except such a message;
 		if(myNi == null) {
 			Logger.normal(this, "We received an unexpected JFK(3) message from "+pn);
@@ -973,7 +983,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.jfkKa = null;
 		pn.jfkKe = null;
 		pn.jfkKs = null;
-		pn.jfkNonceInitiator.clear();
+		synchronized (jfkNoncesSent) {
+			jfkNoncesSent.remove(pn);
+		}
 		
 		final long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
