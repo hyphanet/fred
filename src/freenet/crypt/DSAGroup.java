@@ -214,9 +214,13 @@ public class DSAGroup extends CryptoKey {
 	}
 
 	public static DSAGroup create(SimpleFieldSet fs) throws IllegalBase64Exception {
-		BigInteger p = new NativeBigInteger(1, Base64.decode(fs.get("p")));
-		BigInteger q = new NativeBigInteger(1, Base64.decode(fs.get("q")));
-		BigInteger g = new NativeBigInteger(1, Base64.decode(fs.get("g")));
+		String myP = fs.get("p");
+		String myQ = fs.get("q");
+		String myG = fs.get("g");
+		if(myP == null || myQ == null || myG == null) throw new IllegalArgumentException("The given SFS doesn't contain required fields!");
+		BigInteger p = new NativeBigInteger(1, Base64.decode(myP));
+		BigInteger q = new NativeBigInteger(1, Base64.decode(myQ));
+		BigInteger g = new NativeBigInteger(1, Base64.decode(myG));
 		DSAGroup dg = new DSAGroup(p, q, g);
 		if(dg.equals(Global.DSAgroupBigA)) return Global.DSAgroupBigA;
 		return dg;
