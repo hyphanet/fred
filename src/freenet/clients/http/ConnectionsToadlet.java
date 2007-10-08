@@ -676,11 +676,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		L10n.addL10nSubstitution(headerReferenceInfobox, "DarknetConnectionsToadlet.myReferenceHeader",
 				new String[] { "linkref", "/linkref", "linktext", "/linktext" },
 				new String[] { "<a href=\"myref.fref\">", "</a>", "<a href=\"myref.txt\">", "</a>" });
-		HTMLNode warningSentence = headerReferenceInfobox.addChild("pre");
+		HTMLNode referenceInfoboxContent = referenceInfobox.addChild("div", "class", "infobox-content");
+		HTMLNode warningSentence = referenceInfoboxContent.addChild("p");
 		L10n.addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
 				new String[] { "bold", "/bold" },
 				new String[] { "<b>", "</b>" });
-		referenceInfobox.addChild("div", "class", "infobox-content").addChild("pre", "id", "reference", getNoderef().toString() + '\n');
+		referenceInfoboxContent.addChild("pre", "id", "reference", getNoderef().toString() + '\n');
 	}
 
 	protected abstract String getPageTitle(String titleCountString, String myName);

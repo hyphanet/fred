@@ -166,16 +166,17 @@ public class StatisticsToadlet extends Toadlet {
 		
 		// Statistic gathering box
 		HTMLNode statGatheringBox =  nextTableCell.addChild(ctx.getPageMaker().getInfobox("Statistic gathering"));
+		HTMLNode statGatheringContent = ctx.getPageMaker().getContentNode(statGatheringBox);
 		// Generate a Thread-Dump
 		if(node.isUsingWrapper()){
-			HTMLNode threadDumpForm = ctx.addFormChild(statGatheringBox, "/", "threadDumpForm");
+			HTMLNode threadDumpForm = ctx.addFormChild(statGatheringContent, "/", "threadDumpForm");
 			threadDumpForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getThreadDump", l10n("threadDumpButton")});
 		}
 		// BDB statistics dump 
-		HTMLNode JEStatsForm = ctx.addFormChild(statGatheringBox, "/", "JEStatsForm");
+		HTMLNode JEStatsForm = ctx.addFormChild(statGatheringContent, "/", "JEStatsForm");
 		JEStatsForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getJEStatsDump", l10n("jeDumpButton")});
 		// Get logs
-		HTMLNode logsList = statGatheringBox.addChild("ul");
+		HTMLNode logsList = statGatheringContent.addChild("ul");
 		if(nodeConfig.config.get("logger").getBoolean("enabled"))
 			logsList.addChild("li").addChild("a", new String[]{ "href", "target"}, new String[]{ "/?latestlog", "_new"}, l10n("getLogs"));
 		logsList.addChild("li").addChild("a", "href", TranslationToadlet.TOADLET_URL+"?getOverrideTranlationFile").addChild("#", L10n.getString("TranslationToadlet.downloadTranslationsFile"));
@@ -278,14 +279,14 @@ public class StatisticsToadlet extends Toadlet {
 			nextTableCell = overviewTableRow.addChild("td", "class", "first");
 			HTMLNode peerCircleInfobox = nextTableCell.addChild("div", "class", "infobox");
 			peerCircleInfobox.addChild("div", "class", "infobox-header", "Peer\u00a0Location\u00a0Distribution (w/pReject)");
-			HTMLNode peerCircleTable = peerCircleInfobox.addChild("table");
+			HTMLNode peerCircleTable = peerCircleInfobox.addChild("div", "class", "infobox-content").addChild("table");
 			addPeerCircle(peerCircleTable);
 			nextTableCell = overviewTableRow.addChild("td");
 
 			// node distribution box
 			HTMLNode nodeCircleInfobox = nextTableCell.addChild("div", "class", "infobox");
 			nodeCircleInfobox.addChild("div", "class", "infobox-header", "Node\u00a0Location\u00a0Distribution (w/Swap\u00a0Age)");
-			HTMLNode nodeCircleTable = nodeCircleInfobox.addChild("table");
+			HTMLNode nodeCircleTable = nodeCircleInfobox.addChild("div", "class", "infobox-content").addChild("table");
 			addNodeCircle(nodeCircleTable);
 		}
 
@@ -298,7 +299,7 @@ public class StatisticsToadlet extends Toadlet {
 			return;
 		HTMLNode rejectReasonsInfobox = nextTableCell.addChild("div", "class", "infobox");
 		rejectReasonsInfobox.addChild("div", "class", "infobox-header", "Preemptive Rejection Reasons");
-		rejectReasonsInfobox.addChild(rejectReasonsTable);
+		rejectReasonsInfobox.addChild("div", "class", "infobox-content").addChild(rejectReasonsTable);
 	}
 
 	private void drawNodeVersionBox(HTMLNode versionInfobox) {
