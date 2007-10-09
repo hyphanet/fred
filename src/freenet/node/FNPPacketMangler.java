@@ -2440,7 +2440,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if((currentDHContext == null) || (currentDHContextLifetime + 1800000 /*30mins*/) < now) {
 				currentDHContextLifetime = now;
 				currentDHContext = DiffieHellman.generateLightContext();
-				currentDHContext.setSignature(signDHParams(currentDHContext.myExponential, Global.DSAgroupBigA));
+				currentDHContext.setSignature(signDHParams(currentDHContext.myExponential, crypto.getCryptoGroup()));
 			}
 		}
 		return currentDHContext;

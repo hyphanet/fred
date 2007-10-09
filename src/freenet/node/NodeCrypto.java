@@ -416,4 +416,7 @@ class NodeCrypto {
     	return true;
 	}
 
+	DSAGroup getCryptoGroup() {
+		return cryptoGroup;
+	}
 }
