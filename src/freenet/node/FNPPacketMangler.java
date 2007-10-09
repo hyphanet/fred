@@ -2440,7 +2440,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if((currentDHContext == null) || (currentDHContextLifetime + 1800000 /*30mins*/) < now) {
 				currentDHContextLifetime = now;
 				currentDHContext = DiffieHellman.generateLightContext();
-				currentDHContext.setSignature(signDHParams(currentDHContext.myExponential, crypto.getCryptoGroup()));
+				currentDHContext.setSignature(crypto.sign(SHA256.digest(assembleDHParams(currentDHContext.myExponential, crypto.getCryptoGroup()))));
 			}
 		}
 		return currentDHContext;
@@ -2479,13 +2479,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(sa, 0, result , offset,sa.length);
 
 		return result;
-	}
-
-	/*
-	 * Actually sign the DH parameters for message2
-	 */
-	private DSASignature signDHParams(BigInteger exponential, DSAGroup group) {
-		return crypto.sign(SHA256.digest(assembleDHParams(exponential, group)));
 	}
 	
 	private byte[] getTransientKey() {
