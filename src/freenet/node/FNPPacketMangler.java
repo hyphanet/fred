@@ -92,7 +92,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * 
 	 * We push to it until we reach the cap where we rekey
 	 */
-	private static final int AUTHENTICATOR_CACHE_SIZE = 50;
+	private static final int AUTHENTICATOR_CACHE_SIZE = 30;
 	private static final int MAX_PACKETS_IN_FLIGHT = 256; 
 	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
