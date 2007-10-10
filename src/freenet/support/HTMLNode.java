@@ -42,9 +42,9 @@ public class HTMLNode {
 	public HTMLNode(String name, String[] attributeNames, String[] attributeValues, String content) {
 		
 		Matcher nameMatcher = namePattern.matcher(name);
-		
-		assert nameMatcher.matches();
-		
+		if (!nameMatcher.matches() && !"#".equals(name) && !"%".equals(name)) {
+			throw new IllegalArgumentException("name must start with letter and may only contain letters, digits, and underscore");
+		}
 		this.name = name.toLowerCase(Locale.ENGLISH);
 		if ((attributeNames != null) && (attributeValues != null)) {
 			if (attributeNames.length != attributeValues.length) {
