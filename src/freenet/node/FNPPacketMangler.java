@@ -1001,7 +1001,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * 
 	 */
 
-	private void sendJFKMessage3(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, PeerNode pn, Peer replyTo)
+	private void sendJFKMessage3(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, final PeerNode pn, final Peer replyTo)
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn);
 		BlockCipher c = null;
@@ -1012,7 +1012,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] data = new byte[8 + pn.jfkMyRef.length];
 		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
 		System.arraycopy(pn.jfkMyRef, 0, data, 8, pn.jfkMyRef.length);
-		byte[] message3 = new byte[NONCE_SIZE*2 + // nI, nR
+		final byte[] message3 = new byte[NONCE_SIZE*2 + // nI, nR
 		                           DiffieHellman.modulusLengthInBytes()*2 + // g^i, g^r
 		                           HASH_LENGTH + // authenticator
 		                           HASH_LENGTH + // HMAC(cyphertext)
@@ -1097,6 +1097,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				authenticatorCache.put(authenticator,message3);
 		}		
 		sendAuthPacket(1, 2, 2, message3, pn, replyTo);
+		
+		/* Re-send the packet after 5sec if we don't get any reply */
+		node.getTicker().queueTimedJob(new FastRunnable() {
+			public void run() {
+				if(pn.timeLastConnected() >= pn.lastReceivedPacketTime()) {
+					sendAuthPacket(1, 2, 2, message3, pn, replyTo);
+				}
+			}
+		}, 5*1000);
 	}
 
 	
