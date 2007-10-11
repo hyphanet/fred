@@ -376,8 +376,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 				} else if (encoded) {
 					Logger.error(this,
 							"Could not save to disk (null or not serializable to fieldset): "
-									+ data);
-					return null;
+									+ data, new Exception());
+					continue;
 				}
 			}
 			if (!block.isEmpty())
