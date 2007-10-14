@@ -11,9 +11,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class HTMLNode {
+public class HTMLNode implements XMLCharacterClasses {
 	
-	private static final Pattern namePattern = Pattern.compile("^[a-zA-Z][a-zA-Z_0-9]+$");
+	private static final Pattern namePattern = Pattern.compile("^[" + NAME + "]*$");
 
 	protected final String name;
 
@@ -42,18 +42,21 @@ public class HTMLNode {
 	public HTMLNode(String name, String[] attributeNames, String[] attributeValues, String content) {
 		
 		Matcher nameMatcher = namePattern.matcher(name);
-		if (!nameMatcher.matches() && !"#".equals(name) && !"%".equals(name)) {
-			throw new IllegalArgumentException("name must start with letter and may only contain letters, digits, and underscore");
+		if ((name == null) || (!"#".equals(name) && !"%".equals(name) && !nameMatcher.matches())) {
+			throw new IllegalArgumentException("element name is not legal");
 		}
-		this.name = name.toLowerCase(Locale.ENGLISH);
 		if ((attributeNames != null) && (attributeValues != null)) {
 			if (attributeNames.length != attributeValues.length) {
-				throw new IllegalArgumentException("attribute names and values differ");
+				throw new IllegalArgumentException("attribute names and values differ in length");
 			}
 			for (int attributeIndex = 0, attributeCount = attributeNames.length; attributeIndex < attributeCount; attributeIndex++) {
+				if ((attributeNames[attributeIndex] == null) || !namePattern.matcher(attributeNames[attributeIndex]).matches()) {
+					throw new IllegalArgumentException("attributeName is not legal");
+				}
 				addAttribute(attributeNames[attributeIndex], attributeValues[attributeIndex]);
 			}
 		}
+		this.name = name.toLowerCase(Locale.ENGLISH);
 		if (content != null && !name.equals("#") && !name.equals("%")) {
 			addChild(new HTMLNode("#", content));
 			this.content = null;

@@ -28,12 +28,18 @@ public class HTMLNodeTest extends TestCase {
 	
 	private HTMLNode exampleNode;
 	
-	//example node name that includes a not ASCII char [Greek alpha]
-	private static final String SAMPLE_NODE_NAME = "s\u03b1mpleNode";
+	/** Example node name in ASCII only. */
+	private static final String SAMPLE_OKAY_NODE_NAME = "sampleNode";
 	
-	//example node attribute that includes a not ASCII char [Greek beta]
-	private static final String SAMPLE_ATTRIBUTE_NAME = "sampleAttri\u03b2uteName";
+	/** Example node name that includes an invalid char. */
+	private static final String SAMPLE_WRONG_NODE_NAME = "s\u03a2mpleNode";
 	
+	/* example node attribute in ASCII only. */
+	private static final String SAMPLE_OKAY_ATTRIBUTE_NAME = "sampleAttributeName";
+
+	/** Example attribute name that includes an invalid char. */
+	private static final String SAMPLE_WRONG_ATTRIBUTE_NAME = "s\u03a2mpleAttributeName";
+
 	//example node attribute value that includes a not ASCII char [Greek epsilon]
 	private static final String SAMPLE_ATTRIBUTE_VALUE = "sampleAttribut\u03b5Value";
 	
@@ -42,20 +48,44 @@ public class HTMLNodeTest extends TestCase {
 	
 	protected void setUp() throws Exception {
 		super.setUp();
-		exampleNode = new HTMLNode(SAMPLE_NODE_NAME);
+		exampleNode = null;
+		try {
+			exampleNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
+		} catch (IllegalArgumentException iae1) {
+			fail("Unexpected exception thrown!");
+		}
+		assertNotNull(exampleNode);
+		assertEquals(0, exampleNode.children.size());
 	}
 	
 	/**
 	 * Tests HTMLNode(String,String,String,String) constructor
 	 * using non-ASCII chars
 	 */
-	public void testNotAsciiHTMLNode_StringStringStringString() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,
-				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
-				SAMPLE_NODE_CONTENT);
-		assertFalse(exampleNode.children.contains(methodHTMLNode));
-		exampleNode.addChild(methodHTMLNode);
-		assertTrue(exampleNode.children.contains(methodHTMLNode));
+	public void testHTMLNode_StringStringStringString_WrongNodeName() {
+		try {
+			new HTMLNode(SAMPLE_WRONG_NODE_NAME, SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, SAMPLE_NODE_CONTENT);
+			fail("Expected exception not thrown!");
+		} catch (IllegalArgumentException iae1) {
+		}
+		try {
+			new HTMLNode(SAMPLE_OKAY_NODE_NAME, SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, SAMPLE_NODE_CONTENT);
+		} catch (IllegalArgumentException iae1) {
+			fail("Unexpected exception thrown!");
+		}
+	}
+	
+	public void testHTMLNode_StringStringStringString_WrongAttributeName() {
+		try {
+			new HTMLNode(SAMPLE_OKAY_NODE_NAME, SAMPLE_WRONG_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, SAMPLE_NODE_CONTENT);
+			fail("Expected exception not thrown!");
+		} catch (IllegalArgumentException iae1) {
+		}
+		try {
+			new HTMLNode(SAMPLE_OKAY_NODE_NAME, SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, SAMPLE_NODE_CONTENT);
+		} catch (IllegalArgumentException iae1) {
+			fail("Unexpected exception thrown!");
+		}
 	}
 	
 	/**
@@ -67,10 +97,10 @@ public class HTMLNodeTest extends TestCase {
 		String[] methodAttributesName = new String[size];
 		String[] methodAttributesValue = new String[size];
 		for (int i=0;i<size;i++) {
-			methodAttributesName[i] = "AttributeName " + i;
+			methodAttributesName[i] = "AttributeName" + i;
 			methodAttributesValue[i] = "Value " + i;
 		}
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME,
 				methodAttributesName,methodAttributesValue,
 				SAMPLE_NODE_CONTENT);
 		//checks presence
@@ -116,9 +146,9 @@ public class HTMLNodeTest extends TestCase {
 	 * child. The method should rise an exception
 	 */
 	public void testAddChildrenUsingTheNodeItselfAsChild() {
-		HTMLNode[] methodHTMLNodesArray = {new HTMLNode(SAMPLE_NODE_NAME),
+		HTMLNode[] methodHTMLNodesArray = {new HTMLNode(SAMPLE_OKAY_NODE_NAME),
 										   exampleNode,
-										   new HTMLNode(SAMPLE_NODE_NAME+"1")};
+										   new HTMLNode(SAMPLE_OKAY_NODE_NAME+"1")};
 		try {
 			exampleNode.addChildren(methodHTMLNodesArray);
 			fail("Expected Exception Error Not Thrown!"); } 
@@ -135,7 +165,7 @@ public class HTMLNodeTest extends TestCase {
 	public void testAddChildSameName() {
 		int times = 100;
 		for (int i = 1; i<=times; i++) {
-			exampleNode.addChild(SAMPLE_NODE_NAME);
+			exampleNode.addChild(SAMPLE_OKAY_NODE_NAME);
 			assertEquals(exampleNode.children.size(),i);
 		}
 	}
@@ -147,7 +177,7 @@ public class HTMLNodeTest extends TestCase {
 	 * It should raise an IllegalArgument exception.
 	 */
 	public void testAddChildSameObject() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
 		exampleNode.addChild(methodHTMLNode);
 		try {
 			exampleNode.addChild(methodHTMLNode);
@@ -162,7 +192,7 @@ public class HTMLNodeTest extends TestCase {
 	 * the same HTMLNode instance two times.
 	 */
 	public void testAddChildrenSameObject() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
 		HTMLNode[] methodHTMLNodesArray = {methodHTMLNode,
 										   methodHTMLNode};
 		try {
@@ -178,13 +208,13 @@ public class HTMLNodeTest extends TestCase {
 	 * and if it generates good output using generate() method.
 	 */
 	public void testAddChild_StringStringString() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
-		methodHTMLNode.addChild(SAMPLE_NODE_NAME, 
-				SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE);
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
+		methodHTMLNode.addChild(SAMPLE_OKAY_NODE_NAME, 
+				SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE);
 		List childrenList = methodHTMLNode.children;
 		assertEquals(1,childrenList.size());
-		assertEquals(generateNoContentNodeOutput(SAMPLE_NODE_NAME,
-				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE),
+		assertEquals(generateNoContentNodeOutput(SAMPLE_OKAY_NODE_NAME,
+				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE),
 				((HTMLNode)childrenList.get(0)).generate());
 	}
 	
@@ -194,14 +224,14 @@ public class HTMLNodeTest extends TestCase {
 	 * and if it generates good output using generate() method.
 	 */
 	public void testAddChild_StringStringStringString() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
-		methodHTMLNode.addChild(SAMPLE_NODE_NAME, 
-				SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE,
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
+		methodHTMLNode.addChild(SAMPLE_OKAY_NODE_NAME, 
+				SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE,
 				SAMPLE_NODE_CONTENT);
 		List childrenList = methodHTMLNode.children;
 		assertEquals(1,childrenList.size());
-		assertEquals(generateFullNodeOutput(SAMPLE_NODE_NAME,
-				SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
+		assertEquals(generateFullNodeOutput(SAMPLE_OKAY_NODE_NAME,
+				SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
 				SAMPLE_NODE_CONTENT),
 					((HTMLNode)childrenList.get(0)).generate());
 	}
@@ -214,8 +244,8 @@ public class HTMLNodeTest extends TestCase {
 	public void testAddChild_StringArrayArray() {
 		String[] methodAttributesNamesArray = {"firstName","secondName","thirdName"};
 		String[] methodAttributesValuesArray = {"firstValue","secondValue","thirdValue"};
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
-		methodHTMLNode.addChild(SAMPLE_NODE_NAME, 
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
+		methodHTMLNode.addChild(SAMPLE_OKAY_NODE_NAME, 
 				methodAttributesNamesArray, methodAttributesValuesArray);
 		testSingleChildAttributes(methodHTMLNode, 
 				methodAttributesNamesArray, methodAttributesValuesArray);
@@ -229,8 +259,8 @@ public class HTMLNodeTest extends TestCase {
 	public void testAddChild_StringArrayArrayString() {
 		String[] methodAttributesNamesArray = {"firstName","secondName","thirdName"};
 		String[] methodAttributesValuesArray = {"firstValue","secondValue","thirdValue"};
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
-		methodHTMLNode.addChild(SAMPLE_NODE_NAME, 
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
+		methodHTMLNode.addChild(SAMPLE_OKAY_NODE_NAME, 
 				methodAttributesNamesArray, methodAttributesValuesArray,
 				SAMPLE_NODE_CONTENT);
 		testSingleChildAttributes(methodHTMLNode, 
@@ -259,10 +289,10 @@ public class HTMLNodeTest extends TestCase {
 	 * "%" named nodes
 	 */
 	public void testGetContent() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
 		assertNull(methodHTMLNode.getContent());
 		
-		methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,SAMPLE_NODE_CONTENT);
+		methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME,SAMPLE_NODE_CONTENT);
 		//since the HTMLNode name is not "#", or "%",
 		//the content will be a new child with the "#" name
 		assertEquals(SAMPLE_NODE_CONTENT,
@@ -283,15 +313,15 @@ public class HTMLNodeTest extends TestCase {
 	 * "%" named nodes
 	 */
 	public void testGetAttribute() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
-		assertNull(methodHTMLNode.getAttribute(SAMPLE_ATTRIBUTE_NAME));
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
+		assertNull(methodHTMLNode.getAttribute(SAMPLE_OKAY_ATTRIBUTE_NAME));
 		
-		methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
-		assertEquals(SAMPLE_ATTRIBUTE_VALUE,methodHTMLNode.getAttribute(SAMPLE_ATTRIBUTE_NAME));
-		methodHTMLNode = new HTMLNode("#",SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
-		assertEquals(SAMPLE_ATTRIBUTE_VALUE,methodHTMLNode.getAttribute(SAMPLE_ATTRIBUTE_NAME));
-		methodHTMLNode = new HTMLNode("%",SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
-		assertEquals(SAMPLE_ATTRIBUTE_VALUE,methodHTMLNode.getAttribute(SAMPLE_ATTRIBUTE_NAME));
+		methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME,SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
+		assertEquals(SAMPLE_ATTRIBUTE_VALUE,methodHTMLNode.getAttribute(SAMPLE_OKAY_ATTRIBUTE_NAME));
+		methodHTMLNode = new HTMLNode("#",SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
+		assertEquals(SAMPLE_ATTRIBUTE_VALUE,methodHTMLNode.getAttribute(SAMPLE_OKAY_ATTRIBUTE_NAME));
+		methodHTMLNode = new HTMLNode("%",SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
+		assertEquals(SAMPLE_ATTRIBUTE_VALUE,methodHTMLNode.getAttribute(SAMPLE_OKAY_ATTRIBUTE_NAME));
 	}
 	
 	/**
@@ -303,7 +333,7 @@ public class HTMLNodeTest extends TestCase {
 		int attributesNumber = 100;
 		String methodAttributeName = "";
 		String counterString = "";
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
 		for (int i=0; i<attributesNumber; i++) {
 			counterString = String.valueOf(i);
 			methodAttributeName = "attribute " + counterString; 
@@ -321,7 +351,7 @@ public class HTMLNodeTest extends TestCase {
 	 * IllegalArgument exception 
 	 */
 	public void testAddAttribute_nullAttributeName() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
 		try {
 			methodHTMLNode.addAttribute(null,SAMPLE_ATTRIBUTE_VALUE);
 			fail("Expected Exception Error Not Thrown!"); } 
@@ -336,9 +366,9 @@ public class HTMLNodeTest extends TestCase {
 	 * IllegalArgument exception 
 	 */
 	public void testAddAttribute_nullAttributeValue() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
 		try {
-			methodHTMLNode.addAttribute(SAMPLE_ATTRIBUTE_NAME,null);
+			methodHTMLNode.addAttribute(SAMPLE_WRONG_ATTRIBUTE_NAME,null);
 			fail("Expected Exception Error Not Thrown!"); } 
 		catch (IllegalArgumentException anException) {
 			assertNotNull(anException); }
@@ -352,14 +382,14 @@ public class HTMLNodeTest extends TestCase {
 	 */
 	public void testHTMLNode_nullAttributeName() {
 		try {
-			new HTMLNode(SAMPLE_NODE_NAME,
+			new HTMLNode(SAMPLE_OKAY_NODE_NAME,
 					null,SAMPLE_ATTRIBUTE_VALUE,
 					SAMPLE_NODE_CONTENT);
 			fail("Expected Exception Error Not Thrown!"); } 
 		catch (IllegalArgumentException anException) {
 			assertNotNull(anException); }
 		try {
-			new HTMLNode(SAMPLE_NODE_NAME,
+			new HTMLNode(SAMPLE_OKAY_NODE_NAME,
 					null,SAMPLE_ATTRIBUTE_VALUE);
 			fail("Expected Exception Error Not Thrown!"); } 
 		catch (IllegalArgumentException anException) {
@@ -374,15 +404,15 @@ public class HTMLNodeTest extends TestCase {
 	 */
 	public void testHTMLNode_nullAttributeValue() {
 		try {
-			new HTMLNode(SAMPLE_NODE_NAME,
-					SAMPLE_ATTRIBUTE_NAME,null,
+			new HTMLNode(SAMPLE_OKAY_NODE_NAME,
+					SAMPLE_WRONG_ATTRIBUTE_NAME,null,
 					SAMPLE_NODE_CONTENT);
 			fail("Expected Exception Error Not Thrown!"); } 
 		catch (IllegalArgumentException anException) {
 			assertNotNull(anException); }
 		try {
-			new HTMLNode(SAMPLE_NODE_NAME,
-					SAMPLE_ATTRIBUTE_NAME,null);
+			new HTMLNode(SAMPLE_OKAY_NODE_NAME,
+					SAMPLE_WRONG_ATTRIBUTE_NAME,null);
 			fail("Expected Exception Error Not Thrown!"); } 
 		catch (IllegalArgumentException anException) {
 			assertNotNull(anException); }
@@ -408,8 +438,8 @@ public class HTMLNodeTest extends TestCase {
 	 * IllegalArgument exception
 	 */
 	public void testHTMLNodeArray_nullAttributeValue() {
-		String[] methodAttributesNameArray = {SAMPLE_ATTRIBUTE_NAME,
-				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_NAME};
+		String[] methodAttributesNameArray = {SAMPLE_WRONG_ATTRIBUTE_NAME,
+				SAMPLE_WRONG_ATTRIBUTE_NAME,SAMPLE_WRONG_ATTRIBUTE_NAME};
 		String[] methodAttributesValueArray = {"first",null,"after"};
 		testHTMLNodeArray_null(methodAttributesNameArray, methodAttributesValueArray);
 	}
@@ -422,8 +452,8 @@ public class HTMLNodeTest extends TestCase {
 	 * IllegalArgument exception
 	 */
 	public void testHTMLNode_attributeArrays_differentLengths() {
-		String[] methodAttributesNameArray = {SAMPLE_ATTRIBUTE_NAME,
-				SAMPLE_ATTRIBUTE_NAME};
+		String[] methodAttributesNameArray = {SAMPLE_WRONG_ATTRIBUTE_NAME,
+				SAMPLE_WRONG_ATTRIBUTE_NAME};
 		String[] methodAttributesValueArray = {SAMPLE_ATTRIBUTE_VALUE,
 				SAMPLE_ATTRIBUTE_VALUE,SAMPLE_ATTRIBUTE_VALUE};
 		testHTMLNodeArray_null(methodAttributesNameArray, methodAttributesValueArray);
@@ -438,7 +468,7 @@ public class HTMLNodeTest extends TestCase {
 	 */
 	private void testHTMLNodeArray_null(String[] attributesNames, String[] attributesValues) {
 		try {
-			new HTMLNode(SAMPLE_NODE_NAME,
+			new HTMLNode(SAMPLE_OKAY_NODE_NAME,
 					attributesNames,attributesValues,
 					SAMPLE_NODE_CONTENT);
 			fail("Expected Exception Error Not Thrown!"); } 
@@ -469,9 +499,9 @@ public class HTMLNodeTest extends TestCase {
 		String[] nodeNamesArray = {"textarea","div","a"};
 		for(int i=0;i<nodeNamesArray.length;i++) {
 			methodHTMLNode = new HTMLNode(nodeNamesArray[i],
-					SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
+					SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
 			assertEquals(generateFullNodeOutput(nodeNamesArray[i], 
-					SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,""),
+					SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,""),
 					methodHTMLNode.generate());
 		}	
 	}
@@ -486,23 +516,23 @@ public class HTMLNodeTest extends TestCase {
 		HTMLNode methodHTMLNode;
 		String[] nodeNamesArray = {"div","form","input",
 				"script","table","tr","td"};
-		HTMLNode methodChildNode = new HTMLNode(SAMPLE_NODE_NAME,
-				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+		HTMLNode methodChildNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME,
+				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
 				SAMPLE_NODE_CONTENT);
 		for(int i=0;i<nodeNamesArray.length;i++) {
 			methodHTMLNode = new HTMLNode(nodeNamesArray[i],
-					SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+					SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
 					SAMPLE_NODE_CONTENT);
 			methodHTMLNode.addChild(methodChildNode);
 			
 			assertEquals(("<"+nodeNamesArray[i]+" ").toLowerCase() + 
-					 SAMPLE_ATTRIBUTE_NAME + "=" +
+					SAMPLE_OKAY_ATTRIBUTE_NAME + "=" +
 					 "\""+SAMPLE_ATTRIBUTE_VALUE+"\">" + '\n' +
 					 SAMPLE_NODE_CONTENT +
 					 
 					 //child
-					 generateFullNodeOutput(SAMPLE_NODE_NAME,
-								SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
+					 generateFullNodeOutput(SAMPLE_OKAY_NODE_NAME,
+							 SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
 								SAMPLE_NODE_CONTENT) +
 					 
 					 ("</"+nodeNamesArray[i]+">").toLowerCase() + '\n',
@@ -517,8 +547,8 @@ public class HTMLNodeTest extends TestCase {
 	 * <node_name />
 	 */
 	public void testGenerate_fromHTMLNode_String() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME);
-		assertEquals(("<"+SAMPLE_NODE_NAME+" />").toLowerCase(),
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
+		assertEquals(("<"+SAMPLE_OKAY_NODE_NAME+" />").toLowerCase(),
 					methodHTMLNode.generate());
 	}
 	
@@ -529,10 +559,10 @@ public class HTMLNodeTest extends TestCase {
 	 * <node_name>Node_Content</node_name>
 	 */
 	public void testGenerate_fromHTMLNode_StringString() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,SAMPLE_NODE_CONTENT);
-		assertEquals(("<"+SAMPLE_NODE_NAME+">").toLowerCase() + 
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME,SAMPLE_NODE_CONTENT);
+		assertEquals(("<"+SAMPLE_OKAY_NODE_NAME+">").toLowerCase() + 
 					 SAMPLE_NODE_CONTENT +
-					 ("</"+SAMPLE_NODE_NAME+">").toLowerCase(),
+					 ("</"+SAMPLE_OKAY_NODE_NAME+">").toLowerCase(),
 					methodHTMLNode.generate());
 	}
 	
@@ -543,10 +573,10 @@ public class HTMLNodeTest extends TestCase {
 	 * <node_name Attribute_Name="Attribute_Value" />
 	 */
 	public void testGenerate_fromHTMLNode_StringStringString() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,
-				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
-		assertEquals(generateNoContentNodeOutput(SAMPLE_NODE_NAME,
-				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE),
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME,
+				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
+		assertEquals(generateNoContentNodeOutput(SAMPLE_OKAY_NODE_NAME,
+				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE),
 					methodHTMLNode.generate());
 	}
 	
@@ -557,11 +587,11 @@ public class HTMLNodeTest extends TestCase {
 	 * <node_name Attribute_Name="Attribute_Value">Node_Content</node_name>
 	 */
 	public void testGenerate_fromHTMLNode_StringStringStringString() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,
-				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME,
+				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
 				SAMPLE_NODE_CONTENT);
-		assertEquals(generateFullNodeOutput(SAMPLE_NODE_NAME,
-				SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
+		assertEquals(generateFullNodeOutput(SAMPLE_OKAY_NODE_NAME,
+				SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
 				SAMPLE_NODE_CONTENT),
 					methodHTMLNode.generate());
 	}
@@ -607,26 +637,26 @@ public class HTMLNodeTest extends TestCase {
 	 * </node_name>
 	 */
 	public void testGenerate_HTMLNode_withChild() {
-		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_NODE_NAME,
-				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME,
+				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
 				SAMPLE_NODE_CONTENT);
-		HTMLNode methodHTMLNodeChild = new HTMLNode(SAMPLE_NODE_NAME,
-				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+		HTMLNode methodHTMLNodeChild = new HTMLNode(SAMPLE_OKAY_NODE_NAME,
+				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
 				SAMPLE_NODE_CONTENT);
 		
 		methodHTMLNode.addChild(methodHTMLNodeChild);
 		
-		assertEquals(("<"+SAMPLE_NODE_NAME+" ").toLowerCase() + 
-				 SAMPLE_ATTRIBUTE_NAME + "=" +
+		assertEquals(("<"+SAMPLE_OKAY_NODE_NAME+" ").toLowerCase() + 
+				SAMPLE_OKAY_ATTRIBUTE_NAME + "=" +
 				 "\""+SAMPLE_ATTRIBUTE_VALUE+"\">" +
 				 SAMPLE_NODE_CONTENT +
 				 
 				 //child
-				 generateFullNodeOutput(SAMPLE_NODE_NAME,
-							SAMPLE_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
+				 generateFullNodeOutput(SAMPLE_OKAY_NODE_NAME,
+						 SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
 							SAMPLE_NODE_CONTENT) +
 				 
-				 ("</"+SAMPLE_NODE_NAME+">").toLowerCase(),
+				 ("</"+SAMPLE_OKAY_NODE_NAME+">").toLowerCase(),
 				 methodHTMLNode.generate());
 	}
 	
@@ -637,7 +667,7 @@ public class HTMLNodeTest extends TestCase {
 	 */
 	public void testGenerate_fromHTMLNode_percentName() {
 		HTMLNode methodHTMLNode = new HTMLNode("%",
-				SAMPLE_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
 				SAMPLE_NODE_CONTENT);
 		assertEquals(SAMPLE_NODE_CONTENT,
 				methodHTMLNode.generate());
@@ -652,7 +682,7 @@ public class HTMLNodeTest extends TestCase {
 		String sampleDocType = "html";
 		String sampleSystemUri = "-//W3C//DTD XHTML 1.1//EN";
 		HTMLNode methodHTMLNodeDoc = new HTMLNode.HTMLDoctype(sampleDocType,sampleSystemUri);
-		methodHTMLNodeDoc.addChild(SAMPLE_NODE_NAME);
+		methodHTMLNodeDoc.addChild(SAMPLE_OKAY_NODE_NAME);
 		String generatedString = methodHTMLNodeDoc.generate();
 		//consider only the HTMLDocType generated text
 		assertEquals("<!DOCTYPE "+sampleDocType+" PUBLIC \""+sampleSystemUri+"\">", 	
