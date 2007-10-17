@@ -5,7 +5,7 @@ package freenet.clients.http;
 
 import java.net.URI;
 
-class RedirectException extends Exception {
+public class RedirectException extends Exception {
 	private static final long serialVersionUID = -1;
 	URI newuri;
 	
