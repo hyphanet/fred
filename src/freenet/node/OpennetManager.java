@@ -248,7 +248,7 @@ public class OpennetManager {
 					Logger.minor(this, "Opennet peer already present in LRU: "+nodeToAddNow);
 				return true;
 			}
-			if(peersLRU.size() < MAX_PEERS) {
+			if(peersLRU.size() < getNumberOfConnectedPeersToAim()) {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
 					if(addAtLRU)
@@ -272,12 +272,13 @@ public class OpennetManager {
 		boolean canAdd = true;
 		Vector dropList = new Vector();
 		synchronized(this) {
+			int maxPeers = getNumberOfConnectedPeersToAim();
 			boolean hasDisconnected = false;
-			if(peersLRU.size() == MAX_PEERS && nodeToAddNow == null) {
+			if(peersLRU.size() == maxPeers && nodeToAddNow == null) {
 				PeerNode toDrop = peerToDrop(true);
 				if(toDrop != null)
 					hasDisconnected = !toDrop.isConnected();
-			} else while(peersLRU.size() > MAX_PEERS - (nodeToAddNow == null ? 0 : 1)) {
+			} else while(peersLRU.size() > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				PeerNode toDrop;
 				// can drop peers which are over the limit
 				toDrop = peerToDrop(noDisconnect || nodeToAddNow == null);
@@ -335,7 +336,7 @@ public class OpennetManager {
 	}
 
 	private void dropExcessPeers() {
-		while(peersLRU.size() > MAX_PEERS) {
+		while(peersLRU.size() > getNumberOfConnectedPeersToAim()) {
 			if(logMINOR)
 				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
 			PeerNode toDrop;
@@ -349,7 +350,7 @@ public class OpennetManager {
 	}
 	
 	synchronized PeerNode peerToDrop(boolean noDisconnect) {
-		if(peersLRU.size() < MAX_PEERS) {
+		if(peersLRU.size() < getNumberOfConnectedPeersToAim()) {
 			// Don't drop any peers
 			return null;
 		} else {
@@ -440,6 +441,10 @@ public class OpennetManager {
 
 	public void purgeOldOpennetPeer(PeerNode source) {
 		oldPeers.remove(source);
+	}
+
+	protected int getNumberOfConnectedPeersToAim() {
+		return MAX_PEERS - node.peers.quickCountConnectedPeers();
 	}
 
 }
