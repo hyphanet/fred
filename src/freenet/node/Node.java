@@ -2739,4 +2739,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return set;
 	}
 
+	public long getUptime() {
+		return System.currentTimeMillis() - usm.getStartedTime();
+	}
+
 }

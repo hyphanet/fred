@@ -2780,4 +2780,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	protected void setJFKBuffer(byte[] bufferJFK) {
 		this.jfkBuffer = bufferJFK;
 	}
+
+	public int getSigParamsByteLength() {
+		int bitLen = this.peerCryptoGroup.getQ().bitLength();
+		int byteLen = bitLen / 8 + (bitLen % 8 != 0 ? 1 : 0);
+		return byteLen;
+	}
 }

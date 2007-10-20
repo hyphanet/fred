@@ -1363,6 +1363,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		// R
 		int rLen = payload[count++] & 0xFF;
+		if(rLen > pn.getSigParamsByteLength()) {
+			String msg = "R too long - changed key? Can happen on startup";
+			if(node.getUptime() < 15*60*1000)
+				Logger.minor(this, msg);
+			else Logger.error(this, msg);
+			return null;
+		}
 		byte[] rBytes = new byte[rLen];
 		System.arraycopy(payload, count, rBytes, 0, rLen);
 		count += rLen;
@@ -1370,6 +1377,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		// S
 		int sLen = payload[count++] & 0xFF;
+		if(rLen > pn.getSigParamsByteLength()) {
+			String msg = "S too long - changed key? Can happen on startup";
+			if(node.getUptime() < 15*60*1000)
+				Logger.minor(this, msg);
+			else Logger.error(this, msg);
+			return null;
+		}
 		byte[] sBytes = new byte[sLen];
 		System.arraycopy(payload, count, sBytes, 0, sLen);
 		count += sLen;
