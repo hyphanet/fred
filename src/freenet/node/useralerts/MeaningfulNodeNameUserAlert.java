@@ -39,7 +39,7 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 
 		HTMLNode alertNode = new HTMLNode("div");
 		HTMLNode textNode = alertNode.addChild("div");
-		textNode.addChild(l10n("noNodeNick"));
+		textNode.addChild("#", l10n("noNodeNick"));
 		HTMLNode formNode = alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
