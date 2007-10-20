@@ -661,11 +661,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		// We don't except such a message;
 		if(myNi == null) {
-			Logger.normal(this, "We received an unexpected JFK(3) message from "+pn);
+			Logger.normal(this, "We received an unexpected JFK(2) message from "+pn);
 			return;
 		} else if(!Arrays.equals(myNi, nonceInitiator)){
 			if(logMINOR)
-				Logger.minor(this, "Ignoring old JFK(3) (different nonce to the one we sent - either a timing artefact or an attempt to change the nonce)");
+				Logger.minor(this, "Ignoring old JFK(2) (different nonce to the one we sent - either a timing artefact or an attempt to change the nonce)");
 			return;
 		}
 		
