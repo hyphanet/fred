@@ -980,7 +980,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.jfkKe = null;
 		pn.jfkKs = null;
 		synchronized (pn) {
-			pn.jfkNoncesSent.remove(replyTo);
+			// FIXME TRUE MULTI-HOMING: winner-takes-all, kill all other connection attempts since we can't deal with multiple active connections
+			// Also avoids leaking
+			pn.jfkNoncesSent.clear();
 		}
 		
 		final long t2=System.currentTimeMillis();
