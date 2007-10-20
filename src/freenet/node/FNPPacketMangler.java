@@ -122,11 +122,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	final int fullHeadersLengthMinimum;
 	final int fullHeadersLengthOneMessage;
-	/**
-	 *  The initiator has to ensure that nonces send back by the
-	 *  responder in message2 match what was chosen in message 1
-	 */
-	protected final HashMap jfkNoncesSent = new HashMap();
 
 
 	public FNPPacketMangler(Node node, NodeCrypto crypt, PacketSocketHandler sock) {
@@ -517,8 +512,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] nonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(nonce);
 		
-		synchronized (jfkNoncesSent) {
-			jfkNoncesSent.put(replyTo, nonce);
+		synchronized (pn) {
+			pn.jfkNoncesSent.put(replyTo, nonce);
 		}
 		
 		byte[] message1 = new byte[NONCE_SIZE+DiffieHellman.modulusLengthInBytes()];
@@ -656,8 +651,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// sanity check
 		byte[] myNi = null;
-		synchronized (jfkNoncesSent) {
-			myNi = (byte[]) jfkNoncesSent.get(replyTo);
+		synchronized (pn) {
+			myNi = (byte[]) pn.jfkNoncesSent.get(replyTo);
 		}
 		// We don't except such a message;
 		if(myNi == null) {
@@ -984,8 +979,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.jfkKa = null;
 		pn.jfkKe = null;
 		pn.jfkKs = null;
-		synchronized (jfkNoncesSent) {
-			jfkNoncesSent.remove(pn);
+		synchronized (pn) {
+			pn.jfkNoncesSent.remove(replyTo);
 		}
 		
 		final long t2=System.currentTimeMillis();

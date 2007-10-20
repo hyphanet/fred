@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -312,6 +313,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	/** The node is being disconnected, but it may take a while. */
 	private boolean disconnecting;
+	
+	/**
+	 * For FNP link setup:
+	 *  The initiator has to ensure that nonces send back by the
+	 *  responder in message2 match what was chosen in message 1
+	 */
+	protected final HashMap jfkNoncesSent = new HashMap();
 	
     private static boolean logMINOR;
     
