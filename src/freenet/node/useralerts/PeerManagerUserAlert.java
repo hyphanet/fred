@@ -24,28 +24,28 @@ public class PeerManagerUserAlert implements UserAlert {
 	public int darknetPeers = 0;
 	
 	/** How many connected peers we need to not get alert about not enough */
-	static final int MIN_CONN_ALERT_THRESHOLD = 3;
+	public static final int MIN_CONN_ALERT_THRESHOLD = 3;
 	
 	/** How many connected peers we can have without getting alerted about too many */
-	static final int MAX_CONN_ALERT_THRESHOLD = 30;
+	public static final int MAX_CONN_ALERT_THRESHOLD = 30;
 	
 	/** How many disconnected peers we can have without getting alerted about too many */
-	static final int MAX_DISCONN_PEER_ALERT_THRESHOLD = 50;
+	public static final int MAX_DISCONN_PEER_ALERT_THRESHOLD = 50;
 	
 	/** How many never-connected peers can we have without getting alerted about too many */
-	static final int MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD = 5;
+	public static final int MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD = 5;
 	
 	/** How many peers with clock problems can we have without getting alerted about too many */
-	static final int MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD = 5;
+	public static final int MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD = 5;
 	
 	/** How many peers with unknown connection errors can we have without getting alerted */
-	static final int MIN_CONN_ERROR_ALERT_THRESHOLD = 5;
+	public static final int MIN_CONN_ERROR_ALERT_THRESHOLD = 5;
 	
 	/** How many peers we can have without getting alerted about too many */
-	static final int MAX_PEER_ALERT_THRESHOLD = 100;
+	public static final int MAX_PEER_ALERT_THRESHOLD = 100;
 	
 	/** How high can oldestNeverConnectedPeerAge be before we alert (in milliseconds)*/
-	static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
+	public static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
 	
 	public PeerManagerUserAlert(NodeStats n) {
 		this.n = n;
