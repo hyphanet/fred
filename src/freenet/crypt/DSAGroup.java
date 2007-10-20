@@ -11,6 +11,7 @@ import java.util.Random;
 import java.util.Vector;
 
 import net.i2p.util.NativeBigInteger;
+import freenet.node.FSParseException;
 import freenet.support.Base64;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
@@ -213,11 +214,11 @@ public class DSAGroup extends CryptoKey {
 		return fs;
 	}
 
-	public static DSAGroup create(SimpleFieldSet fs) throws IllegalBase64Exception {
+	public static DSAGroup create(SimpleFieldSet fs) throws IllegalBase64Exception, FSParseException {
 		String myP = fs.get("p");
 		String myQ = fs.get("q");
 		String myG = fs.get("g");
-		if(myP == null || myQ == null || myG == null) throw new IllegalArgumentException("The given SFS doesn't contain required fields!");
+		if(myP == null || myQ == null || myG == null) throw new FSParseException("The given SFS doesn't contain required fields!");
 		BigInteger p = new NativeBigInteger(1, Base64.decode(myP));
 		BigInteger q = new NativeBigInteger(1, Base64.decode(myQ));
 		BigInteger g = new NativeBigInteger(1, Base64.decode(myG));

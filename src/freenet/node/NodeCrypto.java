@@ -176,6 +176,11 @@ class NodeCrypto {
 			this.cryptoGroup = Global.DSAgroupBigA;
 			this.privKey = new DSAPrivateKey(cryptoGroup, random);
 			this.pubKey = new DSAPublicKey(cryptoGroup, privKey);
+		} catch (FSParseException e) {
+			if(logMINOR) Logger.minor(this, "Caught "+e, e);
+			this.cryptoGroup = Global.DSAgroupBigA;
+			this.privKey = new DSAPrivateKey(cryptoGroup, random);
+			this.pubKey = new DSAPublicKey(cryptoGroup, privKey);
 		}
 		InsertableClientSSK ark = null;
 		
