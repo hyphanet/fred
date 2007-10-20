@@ -29,14 +29,11 @@ public class DiffieHellmanLightContext {
 		return sb.toString();
 	}
 
-	public DiffieHellmanLightContext(NativeBigInteger myExponent, NativeBigInteger myExponential) {
+	public DiffieHellmanLightContext(NativeBigInteger myExponent, NativeBigInteger myExponential, DSASignature sig) {
 		this.myExponent = myExponent;
 		this.myExponential = myExponential;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-	}
-	
-	public void setSignature(DSASignature sig) {
 		this.signature = sig;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	/*

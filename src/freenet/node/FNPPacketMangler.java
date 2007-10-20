@@ -2335,6 +2335,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
 	 */
 	public void sendHandshake(PeerNode pn) {
+		if(!node.isHasStarted()) {
+			Logger.normal(this, "Attempting to send a handshake while the node is starting up... cancel it.");
+			return;
+		}
 		int negType = pn.selectNegType(this);
 		if(negType == -1) {
 			if(pn.isRoutingCompatible())
@@ -2419,7 +2423,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public int[] supportedNegTypes() {
-		return new int[] { 2, 1 };
+		return new int[] { 1, 2 };
 	}
 
 	public int fullHeadersLengthOneMessage() {
@@ -2449,7 +2453,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if((currentDHContext == null) || (currentDHContextLifetime + 1800000 /*30mins*/) < now) {
 				currentDHContextLifetime = now;
 				currentDHContext = DiffieHellman.generateLightContext();
-				currentDHContext.setSignature(crypto.sign(SHA256.digest(assembleDHParams(currentDHContext.myExponential, crypto.getCryptoGroup()))));
 			}
 		}
 		return currentDHContext;
@@ -2458,7 +2461,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/*
 	 * Prepare DH parameters of message2 for them to be signed (useful in message3 to check the sig)
 	 */
-	private byte[] assembleDHParams(BigInteger exponential, DSAGroup group) {
+	public static byte[] assembleDHParams(NativeBigInteger exponential, DSAGroup group) {
 		byte[] _myExponential = stripBigIntegerToNetworkFormat(exponential);
 		byte[] _myGroup = group.getP().toByteArray();
 		byte[] toSign = new byte[_myExponential.length + _myGroup.length];
@@ -2523,7 +2526,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 	}
 
-	private byte[] stripBigIntegerToNetworkFormat(BigInteger exponential) {
+	public static byte[] stripBigIntegerToNetworkFormat(BigInteger exponential) {
 		byte[] data = exponential.toByteArray();
 		int targetLength = DiffieHellman.modulusLengthInBytes();
 

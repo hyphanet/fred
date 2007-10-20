@@ -13,7 +13,6 @@ import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
-import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
 import freenet.support.Executor;
@@ -115,8 +114,6 @@ public class NodeStarter implements WrapperListener
     	
     	// Setup RNG
     	RandomSource random = new Yarrow();
-    	
-    	DiffieHellman.init(random);
     	 
 		// Thread to keep the node up.
 		// JVM deadlocks losing a lock when two threads of different types (daemon|app)
@@ -284,7 +281,6 @@ public class NodeStarter implements WrapperListener
     	// Setup RNG
     	RandomSource random = new Yarrow();
     	
-    	DiffieHellman.init(random);
    	 
 		// Thread to keep the node up.
 		// JVM deadlocks losing a lock when two threads of different types (daemon|app)

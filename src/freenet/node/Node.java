@@ -45,6 +45,7 @@ import freenet.config.LongOption;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
+import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.Yarrow;
@@ -425,6 +426,11 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		
 		darknetCrypto.readCrypto(fs);
+		//TODO: That sucks. It breaks layering rules and will eventually break opennet as the key isn't likely to be the same.
+		// Tell me if you know how to improve it.
+		// No, generating two sigs isn't an option as it's sub-optimal.
+		// running one additionnal thread per mangler might be one.
+		DiffieHellman.init(random, darknetCrypto, darknetCrypto.getCryptoGroup());
 		
 		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
 		String loc = fs.get("location");
