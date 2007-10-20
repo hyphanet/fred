@@ -664,7 +664,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.normal(this, "We received an unexpected JFK(3) message from "+pn);
 			return;
 		} else if(!Arrays.equals(myNi, nonceInitiator)){
-			Logger.error(this, "The responder has tampered the nonce in JFK(3)!! - "+pn);
+			if(logMINOR)
+				Logger.minor(this, "Ignoring old JFK(3) (different nonce to the one we sent - either a timing artefact or an attempt to change the nonce)");
 			return;
 		}
 		
