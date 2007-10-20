@@ -91,13 +91,13 @@ public class DSA {
 			// 0<r<q has to be true
 			if((sig.getR().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getR()) < 1)) {
 				if(Logger.shouldLog(Logger.MINOR, DSA.class))
-					Logger.minor(DSA.class, "r < 0 || r > q");
+					Logger.minor(DSA.class, "r < 0 || r > q: r="+sig.getR()+" q="+kp.getQ());
 				return false;
 			}
 			// 0<s<q has to be true as well
 			if((sig.getS().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getS()) < 1)) {
 				if(Logger.shouldLog(Logger.MINOR, DSA.class))
-					Logger.minor(DSA.class, "s < 0 || s > q");
+					Logger.minor(DSA.class, "s < 0 || s > q: s="+sig.getS()+" q="+kp.getQ());
 				return false;
 			}
 
