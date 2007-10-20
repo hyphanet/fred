@@ -40,19 +40,19 @@ public class BookmarkManager {
 
 			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
-							"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/23/"),
+							"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/28/"),
 							"Another Index (freesites with categories but no descriptions)",
 							node.alerts));
 
 			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
-							"USK@RJnh1EnvOSPwOWVRS2nyhC4eIQkKoNE5hcTv7~yY-sM,pOloLxnKWM~AL24iDMHOAvTvCqMlB-p2BO9zK96TOZA,AQACAAE/index_fr/11/"),
+							"USK@RJnh1EnvOSPwOWVRS2nyhC4eIQkKoNE5hcTv7~yY-sM,pOloLxnKWM~AL24iDMHOAvTvCqMlB-p2BO9zK96TOZA,AQACAAE/index_fr/21/"),
 							"Index des sites Français (french freesites with descriptions but no categories)",
 							node.alerts));
 
 			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
-							"USK@cvZEZFWynx~4hmakaimts4Ruusl9mEUpU6mSvNvZ9p8,K2Xopc6GWPkKrs27EDuqzTcca2bE5H2YAXw0qKnkON4,AQACAAE/TSOF/1/"),
+							"USK@cvZEZFWynx~4hmakaimts4Ruusl9mEUpU6mSvNvZ9p8,K2Xopc6GWPkKrs27EDuqzTcca2bE5H2YAXw0qKnkON4,AQACAAE/TSOF/2/"),
 							"The Start Of Freenet (another human-maintained index, so far relatively small)",
 							node.alerts));
 			
