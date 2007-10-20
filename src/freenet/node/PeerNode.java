@@ -1316,6 +1316,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     			this.detectedPeer=newPeer;
     			this.lastAttemptedHandshakeIPUpdateTime = 0;
     			if(!isConnected) return;
+    			// Prevent leak by clearing, *but keep the current handshake*
+    			Object o = jfkNoncesSent.get(newPeer);
+    			jfkNoncesSent.clear();
+    			jfkNoncesSent.put(newPeer, o);
     		} else return;
     	}
     	sendIPAddressMessage();
@@ -1817,6 +1821,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()]))) {
         	changedAnything = true;
         	lastAttemptedHandshakeIPUpdateTime = 0;
+        	// Clear nonces to prevent leak. Will kill any in-progress connect attempts, but that is okay because
+        	// either we got an ARK which changed our peers list, or we just connected.
+        	jfkNoncesSent.clear();
         }
         
         // DO NOT change detectedPeer !!!
