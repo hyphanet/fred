@@ -13,5 +13,4 @@ DOS Mitigation
 Responder does not keep state on receiving Msg 1
 HMAC is produced/verified by the Responder only
 HMAC is used to quickly discard DoS packets
-This lookup can done in O(n) using a Patricia trie (Specialized Set data structure based on a prefix tree,they find particular application in the area of IP routing where the ability to contain large ranges of values with a few exceptions is particularly suited to the hierarchical organization of IP Addresses)
 Responder (and Initiator) can reuse g^r and g^i, key but material still changes
