@@ -301,9 +301,9 @@ public class FreenetInetAddress {
 
 	public int hashCode() {
 		if(hostname != null) {
-			return hostname.hashCode();
+			return hostname.hashCode(); // Was set at creation, so it can safely be used here.
 		} else {
-			return _address.hashCode();
+			return _address.hashCode(); // Can be null, but if so, hostname will be non-null.
 		}
 	}
 	
