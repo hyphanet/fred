@@ -1160,7 +1160,7 @@ public class PeerManager {
 			if(statuses.containsKey(peerNodeStatus)) {
 				statusSet = (HashSet) statuses.get(peerNodeStatus);
 				if(!statusSet.contains(peerNode)) {
-					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
+					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+" for "+peerNode.shortToString()+"' not in peerNodeStatuses with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
 					return;
 				}
 				statuses.remove(peerNodeStatus);
