@@ -28,6 +28,7 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
@@ -96,6 +97,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     protected byte[] jfkKe;
     protected byte[] jfkKs;
     protected byte[] jfkMyRef;
+    protected DiffieHellmanLightContext jfkContext = null;
 	
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;

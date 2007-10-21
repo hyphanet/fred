@@ -8,6 +8,8 @@ import freenet.io.comm.SocketHandler;
 
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.LinkedList;
+
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
@@ -81,8 +83,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		JFK_PREFIX_RESPONDER = R;
 	}
 	
-	/** We renew it every 30sec (the spec. says "once a while") - access is synchronized! */
-	private DiffieHellmanLightContext currentDHContext = null;
+	public final static int DH_CONTEXT_BUFFER_SIZE = 10;
+	private final LinkedList dhContextBuffer = new LinkedList();
 	private long currentDHContextLifetime = 0;
 	
 	protected static final int NONCE_SIZE = 8;
@@ -506,9 +508,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private void sendJFKMessage1(PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+pn);
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
+		if(pn.jfkContext == null) // get a new DH exponents only if needed
+			pn.jfkContext = getLightDiffieHellmanContext();
 		int offset = 0;
-		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
+		byte[] myExponential = stripBigIntegerToNetworkFormat(pn.jfkContext.myExponential);
 		byte[] nonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(nonce);
 		
@@ -535,14 +538,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
+		pn.jfkContext = getLightDiffieHellmanContext();
 		// g^r
-		byte[] myExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
+		byte[] myExponential = stripBigIntegerToNetworkFormat(pn.jfkContext.myExponential);
 		// Nr
 		byte[] myNonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(myNonce);
-		byte[] r = dhContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] s = dhContext.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] r = pn.jfkContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] s = pn.jfkContext.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		HMAC hash = new HMAC(SHA256.getInstance());
 		byte[] authenticator = hash.mac(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
 		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
@@ -775,8 +778,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(payload, inputOffset, hmac, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 		
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
-		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DHgroupA);
+		BigInteger computedExponential = pn.jfkContext.getHMACKey(_hisExponential, Global.DHgroupA);
 		byte[] Ks = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
@@ -979,6 +981,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.jfkKa = null;
 		pn.jfkKe = null;
 		pn.jfkKs = null;
+		// We want to clear it here so that new handshake requests
+		// will be sent with a different DH pair
+		pn.jfkContext = null;
 		synchronized (pn) {
 			// FIXME TRUE MULTI-HOMING: winner-takes-all, kill all other connection attempts since we can't deal with multiple active connections
 			// Also avoids leaking
@@ -1004,8 +1009,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn);
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
-		DiffieHellmanLightContext dhContext = getLightDiffieHellmanContext();
-		byte[] ourExponential = stripBigIntegerToNetworkFormat(dhContext.myExponential);
+		byte[] ourExponential = stripBigIntegerToNetworkFormat(pn.jfkContext.myExponential);
 		pn.jfkMyRef = crypto.myCompressedSetupRef();
 		byte[] data = new byte[8 + pn.jfkMyRef.length];
 		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
@@ -1047,7 +1051,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		
-		BigInteger computedExponential = dhContext.getHMACKey(_hisExponential, Global.DHgroupA);
+		BigInteger computedExponential = pn.jfkContext.getHMACKey(_hisExponential, Global.DHgroupA);
 		pn.jfkKs = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		pn.jfkKe = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		pn.jfkKa = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
@@ -1174,6 +1178,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			else
 				authenticatorCache.put(authenticator, message4);
 		}
+		
 		sendAuthPacket(1, 2, 3, message4, pn, replyTo);
 	}
 
@@ -2470,33 +2475,46 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		final long now = System.currentTimeMillis();
 		
 		boolean changeDHExponents = false;
+		boolean generateOnThread = false;
+		int dhContextBufferSize = 0;
 		
-		synchronized (this) {
-			if((currentDHContext == null) || (currentDHContextLifetime + 30000 /*30sec*/) < now) {
+		synchronized (dhContextBuffer) {
+			dhContextBufferSize = dhContextBuffer.size();
+			
+			if(dhContextBufferSize < 1) {
+				// We need one exponent, generate it at all cost! (startup)
+				changeDHExponents = true;
+				generateOnThread = true;
+			} else if((dhContextBufferSize < DH_CONTEXT_BUFFER_SIZE) && (currentDHContextLifetime + 30000 /*30sec*/) < now) {
 				changeDHExponents = true;
 				currentDHContextLifetime = now;
 			}
 		}
 		
 		if(changeDHExponents) {
-			if(currentDHContext == null) {
+			if(generateOnThread) {
 				Logger.minor(this, "No DH exponent have been created; generate the context on-thread!");
 				// No need to synchronize here as we are on-thread
-				currentDHContext = _genLightDiffieHellmanContext();
+				dhContextBuffer.add(_genLightDiffieHellmanContext());
 			} else {
 				// Use the ticket to do it off-thread
 				node.getTicker().queueTimedJob(new Runnable() {
 					public void run() {
-						synchronized (this) {
-							currentDHContext = _genLightDiffieHellmanContext();
+						synchronized (dhContextBuffer) {
+							dhContextBuffer.addLast(_genLightDiffieHellmanContext());
 						}
 					}
 				}, 0);
 				Logger.minor(this, "The DH exponents will been renewed soonish");
 			}
 		}
-		
-		return currentDHContext;
+
+		DiffieHellmanLightContext result;
+		synchronized (dhContextBuffer) {
+			// Don't remove the exponent from the list if it's the only remaining one.
+			result = (DiffieHellmanLightContext) (dhContextBufferSize < 2 ? dhContextBuffer.getFirst() : dhContextBuffer.removeFirst());
+		}
+		return result;
 	}
 
 	/*
