@@ -81,7 +81,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		JFK_PREFIX_RESPONDER = R;
 	}
 	
-	/** We renew it every 30mins (the spec. says "once a while") - access is synchronized! */
+	/** We renew it every 30sec (the spec. says "once a while") - access is synchronized! */
 	private DiffieHellmanLightContext currentDHContext = null;
 	private long currentDHContextLifetime = 0;
 	
@@ -2431,7 +2431,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public int[] supportedNegTypes() {
-		return new int[] { 2, 1 };
+		return new int[] { 1, 2 };
 	}
 
 	public int fullHeadersLengthOneMessage() {
@@ -2454,16 +2454,48 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return crypto.config.alwaysAllowLocalAddresses();
 	}
 
+	private DiffieHellmanLightContext _genLightDiffieHellmanContext() {
+		DiffieHellmanLightContext ctx = DiffieHellman.generateLightContext();
+		ctx.setSignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.myExponential, crypto.getCryptoGroup()))));
+		
+		return ctx;
+	}
+	
+	/**
+	 * Change the DH Exponents on a regular basis but at most once every 30sec
+	 * 
+	 * @return {@link DiffieHellmanLightContext}
+	 */
 	private DiffieHellmanLightContext getLightDiffieHellmanContext() {
 		final long now = System.currentTimeMillis();
 		
+		boolean changeDHExponents = false;
+		
 		synchronized (this) {
-			if((currentDHContext == null) || (currentDHContextLifetime + 1800000 /*30mins*/) < now) {
+			if((currentDHContext == null) || (currentDHContextLifetime + 30000 /*30sec*/) < now) {
+				changeDHExponents = true;
 				currentDHContextLifetime = now;
-				currentDHContext = DiffieHellman.generateLightContext();
-				currentDHContext.setSignature(crypto.sign(SHA256.digest(assembleDHParams(currentDHContext.myExponential, crypto.getCryptoGroup()))));
 			}
 		}
+		
+		if(changeDHExponents) {
+			if(currentDHContext == null) {
+				Logger.minor(this, "No DH exponent have been created; generate the context on-thread!");
+				// No need to synchronize here as we are on-thread
+				currentDHContext = _genLightDiffieHellmanContext();
+			} else {
+				// Use the ticket to do it off-thread
+				node.getTicker().queueTimedJob(new Runnable() {
+					public void run() {
+						synchronized (this) {
+							currentDHContext = _genLightDiffieHellmanContext();
+						}
+					}
+				}, 0);
+				Logger.minor(this, "The DH exponents will been renewed soonish");
+			}
+		}
+		
 		return currentDHContext;
 	}
 
