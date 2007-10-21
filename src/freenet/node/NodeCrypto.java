@@ -37,7 +37,7 @@ import freenet.support.SimpleFieldSet;
  * Cryptographic and transport level node identity. 
  * @author toad
  */
-public class NodeCrypto {
+class NodeCrypto {
 
 	final Node node;
 	final boolean isOpennet;
@@ -88,6 +88,7 @@ public class NodeCrypto {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		config.starting(this);
+		
 		try {
 		
 		int port = config.getPort();
@@ -134,6 +135,7 @@ public class NodeCrypto {
 		socket.setLowLevelFilter(packetMangler = new FNPPacketMangler(node, this, socket));
 		
 		detector = new NodeIPPortDetector(node, node.ipDetector, this);
+		
 		} catch (NodeInitException e) {
 			config.stopping(this);
 			throw e;
@@ -384,7 +386,7 @@ public class NodeCrypto {
 	}
 
 	/** Sign a hash */
-	public DSASignature sign(byte[] hash) {
+	DSASignature sign(byte[] hash) {
 		return DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
 	}
 

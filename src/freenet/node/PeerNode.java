@@ -2657,7 +2657,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	/**
 	 * Select the most appropriate negType, taking the user's preference into account
-	 * order matters: last is best
+	 * order matters
 	 * 
 	 * @param mangler
 	 * @return -1 if no common negType has been found

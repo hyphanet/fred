@@ -9,8 +9,6 @@ package freenet.crypt;
 import java.util.Random;
 import java.util.Stack;
 
-import freenet.node.FNPPacketMangler;
-import freenet.node.NodeCrypto;
 import freenet.support.Logger;
 import net.i2p.util.NativeBigInteger;
 
@@ -33,11 +31,9 @@ public class DiffieHellman {
 	private static final int PRECALC_TIMEOUT = 193 * 1000;
 
 	private static Random r;
-	private static NodeCrypto crypt;
-	private static DSAGroup dsaGr;
-	private final static DHGroup group = Global.DHgroupA;
-	private final static Stack precalcBuffer = new Stack();
-	private final static Object precalcerWaitObj = new Object();
+	private static DHGroup group = Global.DHgroupA;
+	private static Stack precalcBuffer = new Stack();
+	private static Object precalcerWaitObj = new Object();
 
 	private static Thread precalcThread;
 
@@ -82,10 +78,8 @@ public class DiffieHellman {
 			}
 		}
 
-	public static void init(Random random, NodeCrypto crypto, DSAGroup dsaGroup) {
-		crypt = crypto;
-		dsaGr = dsaGroup;
-		r = random;
+	public static void init(Random random) {
+	    r = random;
 		precalcThread.start();
 	}
 
@@ -126,7 +120,7 @@ public class DiffieHellman {
 		if((time2 - time1) > 300) {
 			Logger.error(null, "DiffieHellman.generateLightContext(): time2 is more than 300ms after time1 ("+(time2 - time1)+ ')');
 		}
-		return new DiffieHellmanLightContext(params[0], params[1], new DSASignature(params[2], params[3]));
+		return new DiffieHellmanLightContext(params[0], params[1]);
 	}
 	
 	public static NativeBigInteger[] getParams() {
@@ -143,16 +137,10 @@ public class DiffieHellman {
 	}
 
 	private static NativeBigInteger[] genParams() {
-		NativeBigInteger params[] = new NativeBigInteger[4];
-		
+		NativeBigInteger params[] = new NativeBigInteger[2];
+		// Don't need NativeBigInteger?
 		params[0] = new NativeBigInteger(256, r);
-		NativeBigInteger exponential = (NativeBigInteger) group.getG().modPow(params[0], group.getP());
-		params[1] = exponential;
-		
-		DSASignature sig = crypt.sign(SHA256.digest(FNPPacketMangler.assembleDHParams(exponential, dsaGr)));
-		params[2] = new NativeBigInteger(sig.getR());
-		params[3] = new NativeBigInteger(sig.getS());
-		
+		params[1] = (NativeBigInteger) group.getG().modPow(params[0], group.getP());
 		return params;
 	}
 
