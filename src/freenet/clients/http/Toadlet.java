@@ -253,7 +253,7 @@ public abstract class Toadlet {
 		
 		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
 		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
-		infoboxContent.addChild(message);
+		infoboxContent.addChild("#", message);
 		infoboxContent.addChild("br");
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);

@@ -662,7 +662,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		int itemCount = 0;
 		while (collectionItems.hasNext()) {
 			FreenetURI uri = (FreenetURI) collectionItems.next();
-			listContent.addChild(uri.toString());
+			listContent.addChild("#", uri.toString());
 			listContent.addChild("br");
 			if (itemCount++ == maxCount) {
 				listContent.addChild("br");
