@@ -2525,6 +2525,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				dhContextFIFO.addLast(result);
 		}
 		
+		Logger.minor(this, "getLightDiffieHellmanContext() is serving "+result.hashCode());
 		return result;
 	}
 
