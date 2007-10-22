@@ -508,8 +508,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private void sendJFKMessage1(PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+pn);
-		if(pn.jfkContext == null) // get a new DH exponents only if needed
+		final long now = System.currentTimeMillis();
+		if((pn.jfkContext == null) || ((pn.jfkContextLifetime + 15*60*1000) < now)) {
 			pn.jfkContext = getLightDiffieHellmanContext();
+			pn.jfkContextLifetime = now;
+		}
 		int offset = 0;
 		byte[] myExponential = stripBigIntegerToNetworkFormat(pn.jfkContext.myExponential);
 		byte[] nonce = new byte[NONCE_SIZE];
@@ -538,7 +541,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
-		pn.jfkContext = getLightDiffieHellmanContext();
+		final long now = System.currentTimeMillis();
+		if((pn.jfkContext == null) || ((pn.jfkContextLifetime + 15*60*1000) < now)) {
+			pn.jfkContext = getLightDiffieHellmanContext();
+			pn.jfkContextLifetime = now;
+		}
 		// g^r
 		byte[] myExponential = stripBigIntegerToNetworkFormat(pn.jfkContext.myExponential);
 		// Nr
