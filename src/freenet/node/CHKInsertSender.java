@@ -243,7 +243,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         HashSet nodesNotIgnored = new HashSet();
         
         while(true) {
-            if(receiveFailed) return; // don't need to set status as killed by InsertHandler
+            if(receiveFailed) {
+            	return; // don't need to set status as killed by InsertHandler
+            }
             
             synchronized (this) {
             	if(htl == 0) {
@@ -492,7 +494,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 								Logger.normal(this,
 												"Verify failed because data was invalid");
 							} catch (AbortedException e) {
-								receiveFailed = true;
+								receiveFailed();
 							}
 						}
 						break; // What else can we do?
@@ -510,7 +512,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 										Logger.normal(this, "Send failed; have not yet received all data but not aborted: " + next);
 								}
 							} catch (AbortedException e) {
-								receiveFailed = true;
+								receiveFailed();
 							}
 						}
 					}
