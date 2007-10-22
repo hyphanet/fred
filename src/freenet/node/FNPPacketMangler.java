@@ -2460,60 +2460,64 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	private DiffieHellmanLightContext _genLightDiffieHellmanContext() {
-		DiffieHellmanLightContext ctx = DiffieHellman.generateLightContext();
+		final DiffieHellmanLightContext ctx = DiffieHellman.generateLightContext();
 		ctx.setSignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.myExponential, crypto.getCryptoGroup()))));
 		
 		return ctx;
+	}
+	
+	private final void _fillJFKDHFIFO() {
+		// Use the ticket to do it off-thread
+		node.getTicker().queueTimedJob(new Runnable() {
+			public void run() {
+				synchronized (dhContextFIFO) {
+					dhContextFIFO.addLast(_genLightDiffieHellmanContext());
+				}
+			}
+		}, 0);
 	}
 	
 	/**
 	 * Change the DH Exponents on a regular basis but at most once every 30sec
 	 * 
 	 * @return {@link DiffieHellmanLightContext}
+	 * 
+	 * FIXME: is it acceptable that some elements will stay around for a *long* time ?
+	 * They will eventually be replaced but noone know when.
 	 */
 	private DiffieHellmanLightContext getLightDiffieHellmanContext() {
 		final long now = System.currentTimeMillis();
 		
-		boolean changeDHExponents = false;
-		boolean generateOnThread = false;
-		int dhContextBufferSize = 0;
+		int dhContextFIFOSize = 0;
+		boolean requeueElement = true;
+		
+		DiffieHellmanLightContext result = null;
 		
 		synchronized (dhContextFIFO) {
-			dhContextBufferSize = dhContextFIFO.size();
+			dhContextFIFOSize = dhContextFIFO.size();
 			
-			if(dhContextBufferSize < 1) {
+			if(dhContextFIFOSize < 1) {
 				// We need one exponent, generate it at all cost! (startup)
-				changeDHExponents = true;
-				generateOnThread = true;
-			} else if((dhContextBufferSize < DH_CONTEXT_BUFFER_SIZE) && (jfkDHLastGenerationTimestamp + 30000 /*30sec*/) < now) {
-				changeDHExponents = true;
-				jfkDHLastGenerationTimestamp = now;
+				Logger.minor(this, "No DH exponent have been created; generate the context on-thread!");
+				for(int i=dhContextFIFOSize; i<DH_CONTEXT_BUFFER_SIZE-1; i++)
+					_fillJFKDHFIFO();
+				
+				result = _genLightDiffieHellmanContext();
+			} else {
+				result = (DiffieHellmanLightContext) dhContextFIFO.removeFirst();
+				
+				// Shall we replace one element of the queue ?
+				if((jfkDHLastGenerationTimestamp + 30000 /*30sec*/) < now) {
+					jfkDHLastGenerationTimestamp = now;
+					requeueElement = false;
+					_fillJFKDHFIFO();
+				}
 			}
+			
+			if(requeueElement)
+				dhContextFIFO.addLast(result);
 		}
 		
-		if(changeDHExponents) {
-			if(generateOnThread) {
-				Logger.minor(this, "No DH exponent have been created; generate the context on-thread!");
-				// No need to synchronize here as we are on-thread
-				dhContextFIFO.add(_genLightDiffieHellmanContext());
-			} else {
-				// Use the ticket to do it off-thread
-				node.getTicker().queueTimedJob(new Runnable() {
-					public void run() {
-						synchronized (dhContextFIFO) {
-							dhContextFIFO.addLast(_genLightDiffieHellmanContext());
-						}
-					}
-				}, 0);
-				Logger.minor(this, "The DH exponents will been renewed soonish");
-			}
-		}
-
-		DiffieHellmanLightContext result;
-		synchronized (dhContextFIFO) {
-			// Don't remove the exponent from the list if it's the only remaining one.
-			result = (DiffieHellmanLightContext) (dhContextBufferSize < 2 ? dhContextFIFO.getFirst() : dhContextFIFO.removeFirst());
-		}
 		return result;
 	}
 
