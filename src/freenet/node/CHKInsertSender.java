@@ -214,6 +214,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
+        	// Always check: we ALWAYS set status, even if receiveFailed.
             int myStatus;
             synchronized (this) {
 				myStatus = status;
