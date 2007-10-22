@@ -148,7 +148,8 @@ public class RequestHandler implements Runnable, ByteCounter {
             	node.addTransferringRequestHandler(uid);
             	if(bt.send(node.executor)) {
             		status = RequestSender.SUCCESS; // for byte logging
-           			finishOpennetNoRelayChecked();
+            		if(node.passOpennetRefsThroughDarknet())
+            			finishOpennetNoRelayChecked();
             	}
             }
             return;
@@ -187,7 +188,8 @@ public class RequestHandler implements Runnable, ByteCounter {
             		finalTransferFailed = true;
             	} else {
     				// Successful CHK transfer, maybe path fold
-    				finishOpennetChecked();
+            		if(node.passOpennetRefsThroughDarknet())
+            			finishOpennetChecked();
             	}
 				status = rs.getStatus();
         	    return;
@@ -262,7 +264,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 	}
 
 	private void finishOpennetChecked() {
-		if(!(node.passOpennetRefsThroughDarknet() || source.isOpennet())) {
+		if(!source.isOpennet()) {
 			Message msg = DMT.createFNPOpennetCompletedAck(uid);
 			try {
 				source.sendAsync(msg, null, 0, this);
@@ -290,7 +292,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     }
     
 	private void finishOpennetNoRelayChecked() {
-		if(!(node.passOpennetRefsThroughDarknet() || source.isOpennet())) {
+		if(!source.isOpennet()) {
 			Message msg = DMT.createFNPOpennetCompletedAck(uid);
 			try {
 				source.sendAsync(msg, null, 0, this);
