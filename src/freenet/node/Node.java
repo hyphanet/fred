@@ -917,7 +917,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
 		
-		nodeConfig.register("storeDir", ".", sortOrder++, true, true, "Node.storeDirectory", "Node.storeDirectoryLong", 
+		nodeConfig.register("storeDir", "datastore", sortOrder++, true, true, "Node.storeDirectory", "Node.storeDirectoryLong", 
 				new StringCallback() {
 					public String get() {
 						return storeDir.getPath();
@@ -929,7 +929,66 @@ public class Node implements TimeSkewDetectorCallback {
 					}
 		});
 		
-		storeDir = new File(nodeConfig.getString("storeDir"));
+		final String suffix = "-" + getDarknetPortNumber();
+		String datastoreDir = nodeConfig.getString("storeDir");
+		// FIXME: temporary cludge for backward compat.
+		File tmpFile = new File("datastore");
+		if(".".equals(datastoreDir) && !tmpFile.exists()) {
+			System.out.println("Your node seems to be using the old directory, we will move it: !!DO NOT RESTART!!");
+			Logger.normal(this, "Your node seems to be using the old directory, we will move it: !!DO NOT RESTART!!");
+			boolean done = false;
+			try {
+				if(tmpFile.mkdir()) {
+					File chkStoreCache = new File("chk"+suffix+".cache");
+					File chkStoreCacheNew = new File("datastore/chk"+suffix+".cache");
+					if(!chkStoreCache.renameTo(chkStoreCacheNew))
+						throw new IOException();
+					File chkStoreStore = new File("chk"+suffix+".store");
+					File chkStoreStoreNew = new File("datastore/chk"+suffix+".store");
+					if(!chkStoreStore.renameTo(chkStoreStoreNew))
+						throw new IOException();
+					
+					File sskStoreCache = new File("ssk"+suffix+".cache");
+					File sskStoreCacheNew = new File("datastore/ssk"+suffix+".cache");
+					if(!sskStoreCache.renameTo(sskStoreCacheNew))
+						throw new IOException();
+					File sskStoreStore = new File("ssk"+suffix+".store");
+					File sskStoreStoreNew = new File("datastore/ssk"+suffix+".store");
+					if(!sskStoreStore.renameTo(sskStoreStoreNew))
+						throw new IOException();
+					
+					File pubkeyStoreCache = new File("pubkey"+suffix+".cache");
+					File pubkeyStoreCacheNew = new File("datastore/pubkey"+suffix+".cache");
+					if(!pubkeyStoreCache.renameTo(pubkeyStoreCacheNew))
+						throw new IOException();
+					File pubkeyStoreStore = new File("pubkey"+suffix+".store");
+					File pubkeyStoreStoreNew = new File("datastore/pubkey"+suffix+".store");
+					if(!pubkeyStoreStore.renameTo(pubkeyStoreStoreNew))
+						throw new IOException();
+					
+					File databaseStoreDir = new File("database"+suffix);
+					File databaseStoreDirNew = new File("datastore/database"+suffix);
+					if(!databaseStoreDir.renameTo(databaseStoreDirNew))
+						throw new IOException();
+					done = true;
+				}
+			} catch (Throwable e) {
+				e.printStackTrace();
+				done = false;
+			}
+			
+			if(done) {
+				datastoreDir = "datastore/";
+				nodeConfig.fixOldDefault("storeDir", datastoreDir);
+				Logger.normal(this, "The migration is complete, cool :)");
+				System.out.println("The migration is complete, cool :)");
+			} else {
+				Logger.error(this, "Something went wrong :( please report the bug!");
+				System.err.println("Something went wrong :( please report the bug!");
+			}
+		}
+		
+		storeDir = new File(datastoreDir);
 		if(!((storeDir.exists() && storeDir.isDirectory()) || (storeDir.mkdir()))) {
 			String msg = "Could not find or create datastore directory";
 			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, msg);
@@ -967,8 +1026,6 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		boolean tryDbLoad = false;
 		
-		String suffix = "-" + getDarknetPortNumber();
-		
 		// This can take some time
 		System.out.println("Starting database...");
 		try {
@@ -997,7 +1054,7 @@ public class Node implements TimeSkewDetectorCallback {
 			System.err.println("Attempting DbDump-level recovery...");
 			
 			boolean[] isStores = new boolean[] { true, false, true, false, true, false };
-			short[] types = new short[] { 
+			final short[] types = new short[] { 
 					BerkeleyDBFreenetStore.TYPE_CHK,
 					BerkeleyDBFreenetStore.TYPE_CHK,
 					BerkeleyDBFreenetStore.TYPE_PUBKEY,
@@ -1005,7 +1062,7 @@ public class Node implements TimeSkewDetectorCallback {
 					BerkeleyDBFreenetStore.TYPE_SSK,
 					BerkeleyDBFreenetStore.TYPE_SSK
 			};
-			int[] lengths = new int[] {
+			final int[] lengths = new int[] {
 					CHKBlock.TOTAL_HEADERS_LENGTH + CHKBlock.DATA_LENGTH,
 					CHKBlock.TOTAL_HEADERS_LENGTH + CHKBlock.DATA_LENGTH,
 					DSAPublicKey.PADDED_SIZE,
