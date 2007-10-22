@@ -550,17 +550,29 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
    		notifyAll();
 	}
     
+    /**
+     * Finish the insert process. Will set status, wait for underlings to complete, and report success
+     * if appropriate.
+     * @param code The status code to set. 
+     * @param next The node we successfully inserted to.
+     */
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
      
         synchronized(this) {   
-        	if(status != NOT_FINISHED)
-        		throw new IllegalStateException("finish() called with "+code+" when was already "+status);
-
         	if((code == ROUTE_NOT_FOUND) && !sentRequest)
         		code = ROUTE_REALLY_NOT_FOUND;
 
-            status = code;
+        	if(status != NOT_FINISHED) {
+        		if(status == RECEIVE_FAILED) {
+        			if(code == SUCCESS)
+        				Logger.error(this, "Request succeeded despite receive failed?! on "+this);
+        		}
+        		throw new IllegalStateException("finish() called with "+code+" when was already "+status);
+        	} else {
+                status = code;
+        	}
+        	
         	notifyAll();
         	if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         }
@@ -607,6 +619,15 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     		receiveFailed = true;
     		nodesWaitingForCompletion.notifyAll();
     	}
+    	// Set status immediately.
+    	// The code (e.g. waitForStatus()) relies on a status eventually being set,
+    	// so we may as well set it here. The alternative is to set it in realRun()
+    	// when we notice that receiveFailed = true.
+    	synchronized(this) {
+    		status = RECEIVE_FAILED;
+    		notifyAll();
+    	}
+    	// Do not call finish(), that can only be called on the main thread and it will block.
     }
 
     /**
