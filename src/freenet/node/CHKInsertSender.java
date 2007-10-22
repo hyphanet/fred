@@ -209,6 +209,14 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         node.addInsertSender(myKey, origHTL, this);
         try {
         	realRun();
+        	int myStatus;
+        	synchronized(this) {
+        		myStatus = status;
+        	}
+        	if(myStatus == NOT_FINISHED) {
+        		Logger.error(this, "realRun() returned without setting status on "+this);
+        		finish(INTERNAL_ERROR, null); // Avoid deadlock
+        	}
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
             int myStatus;
