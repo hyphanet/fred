@@ -627,7 +627,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         	}
         	
         	if(key instanceof NodeCHK && next != null && 
-        			(next.isOpennet() || node.passOpennetRefsThroughDarknet()) ) {
+        			(next.isOpennet() && node.passOpennetRefsThroughDarknet()) ) {
         		finishOpennet(next);
         	}
         }
