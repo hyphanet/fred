@@ -84,8 +84,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 	
 	public final static int DH_CONTEXT_BUFFER_SIZE = 10;
-	private final LinkedList dhContextBuffer = new LinkedList();
-	private long currentDHContextLifetime = 0;
+	private final LinkedList dhContextFIFO = new LinkedList();
+	private long jfkDHLastGenerationTimestamp = 0;
 	
 	protected static final int NONCE_SIZE = 8;
 	/**
@@ -2478,16 +2478,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		boolean generateOnThread = false;
 		int dhContextBufferSize = 0;
 		
-		synchronized (dhContextBuffer) {
-			dhContextBufferSize = dhContextBuffer.size();
+		synchronized (dhContextFIFO) {
+			dhContextBufferSize = dhContextFIFO.size();
 			
 			if(dhContextBufferSize < 1) {
 				// We need one exponent, generate it at all cost! (startup)
 				changeDHExponents = true;
 				generateOnThread = true;
-			} else if((dhContextBufferSize < DH_CONTEXT_BUFFER_SIZE) && (currentDHContextLifetime + 30000 /*30sec*/) < now) {
+			} else if((dhContextBufferSize < DH_CONTEXT_BUFFER_SIZE) && (jfkDHLastGenerationTimestamp + 30000 /*30sec*/) < now) {
 				changeDHExponents = true;
-				currentDHContextLifetime = now;
+				jfkDHLastGenerationTimestamp = now;
 			}
 		}
 		
@@ -2495,13 +2495,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(generateOnThread) {
 				Logger.minor(this, "No DH exponent have been created; generate the context on-thread!");
 				// No need to synchronize here as we are on-thread
-				dhContextBuffer.add(_genLightDiffieHellmanContext());
+				dhContextFIFO.add(_genLightDiffieHellmanContext());
 			} else {
 				// Use the ticket to do it off-thread
 				node.getTicker().queueTimedJob(new Runnable() {
 					public void run() {
-						synchronized (dhContextBuffer) {
-							dhContextBuffer.addLast(_genLightDiffieHellmanContext());
+						synchronized (dhContextFIFO) {
+							dhContextFIFO.addLast(_genLightDiffieHellmanContext());
 						}
 					}
 				}, 0);
@@ -2510,9 +2510,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		DiffieHellmanLightContext result;
-		synchronized (dhContextBuffer) {
+		synchronized (dhContextFIFO) {
 			// Don't remove the exponent from the list if it's the only remaining one.
-			result = (DiffieHellmanLightContext) (dhContextBufferSize < 2 ? dhContextBuffer.getFirst() : dhContextBuffer.removeFirst());
+			result = (DiffieHellmanLightContext) (dhContextBufferSize < 2 ? dhContextFIFO.getFirst() : dhContextFIFO.removeFirst());
 		}
 		return result;
 	}
