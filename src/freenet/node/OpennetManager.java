@@ -445,7 +445,7 @@ public class OpennetManager {
 	}
 
 	protected int getNumberOfConnectedPeersToAim() {
-		return MAX_PEERS - node.peers.quickCountConnectedPeers();
+		return MAX_PEERS - node.peers.countConnectedDarknetPeers();
 	}
 
 }

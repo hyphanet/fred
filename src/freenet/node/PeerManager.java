@@ -1375,4 +1375,16 @@ public class PeerManager {
 		if(conns == null) return 0;
 		return connectedPeers.length;
 	}
+
+	public int countConnectedDarknetPeers() {
+		int count = 0;
+		PeerNode[] peers = connectedPeers;
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] == null) continue;
+			if(peers[i].isOpennet()) continue;
+			if(!peers[i].isRoutable()) continue;
+			count++;
+		}
+		return count;
+	}
 }
