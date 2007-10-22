@@ -273,6 +273,7 @@ public class OpennetManager {
 		Vector dropList = new Vector();
 		synchronized(this) {
 			int maxPeers = getNumberOfConnectedPeersToAim();
+			// If we have dropped a disconnected peer, then the inter-peer offer cooldown doesn't apply: we can accept immediately.
 			boolean hasDisconnected = false;
 			if(peersLRU.size() == maxPeers && nodeToAddNow == null) {
 				PeerNode toDrop = peerToDrop(true);
