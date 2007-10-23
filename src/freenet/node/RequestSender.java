@@ -13,6 +13,7 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.NullAsyncMessageFilterCallback;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.RetrievalException;
@@ -629,7 +630,8 @@ public final class RequestSender implements Runnable, ByteCounter {
         	if(key instanceof NodeCHK && next != null && 
         			(next.isOpennet() || node.passOpennetRefsThroughDarknet()) ) {
         		finishOpennet(next);
-        	}
+        	} else
+        		finishOpennetNull(next);
         }
         
 		synchronized(this) {
@@ -639,7 +641,20 @@ public final class RequestSender implements Runnable, ByteCounter {
         
     }
 
-    /**
+    /** Wait for the opennet completion message and discard it */
+    private void finishOpennetNull(PeerNode next) {
+    	MessageFilter mfAck = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
+    	MessageFilter mfConnect = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(OPENNET_TIMEOUT).setType(DMT.FNPOpennetConnectDestination);
+    	MessageFilter mf = mfAck.or(mfConnect).setMatchesDroppedConnection(true).setMatchesRestartedConnections(true);
+    	
+    	try {
+			node.usm.addAsyncFilter(mf, new NullAsyncMessageFilterCallback());
+		} catch (DisconnectedException e) {
+			// Fine by me.
+		}
+	}
+
+	/**
      * Do path folding, maybe.
      * Wait for either a CompletedAck or a ConnectDestination.
      * If the former, exit.
