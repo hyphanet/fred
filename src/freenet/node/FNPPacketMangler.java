@@ -783,6 +783,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		inputOffset += HASH_LENGTH;
 		
 		DiffieHellmanLightContext ctx = findContextByExponential(_ourExponential);
+		if(ctx == null) {
+			Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN!");
+			return;
+		}
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
 		byte[] Ks = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
