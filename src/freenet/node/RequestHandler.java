@@ -148,8 +148,10 @@ public class RequestHandler implements Runnable, ByteCounter {
             	node.addTransferringRequestHandler(uid);
             	if(bt.send(node.executor)) {
             		status = RequestSender.SUCCESS; // for byte logging
-            		if(node.passOpennetRefsThroughDarknet())
-            			finishOpennetNoRelayChecked();
+            		// We've fetched it from our datastore, so there won't be a downstream noderef.
+            		// But we want to send at least an FNPOpennetCompletedAck, otherwise the request source
+            		// may have to timeout waiting for one.
+           			finishOpennetNoRelayChecked();
             	}
             }
             return;
