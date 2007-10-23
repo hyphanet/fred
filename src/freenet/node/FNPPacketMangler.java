@@ -2476,6 +2476,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		node.executor.execute(new Runnable() {
 			public void run() {
 				synchronized (dhContextFIFO) {
+					dhContextFIFO.remove(findOldestContext());
 					dhContextFIFO.addLast(_genLightDiffieHellmanContext());
 				}
 			}
@@ -2547,6 +2548,29 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * Used to prune the oldest context
+	 * That's O^(N)... but we have only a few elements.
+	 * 
+	 * @return the oldest DiffieHellmanLightContext
+	 */
+	private DiffieHellmanLightContext findOldestContext() {
+		DiffieHellmanLightContext result = null, tmp;
+		long oldestSeen = Long.MAX_VALUE;
+		
+		synchronized (dhContextFIFO) {
+			Iterator it = dhContextFIFO.iterator();
+			while(it.hasNext()) {
+				tmp = (DiffieHellmanLightContext) it.next();
+				if(result.lifetime < oldestSeen) {
+					oldestSeen = result.lifetime;
+					result = tmp;
+				}
+			}
+		}
+		return result;
 	}
 
 	/*
