@@ -449,6 +449,10 @@ public class PacketSender implements Runnable, Ticker {
     }
 
 	public void queueTimedJob(Runnable job, long offset) {
+		if(offset <= 0) {
+			node.executor.execute(job, "Scheduled job: "+job);
+			return;
+		}
 		long now = System.currentTimeMillis();
 		Long l = new Long(offset + now);
 		synchronized(timedJobsByTime) {
