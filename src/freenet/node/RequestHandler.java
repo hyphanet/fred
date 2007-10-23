@@ -265,7 +265,8 @@ public class RequestHandler implements Runnable, ByteCounter {
 	}
 
 	private void finishOpennetChecked() {
-		if(!source.isOpennet()) {
+		if(!(source.isOpennet() || 
+				(node.passOpennetRefsThroughDarknet() && node.isOpennetEnabled()))) {
 			Message msg = DMT.createFNPOpennetCompletedAck(uid);
 			try {
 				source.sendAsync(msg, null, 0, this);
