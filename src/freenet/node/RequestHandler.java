@@ -151,7 +151,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             		// We've fetched it from our datastore, so there won't be a downstream noderef.
             		// But we want to send at least an FNPOpennetCompletedAck, otherwise the request source
             		// may have to timeout waiting for one.
-           			finishOpennetNoRelayChecked();
+           			finishOpennetNoRelayInner();
             	}
             }
             return;
@@ -292,24 +292,11 @@ public class RequestHandler implements Runnable, ByteCounter {
     	finishOpennetRelay(noderef);
     }
     
-	private void finishOpennetNoRelayChecked() {
-		if(!source.isOpennet()) {
-			Message msg = DMT.createFNPOpennetCompletedAck(uid);
-			try {
-				source.sendAsync(msg, null, 0, this);
-			} catch (NotConnectedException e) {
-				// Oh well...
-			}
-			return;
-		}
-		finishOpennetNoRelayInner();
-	}
-	
     private void finishOpennetNoRelayInner() {
     	if(logMINOR)
     		Logger.minor(this, "Finishing opennet: sending own reference");
 		OpennetManager om = node.getOpennet();
-		if(om != null) {
+		if(om != null && (source.isOpennet() || node.passOpennetRefsThroughDarknet())) {
 			if(om.wantPeer(null, false)) {
     			Message msg = DMT.createFNPOpennetConnectDestination(uid, new ShortBuffer(om.crypto.myCompressedFullRef()));
 				try {
