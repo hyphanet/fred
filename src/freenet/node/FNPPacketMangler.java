@@ -1108,7 +1108,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		sendAuthPacket(1, 2, 2, message3, pn, replyTo);
 		
 		/* Re-send the packet after 5sec if we don't get any reply */
-		node.getTicker().queueTimedJob(new FastRunnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
 				if(pn.timeLastConnected() >= pn.lastReceivedPacketTime()) {
 					sendAuthPacket(1, 2, 2, message3, pn, replyTo);
