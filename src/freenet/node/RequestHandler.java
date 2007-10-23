@@ -351,29 +351,18 @@ public class RequestHandler implements Runnable, ByteCounter {
 		    	try {
 					if(!node.addNewOpennetNode(ref)) {
 						Logger.normal(this, "Asked for opennet ref but didn't want it for "+this+" :\n"+ref);
-						return;
 					} else {
 						Logger.normal(this, "Added opennet noderef in "+this);
 					}
 				} catch (FSParseException e) {
 					Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
-					return;
 				} catch (PeerParseException e) {
 					Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
-					return;
 				} catch (ReferenceSignatureVerificationException e) {
 					Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+source+" : "+e, e);
-					return;
 				}
-			} else {
-				Message msg = DMT.createFNPOpennetCompletedAck(uid);
-				try {
-					source.sendAsync(msg, null, 0, this);
-				} catch (NotConnectedException e) {
-					// Oh well...
-				}
-			}
-		} else {
+				return;
+		}
 			Message msg = DMT.createFNPOpennetCompletedAck(uid);
 			try {
 				source.sendAsync(msg, null, 0, this);
