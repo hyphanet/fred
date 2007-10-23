@@ -2568,7 +2568,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Iterator it = dhContextFIFO.iterator();
 			while(it.hasNext()) {
 				tmp = (DiffieHellmanLightContext) it.next();
-				if(result.lifetime < oldestSeen) {
+				if(tmp.lifetime < oldestSeen) {
 					oldestSeen = result.lifetime;
 					result = tmp;
 				}
