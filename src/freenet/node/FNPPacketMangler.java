@@ -2480,8 +2480,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		node.executor.execute(new Runnable() {
 			public void run() {
 				synchronized (dhContextFIFO) {
-					dhContextFIFO.remove(findOldestContext());
 					dhContextFIFO.addLast(_genLightDiffieHellmanContext());
+					if(dhContextFIFO.size() > DH_CONTEXT_BUFFER_SIZE)
+						dhContextFIFO.remove(findOldestContext());
 				}
 			}
 		}, "DiffieHellman exponential signing");
@@ -2497,10 +2498,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private DiffieHellmanLightContext getLightDiffieHellmanContext() {
 		final long now = System.currentTimeMillis();
-		
 		int dhContextFIFOSize = 0;
-		boolean requeueElement = true;
-		
 		DiffieHellmanLightContext result = null;
 		
 		synchronized (dhContextFIFO) {
@@ -2519,13 +2517,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				// Shall we replace one element of the queue ?
 				if((jfkDHLastGenerationTimestamp + 30000 /*30sec*/) < now) {
 					jfkDHLastGenerationTimestamp = now;
-					requeueElement = false;
 					_fillJFKDHFIFO();
 				}
 			}
 			
-			if(requeueElement)
-				dhContextFIFO.addLast(result);
+			dhContextFIFO.addLast(result);
 		}
 		
 		Logger.minor(this, "getLightDiffieHellmanContext() is serving "+result.hashCode());
