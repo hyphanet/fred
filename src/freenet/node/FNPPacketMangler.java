@@ -2569,7 +2569,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			while(it.hasNext()) {
 				tmp = (DiffieHellmanLightContext) it.next();
 				if(tmp.lifetime < oldestSeen) {
-					oldestSeen = result.lifetime;
+					oldestSeen = tmp.lifetime;
 					result = tmp;
 				}
 			}
