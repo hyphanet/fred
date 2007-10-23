@@ -2605,6 +2605,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public boolean isAdvancedModeEnabled() {
+		if(clientCore == null) return false;
 		return clientCore.isAdvancedModeEnabled();
 	}
 	
