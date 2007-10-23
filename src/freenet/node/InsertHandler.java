@@ -257,6 +257,12 @@ public class InsertHandler implements Runnable, ByteCounter {
                 return;
             }
             
+            if(status == CHKInsertSender.RECEIVE_FAILED) {
+            	// Probably source's fault.
+            	finish(status);
+            	return;
+            }
+            
             if(status == CHKInsertSender.SUCCESS) {
             	msg = DMT.createFNPInsertReply(uid);
             	try {
