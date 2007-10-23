@@ -146,7 +146,7 @@ public class PluginManager {
 		synchronized (syncObject) {
 			plugins.add(newPlugin);
 		}
-		node.ps.queueTimedJob(new Runnable() {
+		node.executor.execute(new Runnable() {
 			public void run() {
 				try{
 					while(!node.isHasStarted())
@@ -156,7 +156,7 @@ public class PluginManager {
 				if(store)
 					node.clientCore.storeConfig();
 			}
-		}, 0);
+		}, "Plugin loader");
 		
 	}
 
