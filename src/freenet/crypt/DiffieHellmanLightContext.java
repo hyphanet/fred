@@ -15,6 +15,8 @@ public class DiffieHellmanLightContext {
 	public final NativeBigInteger myExponential;
 	/** The signature of (g^r, grpR) */
 	public DSASignature signature = null;
+	/** A timestamp: when was the context created ? */
+	public final long lifetime = System.currentTimeMillis();
 	
 	private final boolean logMINOR;
 
