@@ -190,8 +190,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             		finalTransferFailed = true;
             	} else {
     				// Successful CHK transfer, maybe path fold
-            		if(node.passOpennetRefsThroughDarknet())
-            			finishOpennetChecked();
+           			finishOpennetChecked();
             	}
 				status = rs.getStatus();
         	    return;
