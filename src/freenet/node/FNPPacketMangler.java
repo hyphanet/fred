@@ -2474,14 +2474,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 	
 	private final void _fillJFKDHFIFO() {
-		// Use the ticket to do it off-thread
-		node.getTicker().queueTimedJob(new Runnable() {
+		// do it off-thread
+		node.executor.execute(new Runnable() {
 			public void run() {
 				synchronized (dhContextFIFO) {
 					dhContextFIFO.addLast(_genLightDiffieHellmanContext());
 				}
 			}
-		}, 0);
+		}, "DiffieHellman exponential signing");
 	}
 	
 	/**
