@@ -8,6 +8,7 @@ import freenet.io.comm.SocketHandler;
 
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import net.i2p.util.NativeBigInteger;
@@ -541,18 +542,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
-		final long now = System.currentTimeMillis();
-		if((pn.jfkContext == null) || ((pn.jfkContextLifetime + 15*60*1000) < now)) {
-			pn.jfkContext = getLightDiffieHellmanContext();
-			pn.jfkContextLifetime = now;
-		}
+		DiffieHellmanLightContext ctx = getLightDiffieHellmanContext();
 		// g^r
-		byte[] myExponential = stripBigIntegerToNetworkFormat(pn.jfkContext.myExponential);
+		byte[] myExponential = stripBigIntegerToNetworkFormat(ctx.myExponential);
 		// Nr
 		byte[] myNonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(myNonce);
-		byte[] r = pn.jfkContext.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] s = pn.jfkContext.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] r = ctx.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] s = ctx.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		HMAC hash = new HMAC(SHA256.getInstance());
 		byte[] authenticator = hash.mac(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
 		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
@@ -785,7 +782,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(payload, inputOffset, hmac, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 		
-		BigInteger computedExponential = pn.jfkContext.getHMACKey(_hisExponential, Global.DHgroupA);
+		DiffieHellmanLightContext ctx = findContextByExponential(_ourExponential);
+		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
 		byte[] Ks = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
@@ -2527,6 +2525,28 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		Logger.minor(this, "getLightDiffieHellmanContext() is serving "+result.hashCode());
 		return result;
+	}
+	
+	/**
+	 * Used in processJFK[3|4]
+	 * That's O^(n) ... but we have only a few elements and
+	 * we call it only once a round-trip has been done
+	 * 
+	 * @param exponential
+	 * @return the corresponding DiffieHellmanLightContext with the right exponent
+	 */
+	private DiffieHellmanLightContext findContextByExponential(BigInteger exponential) {
+		DiffieHellmanLightContext result = null;
+		synchronized (dhContextFIFO) {
+			Iterator it = dhContextFIFO.iterator();
+			while(it.hasNext()) {
+				result = (DiffieHellmanLightContext) it.next();
+				if(exponential.equals(result.myExponential)) {
+					return result;
+				}
+			}
+		}
+		return null;
 	}
 
 	/*

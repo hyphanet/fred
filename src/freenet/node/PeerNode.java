@@ -97,9 +97,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     protected byte[] jfkKe;
     protected byte[] jfkKs;
     protected byte[] jfkMyRef;
+    // The following is used only if we are the initiator
     protected long jfkContextLifetime = 0;
     protected DiffieHellmanLightContext jfkContext = null;
-	
+    
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;
     
