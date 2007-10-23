@@ -362,13 +362,13 @@ public class RequestHandler implements Runnable, ByteCounter {
 					Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+source+" : "+e, e);
 				}
 				return;
-		}
-			Message msg = DMT.createFNPOpennetCompletedAck(uid);
-			try {
-				source.sendAsync(msg, null, 0, this);
-			} catch (NotConnectedException e) {
-				// Oh well...
 			}
+		}
+		Message msg = DMT.createFNPOpennetCompletedAck(uid);
+		try {
+			source.sendAsync(msg, null, 0, this);
+		} catch (NotConnectedException e) {
+			// Oh well...
 		}
     }
     
