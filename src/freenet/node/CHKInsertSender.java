@@ -554,8 +554,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         		if(status == RECEIVE_FAILED) {
         			if(code == SUCCESS)
         				Logger.error(this, "Request succeeded despite receive failed?! on "+this);
-        		}
-        		throw new IllegalStateException("finish() called with "+code+" when was already "+status);
+        		} else
+        			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         	} else {
                 status = code;
         	}
