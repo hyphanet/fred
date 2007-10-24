@@ -24,9 +24,12 @@ public interface PacketSocketHandler extends SocketHandler {
     /**
      * Get the size of the transport layer headers, for byte accounting purposes.
      */
-	int getHeadersLength();
+	public int getHeadersLength();
 
 	/** Set the decryption filter to which incoming packets will be fed */
 	public void setLowLevelFilter(IncomingPacketFilter f);
+
+	/** How big must the pending data be before we send a packet? *Includes* transport layer headers. */
+	public int getPacketSendThreshold();
 
 }

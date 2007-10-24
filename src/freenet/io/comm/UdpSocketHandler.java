@@ -255,6 +255,10 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
     	// UDP/IP header is 28 bytes.
     }
 
+    public int getPacketSendThreshold() {
+    	return getMaxPacketSize() - 100;
+    }
+    
 	public void start() {
 		start(false);
 	}

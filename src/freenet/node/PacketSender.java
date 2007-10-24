@@ -12,7 +12,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.UdpSocketHandler;
+import freenet.io.comm.PacketSocketHandler;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -274,7 +274,8 @@ public class PacketSender implements Runnable, Ticker {
                 		if(l > messages[j].submitted) l = messages[j].submitted;
                 		sz += 2 + /* FIXME only 2? */ messages[j].getData(pn).length;
                 	}
-                	if((l + MAX_COALESCING_DELAY > now) && (sz < 1024 /* sensible size */)) {
+                	if((l + MAX_COALESCING_DELAY > now) && 
+                			(sz < ((PacketSocketHandler) pn.getSocketHandler()).getPacketSendThreshold())) {
                 		// Don't send immediately
                 		if(nextActionTime > (l+MAX_COALESCING_DELAY))
                 			nextActionTime = l+MAX_COALESCING_DELAY;
