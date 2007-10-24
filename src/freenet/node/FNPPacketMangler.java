@@ -64,16 +64,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	final PacketSocketHandler sock;
 	final EntropySource fnpTimingSource;
 	final EntropySource myPacketDataSource;
-	/*
+	/**
 	 * Objects cached during JFK message exchange: JFK(3,4) with authenticator as key
 	 * The messages are cached in hashmaps because the message retrieval from the cache 
 	 * can be performed in constant time( given the key)
-	 * Usage of a linkedList could prove to be much slower due to the allocation time
-	 * for each node in the list.
 	 */
-
 	private final HashMap authenticatorCache;
-	// The following is used in the HMAC calculation of JFK message3 and message4
+	/** The following is used in the HMAC calculation of JFK message3 and message4 */
 	private static final byte[] JFK_PREFIX_INITIATOR, JFK_PREFIX_RESPONDER;
 	static {
 		byte[] I = null,R = null;
@@ -103,6 +100,21 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private static final int TRANSIENT_KEY_SIZE = HASH_LENGTH;
 	/** The key used to authenticate the hmac */
 	private final byte[] transientKey = new byte[TRANSIENT_KEY_SIZE];
+	public static final int TRANSIENT_KEY_REKEYING_MIN_INTERVAL = 30*60*1000;
+	/** The Runnable in charge of rekeying on a regular basis */
+	private final Runnable transitentKeyRekeyer = new Runnable() {
+		public void run() {
+			resetTransientKey();
+			
+			try {
+				// Ugly hack to let the node start up. When we are first
+				// called in the constructor the ticker is not available!
+				while(!node.isHasStarted())
+					Thread.sleep(1000);
+			} catch (InterruptedException e) {}
+			node.getTicker().queueTimedJob(transitentKeyRekeyer, TRANSIENT_KEY_REKEYING_MIN_INTERVAL);
+		}
+	};
 	/** Minimum headers overhead */
 	private static final int HEADERS_LENGTH_MINIMUM =
 		4 + // sequence number
@@ -139,7 +151,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		resetTransientKey();
+		
+		// Yeah there is a race condition... the key might be at 0 for a while...
+		// but it will get reset soonish and current runs will be invalidated.
+		node.executor.execute(transitentKeyRekeyer, "JFK transientRekeyer");
 	}
 
 	/**
@@ -2635,11 +2650,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return mac.mac(exponential.toByteArray(), toHash, HASH_LENGTH);
 	}
 
+	/**
+	 * Change the transient key used by JFK.
+	 * 
+	 * It will determine the PFS interval, hence we call it at least once every 30mins.
+	 */
 	private void resetTransientKey() {
 		Logger.normal(this, "JFK's TransientKey has been changed and the message cache flushed.");
 		synchronized (authenticatorCache) {
 			node.random.nextBytes(transientKey);
-
+			
 			// reset the authenticator cache
 			authenticatorCache.clear();
 		}
