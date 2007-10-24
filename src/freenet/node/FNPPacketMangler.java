@@ -492,10 +492,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
 		System.arraycopy(payload, offset, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-		if(_hisExponential.compareTo(NativeBigInteger.ONE) > 0) {
+		if(DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
 			sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo);
 		}else
-			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
+			Logger.error(this, "We can't accept the exponential "+pn+" sent us!!");
 
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
@@ -671,8 +671,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		
-		if(_hisExponential.compareTo(NativeBigInteger.ONE) < 1) {
-			Logger.error(this, "We can't accept the exponential "+pn+" sent us; it's smaller than 1!!");
+		if(!DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
+			Logger.error(this, "We can't accept the exponential "+pn+" sent us!!");
 			return;
 		}
 		
