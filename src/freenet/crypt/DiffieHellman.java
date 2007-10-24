@@ -40,7 +40,8 @@ public class DiffieHellman {
 	
 	public static final BigInteger MIN_EXPONENTIAL_VALUE = new BigInteger("2").pow(24);
 	public static final BigInteger MAX_EXPONENTIAL_VALUE = group.getP().subtract(MIN_EXPONENTIAL_VALUE);
-
+	public static final BigInteger FORBIDDEN_VALUE = group.getP().subtract(BigInteger.ONE);
+	
 	static {
 		precalcThread = new PrecalcBufferFill();
 	}
@@ -174,14 +175,18 @@ public class DiffieHellman {
 			return false;
 		}
 		
-		//TODO: Shall we test if p-1 = -1 here ?
+		// Ensure that g^x != (p-1)
+		if(FORBIDDEN_VALUE.compareTo(exponential) == 0) {
+			Logger.error(caller, "The provided exponential is p-1 which is unacceptable!");
+			return false;
+		}
 		
 		// Ensure that g^x > 2^24
 		if(MIN_EXPONENTIAL_VALUE.compareTo(exponential) > -1) {
 			Logger.error(caller, "The provided exponential is smaller than 2^24 which is unacceptable!");
 			return false;
 		}
-		// Ensure that g^x < (p - 2^24)
+		// Ensure that g^x < (p-2^24)
 		if(MAX_EXPONENTIAL_VALUE.compareTo(exponential) < 1) {
 			Logger.error(DiffieHellman.class, "The provided exponential is bigger than (p - 2^24) which is unacceptable!");
 			return false;
