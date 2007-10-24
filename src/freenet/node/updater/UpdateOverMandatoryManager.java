@@ -505,7 +505,7 @@ public class UpdateOverMandatoryManager {
 		
 		final BulkTransmitter bt;
 		try {
-			bt = new BulkTransmitter(prb, source, uid, updateManager.node.outputThrottle);
+			bt = new BulkTransmitter(prb, source, uid, updateManager.node.outputThrottle, false);
 		} catch (DisconnectedException e) {
 			Logger.error(this, "Peer "+source+" asked us for the blob file for the revocation key, then disconnected: "+e, e);
 			return true;
@@ -878,7 +878,7 @@ public class UpdateOverMandatoryManager {
 		
 		final BulkTransmitter bt;
 		try {
-			bt = new BulkTransmitter(prb, source, uid, updateManager.node.outputThrottle);
+			bt = new BulkTransmitter(prb, source, uid, updateManager.node.outputThrottle, false);
 		} catch (DisconnectedException e) {
 			Logger.error(this, "Peer "+source+" asked us for the blob file for the main jar, then disconnected: "+e, e);
 			return true;

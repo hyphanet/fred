@@ -42,12 +42,24 @@ public class BulkTransmitter {
 	private boolean sentCancel;
 	private boolean finished;
 	final int packetSize;
+	/** Not expecting a response? */
+	final boolean noWait;
 	
-	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, DoubleTokenBucket masterThrottle) throws DisconnectedException {
+	/**
+	 * Create a bulk data transmitter.
+	 * @param prb The PartiallyReceivedBulk containing the file we want to send, or the part of it that we have so far.
+	 * @param peer The peer we want to send it to.
+	 * @param uid The unique identifier for this data transfer
+	 * @param masterThrottle The overall output throttle
+	 * @param noWait If true, don't wait for an FNPBulkReceivedAll, return as soon as we've sent everything.
+	 * @throws DisconnectedException If the peer we are trying to send to becomes disconnected.
+	 */
+	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, DoubleTokenBucket masterThrottle, boolean noWait) throws DisconnectedException {
 		this.prb = prb;
 		this.peer = peer;
 		this.uid = uid;
 		this.masterThrottle = masterThrottle;
+		this.noWait = noWait;
 		peerBootID = peer.getBootID();
 		// Need to sync on prb while doing both operations, to avoid race condition.
 		// Specifically, we must not get calls to blockReceived() until blocksNotSentButPresent
@@ -167,6 +179,10 @@ public class BulkTransmitter {
 				blockNo = blocksNotSentButPresent.firstOne();
 			}
 			if(blockNo < 0) {
+				if(noWait && prb.hasWholeFile()) {
+					completed();
+					return true;
+				}
 				// Wait for a packet, BulkReceivedAll or BulkReceiveAborted
 				synchronized(this) {
 					try {
