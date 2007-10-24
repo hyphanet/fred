@@ -40,7 +40,6 @@ public class DiffieHellman {
 	
 	public static final BigInteger MIN_EXPONENTIAL_VALUE = new BigInteger("2").pow(24);
 	public static final BigInteger MAX_EXPONENTIAL_VALUE = group.getP().subtract(MIN_EXPONENTIAL_VALUE);
-	public static final BigInteger FORBIDDEN_VALUE = group.getP().subtract(BigInteger.ONE);
 	
 	static {
 		precalcThread = new PrecalcBufferFill();
@@ -173,12 +172,6 @@ public class DiffieHellman {
 				zerosCount++;
 		if((onesCount<16) || (zerosCount<16)) {
 			Logger.error(caller, "The provided exponential contains "+zerosCount+" zeros and "+onesCount+" ones wich is unacceptable!");
-			return false;
-		}
-		
-		// Ensure that g^x != (p-1)
-		if(FORBIDDEN_VALUE.compareTo(exponential) == 0) {
-			Logger.error(caller, "The provided exponential is p-1 which is unacceptable!");
 			return false;
 		}
 		
