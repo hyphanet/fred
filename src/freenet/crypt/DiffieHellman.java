@@ -160,6 +160,7 @@ public class DiffieHellman {
 	 * @return a boolean: whether the DH exponential provided is acceptable or not
 	 * 
 	 * @see http://securitytracker.com/alerts/2005/Aug/1014739.html
+	 * @see http://www.it.iitb.ac.in/~praj/acads/netsec/FinalReport.pdf
 	 */
 	public static boolean checkDHExponentialValidity(Class caller, BigInteger exponential) {
 		int onesCount=0, zerosCount=0;
