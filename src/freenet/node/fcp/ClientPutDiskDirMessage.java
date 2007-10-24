@@ -71,7 +71,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
     	
     	File filelist[] = thisdir.listFiles();
     	if(filelist == null)
-    		throw new IllegalArgumentException("No such directory");
+    		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "No such directory!", identifier, global);
     	for(int i = 0 ; i < filelist.length ; i++) {
                 //   Skip unreadable files and dirs
 		//   Skip files nonexistant (dangling symlinks) - check last 
