@@ -31,7 +31,7 @@ public class PacketSender implements Runnable, Ticker {
 	private static boolean logDEBUG;
 	
 	/** Maximum time we will queue a message for in millseconds */
-	static final int MAX_COALESCING_DELAY = 200;
+	static final int MAX_COALESCING_DELAY = 100;
 	
 	/** If opennet is enabled, and there are fewer than this many connections,
 	 * we MAY attempt to contact old opennet peers (opennet peers we have 
