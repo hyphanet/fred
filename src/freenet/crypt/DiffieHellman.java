@@ -13,7 +13,7 @@ import freenet.support.Logger;
 import net.i2p.util.NativeBigInteger;
 
 public class DiffieHellman {
-	
+
 	/**
 	 * When the number of precalculations falls below this threshold generation
 	 * starts up to make more.
@@ -63,23 +63,23 @@ public class DiffieHellman {
 				precalcThread.setPriority(Thread.NORM_PRIORITY);
 
 				synchronized (precalcerWaitObj) {
-						try {
+					try {
 						// Do not set the thread priority here because the
 						// thread may have been stopped while holding the
 						// precalcerWaitObj lock. The stop causes the thread
 						// group to be cleared and setPriority to throw a NPE.
 						precalcerWaitObj.wait(PRECALC_TIMEOUT);
 						// TODO: this timeout might very well be unneccsary
-						} catch (InterruptedException ie) {
-							// Ignored.
-						}
+					} catch (InterruptedException ie) {
+						// Ignored.
 					}
 				}
 			}
 		}
+	}
 
 	public static void init(Random random) {
-	    r = random;
+		r = random;
 		precalcThread.start();
 	}
 
@@ -122,7 +122,7 @@ public class DiffieHellman {
 		}
 		return new DiffieHellmanLightContext(params[0], params[1]);
 	}
-	
+
 	public static NativeBigInteger[] getParams() {
 		synchronized (precalcBuffer) {
 			//Ensure that we will have something to pop (at least pretty soon)
@@ -131,7 +131,7 @@ public class DiffieHellman {
 			if(!precalcBuffer.isEmpty()) {
 				return (NativeBigInteger[]) precalcBuffer.pop();
 			}
-			
+
 		}
 		return genParams();
 	}
@@ -148,12 +148,12 @@ public class DiffieHellman {
 		return group;
 	}
 
-    /**
-     * @return The length in bytes of the modulus. Exponentials will fit into
-     * this length.
-     */
-    public static int modulusLengthInBytes() {
-        int bitLength = getGroup().getP().bitLength();
-        return (bitLength/8) + ((bitLength % 8) > 0 ? 1 : 0);
-    }
+	/**
+	 * @return The length in bytes of the modulus. Exponentials will fit into
+	 * this length.
+	 */
+	public static int modulusLengthInBytes() {
+		int bitLength = getGroup().getP().bitLength();
+		return (bitLength/8) + ((bitLength % 8) > 0 ? 1 : 0);
+	}
 }
