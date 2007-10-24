@@ -269,9 +269,7 @@ public class PacketSender implements Runnable, Ticker {
                 messages = pn.grabQueuedMessageItems();
                 if((messages != null) && (messages.length > 0)) {
                 	long l = Long.MAX_VALUE;
-                	// FIXME better alternate-transports support
-                	int sz = FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
-                	sz += UdpSocketHandler.UDP_HEADERS_LENGTH;
+                	int sz = pn.getOutgoingMangler().fullHeadersLengthOneMessage(); // includes UDP headers 
                 	for(int j=0;j<messages.length;j++) {
                 		if(l > messages[j].submitted) l = messages[j].submitted;
                 		sz += 2 + /* FIXME only 2? */ messages[j].getData(pn).length;
