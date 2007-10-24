@@ -495,7 +495,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
 			sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo);
 		}else
-			Logger.error(this, "We can't accept the exponential "+pn+" sent us!!");
+			Logger.error(this, "We can't accept the exponential "+pn+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
 
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
@@ -672,7 +672,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		if(!DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
-			Logger.error(this, "We can't accept the exponential "+pn+" sent us!!");
+			Logger.error(this, "We can't accept the exponential "+pn+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
 			return;
 		}
 		
@@ -1486,6 +1486,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] aAsBytes = new byte[length];
 		System.arraycopy(payload, 3, aAsBytes, 0, length);
 		NativeBigInteger a = new NativeBigInteger(1, aAsBytes);
+		if(!DiffieHellman.checkDHExponentialValidity(this.getClass(), a)) {
+			Logger.error(this, "We can't accept the exponential the other end sent us!!");
+			return null;
+		}
 		DiffieHellmanContext ctx;
 		if(phase == 1) {
 			ctx = (DiffieHellmanContext) pn.getKeyAgreementSchemeContext();
