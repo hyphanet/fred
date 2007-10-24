@@ -397,7 +397,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	    			try {
 						p = new Peer(physical[i], true, true);
 					} catch (HostnameSyntaxException e) {
-						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
+						if(fromLocal)
+							Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: "+physical[i]);
 						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
 						continue;
 					}
@@ -1795,8 +1796,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         			Peer p = new Peer(fs.get("physical.udp"), true, true);
         			nominalPeer.addElement(p);
 				} catch (HostnameSyntaxException e) {
-					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference: "+fs.get("physical.udp"));
-					System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: "+fs.get("physical.udp"));
+					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: "+fs.get("physical.udp"));
 				}
         	} else {
 	    		for(int i=0;i<physical.length;i++) {
@@ -1804,8 +1804,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	    			try {
 						p = new Peer(physical[i], true, true);
 					} catch (HostnameSyntaxException e) {
-						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
-						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: "+physical[i]);
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: "+physical[i]);
 						continue;
 					}
 				    if(!nominalPeer.contains(p)) {
