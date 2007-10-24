@@ -106,12 +106,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		public void run() {
 			resetTransientKey();
 			
-			try {
-				// Ugly hack to let the node start up. When we are first
-				// called in the constructor the ticker is not available!
-				while(!node.isHasStarted())
-					Thread.sleep(1000);
-			} catch (InterruptedException e) {}
 			node.getTicker().queueTimedJob(transientKeyRekeyer, TRANSIENT_KEY_REKEYING_MIN_INTERVAL);
 		}
 	};
