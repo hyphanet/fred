@@ -12,6 +12,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.UdpSocketHandler;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -268,7 +269,9 @@ public class PacketSender implements Runnable, Ticker {
                 messages = pn.grabQueuedMessageItems();
                 if((messages != null) && (messages.length > 0)) {
                 	long l = Long.MAX_VALUE;
-                	int sz = 56; // overhead; FIXME should be a constant or something
+                	// FIXME better alternate-transports support
+                	int sz = FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
+                	sz += UdpSocketHandler.UDP_HEADERS_LENGTH;
                 	for(int j=0;j<messages.length;j++) {
                 		if(l > messages[j].submitted) l = messages[j].submitted;
                 		sz += 2 + /* FIXME only 2? */ messages[j].getData(pn).length;
