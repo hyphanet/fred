@@ -169,8 +169,8 @@ public class OpennetManager {
 				try {
 					p = new Peer(udp[i], false, true);
 				} catch (HostnameSyntaxException e) {
-					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing opennet node reference: "+udp[i]);
-					System.err.println("Invalid hostname or IP Address syntax error while parsing opennet node reference: "+udp[i]);
+					Logger.error(this, "Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+udp[i]);
+					System.err.println("Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+udp[i]);
 					continue;
 				} catch (PeerParseException e) {
 					IOException e1 = new IOException();
