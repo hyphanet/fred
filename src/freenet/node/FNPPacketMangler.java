@@ -152,6 +152,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	public void start() {
 		// Run it directly so that the transient key is set.
 		maybeResetTransientKey();
+		// Fill the DH FIFO on-thread
+		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++)
+			_fillJFKDHFIFO();
 	}
 
 
@@ -2488,19 +2491,24 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return ctx;
 	}
 	
-	private final void _fillJFKDHFIFO() {
+	private final void _fillJFKDHFIFOOffThread(final int count) {
 		// do it off-thread
 		node.executor.execute(new Runnable() {
 			public void run() {
-				synchronized (dhContextFIFO) {
-					dhContextFIFO.addLast(_genLightDiffieHellmanContext());
-					if(dhContextFIFO.size() > DH_CONTEXT_BUFFER_SIZE)
-						dhContextFIFO.remove(findOldestContext());
-				}
+				for(int i=0;i<count;i++)
+					_fillJFKDHFIFO();
 			}
 		}, "DiffieHellman exponential signing");
 	}
 	
+	private void _fillJFKDHFIFO() {
+		synchronized (dhContextFIFO) {
+			dhContextFIFO.addLast(_genLightDiffieHellmanContext());
+			if(dhContextFIFO.size() > DH_CONTEXT_BUFFER_SIZE)
+				dhContextFIFO.remove(findOldestContext());
+		}
+	}
+
 	/**
 	 * Change the DH Exponents on a regular basis but at most once every 30sec
 	 * 
@@ -2511,27 +2519,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private DiffieHellmanLightContext getLightDiffieHellmanContext() {
 		final long now = System.currentTimeMillis();
-		int dhContextFIFOSize = 0;
 		DiffieHellmanLightContext result = null;
 		
 		synchronized (dhContextFIFO) {
-			dhContextFIFOSize = dhContextFIFO.size();
 			
-			if(dhContextFIFOSize < 1) {
-				// We need one exponent, generate it at all cost! (startup)
-				Logger.minor(this, "No DH exponent have been created; generate the context on-thread!");
-				for(int i=dhContextFIFOSize; i<DH_CONTEXT_BUFFER_SIZE-1; i++)
-					_fillJFKDHFIFO();
-				
-				result = _genLightDiffieHellmanContext();
-			} else {
-				result = (DiffieHellmanLightContext) dhContextFIFO.removeFirst();
-				
-				// Shall we replace one element of the queue ?
-				if((jfkDHLastGenerationTimestamp + 30000 /*30sec*/) < now) {
-					jfkDHLastGenerationTimestamp = now;
-					_fillJFKDHFIFO();
-				}
+			result = (DiffieHellmanLightContext) dhContextFIFO.removeFirst();
+			
+			// Shall we replace one element of the queue ?
+			if((jfkDHLastGenerationTimestamp + 30000 /*30sec*/) < now) {
+				jfkDHLastGenerationTimestamp = now;
+				_fillJFKDHFIFOOffThread(1);
 			}
 			
 			dhContextFIFO.addLast(result);
