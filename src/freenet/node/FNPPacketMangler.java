@@ -102,7 +102,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private final byte[] transientKey = new byte[TRANSIENT_KEY_SIZE];
 	public static final int TRANSIENT_KEY_REKEYING_MIN_INTERVAL = 30*60*1000;
 	/** The Runnable in charge of rekeying on a regular basis */
-	private final Runnable transitentKeyRekeyer = new Runnable() {
+	private final Runnable transientKeyRekeyer = new Runnable() {
 		public void run() {
 			resetTransientKey();
 			
@@ -112,7 +112,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				while(!node.isHasStarted())
 					Thread.sleep(1000);
 			} catch (InterruptedException e) {}
-			node.getTicker().queueTimedJob(transitentKeyRekeyer, TRANSIENT_KEY_REKEYING_MIN_INTERVAL);
+			node.getTicker().queueTimedJob(transientKeyRekeyer, TRANSIENT_KEY_REKEYING_MIN_INTERVAL);
 		}
 	};
 	/** Minimum headers overhead */
@@ -154,7 +154,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// Yeah there is a race condition... the key might be at 0 for a while...
 		// but it will get reset soonish and current runs will be invalidated.
-		node.executor.execute(transitentKeyRekeyer, "JFK transientRekeyer");
+		node.executor.execute(transientKeyRekeyer, "JFK transientRekeyer");
 	}
 
 	/**
