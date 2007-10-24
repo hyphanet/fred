@@ -151,7 +151,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	public void start() {
 		// Run it directly so that the transient key is set.
-		transientKeyRekeyer.run();
+		maybeResetTransientKey();
 	}
 
 
