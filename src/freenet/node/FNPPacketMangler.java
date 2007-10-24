@@ -151,11 +151,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		
-		// Yeah there is a race condition... the key might be at 0 for a while...
-		// but it will get reset soonish and current runs will be invalidated.
-		node.executor.execute(transientKeyRekeyer, "JFK transientRekeyer");
 	}
+	
+	/**
+	 * Start up the FNPPacketMangler. By the time this is called, all objects will have been constructed,
+	 * but not all will have been started yet.
+	 */
+	public void start() {
+		// Run it directly so that the transient key is set.
+		transientKeyRekeyer.run();
+	}
+
 
 	/**
 	 * Packet format:
@@ -2683,4 +2689,5 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		return data;
 	}
+
 }

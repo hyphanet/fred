@@ -235,6 +235,7 @@ class NodeCrypto {
 	}
 
 	public void start(boolean disableHangchecker) {
+		packetMangler.start();
 		socket.start(disableHangchecker);
 	}
 	
