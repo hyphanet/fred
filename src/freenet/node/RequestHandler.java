@@ -151,7 +151,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             		// We've fetched it from our datastore, so there won't be a downstream noderef.
             		// But we want to send at least an FNPOpennetCompletedAck, otherwise the request source
             		// may have to timeout waiting for one.
-           			finishOpennetNoRelayInner();
+           			finishOpennetNoRelay();
             	}
             }
             return;
@@ -278,30 +278,56 @@ public class RequestHandler implements Runnable, ByteCounter {
 		finishOpennetInner();
 	}
 	
+	private void finishOpennetNoRelay() {
+		OpennetManager om = node.getOpennet();
+		
+		if(om == null) {
+			Message msg = DMT.createFNPOpennetCompletedAck(uid);
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Oh well...
+			}
+			return;
+		}
+		
+		finishOpennetNoRelayInner(om);
+	}
+	
 	private void finishOpennetInner() {
+		OpennetManager om = node.getOpennet();
+		
+		if(om == null) {
+			Message msg = DMT.createFNPOpennetCompletedAck(uid);
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Oh well...
+			}
+			return;
+		}
+		
 		byte[] noderef = rs.waitForOpennetNoderef();
 		if(noderef == null) {
-			finishOpennetNoRelayInner();
+			finishOpennetNoRelayInner(om);
 			return;
 		}
 		
 		if(node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0) {
-			finishOpennetNoRelayInner();
+			finishOpennetNoRelayInner(om);
 			return;
 		}
 		
-    	finishOpennetRelay(noderef);
+    	finishOpennetRelay(noderef, om);
     }
     
-    private void finishOpennetNoRelayInner() {
+    private void finishOpennetNoRelayInner(OpennetManager om) {
     	if(logMINOR)
     		Logger.minor(this, "Finishing opennet: sending own reference");
-		OpennetManager om = node.getOpennet();
-		if(om != null && (source.isOpennet() || node.passOpennetRefsThroughDarknet())) {
 			if(om.wantPeer(null, false)) {
-    			Message msg = DMT.createFNPOpennetConnectDestination(uid, new ShortBuffer(om.crypto.myCompressedFullRef()));
+				
 				try {
-					source.sendAsync(msg, null, 0, this);
+					om.sendOpennetRef(false, uid, source, om.crypto.myCompressedFullRef(), this);
 				} catch (NotConnectedException e) {
 					Logger.normal(this, "Can't send opennet ref because node disconnected on "+this);
 					// Oh well...
@@ -311,6 +337,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 				// Wait for response
 				
 				MessageFilter mf = MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetConnectReply);
+				Message msg;
 				
 				try {
 					msg = node.usm.waitFor(mf, this);
@@ -350,25 +377,16 @@ public class RequestHandler implements Runnable, ByteCounter {
 				}
 				return;
 			}
-		}
-		Message msg = DMT.createFNPOpennetCompletedAck(uid);
-		try {
-			source.sendAsync(msg, null, 0, this);
-		} catch (NotConnectedException e) {
-			// Oh well...
-		}
     }
     
-	private void finishOpennetRelay(byte[] noderef) {
+	private void finishOpennetRelay(byte[] noderef, OpennetManager om) {
     	if(logMINOR)
     		Logger.minor(this, "Finishing opennet: relaying reference from "+rs.successFrom());
 		// Send it back to the handler, then wait for the ConnectReply
 		PeerNode dataSource = rs.successFrom();
 		
-		Message msg = DMT.createFNPOpennetConnectDestination(uid, new ShortBuffer(noderef));
-		
 		try {
-			source.sendAsync(msg, null, 0, this);
+			om.sendOpennetRef(false, uid, source, om.crypto.myCompressedFullRef(), this);
 		} catch (NotConnectedException e) {
 			// Lost contact with request source, nothing we can do
 			return;
@@ -377,7 +395,8 @@ public class RequestHandler implements Runnable, ByteCounter {
 		// Now wait for reply from the request source
 		
 		MessageFilter mf = MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetConnectReply);
-		
+
+		Message msg;
 		try {
 			msg = node.usm.waitFor(mf, this);
 		} catch (DisconnectedException e) {
@@ -393,13 +412,16 @@ public class RequestHandler implements Runnable, ByteCounter {
 		
 		try {
 			SimpleFieldSet fs = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
-			if(!fs.getBoolean("opennet", false)) {
-				msg = DMT.createFNPOpennetCompletedAck(uid);
-			} else {
-				msg = DMT.createFNPOpennetConnectReply(uid, new ShortBuffer(noderef));
+			if(fs.getBoolean("opennet", false)) {
+				try {
+					om.sendOpennetRef(true, uid, dataSource, noderef, this);
+				} catch (NotConnectedException e) {
+					// How sad
+					return;
+				}
 			}
 		} catch (FSParseException e1) {
-			msg = DMT.createFNPOpennetCompletedAck(uid);
+			// Invalid, clear it
 		}
 		
 		try {

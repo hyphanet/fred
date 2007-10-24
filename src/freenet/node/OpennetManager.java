@@ -15,11 +15,16 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Vector;
 
+import freenet.io.comm.ByteCounter;
+import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.transport.ip.HostnameSyntaxException;
 
@@ -446,6 +451,21 @@ public class OpennetManager {
 
 	protected int getNumberOfConnectedPeersToAim() {
 		return MAX_PEERS - node.peers.countConnectedDarknetPeers();
+	}
+
+	/**
+	 * Send our opennet noderef to a node.
+	 * @param isReply If true, send an FNPOpennetConnectReply, else send an FNPOpennetConnectDestination.
+	 * @param uid The unique ID of the request chain involved.
+	 * @param peer The node to send the noderef to.
+	 * @param cs The full compressed noderef to send.
+	 * @throws NotConnectedException If the peer becomes disconnected while we are trying to send the noderef.
+	 */
+	public void sendOpennetRef(boolean isReply, long uid, PeerNode peer, byte[] noderef, ByteCounter ctr) throws NotConnectedException {
+		ShortBuffer buf = new ShortBuffer(noderef);
+		Message msg = isReply ? DMT.createFNPOpennetConnectReply(uid, buf) : 
+			DMT.createFNPOpennetConnectDestination(uid, buf);
+		peer.sendAsync(msg, null, 0, ctr);
 	}
 
 }

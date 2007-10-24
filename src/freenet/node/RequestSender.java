@@ -730,10 +730,8 @@ public final class RequestSender implements Runnable, ByteCounter {
     	
     	// Send our reference
     	
-    	Message msg = DMT.createFNPOpennetConnectReply(uid, new ShortBuffer( om.crypto.myCompressedFullRef()));
-    	
     	try {
-			next.sendAsync(msg, null, 0, this);
+    		om.sendOpennetRef(true, uid, source, om.crypto.myCompressedFullRef(), this);
 		} catch (NotConnectedException e) {
 			// Hmmm... let the LRU deal with it
 			if(logMINOR)
