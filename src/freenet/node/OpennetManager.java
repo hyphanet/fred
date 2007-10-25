@@ -482,13 +482,17 @@ public class OpennetManager {
 		}
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
 		peer.sendAsync(msg, null, 0, ctr);
+		long xferUID = node.random.nextLong();
+		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
+			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
+		peer.sendAsync(msg2, null, 0, ctr);
 		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(padded);
 		raf.setReadOnly();
 		PartiallyReceivedBulk prb =
 			new PartiallyReceivedBulk(node.usm, padded.length, Node.PACKET_SIZE, raf, true);
 		try {
 			BulkTransmitter bt =
-				new BulkTransmitter(prb, peer, uid, node.outputThrottle, true);
+				new BulkTransmitter(prb, peer, xferUID, node.outputThrottle, true);
 			bt.send();
 		} catch (DisconnectedException e) {
 			throw new NotConnectedException(e);
