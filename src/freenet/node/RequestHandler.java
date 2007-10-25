@@ -324,59 +324,59 @@ public class RequestHandler implements Runnable, ByteCounter {
     private void finishOpennetNoRelayInner(OpennetManager om) {
     	if(logMINOR)
     		Logger.minor(this, "Finishing opennet: sending own reference");
-			if(om.wantPeer(null, false)) {
-				
-				try {
-					om.sendOpennetRef(false, uid, source, om.crypto.myCompressedFullRef(), this);
-				} catch (NotConnectedException e) {
-					Logger.normal(this, "Can't send opennet ref because node disconnected on "+this);
-					// Oh well...
-					return;
-				}
-				
-				// Wait for response
-				
-				MessageFilter mf = MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetConnectReply);
-				Message msg;
-				
-				try {
-					msg = node.usm.waitFor(mf, this);
-				} catch (DisconnectedException e) {
-					Logger.normal(this, "No opennet response because node disconnected on "+this);
-					return; // Lost connection with request source
-				}
-				
-				if(msg == null) {
-					// Timeout
-					Logger.normal(this, "Timeout waiting for opennet peer on "+this);
-					return;
-				}
-				
-				byte[] noderef = ((ShortBuffer)msg.getObject(DMT.OPENNET_NODEREF)).getData();
-				
-		    	SimpleFieldSet ref;
-				try {
-					ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
-				} catch (FSParseException e) {
-					Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
-					return;
-				}
-		    	
-		    	try {
-					if(!node.addNewOpennetNode(ref)) {
-						Logger.normal(this, "Asked for opennet ref but didn't want it for "+this+" :\n"+ref);
-					} else {
-						Logger.normal(this, "Added opennet noderef in "+this);
-					}
-				} catch (FSParseException e) {
-					Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
-				} catch (PeerParseException e) {
-					Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
-				} catch (ReferenceSignatureVerificationException e) {
-					Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+source+" : "+e, e);
-				}
+		if(om.wantPeer(null, false)) {
+			
+			try {
+				om.sendOpennetRef(false, uid, source, om.crypto.myCompressedFullRef(), this);
+			} catch (NotConnectedException e) {
+				Logger.normal(this, "Can't send opennet ref because node disconnected on "+this);
+				// Oh well...
 				return;
 			}
+			
+			// Wait for response
+			
+			MessageFilter mf = MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetConnectReply);
+			Message msg;
+			
+			try {
+				msg = node.usm.waitFor(mf, this);
+			} catch (DisconnectedException e) {
+				Logger.normal(this, "No opennet response because node disconnected on "+this);
+				return; // Lost connection with request source
+			}
+			
+			if(msg == null) {
+				// Timeout
+				Logger.normal(this, "Timeout waiting for opennet peer on "+this);
+				return;
+			}
+			
+			byte[] noderef = ((ShortBuffer)msg.getObject(DMT.OPENNET_NODEREF)).getData();
+			
+		   	SimpleFieldSet ref;
+			try {
+				ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
+			} catch (FSParseException e) {
+				Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
+				return;
+			}
+		    
+		    try {
+				if(!node.addNewOpennetNode(ref)) {
+					Logger.normal(this, "Asked for opennet ref but didn't want it for "+this+" :\n"+ref);
+				} else {
+					Logger.normal(this, "Added opennet noderef in "+this);
+				}
+			} catch (FSParseException e) {
+				Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
+			} catch (PeerParseException e) {
+				Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
+			} catch (ReferenceSignatureVerificationException e) {
+				Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+source+" : "+e, e);
+			}
+			return;
+		}
     }
     
 	private void finishOpennetRelay(byte[] noderef, OpennetManager om) {
