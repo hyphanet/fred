@@ -377,6 +377,12 @@ public class RequestHandler implements Runnable, ByteCounter {
 			}
 			return;
 		}
+		Message msg = DMT.createFNPOpennetCompletedAck(uid);
+		try {
+			source.sendAsync(msg, null, 0, this);
+		} catch (NotConnectedException e) {
+			// Oh well...
+		}
     }
     
 	private void finishOpennetRelay(byte[] noderef, OpennetManager om) {
