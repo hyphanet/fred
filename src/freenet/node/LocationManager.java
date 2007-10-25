@@ -868,8 +868,10 @@ public class LocationManager {
 
     private RecentlyForwardedItem addForwardedItem(long uid, long oid, PeerNode pn, PeerNode randomPeer) {
         RecentlyForwardedItem item = new RecentlyForwardedItem(uid, oid, pn, randomPeer);
-        recentlyForwardedIDs.put(new Long(uid), item);
-        recentlyForwardedIDs.put(new Long(oid), item);
+        synchronized(recentlyForwardedIDs) {
+        	recentlyForwardedIDs.put(new Long(uid), item);
+        	recentlyForwardedIDs.put(new Long(oid), item);
+        }
         return item;
     }
 
@@ -1115,8 +1117,10 @@ public class LocationManager {
         if(item == null) {
             Logger.error(this, "removeRecentlyForwardedItem(null)", new Exception("error"));
         }
-        recentlyForwardedIDs.remove(new Long(item.incomingID));
-        recentlyForwardedIDs.remove(new Long(item.outgoingID));
+        synchronized(recentlyForwardedIDs) {
+        	recentlyForwardedIDs.remove(new Long(item.incomingID));
+        	recentlyForwardedIDs.remove(new Long(item.outgoingID));
+        }
     }
     
     private static final long MAX_AGE = 7*24*60*60*1000;
