@@ -17,15 +17,19 @@ import java.util.Vector;
 
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.xfer.BulkTransmitter;
+import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
@@ -77,6 +81,8 @@ public class OpennetManager {
 	static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
 	private static boolean logMINOR;
 
+	static final int PADDED_NODEREF_SIZE = 2048;
+	
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig) throws NodeInitException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.node = node;
@@ -465,7 +471,28 @@ public class OpennetManager {
 		ShortBuffer buf = new ShortBuffer(noderef);
 		Message msg = isReply ? DMT.createFNPOpennetConnectReply(uid, buf) : 
 			DMT.createFNPOpennetConnectDestination(uid, buf);
+		byte[] padded = new byte[PADDED_NODEREF_SIZE];
+		if(noderef.length < padded.length) {
+			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
+			if(!isReply) {
+				msg = DMT.createFNPOpennetCompletedAck(uid);
+				peer.sendAsync(msg, null, 0, ctr);
+			}
+			return;
+		}
+		System.arraycopy(noderef, 0, padded, 0, noderef.length);
 		peer.sendAsync(msg, null, 0, ctr);
+		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(padded);
+		raf.setReadOnly();
+		PartiallyReceivedBulk prb =
+			new PartiallyReceivedBulk(node.usm, padded.length, Node.PACKET_SIZE, raf, true);
+		try {
+			BulkTransmitter bt =
+				new BulkTransmitter(prb, peer, uid, node.outputThrottle, true);
+			bt.send();
+		} catch (DisconnectedException e) {
+			throw new NotConnectedException(e);
+		}
 	}
 
 }

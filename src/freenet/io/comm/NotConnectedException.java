@@ -19,4 +19,9 @@ public class NotConnectedException extends Exception {
         super();
     }
 
+	public NotConnectedException(DisconnectedException e) {
+		super(e.toString());
+		initCause(e);
+	}
+
 }
