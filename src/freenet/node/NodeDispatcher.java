@@ -467,7 +467,8 @@ public class NodeDispatcher implements Dispatcher {
 		double best;
 		Vector notVisitedList; // List of best locations not yet visited by this request
 		short forkCount;
-
+		double maxDistance;
+		
 		public ProbeContext(long id, double target, double best, double nearest, short htl, short counter, PeerNode src, ProbeCallback cb) {
 			visitedPeers = new WeakHashSet();
 			this.counter = counter;
@@ -476,6 +477,7 @@ public class NodeDispatcher implements Dispatcher {
 			this.best = best;
 			this.srcRef = (src == null) ? null : src.myRef;
 			this.cb = cb;
+			maxDistance = 2.0;
 		}
 
 		public PeerNode getSource() {
@@ -533,7 +535,7 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
-		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, false, true, null, notVisitedList, 2.0, false, ++linearCounter, "request");
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, false, true, null, notVisitedList, false, ++linearCounter, "request");
 		return true;
 	}
 
@@ -562,7 +564,7 @@ public class NodeDispatcher implements Dispatcher {
 	 */
 	private boolean innerHandleProbeRequest(PeerNode src, long id, Long lid, final double target, double best, 
 			double nearest, short htl, short counter, boolean checkRecent, boolean loadLimitRequest, 
-			boolean fromRejection, boolean isNew, ProbeCallback cb, Vector locsNotVisited, double maxDistance, boolean dontReject,
+			boolean fromRejection, boolean isNew, ProbeCallback cb, Vector locsNotVisited, boolean dontReject,
 			short linearCounter, String callerReason) {
 		if(fromRejection) {
 			nearest = furthestLoc(target); // reject CANNOT change nearest, because it's from a dead-end; "improving"
@@ -599,6 +601,7 @@ public class NodeDispatcher implements Dispatcher {
 					recentProbeContexts.popValue();
 			}
 		}
+		double maxDistance = ctx.maxDistance;
 		PeerNode origSource = ctx.getSource();
 		if(linearCounter < 0) linearCounter = ctx.linearCounter;
 		ctx.linearCounter = linearCounter;
@@ -894,7 +897,9 @@ public class NodeDispatcher implements Dispatcher {
 					double mustBeBetterThan = dists[Math.min(3,dists.length)];
 					double maxDistance = Location.distance(mustBeBetterThan, target, true);
 					
-					if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, false, null, notVisitedList, maxDistance, true, linearCounter, "backtracking"))
+					ctx.maxDistance = Math.min(maxDistance, ctx.maxDistance);
+					
+					if(innerHandleProbeRequest(src, id, lid, target, best, nearest, ctx.htl, counter, false, false, false, false, null, notVisitedList, true, linearCounter, "backtracking"))
 						return true;
 				}
 			}
@@ -996,7 +1001,7 @@ public class NodeDispatcher implements Dispatcher {
 			for(int i=0;i<locsNotVisited.length;i++)
 				notVisitedList.add(new Double(locsNotVisited[i]));
 		}
-		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, false, null, notVisitedList, 2.0, true, (short)-1, "rejected");
+		innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, true, false, null, notVisitedList, true, (short)-1, "rejected");
 		return true;
 	}
 
@@ -1007,7 +1012,7 @@ public class NodeDispatcher implements Dispatcher {
 			recentProbeRequestIDs.push(ll);
 		}
 		double nodeLoc = node.getLocation();
-		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : furthestGreater(d), nodeLoc, node.maxHTL(), (short)0, false, false, false, true, cb, new Vector(), 2.0, false, (short)-1, "start");
+		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : furthestGreater(d), nodeLoc, node.maxHTL(), (short)0, false, false, false, true, cb, new Vector(), false, (short)-1, "start");
 	}
 	
 	private double furthestLoc(double d) {
