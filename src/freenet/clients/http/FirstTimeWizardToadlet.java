@@ -4,11 +4,7 @@
 package freenet.clients.http;
 
 import java.io.IOException;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.URI;
-import java.util.Enumeration;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
@@ -16,7 +12,6 @@ import freenet.config.InvalidConfigValueException;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
-import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -139,49 +134,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if(currentStep == 5) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step5Title"), false, ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			
-			HTMLNode networkInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode networkInfoboxHeader = networkInfobox.addChild("div", "class", "infobox-header");
-			HTMLNode networkInfoboxContent = networkInfobox.addChild("div", "class", "infobox-content");
-
-			Enumeration interfaces = NetworkInterface.getNetworkInterfaces();
-			HTMLNode networkForm = new HTMLNode("div");
-			
-			short ifCount = 0;
-			HTMLNode ifList = new HTMLNode("div", "class", "interface");
-			while(interfaces.hasMoreElements()) {
-				NetworkInterface currentInterface = (NetworkInterface) interfaces.nextElement();
-				if(currentInterface == null) continue;
-				
-				Enumeration ipAddresses = currentInterface.getInetAddresses();
-				while(ipAddresses.hasMoreElements()) {
-					InetAddress ip = (InetAddress) ipAddresses.nextElement();
-					if((ip == null) || (ip.isLoopbackAddress())) continue;
-					ifCount++;
-					HTMLNode ipDiv = ifList.addChild("div", "class", "ipAddress");
-					ipDiv.addChild("#", L10n.getString("FirstTimeWizardToadlet.iDoTrust", new String[] { "interface", "ip" }, new String[] { currentInterface.getName(), ip.getHostAddress() }));
-					ipDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", Base64.encode(ip.getAddress()), "true" }, L10n.getString("Toadlet.yes"));
-					ipDiv.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", Base64.encode(ip.getAddress()), "false", "checked" }, L10n.getString("Toadlet.no"));
-				}
-			}
-			
-			if(ifCount > 0) {
-				networkInfoboxHeader.addChild("#", l10n("isNetworkTrusted"));
-				networkInfoboxContent.addChild("#", l10n("isNetworkTrustedLong"));
-				networkForm.addChild(ifList);
-			} else {
-				networkInfoboxHeader.addChild("#", l10n("noNetworkIF"));
-				networkInfoboxContent.addChild("#", l10n("noNetworkIFLong"));				
-			}
-			ctx.addFormChild(networkInfoboxContent, ".", "networkForm").addChild(networkForm);
-			
-			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkF", L10n.getString("FirstTimeWizardToadlet.continue")});
-			networkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
 		}else if(currentStep == 6) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step6Title"), true, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -283,59 +235,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e);
 			}
-			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step=5");
-			return;
-		} else if(request.isPartSet("networkF")) {
-			StringBuffer sb = new StringBuffer();
-			// prevent the user from locking himself out
-			sb.append("127.0.0.1");
-			short ifCount = 0;
-			boolean hasIPV6 = false;
-			
-			Enumeration interfaces = NetworkInterface.getNetworkInterfaces();
-			while(interfaces.hasMoreElements()) {
-				NetworkInterface currentIF = (NetworkInterface) interfaces.nextElement();
-				if(currentIF == null) continue;
-				
-				Enumeration ipAddresses = currentIF.getInetAddresses();
-				while(ipAddresses.hasMoreElements()) {
-					InetAddress currentInetAddress = (InetAddress) ipAddresses.nextElement();
-					if(currentInetAddress instanceof Inet6Address)
-						hasIPV6 = true;
-					
-					if((currentInetAddress == null) || (currentInetAddress.isLoopbackAddress())) continue;
-					
-					String isIFSelected =request.getPartAsString(Base64.encode(currentInetAddress.getAddress()), 255);
-					if((isIFSelected != null) && (isIFSelected.equals("true"))) {
-						sb.append(',');
-						sb.append(currentInetAddress.getHostAddress());
-						ifCount++;
-					}
-				}
-			}
-			
-			if(hasIPV6)
-				sb.append(",0:0:0:0:0:0:0:1");
-			
-			if(ifCount > 0) {
-				try {
-					// Java doesn't provide a way to get the netmask : workaround and bind only to trusted if
-					config.get("fcp").set("bindTo", sb.toString());
-					config.get("fcp").set("allowedHosts", "*");
-					config.get("fcp").set("allowedHostsFullAccess", "*");
-
-					config.get("fproxy").set("bindTo", sb.toString());
-					config.get("fproxy").set("allowedHosts", "*");
-					config.get("fproxy").set("allowedHostsFullAccess", "*");
-					config.store();
-
-					Logger.normal(this, "Network allowance list has been set to "+ sb.toString());
-				} catch (InvalidConfigValueException e) {
-					Logger.error(this, "Should not happen, please report!" + e);
-				}
-			}
-
-			super.writeTemporaryRedirect(ctx, "step6", TOADLET_URL+"?step=6");
+			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step=6");
 			return;
 		}
 		
