@@ -469,6 +469,7 @@ public class OpennetManager {
 	 */
 	public void sendOpennetRef(boolean isReply, long uid, PeerNode peer, byte[] noderef, ByteCounter ctr) throws NotConnectedException {
 		ShortBuffer buf = new ShortBuffer(noderef);
+		// FIXME remove back compatibility code when a build that understands the new path folding messages is mandatory.
 		Message msg = isReply ? DMT.createFNPOpennetConnectReply(uid, buf) : 
 			DMT.createFNPOpennetConnectDestination(uid, buf);
 		byte[] padded = new byte[PADDED_NODEREF_SIZE];
@@ -481,11 +482,12 @@ public class OpennetManager {
 			return;
 		}
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
-		peer.sendAsync(msg, null, 0, ctr);
 		long xferUID = node.random.nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
+		// Send the new message first.
 		peer.sendAsync(msg2, null, 0, ctr);
+		peer.sendAsync(msg, null, 0, ctr);
 		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(padded);
 		raf.setReadOnly();
 		PartiallyReceivedBulk prb =
