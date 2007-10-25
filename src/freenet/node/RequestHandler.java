@@ -401,15 +401,15 @@ public class RequestHandler implements Runnable, ByteCounter {
 		
 		byte[] newNoderef = om.waitForOpennetNoderef(true, source, uid, this);
 		
-		if(noderef == null) return;
+		if(newNoderef == null) return;
 		
 		// Send it forward to the data source, if it is valid.
 		
 		try {
-			SimpleFieldSet fs = PeerNode.compressedNoderefToFieldSet(newNoderef, 0, noderef.length);
+			SimpleFieldSet fs = PeerNode.compressedNoderefToFieldSet(newNoderef, 0, newNoderef.length);
 			if(fs.getBoolean("opennet", false)) {
 				try {
-					om.sendOpennetRef(true, uid, dataSource, noderef, this);
+					om.sendOpennetRef(true, uid, dataSource, newNoderef, this);
 				} catch (NotConnectedException e) {
 					// How sad
 					return;
