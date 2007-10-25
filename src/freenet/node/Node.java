@@ -1324,14 +1324,14 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		dispatcher.start(nodeStats); // must be before usm
 		dnsr.start();
-		ps.start(nodeStats);
 		peers.start(); // must be before usm
 		nodeStats.start();
 		
-		usm.start(ps);
 		darknetCrypto.start(disableHangCheckers);
 		if(opennet != null)
 			opennet.start();
+		ps.start(nodeStats);
+		usm.start(ps);
 		
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
