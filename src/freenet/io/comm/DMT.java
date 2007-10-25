@@ -118,6 +118,9 @@ public class DMT {
 	public static final String OPENNET_NODEREF = "opennetNoderef";
 	public static final String REMOVE = "remove";
 	public static final String PURGE = "purge";
+	public static final String TRANSFER_UID = "transferUID";
+	public static final String NODEREF_LENGTH = "noderefLength";
+	public static final String PADDED_LENGTH = "paddedLength";
 	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -722,7 +725,7 @@ public class DMT {
 	// Opennet completions (not sent to darknet nodes)
 	
 	/** Sent when a request to an opennet node is completed, but the data source does not want to 
-	 * path fold */
+	 * path fold. Sent even on pure darknet. A better name might be FNPRequestCompletedAck. */
 	public static MessageType FNPOpennetCompletedAck = new MessageType("FNPOpennetCompletedAck") {{
 		addField(UID, Long.class);
 	}};
@@ -733,7 +736,8 @@ public class DMT {
 		return msg;
 	}
 	
-	/** Sent when a request completes and the data source does want to path fold */
+	/** Sent when a request completes and the data source does want to path fold. Old version, includes 
+	 * the inline variable-length noderef. Opens up a nasty traffic analysis (route tracing) vulnerability. */
 	public static MessageType FNPOpennetConnectDestination = new MessageType("FNPOpennetConnectDestination") {{
 		addField(UID, Long.class);
 		addField(OPENNET_NODEREF, ShortBuffer.class);
@@ -746,7 +750,8 @@ public class DMT {
 		return msg;
 	}
 	
-	/** Path folding response */
+	/** Path folding response. Old version, includes the inline variable-length noderef. Opens up a 
+	 * nasty traffic analysis (route tracing) vulnerability. */
 	public static MessageType FNPOpennetConnectReply = new MessageType("FNPOpennetConnectReply") {{
 		addField(UID, Long.class);
 		addField(OPENNET_NODEREF, ShortBuffer.class);
@@ -758,6 +763,26 @@ public class DMT {
 		msg.set(OPENNET_NODEREF, buf);
 		return msg;
 	}
+	
+	/** Sent when a request completes and the data source wants to path fold. Starts a bulk data 
+	 * transfer including the (padded) noderef. 
+	 */
+	public static MessageType FNPOpennetConnectDestinationNew = new MessageType("FNPConnectDestinationNew") {{
+		addField(UID, Long.class); // UID of original message chain
+		addField(TRANSFER_UID, Long.class); // UID of data transfer
+		addField(NODEREF_LENGTH, Integer.class); // Size of noderef
+		addField(PADDED_LENGTH, Integer.class); // Size of actual transfer i.e. padded length
+	}};
+	
+	/** Path folding response. Sent when the requestor wants to path fold and has received a noderef 
+	 * from the data source. Starts a bulk data transfer including the (padded) noderef. 
+	 */
+	public static MessageType FNPOpennetConnectReplyNew = new MessageType("FNPConnectReplyNew") {{
+		addField(UID, Long.class); // UID of original message chain
+		addField(TRANSFER_UID, Long.class); // UID of data transfer
+		addField(NODEREF_LENGTH, Integer.class); // Size of noderef
+		addField(PADDED_LENGTH, Integer.class); // Size of actual transfer i.e. padded length
+	}};
 	
 	// Key offers (ULPRs)
 	
