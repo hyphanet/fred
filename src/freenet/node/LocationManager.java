@@ -1091,6 +1091,10 @@ public class LocationManager {
             while(e.hasMoreElements()) {
                 Long l = (Long)e.nextElement();
                 RecentlyForwardedItem item = (RecentlyForwardedItem)recentlyForwardedIDs.get(l);
+                if(item == null) {
+                	Logger.error(this, "Key is "+l+" but no value on recentlyForwardedIDs - shouldn't be possible");
+                	continue;
+                }
                 if(item.routedTo != pn) continue;
                 if(item.successfullyForwarded) {
                     removeRecentlyForwardedItem(item);
