@@ -13,7 +13,9 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.BlockTransmitter;
+import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.PartiallyReceivedBlock;
+import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
@@ -23,6 +25,8 @@ import freenet.keys.SSKBlock;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SizeUtil;
+import freenet.support.io.ByteArrayRandomAccessThing;
 
 /**
  * Handle an incoming request. Does not do the actual fetching; that
@@ -320,7 +324,11 @@ public class RequestHandler implements Runnable, ByteCounter {
 		
     	finishOpennetRelay(noderef, om);
     }
-    
+
+	/**
+	 * Send our noderef to the request source, wait for a reply, if we get one add it. Called when either the request
+	 * wasn't routed, or the node it was routed to didn't return a noderef.
+	 */
     private void finishOpennetNoRelayInner(OpennetManager om) {
     	if(logMINOR)
     		Logger.minor(this, "Finishing opennet: sending own reference");
@@ -336,23 +344,8 @@ public class RequestHandler implements Runnable, ByteCounter {
 			
 			// Wait for response
 			
-			MessageFilter mf = MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetConnectReply);
-			Message msg;
-			
-			try {
-				msg = node.usm.waitFor(mf, this);
-			} catch (DisconnectedException e) {
-				Logger.normal(this, "No opennet response because node disconnected on "+this);
-				return; // Lost connection with request source
-			}
-			
-			if(msg == null) {
-				// Timeout
-				Logger.normal(this, "Timeout waiting for opennet peer on "+this);
-				return;
-			}
-			
-			byte[] noderef = ((ShortBuffer)msg.getObject(DMT.OPENNET_NODEREF)).getData();
+			byte[] noderef = 
+				om.waitForOpennetNoderef(true, source, uid, this);
 			
 		   	SimpleFieldSet ref;
 			try {
@@ -384,7 +377,13 @@ public class RequestHandler implements Runnable, ByteCounter {
 			// Oh well...
 		}
     }
-    
+
+    /**
+     * Called when the node we routed the request to returned a valid noderef, and we don't want it.
+     * So we relay it downstream to somebody who does, and wait to relay the response back upstream.
+     * @param noderef
+     * @param om
+     */
 	private void finishOpennetRelay(byte[] noderef, OpennetManager om) {
     	if(logMINOR)
     		Logger.minor(this, "Finishing opennet: relaying reference from "+rs.successFrom());
@@ -392,32 +391,22 @@ public class RequestHandler implements Runnable, ByteCounter {
 		PeerNode dataSource = rs.successFrom();
 		
 		try {
-			om.sendOpennetRef(false, uid, source, om.crypto.myCompressedFullRef(), this);
+			om.sendOpennetRef(false, uid, source, noderef, this);
 		} catch (NotConnectedException e) {
 			// Lost contact with request source, nothing we can do
 			return;
 		}
 		
-		// Now wait for reply from the request source
+		// Now wait for reply from the request source.
 		
-		MessageFilter mf = MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetConnectReply);
-
-		Message msg;
-		try {
-			msg = node.usm.waitFor(mf, this);
-		} catch (DisconnectedException e) {
-			return; // Lost connection with request source
-		}
+		byte[] newNoderef = om.waitForOpennetNoderef(true, source, uid, this);
 		
-		if(msg == null) {
-			// Timeout
-			return;
-		}
+		if(noderef == null) return;
 		
-		noderef = ((ShortBuffer)msg.getObject(DMT.OPENNET_NODEREF)).getData();
+		// Send it forward to the data source, if it is valid.
 		
 		try {
-			SimpleFieldSet fs = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
+			SimpleFieldSet fs = PeerNode.compressedNoderefToFieldSet(newNoderef, 0, noderef.length);
 			if(fs.getBoolean("opennet", false)) {
 				try {
 					om.sendOpennetRef(true, uid, dataSource, noderef, this);
@@ -428,13 +417,6 @@ public class RequestHandler implements Runnable, ByteCounter {
 			}
 		} catch (FSParseException e1) {
 			// Invalid, clear it
-		}
-		
-		try {
-			dataSource.sendAsync(msg, null, 0, this);
-		} catch (NotConnectedException e) {
-			// How sad
-			return;
 		}
 	}
 

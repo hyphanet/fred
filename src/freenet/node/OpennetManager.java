@@ -19,16 +19,19 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
+import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SizeUtil;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.transport.ip.HostnameSyntaxException;
 
@@ -81,7 +84,10 @@ public class OpennetManager {
 	static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
 	private static boolean logMINOR;
 
+	/** How big to pad opennet noderefs to? If they are bigger than this then we won't send them. */
 	static final int PADDED_NODEREF_SIZE = 3072;
+	/** Allow for future expansion. However at any given time all noderefs should be PADDED_NODEREF_SIZE */
+	static final int MAX_OPENNET_NODEREF_LENGTH = 32768;
 	
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig) throws NodeInitException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -498,6 +504,77 @@ public class OpennetManager {
 			bt.send();
 		} catch (DisconnectedException e) {
 			throw new NotConnectedException(e);
+		}
+	}
+
+	/**
+	 * Wait for an opennet noderef.
+	 * @param isReply If true, wait for an FNPOpennetConnectReply[New], if false wait for an FNPOpennetConnectDestination[New].
+	 * @param uid The UID of the parent request.
+	 * @return An opennet noderef.
+	 */
+	public byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr) {
+		// FIXME remove back compat code
+		MessageFilter mfReply = 
+			MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).
+			setType(isReply ? DMT.FNPOpennetConnectReply : DMT.FNPOpennetConnectDestination);
+		MessageFilter mfNewReply =
+			MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).
+			setType(isReply ? DMT.FNPOpennetConnectReplyNew : DMT.FNPOpennetConnectDestinationNew);
+		MessageFilter mf =
+			mfReply.or(mfNewReply);
+		if(!isReply) {
+			// Also waiting for an ack
+			MessageFilter mfAck = 
+				MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
+			mf = mfAck.or(mf);
+		}
+		mf.setMatchesDroppedConnection(true).setMatchesRestartedConnections(true);
+		Message msg;
+		
+		try {
+			msg = node.usm.waitFor(mf, ctr);
+		} catch (DisconnectedException e) {
+			Logger.normal(this, "No opennet response because node disconnected on "+this);
+			return null; // Lost connection with request source
+		}
+		
+		if(msg == null) {
+			// Timeout
+			Logger.normal(this, "Timeout waiting for opennet peer on "+this);
+			return null;
+		}
+		
+		if(msg.getSpec() == DMT.FNPOpennetCompletedAck)
+			return null; // Acked (only possible if !isReply)
+		
+		// FIXME remove back compat
+		if(msg.getSpec() == DMT.FNPOpennetConnectReply || msg.getSpec() == DMT.FNPOpennetConnectDestination) {
+			return ((ShortBuffer)msg.getObject(DMT.OPENNET_NODEREF)).getData();
+		} else {
+			// New format
+    		long xferUID = msg.getLong(DMT.TRANSFER_UID);
+    		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
+    		int realLength = msg.getInt(DMT.NODEREF_LENGTH);
+    		if(paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH) {
+    			Logger.error(this, "Noderef too big: "+SizeUtil.formatSize(paddedLength)+" real length "+SizeUtil.formatSize(realLength));
+    			return null;
+    		}
+    		if(realLength > paddedLength) {
+    			Logger.error(this, "Real length larger than padded length: "+SizeUtil.formatSize(paddedLength)+" real length "+SizeUtil.formatSize(realLength));
+    			return null;
+    		}
+    		byte[] buf = new byte[paddedLength];
+    		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(buf);
+    		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
+    		BulkReceiver br = new BulkReceiver(prb, source, xferUID);
+    		if(!br.receive()) {
+    			Logger.error(this, "Failed to receive noderef bulk transfer for "+this);
+   				return null;
+    		}    			
+    		byte[] noderef = new byte[realLength];
+    		System.arraycopy(buf, 0, noderef, 0, realLength);
+    		return noderef;
 		}
 	}
 
