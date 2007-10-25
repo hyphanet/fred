@@ -81,7 +81,7 @@ public class OpennetManager {
 	static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
 	private static boolean logMINOR;
 
-	static final int PADDED_NODEREF_SIZE = 2048;
+	static final int PADDED_NODEREF_SIZE = 3072;
 	
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig) throws NodeInitException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -472,7 +472,7 @@ public class OpennetManager {
 		Message msg = isReply ? DMT.createFNPOpennetConnectReply(uid, buf) : 
 			DMT.createFNPOpennetConnectDestination(uid, buf);
 		byte[] padded = new byte[PADDED_NODEREF_SIZE];
-		if(noderef.length < padded.length) {
+		if(noderef.length > padded.length) {
 			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
 			if(!isReply) {
 				msg = DMT.createFNPOpennetCompletedAck(uid);
