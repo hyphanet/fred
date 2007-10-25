@@ -774,6 +774,15 @@ public class DMT {
 		addField(PADDED_LENGTH, Integer.class); // Size of actual transfer i.e. padded length
 	}};
 	
+	public static Message createFNPOpennetConnectDestinationNew(long uid, long transferUID, int noderefLength, int paddedLength) {
+		Message msg = new Message(FNPOpennetConnectDestinationNew);
+		msg.set(UID, uid);
+		msg.set(TRANSFER_UID, transferUID);
+		msg.set(NODEREF_LENGTH, noderefLength);
+		msg.set(PADDED_LENGTH, paddedLength);
+		return msg;
+	}
+	
 	/** Path folding response. Sent when the requestor wants to path fold and has received a noderef 
 	 * from the data source. Starts a bulk data transfer including the (padded) noderef. 
 	 */
@@ -783,6 +792,15 @@ public class DMT {
 		addField(NODEREF_LENGTH, Integer.class); // Size of noderef
 		addField(PADDED_LENGTH, Integer.class); // Size of actual transfer i.e. padded length
 	}};
+	
+	public static Message createFNPOpennetConnectReplyNew(long uid, long transferUID, int noderefLength, int paddedLength) {
+		Message msg = new Message(FNPOpennetConnectReplyNew);
+		msg.set(UID, uid);
+		msg.set(TRANSFER_UID, transferUID);
+		msg.set(NODEREF_LENGTH, noderefLength);
+		msg.set(PADDED_LENGTH, paddedLength);
+		return msg;
+	}
 	
 	// Key offers (ULPRs)
 	
