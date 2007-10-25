@@ -221,6 +221,10 @@ public class FreenetURI implements Cloneable{
 		} else
 			URI = URI.trim();
 		
+		if(URI.startsWith("freenet:")) {
+			URI = URI.substring("freenet:".length());
+		}
+		
 		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0) {
 			// Encoded URL?
 			try {
@@ -233,19 +237,12 @@ public class FreenetURI implements Cloneable{
 		// Strip http:// prefix
 		URI = URI.replaceFirst("^http://[^/]+/+","");
 		
-		// check scheme
-		int colon = URI.indexOf(':');
-		if ((colon != -1)
-			&& !URI.substring(0, colon).equalsIgnoreCase("freenet")) {
-			throw new MalformedURLException("Invalid scheme for Freenet URI");
-		}
-
 		// decode keyType
 		int atchar = URI.indexOf('@');
 		if (atchar == -1) {
 			throw new MalformedURLException("There is no @ in that URI! ("+URI.toString()+')');
 		} else {
-			keyType = URI.substring(colon + 1, atchar).toUpperCase().trim();
+			keyType = URI.substring(0, atchar).toUpperCase().trim();
 		}
 		URI = URI.substring(atchar + 1);
 		
