@@ -339,43 +339,43 @@ public class RequestHandler implements Runnable, ByteCounter {
     	if(logMINOR)
     		Logger.minor(this, "Finishing opennet: sending own reference");
 		if(!om.wantPeer(null, false)) return false; // Don't want a reference
-			
-			try {
-				om.sendOpennetRef(false, uid, source, om.crypto.myCompressedFullRef(), this);
-			} catch (NotConnectedException e) {
-				Logger.normal(this, "Can't send opennet ref because node disconnected on "+this);
-				// Oh well...
-				return true;
-			}
-			
-			// Wait for response
-			
-			byte[] noderef = 
-				om.waitForOpennetNoderef(true, source, uid, this);
-			
-			if(noderef == null)
-				return false;
-			
-			SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, source);
-			
-			if(ref == null) 
-				return false;
-			
-		    try {
-				if(!node.addNewOpennetNode(ref)) {
-					Logger.normal(this, "Asked for opennet ref but didn't want it for "+this+" :\n"+ref);
-				} else {
-					Logger.normal(this, "Added opennet noderef in "+this);
-				}
-			} catch (FSParseException e) {
-				Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
-			} catch (PeerParseException e) {
-				Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
-			} catch (ReferenceSignatureVerificationException e) {
-				Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+source+" : "+e, e);
-			}
+		
+		try {
+			om.sendOpennetRef(false, uid, source, om.crypto.myCompressedFullRef(), this);
+		} catch (NotConnectedException e) {
+			Logger.normal(this, "Can't send opennet ref because node disconnected on "+this);
+			// Oh well...
 			return true;
-    }
+		}
+		
+		// Wait for response
+		
+		byte[] noderef = 
+			om.waitForOpennetNoderef(true, source, uid, this);
+		
+		if(noderef == null)
+			return false;
+		
+		SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, source);
+		
+		if(ref == null) 
+			return false;
+		
+	    try {
+			if(!node.addNewOpennetNode(ref)) {
+				Logger.normal(this, "Asked for opennet ref but didn't want it for "+this+" :\n"+ref);
+			} else {
+				Logger.normal(this, "Added opennet noderef in "+this);
+			}
+		} catch (FSParseException e) {
+			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
+		} catch (PeerParseException e) {
+			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
+		} catch (ReferenceSignatureVerificationException e) {
+			Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+source+" : "+e, e);
+		}
+		return true;
+    }    
 
     /**
      * Called when the node we routed the request to returned a valid noderef, and we don't want it.
