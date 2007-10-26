@@ -2778,6 +2778,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * disconnected. */
 	public void forceCancelDisconnecting() {
 		synchronized(this) {
+			if(!disconnecting) return;
 			disconnecting = false;
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
