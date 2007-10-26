@@ -2493,12 +2493,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return ctx;
 	}
 	
-	private final void _fillJFKDHFIFOOffThread(final int count) {
+	private final void _fillJFKDHFIFOOffThread() {
 		// do it off-thread
 		node.executor.execute(new Runnable() {
 			public void run() {
-				for(int i=0;i<count;i++)
-					_fillJFKDHFIFO();
+				_fillJFKDHFIFO();
 			}
 		}, "DiffieHellman exponential signing");
 	}
@@ -2530,7 +2529,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// Shall we replace one element of the queue ?
 			if((jfkDHLastGenerationTimestamp + 30000 /*30sec*/) < now) {
 				jfkDHLastGenerationTimestamp = now;
-				_fillJFKDHFIFOOffThread(1);
+				_fillJFKDHFIFOOffThread();
 			}
 			
 			dhContextFIFO.addLast(result);
