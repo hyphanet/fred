@@ -6,16 +6,12 @@ package freenet.node;
 import freenet.crypt.DSAPublicKey;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
-import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
-import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.BlockTransmitter;
-import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.PartiallyReceivedBlock;
-import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
@@ -23,10 +19,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
-import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
-import freenet.support.SizeUtil;
-import freenet.support.io.ByteArrayRandomAccessThing;
 
 /**
  * Handle an incoming request. Does not do the actual fetching; that
