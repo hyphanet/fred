@@ -261,6 +261,11 @@ public class RequestHandler implements Runnable, ByteCounter {
         }
 	}
 
+    /**
+     * Either send an ack, indicating we've finished and aren't interested in opennet, 
+     * or wait for a noderef and relay it and wait for a response and relay that,
+     * or send our own noderef and wait for a response and add that.
+     */
 	private void finishOpennetChecked() {
 		OpennetManager om = node.getOpennet();
 		if(om != null &&
