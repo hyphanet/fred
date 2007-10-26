@@ -264,7 +264,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 	private void finishOpennetChecked() {
 		OpennetManager om = node.getOpennet();
 		if(om != null &&
-				(node.passOpennetRefsThroughDarknet() && node.isOpennetEnabled()) &&
+				(node.passOpennetRefsThroughDarknet() || source.isOpennet()) &&
 				finishOpennetInner(om)) 
 			return;
 		
