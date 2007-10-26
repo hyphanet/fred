@@ -380,7 +380,10 @@ public class RequestHandler implements Runnable, ByteCounter {
 		
 		byte[] newNoderef = om.waitForOpennetNoderef(true, source, uid, this);
 		
-		if(newNoderef == null) return;
+		if(newNoderef == null) {
+			// Presumably timed out anyway, no point sending an ack.
+			return;
+		}
 		
 		// Send it forward to the data source, if it is valid.
 		
