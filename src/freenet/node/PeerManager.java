@@ -469,7 +469,7 @@ public class PeerManager {
 			    	if(pn.isDisconnecting() && removePeer(pn))
 			    		writePeers();
    				}
-  			}, 60*1000);
+  			}, Node.MAX_PEER_INACTIVITY);
     	} else {
     		if(removePeer(pn))
     			writePeers();
