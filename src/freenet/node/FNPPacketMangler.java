@@ -83,6 +83,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	public final static int DH_CONTEXT_BUFFER_SIZE = 10;
 	private final LinkedList dhContextFIFO = new LinkedList();
+	/* Get a lock on dhContextFIFO before touching it! */
+	private DiffieHellmanLightContext dhContextToBePrunned = null;
 	private long jfkDHLastGenerationTimestamp = 0;
 	
 	protected static final int NONCE_SIZE = 8;
@@ -2556,6 +2558,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					return result;
 				}
 			}
+			if((dhContextToBePrunned.myExponential).equals(result.myExponential))
+				return dhContextToBePrunned;
 		}
 		return null;
 	}
@@ -2579,6 +2583,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					result = tmp;
 				}
 			}
+			dhContextToBePrunned = result;
 		}
 		return result;
 	}
