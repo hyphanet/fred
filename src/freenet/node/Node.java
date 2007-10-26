@@ -783,7 +783,7 @@ public class Node implements TimeSkewDetectorCallback {
 						try {
 							o = opennet = new OpennetManager(Node.this, opennetCryptoConfig);
 						} catch (NodeInitException e) {
-							o = null;
+							opennet = null;
 							throw new InvalidConfigValueException(e.getMessage());
 						}
 					} else {
