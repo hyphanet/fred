@@ -61,7 +61,7 @@ public class PooledExecutor implements Executor {
 					if(miss)
 						jobMisses++;
 					if(logMINOR)
-						Logger.minor(this, "Jobs: "+jobMisses+" misses of "+jobCount);
+						Logger.minor(this, "Jobs: "+jobMisses+" misses of "+jobCount+" starting urgently "+jobName);
 				}
 			}
 			return;
