@@ -1707,6 +1707,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			realSeqNumber = seqNumber + (decrypted[ptr++] & 0xff);
 		}
+		if(logMINOR)
+			Logger.minor(this, "Real sequence number: "+realSeqNumber);
 
 		//Logger.minor(this, "Reference seq number: "+HexUtil.bytesToHex(decrypted, ptr, 4));
 
@@ -1846,14 +1848,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(mi.formatted) {
 				try {
 					byte[] buf = mi.getData(pn);
-					kt = pn.getCurrentKeyTracker();
 					if(kt == null) {
 						if(logMINOR) Logger.minor(this, "kt = null");
 						pn.requeueMessageItems(messages, i, messages.length-i, false, "kt = null");
 						return;
 					}
 					int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
-					this.processOutgoingPreformatted(buf, 0, buf.length, pn.getCurrentKeyTracker(), packetNumber, mi.cb, mi.alreadyReportedBytes);
+					this.processOutgoingPreformatted(buf, 0, buf.length, kt, packetNumber, mi.cb, mi.alreadyReportedBytes);
 					mi.onSent(buf.length + fullHeadersLengthOneMessage);
 				} catch (NotConnectedException e) {
 					Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
