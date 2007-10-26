@@ -882,7 +882,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		final long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
-			Logger.error(this,"Message3 timeout error:Sending packet for"+pn.getPeer());
+			Logger.error(this,"Message3 Sending packet for"+pn.getPeer()+" took "+TimeUtil.formatTime(t2-t1, 3, true));
 	}
 	
 	/*
