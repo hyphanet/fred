@@ -12,6 +12,7 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -711,7 +712,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
     /**
       * Do the maybeUpdateHandshakeIPs DNS requests, but only if ignoreHostnames is false
-      * This method should only be called by maybeUpdateHandshakeIPs
+      * This method should only be called by maybeUpdateHandshakeIPs.
+      * Also removes dupes post-lookup.
       */
 	private Peer[] updateHandshakeIPs(Peer[] localHandshakeIPs, boolean ignoreHostnames) {
 		for(int i=0;i<localHandshakeIPs.length;i++) {
@@ -728,7 +730,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				localHandshakeIPs[i].getHandshakeAddress();
 			}
 		}
-		return localHandshakeIPs;
+		// De-dupe
+		HashSet ret = new HashSet();
+		for(int i=0;i<localHandshakeIPs.length;i++)
+			ret.add(localHandshakeIPs[i]);
+		return (Peer[]) ret.toArray(new Peer[ret.size()]);
 	}
 
     /**
