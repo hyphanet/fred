@@ -800,7 +800,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		DiffieHellmanLightContext ctx = findContextByExponential(_ourExponential);
 		if(ctx == null) {
-			Logger.normal(this, "WTF? the HMAC verified but we don't know about that exponential! (shouldn't happen often)");
+			Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN!");
 			return;
 		}
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
@@ -2491,11 +2491,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return ctx;
 	}
 	
-	private final void _fillJFKDHFIFOOffThread() {
+	private final void _fillJFKDHFIFOOffThread(final int count) {
 		// do it off-thread
 		node.executor.execute(new Runnable() {
 			public void run() {
-				_fillJFKDHFIFO();
+				for(int i=0;i<count;i++)
+					_fillJFKDHFIFO();
 			}
 		}, "DiffieHellman exponential signing");
 	}
@@ -2527,7 +2528,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// Shall we replace one element of the queue ?
 			if((jfkDHLastGenerationTimestamp + 30000 /*30sec*/) < now) {
 				jfkDHLastGenerationTimestamp = now;
-				_fillJFKDHFIFOOffThread();
+				_fillJFKDHFIFOOffThread(1);
 			}
 			
 			dhContextFIFO.addLast(result);
