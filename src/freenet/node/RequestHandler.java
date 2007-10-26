@@ -347,6 +347,16 @@ public class RequestHandler implements Runnable, ByteCounter {
 			byte[] noderef = 
 				om.waitForOpennetNoderef(true, source, uid, this);
 			
+			if(noderef == null) {
+				Message msg = DMT.createFNPOpennetCompletedAck(uid);
+				try {
+					source.sendAsync(msg, null, 0, this);
+				} catch (NotConnectedException e) {
+					// Oh well...
+				}
+				return;
+			}
+			
 		   	SimpleFieldSet ref;
 			try {
 				ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
