@@ -338,7 +338,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     private boolean finishOpennetNoRelayInner(OpennetManager om) {
     	if(logMINOR)
     		Logger.minor(this, "Finishing opennet: sending own reference");
-		if(om.wantPeer(null, false)) {
+		if(!om.wantPeer(null, false)) return false; // Don't want a reference
 			
 			try {
 				om.sendOpennetRef(false, uid, source, om.crypto.myCompressedFullRef(), this);
@@ -375,8 +375,6 @@ public class RequestHandler implements Runnable, ByteCounter {
 				Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+source+" : "+e, e);
 			}
 			return true;
-		}
-		return false;
     }
 
     /**
