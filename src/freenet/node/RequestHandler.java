@@ -278,22 +278,16 @@ public class RequestHandler implements Runnable, ByteCounter {
 	private void finishOpennetNoRelay() {
 		OpennetManager om = node.getOpennet();
 		
-		if(om == null || !(source.isOpennet() || node.passOpennetRefsThroughDarknet())) {
-			Message msg = DMT.createFNPOpennetCompletedAck(uid);
-			try {
-				source.sendAsync(msg, null, 0, this);
-			} catch (NotConnectedException e) {
-				// Oh well...
+		if(!(om == null || !(source.isOpennet() || node.passOpennetRefsThroughDarknet()))) {
+			if(finishOpennetNoRelayInner(om)) {
+				return;
 			}
-			return;
-		} else if(!finishOpennetNoRelayInner(om)) {
-			Message msg = DMT.createFNPOpennetCompletedAck(uid);
-			try {
-				source.sendAsync(msg, null, 0, this);
-			} catch (NotConnectedException e) {
-				// Oh well...
-			}
-			return;
+		}
+		Message msg = DMT.createFNPOpennetCompletedAck(uid);
+		try {
+			source.sendAsync(msg, null, 0, this);
+		} catch (NotConnectedException e) {
+			// Oh well...
 		}
 	}
 	
