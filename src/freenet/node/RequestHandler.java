@@ -288,7 +288,15 @@ public class RequestHandler implements Runnable, ByteCounter {
 			return;
 		}
 		
-		finishOpennetNoRelayInner(om);
+		if(!finishOpennetNoRelayInner(om)) {
+			Message msg = DMT.createFNPOpennetCompletedAck(uid);
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Oh well...
+			}
+			return;
+		}
 	}
 	
 	private void finishOpennetInner() {
@@ -306,7 +314,15 @@ public class RequestHandler implements Runnable, ByteCounter {
 		
 		byte[] noderef = rs.waitForOpennetNoderef();
 		if(noderef == null) {
-			finishOpennetNoRelayInner(om);
+			if(!finishOpennetNoRelayInner(om)) {
+				Message msg = DMT.createFNPOpennetCompletedAck(uid);
+				try {
+					source.sendAsync(msg, null, 0, this);
+				} catch (NotConnectedException e) {
+					// Oh well...
+				}
+				return;
+			}
 			return;
 		}
 		
@@ -321,8 +337,9 @@ public class RequestHandler implements Runnable, ByteCounter {
 	/**
 	 * Send our noderef to the request source, wait for a reply, if we get one add it. Called when either the request
 	 * wasn't routed, or the node it was routed to didn't return a noderef.
+	 * @return True if success, or lost connection; false if we need to send an ack.
 	 */
-    private void finishOpennetNoRelayInner(OpennetManager om) {
+    private boolean finishOpennetNoRelayInner(OpennetManager om) {
     	if(logMINOR)
     		Logger.minor(this, "Finishing opennet: sending own reference");
 		if(om.wantPeer(null, false)) {
@@ -332,7 +349,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Can't send opennet ref because node disconnected on "+this);
 				// Oh well...
-				return;
+				return true;
 			}
 			
 			// Wait for response
@@ -340,27 +357,13 @@ public class RequestHandler implements Runnable, ByteCounter {
 			byte[] noderef = 
 				om.waitForOpennetNoderef(true, source, uid, this);
 			
-			if(noderef == null) {
-				Message msg = DMT.createFNPOpennetCompletedAck(uid);
-				try {
-					source.sendAsync(msg, null, 0, this);
-				} catch (NotConnectedException e) {
-					// Oh well...
-				}
-				return;
-			}
+			if(noderef == null)
+				return false;
 			
 			SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, source);
 			
-			if(ref == null) {
-				Message msg = DMT.createFNPOpennetCompletedAck(uid);
-				try {
-					source.sendAsync(msg, null, 0, this);
-				} catch (NotConnectedException e) {
-					// Oh well...
-				}
-				return;
-			}
+			if(ref == null) 
+				return false;
 			
 		    try {
 				if(!node.addNewOpennetNode(ref)) {
@@ -375,14 +378,9 @@ public class RequestHandler implements Runnable, ByteCounter {
 			} catch (ReferenceSignatureVerificationException e) {
 				Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+source+" : "+e, e);
 			}
-			return;
+			return true;
 		}
-		Message msg = DMT.createFNPOpennetCompletedAck(uid);
-		try {
-			source.sendAsync(msg, null, 0, this);
-		} catch (NotConnectedException e) {
-			// Oh well...
-		}
+		return false;
     }
 
     /**
