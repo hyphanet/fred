@@ -172,6 +172,7 @@ public class NodeCryptoConfig {
 	
 	synchronized void stopping(NodeCrypto crypto2) {
 		crypto = null;
+		started = false;
 	}
 	
 	public synchronized int getPort() {
