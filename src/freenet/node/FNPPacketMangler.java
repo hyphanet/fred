@@ -704,6 +704,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		
+		// At this point we know it's from the peer, so we can report a packet received.
+		pn.receivedPacket(false);
+		
 		sendJFKMessage3(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, authenticator, pn, replyTo);
 
 		long t2=System.currentTimeMillis();
@@ -851,6 +854,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "The signature verification has failed!! JFK(3) - "+pn);
 			return;
 		}
+		
+		// At this point we know it's from the peer, so we can report a packet received.
+		pn.receivedPacket(false);
 		
 		// Send reply
 		sendJFKMessage4(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, c, Ke, Ka, authenticator, hisRef, pn, replyTo);
