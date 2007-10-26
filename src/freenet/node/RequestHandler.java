@@ -262,17 +262,18 @@ public class RequestHandler implements Runnable, ByteCounter {
 	}
 
 	private void finishOpennetChecked() {
-		if(!(source.isOpennet() || 
-				(node.passOpennetRefsThroughDarknet() && node.isOpennetEnabled()))) {
-			Message msg = DMT.createFNPOpennetCompletedAck(uid);
-			try {
-				source.sendAsync(msg, null, 0, this);
-			} catch (NotConnectedException e) {
-				// Oh well...
-			}
-			return;
+		OpennetManager om = node.getOpennet();
+		if(om != null &&
+				(node.passOpennetRefsThroughDarknet() && node.isOpennetEnabled())) {
+			finishOpennetInner(om);
 		}
-		finishOpennetInner();
+		
+		Message msg = DMT.createFNPOpennetCompletedAck(uid);
+		try {
+			source.sendAsync(msg, null, 0, this);
+		} catch (NotConnectedException e) {
+			// Oh well...
+		}
 	}
 	
 	/**
@@ -295,19 +296,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 		}
 	}
 	
-	private void finishOpennetInner() {
-		OpennetManager om = node.getOpennet();
-		
-		if(om == null) {
-			Message msg = DMT.createFNPOpennetCompletedAck(uid);
-			try {
-				source.sendAsync(msg, null, 0, this);
-			} catch (NotConnectedException e) {
-				// Oh well...
-			}
-			return;
-		}
-		
+	private void finishOpennetInner(OpennetManager om) {
 		byte[] noderef = rs.waitForOpennetNoderef();
 		if(noderef == null) {
 			if(!finishOpennetNoRelayInner(om)) {
