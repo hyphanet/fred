@@ -350,14 +350,18 @@ public class RequestHandler implements Runnable, ByteCounter {
 				return;
 			}
 			
-		   	SimpleFieldSet ref;
-			try {
-				ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
-			} catch (FSParseException e) {
-				Logger.error(this, "Could not parse opennet noderef for "+this+" from "+source, e);
+			SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, source);
+			
+			if(ref == null) {
+				Message msg = DMT.createFNPOpennetCompletedAck(uid);
+				try {
+					source.sendAsync(msg, null, 0, this);
+				} catch (NotConnectedException e) {
+					// Oh well...
+				}
 				return;
 			}
-		    
+			
 		    try {
 				if(!node.addNewOpennetNode(ref)) {
 					Logger.normal(this, "Asked for opennet ref but didn't want it for "+this+" :\n"+ref);
@@ -408,18 +412,13 @@ public class RequestHandler implements Runnable, ByteCounter {
 		
 		// Send it forward to the data source, if it is valid.
 		
-		try {
-			SimpleFieldSet fs = PeerNode.compressedNoderefToFieldSet(newNoderef, 0, newNoderef.length);
-			if(fs.getBoolean("opennet", false)) {
-				try {
-					om.sendOpennetRef(true, uid, dataSource, newNoderef, this);
-				} catch (NotConnectedException e) {
-					// How sad
-					return;
-				}
+		if(om.validateNoderef(newNoderef, 0, newNoderef.length, source) != null) {
+			try {
+				om.sendOpennetRef(true, uid, dataSource, newNoderef, this);
+			} catch (NotConnectedException e) {
+				// How sad
+				return;
 			}
-		} catch (FSParseException e1) {
-			// Invalid, clear it
 		}
 	}
 

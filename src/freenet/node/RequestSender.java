@@ -676,12 +676,9 @@ public final class RequestSender implements Runnable, ByteCounter {
         	
         	if(noderef == null) return;
         	
-        	SimpleFieldSet ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
-    		
-    		if(!ref.getBoolean("opennet", false)) {
-    			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next);
-    			return;
-    		}
+        	SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, next);
+        	
+        	if(ref == null) return;
         	
 			if(!node.addNewOpennetNode(ref)) {
 				// If we don't want it let somebody else have it

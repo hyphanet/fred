@@ -83,5 +83,13 @@ public class OpennetPeerNode extends PeerNode {
     public synchronized long timeLastDisconnect() {
     	return timeLastDisconnect;
     }
+
+    /**
+     * Is the SimpleFieldSet a valid noderef?
+     */
+	public static boolean validateRef(SimpleFieldSet ref) {
+		if(!ref.getBoolean("opennet", false)) return false;
+		return true;
+	}
     
 }

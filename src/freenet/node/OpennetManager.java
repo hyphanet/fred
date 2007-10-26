@@ -578,4 +578,21 @@ public class OpennetManager {
 		}
 	}
 
+	public SimpleFieldSet validateNoderef(byte[] noderef, int offset, int length, PeerNode from) {
+    	SimpleFieldSet ref;
+		try {
+			ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
+		} catch (FSParseException e) {
+			Logger.error(this, "Invalid noderef: "+e, e);
+			return null;
+		}
+		
+		if(!OpennetPeerNode.validateRef(ref)) {
+			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+from);
+			return null;
+		}
+    	
+		return ref;
+	}
+
 }
