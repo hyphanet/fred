@@ -278,11 +278,11 @@ public class RequestHandler implements Runnable, ByteCounter {
 	private void finishOpennetNoRelay() {
 		OpennetManager om = node.getOpennet();
 		
-		if(!(om == null || !(source.isOpennet() || node.passOpennetRefsThroughDarknet()))) {
-			if(finishOpennetNoRelayInner(om)) {
-				return;
-			}
-		}
+		if(om != null && (source.isOpennet() || node.passOpennetRefsThroughDarknet()) &&
+				finishOpennetNoRelayInner(om))
+			return;
+		
+		// Otherwise just ack it.
 		Message msg = DMT.createFNPOpennetCompletedAck(uid);
 		try {
 			source.sendAsync(msg, null, 0, this);
