@@ -399,8 +399,8 @@ class NodeCrypto {
 	}
 
 	public void stop() {
-		socket.close(true);
 		config.stopping(this);
+		socket.close(true);
 	}
 
 	public PeerNode[] getPeerNodes() {
