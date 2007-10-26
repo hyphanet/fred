@@ -2481,7 +2481,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			peerNodeStatus = getPeerNodeStatus(now, routingBackedOffUntil);
 			
 			if(peerNodeStatus != oldPeerNodeStatus) {
-				peers.removePeerNodeStatus( oldPeerNodeStatus, this );
+				peers.removePeerNodeStatus( oldPeerNodeStatus, this, true );
 				peers.addPeerNodeStatus( peerNodeStatus, this );
 			}
 

@@ -286,7 +286,7 @@ public class PeerManager {
     			if(myPeers[i] == pn) isInPeers=true;
     		}
     		int peerNodeStatus = pn.getPeerNodeStatus();
-    		removePeerNodeStatus( peerNodeStatus, pn );
+    		removePeerNodeStatus( peerNodeStatus, pn, isInPeers );
     		String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
     		if(peerNodePreviousRoutingBackoffReason != null) {
     			removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
@@ -1147,23 +1147,26 @@ public class PeerManager {
 
 	/**
 	 * Remove a PeerNode status from the map
+	 * @param isInPeers If true, complain if the node is not in the peers list; if false, complain if it is.
 	 */
-	public void removePeerNodeStatus(int pnStatus, PeerNode peerNode) {
+	public void removePeerNodeStatus(int pnStatus, PeerNode peerNode, boolean isInPeers) {
 		Integer peerNodeStatus = new Integer(pnStatus);
-		removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatuses);
+		removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatuses, isInPeers);
 		if(!peerNode.isOpennet())
-			removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatusesDarknet);
+			removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatusesDarknet, isInPeers);
 	}
 
-	private void removePeerNodeStatus(int pnStatus, Integer peerNodeStatus, PeerNode peerNode, HashMap statuses) {
+	private void removePeerNodeStatus(int pnStatus, Integer peerNodeStatus, PeerNode peerNode, HashMap statuses, boolean isInPeers) {
 		HashSet statusSet = null;
 		synchronized(statuses) {
 			if(statuses.containsKey(peerNodeStatus)) {
 				statusSet = (HashSet) statuses.get(peerNodeStatus);
 				if(!statusSet.contains(peerNode)) {
-					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+" for "+peerNode.shortToString()+"' not in peerNodeStatuses with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
+					if(isInPeers)
+						Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+" for "+peerNode.shortToString()+"' not in peerNodeStatuses with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
 					return;
-				}
+				} else if(!isInPeers)
+					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+" for "+peerNode.shortToString()+"' should not be in peerNodeStatuses with given status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
 				statuses.remove(peerNodeStatus);
 			} else {
 				statusSet = new HashSet();
