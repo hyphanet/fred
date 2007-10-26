@@ -286,9 +286,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 				// Oh well...
 			}
 			return;
-		}
-		
-		if(!finishOpennetNoRelayInner(om)) {
+		} else if(!finishOpennetNoRelayInner(om)) {
 			Message msg = DMT.createFNPOpennetCompletedAck(uid);
 			try {
 				source.sendAsync(msg, null, 0, this);
