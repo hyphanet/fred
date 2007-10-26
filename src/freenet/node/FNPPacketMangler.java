@@ -705,7 +705,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// At this point we know it's from the peer, so we can report a packet received.
-		pn.receivedPacket(false);
+		pn.receivedPacket(true);
 		
 		sendJFKMessage3(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, authenticator, pn, replyTo);
 
@@ -856,7 +856,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// At this point we know it's from the peer, so we can report a packet received.
-		pn.receivedPacket(false);
+		pn.receivedPacket(true);
 		
 		// Send reply
 		sendJFKMessage4(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, c, Ke, Ka, authenticator, hisRef, pn, replyTo);
