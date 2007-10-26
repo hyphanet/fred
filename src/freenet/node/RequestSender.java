@@ -18,9 +18,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.BlockReceiver;
-import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.PartiallyReceivedBlock;
-import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyVerifyException;
@@ -32,8 +30,6 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
-import freenet.support.SizeUtil;
-import freenet.support.io.ByteArrayRandomAccessThing;
 
 /**
  * @author amphibian
