@@ -38,7 +38,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 	private boolean _active = true;
 	
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node) throws SocketException {
-		super("MessageCore packet receiver thread on port " + listenPort);
+		super("UdpSocketHandler packet receiver thread on port " + listenPort);
 		this.node = node;
 		_bindTo = bindto;
 		    // Keep the Updater code in, just commented out, for now
