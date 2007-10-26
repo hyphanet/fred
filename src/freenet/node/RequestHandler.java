@@ -275,6 +275,10 @@ public class RequestHandler implements Runnable, ByteCounter {
 		finishOpennetInner();
 	}
 	
+	/**
+	 * There is no noderef to pass downstream. If we want a connection, send our 
+	 * noderef and wait for a reply, otherwise just send an ack.
+	 */
 	private void finishOpennetNoRelay() {
 		OpennetManager om = node.getOpennet();
 		
