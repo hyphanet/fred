@@ -381,7 +381,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 		byte[] newNoderef = om.waitForOpennetNoderef(true, source, uid, this);
 		
 		if(newNoderef == null) {
-			// Presumably timed out anyway, no point sending an ack.
+			// Already sent a ref, no way to tell upstream that we didn't receive one. :(
 			return;
 		}
 		
