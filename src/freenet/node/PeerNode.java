@@ -1217,12 +1217,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     private class SyncMessageCallback implements AsyncMessageCallback {
 
     	private boolean done = false;
+    	private boolean disconnected = false;
     	
-		public synchronized void waitForSend(long maxWaitInterval) {
+		public synchronized void waitForSend(long maxWaitInterval) throws NotConnectedException {
 			long now = System.currentTimeMillis();
 			long end = now + maxWaitInterval;
 			while((now = System.currentTimeMillis()) < end) {
-				if(done) return;
+				if(done) {
+					if(disconnected) throw new NotConnectedException();
+					return;
+				}
 				int waitTime = (int)(Math.min(end - now, Integer.MAX_VALUE));
 				try {
 					wait(waitTime);
@@ -1246,6 +1250,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		public void disconnected() {
 			synchronized(this) {
 				done = true;
+				disconnected = true;
 				notifyAll();
 			}
 		}
