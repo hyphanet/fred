@@ -105,7 +105,7 @@ public class StatisticsToadlet extends Toadlet {
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
 
@@ -137,7 +137,7 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfListening = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTENING);
 		int numberOfListenOnly = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTEN_ONLY);
 
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Statistics for " + node.getMyName(), ctx);
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 		// FIXME! We need some nice images
@@ -165,7 +165,7 @@ public class StatisticsToadlet extends Toadlet {
 		drawJVMStatsBox(jvmStatsInfobox);
 		
 		// Statistic gathering box
-		HTMLNode statGatheringBox =  nextTableCell.addChild(ctx.getPageMaker().getInfobox("Statistic gathering"));
+		HTMLNode statGatheringBox =  nextTableCell.addChild(ctx.getPageMaker().getInfobox(l10n("statisticGatheringTitle")));
 		HTMLNode statGatheringContent = ctx.getPageMaker().getContentNode(statGatheringBox);
 		// Generate a Thread-Dump
 		if(node.isUsingWrapper()){

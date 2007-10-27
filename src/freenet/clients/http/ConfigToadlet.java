@@ -52,7 +52,7 @@ public class ConfigToadlet extends Toadlet {
 		}
 		
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
 		
@@ -117,7 +117,7 @@ public class ConfigToadlet extends Toadlet {
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, L10n.getString("Unauthorized"), L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
 		
@@ -139,7 +139,7 @@ public class ConfigToadlet extends Toadlet {
 			HTMLNode nextTableCell = navigationTableRow;
 			
 			for(int i=0; i<sc.length;i++){
-				nextTableCell.addChild("td", "class", "config_navigation").addChild("li").addChild("a", "href", '#' +sc[i].getPrefix(), sc[i].getPrefix());
+				nextTableCell.addChild("td", "class", "config_navigation").addChild("li").addChild("a", "href", '#' +sc[i].getPrefix(), l10n(sc[i].getPrefix()));
 			}
 			contentNode.addChild(navigationBar);
 		}
@@ -183,7 +183,7 @@ public class ConfigToadlet extends Toadlet {
 			
 			if(displayedConfigElements>0) {
 				formNode.addChild("div", "class", "configprefix", sc[i].getPrefix());
-				formNode.addChild("a", "id", sc[i].getPrefix());
+				formNode.addChild("a", "id", l10n(sc[i].getPrefix()));
 				formNode.addChild(configGroupUlNode);
 			}
 		}
@@ -216,12 +216,12 @@ public class ConfigToadlet extends Toadlet {
 		
 		if(value) {
 			result.addChild("option", new String[] { "value", "selected" }, new String[] {
-					"true", "selected" }, "true");
-			result.addChild("option", "value", "false", "false");
+					"true", "selected" }, l10n("true"));
+			result.addChild("option", "value", "false", l10n("false"));
 		} else {
-			result.addChild("option", "value", "true", "true");
+			result.addChild("option", "value", "true", l10n("true"));
 			result.addChild("option", new String[] { "value", "selected" }, new String[] {
-					"false", "selected" }, "false");
+					"false", "selected" }, l10n("false"));
 		}
 		
 		return result;

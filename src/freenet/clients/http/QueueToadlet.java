@@ -867,16 +867,16 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "ksk" });
 		insertForm.addChild("#", " KSK \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "key", "KSK@" });
-		insertForm.addChild("#", " \u00a0 File: ");
+		insertForm.addChild("#", " \u00a0 " + L10n.getString("QueueToadlet.insertFileLabel") + ": ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
 		insertForm.addChild("#", " \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "compress", "checked" });
-		insertForm.addChild("#", " Compress \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", "Insert file" });
+		insertForm.addChild("#", " " + L10n.getString("QueueToadlet.insertFileCompressLabel") + " \u00a0 ");
+		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", L10n.getString("QueueToadlet.insertFileInsertFileLabel") });
 		insertForm.addChild("#", " \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", "Browse..." });
+		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", L10n.getString("QueueToadlet.insertFileBrowseLabel") + "..." });
 		insertForm.addChild("#", " \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "reset", "Reset form" });
+		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "reset", L10n.getString("QueueToadlet.insertFileResetForm") });
 		return insertBox;
 	}
 	
