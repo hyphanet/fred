@@ -2388,11 +2388,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	public void sendHandshake(PeerNode pn) {
 		int negType = pn.selectNegType(this);
 		if(negType == -1) {
-			if(pn.isRoutingCompatible())
-				Logger.error(this, "Could not negotiate with "+pn+" : no common negTypes available!: his negTypes: "+StringArray.toString(pn.negTypes)+" my negTypes: "+StringArray.toString(supportedNegTypes())+" despite being up to date!!");
-			else
-				Logger.minor(this, "Could not negotiate with "+pn+" : no common negTypes available!: his negTypes: "+StringArray.toString(pn.negTypes)+" my negTypes: "+StringArray.toString(supportedNegTypes())+" (probably just too old)");
-			return;
+			// Pick a random negType from what I do support
+			int[] negTypes = supportedNegTypes();
+			negType = negTypes[node.random.nextInt(negTypes.length)];
+			Logger.normal(this, "Cannot send handshake to "+pn+" because no common negTypes, choosing random negType of "+negType);
 		}
 		if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn+" negotiation type "+negType);
 		DiffieHellmanContext ctx = null;
