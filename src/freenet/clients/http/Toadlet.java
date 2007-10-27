@@ -233,6 +233,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild(message);
 		infoboxContent.addChild("br");
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
+		infoboxContent.addChild("br");
 		addHomepageLink(infoboxContent);
 		
 		writeHTMLReply(ctx, code, desc, pageNode.generate());
