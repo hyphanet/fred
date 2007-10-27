@@ -2492,7 +2492,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			
 			if(peerNodeStatus != oldPeerNodeStatus) {
 				peers.removePeerNodeStatus( oldPeerNodeStatus, this, noLog );
-				peers.addPeerNodeStatus( peerNodeStatus, this );
+				peers.addPeerNodeStatus( peerNodeStatus, this, noLog );
 			}
 
 		}

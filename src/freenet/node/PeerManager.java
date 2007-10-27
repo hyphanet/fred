@@ -255,7 +255,7 @@ public class PeerManager {
 			myPeers = newMyPeers;
 			Logger.normal(this, "Added " + pn);
 		}
-		this.addPeerNodeStatus(pn.getPeerNodeStatus(), pn);
+		this.addPeerNodeStatus(pn.getPeerNodeStatus(), pn, false);
 		pn.setPeerNodeStatus(System.currentTimeMillis());
 		updatePMUserAlert();
 		if((!ignoreOpennet) && pn instanceof OpennetPeerNode) {
@@ -1101,20 +1101,20 @@ public class PeerManager {
 	/**
 	 * Add a PeerNode status to the map
 	 */
-	public void addPeerNodeStatus(int pnStatus, PeerNode peerNode) {
+	public void addPeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
 		Integer peerNodeStatus = new Integer(pnStatus);
-		addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatuses);
+		addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatuses, noLog);
 		if(!peerNode.isOpennet())
-			addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatusesDarknet);
+			addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatusesDarknet, noLog);
 	}
 
-	private void addPeerNodeStatuses(int pnStatus, PeerNode peerNode, Integer peerNodeStatus, HashMap statuses) {
+	private void addPeerNodeStatuses(int pnStatus, PeerNode peerNode, Integer peerNodeStatus, HashMap statuses, boolean noLog) {
 		HashSet statusSet = null;
 		synchronized(statuses) {
 			if(statuses.containsKey(peerNodeStatus)) {
 				statusSet = (HashSet) statuses.get(peerNodeStatus);
 				if(statusSet.contains(peerNode)) {
-					Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode.getPeer()+" with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
+					if(!noLog) Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode.getPeer()+" with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
 					return;
 				}
 				statuses.remove(peerNodeStatus);
