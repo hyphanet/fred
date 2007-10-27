@@ -1236,7 +1236,7 @@ public class PeerManager {
 			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
 				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
 				if(!reasonSet.contains(peerNode)) {
-					Logger.error(this, "removePeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' not in peerNodeRoutingBackoffReasons with status code "+peerNodeRoutingBackoffReason);
+					Logger.error(this, "removePeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' not in peerNodeRoutingBackoffReasons with status code "+peerNodeRoutingBackoffReason, new Exception("debug"));
 					return;
 				}
 				peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
