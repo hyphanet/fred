@@ -58,7 +58,7 @@ public class PproxyToadlet extends Toadlet {
 		}
 
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", l10n("unauthorized"));
+			super.sendErrorPage(ctx, 403, l10n("unauthorizedTitle"), l10n("unauthorized"));
 			return;
 		}
 
@@ -131,6 +131,7 @@ public class PproxyToadlet extends Toadlet {
 							Logger
 							.error(this,
 							"We don't allow downloads from anywhere else but our server");
+							sendErrorPage(ctx, 403, l10n("Error"), l10n("downloadNotAllowedFromRemoteServer"));
 							return;
 						}
 						String pluginname = filename.substring(0,
@@ -153,8 +154,10 @@ public class PproxyToadlet extends Toadlet {
 								Logger
 								.normal(this,
 								"The plugin directory hasn't been found, let's create it");
-								if (!pluginsDirectory.mkdir())
+								if (!pluginsDirectory.mkdir()) {
+									sendErrorPage(ctx, 500, l10n("Error"), l10n("pluginDirectoryNotCreated"));
 									return;
+								}
 							}
 
 							File finalFile = new File("plugins/" + pluginname
@@ -173,14 +176,17 @@ public class PproxyToadlet extends Toadlet {
 							Logger.error(this,
 									"MalformedURLException has occured : " + mue,
 									mue);
+							sendErrorPage(ctx, l10n("Error"), l10n("pluginNotDownloaded"), mue);
 							return;
 						} catch (FileNotFoundException e) {
 							Logger.error(this,
 									"FileNotFoundException has occured : " + e, e);
+							sendErrorPage(ctx, l10n("Error"), l10n("pluginNotDownloaded"), e);
 							return;
 						} catch (IOException ioe) {
 							System.out.println("Caught :" + ioe.getMessage());
 							ioe.printStackTrace();
+							sendErrorPage(ctx, l10n("Error"), l10n("pluginNotDownloaded"), ioe);
 							return;
 						} finally {
 							try {
@@ -190,10 +196,13 @@ public class PproxyToadlet extends Toadlet {
 							}
 						}
 					}
-					if (filename == null)
+					if (filename == null) {
+						sendErrorPage(ctx, 500, l10n("Error"), l10n("pluginNotDownloaded"));
 						return;
+					}
 					else if(!downloaded) {
 						Logger.error(this, "Can't load the given plugin; giving up");
+						sendErrorPage(ctx, 500, l10n("Error"), l10n("pluginNotDownloaded"));
 						return;
 					}
 				}
