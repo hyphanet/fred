@@ -92,6 +92,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 					// Success!
 					cb.onEncode(pubUSK.copy(edition), this);
 					parent.addMustSucceedBlocks(1);
+					parent.completedBlock(true);
 					cb.onSuccess(this);
 					finished = true;
 					sbi = null;
