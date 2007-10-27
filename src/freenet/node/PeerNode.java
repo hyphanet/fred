@@ -2481,13 +2481,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public int setPeerNodeStatus(long now) {
+		return setPeerNodeStatus(now, false);
+	}
+	
+	public int setPeerNodeStatus(long now, boolean noLog) {
 		long routingBackedOffUntil = getRoutingBackedOffUntil();
 		synchronized(this) {
 			int oldPeerNodeStatus = peerNodeStatus;
 			peerNodeStatus = getPeerNodeStatus(now, routingBackedOffUntil);
 			
 			if(peerNodeStatus != oldPeerNodeStatus) {
-				peers.removePeerNodeStatus( oldPeerNodeStatus, this, true );
+				peers.removePeerNodeStatus( oldPeerNodeStatus, this, noLog );
 				peers.addPeerNodeStatus( peerNodeStatus, this );
 			}
 
@@ -2792,7 +2796,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(!disconnecting) return;
 			disconnecting = false;
 		}
-		setPeerNodeStatus(System.currentTimeMillis());
+		setPeerNodeStatus(System.currentTimeMillis(), true);
 	}
 	
 	/** Called when the peer is removed from the PeerManager */
