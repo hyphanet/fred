@@ -689,7 +689,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 				return;
 			} else {
 				// opennetNoderef = null i.e. we want the noderef so we won't pass it further down.
-				Logger.error(this, "Added opennet noderef in "+this+" from "+next);
+				Logger.normal(this, "Added opennet noderef in "+this+" from "+next);
 			}
 			
 	    	// We want the node: send our reference
