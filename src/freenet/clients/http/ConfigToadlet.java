@@ -117,7 +117,7 @@ public class ConfigToadlet extends Toadlet {
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, L10n.getString("Unauthorized"), L10n.getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
 		
@@ -182,8 +182,8 @@ public class ConfigToadlet extends Toadlet {
 			}
 			
 			if(displayedConfigElements>0) {
-				formNode.addChild("div", "class", "configprefix", sc[i].getPrefix());
-				formNode.addChild("a", "id", l10n(sc[i].getPrefix()));
+				formNode.addChild("div", "class", "configprefix", l10n(sc[i].getPrefix()));
+				formNode.addChild("a", "id", sc[i].getPrefix());
 				formNode.addChild(configGroupUlNode);
 			}
 		}
