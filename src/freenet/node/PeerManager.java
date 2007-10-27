@@ -1166,7 +1166,8 @@ public class PeerManager {
 						Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+" for "+peerNode.shortToString()+"' not in peerNodeStatuses with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
 					return;
 				}
-				statuses.remove(peerNodeStatus);
+				if(statuses.isEmpty())
+					statuses.remove(peerNodeStatus);
 			} else {
 				statusSet = new HashSet();
 			}
@@ -1174,7 +1175,6 @@ public class PeerManager {
 			if(statusSet.contains(peerNode)) {
 				statusSet.remove(peerNode);
 			}
-			statuses.put(peerNodeStatus, statusSet);
 		}
 	}
 
