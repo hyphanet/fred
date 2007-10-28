@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Set;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.L10n;
@@ -21,9 +22,11 @@ import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.RedirectPluginHTTPException;
+import freenet.pluginmanager.PluginManager.PluginProgress;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.FileUtil;
 
@@ -118,104 +121,28 @@ public class PproxyToadlet extends Toadlet {
 		}
 		else
 		{
+			final boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			final boolean logNORMAL = Logger.shouldLog(Logger.NORMAL, this);
 
-			if (request.isPartSet("load")) {
-				String filename = request.getPartAsString("load", MAX_PLUGIN_NAME_LENGTH);
-				final boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				boolean downloaded = false;
-
-				if(logMINOR) Logger.minor(this, "Loading "+filename);
-				if (filename.endsWith("#")) {
-					for (int tries = 0; (tries <= 5) && (downloaded == false); tries++) {
-						if (filename.indexOf('@') > -1) {
-							Logger
-							.error(this,
-							"We don't allow downloads from anywhere else but our server");
-							sendErrorPage(ctx, 403, l10n("Error"), l10n("downloadNotAllowedFromRemoteServer"));
-							return;
-						}
-						String pluginname = filename.substring(0,
-								filename.length() - 1);
-						filename = null;
-
-						URL url;
-						InputStream is = null;
-
-						try {
-							url = new URL(
-									"http://downloads.freenetproject.org/alpha/plugins/"
-									+ pluginname + ".jar.url");
-							if (logMINOR)
-								Logger.minor(this, "Downloading " + url);
-							is = url.openStream();
-
-							File pluginsDirectory = new File("plugins");
-							if (!pluginsDirectory.exists()) {
-								Logger
-								.normal(this,
-								"The plugin directory hasn't been found, let's create it");
-								if (!pluginsDirectory.mkdir()) {
-									sendErrorPage(ctx, 500, l10n("Error"), l10n("pluginDirectoryNotCreated"));
-									return;
-								}
-							}
-
-							File finalFile = new File("plugins/" + pluginname
-									+ ".jar");
-							if (!FileUtil.writeTo(is, finalFile))
-								Logger.error(this,
-										"Failed to rename the temporary file into "
-										+ finalFile);
-
-							filename = "*@file://"
-								+ FileUtil.getCanonicalFile(finalFile);
-							if (logMINOR)
-								Logger.minor(this, "Rewritten to " + filename);
-							downloaded = true;
-						} catch (MalformedURLException mue) {
-							Logger.error(this,
-									"MalformedURLException has occured : " + mue,
-									mue);
-							sendErrorPage(ctx, l10n("Error"), l10n("pluginNotDownloaded"), mue);
-							return;
-						} catch (FileNotFoundException e) {
-							Logger.error(this,
-									"FileNotFoundException has occured : " + e, e);
-							sendErrorPage(ctx, l10n("Error"), l10n("pluginNotDownloaded"), e);
-							return;
-						} catch (IOException ioe) {
-							System.out.println("Caught :" + ioe.getMessage());
-							ioe.printStackTrace();
-							sendErrorPage(ctx, l10n("Error"), l10n("pluginNotDownloaded"), ioe);
-							return;
-						} finally {
-							try {
-								if (is != null)
-									is.close();
-							} catch (IOException ioe) {
-							}
-						}
-					}
-					if (filename == null) {
-						sendErrorPage(ctx, 500, l10n("Error"), l10n("pluginNotDownloaded"));
-						return;
-					}
-					else if(!downloaded) {
-						Logger.error(this, "Can't load the given plugin; giving up");
-						sendErrorPage(ctx, 500, l10n("Error"), l10n("pluginNotDownloaded"));
-						return;
-					}
+			if (request.isPartSet("submit-official") || request.isPartSet("submit-other")) {
+				String pluginName = null;
+				boolean refresh = request.isPartSet("refresh-on-startup");
+				if (request.isPartSet("submit-official")) {
+					pluginName = request.getPartAsString("plugin-name", 40);
+				} else {
+					pluginName = request.getPartAsString("plugin-url", 200);
 				}
-
-				pm.startPlugin(filename, true);
+				pm.startPlugin(pluginName, refresh, true);
 				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
-			}if (request.isPartSet("cancel")){
+			}
+			if (request.isPartSet("cancel")){
 				headers.put("Location", "/plugins/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
-			}if (request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			}
+			if (request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				pm.killPlugin(request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH), MAX_THREADED_UNLOAD_WAIT_TIME);
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -243,11 +170,13 @@ public class PproxyToadlet extends Toadlet {
 				return;
 			}else if (request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				String fn = null;
+				boolean refresh = false;
 				Iterator it = pm.getPlugins().iterator();
 				while (it.hasNext()) {
 					PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
 					if (pi.getThreadName().equals(request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH))) {
 						fn = pi.getFilename();
+						refresh = pi.isAutoRefresh();
 						break;
 					}
 				}
@@ -257,7 +186,7 @@ public class PproxyToadlet extends Toadlet {
 							L10n.getString("PluginToadlet.pluginNotFoundReload"));
 				} else {
 					pm.killPlugin(request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH), MAX_THREADED_UNLOAD_WAIT_TIME);
-					pm.startPlugin(fn, true);
+					pm.startPlugin(fn, refresh, true);
 
 					headers.put("Location", ".");
 					ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -297,7 +226,18 @@ public class PproxyToadlet extends Toadlet {
 			Logger.minor(this, "Pproxy fetching "+path);
 		try {
 			if (path.equals("")) {
-				this.showPluginList(ctx, request, pm);
+				if (!ctx.isAllowedFullAccess()) {
+					super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
+					return;
+				}
+
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+
+				this.showStartingPlugins(ctx, request, pm, contentNode);
+				this.showPluginList(ctx, request, pm, contentNode);
+
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			} else {
 				// split path into plugin class name and 'data' path for plugin
 				int to = path.indexOf("/");
@@ -336,16 +276,44 @@ public class PproxyToadlet extends Toadlet {
 		}
 	}
 
-	private void showPluginList(ToadletContext ctx, HTTPRequest request, PluginManager pm) throws ToadletContextClosedException, IOException {
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
-			return;
+	/**
+	 * Shows a list of all currently loading plugins.
+	 * 
+	 * @param toadletContext
+	 *            The toadlet context
+	 * @param request
+	 *            The HTTP request
+	 * @param pluginManager
+	 *            The plugin manager
+	 * @throws ToadletContextClosedException
+	 *             if the toadlet context is closed
+	 * @throws IOException
+	 *             if an I/O error occurs
+	 */
+	private void showStartingPlugins(ToadletContext toadletContext, HTTPRequest request, PluginManager pluginManager, HTMLNode contentNode) throws ToadletContextClosedException, IOException {
+		Set/*<PluginProgress>*/ startingPlugins = pluginManager.getStartingPlugins();
+		if (!startingPlugins.isEmpty()) {
+			HTMLNode startingPluginsBox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			startingPluginsBox.addChild("div", "class", "infobox-header", l10n("startingPluginsTitle"));
+			HTMLNode startingPluginsContent = startingPluginsBox.addChild("div", "class", "infobox-content");
+			HTMLNode startingPluginsTable = startingPluginsContent.addChild("table");
+			HTMLNode startingPluginsHeader = startingPluginsTable.addChild("tr");
+			startingPluginsHeader.addChild("th", l10n("startingPluginName"));
+			startingPluginsHeader.addChild("th", l10n("startingPluginStatus"));
+			startingPluginsHeader.addChild("th", l10n("startingPluginTime"));
+			Iterator/*<PluginProgress>*/ startingPluginsIterator = startingPlugins.iterator();
+			while (startingPluginsIterator.hasNext()) {
+				PluginProgress pluginProgress = (PluginProgress) startingPluginsIterator.next();
+				HTMLNode startingPluginsRow = startingPluginsTable.addChild("tr");
+				startingPluginsRow.addChild("td", pluginProgress.getName());
+				startingPluginsRow.addChild("td", l10n("startingPluginStatus." + pluginProgress.getProgress().toString()));
+				startingPluginsRow.addChild("td", "aligh", "right", TimeUtil.formatTime(pluginProgress.getTime()));
+			}
 		}
+	}
 
+	private void showPluginList(ToadletContext ctx, HTTPRequest request, PluginManager pm, HTMLNode contentNode) throws ToadletContextClosedException, IOException {
 		if (!request.hasParameters()) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			infobox.addChild("div", "class", "infobox-header", L10n.getString("PluginToadlet.pluginListTitle"));
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -386,12 +354,27 @@ public class PproxyToadlet extends Toadlet {
 				}
 			}
 
-			HTMLNode addForm = ctx.addFormChild(infoboxContent, ".", "addPluginForm");
-			HTMLNode loadDiv = addForm.addChild("div");
-			loadDiv.addChild("#", (l10n("loadPluginLabel") + ' '));
-			loadDiv.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "load", "40" });
-			loadDiv.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("Load") });
-			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			/* box for "official" plugins. */
+			HTMLNode addOfficialPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			addOfficialPluginBox.addChild("div", "class", "infobox-header", l10n("loadOfficialPlugin"));
+			HTMLNode addOfficialPluginContent = addOfficialPluginBox.addChild("div", "class", "infobox-content");
+			HTMLNode addOfficialForm = ctx.addFormChild(addOfficialPluginContent, ".", "addOfficialPluginForm");
+			addOfficialForm.addChild("div", l10n("loadOfficialPluginText"));
+			addOfficialForm.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
+			addOfficialForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-name", "40" });
+			addOfficialForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "refresh-on-startup", "tue", "checked" }, l10n("refreshOnStartup"));
+			addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
+
+			/* box for unofficial plugins. */
+			HTMLNode addOtherPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			addOtherPluginBox.addChild("div", "class", "infobox-header", l10n("loadOtherPlugin"));
+			HTMLNode addOtherPluginContent = addOtherPluginBox.addChild("div", "class", "infobox-content");
+			HTMLNode addOtherForm = ctx.addFormChild(addOtherPluginContent, ".", "addOtherPluginForm");
+			addOtherForm.addChild("div", l10n("loadOtherPluginText"));
+			addOtherForm.addChild("#", (l10n("loadOtherURLLabel") + ": "));
+			addOtherForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-url", "80" });
+			addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "refresh-on-startup", "true" }, l10n("refreshOnStartup"));
+			addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-other", l10n("Load") });
 		} 
 	}
 }

@@ -19,13 +19,14 @@ public class PluginInfoWrapper {
 	private boolean isThreadlessPlugin;
 	private boolean isIPDetectorPlugin;
 	private boolean isPortForwardPlugin;
+	private boolean autoRefresh;
 	private String filename;
 	private HashSet toadletLinks=new HashSet();
 	private boolean stopping = false;
 	private boolean unregistered = false;
 	//public String 
 	
-	public PluginInfoWrapper(FredPlugin plug, String filename) {
+	public PluginInfoWrapper(FredPlugin plug, String filename, boolean autoRefresh) {
 		this.plug = plug;
 		if (fedPluginThread) return;
 		className = plug.getClass().toString();
@@ -37,8 +38,20 @@ public class PluginInfoWrapper {
 		isThreadlessPlugin = (plug instanceof FredPluginThreadless);
 		isIPDetectorPlugin = (plug instanceof FredPluginIPDetector);
 		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
+		this.autoRefresh = autoRefresh;
 	}
-	
+
+	/**
+	 * Returns whether this plugin should be refreshed from the server on
+	 * startup.
+	 * 
+	 * @return <code>true</code> if the plugin should be refresh on startup,
+	 *         <code>false</code> otherwise
+	 */
+	public boolean isAutoRefresh() {
+		return autoRefresh;
+	}
+
 	void setThread(Thread ps) {
 		if(thread != null)
 			throw new IllegalStateException("Already set a thread");

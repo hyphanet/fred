@@ -19,8 +19,8 @@ public class PluginHandler {
 	 * 
 	 * @param plug
 	 */
-	public static PluginInfoWrapper startPlugin(PluginManager pm, String filename, FredPlugin plug, PluginRespirator pr) {
-		final PluginInfoWrapper pi = new PluginInfoWrapper(plug, filename);
+	public static PluginInfoWrapper startPlugin(PluginManager pm, String filename, FredPlugin plug, PluginRespirator pr, boolean refresh) {
+		final PluginInfoWrapper pi = new PluginInfoWrapper(plug, filename, refresh);
 		final PluginStarter ps = new PluginStarter(pr, pi);
 		ps.setPlugin(pm, plug);
 		// We must start the plugin *after startup has finished*

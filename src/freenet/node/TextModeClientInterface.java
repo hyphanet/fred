@@ -878,22 +878,19 @@ public class TextModeClientInterface implements Runnable {
         	probeAll();
         } else if(uline.startsWith("PLUGLOAD:")) {
         	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
-        		outsb.append("  PLUGLOAD: pkg.Class                  - Load plugin from current classpath");        		
-        		outsb.append("  PLUGLOAD: pkg.Class@file:<filename>  - Load plugin from file");
-        		outsb.append("  PLUGLOAD: pkg.Class@http://...       - Load plugin from online file");
-        		outsb.append("  PLUGLOAD:         *@...              - Load plugin from manifest in given jarfile");
+        		outsb.append("  PLUGLOAD: pluginName         - Load official plugin from freenetproject.org");
+        		outsb.append("  PLUGLOAD: file://<filename>  - Load plugin from file");
+        		outsb.append("  PLUGLOAD: http://...         - Load plugin from online file");
         		outsb.append("");
-        		outsb.append("If the filename/url ends with \".url\", it" +
-        				" is treated as a link, meaning that the first line is" +
-        				" the accual URL. Else it is loaded as classpath and" +
-        				" the class it loaded from it (meaning the file could" +
-        				" be either a jar-file or a class-file).");
-        		outsb.append("");
-        		outsb.append("  PLUGLOAD: pkg.Class*  - Load newest version of plugin from http://downloads.freenetproject.org/alpha/plugins/");        		
-        		outsb.append("");
-        		
-        	} else
-        		n.pluginManager.startPlugin(line.substring("PLUGLOAD:".length()).trim(), true);
+        		outsb.append("If you append as asterisk (\"*\") to the name or URL, the plugin will be reloaded from the remote server on startup.");
+        	} else {
+        		String name = line.substring("PLUGLOAD:".length()).trim();
+        		boolean refresh = name.endsWith("*");
+        		if (refresh) {
+        			name = name.substring(0, name.length() - 1);
+        		}
+        		n.pluginManager.startPlugin(name, refresh, true);
+        	}
             //outsb.append("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.");
         } else if(uline.startsWith("PLUGLIST")) {
         	outsb.append(n.pluginManager.dumpPlugins());
