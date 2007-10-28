@@ -97,8 +97,11 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		String genURI = fs.get("GeneratedURI");
 		if(genURI != null)
 			generatedURI = new FreenetURI(genURI);
-		if(finished && (!succeeded))
-			putFailedMessage = new PutFailedMessage(fs.subset("PutFailed"), false);
+		if(finished) {
+			completionTime = Long.parseLong("CompletionTime");
+			if(!succeeded)
+				putFailedMessage = new PutFailedMessage(fs.subset("PutFailed"), false);
+		}
 		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
 	}
 
