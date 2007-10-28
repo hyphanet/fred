@@ -450,9 +450,7 @@ public class PluginManager {
 				pluginOutputStream = new FileOutputStream(tempPluginFile);
 				urlConnection = pluginUrl.openConnection();
 				urlConnection.setUseCaches(false);
-				urlConnection.setReadTimeout(0);
 				urlConnection.setAllowUserInteraction(false);
-				urlConnection.setConnectTimeout(180 * 1000);
 				urlConnection.connect();
 				pluginInputStream = urlConnection.getInputStream();
 				byte[] buffer = new byte[1024];
