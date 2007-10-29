@@ -3,18 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.JarURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,7 +17,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
 import java.util.jar.JarException;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -38,11 +32,9 @@ import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
-import freenet.support.URIPreEncoder;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
 import freenet.support.io.Closer;
-import freenet.support.io.StreamCopier;
 
 public class PluginManager {
 
