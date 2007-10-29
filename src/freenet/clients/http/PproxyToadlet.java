@@ -1,14 +1,11 @@
 package freenet.clients.http;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import freenet.client.HighLevelSimpleClient;
@@ -29,7 +26,6 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
-import freenet.support.io.FileUtil;
 
 public class PproxyToadlet extends Toadlet {
 	private static final int MAX_PLUGIN_NAME_LENGTH = 1024;
@@ -251,9 +247,27 @@ public class PproxyToadlet extends Toadlet {
 						contentNode.addChild(core.alerts.renderAlert(userAlert));
 					}
 				}
+				
+				/* find which plugins have already been loaded. */
+				List/*<String>*/ availablePlugins = findAvailablePlugins();
+				Iterator/*<PluginInfoWrapper>*/ loadedPlugins = pm.getPlugins().iterator();
+				while (loadedPlugins.hasNext()) {
+					PluginInfoWrapper pluginInfoWrapper = (PluginInfoWrapper) loadedPlugins.next();
+					String pluginName = pluginInfoWrapper.getPluginClassName();
+					String shortPluginName = pluginName.substring(pluginName.lastIndexOf('.') + 1);
+					availablePlugins.remove(shortPluginName);
+				}
+				Iterator/*<PluginProgress>*/ loadingPlugins = pm.getStartingPlugins().iterator();
+				while (loadingPlugins.hasNext()) {
+					PluginProgress pluginProgress = (PluginProgress) loadingPlugins.next();
+					String pluginName = pluginProgress.getName();
+					availablePlugins.remove(pluginName);
+				}
 
-				this.showStartingPlugins(ctx, request, pm, contentNode);
-				this.showPluginList(ctx, request, pm, contentNode);
+				showStartingPlugins(ctx, pm, contentNode);
+				showPluginList(ctx, pm, contentNode);
+				showOfficialPluginLoader(ctx, contentNode, availablePlugins);
+				showUnofficialPluginLoader(ctx, contentNode);
 
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			} else {
@@ -295,6 +309,29 @@ public class PproxyToadlet extends Toadlet {
 	}
 
 	/**
+	 * Returns a list of the names of all available official plugins. Right now
+	 * this list is hardcoded but in future we could retrieve this list from emu
+	 * or from freenet itself.
+	 * 
+	 * @return A list of all available plugin names
+	 */
+	private List/* <String> */findAvailablePlugins() {
+		List/* <String> */availablePlugins = new ArrayList/* <String> */();
+		availablePlugins.add("Echo");
+		availablePlugins.add("Freemail");
+		availablePlugins.add("HelloWorld");
+		availablePlugins.add("JSTUN");
+		availablePlugins.add("Librarian");
+		availablePlugins.add("MDNSDiscovery");
+		availablePlugins.add("SNMP");
+		availablePlugins.add("TestGallery");
+		availablePlugins.add("UPnP");
+		availablePlugins.add("XMLLibrarian");
+		availablePlugins.add("XMLSpider");
+		return availablePlugins;
+	}
+
+	/**
 	 * Shows a list of all currently loading plugins.
 	 * 
 	 * @param toadletContext
@@ -308,7 +345,7 @@ public class PproxyToadlet extends Toadlet {
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 */
-	private void showStartingPlugins(ToadletContext toadletContext, HTTPRequest request, PluginManager pluginManager, HTMLNode contentNode) throws ToadletContextClosedException, IOException {
+	private void showStartingPlugins(ToadletContext toadletContext, PluginManager pluginManager, HTMLNode contentNode) throws ToadletContextClosedException, IOException {
 		Set/*<PluginProgress>*/ startingPlugins = pluginManager.getStartingPlugins();
 		if (!startingPlugins.isEmpty()) {
 			HTMLNode startingPluginsBox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -330,71 +367,77 @@ public class PproxyToadlet extends Toadlet {
 		}
 	}
 
-	private void showPluginList(ToadletContext ctx, HTTPRequest request, PluginManager pm, HTMLNode contentNode) throws ToadletContextClosedException, IOException {
-		if (!request.hasParameters()) {
-			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			infobox.addChild("div", "class", "infobox-header", L10n.getString("PluginToadlet.pluginListTitle"));
-			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+	private void showPluginList(ToadletContext ctx, PluginManager pm, HTMLNode contentNode) throws ToadletContextClosedException, IOException {
+		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		infobox.addChild("div", "class", "infobox-header", L10n.getString("PluginToadlet.pluginListTitle"));
+		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+		if (pm.getPlugins().isEmpty()) {
+			infoboxContent.addChild("div", l10n("noPlugins"));
+		} else {
 			HTMLNode pluginTable = infoboxContent.addChild("table", "class", "plugins");
 			HTMLNode headerRow = pluginTable.addChild("tr");
 			headerRow.addChild("th", l10n("classNameTitle"));
 			headerRow.addChild("th", l10n("internalIDTitle"));
 			headerRow.addChild("th", l10n("startedAtTitle"));
 			headerRow.addChild("th");
-
-			if (pm.getPlugins().isEmpty()) {
-				pluginTable.addChild("tr").addChild("td", "colspan", "4", l10n("noPlugins"));
-			}
-			else {
-				Iterator it = pm.getPlugins().iterator();
-				while (it.hasNext()) {
-					PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
-					HTMLNode pluginRow = pluginTable.addChild("tr");
-					pluginRow.addChild("td", pi.getPluginClassName());
-					pluginRow.addChild("td", pi.getThreadName());
-					pluginRow.addChild("td", new Date(pi.getStarted()).toString());
-					HTMLNode actionCell = pluginRow.addChild("td");
-					if(pi.isStopping()) {
-						actionCell.addChild("#", l10n("pluginStopping"));
-					} else {
-						if (pi.isPproxyPlugin()) {
-							HTMLNode visitForm = actionCell.addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_new" });
-							visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
-							visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("PluginToadlet.visit") });
-						}
-						HTMLNode unloadForm = ctx.addFormChild(actionCell, ".", "unloadPluginForm");
-						unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unload", pi.getThreadName() });
-						unloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("unload") });
-						HTMLNode reloadForm = ctx.addFormChild(actionCell, ".", "reloadPluginForm");
-						reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reload", pi.getThreadName() });
-						reloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("reload") });
+			Iterator it = pm.getPlugins().iterator();
+			while (it.hasNext()) {
+				PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
+				HTMLNode pluginRow = pluginTable.addChild("tr");
+				pluginRow.addChild("td", pi.getPluginClassName());
+				pluginRow.addChild("td", pi.getThreadName());
+				pluginRow.addChild("td", new Date(pi.getStarted()).toString());
+				HTMLNode actionCell = pluginRow.addChild("td");
+				if (pi.isStopping()) {
+					actionCell.addChild("#", l10n("pluginStopping"));
+				} else {
+					if (pi.isPproxyPlugin()) {
+						HTMLNode visitForm = actionCell.addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_new" });
+						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("PluginToadlet.visit") });
 					}
+					HTMLNode unloadForm = ctx.addFormChild(actionCell, ".", "unloadPluginForm");
+					unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unload", pi.getThreadName() });
+					unloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("unload") });
+					HTMLNode reloadForm = ctx.addFormChild(actionCell, ".", "reloadPluginForm");
+					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reload", pi.getThreadName() });
+					reloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("reload") });
 				}
 			}
-
-			/* box for "official" plugins. */
-			HTMLNode addOfficialPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			addOfficialPluginBox.addChild("div", "class", "infobox-header", l10n("loadOfficialPlugin"));
-			HTMLNode addOfficialPluginContent = addOfficialPluginBox.addChild("div", "class", "infobox-content");
-			HTMLNode addOfficialForm = ctx.addFormChild(addOfficialPluginContent, ".", "addOfficialPluginForm");
-			addOfficialForm.addChild("div", l10n("loadOfficialPluginText"));
-			addOfficialForm.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
-			addOfficialForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-name", "40" });
-			addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "refresh-on-startup", "true" });
-			addOfficialForm.addChild("#", l10n("refreshOnStartup"));
-			addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
-
-			/* box for unofficial plugins. */
-			HTMLNode addOtherPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			addOtherPluginBox.addChild("div", "class", "infobox-header", l10n("loadOtherPlugin"));
-			HTMLNode addOtherPluginContent = addOtherPluginBox.addChild("div", "class", "infobox-content");
-			HTMLNode addOtherForm = ctx.addFormChild(addOtherPluginContent, ".", "addOtherPluginForm");
-			addOtherForm.addChild("div", l10n("loadOtherPluginText"));
-			addOtherForm.addChild("#", (l10n("loadOtherURLLabel") + ": "));
-			addOtherForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-url", "80" });
-			addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "refresh-on-startup", "true" });
-			addOtherForm.addChild("#", l10n("refreshOnStartup"));
-			addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-other", l10n("Load") });
-		} 
+		}
 	}
+	
+	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, List/*<String>*/ availablePlugins) {
+		/* box for "official" plugins. */
+		HTMLNode addOfficialPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		addOfficialPluginBox.addChild("div", "class", "infobox-header", l10n("loadOfficialPlugin"));
+		HTMLNode addOfficialPluginContent = addOfficialPluginBox.addChild("div", "class", "infobox-content");
+		HTMLNode addOfficialForm = toadletContext.addFormChild(addOfficialPluginContent, ".", "addOfficialPluginForm");
+		addOfficialForm.addChild("div", l10n("loadOfficialPluginText"));
+		addOfficialForm.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
+		HTMLNode selectNode = addOfficialForm.addChild("select", "name", "plugin-name");
+		Iterator/*<String>*/ availablePluginIterator = availablePlugins.iterator();
+		while (availablePluginIterator.hasNext()) {
+			String pluginName = (String) availablePluginIterator.next();
+			selectNode.addChild("option", "value", pluginName, pluginName);
+		}
+		addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "refresh-on-startup", "true" });
+		addOfficialForm.addChild("#", l10n("refreshOnStartup"));
+		addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
+	}
+	
+	private void showUnofficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode) {
+		/* box for unofficial plugins. */
+		HTMLNode addOtherPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		addOtherPluginBox.addChild("div", "class", "infobox-header", l10n("loadOtherPlugin"));
+		HTMLNode addOtherPluginContent = addOtherPluginBox.addChild("div", "class", "infobox-content");
+		HTMLNode addOtherForm = toadletContext.addFormChild(addOtherPluginContent, ".", "addOtherPluginForm");
+		addOtherForm.addChild("div", l10n("loadOtherPluginText"));
+		addOtherForm.addChild("#", (l10n("loadOtherURLLabel") + ": "));
+		addOtherForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-url", "80" });
+		addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "refresh-on-startup", "true" });
+		addOtherForm.addChild("#", l10n("refreshOnStartup"));
+		addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-other", l10n("Load") });
+	}
+
 }
