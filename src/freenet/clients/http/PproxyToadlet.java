@@ -141,6 +141,21 @@ public class PproxyToadlet extends Toadlet {
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
+			if (request.isPartSet("change-reload-submit")) {
+				int pluginInfoWrapperHashCode = request.getIntPart("plugin-id", -1);
+				boolean newReload = request.isPartSet("reload-on-startup");
+				Iterator/*<PluginInfoWrapper>*/ pluginIterator = pm.getPlugins().iterator();
+				while (pluginIterator.hasNext()) {
+					PluginInfoWrapper pluginInfoWrapper = (PluginInfoWrapper) pluginIterator.next();
+					if (pluginInfoWrapper.hashCode() == pluginInfoWrapperHashCode) {
+						pluginInfoWrapper.setAutoRefresh(newReload);
+						break;
+					}
+				}
+				headers.put("Location", ".");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				return;
+			}
 			if (request.isPartSet("cancel")){
 				headers.put("Location", "/plugins/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -379,6 +394,9 @@ public class PproxyToadlet extends Toadlet {
 			headerRow.addChild("th", l10n("classNameTitle"));
 			headerRow.addChild("th", l10n("internalIDTitle"));
 			headerRow.addChild("th", l10n("startedAtTitle"));
+			headerRow.addChild("th", l10n("reloadOnStartupShort"));
+			headerRow.addChild("th");
+			headerRow.addChild("th");
 			headerRow.addChild("th");
 			Iterator it = pm.getPlugins().iterator();
 			while (it.hasNext()) {
@@ -387,19 +405,29 @@ public class PproxyToadlet extends Toadlet {
 				pluginRow.addChild("td", pi.getPluginClassName());
 				pluginRow.addChild("td", pi.getThreadName());
 				pluginRow.addChild("td", new Date(pi.getStarted()).toString());
-				HTMLNode actionCell = pluginRow.addChild("td");
+				HTMLNode autoReloadChangeForm = ctx.addFormChild(pluginRow.addChild("td", "align", "center"), ".", "changeAutoReloadForm");
+				if (pi.isAutoRefresh()) {
+					autoReloadChangeForm.addChild("input", new String[] { "name", "type", "checked" }, new String[] { "reload-on-startup", "checkbox", "checked" });
+				} else {
+					autoReloadChangeForm.addChild("input", new String[] { "name", "type" }, new String[] { "reload-on-startup", "checkbox" });
+				}
+				autoReloadChangeForm.addChild("input", new String[] { "name", "type", "value" }, new String[] { "plugin-id", "hidden", String.valueOf(pi.hashCode()) });
+				autoReloadChangeForm.addChild("input", new String[] { "name", "type", "value" }, new String[] { "change-reload-submit", "submit", l10n("changeReloadOnStartup") });
 				if (pi.isStopping()) {
-					actionCell.addChild("#", l10n("pluginStopping"));
+					pluginRow.addChild("td", l10n("pluginStopping"));
+					/* add two empty cells. */
+					pluginRow.addChild("td");
+					pluginRow.addChild("td");
 				} else {
 					if (pi.isPproxyPlugin()) {
-						HTMLNode visitForm = actionCell.addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_new" });
+						HTMLNode visitForm = pluginRow.addChild("td").addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_new" });
 						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("PluginToadlet.visit") });
 					}
-					HTMLNode unloadForm = ctx.addFormChild(actionCell, ".", "unloadPluginForm");
+					HTMLNode unloadForm = ctx.addFormChild(pluginRow.addChild("td"), ".", "unloadPluginForm");
 					unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unload", pi.getThreadName() });
 					unloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("unload") });
-					HTMLNode reloadForm = ctx.addFormChild(actionCell, ".", "reloadPluginForm");
+					HTMLNode reloadForm = ctx.addFormChild(pluginRow.addChild("td"), ".", "reloadPluginForm");
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reload", pi.getThreadName() });
 					reloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("reload") });
 				}

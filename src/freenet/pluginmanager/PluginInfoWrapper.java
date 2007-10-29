@@ -54,6 +54,17 @@ public class PluginInfoWrapper {
 		return autoRefresh;
 	}
 
+	/**
+	 * Sets the new value for the refresh-on-startup feature.
+	 * 
+	 * @param autoRefresh
+	 *            <code>true</code> if the plugin should be reloaded on
+	 *            startup, <code>false</code> otherwise
+	 */
+	public void setAutoRefresh(boolean autoRefresh) {
+		this.autoRefresh = autoRefresh;
+	}
+
 	void setThread(Thread ps) {
 		if(thread != null)
 			throw new IllegalStateException("Already set a thread");
