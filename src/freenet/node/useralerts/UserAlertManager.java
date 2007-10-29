@@ -38,6 +38,31 @@ public class UserAlertManager implements Comparator {
 		}
 	}
 
+	/**
+	 * Tries to find the user alert with the given hash code and dismisses it,
+	 * if found.
+	 * 
+	 * @see #unregister(UserAlert)
+	 * @param alertHashCode
+	 *            The hash code of the user alert to dismiss
+	 */
+	public void dismissAlert(int alertHashCode) {
+		UserAlert[] userAlerts = getAlerts();
+		for (int index = 0, count = userAlerts.length; index < count; index++) {
+			UserAlert userAlert = userAlerts[index];
+			if (userAlert.hashCode() == alertHashCode) {
+				if (userAlert.userCanDismiss()) {
+					if (userAlert.shouldUnregisterOnDismiss()) {
+						userAlert.onDismiss();
+						unregister(userAlert);
+					} else {
+						userAlert.isValid(false);
+					}
+				}
+			}
+		}
+	}
+
 	public UserAlert[] getAlerts() {
 		UserAlert[] a = null;
 		synchronized (alerts) {
@@ -77,32 +102,45 @@ public class UserAlertManager implements Comparator {
 			if (!alert.isValid())
 				continue;
 			totalNumber++;
-			HTMLNode alertNode = null;
-			short level = alert.getPriorityClass();
-			if (level <= UserAlert.CRITICAL_ERROR)
-				alertNode = new HTMLNode("div", "class", "infobox infobox-error");
-			else if (level <= UserAlert.ERROR)
-				alertNode = new HTMLNode("div", "class", "infobox infobox-alert");
-			else if (level <= UserAlert.WARNING)
-				alertNode = new HTMLNode("div", "class", "infobox infobox-warning");
-			else if (level <= UserAlert.MINOR)
-				alertNode = new HTMLNode("div", "class", "infobox infobox-information");
-
-			alertsNode.addChild(alertNode);
-			alertNode.addChild("div", "class", "infobox-header", alert.getTitle());
-			HTMLNode alertContentNode = alertNode.addChild("div", "class", "infobox-content");
-			alertContentNode.addChild(alert.getHTMLText());
-			if (alert.userCanDismiss()) {
-				HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" }).addChild("div");
-				dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(alert.hashCode()) });
-				dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
-				dismissFormNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", alert.dismissButtonText() });
-			}
+			alertsNode.addChild(renderAlert(alert));
 		}
 		if (totalNumber == 0) {
 			return new HTMLNode("#", "");
 		}
 		return alertsNode;
+	}
+
+	/**
+	 * Renders the given alert and returns the rendered HTML node.
+	 * 
+	 * @param userAlert
+	 *            The user alert to render
+	 * @return The rendered HTML node
+	 */
+	public HTMLNode renderAlert(UserAlert userAlert) {
+		HTMLNode userAlertNode = null;
+		short level = userAlert.getPriorityClass();
+		if (level <= UserAlert.CRITICAL_ERROR)
+			userAlertNode = new HTMLNode("div", "class", "infobox infobox-error");
+		else if (level <= UserAlert.ERROR)
+			userAlertNode = new HTMLNode("div", "class", "infobox infobox-alert");
+		else if (level <= UserAlert.WARNING)
+			userAlertNode = new HTMLNode("div", "class", "infobox infobox-warning");
+		else if (level <= UserAlert.MINOR)
+			userAlertNode = new HTMLNode("div", "class", "infobox infobox-information");
+
+		assert userAlertNode != null: "user alert has invalid priority!";
+		
+		userAlertNode.addChild("div", "class", "infobox-header", userAlert.getTitle());
+		HTMLNode alertContentNode = userAlertNode.addChild("div", "class", "infobox-content");
+		alertContentNode.addChild(userAlert.getHTMLText());
+		if (userAlert.userCanDismiss()) {
+			HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" }).addChild("div");
+			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(userAlert.hashCode()) });
+			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-user-alert", userAlert.dismissButtonText() });
+		}
+		return userAlertNode;
 	}
 
 	/**
