@@ -380,7 +380,7 @@ public class PproxyToadlet extends Toadlet {
 			addOfficialForm.addChild("div", l10n("loadOfficialPluginText"));
 			addOfficialForm.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
 			addOfficialForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-name", "40" });
-			addOfficialForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "refresh-on-startup", "true", "checked" });
+			addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "refresh-on-startup", "true" });
 			addOfficialForm.addChild("#", l10n("refreshOnStartup"));
 			addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
 
