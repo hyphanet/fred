@@ -2520,9 +2520,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Change the DH Exponents on a regular basis but at most once every 30sec
 	 * 
 	 * @return {@link DiffieHellmanLightContext}
-	 * 
-	 * FIXME: is it acceptable that some elements will stay around for a *long* time ?
-	 * They will eventually be replaced but noone know when.
 	 */
 	private DiffieHellmanLightContext getLightDiffieHellmanContext() {
 		final long now = System.currentTimeMillis();
