@@ -19,6 +19,7 @@ public class PluginInfoWrapper {
 	private boolean isThreadlessPlugin;
 	private boolean isIPDetectorPlugin;
 	private boolean isPortForwardPlugin;
+	private boolean isMultiplePlugin;
 	private boolean autoRefresh;
 	private String filename;
 	private HashSet toadletLinks=new HashSet();
@@ -38,6 +39,7 @@ public class PluginInfoWrapper {
 		isThreadlessPlugin = (plug instanceof FredPluginThreadless);
 		isIPDetectorPlugin = (plug instanceof FredPluginIPDetector);
 		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
+		isMultiplePlugin = (plug instanceof FredPluginMultiple);
 		this.autoRefresh = autoRefresh;
 	}
 
@@ -164,7 +166,11 @@ public class PluginInfoWrapper {
 	public boolean isPortForwardPlugin() {
 		return isPortForwardPlugin;
 	}
-	
+
+	public boolean isMultiplePlugin() {
+		return isMultiplePlugin;
+	}
+
 	public synchronized boolean isStopping() {
 		return stopping;
 	}
