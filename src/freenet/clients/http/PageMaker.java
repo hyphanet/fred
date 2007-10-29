@@ -126,16 +126,19 @@ public class PageMaker {
 	}
 	
 	/**
-	 * Returns the content node that belongs to the specified page node.
+	 * Returns the content node that belongs to the specified node. The node has
+	 * to be a node that was earlier retrieved by a call to one of the
+	 * {@link #getPageNode(String, ToadletContext)} or
+	 * {@link #getInfobox(String, String)} methods!
 	 * <p>
 	 * <strong>Warning:</strong> this method can only be called once!
 	 * 
-	 * @param pageNode
+	 * @param node
 	 *            The page node to get the content node for
 	 * @return The content node for the specified page node
 	 */
-	public HTMLNode getContentNode(HTMLNode pageNode) {
-		return (HTMLNode) contentNodes.remove(pageNode);
+	public HTMLNode getContentNode(HTMLNode node) {
+		return (HTMLNode) contentNodes.remove(node);
 	}
 	
 	public HTMLNode getInfobox(String header) {
@@ -145,17 +148,27 @@ public class PageMaker {
 	public HTMLNode getInfobox(HTMLNode header) {
 		return getInfobox(null, header);
 	}
-	
+
 	public HTMLNode getInfobox(String category, String header) {
 		return getInfobox(category, (header != null) ? new HTMLNode("#", header) : (HTMLNode) null);
 	}
-	
+
+	/**
+	 * Returns an infobox with the given style and header. If you retrieve an
+	 * infobox from this method, be sure to retrieve the matching content node
+	 * with {@link #getContentNode(HTMLNode)} otherwise your layout will be
+	 * destroyed (and you will get memory leaks).
+	 * 
+	 * @param category
+	 *            The CSS styles, separated by a space (' ')
+	 * @param header
+	 *            The header HTML node
+	 * @return The infobox
+	 */
 	public HTMLNode getInfobox(String category, HTMLNode header) {
 		if (header == null) throw new NullPointerException();
 		HTMLNode infobox = new HTMLNode("div", "class", "infobox" + ((category == null) ? "" : (' ' + category)));
-		if (header != null) {
-			infobox.addChild("div", "class", "infobox-header").addChild(header);
-		}
+		infobox.addChild("div", "class", "infobox-header").addChild(header);
 		contentNodes.put(infobox, infobox.addChild("div", "class", "infobox-content"));
 		return infobox;
 	}
