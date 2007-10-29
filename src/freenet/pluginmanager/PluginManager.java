@@ -448,7 +448,6 @@ public class PluginManager {
 				byte[] buffer = new byte[1024];
 				int read;
 				while ((read = pluginInputStream.read(buffer)) != -1) {
-					System.out.println("read " + read + " bytes");
 					pluginOutputStream.write(buffer, 0, read);
 				}
 			} catch (IOException ioe1) {
