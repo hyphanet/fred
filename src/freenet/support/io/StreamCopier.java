@@ -99,11 +99,11 @@ public class StreamCopier {
 	/**
 	 * Find the length of an input stream. This method will consume the complete
 	 * input stream until its {@link InputStream#read(byte[])} method returns
-	 * <code>-1</code>, thus signalling the end of the stream.
+	 * <code>-1</code>, thus signaling the end of the stream.
 	 * 
 	 * @param source
 	 *            The input stream to find the length of
-	 * @return The numbe of bytes that can be read from the stream
+	 * @return The number of bytes that can be read from the stream
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 */
