@@ -124,6 +124,7 @@ public class JarClassLoader extends ClassLoader {
 				ByteArrayOutputStream classBytesOutputStream = new ByteArrayOutputStream((int) size);
 				StreamCopier.copy(jarEntryInputStream, classBytesOutputStream, size);
 				classBytesOutputStream.close();
+				jarEntryInputStream.close();
 				byte[] classBytes = classBytesOutputStream.toByteArray();
 				Class clazz = defineClass(name, classBytes, 0, classBytes.length);
 				return clazz;
@@ -141,7 +142,7 @@ public class JarClassLoader extends ClassLoader {
 	 */
 	protected URL findResource(String name) {
 		try {
-			return new URL("jar:" + new File(tempJarFile.getName()).toURL() + "!" + name);
+			return new URL("jar:" + new File(tempJarFile.getName()).toURI().toURL() + "!" + name);
 		} catch (MalformedURLException e) {
 		}
 		return null;
