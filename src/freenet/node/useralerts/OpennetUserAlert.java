@@ -4,55 +4,17 @@ import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.support.HTMLNode;
 
-public class OpennetUserAlert implements UserAlert {
+public class OpennetUserAlert extends AbstractUserAlert {
 
 	private final Node node;
 	
 	public OpennetUserAlert(Node node) {
+		super(false, L10n.getString("OpennetUserAlert.warningTitle"), L10n.getString("OpennetUserAlert.warning"), new HTMLNode("#", L10n.getString("OpennetUserAlert.warning")), UserAlert.WARNING, false, null, false, null);
 		this.node = node;
 	}
 	
-	public String dismissButtonText() {
-		// Not dismissable
-		return null;
-	}
-
-	public HTMLNode getHTMLText() {
-		return new HTMLNode("#", getText());
-	}
-
-	public short getPriorityClass() {
-		return UserAlert.WARNING;
-	}
-
-	public String getText() {
-		return L10n.getString("OpennetUserAlert.warning");
-	}
-
-	public String getTitle() {
-		return L10n.getString("OpennetUserAlert.warningTitle");
-	}
-
 	public boolean isValid() {
 		return node.isOpennetEnabled();
-	}
-
-	public void isValid(boolean validity) {
-		// Ignore
-	}
-
-	public void onDismiss() {
-		// Can't dismiss
-	}
-
-	public boolean shouldUnregisterOnDismiss() {
-		// Can't dismiss
-		return false;
-	}
-
-	public boolean userCanDismiss() {
-		// Can't dismiss
-		return false;
 	}
 
 }

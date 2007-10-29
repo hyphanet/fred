@@ -66,4 +66,11 @@ public class ProxyUserAlert implements UserAlert {
 		if(alert != null) alert.onDismiss();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	public Object getUserIdentifier() {
+		return alert.getUserIdentifier();
+	}
+
 }

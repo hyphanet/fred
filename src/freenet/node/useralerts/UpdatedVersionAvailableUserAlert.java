@@ -9,17 +9,14 @@ import freenet.node.updater.RevocationChecker;
 import freenet.support.HTMLNode;
 import freenet.support.TimeUtil;
 
-public class UpdatedVersionAvailableUserAlert implements UserAlert {
+public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	private final NodeUpdateManager updater;
 
 	public UpdatedVersionAvailableUserAlert(NodeUpdateManager updater){
+		super(false, null, null, null, (short) 0, false, L10n.getString("UserAlert.hide"), false, null);
 		this.updater = updater;
 	}
 	
-	public boolean userCanDismiss() {
-		return false;
-	}
-
 	public String getTitle() {
 		return l10n("title");
 	}
@@ -148,15 +145,4 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 		// Ignore
 	}
 	
-	public String dismissButtonText(){
-		return L10n.getString("UserAlert.hide");
-	}
-	
-	public boolean shouldUnregisterOnDismiss() {
-		return false;
-	}
-	
-	public void onDismiss() {
-		// Ignore
-	}
 }

@@ -6,57 +6,18 @@ package freenet.node.useralerts;
 import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 
-public class SimpleUserAlert implements UserAlert {
+public class SimpleUserAlert extends AbstractUserAlert {
 
-	final boolean canDismiss;
-	final String title;
-	final String text;
-	final short type;
-	
 	public SimpleUserAlert(boolean canDismiss, String title, String text, short type) {
-		this.canDismiss = canDismiss;
-		this.title = title;
-		this.text = text;
-		this.type = type;
+		this(canDismiss, title, text, type, null);
 	}
-
-	public boolean userCanDismiss() {
-		return canDismiss;
-	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public String getText() {
-		return text;
-	}
-
-	public HTMLNode getHTMLText() {
-		return new HTMLNode("div", text);
-	}
-
-	public short getPriorityClass() {
-		return type;
-	}
-
-	public boolean isValid() {
-		return true;
+	
+	public SimpleUserAlert(boolean canDismiss, String title, String text, short type, Object userIdentifier) {
+		super(canDismiss, title, text, new HTMLNode("div", text), type, true, L10n.getString("UserAlert.hide"), true, userIdentifier);
 	}
 
 	public void isValid(boolean validity) {
 		// Do nothing
 	}
 
-	public String dismissButtonText() {
-		return L10n.getString("UserAlert.hide");
-	}
-
-	public boolean shouldUnregisterOnDismiss() {
-		return true;
-	}
-	
-	public void onDismiss() {
-		// do nothing on alert dismissal
-	}
 }

@@ -11,6 +11,7 @@ import java.util.Vector;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.l10n.L10n;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.ProxyUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
@@ -31,28 +32,18 @@ import freenet.support.transport.ip.IPUtil;
  */
 public class IPDetectorPluginManager implements ForwardPortCallback {
 	
-	public class MyUserAlert implements UserAlert {
+	public class MyUserAlert extends AbstractUserAlert {
 
-		final short code;
 		final boolean suggestPortForward;
-		final String text;
-		final String title;
-		private boolean isValid = true;
 		
 		public MyUserAlert(String title, String text, boolean suggestPortForward, short code) {
-			this.title = title;
-			this.text = text;
+			super(false, title, text, null, code, true, L10n.getString("UserAlert.hide"), false, null);
 			this.suggestPortForward = suggestPortForward;
-			this.code = code;
-		}
-
-		public String dismissButtonText() {
-			return "Hide";
 		}
 
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
-			div.addChild("#", text);
+			div.addChild("#", super.getText());
 			if(suggestPortForward) {
 				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardPortWithLink", new String[] { "link", "/link", "port" },
 						new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(node.getDarknetPortNumber()) });
@@ -60,14 +51,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			return div;
 		}
 
-		public short getPriorityClass() {
-			return code;
-		}
-
 		public String getText() {
-			if(!suggestPortForward) return text;
+			if(!suggestPortForward) return super.getText();
 			StringBuffer sb = new StringBuffer();
-			sb.append(text);
+			sb.append(super.getText());
 			// FIXME we should support any number of ports, UDP or TCP, and pick them up from the node as we do with the forwarding plugin ... that would be a bit of a pain for L10n though ...
 			int darknetPort = node.getDarknetPortNumber();
 			int opennetPort = node.getOpennetFNPPort();
@@ -82,24 +69,12 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			return sb.toString();
 		}
 
-		public String getTitle() {
-			return title;
-		}
-
-		public boolean isValid() {
-			return isValid;
-		}
-
 		public void isValid(boolean validity) {
-			isValid = validity;
+			valid = validity;
 		}
 
 		public void onDismiss() {
-			isValid = false;
-		}
-
-		public boolean shouldUnregisterOnDismiss() {
-			return false;
+			valid = false;
 		}
 
 		public boolean userCanDismiss() {

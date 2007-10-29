@@ -38,6 +38,7 @@ import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -302,13 +303,12 @@ public class UpdateOverMandatoryManager {
 		updateManager.node.clientCore.alerts.register(alert);
 	}
 
-	class PeersSayKeyBlownAlert implements UserAlert {
+	class PeersSayKeyBlownAlert extends AbstractUserAlert {
 
-		public String dismissButtonText() {
-			// Cannot dismiss
-			return null;
+		public PeersSayKeyBlownAlert() {
+			super(false, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null);
 		}
-
+		
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			
@@ -360,10 +360,6 @@ public class UpdateOverMandatoryManager {
 			return L10n.getString("PeersSayKeyBlownAlert."+key, pattern, value);
 		}
 		
-		public short getPriorityClass() {
-			return UserAlert.CRITICAL_ERROR;
-		}
-
 		public String getText() {
 			StringBuffer sb = new StringBuffer();
 			sb.append(l10n("intro")).append("\n\n");
@@ -411,28 +407,10 @@ public class UpdateOverMandatoryManager {
 			return l10n("titleWithCount", "count", Integer.toString(nodesSayKeyRevoked.size()));
 		}
 
-		public boolean isValid() {
-			return true;
-		}
-
 		public void isValid(boolean validity) {
 			// Do nothing
 		}
 
-		public void onDismiss() {
-			// Do nothing
-		}
-
-		public boolean shouldUnregisterOnDismiss() {
-			// Can't dismiss
-			return false;
-		}
-
-		public boolean userCanDismiss() {
-			// Can't dismiss
-			return false;
-		}
-		
 	}
 
 	public PeerNode[][] getNodesSayBlown() {

@@ -11,8 +11,7 @@ import freenet.node.DarknetPeerNode;
 import freenet.support.HTMLNode;
 
 // Node To Node Text Message User Alert
-public class N2NTMUserAlert implements UserAlert {
-	private boolean isValid=true;
+public class N2NTMUserAlert extends AbstractUserAlert {
 	private DarknetPeerNode sourcePeerNode;
 	private String sourceNodename;
 	private String messageText;
@@ -22,6 +21,7 @@ public class N2NTMUserAlert implements UserAlert {
 	private long receivedTime;
 
 	public N2NTMUserAlert(DarknetPeerNode sourcePeerNode, String source, String target, String message, int fileNumber, long composedTime, long  sentTime, long receivedTime) {
+		super(true, null, null, null, UserAlert.MINOR, true, null, true, null);
 		this.sourcePeerNode = sourcePeerNode;
 		this.sourceNodename = source;
 		this.messageText = message;
@@ -29,13 +29,8 @@ public class N2NTMUserAlert implements UserAlert {
 		this.composedTime = composedTime;
 		this.sentTime = sentTime;
 		this.receivedTime = receivedTime;
-		isValid=true;
 	}
 	
-	public boolean userCanDismiss() {
-		return true;
-	}
-
 	public String getTitle() {
 		return l10n("title", new String[] { "number", "peername", "peer" },
 				new String[] { Integer.toString(fileNumber), sourcePeerNode.getName(), sourcePeerNode.getPeer().toString() });
@@ -65,18 +60,6 @@ public class N2NTMUserAlert implements UserAlert {
 		return alertNode;
 	}
 
-	public short getPriorityClass() {
-		return UserAlert.MINOR;
-	}
-
-	public boolean isValid() {
-		return isValid;
-	}
-	
-	public void isValid(boolean b){
-		if(userCanDismiss()) isValid=b;
-	}
-	
 	public String dismissButtonText(){
 		return l10n("delete");
 	}
@@ -89,10 +72,6 @@ public class N2NTMUserAlert implements UserAlert {
 		return L10n.getString("N2NTMUserAlert."+key, patterns, values);
 	}
 
-	public boolean shouldUnregisterOnDismiss() {
-		return true;
-	}
-	
 	public void onDismiss() {
 		sourcePeerNode.deleteExtraPeerDataFile(fileNumber);
 	}

@@ -9,19 +9,15 @@ import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.support.HTMLNode;
 
-public class IPUndetectedUserAlert implements UserAlert {
+public class IPUndetectedUserAlert extends AbstractUserAlert {
 	
 	public IPUndetectedUserAlert(Node n) {
+		super(true, null, null, null, (short) 0, true, L10n.getString("UserAlert.hide"), false, null);
 		this.node = n;
 	}
 	
-	boolean isValid=true;
 	final Node node;
 	
-	public boolean userCanDismiss() {
-		return true;
-	}
-
 	public String getTitle() {
 		return l10n("unknownAddressTitle");
 	}
@@ -95,24 +91,5 @@ public class IPUndetectedUserAlert implements UserAlert {
 		else
 			return UserAlert.ERROR;
 	}
-	
-	public boolean isValid() {
-		return isValid;
-	}
-	
-	public void isValid(boolean validity){
-		if(userCanDismiss()) isValid=validity;
-	}
-	
-	public String dismissButtonText(){
-		return L10n.getString("UserAlert.hide");
-	}
-	
-	public boolean shouldUnregisterOnDismiss() {
-		return false;
-	}
-	
-	public void onDismiss() {
-		// do nothing on alert dismissal
-	}
+
 }

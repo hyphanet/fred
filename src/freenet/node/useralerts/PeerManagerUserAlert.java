@@ -7,7 +7,7 @@ import freenet.l10n.L10n;
 import freenet.node.NodeStats;
 import freenet.support.HTMLNode;
 
-public class PeerManagerUserAlert implements UserAlert {
+public class PeerManagerUserAlert extends AbstractUserAlert {
 
 	final NodeStats n;
 	public int conns = 0;
@@ -16,7 +16,6 @@ public class PeerManagerUserAlert implements UserAlert {
 	public int clockProblem = 0;
 	public int connError = 0;
 	public int disconnDarknetPeers = 0;
-	boolean isValid=true;
 	int bwlimitDelayTime = 1;
 	int nodeAveragePingTime = 1;
 	long oldestNeverConnectedPeerAge = 0;
@@ -48,13 +47,10 @@ public class PeerManagerUserAlert implements UserAlert {
 	public static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
 	
 	public PeerManagerUserAlert(NodeStats n) {
+		super(false, null, null, null, (short) 0, true, L10n.getString("UserAlert.hide"), false, null);
 		this.n = n;
 	}
 	
-	public boolean userCanDismiss() {
-		return false;
-	}
-
 	public String getTitle() {
 		if(peers == 0)
 			return l10n("noPeersTitle");
@@ -241,22 +237,7 @@ public class PeerManagerUserAlert implements UserAlert {
 				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
 				(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) ||
 				(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD)) &&
-				isValid;
+				super.isValid();
 	}
 	
-	public void isValid(boolean b){
-		if(userCanDismiss()) isValid=b;
-	}
-	
-	public String dismissButtonText(){
-		return L10n.getString("UserAlert.hide");
-	}
-	
-	public boolean shouldUnregisterOnDismiss() {
-		return false;
-	}
-	
-	public void onDismiss() {
-		// do nothing on alert dismissal
-	}
 }

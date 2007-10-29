@@ -14,13 +14,15 @@ import freenet.support.HTMLNode;
  *
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
-public class TimeSkewDetectedUserAlert implements UserAlert {
-	private boolean isValid=false;
+public class TimeSkewDetectedUserAlert extends AbstractUserAlert {
 	
-	public boolean userCanDismiss() {
-		return false;
+	/**
+	 * 
+	 */
+	public TimeSkewDetectedUserAlert() {
+		super(false, null, null, null, UserAlert.CRITICAL_ERROR, false, L10n.getString("UserAlert.hide"), false, null);
 	}
-
+	
 	public String getTitle() {
 		return l10n("title");
 	}
@@ -37,27 +39,4 @@ public class TimeSkewDetectedUserAlert implements UserAlert {
 		return new HTMLNode("div", getText());
 	}
 
-	public short getPriorityClass() {
-		return UserAlert.CRITICAL_ERROR;
-	}
-
-	public boolean isValid() {
-		return isValid;
-	}
-	
-	public void isValid(boolean b){
-		if(userCanDismiss()) isValid=b;
-	}
-	
-	public String dismissButtonText(){
-		return L10n.getString("UserAlert.hide");
-	}
-	
-	public boolean shouldUnregisterOnDismiss() {
-		return false;
-	}
-	
-	public void onDismiss() {
-		// can't happen!
-	}
 }

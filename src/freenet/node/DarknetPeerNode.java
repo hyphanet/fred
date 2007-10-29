@@ -29,6 +29,7 @@ import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.l10n.L10n;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Base64;
@@ -903,7 +904,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		protected void onReceiveFailure() {
-			UserAlert alert = new UserAlert() {
+			UserAlert alert = new AbstractUserAlert() {
 				public String dismissButtonText() {
 					return L10n.getString("UserAlert.hide");
 				}
@@ -999,7 +1000,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		private void onReceiveSuccess() {
-			UserAlert alert = new UserAlert() {
+			UserAlert alert = new AbstractUserAlert() {
 				public String dismissButtonText() {
 					return L10n.getString("UserAlert.hide");
 				}
@@ -1099,7 +1100,7 @@ public class DarknetPeerNode extends PeerNode {
 		
 		/** Ask the user whether (s)he wants to download a file from a direct peer */
 		public UserAlert askUserUserAlert() {
-			return new UserAlert() {
+			return new AbstractUserAlert() {
 				public String dismissButtonText() {
 					return null; // Cannot hide, but can reject
 				}

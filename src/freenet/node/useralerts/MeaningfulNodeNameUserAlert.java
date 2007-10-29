@@ -9,18 +9,14 @@ import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.support.HTMLNode;
 
-public class MeaningfulNodeNameUserAlert implements UserAlert {
-	private boolean isValid=true;
+public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 	private final Node node;
 
 	public MeaningfulNodeNameUserAlert(Node n) {
+		super(true, null, null, null, UserAlert.WARNING, true, L10n.getString("UserAlert.hide"), false, null);
 		this.node = n;
 	}
 	
-	public boolean userCanDismiss() {
-		return true;
-	}
-
 	public String getTitle() {
 		return l10n("noNodeNickTitle");
 	}
@@ -55,27 +51,4 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 		return alertNode;
 	}
 
-	public short getPriorityClass() {
-		return UserAlert.WARNING;
-	}
-	
-	public boolean isValid() {
-		return isValid;
-	}
-	
-	public void isValid(boolean b){
-		if(userCanDismiss()) isValid=b;
-	}
-	
-	public String dismissButtonText(){
-		return L10n.getString("UserAlert.hide");
-	}
-	
-	public boolean shouldUnregisterOnDismiss() {
-		return false;
-	}
-	
-	public void onDismiss() {
-		// do nothing on alert dismissal
-	}
 }

@@ -50,6 +50,13 @@ public interface UserAlert {
 	 */
 	public void onDismiss();
 	
+	/**
+	 * Returns a user-specified object that can be used to identify this alert.
+	 * 
+	 * @return The user-specified identifier object
+	 */
+	public Object getUserIdentifier();
+	
 	/** An error which prevents normal operation */
 	public final static short CRITICAL_ERROR = 0;
 	/** An error which prevents normal operation but might be temporary */

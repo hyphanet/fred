@@ -75,6 +75,7 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
 import freenet.node.updater.NodeUpdateManager;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
@@ -1443,12 +1444,7 @@ public class Node implements TimeSkewDetectorCallback {
 			
 			if(spuriousOOMs) {
 				System.err.println("Please upgrade to at least sun jvm 1.4.2_13, 1.5.0_10 or 1.6 (recommended). This version is buggy and may cause spurious OutOfMemoryErrors.");
-				clientCore.alerts.register(new UserAlert() {
-
-					public String dismissButtonText() {
-						// Not dismissable
-						return null;
-					}
+				clientCore.alerts.register(new AbstractUserAlert(false, null, null, null, UserAlert.ERROR, true, null, false, null) {
 
 					public HTMLNode getHTMLText() {
 						HTMLNode n = new HTMLNode("div");
@@ -1459,10 +1455,6 @@ public class Node implements TimeSkewDetectorCallback {
 						return n;
 					}
 
-					public short getPriorityClass() {
-						return UserAlert.ERROR;
-					}
-
 					public String getText() {
 						return l10n("buggyJVM", "version", System.getProperty("java.vm.version"));
 					}
@@ -1471,27 +1463,10 @@ public class Node implements TimeSkewDetectorCallback {
 						return l10n("buggyJVMTitle");
 					}
 
-					public boolean isValid() {
-						return true;
-					}
-
 					public void isValid(boolean validity) {
 						// Ignore
 					}
 
-					public void onDismiss() {
-						// Ignore
-					}
-
-					public boolean shouldUnregisterOnDismiss() {
-						return false;
-					}
-
-					public boolean userCanDismiss() {
-						// Cannot be dismissed
-						return false;
-					}
-					
 				});
 			}
 			
@@ -1518,11 +1493,7 @@ public class Node implements TimeSkewDetectorCallback {
 				if((assumeKernel == null) || (assumeKernel.length() == 0) || (!(assumeKernel.startsWith("2.2") || assumeKernel.startsWith("2.4")))) {
 					System.err.println(l10n("deadlockWarning"));
 					Logger.error(this, l10n("deadlockWarning"));
-					clientCore.alerts.register(new UserAlert() {
-						
-						public boolean userCanDismiss() {
-							return false;
-						}
+					clientCore.alerts.register(new AbstractUserAlert(false, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null) {
 						
 						public String getTitle() {
 							return l10n("deadlockTitle");
@@ -1536,31 +1507,10 @@ public class Node implements TimeSkewDetectorCallback {
 							return new HTMLNode("div", l10n("deadlockWarning"));
 						}
 						
-						public short getPriorityClass() {
-							return UserAlert.CRITICAL_ERROR;
-						}
-						
-						public boolean isValid() {
-							return true;
-						}
-						
 						public void isValid(boolean validity) {
 							// Not clearable.
 						}
 						
-						public String dismissButtonText() {
-							// Not dismissable.
-							return null;
-						}
-						
-						public boolean shouldUnregisterOnDismiss() {
-							// Not dismissable.
-							return false;
-						}
-						
-						public void onDismiss() {
-							// Not dismissable.
-						}
 					});
 				}
 			}

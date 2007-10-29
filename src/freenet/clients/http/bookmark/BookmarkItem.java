@@ -7,6 +7,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLEncoder;
@@ -39,12 +40,12 @@ public class BookmarkItem extends Bookmark {
 		alert = new BookmarkUpdatedUserAlert();
 	}
 
-	private class BookmarkUpdatedUserAlert implements UserAlert {
+	private class BookmarkUpdatedUserAlert extends AbstractUserAlert {
 
-		public boolean userCanDismiss() {
-			return true;
+		public BookmarkUpdatedUserAlert() {
+			super(true, null, null, null, UserAlert.MINOR, false, null, true, null);
 		}
-
+		
 		public String getTitle() {
 			return l10n("bookmarkUpdatedTitle", "name", name);
 		}
@@ -61,10 +62,6 @@ public class BookmarkItem extends Bookmark {
 			return n;
 		}
 
-		public short getPriorityClass() {
-			return UserAlert.MINOR;
-		}
-
 		public boolean isValid() {
 			synchronized (BookmarkItem.this) {
 				return updated;
@@ -79,10 +76,6 @@ public class BookmarkItem extends Bookmark {
 
 		public String dismissButtonText() {
 			return l10n("deleteBookmarkUpdateNotification");
-		}
-
-		public boolean shouldUnregisterOnDismiss() {
-			return true;
 		}
 
 		public void onDismiss() {

@@ -3,13 +3,15 @@ package freenet.node.useralerts;
 import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 
-public class ExtOldAgeUserAlert implements UserAlert {
-	private boolean isValid=true;
+public class ExtOldAgeUserAlert extends AbstractUserAlert {
 	
-	public boolean userCanDismiss() {
-		return true;
+	/**
+	 * Creates a new alert.
+	 */
+	public ExtOldAgeUserAlert() {
+		super(true, null, null, null, UserAlert.ERROR, true, L10n.getString("UserAlert.hide"), true, null);
 	}
-
+	
 	public String getTitle() {
 		return l10n("extTooOldTitle");
 	}
@@ -26,27 +28,4 @@ public class ExtOldAgeUserAlert implements UserAlert {
 		return new HTMLNode("div", getText());
 	}
 
-	public short getPriorityClass() {
-		return UserAlert.ERROR;
-	}
-
-	public boolean isValid() {
-		return isValid;
-	}
-	
-	public void isValid(boolean b){
-		if(userCanDismiss()) isValid=b;
-	}
-	
-	public String dismissButtonText(){
-		return L10n.getString("UserAlert.hide");
-	}
-	
-	public boolean shouldUnregisterOnDismiss() {
-		return true;
-	}
-	
-	public void onDismiss() {
-		// do nothing on alert dismissal
-	}
 }
