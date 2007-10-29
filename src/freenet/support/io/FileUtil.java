@@ -6,6 +6,7 @@ package freenet.support.io;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,11 +14,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.support.Logger;
 
 final public class FileUtil {
+	
+	private static final int BUFFER_SIZE = 4096;
 
 	/** Round up a value to the next multiple of a power of 2 */
 	private static final long roundup_2n (long val, int blocksize) {
@@ -165,5 +169,62 @@ final public class FileUtil {
 		if(defaultExt == null) return filename;
 		else return filename + '.' + defaultExt;
 	}
-	
+
+	/**
+	 * Find the length of an input stream. This method will consume the complete
+	 * input stream until its {@link InputStream#read(byte[])} method returns
+	 * <code>-1</code>, thus signalling the end of the stream.
+	 * 
+	 * @param source
+	 *            The input stream to find the length of
+	 * @return The numbe of bytes that can be read from the stream
+	 * @throws IOException
+	 *             if an I/O error occurs
+	 */
+	public static long findLength(InputStream source) throws IOException {
+		long length = 0;
+		byte[] buffer = new byte[BUFFER_SIZE];
+		int read = 0;
+		while (read > -1) {
+			read = source.read(buffer);
+			if (read != -1) {
+				length += read;
+			}
+		}
+		return length;
+	}
+
+	/**
+	 * Copies <code>length</code> bytes from the source input stream to the
+	 * destination output stream. If <code>length</code> is <code>-1</code>
+	 * as much bytes as possible will be copied (i.e. until
+	 * {@link InputStream#read()} returns <code>-1</code> to signal the end of
+	 * the stream).
+	 * 
+	 * @param source
+	 *            The input stream to read from
+	 * @param destination
+	 *            The output stream to write to
+	 * @param length
+	 *            The number of bytes to copy
+	 * @throws IOException
+	 *             if an I/O error occurs
+	 */
+	public static void copy(InputStream source, OutputStream destination, long length) throws IOException {
+		long remaining = length;
+		byte[] buffer = new byte[BUFFER_SIZE];
+		int read = 0;
+		while ((remaining == -1) || (remaining > 0)) {
+			read = source.read(buffer, 0, ((remaining > BUFFER_SIZE) || (remaining == -1)) ? BUFFER_SIZE : (int) remaining);
+			if (read == -1) {
+				if (length == -1) {
+					return;
+				}
+				throw new EOFException("stream reached eof");
+			}
+			destination.write(buffer, 0, read);
+			remaining -= read;
+		}
+	}
+
 }

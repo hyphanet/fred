@@ -28,7 +28,7 @@ import java.net.URL;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import freenet.support.io.StreamCopier;
+import freenet.support.io.FileUtil;
 
 /**
  * Class loader that loads classes from a JAR file. The JAR file gets copied
@@ -100,7 +100,7 @@ public class JarClassLoader extends ClassLoader {
 	private void copyFileToTemp(InputStream inputStream, long length) throws IOException {
 		File tempFile = File.createTempFile("jar-", ".tmp");
 		FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
-		StreamCopier.copy(inputStream, fileOutputStream, length);
+		FileUtil.copy(inputStream, fileOutputStream, length);
 		fileOutputStream.close();
 		tempFile.deleteOnExit();
 		tempJarFile = new JarFile(tempFile);
@@ -122,7 +122,7 @@ public class JarClassLoader extends ClassLoader {
 				long size = jarEntry.getSize();
 				InputStream jarEntryInputStream = tempJarFile.getInputStream(jarEntry);
 				ByteArrayOutputStream classBytesOutputStream = new ByteArrayOutputStream((int) size);
-				StreamCopier.copy(jarEntryInputStream, classBytesOutputStream, size);
+				FileUtil.copy(jarEntryInputStream, classBytesOutputStream, size);
 				classBytesOutputStream.close();
 				jarEntryInputStream.close();
 				byte[] classBytes = classBytesOutputStream.toByteArray();
