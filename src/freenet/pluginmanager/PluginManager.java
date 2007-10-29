@@ -165,7 +165,7 @@ public class PluginManager {
 				} catch (PluginNotFoundException e) {
 					Logger.normal(this, "Loading plugin failed (" + filename + ')', e);
 					String message = e.getMessage();
-					core.alerts.register(new SimpleUserAlert(true, l10n("pluginLoadingFailedTitle"), l10n("pluginLoadingFailedWithMessage", new String[] { "name", "message" }, new String[] { filename, message }), UserAlert.ERROR));
+					core.alerts.register(new SimpleUserAlert(true, l10n("pluginLoadingFailedTitle"), l10n("pluginLoadingFailedWithMessage", new String[] { "name", "message" }, new String[] { filename, message }), UserAlert.ERROR, PluginManager.class));
 				} catch (UnsupportedClassVersionError e) {
 					Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
 					System.err.println("Could not load plugin " + filename + " : " + e);
@@ -174,7 +174,7 @@ public class PluginManager {
 					if (jvmVersion.startsWith("1.4.") || jvmVersion.equals("1.4")) {
 						System.err.println("Plugin " + filename + " appears to require a later JVM");
 						Logger.error(this, "Plugin " + filename + " appears to require a later JVM");
-						core.alerts.register(new SimpleUserAlert(true, l10n("pluginReqNewerJVMTitle", "name", filename), l10n("pluginReqNewerJVM", "name", filename), UserAlert.ERROR));
+						core.alerts.register(new SimpleUserAlert(true, l10n("pluginReqNewerJVMTitle", "name", filename), l10n("pluginReqNewerJVM", "name", filename), UserAlert.ERROR, PluginManager.class));
 					}
 				} finally {
 					synchronized (startingPlugins) {

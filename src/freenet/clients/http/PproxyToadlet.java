@@ -15,6 +15,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.AccessDeniedPluginHTTPException;
 import freenet.pluginmanager.DownloadPluginHTTPException;
 import freenet.pluginmanager.NotFoundPluginHTTPException;
@@ -137,6 +138,13 @@ public class PproxyToadlet extends Toadlet {
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
+			if (request.isPartSet("dismiss-user-alert")) {
+				int userAlertHashCode = request.getIntPart("disable", -1);
+				core.alerts.dismissAlert(userAlertHashCode);
+				headers.put("Location", ".");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				return;
+			}
 			if (request.isPartSet("cancel")){
 				headers.put("Location", "/plugins/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -233,6 +241,16 @@ public class PproxyToadlet extends Toadlet {
 
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+
+				contentNode.addChild(core.alerts.createSummary());
+
+				UserAlert[] userAlerts = core.alerts.getAlerts();
+				for (int index = 0, count = userAlerts.length; index < count; index++) {
+					UserAlert userAlert = userAlerts[index];
+					if (userAlert.isValid() && (userAlert.getUserIdentifier() == PluginManager.class)) {
+						contentNode.addChild(core.alerts.renderAlert(userAlert));
+					}
+				}
 
 				this.showStartingPlugins(ctx, request, pm, contentNode);
 				this.showPluginList(ctx, request, pm, contentNode);
@@ -362,7 +380,8 @@ public class PproxyToadlet extends Toadlet {
 			addOfficialForm.addChild("div", l10n("loadOfficialPluginText"));
 			addOfficialForm.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
 			addOfficialForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-name", "40" });
-			addOfficialForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "refresh-on-startup", "tue", "checked" }, l10n("refreshOnStartup"));
+			addOfficialForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "refresh-on-startup", "true", "checked" });
+			addOfficialForm.addChild("#", l10n("refreshOnStartup"));
 			addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
 
 			/* box for unofficial plugins. */
@@ -373,7 +392,8 @@ public class PproxyToadlet extends Toadlet {
 			addOtherForm.addChild("div", l10n("loadOtherPluginText"));
 			addOtherForm.addChild("#", (l10n("loadOtherURLLabel") + ": "));
 			addOtherForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-url", "80" });
-			addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "refresh-on-startup", "true" }, l10n("refreshOnStartup"));
+			addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "refresh-on-startup", "true" });
+			addOtherForm.addChild("#", l10n("refreshOnStartup"));
 			addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-other", l10n("Load") });
 		} 
 	}
