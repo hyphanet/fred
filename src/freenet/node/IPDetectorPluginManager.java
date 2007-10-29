@@ -225,7 +225,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 * (To detect new IP address)
 	 */ 
 	
-	private HashMap /*<FredIPDetectorPlugin,DetectorRunner>*/ runners;
+	private HashMap /*<FredIPDetectorPlugin,DetectorRunner>*/ runners = new HashMap();
 	private boolean lastDetectAttemptFailed;
 	private long lastDetectAttemptEndedTime;
 	private long firstTimeMaybeFakePeers;
