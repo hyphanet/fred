@@ -253,8 +253,10 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 		String passwd = req.getPartAsString("formPassword", 32);
 		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
-		if(noPassword) 
+		if(noPassword) {
+			writePermanentRedirect(ctx, "Invalid", "");
 			return;
+		}
 
 
 		String bookmarkPath = req.getPartAsString("bookmark", MAX_BOOKMARK_PATH_LENGTH);
@@ -268,6 +270,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			if(bookmark == null) {
 				HTMLNode errorBox = content.addChild(ctx.getPageMaker().getInfobox("infobox-error", L10n.getString("BookmarkEditorToadlet.error")));
 				errorBox.addChild("#", L10n.getString("BookmarkEditorToadlet.bookmarkDoesNotExist", new String[] { "bookmark" } , new String[] { bookmarkPath }));
+				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}
 
