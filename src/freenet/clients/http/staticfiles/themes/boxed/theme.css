@@ -88,6 +88,10 @@ a:hover {
 	padding: 0px;
 }
 
+.infobox-content ul#bookmarks li li {
+	margin-left: 2em;
+}
+
 #navbar {
 	padding-top: 1px;
 	padding-bottom: 1px;
