@@ -32,6 +32,7 @@ public class PageMaker {
 	private final Map navigationLinkTitles = new HashMap();
 	private final Map navigationLinks = new HashMap();
 	private final Map contentNodes = new HashMap();
+	private final Map/*<HTMLNode, HTMLNode>*/ headNodes = new HashMap();
 	private final Map /* <String, LinkEnabledCallback> */ navigationLinkCallbacks = new HashMap();
 	
 	/** Cache for themes read from the JAR file. */
@@ -121,10 +122,25 @@ public class PageMaker {
 			}
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
+		headNodes.put(pageNode, headNode);
 		contentNodes.put(pageNode, contentDiv);
 		return pageNode;
 	}
-	
+
+	/**
+	 * Returns the head node belonging to the given page node. This method has
+	 * to be called before {@link #getContentNode(HTMLNode)}!
+	 * 
+	 * @param pageNode
+	 *            The page node to retrieve the head node for
+	 * @return The head node, or <code>null</code> if <code>pageNode</code>
+	 *         is not a valid page node or {@link #getContentNode(HTMLNode)} has
+	 *         already been called
+	 */
+	public HTMLNode getHeadNode(HTMLNode pageNode) {
+		return (HTMLNode) headNodes.remove(pageNode);
+	}
+
 	/**
 	 * Returns the content node that belongs to the specified node. The node has
 	 * to be a node that was earlier retrieved by a call to one of the
@@ -138,6 +154,7 @@ public class PageMaker {
 	 * @return The content node for the specified page node
 	 */
 	public HTMLNode getContentNode(HTMLNode node) {
+		headNodes.remove(node);
 		return (HTMLNode) contentNodes.remove(node);
 	}
 	
