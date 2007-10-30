@@ -250,7 +250,14 @@ public class PproxyToadlet extends Toadlet {
 					return;
 				}
 
+				Iterator/* <PluginProgress> */loadingPlugins = pm.getStartingPlugins().iterator();
+
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx);
+				if (loadingPlugins.hasNext()) {
+					/* okay, add a refresh. */
+					HTMLNode headNode = ctx.getPageMaker().getHeadNode(pageNode);
+					headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "refresh", "10; url=" });
+				}
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
 				contentNode.addChild(core.alerts.createSummary());
@@ -272,7 +279,6 @@ public class PproxyToadlet extends Toadlet {
 					String shortPluginName = pluginName.substring(pluginName.lastIndexOf('.') + 1);
 					availablePlugins.remove(shortPluginName);
 				}
-				Iterator/*<PluginProgress>*/ loadingPlugins = pm.getStartingPlugins().iterator();
 				while (loadingPlugins.hasNext()) {
 					PluginProgress pluginProgress = (PluginProgress) loadingPlugins.next();
 					String pluginName = pluginProgress.getName();
