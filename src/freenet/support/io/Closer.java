@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.jar.JarFile;
+import java.util.zip.ZipFile;
 
 /**
  * Closes various resources. The resources are checked for being
@@ -74,6 +75,21 @@ public class Closer {
 		if (jarFile != null) {
 			try {
 				jarFile.close();
+			} catch (IOException e) {
+			}
+		}
+	}
+
+	/**
+	 * Closes the given zip file.
+	 * 
+	 * @param zipFile
+	 *            The zip file to close
+	 */
+	public static void close(ZipFile zipFile) {
+		if (zipFile != null) {
+			try {
+				zipFile.close();
 			} catch (IOException e) {
 			}
 		}
