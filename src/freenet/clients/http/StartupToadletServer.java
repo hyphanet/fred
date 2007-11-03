@@ -100,7 +100,10 @@ public class StartupToadletServer implements Runnable {
                 HTMLNode logInfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-info", "Current status"));
                 HTMLNode logInfoboxContent = ctx.getPageMaker().getContentNode(logInfobox);
                 logInfoboxContent.addChild("%", FileUtil.readUTF(logs, logs.length()-2000).replaceAll("\n", "<br>\n"));
-                				         
+                
+                // If we don't disconnect we will have pipelining issues
+                ctx.forceDisconnect();
+                
                 //TODO: send a Retry-After header ?
                 writeHTMLReply(ctx, 503, desc, pageNode.generate());
             }
