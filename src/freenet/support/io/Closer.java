@@ -21,6 +21,7 @@ package freenet.support.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
 
@@ -60,6 +61,21 @@ public class Closer {
 		if (inputStream != null) {
 			try {
 				inputStream.close();
+			} catch (IOException ioe1) {
+			}
+		}
+	}
+
+	/**
+	 * Closes the given reader.
+	 * 
+	 * @param reader
+	 *            The reader to close
+	 */
+	public static void close(Reader reader) {
+		if (reader != null) {
+			try {
+				reader.close();
 			} catch (IOException ioe1) {
 			}
 		}
