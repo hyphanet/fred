@@ -483,12 +483,16 @@ public class PluginManager {
 				Logger.error(this, "could not load manifest from plugin file");
 				throw new PluginNotFoundException("could not load manifest from plugin file");
 			}
-			Attributes pluginMainClassAttributes = manifest.getMainAttributes();
-			if (pluginMainClassAttributes == null) {
-				Logger.error(this, "manifest does not contain Plugin-Main-Class attribute");
-				throw new PluginNotFoundException("manifest does not contain Plugin-Main-Class attribute");
+			Attributes mainAttributes = manifest.getMainAttributes();
+			if (mainAttributes == null) {
+				Logger.error(this, "manifest does not contain attributes");
+				throw new PluginNotFoundException("manifest does not contain attributes");
 			}
-			pluginMainClassName = pluginMainClassAttributes.getValue("Plugin-Main-Class");
+			pluginMainClassName = mainAttributes.getValue("Plugin-Main-Class");
+			if (pluginMainClassName == null) {
+				Logger.error(this, "manifest does not contain a Plugin-Main-Class attribute");
+				throw new PluginNotFoundException("manifest does not contain a Plugin-Main-Class attribute");
+			}
 		} catch (JarException je1) {
 			Logger.error(this, "could not process jar file", je1);
 			throw new PluginNotFoundException("could not process jar file", je1);
