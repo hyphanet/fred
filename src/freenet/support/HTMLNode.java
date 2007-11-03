@@ -130,6 +130,27 @@ public class HTMLNode implements XMLCharacterClasses {
 		return addChild(new HTMLNode(nodeName, attributeNames, attributeValues, content));
 	}
 
+	/**
+	 * Returns the name of the first "real" tag found in the hierarchy below
+	 * this node.
+	 * 
+	 * @return The name of the first "real" tag, or <code>null</code> if no
+	 *         "real" tag could be found
+	 */
+	public String getFirstTag() {
+		if (!name.equals("#")) {
+			return name;
+		}
+		for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
+			HTMLNode childNode = (HTMLNode) children.get(childIndex);
+			String tag = childNode.getFirstTag();
+			if (tag != null) {
+				return tag;
+			}
+		}
+		return null;
+	}
+
 	public String generate() {
 		StringBuffer tagBuffer = new StringBuffer();
 		return generate(tagBuffer).toString();
