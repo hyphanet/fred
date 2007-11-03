@@ -81,7 +81,11 @@ final public class FileUtil {
 		return result;
 	}
 	
-	public static String readUTF(File file) throws FileNotFoundException, IOException {
+        public static String readUTF(File file) throws FileNotFoundException, IOException {
+            return readUTF(file, 0);
+        }
+        
+	public static String readUTF(File file, long offset) throws FileNotFoundException, IOException {
 		StringBuffer result = new StringBuffer();
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
@@ -94,6 +98,7 @@ final public class FileUtil {
 
 			char[] buf = new char[4096];
 			int length = 0;
+                        isr.skip(offset);
 
 			while((length = isr.read(buf)) > 0) {
 				result.append(buf, 0, length);

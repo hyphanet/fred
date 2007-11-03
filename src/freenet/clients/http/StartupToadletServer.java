@@ -22,6 +22,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import freenet.io.NetworkInterface;
 import freenet.l10n.L10n;
+import freenet.support.io.FileUtil;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
@@ -95,6 +96,11 @@ public class StartupToadletServer implements Runnable {
 		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
 		infoboxContent.addChild("#", "Your freenet node is starting up, please hold on.");
                 
+                final File logs = new File("wrapper.log");
+                HTMLNode logInfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-info", "Current status"));
+                HTMLNode logInfoboxContent = ctx.getPageMaker().getContentNode(logInfobox);
+                logInfoboxContent.addChild("%", FileUtil.readUTF(logs, logs.length()-2000).replace("\n", "<br>\n"));
+                				         
                 //TODO: send a Retry-After header ?
                 writeHTMLReply(ctx, 503, desc, pageNode.generate());
             }
