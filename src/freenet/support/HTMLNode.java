@@ -136,7 +136,7 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 
 	public StringBuffer generate(StringBuffer tagBuffer) {
-		if (name.equals("#")) {
+		if (name.equals("#") && (content != null)) {
 			HTMLEncoder.encodeToBuffer(content, tagBuffer);
 			return tagBuffer;
 		}
@@ -144,6 +144,13 @@ public class HTMLNode implements XMLCharacterClasses {
 		// This allows non-encoded text to be appended to the tag buffer
 		if (name.equals("%")) {
 			tagBuffer.append(content);
+			return tagBuffer;
+		}
+		if (name.equals("#")) {
+			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
+				HTMLNode childNode = (HTMLNode) children.get(childIndex);
+				childNode.generate(tagBuffer);
+			}
 			return tagBuffer;
 		}
 		tagBuffer.append('<').append(name);
