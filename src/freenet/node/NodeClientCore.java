@@ -16,6 +16,7 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.clients.http.StartupToadletServer;
 import freenet.clients.http.filter.FilterCallback;
 import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.GenericReadFilterCallback;
@@ -113,7 +114,7 @@ public class NodeClientCore implements Persistable {
 	static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
 	static final int MAX_CACHED_ELEMENTS = 256*1024; // equally arbitrary! FIXME hopefully we can cache many of these though
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS, StartupToadletServer sts) throws NodeInitException {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
@@ -351,6 +352,7 @@ public class NodeClientCore implements Persistable {
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins
 		try {
+                        sts.kill();
 			toadletContainer = FProxyToadlet.maybeCreateFProxyEtc(this, node, config, fproxyConfig);
 		} catch (IOException e) {
 			e.printStackTrace();

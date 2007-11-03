@@ -38,6 +38,7 @@ import com.sleepycat.je.StatsConfig;
 import com.sleepycat.je.util.DbDump;
 
 import freenet.client.FetchContext;
+import freenet.clients.http.StartupToadletServer;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
@@ -360,6 +361,8 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	public final long bootID;
 	public final long startupTime;
+        
+        public final StartupToadletServer startupPageHolder;
 	
 	public final NodeClientCore clientCore;
 	
@@ -538,6 +541,9 @@ public class Node implements TimeSkewDetectorCallback {
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
 		startupTime = System.currentTimeMillis();
+                // Will be set up properly afterwards
+                L10n.setLanguage(L10n.FALLBACK_DEFAULT);
+                startupPageHolder = new StartupToadletServer(executor);
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
@@ -1255,7 +1261,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit);
 		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"));
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"), startupPageHolder);
 
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
