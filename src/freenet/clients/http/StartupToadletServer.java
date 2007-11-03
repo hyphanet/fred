@@ -84,6 +84,9 @@ public class StartupToadletServer implements Runnable {
     
     private final Toadlet startupToadlet = new Toadlet(null) {
         public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	    // If we don't disconnect we will have pipelining issues
+	    ctx.forceDisconnect();
+
             String path = uri.getPath();
             if(path.startsWith(StaticToadlet.ROOT_URL)) {
                 staticToadlet.handleGet(uri, req, ctx);
@@ -100,9 +103,6 @@ public class StartupToadletServer implements Runnable {
                 HTMLNode logInfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-info", "Current status"));
                 HTMLNode logInfoboxContent = ctx.getPageMaker().getContentNode(logInfobox);
                 logInfoboxContent.addChild("%", FileUtil.readUTF(logs, logs.length()-2000).replaceAll("\n", "<br>\n"));
-                
-                // If we don't disconnect we will have pipelining issues
-                ctx.forceDisconnect();
                 
                 //TODO: send a Retry-After header ?
                 writeHTMLReply(ctx, 503, desc, pageNode.generate());
