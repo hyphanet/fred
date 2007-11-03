@@ -362,7 +362,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public final long bootID;
 	public final long startupTime;
         
-        public final StartupToadletServer startupPageHolder;
+        private StartupToadletServer startupPageHolder;
 	
 	public final NodeClientCore clientCore;
 	
@@ -1261,7 +1261,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit);
 		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"), startupPageHolder);
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"));
 
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
@@ -2751,5 +2751,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public long getUptime() {
 		return System.currentTimeMillis() - usm.getStartedTime();
 	}
-
+        
+        protected void killStartupToadlet() throws IOException {
+            startupPageHolder.kill();
+            // Give it a chance to be GCed
+            startupPageHolder = null;
+        }
 }
