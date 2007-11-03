@@ -50,7 +50,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private boolean closed;
 	private boolean shouldDisconnect;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable headers, String CSSName, BucketFactory bf, PageMaker pageMaker, ToadletContainer container) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container) throws IOException {
 		this.headers = headers;
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();
@@ -271,8 +271,8 @@ public class ToadletContextImpl implements ToadletContext {
 				}
 				
 				boolean disconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers);
-				
-				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, container.getCSSName(), bf, pageMaker, container);
+
+				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container);
 				ctx.shouldDisconnect = disconnect;
 				
 				/*
