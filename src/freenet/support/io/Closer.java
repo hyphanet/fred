@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.Writer;
 import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
 
@@ -61,6 +62,21 @@ public class Closer {
 		if (inputStream != null) {
 			try {
 				inputStream.close();
+			} catch (IOException ioe1) {
+			}
+		}
+	}
+
+	/**
+	 * Closes the given writer.
+	 * 
+	 * @param writer
+	 *            The writer to close
+	 */
+	public static void close(Writer writer) {
+		if (writer != null) {
+			try {
+				writer.close();
 			} catch (IOException ioe1) {
 			}
 		}
