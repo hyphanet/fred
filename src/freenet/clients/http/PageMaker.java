@@ -24,7 +24,7 @@ import freenet.support.io.FileUtil;
 */
 public class PageMaker {
 	
-	private static final String DEFAULT_THEME = "clean";
+	public static final String DEFAULT_THEME = "clean";
 	private String theme;
 	private File override;
 	private final List navigationLinkTexts = new ArrayList();
@@ -57,7 +57,7 @@ public class PageMaker {
 				this.theme = theme;
 		}
 	}
-	
+        	
 	public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
 		navigationLinkTexts.add(name);
 		if(!fullOnly)
