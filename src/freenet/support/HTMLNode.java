@@ -39,6 +39,10 @@ public class HTMLNode implements XMLCharacterClasses {
 		this(name, new String[] { attributeName }, new String[] { attributeValue }, content);
 	}
 
+	public HTMLNode(String name, String[] attributeNames, String[] attributeValues) {
+		this(name, attributeNames, attributeValues, null);
+	}
+
 	public HTMLNode(String name, String[] attributeNames, String[] attributeValues, String content) {
 		
 		Matcher nameMatcher = namePattern.matcher(name);
