@@ -175,6 +175,11 @@ public class SimpleFieldSetTest extends TestCase {
 		for (int i=0; i < SAMPLE_STRING_PAIRS.length; i++)
 			assertEquals(methodSFS.get(SAMPLE_STRING_PAIRS[i][0]),
 					SAMPLE_STRING_PAIRS[i][1]+methodAppendedString);
+		SimpleFieldSet nullSFS = new SimpleFieldSet(false);
+		nullSFS.putAllOverwrite(methodNewSFS);
+		for (int i=0; i < SAMPLE_STRING_PAIRS.length; i++)
+			assertEquals(nullSFS.get(SAMPLE_STRING_PAIRS[i][0]),
+					SAMPLE_STRING_PAIRS[i][1]+methodAppendedString);
 	}
 	
 	/**
