@@ -41,6 +41,7 @@ public class SimpleFieldSetTest extends TestCase {
 		//directSubset
 		{"foo","bar"},			
 		{"foo.bar","foobar"},	
+		{"foo.bar.foo","foobar"},
 		{"foo.bar.boo.far","foobar"},
 		{"foo2","foobar.fooboo.foofar.foofoo"},
 		{"foo3",KEY_VALUE_SEPARATOR+"bar"} };
