@@ -632,11 +632,11 @@ public class SimpleFieldSetTest extends TestCase {
 	public void testRemoveSubset() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		methodSFS.removeSubset("foo");
-		for(int i = 1; i< 3; i++)
+		for(int i = 1; i< 4; i++)
 			assertNull(methodSFS.get(SAMPLE_STRING_PAIRS[i][0]));
 		assertEquals(methodSFS.get(SAMPLE_STRING_PAIRS[0][0]),
 				SAMPLE_STRING_PAIRS[0][1]);
-		for(int i = 3; i< 5; i++)
+		for(int i = 4; i< 6; i++)
 			assertEquals(methodSFS.get(SAMPLE_STRING_PAIRS[i][0]),
 					SAMPLE_STRING_PAIRS[i][1]);
 	}
