@@ -226,6 +226,7 @@ public class SimpleFieldSet {
     		values.put(key, hisVal); // overwrite old
     	}
     	if(fs.subsets == null) return;
+	if(subsets == null) subsets = new HashMap();
     	i = fs.subsets.keySet().iterator();
     	while(i.hasNext()) {
     		String key = (String) i.next();
