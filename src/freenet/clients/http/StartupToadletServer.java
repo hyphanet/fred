@@ -225,7 +225,8 @@ public class StartupToadletServer implements Runnable {
 
     public synchronized void kill() throws IOException {
         myThread = null;
-        networkInterface.close();
+	if(networkInterface != null)
+        	networkInterface.close();
     }
 
     public class SocketHandler implements Runnable {
