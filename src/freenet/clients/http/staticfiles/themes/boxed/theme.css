@@ -81,6 +81,14 @@ a:hover {
 	overflow: auto;
 }
 
+.infobox-content :first-child {
+	margin-top: 0;
+}
+
+.infobox-content :last-child {
+	margin-bottom: 0;
+}
+
 .infobox-content ul {
 	display: inline;
 	list-style-type: none;
