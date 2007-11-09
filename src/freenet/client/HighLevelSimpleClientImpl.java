@@ -203,8 +203,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				globalEventProducer, cacheLocalRequests, core.uskManager, blockEncoder, core.getExecutor());
 	}
 
-	public FreenetURI[] generateKeyPair() {
-		InsertableClientSSK key = InsertableClientSSK.createRandom(random, "");
+	public FreenetURI[] generateKeyPair(String docName) {
+		InsertableClientSSK key = InsertableClientSSK.createRandom(random, docName);
 		return new FreenetURI[] { key.getInsertURI(), key.getURI() };
 	}
 
