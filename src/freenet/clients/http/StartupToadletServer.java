@@ -43,6 +43,7 @@ import freenet.support.io.ArrayBucketFactory;
 public class StartupToadletServer implements Runnable {
 
     private int port;
+    private String bindTo, allowedHosts;
     private final NetworkInterface networkInterface;
     private String cssName;
     private Thread myThread;
@@ -170,9 +171,14 @@ public class StartupToadletServer implements Runnable {
         try {
             SimpleFieldSet config = SimpleFieldSet.readFrom(configFile, false, false);
             port = config.getInt("fproxy.port");
+            bindTo = config.get("fproxy.bindTo");
+            // Yeah, only FullAccess hosts here, it's on purpose.
+            allowedHosts = config.get("fproxy.allowedHostsFullAccess");
             cssName = config.get("fproxy.css");
         } catch (Exception e) {
             port = SimpleToadletServer.DEFAULT_FPROXY_PORT;
+            bindTo = SimpleToadletServer.DEFAULT_BIND_TO;
+            allowedHosts = SimpleToadletServer.DEFAULT_BIND_TO;
             cssName = PageMaker.DEFAULT_THEME;
         }
         
@@ -181,10 +187,10 @@ public class StartupToadletServer implements Runnable {
         boolean start = true;
         NetworkInterface ni = null;
         try {
-            ni = NetworkInterface.create(port, SimpleToadletServer.DEFAULT_BIND_TO, SimpleToadletServer.DEFAULT_BIND_TO, executor);
+            ni = NetworkInterface.create(port, bindTo, allowedHosts, executor);
         } catch (IOException e) {
-            Logger.error(this, "Error starting SimpleToadletServer on " + port);
-            System.err.println("Error starting SimpleToadletServer on " + port);
+            Logger.error(this, "Error starting SimpleToadletServer on "+ bindTo + ':' + port);
+            System.err.println("Error starting SimpleToadletServer on "+ bindTo + ':' + port);
             start = false;
         }
         this.networkInterface = ni;
