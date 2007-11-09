@@ -17,6 +17,7 @@ import freenet.client.events.EventLogger;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -201,4 +202,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
 				globalEventProducer, cacheLocalRequests, core.uskManager, blockEncoder, core.getExecutor());
 	}
+
+	public FreenetURI[] generateKeyPair() {
+		InsertableClientSSK key = InsertableClientSSK.createRandom(random, "");
+		return new FreenetURI[] { key.getInsertURI(), key.getURI() };
+	}
+
 }

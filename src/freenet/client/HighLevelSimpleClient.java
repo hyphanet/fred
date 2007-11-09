@@ -67,4 +67,12 @@ public interface HighLevelSimpleClient {
 	 */
 	public void addGlobalHook(ClientEventListener listener);
 
+	/**
+	 * Generates a new key pair, consisting of the insert URI at index 0 and the
+	 * request URI at index 1.
+	 * 
+	 * @return An array containing the insert and request URI
+	 */
+	public FreenetURI[] generateKeyPair();
+
 }
