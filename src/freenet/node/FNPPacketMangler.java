@@ -1010,6 +1010,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// cleanup
+                // FIXME: maybe we should copy zeros/garbage into it before leaving it to the GC
 		pn.setJFKBuffer(null);
 		pn.jfkKa = null;
 		pn.jfkKe = null;
