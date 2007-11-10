@@ -54,7 +54,6 @@ public class PluginManager {
 	private final Set/* <PluginProgress> */startingPlugins = new HashSet/* <PluginProgress> */();
 
 	private final Vector/* <PluginInfoWrapper> */pluginWrappers;
-	private PluginRespirator pluginRespirator = null;
 	final Node node;
 	private final NodeClientCore core;
 	SubConfig pmconfig;
@@ -66,7 +65,6 @@ public class PluginManager {
 		this.node = node;
 		this.core = node.clientCore;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		pluginRespirator = new PluginRespirator(node, this);
 
 		pmconfig = new SubConfig("pluginmanager", node.config);
 		// Start plugins in the config
@@ -149,7 +147,7 @@ public class PluginManager {
 				try {
 					plug = loadPlugin(filename, refresh);
 					pluginProgress.setProgress(PluginProgress.STARTING);
-					PluginInfoWrapper pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, pluginRespirator, refresh);
+					PluginInfoWrapper pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this), refresh);
 					synchronized (pluginWrappers) {
 						pluginWrappers.add(pi);
 					}
