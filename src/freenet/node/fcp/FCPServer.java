@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.BindException;
 import java.net.Socket;
 import java.util.Iterator;
 import java.util.Vector;
@@ -46,6 +45,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
+import java.net.SocketException;
 
 /**
  * FCP server process.
@@ -118,7 +118,8 @@ public class FCPServer implements Runnable {
 		NetworkInterface tempNetworkInterface = null;
 		try {
 			tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts, node.executor, false);
-		} catch (BindException be) {
+		} catch (SocketException be) {
+                        be.printStackTrace();
 			Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
 			System.out.println("Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
 		}
