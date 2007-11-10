@@ -119,16 +119,16 @@ public class PproxyToadlet extends Toadlet {
 		{
 			final boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			final boolean logNORMAL = Logger.shouldLog(Logger.NORMAL, this);
+			PageMaker pageMaker = ctx.getPageMaker();
 
 			if (request.isPartSet("submit-official") || request.isPartSet("submit-other")) {
 				String pluginName = null;
-				boolean refresh = request.isPartSet("refresh-on-startup");
 				if (request.isPartSet("submit-official")) {
 					pluginName = request.getPartAsString("plugin-name", 40);
 				} else {
 					pluginName = request.getPartAsString("plugin-url", 200);
 				}
-				pm.startPlugin(pluginName, refresh, true);
+				pm.startPlugin(pluginName, true);
 				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
@@ -140,71 +140,80 @@ public class PproxyToadlet extends Toadlet {
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
-			if (request.isPartSet("change-reload-submit")) {
-				int pluginInfoWrapperHashCode = request.getIntPart("plugin-id", -1);
-				boolean newReload = request.isPartSet("reload-on-startup");
-				Iterator/*<PluginInfoWrapper>*/ pluginIterator = pm.getPlugins().iterator();
-				while (pluginIterator.hasNext()) {
-					PluginInfoWrapper pluginInfoWrapper = (PluginInfoWrapper) pluginIterator.next();
-					if (pluginInfoWrapper.hashCode() == pluginInfoWrapperHashCode) {
-						pluginInfoWrapper.setAutoRefresh(newReload);
-						break;
-					}
-				}
-				headers.put("Location", ".");
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-				return;
-			}
 			if (request.isPartSet("cancel")){
 				headers.put("Location", "/plugins/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
 			if (request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
-				pm.killPlugin(request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH), MAX_THREADED_UNLOAD_WAIT_TIME);
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
-				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				String pluginThreadName = request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH);
+				String pluginSpecification = getPluginSpecification(pm, pluginThreadName);
+				pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME);
+				if (request.isPartSet("purge")) {
+					pm.removeCachedCopy(pluginSpecification);
+				}
+				HTMLNode pageNode = pageMaker.getPageNode(l10n("plugins"), ctx);
+				HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-success");
 				infobox.addChild("div", "class", "infobox-header", l10n("pluginUnloaded"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addChild("#", l10n("pluginUnloadedWithName", "name", request.getPartAsString("remove", MAX_PLUGIN_NAME_LENGTH)));
+				infoboxContent.addChild("#", l10n("pluginUnloadedWithName", "name", pluginThreadName));
 				infoboxContent.addChild("br");
 				infoboxContent.addChild("a", "href", "/plugins/", l10n("returnToPluginPage"));
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}if (request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
-				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode pageNode = pageMaker.getPageNode(l10n("plugins"), ctx);
+				HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-query");
 				infobox.addChild("div", "class", "infobox-header", l10n("unloadPluginTitle"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addChild("#", l10n("unloadPluginWithName", "name", request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH)));
 				HTMLNode unloadForm = 
 					ctx.addFormChild(infoboxContent, "/plugins/", "unloadPluginConfirmForm");
-				unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 				unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unloadconfirm", request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH) });
-				unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n("unload") });
+				HTMLNode tempNode = unloadForm.addChild("p");
+				tempNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "purge" });
+				tempNode.addChild("#", l10n("unloadPurge"));
+				tempNode = unloadForm.addChild("p");
+				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n("unload") });
+				tempNode.addChild("#", " ");
+				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
-			}else if (request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
-				String fn = null;
-				boolean refresh = false;
-				Iterator it = pm.getPlugins().iterator();
-				while (it.hasNext()) {
-					PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
-					if (pi.getThreadName().equals(request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH))) {
-						fn = pi.getFilename();
-						refresh = pi.isAutoRefresh();
-						break;
-					}
-				}
+			} else if (request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+				HTMLNode pageNode = pageMaker.getPageNode(l10n("plugins"), ctx);
+				HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+				HTMLNode reloadBox = contentNode.addChild(pageMaker.getInfobox("infobox infobox-query", l10n("reloadPluginTitle")));
+				HTMLNode reloadContent = pageMaker.getContentNode(reloadBox);
+				reloadContent.addChild("p", l10n("reloadExplanation"));
+				reloadContent.addChild("p", l10n("reloadWarning"));
+				HTMLNode reloadForm = ctx.addFormChild(reloadContent, "/plugins/", "reloadPluginConfirmForm");
+				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reloadconfirm", request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH) });
+				HTMLNode tempNode = reloadForm.addChild("p");
+				tempNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "purge" });
+				tempNode.addChild("#", l10n("reloadPurgeWarning"));
+				tempNode = reloadForm.addChild("p");
+				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n("reload") });
+				tempNode.addChild("#", " ");
+				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
+				
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				return;
+			}else if (request.getPartAsString("reloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+				boolean purge = request.isPartSet("purge");
+				String pluginThreadName = request.getPartAsString("reloadconfirm", MAX_PLUGIN_NAME_LENGTH);
+				String fn = getPluginSpecification(pm, pluginThreadName);
 
 				if (fn == null) {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundReloadTitle"), 
 							L10n.getString("PluginToadlet.pluginNotFoundReload"));
 				} else {
-					pm.killPlugin(request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH), MAX_THREADED_UNLOAD_WAIT_TIME);
-					pm.startPlugin(fn, refresh, true);
+					pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME);
+					if (purge) {
+						pm.removeCachedCopy(fn);
+					}
+					pm.startPlugin(fn, true);
 
 					headers.put("Location", ".");
 					ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -218,6 +227,28 @@ public class PproxyToadlet extends Toadlet {
 
 		}
 
+	}
+
+	/**
+	 * Searches all plugins for the plugin with the given thread name and
+	 * returns the plugin specification used to load the plugin.
+	 * 
+	 * @param pluginManager
+	 *            The plugin manager
+	 * @param pluginThreadName
+	 *            The thread name of the plugin
+	 * @return The plugin specification of the plugin, or <code>null</code> if
+	 *         no plugin was found
+	 */
+	private String getPluginSpecification(PluginManager pluginManager, String pluginThreadName) {
+		Iterator it = pluginManager.getPlugins().iterator();
+		while (it.hasNext()) {
+			PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
+			if (pi.getThreadName().equals(pluginThreadName)) {
+				return pi.getFilename();
+			}
+		}
+		return null;
 	}
 
 	private String l10n(String key, String pattern, String value) {
@@ -393,7 +424,6 @@ public class PproxyToadlet extends Toadlet {
 			headerRow.addChild("th", l10n("classNameTitle"));
 			headerRow.addChild("th", l10n("internalIDTitle"));
 			headerRow.addChild("th", l10n("startedAtTitle"));
-			headerRow.addChild("th", l10n("reloadOnStartupShort"));
 			headerRow.addChild("th");
 			headerRow.addChild("th");
 			headerRow.addChild("th");
@@ -404,14 +434,6 @@ public class PproxyToadlet extends Toadlet {
 				pluginRow.addChild("td", pi.getPluginClassName());
 				pluginRow.addChild("td", pi.getThreadName());
 				pluginRow.addChild("td", new Date(pi.getStarted()).toString());
-				HTMLNode autoReloadChangeForm = ctx.addFormChild(pluginRow.addChild("td", "align", "center"), ".", "changeAutoReloadForm");
-				if (pi.isAutoRefresh()) {
-					autoReloadChangeForm.addChild("input", new String[] { "name", "type", "checked" }, new String[] { "reload-on-startup", "checkbox", "checked" });
-				} else {
-					autoReloadChangeForm.addChild("input", new String[] { "name", "type" }, new String[] { "reload-on-startup", "checkbox" });
-				}
-				autoReloadChangeForm.addChild("input", new String[] { "name", "type", "value" }, new String[] { "plugin-id", "hidden", String.valueOf(pi.hashCode()) });
-				autoReloadChangeForm.addChild("input", new String[] { "name", "type", "value" }, new String[] { "change-reload-submit", "submit", l10n("changeReloadOnStartup") });
 				if (pi.isStopping()) {
 					pluginRow.addChild("td", l10n("pluginStopping"));
 					/* add two empty cells. */
@@ -448,8 +470,7 @@ public class PproxyToadlet extends Toadlet {
 			String pluginName = (String) availablePluginIterator.next();
 			selectNode.addChild("option", "value", pluginName, pluginName);
 		}
-		addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "refresh-on-startup", "true" });
-		addOfficialForm.addChild("#", l10n("refreshOnStartup"));
+		addOfficialForm.addChild("#", " ");
 		addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
 	}
 	
@@ -462,8 +483,7 @@ public class PproxyToadlet extends Toadlet {
 		addOtherForm.addChild("div", l10n("loadOtherPluginText"));
 		addOtherForm.addChild("#", (l10n("loadOtherURLLabel") + ": "));
 		addOtherForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-url", "80" });
-		addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "refresh-on-startup", "true" });
-		addOtherForm.addChild("#", l10n("refreshOnStartup"));
+		addOtherForm.addChild("#", " ");
 		addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-other", l10n("Load") });
 	}
 

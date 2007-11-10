@@ -85,11 +85,13 @@ public class PluginManager {
 		if (fns != null) {
 			for (int i = 0; i < fns.length; i++) {
 				String name = fns[i];
+				/* FIXME - compatibility code, remove somewhen */
 				boolean refresh = name.endsWith("*");
 				if (refresh) {
 					name = name.substring(0, name.length() - 1);
 				}
-				startPlugin(name, refresh, false);
+				/* FIXME - end of compatibility code */
+				startPlugin(name, false);
 			}
 		}
 
@@ -111,7 +113,7 @@ public class PluginManager {
 
 			while (it.hasNext()) {
 				PluginInfoWrapper pluginInfoWrapper = (PluginInfoWrapper) it.next();
-				v.add(pluginInfoWrapper.getFilename() + (pluginInfoWrapper.isAutoRefresh() ? "*" : ""));
+				v.add(pluginInfoWrapper.getFilename());
 			}
 
 			return (String[]) v.toArray(new String[v.size()]);
@@ -132,7 +134,7 @@ public class PluginManager {
 		}
 	}
 
-	public void startPlugin(final String filename, final boolean refresh, final boolean store) {
+	public void startPlugin(final String filename, final boolean store) {
 		if (filename.trim().length() == 0)
 			return;
 		final PluginProgress pluginProgress = new PluginProgress(filename);
@@ -145,9 +147,9 @@ public class PluginManager {
 				Logger.normal(this, "Loading plugin: " + filename);
 				FredPlugin plug;
 				try {
-					plug = loadPlugin(filename, refresh);
+					plug = loadPlugin(filename);
 					pluginProgress.setProgress(PluginProgress.STARTING);
-					PluginInfoWrapper pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this), refresh);
+					PluginInfoWrapper pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this));
 					synchronized (pluginWrappers) {
 						pluginWrappers.add(pi);
 					}
@@ -242,6 +244,30 @@ public class PluginManager {
 			if(!pluginWrappers.remove(pi)) return;
 		}
 		core.storeConfig();
+	}
+
+	/**
+	 * Removes the cached copy of the given plugin from the plugins/ directory.
+	 * 
+	 * @param pluginSpecification
+	 *            The plugin specification
+	 */
+	public void removeCachedCopy(String pluginSpecification) {
+		int lastSlash = pluginSpecification.lastIndexOf('/');
+		File pluginFile;
+		if (lastSlash == -1) {
+			/* Windows, maybe? */
+			lastSlash = pluginSpecification.lastIndexOf('\\');
+		}
+		if (lastSlash == -1) {
+			/* it's an official plugin! */
+			pluginFile = new File("plugins", pluginSpecification + ".jar.url");
+		} else {
+			pluginFile = new File("plugins", pluginSpecification.substring(lastSlash + 1));
+		}
+		if (pluginFile.exists()) {
+			pluginFile.delete();
+		}
 	}
 
 	public void unregisterPluginToadlet(PluginInfoWrapper pi) {
@@ -383,22 +409,19 @@ public class PluginManager {
 
 	/**
 	 * Tries to load a plugin from the given name. If the name only contains the
-	 * name of a plugin and the plugin should not be refreshed on startup it is
-	 * loaded from the plugin directory, if found, otherwise it's refresh from
-	 * the project server. If the name contains a complete url and the short
-	 * file already exists in the plugin directory and the plugin should not be
-	 * refreshed, it's loaded from the plugin directory, otherwise it's
-	 * retrieved from the remote server.
+	 * name of a plugin it is loaded from the plugin directory, if found,
+	 * otherwise it's loaded from the project server. If the name contains a
+	 * complete url and the short file already exists in the plugin directory
+	 * it's loaded from the plugin directory, otherwise it's retrieved from the
+	 * remote server.
 	 * 
 	 * @param name
 	 *            The specification of the plugin
-	 * @param refresh
-	 *            Whether the file should be refreshed on startup
 	 * @return An instanciated object of the plugin
 	 * @throws PluginNotFoundException
 	 *             If anything goes wrong.
 	 */
-	private FredPlugin loadPlugin(String name, boolean refresh) throws PluginNotFoundException {
+	private FredPlugin loadPlugin(String name) throws PluginNotFoundException {
 		URL pluginUrl = null;
 		/* check if name is a local file. */
 		File pluginFile = new File(name);
@@ -440,7 +463,7 @@ public class PluginManager {
 		if (logMINOR) {
 			Logger.minor(this, "plugin file " + pluginFile.getAbsolutePath() + " exists: " + pluginFile.exists());
 		}
-		if (refresh || !pluginFile.exists()) {
+		if (!pluginFile.exists()) {
 			File tempPluginFile = null;
 			OutputStream pluginOutputStream = null;
 			URLConnection urlConnection = null;

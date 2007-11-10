@@ -20,14 +20,13 @@ public class PluginInfoWrapper {
 	private boolean isIPDetectorPlugin;
 	private boolean isPortForwardPlugin;
 	private boolean isMultiplePlugin;
-	private boolean autoRefresh;
 	private String filename;
 	private HashSet toadletLinks=new HashSet();
 	private boolean stopping = false;
 	private boolean unregistered = false;
 	//public String 
 	
-	public PluginInfoWrapper(FredPlugin plug, String filename, boolean autoRefresh) {
+	public PluginInfoWrapper(FredPlugin plug, String filename) {
 		this.plug = plug;
 		if (fedPluginThread) return;
 		className = plug.getClass().toString();
@@ -40,29 +39,6 @@ public class PluginInfoWrapper {
 		isIPDetectorPlugin = (plug instanceof FredPluginIPDetector);
 		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
 		isMultiplePlugin = (plug instanceof FredPluginMultiple);
-		this.autoRefresh = autoRefresh;
-	}
-
-	/**
-	 * Returns whether this plugin should be refreshed from the server on
-	 * startup.
-	 * 
-	 * @return <code>true</code> if the plugin should be refresh on startup,
-	 *         <code>false</code> otherwise
-	 */
-	public boolean isAutoRefresh() {
-		return autoRefresh;
-	}
-
-	/**
-	 * Sets the new value for the refresh-on-startup feature.
-	 * 
-	 * @param autoRefresh
-	 *            <code>true</code> if the plugin should be reloaded on
-	 *            startup, <code>false</code> otherwise
-	 */
-	public void setAutoRefresh(boolean autoRefresh) {
-		this.autoRefresh = autoRefresh;
 	}
 
 	void setThread(Thread ps) {
