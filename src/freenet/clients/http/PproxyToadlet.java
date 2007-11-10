@@ -284,7 +284,7 @@ public class PproxyToadlet extends Toadlet {
 					availablePlugins.remove(pluginName);
 				}
 
-				showStartingPlugins(ctx, pm, contentNode);
+				showStartingPlugins(pm, contentNode);
 				showPluginList(ctx, pm, contentNode);
 				showOfficialPluginLoader(ctx, contentNode, availablePlugins);
 				showUnofficialPluginLoader(ctx, contentNode);
@@ -354,18 +354,12 @@ public class PproxyToadlet extends Toadlet {
 	/**
 	 * Shows a list of all currently loading plugins.
 	 * 
-	 * @param toadletContext
-	 *            The toadlet context
-	 * @param request
-	 *            The HTTP request
 	 * @param pluginManager
 	 *            The plugin manager
-	 * @throws ToadletContextClosedException
-	 *             if the toadlet context is closed
-	 * @throws IOException
-	 *             if an I/O error occurs
+	 * @param contentNode
+	 *            The node to add content to
 	 */
-	private void showStartingPlugins(ToadletContext toadletContext, PluginManager pluginManager, HTMLNode contentNode) throws ToadletContextClosedException, IOException {
+	private void showStartingPlugins(PluginManager pluginManager, HTMLNode contentNode) {
 		Set/*<PluginProgress>*/ startingPlugins = pluginManager.getStartingPlugins();
 		if (!startingPlugins.isEmpty()) {
 			HTMLNode startingPluginsBox = contentNode.addChild("div", "class", "infobox infobox-normal");
