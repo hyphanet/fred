@@ -40,7 +40,9 @@ import freenet.support.Logger;
  * @version $Id$
  */
 public class NetworkInterface {
-
+    
+        public static final String DEFAULT_BIND_TO = "127.0.0.1,0:0:0:0:0:0:0:1";
+        
 	/** Object for synchronisation purpose. */
 	protected final Object syncObject = new Object();
 

@@ -66,7 +66,6 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	static boolean isPanicButtonToBeShown;
 	public static final int DEFAULT_FPROXY_PORT = 8888;
-        public static final String DEFAULT_BIND_TO = "127.0.0.1,0:0:0:0:0:0:0:1";
 	
 	class FProxyPortCallback implements IntCallback {
 		
@@ -276,7 +275,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, configItemOrder++, true, true, "SimpleToadletServer.port", "SimpleToadletServer.portLong",
 				new FProxyPortCallback());
-		fproxyConfig.register("bindTo", DEFAULT_BIND_TO, configItemOrder++, true, true, "SimpleToadletServer.bindTo", "SimpleToadletServer.bindToLong",
+		fproxyConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, configItemOrder++, true, true, "SimpleToadletServer.bindTo", "SimpleToadletServer.bindToLong",
 				new FProxyBindtoCallback());
 		fproxyConfig.register("css", "clean", configItemOrder++, false, false, "SimpleToadletServer.cssName", "SimpleToadletServer.cssNameLong",
 				new FProxyCSSNameCallback());

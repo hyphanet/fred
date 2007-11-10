@@ -247,7 +247,6 @@ public class FCPServer implements Runnable {
 	static class FCPAllowedHostsCallback implements StringCallback {
 
 		private final NodeClientCore node;
-		public static final String DEFAULT = "127.0.0.1,0:0:0:0:0:0:0:1";
 		
 		public FCPAllowedHostsCallback(NodeClientCore node) {
 			this.node = node;
@@ -255,9 +254,9 @@ public class FCPServer implements Runnable {
 		
 		public String get() {
 			FCPServer server = node.getFCPServer();
-			if(server == null) return DEFAULT;
+			if(server == null) return NetworkInterface.DEFAULT_BIND_TO;
 			NetworkInterface netIface = server.networkInterface;
-			return (netIface == null ? DEFAULT : netIface.getAllowedHosts());
+			return (netIface == null ? NetworkInterface.DEFAULT_BIND_TO : netIface.getAllowedHosts());
 		}
 
 		public void set(String val) {
@@ -369,9 +368,9 @@ public class FCPServer implements Runnable {
 		short sortOrder = 0;
 		fcpConfig.register("enabled", true, sortOrder++, true, false, "FcpServer.isEnabled", "FcpServer.isEnabledLong", new FCPEnabledCallback(core));
 		fcpConfig.register("port", FCPServer.DEFAULT_FCP_PORT /* anagram of 1984, and 1000 up from old number */, 2, true, true, "FcpServer.portNumber", "FcpServer.portNumberLong", new FCPPortNumberCallback(core));
-		fcpConfig.register("bindTo", "127.0.0.1,0:0:0:0:0:0:0:1", sortOrder++, false, true, "FcpServer.bindTo", "FcpServer.bindToLong", new FCPBindtoCallback(core));
-		fcpConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", sortOrder++, false, true, "FcpServer.allowedHosts", "FcpServer.allowedHostsLong", new FCPAllowedHostsCallback(core));
-		fcpConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", sortOrder++, false, true, "FcpServer.allowedHostsFullAccess", "FcpServer.allowedHostsFullAccessLong", new FCPAllowedHostsFullAccessCallback(core));
+		fcpConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, false, true, "FcpServer.bindTo", "FcpServer.bindToLong", new FCPBindtoCallback(core));
+		fcpConfig.register("allowedHosts", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, false, true, "FcpServer.allowedHosts", "FcpServer.allowedHostsLong", new FCPAllowedHostsCallback(core));
+		fcpConfig.register("allowedHostsFullAccess", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, false, true, "FcpServer.allowedHostsFullAccess", "FcpServer.allowedHostsFullAccessLong", new FCPAllowedHostsFullAccessCallback(core));
 		PersistentDownloadsEnabledCallback cb1;
 		PersistentDownloadsFileCallback cb2;
 		PersistentDownloadsIntervalCallback cb3;

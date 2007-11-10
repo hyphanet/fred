@@ -136,8 +136,8 @@ public class StartupToadletServer implements Runnable {
             cssName = config.get("fproxy.css");
         } catch (Exception e) {
             port = SimpleToadletServer.DEFAULT_FPROXY_PORT;
-            bindTo = SimpleToadletServer.DEFAULT_BIND_TO;
-            allowedHosts = SimpleToadletServer.DEFAULT_BIND_TO;
+            bindTo = NetworkInterface.DEFAULT_BIND_TO;
+            allowedHosts = NetworkInterface.DEFAULT_BIND_TO;
             cssName = PageMaker.DEFAULT_THEME;
         }
         
