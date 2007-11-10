@@ -426,11 +426,11 @@ public class PluginManager {
 		/* check if name is a local file. */
 		File pluginFile = new File(name);
 		if (pluginFile.exists() && pluginFile.isFile()) {
-			try {
-				pluginUrl = pluginFile.toURI().toURL();
-			} catch (MalformedURLException e) {
-				throw new PluginNotFoundException("can not convert local path");
-			}
+                        try {
+                            pluginUrl = pluginFile.toURI().toURL();
+                        } catch (MalformedURLException e) {
+                            throw new PluginNotFoundException("can not convert local path");
+                        }
 		} else {
 			/* check if name contains a URL. */
 			try {
@@ -463,7 +463,7 @@ public class PluginManager {
 		if (logMINOR) {
 			Logger.minor(this, "plugin file " + pluginFile.getAbsolutePath() + " exists: " + pluginFile.exists());
 		}
-		if (!pluginFile.exists()) {
+		if (!pluginFile.exists() || pluginFile.length() == 0) {
 			File tempPluginFile = null;
 			OutputStream pluginOutputStream = null;
 			URLConnection urlConnection = null;
@@ -491,13 +491,7 @@ public class PluginManager {
 				Closer.close(pluginOutputStream);
 				Closer.close(pluginInputStream);
 			}
-			/* move temp jar to final jar. */
-			if (pluginFile.exists()) {
-				if (!pluginFile.delete()) {
-					Logger.error(this, "could not remove old plugin file");
-					throw new PluginNotFoundException("could not remove old plugin file");
-				}
-			}
+                        
 			if (!tempPluginFile.renameTo(pluginFile)) {
 				Logger.error(this, "could not rename temp file to plugin file");
 				throw new PluginNotFoundException("could not rename temp file to plugin file");
