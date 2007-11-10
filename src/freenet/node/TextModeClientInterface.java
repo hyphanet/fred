@@ -881,17 +881,10 @@ public class TextModeClientInterface implements Runnable {
         		outsb.append("  PLUGLOAD: pluginName         - Load official plugin from freenetproject.org");
         		outsb.append("  PLUGLOAD: file://<filename>  - Load plugin from file");
         		outsb.append("  PLUGLOAD: http://...         - Load plugin from online file");
-        		outsb.append("");
-        		outsb.append("If you append as asterisk (\"*\") to the name or URL, the plugin will be reloaded from the remote server on startup.");
         	} else {
         		String name = line.substring("PLUGLOAD:".length()).trim();
-        		boolean refresh = name.endsWith("*");
-        		if (refresh) {
-        			name = name.substring(0, name.length() - 1);
-        		}
-        		n.pluginManager.startPlugin(name, refresh, true);
+        		n.pluginManager.startPlugin(name, true);
         	}
-            //outsb.append("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.");
         } else if(uline.startsWith("PLUGLIST")) {
         	outsb.append(n.pluginManager.dumpPlugins());
         } else if(uline.startsWith("PLUGKILL:")) {
