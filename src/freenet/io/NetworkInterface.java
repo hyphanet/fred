@@ -130,7 +130,7 @@ public class NetworkInterface {
 		for (int serverSocketIndex = 0; serverSocketIndex < bindToTokenList.size(); serverSocketIndex++) {
 			ServerSocket serverSocket = new ServerSocket();
                         try {
-			serverSocket.bind(new InetSocketAddress((String) bindToTokenList.get(serverSocketIndex), port));
+                            serverSocket.bind(new InetSocketAddress((String) bindToTokenList.get(serverSocketIndex), port));
                         } catch (SocketException e) {
                             if(ignoreUnbindable)
                                 continue;
