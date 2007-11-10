@@ -146,8 +146,9 @@ public class StartupToadletServer implements Runnable {
         boolean start = true;
         NetworkInterface ni = null;
         try {
-            ni = NetworkInterface.create(port, bindTo, allowedHosts, executor);
+            ni = NetworkInterface.create(port, bindTo, allowedHosts, executor, true);
         } catch (IOException e) {
+            e.printStackTrace();
             Logger.error(this, "Error starting SimpleToadletServer on "+ bindTo + ':' + port);
             System.err.println("Error starting SimpleToadletServer on "+ bindTo + ':' + port);
             start = false;

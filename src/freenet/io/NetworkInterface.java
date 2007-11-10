@@ -64,10 +64,10 @@ public class NetworkInterface {
 	
 	private final Executor executor;
 
-	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor) throws IOException {
+	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindable) throws IOException {
 		NetworkInterface iface = new NetworkInterface(port, allowedHosts, executor);
 		try {
-			iface.setBindTo(bindTo);
+			iface.setBindTo(bindTo, ignoreUnbindable);
 		} catch (IOException e) {
 			try {
 				iface.close();
@@ -101,7 +101,7 @@ public class NetworkInterface {
 	 * @param bindTo
 	 *            A comma-separated list of IP address to bind to
 	 */
-	public void setBindTo(String bindTo) throws IOException {
+	public void setBindTo(String bindTo, boolean ignoreUnbindable) throws IOException {
 		StringTokenizer bindToTokens = new StringTokenizer(bindTo, ",");
 		List bindToTokenList = new ArrayList();
 		while (bindToTokens.hasMoreTokens()) {
@@ -127,7 +127,14 @@ public class NetworkInterface {
 		acceptors.clear();
 		for (int serverSocketIndex = 0; serverSocketIndex < bindToTokenList.size(); serverSocketIndex++) {
 			ServerSocket serverSocket = new ServerSocket();
+                        try {
 			serverSocket.bind(new InetSocketAddress((String) bindToTokenList.get(serverSocketIndex), port));
+                        } catch (SocketException e) {
+                            if(ignoreUnbindable)
+                                continue;
+                            else
+                                throw e;
+                        }
 			Acceptor acceptor = new Acceptor(serverSocket);
 			acceptors.add(acceptor);
 		}

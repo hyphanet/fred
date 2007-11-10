@@ -117,7 +117,7 @@ public class FCPServer implements Runnable {
 		
 		NetworkInterface tempNetworkInterface = null;
 		try {
-			tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts, node.executor);
+			tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts, node.executor, false);
 		} catch (BindException be) {
 			Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
 			System.out.println("Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
@@ -232,7 +232,7 @@ public class FCPServer implements Runnable {
 		public void set(String val) throws InvalidConfigValueException {
 			if(!val.equals(get())) {
 				try {
-					node.getFCPServer().networkInterface.setBindTo(val);
+					node.getFCPServer().networkInterface.setBindTo(val, true);
 					node.getFCPServer().bindTo = val;
 				} catch (IOException e) {
 					// This is an advanced option for reasons of reducing clutter,

@@ -90,7 +90,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		public void set(String bindTo) throws InvalidConfigValueException {
 			if(!bindTo.equals(get())) {
 				try {
-					networkInterface.setBindTo(bindTo);
+					networkInterface.setBindTo(bindTo, false);
 					SimpleToadletServer.this.bindTo = bindTo;
 				} catch (IOException e) {
 					// This is an advanced option for reasons of reducing clutter,
@@ -342,7 +342,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");		
 		toadlets = new LinkedList();
 		
-		this.networkInterface = NetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor());
+		this.networkInterface = NetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor(), true);
 		
 		if(!enabled) {
 			Logger.normal(core, "Not starting FProxy as it's disabled");
