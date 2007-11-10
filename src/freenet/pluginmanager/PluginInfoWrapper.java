@@ -135,10 +135,9 @@ public class PluginInfoWrapper {
 					// Dump the thread? Would require post-1.4 features...
 				}
 			}
-		} else {
-			// Remove immediately
-			manager.removePlugin(this);
 		}
+		// always remove plugin
+		manager.removePlugin(this);
 	}
 	
 	/**
