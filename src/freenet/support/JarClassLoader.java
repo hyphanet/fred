@@ -129,7 +129,7 @@ public class JarClassLoader extends ClassLoader {
 				Class clazz = defineClass(name, classBytes, 0, classBytes.length);
 				return clazz;
 			}
-			return null;
+			throw new ClassNotFoundException("could not find jar entry for class " + name);
 		} catch (IOException e) {
 			throw new ClassNotFoundException(e.getMessage(), e);
 		}
