@@ -399,11 +399,21 @@ public class PluginManager {
 	 *             If anything goes wrong.
 	 */
 	private FredPlugin loadPlugin(String name, boolean refresh) throws PluginNotFoundException {
-		/* check if name contains a URL. */
 		URL pluginUrl = null;
-		try {
-			pluginUrl = new URL(name);
-		} catch (MalformedURLException mue1) {
+		/* check if name is a local file. */
+		File pluginFile = new File(name);
+		if (pluginFile.exists() && pluginFile.isFile()) {
+			try {
+				pluginUrl = pluginFile.toURI().toURL();
+			} catch (MalformedURLException e) {
+				throw new PluginNotFoundException("can not convert local path");
+			}
+		} else {
+			/* check if name contains a URL. */
+			try {
+				pluginUrl = new URL(name);
+			} catch (MalformedURLException mue1) {
+			}
 		}
 		if (pluginUrl == null) {
 			try {
@@ -424,7 +434,7 @@ public class PluginManager {
 		/* get plugin filename. */
 		String completeFilename = pluginUrl.getPath();
 		String filename = completeFilename.substring(completeFilename.lastIndexOf('/') + 1);
-		File pluginFile = new File(pluginDirectory, filename);
+		pluginFile = new File(pluginDirectory, filename);
 
 		/* check if file needs to be downloaded. */
 		if (logMINOR) {
