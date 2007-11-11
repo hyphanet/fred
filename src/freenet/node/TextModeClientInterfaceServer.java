@@ -47,7 +47,7 @@ public class TextModeClientInterfaceServer implements Runnable {
         this.bindTo=bindTo;
         this.allowedHosts = allowedHosts;
         this.isEnabled=true;
-	networkInterface = NetworkInterface.create(port, bindTo, allowedHosts, n.executor, true);
+	networkInterface = NetworkInterface.create(port, bindTo, allowedHosts, n.executor, false);
     }
     
     void start() {
@@ -141,7 +141,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     	}
     	
     	public String get() {
-    		if(core.getTextModeClientInterface()!=null)
+    		if(core.getTextModeClientInterface() != null)
     			return core.getTextModeClientInterface().bindTo;
     		else
     			return NetworkInterface.DEFAULT_BIND_TO;
@@ -150,7 +150,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     	public void set(String val) throws InvalidConfigValueException {
     		if(val.equals(get())) return;
 		try {
-			core.getTextModeClientInterface().networkInterface.setBindTo(val, true);
+			core.getTextModeClientInterface().networkInterface.setBindTo(val, false);
 			core.getTextModeClientInterface().bindTo = val;
 		} catch (IOException e) {
 			throw new InvalidConfigValueException("could not change bind to!");
