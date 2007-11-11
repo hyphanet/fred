@@ -149,12 +149,12 @@ public class TextModeClientInterfaceServer implements Runnable {
     	
     	public void set(String val) throws InvalidConfigValueException {
     		if(val.equals(get())) return;
-    		try {
-				core.getTextModeClientInterface().networkInterface.setBindTo(val, false);
-				core.getTextModeClientInterface().bindTo = val;
-			} catch (IOException e) {
-				throw new InvalidConfigValueException("could not change bind to!");
-			}
+		try {
+			core.getTextModeClientInterface().networkInterface.setBindTo(val, true);
+			core.getTextModeClientInterface().bindTo = val;
+		} catch (IOException e) {
+			throw new InvalidConfigValueException("could not change bind to!");
+		}
     	}
     }
     
