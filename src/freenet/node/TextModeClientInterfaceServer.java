@@ -47,7 +47,7 @@ public class TextModeClientInterfaceServer implements Runnable {
         this.bindTo=bindTo;
         this.allowedHosts = allowedHosts;
         this.isEnabled=true;
-	networkInterface = NetworkInterface.create(port, bindTo, allowedHosts, n.executor, false);
+        networkInterface = NetworkInterface.create(port, bindTo, allowedHosts, n.executor, true);
     }
     
     void start() {
