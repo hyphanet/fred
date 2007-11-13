@@ -3,8 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Decode encoded URLs (or parts of URLs). @see URLEncoder.
@@ -40,13 +41,13 @@ public class URLDecoder
 		if (s.length() == 0)
 			return "";
 		int len = s.length();
-		StringWriter decoded = new StringWriter();
+		ByteArrayOutputStream decodedBytes = new ByteArrayOutputStream();
 		boolean hasDecodedSomething = false;
 
 		for (int i = 0; i < len; i++) {
 			char c = s.charAt(i);
 			if (Character.isLetterOrDigit(c))
-				decoded.write(c);
+				decodedBytes.write(c);
 			else if (c == '%') {
 				if (i >= len - 2) {
 					throw new URLEncodedFormatException(s);
@@ -61,25 +62,34 @@ public class URLDecoder
 					long read = Fields.hexToLong(hexval);
 					if (read == 0)
 						throw new URLEncodedFormatException("Can't encode" + " 00");
-					decoded.write((int) read);
+					decodedBytes.write((int) read);
 					hasDecodedSomething = true;
 				} catch (NumberFormatException nfe) {
 					// Not encoded?
 					if(tolerant && !hasDecodedSomething) {
-						decoded.write('%');
-						decoded.write(hexval);
-						continue;
+						try {
+							byte[] buf = ('%'+hexval).getBytes("UTF-8");
+							decodedBytes.write(buf, 0, buf.length);
+							continue;
+						} catch (UnsupportedEncodingException e) {
+							throw new Error(e);
+						}
 					}
 					
 					throw new URLEncodedFormatException("Not a two character hex % escape: "+hexval+" in "+s);
 				}
 			} else {
-				decoded.write(c);
+				try {
+					byte[] encoded = (""+c).getBytes("UTF-8");
+					decodedBytes.write(encoded, 0, encoded.length);
+				} catch (UnsupportedEncodingException e) {
+					throw new Error(e);
+				}
 			}
 		}
 		try {
-			decoded.close();
-			return decoded.toString();
+			decodedBytes.close();
+			return new String(decodedBytes.toByteArray(), "utf-8");
 		} catch (IOException ioe1) {
 			/* if this throws something's wrong */
 		}
