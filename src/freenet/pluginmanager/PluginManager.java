@@ -259,11 +259,12 @@ public class PluginManager {
 			/* Windows, maybe? */
 			lastSlash = pluginSpecification.lastIndexOf('\\');
 		}
+		File pluginDirectory = new File(node.getNodeDir(), "plugins");
 		if (lastSlash == -1) {
 			/* it's an official plugin! */
-			pluginFile = new File("plugins", pluginSpecification + ".jar.url");
+			pluginFile = new File(pluginDirectory, pluginSpecification + ".jar.url");
 		} else {
-			pluginFile = new File("plugins", pluginSpecification.substring(lastSlash + 1));
+			pluginFile = new File(pluginDirectory, pluginSpecification.substring(lastSlash + 1));
 		}
 		if (pluginFile.exists()) {
 			pluginFile.delete();
@@ -426,11 +427,11 @@ public class PluginManager {
 		/* check if name is a local file. */
 		File pluginFile = new File(name);
 		if (pluginFile.exists() && pluginFile.isFile()) {
-                        try {
-                            pluginUrl = pluginFile.toURI().toURL();
-                        } catch (MalformedURLException e) {
-                            throw new PluginNotFoundException("can not convert local path");
-                        }
+			try {
+				pluginUrl = pluginFile.toURI().toURL();
+			} catch (MalformedURLException e) {
+				throw new PluginNotFoundException("can not convert local path");
+			}
 		} else {
 			/* check if name contains a URL. */
 			try {
@@ -448,7 +449,7 @@ public class PluginManager {
 		}
 
 		/* check for plugin directory. */
-		File pluginDirectory = new File("plugins");
+		File pluginDirectory = new File(node.getNodeDir(), "plugins");
 		if ((pluginDirectory.exists() && !pluginDirectory.isDirectory()) || (!pluginDirectory.exists() && !pluginDirectory.mkdirs())) {
 			Logger.error(this, "could not create plugin directory");
 			throw new PluginNotFoundException("could not create plugin directory");
