@@ -55,6 +55,12 @@ public class BookmarkManager {
 							"USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/36/"),
 							"Entry point (old, large index, hasn't been updated for a while)",
 							node.alerts));
+			
+			indexes.addBookmark(new BookmarkItem(
+					new FreenetURI(
+							"USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/Ultimate-Freenet-Index/1/"),
+							"The Ultimate FreeNet Index (new one page index)",
+							node.alerts));
 
 			
 			BookmarkCategory flog = (BookmarkCategory) defaultRoot.addBookmark(new BookmarkCategory("Freenet devel's flogs"));
