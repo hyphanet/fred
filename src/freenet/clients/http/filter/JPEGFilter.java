@@ -68,7 +68,10 @@ public class JPEGFilter implements ContentDataFilter {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Need to modify JPEG...");
 		Bucket filtered = bf.makeBucket(data.size());
-		return readFilter(data, bf, charset, otherParams, cb, deleteComments, deleteExif, new BufferedOutputStream(filtered.getOutputStream()));
+		OutputStream os = new BufferedOutputStream(filtered.getOutputStream());
+		Bucket ret = readFilter(data, bf, charset, otherParams, cb, deleteComments, deleteExif, os);
+		os.close();
+		return ret;
 	}
 	
 	public Bucket readFilter(Bucket data, BucketFactory bf, String charset,
