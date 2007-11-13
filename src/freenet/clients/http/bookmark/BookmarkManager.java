@@ -34,7 +34,7 @@ public class BookmarkManager {
 			BookmarkCategory indexes = (BookmarkCategory) defaultRoot.addBookmark(new BookmarkCategory("Indexes"));
 			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
-							"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/28/"),
+							"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/33/"),
 							"Another Index (freesites with categories but no descriptions)",
 							node.alerts));
 
