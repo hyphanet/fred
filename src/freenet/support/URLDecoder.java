@@ -46,9 +46,7 @@ public class URLDecoder
 
 		for (int i = 0; i < len; i++) {
 			char c = s.charAt(i);
-			if (Character.isLetterOrDigit(c))
-				decodedBytes.write(c);
-			else if (c == '%') {
+			if (c == '%') {
 				if (i >= len - 2) {
 					throw new URLEncodedFormatException(s);
 				}
