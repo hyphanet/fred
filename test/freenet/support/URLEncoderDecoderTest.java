@@ -27,8 +27,8 @@ import junit.framework.TestCase;
  */
 public class URLEncoderDecoderTest extends TestCase {
 
-	private final String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
-	private final String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
+	public static final String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
+	public static final String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
 			
 	/**
 	 * Tests if URLEncode.encode(String) and
