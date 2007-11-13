@@ -27,8 +27,8 @@ import junit.framework.TestCase;
  */
 public class URLEncoderDecoderTest extends TestCase {
 
-	private String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
-	private String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
+	private final String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
+	private final String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
 			
 	/**
 	 * Tests if URLEncode.encode(String) and
@@ -46,7 +46,8 @@ public class URLEncoderDecoderTest extends TestCase {
 				//no chars
 				""};
 		try {
-			assertTrue(areCorrectlyEncodedDecoded(toEncode));
+			assertTrue(areCorrectlyEncodedDecoded(toEncode, true));
+			assertTrue(areCorrectlyEncodedDecoded(toEncode, false));
 		} catch (URLEncodedFormatException anException) {
 			fail("Not expected exception thrown : " + anException.getMessage()); }
 	}
@@ -60,7 +61,8 @@ public class URLEncoderDecoderTest extends TestCase {
 	public void testEncodeDecodeString_notSafeAdvChars() {
 		String[] toEncode = {stressedUTF_8Chars};
 		try {
-			assertTrue(areCorrectlyEncodedDecoded(toEncode));
+			assertTrue(areCorrectlyEncodedDecoded(toEncode, true));
+			assertTrue(areCorrectlyEncodedDecoded(toEncode, false));
 		} catch (URLEncodedFormatException anException) {
 			fail("Not expected exception thrown : " + anException.getMessage()); }
 	}
@@ -73,15 +75,15 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * @return true means to be tolerant of bogus escapes
 	 * @throws URLEncodedFormatException
 	 */
-	private boolean areCorrectlyEncodedDecoded(String[] toEncode) throws URLEncodedFormatException {
+	private boolean areCorrectlyEncodedDecoded(String[] toEncode, boolean withLetters) throws URLEncodedFormatException {
 		boolean retValue = true;
 		String[] encoded = new String[toEncode.length];
 		//encoding
 		for (int i = 0; i < encoded.length; i++)
-			encoded[i] = URLEncoder.encode(toEncode[i],false);
+			encoded[i] = URLEncoder.encode(toEncode[i],withLetters);
 		//decoding
 		for (int i = 0; i < encoded.length; i++)
-			retValue &= (URLDecoder.decode(encoded[i],false)).equals(toEncode[i]);
+			retValue &= (URLDecoder.decode(encoded[i],withLetters)).equals(toEncode[i]);
 		return retValue;
 	}
 	
