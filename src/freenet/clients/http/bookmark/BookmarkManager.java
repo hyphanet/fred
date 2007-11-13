@@ -35,13 +35,13 @@ public class BookmarkManager {
 			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
 							"USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/33/"),
-							"Another Index (freesites with categories but no descriptions)",
+							"Another Index (large categorised index, many sites have no description)",
 							node.alerts));
 
 			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
 							"USK@RJnh1EnvOSPwOWVRS2nyhC4eIQkKoNE5hcTv7~yY-sM,pOloLxnKWM~AL24iDMHOAvTvCqMlB-p2BO9zK96TOZA,AQACAAE/index_fr/21/"),
-							"Index des sites Français (french freesites with descriptions but no categories)",
+							"Index des sites Français (small French index with descriptions)",
 							node.alerts));
 
 			indexes.addBookmark(new BookmarkItem(
