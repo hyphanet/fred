@@ -98,7 +98,7 @@ public class JPEGFilter implements ContentDataFilter {
 			
 			boolean finished = false;
 			int forceMarkerType = -1;
-			while(!finished) {
+			while(dos == null || !finished) {
 				if(baos != null)
 					baos.reset();
 				int markerType;
@@ -110,9 +110,13 @@ public class JPEGFilter implements ContentDataFilter {
 					if(markerStart == -1) {
 						// No more chunks to scan.
 						break;
+					} else if(finished) {
+						if(logMINOR)
+							Logger.minor(this, "More data after EOI, copying to truncate");
+						return null;
 					}
 					if(markerStart != 0xFF) {
-						throwError("Invalid marker", "The file includes an invalid marker "+Integer.toHexString(markerStart)+" and cannot be parsed further.");
+						throwError("Invalid marker", "The file includes an invalid marker start "+Integer.toHexString(markerStart)+" and cannot be parsed further.");
 					}
 					if(baos != null) baos.write(0xFF);
 					markerType = dis.readUnsignedByte();
@@ -257,9 +261,7 @@ public class JPEGFilter implements ContentDataFilter {
 					skipRest(blockLength, countAtStart, cis, dis, dos, "comment");
 				} else if(markerType == 0xD9) {
 					// End of image
-					if(dos != null) {
-						finished = true;
-					}
+					finished = true;
 					if(logMINOR)
 						Logger.minor(this, "End of image");
 				} else {
