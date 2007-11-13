@@ -59,7 +59,7 @@ public class URLEncoder {
 	 * @return      Encoded version of string
 	 */
 	public static String encode(String s, boolean ascii) {
-		return encode(s, null, false);
+		return encode(s, null, ascii);
 	}
 
 }
