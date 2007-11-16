@@ -198,6 +198,7 @@ public class BulkTransmitter {
 					cancel();
 					return false;
 				}
+				continue;
 			}
 			// Send a packet
 			byte[] buf = prb.getBlockData(blockNo);
