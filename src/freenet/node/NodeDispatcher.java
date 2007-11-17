@@ -868,16 +868,16 @@ public class NodeDispatcher implements Dispatcher {
 
 		try {
 			if(origSource != null) {
-			// Send a completion trace - before forking
-			PeerNode[] peers = node.getConnectedPeers();
-			Message trace =
-				DMT.createFNPProbeTrace(id, target, nearest, best, ctx.htl, counter, node.getLocation(), node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), ctx.forkCount, linearCounter, "replying", src == null ? -1 : src.swapIdentifier);
-			trace.addSubMessage(sub);
-			try {
-				origSource.sendAsync(trace, null, 0, null);
-			} catch (NotConnectedException e1) {
-				// Ignore
-			}
+				// Send a completion trace - before forking
+				PeerNode[] peers = node.getConnectedPeers();
+				Message trace =
+					DMT.createFNPProbeTrace(id, target, nearest, best, ctx.htl, counter, node.getLocation(), node.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), ctx.forkCount, linearCounter, "replying", src == null ? -1 : src.swapIdentifier);
+				trace.addSubMessage(sub);
+				try {
+					origSource.sendAsync(trace, null, 0, null);
+				} catch (NotConnectedException e1) {
+					// Ignore
+				}
 			}
 		} catch (Throwable t) {
 			Logger.error(this, "Could not send completion trace: "+t, t);
