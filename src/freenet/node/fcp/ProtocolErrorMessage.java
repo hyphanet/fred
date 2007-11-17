@@ -53,6 +53,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int DUPLICATE_PEER_REF = 29;
 	static final int OPENNET_DISABLED = 30;
 	static final int DARKNET_ONLY = 31;
+	static final int NO_SUCH_PLUGIN = 32;  
 	
 	final int code;
 	final String extra;
@@ -124,6 +125,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Opennet is currently disabled in the node's configuration";
 		case DARKNET_ONLY:
 			return "Operation only available on a darknet peer";
+		case NO_SUCH_PLUGIN:
+			return "No such plugin";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";

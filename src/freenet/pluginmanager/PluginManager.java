@@ -346,6 +346,22 @@ public class PluginManager {
 	}
 	
 	/**
+	 * look for PluginInfo for a Plugin with given classname
+	 * @param plugname
+	 * @return the PluginInfo or null if not found
+	 */
+	public PluginInfoWrapper getPluginInfo(String plugname) {
+		synchronized (pluginWrappers) {
+			for(int i=0;i<pluginWrappers.size();i++) {
+				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
+				if (pi.getPluginClassName().equals(plugname))
+					return pi;
+			}
+		}
+		return null;
+	}
+	
+	/**
 	 * look for a FCPPlugin with given classname
 	 * @param plugname
 	 * @return the plugin or null if not found
