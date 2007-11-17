@@ -1814,6 +1814,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 							(msg.indexOf("LogFileNotFoundException") >= 0 || msg.indexOf("DbChecksumException") >= 0)
 							|| msg.indexOf("RunRecoveryException") >= 0)) {
 				System.err.println("Corrupt database! Will be reconstructed on restart");
+				Logger.error(this, "Corrupt database! Will be reconstructed on restart");
 				try {
 					reconstructFile.createNewFile();
 				} catch (IOException e) {
