@@ -91,25 +91,29 @@ public abstract class FCPMessage {
 			return new WatchGlobal(fs);
 		if(name.equals("Void"))
 			return null;
+
 		// We reached here? Must be a plugin. find it
-		
+		// if pluginmanager == null it is *not* full access or a bug ;)
 		// plugins.HelloFCP.HelloFCP.Ping
-		// split at last point
-		int lp = name.lastIndexOf('.'); 
-		if (lp > 2) {
-			String plugname = name.substring(0, lp);
-			String plugcmd = name.substring(lp+1);
-			
-			System.err.println("plugname: " + plugname);
-			System.err.println("plugcmd: " + plugcmd);
 		
-			FredPluginFCP plug = pluginmanager.getFCPPlugin(plugname);
-			if (plug != null) {
-				System.err.println("plug found: " + plugname);
-				FCPMessage msg = plug.create(plugcmd, fs);
-				if (msg != null) {
-					System.err.println("plug cmd seems valid: " + plugcmd);
-					return msg;
+		if (pluginmanager != null) {			
+			// split at last point
+			int lp = name.lastIndexOf('.'); 
+			if (lp > 2) {
+				String plugname = name.substring(0, lp);
+				String plugcmd = name.substring(lp+1);
+			
+				System.err.println("plugname: " + plugname);
+				System.err.println("plugcmd: " + plugcmd);
+		
+				FredPluginFCP plug = pluginmanager.getFCPPlugin(plugname);
+				if (plug != null) {
+					System.err.println("plug found: " + plugname);
+					FCPMessage msg = plug.create(plugcmd, fs);
+					if (msg != null) {
+						System.err.println("plug cmd seems valid: " + plugcmd);
+						return msg;
+					}
 				}
 			}
 		}
