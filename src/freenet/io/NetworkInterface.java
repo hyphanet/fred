@@ -91,12 +91,16 @@ public class NetworkInterface {
 	 * @param allowedHosts
 	 *            A comma-separated list of allowed addresses
 	 */
-	private NetworkInterface(int port, String allowedHosts, Executor executor) throws IOException {
+	protected NetworkInterface(int port, String allowedHosts, Executor executor) throws IOException {
 		this.port = port;
 		this.allowedHosts = new AllowedHosts(allowedHosts);
 		this.executor = executor;
 	}
 
+	protected ServerSocket createServerSocket() throws IOException {
+		return new ServerSocket();
+	}
+	
 	/**
 	 * Sets the list of IP address this network interface binds to.
 	 * 
@@ -128,7 +132,7 @@ public class NetworkInterface {
 		}
 		acceptors.clear();
 		for (int serverSocketIndex = 0; serverSocketIndex < bindToTokenList.size(); serverSocketIndex++) {
-			ServerSocket serverSocket = new ServerSocket();
+			ServerSocket serverSocket = createServerSocket();
                         try {
                             serverSocket.bind(new InetSocketAddress((String) bindToTokenList.get(serverSocketIndex), port));
                         } catch (SocketException e) {
