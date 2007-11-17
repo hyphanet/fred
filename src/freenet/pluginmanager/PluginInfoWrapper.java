@@ -20,6 +20,7 @@ public class PluginInfoWrapper {
 	private boolean isIPDetectorPlugin;
 	private boolean isPortForwardPlugin;
 	private boolean isMultiplePlugin;
+	private boolean isFCPPlugin;
 	private String filename;
 	private HashSet toadletLinks=new HashSet();
 	private boolean stopping = false;
@@ -39,6 +40,7 @@ public class PluginInfoWrapper {
 		isIPDetectorPlugin = (plug instanceof FredPluginIPDetector);
 		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
 		isMultiplePlugin = (plug instanceof FredPluginMultiple);
+		isFCPPlugin = (plug instanceof FredPluginFCP);
 	}
 
 	void setThread(Thread ps) {
@@ -155,6 +157,10 @@ public class PluginInfoWrapper {
 
 	public boolean isMultiplePlugin() {
 		return isMultiplePlugin;
+	}
+	
+	public boolean isFCPPlugin() {
+		return isFCPPlugin;
 	}
 
 	public synchronized boolean isStopping() {

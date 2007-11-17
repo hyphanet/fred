@@ -28,7 +28,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int FREENET_URI_PARSE_ERROR = 4;
 	static final int MISSING_FIELD = 5;
 	static final int ERROR_PARSING_NUMBER = 6;
-	static final int INVALID_MESSAGE = 7;
+	public static final int INVALID_MESSAGE = 7;
 	static final int INVALID_FIELD = 8;
 	static final int FILE_NOT_FOUND = 9;
 	static final int DISK_TARGET_EXISTS = 10;

@@ -344,6 +344,22 @@ public class PluginManager {
 		}
 		return out;
 	}
+	
+	/**
+	 * look for a FCPPlugin with given classname
+	 * @param plugname
+	 * @return the plugin or null if not found
+	 */
+	public FredPluginFCP getFCPPlugin(String plugname) {
+		synchronized (pluginWrappers) {
+			for(int i=0;i<pluginWrappers.size();i++) {
+				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
+				if (pi.isFCPPlugin() && pi.getPluginClassName().equals(plugname))
+					return (FredPluginFCP) pi.plug;
+			}
+		}
+		return null;
+	}
 
 	public String handleHTTPGet(String plugin, HTTPRequest request) throws PluginHTTPException {
 		FredPlugin handler = null;

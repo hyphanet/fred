@@ -54,7 +54,7 @@ public class FCPConnectionHandler {
 	final FCPServer server;
 	final Socket sock;
 	final FCPConnectionInputHandler inputHandler;
-	final FCPConnectionOutputHandler outputHandler;
+	public final FCPConnectionOutputHandler outputHandler;
 	private boolean isClosed;
 	private boolean inputClosed;
 	private boolean outputClosed;

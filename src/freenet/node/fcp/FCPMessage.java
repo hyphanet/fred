@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import freenet.node.Node;
+import freenet.pluginmanager.FredPluginFCP;
+import freenet.pluginmanager.PluginManager;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BucketFactory;
@@ -34,7 +36,7 @@ public abstract class FCPMessage {
 	/**
 	 * Create a message from a SimpleFieldSet, and the message's name, if possible. 
 	 */
-	public static FCPMessage create(String name, SimpleFieldSet fs, BucketFactory bfTemp, PersistentTempBucketFactory bfPersistent) throws MessageInvalidException {
+	public static FCPMessage create(String name, SimpleFieldSet fs, BucketFactory bfTemp, PersistentTempBucketFactory bfPersistent, PluginManager pluginmanager) throws MessageInvalidException {
 		if(name.equals(AddPeer.NAME))
 			return new AddPeer(fs);
 		if(name.equals(ClientGetMessage.NAME))
@@ -87,6 +89,28 @@ public abstract class FCPMessage {
 			return new WatchGlobal(fs);
 		if(name.equals("Void"))
 			return null;
+		// We reached here? Must be a plugin. find it
+		
+		// plugins.HelloFCP.HelloFCP.Ping
+		// split at last point
+		int lp = name.lastIndexOf('.'); 
+		if (lp > 2) {
+			String plugname = name.substring(0, lp);
+			String plugcmd = name.substring(lp+1);
+			
+			System.err.println("plugname: " + plugname);
+			System.err.println("plugcmd: " + plugcmd);
+		
+			FredPluginFCP plug = pluginmanager.getFCPPlugin(plugname);
+			if (plug != null) {
+				System.err.println("plug found: " + plugname);
+				FCPMessage msg = plug.create(plugcmd, fs);
+				if (msg != null) {
+					System.err.println("plug cmd seems valid: " + plugcmd);
+					return msg;
+				}
+			}
+		}
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null, false);
 	}
 	
@@ -95,7 +119,7 @@ public abstract class FCPMessage {
 	 * Usefull for FCPClients
 	 */
 	public static FCPMessage create(String name, SimpleFieldSet fs) throws MessageInvalidException {
-		return FCPMessage.create(name, fs, null, null);
+		return FCPMessage.create(name, fs, null, null, null);
 	}
 
 	/** Do whatever it is that we do with this type of message. 
