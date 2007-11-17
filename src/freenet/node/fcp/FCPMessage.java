@@ -36,7 +36,7 @@ public abstract class FCPMessage {
 	/**
 	 * Create a message from a SimpleFieldSet, and the message's name, if possible. 
 	 */
-	public static FCPMessage create(String name, SimpleFieldSet fs, BucketFactory bfTemp, PersistentTempBucketFactory bfPersistent, PluginManager pluginmanager) throws MessageInvalidException {
+	public static FCPMessage create(String name, SimpleFieldSet fs, BucketFactory bfTemp, PersistentTempBucketFactory bfPersistent, PluginManager manager, boolean fullaccess) throws MessageInvalidException {
 		if(name.equals(AddPeer.NAME))
 			return new AddPeer(fs);
 		if(name.equals(ClientGetMessage.NAME))
@@ -93,10 +93,8 @@ public abstract class FCPMessage {
 			return null;
 
 		// We reached here? Must be a plugin. find it
-		// if pluginmanager == null it is *not* full access or a bug ;)
-		// plugins.HelloFCP.HelloFCP.Ping
 		
-		if (pluginmanager != null) {			
+		if (manager != null) {			
 			// split at last point
 			int lp = name.lastIndexOf('.'); 
 			if (lp > 2) {
@@ -106,10 +104,10 @@ public abstract class FCPMessage {
 				System.err.println("plugname: " + plugname);
 				System.err.println("plugcmd: " + plugcmd);
 		
-				FredPluginFCP plug = pluginmanager.getFCPPlugin(plugname);
+				FredPluginFCP plug = manager.getFCPPlugin(plugname);
 				if (plug != null) {
 					System.err.println("plug found: " + plugname);
-					FCPMessage msg = plug.create(plugcmd, fs);
+					FCPMessage msg = plug.create(plugcmd, fs, fullaccess);
 					if (msg != null) {
 						System.err.println("plug cmd seems valid: " + plugcmd);
 						return msg;
@@ -125,7 +123,7 @@ public abstract class FCPMessage {
 	 * Usefull for FCPClients
 	 */
 	public static FCPMessage create(String name, SimpleFieldSet fs) throws MessageInvalidException {
-		return FCPMessage.create(name, fs, null, null, null);
+		return FCPMessage.create(name, fs, null, null, null, false);
 	}
 
 	/** Do whatever it is that we do with this type of message. 

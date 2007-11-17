@@ -21,6 +21,6 @@ import freenet.support.SimpleFieldSet;
  */
 public interface FredPluginFCP {
 	
-	FCPMessage create(String name, SimpleFieldSet fs);
+	FCPMessage create(String name, SimpleFieldSet fs, boolean fullacess);
 	
 }

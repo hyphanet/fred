@@ -82,11 +82,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			try {
 				if(Logger.shouldLog(Logger.DEBUG, this))
 					Logger.debug(this, "Incoming FCP message:\n"+messageType+'\n'+fs.toString());
-				// fcp commands from plugins are only visible if full access
-				if (handler.hasFullAccess())
-					msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.core.persistentTempBucketFactory, handler.server.node.pluginManager);
-				else
-					msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.core.persistentTempBucketFactory, null);
+				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.core.persistentTempBucketFactory, handler.server.node.pluginManager, handler.hasFullAccess());
 				if(msg == null) continue;
 			} catch (MessageInvalidException e) {
 				if(firstMessage) {
