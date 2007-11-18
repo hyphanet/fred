@@ -5,10 +5,13 @@ package freenet.node.fcp;
 
 import freenet.node.Node;
 import freenet.pluginmanager.PluginInfoWrapper;
-import freenet.pluginmanager.PluginManager;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
+/**
+ * can find a plugin that implements FredPluginFCP
+ * 
+ */
 public class GetPluginInfo extends FCPMessage {
 
 	static final String NAME = "GetPluginInfo";
@@ -35,13 +38,13 @@ public class GetPluginInfo extends FCPMessage {
 	
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		if(!handler.hasFullAccess()) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetPluginInfo requires full access", identifier, false);
+		if(detailed && !handler.hasFullAccess()) {
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetPluginInfo detailed requires full access", identifier, false);
 		}
 
-		PluginInfoWrapper pi = node.pluginManager.getPluginInfo(plugname);
+		PluginInfoWrapper pi = node.pluginManager.getFCPPluginInfo(plugname);
 		if (pi == null) {
-			handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist", identifier, false));
+			handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or os not a FCP plugin", identifier, false));
 		} else {
 			handler.outputHandler.queue(new PluginInfoMessage(pi, identifier, detailed));
 		}

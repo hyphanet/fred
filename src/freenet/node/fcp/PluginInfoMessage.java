@@ -20,20 +20,16 @@ public class PluginInfoMessage extends FCPMessage {
 	private final boolean detailed;
 
 	private final String classname;
-	private final String filename;
+	private final String originuri;
+	private final long started;
 
-	private final boolean isHTTP;
-	private final boolean isFCP;
 	
 	PluginInfoMessage(PluginInfoWrapper pi, String identifier, boolean detail) {
 		this.identifier = identifier;
 		this.detailed = detail;
-		
 		classname = pi.getPluginClassName();
-		filename = pi.getFilename();
-		
-		isHTTP = pi.isPproxyPlugin();
-		isFCP = pi.isFCPPlugin();
+		originuri = pi.getFilename();
+		started = pi.getStarted();
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -43,10 +39,9 @@ public class PluginInfoMessage extends FCPMessage {
 		sfs.putSingle("PluginName", classname);
 		
 		if (detailed) {
-			sfs.putSingle("FileName", filename);
-			
-			sfs.put("IsHTTPPlugin", isHTTP);
-			sfs.put("IsFCPPlugin", isFCP);
+			sfs.putSingle("OriginUri", originuri);
+			sfs.put("Started", started);
+			//sfs.putSingle("TempFilename", tempfilename);
 		}
 		return sfs;
 	}

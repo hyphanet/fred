@@ -346,11 +346,11 @@ public class PluginManager {
 	}
 	
 	/**
-	 * look for PluginInfo for a Plugin with given classname
+	 * look for PluginInfo for a FCPPlugin with given classname
 	 * @param plugname
 	 * @return the PluginInfo or null if not found
 	 */
-	public PluginInfoWrapper getPluginInfo(String plugname) {
+	public PluginInfoWrapper getFCPPluginInfo(String plugname) {
 		synchronized (pluginWrappers) {
 			for(int i=0;i<pluginWrappers.size();i++) {
 				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
