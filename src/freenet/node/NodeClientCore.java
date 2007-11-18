@@ -175,7 +175,7 @@ public class NodeClientCore implements Persistable {
 						return persistentTempBucketFactory.getDir().toString();
 					}
 					public void set(String val) throws InvalidConfigValueException {
-						if(!get().equals(val))
+						if(get().equals(val))
 							return;
 						// FIXME
 						throw new InvalidConfigValueException("Moving persistent temp directory on the fly not supported at present");
