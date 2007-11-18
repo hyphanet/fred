@@ -94,7 +94,7 @@ public class ConfigToadlet extends Toadlet {
 			ctx.getPageMaker().getContentNode(infobox).addChild("#", l10n("appliedSuccess"));
 		} else {
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle")));
-			HTMLNode content = infobox.addChild("div", "class", "infobox-content");
+			HTMLNode content = ctx.getPageMaker().getContentNode(infobox).addChild("div", "class", "infobox-content");
 			content.addChild("#", l10n("appliedFailureExceptions"));
 			content.addChild("br");
 			content.addChild("#", errbuf.toString());
