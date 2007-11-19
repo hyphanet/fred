@@ -89,7 +89,7 @@ public class BookmarkManager {
 	}
 
 	public class BookmarkCallback implements StringArrCallback {
-		private final Pattern pattern = Pattern.compile("/(.*/)([^/]*)=(.*=)?([A-Z]{3}@.*).*");
+		private final Pattern pattern = Pattern.compile("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
 
 		public String[] get() {
 			synchronized (BookmarkManager.this) {
@@ -106,18 +106,18 @@ public class BookmarkManager {
                                 // FIXME: remove
                                 if (matcher.matches() && matcher.groupCount() == 3) {
 
+                                	boolean hasAnActiveLink = false;
                                     makeParents(matcher.group(1));
                                     key = new FreenetURI(matcher.group(3));
+                                    String title = matcher.group(2);
+                                    if(title.endsWith("=|")) {
+                                    	title = title.substring(0, title.length()-2);
+                                    	hasAnActiveLink = true;
+                                    } else if(title.endsWith("=")) {
+                                    	title = title.substring(0, title.length()-1);
+                                    }
                                     addBookmark(matcher.group(1), new BookmarkItem(key,
-                                            matcher.group(2), false, node.alerts), false);
-
-                                } else if (matcher.matches() && matcher.groupCount() == 4) {
-
-                                    makeParents(matcher.group(1));
-                                    boolean hasAnActiveLink = "|=".equals(matcher.group(3));
-                                    key = new FreenetURI(matcher.group(4));
-                                    addBookmark(matcher.group(1), new BookmarkItem(key,
-                                            matcher.group(2), hasAnActiveLink, node.alerts), false);
+                                            title, hasAnActiveLink, node.alerts), false);
 
                                 } else {
                                     throw new InvalidConfigValueException(l10n("malformedBookmark"));
