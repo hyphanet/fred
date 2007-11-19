@@ -89,7 +89,7 @@ public class BookmarkManager {
 	}
 
 	public class BookmarkCallback implements StringArrCallback {
-		private final Pattern pattern = Pattern.compile("/(.*/)([^/]*)(=\\|?=?)([A-Z]{3}@.*).*");
+		private final Pattern pattern = Pattern.compile("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
 
 		public String[] get() {
 			synchronized (BookmarkManager.this) {
@@ -104,13 +104,18 @@ public class BookmarkManager {
 				try {
 					Matcher matcher = pattern.matcher(newVals[i]);
 					// FIXME: remove
-					if (matcher.matches() && matcher.groupCount() == 4) {
+					if (matcher.matches() && matcher.groupCount() == 3) {
 						
+						boolean hasAnActiveLink = false;
 						makeParents(matcher.group(1));
-						key = new FreenetURI(matcher.group(4));
+						key = new FreenetURI(matcher.group(3));
 						String title = matcher.group(2);
-						String middlebit = matcher.group(3);
-						boolean hasAnActiveLink = "=|=".equals(middlebit);
+						if(title.endsWith("=|")) {
+							title = title.substring(0, title.length()-2);
+							hasAnActiveLink = true;
+						} else if(title.endsWith("=")) {
+							title = title.substring(0, title.length()-1);
+						}
 						addBookmark(matcher.group(1), new BookmarkItem(key,
 								title, hasAnActiveLink, node.alerts), false);
 						
