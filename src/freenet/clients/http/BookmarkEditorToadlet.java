@@ -304,7 +304,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 				if("edit".equals(action)) {
 					bookmarkManager.renameBookmark(bookmarkPath, name);
-                                        boolean hasAnActivelink = req.getPartAsString("hasAnActivelink", 5).equalsIgnoreCase("on");
+                                        boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
 					if(bookmark instanceof BookmarkItem)
 						((BookmarkItem) bookmark).setKey(new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH)), hasAnActivelink);
 
@@ -316,7 +316,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 					Bookmark newBookmark;
 					if("addItem".equals(action)) {
 						FreenetURI key = new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH));
-                                                boolean hasAnActivelink = req.getPartAsString("hasAnActivelink", 5).equalsIgnoreCase("on");
+                                                boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
 						newBookmark = new BookmarkItem(key, name, hasAnActivelink, core.alerts);
 					} else
 						newBookmark = new BookmarkCategory(name);
