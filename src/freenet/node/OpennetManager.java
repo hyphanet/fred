@@ -88,11 +88,11 @@ public class OpennetManager {
 	/** Allow for future expansion. However at any given time all noderefs should be PADDED_NODEREF_SIZE */
 	static final int MAX_OPENNET_NODEREF_LENGTH = 32768;
 	
-	public OpennetManager(Node node, NodeCryptoConfig opennetConfig) throws NodeInitException {
+	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime) throws NodeInitException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.node = node;
 		crypto =
-			new NodeCrypto(node, true, opennetConfig);
+			new NodeCrypto(node, true, opennetConfig, startupTime);
 
 		File nodeFile = new File(node.nodeDir, "opennet-"+crypto.portNumber);
 		File backupNodeFile = new File("opennet-"+crypto.portNumber+".bak");

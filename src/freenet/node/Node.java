@@ -626,7 +626,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false);
 		sortOrder += NodeCryptoConfig.OPTION_COUNT;
-		darknetCrypto = new NodeCrypto(this, false, darknetConfig);
+		darknetCrypto = new NodeCrypto(this, false, darknetConfig, startupTime);
 
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
@@ -791,7 +791,7 @@ public class Node implements TimeSkewDetectorCallback {
 					if(val == (opennet != null)) return;
 					if(val) {
 						try {
-							o = opennet = new OpennetManager(Node.this, opennetCryptoConfig);
+							o = opennet = new OpennetManager(Node.this, opennetCryptoConfig, System.currentTimeMillis());
 						} catch (NodeInitException e) {
 							opennet = null;
 							throw new InvalidConfigValueException(e.getMessage());
@@ -812,7 +812,7 @@ public class Node implements TimeSkewDetectorCallback {
 		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 1 /* 0 = enabled */, true);
 		
 		if(opennetEnabled) {
-			opennet = new OpennetManager(this, opennetCryptoConfig);
+			opennet = new OpennetManager(this, opennetCryptoConfig, System.currentTimeMillis());
 			// Will be started later
 		} else {
 			opennet = null;

@@ -39,7 +39,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 	private boolean _isDone;
 	private boolean _active = true;
 	
-	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node) throws SocketException {
+	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime) throws SocketException {
 		super("UdpSocketHandler packet receiver thread on port " + listenPort);
 		this.node = node;
 		_bindTo = bindto;
@@ -63,7 +63,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 		dropRandom = new Random();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		tracker = new AddressTracker();
-		tracker.startSend(node.startupTime);
+		tracker.startSend(startupTime);
 	}
 
 	/** Must be called, or we will NPE in run() */

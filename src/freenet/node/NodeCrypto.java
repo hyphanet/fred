@@ -79,7 +79,7 @@ class NodeCrypto {
 	 * Get port number from a config, create socket and packet mangler
 	 * @throws NodeInitException 
 	 */
-	public NodeCrypto(Node node, boolean isOpennet, NodeCryptoConfig config) throws NodeInitException {
+	public NodeCrypto(Node node, boolean isOpennet, NodeCryptoConfig config, long startupTime) throws NodeInitException {
 
 		this.node = node;
 		this.config = config;
@@ -104,7 +104,7 @@ class NodeCrypto {
 			for(int i=0;i<200000;i++) {
 				int portNo = 1024 + random.nextInt(65535-1024);
 				try {
-					u = new UdpSocketHandler(portNo, bindto.getAddress(), node);
+					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime);
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
@@ -118,7 +118,7 @@ class NodeCrypto {
 				throw new NodeInitException(NodeInitException.EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
 		} else {
 			try {
-				u = new UdpSocketHandler(port, bindto.getAddress(), node);
+				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime);
 			} catch (Exception e) {
 				throw new NodeInitException(NodeInitException.EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
 			}
