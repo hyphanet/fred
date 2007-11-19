@@ -72,15 +72,22 @@ public class WelcomeToadlet extends Toadlet {
 	private void addCategoryToList(BookmarkCategory cat, HTMLNode list)
 	{
 		BookmarkItems items = cat.getItems();
+		if(items.size() > 0) {
+		// FIXME CSS noborder ...
+		HTMLNode table = list.addChild("li").addChild("table", new String[] { "border", "style" }, new String[] { "0", "border: none" });
 		for(int i = 0; i < items.size(); i++) {
-                        BookmarkItem item = items.get(i);
-			HTMLNode li = list.addChild("li", "class","item");
-			HTMLNode a = li.addChild("a", "href", '/' + item.getKey());
-                        if(item.hasAnActivelink()) {
-                            a.addChild("img", new String[] { "src", "height", "width", "alt"},
-                                new String[] { '/' + item.getKey() + "/activelink.png", "36px", "108px", "activelink"});
-                        }
-                        a.addChild("#", "  " + item.getName());
+			BookmarkItem item = items.get(i);
+			HTMLNode row = table.addChild("tr");
+			HTMLNode cell = row.addChild("td", "style", "border: none");
+			if(item.hasAnActivelink()) {
+				cell.addChild("a", "href", '/' + item.getKey())
+                	.addChild("img", new String[] { "src", "height", "width", "alt"},
+                			new String[] { '/' + item.getKey() + "/activelink.png", "36px", "108px", "activelink"});
+			} else
+				cell.addChild("#", " ");
+			cell = row.addChild("td", "style", "border: none");
+			cell.addChild("a", "href", '/' + item.getKey(), item.getName());
+		}
 		}
 
 		BookmarkCategories cats = cat.getSubCategories();
