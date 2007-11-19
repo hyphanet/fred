@@ -44,7 +44,7 @@ public class AddressTrackerItem {
 	/** The total number of packets received from this address */
 	private long packetsReceived;
 	
-	public AddressTrackerItem(long timeDefinitelyNoPacketsReceived, long timeDefinitelyNoPacketSent) {
+	public AddressTrackerItem(long timeDefinitelyNoPacketsReceived, long timeDefinitelyNoPacketsSent) {
 		timeFirstReceivedPacket = -1;
 		timeFirstSentPacket = -1;
 		timeLastReceivedPacket = -1;
