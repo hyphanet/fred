@@ -554,7 +554,7 @@ public class OpennetManager {
     		if(!br.receive()) {
     			Logger.error(this, "Failed to receive noderef bulk transfer for "+this);
    				return null;
-    		}    			
+    		}
     		byte[] noderef = new byte[realLength];
     		System.arraycopy(buf, 0, noderef, 0, realLength);
     		return noderef;
