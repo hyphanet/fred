@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import freenet.client.async.USKCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -16,7 +17,6 @@ import freenet.keys.USK;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.support.api.StringArrCallback;
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 public class BookmarkManager {
 
