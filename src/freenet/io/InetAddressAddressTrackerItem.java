@@ -19,8 +19,9 @@ import java.net.InetAddress;
 
 public class InetAddressAddressTrackerItem extends AddressTrackerItem {
 
-	public InetAddressAddressTrackerItem(long timeDefinitelyNoPackets, InetAddress addr) {
-		super(timeDefinitelyNoPackets);
+	public InetAddressAddressTrackerItem(long timeDefinitelyNoPacketsReceived, 
+			long timeDefinitelyNoPacketsSent, InetAddress addr) {
+		super(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent);
 		this.addr = addr;
 	}
 

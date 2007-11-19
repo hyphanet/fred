@@ -63,6 +63,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 		dropRandom = new Random();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		tracker = new AddressTracker();
+		tracker.startSend(node.startupTime);
 	}
 
 	/** Must be called, or we will NPE in run() */
@@ -75,6 +76,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 	}
 	
 	public void run() { // Listen for packets
+		tracker.startReceive(System.currentTimeMillis());
 		try {
 			runLoop();
 		} catch (Throwable t) {

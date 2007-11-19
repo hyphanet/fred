@@ -38,10 +38,12 @@ public class AddressTracker {
 	/** Maximum number of Item's of either type */
 	static final int MAX_ITEMS = 1000;
 	
-	private long timeDefinitelyNoPackets;
+	private long timeDefinitelyNoPacketsReceived;
+	private long timeDefinitelyNoPacketsSent;
 	
 	public AddressTracker() {
-		timeDefinitelyNoPackets = System.currentTimeMillis();
+		timeDefinitelyNoPacketsReceived = System.currentTimeMillis();
+		timeDefinitelyNoPacketsSent = System.currentTimeMillis();
 	}
 	
 	public void sentPacketTo(Peer peer) {
@@ -58,11 +60,12 @@ public class AddressTracker {
 		synchronized(this) {
 			PeerAddressTrackerItem peerItem = (PeerAddressTrackerItem) peerTrackers.get(peer);
 			if(peerItem == null) {
-				peerItem = new PeerAddressTrackerItem(timeDefinitelyNoPackets, peer);
+				peerItem = new PeerAddressTrackerItem(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent, peer);
 				if(peerTrackers.size() > MAX_ITEMS) {
 					peerTrackers.clear();
 					ipTrackers.clear();
-					timeDefinitelyNoPackets = now;
+					timeDefinitelyNoPacketsReceived = now;
+					timeDefinitelyNoPacketsSent = now;
 				}
 				peerTrackers.put(peer, peerItem);
 			}
@@ -72,11 +75,12 @@ public class AddressTracker {
 				peerItem.receivedPacket(now);
 			InetAddressAddressTrackerItem ipItem = (InetAddressAddressTrackerItem) ipTrackers.get(ip);
 			if(ipItem == null) {
-				ipItem = new InetAddressAddressTrackerItem(timeDefinitelyNoPackets, ip);
+				ipItem = new InetAddressAddressTrackerItem(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent, ip);
 				if(ipTrackers.size() > MAX_ITEMS) {
 					peerTrackers.clear();
 					ipTrackers.clear();
-					timeDefinitelyNoPackets = now;
+					timeDefinitelyNoPacketsReceived = now;
+					timeDefinitelyNoPacketsSent = now;
 				}
 				ipTrackers.put(ip, ipItem);
 			}
@@ -85,5 +89,13 @@ public class AddressTracker {
 			else
 				ipItem.receivedPacket(now);
 		}
+	}
+
+	public synchronized void startReceive(long now) {
+		timeDefinitelyNoPacketsReceived = now;
+	}
+
+	public synchronized void startSend(long now) {
+		timeDefinitelyNoPacketsSent = now;
 	}
 }

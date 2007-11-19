@@ -27,10 +27,14 @@ public class AddressTrackerItem {
 	/** The time at which the first packet was sent to this address. */
 	private long timeFirstSentPacket;
 	/** The earliest time, before timeFirstReceivedPacket, at which we know for 
-	 * certain that there was no packet sent or received. This may be the 
-	 * startup time of the node, or it may be later, if we have had to clear 
-	 * the tracker cache. */
-	private long timeDefinitelyNoPackets;
+	 * certain that there was no packet received. This is typically the startup 
+	 * time of the server socket. It may be later if the cache has to be 
+	 * flushed. */
+	private long timeDefinitelyNoPacketsReceived;
+	/** The earliest time, before timeFirstSentPacket, at which we know for 
+	 * certain that there was no packet sent. This is typically the startup 
+	 * time of the node. It may be later if the cache has to be flushed. */
+	private long timeDefinitelyNoPacketsSent;
 	/** The time at which we received the most recent packet */
 	private long timeLastReceivedPacket;
 	/** The time at which we sent the most recent packet */
@@ -40,14 +44,15 @@ public class AddressTrackerItem {
 	/** The total number of packets received from this address */
 	private long packetsReceived;
 	
-	public AddressTrackerItem(long timeDefinitelyNoPackets) {
+	public AddressTrackerItem(long timeDefinitelyNoPacketsReceived, long timeDefinitelyNoPacketSent) {
 		timeFirstReceivedPacket = -1;
 		timeFirstSentPacket = -1;
 		timeLastReceivedPacket = -1;
 		timeLastSentPacket = -1;
 		packetsSent = 0;
 		packetsReceived = 0;
-		this.timeDefinitelyNoPackets = timeDefinitelyNoPackets;
+		this.timeDefinitelyNoPacketsReceived = timeDefinitelyNoPacketsReceived;
+		this.timeDefinitelyNoPacketsSent = timeDefinitelyNoPacketsSent;
 	}
 	
 	public synchronized void sentPacket(long now) {
@@ -80,8 +85,12 @@ public class AddressTrackerItem {
 		return timeLastSentPacket;
 	}
 	
-	public synchronized long timeDefinitelyNoPackets() {
-		return timeDefinitelyNoPackets;
+	public synchronized long timeDefinitelyNoPacketsSent() {
+		return timeDefinitelyNoPacketsSent;
+	}
+	
+	public synchronized long timeDefinitelyNoPacketsReceived() {
+		return timeDefinitelyNoPacketsReceived;
 	}
 	
 	public synchronized long packetsSent() {

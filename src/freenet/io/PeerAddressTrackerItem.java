@@ -21,8 +21,9 @@ public class PeerAddressTrackerItem extends AddressTrackerItem {
 	
 	public final Peer peer;
 
-	public PeerAddressTrackerItem(long timeDefinitelyNoPackets, Peer peer) {
-		super(timeDefinitelyNoPackets);
+	public PeerAddressTrackerItem(long timeDefinitelyNoPacketsReceived, 
+			long timeDefinitelyNoPacketsSent, Peer peer) {
+		super(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent);
 		this.peer = peer;
 	}
 
