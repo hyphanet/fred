@@ -2340,7 +2340,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return new Hashtable(localNodeSentMessageTypes);
 	}
 	
-	public Hashtable getLocalNodeReceivedMessagesFromStatistic () {
+	// Must be synchronized *during the copy*
+	public synchronized Hashtable getLocalNodeReceivedMessagesFromStatistic () {
 		return new Hashtable(localNodeReceivedMessageTypes);
 	}
 
