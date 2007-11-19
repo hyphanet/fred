@@ -106,7 +106,7 @@ public class StartupToadletServer implements Runnable {
                     HTMLNode logInfoboxContent = ctx.getPageMaker().getContentNode(logInfobox);
                     String content = FileUtil.readUTF(logs, logs.length()-2000);
                     int eol = content.indexOf('\n');
-                    logInfoboxContent.addChild("%", content.substring((eol < 0 ? 0 : eol)).replaceAll("\n", "<br>\n"));
+                    logInfoboxContent.addChild("%", content.substring((eol < 0 ? 0 : eol+1)).replaceAll("\n", "<br>\n"));
                 }
                 //TODO: send a Retry-After header ?
                 writeHTMLReply(ctx, 503, desc, pageNode.generate());
