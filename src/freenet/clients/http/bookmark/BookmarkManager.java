@@ -48,7 +48,7 @@ public class BookmarkManager {
 			indexes.addBookmark(new BookmarkItem(
 					new FreenetURI(
 							"USK@cvZEZFWynx~4hmakaimts4Ruusl9mEUpU6mSvNvZ9p8,K2Xopc6GWPkKrs27EDuqzTcca2bE5H2YAXw0qKnkON4,AQACAAE/TSOF/2/"),
-							"The Start Of Freenet (another human-maintained index, so far relatively small)", false,
+							"The Start Of Freenet (another human-maintained index, so far relatively small)", true,
 							node.alerts));
 
 			indexes.addBookmark(new BookmarkItem(
