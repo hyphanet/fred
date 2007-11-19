@@ -463,6 +463,8 @@ public class PproxyToadlet extends Toadlet {
 		HTMLNode addOfficialPluginContent = addOfficialPluginBox.addChild("div", "class", "infobox-content");
 		HTMLNode addOfficialForm = toadletContext.addFormChild(addOfficialPluginContent, ".", "addOfficialPluginForm");
 		addOfficialForm.addChild("div", l10n("loadOfficialPluginText"));
+		// FIXME CSS-ize this
+		addOfficialForm.addChild("p").addChild("b").addChild("font", new String[] { "color" }, new String[] { "red" }, l10n("loadOfficialPluginWarning"));
 		addOfficialForm.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
 		HTMLNode selectNode = addOfficialForm.addChild("select", "name", "plugin-name");
 		Iterator/*<String>*/ availablePluginIterator = availablePlugins.iterator();
