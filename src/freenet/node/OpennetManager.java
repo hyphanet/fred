@@ -29,7 +29,6 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
-import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.io.ByteArrayRandomAccessThing;
