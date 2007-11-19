@@ -533,7 +533,7 @@ public class OpennetManager {
 		if(msg.getSpec() == DMT.FNPOpennetCompletedAck)
 			return null; // Acked (only possible if !isReply)
 		
-			// New format
+		// Noderef bulk transfer
     		long xferUID = msg.getLong(DMT.TRANSFER_UID);
     		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
     		int realLength = msg.getInt(DMT.NODEREF_LENGTH);
