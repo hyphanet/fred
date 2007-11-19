@@ -89,7 +89,7 @@ public class BookmarkManager {
 	}
 
 	public class BookmarkCallback implements StringArrCallback {
-		private final Pattern pattern = Pattern.compile("/(.*/)([^/]*)(=|?=?)([A-Z]{3}@.*).*");
+		private final Pattern pattern = Pattern.compile("/(.*/)([^/]*)(=\\|?=?)([A-Z]{3}@.*).*");
 
 		public String[] get() {
 			synchronized (BookmarkManager.this) {
