@@ -19,23 +19,26 @@ public class BookmarkItem extends Bookmark {
 
 	private FreenetURI key;
 	private boolean updated;
+        private boolean hasAnActivelink = false;
 	private final BookmarkUpdatedUserAlert alert;
 	private final UserAlertManager alerts;
 
-	public BookmarkItem(FreenetURI k, String n, UserAlertManager uam)
+	public BookmarkItem(FreenetURI k, String n, boolean hasAnActivelink, UserAlertManager uam)
 			throws MalformedURLException {
 		this.key = k;
 		this.name = n;
+                this.hasAnActivelink = hasAnActivelink;
 		this.alerts = uam;
 		alert = new BookmarkUpdatedUserAlert();
 	}
 
-	public BookmarkItem(FreenetURI k, String n, String d, UserAlertManager uam)
+	public BookmarkItem(FreenetURI k, String n, String d, boolean hasAnActivelink, UserAlertManager uam)
 			throws MalformedURLException {
 
 		this.key = k;
 		this.name = n;
 		this.desc = d;
+                this.hasAnActivelink = hasAnActivelink;
 		this.alerts = uam;
 		alert = new BookmarkUpdatedUserAlert();
 	}
@@ -116,8 +119,9 @@ public class BookmarkItem extends Bookmark {
 		return key;
 	}
 
-	public synchronized void setKey(FreenetURI uri) {
+	public synchronized void setKey(FreenetURI uri, boolean hasAnActivelink) {
 		key = uri;
+                this.hasAnActivelink = hasAnActivelink;
 	}
 
 	public synchronized String getKeyType() {
@@ -133,7 +137,7 @@ public class BookmarkItem extends Bookmark {
 	}
 
 	public String toString() {
-		return this.name + '=' + this.key.toString();
+		return this.name + '=' + (hasAnActivelink ? "|=" : "=") + this.key.toString();
 	}
 
 	public synchronized void setEdition(long ed, NodeClientCore node) {
@@ -159,7 +163,12 @@ public class BookmarkItem extends Bookmark {
 				} else return false;
 			}
 			if(b.alerts != alerts) return false; // Belongs to a different node???
+                        if(b.hasAnActivelink != hasAnActivelink) return false;
 			return true;
 		} else return false;
 	}
+        
+        public boolean hasAnActivelink() {
+            return hasAnActivelink;
+}
 }

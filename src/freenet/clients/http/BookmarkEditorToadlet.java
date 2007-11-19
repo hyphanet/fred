@@ -15,6 +15,7 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.client.HighLevelSimpleClient;
+import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
@@ -212,9 +213,16 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 					form.addChild("br");
 					if (("edit".equals(action) && bookmark instanceof BookmarkItem) || "addItem".equals(action)) {
-						String key = (action.equals("edit") ? ((BookmarkItem) bookmark).getKey() : "");
+                                                BookmarkItem item = (BookmarkItem) bookmark;
+						String key = (action.equals("edit") ? item.getKey() : "");
 						form.addChild("label", "for", "key", (L10n.getString("BookmarkEditorToadlet.keyLabel") + ' '));
 						form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String []{"text", "key", "key", "50", key});
+                                                form.addChild("br");
+                                                form.addChild("label", "for", "hasAnActivelink", (L10n.getString("BookmarkEditorToadlet.hasAnActivelinkLabel") + ' '));
+                                                if(item.hasAnActivelink())
+                                                    form.addChild("input", new String[]{"type", "id", "name", "checked" }, new String[]{"checkbox", "hasAnActivelink", "hasAnActivelink", String.valueOf(item.hasAnActivelink()) });
+                                                else
+                                                    form.addChild("input", new String[]{"type", "id", "name"}, new String[]{"checkbox", "hasAnActivelink", "hasAnActivelink" });
 					}
 
 					form.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "bookmark",bookmarkPath});
@@ -296,8 +304,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 				if("edit".equals(action)) {
 					bookmarkManager.renameBookmark(bookmarkPath, name);
+                                        boolean hasAnActivelink = req.getPartAsString("hasAnActivelink", 5).equalsIgnoreCase("on");
 					if(bookmark instanceof BookmarkItem)
-						((BookmarkItem) bookmark).setKey(new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH)));
+						((BookmarkItem) bookmark).setKey(new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH)), hasAnActivelink);
 
 					HTMLNode successBox = content.addChild(pageMaker.getInfobox("infobox-success", L10n.getString("BookmarkEditorToadlet.changesSavedTitle")));
 					pageMaker.getContentNode(successBox).addChild("p", L10n.getString("BookmarkEditorToadlet.changesSaved"));
@@ -307,7 +316,8 @@ public class BookmarkEditorToadlet extends Toadlet {
 					Bookmark newBookmark;
 					if("addItem".equals(action)) {
 						FreenetURI key = new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH));
-						newBookmark = new BookmarkItem(key, name, core.alerts);
+                                                boolean hasAnActivelink = req.getPartAsString("hasAnActivelink", 5).equalsIgnoreCase("on");
+						newBookmark = new BookmarkItem(key, name, hasAnActivelink, core.alerts);
 					} else
 						newBookmark = new BookmarkCategory(name);
 

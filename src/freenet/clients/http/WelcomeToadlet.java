@@ -19,6 +19,7 @@ import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.clients.http.bookmark.BookmarkItems;
 import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkCategories;
+import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
@@ -72,11 +73,14 @@ public class WelcomeToadlet extends Toadlet {
 	{
 		BookmarkItems items = cat.getItems();
 		for(int i = 0; i < items.size(); i++) {
+                        BookmarkItem item = items.get(i);
 			HTMLNode li = list.addChild("li", "class","item");
-			HTMLNode a = li.addChild("a", "href", '/' + items.get(i).getKey());
-                        HTMLNode img = a.addChild("img", new String[] { "src", "height", "width", "alt"},
-                                new String[] { '/' + items.get(i).getKey() + "/activelink.png", "36px", "108px", "activelink"});
-                        img.addChild("#", "  " + items.get(i).getName());
+			HTMLNode a = li.addChild("a", "href", '/' + item.getKey());
+                        if(item.hasAnActivelink()) {
+                            a.addChild("img", new String[] { "src", "height", "width", "alt"},
+                                new String[] { '/' + item.getKey() + "/activelink.png", "36px", "108px", "activelink"});
+                        }
+                        a.addChild("#", "  " + item.getName());
 		}
 
 		BookmarkCategories cats = cat.getSubCategories();
