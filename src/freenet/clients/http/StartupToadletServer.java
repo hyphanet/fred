@@ -92,10 +92,11 @@ public class StartupToadletServer implements Runnable {
 		infoboxContent.addChild("#", "Your freenet node is starting up, please hold on.");
                 
                 final File logs = new File("wrapper.log");
-                if(logs.exists() && logs.isFile() && logs.canRead() && logs.length() > 2000) {
+                long logSize = logs.length();
+                if(logs.exists() && logs.isFile() && logs.canRead() && logSize > 0) {
                     HTMLNode logInfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-info", "Current status"));
                     HTMLNode logInfoboxContent = ctx.getPageMaker().getContentNode(logInfobox);
-                    String content = FileUtil.readUTF(logs, logs.length()-2000);
+                    String content = FileUtil.readUTF(logs, (logSize < 2000 ? 0 : logSize - 2000));
                     int eol = content.indexOf('\n');
                     logInfoboxContent.addChild("%", content.substring((eol < 0 ? 0 : eol+1)).replaceAll("\n", "<br>\n"));
                 }
