@@ -474,17 +474,9 @@ public class OpennetManager {
 	 * @throws NotConnectedException If the peer becomes disconnected while we are trying to send the noderef.
 	 */
 	public void sendOpennetRef(boolean isReply, long uid, PeerNode peer, byte[] noderef, ByteCounter ctr) throws NotConnectedException {
-		ShortBuffer buf = new ShortBuffer(noderef);
-		// FIXME remove back compatibility code when a build that understands the new path folding messages is mandatory.
-		Message msg = isReply ? DMT.createFNPOpennetConnectReply(uid, buf) : 
-			DMT.createFNPOpennetConnectDestination(uid, buf);
 		byte[] padded = new byte[PADDED_NODEREF_SIZE];
 		if(noderef.length > padded.length) {
 			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
-			if(!isReply) {
-				msg = DMT.createFNPOpennetCompletedAck(uid);
-				peer.sendAsync(msg, null, 0, ctr);
-			}
 			return;
 		}
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
@@ -493,7 +485,6 @@ public class OpennetManager {
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
 		// Send the new message first.
 		peer.sendAsync(msg2, null, 0, ctr);
-		peer.sendAsync(msg, null, 0, ctr);
 		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(padded);
 		raf.setReadOnly();
 		PartiallyReceivedBulk prb =
@@ -515,14 +506,9 @@ public class OpennetManager {
 	 */
 	public byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr) {
 		// FIXME remove back compat code
-		MessageFilter mfReply = 
-			MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).
-			setType(isReply ? DMT.FNPOpennetConnectReply : DMT.FNPOpennetConnectDestination);
-		MessageFilter mfNewReply =
+		MessageFilter mf =
 			MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).
 			setType(isReply ? DMT.FNPOpennetConnectReplyNew : DMT.FNPOpennetConnectDestinationNew);
-		MessageFilter mf =
-			mfReply.or(mfNewReply);
 		if(!isReply) {
 			// Also waiting for an ack
 			MessageFilter mfAck = 
@@ -548,10 +534,6 @@ public class OpennetManager {
 		if(msg.getSpec() == DMT.FNPOpennetCompletedAck)
 			return null; // Acked (only possible if !isReply)
 		
-		// FIXME remove back compat
-		if(msg.getSpec() == DMT.FNPOpennetConnectReply || msg.getSpec() == DMT.FNPOpennetConnectDestination) {
-			return ((ShortBuffer)msg.getObject(DMT.OPENNET_NODEREF)).getData();
-		} else {
 			// New format
     		long xferUID = msg.getLong(DMT.TRANSFER_UID);
     		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
@@ -575,7 +557,6 @@ public class OpennetManager {
     		byte[] noderef = new byte[realLength];
     		System.arraycopy(buf, 0, noderef, 0, realLength);
     		return noderef;
-		}
 	}
 
 	public SimpleFieldSet validateNoderef(byte[] noderef, int offset, int length, PeerNode from) {
