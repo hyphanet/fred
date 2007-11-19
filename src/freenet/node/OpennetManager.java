@@ -534,30 +534,30 @@ public class OpennetManager {
 			return null; // Acked (only possible if !isReply)
 		
 		// Noderef bulk transfer
-    		long xferUID = msg.getLong(DMT.TRANSFER_UID);
-    		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
-    		int realLength = msg.getInt(DMT.NODEREF_LENGTH);
-    		if(paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH) {
-    			Logger.error(this, "Noderef too big: "+SizeUtil.formatSize(paddedLength)+" real length "+SizeUtil.formatSize(realLength));
-    			return null;
-    		}
-    		if(realLength > paddedLength) {
-    			Logger.error(this, "Real length larger than padded length: "+SizeUtil.formatSize(paddedLength)+" real length "+SizeUtil.formatSize(realLength));
-    			return null;
-    		}
-    		byte[] buf = new byte[paddedLength];
-    		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(buf);
-    		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
-    		BulkReceiver br = new BulkReceiver(prb, source, xferUID);
-    		if(logMINOR)
-    			Logger.minor(this, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
-    		if(!br.receive()) {
-    			Logger.error(this, "Failed to receive noderef bulk transfer for "+this);
-   				return null;
-    		}
-    		byte[] noderef = new byte[realLength];
-    		System.arraycopy(buf, 0, noderef, 0, realLength);
-    		return noderef;
+    	long xferUID = msg.getLong(DMT.TRANSFER_UID);
+    	int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
+    	int realLength = msg.getInt(DMT.NODEREF_LENGTH);
+    	if(paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH) {
+    		Logger.error(this, "Noderef too big: "+SizeUtil.formatSize(paddedLength)+" real length "+SizeUtil.formatSize(realLength));
+    		return null;
+    	}
+    	if(realLength > paddedLength) {
+    		Logger.error(this, "Real length larger than padded length: "+SizeUtil.formatSize(paddedLength)+" real length "+SizeUtil.formatSize(realLength));
+    		return null;
+    	}
+    	byte[] buf = new byte[paddedLength];
+    	ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(buf);
+    	PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
+    	BulkReceiver br = new BulkReceiver(prb, source, xferUID);
+    	if(logMINOR)
+    		Logger.minor(this, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
+    	if(!br.receive()) {
+    		Logger.error(this, "Failed to receive noderef bulk transfer for "+this);
+   			return null;
+    	}
+    	byte[] noderef = new byte[realLength];
+    	System.arraycopy(buf, 0, noderef, 0, realLength);
+    	return noderef;
 	}
 
 	public SimpleFieldSet validateNoderef(byte[] noderef, int offset, int length, PeerNode from) {
