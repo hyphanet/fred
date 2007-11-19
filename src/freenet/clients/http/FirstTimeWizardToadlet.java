@@ -189,7 +189,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			try {
 				enable = Fields.stringToBool(isOpennetEnabled);
 			} catch (NumberFormatException e) {
-				Logger.error(this, "Invalid opennetEnabled: "+isOpennetEnabled);
+				Logger.error(this, "Invalid opennetEnabled: "+isOpennetEnabled, e);
 				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step=1");
 				return;
 			}
@@ -207,11 +207,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			try {
 				config.get("node").set("name", selectedNName);
-				// We call the callback once again to ensure MeaningfulNodeNameUserAlert
-				// has been unregistered ... see #1595
-				Logger.normal(this, "The node name has been set to "+ config.get("node.name"));
+				Logger.normal(this, "The node name has been set to "+ selectedNName);
 			} catch (InvalidConfigValueException e) {
-				Logger.error(this, "Should not happen, please report!" + e);
+				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
 			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=3");
 			return;
@@ -222,7 +220,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
 				Logger.normal(this, "The outputBandwidthLimit has been set to "+ selectedUploadSpeed);
 			} catch (InvalidConfigValueException e) {
-				Logger.error(this, "Should not happen, please report!" + e);
+				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
 			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step=4");
 			return;
@@ -233,7 +231,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				config.get("node").set("storeSize", selectedStoreSize);
 				Logger.normal(this, "The storeSize has been set to "+ selectedStoreSize);
 			} catch (InvalidConfigValueException e) {
-				Logger.error(this, "Should not happen, please report!" + e);
+				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
 			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step=6");
 			return;
