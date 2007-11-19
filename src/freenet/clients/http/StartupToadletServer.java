@@ -101,10 +101,13 @@ public class StartupToadletServer implements Runnable {
 		infoboxContent.addChild("#", "Your freenet node is starting up, please hold on.");
                 
                 final File logs = new File("wrapper.log");
-                HTMLNode logInfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-info", "Current status"));
-                HTMLNode logInfoboxContent = ctx.getPageMaker().getContentNode(logInfobox);
-                logInfoboxContent.addChild("%", FileUtil.readUTF(logs, logs.length()-2000).replaceAll("\n", "<br>\n"));
-                
+                if(logs.exists() && logs.isFile() && logs.canRead() && logs.length() > 2000) {
+                    HTMLNode logInfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-info", "Current status"));
+                    HTMLNode logInfoboxContent = ctx.getPageMaker().getContentNode(logInfobox);
+                    String content = FileUtil.readUTF(logs, logs.length()-2000);
+                    int eol = content.indexOf('\n');
+                    logInfoboxContent.addChild("%", content.substring((eol < 0 ? 0 : eol)).replaceAll("\n", "<br>\n"));
+                }
                 //TODO: send a Retry-After header ?
                 writeHTMLReply(ctx, 503, desc, pageNode.generate());
             }
