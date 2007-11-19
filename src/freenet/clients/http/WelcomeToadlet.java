@@ -514,15 +514,6 @@ public class WelcomeToadlet extends Toadlet {
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createAlerts());
 
-		// Fetch-a-key box
-		HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel")));
-		HTMLNode fetchKeyContent = ctx.getPageMaker().getContentNode(fetchKeyBox);
-		fetchKeyContent.addAttribute("id", "keyfetchbox");
-		HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[] { "action", "method" }, new String[] { "/", "get" }).addChild("div");
-		fetchKeyForm.addChild("#", l10n("keyRequestLabel")+' ');
-		fetchKeyForm.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "key" });
-		fetchKeyForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("fetch") });
-
 		// Bookmarks
 		HTMLNode bookmarkBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode bookmarkBoxHeader = bookmarkBox.addChild("div", "class", "infobox-header");
@@ -536,6 +527,15 @@ public class WelcomeToadlet extends Toadlet {
 		HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
 		HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
 		addCategoryToList(bookmarkManager.getMainCategory(), bookmarksList);
+
+		// Fetch-a-key box
+		HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel")));
+		HTMLNode fetchKeyContent = ctx.getPageMaker().getContentNode(fetchKeyBox);
+		fetchKeyContent.addAttribute("id", "keyfetchbox");
+		HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[] { "action", "method" }, new String[] { "/", "get" }).addChild("div");
+		fetchKeyForm.addChild("#", l10n("keyRequestLabel")+' ');
+		fetchKeyForm.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "key" });
+		fetchKeyForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("fetch") });
 
 		// Version info and Quit Form
 		HTMLNode versionBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", l10n("versionHeader")));
