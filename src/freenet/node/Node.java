@@ -2741,7 +2741,6 @@ public class Node implements TimeSkewDetectorCallback {
 		HashSet set = new HashSet();
 		// FIXME IPv6 support
 		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.portNumber));
-		OpennetManager opennet = this.opennet;
 		if(opennet != null) {
 			NodeCrypto crypto = opennet.crypto;
 			if(crypto != null) {
