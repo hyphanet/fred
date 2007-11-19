@@ -143,12 +143,13 @@ public class NodeIPDetector {
 				if(!addresses.contains(a)) {
 					Logger.normal(this, "Plugin detected IP address: "+a);
 					addresses.add(a);
-					addedValidIP = true;
+					if(a.isRealInternetAddress(false, false))
+						addedValidIP = true;
 				}
 			}
 		}
 		
-		if(addresses.isEmpty() && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress)) {
+		if((!addedValidIP) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress)) {
 			addresses.add(oldIPAddress);
 			if(oldIPAddress.isRealInternetAddress(false, true))
 				addedValidIP = true;
