@@ -108,6 +108,7 @@ public class NetworkInterface {
 	 *            A comma-separated list of IP address to bind to
 	 */
 	public void setBindTo(String bindTo, boolean ignoreUnbindable) throws IOException {
+                if(bindTo == null || bindTo.equals("")) bindTo = NetworkInterface.DEFAULT_BIND_TO;
 		StringTokenizer bindToTokens = new StringTokenizer(bindTo, ",");
 		List bindToTokenList = new ArrayList();
 		while (bindToTokens.hasMoreTokens()) {
