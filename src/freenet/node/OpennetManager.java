@@ -483,7 +483,6 @@ public class OpennetManager {
 		long xferUID = node.random.nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
-		// Send the new message first.
 		peer.sendAsync(msg2, null, 0, ctr);
 		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(padded);
 		raf.setReadOnly();
