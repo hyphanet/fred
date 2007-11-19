@@ -116,7 +116,6 @@ public class StartupToadletServer implements Runnable {
 	 * config).
 	 */
     public StartupToadletServer(Executor executor, PersistentConfig conf) {
-        int configItemOrder = 0;
         this.executor = executor;
         formPassword = String.valueOf(this.getClass().hashCode());
 
