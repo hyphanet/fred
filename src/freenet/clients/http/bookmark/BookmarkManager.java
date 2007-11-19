@@ -104,7 +104,7 @@ public class BookmarkManager {
 				try {
 					Matcher matcher = pattern.matcher(newVals[i]);
 					// FIXME: remove
-					if (matcher.matches() && matcher.groupCount() == 3) {
+					if (matcher.matches() && matcher.groupCount() == 4) {
 						
 						makeParents(matcher.group(1));
 						key = new FreenetURI(matcher.group(4));
