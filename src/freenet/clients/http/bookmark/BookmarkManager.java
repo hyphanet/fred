@@ -78,7 +78,7 @@ public class BookmarkManager {
 			apps.addBookmark(new BookmarkItem(
 					new FreenetURI(
 							"USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/4"),
-							"Frost", false, node.alerts));
+							"Frost", true, node.alerts));
 
 			sc.register("bookmarks", defaultRoot.toStrings(), 0, true, false,"BookmarkManager.list", "BookmarkManager.listLong", configCB);
 			configCB.set(sc.getStringArr("bookmarks"));
