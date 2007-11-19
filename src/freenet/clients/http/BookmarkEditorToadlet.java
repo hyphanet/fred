@@ -213,13 +213,14 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 					form.addChild("br");
 					if (("edit".equals(action) && bookmark instanceof BookmarkItem) || "addItem".equals(action)) {
-						BookmarkItem item = (BookmarkItem) bookmark;
+						BookmarkItem item = null;
+						if(bookmark != null) item = (BookmarkItem) bookmark;
 						String key = (action.equals("edit") ? item.getKey() : "");
 						form.addChild("label", "for", "key", (L10n.getString("BookmarkEditorToadlet.keyLabel") + ' '));
 						form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String []{"text", "key", "key", "50", key});
 						form.addChild("br");
 						form.addChild("label", "for", "hasAnActivelink", (L10n.getString("BookmarkEditorToadlet.hasAnActivelinkLabel") + ' '));
-						if(item.hasAnActivelink())
+						if(item != null && item.hasAnActivelink())
 							form.addChild("input", new String[]{"type", "id", "name", "checked" }, new String[]{"checkbox", "hasAnActivelink", "hasAnActivelink", String.valueOf(item.hasAnActivelink()) });
 						else
 							form.addChild("input", new String[]{"type", "id", "name"}, new String[]{"checkbox", "hasAnActivelink", "hasAnActivelink" });
