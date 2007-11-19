@@ -11,6 +11,7 @@ import java.util.Random;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.io.AddressTracker;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.LoggingConfigHandler;
 import freenet.node.Node;
@@ -23,6 +24,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 
 	private final DatagramSocket _sock;
 	private final InetAddress _bindTo;
+	private final AddressTracker tracker;
 	private IncomingPacketFilter lowLevelFilter;
 	/** RNG for debugging, used with _dropProbability.
 	 * NOT CRYPTO SAFE. DO NOT USE FOR THINGS THAT NEED CRYPTO SAFE RNG!
@@ -60,6 +62,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = new Random();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		tracker = new AddressTracker();
 	}
 
 	/** Must be called, or we will NPE in run() */
@@ -138,6 +141,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 		if (gotPacket) {
 			long startTime = System.currentTimeMillis();
 			Peer peer = new Peer(packet.getAddress(), packet.getPort());
+			tracker.receivedPacketFrom(peer);
 			long endTime = System.currentTimeMillis();
 			if(endTime - startTime > 50) {
 				if(endTime-startTime > 3000)
@@ -219,6 +223,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 		// TODO: keep?
 		// packet.length() is simply the size of the buffer, it knows nothing of UDP headers
 		IOStatisticCollector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH); 
+		tracker.sentPacketTo(destination);
 		
 		try {
 			_sock.send(packet);
