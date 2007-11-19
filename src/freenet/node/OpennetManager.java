@@ -549,6 +549,8 @@ public class OpennetManager {
     		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(buf);
     		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
     		BulkReceiver br = new BulkReceiver(prb, source, xferUID);
+    		if(logMINOR)
+    			Logger.minor(this, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
     		if(!br.receive()) {
     			Logger.error(this, "Failed to receive noderef bulk transfer for "+this);
    				return null;
