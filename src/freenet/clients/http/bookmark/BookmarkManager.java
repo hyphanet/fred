@@ -102,26 +102,26 @@ public class BookmarkManager {
 			clear();
 			for (int i = 0; i < newVals.length; i++) {
 				try {
-                                Matcher matcher = pattern.matcher(newVals[i]);
-                                // FIXME: remove
-                                if (matcher.matches() && matcher.groupCount() == 3) {
-
-                                	boolean hasAnActiveLink = false;
-                                    makeParents(matcher.group(1));
-                                    key = new FreenetURI(matcher.group(3));
-                                    String title = matcher.group(2);
-                                    if(title.endsWith("=|")) {
-                                    	title = title.substring(0, title.length()-2);
-                                    	hasAnActiveLink = true;
-                                    } else if(title.endsWith("=")) {
-                                    	title = title.substring(0, title.length()-1);
-                                    }
-                                    addBookmark(matcher.group(1), new BookmarkItem(key,
-                                            title, hasAnActiveLink, node.alerts), false);
-
-                                } else {
-                                    throw new InvalidConfigValueException(l10n("malformedBookmark"));
-                                }
+					Matcher matcher = pattern.matcher(newVals[i]);
+					// FIXME: remove
+					if (matcher.matches() && matcher.groupCount() == 3) {
+						
+						boolean hasAnActiveLink = false;
+						makeParents(matcher.group(1));
+						key = new FreenetURI(matcher.group(3));
+						String title = matcher.group(2);
+						if(title.endsWith("=|")) {
+							title = title.substring(0, title.length()-2);
+							hasAnActiveLink = true;
+						} else if(title.endsWith("=")) {
+							title = title.substring(0, title.length()-1);
+						}
+						addBookmark(matcher.group(1), new BookmarkItem(key,
+								title, hasAnActiveLink, node.alerts), false);
+						
+					} else {
+						throw new InvalidConfigValueException(l10n("malformedBookmark"));
+					}
 
 				} catch (MalformedURLException mue) {
 					throw new InvalidConfigValueException(mue.getMessage());
