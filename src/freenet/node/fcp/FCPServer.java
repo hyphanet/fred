@@ -45,7 +45,6 @@ import freenet.support.api.Bucket;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
-import java.net.SocketException;
 
 /**
  * FCP server process.
