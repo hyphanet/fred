@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import freenet.config.PersistentConfig;
 import freenet.support.HTMLNode;
 import java.io.File;
 import java.io.IOException;
@@ -51,7 +52,6 @@ public class StartupToadletServer implements Runnable {
     private String formPassword;
     private Executor executor;
     private final BucketFactory bf = new ArrayBucketFactory();
-    private final File configFile = new File("freenet.ini");
     private final ToadletContainer container = new ToadletContainer() {
 
         public void register(Toadlet t, String urlPrefix, boolean atFront, boolean fullAccessOnly) {
@@ -124,14 +124,14 @@ public class StartupToadletServer implements Runnable {
 	 * Create a SimpleToadletServer, using the settings from the SubConfig (the fproxy.*
 	 * config).
 	 */
-    public StartupToadletServer(Executor executor) {
+    public StartupToadletServer(Executor executor, PersistentConfig conf) {
         int configItemOrder = 0;
         this.executor = executor;
         formPassword = String.valueOf(this.getClass().hashCode());
 
         // hack ... we don't have the config framework yet
         try {
-            SimpleFieldSet config = SimpleFieldSet.readFrom(configFile, false, false);
+            SimpleFieldSet config = conf.getSimpleFieldSet();
             port = config.getInt("fproxy.port");
             bindTo = config.get("fproxy.bindTo");
             // Yeah, only FullAccess hosts here, it's on purpose.

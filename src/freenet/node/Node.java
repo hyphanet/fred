@@ -546,7 +546,7 @@ public class Node implements TimeSkewDetectorCallback {
 		startupTime = System.currentTimeMillis();
                 // Will be set up properly afterwards
                 L10n.setLanguage(L10n.FALLBACK_DEFAULT);
-                startupPageHolder = new StartupToadletServer(executor);
+                startupPageHolder = new StartupToadletServer(executor, config);
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
