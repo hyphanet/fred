@@ -73,7 +73,10 @@ public class WelcomeToadlet extends Toadlet {
 		BookmarkItems items = cat.getItems();
 		for(int i = 0; i < items.size(); i++) {
 			HTMLNode li = list.addChild("li", "class","item");
-			li.addChild("a", "href", "/" + items.get(i).getKey(), items.get(i).getName());
+			HTMLNode a = li.addChild("a", "href", '/' + items.get(i).getKey());
+                        HTMLNode img = a.addChild("img", new String[] { "src", "height", "width", "alt"},
+                                new String[] { '/' + items.get(i).getKey() + "/activelink.png", "36px", "108px", "activelink"});
+                        img.addChild("#", "  " + items.get(i).getName());
 		}
 
 		BookmarkCategories cats = cat.getSubCategories();
