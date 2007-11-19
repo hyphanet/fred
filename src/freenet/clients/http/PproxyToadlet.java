@@ -371,6 +371,7 @@ public class PproxyToadlet extends Toadlet {
 		availablePlugins.add("Echo");
 		availablePlugins.add("Freemail");
 		availablePlugins.add("HelloWorld");
+		availablePlugins.add("HelloFCP");
 		availablePlugins.add("JSTUN");
 		availablePlugins.add("Librarian");
 		availablePlugins.add("MDNSDiscovery");
