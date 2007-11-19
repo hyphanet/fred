@@ -142,6 +142,9 @@ public class Node implements TimeSkewDetectorCallback {
 				else if("".equals(val))
 					val = "~none~";
 				myName = val;
+                                // We call the callback once again to ensure MeaningfulNodeNameUserAlert
+				// has been unregistered ... see #1595
+                                get();
 			}
 	}
 	
