@@ -210,13 +210,18 @@ public class BookmarkManager {
 		
 		String oldName = bookmark.getName();
 		String oldPath = '/' + oldName + '/';
-		String newPath = oldPath.substring(0, oldPath.indexOf(oldName)) + newName + '/';
+		String newPath = oldPath.substring(0, oldPath.indexOf(oldName)) + newName;
 
 		bookmark.setName(newName);
-		
 		bookmarks.remove(path);
-		bookmarks.put(newPath, bookmark);
+                if(path.charAt(path.length()-1) != '/') {
+                    int lastIndexOfSlash = path.lastIndexOf('/');
+                    newPath = path.substring(0,lastIndexOfSlash)+newPath;
+                } else
+                    newPath += '/';
 
+                bookmarks.put(newPath, bookmark);
+                
 		node.storeConfig();
 	}
 
