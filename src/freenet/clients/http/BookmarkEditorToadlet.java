@@ -212,9 +212,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 					form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String []{"text", "name", "name", "20", "edit".equals(action)?bookmark.getName():""});
 
 					form.addChild("br");
-					if (("edit".equals(action) && bookmark instanceof BookmarkItem) || "addItem".equals(action)) {
-						BookmarkItem item = null;
-						if(bookmark != null) item = (BookmarkItem) bookmark;
+					boolean isNew = false;
+					if (("edit".equals(action) && bookmark instanceof BookmarkItem) || (isNew = "addItem".equals(action))) {
+						BookmarkItem item = isNew ? null : (BookmarkItem) bookmark;
 						String key = (action.equals("edit") ? item.getKey() : "");
 						form.addChild("label", "for", "key", (L10n.getString("BookmarkEditorToadlet.keyLabel") + ' '));
 						form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String []{"text", "key", "key", "50", key});
