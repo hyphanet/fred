@@ -30,10 +30,10 @@ import freenet.io.comm.Peer;
 public class AddressTracker {
 	
 	/** PeerAddressTrackerItem's by Peer */
-	private HashMap peerTrackers;
+	private final HashMap peerTrackers;
 	
 	/** InetAddressAddressTrackerItem's by InetAddress */
-	private HashMap ipTrackers;
+	private final HashMap ipTrackers;
 	
 	/** Maximum number of Item's of either type */
 	static final int MAX_ITEMS = 1000;
@@ -44,6 +44,8 @@ public class AddressTracker {
 	public AddressTracker() {
 		timeDefinitelyNoPacketsReceived = System.currentTimeMillis();
 		timeDefinitelyNoPacketsSent = System.currentTimeMillis();
+		peerTrackers = new HashMap();
+		ipTrackers = new HashMap();
 	}
 	
 	public void sentPacketTo(Peer peer) {
