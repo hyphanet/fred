@@ -144,10 +144,6 @@ public class BookmarkItem extends Bookmark {
 		return ("".equals(name) ? l10n("unnamedBookmark") : name);
 	}
 
-	public void setPrivate(boolean bool) {
-		privateBookmark = bool;
-	}
-
 	public String toString() {
 		return this.name + "###" + this.desc + "###" + this.hasAnActivelink + "###" + this.key.toString();
 	}

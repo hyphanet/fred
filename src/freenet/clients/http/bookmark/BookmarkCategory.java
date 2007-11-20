@@ -134,14 +134,5 @@ public class BookmarkCategory extends Bookmark {
 
             return sfs;
         }
-
-	public void setPrivate(boolean bool) {
-		privateBookmark = bool;
-
-		BookmarkCategories subCategories = getSubCategories();
-		for (int i = 0; i < size(); i++)
-			subCategories.get(i).setPrivate(bool);
-	}
-	
 	// Don't override equals(), two categories are equal if they have the same name and description.
 }
