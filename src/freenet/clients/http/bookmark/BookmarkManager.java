@@ -101,7 +101,8 @@ public class BookmarkManager {
                     addBookmark(matcher.group(1), new BookmarkItem(key,
                             title, hasAnActiveLink, node.alerts), false);
                 }
-            } catch (MalformedURLException e) {}
+            } catch (MalformedURLException e) {
+            }
         }
     }
 
@@ -148,8 +149,9 @@ public class BookmarkManager {
     }
 
     public BookmarkCategory getCategoryByPath(String path) {
-        if (getBookmarkByPath(path.trim()) instanceof BookmarkCategory)
+        if (getBookmarkByPath(path.trim()) instanceof BookmarkCategory) {
             return (BookmarkCategory) getBookmarkByPath(path);
+        }
 
         return null;
     }
@@ -174,7 +176,7 @@ public class BookmarkManager {
             storeBookmarks();
         }
     }
-    
+
     public void addBookmark(String parentPath, Bookmark bookmark, boolean store) {
         BookmarkCategory parent = getCategoryByPath(parentPath);
         parent.addBookmark(bookmark);
@@ -337,9 +339,9 @@ public class BookmarkManager {
                 return;
             }
             isSavingBookmarks = true;
-            
+
             SimpleFieldSet toSave = MAIN_CATEGORY.toSimpleFieldSet();
-            if(toSave.isEmpty()) {
+            if (toSave.isEmpty()) {
                 isSavingBookmarks = false;
                 return;
             }
@@ -389,7 +391,7 @@ public class BookmarkManager {
                     category.addBookmark(item);
                     addBookmark(category, item, false);
                 } catch (MalformedURLException e) {
-                    Logger.error(this, "Error while adding one of the bookmarks :"+e.getMessage(), e);
+                    Logger.error(this, "Error while adding one of the bookmarks :" + e.getMessage(), e);
                 }
             }
         }
