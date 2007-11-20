@@ -625,7 +625,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         lastAttemptedHandshakeIPUpdateTime=0;
         maybeUpdateHandshakeIPs(true);
         
-        sendHandshakeTime = now;  // Be sure we're ready to handshake right away
+        if(fromLocal)
+        	innerCalcNextHandshake(false, false, now); // Let them connect so we can recognise we are NATed
+        else
+        	sendHandshakeTime = now;  // Be sure we're ready to handshake right away
     
         // status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
     }
