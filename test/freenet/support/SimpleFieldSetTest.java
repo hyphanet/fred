@@ -682,7 +682,7 @@ public class SimpleFieldSetTest extends TestCase {
 		retValue &= (actualLength==aStringPairsArray.length);
 		return retValue;
 	}
-	
+
 	/**
 	 * Tests the Iterator given for the
 	 * SimpleFieldSet class.
@@ -703,5 +703,23 @@ public class SimpleFieldSetTest extends TestCase {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		Iterator itr = methodSFS.keyIterator(methodPrefix);
 		assertTrue(areAllContainedKeys(SAMPLE_STRING_PAIRS,methodPrefix,itr));	
+	}
+        
+        /**
+	 * Tests the toplevelIterator given for the
+	 * SimpleFieldSet class.
+	 * It tests hasNext() and next() methods.
+         * 
+         * TODO: improve the test
+	 */
+	public void testToplevelKeyIterator() {
+		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
+		Iterator itr = methodSFS.toplevelKeyIterator();
+		
+                for(int i=0; i<3; i++) {
+                    assertTrue(itr.hasNext());
+                    assertTrue(isAKey(SAMPLE_STRING_PAIRS, "", (String)itr.next()));
+                }
+                assertFalse(itr.hasNext());
 	}
 }
