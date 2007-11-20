@@ -7,6 +7,7 @@ import freenet.node.fcp.FCPConnectionHandler;
 import freenet.node.fcp.FCPPluginReply;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import freenet.support.io.ArrayBucket;
 
 /**
  * @author saces
@@ -26,17 +27,17 @@ public class FCPPluginOutputWrapper {
 	}
 	
 	public void send(SimpleFieldSet params) {
-		FCPPluginReply reply = new FCPPluginReply(plugname, identifier, params);
+		FCPPluginReply reply = new FCPPluginReply(plugname, identifier, params, null);
 		handler.outputHandler.queue(reply);
 	}
 	
 	public void send(SimpleFieldSet params, byte[] data) {
-		FCPPluginReply reply = new FCPPluginReply(plugname, identifier, params);
+		FCPPluginReply reply = new FCPPluginReply(plugname, identifier, params, new ArrayBucket(data));
 		handler.outputHandler.queue(reply);
 	}
 	
-	public void send(SimpleFieldSet params, Bucket data) {
-		FCPPluginReply reply = new FCPPluginReply(plugname, identifier, params);
+	public void send(SimpleFieldSet params, Bucket bucket) {
+		FCPPluginReply reply = new FCPPluginReply(plugname, identifier, params, bucket);
 		handler.outputHandler.queue(reply);
 	}
 

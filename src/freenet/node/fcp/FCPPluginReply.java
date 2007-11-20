@@ -5,6 +5,7 @@ package freenet.node.fcp;
 
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 
 /**
  * @author saces
@@ -16,11 +17,19 @@ public class FCPPluginReply extends DataCarryingMessage {
 	
 	public static final String PARAM_PREFIX = "Param";
 	
+	private final long dataLength;
 	private final String plugname;
 	private final String identifier;
 	private final SimpleFieldSet plugparams;
-	
-	public FCPPluginReply(String pluginname, String identifier2, SimpleFieldSet fs) {
+
+	public FCPPluginReply(String pluginname, String identifier2, SimpleFieldSet fs, Bucket bucket2) {
+		bucket = bucket2;
+		if (bucket == null)
+			dataLength = -1;
+		else {
+			bucket.setReadOnly();
+			dataLength = bucket.size();
+		}
 		plugname = pluginname;
 		identifier = identifier2;
 		plugparams = fs;
@@ -35,7 +44,7 @@ public class FCPPluginReply extends DataCarryingMessage {
 	}
 
 	long dataLength() {
-		return -1;
+		return dataLength;
 	}
 	
 	String getEndString() {
@@ -49,6 +58,8 @@ public class FCPPluginReply extends DataCarryingMessage {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("PluginName", plugname);
 		sfs.putSingle("Identifier", identifier);
+		if (dataLength() > 0)
+			sfs.put("DataLength", dataLength());			
 		sfs.put("Replies", plugparams);
 		return sfs;
 	}
