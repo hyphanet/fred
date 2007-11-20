@@ -87,16 +87,22 @@ public class BookmarkManager {
 
     private void migrateOldBookmarks(String[] newVals) {
         //FIXME: for some reason that doesn't work... if someone wants to fix it ;)
-        Pattern pattern = Pattern.compile("/(.*/)([^/]*)=(|=)*([A-Z]{3}@.*).*");
+        Pattern pattern = Pattern.compile("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
         FreenetURI key;
         for (int i = 0; i < newVals.length; i++) {
             try {
                 Matcher matcher = pattern.matcher(newVals[i]);
-                if (matcher.matches() && matcher.groupCount() == 4) {
+                if (matcher.matches()) {
                     makeParents(matcher.group(1));
-                    key = new FreenetURI(matcher.group(4));
+                    key = new FreenetURI(matcher.group(3));
                     String title = matcher.group(2);
-                    boolean hasAnActiveLink = matcher.group(3).indexOf('|') > -1;
+                    boolean hasAnActiveLink = false;
+                    if(title.endsWith("=|")) {
+                    	hasAnActiveLink = true;
+                    	title = title.substring(0, title.length()-2);
+                    } else if(title.endsWith("=")) {
+                    	title = title.substring(0, title.length()-1);
+                    }
                     addBookmark(matcher.group(1), new BookmarkItem(key,
                             title, hasAnActiveLink, node.alerts));
                 }
