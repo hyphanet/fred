@@ -353,8 +353,9 @@ public class BookmarkManager {
     }
     
     private void _innerReadBookmarks(String prefix, BookmarkCategory category, SimpleFieldSet sfs) {
+        boolean isRoot = ("".equals(prefix) && MAIN_CATEGORY.equals(category));
         synchronized (bookmarks) {
-            if(!"".equals(prefix))
+            if(!isRoot)
                 putPaths(prefix + category.name + '/', category);
             
             String[] categories = sfs.namesOfDirectSubsets();
@@ -363,7 +364,7 @@ public class BookmarkManager {
                 BookmarkCategory currentCategory = new BookmarkCategory(categories[i]);
                 String name = prefix + category.name + '/';
                 category.addBookmark(currentCategory);
-                _innerReadBookmarks((MAIN_CATEGORY.equals(category) ? "/" : name), currentCategory, subset);
+                _innerReadBookmarks((isRoot ? "/" : name), currentCategory, subset);
             }
                         
             Iterator it = sfs.toplevelKeyIterator();
@@ -372,7 +373,7 @@ public class BookmarkManager {
                 String line = sfs.get(key);
                 try {
                     BookmarkItem item = new BookmarkItem(line, node.alerts);
-                    String name = ("".equals(prefix) ? "" : prefix + category.name) + '/' +item.name;
+                    String name = (isRoot ? "" : prefix + category.name) + '/' +item.name;
                     putPaths(name, item);
                     category.addBookmark(item);
                 } catch (MalformedURLException e) {
