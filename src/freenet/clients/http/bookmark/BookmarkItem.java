@@ -133,7 +133,6 @@ public class BookmarkItem extends Bookmark {
     }
 
     public synchronized void update(FreenetURI uri, boolean hasAnActivelink, String description) {
-        System.out.println("###################### "+description);
         this.key = uri;
         this.desc = description;
         this.hasAnActivelink = hasAnActivelink;
