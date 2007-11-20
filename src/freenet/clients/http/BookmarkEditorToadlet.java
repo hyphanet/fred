@@ -225,7 +225,7 @@ public class BookmarkEditorToadlet extends Toadlet {
                         form.addChild("br");
                         form.addChild("label", "for", "descB", (L10n.getString("BookmarkEditorToadlet.descLabel") + ' '));
                         form.addChild("br");
-                        form.addChild("textarea", new String[]{"id", "name", "row", "cols", "value"}, new String[]{"descB", "descB", "3", "70", (item == null ? "" : item.getDescription())});
+                        form.addChild("textarea", new String[]{"id", "name", "row", "cols"}, new String[]{"descB", "descB", "3", "70"}, (item == null ? "" : item.getDescription()));
                         form.addChild("br");
                         form.addChild("label", "for", "hasAnActivelink", (L10n.getString("BookmarkEditorToadlet.hasAnActivelinkLabel") + ' '));
                         if (item != null && item.hasAnActivelink()) {
@@ -329,7 +329,7 @@ public class BookmarkEditorToadlet extends Toadlet {
                     if ("addItem".equals(action)) {
                         FreenetURI key = new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH));
                         boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
-                        newBookmark = new BookmarkItem(key, name, hasAnActivelink, core.alerts);
+                        newBookmark = new BookmarkItem(key, name, req.getPartAsString("descB", MAX_KEY_LENGTH),hasAnActivelink, core.alerts);
                     } else {
                         newBookmark = new BookmarkCategory(name);
                     }

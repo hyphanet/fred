@@ -133,6 +133,7 @@ public class BookmarkItem extends Bookmark {
     }
 
     public synchronized void update(FreenetURI uri, boolean hasAnActivelink, String description) {
+        System.out.println("###################### "+description);
         this.key = uri;
         this.desc = description;
         this.hasAnActivelink = hasAnActivelink;
@@ -186,6 +187,9 @@ public class BookmarkItem extends Bookmark {
             if (b.hasAnActivelink != hasAnActivelink) {
                 return false;
             }
+            if (!b.desc.equals(desc)) {
+                return false;
+            }
             return true;
         } else {
             return false;
@@ -197,6 +201,6 @@ public class BookmarkItem extends Bookmark {
     }
     
     public String getDescription() {
-        return desc;
+        return (desc == null ? "" : desc);
     }
 }

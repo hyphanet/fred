@@ -73,7 +73,13 @@ public class WelcomeToadlet extends Toadlet {
             for (int i = 0; i < items.size(); i++) {
                 BookmarkItem item = items.get(i);
                 HTMLNode row = table.addChild("tr");
-                HTMLNode cell = row.addChild("td", "style", "border: none");
+                HTMLNode cell = new HTMLNode("td", "style", "border: none");
+                String description = item.getDescription();
+                if(!"".equals(description))
+                    row.addChild("span", new String[] { "title", "style"}, new String[]{ description, "cursor: help;"}).addChild(cell);
+                else
+                    row.addChild(cell);
+                
                 if (item.hasAnActivelink()) {
                     cell.addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "height", "width", "alt"},
                             new String[]{'/' + item.getKey() + "/activelink.png", "36px", "108px", "activelink"});
