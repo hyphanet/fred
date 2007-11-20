@@ -33,6 +33,7 @@ public abstract class Bookmark {
 		if(o == this) return true;
 		if(o instanceof Bookmark) {
 			Bookmark b = (Bookmark) o;
+                        if(b.name == null || b.desc == null) return false;
 			if(!b.name.equals(name)) return false;
 			// Compensate for nulls
 			if(!String.valueOf(b.desc).equals(String.valueOf(desc))) return false;

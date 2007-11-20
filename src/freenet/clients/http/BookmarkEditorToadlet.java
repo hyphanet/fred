@@ -129,7 +129,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			actions.addChild("a", "href", "?action=paste&bookmark=/").addChild("img", new String[] {"src", "alt", "title"}, new String[] {"/static/icon/paste.png", paste, paste});
 
 		root.addChild(actions);
-		addCategoryToList(bookmarkManager.getMainCategory(), "/", root.addChild("ul"));
+		addCategoryToList(BookmarkManager.MAIN_CATEGORY, "/", root.addChild("ul"));
 
 		return bookmarks;
 	}

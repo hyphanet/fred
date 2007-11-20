@@ -1,5 +1,6 @@
 package freenet.clients.http.bookmark;
 
+import freenet.support.SimpleFieldSet;
 import java.util.Vector;
 
 import freenet.support.StringArray;
@@ -18,6 +19,7 @@ public class BookmarkCategory extends Bookmark {
 	}
 
 	protected synchronized Bookmark addBookmark(Bookmark b) {
+                if(b == null) return null;
 		int x = bookmarks.indexOf(b);
 		if(x >= 0) return (Bookmark) bookmarks.get(x);
 		bookmarks.add(b);
@@ -117,6 +119,26 @@ public class BookmarkCategory extends Bookmark {
 		return strings;
 
 	}
+
+        public SimpleFieldSet toSimpleFieldSet() {
+            SimpleFieldSet sfs = new SimpleFieldSet(true);
+
+            BookmarkItems items = getItems();
+            for (int i = 0; i < items.size(); i++) {
+                BookmarkItem item = items.get(i);
+                sfs.putSingle(String.valueOf(i), item.toString());
+            }
+
+            BookmarkCategories subCategories = getSubCategories();
+            for (int i = 0; i < subCategories.size(); i++) {
+                BookmarkCategory category = subCategories.get(i);
+                SimpleFieldSet toPut = category.toSimpleFieldSet();
+                if("".equals(category.name) || toPut.isEmpty()) continue;
+                sfs.put(category.name, toPut);
+            }
+
+            return sfs;
+        }
 
 	public void setPrivate(boolean bool) {
 		privateBookmark = bool;

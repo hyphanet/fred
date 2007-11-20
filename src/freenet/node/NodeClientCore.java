@@ -113,7 +113,7 @@ public class NodeClientCore implements Persistable {
 	static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
 	static final int MAX_CACHED_ELEMENTS = 256*1024; // equally arbitrary! FIXME hopefully we can cache many of these though
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS, SimpleFieldSet oldConfig) throws NodeInitException {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
@@ -346,7 +346,7 @@ public class NodeClientCore implements Persistable {
 		}
 		
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
-		bookmarkManager = new BookmarkManager(this, fproxyConfig);
+		bookmarkManager = new BookmarkManager(this, oldConfig);
 		
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins

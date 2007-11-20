@@ -547,7 +547,8 @@ public class Node implements TimeSkewDetectorCallback {
 		startupTime = System.currentTimeMillis();
                 // Will be set up properly afterwards
                 L10n.setLanguage(L10n.FALLBACK_DEFAULT);
-                startupPageHolder = new StartupToadletServer(executor, config);
+                SimpleFieldSet oldConfig = config.getSimpleFieldSet();
+                startupPageHolder = new StartupToadletServer(executor, oldConfig);
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
@@ -1265,7 +1266,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit);
 		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"));
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"), oldConfig);
 
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 

@@ -10,9 +10,11 @@ import freenet.node.NodeClientCore;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.support.Fields;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 
+import freenet.support.SimpleFieldSet;
 import java.net.MalformedURLException;
 
 public class BookmarkItem extends Bookmark {
@@ -42,6 +44,16 @@ public class BookmarkItem extends Bookmark {
 		this.alerts = uam;
 		alert = new BookmarkUpdatedUserAlert();
 	}
+        
+        public BookmarkItem(String line, UserAlertManager uam) throws MalformedURLException {
+            String[] result = line.split("###");
+            this.name = result[0];
+            this.desc = result[1];
+            this.hasAnActivelink = Fields.stringToBool(result[2], false);
+            this.key = new FreenetURI(result[3]);
+            this.alerts = uam;
+            this.alert = new BookmarkUpdatedUserAlert();
+        }
 
 	private class BookmarkUpdatedUserAlert extends AbstractUserAlert {
 
@@ -137,7 +149,7 @@ public class BookmarkItem extends Bookmark {
 	}
 
 	public String toString() {
-		return this.name + '=' + (hasAnActivelink ? "|=" : "=") + this.key.toString();
+		return this.name + "###" + this.desc + "###" + this.hasAnActivelink + "###" + this.key.toString();
 	}
 
 	public synchronized void setEdition(long ed, NodeClientCore node) {

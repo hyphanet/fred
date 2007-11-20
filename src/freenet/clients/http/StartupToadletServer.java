@@ -118,13 +118,12 @@ public class StartupToadletServer implements Runnable {
 	 * Create a SimpleToadletServer, using the settings from the SubConfig (the fproxy.*
 	 * config).
 	 */
-    public StartupToadletServer(Executor executor, PersistentConfig conf) {
+    public StartupToadletServer(Executor executor, SimpleFieldSet config) {
         this.executor = executor;
         formPassword = String.valueOf(this.getClass().hashCode());
 
         // hack ... we don't have the config framework yet
         try {
-            SimpleFieldSet config = conf.getSimpleFieldSet();
             port = config.getInt("fproxy.port");
             bindTo = config.get("fproxy.bindTo");
             // Yeah, only FullAccess hosts here, it's on purpose.
