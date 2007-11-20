@@ -100,4 +100,9 @@ public class AddressTracker {
 	public synchronized void startSend(long now) {
 		timeDefinitelyNoPacketsSent = now;
 	}
+
+	public synchronized PeerAddressTrackerItem[] getPeerAddressTrackerItems() {
+		PeerAddressTrackerItem[] items = new PeerAddressTrackerItem[peerTrackers.size()];
+		return (PeerAddressTrackerItem[]) peerTrackers.values().toArray(items);
+	}
 }

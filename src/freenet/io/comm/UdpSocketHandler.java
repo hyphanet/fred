@@ -384,4 +384,8 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 		return UDP_HEADERS_LENGTH;
 	}
 
+	public AddressTracker getAddressTracker() {
+		return tracker;
+	}
+
 }

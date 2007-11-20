@@ -628,6 +628,9 @@ public class FProxyToadlet extends Toadlet {
 			BrowserTestToadlet browsertTestToadlet = new BrowserTestToadlet(client, core);
 			server.register(browsertTestToadlet, "/test/", true, false);
 			
+			ConnectivityToadlet connectivityToadlet = new ConnectivityToadlet(client, node, core);
+			server.register(connectivityToadlet, "/connectivity/", true, "ConnectivityToadlet.connectivityTitle", "ConnectivityToadlet.connectivity", true, null);
+			
 			TranslationToadlet translationToadlet = new TranslationToadlet(client, core);
 			server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, true);
 			

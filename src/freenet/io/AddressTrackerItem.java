@@ -100,4 +100,21 @@ public class AddressTrackerItem {
 	public synchronized long packetsReceived() {
 		return packetsReceived;
 	}
+	
+	public synchronized boolean weSentFirst() {
+		if(timeFirstReceivedPacket == -1) return true;
+		if(timeFirstSentPacket == -1) return false;
+		return timeFirstSentPacket < timeFirstReceivedPacket; 
+	}
+	
+	public long timeFromStartupToFirstSentPacket() {
+		if(packetsSent == 0) return -1;
+		return timeFirstSentPacket - timeDefinitelyNoPacketsSent;
+	}
+
+	public long timeFromStartupToFirstReceivedPacket() {
+		if(packetsReceived == 0) return -1;
+		return timeFirstReceivedPacket - timeDefinitelyNoPacketsReceived;
+	}
+
 }

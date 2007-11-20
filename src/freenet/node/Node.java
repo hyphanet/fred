@@ -58,6 +58,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.comm.UdpSocketHandler;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -2759,4 +2760,14 @@ public class Node implements TimeSkewDetectorCallback {
             // Give it a chance to be GCed
             startupPageHolder = null;
         }
+
+		public synchronized UdpSocketHandler[] getPacketSocketHandlers() {
+			// FIXME better way to get these!
+			if(opennet != null) {
+				return new UdpSocketHandler[] { darknetCrypto.socket, opennet.crypto.socket };
+				// TODO Auto-generated method stub
+			} else {
+				return new UdpSocketHandler[] { darknetCrypto.socket };
+			}
+		}
 }
