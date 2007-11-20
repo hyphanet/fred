@@ -121,6 +121,8 @@ public interface HTTPRequest {
 	 */
 	public String getPartAsString(String name, int maxlength);
 
+	public byte[] getPartAsBytes(String name, int maxlength);
+
 	public void freeParts();
 
 	public long getLongParam(String name, long defaultValue);

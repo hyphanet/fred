@@ -538,15 +538,24 @@ public class HTTPRequestImpl implements HTTPRequest {
 
 		return this.parts.containsKey(name);
 	}
-	
+
+	public String getPartAsString(String name, int maxlength) {
+		try {
+			return new String(getPartAsBytes(name, maxlength), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			/* UTF-8 is always supported. */
+		}
+		return null;
+	}
+
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getPartAsString(java.lang.String, int)
 	 */
-	public String getPartAsString(String name, int maxlength) {
+	public byte[] getPartAsBytes(String name, int maxlength) {
 		Bucket part = (Bucket)this.parts.get(name);
-		if(part == null) return "";
+		if(part == null) return new byte[0];
 		
-		if (part.size() > maxlength) return "";
+		if (part.size() > maxlength) return new byte[0];
 		
 		InputStream is = null;
 		DataInputStream dis = null;
@@ -555,7 +564,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 			dis = new DataInputStream(is);
 			byte[] buf = new byte[is.available()];
 			dis.readFully(buf);
-			return new String(buf);
+			return buf;
 		} catch (IOException ioe) {
 	         Logger.error(this, "Caught IOE:" + ioe.getMessage());
 		} finally {
@@ -567,7 +576,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 			} catch (IOException ioe) {}
 		}
 		
-		return "";
+		return new byte[0];
 	}
 	
 	/* (non-Javadoc)
