@@ -539,26 +539,32 @@ public class PluginManager {
 			Manifest manifest = pluginJarFile.getManifest();
 			if (manifest == null) {
 				Logger.error(this, "could not load manifest from plugin file");
+				pluginFile.delete();
 				throw new PluginNotFoundException("could not load manifest from plugin file");
 			}
 			Attributes mainAttributes = manifest.getMainAttributes();
 			if (mainAttributes == null) {
 				Logger.error(this, "manifest does not contain attributes");
+				pluginFile.delete();
 				throw new PluginNotFoundException("manifest does not contain attributes");
 			}
 			pluginMainClassName = mainAttributes.getValue("Plugin-Main-Class");
 			if (pluginMainClassName == null) {
 				Logger.error(this, "manifest does not contain a Plugin-Main-Class attribute");
+				pluginFile.delete();
 				throw new PluginNotFoundException("manifest does not contain a Plugin-Main-Class attribute");
 			}
 		} catch (JarException je1) {
 			Logger.error(this, "could not process jar file", je1);
+			pluginFile.delete();
 			throw new PluginNotFoundException("could not process jar file", je1);
 		} catch (ZipException ze1) {
 			Logger.error(this, "could not process jar file", ze1);
+			pluginFile.delete();
 			throw new PluginNotFoundException("could not process jar file", ze1);
 		} catch (IOException ioe1) {
 			Logger.error(this, "error processing jar file", ioe1);
+			pluginFile.delete();
 			throw new PluginNotFoundException("error procesesing jar file", ioe1);
 		} finally {
 			Closer.close(pluginJarFile);
@@ -570,20 +576,25 @@ public class PluginManager {
 			Object object = pluginMainClass.newInstance();
 			if (!(object instanceof FredPlugin)) {
 				Logger.error(this, "plugin main class is not a plugin");
+				pluginFile.delete();
 				throw new PluginNotFoundException("plugin main class is not a plugin");
 			}
 			return (FredPlugin) object;
 		} catch (IOException ioe1) {
 			Logger.error(this, "could not load plugin", ioe1);
+			pluginFile.delete();
 			throw new PluginNotFoundException("could not load plugin", ioe1);
 		} catch (ClassNotFoundException cnfe1) {
 			Logger.error(this, "could not find plugin class", cnfe1);
+			pluginFile.delete();
 			throw new PluginNotFoundException("could not find plugin class", cnfe1);
 		} catch (InstantiationException ie1) {
 			Logger.error(this, "could not instantiate plugin", ie1);
+			pluginFile.delete();
 			throw new PluginNotFoundException("could not instantiate plugin", ie1);
 		} catch (IllegalAccessException iae1) {
 			Logger.error(this, "could not access plugin main class", iae1);
+			pluginFile.delete();
 			throw new PluginNotFoundException("could not access plugin main class", iae1);
 		}
 	}
