@@ -89,7 +89,6 @@ public class BookmarkManager {
         //FIXME: for some reason that doesn't work... if someone wants to fix it ;)
         Pattern pattern = Pattern.compile("/(.*/)([^/]*)=(|=)*([A-Z]{3}@.*).*");
         FreenetURI key;
-        clear();
         for (int i = 0; i < newVals.length; i++) {
             try {
                 Matcher matcher = pattern.matcher(newVals[i]);
@@ -297,14 +296,6 @@ public class BookmarkManager {
             }
         }
         bookmarks.remove(path);
-    }
-
-    public void clear() {
-        removeBookmark("/");
-        synchronized (bookmarks) {
-            bookmarks.clear();
-            bookmarks.put("/", MAIN_CATEGORY);
-        }
     }
 
     public FreenetURI[] getBookmarkURIs() {

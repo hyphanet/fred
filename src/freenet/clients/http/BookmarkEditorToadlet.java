@@ -15,7 +15,6 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.client.HighLevelSimpleClient;
-import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
