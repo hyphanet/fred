@@ -99,7 +99,7 @@ public class BookmarkManager {
                     String title = matcher.group(2);
                     boolean hasAnActiveLink = matcher.group(3).indexOf('|') > -1;
                     addBookmark(matcher.group(1), new BookmarkItem(key,
-                            title, hasAnActiveLink, node.alerts), false);
+                            title, hasAnActiveLink, node.alerts));
                 }
             } catch (MalformedURLException e) {
             }
@@ -164,7 +164,7 @@ public class BookmarkManager {
         return null;
     }
 
-    public void addBookmark(BookmarkCategory parent, Bookmark bookmark, boolean store) {
+    public void addBookmark(BookmarkCategory parent, Bookmark bookmark) {
         if (bookmark instanceof BookmarkItem && ((BookmarkItem) bookmark).getKeyType().equals("USK")) {
             try {
                 USK u = ((BookmarkItem) bookmark).getUSK();
@@ -172,17 +172,14 @@ public class BookmarkManager {
             } catch (MalformedURLException mue) {
             }
         }
-        if (store) {
-            storeBookmarks();
-        }
     }
 
-    public void addBookmark(String parentPath, Bookmark bookmark, boolean store) {
+    public void addBookmark(String parentPath, Bookmark bookmark) {
         BookmarkCategory parent = getCategoryByPath(parentPath);
         parent.addBookmark(bookmark);
         putPaths(parentPath + bookmark.getName() + ((bookmark instanceof BookmarkCategory) ? "/" : ""),
                 bookmark);
-        addBookmark(parent, bookmark, store);
+        addBookmark(parent, bookmark);
     }
 
     public void renameBookmark(String path, String newName) {
@@ -208,19 +205,15 @@ public class BookmarkManager {
         storeBookmarks();
     }
 
-    public void moveBookmark(String bookmarkPath, String newParentPath, boolean store) {
+    public void moveBookmark(String bookmarkPath, String newParentPath) {
         Bookmark b = getBookmarkByPath(bookmarkPath);
-        addBookmark(newParentPath, b, false);
+        addBookmark(newParentPath, b);
 
         getCategoryByPath(parentPath(bookmarkPath)).removeBookmark(b);
         removePaths(bookmarkPath);
-
-        if (store) {
-            storeBookmarks();
-        }
     }
 
-    public void removeBookmark(String path, boolean store) {
+    public void removeBookmark(String path) {
         Bookmark bookmark = getBookmarkByPath(path);
         if (bookmark == null) {
             return;
@@ -230,7 +223,7 @@ public class BookmarkManager {
             BookmarkCategory cat = (BookmarkCategory) bookmark;
             for (int i = 0; i < cat.size(); i++) {
                 removeBookmark(path + cat.get(i).getName() + ((cat.get(i) instanceof BookmarkCategory) ? "/"
-                        : ""), false);
+                        : ""));
             }
         } else {
             if (((BookmarkItem) bookmark).getKeyType().equals("USK")) {
@@ -245,10 +238,6 @@ public class BookmarkManager {
         getCategoryByPath(parentPath(path)).removeBookmark(bookmark);
         synchronized (bookmarks) {
             bookmarks.remove(path);
-        }
-
-        if (store) {
-            storeBookmarks();
         }
     }
 
@@ -284,7 +273,7 @@ public class BookmarkManager {
 
             BookmarkCategory cat = new BookmarkCategory(name);
             makeParents(parentPath(path));
-            addBookmark(parentPath(path), cat, false);
+            addBookmark(parentPath(path), cat);
 
             return cat;
         }
@@ -314,7 +303,7 @@ public class BookmarkManager {
     }
 
     public void clear() {
-        removeBookmark("/", false);
+        removeBookmark("/");
         synchronized (bookmarks) {
             bookmarks.clear();
             bookmarks.put("/", MAIN_CATEGORY);
@@ -331,7 +320,7 @@ public class BookmarkManager {
         return uris;
     }
 
-    private void storeBookmarks() {
+    public void storeBookmarks() {
         Logger.normal(this, "Attempting to save bookmarks to " + bookmarksFile.toString());
         SimpleFieldSet sfs;
         synchronized (bookmarks) {
@@ -378,7 +367,7 @@ public class BookmarkManager {
                 SimpleFieldSet subset = sfs.subset(categories[i]);
                 BookmarkCategory currentCategory = new BookmarkCategory(categories[i]);
                 category.addBookmark(currentCategory);
-                addBookmark(currentCategory, currentCategory, false);
+                addBookmark(currentCategory, currentCategory);
                 readBookmarks(currentCategory, subset);
             }
 
@@ -389,7 +378,7 @@ public class BookmarkManager {
                 try {
                     BookmarkItem item = new BookmarkItem(line, node.alerts);
                     category.addBookmark(item);
-                    addBookmark(category, item, false);
+                    addBookmark(category, item);
                 } catch (MalformedURLException e) {
                     Logger.error(this, "Error while adding one of the bookmarks :" + e.getMessage(), e);
                 }

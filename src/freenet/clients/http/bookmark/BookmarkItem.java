@@ -132,8 +132,9 @@ public class BookmarkItem extends Bookmark {
         return key;
     }
 
-    public synchronized void setKey(FreenetURI uri, boolean hasAnActivelink) {
-        key = uri;
+    public synchronized void update(FreenetURI uri, boolean hasAnActivelink, String description) {
+        this.key = uri;
+        this.desc = description;
         this.hasAnActivelink = hasAnActivelink;
     }
 
@@ -146,7 +147,7 @@ public class BookmarkItem extends Bookmark {
     }
 
     public String toString() {
-        return this.name + "###" + this.desc + "###" + this.hasAnActivelink + "###" + this.key.toString();
+        return this.name + "###" + (this.desc != null ? this.desc : "") + "###" + this.hasAnActivelink + "###" + this.key.toString();
     }
 
     public synchronized void setEdition(long ed, NodeClientCore node) {
@@ -193,5 +194,9 @@ public class BookmarkItem extends Bookmark {
 
     public boolean hasAnActivelink() {
         return hasAnActivelink;
+    }
+    
+    public String getDescription() {
+        return desc;
     }
 }
