@@ -467,6 +467,10 @@ public class SimpleFieldSet {
 	public KeyIterator keyIterator(String prefix) {
 		return new KeyIterator(prefix);
 	}
+        
+        public Iterator toplevelKeyIterator() {
+            return values.keySet().iterator();
+        }
 	
     public class KeyIterator implements Iterator {
     	

@@ -149,8 +149,9 @@ public class BookmarkManager {
     }
 
     public BookmarkCategory getCategoryByPath(String path) {
-        if (getBookmarkByPath(path.trim()) instanceof BookmarkCategory) {
-            return (BookmarkCategory) getBookmarkByPath(path);
+        Bookmark cat = getBookmarkByPath(path.trim());
+        if (cat instanceof BookmarkCategory) {
+            return (BookmarkCategory) cat;
         }
 
         return null;
@@ -164,22 +165,18 @@ public class BookmarkManager {
         return null;
     }
 
-    public void addBookmark(BookmarkCategory parent, Bookmark bookmark) {
-        if (bookmark instanceof BookmarkItem && ((BookmarkItem) bookmark).getKeyType().equals("USK")) {
-            try {
-                USK u = ((BookmarkItem) bookmark).getUSK();
-                this.node.uskManager.subscribe(u, this.uskCB, true, this);
-            } catch (MalformedURLException mue) {
-            }
-        }
-    }
-
     public void addBookmark(String parentPath, Bookmark bookmark) {
         BookmarkCategory parent = getCategoryByPath(parentPath);
         parent.addBookmark(bookmark);
         putPaths(parentPath + bookmark.getName() + ((bookmark instanceof BookmarkCategory) ? "/" : ""),
                 bookmark);
-        addBookmark(parent, bookmark);
+
+        if (bookmark instanceof BookmarkItem && ((BookmarkItem) bookmark).getKeyType().equals("USK")) {
+            try {
+                USK u = ((BookmarkItem) bookmark).getUSK();
+                this.node.uskManager.subscribe(u, this.uskCB, true, this);
+            } catch (MalformedURLException mue) {}
+        }
     }
 
     public void renameBookmark(String path, String newName) {
@@ -361,24 +358,31 @@ public class BookmarkManager {
     }
 
     private void readBookmarks(BookmarkCategory category, SimpleFieldSet sfs) {
+        _innerReadBookmarks("", category, sfs);
+    }
+    
+    private void _innerReadBookmarks(String prefix, BookmarkCategory category, SimpleFieldSet sfs) {
         synchronized (bookmarks) {
+            putPaths(prefix + category.name + '/', category);
+            
             String[] categories = sfs.namesOfDirectSubsets();
             for (int i = 0; i < categories.length; i++) {
                 SimpleFieldSet subset = sfs.subset(categories[i]);
                 BookmarkCategory currentCategory = new BookmarkCategory(categories[i]);
+                String name = prefix + category.name + '/';
                 category.addBookmark(currentCategory);
-                addBookmark(currentCategory, currentCategory);
-                readBookmarks(currentCategory, subset);
+                _innerReadBookmarks((category.equals(MAIN_CATEGORY) ? "/" : name), currentCategory, subset);
             }
-
-            Iterator it = sfs.keyIterator();
+                        
+            Iterator it = sfs.toplevelKeyIterator();
             while (it.hasNext()) {
                 String key = (String) it.next();
                 String line = sfs.get(key);
                 try {
                     BookmarkItem item = new BookmarkItem(line, node.alerts);
+                    String name = prefix + category.name + '/' +item.name;
+                    putPaths(name, item);
                     category.addBookmark(item);
-                    addBookmark(category, item);
                 } catch (MalformedURLException e) {
                     Logger.error(this, "Error while adding one of the bookmarks :" + e.getMessage(), e);
                 }
