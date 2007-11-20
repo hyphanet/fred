@@ -14,7 +14,6 @@ import freenet.support.Fields;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 
-import freenet.support.SimpleFieldSet;
 import java.net.MalformedURLException;
 
 public class BookmarkItem extends Bookmark {
@@ -24,6 +23,7 @@ public class BookmarkItem extends Bookmark {
         private boolean hasAnActivelink = false;
 	private final BookmarkUpdatedUserAlert alert;
 	private final UserAlertManager alerts;
+        protected String desc;
 
 	public BookmarkItem(FreenetURI k, String n, boolean hasAnActivelink, UserAlertManager uam)
 			throws MalformedURLException {

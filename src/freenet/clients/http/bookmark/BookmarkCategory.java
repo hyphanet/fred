@@ -13,11 +13,6 @@ public class BookmarkCategory extends Bookmark {
 		setName(name);
 	}
 
-	public BookmarkCategory(String name, String desc) {
-		setName(name);
-		setDesc(desc);
-	}
-
 	protected synchronized Bookmark addBookmark(Bookmark b) {
                 if(b == null) return null;
 		int x = bookmarks.indexOf(b);

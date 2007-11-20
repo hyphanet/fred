@@ -5,8 +5,6 @@ public abstract class Bookmark {
 
 	protected String name;
 
-	protected String desc;
-
 	public boolean isPrivate() {
 		return privateBookmark;
 	}
@@ -20,23 +18,12 @@ public abstract class Bookmark {
 	protected void setName(String s) {
 		name = s;
 	}
-
-	public String getDesc() {
-		return desc;
-	}
-
-	public void setDesc(String s) {
-		desc = s;
-	}
 	
 	public boolean equals(Object o) {
 		if(o == this) return true;
 		if(o instanceof Bookmark) {
 			Bookmark b = (Bookmark) o;
-                        if(b.name == null || b.desc == null) return false;
 			if(!b.name.equals(name)) return false;
-			// Compensate for nulls
-			if(!String.valueOf(b.desc).equals(String.valueOf(desc))) return false;
 			if(b.privateBookmark != privateBookmark) return false;
 			return true;
 		} else return false;
