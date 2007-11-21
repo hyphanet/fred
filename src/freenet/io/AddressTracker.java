@@ -105,4 +105,9 @@ public class AddressTracker {
 		PeerAddressTrackerItem[] items = new PeerAddressTrackerItem[peerTrackers.size()];
 		return (PeerAddressTrackerItem[]) peerTrackers.values().toArray(items);
 	}
+
+	public synchronized InetAddressAddressTrackerItem[] getInetAddressTrackerItems() {
+		InetAddressAddressTrackerItem[] items = new InetAddressAddressTrackerItem[ipTrackers.size()];
+		return (InetAddressAddressTrackerItem[]) ipTrackers.values().toArray(items);
+	}
 }

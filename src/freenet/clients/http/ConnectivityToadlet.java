@@ -20,6 +20,7 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.io.AddressTracker;
+import freenet.io.InetAddressAddressTrackerItem;
 import freenet.io.PeerAddressTrackerItem;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.l10n.L10n;
@@ -70,6 +71,7 @@ public class ConnectivityToadlet extends Toadlet {
 		String remote = l10n("remote");
 		
 		for(int i=0;i<handlers.length;i++) {
+			// Peers
 			HTMLNode portsBox = pageMaker.getInfobox(L10n.getString("ConnectivityToadlet.byPortTitle", "port", handlers[i].getName()));
 			contentNode.addChild(portsBox);
 			HTMLNode portsContent = pageMaker.getContentNode(portsBox);
@@ -97,7 +99,35 @@ public class ConnectivityToadlet extends Toadlet {
 				// Lead in time to first packet received
 				row.addChild("td", TimeUtil.formatTime(item.timeFromStartupToFirstReceivedPacket()));
 			}
-			// FIXME IP addresses too
+
+			// IPs
+			portsBox = pageMaker.getInfobox(L10n.getString("ConnectivityToadlet.byIPTitle", "ip", handlers[i].getName()));
+			contentNode.addChild(portsBox);
+			portsContent = pageMaker.getContentNode(portsBox);
+			InetAddressAddressTrackerItem[] ipItems = tracker.getInetAddressTrackerItems();
+			table = portsContent.addChild("table");
+			row = table.addChild("tr");
+			row.addChild("th", l10n("addressTitle"));
+			row.addChild("th", l10n("sentReceivedTitle"));
+			row.addChild("th", l10n("localRemoteTitle"));
+			row.addChild("th", l10n("firstSendLeadTime"));
+			row.addChild("th", l10n("firstReceiveLeadTime"));
+			for(int j=0;j<ipItems.length;j++) {
+				row = table.addChild("tr");
+				InetAddressAddressTrackerItem item = ipItems[j];
+				// Address
+				row.addChild("td", item.addr.toString());
+				// Sent/received packets
+				row.addChild("td", item.packetsSent() + "/ " + item.packetsReceived());
+				// Initiator: local/remote FIXME something more graphical e.g. colored cells
+				row.addChild("td", item.packetsReceived() == 0 ? noreply :
+						(item.weSentFirst() ? local : remote));
+				// Lead in time to first packet sent
+				row.addChild("td", TimeUtil.formatTime(item.timeFromStartupToFirstSentPacket()));
+				// Lead in time to first packet received
+				row.addChild("td", TimeUtil.formatTime(item.timeFromStartupToFirstReceivedPacket()));
+			}
+
 		}
 		
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
