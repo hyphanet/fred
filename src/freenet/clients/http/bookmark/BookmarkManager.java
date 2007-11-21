@@ -364,10 +364,10 @@ public class BookmarkManager {
                 }
             } catch (IOException e) {
             }
-        }
-
-        synchronized (bookmarks) {
-            isSavingBookmarks = false;
+            
+            synchronized (bookmarks) {
+                isSavingBookmarks = false;
+            }
         }
     }
 
