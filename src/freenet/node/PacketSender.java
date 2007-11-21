@@ -202,7 +202,7 @@ public class PacketSender implements Runnable, Ticker {
             lastReceivedPacketFromAnyNode =
                 Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
             pn.maybeOnConnect();
-            if(pn.isConnected()) {
+            if(pn.isConnected() && !pn.isRekeying()) {
             	// Is the node dead?
             	if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
             		Logger.normal(this, "Disconnecting from "+pn+" - haven't received packets recently");

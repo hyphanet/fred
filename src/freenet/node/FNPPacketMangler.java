@@ -103,6 +103,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/** The key used to authenticate the hmac */
 	private final byte[] transientKey = new byte[TRANSIENT_KEY_SIZE];
 	public static final int TRANSIENT_KEY_REKEYING_MIN_INTERVAL = 30*60*1000;
+        /** The rekeying interval for the session key (keytrackers) */
+        public static final int SESSION_KEY_REKEYING_INTERVAL = 60*60*1000;
+        /** The amount of data sent before we ask for a rekey */
+        public static final int AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY = 1024 * 1024;
 	/** The Runnable in charge of rekeying on a regular basis */
 	private final Runnable transientKeyRekeyer = new Runnable() {
 		public void run() {
@@ -1817,6 +1821,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				usm.checkFilters(m, sock);
 			}
 		}
+                
+                tracker.pn.maybeRekey(tracker);
 		if(logMINOR) Logger.minor(this, "Done");
 	}
 
@@ -2075,8 +2081,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Key changed(2) for "+peer.getPeer());
 				if(last == peer.getCurrentKeyTracker()) {
 					if(peer.isConnected()) {
-						Logger.error(this, "Peer is connected, yet current tracker is deprecated !!: "+e, e);
-						throw new NotConnectedException("Peer is connected, yet current tracker is deprecated !!: "+e);
+						Logger.error(this, "Peer is connected, yet current tracker is deprecated !! (rekey ?): "+e, e);
+						throw new NotConnectedException("Peer is connected, yet current tracker is deprecated !! (rekey ?): "+e);
 					}
 				}
 				// Go around again

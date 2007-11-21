@@ -123,6 +123,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     /** Previous key - has a separate packet number space */
     private KeyTracker previousTracker;
     
+    /** When did we last rekey (promote the unverified tracker to new) ? */
+    private long timeLastRekeyed;
+    
+    /** How much data did we send with the current tracker ? */
+    private long totalBytesExchangedWithCurrentTracker = 0;
+    
+    /** Are we rekeying ? */
+    private boolean isRekeying = false;
+    
     /** Unverified tracker - will be promoted to currentTracker if
      * we receive packets on it
      */
@@ -950,6 +959,26 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     public synchronized long timeLastRoutable() {
         return timeLastRoutable;
     }
+    
+    protected void maybeRekey(final KeyTracker tracker) {
+        long now = System.currentTimeMillis();
+        boolean hasRekeyed = false;
+        if(hasLiveHandshake(now)) return;
+        synchronized (this) {
+            if(isRekeying || !isConnected) return;
+            if((timeLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL < now) || (totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY)) {
+                hasRekeyed = true;
+                isRekeying = true;
+                tracker.deprecated();
+            }
+        }
+        if(hasRekeyed)
+            Logger.normal(this, "We are asking for the key to be renewed ("+this.detectedPeer+')');
+    }
+    
+    protected synchronized boolean isRekeying() {
+        return isRekeying;
+    }
 
     /**
      * @return The time this PeerNode was added to the node (persistent across restarts).
@@ -980,6 +1009,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         	// Force renegotiation.
             isConnected = false;
             isRoutable = false;
+            isRekeying = false;
             // Prevent sending packets to the node until that happens.
             if(currentTracker != null)
             	currentTracker.disconnected();
@@ -1079,15 +1109,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     public boolean shouldSendHandshake() {
         long now = System.currentTimeMillis();
         boolean tempShouldSendHandshake = false;
-        synchronized(this) {
-        	tempShouldSendHandshake = (!isConnected()) &&
-                (handshakeIPs != null) &&
-                (now > sendHandshakeTime);
-		}
-		if(tempShouldSendHandshake && (hasLiveHandshake(now))) {
-			tempShouldSendHandshake = false;
-		}
-		return tempShouldSendHandshake;
+        synchronized (this) {
+            tempShouldSendHandshake = ((!isConnected()) && (handshakeIPs != null) && (now > sendHandshakeTime)) || isRekeying;
+        }
+        if (tempShouldSendHandshake && (hasLiveHandshake(now))) {
+            tempShouldSendHandshake = false;
+        }
+        return tempShouldSendHandshake;
     }
     
     /**
@@ -1510,7 +1538,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
 			this.bootID = thisBootID;
-			connectedTime = now;
 			if(bootIDChanged) {
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
@@ -1534,7 +1561,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				peerAddedTime = 0;  // don't store anymore
 				ctx = null;
 			}
-			sentInitialMessages = false;
+                        
+                        if(!isRekeying) {
+                            connectedTime = now;
+                            sentInitialMessages = false;
+                        }
+                        isRekeying = false;
+                        timeLastRekeyed = now;
+                        totalBytesExchangedWithCurrentTracker = 0;
 		}
 
     	if(bootIDChanged) {
@@ -2621,10 +2655,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public synchronized void reportIncomingBytes(int length) {
 		totalBytesIn += length;
+                totalBytesExchangedWithCurrentTracker += length;
 	}
 	
 	public synchronized void reportOutgoingBytes(int length) {
 		totalBytesOut += length;
+                totalBytesExchangedWithCurrentTracker += length;
 	}
 	
 	public synchronized long getTotalInputBytes() {
