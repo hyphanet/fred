@@ -46,7 +46,7 @@ public class StringArrOption extends Option {
 		}
 	}
 	
-	private String[] stringToArray(String val) throws URLEncodedFormatException {
+	public static String[] stringToArray(String val) throws URLEncodedFormatException {
 		if(val.length() == 0) return new String[0];
 		String[] out = val.split(delimiter);
 		for(int i=0;i<out.length;i++) {

@@ -9,12 +9,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import freenet.client.async.USKCallback;
+import freenet.config.StringArrOption;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.StringArray;
+import freenet.support.URLEncodedFormatException;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -68,7 +72,13 @@ public class BookmarkManager {
                     "Frost", true, node.alerts));
 
             //TODO: remove
-            String[] oldBookmarks = oldConfig.getAll("bookmarks");
+            String[] oldBookmarks;
+			try {
+				oldBookmarks = StringArrOption.stringToArray(oldConfig.get("fproxy.bookmarks"));
+			} catch (URLEncodedFormatException e) {
+				Logger.error(this, "Not possible to migrate: caught "+e, e);
+				oldBookmarks = null;
+			}
             if (oldBookmarks != null) {
                 migrateOldBookmarks(oldBookmarks);
             }
@@ -86,6 +96,8 @@ public class BookmarkManager {
     }
 
     private void migrateOldBookmarks(String[] newVals) {
+    	if(Logger.shouldLog(Logger.MINOR, this))
+    		Logger.minor(this, "Migrating bookmarks: "+StringArray.toString(newVals));
         //FIXME: for some reason that doesn't work... if someone wants to fix it ;)
         Pattern pattern = Pattern.compile("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
         FreenetURI key;
@@ -171,6 +183,8 @@ public class BookmarkManager {
     }
 
     public void addBookmark(String parentPath, Bookmark bookmark) {
+    	if(Logger.shouldLog(Logger.MINOR, this))
+    		Logger.minor(this, "Adding bookmark "+bookmark+" to "+parentPath);
         BookmarkCategory parent = getCategoryByPath(parentPath);
         parent.addBookmark(bookmark);
         putPaths(parentPath + bookmark.getName() + ((bookmark instanceof BookmarkCategory) ? "/" : ""),
