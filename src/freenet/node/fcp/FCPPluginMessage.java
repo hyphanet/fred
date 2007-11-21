@@ -4,9 +4,8 @@
 package freenet.node.fcp;
 
 import freenet.node.Node;
-import freenet.pluginmanager.FCPPluginOutputWrapper;
-import freenet.pluginmanager.FredPluginFCP;
-import freenet.support.Logger;
+import freenet.pluginmanager.PluginNotFoundException;
+import freenet.pluginmanager.PluginTalker;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
@@ -15,7 +14,7 @@ import freenet.support.api.Bucket;
  * 
  * FCPPluginMessage
  * Identifer=me
- * PluginName=plugins.HelloFCP (or plugins.HelloFCP.HelloFCP?)
+ * PluginName=plugins.HelloFCP.HelloFCP
  * Param.Itemname1=value1
  * Param.Itemname2=value2
  * ...
@@ -93,27 +92,16 @@ public class FCPPluginMessage extends DataCarryingMessage {
 
 	public void run(final FCPConnectionHandler handler, final Node node) throws MessageInvalidException {
 
-		final Bucket data2 = this.bucket;
-		final FCPPluginOutputWrapper replysender = new FCPPluginOutputWrapper(handler, pluginname, identifier);
-		node.executor.execute(new Runnable() {
-
-			public void run() {
-				Logger.normal(this, "Searching fcp plugin: " + pluginname);
-				FredPluginFCP plug = node.pluginManager.getFCPPlugin(pluginname);
-				if (plug == null) {
-					Logger.error(this, "Could not find fcp plugin: " + pluginname);
-					return;
-				}
-				Logger.normal(this, "Found fcp plugin: " + pluginname);
-				
-				try {
-					plug.handle(replysender, plugparams, data2, handler.hasFullAccess());
-				} catch (Throwable t) {
-					Logger.error(this, "Cought error while execute fcp plugin handler" + t.getMessage(), t);
-				}
-			
-			}
-		}, "FCPPlugin runner for " + pluginname);
+		Bucket data2 = this.bucket;
+		
+		PluginTalker pt;
+		try {
+			pt = new PluginTalker(node, handler, pluginname, identifier, handler.hasFullAccess());
+		} catch (PluginNotFoundException e) {
+			throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_PLUGIN, pluginname + " not found or is not a FCPPlugin", identifier, false);
+		}
+		
+		pt.send(plugparams, data2);
 
 	}
 
