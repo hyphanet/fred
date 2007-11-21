@@ -1562,7 +1562,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				ctx = null;
 			}
                         
-                        if(!isRekeying && !isConnected) {
+			// Don't reset the uptime if we rekey
+                        if(!isConnected) {
                             connectedTime = now;
                             sentInitialMessages = false;
                         }
