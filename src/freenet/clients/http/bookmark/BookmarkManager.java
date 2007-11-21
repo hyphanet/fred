@@ -376,6 +376,7 @@ public class BookmarkManager {
     }
     
     private void _innerReadBookmarks(String prefix, BookmarkCategory category, SimpleFieldSet sfs) {
+        boolean hasBeenParsedWithoutAnyProblem = true;
         boolean isRoot = ("".equals(prefix) && MAIN_CATEGORY.equals(category));
         synchronized (bookmarks) {
             if(!isRoot)
@@ -401,9 +402,11 @@ public class BookmarkManager {
                     category.addBookmark(item);
                 } catch (MalformedURLException e) {
                     Logger.error(this, "Error while adding one of the bookmarks :" + e.getMessage(), e);
+                    hasBeenParsedWithoutAnyProblem = false;
                 }
             }
         }
-        storeBookmarks();
+        if(hasBeenParsedWithoutAnyProblem)
+            storeBookmarks();
     }
 }
