@@ -73,21 +73,15 @@ public class WelcomeToadlet extends Toadlet {
             for (int i = 0; i < items.size(); i++) {
                 BookmarkItem item = items.get(i);
                 HTMLNode row = table.addChild("tr");
-                HTMLNode cell = new HTMLNode("td", "style", "border: none");
-                String description = item.getDescription();
-                if(!"".equals(description))
-                    row.addChild("span", new String[] { "title", "style"}, new String[]{ description, "cursor: help;"}).addChild(cell);
-                else
-                    row.addChild(cell);
-                
+                HTMLNode cell = row.addChild("td", "style", "border: none");
                 if (item.hasAnActivelink()) {
-                    cell.addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "height", "width", "alt"},
-                            new String[]{'/' + item.getKey() + "/activelink.png", "36px", "108px", "activelink"});
+                    cell.addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "height", "width", "alt", "title"},
+                            new String[]{'/' + item.getKey() + "/activelink.png", "36px", "108px", "activelink", item.getDescription()});
                 } else {
                     cell.addChild("#", " ");
                 }
                 cell = row.addChild("td", "style", "border: none");
-                cell.addChild("a", "href", '/' + item.getKey(), item.getName());
+                cell.addChild("a", new String[]{"href", "title"}, new String[]{ '/' + item.getKey(), item.getDescription()}, item.getName());
             }
         }
 
