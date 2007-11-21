@@ -73,16 +73,20 @@ public class BookmarkManager {
 
             //TODO: remove
             String[] oldBookmarks;
-			try {
-				String o = oldConfig.get("fproxy.bookmarks");
-				if(o == null) oldBookmarks = null;
-				else oldBookmarks = StringArrOption.stringToArray(o);
-			} catch (URLEncodedFormatException e) {
-				Logger.error(this, "Not possible to migrate: caught "+e, e);
-				oldBookmarks = null;
-			}
+            try {
+                String o = oldConfig.get("fproxy.bookmarks");
+                if (o == null) {
+                    oldBookmarks = null;
+                } else {
+                    oldBookmarks = StringArrOption.stringToArray(o);
+                }
+            } catch (URLEncodedFormatException e) {
+                Logger.error(this, "Not possible to migrate: caught " + e, e);
+                oldBookmarks = null;
+            }
             if (oldBookmarks != null) {
                 migrateOldBookmarks(oldBookmarks);
+                storeBookmarks();
             }
 
             if (bookmarksFile.exists() && bookmarksFile.canRead() && bookmarksFile.length() > 0) {
@@ -90,8 +94,6 @@ public class BookmarkManager {
                 SimpleFieldSet sfs = SimpleFieldSet.readFrom(bookmarksFile, false, true);
                 readBookmarks(MAIN_CATEGORY, sfs);
             }
-            storeBookmarks();
-
         } catch (MalformedURLException mue) {
         } catch (IOException ioe) {
             Logger.error(this, "Error reading the bookmark file (" + bookmarksFile.toString() + "):" + ioe.getMessage(), ioe);
