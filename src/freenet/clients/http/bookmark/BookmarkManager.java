@@ -74,7 +74,9 @@ public class BookmarkManager {
             //TODO: remove
             String[] oldBookmarks;
 			try {
-				oldBookmarks = StringArrOption.stringToArray(oldConfig.get("fproxy.bookmarks"));
+				String o = oldConfig.get("fproxy.bookmarks");
+				if(o == null) oldBookmarks = null;
+				else oldBookmarks = StringArrOption.stringToArray(o);
 			} catch (URLEncodedFormatException e) {
 				Logger.error(this, "Not possible to migrate: caught "+e, e);
 				oldBookmarks = null;
@@ -88,6 +90,7 @@ public class BookmarkManager {
                 SimpleFieldSet sfs = SimpleFieldSet.readFrom(bookmarksFile, false, true);
                 readBookmarks(MAIN_CATEGORY, sfs);
             }
+            storeBookmarks();
 
         } catch (MalformedURLException mue) {
         } catch (IOException ioe) {
