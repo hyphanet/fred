@@ -186,8 +186,10 @@ public class BookmarkItem extends Bookmark {
             if (b.hasAnActivelink != hasAnActivelink) {
                 return false;
             }
-            if (!(b.desc == null && desc == null) || !b.desc.equals(desc)) {
-                return false;
+	    if(!(b.desc == null && desc == null)) {
+		if(!b.desc.equals(desc)) {
+	                return false;
+		}
             }
             return true;
         } else {
