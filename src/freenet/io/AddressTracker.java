@@ -110,4 +110,39 @@ public class AddressTracker {
 		InetAddressAddressTrackerItem[] items = new InetAddressAddressTrackerItem[ipTrackers.size()];
 		return (InetAddressAddressTrackerItem[]) ipTrackers.values().toArray(items);
 	}
+	
+	public static final int DEFINITELY_PORT_FORWARDED = 1;
+	public static final int DEFINITELY_NATED = -1;
+	public static final int DONT_KNOW = 0;
+	
+	/** Assume NAT UDP hole punching tunnels are no longer than this */
+	public static int MAX_TUNNEL_LENGTH = ((5*60)+1)*1000;
+	
+	public int getPortForwardStatus() {
+		PeerAddressTrackerItem[] items = getPeerAddressTrackerItems();
+		for(int i=0;i<items.length;i++) {
+			PeerAddressTrackerItem item = items[i];
+			if(item.packetsReceived() <= 0) continue;
+			if(item.weSentFirst()) continue;
+			if(!item.peer.isRealInternetAddress(false, false)) continue;
+			if(item.timeFromStartupToFirstReceivedPacket() > MAX_TUNNEL_LENGTH) {
+				// FIXME should require more than one
+				return DEFINITELY_PORT_FORWARDED;
+			}
+		}
+		return DONT_KNOW;
+	}
+	
+	public static String statusString(int status) {
+		switch(status) {
+		case DEFINITELY_PORT_FORWARDED:
+			return "Port forwarded";
+		case DEFINITELY_NATED:
+			return "Behind NAT";
+		case DONT_KNOW:
+			return "Status unknown";
+		default:
+			return "Error";
+		}
+	}
 }
