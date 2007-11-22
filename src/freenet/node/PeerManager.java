@@ -35,6 +35,7 @@ import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FileUtil;
+import freenet.support.io.Closer;
 
 /**
  * @author amphibian
@@ -853,25 +854,27 @@ public class PeerManager {
      */
     private void writePeersInner(String filename, PeerNode[] peers) {
         synchronized (writePeersSync) {
-            FileOutputStream fos;
+            FileOutputStream fos = null;
             String f = filename + ".bak";
             try {
                 fos = new FileOutputStream(f);
             } catch (FileNotFoundException e2) {
                 Logger.error(this, "Cannot write peers to disk: Cannot create "
                         + f + " - " + e2, e2);
+		Closer.close(fos);
                 return;
             }
-            OutputStreamWriter w;
+            OutputStreamWriter w = null;
 			try {
 				w = new OutputStreamWriter(fos, "UTF-8");
 			} catch (UnsupportedEncodingException e2) {
+				Closer.close(w);
 				throw new Error("UTF-8 unsupported!: "+e2, e2);
 			}
             BufferedWriter bw = new BufferedWriter(w);
             try {
             	boolean succeeded = writePeers(bw, peers);
-                bw.close();
+                bw.close(); bw = null;
                 if(!succeeded) return;
             } catch (IOException e) {
             	try {
@@ -881,7 +884,10 @@ public class PeerManager {
             	}
                 Logger.error(this, "Cannot write file: " + e, e);
                 return; // don't overwrite old file!
-            }
+            } finally {
+		    Closer.close(bw);
+		    Closer.close(fos);
+	    }
             File fnam = new File(filename);
             FileUtil.renameTo(new File(f), fnam);
         }
