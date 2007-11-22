@@ -30,6 +30,9 @@ public class RemovePeer extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, NAME + " requires full access", null, false);
 		}
 		String nodeIdentifier = fs.get("NodeIdentifier");
+		if( nodeIdentifier == null ) {
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", null, false);
+		}
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
 			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier);

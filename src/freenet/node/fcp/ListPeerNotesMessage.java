@@ -31,6 +31,9 @@ public class ListPeerNotesMessage extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ListPeerNotes requires full access", fs.get("Identifier"), false);
 		}
 		String nodeIdentifier = fs.get("NodeIdentifier");
+		if( nodeIdentifier == null ) {
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", null, false);
+		}
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
 			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier);
