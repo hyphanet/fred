@@ -825,7 +825,7 @@ public class PeerManager {
         return sb.toString();
     }
 
-    final Object writePeersSync = new Object();
+    private final Object writePeersSync = new Object();
     
     void writePeers() {
     	node.ps.queueTimedJob(new Runnable() {
