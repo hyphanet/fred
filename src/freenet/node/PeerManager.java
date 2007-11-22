@@ -734,10 +734,6 @@ public class PeerManager {
             	if(logMINOR) Logger.minor(this, "Skipping (routing backed off): "+p.getPeer());
             	continue;
             }
-            if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion()) < minVersion) {
-            	if(logMINOR) Logger.minor(this, "Skipping old version: "+p.getPeer());
-            	continue;
-            }
             count++;
             double diff = Location.distance(p, target);
             if(diff > maxDistance) continue;
