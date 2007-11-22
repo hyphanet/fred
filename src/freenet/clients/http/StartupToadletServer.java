@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
-import freenet.config.PersistentConfig;
 import freenet.support.HTMLNode;
 import java.io.File;
 import java.io.IOException;
@@ -85,7 +84,9 @@ public class StartupToadletServer implements Runnable {
             } else {
                 String desc = "Freenet is starting up";
                 HTMLNode pageNode = ctx.getPageMaker().getPageNode(desc, false, ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+                HTMLNode headNode = ctx.getPageMaker().getHeadNode(pageNode);
+                headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "5; url="});
+                HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
 		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
