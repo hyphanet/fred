@@ -64,8 +64,6 @@ public class OpennetManager {
 	/** Only drop a connection after at least this many successful requests */
 	// FIXME should be a function of # opennet peers? max # opennet peers? ...
 	static final int MIN_SUCCESS_BETWEEN_DROP_CONNS = 10;
-	// FIXME make this configurable
-	static final int MAX_PEERS = 20;
 	/** Chance of resetting path folding (for plausible deniability) is 1 in this number. */
 	static final int RESET_PATH_FOLDING_PROB = 20;
 	/** Don't re-add a node until it's been up and disconnected for at least this long */
@@ -452,7 +450,7 @@ public class OpennetManager {
 	}
 
 	protected int getNumberOfConnectedPeersToAim() {
-		return MAX_PEERS - node.peers.countConnectedDarknetPeers();
+		return node.getMaxOpennetPeers() - node.peers.countConnectedDarknetPeers();
 	}
 
 	/**

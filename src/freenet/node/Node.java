@@ -330,6 +330,7 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private final NodeCryptoConfig opennetCryptoConfig;
 	private OpennetManager opennet;
+	private int maxOpennetPeers;
 	private boolean passOpennetRefsThroughDarknet;
 	
 	// General stuff
@@ -800,7 +801,22 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 		
-		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 1 /* 0 = enabled */, true);
+		opennetConfig.register("maxOpennetPeers", "20", 1, true, false, "Node.maxOpennetPeers",
+				"Node.maxOpennetPeers.maxOpennetPeersLong", new IntCallback() {
+					public int get() {
+						return maxOpennetPeers;
+					}
+					public void set(int inputMaxOpennetPeers) throws InvalidConfigValueException {
+						if(inputMaxOpennetPeers < 0) throw new InvalidConfigValueException(l10n("mustBePositive"));
+						if(inputMaxOpennetPeers > 20) throw new InvalidConfigValueException(l10n("maxOpennetPeersMustBeTwentyOrLess"));
+						maxOpennetPeers = inputMaxOpennetPeers;
+						}
+					}
+		);
+		
+		maxOpennetPeers = opennetConfig.getInt("maxOpennetPeers");
+		
+		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true);
 		
 		if(opennetEnabled) {
 			opennet = new OpennetManager(this, opennetCryptoConfig, System.currentTimeMillis());
@@ -2760,4 +2776,8 @@ public class Node implements TimeSkewDetectorCallback {
 				return new UdpSocketHandler[] { darknetCrypto.socket };
 			}
 		}
+
+	public int getMaxOpennetPeers() {
+		return maxOpennetPeers;
+	}
 }
