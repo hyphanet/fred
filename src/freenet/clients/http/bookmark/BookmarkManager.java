@@ -22,6 +22,7 @@ import freenet.support.URLEncodedFormatException;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Iterator;
@@ -364,10 +365,10 @@ public class BookmarkManager {
             }
             sfs = toSave;
         }
-        FileWriter fw = null;
+        FileOutputStream fos = null;
         try {
-            fw = new FileWriter(backupBookmarksFile);
-            sfs.writeTo(fw);
+            fos = new FileOutputStream(backupBookmarksFile);
+            sfs.writeTo(fos);
             
             if (!FileUtil.renameTo(backupBookmarksFile, bookmarksFile)) {
                 Logger.error(this, "Unable to rename " + backupBookmarksFile.toString() + " to " + bookmarksFile.toString());
@@ -375,7 +376,7 @@ public class BookmarkManager {
         } catch (IOException ioe) {
             Logger.error(this, "An error has occured saving the bookmark file :" + ioe.getMessage(), ioe);
         } finally {
-            Closer.close(fw);
+            Closer.close(fos);
             
             synchronized (bookmarks) {
                 isSavingBookmarks = false;

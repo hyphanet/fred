@@ -15,6 +15,7 @@ import java.io.OutputStreamWriter;
 
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
 
@@ -136,17 +137,15 @@ public class FilePersistentConfig extends PersistentConfig {
 		SimpleFieldSet fs = exportFieldSet();
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "fs = "+fs);
-		FileOutputStream fos = new FileOutputStream(tempFilename);
+                FileOutputStream fos = null;
 		try {
-			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos, "UTF-8"));
-			synchronized(this) {
-				fs.writeTo(bw);
-			}
-			bw.close();
-		} catch (IOException e) {
-			fos.close();
-			throw e;
-		}
+                    fos = new FileOutputStream(tempFilename);
+                    synchronized(this) {
+                        fs.writeTo(fos);
+                    }
+                } finally {
+                    Closer.close(fos);
+                }
                 
                 FileUtil.renameTo(tempFilename, filename);
 	}

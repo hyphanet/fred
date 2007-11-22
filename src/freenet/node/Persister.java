@@ -1,17 +1,14 @@
 package freenet.node;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 class Persister implements Runnable {
@@ -63,37 +60,22 @@ class Persister implements Runnable {
 		SimpleFieldSet fs = persistable.persistThrottlesToFieldSet();
 		try {
 			FileOutputStream fos = new FileOutputStream(persistTemp);
-			// FIXME common pattern, reuse it.
-			BufferedOutputStream bos = new BufferedOutputStream(fos);
-			OutputStreamWriter osw = new OutputStreamWriter(bos, "UTF-8");
-			BufferedWriter bw = new BufferedWriter(osw);
 			try {
-				fs.writeTo(bw);
+				fs.writeTo(fos);
 			} catch (IOException e) {
 				try {
 					fos.close();
 					persistTemp.delete();
 					return;
-				} catch (IOException e1) {
-					// Ignore
-				}
+				} catch (IOException e1) {}
 			}
-			try {
-				bw.close();
-			} catch (IOException e) {
-				// Huh?
-				Logger.error(this, "Caught while closing: "+e, e);
-				return;
-			}
+			Closer.close(fos);
 
                         FileUtil.renameTo(persistTemp, persistTarget);
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Could not store throttle data to disk: "+e, e);
 			return;
-		} catch (UnsupportedEncodingException e) {
-			Logger.error(this, "Unsupported encoding: UTF-8 !!!!: "+e, e);
-		}
-		
+                }
 	}
 
 	public SimpleFieldSet read() {

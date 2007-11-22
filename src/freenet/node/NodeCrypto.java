@@ -3,10 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
@@ -32,6 +30,7 @@ import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Closer;
 
 /**
  * Cryptographic and transport level node identity. 
@@ -337,23 +336,15 @@ class NodeCrypto {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DeflaterOutputStream gis;
 		gis = new DeflaterOutputStream(baos);
-		OutputStreamWriter osw;
 		try {
-			osw = new OutputStreamWriter(gis, "UTF-8");
-		} catch (UnsupportedEncodingException e2) {
-			throw new Error(e2);
+			fs.writeTo(gis);
+                } catch (IOException e) {
+                    Logger.error(this, "IOE :"+e.getMessage(), e);
+		} finally {
+			Closer.close(gis);
+                        Closer.close(baos);
 		}
-		BufferedWriter bw = new BufferedWriter(osw);
-		try {
-			fs.writeTo(bw);
-		} catch (IOException e) {
-			throw new Error(e);
-		}
-		try {
-			bw.close();
-		} catch (IOException e1) {
-			throw new Error(e1);
-		}
+		
 		byte[] buf = baos.toByteArray();
 		byte[] obuf = new byte[buf.length + 1];
 		obuf[0] = 1;

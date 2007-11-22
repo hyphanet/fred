@@ -7,14 +7,12 @@
 package freenet.node;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
@@ -477,14 +475,14 @@ public class Node implements TimeSkewDetectorCallback {
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(backup);
-			OutputStreamWriter osr = new OutputStreamWriter(fos, "UTF-8");
-			BufferedWriter bw = new BufferedWriter(osr);
-			fs.writeTo(bw);
-			bw.close();
-                        FileUtil.renameTo(backup, orig);
-		} catch (IOException e) {
+			fs.writeTo(fos);
+                } catch (IOException ioe){
+                        Logger.error(this, "IOE :"+ioe.getMessage(), ioe);
+                        return;
+                } finally {
                         Closer.close(fos);
 		}
+                FileUtil.renameTo(backup, orig);
 	}
 
 	private void initNodeFileSettings(RandomSource r) {

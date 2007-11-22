@@ -309,9 +309,8 @@ public class BookmarkEditorToadlet extends Toadlet {
             } else if ("edit".equals(action) || "addItem".equals(action) || "addCat".equals(action)) {
 
                 String name = "unnamed";
-                if (req.getPartAsString("name", MAX_NAME_LENGTH).length() > 0) {
+                if (req.isPartSet("name"))
                     name = req.getPartAsString("name", MAX_NAME_LENGTH);
-                }
 
                 if ("edit".equals(action)) {
                     bookmarkManager.renameBookmark(bookmarkPath, name);
@@ -333,7 +332,6 @@ public class BookmarkEditorToadlet extends Toadlet {
                     } else {
                         newBookmark = new BookmarkCategory(name);
                     }
-
                     bookmarkManager.addBookmark(bookmarkPath, newBookmark);
                     bookmarkManager.storeBookmarks();
                     HTMLNode successBox = content.addChild(pageMaker.getInfobox("infobox-success", L10n.getString("BookmarkEditorToadlet.addedNewBookmarkTitle")));

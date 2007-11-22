@@ -350,6 +350,8 @@ public class SimpleFieldSet {
      * Write the contents of the SimpleFieldSet to a Writer.
      * Note: The caller *must* buffer the writer to avoid lousy performance!
      * (StringWriter is by definition buffered, otherwise wrap it in a BufferedWriter)
+     *
+     * @warning keep in mind that a Writer is not necessarily UTF-8!!
      */
 	public void writeTo(Writer w) throws IOException {
 		writeTo(w, "", false);
@@ -359,6 +361,8 @@ public class SimpleFieldSet {
      * Write the contents of the SimpleFieldSet to a Writer.
      * Note: The caller *must* buffer the writer to avoid lousy performance!
      * (StringWriter is by definition buffered, otherwise wrap it in a BufferedWriter)
+     * 
+     * @warning keep in mind that a Writer is not necessarily UTF-8!!
      */
     synchronized void writeTo(Writer w, String prefix, boolean noEndMarker) throws IOException {
     	for(Iterator i = values.entrySet().iterator();i.hasNext();) {
@@ -686,7 +690,7 @@ public class SimpleFieldSet {
 		return readFrom(new FileInputStream(f), allowMultiple, shortLived);
 	}
         
-        public void writeTo(OutputStream os) {
+        public void writeTo(OutputStream os) throws IOException {
             BufferedOutputStream bos = null;
             OutputStreamWriter osw = null;
             BufferedWriter bw = null;
@@ -702,8 +706,6 @@ public class SimpleFieldSet {
                 }
                 bw = new BufferedWriter(osw);
                 writeTo(bw);
-            } catch (IOException ioe) {
-                Logger.error("SimpleFieldSet", "An exception has occured while saving the SFS :"+ioe.getMessage(), ioe);
             }finally {
                 Closer.close(bw);
                 Closer.close(osw);
