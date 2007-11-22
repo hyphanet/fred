@@ -802,7 +802,7 @@ public class Node implements TimeSkewDetectorCallback {
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 		
 		opennetConfig.register("maxOpennetPeers", "20", 1, true, false, "Node.maxOpennetPeers",
-				"Node.maxOpennetPeers.maxOpennetPeersLong", new IntCallback() {
+				"Node.maxOpennetPeersLong", new IntCallback() {
 					public int get() {
 						return maxOpennetPeers;
 					}
