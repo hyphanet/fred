@@ -597,6 +597,14 @@ public class PluginManager {
 			Logger.error(this, "could not access plugin main class", iae1);
 			pluginFile.delete();
 			throw new PluginNotFoundException("could not access plugin main class", iae1);
+		} catch (NoClassDefFoundError ncdfe1) {
+			Logger.error(this, "could not find class def, may a missing lib?", ncdfe1);
+			pluginFile.delete();
+			throw new PluginNotFoundException("could not find class def, may a missing lib?", ncdfe1);
+		} catch (Throwable t) {
+			Logger.error(this, "unexcpected error while plugin loading", t);
+			pluginFile.delete();
+			throw new PluginNotFoundException("unexcpected error while plugin loading "+t, t);
 		}
 	}
 
