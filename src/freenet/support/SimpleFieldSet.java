@@ -18,7 +18,12 @@ import java.util.Iterator;
 import java.util.Map;
 
 import freenet.node.FSParseException;
+import freenet.support.io.Closer;
 import freenet.support.io.LineReader;
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 
 /**
  * @author amphibian
@@ -671,17 +676,40 @@ public class SimpleFieldSet {
 			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived);
 			return fs;
 		} finally {
-			try {
-				if(br != null) br.close();
-				if(isr != null) isr.close();
-				if(bis != null) bis.close();
-			} catch (IOException e) {}			
-		}
+                        Closer.close(br);
+                        Closer.close(isr);
+                        Closer.close(bis);
+                }
 	}
 	
 	public static SimpleFieldSet readFrom(File f, boolean allowMultiple, boolean shortLived) throws IOException {
 		return readFrom(new FileInputStream(f), allowMultiple, shortLived);
 	}
+        
+        public void writeTo(OutputStream os) {
+            BufferedOutputStream bos = null;
+            OutputStreamWriter osw = null;
+            BufferedWriter bw = null;
+            
+            try {
+                bos = new BufferedOutputStream(os);
+                try {
+                    osw = new OutputStreamWriter(bos, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    Logger.error(SimpleFieldSet.class, "Impossible: " + e, e);
+                    os.close();
+                    return;
+                }
+                bw = new BufferedWriter(osw);
+                writeTo(bw);
+            } catch (IOException ioe) {
+                Logger.error("SimpleFieldSet", "An exception has occured while saving the SFS :"+ioe.getMessage(), ioe);
+            }finally {
+                Closer.close(bw);
+                Closer.close(osw);
+                Closer.close(bos);
+            }
+        }
 
 	public int getInt(String key, int def) {
 		String s = get(key);

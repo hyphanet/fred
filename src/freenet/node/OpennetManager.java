@@ -32,6 +32,8 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.io.ByteArrayRandomAccessThing;
+import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
@@ -152,21 +154,10 @@ public class OpennetManager {
 			BufferedWriter bw = new BufferedWriter(osr);
 			fs.writeTo(bw);
 			bw.close();
-			if(!backup.renameTo(orig)) {
-				orig.delete();
-				if(!backup.renameTo(orig)) {
-					Logger.error(this, "Could not rename new node file "+backup+" to "+orig);
-				}
-			}
+                        FileUtil.renameTo(backup, orig);
 		} catch (IOException e) {
-			if(fos != null) {
-				try {
-					fos.close();
-				} catch (IOException e1) {
-					Logger.error(this, "Cannot close "+backup+": "+e1, e1);
-				}
-			}
-		}
+                        Closer.close(fos);
+                }
 	}
 
 	private void readFile(File filename) throws IOException {

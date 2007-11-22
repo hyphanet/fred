@@ -34,6 +34,7 @@ import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileUtil;
 
 /**
  * @author amphibian
@@ -886,13 +887,7 @@ public class PeerManager {
                 return; // don't overwrite old file!
             }
             File fnam = new File(filename);
-            if (!new File(f).renameTo(fnam)) {
-                fnam.delete();
-                if (!new File(f).renameTo(fnam)) {
-                    Logger.error(this, "Could not rename " + f + " to "
-                            + filename + " writing peers");
-                }
-            }
+            FileUtil.renameTo(new File(f), fnam);
         }
     }
 

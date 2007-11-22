@@ -45,6 +45,8 @@ import freenet.support.api.Bucket;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /**
  * FCP server process.
@@ -576,28 +578,32 @@ public class FCPServer implements Runnable {
 		try {
 			synchronized(persistenceSync) {
 				toFree = core.persistentTempBucketFactory.grabBucketsToFree();
+                                
+                                File compressedTemp = new File(persistentDownloadsTempFile+".gz");
+				File compressedFinal = new File(persistentDownloadsFile.toString()+".gz");
+                                FileOutputStream fos = null;
+                                BufferedOutputStream bos = null;
+                                GZIPOutputStream gos = null;
+                                OutputStreamWriter osw = null;
+                                BufferedWriter w = null;
 				try {
-					File compressedTemp = new File(persistentDownloadsTempFile+".gz");
-					File compressedFinal = new File(persistentDownloadsFile.toString()+".gz");
-					FileOutputStream fos = new FileOutputStream(compressedTemp);
-					BufferedOutputStream bos = new BufferedOutputStream(fos);
-					GZIPOutputStream gos = new GZIPOutputStream(bos);
-					OutputStreamWriter osw = new OutputStreamWriter(gos, "UTF-8");
-					BufferedWriter w = new BufferedWriter(osw);
+					fos = new FileOutputStream(compressedTemp);
+					bos = new BufferedOutputStream(fos);
+					gos = new GZIPOutputStream(bos);
+					osw = new OutputStreamWriter(gos, "UTF-8");
+					w = new BufferedWriter(osw);
 					w.write(Integer.toString(persistentRequests.length)+ '\n');
 					for(int i=0;i<persistentRequests.length;i++)
-						persistentRequests[i].write(w);
-					w.close();
-					if(!compressedTemp.renameTo(compressedFinal)) {
-						if(logMINOR) Logger.minor(this, "Rename failed");
-						compressedFinal.delete();
-						if(!compressedTemp.renameTo(compressedFinal)) {
-							Logger.error(this, "Could not rename persisted requests temp file "+persistentDownloadsTempFile+".gz to "+persistentDownloadsFile);
-						}
-					}
+						persistentRequests[i].write(w);                                        
 				} catch (IOException e) {
 					Logger.error(this, "Cannot write persistent requests to disk: "+e);
+                                        Closer.close(w);
+                                        Closer.close(osw);
+                                        Closer.close(gos);
+                                        Closer.close(bos);
+                                        Closer.close(fos);
 				}
+                                FileUtil.renameTo(compressedTemp, compressedTemp);
 			}
 			if(logMINOR) Logger.minor(this, "Stored persistent requests");
 		} finally {

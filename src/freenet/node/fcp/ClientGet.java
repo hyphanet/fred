@@ -27,6 +27,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 import freenet.support.io.NullBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
@@ -399,7 +400,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				// Write to temp file, then rename over filename
 				FileOutputStream fos = null;
 				boolean closed = false;
-				if(!tempFile.renameTo(targetFile)) {
+				if(!FileUtil.renameTo(tempFile, targetFile)) {
 					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
 					// Don't delete temp file, user might want it.
 				}

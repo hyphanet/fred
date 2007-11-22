@@ -3,7 +3,6 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.l10n;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,6 +14,8 @@ import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /**
 * This class provides a trivial internationalization framework to a Freenet node.
@@ -50,11 +51,18 @@ public class L10n {
 		File tmpFile = new File(L10n.PREFIX + selected + L10n.OVERRIDE_SUFFIX);
 		
 		try {
-			if(tmpFile.exists() && tmpFile.canRead()) {
+			if(tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
 				Logger.normal(this, "Override file detected : let's try to load it");
 				translationOverride = SimpleFieldSet.readFrom(tmpFile, false, false);
-			} else
+			} else {
+                                // try to restore a backup
+                                File backup = new File(tmpFile.getParentFile(), tmpFile.getName()+".bak");
+                                if(backup.exists() && backup.length() > 0) {
+                                    Logger.normal(this, "Override-backup file detected : let's try to load it");
+                                    translationOverride = SimpleFieldSet.readFrom(backup, false, false);
+                                }
 				translationOverride = null;
+                        }
 			
 		} catch (IOException e) {
 			translationOverride = null;
@@ -125,32 +133,22 @@ public class L10n {
 	
 	private static void _saveTranslationFile() {
 		FileOutputStream fos = null;
-		BufferedOutputStream bos = null;
 		File finalFile = new File(L10n.PREFIX + L10n.getSelectedLanguage() + L10n.OVERRIDE_SUFFIX);
 		
 		try {
 			// We don't set deleteOnExit on it : if the save operation fails, we want a backup
-			File tempFile = new File(finalFile.getPath() + "-" + System.currentTimeMillis() + ".tmp");
+			File tempFile = new File(finalFile.getParentFile(), finalFile.getName()+".bak");
 			Logger.minor("L10n", "The temporary filename is : " + tempFile);
 			
 			fos = new FileOutputStream(tempFile);
-			bos = new BufferedOutputStream(fos);
+                        L10n.translationOverride.writeTo(fos);
 			
-			bos.write(L10n.translationOverride.toOrderedString().getBytes("UTF-8"));
-			bos.flush();
-			
-			
-			tempFile.renameTo(finalFile);
-			tempFile.delete();
-			
+			FileUtil.renameTo(tempFile, finalFile);
 			Logger.normal("L10n", "Override file saved successfully!");
 		} catch (IOException e) {
 			Logger.error("L10n", "Error while saving the translation override: "+ e.getMessage(), e);
 		} finally {
-			try {
-				if(bos != null) bos.close();
-				if(fos != null) fos.close();
-			} catch (IOException e) {}
+			Closer.close(fos);
 		}
 	}
 	

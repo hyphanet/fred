@@ -12,6 +12,7 @@ import java.io.UnsupportedEncodingException;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileUtil;
 
 class Persister implements Runnable {
 
@@ -84,21 +85,8 @@ class Persister implements Runnable {
 				Logger.error(this, "Caught while closing: "+e, e);
 				return;
 			}
-			// Try an atomic rename
-			if(!persistTemp.renameTo(persistTarget)) {
-				// Not supported on some systems (Windows)
-				if(!persistTarget.delete()) {
-					if(persistTarget.exists()) {
-						Logger.error(this, "Could not delete "+persistTarget+" - check permissions");
-					}
-				}
-				if(!persistTemp.renameTo(persistTarget)) {
-					Logger.error(this, "Could not rename "+persistTemp+" to "+persistTarget+
-							(persistTarget.exists() ? " (target exists)" : "")+
-							(persistTemp.exists() ? " (source exists)" : "")+
-							" - check permissions");
-				}
-			}
+
+                        FileUtil.renameTo(persistTemp, persistTarget);
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Could not store throttle data to disk: "+e, e);
 			return;

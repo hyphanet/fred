@@ -35,6 +35,7 @@ import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
 import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 public class PluginManager {
 
@@ -525,7 +526,7 @@ public class PluginManager {
 				Closer.close(pluginInputStream);
 			}
                         
-			if (!tempPluginFile.renameTo(pluginFile)) {
+			if (!FileUtil.renameTo(tempPluginFile, pluginFile)) {
 				Logger.error(this, "could not rename temp file to plugin file");
 				throw new PluginNotFoundException("could not rename temp file to plugin file");
 			}

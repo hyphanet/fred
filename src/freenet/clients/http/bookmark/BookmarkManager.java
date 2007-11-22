@@ -19,6 +19,8 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.StringArray;
 import freenet.support.URLEncodedFormatException;
 
+import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -32,6 +34,7 @@ public class BookmarkManager {
     public static final BookmarkCategory PROTECTED_CATEGORY = new BookmarkCategory("/protected");
     private final HashMap bookmarks = new HashMap();
     private final File bookmarksFile = new File("bookmarks.dat").getAbsoluteFile();
+    private final File backupBookmarksFile = new File(bookmarksFile.getParentFile(), bookmarksFile.getName()+".bak");
     private boolean isSavingBookmarks = false;
 
     public BookmarkManager(NodeClientCore n, SimpleFieldSet oldConfig) {
@@ -89,14 +92,26 @@ public class BookmarkManager {
                 storeBookmarks();
             }
 
-            if (bookmarksFile.exists() && bookmarksFile.canRead() && bookmarksFile.length() > 0) {
-                Logger.normal(this, "Attempting to read the bookmark file from " + bookmarksFile.toString());
-                SimpleFieldSet sfs = SimpleFieldSet.readFrom(bookmarksFile, false, true);
-                readBookmarks(MAIN_CATEGORY, sfs);
-            }
+            // Read the backup file if necessary
+            if(!bookmarksFile.exists() || bookmarksFile.length() == 0)
+                throw new IOException();
+            Logger.normal(this, "Attempting to read the bookmark file from " + bookmarksFile.toString());
+            SimpleFieldSet sfs = SimpleFieldSet.readFrom(bookmarksFile, false, true);
+            readBookmarks(MAIN_CATEGORY, sfs);
         } catch (MalformedURLException mue) {
         } catch (IOException ioe) {
             Logger.error(this, "Error reading the bookmark file (" + bookmarksFile.toString() + "):" + ioe.getMessage(), ioe);
+            
+            try {
+                if (backupBookmarksFile.exists() && backupBookmarksFile.canRead() && backupBookmarksFile.length() > 0) {
+                    Logger.normal(this, "Attempting to read the backup bookmark file from " + backupBookmarksFile.toString());
+                    SimpleFieldSet sfs = SimpleFieldSet.readFrom(backupBookmarksFile, false, true);
+                    readBookmarks(MAIN_CATEGORY, sfs);
+                } else
+                    Logger.error(this, "We couldn't find the backup either! - "+FileUtil.getCanonicalFile(backupBookmarksFile));
+            } catch (IOException e) {
+                Logger.error(this, "Error reading the backup bookmark file !" + e.getMessage(), e);
+            }
         }
     }
 
@@ -351,21 +366,16 @@ public class BookmarkManager {
         }
         FileWriter fw = null;
         try {
-            File tmp = File.createTempFile("bookmark", ".bak", bookmarksFile.getParentFile());
-            fw = new FileWriter(tmp);
+            fw = new FileWriter(backupBookmarksFile);
             sfs.writeTo(fw);
-            if (!tmp.renameTo(bookmarksFile)) {
-                Logger.error(this, "Unable to rename " + tmp.toString() + " to " + bookmarksFile.toString());
+            
+            if (!FileUtil.renameTo(backupBookmarksFile, bookmarksFile)) {
+                Logger.error(this, "Unable to rename " + backupBookmarksFile.toString() + " to " + bookmarksFile.toString());
             }
         } catch (IOException ioe) {
             Logger.error(this, "An error has occured saving the bookmark file :" + ioe.getMessage(), ioe);
         } finally {
-            try {
-                if (fw != null) {
-                    fw.close();
-                }
-            } catch (IOException e) {
-            }
+            Closer.close(fw);
             
             synchronized (bookmarks) {
                 isSavingBookmarks = false;

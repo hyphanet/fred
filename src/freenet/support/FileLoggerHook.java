@@ -1,7 +1,6 @@
 package freenet.support;
 
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,7 +9,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -27,6 +25,7 @@ import java.util.Vector;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.node.Version;
+import freenet.support.io.FileUtil;
 
 /**
  * Converted the old StandardLogger to Ian's loggerhook interface.
@@ -300,8 +299,7 @@ public class FileLoggerHook extends LoggerHook {
 											"Closing alt on change caught " + e);
 								}
 								if(previousFile != null) {
-									previousFile.delete();
-									latestFile.renameTo(previousFile);
+                                                                        FileUtil.renameTo(latestFile, previousFile);
 									latestFile.delete();
 								} else {
 									latestFile.delete();
@@ -505,8 +503,7 @@ public class FileLoggerHook extends LoggerHook {
 		java.util.Arrays.sort(files);
 		long lastStartTime = -1;
 		File oldFile = null;
-		previousFile.delete();
-		latestFile.renameTo(previousFile);
+                FileUtil.renameTo(latestFile, previousFile);
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		for(int i=0;i<files.length;i++) {
 			File f = files[i];

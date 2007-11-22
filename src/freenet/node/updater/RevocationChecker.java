@@ -15,6 +15,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 
 /**
  * Fetches the revocation key. Each time it starts, it will try to fetch it until it has 3 DNFs. If it ever finds it, it will
@@ -167,13 +168,7 @@ public class RevocationChecker implements ClientCallback {
 			Logger.error(this, "No temporary binary blob file moving it: may not be able to propagate revocation, bug???");
 			return;
 		}
-		if(!tmpBlobFile.renameTo(blobFile)) {
-			blobFile.delete();
-			if(!tmpBlobFile.renameTo(blobFile)) {
-				Logger.error(this, "Not able to rename binary blob for revocation fetcher: "+tmpBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this revocation");
-				System.err.println("Not able to rename binary blob for revocation fetcher: "+tmpBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this revocation");
-			}
-		}
+                FileUtil.renameTo(tmpBlobFile, blobFile);
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {

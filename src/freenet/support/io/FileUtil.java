@@ -4,7 +4,6 @@
 package freenet.support.io;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -137,13 +136,35 @@ final public class FileUtil {
 			if(fos != null) fos.close();
 		}
 		
-		if(file.renameTo(target))
+		if(FileUtil.renameTo(file, target))
 			return true;
 		else {
 			file.delete();
 			return false;
 		}
 	}
+        
+        public static boolean renameTo(File orig, File dest) {
+            // Try an atomic rename
+            // Shall we prevent symlink-race-conditions here ?
+            
+            if (!orig.renameTo(dest)) {
+                // Not supported on some systems (Windows)
+                if (!dest.delete()) {
+                    if (dest.exists()) {
+                        Logger.error("FileUtil", "Could not delete " + dest + " - check permissions");
+                    }
+                }
+                if (!orig.renameTo(dest)) {
+                    Logger.error("FileUtil", "Could not rename " + orig + " to " + dest +
+                            (dest.exists() ? " (target exists)" : "") +
+                            (orig.exists() ? " (source exists)" : "") +
+                            " - check permissions");
+                    return false;
+                }
+            }
+            return true;
+        }
 
 	public static String sanitize(String s) {
 		StringBuffer sb = new StringBuffer(s.length());
