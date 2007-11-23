@@ -23,7 +23,6 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -109,7 +108,7 @@ public class BookmarkManager {
                     SimpleFieldSet sfs = SimpleFieldSet.readFrom(backupBookmarksFile, false, true);
                     readBookmarks(MAIN_CATEGORY, sfs);
                 } else
-                    Logger.error(this, "We couldn't find the backup either! - "+FileUtil.getCanonicalFile(backupBookmarksFile));
+                    Logger.normal(this, "We couldn't find the backup either! - "+FileUtil.getCanonicalFile(backupBookmarksFile));
             } catch (IOException e) {
                 Logger.error(this, "Error reading the backup bookmark file !" + e.getMessage(), e);
             }
