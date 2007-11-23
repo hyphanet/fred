@@ -581,11 +581,16 @@ public class FCPServer implements Runnable {
                                 
                                 File compressedTemp = new File(persistentDownloadsTempFile+".gz");
 				File compressedFinal = new File(persistentDownloadsFile.toString()+".gz");
+                                // delete files created by check()
+                                persistentDownloadsFile.delete();
+                                persistentDownloadsTempFile.delete();
+                                
                                 FileOutputStream fos = null;
                                 BufferedOutputStream bos = null;
                                 GZIPOutputStream gos = null;
                                 OutputStreamWriter osw = null;
                                 BufferedWriter w = null;
+                                
 				try {
 					fos = new FileOutputStream(compressedTemp);
 					bos = new BufferedOutputStream(fos);
@@ -629,13 +634,10 @@ public class FCPServer implements Runnable {
                 GZIPInputStream gis = null;
 		try {
                         File file = new File(persistentDownloadsFile+".gz");
-                        if(!file.exists() || !file.canRead() || file.length() == 0)
-                            throw new IOException(file.toURI() + " is empty or doesn't exist!");
 			fis = new FileInputStream(file);
 			gis = new GZIPInputStream(fis);
 			bis = new BufferedInputStream(gis);
 			loadPersistentRequests(bis);
-			file.delete();
 		} catch (IOException e) {
                         Logger.error(this, "IOE : " + e.getMessage(), e);
                         Logger.normal(this, "Let's try to load "+persistentDownloadsFile+" then.");
@@ -648,7 +650,6 @@ public class FCPServer implements Runnable {
 				loadPersistentRequests(bis);
 			} catch (IOException e1) {
 				Logger.normal(this, "It's corrupted too : Not reading any persistent requests from disk: "+e1);
-                                persistentDownloadsFile.delete();
 				return;
 			}
 		} finally {
