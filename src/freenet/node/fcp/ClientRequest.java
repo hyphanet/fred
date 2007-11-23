@@ -148,7 +148,7 @@ public abstract class ClientRequest {
 
 	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequest.class);
-		Runtime rt = Runtime.getRuntime();;
+		Runtime rt = Runtime.getRuntime();
 		if(logMINOR)
 			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use before loading request");
 		SimpleFieldSet fs = new SimpleFieldSet(br, false, false); // can get enormous

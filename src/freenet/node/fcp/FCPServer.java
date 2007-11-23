@@ -594,16 +594,17 @@ public class FCPServer implements Runnable {
 					w = new BufferedWriter(osw);
 					w.write(Integer.toString(persistentRequests.length)+ '\n');
 					for(int i=0;i<persistentRequests.length;i++)
-						persistentRequests[i].write(w);                                        
+						persistentRequests[i].write(w);                                       
 				} catch (IOException e) {
 					Logger.error(this, "Cannot write persistent requests to disk: "+e);
+				} finally {
                                         Closer.close(w);
                                         Closer.close(osw);
                                         Closer.close(gos);
                                         Closer.close(bos);
                                         Closer.close(fos);
-				}
-                                FileUtil.renameTo(compressedTemp, compressedTemp);
+                                }
+                                FileUtil.renameTo(compressedTemp, compressedFinal);
 			}
 			if(logMINOR) Logger.minor(this, "Stored persistent requests");
 		} finally {
@@ -624,37 +625,36 @@ public class FCPServer implements Runnable {
 
 	private void loadPersistentRequests() {
 		FileInputStream fis = null;
+                BufferedInputStream bis = null;
+                GZIPInputStream gis = null;
 		try {
-			fis = new FileInputStream(persistentDownloadsFile+".gz");
-			GZIPInputStream gis = new GZIPInputStream(fis);
-			BufferedInputStream bis = new BufferedInputStream(gis);
+                        File file = new File(persistentDownloadsFile+".gz");
+                        if(!file.exists() || !file.canRead() || file.length() == 0)
+                            throw new IOException(file.toURI() + " is empty or doesn't exist!");
+			fis = new FileInputStream(file);
+			gis = new GZIPInputStream(fis);
+			bis = new BufferedInputStream(gis);
 			loadPersistentRequests(bis);
-			persistentDownloadsFile.delete();
+			file.delete();
 		} catch (IOException e) {
-			if(fis != null) {
-				try {
-					fis.close();
-				} catch (IOException e1) {
-					// Ignore
-				}
-				fis = null;
-			}
+                        Logger.error(this, "IOE : " + e.getMessage(), e);
+                        Logger.normal(this, "Let's try to load "+persistentDownloadsFile+" then.");
+                        Closer.close(bis);
+			Closer.close(gis);
+                        Closer.close(fis);
 			try {
 				fis = new FileInputStream(persistentDownloadsFile);
-				BufferedInputStream bis = new BufferedInputStream(fis);
+				bis = new BufferedInputStream(fis);
 				loadPersistentRequests(bis);
 			} catch (IOException e1) {
-				Logger.normal(this, "Not reading any persistent requests from disk: "+e1);
+				Logger.normal(this, "It's corrupted too : Not reading any persistent requests from disk: "+e1);
+                                persistentDownloadsFile.delete();
 				return;
 			}
 		} finally {
-			if(fis != null) {
-				try {
-					fis.close();
-				} catch (IOException e) {
-					// Ignore
-				}
-			}
+                        Closer.close(gis);
+                        Closer.close(bis);
+                        Closer.close(fis);
 		}
 	}
 	
@@ -662,20 +662,25 @@ public class FCPServer implements Runnable {
 		synchronized(persistenceSync) {
 			InputStreamReader ris = new InputStreamReader(is, "UTF-8");
 			BufferedReader br = new BufferedReader(ris);
-			String r = br.readLine();
-			int count;
-			try {
-				count = Integer.parseInt(r);
-			} catch (NumberFormatException e) {
-				Logger.error(this, "Corrupt persistent downloads file: "+persistentDownloadsFile);
-				throw new IOException(e.toString());
-			}
-			for(int i=0;i<count;i++) {
-				WrapperManager.signalStarting(20*60*1000);  // 20 minutes per request; must be >ds lock timeout (10 minutes)
-				System.out.println("Loading persistent request "+(i+1)+" of "+count+"..."); // humans count from 1..
-				ClientRequest.readAndRegister(br, this);
-			}
-			br.close();
+                        try {
+                            String r = br.readLine();
+                            int count;
+                            try {
+                                count = Integer.parseInt(r);
+                            } catch(NumberFormatException e) {
+                                Logger.error(this, "Corrupt persistent downloads file");
+                                throw new IOException(e.toString());
+                            }
+                            for(int i = 0; i < count; i++) {
+                                WrapperManager.signalStarting(20 * 60 * 1000);  // 20 minutes per request; must be >ds lock timeout (10 minutes)
+                                System.out.println("Loading persistent request " + (i + 1) + " of " + count + "..."); // humans count from 1..
+                                ClientRequest.readAndRegister(br, this);
+                            }
+                        }
+                        finally {
+                            Closer.close(br);
+                            Closer.close(ris);
+                        }
 		}
 	}
 
@@ -746,7 +751,7 @@ public class FCPServer implements Runnable {
 								String id = "FProxy:"+Base64.encode(buf);
 								innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, id, returnFilename, returnTempFilename);
 								return;
-							} catch (IdentifierCollisionException e3) {};
+							} catch (IdentifierCollisionException e3) {}
 						}
 					}
 				}
