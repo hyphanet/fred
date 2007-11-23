@@ -115,7 +115,7 @@ public class SimpleFieldSet {
             String line = br.readLine();
             if(line == null) {
                 if(firstLine) throw new EOFException();
-                throw new IOException(); // No end marker!
+                throw new IOException("No end Marker!");
             }
             firstLine = false;
             int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
