@@ -141,10 +141,12 @@ public class JarClassLoader extends ClassLoader {
 	 * @see java.lang.ClassLoader#findResource(java.lang.String)
 	 */
 	protected URL findResource(String name) {
-		if (!name.startsWith("/"))
-			name = '/' + name;
+		/* compatibility code. remove when all plugins are fixed. */
+		if (name.startsWith("/")) {
+			name = name.substring(1);
+		}
 		try {
-			return new URL("jar:" + new File(tempJarFile.getName()).toURI().toURL() + "!" + name);
+			return new URL("jar:" + new File(tempJarFile.getName()).toURI().toURL() + "!/" + name);
 		} catch (MalformedURLException e) {
 		}
 		return null;
