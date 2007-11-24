@@ -360,6 +360,7 @@ public class BookmarkManager {
             SimpleFieldSet toSave = MAIN_CATEGORY.toSimpleFieldSet();
             if (toSave.isEmpty()) {
                 isSavingBookmarks = false;
+		bookmarksFile.delete();
                 return;
             }
             sfs = toSave;
