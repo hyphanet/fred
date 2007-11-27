@@ -201,6 +201,10 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
      */
     public void sendPacket(byte[] blockToSend, Peer destination, boolean allowLocalAddresses) throws LocalAddressException {
     	assert(blockToSend != null);
+    	if(!_active) {
+    		Logger.error(this, "Trying to send packet but no longer active");
+    		return;
+    	}
 		// there should be no DNS needed here, but go ahead if we can, but complain doing it
 		if( destination.getAddress(false, allowLocalAddresses) == null ) {
   			Logger.error(this, "Tried sending to destination without pre-looked up IP address(needs a real Peer.getHostname()): null:" + destination.getPort(), new Exception("error"));
