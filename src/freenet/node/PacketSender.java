@@ -45,9 +45,6 @@ public class PacketSender implements Runnable, Ticker {
 	/** We send connect attempts to old-opennet-peers no more than once every
 	 * this many milliseconds. */
 	static final int MIN_OLD_OPENNET_CONNECT_DELAY = 60*1000;
-	/** Time after which we can send handshakes. Before this we will only reply 
-	 * to them. This is to make detecting port forwards easier. */
-	private static final long SEND_HANDSHAKES_AFTER = 31*1000;
 	
     final LinkedList resendPackets;
     /** ~= Ticker :) */
@@ -61,7 +58,6 @@ public class PacketSender implements Runnable, Ticker {
     /** For watchdog. 32-bit to avoid locking. */
     volatile int lastTimeInSeconds;
     private long timeLastSentOldOpennetConnectAttempt;
-    private long startupTime;
     
     private Vector rpiTemp;
     private int[] rpiIntTemp;
@@ -92,7 +88,6 @@ public class PacketSender implements Runnable, Ticker {
     private class Watchdog implements Runnable {
     	
     	public void run() {
-    		startupTime = System.currentTimeMillis();
 		    freenet.support.Logger.OSThread.logPID(this);
     		// Do not lock anything, or we may be caught up with a lost-lock deadlock.
     		while(true) {
@@ -317,7 +312,7 @@ public class PacketSender implements Runnable, Ticker {
                 // Not connected
                 // Send handshake if necessary
                 long beforeHandshakeTime = System.currentTimeMillis();
-                if(now - startupTime > SEND_HANDSHAKES_AFTER && pn.shouldSendHandshake())
+                if(pn.shouldSendHandshake())
                     pn.getOutgoingMangler().sendHandshake(pn);
                 if(pn.noContactDetails())
                 	pn.startARKFetcher();
