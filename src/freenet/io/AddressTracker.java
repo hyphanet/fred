@@ -70,6 +70,7 @@ public class AddressTracker {
 		} catch (IOException e) {
 			// Fall through
 		} catch (FSParseException e) {
+			Logger.error(AddressTracker.class, "Failed to load from disk for port "+port+": "+e, e);
 			// Fall through
 		} finally {
 			if(fis != null)
