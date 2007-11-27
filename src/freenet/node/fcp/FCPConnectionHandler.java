@@ -103,6 +103,7 @@ public class FCPConnectionHandler {
 			requests[i].onLostConnection();
 		if((client != null) && !client.hasPersistentRequests())
 			server.unregisterClient(client);
+		outputHandler.onClosed();
 	}
 	
 	public synchronized boolean isClosed() {

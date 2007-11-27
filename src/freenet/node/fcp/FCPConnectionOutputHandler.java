@@ -44,14 +44,16 @@ public class FCPConnectionOutputHandler implements Runnable {
 	private void realRun() throws IOException {
 		OutputStream os = new BufferedOutputStream(handler.sock.getOutputStream(), 4096);
 		while(true) {
-			FCPMessage msg;
-			synchronized(outQueue) {
-				while(true) {
+			boolean closed;
+			FCPMessage msg = null;
+			while(true) {
+				closed = handler.isClosed();
+				synchronized(outQueue) {
 					if(outQueue.isEmpty()) {
-						if(handler.isClosed()) return;
+						if(closed) break;
 						os.flush();
 						try {
-							outQueue.wait(10000);
+							outQueue.wait();
 						} catch (InterruptedException e) {
 							// Ignore
 						}
@@ -61,11 +63,14 @@ public class FCPConnectionOutputHandler implements Runnable {
 					break;
 				}
 			}
-			msg.send(os);
-			if(handler.isClosed()) {
-				os.flush();
-				os.close();
-				return;
+			if(msg == null) {
+				if(closed) {
+					os.flush();
+					os.close();
+					return;
+				}
+			} else {
+				msg.send(os);
 			}
 		}
 	}
@@ -76,6 +81,12 @@ public class FCPConnectionOutputHandler implements Runnable {
 		if(msg == null) throw new NullPointerException();
 		synchronized(outQueue) {
 			outQueue.add(msg);
+			outQueue.notifyAll();
+		}
+	}
+
+	public void onClosed() {
+		synchronized(outQueue) {
 			outQueue.notifyAll();
 		}
 	}
