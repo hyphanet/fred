@@ -43,6 +43,10 @@ public class AddressTrackerItem {
 	private long packetsSent;
 	/** The total number of packets received from this address */
 	private long packetsReceived;
+	static final int TRACK_GAPS = 5;
+	private long[] topGapLengths;
+	private long[] topGapLengthRecvTimes;
+	static final int GAP_THRESHOLD = AddressTracker.MAX_TUNNEL_LENGTH;
 	
 	public AddressTrackerItem(long timeDefinitelyNoPacketsReceived, long timeDefinitelyNoPacketsSent) {
 		timeFirstReceivedPacket = -1;
@@ -53,6 +57,8 @@ public class AddressTrackerItem {
 		packetsReceived = 0;
 		this.timeDefinitelyNoPacketsReceived = timeDefinitelyNoPacketsReceived;
 		this.timeDefinitelyNoPacketsSent = timeDefinitelyNoPacketsSent;
+		topGapLengths = new long[TRACK_GAPS];
+		topGapLengthRecvTimes = new long[TRACK_GAPS];
 	}
 	
 	public synchronized void sentPacket(long now) {
@@ -67,6 +73,19 @@ public class AddressTrackerItem {
 		if(timeFirstReceivedPacket < 0)
 			timeFirstReceivedPacket = now;
 		timeLastReceivedPacket = now;
+		// Establish the interval
+		long startTime;
+		if(timeFirstSentPacket > 0) startTime = timeFirstSentPacket;
+		else startTime = timeDefinitelyNoPacketsSent;
+		if(now - startTime > GAP_THRESHOLD) {
+			// Rotate gaps array
+			for(int i=1;i<TRACK_GAPS;i++) {
+				topGapLengths[i] = topGapLengths[i-1];
+				topGapLengthRecvTimes[i] = topGapLengthRecvTimes[i-1];
+			}
+			topGapLengths[0] = (now - timeFirstSentPacket);
+			topGapLengthRecvTimes[0] = now;
+		}
 	}
 	
 	public synchronized long firstReceivedPacket() {
