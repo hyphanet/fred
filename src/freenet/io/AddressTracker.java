@@ -183,16 +183,16 @@ public class AddressTracker {
 
 	private SimpleFieldSet getFieldset(long bootID) {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.put("version", 1);
-		sfs.put("bootID", bootID);
-		sfs.put("timeDefinitelyNoPacketsReceived", timeDefinitelyNoPacketsReceived);
-		sfs.put("timeDefinitelyNoPacketsSent", timeDefinitelyNoPacketsSent);
+		sfs.put("Version", 1);
+		sfs.put("BootID", bootID);
+		sfs.put("TimeDefinitelyNoPacketsReceived", timeDefinitelyNoPacketsReceived);
+		sfs.put("TimeDefinitelyNoPacketsSent", timeDefinitelyNoPacketsSent);
 		PeerAddressTrackerItem[] peerItems = getPeerAddressTrackerItems();
 		SimpleFieldSet items = new SimpleFieldSet(true);
 		for(int i=0;i<peerItems.length;i++) {
 			items.put(Integer.toString(i), peerItems[i].toFieldSet());
 		}
-		sfs.put("peers", items);
+		sfs.put("Peers", items);
 		InetAddressAddressTrackerItem[] inetItems = getInetAddressTrackerItems();
 		items = new SimpleFieldSet(true);
 		for(int i=0;i<inetItems.length;i++) {

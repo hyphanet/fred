@@ -169,22 +169,22 @@ public class AddressTrackerItem {
 
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("timeFirstReceivedPacket", timeFirstReceivedPacket);
-		fs.put("timeFirstSentPacket", timeFirstSentPacket);
-		fs.put("timeDefinitelyNoPacketsSent", timeDefinitelyNoPacketsSent);
-		fs.put("timeDefinitelyNoPacketsReceived", timeDefinitelyNoPacketsReceived);
-		fs.put("timeLastReceivedPacket", timeLastReceivedPacket);
-		fs.put("timeLastSentPacket", timeLastSentPacket);
-		fs.put("packetsSent", packetsSent);
-		fs.put("packetsReceived", packetsReceived);
+		fs.put("TimeFirstReceivedPacket", timeFirstReceivedPacket);
+		fs.put("TimeFirstSentPacket", timeFirstSentPacket);
+		fs.put("TimeDefinitelyNoPacketsSent", timeDefinitelyNoPacketsSent);
+		fs.put("TimeDefinitelyNoPacketsReceived", timeDefinitelyNoPacketsReceived);
+		fs.put("TimeLastReceivedPacket", timeLastReceivedPacket);
+		fs.put("TimeLastSentPacket", timeLastSentPacket);
+		fs.put("PacketsSent", packetsSent);
+		fs.put("PacketsReceived", packetsReceived);
 		SimpleFieldSet gaps = new SimpleFieldSet(true);
 		for(int i=0;i<TRACK_GAPS;i++) {
 			SimpleFieldSet gap = new SimpleFieldSet(true);
-			gap.put("length", gapLengths[i]);
-			gap.put("received", gapLengthRecvTimes[i]);
+			gap.put("Length", gapLengths[i]);
+			gap.put("Received", gapLengthRecvTimes[i]);
 			gaps.put(Integer.toString(i), gap);
 		}
-		fs.put("gaps", gaps);
+		fs.put("Gaps", gaps);
 		return fs;
 	}
 
