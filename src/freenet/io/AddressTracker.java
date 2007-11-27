@@ -117,6 +117,8 @@ public class AddressTracker {
 	
 	/** Assume NAT UDP hole punching tunnels are no longer than this */
 	public static int MAX_TUNNEL_LENGTH = ((5*60)+1)*1000;
+	/** Time after which we ignore evidence that we are port forwarded */
+	public static final long HORIZON = 24*60*60*1000L;
 	
 	public int getPortForwardStatus() {
 		PeerAddressTrackerItem[] items = getPeerAddressTrackerItems();
@@ -125,6 +127,10 @@ public class AddressTracker {
 			if(item.packetsReceived() <= 0) continue;
 			if(item.weSentFirst()) continue;
 			if(!item.peer.isRealInternetAddress(false, false)) continue;
+			if(item.hasLongTunnel(HORIZON)) {
+				// FIXME should require more than one
+				return DEFINITELY_PORT_FORWARDED;
+			}
 			if(item.timeFromStartupToFirstReceivedPacket() > MAX_TUNNEL_LENGTH) {
 				// FIXME should require more than one
 				return DEFINITELY_PORT_FORWARDED;

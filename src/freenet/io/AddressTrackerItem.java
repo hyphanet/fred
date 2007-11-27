@@ -92,6 +92,10 @@ public class AddressTrackerItem {
 		}
 	}
 	
+	public synchronized boolean hasLongTunnel(long horizon) {
+		return topGapLengthRecvTimes[0] > System.currentTimeMillis() - horizon;
+	}
+
 	public class Gap {
 		public final long gapLength;
 		public final long receivedPacketAt;
