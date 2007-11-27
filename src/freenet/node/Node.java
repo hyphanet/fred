@@ -13,6 +13,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
@@ -364,6 +365,12 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final int EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM = 3;
 	public static final int PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT = 1;
 	
+	/** The bootID of the last time the node booted up. Or -1 if we don't know due to
+	 * permissions problems, or we suspect that the node has been booted and not
+	 * written the file e.g. if we can't write it. So if we want to compare data 
+	 * gathered in the last session and only recorded to disk on a clean shutdown
+	 * to data we have now, we just include the lastBootID. */
+	public final long lastBootID;
 	public final long bootID;
 	public final long startupTime;
         
@@ -565,14 +572,77 @@ public class Node implements TimeSkewDetectorCallback {
 		runningSSKGetUIDs = new HashSet();
 		runningCHKPutUIDs = new HashSet();
 		runningSSKPutUIDs = new HashSet();
+		
+		// Setup node-specific configuration
+		SubConfig nodeConfig = new SubConfig("node", config);
+		int sortOrder = 0;
+		
+		// Directory for node-related files other than store
+		
+		nodeConfig.register("nodeDir", ".", sortOrder++, true, true /* because can't be changed on the fly, also for packages */, "Node.nodeDir", "Node.nodeDirLong", 
+				new StringCallback() {
+					public String get() {
+						return nodeDir.getPath();
+					}
+					public void set(String val) throws InvalidConfigValueException {
+						if(nodeDir.equals(new File(val))) return;
+						// FIXME support it
+						// Don't translate the below as very few users will use it.
+						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
+					}
+		});
+		
+		nodeDir = new File(nodeConfig.getString("nodeDir"));
+		if(!((nodeDir.exists() && nodeDir.isDirectory()) || (nodeDir.mkdir()))) {
+			String msg = "Could not find or create datastore directory";
+			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
+		}
+
+		// Boot ID
 		bootID = random.nextLong();
+		// Fixed length file containing boot ID. Accessed with random access file. So hopefully it will always be
+		// written. Note that we set lastBootID to -1 if we can't _write_ our ID as well as if we can't read it,
+		// because if we can't write it then we probably couldn't write it on the last bootup either.
+		File bootIDFile = new File(nodeDir, "bootID");
+		int BOOT_FILE_LENGTH = 64 / 4; // A long in padded hex bytes
+		long oldBootID = -1;
+		RandomAccessFile raf = null;
+		try {
+			raf = new RandomAccessFile(bootIDFile, "rw");
+			if(raf.length() < BOOT_FILE_LENGTH) {
+				oldBootID = -1;
+			} else {
+				byte[] buf = new byte[BOOT_FILE_LENGTH];
+				raf.readFully(buf);
+				String s = new String(buf, "ISO-8859-1");
+				try {
+					oldBootID = Fields.hexToLong(s);
+					raf.seek(0);
+					s = HexUtil.bytesToHex(Fields.longToBytes(bootID));
+					buf = s.getBytes("ISO-8859-1");
+					if(buf.length != BOOT_FILE_LENGTH)
+						System.err.println("Not 16 bytes for boot ID "+bootID+" - WTF??");
+					raf.write(buf);
+				} catch (NumberFormatException e) {
+					oldBootID = -1;
+				}
+				
+			}
+		} catch (IOException e) {
+			oldBootID = -1;
+			// If we have an error in reading, *or in writing*, we don't reliably know the last boot ID.
+		} finally {
+			try {
+				if(raf != null)
+					raf.close();
+			} catch (IOException e) {
+				// Ignore
+			}
+		}
+		lastBootID = oldBootID;
 		
 		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
 
-		int sortOrder = 0;
-		// Setup node-specific configuration
-		SubConfig nodeConfig = new SubConfig("node", config);
-		
 		nodeConfig.register("disableProbabilisticHTLs", false, sortOrder++, true, false, "Node.disablePHTLS", "Node.disablePHTLSLong", 
 				new BooleanCallback() {
 
@@ -717,27 +787,6 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 		
-		// Directory for node-related files other than store
-		
-		nodeConfig.register("nodeDir", ".", sortOrder++, true, true /* because can't be changed on the fly, also for packages */, "Node.nodeDir", "Node.nodeDirLong", 
-				new StringCallback() {
-					public String get() {
-						return nodeDir.getPath();
-					}
-					public void set(String val) throws InvalidConfigValueException {
-						if(nodeDir.equals(new File(val))) return;
-						// FIXME support it
-						// Don't translate the below as very few users will use it.
-						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
-					}
-		});
-		
-		nodeDir = new File(nodeConfig.getString("nodeDir"));
-		if(!((nodeDir.exists() && nodeDir.isDirectory()) || (nodeDir.mkdir()))) {
-			String msg = "Could not find or create datastore directory";
-			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
-		}
-
 		// After we have set up testnet and IP address, load the node file
 		try {
 			// FIXME should take file directly?
