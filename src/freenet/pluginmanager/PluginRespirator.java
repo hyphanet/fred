@@ -51,4 +51,8 @@ public class PluginRespirator {
 		
 		return formNode;
 	}
+	
+	public PluginTalker getPluginTalker(FredPluginTalker fpt, String pluginname, String identifier) throws PluginNotFoundException {
+		return new PluginTalker(fpt, node, pluginname, identifier);
+	}
 }

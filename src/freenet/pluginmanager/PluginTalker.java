@@ -22,11 +22,11 @@ public class PluginTalker {
 
 	FredPluginFCP plugin;
 
-	PluginTalker(Node node2, String pluginname2, String identifier2) throws PluginNotFoundException {
+	PluginTalker(FredPluginTalker fpt, Node node2, String pluginname2, String identifier2) throws PluginNotFoundException {
 		node = node2;
 		plugin = findPlugin(pluginname2);
 		access = null;
-		replysender = new PluginReplySenderDirect(node2, null, pluginname2, identifier2);
+		replysender = new PluginReplySenderDirect(node2, fpt, pluginname2, identifier2);
 	}
 
 	public PluginTalker(Node node2, FCPConnectionHandler handler, String pluginname2, String identifier2, boolean access2) throws PluginNotFoundException {
