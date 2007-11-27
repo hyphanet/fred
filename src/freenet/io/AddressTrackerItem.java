@@ -87,7 +87,7 @@ public class AddressTrackerItem {
 					topGapLengthRecvTimes[i] = topGapLengthRecvTimes[i-1];
 				}
 			} // else overwrite [0]
-			topGapLengths[0] = (now - timeFirstSentPacket);
+			topGapLengths[0] = (now - startTime);
 			topGapLengthRecvTimes[0] = now;
 		}
 	}
