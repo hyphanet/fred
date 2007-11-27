@@ -75,7 +75,7 @@ public class AddressTrackerItem {
 		timeLastReceivedPacket = now;
 		// Establish the interval
 		long startTime;
-		if(timeFirstSentPacket > 0) startTime = timeFirstSentPacket;
+		if(timeLastSentPacket > 0) startTime = timeLastSentPacket;
 		else startTime = timeDefinitelyNoPacketsSent;
 		if(now - startTime > GAP_THRESHOLD) {
 			// Not necessarily a new gap
