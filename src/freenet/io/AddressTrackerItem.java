@@ -78,11 +78,15 @@ public class AddressTrackerItem {
 		if(timeFirstSentPacket > 0) startTime = timeFirstSentPacket;
 		else startTime = timeDefinitelyNoPacketsSent;
 		if(now - startTime > GAP_THRESHOLD) {
-			// Rotate gaps array
-			for(int i=1;i<TRACK_GAPS;i++) {
-				topGapLengths[i] = topGapLengths[i-1];
-				topGapLengthRecvTimes[i] = topGapLengthRecvTimes[i-1];
-			}
+			// Not necessarily a new gap
+			// If no packets sent since last one, just replace it
+			if(timeLastSentPacket > topGapLengthRecvTimes[0]) {
+				// Rotate gaps array
+				for(int i=1;i<TRACK_GAPS;i++) {
+					topGapLengths[i] = topGapLengths[i-1];
+					topGapLengthRecvTimes[i] = topGapLengthRecvTimes[i-1];
+				}
+			} // else overwrite [0]
 			topGapLengths[0] = (now - timeFirstSentPacket);
 			topGapLengthRecvTimes[0] = now;
 		}
@@ -99,7 +103,7 @@ public class AddressTrackerItem {
 	
 	public synchronized Gap[] getGaps() {
 		Gap[] gaps = new Gap[GAP_THRESHOLD];
-		for(int i=0;i<GAP_THRESHOLD;i++) {
+		for(int i=0;i<TRACK_GAPS;i++) {
 			gaps[i] = new Gap(topGapLengths[i], topGapLengthRecvTimes[i]);
 		}
 		return gaps;
