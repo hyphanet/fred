@@ -151,12 +151,12 @@ public class AddressTrackerItem {
 		return timeFirstSentPacket < timeFirstReceivedPacket; 
 	}
 	
-	public long timeFromStartupToFirstSentPacket() {
+	public synchronized long timeFromStartupToFirstSentPacket() {
 		if(packetsSent == 0) return -1;
 		return timeFirstSentPacket - timeDefinitelyNoPacketsSent;
 	}
 
-	public long timeFromStartupToFirstReceivedPacket() {
+	public synchronized long timeFromStartupToFirstReceivedPacket() {
 		if(packetsReceived == 0) return -1;
 		return timeFirstReceivedPacket - timeDefinitelyNoPacketsReceived;
 	}
