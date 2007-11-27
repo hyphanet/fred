@@ -95,24 +95,28 @@ public class AddressTracker {
 		if(version != 1)
 			throw new FSParseException("Unknown Version "+version);
 		long savedBootID = fs.getLong("BootID");
-		if(savedBootID != lastBootID) throw new FSParseException("Wrong boot ID - maybe unclean shutdown?");
+		if(savedBootID != lastBootID) throw new FSParseException("Wrong boot ID - maybe unclean shutdown? Last was "+lastBootID+" stored "+savedBootID);
 		timeDefinitelyNoPacketsReceived = fs.getLong("TimeDefinitelyNoPacketsReceived");
 		timeDefinitelyNoPacketsSent = fs.getLong("TimeDefinitelyNoPacketsSent");
 		peerTrackers = new HashMap();
 		SimpleFieldSet peers = fs.getSubset("Peers");
 		Iterator i = peers.directSubsetNameIterator();
+		if(i != null) {
 		while(i.hasNext()) {
 			SimpleFieldSet peer = peers.subset((String)i.next());
 			PeerAddressTrackerItem item = new PeerAddressTrackerItem(peer);
 			peerTrackers.put(item.peer, item);
 		}
+		}
 		ipTrackers = new HashMap();
 		SimpleFieldSet ips = fs.getSubset("IPs");
-		i = peers.directSubsetNameIterator();
+		i = ips.directSubsetNameIterator();
+		if(i != null) {
 		while(i.hasNext()) {
 			SimpleFieldSet peer = ips.subset((String)i.next());
 			InetAddressAddressTrackerItem item = new InetAddressAddressTrackerItem(peer);
 			ipTrackers.put(item.addr, item);
+		}
 		}
 	}
 	

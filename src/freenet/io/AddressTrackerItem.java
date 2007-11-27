@@ -75,6 +75,8 @@ public class AddressTrackerItem {
 		packetsSent = fs.getLong("PacketsSent");
 		packetsReceived = fs.getLong("PacketsReceived");
 		SimpleFieldSet gaps = fs.getSubset("Gaps");
+		gapLengths = new long[TRACK_GAPS];
+		gapLengthRecvTimes = new long[TRACK_GAPS];
 		for(int i=0;i<TRACK_GAPS;i++) {
 			SimpleFieldSet gap = gaps.subset(Integer.toString(i));
 			if(gap == null) {
