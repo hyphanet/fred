@@ -197,15 +197,16 @@ public class AddressTracker {
 		for(int i=0;i<items.length;i++) {
 			PeerAddressTrackerItem item = items[i];
 			if(item.packetsReceived() <= 0) continue;
-			if(item.weSentFirst()) continue;
 			if(!item.peer.isRealInternetAddress(false, false)) continue;
 			if(item.hasLongTunnel(HORIZON)) {
 				// FIXME should require more than one
 				return DEFINITELY_PORT_FORWARDED;
 			}
-			if(item.timeFromStartupToFirstReceivedPacket() > MAX_TUNNEL_LENGTH) {
-				// FIXME should require more than one
-				return DEFINITELY_PORT_FORWARDED;
+			if(!item.weSentFirst()) {
+				if(item.timeFromStartupToFirstReceivedPacket() > MAX_TUNNEL_LENGTH) {
+					// FIXME should require more than one
+					return DEFINITELY_PORT_FORWARDED;
+				}
 			}
 		}
 		return DONT_KNOW;
