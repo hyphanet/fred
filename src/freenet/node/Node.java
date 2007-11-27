@@ -1210,14 +1210,14 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		});
 		
-		storeShutdownHook.addLateJob(new Thread() {
+		storeShutdownHook.addEarlyJob(new Thread() {
 			public void run() {
 				if(opennet != null)
 					opennet.stop(false);
 			}
 		});
 		
-		storeShutdownHook.addLateJob(new Thread() {
+		storeShutdownHook.addEarlyJob(new Thread() {
 			public void run() {
 				darknetCrypto.stop();
 			}
