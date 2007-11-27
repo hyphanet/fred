@@ -108,14 +108,12 @@ public class AddressTrackerItem {
 			// Not necessarily a new gap
 			// If no packets sent since last one, just replace it
 			if(timeLastSentPacket >= gapLengthRecvTimes[0]) {
-				System.out.println("Rotating");
 				// Rotate gaps array
 				for(int i=TRACK_GAPS-1;i>=1;i--) {
 					gapLengths[i] = gapLengths[i-1];
 					gapLengthRecvTimes[i] = gapLengthRecvTimes[i-1];
 				}
 			} else {
-				System.out.println("Not rotating");
 				// else overwrite [0]
 			}
 			gapLengths[0] = (now - startTime);
