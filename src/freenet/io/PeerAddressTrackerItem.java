@@ -15,7 +15,11 @@
  */
 package freenet.io;
 
+import java.net.UnknownHostException;
+
 import freenet.io.comm.Peer;
+import freenet.io.comm.PeerParseException;
+import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
 
 public class PeerAddressTrackerItem extends AddressTrackerItem {
@@ -28,9 +32,22 @@ public class PeerAddressTrackerItem extends AddressTrackerItem {
 		this.peer = peer;
 	}
 	
+	public PeerAddressTrackerItem(SimpleFieldSet fs) throws FSParseException {
+		super(fs);
+		try {
+			peer = new Peer(fs.getString("Address"), false);
+		} catch (UnknownHostException e) {
+			FSParseException ex = new FSParseException("Unknown domain name in Address: "+e);
+			ex.initCause(e);
+			throw ex;
+		} catch (PeerParseException e) {
+			throw new FSParseException(e);
+		}
+	}
+
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = super.toFieldSet();
-		fs.putOverwrite("address", peer.toStringPrefNumeric());
+		fs.putOverwrite("Address", peer.toStringPrefNumeric());
 		return fs;
 	}
 

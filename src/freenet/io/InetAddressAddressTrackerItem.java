@@ -16,7 +16,9 @@
 package freenet.io;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 
+import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
 
 public class InetAddressAddressTrackerItem extends AddressTrackerItem {
@@ -31,7 +33,19 @@ public class InetAddressAddressTrackerItem extends AddressTrackerItem {
 	
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = super.toFieldSet();
-		fs.putOverwrite("address", addr.getHostAddress());
+		fs.putOverwrite("Address", addr.getHostAddress());
 		return fs;
 	}
+	
+	public InetAddressAddressTrackerItem(SimpleFieldSet fs) throws FSParseException {
+		super(fs);
+		try {
+			addr = InetAddress.getByName(fs.getString("Address"));
+		} catch (UnknownHostException e) {
+			FSParseException ex = new FSParseException("Unknown domain name in Address: "+e);
+			ex.initCause(e);
+			throw ex;
+		}
+	}
+
 }

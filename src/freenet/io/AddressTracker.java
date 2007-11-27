@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import freenet.io.comm.Peer;
+import freenet.node.FSParseException;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -54,6 +56,32 @@ public class AddressTracker {
 		timeDefinitelyNoPacketsSent = System.currentTimeMillis();
 		peerTrackers = new HashMap();
 		ipTrackers = new HashMap();
+	}
+	
+	public AddressTracker(SimpleFieldSet fs, long lastBootID) throws FSParseException {
+		int version = fs.getInt("Version");
+		if(version != 1)
+			throw new FSParseException("Unknown Version "+version);
+		long savedBootID = fs.getLong("BootID");
+		if(savedBootID != lastBootID) throw new FSParseException("Wrong boot ID - maybe unclean shutdown?");
+		timeDefinitelyNoPacketsReceived = fs.getLong("TimeDefinitelyNoPacketsReceived");
+		timeDefinitelyNoPacketsSent = fs.getLong("TimeDefinitelyNoPacketsSent");
+		peerTrackers = new HashMap();
+		SimpleFieldSet peers = fs.getSubset("Peers");
+		Iterator i = peers.directSubsetNameIterator();
+		while(i.hasNext()) {
+			SimpleFieldSet peer = peers.subset((String)i.next());
+			PeerAddressTrackerItem item = new PeerAddressTrackerItem(peer);
+			peerTrackers.put(item.peer, item);
+		}
+		ipTrackers = new HashMap();
+		SimpleFieldSet ips = fs.getSubset("IPs");
+		i = peers.directSubsetNameIterator();
+		while(i.hasNext()) {
+			SimpleFieldSet peer = ips.subset((String)i.next());
+			InetAddressAddressTrackerItem item = new InetAddressAddressTrackerItem(peer);
+			ipTrackers.put(item.addr, item);
+		}
 	}
 	
 	public void sentPacketTo(Peer peer) {

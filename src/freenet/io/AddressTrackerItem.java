@@ -15,6 +15,8 @@
  */
 package freenet.io;
 
+import freenet.node.FSParseException;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -63,6 +65,27 @@ public class AddressTrackerItem {
 		gapLengthRecvTimes = new long[TRACK_GAPS];
 	}
 	
+	public AddressTrackerItem(SimpleFieldSet fs) throws FSParseException {
+		timeFirstReceivedPacket = fs.getLong("TimeFirstReceivedPacket");
+		timeFirstSentPacket = fs.getLong("TimeFirstSentPacket");
+		timeDefinitelyNoPacketsSent = fs.getLong("TimeDefinitelyNoPacketsSent");
+		timeDefinitelyNoPacketsReceived = fs.getLong("TimeDefinitelyNoPacketsReceived");
+		timeLastReceivedPacket = fs.getLong("TimeLastReceivedPacket");
+		timeLastSentPacket = fs.getLong("TimeLastSentPacket");
+		packetsSent = fs.getLong("PacketsSent");
+		packetsReceived = fs.getLong("PacketsReceived");
+		SimpleFieldSet gaps = fs.getSubset("Gaps");
+		for(int i=0;i<TRACK_GAPS;i++) {
+			SimpleFieldSet gap = gaps.subset(Integer.toString(i));
+			if(gap == null) {
+				Logger.normal(this, "No more gaps at i="+i+" - TRACK_GAPS changed??");
+				break;
+			}
+			gapLengths[i] = gap.getLong("Length");
+			gapLengthRecvTimes[i] = gap.getLong("Received");
+		}
+	}
+
 	public synchronized void sentPacket(long now) {
 		packetsSent++;
 		if(timeFirstSentPacket < 0)
