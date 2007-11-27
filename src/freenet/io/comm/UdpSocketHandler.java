@@ -64,7 +64,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = new Random();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		tracker = new AddressTracker();
+		tracker = AddressTracker.create(node.lastBootID, node.getNodeDir(), listenPort);
 		tracker.startSend(startupTime);
 	}
 

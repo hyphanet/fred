@@ -2,6 +2,7 @@ package freenet.support;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -469,6 +470,16 @@ public class SimpleFieldSet {
 		return fs.subset(after);
 	}
 
+	/**
+	 * Like subset(), only throws instead of returning null.
+	 * @throws FSParseException 
+	 */
+	public synchronized SimpleFieldSet getSubset(String key) throws FSParseException {
+		SimpleFieldSet fs = subset(key);
+		if(fs == null) throw new FSParseException("No such subset "+key);
+		return fs;
+	}
+	
 	public Iterator keyIterator() {
 		return new KeyIterator("");
 	}
@@ -839,6 +850,12 @@ public class SimpleFieldSet {
 
 	public void putOverwrite(String key, String[] strings) {
 		putOverwrite(key, unsplit(strings));
+	}
+
+	public String getString(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No such element "+key);
+		return s;
 	}
 
 }

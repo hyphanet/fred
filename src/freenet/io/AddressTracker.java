@@ -15,11 +15,15 @@
  */
 package freenet.io;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.util.HashMap;
@@ -51,14 +55,41 @@ public class AddressTracker {
 	private long timeDefinitelyNoPacketsReceived;
 	private long timeDefinitelyNoPacketsSent;
 	
-	public AddressTracker() {
+	public static AddressTracker create(long lastBootID, File nodeDir, int port) {
+		File data = new File(nodeDir, "packets-"+port+".dat");
+		File dataBak = new File(nodeDir, "packets-"+port+".bak");
+		dataBak.delete();
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(data);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			InputStreamReader ir = new InputStreamReader(bis, "UTF-8");
+			BufferedReader br = new BufferedReader(ir);
+			SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
+			return new AddressTracker(fs, lastBootID);
+		} catch (IOException e) {
+			// Fall through
+		} catch (FSParseException e) {
+			// Fall through
+		} finally {
+			if(fis != null)
+				try {
+					fis.close();
+				} catch (IOException e) {
+					// Ignore
+				}
+		}
+		return new AddressTracker();
+	}
+	
+	private AddressTracker() {
 		timeDefinitelyNoPacketsReceived = System.currentTimeMillis();
 		timeDefinitelyNoPacketsSent = System.currentTimeMillis();
 		peerTrackers = new HashMap();
 		ipTrackers = new HashMap();
 	}
 	
-	public AddressTracker(SimpleFieldSet fs, long lastBootID) throws FSParseException {
+	private AddressTracker(SimpleFieldSet fs, long lastBootID) throws FSParseException {
 		int version = fs.getInt("Version");
 		if(version != 1)
 			throw new FSParseException("Unknown Version "+version);
