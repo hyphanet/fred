@@ -246,7 +246,7 @@ public class AddressTracker {
 		}
 	}
 
-	private SimpleFieldSet getFieldset(long bootID) {
+	private synchronized SimpleFieldSet getFieldset(long bootID) {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.put("Version", 1);
 		sfs.put("BootID", bootID);
