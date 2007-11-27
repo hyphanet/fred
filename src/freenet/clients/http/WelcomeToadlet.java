@@ -75,8 +75,10 @@ public class WelcomeToadlet extends Toadlet {
                 HTMLNode row = table.addChild("tr");
                 HTMLNode cell = row.addChild("td", "style", "border: none");
                 if (item.hasAnActivelink()) {
+		    String initialKey = item.getKey();
+		    String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
                     cell.addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "height", "width", "alt", "title"},
-                            new String[]{'/' + item.getKey() + "/activelink.png", "36px", "108px", "activelink", item.getDescription()});
+                            new String[]{ key, "36px", "108px", "activelink", item.getDescription()});
                 } else {
                     cell.addChild("#", " ");
                 }
