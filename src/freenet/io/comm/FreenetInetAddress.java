@@ -364,4 +364,10 @@ public class FreenetInetAddress {
 			return defaultVal;	
 		}
 	}
+
+	public FreenetInetAddress dropHostname() {
+		if(hostname != null) {
+			return new FreenetInetAddress(getAddress());
+		} else return this;
+	}
 }

@@ -238,4 +238,11 @@ public class Peer {
 	public String toStringPrefNumeric() {
 		return addr.toStringPrefNumeric()+':'+_port;
 	}
+
+	public Peer dropHostName() {
+		FreenetInetAddress newAddr = addr.dropHostname();
+		if(addr != newAddr) {
+			return new Peer(newAddr, _port);
+		} else return this;
+	}
 }
