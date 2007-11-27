@@ -29,7 +29,7 @@ public class PeerAddressTrackerItem extends AddressTrackerItem {
 	public PeerAddressTrackerItem(long timeDefinitelyNoPacketsReceived, 
 			long timeDefinitelyNoPacketsSent, Peer peer) {
 		super(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent);
-		this.peer = peer.dropHostName();
+		this.peer = peer;
 	}
 	
 	public PeerAddressTrackerItem(SimpleFieldSet fs) throws FSParseException {

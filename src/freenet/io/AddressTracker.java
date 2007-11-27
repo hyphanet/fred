@@ -129,6 +129,7 @@ public class AddressTracker {
 	}
 	
 	void packetTo(Peer peer, boolean sent) {
+		peer = peer.dropHostName();
 		InetAddress ip = peer.getAddress();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
