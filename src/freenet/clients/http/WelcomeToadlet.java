@@ -436,6 +436,9 @@ public class WelcomeToadlet extends Toadlet {
                 HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", l10n("shutdownDone")));
                 HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
                 infoboxContent.addChild("#", l10n("thanks"));
+                
+                WelcomeToadlet.maybeDisplayWrapperLogfile(ctx, contentNode);
+                
                 this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
                 return;
             } else if (request.isParameterSet("restarted")) {
@@ -610,5 +613,21 @@ public class WelcomeToadlet extends Toadlet {
 
     private String l10n(String key, String pattern, String value) {
         return L10n.getString("WelcomeToadlet." + key, new String[]{pattern}, new String[]{value});
+    }
+    
+    public static void maybeDisplayWrapperLogfile(ToadletContext ctx, HTMLNode contentNode) {
+        final File logs = new File("wrapper.log");
+        long logSize = logs.length();
+        if(logs.exists() && logs.isFile() && logs.canRead() && logSize > 0) {
+            try {
+                HTMLNode logInfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-info", "Current status"));
+                HTMLNode logInfoboxContent = ctx.getPageMaker().getContentNode(logInfobox);
+                boolean isShortFile = logSize < 2000;
+                String content = FileUtil.readUTF(logs, (isShortFile ? 0 : logSize - 2000));
+                int eol = content.indexOf('\n');
+                boolean shallStripFirstLine = (!isShortFile) && (eol > 0);
+                logInfoboxContent.addChild("%", content.substring((shallStripFirstLine ? eol + 1 : 0)).replaceAll("\n", "<br>\n"));
+            } catch(IOException e) {}
+        }
     }
 }
