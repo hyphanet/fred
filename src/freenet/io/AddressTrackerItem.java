@@ -178,13 +178,13 @@ public class AddressTrackerItem {
 		fs.put("packetsSent", packetsSent);
 		fs.put("packetsReceived", packetsReceived);
 		SimpleFieldSet gaps = new SimpleFieldSet(true);
-		fs.put("gaps", gaps);
 		for(int i=0;i<TRACK_GAPS;i++) {
 			SimpleFieldSet gap = new SimpleFieldSet(true);
-			gaps.put(Integer.toString(i), gap);
 			gap.put("length", gapLengths[i]);
 			gap.put("received", gapLengthRecvTimes[i]);
+			gaps.put(Integer.toString(i), gap);
 		}
+		fs.put("gaps", gaps);
 		return fs;
 	}
 

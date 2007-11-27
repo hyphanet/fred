@@ -189,16 +189,16 @@ public class AddressTracker {
 		sfs.put("timeDefinitelyNoPacketsSent", timeDefinitelyNoPacketsSent);
 		PeerAddressTrackerItem[] peerItems = getPeerAddressTrackerItems();
 		SimpleFieldSet items = new SimpleFieldSet(true);
-		sfs.put("peers", items);
 		for(int i=0;i<peerItems.length;i++) {
 			items.put(Integer.toString(i), peerItems[i].toFieldSet());
 		}
+		sfs.put("peers", items);
 		InetAddressAddressTrackerItem[] inetItems = getInetAddressTrackerItems();
 		items = new SimpleFieldSet(true);
-		sfs.put("IPs", items);
 		for(int i=0;i<inetItems.length;i++) {
 			items.put(Integer.toString(i), inetItems[i].toFieldSet());
 		}
+		sfs.put("IPs", items);
 		return sfs;
 	}
 }
