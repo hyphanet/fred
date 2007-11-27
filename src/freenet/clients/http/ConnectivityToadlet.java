@@ -20,8 +20,10 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.io.AddressTracker;
+import freenet.io.AddressTrackerItem;
 import freenet.io.InetAddressAddressTrackerItem;
 import freenet.io.PeerAddressTrackerItem;
+import freenet.io.AddressTrackerItem.Gap;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.l10n.L10n;
 import freenet.node.Node;
@@ -69,6 +71,7 @@ public class ConnectivityToadlet extends Toadlet {
 		String noreply = l10n("noreply");
 		String local = l10n("local");
 		String remote = l10n("remote");
+		long now = System.currentTimeMillis();
 		
 		for(int i=0;i<handlers.length;i++) {
 			// Peers
@@ -84,6 +87,9 @@ public class ConnectivityToadlet extends Toadlet {
 			row.addChild("th", l10n("localRemoteTitle"));
 			row.addChild("th", l10n("firstSendLeadTime"));
 			row.addChild("th", l10n("firstReceiveLeadTime"));
+			for(int j=0;j<AddressTrackerItem.TRACK_GAPS;j++) {
+				row.addChild("th", " "); // FIXME is <th/> valid??
+			}
 			for(int j=0;j<items.length;j++) {
 				row = table.addChild("tr");
 				PeerAddressTrackerItem item = items[j];
@@ -98,6 +104,11 @@ public class ConnectivityToadlet extends Toadlet {
 				row.addChild("td", TimeUtil.formatTime(item.timeFromStartupToFirstSentPacket()));
 				// Lead in time to first packet received
 				row.addChild("td", TimeUtil.formatTime(item.timeFromStartupToFirstReceivedPacket()));
+				Gap[] gaps = item.getGaps();
+				for(int k=0;k<AddressTrackerItem.TRACK_GAPS;k++) {
+					row.addChild("td", gaps[k].receivedPacketAt == 0 ? "" : 
+						(TimeUtil.formatTime(gaps[k].gapLength)+" @ "+TimeUtil.formatTime(now - gaps[k].receivedPacketAt)+" ago" /* fixme l10n */));
+				}
 			}
 
 			// IPs
@@ -112,6 +123,9 @@ public class ConnectivityToadlet extends Toadlet {
 			row.addChild("th", l10n("localRemoteTitle"));
 			row.addChild("th", l10n("firstSendLeadTime"));
 			row.addChild("th", l10n("firstReceiveLeadTime"));
+			for(int j=0;j<AddressTrackerItem.TRACK_GAPS;j++) {
+				row.addChild("th", " "); // FIXME is <th/> valid??
+			}
 			for(int j=0;j<ipItems.length;j++) {
 				row = table.addChild("tr");
 				InetAddressAddressTrackerItem item = ipItems[j];
@@ -126,6 +140,11 @@ public class ConnectivityToadlet extends Toadlet {
 				row.addChild("td", TimeUtil.formatTime(item.timeFromStartupToFirstSentPacket()));
 				// Lead in time to first packet received
 				row.addChild("td", TimeUtil.formatTime(item.timeFromStartupToFirstReceivedPacket()));
+				Gap[] gaps = item.getGaps();
+				for(int k=0;k<AddressTrackerItem.TRACK_GAPS;k++) {
+					row.addChild("td", gaps[k].receivedPacketAt == 0 ? "" : 
+						(TimeUtil.formatTime(gaps[k].gapLength)+" @ "+TimeUtil.formatTime(now - gaps[k].receivedPacketAt)+" ago" /* fixme l10n */));
+				}
 			}
 
 		}

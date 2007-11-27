@@ -43,7 +43,7 @@ public class AddressTrackerItem {
 	private long packetsSent;
 	/** The total number of packets received from this address */
 	private long packetsReceived;
-	static final int TRACK_GAPS = 5;
+	public static final int TRACK_GAPS = 5;
 	private long[] topGapLengths;
 	private long[] topGapLengthRecvTimes;
 	static final int GAP_THRESHOLD = AddressTracker.MAX_TUNNEL_LENGTH;
@@ -86,6 +86,23 @@ public class AddressTrackerItem {
 			topGapLengths[0] = (now - timeFirstSentPacket);
 			topGapLengthRecvTimes[0] = now;
 		}
+	}
+	
+	public class Gap {
+		public final long gapLength;
+		public final long receivedPacketAt;
+		Gap(long gapLength, long receivedPacketAt) {
+			this.gapLength = gapLength;
+			this.receivedPacketAt = receivedPacketAt;
+		}
+	}
+	
+	public synchronized Gap[] getGaps() {
+		Gap[] gaps = new Gap[GAP_THRESHOLD];
+		for(int i=0;i<GAP_THRESHOLD;i++) {
+			gaps[i] = new Gap(topGapLengths[i], topGapLengthRecvTimes[i]);
+		}
+		return gaps;
 	}
 	
 	public synchronized long firstReceivedPacket() {
