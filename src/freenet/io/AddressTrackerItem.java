@@ -44,8 +44,8 @@ public class AddressTrackerItem {
 	/** The total number of packets received from this address */
 	private long packetsReceived;
 	public static final int TRACK_GAPS = 5;
-	private long[] topGapLengths;
-	private long[] topGapLengthRecvTimes;
+	private long[] gapLengths;
+	private long[] gapLengthRecvTimes;
 	static final int GAP_THRESHOLD = AddressTracker.MAX_TUNNEL_LENGTH;
 	
 	public AddressTrackerItem(long timeDefinitelyNoPacketsReceived, long timeDefinitelyNoPacketsSent) {
@@ -57,8 +57,8 @@ public class AddressTrackerItem {
 		packetsReceived = 0;
 		this.timeDefinitelyNoPacketsReceived = timeDefinitelyNoPacketsReceived;
 		this.timeDefinitelyNoPacketsSent = timeDefinitelyNoPacketsSent;
-		topGapLengths = new long[TRACK_GAPS];
-		topGapLengthRecvTimes = new long[TRACK_GAPS];
+		gapLengths = new long[TRACK_GAPS];
+		gapLengthRecvTimes = new long[TRACK_GAPS];
 	}
 	
 	public synchronized void sentPacket(long now) {
@@ -80,20 +80,20 @@ public class AddressTrackerItem {
 		if(now - startTime > GAP_THRESHOLD) {
 			// Not necessarily a new gap
 			// If no packets sent since last one, just replace it
-			if(timeLastSentPacket > topGapLengthRecvTimes[0]) {
+			if(timeLastSentPacket > gapLengthRecvTimes[0]) {
 				// Rotate gaps array
 				for(int i=1;i<TRACK_GAPS;i++) {
-					topGapLengths[i] = topGapLengths[i-1];
-					topGapLengthRecvTimes[i] = topGapLengthRecvTimes[i-1];
+					gapLengths[i] = gapLengths[i-1];
+					gapLengthRecvTimes[i] = gapLengthRecvTimes[i-1];
 				}
 			} // else overwrite [0]
-			topGapLengths[0] = (now - startTime);
-			topGapLengthRecvTimes[0] = now;
+			gapLengths[0] = (now - startTime);
+			gapLengthRecvTimes[0] = now;
 		}
 	}
 	
 	public synchronized boolean hasLongTunnel(long horizon) {
-		return topGapLengthRecvTimes[0] > System.currentTimeMillis() - horizon;
+		return gapLengthRecvTimes[0] > System.currentTimeMillis() - horizon;
 	}
 
 	public class Gap {
@@ -108,7 +108,7 @@ public class AddressTrackerItem {
 	public synchronized Gap[] getGaps() {
 		Gap[] gaps = new Gap[GAP_THRESHOLD];
 		for(int i=0;i<TRACK_GAPS;i++) {
-			gaps[i] = new Gap(topGapLengths[i], topGapLengthRecvTimes[i]);
+			gaps[i] = new Gap(gapLengths[i], gapLengthRecvTimes[i]);
 		}
 		return gaps;
 	}
