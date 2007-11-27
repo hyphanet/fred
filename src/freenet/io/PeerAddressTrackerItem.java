@@ -16,6 +16,7 @@
 package freenet.io;
 
 import freenet.io.comm.Peer;
+import freenet.support.SimpleFieldSet;
 
 public class PeerAddressTrackerItem extends AddressTrackerItem {
 	
@@ -25,6 +26,12 @@ public class PeerAddressTrackerItem extends AddressTrackerItem {
 			long timeDefinitelyNoPacketsSent, Peer peer) {
 		super(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent);
 		this.peer = peer;
+	}
+	
+	public SimpleFieldSet toFieldSet() {
+		SimpleFieldSet fs = super.toFieldSet();
+		fs.putOverwrite("address", peer.toStringPrefNumeric());
+		return fs;
 	}
 
 }

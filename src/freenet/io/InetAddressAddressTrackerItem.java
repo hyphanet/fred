@@ -17,6 +17,8 @@ package freenet.io;
 
 import java.net.InetAddress;
 
+import freenet.support.SimpleFieldSet;
+
 public class InetAddressAddressTrackerItem extends AddressTrackerItem {
 
 	public InetAddressAddressTrackerItem(long timeDefinitelyNoPacketsReceived, 
@@ -27,4 +29,9 @@ public class InetAddressAddressTrackerItem extends AddressTrackerItem {
 
 	public final InetAddress addr;
 	
+	public SimpleFieldSet toFieldSet() {
+		SimpleFieldSet fs = super.toFieldSet();
+		fs.putOverwrite("address", addr.getHostAddress());
+		return fs;
+	}
 }

@@ -15,10 +15,18 @@
  */
 package freenet.io;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.util.HashMap;
 
 import freenet.io.comm.Peer;
+import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * Track packet traffic to/from specific peers and IP addresses, in order to 
@@ -150,5 +158,47 @@ public class AddressTracker {
 		default:
 			return "Error";
 		}
+	}
+
+	/** Persist the table to disk */
+	public void storeData(long bootID, File nodeDir, int port) {
+		File data = new File(nodeDir, "packets-"+port+".dat");
+		File dataBak = new File(nodeDir, "packets-"+port+".bak");
+		data.delete();
+		dataBak.delete();
+		try {
+			FileOutputStream fos = new FileOutputStream(dataBak);
+			BufferedOutputStream bos = new BufferedOutputStream(fos);
+			OutputStreamWriter osw = new OutputStreamWriter(bos, "UTF-8");
+			BufferedWriter bw = new BufferedWriter(osw);
+			SimpleFieldSet fs = getFieldset(bootID);
+			fs.writeTo(bw);
+			bw.close();
+			dataBak.renameTo(data);
+		} catch (IOException e) {
+			Logger.error(this, "Cannot store packet tracker to disk");
+			return;
+		}
+	}
+
+	private SimpleFieldSet getFieldset(long bootID) {
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.put("Version", 1);
+		sfs.put("BootID", bootID);
+		sfs.put("timeDefinitelyNoPacketsReceived", timeDefinitelyNoPacketsReceived);
+		sfs.put("timeDefinitelyNoPacketsSent", timeDefinitelyNoPacketsSent);
+		PeerAddressTrackerItem[] peerItems = getPeerAddressTrackerItems();
+		SimpleFieldSet items = new SimpleFieldSet(true);
+		sfs.put("peers", items);
+		for(int i=0;i<peerItems.length;i++) {
+			items.put(Integer.toString(i), peerItems[i].toFieldSet());
+		}
+		InetAddressAddressTrackerItem[] inetItems = getInetAddressTrackerItems();
+		items = new SimpleFieldSet(true);
+		sfs.put("IPs", items);
+		for(int i=0;i<inetItems.length;i++) {
+			items.put(Integer.toString(i), inetItems[i].toFieldSet());
+		}
+		return sfs;
 	}
 }

@@ -15,6 +15,8 @@
  */
 package freenet.io;
 
+import freenet.support.SimpleFieldSet;
+
 /**
  * Tracks communication to/from a specific address. That address can be a specific IP:port, a specific IP,
  * or some completely different type of address, so we don't store it in this class; subclasses will do.
@@ -163,6 +165,27 @@ public class AddressTrackerItem {
 	public synchronized long timeFromStartupToFirstReceivedPacket() {
 		if(packetsReceived == 0) return -1;
 		return timeFirstReceivedPacket - timeDefinitelyNoPacketsReceived;
+	}
+
+	public SimpleFieldSet toFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("timeFirstReceivedPacket", timeFirstReceivedPacket);
+		fs.put("timeFirstSentPacket", timeFirstSentPacket);
+		fs.put("timeDefinitelyNoPacketsSent", timeDefinitelyNoPacketsSent);
+		fs.put("timeDefinitelyNoPacketsReceived", timeDefinitelyNoPacketsReceived);
+		fs.put("timeLastReceivedPacket", timeLastReceivedPacket);
+		fs.put("timeLastSentPacket", timeLastSentPacket);
+		fs.put("packetsSent", packetsSent);
+		fs.put("packetsReceived", packetsReceived);
+		SimpleFieldSet gaps = new SimpleFieldSet(true);
+		fs.put("gaps", gaps);
+		for(int i=0;i<TRACK_GAPS;i++) {
+			SimpleFieldSet gap = new SimpleFieldSet(true);
+			gaps.put(Integer.toString(i), gap);
+			gap.put("length", gapLengths[i]);
+			gap.put("received", gapLengthRecvTimes[i]);
+		}
+		return fs;
 	}
 
 }

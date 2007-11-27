@@ -38,6 +38,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 	private volatile int lastTimeInSeconds;
 	private boolean _isDone;
 	private boolean _active = true;
+	private final int listenPort;
 	
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime) throws SocketException {
 		super("UdpSocketHandler packet receiver thread on port " + listenPort);
@@ -48,6 +49,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 //			if (Updater.hasResource()) {
 //				_sock = (DatagramSocket) Updater.getResource();
 //			} else {
+		this.listenPort = listenPort;
 		_sock = new DatagramSocket(listenPort, bindto);
 		int sz = _sock.getReceiveBufferSize();
 		if(sz < 32768)
@@ -203,6 +205,8 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
     	assert(blockToSend != null);
     	if(!_active) {
     		Logger.error(this, "Trying to send packet but no longer active");
+    		// It is essential that for recording accurate AddressTracker data that we don't send any more
+    		// packets after shutdown.
     		return;
     	}
 		// there should be no DNS needed here, but go ahead if we can, but complain doing it
@@ -366,6 +370,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 		    Logger.fatal(this, 10, "Not implemented: close(false)");
 			//Updater.saveResource(_sock);
 		}
+		tracker.storeData(node.bootID, node.getNodeDir(), listenPort);
 	}
     
 	public int getDropProbability() {
