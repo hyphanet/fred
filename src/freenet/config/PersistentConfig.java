@@ -67,7 +67,7 @@ public class PersistentConfig extends Config {
 			if(val == null) return;
 		}
 		try {
-			o.setInitialValue(val);
+			o.setInitialValue(val.trim());
 		} catch (InvalidConfigValueException e) {
 			Logger.error(this, "Could not parse config option "+name+": "+e, e);
 		}
