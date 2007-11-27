@@ -617,17 +617,16 @@ public class Node implements TimeSkewDetectorCallback {
 				String s = new String(buf, "ISO-8859-1");
 				try {
 					oldBootID = Fields.hexToLong(s);
-					raf.seek(0);
-					s = HexUtil.bytesToHex(Fields.longToBytes(bootID));
-					buf = s.getBytes("ISO-8859-1");
-					if(buf.length != BOOT_FILE_LENGTH)
-						System.err.println("Not 16 bytes for boot ID "+bootID+" - WTF??");
-					raf.write(buf);
 				} catch (NumberFormatException e) {
 					oldBootID = -1;
 				}
-				
+				raf.seek(0);
 			}
+			String s = HexUtil.bytesToHex(Fields.longToBytes(bootID));
+			byte[] buf = s.getBytes("ISO-8859-1");
+			if(buf.length != BOOT_FILE_LENGTH)
+				System.err.println("Not 16 bytes for boot ID "+bootID+" - WTF??");
+			raf.write(buf);
 		} catch (IOException e) {
 			oldBootID = -1;
 			// If we have an error in reading, *or in writing*, we don't reliably know the last boot ID.
