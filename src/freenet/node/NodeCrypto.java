@@ -119,6 +119,9 @@ class NodeCrypto {
 			try {
 				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime);
 			} catch (Exception e) {
+				Logger.error(this, "Caught "+e, e);
+				System.err.println(e);
+				e.printStackTrace();
 				throw new NodeInitException(NodeInitException.EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
 			}
 		}
