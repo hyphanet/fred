@@ -200,9 +200,10 @@ public class OpennetManager {
 	/**
 	 * Called when opennet is disabled
 	 */
-	public void stop() {
+	public void stop(boolean purge) {
 		crypto.stop();
-		node.peers.removeOpennetPeers();
+		if(purge)
+			node.peers.removeOpennetPeers();
 	}
 
 	public boolean addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {

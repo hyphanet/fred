@@ -843,7 +843,7 @@ public class Node implements TimeSkewDetectorCallback {
 					}
 				}
 				if(val) o.start();
-				else o.stop();
+				else o.stop(true);
 				ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
 			}
 		});
@@ -1207,6 +1207,19 @@ public class Node implements TimeSkewDetectorCallback {
 					System.err.println("Caught "+t+" closing environment");
 					t.printStackTrace();
 				}
+			}
+		});
+		
+		storeShutdownHook.addLateJob(new Thread() {
+			public void run() {
+				if(opennet != null)
+					opennet.stop(false);
+			}
+		});
+		
+		storeShutdownHook.addLateJob(new Thread() {
+			public void run() {
+				darknetCrypto.stop();
 			}
 		});
 		
