@@ -254,11 +254,11 @@ public class AddressTracker {
 		sfs.put("TimeDefinitelyNoPacketsSent", timeDefinitelyNoPacketsSent);
 		PeerAddressTrackerItem[] peerItems = getPeerAddressTrackerItems();
 		SimpleFieldSet items = new SimpleFieldSet(true);
-                if(peerItems.length > 0) {
-                    for(int i = 0; i < peerItems.length; i++)
-                        items.put(Integer.toString(i), peerItems[i].toFieldSet());
-                    sfs.put("Peers", items);
-                }
+		if(peerItems.length > 0) {
+			for(int i = 0; i < peerItems.length; i++)
+				items.put(Integer.toString(i), peerItems[i].toFieldSet());
+			sfs.put("Peers", items);
+		}
 		InetAddressAddressTrackerItem[] inetItems = getInetAddressTrackerItems();
 		items = new SimpleFieldSet(true);
 		for(int i=0;i<inetItems.length;i++) {
