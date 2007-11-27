@@ -616,7 +616,7 @@ public class Node implements TimeSkewDetectorCallback {
 				raf.readFully(buf);
 				String s = new String(buf, "ISO-8859-1");
 				try {
-					oldBootID = Fields.hexToLong(s);
+					oldBootID = Fields.bytesToLong(HexUtil.hexToBytes(s));
 				} catch (NumberFormatException e) {
 					oldBootID = -1;
 				}
