@@ -2863,13 +2863,31 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return byteLen;
 	}
 
+	// Recent packets sent/received
+	static final int TRACK_PACKETS = 64;
+	private final long[] packetsSentTimes = new long[TRACK_PACKETS];
+	private final long[] packetsRecvTimes = new long[TRACK_PACKETS];
+	private final long[] packetsSentHashes = new long[TRACK_PACKETS];
+	private final long[] packetsRecvHashes = new long[TRACK_PACKETS];
+	private int sentPtr;
+	private int recvPtr;
+	
 	public void reportIncomingPacket(byte[] buf, int offset, int length, long now) {
 		reportIncomingBytes(length);
-		// FIXME
+		long hash = Fields.longHashCode(buf, offset, length);
+		packetsRecvTimes[recvPtr] = now;
+		packetsRecvHashes[recvPtr] = hash;
+		recvPtr++;
+		if(recvPtr == TRACK_PACKETS) recvPtr = 0;
 	}
 
-	public void reportOutgoingPacket(byte[] data, int i, int length, long l) {
+	public synchronized void reportOutgoingPacket(byte[] buf, int offset, int length, long now) {
 		reportOutgoingBytes(length);
-		// FIXME
+		long hash = Fields.longHashCode(buf, offset, length);
+		packetsSentTimes[sentPtr] = now;
+		packetsSentHashes[sentPtr] = hash;
+		sentPtr++;
+		if(sentPtr == TRACK_PACKETS) sentPtr = 0;
 	}
+	
 }
