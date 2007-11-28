@@ -2865,9 +2865,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	// Recent packets sent/received
 	// We record times and weak short hashes of the last 64 packets 
-	// sent/received. We can then send this information when we connect, 
-	// and if there are many packets which the other side sent but we 
-	// didn't receive, they can realise that they are not port forwarded.
+	// sent/received. When we connect successfully, we send the data
+	// on what packets we have sent, and the recipient can compare
+	// this to their records of received packets to determine if there
+	// is a problem, which usually indicates not being port forwarded.
 	static final short TRACK_PACKETS = 64;
 	private final long[] packetsSentTimes = new long[TRACK_PACKETS];
 	private final long[] packetsRecvTimes = new long[TRACK_PACKETS];
