@@ -232,18 +232,27 @@ public class AddressTracker {
 		File dataBak = new File(nodeDir, "packets-"+port+".bak");
 		data.delete();
 		dataBak.delete();
+		FileOutputStream fos = null;
 		try {
-			FileOutputStream fos = new FileOutputStream(dataBak);
+			fos = new FileOutputStream(dataBak);
 			BufferedOutputStream bos = new BufferedOutputStream(fos);
 			OutputStreamWriter osw = new OutputStreamWriter(bos, "UTF-8");
 			BufferedWriter bw = new BufferedWriter(osw);
 			SimpleFieldSet fs = getFieldset(bootID);
 			fs.writeTo(bw);
 			bw.close();
+			fos = null;
 			dataBak.renameTo(data);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store packet tracker to disk");
 			return;
+		} finally {
+			if(fos != null)
+				try {
+					fos.close();
+				} catch (IOException e) {
+					// Ignore
+				}
 		}
 	}
 
