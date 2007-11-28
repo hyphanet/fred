@@ -657,6 +657,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	private class CompletionWaiter implements Runnable {
 		
 		public void run() {
+			try {
 		    freenet.support.Logger.OSThread.logPID(this);
 			if(logMINOR) Logger.minor(this, "Starting "+this);
 			
@@ -672,9 +673,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			// Wait for the outgoing transfers to complete.
 			if(!waitForCompletedTransfers(waiters)) {
 				synchronized(CHKInsertSender.this) {
-					allTransfersCompleted = true;
 					transferTimedOut = true; // probably, they disconnected
-					CHKInsertSender.this.notifyAll();
 					return;
 				}
 			}
@@ -693,8 +692,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					synchronized(CHKInsertSender.this) {
 						if(logMINOR) Logger.minor(this, "Timed out waiting for transfers to complete on "+uid);
 						transferTimedOut = true;
-						allTransfersCompleted = true;
-						CHKInsertSender.this.notifyAll();
 					}
 					return;
 				}
@@ -724,11 +721,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				}
 				
 				if(mf == null) {
-					synchronized(CHKInsertSender.this) {
-						allTransfersCompleted = true;
-						CHKInsertSender.this.notifyAll();
-						return;
-					}
+					return;
 				} else {
 					Message m;
 					try {
@@ -763,6 +756,12 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 							Logger.error(this, "Did not process message: "+m+" on "+this);
 						}
 					}
+				}
+			}
+			} finally {
+				synchronized(CHKInsertSender.this) {
+					allTransfersCompleted = true;
+					CHKInsertSender.this.notifyAll();
 				}
 			}
 		}
