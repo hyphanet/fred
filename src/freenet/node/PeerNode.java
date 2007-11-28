@@ -2868,30 +2868,82 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	// sent/received. We can then send this information when we connect, 
 	// and if there are many packets which the other side sent but we 
 	// didn't receive, they can realise that they are not port forwarded.
-	static final int TRACK_PACKETS = 64;
+	static final short TRACK_PACKETS = 64;
 	private final long[] packetsSentTimes = new long[TRACK_PACKETS];
 	private final long[] packetsRecvTimes = new long[TRACK_PACKETS];
 	private final long[] packetsSentHashes = new long[TRACK_PACKETS];
 	private final long[] packetsRecvHashes = new long[TRACK_PACKETS];
-	private int sentPtr;
-	private int recvPtr;
+	private short sentPtr;
+	private short recvPtr;
+	private boolean sentTrackPackets;
+	private boolean recvTrackPackets;
 	
 	public void reportIncomingPacket(byte[] buf, int offset, int length, long now) {
 		reportIncomingBytes(length);
 		long hash = Fields.longHashCode(buf, offset, length);
+		synchronized(this) {
 		packetsRecvTimes[recvPtr] = now;
 		packetsRecvHashes[recvPtr] = hash;
 		recvPtr++;
-		if(recvPtr == TRACK_PACKETS) recvPtr = 0;
+		if(recvPtr == TRACK_PACKETS) {
+			recvPtr = 0;
+			recvTrackPackets = true;
+		}
+		}
 	}
 
-	public synchronized void reportOutgoingPacket(byte[] buf, int offset, int length, long now) {
+	public void reportOutgoingPacket(byte[] buf, int offset, int length, long now) {
 		reportOutgoingBytes(length);
 		long hash = Fields.longHashCode(buf, offset, length);
+		synchronized(this) {
 		packetsSentTimes[sentPtr] = now;
 		packetsSentHashes[sentPtr] = hash;
 		sentPtr++;
-		if(sentPtr == TRACK_PACKETS) sentPtr = 0;
+		if(sentPtr == TRACK_PACKETS) {
+			sentPtr = 0;
+			sentTrackPackets = true;
+		}
+		}
 	}
 	
+	/**
+	 * @return a long[] consisting of two arrays, the first being packet times,
+	 * the second being packet hashes.
+	 */
+	public synchronized long[][] getSentPacketTimesHashes() {
+		short count = sentTrackPackets ? TRACK_PACKETS : sentPtr;
+		long[] times = new long[count];
+		long[] hashes = new long[count];
+		if(sentTrackPackets) {
+			System.arraycopy(packetsSentTimes, 0, times, 0, sentPtr);
+			System.arraycopy(packetsSentHashes, 0, hashes, 0, sentPtr);
+		} else {
+			System.arraycopy(packetsSentTimes, sentPtr, times, 0, TRACK_PACKETS - sentPtr);
+			System.arraycopy(packetsSentTimes, 0, times, TRACK_PACKETS - sentPtr, sentPtr);
+			System.arraycopy(packetsSentHashes, sentPtr, hashes, 0, TRACK_PACKETS - sentPtr);
+			System.arraycopy(packetsSentHashes, 0, hashes, TRACK_PACKETS - sentPtr, sentPtr);
+		}
+		return new long[][] { times, hashes };
+	}
+	
+	/**
+	 * @return a long[] consisting of two arrays, the first being packet times,
+	 * the second being packet hashes.
+	 */
+	public synchronized long[][] getRecvPacketTimesHashes() {
+		short count = recvTrackPackets ? TRACK_PACKETS : recvPtr;
+		long[] times = new long[count];
+		long[] hashes = new long[count];
+		if(recvTrackPackets) {
+			System.arraycopy(packetsRecvTimes, 0, times, 0, recvPtr);
+			System.arraycopy(packetsRecvHashes, 0, hashes, 0, recvPtr);
+		} else {
+			System.arraycopy(packetsRecvTimes, recvPtr, times, 0, TRACK_PACKETS - recvPtr);
+			System.arraycopy(packetsRecvTimes, 0, times, TRACK_PACKETS - recvPtr, recvPtr);
+			System.arraycopy(packetsRecvHashes, recvPtr, hashes, 0, TRACK_PACKETS - recvPtr);
+			System.arraycopy(packetsRecvHashes, 0, hashes, TRACK_PACKETS - recvPtr, recvPtr);
+		}
+		return new long[][] { times, hashes };
+	}
+
 }
