@@ -124,6 +124,15 @@ public class AddressTrackerItem {
 	public synchronized boolean hasLongTunnel(long horizon) {
 		return gapLengthRecvTimes[0] > System.currentTimeMillis() - horizon;
 	}
+	
+	public long longestGap(long horizon, long now) {
+		long longestGap = 0;
+		for(int i=0;i<TRACK_GAPS;i++) {
+			if(gapLengthRecvTimes[0] < now - horizon) continue;
+			longestGap = Math.max(longestGap, gapLengths[i]);
+		}
+		return longestGap;
+	}
 
 	public class Gap {
 		public final long gapLength;

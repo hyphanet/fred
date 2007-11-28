@@ -193,6 +193,25 @@ public class AddressTracker {
 	/** Time after which we ignore evidence that we are port forwarded */
 	public static final long HORIZON = 24*60*60*1000L;
 	
+	/**
+	 * Find the longest send/known-no-packets-sent ... receive gap.
+	 * It is highly unlikely that we are behind a NAT or symmetric
+	 * firewall with a timeout less than the returned length.
+	 */
+	public long getLongestSendReceiveGap(long horizon) {
+		long longestGap = -1;
+		long now = System.currentTimeMillis();
+		PeerAddressTrackerItem[] items = getPeerAddressTrackerItems();
+		for(int i=0;i<items.length;i++) {
+			PeerAddressTrackerItem item = items[i];
+			if(item.packetsReceived() <= 0) continue;
+			if(!item.peer.isRealInternetAddress(false, false)) continue;
+			longestGap = Math.max(longestGap, item.longestGap(horizon, now));
+		}
+		return longestGap;
+		
+	}
+	
 	public int getPortForwardStatus() {
 		PeerAddressTrackerItem[] items = getPeerAddressTrackerItems();
 		for(int i=0;i<items.length;i++) {
