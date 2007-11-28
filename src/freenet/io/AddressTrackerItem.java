@@ -50,7 +50,7 @@ public class AddressTrackerItem {
 	public static final int TRACK_GAPS = 5;
 	private long[] gapLengths;
 	private long[] gapLengthRecvTimes;
-	static final int GAP_THRESHOLD = AddressTracker.MAX_TUNNEL_LENGTH;
+	static final long GAP_THRESHOLD = AddressTracker.MAYBE_TUNNEL_LENGTH;
 	static final boolean INCLUDE_RECEIVED_PACKETS = true;
 	
 	public AddressTrackerItem(long timeDefinitelyNoPacketsReceived, long timeDefinitelyNoPacketsSent) {

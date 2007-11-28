@@ -184,12 +184,15 @@ public class AddressTracker {
 		return (InetAddressAddressTrackerItem[]) ipTrackers.values().toArray(items);
 	}
 	
-	public static final int DEFINITELY_PORT_FORWARDED = 1;
+	public static final int DEFINITELY_PORT_FORWARDED = 2;
+	public static final int MAYBE_PORT_FORWARDED = 1;
 	public static final int DEFINITELY_NATED = -1;
 	public static final int DONT_KNOW = 0;
 	
-	/** Assume NAT UDP hole punching tunnels are no longer than this */
-	public static int MAX_TUNNEL_LENGTH = ((5*60)+1)*1000;
+	/** If the minimum gap is at least this, we might be port forwarded */
+	public static long MAYBE_TUNNEL_LENGTH = ((5*60)+1)*1000L;
+	/** If the minimum gap is at least this, we are almost certainly port forwarded */
+	public static long DEFINITELY_TUNNEL_LENGTH = (12*60+1)*60*1000L;
 	/** Time after which we ignore evidence that we are port forwarded */
 	public static final long HORIZON = 24*60*60*1000L;
 	
@@ -217,22 +220,11 @@ public class AddressTracker {
 	}
 	
 	public int getPortForwardStatus() {
-		PeerAddressTrackerItem[] items = getPeerAddressTrackerItems();
-		for(int i=0;i<items.length;i++) {
-			PeerAddressTrackerItem item = items[i];
-			if(item.packetsReceived() <= 0) continue;
-			if(!item.peer.isRealInternetAddress(false, false)) continue;
-			if(item.hasLongTunnel(HORIZON)) {
-				// FIXME should require more than one
-				return DEFINITELY_PORT_FORWARDED;
-			}
-			if(!item.weSentFirst()) {
-				if(item.timeFromStartupToFirstReceivedPacket() > MAX_TUNNEL_LENGTH) {
-					// FIXME should require more than one
-					return DEFINITELY_PORT_FORWARDED;
-				}
-			}
-		}
+		long minGap = getLongestSendReceiveGap(HORIZON);
+		if(minGap > DEFINITELY_TUNNEL_LENGTH)
+			return DEFINITELY_PORT_FORWARDED;
+		if(minGap > MAYBE_TUNNEL_LENGTH)
+			return MAYBE_PORT_FORWARDED;
 		return DONT_KNOW;
 	}
 	
@@ -240,6 +232,8 @@ public class AddressTracker {
 		switch(status) {
 		case DEFINITELY_PORT_FORWARDED:
 			return "Port forwarded";
+		case MAYBE_PORT_FORWARDED:
+			return "Maybe port forwarded";
 		case DEFINITELY_NATED:
 			return "Behind NAT";
 		case DONT_KNOW:
