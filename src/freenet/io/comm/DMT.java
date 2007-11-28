@@ -121,6 +121,8 @@ public class DMT {
 	public static final String TRANSFER_UID = "transferUID";
 	public static final String NODEREF_LENGTH = "noderefLength";
 	public static final String PADDED_LENGTH = "paddedLength";
+	public static final String TIME_DELTAS = "timeDeltas";
+	public static final String HASHES = "hashes";
 	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -1074,6 +1076,18 @@ public class DMT {
 	public static final Message createFNPTime(long time) {
 		Message msg = new Message(FNPTime);
 		msg.set(TIME, time);
+		return msg;
+	}
+	
+	public static final MessageType FNPSentPackets = new MessageType("FNPSentPackets") {{
+		addField(TIME_DELTAS, ShortBuffer.class);
+		addField(HASHES, ShortBuffer.class);
+	}};
+	
+	public static final Message createFNPSentPackets(int[] timeDeltas, long[] hashes) {
+		Message msg = new Message(FNPSentPackets);
+		msg.set(TIME_DELTAS, new ShortBuffer(Fields.intsToBytes(timeDeltas)));
+		msg.set(HASHES, new ShortBuffer(Fields.longsToBytes(hashes)));
 		return msg;
 	}
 	

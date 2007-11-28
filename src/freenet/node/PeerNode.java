@@ -1646,12 +1646,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         Message locMsg = DMT.createFNPLocChangeNotification(node.lm.getLocation());
         Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
+        Message packetsMsg = createSentPacketsMessage();
         
         try {
         	if(isRoutable())
         		 sendAsync(locMsg, null, 0, null);
             sendAsync(ipMsg, null, 0, null);
             sendAsync(timeMsg, null, 0, null);
+            sendAsync(packetsMsg, null, 0, null);
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected ("+isConnected+ ':' +currentTracker+"!!!: "+e, e);
         }
@@ -1660,7 +1662,32 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         	node.nodeUpdater.maybeSendUOMAnnounce(this);
     }
     
-    private void sendIPAddressMessage() {
+    private Message createSentPacketsMessage() {
+    	long[][] sent = getSentPacketTimesHashes();
+    	long[] times = sent[0];
+    	long[] hashes = sent[1];
+    	long now = System.currentTimeMillis();
+    	long horizon = now - Integer.MAX_VALUE;
+    	int skip = 0;
+    	for(int i=0;i<times.length;i++) {
+    		long time = times[i];
+    		if(time < horizon) skip++;
+    		else break;
+    	}
+    	int[] timeDeltas = new int[times.length-skip];
+    	for(int i=skip;i<times.length;i++) {
+    		timeDeltas[i] = (int) (now - times[i]);
+    	}
+    	if(skip != 0) {
+    		// Unlikely code path, only happens with very long uptime.
+    		// Trim hashes too.
+    		long[] newHashes = new long[hashes.length - skip];
+    		System.arraycopy(hashes, skip, newHashes, 0, hashes.length - skip);
+    	}
+    	return DMT.createFNPSentPackets(timeDeltas, hashes);
+	}
+
+	private void sendIPAddressMessage() {
         Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         try {
             sendAsync(ipMsg, null, 0, null);
