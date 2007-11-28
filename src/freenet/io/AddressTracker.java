@@ -189,9 +189,12 @@ public class AddressTracker {
 	public static final int DEFINITELY_NATED = -1;
 	public static final int DONT_KNOW = 0;
 	
-	/** If the minimum gap is at least this, we might be port forwarded */
+	/** If the minimum gap is at least this, we might be port forwarded. 
+	 * RFC 4787 requires at least 2 minutes, but many NATs have shorter timeouts. */
 	public static long MAYBE_TUNNEL_LENGTH = ((5*60)+1)*1000L;
-	/** If the minimum gap is at least this, we are almost certainly port forwarded */
+	/** If the minimum gap is at least this, we are almost certainly port forwarded. 
+	 * Some stateful firewalls do at least 30 minutes. Hopefully the below is 
+	 * sufficiently over the top! */
 	public static long DEFINITELY_TUNNEL_LENGTH = (12*60+1)*60*1000L;
 	/** Time after which we ignore evidence that we are port forwarded */
 	public static final long HORIZON = 24*60*60*1000L;
