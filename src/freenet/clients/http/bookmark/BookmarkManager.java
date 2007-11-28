@@ -79,17 +79,17 @@ public class BookmarkManager {
             //TODO: remove
             String[] oldBookmarks = null;
             if(oldConfig != null) {
-            try {
-                String o = oldConfig.get("fproxy.bookmarks");
-                if (o == null) {
-                    oldBookmarks = null;
-                } else {
-                    oldBookmarks = StringArrOption.stringToArray(o);
-                }
-            } catch (URLEncodedFormatException e) {
-                Logger.error(this, "Not possible to migrate: caught " + e, e);
-                oldBookmarks = null;
-            }
+            	try {
+            		String o = oldConfig.get("fproxy.bookmarks");
+            		if (o == null) {
+            			oldBookmarks = null;
+            		} else {
+            			oldBookmarks = StringArrOption.stringToArray(o);
+            		}
+            	} catch (URLEncodedFormatException e) {
+            		Logger.error(this, "Not possible to migrate: caught " + e, e);
+            		oldBookmarks = null;
+            	}
             }
             if (oldBookmarks != null) {
                 migrateOldBookmarks(oldBookmarks);
