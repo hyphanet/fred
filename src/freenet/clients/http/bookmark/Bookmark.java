@@ -1,5 +1,7 @@
 package freenet.clients.http.bookmark;
 
+import freenet.support.SimpleFieldSet;
+
 public abstract class Bookmark {
 
     protected String name;
@@ -26,4 +28,6 @@ public abstract class Bookmark {
             return false;
         }
     }
+    
+    public abstract SimpleFieldSet getSimpleFieldSet();
 }

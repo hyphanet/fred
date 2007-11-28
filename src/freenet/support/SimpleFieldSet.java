@@ -825,6 +825,14 @@ public class SimpleFieldSet {
 	public boolean getBoolean(String key, boolean def) {
 		return Fields.stringToBool(get(key), def);
 	}
+	
+	public boolean getBoolean(String key) throws FSParseException {
+		try {
+		    return Fields.stringToBool(get(key));
+		} catch(NumberFormatException e) {
+		    throw new FSParseException(e);
+		}
+	}
 
 	public void put(String key, int[] value) {
 		// FIXME this could be more efficient...

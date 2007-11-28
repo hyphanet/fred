@@ -13,6 +13,7 @@ import freenet.config.StringArrOption;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.L10n;
+import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -354,20 +355,14 @@ public class BookmarkManager {
 
     public void storeBookmarks() {
         Logger.normal(this, "Attempting to save bookmarks to " + bookmarksFile.toString());
-        SimpleFieldSet sfs;
+        SimpleFieldSet sfs = null;
         synchronized (bookmarks) {
             if (isSavingBookmarks) {
                 return;
             }
             isSavingBookmarks = true;
-
-            SimpleFieldSet toSave = MAIN_CATEGORY.toSimpleFieldSet();
-            if (toSave.isEmpty()) {
-                isSavingBookmarks = false;
-		bookmarksFile.delete();
-                return;
-            }
-            sfs = toSave;
+	    
+            sfs = toSimpleFieldSet();
         }
         FileOutputStream fos = null;
         try {
@@ -389,13 +384,60 @@ public class BookmarkManager {
     }
 
     private void readBookmarks(BookmarkCategory category, SimpleFieldSet sfs) {
-        _innerReadBookmarks("", category, sfs);
+	try {
+	    int bookmarkVersion = sfs.getInt("Version");
+	    
+	    _innerReadBookmarks("", category, sfs);
+	} catch (FSParseException e) {
+	    _innerReadTrunkBookmarks("", category, sfs);
+	}
     }
     
     private void _innerReadBookmarks(String prefix, BookmarkCategory category, SimpleFieldSet sfs) {
+	boolean hasBeenParsedWithoutAnyProblem = true;
+        boolean isRoot = ("".equals(prefix) && MAIN_CATEGORY.equals(category));
+        synchronized (bookmarks) {	    
+            if(!isRoot)
+                putPaths(prefix + category.name + '/', category);
+		
+	    try {
+		int nbBookmarks = sfs.getInt(BookmarkItem.NAME);
+		int nbCategories = sfs.getInt(BookmarkCategory.NAME);
+
+		for(int i = 0; i < nbBookmarks; i++) {
+		    SimpleFieldSet subset = sfs.getSubset(BookmarkItem.NAME + i);
+		    try {
+			BookmarkItem item = new BookmarkItem(subset, node.alerts);
+			String name = (isRoot ? "" : prefix + category.name) + '/' + item.name;
+			putPaths(name, item);
+			category.addBookmark(item);
+		    } catch(MalformedURLException e) {
+			throw new FSParseException(e);
+		    }
+		}
+
+		for(int i = 0; i < nbCategories; i++) {
+		    SimpleFieldSet subset = sfs.getSubset(BookmarkCategory.NAME + i);
+		    BookmarkCategory currentCategory = new BookmarkCategory(subset);
+		    category.addBookmark(currentCategory);
+		    String name = (isRoot ? "/" : (prefix + category.name + '/'));
+		    _innerReadBookmarks(name, currentCategory, subset.getSubset("Content"));
+		}
+
+	    } catch(FSParseException e) {
+		Logger.error(this, "Error parsing the bookmarks file!", e);
+		hasBeenParsedWithoutAnyProblem = false;
+	    }
+	    
+        }
+        if(hasBeenParsedWithoutAnyProblem)
+            storeBookmarks();
+    }
+    
+    private void _innerReadTrunkBookmarks(String prefix, BookmarkCategory category, SimpleFieldSet sfs) {
         boolean hasBeenParsedWithoutAnyProblem = true;
         boolean isRoot = ("".equals(prefix) && MAIN_CATEGORY.equals(category));
-        synchronized (bookmarks) {
+        synchronized (bookmarks) {	    
             if(!isRoot)
                 putPaths(prefix + category.name + '/', category);
             
@@ -405,7 +447,7 @@ public class BookmarkManager {
                 BookmarkCategory currentCategory = new BookmarkCategory(categories[i]);
                 String name = prefix + category.name + '/';
                 category.addBookmark(currentCategory);
-                _innerReadBookmarks((isRoot ? "/" : name), currentCategory, subset);
+                _innerReadTrunkBookmarks((isRoot ? "/" : name), currentCategory, subset);
             }
                         
             Iterator it = sfs.toplevelKeyIterator();
@@ -425,5 +467,35 @@ public class BookmarkManager {
         }
         if(hasBeenParsedWithoutAnyProblem)
             storeBookmarks();
+    }
+    
+    public SimpleFieldSet toSimpleFieldSet() {
+	SimpleFieldSet sfs = new SimpleFieldSet(true);
+
+	sfs.put("Version", 1);
+	synchronized (bookmarks) {
+	    sfs.putAllOverwrite(BookmarkManager.toSimpleFieldSet(MAIN_CATEGORY));
+	}
+	
+	return sfs;
+    }
+    
+    public static SimpleFieldSet toSimpleFieldSet(BookmarkCategory cat) {
+	SimpleFieldSet sfs = new SimpleFieldSet(true);
+	BookmarkCategories bc = cat.getSubCategories();
+	
+	for(int i=0; i<bc.size(); i++) {
+	    BookmarkCategory currentCat = bc.get(i);
+	    sfs.put(BookmarkCategory.NAME+i, currentCat.getSimpleFieldSet());
+	}
+	sfs.put(BookmarkCategory.NAME, bc.size());
+	
+	
+	BookmarkItems bi = cat.getItems();
+	for(int i=0; i<bi.size(); i++)
+	    sfs.put(BookmarkItem.NAME+i, bi.get(i).getSimpleFieldSet());
+	sfs.put(BookmarkItem.NAME, bi.size());
+	
+	return sfs;
     }
 }

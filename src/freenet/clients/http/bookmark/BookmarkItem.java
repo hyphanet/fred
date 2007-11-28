@@ -6,6 +6,7 @@ package freenet.clients.http.bookmark;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.L10n;
+import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -14,10 +15,11 @@ import freenet.support.Fields;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 
+import freenet.support.SimpleFieldSet;
 import java.net.MalformedURLException;
 
 public class BookmarkItem extends Bookmark {
-
+    public static final String NAME = "Bookmark";
     private FreenetURI key;
     private boolean updated;
     private boolean hasAnActivelink = false;
@@ -51,6 +53,15 @@ public class BookmarkItem extends Bookmark {
         this.desc = result[1];
         this.hasAnActivelink = Fields.stringToBool(result[2], false);
         this.key = new FreenetURI(result[3]);
+        this.alerts = uam;
+        this.alert = new BookmarkUpdatedUserAlert();
+    }
+    
+    public BookmarkItem(SimpleFieldSet sfs, UserAlertManager uam) throws FSParseException, MalformedURLException {
+        this.name = sfs.get("Name");
+        this.desc = sfs.get("Description");
+        this.hasAnActivelink = sfs.getBoolean("hasAnActivelink");
+        this.key = new FreenetURI(sfs.get("URI"));
         this.alerts = uam;
         this.alert = new BookmarkUpdatedUserAlert();
     }
@@ -203,5 +214,14 @@ public class BookmarkItem extends Bookmark {
     
     public String getDescription() {
         return (desc == null ? "" : desc);
+    }
+    
+    public SimpleFieldSet getSimpleFieldSet() {
+	SimpleFieldSet sfs = new SimpleFieldSet(true);
+	sfs.putSingle("Name", name);
+	sfs.putSingle("Description", desc);
+	sfs.put("hasAnActivelink", hasAnActivelink);
+	sfs.putSingle("URI", key.toString());
+	return sfs;
     }
 }
