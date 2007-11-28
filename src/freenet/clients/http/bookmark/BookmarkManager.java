@@ -434,6 +434,7 @@ public class BookmarkManager {
             storeBookmarks();
     }
     
+    /* FIXME: remove that kludge when 1076 is out */
     private void _innerReadTrunkBookmarks(String prefix, BookmarkCategory category, SimpleFieldSet sfs) {
         boolean hasBeenParsedWithoutAnyProblem = true;
         boolean isRoot = ("".equals(prefix) && MAIN_CATEGORY.equals(category));
