@@ -27,7 +27,7 @@ import freenet.support.io.BucketTools;
  */
 public class ClientGetter extends BaseClientGetter {
 
-	final ClientCallback client;
+	final ClientCallback clientCallback;
 	FreenetURI uri;
 	final FetchContext ctx;
 	final ArchiveContext actx;
@@ -57,7 +57,7 @@ public class ClientGetter extends BaseClientGetter {
 	public ClientGetter(ClientCallback client, ClientRequestScheduler chkSched, ClientRequestScheduler sskSched,
 			    FreenetURI uri, FetchContext ctx, short priorityClass, Object clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
 		super(priorityClass, chkSched, sskSched, clientContext);
-		this.client = client;
+		this.clientCallback = client;
 		this.returnBucket = returnBucket;
 		this.uri = uri;
 		this.ctx = ctx;
@@ -147,7 +147,7 @@ public class ClientGetter extends BaseClientGetter {
 		final FetchResult res = result;
 		ctx.executor.execute(new Runnable() {
 			public void run() {
-				client.onSuccess(res, ClientGetter.this);
+				clientCallback.onSuccess(res, ClientGetter.this);
 			}
 		}, "ClientGetter onSuccess callback for "+this);
 		
@@ -190,7 +190,7 @@ public class ClientGetter extends BaseClientGetter {
 			final FetchException e1 = e;
 			ctx.executor.execute(new Runnable() {
 				public void run() {
-					client.onFailure(e1, ClientGetter.this);
+					clientCallback.onFailure(e1, ClientGetter.this);
 				}
 			}, "ClientGetter onFailure callback");
 			
