@@ -27,15 +27,6 @@ public class BookmarkItem extends Bookmark {
     private final UserAlertManager alerts;
     protected String desc;
 
-    public BookmarkItem(FreenetURI k, String n, boolean hasAnActivelink, UserAlertManager uam)
-            throws MalformedURLException {
-        this.key = k;
-        this.name = n;
-        this.hasAnActivelink = hasAnActivelink;
-        this.alerts = uam;
-        alert = new BookmarkUpdatedUserAlert();
-    }
-
     public BookmarkItem(FreenetURI k, String n, String d, boolean hasAnActivelink, UserAlertManager uam)
             throws MalformedURLException {
 
