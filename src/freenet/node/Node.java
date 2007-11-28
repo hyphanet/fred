@@ -542,10 +542,10 @@ public class Node implements TimeSkewDetectorCallback {
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
 		startupTime = System.currentTimeMillis();
-                // Will be set up properly afterwards
-                L10n.setLanguage(L10n.FALLBACK_DEFAULT);
-                SimpleFieldSet oldConfig = config.getSimpleFieldSet();
-                startupPageHolder = new StartupToadletServer(executor, oldConfig);
+		// Will be set up properly afterwards
+		L10n.setLanguage(L10n.FALLBACK_DEFAULT);
+		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
+		startupPageHolder = new StartupToadletServer(executor, oldConfig);
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
