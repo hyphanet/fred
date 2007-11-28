@@ -2942,7 +2942,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		short count = sentTrackPackets ? TRACK_PACKETS : sentPtr;
 		long[] times = new long[count];
 		long[] hashes = new long[count];
-		if(sentTrackPackets) {
+		if(!sentTrackPackets) {
 			System.arraycopy(packetsSentTimes, 0, times, 0, sentPtr);
 			System.arraycopy(packetsSentHashes, 0, hashes, 0, sentPtr);
 		} else {
@@ -2962,7 +2962,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		short count = recvTrackPackets ? TRACK_PACKETS : recvPtr;
 		long[] times = new long[count];
 		long[] hashes = new long[count];
-		if(recvTrackPackets) {
+		if(!recvTrackPackets) {
 			System.arraycopy(packetsRecvTimes, 0, times, 0, recvPtr);
 			System.arraycopy(packetsRecvHashes, 0, hashes, 0, recvPtr);
 		} else {
