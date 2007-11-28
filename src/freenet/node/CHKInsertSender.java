@@ -613,6 +613,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     	synchronized(this) {
     		status = RECEIVE_FAILED;
     		allTransfersCompleted = true;
+    		cw = null; // Effectively ... we certainly don't want to wait for it.
     		notifyAll();
     	}
     	// Do not call finish(), that can only be called on the main thread and it will block.
