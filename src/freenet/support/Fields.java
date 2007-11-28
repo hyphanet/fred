@@ -535,6 +535,20 @@ public abstract class Fields {
         return x;
 	}
 	
+	public static int[] bytesToInts(byte[] buf, int offset, int length) {
+		if(length % 4 != 0) throw new IllegalArgumentException();
+		int[] ints = new int[length/4];
+		for(int i=0;i<ints.length;i++) {
+			int x = 0;
+			for(int j=3;j>=0;j--) {
+				int y = (buf[j+offset] & 0xff);
+				x = (x << 8) + y;
+			}
+			ints[i] = x;
+		}
+		return ints;
+	}
+	
     public static byte[] longToBytes(long x) {
         byte[] buf = new byte[8];
         for(int j=0;j<8;j++) {
