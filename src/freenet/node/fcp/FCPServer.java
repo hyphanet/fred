@@ -599,7 +599,8 @@ public class FCPServer implements Runnable {
 					w = new BufferedWriter(osw);
 					w.write(Integer.toString(persistentRequests.length)+ '\n');
 					for(int i=0;i<persistentRequests.length;i++)
-						persistentRequests[i].write(w);                                       
+						persistentRequests[i].write(w);
+					FileUtil.renameTo(compressedTemp, compressedFinal);
 				} catch (IOException e) {
 					Logger.error(this, "Cannot write persistent requests to disk: "+e);
 				} finally {
@@ -609,7 +610,6 @@ public class FCPServer implements Runnable {
 					Closer.close(bos);
 					Closer.close(fos);
 				}
-				FileUtil.renameTo(compressedTemp, compressedFinal);
 			}
 			if(logMINOR) Logger.minor(this, "Stored persistent requests");
 		} finally {
