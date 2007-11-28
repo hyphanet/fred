@@ -18,21 +18,21 @@ public class PluginTalker {
 	Node node;
 	private PluginReplySender replysender;
 
-	private Boolean access;
+	private int access;
 
 	FredPluginFCP plugin;
 
 	PluginTalker(FredPluginTalker fpt, Node node2, String pluginname2, String identifier2) throws PluginNotFoundException {
 		node = node2;
 		plugin = findPlugin(pluginname2);
-		access = null;
+		access = FredPluginFCP.ACCESS_DIRECT;
 		replysender = new PluginReplySenderDirect(node2, fpt, pluginname2, identifier2);
 	}
 
 	public PluginTalker(Node node2, FCPConnectionHandler handler, String pluginname2, String identifier2, boolean access2) throws PluginNotFoundException {
 		node = node2;
 		plugin = findPlugin(pluginname2);
-		access = new Boolean(access2);
+		access = access2 ? FredPluginFCP.ACCESS_FCP_FULL : FredPluginFCP.ACCESS_FCP_RESTRICTED;
 		replysender = new PluginReplySenderFCP(handler, pluginname2, identifier2);
 	}
 	
