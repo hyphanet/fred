@@ -863,7 +863,7 @@ public class TextModeClientInterface implements Runnable {
 				}
         	};
         	System.err.println("Probing keyspace around "+d+" ...");
-        	n.dispatcher.startProbe(d, cb);
+        	n.dispatcher.startProbe(d, cb, NodeDispatcher.PROBE_TYPE_DEFAULT);
         	synchronized(this) {
         		while(!doneSomething) {
         			try {
@@ -875,7 +875,13 @@ public class TextModeClientInterface implements Runnable {
         		doneSomething = false;
         	}
         } else if(uline.startsWith("PROBEALL")) {
-        	probeAll();
+        	uline = uline.substring("PROBEALL".length());
+        	if(uline.startsWith(":")) uline = uline.substring(1);
+        	if(uline.length() == 0) {
+        		probeAll(NodeDispatcher.PROBE_TYPE_DEFAULT);
+        	} else {
+        		probeAll(Integer.parseInt(uline));
+        	}
         } else if(uline.startsWith("PLUGLOAD:")) {
         	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
         		outsb.append("  PLUGLOAD: pluginName         - Load official plugin from freenetproject.org");
@@ -899,8 +905,8 @@ public class TextModeClientInterface implements Runnable {
         return false;
     }
 
-    private void probeAll() {
-    	GlobalProbe p = new GlobalProbe(n);
+    private void probeAll(int probeType) {
+    	GlobalProbe p = new GlobalProbe(n, probeType);
     	n.executor.execute(p, "GlobalProbe");
 	}
 
