@@ -51,6 +51,7 @@ public class AddressTrackerItem {
 	private long[] gapLengths;
 	private long[] gapLengthRecvTimes;
 	static final int GAP_THRESHOLD = AddressTracker.MAX_TUNNEL_LENGTH;
+	static final boolean INCLUDE_RECEIVED_PACKETS = true;
 	
 	public AddressTrackerItem(long timeDefinitelyNoPacketsReceived, long timeDefinitelyNoPacketsSent) {
 		timeFirstReceivedPacket = -1;
@@ -99,9 +100,17 @@ public class AddressTrackerItem {
 		packetsReceived++;
 		if(timeFirstReceivedPacket < 0)
 			timeFirstReceivedPacket = now;
+		long oldTimeLastReceivedPacket = timeLastReceivedPacket;
 		timeLastReceivedPacket = now;
 		// Establish the interval
 		long startTime;
+		startTime = timeLastSentPacket;
+		startTime = Math.max(startTime, timeDefinitelyNoPacketsSent);
+		if(INCLUDE_RECEIVED_PACKETS) {
+			startTime = Math.max(startTime, oldTimeLastReceivedPacket);
+			startTime = Math.max(startTime, timeDefinitelyNoPacketsReceived);
+		}
+		if(startTime <= 0) return; // No information
 		if(timeLastSentPacket > 0) startTime = timeLastSentPacket;
 		else startTime = timeDefinitelyNoPacketsSent;
 		if(now - startTime > GAP_THRESHOLD) {
