@@ -439,6 +439,18 @@ public abstract class Fields {
 		return h;
 	}
 
+	/**
+	 * Long version of above Not believed to be secure in any sense of the word :)
+	 */
+	public static final long longHashCode(byte[] b, int offset, int length) {
+		long h = 0;
+		for (int i = length - 1; i >= 0; --i) {
+			int x = b[i+offset] & 0xff;
+			h ^= ((long) x) << ((i & 7) << 3);
+		}
+		return h;
+	}
+
     /**
      * @param addr
      * @return
