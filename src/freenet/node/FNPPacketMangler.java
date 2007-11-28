@@ -206,15 +206,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(opn != null) {
 			if(logMINOR) Logger.minor(this, "Trying exact match");
 			if(length > HEADERS_LENGTH_MINIMUM) {
-				if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker())) return;
+				if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker(), now)) return;
 				// Try with old key
-				if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker())) return;
+				if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker(), now)) return;
 				// Try with unverified key
-				if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker())) return;
+				if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker(), now)) return;
 			}
 			if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2 && !node.isStopping()) {
 				// Might be an auth packet
-				if(tryProcessAuth(buf, offset, length, opn, peer, false)) return;
+				if(tryProcessAuth(buf, offset, length, opn, peer, false, now)) return;
 			}
 		}
 		PeerNode[] peers = crypto.getPeerNodes();
@@ -223,17 +223,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			for(int i=0;i<peers.length;i++) {
 				pn = peers[i];
 				if(pn == opn) continue;
-				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker())) {
+				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
 					return;
 				}
-				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker())) {
+				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
 					return;
 				}
-				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker())) {
+				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
 					return;
@@ -246,7 +246,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			for(int i=0;i<peers.length;i++) {
 				pn = peers[i];
 				if(pn == opn) continue;
-				if(tryProcessAuth(buf, offset, length, pn, peer,false)) return;
+				if(tryProcessAuth(buf, offset, length, pn, peer,false, now)) return;
 			}
 		}
 		OpennetManager opennet = node.getOpennet();
@@ -257,7 +257,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				// Try old connections.
 				PeerNode[] oldPeers = opennet.getOldPeers();
 				for(int i=0;i<oldPeers.length;i++) {
-					if(tryProcessAuth(buf, offset, length, oldPeers[i], peer, true)) return;
+					if(tryProcessAuth(buf, offset, length, oldPeers[i], peer, true, now)) return;
 				}
 			}
 		}
@@ -271,9 +271,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param length The number of bytes to read
 	 * @param pn The PeerNode we think is responsible
 	 * @param peer The Peer to send a reply to
+	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
-	private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode pn, Peer peer, boolean oldOpennetPeer) {
+	private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode pn, Peer peer, boolean oldOpennetPeer, long now) {
 		BlockCipher authKey = pn.incomingSetupCipher;
 		if(logMINOR) Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(pn.incomingSetupKey)+" for "+peer+" : "+pn+" in tryProcessAuth");
 		// Does the packet match IV E( H(data) data ) ?
@@ -318,7 +319,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(Arrays.equals(realHash, hash)) {
 			// Got one
 			processDecryptedAuth(payload, pn, peer, oldOpennetPeer);
-			pn.reportIncomingBytes(length);
+			pn.reportIncomingPacket(buf, offset, length, now);
 			return true;
 		} else {
 			if(logMINOR) Logger.minor(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
@@ -1356,7 +1357,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(p != null) replyTo = p;
 		}
 		sock.sendPacket(data, replyTo, pn.allowLocalAddresses());
-		pn.reportOutgoingBytes(data.length);
+		pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
 		node.outputThrottle.forceGrab(data.length - alreadyReportedBytes);
 	}
 
@@ -1540,7 +1541,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * We need to know where the packet has come from in order to
 	 * decrypt and authenticate it.
 	 */
-	private boolean tryProcess(byte[] buf, int offset, int length, KeyTracker tracker) {
+	private boolean tryProcess(byte[] buf, int offset, int length, KeyTracker tracker, long now) {
 		// Need to be able to call with tracker == null to simplify code above
 		if(tracker == null) {
 			if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Tracker == null");
@@ -1644,7 +1645,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		// Lots more to do yet!
 		processDecryptedData(plaintext, seqNumber, tracker, length - plaintext.length);
-		tracker.pn.reportIncomingBytes(length);
+		tracker.pn.reportIncomingPacket(buf, offset, length, now);
 		return true;
 	}
 

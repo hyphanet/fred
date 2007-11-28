@@ -2654,12 +2654,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return handshakeIPs == null || handshakeIPs.length == 0;
 	}
 
-	public synchronized void reportIncomingBytes(int length) {
+	private synchronized void reportIncomingBytes(int length) {
 		totalBytesIn += length;
                 totalBytesExchangedWithCurrentTracker += length;
 	}
 	
-	public synchronized void reportOutgoingBytes(int length) {
+	private synchronized void reportOutgoingBytes(int length) {
 		totalBytesOut += length;
                 totalBytesExchangedWithCurrentTracker += length;
 	}
@@ -2861,5 +2861,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		int bitLen = this.peerCryptoGroup.getQ().bitLength();
 		int byteLen = bitLen / 8 + (bitLen % 8 != 0 ? 1 : 0);
 		return byteLen;
+	}
+
+	public void reportIncomingPacket(byte[] buf, int offset, int length, long now) {
+		reportIncomingBytes(length);
+		// FIXME
+	}
+
+	public void reportOutgoingPacket(byte[] data, int i, int length, long l) {
+		reportOutgoingBytes(length);
+		// FIXME
 	}
 }

@@ -20,8 +20,9 @@ public interface IncomingPacketFilter {
      * @param peer The peer which sent us the packet. We only know
      * the Peer because it's incoming; we are supposed to create
      * or find PeerContext's for the Message's.
+     * @param now The exact time at which the packet was received.
      */
-    void process(byte[] buf, int offset, int length, Peer peer);
+    void process(byte[] buf, int offset, int length, Peer peer, long now);
 
     // Outgoing packets are handled elsewhere...
     

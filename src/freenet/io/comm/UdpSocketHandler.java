@@ -142,6 +142,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 	private void realRun(DatagramPacket packet) {
 		// Single receiving thread
 		boolean gotPacket = getPacket(packet);
+		long now = System.currentTimeMillis();
 		if (gotPacket) {
 			long startTime = System.currentTimeMillis();
 			Peer peer = new Peer(packet.getAddress(), packet.getPort());
@@ -159,7 +160,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler {
 			try {
 				if(logMINOR) Logger.minor(this, "Processing packet of length "+length+" from "+peer);
 				startTime = System.currentTimeMillis();
-				lowLevelFilter.process(data, offset, length, peer);
+				lowLevelFilter.process(data, offset, length, peer, now);
 				endTime = System.currentTimeMillis();
 				if(endTime - startTime > 50) {
 					if(endTime-startTime > 3000)
