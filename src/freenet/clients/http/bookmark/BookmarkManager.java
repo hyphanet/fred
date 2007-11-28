@@ -69,6 +69,8 @@ public class BookmarkManager {
                     "Toad", true, node.alerts));
             flog.addBookmark(new BookmarkItem(new FreenetURI("USK@hM9XRwjXIzU8xTSBXNZvTn2KuvTSRFnVn4EER9FQnpM,gsth24O7ud4gL4NwNuYJDUqfaWASOG2zxZY~ChtgPxc,AQACAAE/Flog/7/"),
                     "Nextgen$", true, node.alerts));
+            flog.addBookmark(new BookmarkItem(new FreenetURI("USK@e3myoFyp5avg6WYN16ImHri6J7Nj8980Fm~aQe4EX1U,QvbWT0ImE0TwLODTl7EoJx2NBnwDxTbLTE6zkB-eGPs,AQACAAE/bombe/10/"),
+            		"Bombe", true, node.alerts));
 
             BookmarkCategory apps = (BookmarkCategory) PROTECTED_CATEGORY.addBookmark(new BookmarkCategory("Freenet related software"));
             apps.addBookmark(new BookmarkItem(new FreenetURI("USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/4"),
