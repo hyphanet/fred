@@ -42,7 +42,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	public PersistentTempBucketFactory(File dir, String prefix, RandomSource rand) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		this.dir = dir;
+		this.dir = FileUtil.getCanonicalFile(dir);
 		this.rand = rand;
 		this.fg = new FilenameGenerator(rand, false, dir, prefix);
 		if(!dir.exists()) {
