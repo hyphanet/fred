@@ -185,7 +185,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Packets generated should have a PeerNode on them.
 	 * Note that the buffer can be modified by this method.
 	 */
-	public void process(byte[] buf, int offset, int length, Peer peer) {
+	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
 		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
@@ -269,13 +269,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param buf The buffer to read bytes from
 	 * @param offset The offset at which to start reading
 	 * @param length The number of bytes to read
-	 * @param opn The PeerNode we think is responsible
+	 * @param pn The PeerNode we think is responsible
 	 * @param peer The Peer to send a reply to
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
-	private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode opn, Peer peer, boolean oldOpennetPeer) {
-		BlockCipher authKey = opn.incomingSetupCipher;
-		if(logMINOR) Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(opn.incomingSetupKey)+" for "+peer+" : "+opn+" in tryProcessAuth");
+	private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode pn, Peer peer, boolean oldOpennetPeer) {
+		BlockCipher authKey = pn.incomingSetupCipher;
+		if(logMINOR) Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(pn.incomingSetupKey)+" for "+peer+" : "+pn+" in tryProcessAuth");
 		// Does the packet match IV E( H(data) data ) ?
 		PCFBMode pcfb = PCFBMode.create(authKey);
 		int ivLength = pcfb.lengthIV();
@@ -317,8 +317,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		if(Arrays.equals(realHash, hash)) {
 			// Got one
-			processDecryptedAuth(payload, opn, peer, oldOpennetPeer);
-			opn.reportIncomingBytes(length);
+			processDecryptedAuth(payload, pn, peer, oldOpennetPeer);
+			pn.reportIncomingBytes(length);
 			return true;
 		} else {
 			if(logMINOR) Logger.minor(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
