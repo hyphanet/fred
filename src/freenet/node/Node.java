@@ -48,6 +48,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.Yarrow;
+import freenet.io.PortForwardBrokenDetector;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;

@@ -1082,12 +1082,14 @@ public class DMT {
 	public static final MessageType FNPSentPackets = new MessageType("FNPSentPackets") {{
 		addField(TIME_DELTAS, ShortBuffer.class);
 		addField(HASHES, ShortBuffer.class);
+		addField(TIME, Long.class);
 	}};
 	
-	public static final Message createFNPSentPackets(int[] timeDeltas, long[] hashes) {
+	public static final Message createFNPSentPackets(int[] timeDeltas, long[] hashes, long baseTime) {
 		Message msg = new Message(FNPSentPackets);
 		msg.set(TIME_DELTAS, new ShortBuffer(Fields.intsToBytes(timeDeltas)));
 		msg.set(HASHES, new ShortBuffer(Fields.longsToBytes(hashes)));
+		msg.set(TIME, baseTime);
 		return msg;
 	}
 	

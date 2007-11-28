@@ -45,6 +45,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
+import freenet.io.comm.PortForwardSensitiveSocketHandler;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.xfer.PacketThrottle;
@@ -58,6 +59,7 @@ import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.WouldBlockException;
 import freenet.support.math.RunningAverage;
@@ -1689,7 +1691,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     		long[] newHashes = new long[hashes.length - skip];
     		System.arraycopy(hashes, skip, newHashes, 0, hashes.length - skip);
     	}
-    	return DMT.createFNPSentPackets(timeDeltas, hashes);
+    	return DMT.createFNPSentPackets(timeDeltas, hashes, now);
 	}
 
 	private void sendIPAddressMessage() {
@@ -2979,4 +2981,95 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return new long[][] { times, hashes };
 	}
 
+	static final int SENT_PACKETS_MAX_TIME_AFTER_CONNECT = 5*60*1000;
+	
+	/**
+	 * Handle an FNPSentPackets message
+	 */
+	public void handleSentPackets(Message m) {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(forceDisconnectCalled) return;
+			if(now - this.timeLastConnected < SENT_PACKETS_MAX_TIME_AFTER_CONNECT) return;
+		}
+		long baseTime = m.getLong(DMT.TIME);
+		baseTime += this.clockDelta;
+		// Should be a reasonable approximation now
+		int[] timeDeltas = Fields.bytesToInts(((ShortBuffer) m.getObject(DMT.TIME_DELTAS)).getData());
+		long[] packetHashes = Fields.bytesToLongs(((ShortBuffer) m.getObject(DMT.TIME_DELTAS)).getData());
+		long[] times = new long[timeDeltas.length];
+		for(int i=0;i<times.length;i++)
+			times[i] = baseTime - timeDeltas[i];
+		long tolerance = 60*1000 + (Math.abs(timeDeltas[0]) / 20); // 1 minute or 5% of full interval
+		synchronized(this) {
+			// They are in increasing order
+			// Loop backwards
+			long otime = Long.MAX_VALUE;
+			long[][] sent = getSentPacketTimesHashes();
+			long[] sentTimes = sent[0];
+			long[] sentHashes = sent[1];
+			short sentPtr = (short)(sent.length-1);
+			short notFoundCount = 0;
+			short consecutiveNotFound = 0;
+			short longestConsecutiveNotFound = 0;
+			for(short i=(short)times.length;i>=0;i--) {
+				long time = times[i];
+				if(time > otime) {
+					Logger.error(this, "Inconsistent time order: ["+i+"]="+time+" but ["+(i+1)+"] is "+otime);
+					return;
+				} else otime = time;
+				long hash = packetHashes[i];
+				// Search for the hash.
+				short match = -1;
+				// First try forwards
+				for(short j=sentPtr;j<sentTimes.length;j++) {
+					long ttime = sentTimes[j];
+					if(sentHashes[j] == hash) {
+						match = j;
+						sentPtr = j;
+						break;
+					}
+					if(ttime - time > tolerance) break;
+				}
+				if(match == -1) {
+					for(short j=(short)(sentPtr-1);j>=0;j--) {
+						long ttime = sentTimes[j];
+						if(sentHashes[j] == hash) {
+							match = j;
+							sentPtr = j;
+							break;
+						}
+						if(time - ttime > tolerance) break;
+					}
+				}
+				if(match == -1) {
+					// Not found
+					consecutiveNotFound++;
+					notFoundCount++;
+				} else {
+					if(consecutiveNotFound > longestConsecutiveNotFound)
+						longestConsecutiveNotFound = consecutiveNotFound;
+					consecutiveNotFound = 0;
+				}
+			}
+			if(consecutiveNotFound > longestConsecutiveNotFound)
+				longestConsecutiveNotFound = consecutiveNotFound;
+			if(consecutiveNotFound > TRACK_PACKETS / 2) {
+				manyPacketsClaimedSentNotReceived = true;
+				Logger.error(this, ""+consecutiveNotFound+" consecutive packets not found on "+userToString());
+				SocketHandler handler = outgoingMangler.getSocketHandler();
+				if(handler instanceof PortForwardSensitiveSocketHandler) {
+					((PortForwardSensitiveSocketHandler)handler).rescanPortForward();
+				}
+			}
+		}
+		// TODO Auto-generated method stub
+		
+	}
+
+	private boolean manyPacketsClaimedSentNotReceived = false;
+	
+	synchronized boolean manyPacketsClaimedSentNotReceived() {
+		return manyPacketsClaimedSentNotReceived;
+	}
 }

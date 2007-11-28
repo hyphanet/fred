@@ -85,6 +85,9 @@ public class NodeDispatcher implements Dispatcher {
 			return true;
 		} else if(spec == DMT.FNPTime) {
 			return handleTime(m, source);
+		} else if(spec == DMT.FNPSentPackets) {
+			source.handleSentPackets(m);
+			return true;
 		} else if(spec == DMT.FNPVoid) {
 			return true;
 		} else if(spec == DMT.FNPDisconnect) {

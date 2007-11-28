@@ -20,6 +20,7 @@ import freenet.crypt.DSASignature;
 import freenet.crypt.Global;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
+import freenet.io.PortForwardBrokenDetector;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
@@ -78,7 +79,7 @@ class NodeCrypto {
 	 * Get port number from a config, create socket and packet mangler
 	 * @throws NodeInitException 
 	 */
-	public NodeCrypto(Node node, boolean isOpennet, NodeCryptoConfig config, long startupTime) throws NodeInitException {
+	public NodeCrypto(final Node node, final boolean isOpennet, NodeCryptoConfig config, long startupTime) throws NodeInitException {
 
 		this.node = node;
 		this.config = config;
@@ -126,6 +127,18 @@ class NodeCrypto {
 			}
 		}
 		socket = u;
+		
+		u.setPortForwardBrokenDetector(new PortForwardBrokenDetector() {
+			public boolean isBroken() {
+				PeerManager pm = node.peers;
+				if(pm == null) return false;
+				PeerNode[] peers = isOpennet ? ((PeerNode[])pm.getOpennetPeers()) : ((PeerNode[])pm.getDarknetPeers());
+				for(int i=0;i<peers.length;i++) {
+					if(peers[i].manyPacketsClaimedSentNotReceived()) return true;
+				}
+				return false;
+			}
+		});
 		
 		Logger.normal(this, "FNP port created on "+bindto+ ':' +port);
 		System.out.println("FNP port created on "+bindto+ ':' +port);
