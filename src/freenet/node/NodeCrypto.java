@@ -134,6 +134,7 @@ class NodeCrypto {
 				if(pm == null) return false;
 				PeerNode[] peers = isOpennet ? ((PeerNode[])pm.getOpennetPeers()) : ((PeerNode[])pm.getDarknetPeers());
 				for(int i=0;i<peers.length;i++) {
+					if(peers[i].forceDisconnectCalled()) continue;
 					if(peers[i].manyPacketsClaimedSentNotReceived()) return true;
 				}
 				return false;

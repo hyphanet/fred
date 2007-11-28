@@ -1037,6 +1037,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     	disconnected();
     }
     
+    boolean forceDisconnectCalled() {
+    	return forceDisconnectCalled;
+    }
+    
     /**
      * Grab all queued Message's.
      * @return Null if no messages are queued, or an array of
