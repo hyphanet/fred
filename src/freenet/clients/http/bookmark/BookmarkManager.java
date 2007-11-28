@@ -77,7 +77,8 @@ public class BookmarkManager {
                     "Frost", true, node.alerts));
 
             //TODO: remove
-            String[] oldBookmarks;
+            String[] oldBookmarks = null;
+            if(oldConfig != null) {
             try {
                 String o = oldConfig.get("fproxy.bookmarks");
                 if (o == null) {
@@ -88,6 +89,7 @@ public class BookmarkManager {
             } catch (URLEncodedFormatException e) {
                 Logger.error(this, "Not possible to migrate: caught " + e, e);
                 oldBookmarks = null;
+            }
             }
             if (oldBookmarks != null) {
                 migrateOldBookmarks(oldBookmarks);
