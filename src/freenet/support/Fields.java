@@ -502,7 +502,7 @@ public abstract class Fields {
             long x = 0;
             for(int j=7;j>=0;j--) {
                 long y = (buf[offset+i*8+j] & 0xff);
-                x = (x << 8) + y;
+                x = (x << 8) | y;
             }
             longs[i] = x;
         }
@@ -517,7 +517,7 @@ public abstract class Fields {
         long x = 0;
         for(int j=7;j>=0;j--) {
             long y = (buf[j] & 0xff);
-            x = (x << 8) + y;
+            x = (x << 8) | y;
         }
         return x;
     }
@@ -530,7 +530,7 @@ public abstract class Fields {
         int x = 0;
         for(int j=3;j>=0;j--) {
             int y = (buf[j+offset] & 0xff);
-            x = (x << 8) + y;
+            x = (x << 8) | y;
         }
         return x;
 	}
@@ -542,7 +542,7 @@ public abstract class Fields {
 			int x = 0;
 			for(int j=3;j>=0;j--) {
 				int y = (buf[j+offset] & 0xff);
-				x = (x << 8) + y;
+				x = (x << 8) | y;
 			}
 			ints[i] = x;
 		}
