@@ -3,11 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import java.io.File;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -15,12 +14,14 @@ import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
-import freenet.clients.http.filter.GenericReadFilterCallback;
-import freenet.clients.http.bookmark.BookmarkItems;
-import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkCategories;
+import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkItem;
+import freenet.clients.http.bookmark.BookmarkItems;
 import freenet.clients.http.bookmark.BookmarkManager;
+import freenet.clients.http.filter.GenericReadFilterCallback;
+import freenet.frost.message.FrostBoard;
+import freenet.frost.message.FrostMessage;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.Node;
@@ -34,9 +35,6 @@ import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.FileUtil;
-
-
-import freenet.frost.message.*;
 
 public class WelcomeToadlet extends Toadlet {
 
@@ -78,7 +76,7 @@ public class WelcomeToadlet extends Toadlet {
 		    String initialKey = item.getKey();
 		    String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
                     cell.addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "height", "width", "alt", "title"},
-                            new String[]{ key, "36px", "108px", "activelink", item.getDescription()});
+                            new String[]{ key, "36", "108", "activelink", item.getDescription()});
                 } else {
                     cell.addChild("#", " ");
                 }
@@ -264,7 +262,7 @@ public class WelcomeToadlet extends Toadlet {
             }
 
             FrostBoard board = null;
-            if (boardPrivateKey.length() > 0 && boardPublicKey.length() > 0) { // keyed board
+            if ((boardPrivateKey.length() > 0) && (boardPublicKey.length() > 0)) { // keyed board
                 board = new FrostBoard(boardName, boardPrivateKey, boardPublicKey);
             } else { // unkeyed or public board
                 board = new FrostBoard(boardName);
@@ -320,7 +318,7 @@ public class WelcomeToadlet extends Toadlet {
             String filenameHint = null;
             if (key.getKeyType().equals("CHK")) {
                 String[] metas = key.getAllMetaStrings();
-                if (metas != null && metas.length > 1) {
+                if ((metas != null) && (metas.length > 1)) {
                     filenameHint = metas[0];
                 }
             }
@@ -438,9 +436,9 @@ public class WelcomeToadlet extends Toadlet {
                 HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", l10n("shutdownDone")));
                 HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
                 infoboxContent.addChild("#", l10n("thanks"));
-                
+
                 WelcomeToadlet.maybeDisplayWrapperLogfile(ctx, contentNode);
-                
+
                 this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
                 return;
             } else if (request.isParameterSet("restarted")) {
@@ -618,11 +616,11 @@ public class WelcomeToadlet extends Toadlet {
     private String l10n(String key, String pattern, String value) {
         return L10n.getString("WelcomeToadlet." + key, new String[]{pattern}, new String[]{value});
     }
-    
+
     public static void maybeDisplayWrapperLogfile(ToadletContext ctx, HTMLNode contentNode) {
         final File logs = new File("wrapper.log");
         long logSize = logs.length();
-        if(logs.exists() && logs.isFile() && logs.canRead() && logSize > 0) {
+        if(logs.exists() && logs.isFile() && logs.canRead() && (logSize > 0)) {
             try {
                 HTMLNode logInfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-info", "Current status"));
                 HTMLNode logInfoboxContent = ctx.getPageMaker().getContentNode(logInfobox);
