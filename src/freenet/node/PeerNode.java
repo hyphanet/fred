@@ -1025,8 +1025,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         return ret;
     }
 
+    private boolean forceDisconnectCalled = false;
+    
     public void forceDisconnect() {
     	Logger.error(this, "Forcing disconnect on "+this, new Exception("debug"));
+    	synchronized(this) {
+    		forceDisconnectCalled = true;
+    	}
     	disconnected();
     }
     
