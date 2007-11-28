@@ -612,6 +612,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     	// when we notice that receiveFailed = true.
     	synchronized(this) {
     		status = RECEIVE_FAILED;
+    		allTransfersCompleted = true;
     		notifyAll();
     	}
     	// Do not call finish(), that can only be called on the main thread and it will block.
@@ -684,6 +685,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			
 			while(true) {
 				
+				synchronized(nodesWaitingForCompletion) {
+					if(receiveFailed) return;
+				}
 				// First calculate the timeout
 				int timeout;
 				long now = System.currentTimeMillis();
@@ -784,6 +788,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				if(noneRouteable) return false;
 
 				synchronized(nodesWaitingForCompletion) {
+					if(receiveFailed) return false;
 					if(logMINOR) Logger.minor(this, "Waiting for completion");
 					try {
 						nodesWaitingForCompletion.wait(100*1000);
