@@ -153,7 +153,7 @@ public class AddressTrackerItem {
 	}
 	
 	public synchronized Gap[] getGaps() {
-		Gap[] gaps = new Gap[GAP_THRESHOLD];
+		Gap[] gaps = new Gap[TRACK_GAPS];
 		for(int i=0;i<TRACK_GAPS;i++) {
 			gaps[i] = new Gap(gapLengths[i], gapLengthRecvTimes[i]);
 		}
