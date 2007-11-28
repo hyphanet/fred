@@ -193,6 +193,10 @@ public class AddressTracker {
 	/** Time after which we ignore evidence that we are port forwarded */
 	public static final long HORIZON = 24*60*60*1000L;
 	
+	public long getLongestSendReceiveGap() {
+		return getLongestSendReceiveGap(HORIZON);
+	}
+	
 	/**
 	 * Find the longest send/known-no-packets-sent ... receive gap.
 	 * It is highly unlikely that we are behind a NAT or symmetric
