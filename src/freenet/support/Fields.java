@@ -475,7 +475,7 @@ public abstract class Fields {
             long x = longs[i];
             for(int j=0;j<8;j++) {
                 buf[i*8+j] = (byte)x;
-                x >>= 8;
+                x >>>= 8;
             }
         }
         return buf;
@@ -553,7 +553,7 @@ public abstract class Fields {
         byte[] buf = new byte[8];
         for(int j=0;j<8;j++) {
             buf[j] = (byte)x;
-            x >>= 8;
+            x >>>= 8;
         }
         return buf;
     }
@@ -564,7 +564,7 @@ public abstract class Fields {
             long x = ints[i];
             for(int j=0;j<4;j++) {
                 buf[i*4+j] = (byte)x;
-                x >>= 8;
+                x >>>= 8;
             }
         }
         return buf;
