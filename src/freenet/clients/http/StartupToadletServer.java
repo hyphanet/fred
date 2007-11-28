@@ -85,7 +85,7 @@ public class StartupToadletServer implements Runnable {
                 String desc = "Freenet is starting up";
                 HTMLNode pageNode = ctx.getPageMaker().getPageNode(desc, false, ctx);
                 HTMLNode headNode = ctx.getPageMaker().getHeadNode(pageNode);
-                headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "5; url="});
+                headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "20; url="});
                 HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
