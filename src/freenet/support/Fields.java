@@ -549,6 +549,10 @@ public abstract class Fields {
 		return ints;
 	}
 	
+	public static int[] bytesToInts(byte[] buf) {
+		return bytesToInts(buf, 0, buf.length);
+	}
+	
     public static byte[] longToBytes(long x) {
         byte[] buf = new byte[8];
         for(int j=0;j<8;j++) {
