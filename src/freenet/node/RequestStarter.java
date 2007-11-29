@@ -140,6 +140,7 @@ public class RequestStarter implements Runnable {
 			}
 			if(req == null) continue;
 			startRequest(req, logMINOR);
+			req = null;
 			sentRequestTime = System.currentTimeMillis();
 		}
 	}
