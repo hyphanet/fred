@@ -250,29 +250,36 @@ public class ContentFilter {
 	private static String detectBOM(Bucket bucket) throws IOException {
 		InputStream is = null;
 		try {
-		byte[] data = new byte[5];
-		is = bucket.getInputStream();
-		int read = 0;
-		while(read < data.length) {
-			int x;
-			try {
-				x = is.read(data, read, data.length - read);
-			} catch (EOFException e) {
-				x = -1;
+			byte[] data = new byte[5];
+			is = bucket.getInputStream();
+			int read = 0;
+			while(read < data.length) {
+				int x;
+				try {
+					x = is.read(data, read, data.length - read);
+				} catch(EOFException e) {
+					x = -1;
+				}
+				if(x <= 0)
+					break;
 			}
-			if(x <= 0) break;
+			if(startsWith(data, bom_utf8))
+				return "UTF-8";
+			if(startsWith(data, bom_utf16_be) || startsWith(data, bom_utf16_le))
+				return "UTF-16";
+			if(startsWith(data, bom_utf32_be) || startsWith(data, bom_utf32_le))
+				return "UTF-32";
+			if(startsWith(data, bom_scsu))
+				return "SCSU";
+			if(startsWith(data, bom_utf7_1) || startsWith(data, bom_utf7_2) || startsWith(data, bom_utf7_3) || startsWith(data, bom_utf7_4) || startsWith(data, bom_utf7_5))
+				return "UTF-7";
+			if(startsWith(data, bom_utf_ebcdic))
+				return "UTF-EBCDIC";
+			if(startsWith(data, bom_bocu_1))
+				return "BOCU-1";
+			return null;
 		}
-		if(startsWith(data, bom_utf8)) return "UTF-8";
-		if(startsWith(data, bom_utf16_be) || startsWith(data, bom_utf16_le)) return "UTF-16";
-		if(startsWith(data, bom_utf32_be) || startsWith(data, bom_utf32_le)) return "UTF-32";
-		if(startsWith(data, bom_scsu)) return "SCSU";
-		if(startsWith(data, bom_utf7_1) || startsWith(data, bom_utf7_2)
-				|| startsWith(data, bom_utf7_3) || startsWith(data, bom_utf7_4)
-				|| startsWith(data, bom_utf7_5)) return "UTF-7";
-		if(startsWith(data, bom_utf_ebcdic)) return "UTF-EBCDIC";
-		if(startsWith(data, bom_bocu_1)) return "BOCU-1";
-		return null;
-		} finally {
+		finally {
 			Closer.close(is);
 		}
 	}
