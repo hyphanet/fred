@@ -123,7 +123,7 @@ public class RequestStarter implements Runnable {
 				} else {
 					stats.waitUntilNotOverloaded(isInsert);
 				}
-				return;
+				continue;
 			} else {
 				if(logMINOR) Logger.minor(this, "Waiting...");				
 				// Always take the lock on RequestStarter first. AFAICS we don't synchronize on RequestStarter anywhere else.
@@ -139,6 +139,7 @@ public class RequestStarter implements Runnable {
 					}
 				}
 			}
+			if(req == null) continue;
 			startRequest(req, logMINOR);
 			sentRequestTime = System.currentTimeMillis();
 		}
