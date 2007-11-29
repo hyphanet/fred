@@ -33,7 +33,7 @@ public class PNGFilter implements ContentDataFilter {
 		DataInputStream dis = null;
 		try {
 			is = data.getInputStream();
-			dis = new DataInputStream(bis);
+			dis = new DataInputStream(is);
 			dis = new DataInputStream(bis);
 			// Check the header
 			byte[] headerCheck = new byte[pngHeader.length];
