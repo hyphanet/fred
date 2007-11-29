@@ -82,13 +82,12 @@ public class RequestStarter implements Runnable {
 	
 	void realRun() {
 		SendableRequest req = null;
+		sentRequestTime = System.currentTimeMillis();
 		while(true) {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(req == null) req = sched.removeFirst();
 			if(req != null) {
 				if(logMINOR) Logger.minor(this, "Running "+req);
-				startRequest(req, logMINOR);
-				sentRequestTime = System.currentTimeMillis();
 				// Wait
 				long delay = throttle.getDelay();
 				if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
@@ -114,14 +113,17 @@ public class RequestStarter implements Runnable {
 				// Nested locks here prevent extra latency when there is a race, and therefore allow us to sleep indefinitely
 				synchronized(this) {
 					req = sched.removeFirst();
-					if(req != null) continue;
-					try {
-						wait(100*1000); // as close to indefinite as I'm comfortable with! Toad
-					} catch (InterruptedException e) {
-						// Ignore
+					if(req == null) {
+						try {
+							wait(100*1000); // as close to indefinite as I'm comfortable with! Toad
+						} catch (InterruptedException e) {
+							// Ignore
+						}
 					}
 				}
 			}
+			startRequest(req, logMINOR);
+			sentRequestTime = System.currentTimeMillis();
 		}
 	}
 	
