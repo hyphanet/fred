@@ -64,6 +64,8 @@ public class ConnectivityToadlet extends Toadlet {
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 
+		if(node.isAdvancedModeEnabled()) {
+		
 		// One box per port
 		
 		UdpSocketHandler[] handlers = node.getPacketSocketHandlers();
@@ -147,6 +149,8 @@ public class ConnectivityToadlet extends Toadlet {
 				}
 			}
 
+		}
+		
 		}
 		
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
