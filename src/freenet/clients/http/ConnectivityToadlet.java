@@ -64,11 +64,25 @@ public class ConnectivityToadlet extends Toadlet {
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 
+		UdpSocketHandler[] handlers = node.getPacketSocketHandlers();
+		
+		HTMLNode summaryBox = pageMaker.getInfobox(L10n.getString("ConnectivityToadlet.summaryTitle"));
+		contentNode.addChild(summaryBox);
+		HTMLNode summaryContent = pageMaker.getContentNode(summaryBox);
+		
+		HTMLNode table = summaryContent.addChild("table", "border", "0");
+		
+		for(int i=0;i<handlers.length;i++) {
+			UdpSocketHandler handler = handlers[i];
+			AddressTracker tracker = handlers[i].getAddressTracker();
+			HTMLNode row = table.addChild("tr");
+			row.addChild("td", handler.getName());
+			row.addChild("td", AddressTracker.statusString(tracker.getPortForwardStatus()));
+		}
+		
 		if(node.isAdvancedModeEnabled()) {
 		
 		// One box per port
-		
-		UdpSocketHandler[] handlers = node.getPacketSocketHandlers();
 		
 		String noreply = l10n("noreply");
 		String local = l10n("local");
@@ -82,7 +96,7 @@ public class ConnectivityToadlet extends Toadlet {
 			contentNode.addChild(portsBox);
 			HTMLNode portsContent = pageMaker.getContentNode(portsBox);
 			PeerAddressTrackerItem[] items = tracker.getPeerAddressTrackerItems();
-			HTMLNode table = portsContent.addChild("table");
+			table = portsContent.addChild("table");
 			HTMLNode row = table.addChild("tr");
 			row.addChild("th", l10n("addressTitle"));
 			row.addChild("th", l10n("sentReceivedTitle"));
