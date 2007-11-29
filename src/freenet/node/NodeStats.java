@@ -656,7 +656,6 @@ public class NodeStats implements Persistable {
 		}
 	}
 
-	
 	public int getActiveThreadCount() {
 		return rootThreadGroup.activeCount() - node.executor.waitingThreads();
 	}

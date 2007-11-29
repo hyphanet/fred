@@ -36,6 +36,10 @@ public class RequestStarter implements Runnable {
 	
 	public static final short NUMBER_OF_PRIORITY_CLASSES = MINIMUM_PRIORITY_CLASS - MAXIMUM_PRIORITY_CLASS + 1; // include 0 and max !!
 	
+	/** If true, local requests are subject to shouldRejectRequest(). If false, they are only subject to the token
+	 * buckets and the thread limit. FIXME make configurable. */
+	private final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
+	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
 	}
@@ -50,9 +54,10 @@ public class RequestStarter implements Runnable {
 	final NodeStats stats;
 	private long sentRequestTime;
 	private final boolean isInsert;
+	private final boolean isSSK;
 	
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
-			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert) {
+			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK) {
 		this.core = node;
 		this.stats = core.nodeStats;
 		this.throttle = throttle;
@@ -62,6 +67,7 @@ public class RequestStarter implements Runnable {
 		this.averageOutputBytesPerRequest = averageOutputBytesPerRequest;
 		this.averageInputBytesPerRequest = averageInputBytesPerRequest;
 		this.isInsert = isInsert;
+		this.isSSK = isSSK;
 	}
 
 	void setScheduler(RequestScheduler sched) {
@@ -92,8 +98,10 @@ public class RequestStarter implements Runnable {
 				long delay = throttle.getDelay();
 				if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
 				long sleepUntil = sentRequestTime + delay;
-				inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
-				outputBucket.blockingGrab((int)(Math.max(0, averageOutputBytesPerRequest.currentValue())));
+				if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
+					inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
+					outputBucket.blockingGrab((int)(Math.max(0, averageOutputBytesPerRequest.currentValue())));
+				}
 				long now;
 				do {
 					now = System.currentTimeMillis();
@@ -105,7 +113,16 @@ public class RequestStarter implements Runnable {
 							// Ignore
 						}
 				} while(now < sleepUntil);
-				stats.waitUntilNotOverloaded(isInsert);
+				String reason;
+				if(LOCAL_REQUESTS_COMPETE_FAIRLY) {
+					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK)) != null) {
+						if(logMINOR)
+							Logger.minor(this, "Not sending local request: "+reason);
+						continue; // Let local requests compete with all the others
+					}
+				} else {
+					stats.waitUntilNotOverloaded(isInsert);
+				}
 				return;
 			} else {
 				if(logMINOR) Logger.minor(this, "Waiting...");				
