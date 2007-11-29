@@ -20,6 +20,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.Closer;
 import freenet.support.io.CountedInputStream;
 
 /**
@@ -69,8 +70,12 @@ public class JPEGFilter implements ContentDataFilter {
 			Logger.minor(this, "Need to modify JPEG...");
 		Bucket filtered = bf.makeBucket(data.size());
 		OutputStream os = new BufferedOutputStream(filtered.getOutputStream());
-		Bucket ret = readFilter(data, bf, charset, otherParams, cb, deleteComments, deleteExif, os);
-		os.close();
+		Bucket ret = null;
+		try {
+			ret = readFilter(data, bf, charset, otherParams, cb, deleteComments, deleteExif, os);
+		} finally {
+			Closer.close(os);
+		}
 		return ret;
 	}
 	
@@ -294,8 +299,8 @@ public class JPEGFilter implements ContentDataFilter {
 			// In particular, we may want to delete, or filter, the comment blocks.
 			// FIXME
 		} finally {
-			dis.close();
-			if(output != null) output.close();
+			Closer.close(dis);
+			Closer.close(output);
 		}
 		return data;
 	}
