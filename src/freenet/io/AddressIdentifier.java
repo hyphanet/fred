@@ -31,6 +31,18 @@ import java.util.regex.Pattern;
  * @version $Id$
  */
 public class AddressIdentifier {
+	public static final Pattern ipv4Pattern, ipv6Pattern, ipv6PatternWithPercentScopeID;
+	
+	static {
+		String byteRegex = "([01]?[0-9]?[0-9]?|2[0-4][0-9]|25[0-5])";
+		String ipv4AddressRegex = byteRegex + "\\.(" + byteRegex + "\\.)?(" + byteRegex + "\\.)?" + byteRegex;
+		ipv4Pattern = Pattern.compile(ipv4AddressRegex);
+		
+		String wordRegex = "([0-9a-fA-F]{1,4})";
+		String ipv6AddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex;
+		ipv6Pattern = Pattern.compile(ipv6AddressRegex);
+		ipv6PatternWithPercentScopeID = Pattern.compile(ipv6AddressRegex + "(?:%[0-9]{1,3})?");
+	}
 
 	public static class AddressType {
 
@@ -75,17 +87,9 @@ public class AddressIdentifier {
 	 *         otherwise
 	 */
 	public static AddressType getAddressType(String address, boolean allowIPv6PercentScopeID) {
-		String byteRegex = "([01]?[0-9]?[0-9]?|2[0-4][0-9]|25[0-5])";
-		String ipv4AddressRegex = byteRegex + "\\.(" + byteRegex + "\\.)?(" + byteRegex + "\\.)?" + byteRegex;
-		if (Pattern.matches(ipv4AddressRegex, address)) {
+		if (ipv4Pattern.matcher(address).matches()) {
 			return AddressType.IPv4;
-		}
-		String wordRegex = "([0-9a-fA-F]{1,4})";
-		String ipv6AddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex;
-		if (allowIPv6PercentScopeID) {
-			ipv6AddressRegex = ipv6AddressRegex + "(?:%[0-9]{1,3})?";
-		}
-		if (Pattern.matches(ipv6AddressRegex, address)) {
+		}else if ((allowIPv6PercentScopeID ? ipv6PatternWithPercentScopeID : ipv6Pattern).matcher(address).matches()) {
 			return AddressType.IPv6;
 		}
 		return AddressType.OTHER;
