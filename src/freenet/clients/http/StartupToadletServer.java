@@ -4,7 +4,6 @@
 package freenet.clients.http;
 
 import freenet.support.HTMLNode;
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -13,7 +12,6 @@ import java.net.SocketTimeoutException;
 import java.net.URI;
 import freenet.io.NetworkInterface;
 import freenet.l10n.L10n;
-import freenet.support.io.FileUtil;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
