@@ -40,10 +40,12 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 	private boolean _isDone;
 	private boolean _active = true;
 	private final int listenPort;
+	private final String title;
 	
-	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime) throws SocketException {
+	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title) throws SocketException {
 		super("UdpSocketHandler packet receiver thread on port " + listenPort);
 		this.node = node;
+		this.title = title;
 		_bindTo = bindto;
 		    // Keep the Updater code in, just commented out, for now
 		    // We may want to be able to do on-line updates.
@@ -76,6 +78,10 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 	
 	public InetAddress getBindTo() {
 		return _bindTo;
+	}
+	
+	public String getTitle() {
+		return title;
 	}
 	
 	public void run() { // Listen for packets

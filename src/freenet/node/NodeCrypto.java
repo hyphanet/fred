@@ -104,7 +104,7 @@ class NodeCrypto {
 			for(int i=0;i<200000;i++) {
 				int portNo = 1024 + random.nextInt(65535-1024);
 				try {
-					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime);
+					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime, getTitle());
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
@@ -118,7 +118,7 @@ class NodeCrypto {
 				throw new NodeInitException(NodeInitException.EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
 		} else {
 			try {
-				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime);
+				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle());
 			} catch (Exception e) {
 				Logger.error(this, "Caught "+e, e);
 				System.err.println(e);
@@ -166,6 +166,11 @@ class NodeCrypto {
 		}
 	}
 	
+	private String getTitle() {
+		// FIXME l10n
+		return (isOpennet ? "Opennet " : "Darknet ") + "port " + portNumber;
+	}
+
 	/**
 	 * Read the cryptographic keys etc from a SimpleFieldSet
 	 * @param fs
