@@ -43,17 +43,18 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		InputStreamReader isr = null;
 		OutputStreamWriter osr = null;
 		try {
-		try {
-			isr = new InputStreamReader(strm, charset);
-			osr = new OutputStreamWriter(os, charset);
-			r = new BufferedReader(isr, 32768);
-			w = new BufferedWriter(osr, 32768);
-		} catch (UnsupportedEncodingException e) {
-			throw UnknownCharsetException.create(e, charset);
+			try {
+				isr = new InputStreamReader(strm, charset);
+				osr = new OutputStreamWriter(os, charset);
+				r = new BufferedReader(isr, 32768);
+				w = new BufferedWriter(osr, 32768);
+			} catch(UnsupportedEncodingException e) {
+				throw UnknownCharsetException.create(e, charset);
+			}
+			CSSParser parser = new CSSParser(r, w, false, cb);
+			parser.parse();
 		}
-		CSSParser parser = new CSSParser(r, w, false, cb);
-		parser.parse();
-		} finally {
+		finally {
 			Closer.close(isr);
 			Closer.close(r);
 			Closer.close(osr);
