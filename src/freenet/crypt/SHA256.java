@@ -51,6 +51,7 @@ import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.io.Closer;
 
 /**
  * @author  Jeroen C. van Gelderen (gelderen@cryptix.org)
@@ -317,7 +318,7 @@ public class SHA256 implements Digest {
 					readBytes = is.read(buf);
 			}
 		} finally {
-			if(is != null) is.close();
+			Closer.close(is);
 		}
 	}
 	

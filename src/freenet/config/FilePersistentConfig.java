@@ -93,19 +93,19 @@ public class FilePersistentConfig extends PersistentConfig {
 	 * @throws IOException */
 	private static SimpleFieldSet initialLoad(File toRead) throws IOException {
 		if(toRead == null) return null;
-		FileInputStream fis = new FileInputStream(toRead);
-		BufferedInputStream bis = new BufferedInputStream(fis);
+		FileInputStream fis = null;
+		BufferedInputStream bis = null;
+		LineReadingInputStream lis = null;
 		try {
-			LineReadingInputStream lis = new LineReadingInputStream(bis);
+			fis = new FileInputStream(toRead);
+			bis = new BufferedInputStream(fis);
+			lis = new LineReadingInputStream(bis);
 			// Config file is UTF-8 too!
 			return new SimpleFieldSet(lis, 1024*1024, 128, true, true, true, true); // FIXME? advanced users may edit the config file, hence true?
 		} finally {
-			try {
-				fis.close();
-			} catch (IOException e) {
-				System.err.println("Could not close "+toRead+": "+e);
-				e.printStackTrace();
-			}
+			Closer.close(lis);
+			Closer.close(bis);
+			Closer.close(fis);
 		}
 	}
 	

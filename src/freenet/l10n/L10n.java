@@ -340,7 +340,7 @@ public class L10n {
 			Logger.error("L10n", "Error while loading the l10n file from " + name + " :" + e.getMessage(), e);
 			result = null;
 		} finally {
-			if (in != null) try { in.close(); } catch (Throwable ignore) {}
+			Closer.close(in);
 		}
 		
 		return result;

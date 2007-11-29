@@ -12,6 +12,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Closer;
 import freenet.support.io.LineReadingInputStream;
 
 public class FCPConnectionInputHandler implements Runnable {
@@ -54,17 +55,13 @@ public class FCPConnectionInputHandler implements Runnable {
 			if(WrapperManager.hasShutdownHookBeenTriggered()) {
 				FCPMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.SHUTTING_DOWN,true,"The node is shutting down","Node",false);
 				handler.outputHandler.queue(msg);
-				try {
-					is.close();
-				} catch (IOException e) {
-					// Don't care
-				}
+				Closer.close(is);
 				return;
 			}
 			// Read a message
 			String messageType = lis.readLine(128, 128, true);
 			if(messageType == null) {
-				is.close();
+				Closer.close(is);
 				return;
 			}
 			if(messageType.equals(""))
@@ -89,7 +86,7 @@ public class FCPConnectionInputHandler implements Runnable {
 					FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.CLIENT_HELLO_MUST_BE_FIRST_MESSAGE, true, null, null, false);
 					handler.outputHandler.queue(err);
 					handler.close();
-					is.close();
+					Closer.close(is);
 					return;
 				} else {
 					FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
@@ -101,7 +98,7 @@ public class FCPConnectionInputHandler implements Runnable {
 				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.CLIENT_HELLO_MUST_BE_FIRST_MESSAGE, true, null, null, false);
 				handler.outputHandler.queue(err);
 				handler.close();
-				is.close();
+				Closer.close(is);
 				return;
 			}
 			if(msg instanceof BaseDataCarryingMessage) {
@@ -130,7 +127,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			}
 			firstMessage = false;
 			if(handler.isClosed()) {
-				is.close();
+				Closer.close(is);
 				return;
 			}
 		}

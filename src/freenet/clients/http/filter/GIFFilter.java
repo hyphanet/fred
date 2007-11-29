@@ -14,6 +14,7 @@ import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.Closer;
 
 /**
  * Content filter for PNG's.
@@ -45,7 +46,7 @@ public class GIFFilter implements ContentDataFilter {
 				throwHeaderError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
 			}
 		} finally {
-			dis.close();
+			Closer.close(dis);
 		}
 		return data;
 	}
