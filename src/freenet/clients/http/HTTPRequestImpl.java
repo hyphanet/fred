@@ -29,6 +29,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 import freenet.support.io.LineReadingInputStream;
 
 /**
@@ -375,6 +376,13 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * params, whereas if it is multipart/form-data it will be separated into buckets.
 	 */
 	private void parseMultiPartData() throws IOException {
+		InputStream is = null;
+		BufferedInputStream bis = null;
+		LineReadingInputStream lis = null;
+		OutputStream bucketos = null;
+		OutputStream bbos = null;
+		
+		try {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(data == null) return;
 		String ctype = (String) this.headers.get("content-type");
@@ -412,9 +420,9 @@ public class HTTPRequestImpl implements HTTPRequest {
 		if(logMINOR)
 			Logger.minor(this, "Boundary is: "+boundary);
 		
-		InputStream is = this.data.getInputStream();
-		BufferedInputStream bis = new BufferedInputStream(is, 32768);
-		LineReadingInputStream lis = new LineReadingInputStream(bis);
+		is = this.data.getInputStream();
+		bis = new BufferedInputStream(is, 32768);
+		lis = new LineReadingInputStream(bis);
 		
 		String line;
 		line = lis.readLine(100, 100, false); // really it's US-ASCII, but ISO-8859-1 is close enough.
@@ -476,8 +484,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 			
 			// we can only give an upper bound for the size of the bucket
 			filedata = this.bucketfactory.makeBucket(bis.available());
-			OutputStream bucketos = filedata.getOutputStream();
-			OutputStream bbos = new BufferedOutputStream(bucketos, 32768);
+			bucketos = filedata.getOutputStream();
+			bbos = new BufferedOutputStream(bucketos, 32768);
 			// buffer characters that match the boundary so far
 			// FIXME use whatever charset was used
 			byte[] bbound = boundary.getBytes("UTF-8"); // ISO-8859-1? boundary should be in US-ASCII
@@ -502,8 +510,6 @@ public class HTTPRequestImpl implements HTTPRequest {
 				}
 			}
 			
-			bbos.close();
-			
 			parts.put(name, filedata);
 			if(logMINOR)
 				Logger.minor(this, "Name = "+name+" length = "+filedata.size()+" filename = "+filename);
@@ -511,8 +517,13 @@ public class HTTPRequestImpl implements HTTPRequest {
 				uploadedFiles.put(name, new HTTPUploadedFileImpl(filename, contentType, filedata));
 			}
 		}
-		
-		bis.close();
+		} finally {
+			Closer.close(bbos);
+			Closer.close(bucketos);
+			Closer.close(lis);
+			Closer.close(bis);
+			Closer.close(is);
+		}
 	}
 	
 	/* (non-Javadoc)
@@ -568,12 +579,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 		} catch (IOException ioe) {
 	         Logger.error(this, "Caught IOE:" + ioe.getMessage());
 		} finally {
-			try {
-				if(dis != null)
-					dis.close();
-				if(is != null)
-					is.close();
-			} catch (IOException ioe) {}
+			Closer.close(dis);
+			Closer.close(is);
 		}
 		
 		return new byte[0];
