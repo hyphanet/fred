@@ -136,17 +136,18 @@ public class FilePersistentConfig extends PersistentConfig {
 	protected void innerStore() throws IOException {
 		SimpleFieldSet fs = exportFieldSet();
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "fs = "+fs);
-                FileOutputStream fos = null;
+			Logger.minor(this, "fs = " + fs);
+		FileOutputStream fos = null;
 		try {
-                    fos = new FileOutputStream(tempFilename);
-                    synchronized(this) {
-                        fs.writeTo(fos);
-                    }
-		                    
+			fos = new FileOutputStream(tempFilename);
+			synchronized(this) {
+				fs.writeTo(fos);
+			}
+
 			FileUtil.renameTo(tempFilename, filename);
-                } finally {
-                    Closer.close(fos);
-                }
+		}
+		finally {
+			Closer.close(fos);
+		}
 	}
 }
