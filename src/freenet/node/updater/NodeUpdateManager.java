@@ -162,11 +162,12 @@ public class NodeUpdateManager {
 	}
 	
 	void broadcastUOMAnnounces() {
+		Message msg;
 		synchronized(broadcastUOMAnnouncesSync) {
-			Message msg = getUOMAnnouncement();
-			node.peers.localBroadcast(msg, true);
+			msg = getUOMAnnouncement();
 			broadcastUOMAnnounces = true;
 		}
+		node.peers.localBroadcast(msg, true);
 	}
 
 	private Message getUOMAnnouncement() {
