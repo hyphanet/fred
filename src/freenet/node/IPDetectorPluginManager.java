@@ -248,8 +248,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				detector.hasDetectedPM();
 				return;
 			}
-			if(runners.size() < plugins.length) {
-				if(logMINOR) Logger.minor(this, "Already running IP detection plugins");
+			if(runners.size() == plugins.length) {
+				if(logMINOR) Logger.minor(this, "Already running all IP detection plugins");
 				return;
 			}
 			
@@ -434,7 +434,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						// Is it internal?
 						boolean internal = false;
 						for(int j=0;j<nodeAddrs.length;j++) {
-							if(addr.equals(nodeAddrs[j])) {
+							if(addr.equals(nodeAddrs[j].getAddress())) {
 								// Internal
 								internal = true;
 								break;
