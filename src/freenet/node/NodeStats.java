@@ -453,8 +453,6 @@ public class NodeStats implements Persistable {
 		
 		// Do we have the bandwidth?
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
-			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
-					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
 		int expectedSent = (int)Math.max(expected, 0);
 		if(logMINOR)
 			Logger.minor(this, "Expected sent bytes: "+expectedSent);
@@ -464,8 +462,6 @@ public class NodeStats implements Persistable {
 			return "Insufficient output bandwidth";
 		}
 		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
-			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
-					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
 		int expectedReceived = (int)Math.max(expected, 0);
 		if(logMINOR)
 			Logger.minor(this, "Expected received bytes: "+expectedSent);
