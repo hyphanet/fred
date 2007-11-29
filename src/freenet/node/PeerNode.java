@@ -964,25 +964,30 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     }
     
     protected void maybeRekey() {
-        long now = System.currentTimeMillis();
-        boolean hasRekeyed = false;
-        if(hasLiveHandshake(now)) return;
-        synchronized (this) {
-            if(isRekeying || !isConnected) return;
-	    long timeWhenRekeyingShouldOccur = timeLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL;
-            if((timeWhenRekeyingShouldOccur < now) || (totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY)) {
-                hasRekeyed = true;
-                isRekeying = true;
-            }
-	    
-	    if(timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) {
-		    Logger.error(this, "The peer ("+this+") has been asked to rekey "+TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY)+" ago... force disconnect.");
-		    forceDisconnect();
-	    }
-        }
-        if(hasRekeyed)
-            Logger.normal(this, "We are asking for the key to be renewed ("+this.detectedPeer+')');
-    }
+       		long now = System.currentTimeMillis();
+		boolean hasRekeyed = false;
+		if(hasLiveHandshake(now))
+			return;
+		
+		long timeWhenRekeyingShouldOccur = 0;
+		synchronized(this) {
+			if(isRekeying || !isConnected)
+				return;
+			timeWhenRekeyingShouldOccur = timeLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL;
+			if((timeWhenRekeyingShouldOccur < now) || (totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY)) {
+				hasRekeyed = true;
+				isRekeying = true;
+			}
+		}
+
+		if(timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) {
+			Logger.error(this, "The peer (" + this + ") has been asked to rekey " + TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY) + " ago... force disconnect.");
+			forceDisconnect();
+		}
+
+		if(hasRekeyed)
+			Logger.normal(this, "We are asking for the key to be renewed (" + this.detectedPeer + ')');
+	}
     
     protected synchronized boolean isRekeying() {
         return isRekeying;
