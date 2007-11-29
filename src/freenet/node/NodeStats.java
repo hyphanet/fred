@@ -350,7 +350,7 @@ public class NodeStats implements Persistable {
 	};
 	
 	/* return reject reason as string if should reject, otherwise return null */
-	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
+	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) dumpByteCostAverages();
 		
@@ -452,7 +452,7 @@ public class NodeStats implements Persistable {
 		
 		
 		// Do we have the bandwidth?
-		double expected =
+		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
 					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
 		int expectedSent = (int)Math.max(expected, 0);
@@ -463,7 +463,7 @@ public class NodeStats implements Persistable {
 			preemptiveRejectReasons.inc("Insufficient output bandwidth");
 			return "Insufficient output bandwidth";
 		}
-		expected = 
+		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
 					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
 		int expectedReceived = (int)Math.max(expected, 0);
@@ -508,6 +508,38 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 	
+	private RunningAverage getThrottle(boolean isLocal, boolean isInsert, boolean isSSK, boolean isSent) {
+		if(isLocal) {
+			if(isInsert) {
+				if(isSSK) {
+					return isSent ? this.localSskInsertBytesSentAverage : this.localSskInsertBytesReceivedAverage;
+				} else {
+					return isSent ? this.localChkInsertBytesSentAverage : this.localChkInsertBytesReceivedAverage;
+				}
+			} else {
+				if(isSSK) {
+					return isSent ? this.localSskFetchBytesSentAverage : this.localSskFetchBytesReceivedAverage;
+				} else {
+					return isSent ? this.localChkFetchBytesSentAverage : this.localChkFetchBytesReceivedAverage;
+				}
+			}
+		} else {
+			if(isInsert) {
+				if(isSSK) {
+					return isSent ? this.remoteSskInsertBytesSentAverage : this.remoteSskInsertBytesReceivedAverage;
+				} else {
+					return isSent ? this.remoteChkInsertBytesSentAverage : this.remoteChkInsertBytesReceivedAverage;
+				}
+			} else {
+				if(isSSK) {
+					return isSent ? this.remoteSskFetchBytesSentAverage : this.remoteSskFetchBytesReceivedAverage;
+				} else {
+					return isSent ? this.remoteChkFetchBytesSentAverage : this.remoteChkFetchBytesReceivedAverage;
+				}
+			}
+		}
+	}
+
 	private void dumpByteCostAverages() {
 		Logger.minor(this, "Byte cost averages: REMOTE:"+
 				" CHK insert "+remoteChkInsertBytesSentAverage.currentValue()+ '/' +remoteChkInsertBytesReceivedAverage.currentValue()+

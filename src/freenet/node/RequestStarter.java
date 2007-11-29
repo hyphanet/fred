@@ -115,7 +115,7 @@ public class RequestStarter implements Runnable {
 				} while(now < sleepUntil);
 				String reason;
 				if(LOCAL_REQUESTS_COMPETE_FAIRLY) {
-					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK)) != null) {
+					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true)) != null) {
 						if(logMINOR)
 							Logger.minor(this, "Not sending local request: "+reason);
 						continue; // Let local requests compete with all the others

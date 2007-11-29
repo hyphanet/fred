@@ -209,7 +209,7 @@ public class NodeDispatcher implements Dispatcher {
 		} else {
 			if(logMINOR) Logger.minor(this, "Locked "+id);
 		}
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK);
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false);
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting request from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
@@ -250,7 +250,7 @@ public class NodeDispatcher implements Dispatcher {
 			return true;
 		}
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK);
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false);
 		if(rejectReason != null) {
 			Logger.normal(this, "Rejecting insert from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
