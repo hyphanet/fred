@@ -35,6 +35,7 @@ import freenet.support.URLEncoder;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.Closer;
 
 public class FProxyToadlet extends Toadlet {
 	
@@ -249,7 +250,7 @@ public class FProxyToadlet extends Toadlet {
 				return true;
 		}
 		finally {
-			is.close();
+			Closer.close(is);
 		}
 		return false;
 	}
