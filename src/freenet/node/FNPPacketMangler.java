@@ -1825,7 +1825,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 		}
                 
-                tracker.pn.maybeRekey();
+		tracker.pn.maybeRekey();
 		if(logMINOR) Logger.minor(this, "Done");
 	}
 
