@@ -544,6 +544,7 @@ public class FProxyToadlet extends Toadlet {
 				URI refererURI = new URI(referer);
 				String path = refererURI.getPath();
 				while(path.startsWith("/")) path = path.substring(1);
+				if("".equals(path)) return "/";
 				FreenetURI furi = new FreenetURI(path);
 				HTTPRequest req = new HTTPRequestImpl(refererURI);
 				String type = req.getParam("type");
