@@ -143,10 +143,10 @@ public class FilePersistentConfig extends PersistentConfig {
                     synchronized(this) {
                         fs.writeTo(fos);
                     }
+		                    
+			FileUtil.renameTo(tempFilename, filename);
                 } finally {
                     Closer.close(fos);
                 }
-                
-                FileUtil.renameTo(tempFilename, filename);
 	}
 }
