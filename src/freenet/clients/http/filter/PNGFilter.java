@@ -14,6 +14,7 @@ import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.Closer;
 
 /**
  * Content filter for PNG's.
@@ -27,10 +28,13 @@ public class PNGFilter implements ContentDataFilter {
 	public Bucket readFilter(Bucket data, BucketFactory bf, String charset,
 			HashMap otherParams, FilterCallback cb) throws DataFilterException,
 			IOException {
-		InputStream is = data.getInputStream();
-		BufferedInputStream bis = new BufferedInputStream(is);
-		DataInputStream dis = new DataInputStream(bis);
+		InputStream is = null;
+		BufferedInputStream bis = null;
+		DataInputStream dis = null;
 		try {
+			is = data.getInputStream();
+			dis = new DataInputStream(bis);
+			dis = new DataInputStream(bis);
 			// Check the header
 			byte[] headerCheck = new byte[pngHeader.length];
 			dis.read(headerCheck);
@@ -42,7 +46,9 @@ public class PNGFilter implements ContentDataFilter {
 						"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
 			}
 		} finally {
-			dis.close();
+			Closer.close(dis);
+			Closer.close(bis);
+			Closer.close(is);
 		}
 		return data;
 	}
