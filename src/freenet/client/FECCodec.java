@@ -16,6 +16,7 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 
 /**
  * FEC (forward error correction) handler.
@@ -175,11 +176,11 @@ public abstract class FECCodec {
 			
 			for (int i = 0; i < k; i++) {
 				if (writers[i] != null)
-					writers[i].close();
+					Closer.close(writers[i]);
 			}
 			for (int i = 0; i < n; i++) {
 				if (readers[i] != null)
-					readers[i].close();
+					Closer.close(readers[i]);
 			}
 
 		}
@@ -313,10 +314,10 @@ public abstract class FECCodec {
 
 			for (int i = 0; i < k; i++)
 				if (readers[i] != null)
-					readers[i].close();
+					Closer.close(readers[i]);
 			for (int i = 0; i < n - k; i++)
 				if (writers[i] != null)
-					writers[i].close();
+					Closer.close(writers[i]);
 
 		}
 		// Set new buckets only after have a successful decode.
