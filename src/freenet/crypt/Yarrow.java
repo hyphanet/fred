@@ -22,6 +22,7 @@ import java.util.Hashtable;
 import java.util.Properties;
 
 import freenet.support.Logger;
+import freenet.support.io.Closer;
 
 /**
  * An implementation of the Yarrow PRNG in Java.
@@ -113,12 +114,8 @@ public class Yarrow extends RandomSource {
 		        } catch (Throwable t) {
 		            Logger.normal(this, "Can't read /dev/hwrng even though exists and is readable: "+t, t);
 		        } finally {
-		            try {
-		            	if(fis != null)
-		            		fis.close();
-		            	if(dis != null)
-		                    dis.close();
-		            } catch (IOException e) {}
+		            Closer.close(dis);
+			    Closer.close(fis);
 		        }
 	        }
 
@@ -137,12 +134,8 @@ public class Yarrow extends RandomSource {
 	            canBlock = true;
 	            isSystemEntropyAvailable = false;
 	        } finally {
-	            try {
-	            	if(fis != null)
-	            		fis.close();
-	            	if(dis != null)
-	                    dis.close();
-	            } catch (IOException e) {}
+	            Closer.close(dis);
+		    Closer.close(fis);
 	        }
 	        if(canBlock && isSystemEntropyAvailable) {
 	            // Read some bits from /dev/random
@@ -156,12 +149,8 @@ public class Yarrow extends RandomSource {
 	            } catch (Throwable t) {
 	                Logger.normal(this, "Can't read /dev/random: "+t, t);
 	            } finally {
-		            try {
-		            	if(fis != null)
-		            		fis.close();
-		            	if(dis != null)
-		                    dis.close();
-		            } catch (IOException e) {}
+		            Closer.close(dis);
+			    Closer.close(fis);
 	            }
 	        }
 	        fis = null;
@@ -218,30 +207,30 @@ public class Yarrow extends RandomSource {
 	 * Seed handling
 	 */
 	private void read_seed(File filename) {
-		try {
-			FileInputStream fis = null;
-			BufferedInputStream bis = null;
-			DataInputStream dis = null;
-			
-			try {
-				fis = new FileInputStream(filename);
-				bis = new BufferedInputStream(fis);
-				dis = new DataInputStream(bis);
-				
-				EntropySource seedFile = new EntropySource();
-				try {
-					for (int i = 0; i < 32; i++)
-						acceptEntropy(seedFile, dis.readLong(), 64);
-				} catch (EOFException f) {}
+		FileInputStream fis = null;
+		BufferedInputStream bis = null;
+		DataInputStream dis = null;
 
-			} catch (IOException e) {
-				Logger.error(this, "IOE trying to read the seedfile from disk : " + e.getMessage());
-			} finally {
-				if(dis != null) dis.close();
-				if(bis != null) bis.close();
-				if(fis != null) fis.close();
+		try {
+			fis = new FileInputStream(filename);
+			bis = new BufferedInputStream(fis);
+			dis = new DataInputStream(bis);
+
+			EntropySource seedFile = new EntropySource();
+			try {
+				for(int i = 0; i < 32; i++)
+					acceptEntropy(seedFile, dis.readLong(), 64);
+			} catch(EOFException f) {
 			}
-		} catch (Exception e) {}
+
+		} catch(IOException e) {
+			Logger.error(this, "IOE trying to read the seedfile from disk : " + e.getMessage());
+		}
+		finally {
+			Closer.close(dis);
+			Closer.close(bis);
+			Closer.close(fis);
+		}
 		fast_pool_reseed();
 	}
 
@@ -262,27 +251,25 @@ public class Yarrow extends RandomSource {
 			}
 		}
 		
+		FileOutputStream fos = null;
+		BufferedOutputStream bos = null;
+		DataOutputStream dos = null;
 		try {
-			FileOutputStream fos = null;
-			BufferedOutputStream bos = null;
-			DataOutputStream dos = null;
+			fos = new FileOutputStream(filename);
+			bos = new BufferedOutputStream(fos);
+			dos = new DataOutputStream(bos);
 
-			try {
-				fos = new FileOutputStream(filename);
-				bos = new BufferedOutputStream(fos);
-				dos = new DataOutputStream(bos);
+			for(int i = 0; i < 32; i++)
+				dos.writeLong(nextLong());
 
-				for (int i = 0; i < 32; i++)
-					dos.writeLong(nextLong());
-
-			}catch (IOException e) {
-				Logger.error(this, "IOE while saving the seed file! : "+e.getMessage());
-			} finally {
-				if(dos != null) dos.close();
-				if(bos != null) bos.close();
-				if(fos != null) fos.close();
-			}
-		} catch (Exception e) {}
+		} catch(IOException e) {
+			Logger.error(this, "IOE while saving the seed file! : " + e.getMessage());
+		}
+		finally {
+			Closer.close(dos);
+			Closer.close(bos);
+			Closer.close(fos);
+		}
 	}
 
 	/**
