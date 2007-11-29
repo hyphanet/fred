@@ -15,6 +15,7 @@ import freenet.l10n.L10n;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.Closer;
 
 /**
  * Freenet content filter. This doesn't actually do any filtering,
@@ -247,8 +248,10 @@ public class ContentFilter {
 	 * @throws IOException 
 	 */
 	private static String detectBOM(Bucket bucket) throws IOException {
+		InputStream is = null;
+		try {
 		byte[] data = new byte[5];
-		InputStream is = bucket.getInputStream();
+		is = bucket.getInputStream();
 		int read = 0;
 		while(read < data.length) {
 			int x;
@@ -259,7 +262,6 @@ public class ContentFilter {
 			}
 			if(x <= 0) break;
 		}
-		is.close();
 		if(startsWith(data, bom_utf8)) return "UTF-8";
 		if(startsWith(data, bom_utf16_be) || startsWith(data, bom_utf16_le)) return "UTF-16";
 		if(startsWith(data, bom_utf32_be) || startsWith(data, bom_utf32_le)) return "UTF-32";
@@ -270,6 +272,9 @@ public class ContentFilter {
 		if(startsWith(data, bom_utf_ebcdic)) return "UTF-EBCDIC";
 		if(startsWith(data, bom_bocu_1)) return "BOCU-1";
 		return null;
+		} finally {
+			Closer.close(is);
+		}
 	}
 	
 	// Byte Order Mark's - from Wikipedia. We keep all of them because a rare encoding might
