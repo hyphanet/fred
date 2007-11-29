@@ -18,6 +18,7 @@ import java.util.HashMap;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
 public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
@@ -37,20 +38,29 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		InputStream strm = bucket.getInputStream();
 		Bucket temp = bf.makeBucket(bucket.size());
 		OutputStream os = temp.getOutputStream();
-		Reader r;
-		Writer w;
+		Reader r = null;
+		Writer w = null;
+		InputStreamReader isr = null;
+		OutputStreamWriter osr = null;
 		try {
-			r = new BufferedReader(new InputStreamReader(strm, charset), 32768);
-			w = new BufferedWriter(new OutputStreamWriter(os, charset), 32768);
+		try {
+			isr = new InputStreamReader(strm, charset);
+			osr = new OutputStreamWriter(os, charset);
+			r = new BufferedReader(isr, 32768);
+			w = new BufferedWriter(osr, 32768);
 		} catch (UnsupportedEncodingException e) {
-			os.close();
-			strm.close();
 			throw UnknownCharsetException.create(e, charset);
 		}
 		CSSParser parser = new CSSParser(r, w, false, cb);
 		parser.parse();
-		r.close();
-		w.close();
+		} finally {
+			Closer.close(isr);
+			Closer.close(r);
+			Closer.close(osr);
+			Closer.close(w);
+			Closer.close(os);
+			Closer.close(strm);
+		}
 		return temp;
 	}
 
