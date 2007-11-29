@@ -503,7 +503,8 @@ public class FileLoggerHook extends LoggerHook {
 		java.util.Arrays.sort(files);
 		long lastStartTime = -1;
 		File oldFile = null;
-        FileUtil.renameTo(latestFile, previousFile);
+        if(latestFile.exists())
+        	FileUtil.renameTo(latestFile, previousFile);
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		for(int i=0;i<files.length;i++) {
 			File f = files[i];
