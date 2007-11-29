@@ -515,6 +515,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 						bbos.write((int) b & 0xff);
 				}
 
+				bbos.close();
+			
 				parts.put(name, filedata);
 				if(logMINOR)
 					Logger.minor(this, "Name = " + name + " length = " + filedata.size() + " filename = " + filename);
