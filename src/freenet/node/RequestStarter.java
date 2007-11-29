@@ -87,23 +87,7 @@ public class RequestStarter implements Runnable {
 			if(req == null) req = sched.removeFirst();
 			if(req != null) {
 				if(logMINOR) Logger.minor(this, "Running "+req);
-				// Create a thread to handle starting the request, and the resulting feedback
-				while(true) {
-					try {
-						core.getExecutor().execute(new SenderThread(req), "RequestStarter$SenderThread for "+req);
-						if(logMINOR) Logger.minor(this, "Started "+req);
-						break;
-					} catch (OutOfMemoryError e) {
-						OOMHandler.handleOOM(e);
-						System.err.println("Will retry above failed operation...");
-						// Possibly out of threads
-						try {
-							Thread.sleep(5000);
-						} catch (InterruptedException e1) {
-							// Ignore
-						}
-					}
-				}
+				startRequest(req, logMINOR);
 				sentRequestTime = System.currentTimeMillis();
 				// Wait
 				long delay = throttle.getDelay();
@@ -141,6 +125,26 @@ public class RequestStarter implements Runnable {
 		}
 	}
 	
+	private void startRequest(SendableRequest req, boolean logMINOR) {
+		// Create a thread to handle starting the request, and the resulting feedback
+		while(true) {
+			try {
+				core.getExecutor().execute(new SenderThread(req), "RequestStarter$SenderThread for "+req);
+				if(logMINOR) Logger.minor(this, "Started "+req);
+				break;
+			} catch (OutOfMemoryError e) {
+				OOMHandler.handleOOM(e);
+				System.err.println("Will retry above failed operation...");
+				// Possibly out of threads
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e1) {
+					// Ignore
+				}
+			}
+		}
+	}
+
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
