@@ -98,7 +98,10 @@ public class AddressTracker {
 			throw new FSParseException("Unknown Version "+version);
 		long savedBootID = fs.getLong("BootID");
 		if(savedBootID != lastBootID) throw new FSParseException("Wrong boot ID - maybe unclean shutdown? Last was "+lastBootID+" stored "+savedBootID);
-		timeDefinitelyNoPacketsReceived = fs.getLong("TimeDefinitelyNoPacketsReceived");
+		// Sadly we don't know whether there were packets arriving during the gap,
+		// and some insecure firewalls will use incoming packets to keep tunnels open
+		//timeDefinitelyNoPacketsReceived = fs.getLong("TimeDefinitelyNoPacketsReceived");
+		timeDefinitelyNoPacketsReceived = System.currentTimeMillis();
 		timeDefinitelyNoPacketsSent = fs.getLong("TimeDefinitelyNoPacketsSent");
 		peerTrackers = new HashMap();
 		SimpleFieldSet peers = fs.getSubset("Peers");
