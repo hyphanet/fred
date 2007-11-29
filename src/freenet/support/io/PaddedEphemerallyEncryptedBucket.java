@@ -185,7 +185,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 					byte[] buf = new byte[4096];
 					long writtenPadding = 0;
 					while(writtenPadding < padding) {
-						int left = Math.min((int) (padding - writtenPadding), buf.length);
+						int left = (int) Math.min((padding - writtenPadding), (long)buf.length);
 						paddingSource.nextBytes(buf);
 						out.write(buf, 0, left);
 						writtenPadding += left;
