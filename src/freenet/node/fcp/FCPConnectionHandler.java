@@ -15,6 +15,7 @@ import org.spaceroots.mantissa.random.MersenneTwister;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 public class FCPConnectionHandler {
@@ -393,15 +394,18 @@ public class FCPConnectionHandler {
 			// We don't want to attempt to write before: in case an IOException is raised, we want to inform the
 			// client somehow that the node can't write there... And setting readFile to null means we won't inform
 			// it on the status (as if it hasn't requested us to do the test).
+			FileOutputStream fos = null;
+			BufferedOutputStream bos = null;
 			try {
-				FileOutputStream fos = new FileOutputStream(result.readFilename);
-				BufferedOutputStream bos = new BufferedOutputStream(fos);
+				fos = new FileOutputStream(result.readFilename);
+				bos = new BufferedOutputStream(fos);
 				bos.write(result.readContent.getBytes("UTF-8"));
 				bos.flush();
-				bos.close();
-				fos.close();
 			} catch (IOException e) {
 				Logger.error(this, "Got a IOE while creating the file (" + readFile.toString() + " ! " + e.getMessage());
+			} finally {
+				Closer.close(bos);
+				Closer.close(fos);
 			}
 		}
 		
