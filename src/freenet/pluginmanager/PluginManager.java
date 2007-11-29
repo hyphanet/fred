@@ -515,6 +515,11 @@ public class PluginManager {
 				while ((read = pluginInputStream.read(buffer)) != -1) {
 					pluginOutputStream.write(buffer, 0, read);
 				}
+				                        
+				if(!FileUtil.renameTo(tempPluginFile, pluginFile)) {
+					Logger.error(this, "could not rename temp file to plugin file");
+					throw new PluginNotFoundException("could not rename temp file to plugin file");
+				}
 			} catch (IOException ioe1) {
 				Logger.error(this, "could not load plugin", ioe1);
 				if (tempPluginFile != null) {
@@ -524,11 +529,6 @@ public class PluginManager {
 			} finally {
 				Closer.close(pluginOutputStream);
 				Closer.close(pluginInputStream);
-			}
-                        
-			if (!FileUtil.renameTo(tempPluginFile, pluginFile)) {
-				Logger.error(this, "could not rename temp file to plugin file");
-				throw new PluginNotFoundException("could not rename temp file to plugin file");
 			}
 		}
 

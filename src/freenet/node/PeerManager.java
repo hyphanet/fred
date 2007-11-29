@@ -880,6 +880,8 @@ public class PeerManager {
             	boolean succeeded = writePeers(bw, peers);
                 bw.close(); bw = null;
                 if(!succeeded) return;
+		File fnam = new File(filename);
+		FileUtil.renameTo(new File(f), fnam);
             } catch (IOException e) {
             	try {
             		fos.close();
@@ -892,8 +894,6 @@ public class PeerManager {
 		    Closer.close(bw);
 		    Closer.close(fos);
 	    }
-            File fnam = new File(filename);
-            FileUtil.renameTo(new File(f), fnam);
         }
     }
 

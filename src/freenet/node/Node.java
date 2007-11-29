@@ -485,13 +485,13 @@ public class Node implements TimeSkewDetectorCallback {
 		try {
 			fos = new FileOutputStream(backup);
 			fs.writeTo(fos);
+			FileUtil.renameTo(backup, orig);
                 } catch (IOException ioe){
                         Logger.error(this, "IOE :"+ioe.getMessage(), ioe);
                         return;
                 } finally {
                         Closer.close(fos);
 		}
-                FileUtil.renameTo(backup, orig);
 	}
 
 	private void initNodeFileSettings(RandomSource r) {
