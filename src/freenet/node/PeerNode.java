@@ -61,6 +61,7 @@ import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
@@ -968,10 +969,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         if(hasLiveHandshake(now)) return;
         synchronized (this) {
             if(isRekeying || !isConnected) return;
-            if((timeLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL < now) || (totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY)) {
+	    long timeWhenRekeyingShouldOccur = timeLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL;
+            if((timeWhenRekeyingShouldOccur < now) || (totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY)) {
                 hasRekeyed = true;
                 isRekeying = true;
             }
+	    
+	    if(timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) {
+		    Logger.error(this, "The peer ("+this+") has been asked to rekey "+TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY)+" ago... force disconnect.");
+		    forceDisconnect();
+	    }
         }
         if(hasRekeyed)
             Logger.normal(this, "We are asking for the key to be renewed ("+this.detectedPeer+')');
