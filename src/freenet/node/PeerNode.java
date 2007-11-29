@@ -962,7 +962,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         return timeLastRoutable;
     }
     
-    protected void maybeRekey(final KeyTracker tracker) {
+    protected void maybeRekey() {
         long now = System.currentTimeMillis();
         boolean hasRekeyed = false;
         if(hasLiveHandshake(now)) return;
@@ -971,7 +971,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
             if((timeLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL < now) || (totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY)) {
                 hasRekeyed = true;
                 isRekeying = true;
-                tracker.deprecated();
             }
         }
         if(hasRekeyed)
