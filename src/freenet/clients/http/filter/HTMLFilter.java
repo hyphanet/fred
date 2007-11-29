@@ -31,6 +31,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
@@ -50,24 +51,30 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Bucket temp = bf.makeBucket(bucket.size());
 		OutputStream os = temp.getOutputStream();
 		BufferedOutputStream bos = new BufferedOutputStream(os, 4096);
-		Reader r;
-		Writer w;
+		Reader r = null;
+		Writer w = null;
+		InputStreamReader isr = null;
+		OutputStreamWriter osw = null;
 		try {
-			r = new BufferedReader(new InputStreamReader(bis, charset), 4096);
-			w = new BufferedWriter(new OutputStreamWriter(bos, charset), 4096);
+		try {
+			isr = new InputStreamReader(bis, charset);
+			osw = new OutputStreamWriter(bos, charset);
+			r = new BufferedReader(isr, 4096);
+			w = new BufferedWriter(osw, 4096);
 		} catch (UnsupportedEncodingException e) {
-			os.close();
-			strm.close();
 			throw UnknownCharsetException.create(e, charset);
 		}
 		HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb, false);
 		pc.run(temp);
-		r.close();
-		w.close();
-		os.close();
-		bos.close();
-		bis.close();
-		strm.close();
+		} finally {
+			Closer.close(w);
+			Closer.close(osw);
+			Closer.close(os);
+			Closer.close(r);
+			Closer.close(isr);
+			Closer.close(bis);
+			Closer.close(strm);
+		}
 		return temp;
 	}
 	
