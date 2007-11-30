@@ -659,8 +659,8 @@ public class FCPServer implements Runnable {
 				return;
 			}
 		} finally {
-			Closer.close(gis);
 			Closer.close(bis);
+			Closer.close(gis);
 			Closer.close(fis);
 		}
 	}
