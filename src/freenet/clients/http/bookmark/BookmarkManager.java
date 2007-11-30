@@ -192,7 +192,7 @@ public class BookmarkManager {
 	}
 
 	public BookmarkCategory getCategoryByPath(String path) {
-		Bookmark cat = getBookmarkByPath(path.trim());
+		Bookmark cat = getBookmarkByPath(path);
 		if(cat instanceof BookmarkCategory)
 			return (BookmarkCategory) cat;
 
@@ -200,7 +200,7 @@ public class BookmarkManager {
 	}
 
 	public BookmarkItem getItemByPath(String path) {
-		if(getBookmarkByPath(path.trim()) instanceof BookmarkItem)
+		if(getBookmarkByPath(path) instanceof BookmarkItem)
 			return (BookmarkItem) getBookmarkByPath(path);
 
 		return null;
