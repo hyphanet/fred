@@ -135,12 +135,12 @@ public class BookmarkEditorToadlet extends Toadlet {
 		String error = L10n.getString("BookmarkEditorToadlet.error");
 		HTMLNode pageNode = pageMaker.getPageNode(editorTitle, ctx);
 		HTMLNode content = pageMaker.getContentNode(pageNode);
-
-		if(req.getParam("action").length() > 0 && req.getParam("bookmark").length() > 0) {
+		String originalBookmark = req.getParam("bookmark");
+		if(req.getParam("action").length() > 0 && originalBookmark.length() > 0) {
 			String action = req.getParam("action");
 			String bookmarkPath;
 			try {
-				bookmarkPath = URLDecoder.decode(req.getParam("bookmark"), false);
+				bookmarkPath = URLDecoder.decode(originalBookmark, false);
 			} catch(URLEncodedFormatException e) {
 				HTMLNode errorBox = content.addChild(pageMaker.getInfobox("infobox-error", error));
 				pageMaker.getContentNode(errorBox).addChild("#", L10n.getString("BookmarkEditorToadlet.urlDecodeError"));
