@@ -195,7 +195,7 @@ public final class RequestSender implements Runnable, ByteCounter {
                  * What are we waiting for?
                  * FNPAccepted - continue
                  * FNPRejectedLoop - go to another node
-                 * FNPRejectedOverload - go to another node and propagate back to source
+                 * FNPRejectedOverload - propagate back to source, go to another node if local
                  */
                 
                 MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
