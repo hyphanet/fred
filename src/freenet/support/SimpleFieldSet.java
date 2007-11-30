@@ -717,6 +717,9 @@ public class SimpleFieldSet {
                 }
                 bw = new BufferedWriter(osw);
                 writeTo(bw);
+		bw.close();
+		osw.close();
+		bos.close();
             }finally {
                 Closer.close(bw);
                 Closer.close(osw);
