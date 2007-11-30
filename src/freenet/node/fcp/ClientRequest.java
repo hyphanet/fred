@@ -106,9 +106,7 @@ public abstract class ClientRequest {
 		global = Fields.stringToBool(fs.get("Global"), false);
 		final String stime = fs.get("StartupTime");
 		this.startupTime = stime == null ? System.currentTimeMillis() : Fields.parseLong(stime);
-		final String ctime = fs.get("CompletionTime");
-		if(ctime != null)
-			completionTime = Fields.parseLong(ctime);
+		completionTime = fs.getLong("CompletionTime", 0);
 	}
 
 	/** Lost connection */
