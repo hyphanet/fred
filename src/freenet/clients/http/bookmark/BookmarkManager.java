@@ -105,6 +105,13 @@ public class BookmarkManager {
             }
         }
     }
+    
+    public void reAddDefaultBookmarks() {
+	    BookmarkCategory bc = new BookmarkCategory("DefaultBookmarks-"+System.currentTimeMillis());
+	    _innerReadBookmarks("/", bc, DEFAULT_BOOKMARKS);
+	    addBookmark("/", bc);
+	    putPaths("/", bc);
+    }
 
     private void registerProtectedItems(String prefix, BookmarkCategory current) {
 	BookmarkCategories categories = current.getSubCategories();
