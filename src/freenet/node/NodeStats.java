@@ -150,6 +150,7 @@ public class NodeStats implements Persistable {
 	final NodePinger nodePinger;
 	
 	final StringCounter preemptiveRejectReasons;
+	final StringCounter localPreemptiveRejectReasons;
 
 	// Enable this if you run into hard to debug OOMs.
 	// Disabled to prevent long pauses every 30 seconds.
@@ -169,6 +170,7 @@ public class NodeStats implements Persistable {
 		this.routingMissDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		preemptiveRejectReasons = new StringCounter();
+		localPreemptiveRejectReasons = new StringCounter();
 		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0, node);
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
@@ -506,6 +508,7 @@ public class NodeStats implements Persistable {
 	
 	private void rejected(String reason, boolean isLocal) {
 		if(!isLocal) preemptiveRejectReasons.inc(reason);
+		else this.localPreemptiveRejectReasons.inc(reason);
 	}
 
 	private RunningAverage getThrottle(boolean isLocal, boolean isInsert, boolean isSSK, boolean isSent) {
@@ -925,6 +928,10 @@ public class NodeStats implements Persistable {
 
 	public boolean getRejectReasonsTable(HTMLNode table) {
 		return preemptiveRejectReasons.toTableRows(table) > 0;
+	}
+
+	public boolean getLocalRejectReasonsTable(HTMLNode table) {
+		return localPreemptiveRejectReasons.toTableRows(table) > 0;
 	}
 
 }
