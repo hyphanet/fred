@@ -1066,7 +1066,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		long now = System.currentTimeMillis();
 		boolean tempShouldSendHandshake = false;
 		synchronized(this) {
-			tempShouldSendHandshake = ((!isConnected()) && (handshakeIPs != null) && (now > sendHandshakeTime)) || isRekeying;
+			tempShouldSendHandshake = ((isRekeying || !isConnected()) && (handshakeIPs != null) && (now > sendHandshakeTime));
 		}
 		if(tempShouldSendHandshake && (hasLiveHandshake(now)))
 			tempShouldSendHandshake = false;
