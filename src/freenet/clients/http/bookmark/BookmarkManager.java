@@ -199,12 +199,8 @@ public class BookmarkManager {
 		putPaths(parentPath + bookmark.getName() + ((bookmark instanceof BookmarkCategory) ? "/" : ""),
 			bookmark);
 
-		if(bookmark instanceof BookmarkItem && ((BookmarkItem) bookmark).getKeyType().equals("USK"))
-			try {
-				USK u = ((BookmarkItem) bookmark).getUSK();
-				this.node.uskManager.subscribe(u, this.uskCB, true, this);
-			} catch(MalformedURLException mue) {
-			}
+		if(bookmark instanceof BookmarkItem)
+			subscribeToUSK((BookmarkItem)bookmark);
 	}
 
 	public void renameBookmark(String path, String newName) {
@@ -356,6 +352,14 @@ public class BookmarkManager {
 			_innerReadTrunkBookmarks("", category, sfs);
 		}
 	}
+	
+	private void subscribeToUSK(BookmarkItem item) {
+		if("USK".equals(item.getKeyType()))
+			try {
+				USK u = item.getUSK();
+				this.node.uskManager.subscribe(u, this.uskCB, true, this);
+			} catch(MalformedURLException mue) {}
+	}
 
 	private void _innerReadBookmarks(String prefix, BookmarkCategory category, SimpleFieldSet sfs) {
 		boolean hasBeenParsedWithoutAnyProblem = true;
@@ -375,6 +379,7 @@ public class BookmarkManager {
 						String name = (isRoot ? "" : prefix + category.name) + '/' + item.name;
 						putPaths(name, item);
 						category.addBookmark(item);
+						subscribeToUSK(item);
 					} catch(MalformedURLException e) {
 						throw new FSParseException(e);
 					}
@@ -424,6 +429,7 @@ public class BookmarkManager {
 					String name = (isRoot ? "" : prefix + category.name) + '/' + item.name;
 					putPaths(name, item);
 					category.addBookmark(item);
+					subscribeToUSK(item);
 				} catch(MalformedURLException e) {
 					Logger.error(this, "Error while adding one of the bookmarks :" + e.getMessage(), e);
 					hasBeenParsedWithoutAnyProblem = false;
