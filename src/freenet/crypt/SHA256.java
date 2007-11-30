@@ -317,6 +317,7 @@ public class SHA256 implements Digest {
 					md.update(buf, 0, readBytes);
 					readBytes = is.read(buf);
 			}
+			is.close();
 		} finally {
 			Closer.close(is);
 		}

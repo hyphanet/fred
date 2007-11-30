@@ -45,6 +45,7 @@ public class PNGFilter implements ContentDataFilter {
 				throw new DataFilterException(title, title,
 						"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
 			}
+			dis.close();
 		} finally {
 			Closer.close(dis);
 			Closer.close(bis);

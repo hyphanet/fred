@@ -55,6 +55,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			CSSParser parser = new CSSParser(r, w, false, cb);
 			parser.parse();
+			r.close();
 		}
 		finally {
 			// Do *not* close output related things here!

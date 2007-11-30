@@ -73,6 +73,7 @@ public class JPEGFilter implements ContentDataFilter {
 		Bucket ret = null;
 		try {
 			ret = readFilter(data, bf, charset, otherParams, cb, deleteComments, deleteExif, os);
+			os.close();
 		} finally {
 			Closer.close(os);
 		}
@@ -295,6 +296,8 @@ public class JPEGFilter implements ContentDataFilter {
 				}
 			}
 			
+			dis.close();
+			output.close();
 			// In future, maybe we will check the other chunks too.
 			// In particular, we may want to delete, or filter, the comment blocks.
 			// FIXME

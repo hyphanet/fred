@@ -2,7 +2,6 @@ package freenet.support;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -689,6 +688,8 @@ public class SimpleFieldSet {
 			}
 			br = new BufferedReader(isr);
 			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived);
+			br.close();
+			
 			return fs;
 		} finally {
                         Closer.close(br);
@@ -718,8 +719,6 @@ public class SimpleFieldSet {
                 bw = new BufferedWriter(osw);
                 writeTo(bw);
 		bw.close();
-		osw.close();
-		bos.close();
             }finally {
                 Closer.close(bw);
                 Closer.close(osw);

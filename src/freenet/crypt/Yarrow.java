@@ -111,6 +111,7 @@ public class Yarrow extends RandomSource {
 		            consumeBytes(buf);
 		            dis.readFully(buf);
 		            consumeBytes(buf);
+			    dis.close();
 		        } catch (Throwable t) {
 		            Logger.normal(this, "Can't read /dev/hwrng even though exists and is readable: "+t, t);
 		        } finally {
@@ -222,7 +223,7 @@ public class Yarrow extends RandomSource {
 					acceptEntropy(seedFile, dis.readLong(), 64);
 			} catch(EOFException f) {
 			}
-
+			dis.close();
 		} catch(IOException e) {
 			Logger.error(this, "IOE trying to read the seedfile from disk : " + e.getMessage());
 		}
@@ -261,7 +262,8 @@ public class Yarrow extends RandomSource {
 
 			for(int i = 0; i < 32; i++)
 				dos.writeLong(nextLong());
-
+			
+			dos.close();
 		} catch(IOException e) {
 			Logger.error(this, "IOE while saving the seed file! : " + e.getMessage());
 		}

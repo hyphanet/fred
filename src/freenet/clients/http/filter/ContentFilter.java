@@ -277,6 +277,9 @@ public class ContentFilter {
 				return "UTF-EBCDIC";
 			if(startsWith(data, bom_bocu_1))
 				return "BOCU-1";
+			
+			is.close();
+			
 			return null;
 		}
 		finally {

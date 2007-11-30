@@ -400,7 +400,7 @@ public class FCPConnectionHandler {
 				fos = new FileOutputStream(result.readFilename);
 				bos = new BufferedOutputStream(fos);
 				bos.write(result.readContent.getBytes("UTF-8"));
-				bos.flush();
+				bos.close();
 			} catch (IOException e) {
 				Logger.error(this, "Got a IOE while creating the file (" + readFile.toString() + " ! " + e.getMessage());
 			} finally {

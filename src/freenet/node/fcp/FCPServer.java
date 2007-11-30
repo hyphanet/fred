@@ -602,10 +602,6 @@ public class FCPServer implements Runnable {
 						persistentRequests[i].write(w);
 					
 					w.close();
-					osw.close();
-					gos.close();
-					bos.close();
-					fos.close();
 					FileUtil.renameTo(compressedTemp, compressedFinal);
 				} catch (IOException e) {
 					Logger.error(this, "Cannot write persistent requests to disk: "+e);
