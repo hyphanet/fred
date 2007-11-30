@@ -372,8 +372,15 @@ public class FCPConnectionHandler {
 		if(!directory.exists() || !directory.isDirectory())
 			throw new IllegalArgumentException("The specified path isn't a directory! or doesn't exist or the node doesn't have access to it!");
 		
-		File writeFile = (write ? new File(path, "DDACheck-" + new Random().nextInt() + ".tmp") : null);
+		// See #1856
+		DDACheckJob job = null;
+		synchronized (inTestDirectories) {
+			job = (DDACheckJob) inTestDirectories.get(directory);
+		}
+		if(job != null)
+			throw new IllegalArgumentException("There is already a TestDDA going on for that directory!");
 		
+		File writeFile = (write ? new File(path, "DDACheck-" + new Random().nextInt() + ".tmp") : null);
 		File readFile = null;
 		if(read) {
 			try {
