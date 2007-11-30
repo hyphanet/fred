@@ -2932,13 +2932,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		reportIncomingBytes(length);
 		long hash = Fields.longHashCode(buf, offset, length);
 		synchronized(this) {
-		packetsRecvTimes[recvPtr] = now;
-		packetsRecvHashes[recvPtr] = hash;
-		recvPtr++;
-		if(recvPtr == TRACK_PACKETS) {
-			recvPtr = 0;
-			recvTrackPackets = true;
-		}
+			packetsRecvTimes[recvPtr] = now;
+			packetsRecvHashes[recvPtr] = hash;
+			recvPtr++;
+			if(recvPtr == TRACK_PACKETS) {
+				recvPtr = 0;
+				recvTrackPackets = true;
+			}
 		}
 	}
 
@@ -2946,13 +2946,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		reportOutgoingBytes(length);
 		long hash = Fields.longHashCode(buf, offset, length);
 		synchronized(this) {
-		packetsSentTimes[sentPtr] = now;
-		packetsSentHashes[sentPtr] = hash;
-		sentPtr++;
-		if(sentPtr == TRACK_PACKETS) {
-			sentPtr = 0;
-			sentTrackPackets = true;
-		}
+			packetsSentTimes[sentPtr] = now;
+			packetsSentHashes[sentPtr] = hash;
+			sentPtr++;
+			if(sentPtr == TRACK_PACKETS) {
+				sentPtr = 0;
+				sentTrackPackets = true;
+			}
 		}
 	}
 	
