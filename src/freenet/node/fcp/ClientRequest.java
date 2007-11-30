@@ -40,7 +40,7 @@ public abstract class ClientRequest {
 	/** Timestamp : startup time */
 	protected final long startupTime;
 	/** Timestamp : completion time */
-	protected long completionTime = Long.MAX_VALUE;
+	protected long completionTime;
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
 			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
