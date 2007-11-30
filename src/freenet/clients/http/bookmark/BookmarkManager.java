@@ -223,21 +223,13 @@ public class BookmarkManager {
 
 	public void renameBookmark(String path, String newName) {
 		Bookmark bookmark = getBookmarkByPath(path);
-
 		String oldName = bookmark.getName();
-		String oldPath = '/' + oldName + '/';
-		String newPath = oldPath.substring(0, oldPath.indexOf(oldName)) + newName;
-
+		String oldPath = '/' + oldName;
+		String newPath = path.substring(0, path.indexOf(oldPath)) + '/' + newName + (bookmark instanceof BookmarkCategory ? "/" : "");
+		
 		bookmark.setName(newName);
 		synchronized(bookmarks) {
 			bookmarks.remove(path);
-		}
-		if(path.charAt(path.length() - 1) != '/') {
-			int lastIndexOfSlash = path.lastIndexOf('/');
-			newPath = path.substring(0, lastIndexOfSlash) + newPath;
-		} else
-			newPath += '/';
-		synchronized(bookmarks) {
 			bookmarks.put(newPath, bookmark);
 		}
 		storeBookmarks();
