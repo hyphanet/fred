@@ -789,9 +789,10 @@ public class DMT {
 		addField(PADDED_LENGTH, Integer.class);
 		addField(HTL, Short.class);
 		addField(NEAREST_LOCATION, Double.class);
+		addField(TARGET_LOCATION, Double.class);
 	}};
 
-	public static Message createFNPOpennetAnnounceRequest(long uid, long transferUID, int noderefLength, int paddedLength, short htl, double nearestLocSoFar) {
+	public static Message createFNPOpennetAnnounceRequest(long uid, long transferUID, int noderefLength, int paddedLength, double target, short htl, double nearestLocSoFar) {
 		Message msg = new Message(FNPOpennetAnnounceRequest);
 		msg.set(UID, uid);
 		msg.set(TRANSFER_UID, transferUID);
@@ -799,6 +800,7 @@ public class DMT {
 		msg.set(PADDED_LENGTH, paddedLength);
 		msg.set(HTL, htl);
 		msg.set(NEAREST_LOCATION, nearestLocSoFar);
+		msg.set(TARGET_LOCATION, target);
 		return msg;
 	}
 	
@@ -820,6 +822,16 @@ public class DMT {
 		msg.set(TRANSFER_UID, transferUID);
 		msg.set(NODEREF_LENGTH, noderefLength);
 		msg.set(PADDED_LENGTH, paddedLength);
+		return msg;
+	}
+	
+	public static MessageType FNPOpennetAnnounceCompleted = new MessageType("FNPOpennetAnnounceCompleted") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static Message createFNPOpennetAnnounceCompleted(long uid) {
+		Message msg = new Message(FNPOpennetAnnounceCompleted);
+		msg.set(UID, uid);
 		return msg;
 	}
 	
