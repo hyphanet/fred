@@ -106,9 +106,8 @@ public class BookmarkManager {
 
 	public void reAddDefaultBookmarks() {
 		BookmarkCategory bc = new BookmarkCategory("Default bookmarks - " + System.currentTimeMillis());
-		_innerReadBookmarks("/", bc, DEFAULT_BOOKMARKS);
 		addBookmark("/", bc);
-		putPaths("/", bc);
+		_innerReadBookmarks("/", bc, DEFAULT_BOOKMARKS);
 	}
 
 	private void registerProtectedItems(String prefix, BookmarkCategory current) {
