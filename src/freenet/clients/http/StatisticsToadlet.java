@@ -205,6 +205,12 @@ public class StatisticsToadlet extends Toadlet {
 				loadStatsList.addChild("li", starters.statsPageLine(true, true));
 				loadStatsList.addChild("li", starters.diagnosticThrottlesLine(false));
 				loadStatsList.addChild("li", starters.diagnosticThrottlesLine(true));
+				
+				// Psuccess box
+				HTMLNode successRateBox = nextTableCell.addChild("div", "class", "infobox");
+				successRateBox.addChild("div", "class", "infobox-header", "Success rates");
+				HTMLNode successRateContent = successRateBox.addChild("div", "class", "infobox-content");
+				stats.fillSuccessRateBox(successRateContent);
 			}
 		}
 

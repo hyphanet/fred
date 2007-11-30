@@ -23,6 +23,7 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
+import freenet.support.math.TrivialRunningAverage;
 
 /** Node (as opposed to NodeClientCore) level statistics. Includes shouldRejectRequest(), but not limited
  * to stuff required to implement that. */
@@ -114,6 +115,12 @@ public class NodeStats implements Persistable {
 	final TimeDecayingRunningAverage successfulSskFetchBytesReceivedAverage;
 	final TimeDecayingRunningAverage successfulChkInsertBytesReceivedAverage;
 	final TimeDecayingRunningAverage successfulSskInsertBytesReceivedAverage;
+	
+	final TrivialRunningAverage globalFetchPSuccess;
+	final TrivialRunningAverage chkFetchPSuccess;
+	final TrivialRunningAverage sskFetchPSuccess;
+	final TrivialRunningAverage localFetchPSuccess;
+	final TrivialRunningAverage remoteFetchPSuccess;
 	
 	File persistTarget; 
 	File persistTemp;
@@ -298,6 +305,12 @@ public class NodeStats implements Persistable {
 		successfulSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskFetchBytesReceivedAverage"), node);
 		successfulChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesReceivedAverage"), node);
 		successfulSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskInsertBytesReceivedAverage"), node);
+		
+		globalFetchPSuccess = new TrivialRunningAverage();
+		chkFetchPSuccess = new TrivialRunningAverage();
+		sskFetchPSuccess = new TrivialRunningAverage();
+		localFetchPSuccess = new TrivialRunningAverage();
+		remoteFetchPSuccess = new TrivialRunningAverage();
 		
 		requestOutputThrottle = 
 			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), 0);
@@ -934,4 +947,48 @@ public class NodeStats implements Persistable {
 		return localPreemptiveRejectReasons.toTableRows(table) > 0;
 	}
 
+	public void requestCompleted(boolean succeeded, boolean isRemote, boolean isSSK) {
+		globalFetchPSuccess.report(succeeded ? 1.0 : 0.0);
+		if(isSSK)
+			sskFetchPSuccess.report(succeeded ? 1.0 : 0.0);
+		else
+			chkFetchPSuccess.report(succeeded ? 1.0 : 0.0);
+		if(isRemote)
+			remoteFetchPSuccess.report(succeeded ? 1.0 : 0.0);
+		else
+			localFetchPSuccess.report(succeeded ? 1.0 : 0.0);
+	}
+
+	private final DecimalFormat fix3p3pct = new DecimalFormat("##0.000%");
+	
+	public void fillSuccessRateBox(HTMLNode parent) {
+		HTMLNode list = parent.addChild("table", "border", "0");
+		final TrivialRunningAverage[] averages = new TrivialRunningAverage[] {
+				globalFetchPSuccess,
+				chkFetchPSuccess,
+				sskFetchPSuccess,
+				localFetchPSuccess,
+				remoteFetchPSuccess
+		};
+		final String[] names = new String[] {
+				// FIXME l10n, but atm this only shows up in advanced mode
+				"All requests",
+				"CHKs",
+				"SSKs",
+				"Local requests",
+				"Remote requests"
+		};
+		HTMLNode row = list.addChild("tr");
+		row.addChild("th", "Group"); 
+		row.addChild("th", "P(success)");
+		row.addChild("th", "Count");
+		
+		for(int i=0;i<averages.length;i++) {
+			row = list.addChild("tr");
+			row.addChild("td", names[i]);
+			row.addChild("td", fix3p3pct.format(averages[i].currentValue()));
+			row.addChild("td", Double.toString(averages[i].countReports()));
+		}
+	}
+	
 }

@@ -626,13 +626,15 @@ public final class RequestSender implements Runnable, ByteCounter {
         	if(next != null) {
         		next.onSuccess(false, key instanceof NodeSSK);
         	}
+        	node.nodeStats.requestCompleted(true, source != null, key instanceof NodeSSK);
         	
         	if(key instanceof NodeCHK && next != null && 
         			(next.isOpennet() || node.passOpennetRefsThroughDarknet()) ) {
         		finishOpennet(next);
         	} else
         		finishOpennetNull(next);
-        }
+        } else
+        	node.nodeStats.requestCompleted(false, source != null, key instanceof NodeSSK);
         
 		synchronized(this) {
 			opennetFinished = true;
