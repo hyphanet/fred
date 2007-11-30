@@ -738,22 +738,6 @@ public class DMT {
 		return msg;
 	}
 	
-	// FIXME remove these two messages once 1074 is mandatory
-	
-	/** Sent when a request completes and the data source does want to path fold. Old version, includes 
-	 * the inline variable-length noderef. Opens up a nasty traffic analysis (route tracing) vulnerability. */
-	public static MessageType FNPOpennetConnectDestination = new MessageType("FNPOpennetConnectDestination") {{
-		addField(UID, Long.class);
-		addField(OPENNET_NODEREF, ShortBuffer.class);
-	}};
-	
-	/** Path folding response. Old version, includes the inline variable-length noderef. Opens up a 
-	 * nasty traffic analysis (route tracing) vulnerability. */
-	public static MessageType FNPOpennetConnectReply = new MessageType("FNPOpennetConnectReply") {{
-		addField(UID, Long.class);
-		addField(OPENNET_NODEREF, ShortBuffer.class);
-	}};
-	
 	/** Sent when a request completes and the data source wants to path fold. Starts a bulk data 
 	 * transfer including the (padded) noderef. 
 	 */
