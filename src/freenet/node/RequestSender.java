@@ -118,15 +118,26 @@ public final class RequestSender implements Runnable, ByteCounter {
     }
     
     public void run() {
+        short origHTL = htl;
+        try {
+        	realRun();
+        } catch (Throwable t) {
+            Logger.error(this, "Caught "+t, t);
+            finish(INTERNAL_ERROR, null);
+        } finally {
+        	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
+            node.removeRequestSender(key, origHTL, this);
+        }
+    }
+
+    private void realRun() {
 	    freenet.support.Logger.OSThread.logPID(this);
         if((key instanceof NodeSSK) && (pubKey == null)) {
         	pubKey = ((NodeSSK)key).getPubKey();
         }
         
-        short origHTL = htl;
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
-        try {
         while(true) {
             if(logMINOR) Logger.minor(this, "htl="+htl);
             if(htl == 0) {
@@ -477,16 +488,9 @@ public final class RequestSender implements Runnable, ByteCounter {
             	
             }
         }
-        } catch (Throwable t) {
-            Logger.error(this, "Caught "+t, t);
-            finish(INTERNAL_ERROR, null);
-        } finally {
-        	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
-            node.removeRequestSender(key, origHTL, this);
-        }
-    }
+	}
 
-    private void finishSSK(PeerNode next) {
+	private void finishSSK(PeerNode next) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
 			node.storeShallow(block);
