@@ -98,7 +98,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		if(genURI != null)
 			generatedURI = new FreenetURI(genURI);
 		if(finished) {
-			completionTime = Long.parseLong("CompletionTime");
+			completionTime = Long.parseLong(fs.get("CompletionTime"));
 			if(!succeeded)
 				putFailedMessage = new PutFailedMessage(fs.subset("PutFailed"), false);
 		}
