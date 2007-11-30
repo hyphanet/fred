@@ -130,9 +130,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         while(true) {
             if(logMINOR) Logger.minor(this, "htl="+htl);
             if(htl == 0) {
-                // RNF
-                // Would be DNF if arrived with no HTL
-                // But here we've already routed it and that's been rejected.
+            	// This used to be RNF, I dunno why
                 finish(DATA_NOT_FOUND, null);
                 return;
             }
