@@ -123,6 +123,7 @@ public class DMT {
 	public static final String PADDED_LENGTH = "paddedLength";
 	public static final String TIME_DELTAS = "timeDeltas";
 	public static final String HASHES = "hashes";
+	public static final String REJECT_CODE = "rejectCode";
 	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -821,6 +822,33 @@ public class DMT {
 		msg.set(PADDED_LENGTH, paddedLength);
 		return msg;
 	}
+	
+	public static MessageType FNPOpennetDisabled = new MessageType("FNPOpennetDisabled") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static Message createFNPOpennetDisabled(long uid) {
+		Message msg = new Message(FNPOpennetDisabled);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
+	public static MessageType FNPOpennetNoderefRejected = new MessageType("FNPOpennetNoderefRejected") {{
+		addField(UID, Long.class);
+		addField(REJECT_CODE, Integer.class);
+	}};
+	
+	public static Message createFNPOpennetNoderefRejected(long uid, int rejectCode) {
+		Message msg = new Message(FNPOpennetNoderefRejected);
+		msg.set(UID, uid);
+		msg.set(REJECT_CODE, rejectCode);
+		return msg;
+	}
+	
+	public static int NODEREF_REJECTED_TOO_BIG = 1;
+	public static int NODEREF_REJECTED_REAL_BIGGER_THAN_PADDED = 2;
+	public static int NODEREF_REJECTED_TRANSFER_FAILED = 3;
+	public static int NODEREF_REJECTED_INVALID = 4;
 	
 	// Key offers (ULPRs)
 	
