@@ -89,6 +89,8 @@ public class RequestStarter implements Runnable {
 	void realRun() {
 		SendableRequest req = null;
 		sentRequestTime = System.currentTimeMillis();
+		// The last time at which we sent a request or decided not to
+		long cycleTime = sentRequestTime;
 		while(true) {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(req == null) req = sched.removeFirst();
@@ -97,7 +99,7 @@ public class RequestStarter implements Runnable {
 				// Wait
 				long delay = throttle.getDelay();
 				if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
-				long sleepUntil = sentRequestTime + delay;
+				long sleepUntil = cycleTime + delay;
 				if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
 					inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
 					outputBucket.blockingGrab((int)(Math.max(0, averageOutputBytesPerRequest.currentValue())));
@@ -118,6 +120,8 @@ public class RequestStarter implements Runnable {
 					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true)) != null) {
 						if(logMINOR)
 							Logger.minor(this, "Not sending local request: "+reason);
+						// Wait one throttle-delay before trying again
+						cycleTime = System.currentTimeMillis();
 						continue; // Let local requests compete with all the others
 					}
 				} else {
@@ -141,7 +145,7 @@ public class RequestStarter implements Runnable {
 			if(req == null) continue;
 			startRequest(req, logMINOR);
 			req = null;
-			sentRequestTime = System.currentTimeMillis();
+			cycleTime = sentRequestTime = System.currentTimeMillis();
 		}
 	}
 	
