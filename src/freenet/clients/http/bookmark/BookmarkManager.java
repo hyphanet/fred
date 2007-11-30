@@ -110,20 +110,6 @@ public class BookmarkManager {
 		_innerReadBookmarks("/", bc, DEFAULT_BOOKMARKS);
 	}
 
-	private void registerProtectedItems(String prefix, BookmarkCategory current) {
-		BookmarkCategories categories = current.getSubCategories();
-		for(int i = 0; i < categories.size(); i++) {
-			BookmarkCategory cat = categories.get(i);
-			String name = ("".equals(prefix) ? "" : prefix + '/') + cat.name;
-			addBookmark(prefix, cat);
-			registerProtectedItems(name, cat);
-		}
-
-		BookmarkItems items = current.getItems();
-		for(int i = 0; i < items.size(); i++)
-			addBookmark(prefix, items.get(i));
-	}
-
 	private void migrateOldBookmarks(String[] newVals) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Migrating bookmarks: " + StringArray.toString(newVals));
