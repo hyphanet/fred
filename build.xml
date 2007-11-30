@@ -87,6 +87,7 @@
 			<include name="net/i2p/util/*.java"/>
 			<exclude name="org/**/MersenneTwisterTest.java"/>
 			<exclude name="freenet/node/*Test.java"/>
+			<exclude name="**/package-info.java"/>
 		</javac>
 		<!-- Copy web interface static files to the build dir -->
 		<copy todir="${build}/freenet/clients/http/staticfiles">
