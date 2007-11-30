@@ -25,58 +25,41 @@ import freenet.support.io.FileUtil;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 
 public class BookmarkManager {
-
+    public static SimpleFieldSet DEFAULT_BOOKMARKS = null;
     private final NodeClientCore node;
     private final USKUpdatedCallback uskCB = new USKUpdatedCallback();
     public static final BookmarkCategory MAIN_CATEGORY = new BookmarkCategory("/");
-    public static final BookmarkCategory PROTECTED_CATEGORY = new BookmarkCategory("/protected");
     private final HashMap bookmarks = new HashMap();
     private final File bookmarksFile = new File("bookmarks.dat").getAbsoluteFile();
     private final File backupBookmarksFile = new File(bookmarksFile.getParentFile(), bookmarksFile.getName()+".bak");
     private boolean isSavingBookmarks = false;
 
+	static {
+		String name = "freenet/clients/http/staticfiles/defaultbookmarks.dat";
+		InputStream in = null;
+		try {
+			ClassLoader loader = ClassLoader.getSystemClassLoader();
+
+			// Returns null on lookup failures:
+			in = loader.getResourceAsStream(name);
+			if(in != null)
+				DEFAULT_BOOKMARKS = SimpleFieldSet.readFrom(in, false, false);
+		} catch(Exception e) {
+			Logger.error("BookmarkManager", "Error while loading the default bookmark file from " + name + " :" + e.getMessage(), e);
+		} finally {
+			Closer.close(in);
+		}
+	}
+
     public BookmarkManager(NodeClientCore n, SimpleFieldSet oldConfig) {
-        bookmarks.put("/", MAIN_CATEGORY);
+	putPaths("/", MAIN_CATEGORY);
         this.node = n;
 
         try {
-            BookmarkCategory indexes = (BookmarkCategory) PROTECTED_CATEGORY.addBookmark(new BookmarkCategory("Indexes"));
-            indexes.addBookmark(new BookmarkItem(new FreenetURI("USK@zQyF2O1o8B4y40w7Twz8y2I9haW3d2DTlxjTHPu7zc8,h2mhQNNE9aQvF~2yKAmKV1uorr7141-QOroBf5hrlbw,AQACAAE/AnotherIndex/33/"),
-                    "Another Index", "A large categorised index, many sites have no description", false,
-                    node.alerts));
-
-            indexes.addBookmark(new BookmarkItem(new FreenetURI("USK@RJnh1EnvOSPwOWVRS2nyhC4eIQkKoNE5hcTv7~yY-sM,pOloLxnKWM~AL24iDMHOAvTvCqMlB-p2BO9zK96TOZA,AQACAAE/index_fr/21/"),
-                    "Index des sites Français", "A small French index with descriptions", false,
-                    node.alerts));
-
-            indexes.addBookmark(new BookmarkItem(new FreenetURI("USK@cvZEZFWynx~4hmakaimts4Ruusl9mEUpU6mSvNvZ9p8,K2Xopc6GWPkKrs27EDuqzTcca2bE5H2YAXw0qKnkON4,AQACAAE/TSOF/2/"),
-                    "The Start Of Freenet", "Another human-maintained index, so far relatively small", true,
-                    node.alerts));
-
-            indexes.addBookmark(new BookmarkItem(new FreenetURI("USK@7H66rhYmxIFgMyw5Dl11JazXGHPhp7dSN7WMa1pbtEo,jQHUQUPTkeRcjmjgrc7t5cDRdDkK3uKkrSzuw5CO9uk,AQACAAE/ENTRY.POINT/36/"),
-                    "Entry point", "An old, large index, wich hasn't been updated for a while", true,
-                    node.alerts));
-
-            indexes.addBookmark(new BookmarkItem(new FreenetURI("USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/Ultimate-Freenet-Index/1/"),
-                    "The Ultimate FreeNet Index", "A new one; page index", false,
-                    node.alerts));
-
-
-            BookmarkCategory flog = (BookmarkCategory) PROTECTED_CATEGORY.addBookmark(new BookmarkCategory("Freenet devel's flogs"));
-            flog.addBookmark(new BookmarkItem(new FreenetURI("USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/7/"),
-                    "Toad", "Toad's blog", true, node.alerts));
-            flog.addBookmark(new BookmarkItem(new FreenetURI("USK@hM9XRwjXIzU8xTSBXNZvTn2KuvTSRFnVn4EER9FQnpM,gsth24O7ud4gL4NwNuYJDUqfaWASOG2zxZY~ChtgPxc,AQACAAE/Flog/7/"),
-                    "Nextgen$", "NextGen$' blog", true, node.alerts));
-            flog.addBookmark(new BookmarkItem(new FreenetURI("USK@e3myoFyp5avg6WYN16ImHri6J7Nj8980Fm~aQe4EX1U,QvbWT0ImE0TwLODTl7EoJx2NBnwDxTbLTE6zkB-eGPs,AQACAAE/bombe/10/"),
-            		"Bombe", "Bombe's blog", true, node.alerts));
-
-            BookmarkCategory apps = (BookmarkCategory) PROTECTED_CATEGORY.addBookmark(new BookmarkCategory("Freenet related software"));
-            apps.addBookmark(new BookmarkItem(new FreenetURI("USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/4"),
-                    "Frost", "The official freesite of Frost", true, node.alerts));
-
             //TODO: remove
             String[] oldBookmarks = null;
             if(oldConfig != null) {
@@ -112,14 +95,31 @@ public class BookmarkManager {
                     Logger.normal(this, "Attempting to read the backup bookmark file from " + backupBookmarksFile.toString());
                     SimpleFieldSet sfs = SimpleFieldSet.readFrom(backupBookmarksFile, false, true);
                     readBookmarks(MAIN_CATEGORY, sfs);
-                } else
+                } else {
                     Logger.normal(this, "We couldn't find the backup either! - "+FileUtil.getCanonicalFile(backupBookmarksFile));
+		    // restore the default bookmark set
+   		    readBookmarks(MAIN_CATEGORY, DEFAULT_BOOKMARKS);
+		}
             } catch (IOException e) {
                 Logger.error(this, "Error reading the backup bookmark file !" + e.getMessage(), e);
             }
         }
     }
 
+    private void registerProtectedItems(String prefix, BookmarkCategory current) {
+	BookmarkCategories categories = current.getSubCategories();
+	for(int i=0; i<categories.size(); i++) {
+		BookmarkCategory cat = categories.get(i);
+		String name = ("".equals(prefix) ? "" : prefix+'/') + cat.name;
+		addBookmark(prefix, cat);
+		registerProtectedItems(name, cat);
+	}
+	
+	BookmarkItems items = current.getItems();
+	for(int i=0; i<items.size(); i++)
+		addBookmark(prefix, items.get(i));
+    }
+    
     private void migrateOldBookmarks(String[] newVals) {
     	if(Logger.shouldLog(Logger.MINOR, this))
     		Logger.minor(this, "Migrating bookmarks: "+StringArray.toString(newVals));

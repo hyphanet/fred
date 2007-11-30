@@ -25,9 +25,10 @@ public class BookmarkCategory extends Bookmark {
         if (b == null) {
             return null;
         }
+	// Overwrite any existing bookmark
         int x = bookmarks.indexOf(b);
         if (x >= 0) {
-            return (Bookmark) bookmarks.get(x);
+            bookmarks.remove(x);
         }
         bookmarks.add(b);
         return b;
