@@ -776,6 +776,52 @@ public class DMT {
 		return msg;
 	}
 	
+	// Opennet announcement
+
+	/**
+	 * Announcement request. Noderef is attached, will be transferred before anything else is done.
+	 */
+	public static MessageType FNPOpennetAnnounceRequest = new MessageType("FNPOpennetAnnounceRequest") {{
+		addField(UID, Long.class);
+		addField(TRANSFER_UID, Long.class);
+		addField(NODEREF_LENGTH, Integer.class);
+		addField(PADDED_LENGTH, Integer.class);
+		addField(HTL, Short.class);
+		addField(NEAREST_LOCATION, Double.class);
+	}};
+
+	public static Message createFNPOpennetAnnounceRequest(long uid, long transferUID, int noderefLength, int paddedLength, short htl, double nearestLocSoFar) {
+		Message msg = new Message(FNPOpennetAnnounceRequest);
+		msg.set(UID, uid);
+		msg.set(TRANSFER_UID, transferUID);
+		msg.set(NODEREF_LENGTH, noderefLength);
+		msg.set(PADDED_LENGTH, paddedLength);
+		msg.set(HTL, htl);
+		msg.set(NEAREST_LOCATION, nearestLocSoFar);
+		return msg;
+	}
+	
+	/**
+	 * Announcement reply. Noderef is attached, will be transferred, both nodes add the other. A single
+	 * request will result in many reply's. When the announcement is done, we return a DataNotFound; if
+	 * we run into a dead-end, we return a RejectedLoop; if we can't accept it, RejectedOverload.
+	 */
+	public static MessageType FNPOpennetAnnounceReply = new MessageType("FNPOpennetAnnounceReply") {{
+		addField(UID, Long.class);
+		addField(TRANSFER_UID, Long.class);
+		addField(NODEREF_LENGTH, Integer.class);
+		addField(PADDED_LENGTH, Integer.class);
+	}};
+	
+	public static Message createFNPOpennetAnnounceReply(long uid, long transferUID, int noderefLength, int paddedLength) {
+		Message msg = new Message(FNPOpennetAnnounceReply);
+		msg.set(UID, uid);
+		msg.set(TRANSFER_UID, transferUID);
+		msg.set(NODEREF_LENGTH, noderefLength);
+		msg.set(PADDED_LENGTH, paddedLength);
+		return msg;
+	}
+	
 	// Key offers (ULPRs)
 	
 	public static MessageType FNPOfferKey = new MessageType("FNPOfferKey") {{
