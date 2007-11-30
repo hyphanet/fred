@@ -3,12 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.lang.ref.WeakReference;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Vector;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.Dispatcher;
@@ -16,13 +12,8 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
-import freenet.support.Fields;
-import freenet.support.LRUHashtable;
-import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
-import freenet.support.StringArray;
-import freenet.support.WeakHashSet;
 
 /**
  * @author amphibian
