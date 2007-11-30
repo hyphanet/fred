@@ -357,7 +357,7 @@ public class NodeStats implements Persistable {
 		int threadCount = getActiveThreadCount();
 		if(threadLimit < threadCount) {
 			pInstantRejectIncoming.report(1.0);
-			preemptiveRejectReasons.inc(">threadLimit");
+			rejected(">threadLimit", isLocal);
 			return ">threadLimit ("+threadCount+'/'+threadLimit+')';
 		}
 		
@@ -373,14 +373,14 @@ public class NodeStats implements Persistable {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
 					pInstantRejectIncoming.report(1.0);
-					preemptiveRejectReasons.inc(">MAX_PING_TIME");
+					rejected(">MAX_PING_TIME", isLocal);
 					return ">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
 				}
 			} else if(pingTime > SUB_MAX_PING_TIME) {
 				double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
 				if(hardRandom.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
-					preemptiveRejectReasons.inc(">SUB_MAX_PING_TIME");
+					rejected(">SUB_MAX_PING_TIME", isLocal);
 					return ">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
 				}
 			}
@@ -391,14 +391,14 @@ public class NodeStats implements Persistable {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
 					pInstantRejectIncoming.report(1.0);
-					preemptiveRejectReasons.inc(">MAX_THROTTLE_DELAY");
+					rejected(">MAX_THROTTLE_DELAY", isLocal);
 					return ">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
 				}
 			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
 				double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
 				if(hardRandom.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
-					preemptiveRejectReasons.inc(">SUB_MAX_THROTTLE_DELAY");
+					rejected(">SUB_MAX_THROTTLE_DELAY", isLocal);
 					return ">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
 				}
 			}
@@ -432,7 +432,7 @@ public class NodeStats implements Persistable {
 		bandwidthAvailableOutput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutput) {
 			pInstantRejectIncoming.report(1.0);
-			preemptiveRejectReasons.inc("Output bandwidth liability");
+			rejected("Output bandwidth liability", isLocal);
 			return "Output bandwidth liability";
 		}
 		
@@ -446,7 +446,7 @@ public class NodeStats implements Persistable {
 		bandwidthAvailableInput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
 		if(bandwidthLiabilityInput > bandwidthAvailableInput) {
 			pInstantRejectIncoming.report(1.0);
-			preemptiveRejectReasons.inc("Input bandwidth liability");
+			rejected("Input bandwidth liability", isLocal);
 			return "Input bandwidth liability";
 		}
 		
@@ -458,7 +458,7 @@ public class NodeStats implements Persistable {
 			Logger.minor(this, "Expected sent bytes: "+expectedSent);
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
 			pInstantRejectIncoming.report(1.0);
-			preemptiveRejectReasons.inc("Insufficient output bandwidth");
+			rejected("Insufficient output bandwidth", isLocal);
 			return "Insufficient output bandwidth";
 		}
 		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
@@ -468,7 +468,7 @@ public class NodeStats implements Persistable {
 		if(!requestInputThrottle.instantGrab(expectedReceived)) {
 			requestOutputThrottle.recycle(expectedSent);
 			pInstantRejectIncoming.report(1.0);
-			preemptiveRejectReasons.inc("Insufficient input bandwidth");
+			rejected("Insufficient input bandwidth", isLocal);
 			return "Insufficient input bandwidth";
 		}
 
@@ -481,7 +481,7 @@ public class NodeStats implements Persistable {
 		}
 		if(freeHeapMemory < freeHeapBytesThreshold) {
 			pInstantRejectIncoming.report(1.0);
-			preemptiveRejectReasons.inc("<freeHeapBytesThreshold");
+			rejected("<freeHeapBytesThreshold", isLocal);
 			return "<freeHeapBytesThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+')';
 		}
 		double percentFreeHeapMemoryOfMax = ((double) freeHeapMemory) / ((double) maxHeapMemory);
@@ -489,7 +489,7 @@ public class NodeStats implements Persistable {
 		if(percentFreeHeapMemoryOfMax < freeHeapPercentThresholdDouble) {
 			pInstantRejectIncoming.report(1.0);
 			DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
-			preemptiveRejectReasons.inc("<freeHeapPercentThreshold");
+			rejected("<freeHeapPercentThreshold", isLocal);
 			return "<freeHeapPercentThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+" ("+fix3p1pct.format(percentFreeHeapMemoryOfMax)+"))";
 		}
 
@@ -504,6 +504,10 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 	
+	private void rejected(String reason, boolean isLocal) {
+		if(!isLocal) preemptiveRejectReasons.inc(reason);
+	}
+
 	private RunningAverage getThrottle(boolean isLocal, boolean isInsert, boolean isSSK, boolean isSent) {
 		if(isLocal) {
 			if(isInsert) {
