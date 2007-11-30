@@ -133,7 +133,7 @@ public final class RequestSender implements Runnable, ByteCounter {
                 // RNF
                 // Would be DNF if arrived with no HTL
                 // But here we've already routed it and that's been rejected.
-                finish(ROUTE_NOT_FOUND, null);
+                finish(DATA_NOT_FOUND, null);
                 return;
             }
             
