@@ -52,7 +52,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 		for(int i = 0; i < items.size(); i++) {
 
-			String itemPath = URLEncoder.encode(path + items.get(i).getName(), false).trim();
+			String itemPath = URLEncoder.encode(path + items.get(i).getName(), false);
 			HTMLNode li = new HTMLNode("li", "class", "item", items.get(i).getName());
 
 			HTMLNode actions = new HTMLNode("span", "class", "actions");
@@ -286,7 +286,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			}
 
 
-			String action = req.getPartAsString("action", MAX_ACTION_LENGTH).trim();
+			String action = req.getPartAsString("action", MAX_ACTION_LENGTH);
 
 			if(req.isPartSet("confirmdelete")) {
 				bookmarkManager.removeBookmark(bookmarkPath);
