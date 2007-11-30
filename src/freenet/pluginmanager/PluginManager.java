@@ -515,7 +515,7 @@ public class PluginManager {
 				while ((read = pluginInputStream.read(buffer)) != -1) {
 					pluginOutputStream.write(buffer, 0, read);
 				}
-				                        
+				pluginOutputStream.close();               
 				if(!FileUtil.renameTo(tempPluginFile, pluginFile)) {
 					Logger.error(this, "could not rename temp file to plugin file");
 					throw new PluginNotFoundException("could not rename temp file to plugin file");
