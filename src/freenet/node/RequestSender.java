@@ -165,7 +165,12 @@ public final class RequestSender implements Runnable, ByteCounter {
             // See comments below when handling FNPRecentlyFailed for why we need this.
             long timeSentRequest = System.currentTimeMillis();
             
-            next.sendSync(req, this);
+            try {
+            	next.sendSync(req, this);
+            } catch (NotConnectedException e) {
+            	Logger.minor(this, "Not connected");
+            	continue;
+            }
             
             synchronized(this) {
             	hasForwarded = true;
