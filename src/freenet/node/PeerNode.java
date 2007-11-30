@@ -913,6 +913,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if((timeWhenRekeyingShouldOccur < now) || (totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY)) {
 				hasRekeyed = true;
 				isRekeying = true;
+				sendHandshakeTime = now; // Immediately
 			}
 		}
 
