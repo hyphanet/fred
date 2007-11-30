@@ -146,15 +146,22 @@ public class OpennetManager {
 		if(orig.exists()) backup.delete();
 		
 		FileOutputStream fos = null;
+		OutputStreamWriter osr = null;
+		BufferedWriter bw = null;
 		try {
 			fos = new FileOutputStream(backup);
-			OutputStreamWriter osr = new OutputStreamWriter(fos, "UTF-8");
-			BufferedWriter bw = new BufferedWriter(osr);
+			osr = new OutputStreamWriter(fos, "UTF-8");
+			bw = new BufferedWriter(osr);
 			fs.writeTo(bw);
+			                  
 			bw.close();
+			osr.close();
+			fos.close();
                         FileUtil.renameTo(backup, orig);
 		} catch (IOException e) {
-                        Closer.close(fos);
+                        Closer.close(bw);
+			Closer.close(osr);
+			Closer.close(fos);
                 }
 	}
 

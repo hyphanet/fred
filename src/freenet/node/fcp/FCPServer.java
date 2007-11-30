@@ -601,11 +601,11 @@ public class FCPServer implements Runnable {
 					for(int i=0;i<persistentRequests.length;i++)
 						persistentRequests[i].write(w);
 					
-					Closer.close(w);
-					Closer.close(osw);
-					Closer.close(gos);
-					Closer.close(bos);
-					Closer.close(fos);
+					w.close();
+					osw.close();
+					gos.close();
+					bos.close();
+					fos.close();
 					FileUtil.renameTo(compressedTemp, compressedFinal);
 				} catch (IOException e) {
 					Logger.error(this, "Cannot write persistent requests to disk: "+e);
