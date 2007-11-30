@@ -1486,6 +1486,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			handshakeCount = 0;
 			bogusNoderef = false;
+			// Don't reset the uptime if we rekey
+			if(!isConnected) {
+				connectedTime = now;
+				sentInitialMessages = false;
+			}
 			isConnected = true;
 			isRoutable = routable;
 			verifiedIncompatibleNewerVersion = newer;
@@ -1516,12 +1521,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				neverConnected = false;
 				peerAddedTime = 0;  // don't store anymore
 				ctx = null;
-			}
-
-			// Don't reset the uptime if we rekey
-			if(!isConnected) {
-				connectedTime = now;
-				sentInitialMessages = false;
 			}
 			isRekeying = false;
 			timeLastRekeyed = now;
