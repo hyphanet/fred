@@ -30,10 +30,12 @@ public class PersistentGet extends FCPMessage {
 	final boolean global;
 	final boolean started;
 	final int maxRetries;
+	final boolean binaryBlob;
+	final long maxSize;
 	
 	public PersistentGet(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short returnType, short persistenceType, 
-			File targetFile, File tempFile, String clientToken, boolean global, boolean started, int maxRetries) {
+			File targetFile, File tempFile, String clientToken, boolean global, boolean started, int maxRetries, boolean binaryBlob, long maxSize) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -46,6 +48,8 @@ public class PersistentGet extends FCPMessage {
 		this.global = global;
 		this.started = started;
 		this.maxRetries = maxRetries;
+		this.binaryBlob = binaryBlob;
+		this.maxSize = maxSize;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -65,6 +69,8 @@ public class PersistentGet extends FCPMessage {
 		fs.put("Global", global);
 		fs.put("Started", started);
 		fs.put("MaxRetries", maxRetries);
+		fs.put("BinaryBlob", binaryBlob);
+		fs.put("MaxSize", maxSize);
 		return fs;
 	}
 
