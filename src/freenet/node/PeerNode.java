@@ -1518,6 +1518,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(previousTracker == null)
 						previousTracker = unverifiedTracker;
 				unverifiedTracker = newTracker;
+				if(currentTracker == null || currentTracker.isDeprecated())
+					isConnected = false;
 			} else {
 				prev = currentTracker;
 				previousTracker = prev;
