@@ -266,6 +266,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	final WeakReference myRef;
 	/** The node is being disconnected, but it may take a while. */
 	private boolean disconnecting;
+	
 	/**
 	 * For FNP link setup:
 	 *  The initiator has to ensure that nonces send back by the
@@ -3037,5 +3038,48 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	synchronized boolean manyPacketsClaimedSentNotReceived() {
 		return manyPacketsClaimedSentNotReceived;
+	}
+	
+	static final int MAX_SIMULTANEOUS_ANNOUNCEMENTS = 1;
+	static final int MAX_ANNOUNCE_DELAY = 1000;
+	private long timeLastAcceptedAnnouncement;
+	private long[] runningAnnounceUIDs = new long[0];
+	
+	public synchronized boolean shouldAcceptAnnounce(long uid) {
+		long now = System.currentTimeMillis();
+		if(runningAnnounceUIDs.length < MAX_SIMULTANEOUS_ANNOUNCEMENTS &&
+				now - timeLastAcceptedAnnouncement > MAX_ANNOUNCE_DELAY) {
+			long[] newList = new long[runningAnnounceUIDs.length + 1];
+			if(runningAnnounceUIDs.length > 0)
+				System.arraycopy(runningAnnounceUIDs, 0, newList, 0, runningAnnounceUIDs.length);
+			newList[runningAnnounceUIDs.length] = uid;
+			timeLastAcceptedAnnouncement = now;
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	public synchronized boolean completedAnnounce(long uid) {
+		if(runningAnnounceUIDs.length == 0) return false;
+		long[] newList = new long[runningAnnounceUIDs.length - 1];
+		int x = 0;
+		for(int i=0;i<runningAnnounceUIDs.length;i++) {
+			if(i == runningAnnounceUIDs.length) return false;
+			long l = runningAnnounceUIDs[i];
+			if(l == uid) continue;
+			newList[x++] = l;
+		}
+		runningAnnounceUIDs = newList;
+		if(x < runningAnnounceUIDs.length) {
+			newList = new long[x];
+			System.arraycopy(runningAnnounceUIDs, 0, newList, 0, x);
+			runningAnnounceUIDs = newList;
+		}
+		return true;
+	}
+
+	public void setOpennetDisabled() {
+		// FIXME
 	}
 }

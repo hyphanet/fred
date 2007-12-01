@@ -97,6 +97,8 @@ public class NodeDispatcher implements Dispatcher {
 			return node.nodeUpdater.uom.handleRequestMain(m, source);
 		} else if(spec == DMT.UOMSendingMain) {
 			return node.nodeUpdater.uom.handleSendingMain(m, source);
+		} else if(spec == DMT.FNPOpennetAnnounceRequest) {
+			return handleAnnounceRequest(m, source);
 		}
 
 		if(!source.isRoutable()) return false;
@@ -141,7 +143,7 @@ public class NodeDispatcher implements Dispatcher {
 //			return handleProbeRejected(m, source);
 //		} else if(spec == DMT.FNPProbeTrace) {
 //			return handleProbeTrace(m, source);
-		}
+		} 
 		return false;
 	}
 
@@ -263,6 +265,49 @@ public class NodeDispatcher implements Dispatcher {
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
 		return true;
+	}
+
+	private boolean handleAnnounceRequest(Message m, PeerNode source) {
+		long uid = m.getLong(DMT.UID);
+		OpennetManager om = node.getOpennet();
+		if(om == null) {
+			Message msg = DMT.createFNPOpennetDisabled(uid);
+			try {
+				source.sendAsync(msg, null, 0, null);
+			} catch (NotConnectedException e) {
+				// Ok
+			}
+			return true;
+		}
+		if(node.recentlyCompleted(uid)) {
+			Message msg = DMT.createFNPRejectedLoop(uid);
+			try {
+				source.sendAsync(msg, null, 0, null);
+			} catch (NotConnectedException e) {
+				// Ok
+			}
+			return true;
+		}
+		boolean success = false;
+		try {
+			if(!source.shouldAcceptAnnounce(uid)) {
+				node.completed(uid);
+				Message msg = DMT.createFNPRejectedOverload(uid, true);
+				try {
+					source.sendAsync(msg, null, 0, null);
+				} catch (NotConnectedException e) {
+					// Ok
+				}
+				return true;
+			}
+			AnnounceSender sender = new AnnounceSender(m, uid, source, om, node);
+			node.executor.execute(sender, "Announcement sender for "+uid);
+			success = true;
+			return true;
+		} finally {
+			if(!success)
+				source.completedAnnounce(uid);
+		}
 	}
 
 	final Hashtable routedContexts = new Hashtable();

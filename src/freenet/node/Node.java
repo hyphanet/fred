@@ -2224,7 +2224,7 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * A request completed (regardless of success).
 	 */
-	private synchronized void completed(long id) {
+	synchronized void completed(long id) {
 		recentlyCompletedIDs.push(new Long(id));
 		while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
 			recentlyCompletedIDs.pop();
