@@ -503,6 +503,21 @@ public class OpennetManager {
 		}
 	}
 
+	public void sendAnnouncementRequest(long uid, PeerNode peer, byte[] noderef, ByteCounter ctr, 
+			double target, short htl, double nearestLocSoFar) throws NotConnectedException {
+		byte[] padded = new byte[PADDED_NODEREF_SIZE];
+		if(noderef.length > padded.length) {
+			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
+			return;
+		}
+		System.arraycopy(noderef, 0, padded, 0, noderef.length);
+		long xferUID = node.random.nextLong();
+		Message msg = DMT.createFNPOpennetAnnounceRequest(uid, xferUID, noderef.length, 
+				padded.length, target, htl, nearestLocSoFar);
+		peer.sendAsync(msg, null, 0, ctr);
+		innerSendOpennetRef(xferUID, padded, peer);
+	}
+	
 	/**
 	 * Wait for an opennet noderef.
 	 * @param isReply If true, wait for an FNPOpennetConnectReply[New], if false wait for an FNPOpennetConnectDestination[New].
