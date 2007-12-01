@@ -535,12 +535,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void sendJFKMessage1(PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+pn);
 		final long now = System.currentTimeMillis();
-		if((pn.jfkContext == null) || ((pn.jfkContextLifetime + 15*60*1000) < now)) {
-			pn.jfkContext = getLightDiffieHellmanContext();
+		DiffieHellmanLightContext ctx = (DiffieHellmanLightContext) pn.getKeyAgreementSchemeContext();
+		if((ctx == null) || ((pn.jfkContextLifetime + 15*60*1000) < now)) {
 			pn.jfkContextLifetime = now;
+			pn.setKeyAgreementSchemeContext(ctx = getLightDiffieHellmanContext());
 		}
 		int offset = 0;
-		byte[] myExponential = stripBigIntegerToNetworkFormat(pn.jfkContext.myExponential);
+		byte[] myExponential = stripBigIntegerToNetworkFormat(ctx.myExponential);
 		byte[] nonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(nonce);
 		
@@ -1026,7 +1027,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.jfkKs = null;
 		// We want to clear it here so that new handshake requests
 		// will be sent with a different DH pair
-		pn.jfkContext = null;
+		pn.setKeyAgreementSchemeContext(null);
 		synchronized (pn) {
 			// FIXME TRUE MULTI-HOMING: winner-takes-all, kill all other connection attempts since we can't deal with multiple active connections
 			// Also avoids leaking
@@ -1052,7 +1053,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn);
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
-		byte[] ourExponential = stripBigIntegerToNetworkFormat(pn.jfkContext.myExponential);
+		DiffieHellmanLightContext ctx = (DiffieHellmanLightContext) pn.getKeyAgreementSchemeContext();
+		if(ctx == null) return;
+		byte[] ourExponential = stripBigIntegerToNetworkFormat(ctx.myExponential);
 		pn.jfkMyRef = crypto.myCompressedSetupRef();
 		byte[] data = new byte[8 + pn.jfkMyRef.length];
 		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
@@ -1094,7 +1097,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		
-		BigInteger computedExponential = pn.jfkContext.getHMACKey(_hisExponential, Global.DHgroupA);
+		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
 		pn.jfkKs = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		pn.jfkKe = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		pn.jfkKa = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
@@ -2430,9 +2433,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if((DHTime2 - DHTime1) > 1000)
 				Logger.error(this, "DHTime2 is more than a second after DHTime1 ("+(DHTime2 - DHTime1)+") working on "+pn.userToString());
 			pn.setKeyAgreementSchemeContext(ctx);
-			long DHTime3 = System.currentTimeMillis();
-			if((DHTime3 - DHTime2) > 1000)
-				Logger.error(this, "DHTime3 is more than a second after DHTime2 ("+(DHTime3 - DHTime2)+") working on "+pn.userToString());
 		}
 		int sentCount = 0;
 		long loopTime1 = System.currentTimeMillis();

@@ -4,6 +4,7 @@
 
 package freenet.crypt;
 
+import freenet.crypt.ciphers.Rijndael;
 import net.i2p.util.NativeBigInteger;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -17,6 +18,9 @@ public class DiffieHellmanContext extends KeyAgreementSchemeContext {
     final NativeBigInteger myExponential;
     /** The group we both share */
     final DHGroup group;
+    
+    BlockCipher cipher;
+    byte[] key;
     
     // Generated or set later
     NativeBigInteger peerExponential;
@@ -86,4 +90,17 @@ public class DiffieHellmanContext extends KeyAgreementSchemeContext {
 	public NativeBigInteger getHisExponential() {
 		return peerExponential;
 	}
+	
+	    public synchronized BlockCipher getCipher() {
+        lastUsedTime = System.currentTimeMillis();
+        if(cipher != null) return cipher;
+        getKey();
+        try {
+            cipher = new Rijndael(256, 256);
+        } catch (UnsupportedCipherException e1) {
+            throw new Error(e1);
+        }
+        cipher.initialize(key);
+        return cipher;
+    }
 }

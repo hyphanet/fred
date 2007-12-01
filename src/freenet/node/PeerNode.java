@@ -29,7 +29,6 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
-import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
@@ -102,7 +101,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	// The following is used only if we are the initiator
 
 	protected long jfkContextLifetime = 0;
-	protected DiffieHellmanLightContext jfkContext = null;
 	/** My low-level address for SocketManager purposes */
 	private Peer detectedPeer;
 	/** My OutgoingPacketMangler i.e. the object which encrypts packets sent to this node */
@@ -914,6 +912,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				hasRekeyed = true;
 				isRekeying = true;
 				sendHandshakeTime = now; // Immediately
+				ctx = null;
 			}
 		}
 
@@ -1509,7 +1508,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(previousTracker == null)
 						previousTracker = unverifiedTracker;
 				unverifiedTracker = newTracker;
-				ctx = null;
 			} else {
 				prev = currentTracker;
 				previousTracker = prev;
@@ -1517,8 +1515,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				unverifiedTracker = null;
 				neverConnected = false;
 				peerAddedTime = 0;  // don't store anymore
-				ctx = null;
 			}
+			ctx = null;
 			isRekeying = false;
 			timeLastRekeyed = now;
 			totalBytesExchangedWithCurrentTracker = 0;

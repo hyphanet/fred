@@ -7,7 +7,7 @@ import freenet.support.Logger;
 
 import net.i2p.util.NativeBigInteger;
 
-public class DiffieHellmanLightContext {
+public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
 
 	/** My exponent.*/
 	public final NativeBigInteger myExponent;
@@ -17,8 +17,6 @@ public class DiffieHellmanLightContext {
 	public DSASignature signature = null;
 	/** A timestamp: when was the context created ? */
 	public final long lifetime = System.currentTimeMillis();
-	
-	private final boolean logMINOR;
 
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
@@ -34,7 +32,8 @@ public class DiffieHellmanLightContext {
 	public DiffieHellmanLightContext(NativeBigInteger myExponent, NativeBigInteger myExponential) {
 		this.myExponent = myExponent;
 		this.myExponential = myExponential;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.lastUsedTime = System.currentTimeMillis();
+		this.logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	public void setSignature(DSASignature sig) {
@@ -45,6 +44,7 @@ public class DiffieHellmanLightContext {
 	 * Calling the following is costy; avoid
 	 */
 	public NativeBigInteger getHMACKey(NativeBigInteger peerExponential, DHGroup group) {
+		lastUsedTime = System.currentTimeMillis();
 		BigInteger P = group.getP();
 		NativeBigInteger sharedSecret =
 			(NativeBigInteger) peerExponential.modPow(myExponent, P);
