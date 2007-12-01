@@ -1673,7 +1673,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		long now = System.currentTimeMillis();
 		KeyTracker completelyDeprecatedTracker;
 		synchronized(this) {
-			if(tracker == unverifiedTracker) {
+			if(tracker == unverifiedTracker && !tracker.isDeprecated()) {
 				if(logMINOR)
 					Logger.minor(this, "Promoting unverified tracker " + tracker + " for " + getPeer());
 				completelyDeprecatedTracker = previousTracker;
