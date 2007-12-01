@@ -909,7 +909,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			timeWhenRekeyingShouldOccur = timeLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL;
 			shouldDisconnect = (timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) && isRekeying;
 			shouldReturn = isRekeying || !isConnected;
-			shouldRekey = (timeWhenRekeyingShouldOccur < now) || (totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY);
+			shouldRekey = (timeWhenRekeyingShouldOccur < now);
+			if((!shouldRekey) && totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY) {
+				shouldRekey = true;
+				timeWhenRekeyingShouldOccur = now;
+			}
 		}
 		
 		if(shouldDisconnect) {
