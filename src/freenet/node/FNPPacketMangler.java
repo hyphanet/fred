@@ -733,7 +733,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(!mac.verify(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
 			Logger.error(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery)");
 			return;
-		}
+		} else if(pn.isConnected() && !pn.firstHandshake)
+			return;
+		
 		// Check try to find the authenticator in the cache.
 		// If authenticator is already present, indicates duplicate/replayed message3
 		// Now simply transmit the corresponding message4
