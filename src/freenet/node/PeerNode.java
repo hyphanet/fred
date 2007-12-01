@@ -2559,7 +2559,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 						Logger.minor(this, "Connected, primary tracker deprecated, unverified is valid, " + unverifiedTracker + " for " + this, new Exception("debug"));
 				else {
 					// !!!!!!!
-					Logger.error(this, "Connected but primary tracker and unverified tracker are null on " + this, new Exception("debug"));
+					Logger.error(this, "Connected but primary tracker is deprecated and unverified tracker is null on " + this, new Exception("debug"));
 					isConnected = false;
 				}
 	}
