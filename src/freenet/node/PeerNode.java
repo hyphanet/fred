@@ -926,10 +926,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Logger.normal(this, "We are asking for the key to be renewed (" + this.detectedPeer + ')');
 	}
 
-	protected synchronized boolean isRekeying() {
-		return isRekeying;
-	}
-
 	/**
 	* @return The time this PeerNode was added to the node (persistent across restarts).
 	*/
