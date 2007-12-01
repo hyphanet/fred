@@ -15,9 +15,8 @@ public abstract class Bookmark {
     }
 
     public boolean equals(Object o) {
-        if (o == this) {
+        if (o == this)
 		return true;
-        }
         if (o instanceof Bookmark) {
             Bookmark b = (Bookmark) o;
             if (!b.name.equals(name)) {
