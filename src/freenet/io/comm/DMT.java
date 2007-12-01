@@ -857,10 +857,25 @@ public class DMT {
 		return msg;
 	}
 	
-	public static int NODEREF_REJECTED_TOO_BIG = 1;
-	public static int NODEREF_REJECTED_REAL_BIGGER_THAN_PADDED = 2;
-	public static int NODEREF_REJECTED_TRANSFER_FAILED = 3;
-	public static int NODEREF_REJECTED_INVALID = 4;
+	public static String getOpennetRejectedCode(int x) {
+		switch(x) {
+		case NODEREF_REJECTED_TOO_BIG:
+			return "Too big";
+		case NODEREF_REJECTED_REAL_BIGGER_THAN_PADDED:
+			return "Real length bigger than padded length";
+		case NODEREF_REJECTED_TRANSFER_FAILED:
+			return "Transfer failed";
+		case NODEREF_REJECTED_INVALID:
+			return "Invalid noderef";
+		default:
+			return "Unknown rejection code "+x;
+		}
+	}
+	
+	public static final int NODEREF_REJECTED_TOO_BIG = 1;
+	public static final int NODEREF_REJECTED_REAL_BIGGER_THAN_PADDED = 2;
+	public static final int NODEREF_REJECTED_TRANSFER_FAILED = 3;
+	public static final int NODEREF_REJECTED_INVALID = 4;
 	
 	// Key offers (ULPRs)
 	
