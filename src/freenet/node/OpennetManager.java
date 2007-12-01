@@ -478,6 +478,18 @@ public class OpennetManager {
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
 		peer.sendAsync(msg2, null, 0, ctr);
+		innerSendOpennetRef(xferUID, padded, peer);
+	}
+
+	/**
+	 * Just the actual transfer.
+	 * @param xferUID The transfer UID
+	 * @param padded The length of the data to transfer.
+	 * @param peer The peer to send it to.
+	 * @throws NotConnectedException If the peer is not connected, or we lose the connection to the peer,
+	 * or it restarts.
+	 */
+	private void innerSendOpennetRef(long xferUID, byte[] padded, PeerNode peer) throws NotConnectedException {
 		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(padded);
 		raf.setReadOnly();
 		PartiallyReceivedBulk prb =
