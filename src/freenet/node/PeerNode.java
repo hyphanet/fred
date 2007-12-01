@@ -899,30 +899,33 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	protected void maybeRekey() {
 		long now = System.currentTimeMillis();
-		boolean hasRekeyed = false;
-		if(hasLiveHandshake(now))
-			return;
-
+		boolean shouldDisconnect = false;
+		boolean shouldReturn = false;
+		boolean shouldRekey = false;
 		long timeWhenRekeyingShouldOccur = 0;
-		synchronized(this) {
-			if(isRekeying || !isConnected)
-				return;
+		
+		synchronized (this) {
 			timeWhenRekeyingShouldOccur = timeLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL;
-			if((timeWhenRekeyingShouldOccur < now) || (totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY)) {
-				hasRekeyed = true;
+			shouldDisconnect = (timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) && isRekeying;
+			shouldReturn = isRekeying || !isConnected;
+			shouldRekey = (timeWhenRekeyingShouldOccur < now) || (totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY);
+		}
+		
+		if(shouldDisconnect) {
+			String time = TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY);
+			System.err.println("The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
+			Logger.error(this, "The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
+			forceDisconnect();
+		} else if (shouldReturn || hasLiveHandshake(now)) {
+			return;
+		} else if(shouldRekey) {
+			synchronized(this) {
 				isRekeying = true;
 				sendHandshakeTime = now; // Immediately
 				ctx = null;
 			}
-		}
-
-		if(timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) {
-			Logger.error(this, "The peer (" + this + ") has been asked to rekey " + TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY) + " ago... force disconnect.");
-			forceDisconnect();
-		}
-
-		if(hasRekeyed)
 			Logger.normal(this, "We are asking for the key to be renewed (" + this.detectedPeer + ')');
+		}
 	}
 
 	/**
