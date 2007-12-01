@@ -1479,6 +1479,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
 		changedIP(replyTo);
 		boolean bootIDChanged = false;
+		boolean wasARekey = false;
 		KeyTracker oldPrev = null;
 		KeyTracker oldCur = null;
 		KeyTracker prev = null;
@@ -1489,7 +1490,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(!isConnected) {
 				connectedTime = now;
 				sentInitialMessages = false;
-			}
+			} else
+				wasARekey = true;
 			isConnected = true;
 			isRoutable = routable;
 			verifiedIncompatibleNewerVersion = newer;
@@ -1543,7 +1545,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		if(newer || older || !isConnected())
 			node.peers.disconnected(this);
-		else {
+		else if(!wasARekey) {
 			node.peers.addConnectedPeer(this);
 			onConnect();
 		}
