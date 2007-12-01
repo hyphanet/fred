@@ -17,7 +17,6 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellman;
-import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.EntropySource;
 import freenet.crypt.Global;
@@ -362,65 +361,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(negType == 0) {
 			Logger.error(this, "Old ephemeral Diffie-Hellman (negType 0) not supported.");
 			return;
-		}else if (negType == 1) {
-			// Four stage Diffie-Hellman. 0 = ephemeral, 1 = payload stages are signed (not quite STS)
-			// FIXME reduce to 3 stages and implement STS properly (we have a separate validation mechanism in PeerNode)
-			// AFAICS this (with negType=1) is equivalent in security to STS; it expands the second phase into a second and a fourth phase.
-			// A -> B g^x
-			// B -> A g^y
-			// A -> B E^k ( ... )
-			// B -> A E^k ( ... )
-
-			if((packetType < 0) || (packetType > 3)) {
-				Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
-				return;
-			}
-
-			// We keep one DiffieHellmanContext per node ONLY
-			/*
-			 * Now, to the real meat
-			 * Alice, Bob share a base, g, and a modulus, p
-			 * Alice generates a random number r, and: 1: Alice -> Bob: a=g^r
-			 * Bob receives this and generates his own random number, s, and: 2: Bob -> Alice: b=g^s
-			 * Alice receives this, calculates K = b^r, and: 3: Alice -> Bob: E_K ( H(data) data )
-			 *    where data = [ Alice's startup number ]
-			 * Bob does exactly the same as Alice for packet 4.
-			 * 
-			 * At this point we are done.
-			 */
-			if(packetType == 0) {
-				// We are Bob
-				// We need to:
-				// - Record Alice's a
-				// - Generate our own s and b
-				// - Send a type 1 packet back to Alice containing this
-
-				DiffieHellmanContext ctx = 
-					processDHZeroOrOne(0, payload, pn);
-				if(ctx == null) return;
-				// Send reply
-				sendFirstHalfDHPacket(1, negType, ctx.getOurExponential(), pn, replyTo);
-				// Send a type 1, they will reply with a type 2
-			} else if(packetType == 1) {
-				// We are Alice
-				DiffieHellmanContext ctx = 
-					processDHZeroOrOne(1, payload, pn);
-				if(ctx == null) return;
-				sendSignedDHCompletion(2, ctx.getCipher(), pn, replyTo, ctx);
-				// Send a type 2
-			} else if(packetType == 2) {
-				// We are Bob
-				// Receiving a completion packet
-				// Verify the packet, then complete
-				// Format: IV E_K ( H(data) data )
-				// Where data = [ long: bob's startup number ]
-				processSignedDHTwoOrThree(2, payload, pn, replyTo, true, oldOpennetPeer);
-			} else if(packetType == 3) {
-				// We are Alice
-				processSignedDHTwoOrThree(3, payload, pn, replyTo, false, oldOpennetPeer);
-			}
-		}
-		else if (negType==2){
+		} else if (negType == 1) {
+			Logger.error(this, "Old StationToStation (negType 1) not supported.");
+			return;
+		} else if (negType==2){
 			/*
 			 * We implement Just Fast Keying key management protocol with active identity protection
 			 * for the initiator and no identity protection for the responder
@@ -478,8 +422,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 */
 				processJFKMessage4(payload, pn, replyTo, oldOpennetPeer);
 			}
-		}
-		else {
+		} else {
 			Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
 			return;
 		}
@@ -1225,89 +1168,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	/**
-	 * Send a signed DH completion message.
-	 * Format:
-	 * IV
-	 * Signature on { My exponential, his exponential, data }
-	 * Data
-	 * @param phase The packet phase number. Either 2 or 3.
-	 * @param cipher The negotiated cipher.
-	 * @param pn The PeerNode which we are talking to.
-	 * @param replyTo The Peer to which to send the packet (not necessarily the same
-	 * as the one on pn as the IP may have changed).
-	 */
-	private void sendSignedDHCompletion(int phase, BlockCipher cipher, PeerNode pn, Peer replyTo, DiffieHellmanContext ctx) {
-		PCFBMode pcfb = PCFBMode.create(cipher);
-		byte[] iv = new byte[pcfb.lengthIV()];
-
-		byte[] myRef = crypto.myCompressedSetupRef();
-		byte[] data = new byte[myRef.length + 8];
-		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
-		System.arraycopy(myRef, 0, data, 8, myRef.length);
-		byte[] myExp = ctx.getOurExponential().toByteArray();
-		byte[] hisExp = ctx.getHisExponential().toByteArray();
-
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(myExp);
-		md.update(hisExp);
-		md.update(data);
-		byte[] hash = md.digest();
-
-		DSASignature sig = crypto.sign(hash);
-
-		byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-
-		Logger.minor(this, "Sending DH completion: "+pn+" hash "+HexUtil.bytesToHex(hash)+" r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
-
-		int outputLength = iv.length + data.length + r.length + s.length + 2;
-
-		byte[] output = new byte[outputLength];
-
-		System.arraycopy(iv, 0, output, 0, iv.length);
-		int count = iv.length;
-		if(r.length > 255 || s.length > 255)
-			throw new IllegalStateException("R or S is too long: r.length="+r.length+" s.length="+s.length);
-		output[count++] = (byte) r.length;
-		System.arraycopy(r, 0, output, count, r.length);
-		count += r.length;
-		output[count++] = (byte) s.length;
-		System.arraycopy(s, 0, output, count, s.length);
-		count += s.length;
-		System.arraycopy(data, 0, output, count, data.length);
-
-		pcfb.blockEncipher(output, 0, output.length);
-
-		sendAuthPacket(1, 1, phase, output, pn, replyTo);
-	}
-
-	/**
-	 * Send a first-half (phase 0 or 1) DH negotiation packet to the node.
-	 * @param phase The phase of the message to be sent (0 or 1).
-	 * @param negType The negotiation type.
-	 * @param integer Our exponential
-	 * @param replyTo The peer to reply to
-	 */
-	private void sendFirstHalfDHPacket(int phase, int negType, NativeBigInteger integer, PeerNode pn, Peer replyTo) {
-		long time1 = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Sending ("+phase+") "+integer.toHexString()+" to "+pn.getPeer());
-		byte[] data = stripBigIntegerToNetworkFormat(integer);
-		if(logMINOR) Logger.minor(this, "Processed: "+HexUtil.bytesToHex(data));
-		long time2 = System.currentTimeMillis();
-		if((time2 - time1) > 200) {
-			Logger.error(this, "sendFirstHalfDHPacket: time2 is more than 200ms after time1 ("+(time2 - time1)+") working on "+replyTo+" of "+pn.userToString());
-		}
-		sendAuthPacket(1, negType, phase, data, pn, replyTo);
-		long time3 = System.currentTimeMillis();
-		if((time3 - time2) > 500) {
-			Logger.error(this, "sendFirstHalfDHPacket:sendAuthPacket() time3 is more than half a second after time2 ("+(time3 - time2)+") working on "+replyTo+" of "+pn.userToString());
-		}
-		if((time3 - time1) > 500) {
-			Logger.error(this, "sendFirstHalfDHPacket: time3 is more than half a second after time1 ("+(time3 - time1)+") working on "+replyTo+" of "+pn.userToString());
-		}
-	}
-
-	/**
 	 * Send an auth packet.
 	 */
 	private void sendAuthPacket(int version, int negType, int phase, byte[] data, PeerNode pn, Peer replyTo) {
@@ -1369,126 +1229,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	/**
-	 * Process a stage 2 or stage 3 auth packet.
-	 * Send a signed DH completion message.
-	 * Format:
-	 * IV
-	 * Signature on { My exponential, his exponential, data }
-	 * Data
-	 * 
-	 * May decrypt in place.
-	 * @param oldOpennetPeer If true, the peer we are negotiating with is not in
-	 * the primary routing table, it needs to be promoted from the list of old opennet
-	 * nodes.
-	 */
-	private DiffieHellmanContext processSignedDHTwoOrThree(int phase, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion, boolean oldOpennetPeer) {
-		if(logMINOR) Logger.minor(this, "Handling signed stage "+phase+" auth packet");
-		// Get context, cipher, IV
-		DiffieHellmanContext ctx = (DiffieHellmanContext) pn.getKeyAgreementSchemeContext();
-		if((ctx == null) || !ctx.canGetCipher()) {
-			if(shouldLogErrorInHandshake()) {
-				Logger.error(this, "Cannot get cipher");
-			}
-			return null;
-		}
-		byte[] encKey = ctx.getKey();
-		BlockCipher cipher = ctx.getCipher();
-		PCFBMode pcfb = PCFBMode.create(cipher);
-		int ivLength = pcfb.lengthIV();
-		if(payload.length-3 < HASH_LENGTH + ivLength + 8) {
-			Logger.error(this, "Too short phase "+phase+" packet from "+replyTo+" probably from "+pn);
-			return null;
-		}
-		pcfb.reset(payload, 3); // IV
-
-		// Decrypt the rest
-		pcfb.blockDecipher(payload, 3, payload.length - 3);
-
-		int count = 3 + ivLength;
-
-		// R
-		int rLen = payload[count++] & 0xFF;
-		if(rLen > pn.getSigParamsByteLength()) {
-			String msg = "R too long - changed key? Can happen on startup";
-			if(node.getUptime() < 15*60*1000)
-				Logger.minor(this, msg);
-			else Logger.error(this, msg);
-			return null;
-		}
-		byte[] rBytes = new byte[rLen];
-		System.arraycopy(payload, count, rBytes, 0, rLen);
-		count += rLen;
-		NativeBigInteger r = new NativeBigInteger(1, rBytes);
-
-		// S
-		int sLen = payload[count++] & 0xFF;
-		if(rLen > pn.getSigParamsByteLength()) {
-			String msg = "S too long - changed key? Can happen on startup";
-			if(node.getUptime() < 15*60*1000)
-				Logger.minor(this, msg);
-			else Logger.error(this, msg);
-			return null;
-		}
-		byte[] sBytes = new byte[sLen];
-		System.arraycopy(payload, count, sBytes, 0, sLen);
-		count += sLen;
-		NativeBigInteger s = new NativeBigInteger(1, sBytes);
-
-		DSASignature sig = new DSASignature(r, s);
-
-		// Data
-		byte[] data = new byte[payload.length - count];
-		System.arraycopy(payload, count, data, 0, payload.length - count);
-
-		// Now verify
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(ctx.getHisExponential().toByteArray());
-		md.update(ctx.getOurExponential().toByteArray());
-		md.update(data);
-		byte[] hash = md.digest();
-		if(!pn.verify(hash, sig)) {
-			Logger.error(this, "Signature verification failed for "+pn+" hash "+HexUtil.bytesToHex(hash)+" r="+HexUtil.bytesToHex(sig.getR().toByteArray())+" s="+HexUtil.bytesToHex(sig.getS().toByteArray()));
-			return null;
-		}
-
-		// Success!
-		long bootID = Fields.bytesToLong(data);
-
-		// Promote if necessary
-		boolean dontWant = false;
-		if(oldOpennetPeer) {
-			OpennetManager opennet = node.getOpennet();
-			if(opennet == null) {
-				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
-				return null;
-			}
-			if(!opennet.wantPeer(pn, true)) {
-				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
-				dontWant = true;
-			}
-			// wantPeer will call node.peers.addPeer(), we don't have to.
-		}
-
-		// Send the completion before parsing the data, because this is easiest
-		// Doesn't really matter - if it fails, we get loads of errors anyway...
-		// Only downside is that the other side might still think we are connected for a while.
-		// But this should be extremely rare.
-		// REDFLAG?
-		// We need to send the completion before the PN sends any packets, that's all...
-		if(pn.completedHandshake(bootID, data, 8, data.length-8, cipher, encKey, replyTo, phase == 2)) {
-			if(sendCompletion)
-				sendSignedDHCompletion(3, ctx.getCipher(), pn, replyTo, ctx);
-			if(dontWant)
-				node.peers.disconnect(pn, true, false);
-			else
-				pn.maybeSendInitialMessages();
-		} else {
-			Logger.error(this, "Handshake not completed");
-		}
-		return ctx;
-	}
-
-	/**
 	 * Should we log an error for an event that could easily be
 	 * caused by a handshake across a restart boundary?
 	 */
@@ -1497,50 +1237,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(now - node.startupTime < Node.HANDSHAKE_TIMEOUT*2)
 			return false;
 		return true;
-	}
-
-	/**
-	 * Process a phase-0 or phase-1 Diffie-Hellman packet.
-	 * @return a DiffieHellmanContext if we succeeded, otherwise null.
-	 */
-	private DiffieHellmanContext processDHZeroOrOne(int phase, byte[] payload, PeerNode pn) {
-
-		if((phase == 0) && pn.hasLiveHandshake(System.currentTimeMillis())) {
-			if(logMINOR) Logger.minor(this, "Rejecting phase "+phase+" handshake on "+pn+" - already running one");
-			return null;
-		}
-
-		// First, get the BigInteger
-		int length = DiffieHellman.modulusLengthInBytes();
-		if(payload.length < length + 3) {
-			Logger.error(this, "Packet too short: "+payload.length+" after decryption in DH("+phase+"), should be "+(length + 3));
-			return null;
-		}
-		byte[] aAsBytes = new byte[length];
-		System.arraycopy(payload, 3, aAsBytes, 0, length);
-		NativeBigInteger a = new NativeBigInteger(1, aAsBytes);
-		if(!DiffieHellman.checkDHExponentialValidity(this.getClass(), a)) {
-			Logger.error(this, "We can't accept the exponential the other end sent us!!");
-			return null;
-		}
-		DiffieHellmanContext ctx;
-		if(phase == 1) {
-			ctx = (DiffieHellmanContext) pn.getKeyAgreementSchemeContext();
-			if(ctx == null) {
-				if(shouldLogErrorInHandshake())
-					Logger.error(this, "Could not get context for phase 1 handshake from "+pn);
-				return null;
-			}
-		} else {
-			ctx = DiffieHellman.generateContext();
-			// Don't calculate the key until we need it
-			pn.setKeyAgreementSchemeContext(ctx);
-		}
-		ctx.setOtherSideExponential(a);
-		if(logMINOR) Logger.minor(this, "His exponential: "+a.toHexString());
-		// REDFLAG: This is of course easily DoS'ed if you know the node.
-		// We will fix this by means of JFKi.
-		return ctx;
 	}
 
 	/**
@@ -2409,7 +2105,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.normal(this, "Cannot send handshake to "+pn+" because no common negTypes, choosing random negType of "+negType);
 		}
 		if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn+" negotiation type "+negType);
-		DiffieHellmanContext ctx = null;
 		Peer[] handshakeIPs;
 		if(!pn.shouldSendHandshake()) {
 			if(logMINOR) Logger.minor(this, "Not sending handshake to "+pn.getPeer()+" because pn.shouldSendHandshake() returned false");
@@ -2426,13 +2121,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if((thirdTime - secondTime) > 1000)
 				Logger.error(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+pn.userToString());
 			return;
-		} else if(negType < 2){
-			long DHTime1 = System.currentTimeMillis();
-			ctx = DiffieHellman.generateContext();
-			long DHTime2 = System.currentTimeMillis();
-			if((DHTime2 - DHTime1) > 1000)
-				Logger.error(this, "DHTime2 is more than a second after DHTime1 ("+(DHTime2 - DHTime1)+") working on "+pn.userToString());
-			pn.setKeyAgreementSchemeContext(ctx);
 		}
 		int sentCount = 0;
 		long loopTime1 = System.currentTimeMillis();
@@ -2451,10 +2139,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
 				continue;
 			}
-			if(negType == 1)
-				sendFirstHalfDHPacket(0, negType, ctx.getOurExponential(), pn, peer);
-			else
-				sendJFKMessage1(pn, peer);
+			sendJFKMessage1(pn, peer);
 			if(logMINOR)
 				Logger.minor(this, "Sending handshake to "+peer+" for "+pn+" ("+i+" of "+handshakeIPs.length);
 			pn.sentHandshake();
