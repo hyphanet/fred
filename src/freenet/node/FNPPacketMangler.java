@@ -898,7 +898,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(!mac.verify(pn.jfkKa, decypheredPayload, hmac)) {
 			Logger.error(this, "The digest-HMAC doesn't match; let's discard the packet");
 			return;
-		}
+		}else if(pn.isConnected() && !pn.firstHandshake)
+			return;
 		
 		// Get the IV
 		pk.reset(decypheredPayload, decypheredPayloadOffset);
