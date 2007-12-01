@@ -3088,4 +3088,5 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public void setOpennetDisabled() {
 		// FIXME
 	}
+	
 }
