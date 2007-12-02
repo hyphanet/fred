@@ -1556,7 +1556,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			node.peers.addConnectedPeer(this);
 			onConnect();
 		}
-
+		
 		setPeerNodeStatus(now);
 		return true;
 	}
@@ -1798,18 +1798,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			throw new FSParseException(err);
 		}
 		String newVersion = fs.get("version");
-		if(newVersion == null)
+		if(newVersion == null) {
 			// Version may be ommitted for an ARK.
-
 			if(!forARK)
 				throw new FSParseException("No version");
-		else {
+		} else {
 			if(!newVersion.equals(version))
 				changedAnything = true;
 			version = newVersion;
 			Version.seenVersion(newVersion);
 		}
-
 		lastGoodVersion = fs.get("lastGoodVersion");
 
 		updateShouldDisconnectNow();
