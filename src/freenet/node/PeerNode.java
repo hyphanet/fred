@@ -872,8 +872,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException {
 		if(logMINOR)
 			Logger.minor(this, "Sending async: " + msg + " : " + cb + " on " + this);
-		if(!isConnected())
+		if(!isConnected()) {
+            if (cb instanceof SyncMessageCallback)
+                Logger.error(this, "Tried to send " + msg + " but not connected to " + this, new Exception("debug"));
 			throw new NotConnectedException();
+        }
 		addToLocalNodeSentMessagesToStatistic(msg);
 		MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[]{cb}, alreadyReportedBytes, ctr);
 		item.getData(this);
@@ -1255,15 +1258,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	/**
-	* Send a message, right now, on this thread, to this node.
+	* Enqueue a message to be sent to this node and wait up to a minute for it to be transmitted.
 	*/
 	public void sendSync(Message req, ByteCounter ctr) throws NotConnectedException {
-		synchronized(this) {
-			if(!isConnected()) {
-				Logger.error(this, "Tried to send " + req + " but not connected to " + this, new Exception("debug"));
-				throw new NotConnectedException();
-			}
-		}
 		SyncMessageCallback cb = new SyncMessageCallback();
 		sendAsync(req, cb, 0, ctr);
 		cb.waitForSend(60 * 1000);

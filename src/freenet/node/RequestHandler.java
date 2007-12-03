@@ -85,7 +85,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD 
             		&& status != RequestSender.INTERNAL_ERROR && !thrown) {
             	int sent, rcvd;
-            	synchronized(this) {
+            	synchronized(bytesSync) {
             		sent = sentBytes;
             		rcvd = receivedBytes;
             	}
