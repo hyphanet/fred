@@ -898,6 +898,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
         // it wakes up every 100ms *anyway*.
 	}
 
+	public long getMessageQueueLengthBytes() {
+		long x = 0;
+		synchronized(messagesToSendNow) {
+			Iterator i = messagesToSendNow.iterator();
+			for(; i.hasNext();) {
+				MessageItem it = (MessageItem) (i.next());
+				x += it.getData(this).length + 2;
+			}
+		}
+		return x;
+	}
+	
 	/**
 	* @return The last time we received a packet.
 	*/

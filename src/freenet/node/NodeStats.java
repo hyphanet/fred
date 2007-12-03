@@ -335,6 +335,11 @@ public class NodeStats implements Persistable {
 	 * (If no packets have been sent, the throttledPacketSendAverage should decrease; if it doesn't, it may go high,
 	 * and then no requests will be accepted, and it will stay high forever. */
 	static final int CHECK_THROTTLE_TIME = 60 * 1000;
+	/** Absolute limit of 4MB queued to any given peer. FIXME make this configurable. 
+	 * Note that for many MessageItem's, the actual memory usage will be significantly more than this figure. */
+	private static final long MAX_PEER_QUEUE_BYTES = 4 * 1024 * 1024;
+	/** Don't accept requests if it'll take more than an hour to send the current message queue */
+	private static final double MAX_PEER_QUEUE_TIME = 60 * 60 * 1000.0;
 	
 	private long lastAcceptedRequest = -1;
 	
@@ -508,6 +513,14 @@ public class NodeStats implements Persistable {
 			return "<freeHeapPercentThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+" ("+fix3p1pct.format(percentFreeHeapMemoryOfMax)+"))";
 		}
 
+		if(source != null) {
+			long queuedBytes = source.getMessageQueueLengthBytes();
+			if(queuedBytes > MAX_PEER_QUEUE_BYTES)
+				return "Too many message bytes queued for peer";
+			if(queuedBytes / (source.getThrottle().getBandwidth()+1.0) > MAX_PEER_QUEUE_TIME)
+				return "Peer's queue will take too long to transfer";
+		}
+		
 		synchronized(this) {
 			if(logMINOR) Logger.minor(this, "Accepting request?");
 			lastAcceptedRequest = now;

@@ -124,4 +124,8 @@ public class PacketThrottle {
 	public double getWindowSize() {
 		return _simulatedWindowSize;
 	}
+
+	public double getBandwidth() {
+		return ((PACKET_SIZE * 1000.0 / getDelay())) / 1024;
+	}
 }
