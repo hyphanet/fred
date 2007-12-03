@@ -340,7 +340,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			String physical[] = fs.getAll("physical.udp");
 			if(physical == null) {
 			// Leave it empty
-			} else
+			} else {
 				for(int i = 0; i < physical.length; i++) {
 					Peer p;
 					try {
@@ -354,15 +354,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(!nominalPeer.contains(p))
 						nominalPeer.addElement(p);
 				}
+			}
 		} catch(Exception e1) {
 			throw new FSParseException(e1);
 		}
 		if(nominalPeer.isEmpty()) {
 			Logger.normal(this, "No IP addresses found for identity '" + Base64.encode(identity) + "', possibly at location '" + Double.toString(currentLocation) + ": " + userToString());
 			detectedPeer = null;
-		} else
+		} else {
 			detectedPeer = (Peer) nominalPeer.firstElement();
-
+		}
 		negTypes = fs.getIntArray("auth.negTypes");
 		if(negTypes == null || negTypes.length == 0)
 			negTypes = new int[]{0};
@@ -386,7 +387,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 			String signature = fs.get("sig");
 			fs.removeValue("sig");
-			if(!fromLocal)
+			if(!fromLocal) {
 				try {
 					boolean failed = false;
 					if(signature == null || peerCryptoGroup == null || peerPubKey == null ||
@@ -416,9 +417,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					e.printStackTrace();
 					node.exit(NodeInitException.EXIT_CRAPPY_JVM);
 				}
-			else // Local is always good (assumed)
-
+			} else {
+				// Local is always good (assumed)
 				this.isSignatureVerificationSuccessfull = true;
+			}
 		} catch(IllegalBase64Exception e) {
 			Logger.error(this, "Caught " + e, e);
 			throw new FSParseException(e);
@@ -545,7 +547,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					peerAddedTime = 0;
 				neverConnected = Fields.stringToBool(metadata.get("neverConnected"), false);
 				if((now - peerAddedTime) > (((long) 30) * 24 * 60 * 60 * 1000))  // 30 days
-
 					peerAddedTime = 0;
 				if(!neverConnected)
 					peerAddedTime = 0;
@@ -585,9 +586,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		try {
 			String arkNumber = fs.get("ark.number");
 
-			if(arkNumber != null)
+			if(arkNumber != null) {
 				arkNo = Long.parseLong(arkNumber) + (onStartup ? 0 : 1);
-
+			// this is the number of the ref we are parsing.
+			// we want the number of the next edition.
+			// on startup we want to fetch the old edition in case there's been a corruption.
+			}
 			String arkPubKey = fs.get("ark.pubURI");
 			if(arkPubKey != null) {
 				FreenetURI uri = new FreenetURI(arkPubKey);
@@ -601,11 +605,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 
 		synchronized(this) {
-			if(ark != null)
+			if(ark != null) {
 				if((myARK == null) || ((myARK != ark) && !myARK.equals(ark))) {
 					myARK = ark;
 					return true;
 				}
+			}
 		}
 		return false;
 	}
@@ -662,7 +667,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Also removes dupes post-lookup.
 	*/
 	private Peer[] updateHandshakeIPs(Peer[] localHandshakeIPs, boolean ignoreHostnames) {
-		for(int i = 0; i < localHandshakeIPs.length; i++)
+		for(int i = 0; i < localHandshakeIPs.length; i++) {
 			if(ignoreHostnames) {
 				// Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
 				// upon startup (I suspect the following won't do anything, but just in case)
@@ -675,6 +680,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '" + localHandshakeIPs[i] + "' for " + shortToString() + " (" + ignoreHostnames + ')');
 				localHandshakeIPs[i].getHandshakeAddress();
 			}
+		}
 		// De-dupe
 		HashSet ret = new HashSet();
 		for(int i = 0; i < localHandshakeIPs.length; i++)
@@ -691,10 +697,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Peer localDetectedPeer = null;
 		synchronized(this) {
 			localDetectedPeer = detectedPeer;
-			if((now - lastAttemptedHandshakeIPUpdateTime) < (5 * 60 * 1000))  // 5 minutes
+			if((now - lastAttemptedHandshakeIPUpdateTime) < (5 * 60 * 1000)) {  // 5 minutes
 	    		//Logger.minor(this, "Looked up recently (localDetectedPeer = "+localDetectedPeer + " : "+((localDetectedPeer == null) ? "" : localDetectedPeer.getAddress(false).toString()));
-
 				return;
+			}
 			// We want to come back right away for DNS requesting if this is our first time through
 			if(!ignoreHostnames)
 				lastAttemptedHandshakeIPUpdateTime = now;
@@ -744,10 +750,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Peer p = myNominalPeer[i];
 			if(p == null)
 				continue;
-			if(localDetectedPeer != null)
-				if((p != localDetectedPeer) && p.equals(localDetectedPeer))
+			if(localDetectedPeer != null) {
+				if((p != localDetectedPeer) && p.equals(localDetectedPeer)) {
 					// Equal but not the same object; need to update the copy.
 					detectedDuplicate = p;
+				}
+			}
 			FreenetInetAddress addr = p.getFreenetAddress();
 			if(addr.equals(localhost)) {
 				if(addedLocalhost)
@@ -874,10 +882,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					break;
 			}
 		}
-		if(x > 1024)
+		if(x > 1024) {
 			// If there is a packet's worth to send, wake up the packetsender.
-
 			node.ps.wakeUp();
+		}
 	// We DO NOT NEED to wake up the PacketSender
         // It will wake up before the maximum coalescing delay (100ms) because
         // it wakes up every 100ms *anyway*.
@@ -1019,15 +1027,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			boolean rateLimitLogging = false;
 			if(messages.length > messageRequeueLogRateLimitThreshold) {
 				rateLimitWrapper = " (log message rate limited)";
-				if(nextMessageRequeueLogTime <= now)
+				if(nextMessageRequeueLogTime <= now) {
 					nextMessageRequeueLogTime = now + messageRequeueLogRateLimitInterval;
-				else
+				} else {
 					rateLimitLogging = true;
+				}
 			}
 			if(!rateLimitLogging) {
 				String reasonWrapper = "";
-				if(0 <= reason.length())
+				if(0 <= reason.length()) {
 					reasonWrapper = " because of '" + reason + '\'';
+				}
 				Logger.normal(this, "Requeueing " + messages.length + " messages" + reasonWrapper + " on " + this + rateLimitWrapper);
 			}
 		}
@@ -1096,14 +1106,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Set sendHandshakeTime, and return whether to fetch the ARK.
 	*/
 	protected synchronized boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
-		if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)
+		if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) {
 			// Let them know we're here, but have no hope of connecting
-
 			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
-		else if(invalidVersion() && !firstHandshake)
+		} else if(invalidVersion() && !firstHandshake) {
 			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
-		else
+		} else {
 			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+		}
+		
 		if(successfulHandshakeSend)
 			firstHandshake = false;
 		handshakeCount++;
@@ -1382,12 +1393,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	void receivedPacket(boolean dontLog) {
 		synchronized(this) {
-			if((!isConnected) && (!dontLog))
+			if((!isConnected) && (!dontLog)) {
 				if((unverifiedTracker == null) && (currentTracker == null))
 					Logger.error(this, "Received packet while disconnected!: " + this, new Exception("error"));
 				else
 					if(logMINOR)
 						Logger.minor(this, "Received packet while disconnected on " + this + " - recently disconnected() ?");
+			}
 		}
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -1512,11 +1524,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				currentTracker = null;
 			} // else it's a rekey
 			if(unverified) {
-				if(unverifiedTracker != null)
+				if(unverifiedTracker != null) {
 					// Keep the old unverified tracker if possible.
-
 					if(previousTracker == null)
 						previousTracker = unverifiedTracker;
+				}
 				unverifiedTracker = newTracker;
 				if(currentTracker == null || currentTracker.isDeprecated())
 					isConnected = false;
@@ -1813,12 +1825,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		updateShouldDisconnectNow();
 
 		String locationString = fs.get("location");
-		if(locationString == null)
+		if(locationString == null) {
 			// Location WILL be ommitted for an ARK.
-
 			if(!forARK)
 				throw new FSParseException("No location");
-		else
+		} else {
 			try {
 				double newLoc = Location.getLocation(locationString);
 				if(!Location.equals(newLoc, currentLocation)) {
@@ -1830,7 +1841,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(logMINOR)
 					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: " + e);
 			}
-
+		}
 		Vector oldNominalPeer = nominalPeer;
 
 		if(nominalPeer == null)
@@ -1841,14 +1852,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		try {
 			String physical[] = fs.getAll("physical.udp");
-			if(physical == null)
+			if(physical == null) {
 				try {
 					Peer p = new Peer(fs.get("physical.udp"), true, true);
 					nominalPeer.addElement(p);
 				} catch(HostnameSyntaxException e) {
 					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + fs.get("physical.udp"));
 				}
-			else
+			} else {
 				for(int i = 0; i < physical.length; i++) {
 					Peer p;
 					try {
@@ -1866,6 +1877,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 						nominalPeer.addElement(p);
 					}
 				}
+			}
 		} catch(Exception e1) {
 			throw new FSParseException(e1);
 		}
@@ -1918,7 +1930,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		KeyTracker tracker = cur;
 		if(tracker != null) {
 			long t = tracker.getNextUrgentTime();
-			if(t < now)
+			if(t < now) {
 				try {
 					outgoingMangler.processOutgoing(null, 0, 0, tracker, 0);
 				} catch(NotConnectedException e) {
@@ -1928,6 +1940,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				} catch(WouldBlockException e) {
 				// Impossible, ignore
 				}
+			}
 		}
 		tracker = prev;
 		if(tracker != null) {
@@ -2168,18 +2181,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	private void reportBackoffStatus(long now) {
 		synchronized(this) {
-			if(now > lastSampleTime) // don't report twice in the same millisecond
-
-				if(now > routingBackedOffUntil) // not backed off
-
-					if(lastSampleTime > routingBackedOffUntil) // last sample after last backoff
-
+			if(now > lastSampleTime) { // don't report twice in the same millisecond
+				if(now > routingBackedOffUntil) { // not backed off
+					if(lastSampleTime > routingBackedOffUntil) { // last sample after last backoff
 						backedOffPercent.report(0.0);
-					else
+					}else {
 						if(routingBackedOffUntil > 0)
 							backedOffPercent.report((double) (routingBackedOffUntil - lastSampleTime) / (double) (now - lastSampleTime));
-				else
+					}
+				}else {
 					backedOffPercent.report(1.0);
+				}
+			}
 			lastSampleTime = now;
 		}
 	}
@@ -2498,16 +2511,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(now < routingBackedOffUntil) {
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
 				if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason) || (previousRoutingBackoffReason == null)) {
-					if(previousRoutingBackoffReason != null)
+					if(previousRoutingBackoffReason != null) {
 						peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+					}
 					peers.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReason, this);
 					previousRoutingBackoffReason = lastRoutingBackoffReason;
 				}
-			} else
+			} else {
 				if(previousRoutingBackoffReason != null) {
 					peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
 					previousRoutingBackoffReason = null;
 				}
+			}
 		} else if(isConnected() && bogusNoderef)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONN_ERROR;
 		else if(isConnected() && verifiedIncompatibleNewerVersion)
@@ -2547,26 +2562,29 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	private synchronized void checkConnectionsAndTrackers() {
-		if(isConnected)
-			if(currentTracker == null)
-				if(unverifiedTracker != null)
+		if(isConnected) {
+			if(currentTracker == null) {
+				if(unverifiedTracker != null) {
 					if(unverifiedTracker.isDeprecated())
 						Logger.error(this, "Connected but primary tracker is null and unverified is deprecated ! " + unverifiedTracker + " for " + this, new Exception("debug"));
 					else if(logMINOR)
 						Logger.minor(this, "Connected but primary tracker is null, but unverified = " + unverifiedTracker + " for " + this, new Exception("debug"));
-				else
+				} else {
 					Logger.error(this, "Connected but both primary and unverified are null on " + this, new Exception("debug"));
-			else if(currentTracker.isDeprecated())
-				if(unverifiedTracker != null)
+				}
+			} else if(currentTracker.isDeprecated()) {
+				if(unverifiedTracker != null) {
 					if(unverifiedTracker.isDeprecated())
 						Logger.error(this, "Connected but primary tracker is deprecated, unverified is deprecated: primary=" + currentTracker + " unverified: " + unverifiedTracker + " for " + this, new Exception("debug"));
 					else if(logMINOR)
 						Logger.minor(this, "Connected, primary tracker deprecated, unverified is valid, " + unverifiedTracker + " for " + this, new Exception("debug"));
-				else {
+				} else {
 					// !!!!!!!
 					Logger.error(this, "Connected but primary tracker is deprecated and unverified tracker is null on " + this, new Exception("debug"));
 					isConnected = false;
 				}
+			}
+		}
 	}
 
 	public String getIdentityString() {
@@ -2609,10 +2627,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				wasDisconnected = false;
 			}
 			onConnect();
-		} else if(!isConnected())
+		} else if(!isConnected()) {
 			synchronized(this) {
 				wasDisconnected = true;
 			}
+		}
 	}
 
 	/**
@@ -2735,11 +2754,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		int bestNegType = -1;
 		for(int i = 0; i < myNegTypes.length; i++) {
 			int negType = myNegTypes[i];
-			for(int j = 0; j < hisNegTypes.length; j++)
+			for(int j = 0; j < hisNegTypes.length; j++) {
 				if(hisNegTypes[j] == negType) {
 					bestNegType = negType;
 					break;
 				}
+			}
 		}
 		return bestNegType;
 	}
@@ -3033,8 +3053,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				manyPacketsClaimedSentNotReceived = true;
 				Logger.error(this, "" + consecutiveNotFound + " consecutive packets not found on " + userToString());
 				SocketHandler handler = outgoingMangler.getSocketHandler();
-				if(handler instanceof PortForwardSensitiveSocketHandler)
+				if(handler instanceof PortForwardSensitiveSocketHandler) {
 					((PortForwardSensitiveSocketHandler) handler).rescanPortForward();
+				}
 			}
 		}
 	}
