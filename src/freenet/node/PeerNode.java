@@ -980,8 +980,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/**
 	* Disconnected e.g. due to not receiving a packet for ages.
-	* @param longTime If true, we expect the node to be down for some time,
-	* so we need to purge queued messages etc.
+	* @param dumpMessageQueue If true, clear the messages-to-send queue.
+	* @param dumpTrackers If true, dump the KeyTracker's.
 	* @return True if the node was connected, false if it was not.
 	*/
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
