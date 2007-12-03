@@ -1025,7 +1025,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(!dumpMessageQueue) {
 			node.getTicker().queueTimedJob(new Runnable() {
 				public void run() {
-					if(!PeerNode.this.isConnected() &&
+					if((!PeerNode.this.isConnected()) &&
 							timeLastDisconnect == now)
 						synchronized(PeerNode.this.messagesToSendNow) {
 							PeerNode.this.messagesToSendNow.clear();
