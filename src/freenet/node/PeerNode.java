@@ -339,7 +339,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		try {
 			String physical[] = fs.getAll("physical.udp");
 			if(physical == null) {
-			// Leave it empty
+				// Leave it empty
 			} else {
 				for(int i = 0; i < physical.length; i++) {
 					Peer p;
@@ -588,9 +588,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 			if(arkNumber != null) {
 				arkNo = Long.parseLong(arkNumber) + (onStartup ? 0 : 1);
-			// this is the number of the ref we are parsing.
-			// we want the number of the next edition.
-			// on startup we want to fetch the old edition in case there's been a corruption.
+				// this is the number of the ref we are parsing.
+				// we want the number of the next edition.
+				// on startup we want to fetch the old edition in case there's been a corruption.
 			}
 			String arkPubKey = fs.get("ark.pubURI");
 			if(arkPubKey != null) {
@@ -1103,8 +1103,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	boolean firstHandshake = true;
 
 	/**
-	* Set sendHandshakeTime, and return whether to fetch the ARK.
-	*/
+	 * Set sendHandshakeTime, and return whether to fetch the ARK.
+	 */
 	protected synchronized boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
 		if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) {
 			// Let them know we're here, but have no hope of connecting
@@ -2189,7 +2189,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 						if(routingBackedOffUntil > 0)
 							backedOffPercent.report((double) (routingBackedOffUntil - lastSampleTime) / (double) (now - lastSampleTime));
 					}
-				}else {
+				} else {
 					backedOffPercent.report(1.0);
 				}
 			}
