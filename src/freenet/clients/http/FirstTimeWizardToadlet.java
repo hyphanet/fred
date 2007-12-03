@@ -158,11 +158,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		welcomeInfoboxHeader.addChild("#", l10n("welcomeInfoboxTitle"));
 		
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
-		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1") + ' ');
-		firstParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("FirstTimeWizardToadlet.continue"));
-		
+		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1"));
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
-		secondParagraph.addChild("a", "href", "/").addChild("#", l10n("skipWizard"));
+		secondParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("FirstTimeWizardToadlet.continue"));
+		
+		HTMLNode thirdParagraph = welcomeInfoboxContent.addChild("p");
+		thirdParagraph.addChild("a", "href", "/").addChild("#", l10n("skipWizard"));
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
