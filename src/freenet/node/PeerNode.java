@@ -266,7 +266,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	final WeakReference myRef;
 	/** The node is being disconnected, but it may take a while. */
 	private boolean disconnecting;
-	
+    /** When did we last disconnect? Not Disconnected because a discrete event */
+    long timeLastDisconnect;
+    /** Previous time of disconnection */
+    long timePrevDisconnect;
+    
 	/**
 	 * For FNP link setup:
 	 *  The initiator has to ensure that nonces send back by the
@@ -990,6 +994,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			// Else DO NOT clear trackers, because hopefully it's a temporary connectivity glitch.
 			sendHandshakeTime = now;
+    		synchronized(this) {
+    			timePrevDisconnect = timeLastDisconnect;
+    			timeLastDisconnect = now;
+    		}
 		}
 		node.lm.lostOrRestartedNode(this);
 		setPeerNodeStatus(now);
@@ -3122,4 +3130,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// FIXME
 	}
 	
+    public synchronized long timeLastDisconnect() {
+    	return timeLastDisconnect;
+    }
+
 }

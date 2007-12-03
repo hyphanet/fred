@@ -9,11 +9,6 @@ public class OpennetPeerNode extends PeerNode {
 	final OpennetManager opennet;
 	private long timeLastSuccess;
 	
-    /** When did we last disconnect? Not Disconnected because a discrete event */
-    private long timeLastDisconnect;
-    /** Previous time of disconnection */
-    private long timePrevDisconnect;
-    
 	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		super(fs, node2, crypto, peers, fromLocal, mangler, true);
 		this.opennet = opennet;
@@ -70,20 +65,6 @@ public class OpennetPeerNode extends PeerNode {
     	return timeLastSuccess;
     }
     
-    public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
-    	if(super.disconnected(dumpMessageQueue, dumpTrackers)) {
-    		synchronized(this) {
-    			timePrevDisconnect = timeLastDisconnect;
-    			timeLastDisconnect = System.currentTimeMillis();
-    		}
-    		return true;
-    	} else return false;
-    }
-    
-    public synchronized long timeLastDisconnect() {
-    	return timeLastDisconnect;
-    }
-
     /**
      * Is the SimpleFieldSet a valid noderef?
      */
