@@ -118,13 +118,13 @@ public class NodeDispatcher implements Dispatcher {
 		} else if(spec == DMT.FNPSwapComplete) {
 			return node.lm.handleSwapComplete(m);
 		} else if(spec == DMT.FNPCHKDataRequest) {
-			return handleDataRequest(m, false);
+			return handleDataRequest(m, source, false);
 		} else if(spec == DMT.FNPSSKDataRequest) {
-			return handleDataRequest(m, true);
+			return handleDataRequest(m, source, true);
 		} else if(spec == DMT.FNPInsertRequest) {
-			return handleInsertRequest(m, false);
+			return handleInsertRequest(m, source, false);
 		} else if(spec == DMT.FNPSSKInsertRequest) {
-			return handleInsertRequest(m, true);
+			return handleInsertRequest(m, source, true);
 		} else if(spec == DMT.FNPRoutedPing) {
 			return handleRouted(m);
 		} else if(spec == DMT.FNPRoutedPong) {
@@ -179,7 +179,7 @@ public class NodeDispatcher implements Dispatcher {
 	/**
 	 * Handle an incoming FNPDataRequest.
 	 */
-	private boolean handleDataRequest(Message m, boolean isSSK) {
+	private boolean handleDataRequest(Message m, PeerNode source, boolean isSSK) {
 		long id = m.getLong(DMT.UID);
 		if(node.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
@@ -202,7 +202,7 @@ public class NodeDispatcher implements Dispatcher {
 		} else {
 			if(logMINOR) Logger.minor(this, "Locked "+id);
 		}
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false);
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, source);
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting request from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
@@ -221,7 +221,7 @@ public class NodeDispatcher implements Dispatcher {
 		return true;
 	}
 
-	private boolean handleInsertRequest(Message m, boolean isSSK) {
+	private boolean handleInsertRequest(Message m, PeerNode source, boolean isSSK) {
 		long id = m.getLong(DMT.UID);
 		if(node.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
@@ -243,7 +243,7 @@ public class NodeDispatcher implements Dispatcher {
 			return true;
 		}
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false);
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, source);
 		if(rejectReason != null) {
 			Logger.normal(this, "Rejecting insert from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
