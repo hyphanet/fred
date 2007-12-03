@@ -121,7 +121,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         	htl = source.decrementHTL(htl);
         
         Message accepted = DMT.createFNPAccepted(uid);
-        source.sendSync(accepted, null);
+        source.sendAsync(accepted, null, 0, this);
         
         Object o = node.makeRequestSender(key, htl, uid, source, closestLoc, resetClosestLoc, false, true, false);
         if(o instanceof KeyBlock) {

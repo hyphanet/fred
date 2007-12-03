@@ -93,7 +93,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         Message accepted = DMT.createFNPSSKAccepted(uid, pubKey == null);
         
         try {
-			source.sendSync(accepted, this);
+			source.sendAsync(accepted, null, 0, this);
 		} catch (NotConnectedException e1) {
 			if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
