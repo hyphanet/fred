@@ -338,8 +338,8 @@ public class NodeStats implements Persistable {
 	/** Absolute limit of 4MB queued to any given peer. FIXME make this configurable. 
 	 * Note that for many MessageItem's, the actual memory usage will be significantly more than this figure. */
 	private static final long MAX_PEER_QUEUE_BYTES = 4 * 1024 * 1024;
-	/** Don't accept requests if it'll take more than an hour to send the current message queue */
-	private static final double MAX_PEER_QUEUE_TIME = 60 * 60 * 1000.0;
+	/** Don't accept requests if it'll take more than 10 minutes to send the current message queue */
+	private static final double MAX_PEER_QUEUE_TIME = 10 * 60 * 1000.0;
 	
 	private long lastAcceptedRequest = -1;
 	
