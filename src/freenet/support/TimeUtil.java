@@ -57,55 +57,55 @@ public class TimeUtil {
             return sb.toString();
         }
         //
-        long weeks = (l / (1L*7*24*60*60*1000));
+        long weeks = (l / (7L*24*60*60*1000));
         if (weeks > 0) {
             sb.append(weeks).append('w');
             termCount++;
-            l = l - (weeks * (1L*7*24*60*60*1000));
+            l = l - (weeks * (7L*24*60*60*1000));
         }
         if(termCount >= maxTerms) {
             return sb.toString();
         }
         //
-        long days = (l / (1L*24*60*60*1000));
+        long days = (l / (24L*60*60*1000));
         if (days > 0) {
             sb.append(days).append('d');
             termCount++;
-            l = l - (days * (1L*24*60*60*1000));
+            l = l - (days * (24L*60*60*1000));
         }
         if(termCount >= maxTerms) {
           return sb.toString();
         }
         //
-        long hours = (l / (1L*60*60*1000));
+        long hours = (l / (60L*60*1000));
         if (hours > 0) {
             sb.append(hours).append('h');
             termCount++;
-            l = l - (hours * (1L*60*60*1000));
+            l = l - (hours * (60L*60*1000));
         }
         if(termCount >= maxTerms) {
             return sb.toString();
         }
         //
-        long minutes = (l / (1L*60*1000));
+        long minutes = (l / (60L*1000));
         if (minutes > 0) {
             sb.append(minutes).append('m');
             termCount++;
-            l = l - (minutes * (1L*60*1000));
+            l = l - (minutes * (60L*1000));
         }
         if(termCount >= maxTerms) {
             return sb.toString();
         }
         if(withSecondFractions && ((maxTerms - termCount) >= 2)) {
             if (l > 0) {
-                double fractionalSeconds = ((double) l) / (1000.0);
+                double fractionalSeconds = l / (1000.0D);
                 DecimalFormat fix3 = new DecimalFormat("0.000");
                 sb.append(fix3.format(fractionalSeconds)).append('s');
                 termCount++;
                 //l = l - ((long)fractionalSeconds * (long)1000);
             }
         } else {
-            long seconds = (l / 1L*1000);
+            long seconds = (l / 1000L);
             if (seconds > 0) {
                 sb.append(seconds).append('s');
                 termCount++;
