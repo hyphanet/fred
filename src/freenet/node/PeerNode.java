@@ -1522,6 +1522,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				oldCur = currentTracker;
 				previousTracker = null;
 				currentTracker = null;
+				// Messages do not persist across restarts.
+				// Generally they would be incomprehensible, anything that isn't should be sent as
+				// connection initial messages by maybeOnConnect().
+				messagesToSendNow.clear();
 			} // else it's a rekey
 			if(unverified) {
 				if(unverifiedTracker != null) {
