@@ -57,41 +57,41 @@ public class TimeUtil {
             return sb.toString();
         }
         //
-        long weeks = (l / ((long)7*24*60*60*1000));
+        long weeks = (l / (1L*7*24*60*60*1000));
         if (weeks > 0) {
             sb.append(weeks).append('w');
             termCount++;
-            l = l - (weeks * ((long)7*24*60*60*1000));
+            l = l - (weeks * (1L*7*24*60*60*1000));
         }
         if(termCount >= maxTerms) {
             return sb.toString();
         }
         //
-        long days = (l / ((long)24*60*60*1000));
+        long days = (l / (1L*24*60*60*1000));
         if (days > 0) {
             sb.append(days).append('d');
             termCount++;
-            l = l - (days * ((long)24*60*60*1000));
+            l = l - (days * (1L*24*60*60*1000));
         }
         if(termCount >= maxTerms) {
           return sb.toString();
         }
         //
-        long hours = (l / ((long)60*60*1000));
+        long hours = (l / (1L*60*60*1000));
         if (hours > 0) {
             sb.append(hours).append('h');
             termCount++;
-            l = l - (hours * ((long)60*60*1000));
+            l = l - (hours * (1L*60*60*1000));
         }
         if(termCount >= maxTerms) {
             return sb.toString();
         }
         //
-        long minutes = (l / ((long)60*1000));
+        long minutes = (l / (1L*60*1000));
         if (minutes > 0) {
             sb.append(minutes).append('m');
             termCount++;
-            l = l - (minutes * ((long)60*1000));
+            l = l - (minutes * (1L*60*1000));
         }
         if(termCount >= maxTerms) {
             return sb.toString();
@@ -105,7 +105,7 @@ public class TimeUtil {
                 //l = l - ((long)fractionalSeconds * (long)1000);
             }
         } else {
-            long seconds = (l / (long)1000);
+            long seconds = (l / 1L*1000);
             if (seconds > 0) {
                 sb.append(seconds).append('s');
                 termCount++;
