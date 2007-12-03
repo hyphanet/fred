@@ -143,7 +143,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode congratzInfoboxContent = congratzInfobox.addChild("div", "class", "infobox-content");
 
 			congratzInfoboxHeader.addChild("#", l10n("congratz"));
-			congratzInfoboxContent.addChild("#", l10n("congratzLong"));
+			congratzInfoboxContent.addChild("p", l10n("congratzLong"));
+			
+			congratzInfoboxContent.addChild("a", "href", "/", L10n.getString("FirstTimeWizardToadlet.continueEnd"));
 
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
