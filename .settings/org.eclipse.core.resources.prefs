@@ -1,3 +1,11 @@
-#Tue Sep 04 15:20:10 CEST 2007
+#Mon Dec 03 12:31:38 GMT 2007
 eclipse.preferences.version=1
+encoding//src/freenet/l10n/freenet.l10n.de.properties=UTF-8
+encoding//src/freenet/l10n/freenet.l10n.en.properties=UTF-8
+encoding//src/freenet/l10n/freenet.l10n.es.properties=UTF-8
+encoding//src/freenet/l10n/freenet.l10n.fr.properties=UTF-8
+encoding//src/freenet/l10n/freenet.l10n.it.properties=UTF-8
+encoding//src/freenet/l10n/freenet.l10n.no.properties=UTF-8
+encoding//src/freenet/l10n/freenet.l10n.pl.properties=UTF-8
+encoding//src/freenet/l10n/freenet.l10n.se.properties=UTF-8
 encoding/<project>=UTF-8
