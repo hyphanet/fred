@@ -162,7 +162,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
 		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1"));
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
-		secondParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("FirstTimeWizardToadlet.continue"));
+		secondParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
 		
 		HTMLNode thirdParagraph = welcomeInfoboxContent.addChild("p");
 		thirdParagraph.addChild("a", "href", "/").addChild("#", l10n("skipWizard"));
