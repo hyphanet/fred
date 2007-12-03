@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.Iterator;
 
 public class BookmarkManager {
@@ -105,7 +106,7 @@ public class BookmarkManager {
 	}
 
 	public void reAddDefaultBookmarks() {
-		BookmarkCategory bc = new BookmarkCategory("Default bookmarks - " + System.currentTimeMillis());
+		BookmarkCategory bc = new BookmarkCategory("Default bookmarks - " + new Date());
 		addBookmark("/", bc);
 		_innerReadBookmarks("/", bc, DEFAULT_BOOKMARKS);
 	}
