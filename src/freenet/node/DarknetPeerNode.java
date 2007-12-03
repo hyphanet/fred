@@ -247,7 +247,7 @@ public class DarknetPeerNode extends PeerNode {
 			isDisabled = true;
 		}
 		if(isConnected()) {
-			forceDisconnect();
+			forceDisconnect(true);
 		}
 		stopARKFetcher();
 		setPeerNodeStatus(System.currentTimeMillis());

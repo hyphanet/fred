@@ -928,7 +928,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			String time = TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY);
 			System.err.println("The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
 			Logger.error(this, "The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
-			forceDisconnect();
+			forceDisconnect(false);
 		} else if (shouldReturn || hasLiveHandshake(now)) {
 			return;
 		} else if(shouldRekey) {
@@ -957,9 +957,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/**
 	* Disconnected e.g. due to not receiving a packet for ages.
+	* @param longTime If true, we expect the node to be down for some time,
+	* so we need to purge queued messages etc.
 	* @return True if the node was connected, false if it was not.
 	*/
-	public boolean disconnected() {
+	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
 		long now = System.currentTimeMillis();
 		Logger.normal(this, "Disconnected " + this);
 		node.usm.onDisconnect(this);
@@ -978,7 +980,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				previousTracker.disconnected();
 			if(unverifiedTracker != null)
 				unverifiedTracker.disconnected();
-			// DO NOT clear trackers, so can still receive.
+			if(dumpTrackers) {
+				currentTracker = null;
+				previousTracker = null;
+				unverifiedTracker = null;
+			}
+			if(dumpMessageQueue) {
+				messagesToSendNow.clear();
+			}
+			// Else DO NOT clear trackers, because hopefully it's a temporary connectivity glitch.
 			sendHandshakeTime = now;
 		}
 		node.lm.lostOrRestartedNode(this);
@@ -987,12 +997,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	private boolean forceDisconnectCalled = false;
 
-	public void forceDisconnect() {
+	public void forceDisconnect(boolean purge) {
 		Logger.error(this, "Forcing disconnect on " + this, new Exception("debug"));
 		synchronized(this) {
 			forceDisconnectCalled = true;
 		}
-		disconnected();
+		disconnected(purge, true); // always dump trackers, maybe dump messages
 	}
 
 	boolean forceDisconnectCalled() {
@@ -2871,7 +2881,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/** Called when the peer is removed from the PeerManager */
 	public void onRemove() {
-		disconnected();
+		disconnected(true, true);
 	}
 
 	public synchronized boolean isDisconnecting() {

@@ -16,8 +16,9 @@ public interface PeerContext {
     // Largely opaque interface for now
     Peer getPeer();
 
-    /** Force the peer to disconnect */
-	void forceDisconnect();
+    /** Force the peer to disconnect.
+     * @param purge If true, the message queue and trackers will be dumped. */
+	void forceDisconnect(boolean dump);
 
 	/** Is the peer connected? Have we established the session link? */
 	boolean isConnected();

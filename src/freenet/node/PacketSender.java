@@ -198,7 +198,7 @@ public class PacketSender implements Runnable, Ticker {
 				// Is the node dead?
 				if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received packets recently");
-					pn.disconnected();
+					pn.disconnected(false, false /* hopefully will recover, transient network glitch */);
 					continue;
 				} else if(pn.isRoutable() && pn.noLongerRoutable()) {
 					// we don't disconnect but we mark it incompatible
@@ -254,7 +254,8 @@ public class PacketSender implements Runnable, Ticker {
 							break;
 						} catch(PacketSequenceException e) {
 							Logger.error(this, "Caught " + e + " - disconnecting", e);
-							pn.forceDisconnect();
+							// PSE is fairly drastic, something is broken between us, but maybe we can resync
+							pn.forceDisconnect(false); 
 						} catch(WouldBlockException e) {
 							Logger.error(this, "Impossible: " + e, e);
 						}
@@ -296,7 +297,7 @@ public class PacketSender implements Runnable, Ticker {
 						pn.sendAnyUrgentNotifications();
 					} catch(PacketSequenceException e) {
 						Logger.error(this, "Caught " + e + " - while sending urgent notifications : disconnecting", e);
-						pn.forceDisconnect();
+						pn.forceDisconnect(false);
 					}
 
 				// Need to send a keepalive packet?

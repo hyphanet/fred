@@ -70,8 +70,8 @@ public class OpennetPeerNode extends PeerNode {
     	return timeLastSuccess;
     }
     
-    public boolean disconnected() {
-    	if(super.disconnected()) {
+    public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
+    	if(super.disconnected(dumpMessageQueue, dumpTrackers)) {
     		synchronized(this) {
     			timePrevDisconnect = timeLastDisconnect;
     			timeLastDisconnect = System.currentTimeMillis();
