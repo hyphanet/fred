@@ -261,6 +261,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** If the clock delta is more than this constant, we don't talk to the node. Reason: It may not be up to date,
 	* it will have difficulty resolving date-based content etc. */
 	private static final long MAX_CLOCK_DELTA = 24L * 60L * 60L * 1000L;
+	/** 1 hour after the node is disconnected, if it is still disconnected and hasn't connected in that time, 
+	 * clear the message queue */
+	private static final long CLEAR_MESSAGE_QUEUE_AFTER = 60 * 60 * 1000L;
 	/** A WeakReference to this object. Can be taken whenever a node object needs to refer to this object for a 
 	 * long time, but without preventing it from being GC'ed. */
 	final WeakReference myRef;
@@ -966,7 +969,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @return True if the node was connected, false if it was not.
 	*/
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
-		long now = System.currentTimeMillis();
+		final long now = System.currentTimeMillis();
 		Logger.normal(this, "Disconnected " + this);
 		node.usm.onDisconnect(this);
 		node.peers.disconnected(this);
@@ -1001,8 +1004,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		node.lm.lostOrRestartedNode(this);
 		setPeerNodeStatus(now);
+		if(!dumpMessageQueue) {
+			node.getTicker().queueTimedJob(new Runnable() {
+				public void run() {
+					if(!PeerNode.this.isConnected() &&
+							timeLastDisconnect == now)
+						synchronized(PeerNode.this) {
+							PeerNode.this.messagesToSendNow.clear();
+						}
+				}
+			}, CLEAR_MESSAGE_QUEUE_AFTER);
+		}
 		return ret;
 	}
+	
 	private boolean forceDisconnectCalled = false;
 
 	public void forceDisconnect(boolean purge) {
