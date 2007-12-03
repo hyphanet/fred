@@ -175,7 +175,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	final Node node;
 	/** The PeerManager we serve */
 	final PeerManager peers;
-	/** MessageItem's to send ASAP */
+	/** MessageItem's to send ASAP. 
+	 * LOCKING: Lock on self, always take that lock last. Sometimes used inside PeerNode.this lock. */
 	private final LinkedList messagesToSendNow;
 	/** When did we last receive a SwapRequest? */
 	private long timeLastReceivedSwapRequest;
@@ -1004,15 +1005,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				previousTracker = null;
 				unverifiedTracker = null;
 			}
-			if(dumpMessageQueue) {
-				messagesToSendNow.clear();
-			}
 			// Else DO NOT clear trackers, because hopefully it's a temporary connectivity glitch.
 			sendHandshakeTime = now;
     		synchronized(this) {
     			timePrevDisconnect = timeLastDisconnect;
     			timeLastDisconnect = now;
     		}
+			if(dumpMessageQueue) {
+				synchronized(messagesToSendNow) {
+					messagesToSendNow.clear();
+				}
+			}
 		}
 		node.lm.lostOrRestartedNode(this);
 		setPeerNodeStatus(now);
@@ -1021,7 +1024,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				public void run() {
 					if(!PeerNode.this.isConnected() &&
 							timeLastDisconnect == now)
-						synchronized(PeerNode.this) {
+						synchronized(PeerNode.this.messagesToSendNow) {
 							PeerNode.this.messagesToSendNow.clear();
 						}
 				}
@@ -1570,7 +1573,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// Messages do not persist across restarts.
 				// Generally they would be incomprehensible, anything that isn't should be sent as
 				// connection initial messages by maybeOnConnect().
-				messagesToSendNow.clear();
+				synchronized(messagesToSendNow) {
+					messagesToSendNow.clear();
+				}
 			} // else it's a rekey
 			if(unverified) {
 				if(unverifiedTracker != null) {
