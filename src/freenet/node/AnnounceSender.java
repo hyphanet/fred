@@ -63,8 +63,10 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" announcing "+uid+" from "+source, t);
 		} finally {
-			source.completedAnnounce(uid);
-			source.node.completed(uid);
+			if(source != null) {
+				source.completedAnnounce(uid);
+			}
+			node.completed(uid);
 		}
 	}
 
@@ -178,7 +180,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	
             	if(msg.getSpec() == DMT.FNPOpennetNoderefRejected) {
             		int reason = msg.getInt(DMT.REJECT_CODE);
-            		Logger.normal(this, "Announce rejected by "+source+" : "+DMT.getOpennetRejectedCode(reason));
+            		Logger.normal(this, "Announce rejected by "+next+" : "+DMT.getOpennetRejectedCode(reason));
             		msg = null;
             		break;
             	}
@@ -321,30 +323,36 @@ public class AnnounceSender implements Runnable, ByteCounter {
 
 	private void timedOut(PeerNode next) {
 		Message msg = DMT.createFNPRejectedOverload(uid, false);
-		try {
-			source.sendAsync(msg, null, 0, this);
-		} catch (NotConnectedException e) {
-			// Ok
+		if(source != null) {
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Ok
+			}
 		}
 		if(cb != null) cb.nodeFailed(next, "timed out");
 	}
 
 	private void rnf(PeerNode next) {
 		Message msg = DMT.createFNPRouteNotFound(uid, htl);
-		try {
-			source.sendAsync(msg, null, 0, this);
-		} catch (NotConnectedException e) {
-			// Ok
+		if(source != null) {
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Ok
+			}
 		}
 		if(cb != null) cb.nodeFailed(next, "route not found");
 	}
 
 	private void complete() {
 		Message msg = DMT.createFNPOpennetAnnounceCompleted(uid);
-		try {
-			source.sendAsync(msg, null, 0, this);
-		} catch (NotConnectedException e) {
-			// Oh well.
+		if(source != null) {
+			try {
+				source.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e) {
+				// Oh well.
+			}
 		}
 	}
 
