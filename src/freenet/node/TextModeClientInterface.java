@@ -186,7 +186,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("STATUS - display some status information on the node including its reference and connections.\r\n");
         sb.append("MEMSTAT - display some memory usage related informations.\r\n");
         sb.append("SHUTDOWN - exit the program\r\n");
-        sb.append("ANNOUNCE[:<location>] - announce to the specified location");
+        sb.append("ANNOUNCE[:<location>] - announce to the specified location\r\n");
         if(n.isUsingWrapper())
         	sb.append("RESTART - restart the program\r\n");
         if(core != null && core.directTMCI != this) {
@@ -939,7 +939,7 @@ public class TextModeClientInterface implements Runnable {
 
 				public void nodeFailed(PeerNode pn, String reason) {
 					try {
-						out.write(("Node failed: "+pn.shortToString()+" "+reason).getBytes());
+						out.write(("Node failed: "+pn+" "+reason).getBytes());
 						out.flush();
 					} catch (IOException e) {
 						// Ignore
