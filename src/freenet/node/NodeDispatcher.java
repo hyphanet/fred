@@ -99,6 +99,15 @@ public class NodeDispatcher implements Dispatcher {
 			return node.nodeUpdater.uom.handleSendingMain(m, source);
 		} else if(spec == DMT.FNPOpennetAnnounceRequest) {
 			return handleAnnounceRequest(m, source);
+		} else if(spec == DMT.FNPRoutingStatus) {
+			if(source instanceof DarknetPeerNode) {
+				boolean value = m.getBoolean(DMT.ROUTING_ENABLED);
+				if(logMINOR)
+					Logger.minor(this, "The peer ("+source+") asked us to set routing="+value);
+				((DarknetPeerNode)source).setRoutingStatus(value, false);
+			}
+			// We claim it in any case
+			return true;
 		}
 
 		if(!source.isRoutable()) return false;

@@ -124,6 +124,7 @@ public class DMT {
 	public static final String TIME_DELTAS = "timeDeltas";
 	public static final String HASHES = "hashes";
 	public static final String REJECT_CODE = "rejectCode";
+	public static final String ROUTING_ENABLED = "routingEnabled";
 	
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -1385,6 +1386,17 @@ public class DMT {
 		double[] locs = new double[doubles.length];
 		for(int i=0;i<locs.length;i++) locs[i] = doubles[i].doubleValue();
 		return createFNPBestRoutesNotTaken(locs);
+	}
+	
+	public static final MessageType FNPRoutingStatus = new MessageType("FNPRoutingStatus") {{
+		addField(ROUTING_ENABLED, Boolean.class);
+	}};
+	
+	public static final Message createRoutingStatus(boolean routeRequests) {
+		Message msg = new Message(FNPRoutingStatus);
+		msg.set(ROUTING_ENABLED, routeRequests);
+		
+		return msg;
 	}
 
 	public static void init() { }

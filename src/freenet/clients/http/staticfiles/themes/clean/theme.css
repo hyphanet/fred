@@ -321,6 +321,10 @@ span.peer_disconnected {
 	color: #d0d0d0;
 }
 
+span.peer_routing_disabled {
+        color: #7b68ee;
+}
+
 span.peer_never_connected {
 	color: #a0a0a0;
 }

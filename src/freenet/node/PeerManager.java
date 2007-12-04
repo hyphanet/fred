@@ -97,6 +97,7 @@ public class PeerManager {
 	public static final int PEER_NODE_STATUS_CLOCK_PROBLEM = 11;
 	public static final int PEER_NODE_STATUS_CONN_ERROR = 12;
 	public static final int PEER_NODE_STATUS_DISCONNECTING = 13;
+	public static final int PEER_NODE_STATUS_ROUTING_DISABLED = 14;
 	
     /**
      * Create a PeerManager by reading a list of peers from

@@ -88,6 +88,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*  Set true if this peer has a incompatible newer build than we are
 	*/
 	protected boolean verifiedIncompatibleNewerVersion;
+	protected boolean disableRouting;
+	protected boolean disableRoutingHasBeenSetLocally;
+	protected boolean isRoutingDisabledRemotely;
 	/*
 	* Buffer of Ni,Nr,g^i,g^r,ID
 	*/
@@ -330,9 +333,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			currentLocation = -1.0;
 		}
 
+		disableRouting = disableRoutingHasBeenSetLocally = false;
+		isRoutingDisabledRemotely = false; // Assume so
+		
 		// FIXME make mandatory once everyone has upgraded
 		lastGoodVersion = fs.get("lastGoodVersion");
-
 		updateShouldDisconnectNow();
 
 		String testnet = fs.get("testnet");
@@ -842,7 +847,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean isRoutingCompatible() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			if(isRoutable) {
+			if(isRoutable && !disableRouting) {
 				timeLastRoutable = now;
 				return true;
 			}
@@ -1154,7 +1159,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Set sendHandshakeTime, and return whether to fetch the ARK.
 	 */
 	protected synchronized boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
-		if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) {
+		if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion || disableRouting) {
 			// Let them know we're here, but have no hope of connecting
 			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
 		} else if(invalidVersion() && !firstHandshake) {
@@ -1552,6 +1557,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else
 				wasARekey = true;
 			isConnected = true;
+			disableRouting = disableRoutingHasBeenSetLocally || isRoutingDisabledRemotely;
 			isRoutable = routable;
 			verifiedIncompatibleNewerVersion = newer;
 			verifiedIncompatibleOlderVersion = older;
@@ -1674,6 +1680,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
 		Message packetsMsg = createSentPacketsMessage();
+		Message dRouting = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
 
 		try {
 			if(isRoutable())
@@ -1681,6 +1688,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			sendAsync(ipMsg, null, 0, null);
 			sendAsync(timeMsg, null, 0, null);
 			sendAsync(packetsMsg, null, 0, null);
+			sendAsync(dRouting, null, 0, null);
 		} catch(NotConnectedException e) {
 			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected (" + isConnected + ':' + currentTracker + "!!!: " + e, e);
 		}
@@ -1774,6 +1782,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public synchronized boolean publicReverseInvalidVersion() {
 		return verifiedIncompatibleNewerVersion;
+	}
+	
+	public synchronized boolean dontRoute() {
+		return disableRouting;
 	}
 
 	/**
@@ -2512,6 +2524,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return "CLOCK PROBLEM";
 		if(status == PeerManager.PEER_NODE_STATUS_CONN_ERROR)
 			return "CONNECTION ERROR";
+		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED)
+			return "ROUTINGDISABLED";
 		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
 			return "DISCONNECTING";
 		return "UNKNOWN STATUS";
@@ -2545,6 +2559,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return "peer_listen_only";
 		if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
 			return "peer_clock_problem";
+		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED)
+			return "peer_routing_disabled";
 		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
 			return "peer_disconnecting";
 		return "peer_unknown_status";
@@ -2577,6 +2593,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_NEW;
 		else if(isConnected && verifiedIncompatibleOlderVersion)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_OLD;
+		else if(isConnected && disableRouting)
+			peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED;
 		else if(isConnected && Math.abs(clockDelta) > MAX_CLOCK_DELTA)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM;
 		else if(neverConnected)
@@ -2659,7 +2677,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public synchronized boolean noLongerRoutable() {
 		// TODO: We should disconnect here if "protocol version mismatch", maybe throwing an exception
 		// TODO: shouldDisconnectNow() is hopefully only called when we're connected, otherwise we're breaking the meaning of verifiedIncompable[Older|Newer]Version
-		if(verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion)
+		if(verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion || disableRouting)
 			return true;
 		return false;
 	}

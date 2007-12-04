@@ -118,6 +118,8 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			actionSelect.addChild("option", "value", "clear_allow_local", "On selected peers, clear allowLocalAddresses");
 			actionSelect.addChild("option", "value", "set_ignore_source_port", "On selected peers, set ignoreSourcePort (try this if behind an evil corporate firewall; otherwise not recommended)");
 			actionSelect.addChild("option", "value", "clear_ignore_source_port", "On selected peers, clear ignoreSourcePort");
+			actionSelect.addChild("option", "value", "set_dont_route", "On selected peers, set dontRoute (you shouldn't use that unless you know what you're doing, really!)");
+			actionSelect.addChild("option", "value", "clear_dont_route", "On selected peers, clear dontRoute");
 		}
 		actionSelect.addChild("option", "value", "", l10n("separator"));
 		actionSelect.addChild("option", "value", "remove", l10n("removePeers"));
@@ -248,6 +250,28 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			for(int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
 					peerNodes[i].setIgnoreSourcePort(false);
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/friends/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_dont_route")) {
+			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					peerNodes[i].setRoutingStatus(true, true);
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/friends/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_dont_route")) {
+			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if(request.isPartSet("node_" + peerNodes[i].hashCode())) {
+					peerNodes[i].setRoutingStatus(false, true);
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();

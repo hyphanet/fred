@@ -105,13 +105,14 @@ public class DarknetPeerNode extends PeerNode {
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
         myName = name;
-
+	
         if(fromLocal) {
         	SimpleFieldSet metadata = fs.subset("metadata");
         	
         	isDisabled = Fields.stringToBool(metadata.get("isDisabled"), false);
         	isListenOnly = Fields.stringToBool(metadata.get("isListenOnly"), false);
         	isBurstOnly = Fields.stringToBool(metadata.get("isBurstOnly"), false);
+		disableRouting = disableRoutingHasBeenSetLocally = Fields.stringToBool(metadata.get("disableRoutingHasBeenSetLocally"), false);
         	ignoreSourcePort = Fields.stringToBool(metadata.get("ignoreSourcePort"), false);
         	allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
         }
@@ -205,6 +206,8 @@ public class DarknetPeerNode extends PeerNode {
     		fs.putSingle("ignoreSourcePort", "true");
     	if(allowLocalAddresses)
     		fs.putSingle("allowLocalAddresses", "true");
+	if(disableRoutingHasBeenSetLocally)
+		fs.putSingle("disableRoutingHasBeenSetLocally", "true");
     	return fs;
     }
 
@@ -299,6 +302,35 @@ public class DarknetPeerNode extends PeerNode {
 		}
 	}
 	
+	/**
+	 * Change the routing status of a peer
+	 * 
+	 * @param shouldRoute
+	 * @param localRequest (true everywhere but in NodeDispatcher)
+	 */
+	
+	public void setRoutingStatus(boolean shouldRoute, boolean localRequest) {
+		synchronized(this) {
+			if(localRequest)
+				disableRoutingHasBeenSetLocally = !shouldRoute;
+			else
+				isRoutingDisabledRemotely = !shouldRoute;
+
+			disableRouting = disableRoutingHasBeenSetLocally || isRoutingDisabledRemotely;
+		}
+		
+		if(localRequest) {
+			Message msg = DMT.createRoutingStatus(shouldRoute);
+			try {
+				sendAsync(msg, null, 0, null);
+			} catch(NotConnectedException e) {
+			// ok
+			}
+		}
+		setPeerNodeStatus(System.currentTimeMillis());
+		node.peers.writePeers();
+		
+	}
 
 	public boolean isIgnoreSourcePort() {
 		return ignoreSourcePort;

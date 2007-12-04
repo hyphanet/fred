@@ -183,12 +183,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		int numberOfClockProblem = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM);
 		int numberOfConnError = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONN_ERROR);
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
+		int numberOfRoutingDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED);
 		
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly + numberOfClockProblem + numberOfConnError;
 		String titleCountString = null;
 		if(advancedModeEnabled) {
-			titleCountString = "(" + numberOfConnected + '/' + numberOfRoutingBackedOff + '/' + numberOfTooNew + '/' + numberOfTooOld + '/' + numberOfNotConnected + ')';
+			titleCountString = "(" + numberOfConnected + '/' + numberOfRoutingBackedOff + '/' + numberOfTooNew + '/' + numberOfTooOld + '/' + numberOfRoutingDisabled + '/' + numberOfNotConnected + ')';
 		} else {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
@@ -327,6 +328,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
 				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnecting", l10n("disconnecting"), "border-bottom: 1px dotted; cursor: help;" }, l10n("disconnectingShort"));
 				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfDisconnecting);
+			}
+			
+			if (numberOfRoutingDisabled > 0) {
+				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_routing_disabled", l10n("routingDisabled"), "border-bottom: 1px dotted; cursor: help;" }, l10n("routingDisabledShort"));
+				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfRoutingDisabled);
 			}
 
 			// Peer routing backoff reason box

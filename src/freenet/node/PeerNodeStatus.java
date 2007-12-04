@@ -5,7 +5,6 @@ package freenet.node;
 
 import java.util.Map;
 
-import freenet.clients.http.DarknetConnectionsToadlet;
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
 
@@ -52,7 +51,7 @@ public class PeerNodeStatus {
 	private final boolean publicInvalidVersion;
 
 	private final boolean publicReverseInvalidVersion;
-
+	
 	private final double backedOffPercent;
 
 	private String lastBackoffReason;
