@@ -905,7 +905,7 @@ public class TextModeClientInterface implements Runnable {
         	uline = uline.substring("ANNOUNCE".length());
         	double target;
         	if(uline.charAt(0) == ':') {
-        		target = Double.parseDouble(uline);
+        		target = Double.parseDouble(uline.substring(1));
         	} else {
         		target = n.random.nextDouble();
         	}
