@@ -179,18 +179,12 @@ public class NodeARKInserter implements ClientCallback {
 
 	public void onSuccess(BaseClientPutter state) {
 		if(logMINOR) Logger.minor(this, "ARK insert succeeded");
+		synchronized (this) {
 			inserter = null;
-			boolean myShouldInsert;
-			synchronized (this) {
-				myShouldInsert = shouldInsert;
-			}
-			if(myShouldInsert) {
-				myShouldInsert = false;
-				startInserter();
-			}
-			synchronized (this){
-				shouldInsert = myShouldInsert;
-			}
+			if(!shouldInsert) return;
+			shouldInsert = false;
+		}
+		startInserter();
 	}
 
 	public void onFailure(InsertException e, BaseClientPutter state) {
