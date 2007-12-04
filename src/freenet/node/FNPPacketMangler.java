@@ -508,7 +508,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * session key will be different,can be used to differentiate between
 				 * parallel sessions
 				 */
-				processJFKMessage1(payload,pn,replyTo);
+				processJFKMessage1(payload,3,pn,replyTo);
 
 			}
 			else if(packetType==1){
@@ -517,7 +517,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * nonce and an authenticator calculated from a transient hash key private
 				 * to the responder.
 				 */
-				processJFKMessage2(payload,pn,replyTo);
+				processJFKMessage2(payload,3,pn,replyTo);
 			}
 			else if(packetType==2){
 				/*
@@ -525,7 +525,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * cached by the Responder.Receiving a duplicate message simply causes
 				 * the responder to Re-transmit the corresponding message4
 				 */
-				processJFKMessage3(payload, pn, replyTo, oldOpennetPeer);
+				processJFKMessage3(payload, 3, pn, replyTo, oldOpennetPeer);
 			}
 			else if(packetType==3){
 				/*
@@ -533,7 +533,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				processJFKMessage4(payload, pn, replyTo, oldOpennetPeer);
+				processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer);
 			}
 		} else {
 			Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
@@ -554,7 +554,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * g^i
 	 * IDr'
 	 */	
-	private void processJFKMessage1(byte[] payload,PeerNode pn,Peer replyTo)
+	private void processJFKMessage1(byte[] payload,int offset,PeerNode pn,Peer replyTo)
 	{
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
@@ -563,7 +563,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
 			return;
 		}
-		int offset=3;
 		// get Ni
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
 		System.arraycopy(payload, offset, nonceInitiator, 0, NONCE_SIZE);
@@ -690,7 +689,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 */
 
-	private void processJFKMessage2(byte[] payload,PeerNode pn,Peer replyTo)
+	private void processJFKMessage2(byte[] payload,int inputOffset,PeerNode pn,Peer replyTo)
 	{
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it - "+pn);
@@ -701,7 +700,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 
-		int inputOffset=3;
 		byte[] nonceInitiator = new byte[NONCE_SIZE];
 		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
@@ -799,14 +797,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * @return byte Message3
 	 */
-	private void processJFKMessage3(byte[] payload, PeerNode pn,Peer replyTo, boolean oldOpennetPeer)
+	private void processJFKMessage3(byte[] payload, int inputOffset, PeerNode pn,Peer replyTo, boolean oldOpennetPeer)
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
 		
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
-		int inputOffset=3;
 		
 		final int expectedLength =	NONCE_SIZE*2 + DiffieHellman.modulusLengthInBytes()*2 +
 									HASH_LENGTH + // authenticator
@@ -969,13 +966,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peerNode we are talking to
 	 * @param replyTo the Peer we are replying to
 	 */
-	private void processJFKMessage4(byte[] payload, PeerNode pn, Peer replyTo, boolean oldOpennetPeer)
+	private void processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer)
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn);
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
-		int inputOffset=3;
 		
 		final int expectedLength =	HASH_LENGTH + // HMAC of the cyphertext
 									(c.getBlockSize() >> 3) + // IV
