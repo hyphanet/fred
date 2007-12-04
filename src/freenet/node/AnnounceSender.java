@@ -289,7 +289,6 @@ public class AnnounceSender implements Runnable, ByteCounter {
 			try {
 				OpennetPeerNode pn = node.addNewOpennetNode(fs);
 				cb.addedNode(pn);
-				sendOurRef(source);
 			} catch (FSParseException e) {
 				Logger.normal(this, "Failed to parse reply: "+e, e);
 				if(cb != null) cb.bogusNoderef("parse failed: "+e);
@@ -299,11 +298,6 @@ public class AnnounceSender implements Runnable, ByteCounter {
 			} catch (ReferenceSignatureVerificationException e) {
 				Logger.normal(this, "Failed to parse reply: "+e, e);
 				if(cb != null) cb.bogusNoderef("parse failed: "+e);
-			} catch (NotConnectedException e) {
-				Logger.normal(this, "Added their ref but then lost connection");
-				// It will be dropped soon. :(
-				// FIXME maybe we should remove it here.
-				return false;
 			}
 		}
 		return true;
@@ -365,6 +359,26 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		SimpleFieldSet fs = om.validateNoderef(noderefBuf, 0, noderefLength, source);
 		if(fs == null) {
 			om.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
+			return false;
+		}
+		// If we want it, add it and send it.
+		try {
+			if(om.addNewOpennetNode(fs) != null) {
+				sendOurRef(source);
+			} else {
+				// Okay, just route it.
+			}
+		} catch (FSParseException e) {
+			om.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
+			return false;
+		} catch (PeerParseException e) {
+			om.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
+			return false;
+		} catch (ReferenceSignatureVerificationException e) {
+			om.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
+			return false;
+		} catch (NotConnectedException e) {
+			Logger.normal(this, "Could not receive noderef, disconnected");
 			return false;
 		}
 		return true;
