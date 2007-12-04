@@ -473,6 +473,7 @@ public class OpennetManager {
 			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
 			return;
 		}
+		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
 		long xferUID = node.random.nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
@@ -510,6 +511,7 @@ public class OpennetManager {
 			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
 			return;
 		}
+		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
 		long xferUID = node.random.nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceRequest(uid, xferUID, noderef.length, 
