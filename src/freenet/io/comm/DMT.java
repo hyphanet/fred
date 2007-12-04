@@ -877,6 +877,18 @@ public class DMT {
 	public static final int NODEREF_REJECTED_TRANSFER_FAILED = 3;
 	public static final int NODEREF_REJECTED_INVALID = 4;
 	
+	// FIXME get rid???
+	
+	public static MessageType FNPOpennetAnnounceNodeNotWanted = new MessageType("FNPOpennetAnnounceNodeNotWanted") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static Message createFNPOpennetAnnounceNodeNotWanted(long uid) {
+		Message msg = new Message(FNPOpennetAnnounceNodeNotWanted);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
 	// Key offers (ULPRs)
 	
 	public static MessageType FNPOfferKey = new MessageType("FNPOfferKey") {{
