@@ -903,56 +903,39 @@ public class TextModeClientInterface implements Runnable {
         		return false;
         	}
         	uline = uline.substring("ANNOUNCE".length());
-        	double target;
+        	final double target;
         	if(uline.charAt(0) == ':') {
         		target = Double.parseDouble(uline.substring(1));
         	} else {
         		target = n.random.nextDouble();
         	}
         	om.announce(target, new AnnouncementCallback() {
+        		private void write(String msg) {
+        			try {
+        				out.write(("ANNOUNCE:"+target+":"+msg+"\r\n").getBytes());
+        				out.flush();
+        			} catch (IOException e) {
+        				// Ignore
+        			}
+        		}
 				public void addedNode(PeerNode pn) {
-					try {
-						out.write(("Added node "+pn.shortToString()+"\r\n").getBytes());
-						out.flush();
-					} catch (IOException e) {
-						// Ignore
-					}
+					write("Added node "+pn.shortToString());
 				}
 
 				public void bogusNoderef(String reason) {
-					try {
-						out.write(("Bogus noderef: "+reason+"\r\n").getBytes());
-						out.flush();
-					} catch (IOException e) {
-						// Ignore
-					}
+					write("Bogus noderef: "+reason);
 				}
 
 				public void completed() {
-					try {
-						out.write(("Completed announcement.\r\n").getBytes());
-						out.flush();
-					} catch (IOException e) {
-						// Ignore
-					}
+					write("Completed announcement.");
 				}
 
 				public void nodeFailed(PeerNode pn, String reason) {
-					try {
-						out.write(("Node failed: "+pn+" "+reason+"\r\n").getBytes());
-						out.flush();
-					} catch (IOException e) {
-						// Ignore
-					}
+					write("Node failed: "+pn+" "+reason);
 				}
 
 				public void nodeNotWanted() {
-					try {
-						out.write(("Hop doesn't want me.\r\n").getBytes());
-						out.flush();
-					} catch (IOException e) {
-						// Ignore
-					}
+					write("Hop doesn't want me.");
 				}
         		
         	});
