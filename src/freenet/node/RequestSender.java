@@ -686,7 +686,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         	
         	if(ref == null) return;
         	
-			if(!node.addNewOpennetNode(ref)) {
+			if(node.addNewOpennetNode(ref) == null) {
 				// If we don't want it let somebody else have it
 				synchronized(this) {
 					opennetNoderef = noderef;

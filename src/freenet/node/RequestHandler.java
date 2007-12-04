@@ -347,7 +347,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 			return false;
 		
 	    try {
-			if(!node.addNewOpennetNode(ref)) {
+			if(node.addNewOpennetNode(ref) == null) {
 				Logger.normal(this, "Asked for opennet ref but didn't want it for "+this+" :\n"+ref);
 			} else {
 				Logger.normal(this, "Added opennet noderef in "+this);

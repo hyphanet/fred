@@ -2737,9 +2737,9 @@ public class Node implements TimeSkewDetectorCallback {
     	return new OpennetPeerNode(fs, this, opennet.crypto, opennet, peers, false, opennet.crypto.packetMangler);
 	}
 	
-	public boolean addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		// FIXME: perhaps this should throw OpennetDisabledExcemption rather than returing false?
-		if(opennet == null) return false;
+		if(opennet == null) return null;
 		return opennet.addNewOpennetNode(fs);
 	}
 	

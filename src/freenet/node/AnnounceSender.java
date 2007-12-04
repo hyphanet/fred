@@ -30,6 +30,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 	private double nearestLoc;
 	private double target;
 	private static boolean logMINOR;
+	private final AnnouncementCallback cb;
 	
 	public AnnounceSender(Message m, long uid, PeerNode source, OpennetManager om, Node node) {
 		this.source = source;
@@ -40,8 +41,21 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		htl = m.getShort(DMT.HTL);
 		target = m.getDouble(DMT.TARGET_LOCATION); // FIXME validate
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		cb = null;
 	}
 
+	public AnnounceSender(double target, OpennetManager om, Node node, AnnouncementCallback cb) {
+		source = null;
+		this.uid = node.random.nextLong();
+		msg = null;
+		this.om = om;
+		this.node = node;
+		this.htl = node.maxHTL();
+		this.target = target;
+		this.cb = cb;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+	}
+	
 	public void run() {
 		try {
 			realRun();
@@ -55,12 +69,12 @@ public class AnnounceSender implements Runnable, ByteCounter {
 
 	private void realRun() {
 		boolean hasForwarded = false;
-		try {
-			source.sendAsync(DMT.createFNPAccepted(uid), null, 0, null);
-		} catch (NotConnectedException e) {
-			return;
-		}
 		if(source != null) {
+			try {
+				source.sendAsync(DMT.createFNPAccepted(uid), null, 0, null);
+			} catch (NotConnectedException e) {
+				return;
+			}
 			if(!transferNoderef()) return;
 		}
 		
@@ -259,15 +273,32 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		}
 		SimpleFieldSet fs = om.validateNoderef(noderefBuf, 0, noderefLength, source);
 		if(fs == null) {
-			om.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
+			if(cb != null) cb.bogusNoderef("invalid noderef");
 			return true; // Don't relay
 		}
-		// Now relay it
-		try {
-			om.sendAnnouncementReply(uid, source, noderefBuf, this);
-		} catch (NotConnectedException e) {
-			// Hmmm...!
-			return false;
+		if(source != null) {
+			// Now relay it
+			try {
+				om.sendAnnouncementReply(uid, source, noderefBuf, this);
+			} catch (NotConnectedException e) {
+				// Hmmm...!
+				return false;
+			}
+		} else {
+			// Add it
+			try {
+				OpennetPeerNode pn = node.addNewOpennetNode(fs);
+				cb.addedNode(pn);
+			} catch (FSParseException e) {
+				Logger.normal(this, "Failed to parse reply: "+e, e);
+				if(cb != null) cb.bogusNoderef("parse failed: "+e);
+			} catch (PeerParseException e) {
+				Logger.normal(this, "Failed to parse reply: "+e, e);
+				if(cb != null) cb.bogusNoderef("parse failed: "+e);
+			} catch (ReferenceSignatureVerificationException e) {
+				Logger.normal(this, "Failed to parse reply: "+e, e);
+				if(cb != null) cb.bogusNoderef("parse failed: "+e);
+			}
 		}
 		return true;
 	}
@@ -332,7 +363,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		}
 		// If we want it, add it and send it.
 		try {
-			if(om.addNewOpennetNode(fs)) {
+			if(om.addNewOpennetNode(fs) != null) {
 				sendOurRef();
 			} else {
 				// Okay, just route it.

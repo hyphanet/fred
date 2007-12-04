@@ -186,6 +186,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("STATUS - display some status information on the node including its reference and connections.\r\n");
         sb.append("MEMSTAT - display some memory usage related informations.\r\n");
         sb.append("SHUTDOWN - exit the program\r\n");
+        sb.append("ANNOUNCE[:<location>] - announce to the specified location");
         if(n.isUsingWrapper())
         	sb.append("RESTART - restart the program\r\n");
         if(core != null && core.directTMCI != this) {
@@ -862,7 +863,7 @@ public class TextModeClientInterface implements Runnable {
 					}
 				}
         	};
-        	System.err.println("Probing keyspace around "+d+" ...");
+        	outsb.append("Probing keyspace around "+d+" ...");
         	n.dispatcher.startProbe(d, cb, NodeDispatcher.PROBE_TYPE_DEFAULT);
         	synchronized(this) {
         		while(!doneSomething) {
@@ -884,9 +885,9 @@ public class TextModeClientInterface implements Runnable {
         	}
         } else if(uline.startsWith("PLUGLOAD:")) {
         	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
-        		outsb.append("  PLUGLOAD: pluginName         - Load official plugin from freenetproject.org");
-        		outsb.append("  PLUGLOAD: file://<filename>  - Load plugin from file");
-        		outsb.append("  PLUGLOAD: http://...         - Load plugin from online file");
+        		outsb.append("  PLUGLOAD: pluginName         - Load official plugin from freenetproject.org\r\n");
+        		outsb.append("  PLUGLOAD: file://<filename>  - Load plugin from file\r\n");
+        		outsb.append("  PLUGLOAD: http://...         - Load plugin from online file\r\n");
         	} else {
         		String name = line.substring("PLUGLOAD:".length()).trim();
         		n.pluginManager.startPlugin(name, true);
@@ -895,6 +896,48 @@ public class TextModeClientInterface implements Runnable {
         	outsb.append(n.pluginManager.dumpPlugins());
         } else if(uline.startsWith("PLUGKILL:")) {
         	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim(), 60*1000);
+        } else if(uline.startsWith("ANNOUNCE")) {
+        	OpennetManager om = n.getOpennet();
+        	if(om == null) {
+        		outsb.append("OPENNET DISABLED, cannot announce.");
+        		return false;
+        	}
+        	uline = uline.substring("ANNOUNCE".length());
+        	double target;
+        	if(uline.charAt(0) == ':') {
+        		target = Double.parseDouble(uline);
+        	} else {
+        		target = n.random.nextDouble();
+        	}
+        	om.announce(target, new AnnouncementCallback() {
+				public void addedNode(PeerNode pn) {
+					try {
+						out.write(("Added node "+pn.shortToString()+"\n").getBytes());
+						out.flush();
+					} catch (IOException e) {
+						// Ignore
+					}
+				}
+
+				public void bogusNoderef(String reason) {
+					try {
+						out.write(("Bogus noderef: "+reason).getBytes());
+						out.flush();
+					} catch (IOException e) {
+						// Ignore
+					}
+				}
+
+				public void completed() {
+					try {
+						out.write(("Completed announcement.").getBytes());
+						out.flush();
+					} catch (IOException e) {
+						// Ignore
+					}
+				}
+        		
+        	});
         } else {
         	if(uline.length() > 0)
         		printHeader(out);

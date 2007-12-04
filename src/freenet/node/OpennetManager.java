@@ -211,17 +211,18 @@ public class OpennetManager {
 			node.peers.removeOpennetPeers();
 	}
 
-	public boolean addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
 		if(Arrays.equals(pn.getIdentity(), crypto.myIdentity)) {
 			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
-			return false; // Equal to myself
+			return null; // Equal to myself
 		}
 		if(peersLRU.contains(pn)) {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
-			return false;
+			return null;
 		}
-		return wantPeer(pn, true); 
+		if(wantPeer(pn, true)) return pn;
+		else return null;
 		// Start at bottom. Node must prove itself.
 	}
 
@@ -637,6 +638,15 @@ public class OpennetManager {
 		}
     	
 		return ref;
+	}
+
+	/** Do an announcement !!
+	 * @param target The location to announce to. In 0.7 we don't try to prevent nodes from choosing their
+	 * announcement location, because it is easy for them to get the location they want later on anyway,
+	 * and we can do a much more effective announcement this way. */
+	public void announce(double target, AnnouncementCallback cb) {
+		AnnounceSender sender = new AnnounceSender(target, this, node, cb);
+		node.executor.execute(sender, "Announcement to "+target);
 	}
 
 }
