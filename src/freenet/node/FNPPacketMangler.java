@@ -80,9 +80,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		JFK_PREFIX_RESPONDER = R;
 	}
 	
+	/* How often shall we generate a new exponential and add it to the FIFO? */
+	public final static int DH_GENERATION_INTERVAL = 30000; // 30sec
+	/* How big is the FIFO? */
 	public final static int DH_CONTEXT_BUFFER_SIZE = 10;
+	/*
+	* The FIFO itself
+	* Get a lock on dhContextFIFO before touching it!
+	*/
 	private final LinkedList dhContextFIFO = new LinkedList();
-	/* Get a lock on dhContextFIFO before touching it! */
+	/* The element which is about to be prunned from the FIFO */
 	private DiffieHellmanLightContext dhContextToBePrunned = null;
 	private long jfkDHLastGenerationTimestamp = 0;
 	
@@ -479,7 +486,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+pn);
 		final long now = System.currentTimeMillis();
 		DiffieHellmanLightContext ctx = (DiffieHellmanLightContext) pn.getKeyAgreementSchemeContext();
-		if((ctx == null) || ((pn.jfkContextLifetime + 15*60*1000) < now)) {
+		if((ctx == null) || ((pn.jfkContextLifetime + DH_GENERATION_INTERVAL*DH_CONTEXT_BUFFER_SIZE) < now)) {
 			pn.jfkContextLifetime = now;
 			pn.setKeyAgreementSchemeContext(ctx = getLightDiffieHellmanContext());
 		}
@@ -2226,7 +2233,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			result = (DiffieHellmanLightContext) dhContextFIFO.removeFirst();
 			
 			// Shall we replace one element of the queue ?
-			if((jfkDHLastGenerationTimestamp + 30000 /*30sec*/) < now) {
+			if((jfkDHLastGenerationTimestamp + DH_GENERATION_INTERVAL) < now) {
 				jfkDHLastGenerationTimestamp = now;
 				_fillJFKDHFIFOOffThread();
 			}
