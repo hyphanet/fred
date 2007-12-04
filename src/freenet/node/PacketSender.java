@@ -314,6 +314,7 @@ public class PacketSender implements Runnable, Ticker {
 
 				if(pn.noContactDetails())
 					pn.startARKFetcher();
+			
 			if(pn.shouldSendHandshake()) {
 				// Send handshake if necessary
 				long beforeHandshakeTime = System.currentTimeMillis();
