@@ -936,6 +936,15 @@ public class TextModeClientInterface implements Runnable {
 						// Ignore
 					}
 				}
+
+				public void nodeFailed(PeerNode pn, String reason) {
+					try {
+						out.write(("Node failed: "+pn.shortToString()+" "+reason).getBytes());
+						out.flush();
+					} catch (IOException e) {
+						// Ignore
+					}
+				}
         		
         	});
         } else {

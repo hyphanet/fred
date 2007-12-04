@@ -105,7 +105,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
             
             if(next == null) {
                 // Backtrack
-            	rnf();
+            	rnf(next);
                 return;
             }
             if(logMINOR) Logger.minor(this, "Routing request to "+next);
@@ -221,7 +221,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	
             	if(msg == null) {
             		// Fatal timeout
-            		timedOut();
+            		timedOut(next);
             		return;
             	}
             	
@@ -318,22 +318,24 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		return true;
 	}
 
-	private void timedOut() {
+	private void timedOut(PeerNode next) {
 		Message msg = DMT.createFNPRejectedOverload(uid, false);
 		try {
 			source.sendAsync(msg, null, 0, this);
 		} catch (NotConnectedException e) {
 			// Ok
 		}
+		if(cb != null) cb.nodeFailed(next, "timed out");
 	}
 
-	private void rnf() {
+	private void rnf(PeerNode next) {
 		Message msg = DMT.createFNPRouteNotFound(uid, htl);
 		try {
 			source.sendAsync(msg, null, 0, this);
 		} catch (NotConnectedException e) {
 			// Ok
 		}
+		if(cb != null) cb.nodeFailed(next, "route not found");
 	}
 
 	private void complete() {
