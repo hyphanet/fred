@@ -279,15 +279,15 @@ public class AnnounceSender implements Runnable, ByteCounter {
 	 * @param msg2 The AnnouncementReply message.
 	 * @return True unless we lost the connection to our request source.
 	 */
-	private boolean validateForwardReply(Message msg, PeerNode source) {
+	private boolean validateForwardReply(Message msg, PeerNode next) {
 		long xferUID = msg.getLong(DMT.TRANSFER_UID);
 		int noderefLength = msg.getInt(DMT.NODEREF_LENGTH);
 		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
-		byte[] noderefBuf = om.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, source, false, uid, true, this);
+		byte[] noderefBuf = om.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, next, false, uid, true, this);
 		if(noderefBuf == null) {
 			return true; // Don't relay
 		}
-		SimpleFieldSet fs = om.validateNoderef(noderefBuf, 0, noderefLength, source);
+		SimpleFieldSet fs = om.validateNoderef(noderefBuf, 0, noderefLength, next);
 		if(fs == null) {
 			if(cb != null) cb.bogusNoderef("invalid noderef");
 			return true; // Don't relay
