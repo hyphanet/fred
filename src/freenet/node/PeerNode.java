@@ -2686,7 +2686,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * A method to be called once at the beginning of every time isConnected() is true
 	 */
 	protected void onConnect() {
-	// Do nothing in the default impl
+		// Do nothing in the default impl
 	}
 
 	public void onFound(long edition, FetchResult result) {
