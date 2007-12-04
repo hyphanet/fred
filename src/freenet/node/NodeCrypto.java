@@ -12,6 +12,7 @@ import java.security.MessageDigest;
 import java.util.zip.DeflaterOutputStream;
 
 import net.i2p.util.NativeBigInteger;
+import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
@@ -20,6 +21,8 @@ import freenet.crypt.DSASignature;
 import freenet.crypt.Global;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
+import freenet.crypt.UnsupportedCipherException;
+import freenet.crypt.ciphers.Rijndael;
 import freenet.io.PortForwardBrokenDetector;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
@@ -66,6 +69,7 @@ class NodeCrypto {
 	static boolean logMINOR;
 	final NodeCryptoConfig config;
 	final NodeIPPortDetector detector;
+	final BlockCipher anonSetupCipher;
 	
 	// Noderef related
 	/** An ordered version of the noderef FieldSet, without the signature */
@@ -152,6 +156,11 @@ class NodeCrypto {
 		
 		detector = new NodeIPPortDetector(node, node.ipDetector, this);
 		
+		anonSetupCipher = new Rijndael(256,256);
+		anonSetupCipher.initialize(identityHash);
+		
+		} catch (UnsupportedCipherException e) {
+			throw new Error(e);
 		} catch (NodeInitException e) {
 			config.stopping(this);
 			throw e;
@@ -437,5 +446,12 @@ class NodeCrypto {
 
 	DSAGroup getCryptoGroup() {
 		return cryptoGroup;
+	}
+
+	/**
+	 * Get the cipher for connection attempts for e.g. seednode connections from nodes we don't know.
+	 */
+	public BlockCipher getAnonSetupCipher() {
+		return anonSetupCipher;
 	}
 }

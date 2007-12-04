@@ -269,6 +269,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				}
 			}
 		}
+		if(tryProcessAuthAnon(buf, offset, length, peer, now)) return;
 		Logger.normal(this,"Unmatchable packet from "+peer);
 	}
 
@@ -333,6 +334,111 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(logMINOR) Logger.minor(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
 			return false;
 		}
+	}
+
+	/**
+	 * Might be an anonymous-initiator negotiation packet.
+	 * Anonymous initiator is used for seednode connections, 
+	 * and will in future be used for other things for example
+	 * one-side-only invites, password based invites etc. 
+	 * @param buf The buffer to read bytes from
+	 * @param offset The offset at which to start reading
+	 * @param length The number of bytes to read
+	 * @param pn The PeerNode we think is responsible
+	 * @param peer The Peer to send a reply to
+	 * @param now The time at which the packet was received
+	 * @return True if we handled a negotiation packet, false otherwise.
+	 */
+	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer, long now) {
+		BlockCipher authKey = crypto.getAnonSetupCipher();
+		// Does the packet match IV E( H(data) data ) ?
+		PCFBMode pcfb = PCFBMode.create(authKey);
+		int ivLength = pcfb.lengthIV();
+		MessageDigest md = SHA256.getMessageDigest();
+		int digestLength = HASH_LENGTH;
+		if(length < digestLength + ivLength + 4) {
+			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
+			SHA256.returnMessageDigest(md);
+			return false;
+		}
+		// IV at the beginning
+		pcfb.reset(buf, offset);
+		// Then the hash, then the data
+		// => Data starts at ivLength + digestLength
+		// Decrypt the hash
+		byte[] hash = new byte[digestLength];
+		System.arraycopy(buf, offset+ivLength, hash, 0, digestLength);
+		pcfb.blockDecipher(hash, 0, hash.length);
+
+		int dataStart = ivLength + digestLength + offset+2;
+
+		int byte1 = ((pcfb.decipher(buf[dataStart-2])) & 0xff);
+		int byte2 = ((pcfb.decipher(buf[dataStart-1])) & 0xff);
+		int dataLength = (byte1 << 8) + byte2;
+		if(logMINOR) Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+ ')');
+		if(dataLength > length - (ivLength+hash.length+2)) {
+			if(logMINOR) Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
+			SHA256.returnMessageDigest(md);
+			return false;
+		}
+		// Decrypt the data
+		byte[] payload = new byte[dataLength];
+		System.arraycopy(buf, dataStart, payload, 0, dataLength);
+		pcfb.blockDecipher(payload, 0, payload.length);
+
+		md.update(payload);
+		byte[] realHash = md.digest();
+		SHA256.returnMessageDigest(md); md = null;
+
+		if(Arrays.equals(realHash, hash)) {
+			// Got one
+			processDecryptedAuthAnon(payload, peer);
+			return true;
+		} else {
+			if(logMINOR) Logger.minor(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
+			return false;
+		}
+	}
+	
+	// Anonymous-initiator setup types
+	/** Connect to a node hoping it will act as a seednode for us */
+	static final byte SETUP_OPENNET_SEEDNODE = 1;
+
+	private void processDecryptedAuthAnon(byte[] payload, Peer replyTo) {
+		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo);
+		
+		long now = System.currentTimeMillis();
+
+		/** Protocol version. Should be 1. */
+		int version = payload[0];
+		/** Negotiation type. 2 = JFK. Other types might indicate other DH variants, 
+		 * or even non-DH-based algorithms such as password based key setup. */
+		int negType = payload[1];
+		/** Packet phase. */
+		int packetType = payload[2];
+		/** Setup type. See above. */
+		int setupType = payload[3];
+		
+		if(logMINOR) Logger.minor(this, "Received anonymous auth packet (phase="+packetType+", v="+version+", nt="+negType+", setup type="+setupType+") from "+replyTo+"");
+		
+		if(version != 1) {
+			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
+			return;
+		}
+		if(negType != 2) {
+			Logger.error(this, "Unknown neg type: "+negType);
+			return;
+		}
+		
+		// Known setup types
+		if(setupType != SETUP_OPENNET_SEEDNODE) {
+			Logger.error(this, "Unknown setup type "+negType);
+			return;
+		}
+		
+		
+		// TODO Auto-generated method stub
+		
 	}
 
 	/**
