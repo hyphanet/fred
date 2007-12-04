@@ -282,7 +282,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	protected final HashMap jfkNoncesSent = new HashMap();
 	private static boolean logMINOR;
-
+	
 	/**
 	* Create a PeerNode from a SimpleFieldSet containing a
 	* node reference for one. This must contain the following
@@ -3152,10 +3152,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return true;
 	}
 
-	public void setOpennetDisabled() {
-		// FIXME
-	}
-	
     public synchronized long timeLastDisconnect() {
     	return timeLastDisconnect;
     }

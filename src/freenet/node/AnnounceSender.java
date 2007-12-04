@@ -156,7 +156,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	}
             	
             	if(msg.getSpec() == DMT.FNPOpennetDisabled) {
-            		source.setOpennetDisabled();
+            		if(logMINOR) Logger.minor(this, "Opennet disabled");
             		msg = null;
             		break;
             	}
@@ -229,7 +229,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	}
             	
             	if(msg.getSpec() == DMT.FNPOpennetDisabled) {
-            		source.setOpennetDisabled();
+            		Logger.minor(this, "Opennet disabled");
             		msg = null;
             		break;
             	}
