@@ -314,9 +314,9 @@ public class DarknetPeerNode extends PeerNode {
 			if(localRequest)
 				disableRoutingHasBeenSetLocally = !shouldRoute;
 			else
-				isRoutingDisabledRemotely = !shouldRoute;
+				disableRoutingHasBeenSetRemotely = !shouldRoute;
 
-			disableRouting = disableRoutingHasBeenSetLocally || isRoutingDisabledRemotely;
+			disableRouting = disableRoutingHasBeenSetLocally || disableRoutingHasBeenSetRemotely;
 		}
 		
 		if(localRequest) {

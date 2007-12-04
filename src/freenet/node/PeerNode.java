@@ -90,7 +90,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	protected boolean verifiedIncompatibleNewerVersion;
 	protected boolean disableRouting;
 	protected boolean disableRoutingHasBeenSetLocally;
-	protected boolean isRoutingDisabledRemotely;
+	protected boolean disableRoutingHasBeenSetRemotely;
 	/*
 	* Buffer of Ni,Nr,g^i,g^r,ID
 	*/
@@ -334,7 +334,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 
 		disableRouting = disableRoutingHasBeenSetLocally = false;
-		isRoutingDisabledRemotely = false; // Assume so
+		disableRoutingHasBeenSetRemotely = false; // Assume so
 		
 		// FIXME make mandatory once everyone has upgraded
 		lastGoodVersion = fs.get("lastGoodVersion");
@@ -1557,7 +1557,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else
 				wasARekey = true;
 			isConnected = true;
-			disableRouting = disableRoutingHasBeenSetLocally || isRoutingDisabledRemotely;
+			disableRouting = disableRoutingHasBeenSetLocally || disableRoutingHasBeenSetRemotely;
 			isRoutable = routable;
 			verifiedIncompatibleNewerVersion = newer;
 			verifiedIncompatibleOlderVersion = older;
