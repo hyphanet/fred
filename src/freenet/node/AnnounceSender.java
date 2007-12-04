@@ -53,6 +53,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		this.htl = node.maxHTL();
 		this.target = target;
 		this.cb = cb;
+		noderefBuf = om.crypto.myCompressedFullRef();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
@@ -366,7 +367,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		// If we want it, add it and send it.
 		try {
 			if(om.addNewOpennetNode(fs) != null) {
-				sendOurRef(source);
+				sendOurRef(source, om.crypto.myCompressedFullRef());
 			} else {
 				// Okay, just route it.
 			}
@@ -386,8 +387,8 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		return true;
 	}
 
-	private void sendOurRef(PeerNode next) throws NotConnectedException {
-		om.sendAnnouncementReply(uid, next, om.crypto.myCompressedFullRef(), this);
+	private void sendOurRef(PeerNode next, byte[] ref) throws NotConnectedException {
+		om.sendAnnouncementReply(uid, next, ref, this);
 	}
 
 	private volatile Object totalBytesSync = new Object();
