@@ -153,14 +153,14 @@ public class OpennetManager {
 			osr = new OutputStreamWriter(fos, "UTF-8");
 			bw = new BufferedWriter(osr);
 			fs.writeTo(bw);
-			                  
+			
 			bw.close();
-                        FileUtil.renameTo(backup, orig);
+			FileUtil.renameTo(backup, orig);
 		} catch (IOException e) {
-                        Closer.close(bw);
+			Closer.close(bw);
 			Closer.close(osr);
 			Closer.close(fos);
-                }
+		}
 	}
 
 	private void readFile(File filename) throws IOException {
