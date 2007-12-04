@@ -379,6 +379,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 			} else {
 				if(logMINOR)
 					Logger.minor(this, "Don't need the node");
+				sendNotWanted();
 				// Okay, just route it.
 			}
 		} catch (FSParseException e) {
@@ -395,6 +396,11 @@ public class AnnounceSender implements Runnable, ByteCounter {
 			return false;
 		}
 		return true;
+	}
+
+	private void sendNotWanted() throws NotConnectedException {
+		Message msg = DMT.createFNPOpennetAnnounceNodeNotWanted(uid);
+		source.sendAsync(msg, null, 0, this);
 	}
 
 	private void sendOurRef(PeerNode next, byte[] ref) throws NotConnectedException {
