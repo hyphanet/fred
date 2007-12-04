@@ -369,6 +369,8 @@ public class AnnounceSender implements Runnable, ByteCounter {
 			if(om.addNewOpennetNode(fs) != null) {
 				sendOurRef(source, om.crypto.myCompressedFullRef());
 			} else {
+				if(logMINOR)
+					Logger.minor(this, "Don't need the node");
 				// Okay, just route it.
 			}
 		} catch (FSParseException e) {
