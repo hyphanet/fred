@@ -79,31 +79,40 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		fetcher.schedule();
 	}
 
-	public synchronized void onFoundEdition(long l, USK key) {
-		edition = Math.max(l, edition);
-		consecutiveCollisions = 0;
-		if((fetcher.lastContentWasMetadata() == isMetadata) && fetcher.hasLastData()
-				&& (fetcher.lastCompressionCodec() == compressionCodec)) {
-			try {
-				byte[] myData = BucketTools.toByteArray(data);
-				byte[] hisData = BucketTools.toByteArray(fetcher.getLastData());
-				fetcher.freeLastData();
-				if(Arrays.equals(myData, hisData)) {
-					// Success!
-					cb.onEncode(pubUSK.copy(edition), this);
-					parent.addMustSucceedBlocks(1);
-					parent.completedBlock(true);
-					cb.onSuccess(this);
-					finished = true;
-					sbi = null;
-					return;
+	public void onFoundEdition(long l, USK key) {
+		boolean alreadyInserted = false;
+		synchronized(this) {
+			edition = Math.max(l, edition);
+			consecutiveCollisions = 0;
+			if((fetcher.lastContentWasMetadata() == isMetadata) && fetcher.hasLastData()
+					&& (fetcher.lastCompressionCodec() == compressionCodec)) {
+				try {
+					byte[] myData = BucketTools.toByteArray(data);
+					byte[] hisData = BucketTools.toByteArray(fetcher.getLastData());
+					fetcher.freeLastData();
+					if(Arrays.equals(myData, hisData)) {
+						// Success
+						alreadyInserted = true;
+						finished = true;
+						sbi = null;
+					}
+				} catch (IOException e) {
+					Logger.error(this, "Could not decode: "+e, e);
 				}
-			} catch (IOException e) {
-				Logger.error(this, "Could not decode: "+e, e);
+			}
+			if(!alreadyInserted) {
+				fetcher = null;
 			}
 		}
-		fetcher = null;
-		scheduleInsert();
+		if(alreadyInserted) {
+			// Success!
+			cb.onEncode(pubUSK.copy(edition), this);
+			parent.addMustSucceedBlocks(1);
+			parent.completedBlock(true);
+			cb.onSuccess(this);
+		} else {
+			scheduleInsert();
+		}
 	}
 
 	private void scheduleInsert() {
