@@ -293,6 +293,8 @@ public class AnnounceSender implements Runnable, ByteCounter {
 				OpennetPeerNode pn = node.addNewOpennetNode(fs);
 				if(pn != null)
 					cb.addedNode(pn);
+				else
+					cb.bogusNoderef("not added - maybe not needed?");
 			} catch (FSParseException e) {
 				Logger.normal(this, "Failed to parse reply: "+e, e);
 				if(cb != null) cb.bogusNoderef("parse failed: "+e);
