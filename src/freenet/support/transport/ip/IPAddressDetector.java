@@ -48,7 +48,7 @@ public class IPAddressDetector implements Runnable {
 	 * @return Detected ip address
 	 */
 	public InetAddress[] getAddress() {
-		return getAddress(0);
+		return getAddress(interval);
 	}
 
 	/**
