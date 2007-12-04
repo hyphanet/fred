@@ -211,7 +211,8 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ANNOUNCE_TIMEOUT).setType(DMT.FNPRejectedOverload);
             	MessageFilter mfAnnounceReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ANNOUNCE_TIMEOUT).setType(DMT.FNPOpennetAnnounceReply);
                 MessageFilter mfOpennetDisabled = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ANNOUNCE_TIMEOUT).setType(DMT.FNPOpennetDisabled);
-            	MessageFilter mf = mfAnnounceCompleted.or(mfRouteNotFound.or(mfRejectedOverload.or(mfAnnounceReply.or(mfOpennetDisabled))));
+                MessageFilter mfNotWanted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ANNOUNCE_TIMEOUT).setType(DMT.FNPOpennetAnnounceNodeNotWanted);
+            	MessageFilter mf = mfAnnounceCompleted.or(mfRouteNotFound.or(mfRejectedOverload.or(mfAnnounceReply.or(mfOpennetDisabled.or(mfNotWanted)))));
             	
             	try {
             		msg = node.usm.waitFor(mf, this);
@@ -254,6 +255,18 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	if(msg.getSpec() == DMT.FNPOpennetAnnounceReply) {
             		validateForwardReply(msg, next);
             		continue; // There may be more
+            	}
+            	
+            	if(msg.getSpec() == DMT.FNPOpennetAnnounceNodeNotWanted) {
+            		if(cb != null)
+            			cb.nodeNotWanted();
+            		if(source != null)
+						try {
+							sendNotWanted();
+						} catch (NotConnectedException e) {
+							Logger.error(this, "Lost connection to source");
+							return;
+						}
             	}
             	
             	Logger.error(this, "Unexpected message: "+msg);

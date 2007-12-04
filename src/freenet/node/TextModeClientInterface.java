@@ -945,6 +945,15 @@ public class TextModeClientInterface implements Runnable {
 						// Ignore
 					}
 				}
+
+				public void nodeNotWanted() {
+					try {
+						out.write(("Hop doesn't want me.").getBytes());
+						out.flush();
+					} catch (IOException e) {
+						// Ignore
+					}
+				}
         		
         	});
         } else {

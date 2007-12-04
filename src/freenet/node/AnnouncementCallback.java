@@ -9,5 +9,6 @@ public interface AnnouncementCallback {
 	public void bogusNoderef(String reason);
 	public void nodeFailed(PeerNode pn, String reason);
 	public void addedNode(PeerNode pn);
+	public void nodeNotWanted();
 	
 }
