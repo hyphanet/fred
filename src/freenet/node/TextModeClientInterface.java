@@ -912,7 +912,7 @@ public class TextModeClientInterface implements Runnable {
         	om.announce(target, new AnnouncementCallback() {
 				public void addedNode(PeerNode pn) {
 					try {
-						out.write(("Added node "+pn.shortToString()+"\n").getBytes());
+						out.write(("Added node "+pn.shortToString()+"\r\n").getBytes());
 						out.flush();
 					} catch (IOException e) {
 						// Ignore
@@ -921,7 +921,7 @@ public class TextModeClientInterface implements Runnable {
 
 				public void bogusNoderef(String reason) {
 					try {
-						out.write(("Bogus noderef: "+reason).getBytes());
+						out.write(("Bogus noderef: "+reason+"\r\n").getBytes());
 						out.flush();
 					} catch (IOException e) {
 						// Ignore
@@ -930,7 +930,7 @@ public class TextModeClientInterface implements Runnable {
 
 				public void completed() {
 					try {
-						out.write(("Completed announcement.").getBytes());
+						out.write(("Completed announcement.\r\n").getBytes());
 						out.flush();
 					} catch (IOException e) {
 						// Ignore
@@ -939,7 +939,7 @@ public class TextModeClientInterface implements Runnable {
 
 				public void nodeFailed(PeerNode pn, String reason) {
 					try {
-						out.write(("Node failed: "+pn+" "+reason).getBytes());
+						out.write(("Node failed: "+pn+" "+reason+"\r\n").getBytes());
 						out.flush();
 					} catch (IOException e) {
 						// Ignore
@@ -948,7 +948,7 @@ public class TextModeClientInterface implements Runnable {
 
 				public void nodeNotWanted() {
 					try {
-						out.write(("Hop doesn't want me.").getBytes());
+						out.write(("Hop doesn't want me.\r\n").getBytes());
 						out.flush();
 					} catch (IOException e) {
 						// Ignore
