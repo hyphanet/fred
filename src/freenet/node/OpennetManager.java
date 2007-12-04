@@ -468,7 +468,7 @@ public class OpennetManager {
 	 * @throws NotConnectedException If the peer becomes disconnected while we are trying to send the noderef.
 	 */
 	public void sendOpennetRef(boolean isReply, long uid, PeerNode peer, byte[] noderef, ByteCounter ctr) throws NotConnectedException {
-		byte[] padded = new byte[PADDED_NODEREF_SIZE];
+		byte[] padded = new byte[paddedSize(noderef.length)];
 		if(noderef.length > padded.length) {
 			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
 			return;
@@ -506,7 +506,7 @@ public class OpennetManager {
 
 	public void sendAnnouncementRequest(long uid, PeerNode peer, byte[] noderef, ByteCounter ctr, 
 			double target, short htl, double nearestLocSoFar) throws NotConnectedException {
-		byte[] padded = new byte[PADDED_NODEREF_SIZE];
+		byte[] padded = new byte[paddedSize(noderef.length)];
 		if(noderef.length > padded.length) {
 			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
 			return;
@@ -520,6 +520,14 @@ public class OpennetManager {
 		innerSendOpennetRef(xferUID, padded, peer);
 	}
 	
+	private int paddedSize(int length) {
+		if(length < PADDED_NODEREF_SIZE) return PADDED_NODEREF_SIZE;
+		Logger.normal(this, "Large noderef: "+length);
+		if(length > MAX_OPENNET_NODEREF_LENGTH)
+			throw new IllegalArgumentException("Too big noderef: "+length+" limit is "+MAX_OPENNET_NODEREF_LENGTH);
+		return ((length >>> 10) + ((length & 1023) == 0 ? 0 : 1)) << 10;
+	}
+
 	public void sendAnnouncementReply(long uid, PeerNode peer, byte[] noderef, ByteCounter ctr) 
 	throws NotConnectedException {
 		byte[] padded = new byte[PADDED_NODEREF_SIZE];
