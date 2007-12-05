@@ -41,4 +41,8 @@ public class SeedClientPeerNode extends PeerNode {
 	public boolean canAcceptAnnouncements() {
 		return true;
 	}
+
+	public boolean recordStatus() {
+		return false;
+	}
 }

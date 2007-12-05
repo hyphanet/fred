@@ -76,5 +76,9 @@ public class OpennetPeerNode extends PeerNode {
 	public boolean isSearchable() {
 		return true;
 	}
+
+	public boolean recordStatus() {
+		return true;
+	}
     
 }

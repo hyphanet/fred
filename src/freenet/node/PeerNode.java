@@ -2625,7 +2625,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			int oldPeerNodeStatus = peerNodeStatus;
 			peerNodeStatus = getPeerNodeStatus(now, routingBackedOffUntil);
 
-			if(peerNodeStatus != oldPeerNodeStatus) {
+			if(peerNodeStatus != oldPeerNodeStatus && recordStatus()) {
 				peers.removePeerNodeStatus(oldPeerNodeStatus, this, noLog);
 				peers.addPeerNodeStatus(peerNodeStatus, this, noLog);
 			}
@@ -2634,6 +2634,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return peerNodeStatus;
 	}
 
+	public abstract boolean recordStatus();
+	
 	private synchronized void checkConnectionsAndTrackers() {
 		if(isConnected) {
 			if(currentTracker == null) {

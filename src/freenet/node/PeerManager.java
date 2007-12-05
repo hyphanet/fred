@@ -258,7 +258,8 @@ public class PeerManager {
 			myPeers = newMyPeers;
 			Logger.normal(this, "Added " + pn);
 		}
-		this.addPeerNodeStatus(pn.getPeerNodeStatus(), pn, false);
+		if(pn.recordStatus())
+			addPeerNodeStatus(pn.getPeerNodeStatus(), pn, false);
 		pn.setPeerNodeStatus(System.currentTimeMillis());
 		updatePMUserAlert();
 		if((!ignoreOpennet) && pn instanceof OpennetPeerNode) {
@@ -289,7 +290,8 @@ public class PeerManager {
     			if(myPeers[i] == pn) isInPeers=true;
     		}
     		int peerNodeStatus = pn.getPeerNodeStatus();
-    		removePeerNodeStatus( peerNodeStatus, pn, !isInPeers );
+    		if(pn.recordStatus())
+    			removePeerNodeStatus( peerNodeStatus, pn, !isInPeers );
     		String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
     		if(peerNodePreviousRoutingBackoffReason != null) {
     			removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
