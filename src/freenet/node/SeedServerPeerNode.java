@@ -3,6 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.net.InetAddress;
+import java.util.Vector;
+
+import freenet.io.comm.FreenetInetAddress;
+import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.Logger;
@@ -59,6 +64,17 @@ public class SeedServerPeerNode extends PeerNode {
 		} else {
 			om.announcer.maybeSendAnnouncement();
 		}
+	}
+
+	public InetAddress[] getInetAddresses() {
+		Peer[] peers = getHandshakeIPs();
+		Vector v = new Vector();
+		for(int i=0;i<peers.length;i++) {
+			InetAddress ia = peers[i].getFreenetAddress().dropHostname().getAddress();
+			if(v.contains(ia)) continue;
+			v.add(ia);
+		}
+		return (InetAddress[]) v.toArray(new InetAddress[v.size()]);
 	}
 	
 }
