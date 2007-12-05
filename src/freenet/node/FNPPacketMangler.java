@@ -1518,7 +1518,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		output[2] = (byte) phase;
 		output[3] = (byte) setupType;
 		System.arraycopy(data, 0, output, 4, data.length);
-		if(logMINOR) Logger.minor(this, "Sending anon auth packet (phase="+phase+", ver="+version+", nt="+negType+") data.length="+data.length);
+		if(logMINOR) Logger.minor(this, "Sending anon auth packet (phase="+phase+", ver="+version+", nt="+negType+", setup="+setupType+") data.length="+data.length);
 		sendAuthPacket(output, cipher, pn, replyTo);
 	}
 	
