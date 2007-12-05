@@ -42,6 +42,8 @@ import freenet.support.io.Closer;
  */
 class NodeCrypto {
 
+	/** Length of a node identity */
+	public static final int IDENTITY_LENGTH = 32;
 	final Node node;
 	final boolean isOpennet;
 	final RandomSource random;

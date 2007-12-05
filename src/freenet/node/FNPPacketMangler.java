@@ -507,7 +507,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		if(packetType == 0) {
 			// Phase 1
-			processJFKMessage1(payload,4,null,replyTo);
+			processJFKMessage1(payload,4,null,replyTo, true);
 		} else if(packetType == 2) {
 			// Phase 3
 			processJFKMessage3(payload, 4, null, replyTo, false);
@@ -627,7 +627,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * session key will be different,can be used to differentiate between
 				 * parallel sessions
 				 */
-				processJFKMessage1(payload,3,pn,replyTo);
+				processJFKMessage1(payload,3,pn,replyTo,false);
 
 			}
 			else if(packetType==1){
@@ -667,6 +667,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The packet phase number
 	 * @param The peerNode we are talking to
 	 * @param The peer to which we need to send the packet
+	 * @param unknownInitiator If true, we (the responder) don't know the
+	 * initiator, and should check for fields which would be skipped in a
+	 * normal setup where both sides know the other.
 	 * 
 	 * format :
 	 * Ni
@@ -679,12 +682,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * ACM Transactions on Information and System Security, Vol 7 No 2, May 2004, Pages 1-30.
 	 * 
 	 */	
-	private void processJFKMessage1(byte[] payload,int offset,PeerNode pn,Peer replyTo)
+	private void processJFKMessage1(byte[] payload,int offset,PeerNode pn,Peer replyTo, boolean unknownInitiator)
 	{
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
 		// FIXME: follow the spec and send IDr' ?
-		if(payload.length < NONCE_SIZE + DiffieHellman.modulusLengthInBytes() + 3) {
+		if(payload.length < NONCE_SIZE + DiffieHellman.modulusLengthInBytes() + 3 + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)) {
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
 			return;
 		}
@@ -694,8 +697,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		offset += NONCE_SIZE;
 
 		// get g^i
-		byte[] hisExponential = new byte[DiffieHellman.modulusLengthInBytes()];
-		System.arraycopy(payload, offset, hisExponential, 0, DiffieHellman.modulusLengthInBytes());
+		int modulusLength = DiffieHellman.modulusLengthInBytes();
+		byte[] hisExponential = new byte[modulusLength];
+		System.arraycopy(payload, offset, hisExponential, 0, modulusLength);
+		if(unknownInitiator) {
+			// Check IDr'
+			offset += DiffieHellman.modulusLengthInBytes();
+			byte[] expectedIdentityHash = new byte[NodeCrypto.IDENTITY_LENGTH];
+			System.arraycopy(payload, offset, expectedIdentityHash, 0, expectedIdentityHash.length);
+			if(!Arrays.equals(expectedIdentityHash, crypto.identityHash)) {
+				Logger.error(this, "Invalid unknown-initiator JFK(1), IDr' is "+HexUtil.bytesToHex(expectedIdentityHash)+" should be "+HexUtil.bytesToHex(crypto.identityHash));
+				return;
+			}
+		}
+		
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		if(DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
 			sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo);
