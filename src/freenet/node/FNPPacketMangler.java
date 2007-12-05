@@ -31,6 +31,8 @@ import freenet.io.comm.IncomingPacketFilter;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Fields;
 import freenet.io.comm.PacketSocketHandler;
@@ -38,6 +40,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 import freenet.support.StringArray;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
@@ -1063,6 +1066,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] hisRef = new byte[data.length -8];
 		System.arraycopy(data, 8, hisRef, 0, hisRef.length);
 		
+		// construct the peernode
+		if(unknownInitiator) {
+			pn = getPeerNodeFromUnknownInitiator(hisRef, setupType, pn);
+		}
+		
+		if(pn == null) {
+			// Reject
+			Logger.normal(this, "Rejecting...");
+			return;
+		}
+		
 		// verify the signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s)); 
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, _hisExponential, _ourExponential, crypto.myIdentity, data))), false)) {
@@ -1106,6 +1120,45 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this,"Message3 Sending packet for"+pn.getPeer()+" took "+TimeUtil.formatTime(t2-t1, 3, true));
 	}
 	
+	private PeerNode getPeerNodeFromUnknownInitiator(byte[] hisRef, int setupType, PeerNode pn) {
+		if(setupType == SETUP_OPENNET_SEEDNODE) {
+			OpennetManager om = node.getOpennet();
+			if(om == null) {
+				Logger.error(this, "Opennet disabled, ignoring seednode connect attempt");
+				// FIXME Send some sort of explicit rejection message.
+				return null;
+			}
+			SimpleFieldSet ref = om.validateNoderef(hisRef, 0, hisRef.length, null);
+			if(ref == null) {
+				Logger.error(this, "Invalid noderef");
+				// FIXME Send some sort of explicit rejection message.
+				return null;
+			}
+			PeerNode seed;
+			try {
+				seed = new SeedClientPeerNode(ref, node, crypto, node.peers, false, crypto.packetMangler);
+			} catch (FSParseException e) {
+				Logger.error(this, "Invalid seednode noderef: "+e, e);
+				return null;
+			} catch (PeerParseException e) {
+				Logger.error(this, "Invalid seednode noderef: "+e, e);
+				return null;
+			} catch (ReferenceSignatureVerificationException e) {
+				Logger.error(this, "Invalid seednode noderef: "+e, e);
+				return null;
+			}
+			if(seed.equals(pn)) {
+				Logger.normal(this, "Already connected to seednode");
+				return pn;
+			}
+			node.peers.addConnectedPeer(seed);
+			return seed;
+		} else {
+			Logger.error(this, "Unknown setup type");
+			return null;
+		}
+	}
+
 	/*
 	 * Responder Method:Message4
 	 * Process Message4
