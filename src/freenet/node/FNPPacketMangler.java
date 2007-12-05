@@ -669,12 +669,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param The peer to which we need to send the packet
 	 * @param unknownInitiator If true, we (the responder) don't know the
 	 * initiator, and should check for fields which would be skipped in a
-	 * normal setup where both sides know the other.
+	 * normal setup where both sides know the other (indicated with * below).
 	 * 
 	 * format :
 	 * Ni
 	 * g^i
-	 * IDr'
+	 * *IDr'
 	 * 
 	 * See http://www.wisdom.weizmann.ac.il/~reingold/publications/jfk-tissec.pdf
 	 * Just Fast Keying: Key Agreement In A Hostile Internet
@@ -725,9 +725,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/*
 	 * format:
 	 * Ni,g^i
-	 * NB: we don't send IDr as we know to who we are talking to (darknet)
+	 * We send IDr' only if unknownInitiator is set.
 	 */
-	private void sendJFKMessage1(PeerNode pn, Peer replyTo) {
+	private void sendJFKMessage1(PeerNode pn, Peer replyTo, boolean unknownInitiator) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+pn);
 		final long now = System.currentTimeMillis();
 		DiffieHellmanLightContext ctx = (DiffieHellmanLightContext) pn.getKeyAgreementSchemeContext();
@@ -744,11 +744,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			pn.jfkNoncesSent.put(replyTo, nonce);
 		}
 		
-		byte[] message1 = new byte[NONCE_SIZE+DiffieHellman.modulusLengthInBytes()];
+		int modulusLength = DiffieHellman.modulusLengthInBytes();
+		byte[] message1 = new byte[NONCE_SIZE+modulusLength+(unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)];
 
 		System.arraycopy(nonce, 0, message1, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
-		System.arraycopy(myExponential, 0, message1, offset, DiffieHellman.modulusLengthInBytes());
+		System.arraycopy(myExponential, 0, message1, offset, modulusLength);
+		
+		if(unknownInitiator) {
+			offset += modulusLength;
+			System.arraycopy(pn.identityHash, 0, message1, offset, pn.identityHash.length);
+		}
 
 		sendAuthPacket(1,2,0,message1,pn,replyTo);
 	}
@@ -2385,7 +2391,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
 				continue;
 			}
-			sendJFKMessage1(pn, peer);
+			sendJFKMessage1(pn, peer, false);
 			if(logMINOR)
 				Logger.minor(this, "Sending handshake to "+peer+" for "+pn+" ("+i+" of "+handshakeIPs.length);
 			pn.sentHandshake();
