@@ -260,9 +260,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				pn = peers[i];
 				if(pn == opn) continue;
 				if(tryProcessAuth(buf, offset, length, pn, peer,false, now)) return;
+			}
+		}
+		PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes();
+		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
+			for(int i=0;i<anonPeers.length;i++) {
+				pn = anonPeers[i];
+				if(pn == opn) continue;
 				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) return;
 			}
 		}
+		
 		OpennetManager opennet = node.getOpennet();
 		if(opennet != null) {
 			// Try old opennet connections.
