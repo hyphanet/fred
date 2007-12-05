@@ -150,7 +150,7 @@ class NodeCrypto {
 		portNumber = port;
 		config.setPort(port);
 		
-		((UdpSocketHandler)socket).setDropProbability(config.getDropProbability());
+		socket.setDropProbability(config.getDropProbability());
 		
 		socket.setLowLevelFilter(packetMangler = new FNPPacketMangler(node, this, socket));
 		
@@ -347,11 +347,11 @@ class NodeCrypto {
 			byte[] ref = mySignedReference.getBytes("UTF-8");
 			BigInteger m = new BigInteger(1, SHA256.digest(ref));
 			if(logMINOR) Logger.minor(this, "m = "+m.toString(16));
-			DSASignature myReferenceSignature = DSA.sign(cryptoGroup, privKey, m, random);
+			DSASignature _signature = DSA.sign(cryptoGroup, privKey, m, random);
 			// FIXME remove this ... eventually
-			if(!DSA.verify(pubKey, myReferenceSignature, m, false))
+			if(!DSA.verify(pubKey, _signature, m, false))
 				Logger.error(this, "Signature failed!");
-			return myReferenceSignature;
+			return _signature;
 		} catch(UnsupportedEncodingException e){
 			//duh ?
 			Logger.error(this, "Error while signing the node identity!"+e);
