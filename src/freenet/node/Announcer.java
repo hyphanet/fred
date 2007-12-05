@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.Vector;
 
@@ -47,7 +48,7 @@ public class Announcer {
 	/** Identities of nodes we have announced to */
 	private final HashSet announcedToIdentities;
 	/** IPs of nodes we have announced to. Maybe this should be first-two-bytes, but I'm not sure how to do that with IPv6. */
-	private final Vector announcedToIPs;
+	private final HashSet announcedToIPs;
 	/** How many nodes to connect to at once? */
 	static final int CONNECT_AT_ONCE = 10;
 	/** Do not announce if there are more than this many opennet peers connected */
@@ -63,7 +64,7 @@ public class Announcer {
 		this.om = om;
 		this.node = om.node;
 		announcedToIdentities = new HashSet();
-		announcedToIPs = new Vector();
+		announcedToIPs = new HashSet();
 		connectedToIdentities = new HashSet();
 	}
 
@@ -195,9 +196,12 @@ public class Announcer {
 			}
 			// Now find a node to announce to
 			Vector seeds = node.peers.getSeedServerPeersVector(announcedToIdentities);
-			for(int i=sentAnnouncements;i<WANT_ANNOUNCEMENTS;i++) {
+			while(sentAnnouncements < WANT_ANNOUNCEMENTS) {
 				if(seeds.isEmpty()) break;
 				final SeedServerPeerNode seed = (SeedServerPeerNode) seeds.remove(node.random.nextInt(seeds.size()));
+				InetAddress[] addrs = seed.getInetAddresses();
+				if(!newAnnouncedIPs(addrs)) continue;
+				addAnnouncedIPs(addrs);
 				sentAnnouncements++;
 				runningAnnouncements++;
 				timeSentAnnouncement = now;
@@ -224,6 +228,19 @@ public class Announcer {
 		connectSomeSeednodes();
 	}
 	
+	private synchronized void addAnnouncedIPs(InetAddress[] addrs) {
+		for(int i=0;i<addrs.length;i++)
+			announcedToIPs.add(addrs[i]);
+	}
+
+	private synchronized boolean newAnnouncedIPs(InetAddress[] addrs) {
+		for(int i=0;i<addrs.length;i++) {
+			if(!announcedToIPs.contains(addrs[i]))
+				return true;
+		}
+		return false;
+	}
+
 	public void sendAnnouncement(final SeedServerPeerNode seed) {
 		AnnounceSender sender = new AnnounceSender(node.getLocation(), om, node, new AnnouncementCallback() {
 			private int totalAdded;
