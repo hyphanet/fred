@@ -105,7 +105,7 @@ public class ClientSSK extends ClientKey {
 
 		extra[0] = NodeSSK.SSK_VERSION;
 		extra[1] = 0; // 0 = fetch (public) URI; 1 = insert (private) URI
-		extra[2] = (byte) cryptoAlgorithm;
+		extra[2] = cryptoAlgorithm;
 		extra[3] = (byte) (KeyBlock.HASH_SHA256 >> 8);
 		extra[4] = (byte) KeyBlock.HASH_SHA256;
 		return extra;
