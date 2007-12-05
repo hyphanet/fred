@@ -2525,7 +2525,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(status == PeerManager.PEER_NODE_STATUS_CONN_ERROR)
 			return "CONNECTION ERROR";
 		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED)
-			return "ROUTINGDISABLED";
+			return "ROUTING DISABLED";
 		if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
 			return "LISTEN ONLY";
 		if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
