@@ -134,7 +134,7 @@ public class InsertableClientSSK extends ClientSSK {
         headers[x++] = (byte) (KeyBlock.HASH_SHA256);
         // Then crypto ID
         headers[x++] = (byte) (Key.ALGO_AES_PCFB_256_SHA256 >> 8);
-        headers[x++] = (byte) (Key.ALGO_AES_PCFB_256_SHA256);
+        headers[x++] = Key.ALGO_AES_PCFB_256_SHA256;
         // Then E(H(docname))
 		// Copy to headers
 		System.arraycopy(ehDocname, 0, headers, x, ehDocname.length);
