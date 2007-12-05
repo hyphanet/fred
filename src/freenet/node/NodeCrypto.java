@@ -156,9 +156,7 @@ class NodeCrypto {
 		
 		detector = new NodeIPPortDetector(node, node.ipDetector, this);
 		
-		anonSetupCipher = new Rijndael(256,256);
-		anonSetupCipher.initialize(identityHash);
-		
+		anonSetupCipher = new Rijndael(256,256);		
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		} catch (NodeInitException e) {
@@ -195,6 +193,7 @@ class NodeCrypto {
 			throw new IOException();
 		}
 		identityHash = SHA256.digest(myIdentity);
+		anonSetupCipher.initialize(identityHash);
 		identityHashHash = SHA256.digest(identityHash);
 		
 		try {
