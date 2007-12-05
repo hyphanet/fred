@@ -436,9 +436,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		
+		// We are the RESPONDER.
+		// Therefore, we can only get packets of phase 1 and 3 here.
 		
-		// TODO Auto-generated method stub
-		
+		if(packetType == 0) {
+			// Phase 1
+			processJFKMessage1(payload,4,null,replyTo);
+		} else if(packetType == 2) {
+			// Phase 3
+			processJFKMessage3(payload, 3, null, replyTo, false);
+		} else {
+			Logger.error(this, "Invalid phase "+packetType+" for anonymous-initiator (we are the responder)");
+		}
 	}
 
 	/**
