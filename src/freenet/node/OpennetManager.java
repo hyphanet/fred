@@ -47,6 +47,7 @@ public class OpennetManager {
 	
 	final Node node;
 	final NodeCrypto crypto;
+	final Announcer announcer;
 	
 	/** Our peers. PeerNode's are promoted when they successfully fetch a key. Normally we take
 	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
@@ -137,6 +138,7 @@ public class OpennetManager {
 		writeFile(nodeFile, backupNodeFile);
 		// Read old peers
 		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
+		announcer = new Announcer(this);
 	}
 
 	private void writeFile(File orig, File backup) {
@@ -200,6 +202,7 @@ public class OpennetManager {
 
 	public void start() {
 		crypto.start(node.disableHangCheckers);
+		announcer.start();
 	}
 
 	/**
