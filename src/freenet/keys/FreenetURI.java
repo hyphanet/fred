@@ -552,7 +552,7 @@ public class FreenetURI implements Cloneable{
 	}
 	
 	public String toShortString() {
-		StringBuffer b = new StringBuffer();;
+		StringBuffer b = new StringBuffer();
 		
 		b.append(keyType).append('@');
 		
