@@ -2480,7 +2480,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
 				continue;
 			}
-			sendJFKMessage1(pn, peer, false, -1);
+			sendJFKMessage1(pn, peer, pn.handshakeUnknownInitiator(), pn.handshakeSetupType());
 			if(logMINOR)
 				Logger.minor(this, "Sending handshake to "+peer+" for "+pn+" ("+i+" of "+handshakeIPs.length);
 			pn.sentHandshake();

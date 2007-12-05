@@ -3191,4 +3191,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return isOpennet() || node.passOpennetRefsThroughDarknet();
 	}
 
+	public boolean handshakeUnknownInitiator() {
+		return false;
+	}
+
+	public int handshakeSetupType() {
+		return -1;
+	}
+
 }

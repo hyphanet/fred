@@ -77,4 +77,12 @@ public class SeedServerPeerNode extends PeerNode {
 		return (InetAddress[]) v.toArray(new InetAddress[v.size()]);
 	}
 	
+	public boolean handshakeUnknownInitiator() {
+		return true;
+	}
+
+	public int handshakeSetupType() {
+		return FNPPacketMangler.SETUP_OPENNET_SEEDNODE;
+	}
+
 }
