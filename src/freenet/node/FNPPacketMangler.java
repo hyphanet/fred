@@ -731,7 +731,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * We send IDr' only if unknownInitiator is set.
 	 */
 	private void sendJFKMessage1(PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType) {
-		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+pn);
+		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+replyTo+" for "+pn);
 		final long now = System.currentTimeMillis();
 		DiffieHellmanLightContext ctx = (DiffieHellmanLightContext) pn.getKeyAgreementSchemeContext();
 		if((ctx == null) || ((pn.jfkContextLifetime + DH_GENERATION_INTERVAL*DH_CONTEXT_BUFFER_SIZE) < now)) {
