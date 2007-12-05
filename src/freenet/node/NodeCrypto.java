@@ -246,7 +246,6 @@ class NodeCrypto {
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
-		anonSetupCipher.initialize(identityHash);
 		
 	}
 
