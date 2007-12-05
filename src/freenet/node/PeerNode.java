@@ -2520,18 +2520,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return "NEVER CONNECTED";
 		if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
 			return "DISABLED";
-		if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
-			return "LISTEN ONLY";
-		if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
-			return "LISTENING";
-		if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
-			return "BURSTING";
 		if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
 			return "CLOCK PROBLEM";
 		if(status == PeerManager.PEER_NODE_STATUS_CONN_ERROR)
 			return "CONNECTION ERROR";
 		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED)
 			return "ROUTINGDISABLED";
+		if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
+			return "LISTEN ONLY";
+		if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
+			return "LISTENING";
+		if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
+			return "BURSTING";
 		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
 			return "DISCONNECTING";
 		return "UNKNOWN STATUS";
