@@ -222,6 +222,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	final BlockCipher incomingSetupCipher;
 	/** Outgoing setup cipher (see above) */
 	final BlockCipher outgoingSetupCipher;
+	/** Anonymous-connect cipher. This is used in link setup if
+	 * we are trying to get a connection to this node even though
+	 * it doesn't know us, e.g. as a seednode. */
+	final BlockCipher anonymousInitiatorSetupCipher;
 	/** The context object for the currently running negotiation. */
 	private KeyAgreementSchemeContext ctx;
 	/** The other side's boot ID. This is a random number generated
@@ -464,6 +468,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			incomingSetupCipher.initialize(incomingSetupKey);
 			outgoingSetupCipher = new Rijndael(256, 256);
 			outgoingSetupCipher.initialize(outgoingSetupKey);
+			anonymousInitiatorSetupCipher = new Rijndael(256, 256);
+			anonymousInitiatorSetupCipher.initialize(identityHash);
 		} catch(UnsupportedCipherException e1) {
 			Logger.error(this, "Caught: " + e1);
 			throw new Error(e1);
