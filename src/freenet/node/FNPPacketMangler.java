@@ -765,7 +765,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Signature[g^r,grpInfo(r)] - R, S
 	 * Hashed JFKAuthenticator : HMAC{Hkr}[g^r, g^i, Nr, Ni, IPi]
 	 * 
-	 * NB: we don't send IDr nor groupinfo as we know them (darknet)
+	 * NB: we don't send IDr nor groupinfo as we know them: even if the responder doesn't know the initiator,
+	 * the initiator ALWAYS knows the responder. 
 	 */
 	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
@@ -828,7 +829,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	/*
 	 * Initiator Method:Message2
-	 * @see{sendJFKMessage2} for packet format details
+	 * @see{sendJFKMessage2} for packet format details.
+	 * Note that this packet is exactly the same for known initiator as for unknown initiator.
 	 * 
 	 * @param Payload
 	 * @param The peer to which we need to send the packet
