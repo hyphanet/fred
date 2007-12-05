@@ -69,7 +69,7 @@ class NodeCrypto {
 	static boolean logMINOR;
 	final NodeCryptoConfig config;
 	final NodeIPPortDetector detector;
-	private BlockCipher anonSetupCipher;
+	final BlockCipher anonSetupCipher;
 	
 	// Noderef related
 	/** An ordered version of the noderef FieldSet, without the signature */
@@ -155,6 +155,8 @@ class NodeCrypto {
 		socket.setLowLevelFilter(packetMangler = new FNPPacketMangler(node, this, socket));
 		
 		detector = new NodeIPPortDetector(node, node.ipDetector, this);
+
+		anonSetupCipher = new Rijndael(256,256);
 		
 		} catch (NodeInitException e) {
 			config.stopping(this);
@@ -165,6 +167,9 @@ class NodeCrypto {
 		} catch (Error e) {
 			config.stopping(this);
 			throw e;
+		} catch (UnsupportedCipherException e) {
+			config.stopping(this);
+			throw new Error(e);
 		} finally {
 			config.maybeStarted(this);
 		}
@@ -240,12 +245,6 @@ class NodeCrypto {
 			myARKNumber = 0;
 		}
 		myARK = ark;
-
-		try {
-			anonSetupCipher = new Rijndael(256,256);
-		} catch (UnsupportedCipherException e) {
-			throw new Error(e);
-		}
 		
 	}
 
@@ -264,11 +263,6 @@ class NodeCrypto {
 		myARK = InsertableClientSSK.createRandom(random, "ark");
 		myARKNumber = 0;
 		SHA256.returnMessageDigest(md);
-		try {
-			anonSetupCipher = new Rijndael(256,256);
-		} catch (UnsupportedCipherException e) {
-			throw new Error(e);
-		}
 		anonSetupCipher.initialize(identityHash);
 	}
 
