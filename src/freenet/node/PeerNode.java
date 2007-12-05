@@ -3184,6 +3184,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     /** Does this peernode want to be returned by for example PeerManager.getByPeer() ? */
 	public abstract boolean isSearchable();
 
+	/** Can we accept announcements from this node? */
 	public boolean canAcceptAnnouncements() {
 		return isOpennet() || node.passOpennetRefsThroughDarknet();
 	}
