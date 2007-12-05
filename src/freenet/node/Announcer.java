@@ -201,6 +201,7 @@ public class Announcer {
 				sentAnnouncements++;
 				runningAnnouncements++;
 				timeSentAnnouncement = now;
+				announcedToIdentities.add(seed.getIdentity());
 				sendAnnouncement(seed);
 			}
 			if(runningAnnouncements >= WANT_ANNOUNCEMENTS)
