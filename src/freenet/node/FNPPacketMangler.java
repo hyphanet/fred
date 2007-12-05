@@ -961,7 +961,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// is it cheaper to wait for the lock on authenticatorCache or to verify the hmac ?
 		HMAC mac = new HMAC(SHA256.getInstance());
 		if(!mac.verify(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
-			Logger.error(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery)");
+			Logger.error(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery) - JFK3");
 			return;
 		}
 		// Check try to find the authenticator in the cache.
@@ -986,7 +986,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		DiffieHellmanLightContext ctx = findContextByExponential(_ourExponential);
 		if(ctx == null) {
-			Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN!");
+			Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK4");
 			return;
 		}
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
