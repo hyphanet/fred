@@ -359,8 +359,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int ivLength = pcfb.lengthIV();
 		MessageDigest md = SHA256.getMessageDigest();
 		int digestLength = HASH_LENGTH;
-		if(length < digestLength + ivLength + 4) {
-			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
+		if(length < digestLength + ivLength + 5) {
+			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 5));
 			SHA256.returnMessageDigest(md);
 			return false;
 		}
@@ -424,8 +424,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int ivLength = pcfb.lengthIV();
 		MessageDigest md = SHA256.getMessageDigest();
 		int digestLength = HASH_LENGTH;
-		if(length < digestLength + ivLength + 4) {
-			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
+		if(length < digestLength + ivLength + 5) {
+			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 5));
 			SHA256.returnMessageDigest(md);
 			return false;
 		}
