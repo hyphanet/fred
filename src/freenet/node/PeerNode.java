@@ -2545,31 +2545,32 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public static String getPeerNodeStatusCSSClassName(int status) {
 		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
 			return "peer_connected";
-		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+		else if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
 			return "peer_backed_off";
-		if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
+		else if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
 			return "peer_too_new";
-		if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
+		else if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
 			return "peer_too_old";
-		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
+		else if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
 			return "peer_disconnected";
-		if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
+		else if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
 			return "peer_never_connected";
-		if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
+		else if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
 			return "peer_disabled";
-		if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
-			return "peer_bursting";
-		if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
-			return "peer_listening";
-		if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
-			return "peer_listen_only";
-		if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
-			return "peer_clock_problem";
-		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED)
+		else if(status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED)
 			return "peer_routing_disabled";
-		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
+		else if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
+			return "peer_bursting";
+		else if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
+			return "peer_clock_problem";
+		else if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
+			return "peer_listening";
+		else if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
+			return "peer_listen_only";
+		else if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
 			return "peer_disconnecting";
-		return "peer_unknown_status";
+		else 
+			return "peer_unknown_status";
 	}
 
 	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntil) {
