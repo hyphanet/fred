@@ -3181,4 +3181,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     	return timeLastDisconnect;
     }
 
+    /** Does this peernode want to be returned by for example PeerManager.getByPeer() ? */
+	public abstract boolean isSearchable();
+
 }

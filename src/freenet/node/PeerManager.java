@@ -410,6 +410,8 @@ public class PeerManager {
      */
     public PeerNode getByPeer(Peer peer) {
         for(int i=0;i<myPeers.length;i++) {
+        	if(!myPeers[i].isSearchable())
+        		continue;
             if(peer.equals(myPeers[i].getPeer()))
                 return myPeers[i];
         }

@@ -72,5 +72,9 @@ public class OpennetPeerNode extends PeerNode {
 		if(!ref.getBoolean("opennet", false)) return false;
 		return true;
 	}
+
+	public boolean isSearchable() {
+		return true;
+	}
     
 }

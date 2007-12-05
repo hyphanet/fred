@@ -1561,4 +1561,8 @@ public class DarknetPeerNode extends PeerNode {
 		// Do nothing
 		// FIXME is there anything we should do?
 	}
+
+	public boolean isSearchable() {
+		return true;
+	}
 }
