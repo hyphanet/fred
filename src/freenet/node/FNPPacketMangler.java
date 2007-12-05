@@ -348,7 +348,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param buf The buffer to read bytes from
 	 * @param offset The offset at which to start reading
 	 * @param length The number of bytes to read
-	 * @param pn The PeerNode we think is responsible
 	 * @param peer The Peer to send a reply to
 	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
