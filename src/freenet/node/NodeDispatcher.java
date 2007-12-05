@@ -279,8 +279,7 @@ public class NodeDispatcher implements Dispatcher {
 	private boolean handleAnnounceRequest(Message m, PeerNode source) {
 		long uid = m.getLong(DMT.UID);
 		OpennetManager om = node.getOpennet();
-		if(om == null || 
-				((!source.isOpennet()) && (!node.passOpennetRefsThroughDarknet()))) {
+		if(om == null || !source.canAcceptAnnouncements()) {
 			Message msg = DMT.createFNPOpennetDisabled(uid);
 			try {
 				source.sendAsync(msg, null, 0, null);
