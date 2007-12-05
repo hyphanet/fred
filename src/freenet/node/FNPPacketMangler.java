@@ -672,6 +672,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Ni
 	 * g^i
 	 * IDr'
+	 * 
+	 * See http://www.wisdom.weizmann.ac.il/~reingold/publications/jfk-tissec.pdf
+	 * Just Fast Keying: Key Agreement In A Hostile Internet
+	 * Aiello, Bellovin, Blaze, Canetti, Ioannidis, Keromytis, Reingold.
+	 * ACM Transactions on Information and System Security, Vol 7 No 2, May 2004, Pages 1-30.
+	 * 
 	 */	
 	private void processJFKMessage1(byte[] payload,int offset,PeerNode pn,Peer replyTo)
 	{
