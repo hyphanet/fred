@@ -5,6 +5,7 @@ package freenet.node;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -49,4 +50,15 @@ public class SeedServerPeerNode extends PeerNode {
 		return false;
 	}
 
+	protected void sendInitialMessages() {
+		super.sendInitialMessages();
+		OpennetManager om = node.getOpennet();
+		if(om == null) {
+			Logger.normal(this, "Opennet turned off while connecting to seednodes");
+			node.peers.disconnect(this, true, true);
+		} else {
+			om.announcer.maybeSendAnnouncement();
+		}
+	}
+	
 }

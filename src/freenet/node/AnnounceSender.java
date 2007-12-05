@@ -34,6 +34,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 	private double target;
 	private static boolean logMINOR;
 	private final AnnouncementCallback cb;
+	private final PeerNode onlyNode;
 	
 	public AnnounceSender(Message m, long uid, PeerNode source, OpennetManager om, Node node) {
 		this.source = source;
@@ -41,13 +42,14 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		this.msg = m;
 		this.om = om;
 		this.node = node;
+		this.onlyNode = null;
 		htl = m.getShort(DMT.HTL);
 		target = m.getDouble(DMT.TARGET_LOCATION); // FIXME validate
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		cb = null;
 	}
 
-	public AnnounceSender(double target, OpennetManager om, Node node, AnnouncementCallback cb) {
+	public AnnounceSender(double target, OpennetManager om, Node node, AnnouncementCallback cb, PeerNode onlyNode) {
 		source = null;
 		this.uid = node.random.nextLong();
 		msg = null;
@@ -56,6 +58,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		this.htl = node.maxHTL();
 		this.target = target;
 		this.cb = cb;
+		this.onlyNode = onlyNode;
 		noderefBuf = om.crypto.myCompressedFullRef();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
@@ -70,6 +73,8 @@ public class AnnounceSender implements Runnable, ByteCounter {
 				source.completedAnnounce(uid);
 			}
 			node.completed(uid);
+			if(cb != null)
+				cb.completed();
 		}
 	}
 
@@ -105,9 +110,17 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	return;
             }
             
-            // Route it
-            PeerNode next;
-            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
+        	PeerNode next;
+            if(onlyNode == null) {
+            	// Route it
+            	next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
+            } else {
+            	next = onlyNode;
+            	if(nodesRoutedTo.contains(onlyNode)) {
+            		rnf(onlyNode);
+            		return;
+            	}
+            }
             
             if(next == null) {
                 // Backtrack

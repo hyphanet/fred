@@ -209,6 +209,7 @@ public class OpennetManager {
 	 * Called when opennet is disabled
 	 */
 	public void stop(boolean purge) {
+		announcer.stop();
 		crypto.stop();
 		if(purge)
 			node.peers.removeOpennetPeers();
@@ -648,7 +649,7 @@ public class OpennetManager {
 	 * announcement location, because it is easy for them to get the location they want later on anyway,
 	 * and we can do a much more effective announcement this way. */
 	public void announce(double target, AnnouncementCallback cb) {
-		AnnounceSender sender = new AnnounceSender(target, this, node, cb);
+		AnnounceSender sender = new AnnounceSender(target, this, node, cb, null);
 		node.executor.execute(sender, "Announcement to "+target);
 	}
 

@@ -1325,6 +1325,22 @@ public class PeerManager {
 		return (DarknetPeerNode[])v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
+	public Vector getSeedServerPeersVector(HashSet exclude) {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		// FIXME optimise! Maybe maintain as a separate list?
+		Vector v = new Vector(myPeers.length);
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] instanceof SeedServerPeerNode) {
+				if(exclude.contains(peers[i].getIdentity())) continue;
+				v.add(peers[i]);
+			}
+		}
+		return v;
+	}
+	
 	/**
 	 * Get the opennet peers list.
 	 */
@@ -1391,7 +1407,20 @@ public class PeerManager {
 		PeerNode[] peers = connectedPeers;
 		for(int i=0;i<peers.length;i++) {
 			if(peers[i] == null) continue;
+			if(!(peers[i] instanceof DarknetPeerNode)) continue;
 			if(peers[i].isOpennet()) continue;
+			if(!peers[i].isRoutable()) continue;
+			count++;
+		}
+		return count;
+	}
+	
+	public int countConnectedOpennetPeers() {
+		int count = 0;
+		PeerNode[] peers = connectedPeers;
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] == null) continue;
+			if(!(peers[i] instanceof OpennetPeerNode)) continue;
 			if(!peers[i].isRoutable()) continue;
 			count++;
 		}
