@@ -1550,7 +1550,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		
 		} else {
-			clientCore.alerts.register(new SimpleUserAlert(true, "Not using a Sun JVM", "You are trying to run the node under a non-Sun JVM ("+jvmVendor+" "+jvmVersion+"). This is not recommended: the node may not run well. Please get Sun java if possible.", UserAlert.WARNING));
+			clientCore.alerts.register(new SimpleUserAlert(true, "Not using a Sun JVM", "You are trying to run the node under a non-Sun JVM ("+jvmVendor+" "+jvmVersion+"). This is not recommended: the node may not run well. Please get Sun java from http://java.sun.com/ if possible.", UserAlert.WARNING));
 		}
 			
 		if(!isUsingWrapper()) {
