@@ -1548,50 +1548,6 @@ public class Node implements TimeSkewDetectorCallback {
 				});
 			}
 			
-			// If we are using the wrapper, we ignore:
-			// Any problem should be detected by the watchdog and the node will be restarted
-			// FIXME we should only check this on x86 (x86-64 doesn't have pthreads)
-			// FIXME why only if not running the wrapper? It's worse with the wrapper of course... but if that's
-			// the issue we should tell the user.
-			if(osName.equals("Linux") && jvmVendor.startsWith("Sun ") && 
-					((osVersion.indexOf("nptl")!=-1) || osVersion.startsWith("2.6") || 
-							osVersion.startsWith("2.7") || osVersion.startsWith("3."))
-							&& !isUsingWrapper()) {
-				// Hopefully we won't still have to deal with this **** when THAT comes out! 
-				// Check the environment.
-				String assumeKernel;
-				try {
-					// It is essential to check the environment.
-					// Make an alternative way to do it if you like.
-					assumeKernel = System.getenv("LD_ASSUME_KERNEL");
-				} catch (Error e) {
-					assumeKernel = null;
-					assumeKernel = WrapperManager.getProperties().getProperty("set.LD_ASSUME_KERNEL");
-				}
-				if((assumeKernel == null) || (assumeKernel.length() == 0) || (!(assumeKernel.startsWith("2.2") || assumeKernel.startsWith("2.4")))) {
-					System.err.println(l10n("deadlockWarning"));
-					Logger.error(this, l10n("deadlockWarning"));
-					clientCore.alerts.register(new AbstractUserAlert(false, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null) {
-						
-						public String getTitle() {
-							return l10n("deadlockTitle");
-						}
-						
-						public String getText() {
-							return l10n("deadlockWarning");
-						}
-						
-						public HTMLNode getHTMLText() {
-							return new HTMLNode("div", l10n("deadlockWarning"));
-						}
-						
-						public void isValid(boolean validity) {
-							// Not clearable.
-						}
-						
-					});
-				}
-			}
 		}
 		
 	}
