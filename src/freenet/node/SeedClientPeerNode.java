@@ -52,4 +52,17 @@ public class SeedClientPeerNode extends PeerNode {
 	public boolean recordStatus() {
 		return false;
 	}
+	
+	public boolean handshakeUnknownInitiator() {
+		return true;
+	}
+
+	public int handshakeSetupType() {
+		return FNPPacketMangler.SETUP_OPENNET_SEEDNODE;
+	}
+	
+	public boolean shouldSendHandshake() {
+		return false;
+	}
+
 }
