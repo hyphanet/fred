@@ -114,6 +114,27 @@ public class Announcer {
 		// Try to connect to some seednodes.
 		// Once they are connected they will report back and we can attempt an announcement.
 
+		int count = connectSomeNodesInner(seeds);
+		if(count == 0 && connectedToIdentities.size() <= announcedToIdentities.size()) {
+			seeds = readSeednodes();
+			synchronized(this) {
+				connectedToIdentities.clear();
+			}
+			count = connectSomeNodesInner(seeds);
+		}
+		// If none connect in a minute, try some more.
+		node.getTicker().queueTimedJob(new Runnable() {
+			public void run() {
+				try {
+					maybeSendAnnouncement();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t+" trying to send announcements", t);
+				}
+			}
+		}, MIN_ADDED_SEEDS_INTERVAL);
+	}
+
+	private int connectSomeNodesInner(Vector seeds) {
 		int count = 0;
 		while(count < CONNECT_AT_ONCE) {
 			if(seeds.size() == 0) break;
@@ -135,18 +156,8 @@ public class Announcer {
 				Logger.error(this, "Invalid seed in file: "+e+" for\n"+fs, e);
 				continue;
 			}
-			
 		}
-		// If none connect in a minute, try some more.
-		node.getTicker().queueTimedJob(new Runnable() {
-			public void run() {
-				try {
-					maybeSendAnnouncement();
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" trying to send announcements", t);
-				}
-			}
-		}, MIN_ADDED_SEEDS_INTERVAL);
+		return count;
 	}
 
 	private Vector readSeednodes() {
