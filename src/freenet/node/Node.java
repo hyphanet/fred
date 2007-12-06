@@ -1550,13 +1550,11 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		
 		} else {
-			// FIXME l10n
-			clientCore.alerts.register(new SimpleUserAlert(true, "Not using a Sun JVM", "You are trying to run the node under a non-Sun JVM ("+jvmVendor+" "+jvmVersion+"). This is not recommended: the node may not run well. Please get Sun java from http://java.sun.com/ if possible.", UserAlert.WARNING));
+			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "version" }, new String[] { jvmVendor, jvmVersion }), UserAlert.WARNING));
 		}
 			
 		if(!isUsingWrapper()) {
-			// FIXME l10n
-			clientCore.alerts.register(new SimpleUserAlert(true, "Not using the wrapper!", "You are running the node without the wrapper. This is not recommended. The node will not be able to restart itself, so auto-updating won't work, and if the JVM goes off into limbo, it won't get restarted either. Also the node can't generate stack dumps in some places.", UserAlert.WARNING));
+			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), UserAlert.WARNING));
 		}
 		
 	}
@@ -1566,6 +1564,10 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("Node."+key, pattern, value);
+	}
+
+	private String l10n(String key, String[] pattern, String[] value) {
 		return L10n.getString("Node."+key, pattern, value);
 	}
 
