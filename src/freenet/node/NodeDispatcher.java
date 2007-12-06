@@ -399,7 +399,7 @@ public class NodeDispatcher implements Dispatcher {
 		}
 		ctx = new RoutedContext(m, source);
 		routedContexts.put(lid, ctx);
-		// pn == null => originated locally, keep full htl
+		// source == null => originated locally, keep full htl
 		double target = m.getDouble(DMT.TARGET_LOCATION);
 		if(logMINOR) Logger.minor(this, "id "+id+" from "+source+" htl "+htl+" target "+target);
 		if(Math.abs(node.lm.getLocation() - target) <= Double.MIN_VALUE) {
