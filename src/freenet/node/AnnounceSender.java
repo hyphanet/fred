@@ -21,6 +21,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
     // Constants
     static final int ACCEPTED_TIMEOUT = 5000;
     static final int ANNOUNCE_TIMEOUT = 240000; // longer than a regular request as have to transfer noderefs hop by hop etc
+    static final int END_TIMEOUT = 30000; // After received the completion message, wait 30 seconds for any late reordered replies
 	
 	private final PeerNode source;
 	private final long uid;
@@ -251,7 +252,34 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	
             	if(msg.getSpec() == DMT.FNPOpennetAnnounceCompleted) {
             		complete();
-            		return;
+            		mfAnnounceReply.setTimeout(END_TIMEOUT).setTimeoutRelativeToCreation(true);
+            		mfNotWanted.setTimeout(END_TIMEOUT).setTimeoutRelativeToCreation(true);
+            		mf = mfAnnounceReply.or(mfNotWanted);
+            		while(true)  {
+                    	try {
+                    		msg = node.usm.waitFor(mf, this);
+                    	} catch (DisconnectedException e) {
+                    		return;
+                    	}
+            			if(msg == null) return;
+            			if(msg.getSpec() == DMT.FNPOpennetAnnounceReply) {
+            				validateForwardReply(msg, next);
+            				continue;
+            			}
+            			if(msg.getSpec() == DMT.FNPOpennetAnnounceNodeNotWanted) {
+                    		if(cb != null)
+                    			cb.nodeNotWanted();
+                    		if(source != null) {
+        						try {
+        							sendNotWanted();
+        						} catch (NotConnectedException e) {
+        							Logger.error(this, "Lost connection to source");
+        							return;
+        						}
+                    		}
+            				continue;
+            			}
+            		}
             	}
             	
             	if(msg.getSpec() == DMT.FNPRouteNotFound) {
