@@ -273,6 +273,7 @@ public class Announcer {
 					totalAdded++;
 				}
 				Logger.error(this, "Announcement to "+seed+" added node "+pn+" for a total of "+announcementAddedNodes+" ("+totalAdded+" from this announcement)");
+				System.out.println("Announcement to "+seed.shortToString()+" added node "+pn.shortToString()+'.');
 				return;
 			}
 			public void bogusNoderef(String reason) {
@@ -301,6 +302,7 @@ public class Announcer {
 				// node. However, we can't reannounce to it anyway until announcedTo is cleared, which probably will
 				// be more than that period in the future.
 				node.peers.disconnect(seed, true, true);
+				System.out.println("Announcement to "+seed.shortToString()+" completed.");
 			}
 
 			public void nodeFailed(PeerNode pn, String reason) {
