@@ -118,7 +118,7 @@ public class Announcer {
 		if(count == 0 && connectedToIdentities.size() <= announcedToIdentities.size()) {
 			seeds = readSeednodes();
 			synchronized(this) {
-				connectedToIdentities.clear();
+				announcedToIdentities.clear();
 			}
 			count = connectSomeNodesInner(seeds);
 		}
