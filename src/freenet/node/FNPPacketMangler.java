@@ -1312,7 +1312,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * 
 	 */
 
-	private void sendJFKMessage3(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, final PeerNode pn, final Peer replyTo, boolean unknownInitiator, int setupType)
+	private void sendJFKMessage3(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, final PeerNode pn, final Peer replyTo, final boolean unknownInitiator, final int setupType)
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn);
 		BlockCipher c = null;
@@ -1415,7 +1415,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		node.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
 				if(pn.timeLastConnected() >= pn.lastReceivedPacketTime()) {
-					sendAuthPacket(1, 2, 2, message3, pn, replyTo);
+					if(unknownInitiator)
+						sendAnonAuthPacket(1, 2, 2, setupType, message3, pn, replyTo, pn.anonymousInitiatorSetupCipher);
+					else
+						sendAuthPacket(1, 2, 2, message3, pn, replyTo);
 				}
 			}
 		}, 5*1000);
@@ -1535,9 +1538,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private void sendAuthPacket(byte[] output, BlockCipher cipher, PeerNode pn, Peer replyTo) {
 		int length = output.length;
-		if(length > sock.getMaxPacketSize()) {
-			throw new IllegalStateException("Cannot send auth packet: too long: "+length);
-		}
+		// FIXME shorten seednode phase 3/4 so it's within the limit
+//		if(length > sock.getMaxPacketSize()) {
+//			throw new IllegalStateException("Cannot send auth packet: too long: "+length);
+//		}
 		PCFBMode pcfb = PCFBMode.create(cipher);
 		int paddingLength = node.fastWeakRandom.nextInt(100);
 		byte[] iv = new byte[pcfb.lengthIV()];
