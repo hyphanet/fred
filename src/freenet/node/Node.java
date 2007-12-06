@@ -1548,12 +1548,14 @@ public class Node implements TimeSkewDetectorCallback {
 
 				});
 			}
+		
+		} else {
+			clientCore.alerts.register(new SimpleUserAlert(true, "Not using a Sun JVM", "You are trying to run the node under a non-Sun JVM ("+jvmVendor+" "+jvmVersion+"). This is not recommended: the node may not run well. Please get Sun java if possible.", UserAlert.WARNING));
+		}
 			
-			if(!isUsingWrapper()) {
-				// FIXME l10n
-				clientCore.alerts.register(new SimpleUserAlert(true, "Not using the wrapper!", "You are running the node without the wrapper. This is not recommended. The node will not be able to restart itself, so auto-updating won't work, and if the JVM goes off into limbo, it won't get restarted either. Also the node can't generate stack dumps in some places.", UserAlert.WARNING));
-			}
-			
+		if(!isUsingWrapper()) {
+			// FIXME l10n
+			clientCore.alerts.register(new SimpleUserAlert(true, "Not using the wrapper!", "You are running the node without the wrapper. This is not recommended. The node will not be able to restart itself, so auto-updating won't work, and if the JVM goes off into limbo, it won't get restarted either. Also the node can't generate stack dumps in some places.", UserAlert.WARNING));
 		}
 		
 	}
