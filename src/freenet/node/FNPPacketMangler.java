@@ -1171,7 +1171,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Already connected to seednode");
 				return pn;
 			}
-			node.peers.addConnectedPeer(seed);
+			node.peers.addPeer(seed);
 			return seed;
 		} else {
 			Logger.error(this, "Unknown setup type");
