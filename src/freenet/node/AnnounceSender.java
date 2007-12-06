@@ -43,7 +43,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		this.om = om;
 		this.node = node;
 		this.onlyNode = null;
-		htl = m.getShort(DMT.HTL);
+		htl = (short) Math.min(m.getShort(DMT.HTL), node.maxHTL());
 		target = m.getDouble(DMT.TARGET_LOCATION); // FIXME validate
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		cb = null;
