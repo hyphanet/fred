@@ -54,6 +54,7 @@ public class MessageItem {
     }
 
 	public void onSent(int length) {
+        //NB: The fact that the bytes are counted before callback notifications is important for load management.
 		if(ctrCallback != null) {
 			try {
 				ctrCallback.sentBytes(length);
