@@ -1366,6 +1366,7 @@ public class PeerManager {
 		for(int i=0;i<peers.length;i++) {
 			if(peers[i] == pn) continue;
 			if(!peers[i].isConnected()) continue;
+			if(!peers[i].isSearchable()) continue; // Ignore non-searchable peers i.e. bootstrapping peers
 			if(peers[i].getPeer().getFreenetAddress().equals(addr)) return true;
 		}
 		return false;
