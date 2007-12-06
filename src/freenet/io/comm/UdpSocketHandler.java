@@ -245,6 +245,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 		
 		try {
 			_sock.send(packet);
+			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address);
 		} catch (IOException e) {
 			if(packet.getAddress() instanceof Inet6Address)
 				Logger.normal(this, "Error while sending packet to IPv6 address: "+destination+": "+e, e);
