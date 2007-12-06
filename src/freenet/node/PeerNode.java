@@ -3199,4 +3199,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return -1;
 	}
 
+	public WeakReference getWeakRef() {
+		return myRef;
+	}
+	
 }

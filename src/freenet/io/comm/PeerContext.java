@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
+import java.lang.ref.WeakReference;
+
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.OutgoingPacketMangler;
 
@@ -44,4 +46,8 @@ public interface PeerContext {
 	
 	/** Get the OutgoingPacketMangler which encrypts outgoing packets to this node */
 	OutgoingPacketMangler getOutgoingMangler();
+
+	/** Get a WeakReference to this context. Hopefully there is only one of these for the whole object; they are quite
+	 * expensive. */
+	WeakReference getWeakRef();
 }

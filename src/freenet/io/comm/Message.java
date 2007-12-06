@@ -20,6 +20,7 @@
 package freenet.io.comm;
 
 import java.io.*;
+import java.lang.ref.WeakReference;
 import java.util.*;
 
 import freenet.support.Fields;
@@ -36,7 +37,8 @@ public class Message {
     public static final String VERSION = "$Id: Message.java,v 1.11 2005/09/15 18:16:04 amphibian Exp $";
 
 	private final MessageType _spec;
-	private final PeerContext _source;
+	private final WeakReference/*<PeerContext>*/ _sourceRef;
+	private final boolean _internal;
 	private final HashMap _payload = new HashMap(8, 1.0F); // REDFLAG at the moment memory is more of an issue than CPU so we use a high load factor
 	private Vector _subMessages;
 	public final long localInstantiationTime;
@@ -115,7 +117,8 @@ public class Message {
 	private Message(MessageType spec, PeerContext source, int recvByteCount) {
 		localInstantiationTime = System.currentTimeMillis();
 		_spec = spec;
-		_source = source;
+		_internal = source == null;
+		_sourceRef = source.getWeakRef();
 		_receivedByteCount = recvByteCount;
 	}
 
@@ -243,11 +246,11 @@ public class Message {
 	}
 
 	public PeerContext getSource() {
-		return _source;
+		return (PeerContext) _sourceRef.get();
 	}
 
 	public boolean isInternal() {
-	    return _source == null;
+	    return _internal;
 	}
 	
 	public MessageType getSpec() {

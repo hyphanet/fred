@@ -47,12 +47,12 @@ public class RequestHandler implements Runnable, ByteCounter {
         return super.toString()+" for "+uid;
     }
     
-    public RequestHandler(Message m, long id, Node n) {
+    public RequestHandler(Message m, PeerNode source, long id, Node n) {
         req = m;
         node = n;
         uid = id;
         htl = req.getShort(DMT.HTL);
-        source = (PeerNode) req.getSource();
+        this.source = source;
         closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
         double myLoc = n.lm.getLocation();
         key = (Key) req.getObject(DMT.FREENET_ROUTING_KEY);

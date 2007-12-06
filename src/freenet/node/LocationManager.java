@@ -756,8 +756,7 @@ public class LocationManager {
      * @return True if we have handled the message, false if it needs
      * to be handled otherwise.
      */
-    public boolean handleSwapRequest(Message m) {
-        PeerNode pn = (PeerNode)m.getSource();
+    public boolean handleSwapRequest(Message m, PeerNode pn) {
         long oldID = m.getLong(DMT.UID);
         Long luid = new Long(oldID);
         long newID = oldID+1;
@@ -879,7 +878,7 @@ public class LocationManager {
      * Handle an unmatched FNPSwapReply
      * @return True if we recognized and forwarded this reply.
      */
-    public boolean handleSwapReply(Message m) {
+    public boolean handleSwapReply(Message m, PeerNode source) {
         long uid = m.getLong(DMT.UID);
         Long luid = new Long(uid);
         RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
@@ -888,22 +887,22 @@ public class LocationManager {
             return false;
         }
         if(item.requestSender == null) {
-        	if(logMINOR) Logger.minor(this, "SwapReply from "+m.getSource()+" on chain originated locally "+uid);
+        	if(logMINOR) Logger.minor(this, "SwapReply from "+source+" on chain originated locally "+uid);
             return false;
         }
         if(item.routedTo == null) {
             Logger.error(this, "Got SwapReply on "+uid+" but routedTo is null!");
             return false;
         }
-        if(m.getSource() != item.routedTo) {
-            Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+m.getSource()+
+        if(source != item.routedTo) {
+            Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+source+
                     " should be "+item.routedTo+" to "+item.requestSender);
             return true;
         }
         item.lastMessageTime = System.currentTimeMillis();
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
-        if(logMINOR) Logger.minor(this, "Forwarding SwapReply "+uid+" from "+m.getSource()+" to "+item.requestSender);
+        if(logMINOR) Logger.minor(this, "Forwarding SwapReply "+uid+" from "+source+" to "+item.requestSender);
         try {
             item.requestSender.sendAsync(m, null, 0, null);
         } catch (NotConnectedException e) {
@@ -916,7 +915,7 @@ public class LocationManager {
      * Handle an unmatched FNPSwapRejected
      * @return True if we recognized and forwarded this message.
      */
-    public boolean handleSwapRejected(Message m) {
+    public boolean handleSwapRejected(Message m, PeerNode source) {
         long uid = m.getLong(DMT.UID);
         Long luid = new Long(uid);
         RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
@@ -929,14 +928,14 @@ public class LocationManager {
             Logger.error(this, "Got SwapRejected on "+uid+" but routedTo is null!");
             return false;
         }
-        if(m.getSource() != item.routedTo) {
-            Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+m.getSource()+
+        if(source != item.routedTo) {
+            Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+source+
                     " should be "+item.routedTo+" to "+item.requestSender);
             return true;
         }
         removeRecentlyForwardedItem(item);
         item.lastMessageTime = System.currentTimeMillis();
-        if(logMINOR) Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+m.getSource()+" to "+item.requestSender);
+        if(logMINOR) Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+source+" to "+item.requestSender);
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {
@@ -951,19 +950,19 @@ public class LocationManager {
      * Handle an unmatched FNPSwapCommit
      * @return True if we recognized and forwarded this message.
      */
-    public boolean handleSwapCommit(Message m) {
+    public boolean handleSwapCommit(Message m, PeerNode source) {
         long uid = m.getLong(DMT.UID);
         Long luid = new Long(uid);
         RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
         if(item == null) return false;
         if(item.routedTo == null) return false;
-        if(m.getSource() != item.requestSender) {
-            Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+m.getSource()+
+        if(source != item.requestSender) {
+            Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+source+
                     " should be "+item.requestSender+" to "+item.routedTo);
             return true;
         }
         item.lastMessageTime = System.currentTimeMillis();
-        if(logMINOR) Logger.minor(this, "Forwarding SwapCommit "+uid+ ',' +item.outgoingID+" from "+m.getSource()+" to "+item.routedTo);
+        if(logMINOR) Logger.minor(this, "Forwarding SwapCommit "+uid+ ',' +item.outgoingID+" from "+source+" to "+item.routedTo);
         // Sending onwards - use outgoing ID
         m.set(DMT.UID, item.outgoingID);
         try {
@@ -979,7 +978,7 @@ public class LocationManager {
      * Handle an unmatched FNPSwapComplete
      * @return True if we recognized and forwarded this message.
      */
-    public boolean handleSwapComplete(Message m) {
+    public boolean handleSwapComplete(Message m, PeerNode source) {
         long uid = m.getLong(DMT.UID);
         if(logMINOR) Logger.minor(this, "handleSwapComplete("+uid+ ')');
         Long luid = new Long(uid);
@@ -996,12 +995,12 @@ public class LocationManager {
             Logger.error(this, "Got SwapComplete on "+uid+" but routedTo == null! (meaning we accepted it, presumably)");
             return false;
         }
-        if(m.getSource() != item.routedTo) {
-            Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+m.getSource()+
+        if(source != item.routedTo) {
+            Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+source+
                     " should be "+item.routedTo+" to "+item.requestSender);
             return true;
         }
-        if(logMINOR) Logger.minor(this, "Forwarding SwapComplete "+uid+" from "+m.getSource()+" to "+item.requestSender);
+        if(logMINOR) Logger.minor(this, "Forwarding SwapComplete "+uid+" from "+source+" to "+item.requestSender);
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {

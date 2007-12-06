@@ -739,6 +739,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					if(m != null) {
 						// Process message
 						PeerNode pn = (PeerNode) m.getSource();
+						// pn cannot be null, because the filters will prevent garbage collection of the nodes
 						boolean processed = false;
 						for(int i=0;i<waiters.length;i++) {
 							PeerNode p = waiters[i].pn;

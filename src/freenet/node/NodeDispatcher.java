@@ -45,13 +45,17 @@ public class NodeDispatcher implements Dispatcher {
 	public boolean handleMessage(Message m) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		PeerNode source = (PeerNode)m.getSource();
+		if(source == null) {
+			// Node has been disconnected and garbage collected already! Ouch.
+			return true;
+		}
 		if(logMINOR) Logger.minor(this, "Dispatching "+m+" from "+source);
 		MessageType spec = m.getSpec();
 		if(spec == DMT.FNPPing) {
 			// Send an FNPPong
 			Message reply = DMT.createFNPPong(m.getInt(DMT.PING_SEQNO));
 			try {
-				m.getSource().sendAsync(reply, null, 0, null); // nothing we can do if can't contact source
+				source.sendAsync(reply, null, 0, null); // nothing we can do if can't contact source
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection replying to "+m);
 			}
@@ -85,7 +89,7 @@ public class NodeDispatcher implements Dispatcher {
 			handleDisconnect(m, source);
 			return true;
 		} else if(spec == DMT.nodeToNodeMessage) {
-			node.receivedNodeToNodeMessage(m);
+			node.receivedNodeToNodeMessage(m, source);
 			return true;
 		} else if(spec == DMT.UOMAnnounce) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
@@ -117,15 +121,15 @@ public class NodeDispatcher implements Dispatcher {
 			source.updateLocation(newLoc);
 			return true;
 		} else if(spec == DMT.FNPSwapRequest) {
-			return node.lm.handleSwapRequest(m);
+			return node.lm.handleSwapRequest(m, source);
 		} else if(spec == DMT.FNPSwapReply) {
-			return node.lm.handleSwapReply(m);
+			return node.lm.handleSwapReply(m, source);
 		} else if(spec == DMT.FNPSwapRejected) {
-			return node.lm.handleSwapRejected(m);
+			return node.lm.handleSwapRejected(m, source);
 		} else if(spec == DMT.FNPSwapCommit) {
-			return node.lm.handleSwapCommit(m);
+			return node.lm.handleSwapCommit(m, source);
 		} else if(spec == DMT.FNPSwapComplete) {
-			return node.lm.handleSwapComplete(m);
+			return node.lm.handleSwapComplete(m, source);
 		} else if(spec == DMT.FNPCHKDataRequest) {
 			return handleDataRequest(m, source, false);
 		} else if(spec == DMT.FNPSSKDataRequest) {
@@ -135,7 +139,7 @@ public class NodeDispatcher implements Dispatcher {
 		} else if(spec == DMT.FNPSSKInsertRequest) {
 			return handleInsertRequest(m, source, true);
 		} else if(spec == DMT.FNPRoutedPing) {
-			return handleRouted(m);
+			return handleRouted(m, source);
 		} else if(spec == DMT.FNPRoutedPong) {
 			return handleRoutedReply(m);
 		} else if(spec == DMT.FNPRoutedRejected) {
@@ -193,7 +197,7 @@ public class NodeDispatcher implements Dispatcher {
 		if(node.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				m.getSource().sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting data request (loop, finished): "+e);
 			}
@@ -203,9 +207,9 @@ public class NodeDispatcher implements Dispatcher {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				m.getSource().sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting insert request from "+m.getSource().getPeer()+": "+e);
+				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
 			}
 			return true;
 		} else {
@@ -214,18 +218,18 @@ public class NodeDispatcher implements Dispatcher {
 		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, source);
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
-			Logger.normal(this, "Rejecting request from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
+			Logger.normal(this, "Rejecting request from "+source.getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
 			try {
-				m.getSource().sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting (overload) data request from "+m.getSource().getPeer()+": "+e);
+				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
 			node.unlockUID(id, isSSK, false, false);
 			return true;
 		}
 		//if(!node.lockUID(id)) return false;
-		RequestHandler rh = new RequestHandler(m, id, node);
+		RequestHandler rh = new RequestHandler(m, source, id, node);
 		node.executor.execute(rh, "RequestHandler for UID "+id);
 		return true;
 	}
@@ -235,9 +239,9 @@ public class NodeDispatcher implements Dispatcher {
 		if(node.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				m.getSource().sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting insert request from "+m.getSource().getPeer()+": "+e);
+				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
 			}
 			return true;
 		}
@@ -245,31 +249,31 @@ public class NodeDispatcher implements Dispatcher {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				m.getSource().sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting insert request from "+m.getSource().getPeer()+": "+e);
+				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
 			}
 			return true;
 		}
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
 		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, source);
 		if(rejectReason != null) {
-			Logger.normal(this, "Rejecting insert from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
+			Logger.normal(this, "Rejecting insert from "+source.getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
 			try {
-				m.getSource().sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting (overload) insert request from "+m.getSource().getPeer()+": "+e);
+				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
 			node.unlockUID(id, isSSK, true, false);
 			return true;
 		}
 		long now = System.currentTimeMillis();
 		if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
-			SSKInsertHandler rh = new SSKInsertHandler(m, id, node, now);
+			SSKInsertHandler rh = new SSKInsertHandler(m, source, id, node, now);
 			node.executor.execute(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
-			InsertHandler rh = new InsertHandler(m, id, node, now);
+			InsertHandler rh = new InsertHandler(m, source, id, node, now);
 			node.executor.execute(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
@@ -332,9 +336,9 @@ public class NodeDispatcher implements Dispatcher {
 		Message msg;
 		short lastHtl;
 
-		RoutedContext(Message msg) {
+		RoutedContext(Message msg, PeerNode source) {
 			createdTime = accessTime = System.currentTimeMillis();
-			source = (PeerNode)msg.getSource();
+			this.source = source;
 			routedTo = new HashSet();
 			notIgnored = new HashSet();
 			this.msg = msg;
@@ -373,48 +377,47 @@ public class NodeDispatcher implements Dispatcher {
 	 * @param m
 	 * @return False if we want the message put back on the queue.
 	 */
-	boolean handleRouted(Message m) {
+	boolean handleRouted(Message m, PeerNode source) {
 		if(logMINOR) Logger.minor(this, "handleRouted("+m+ ')');
-		if((m.getSource() != null) && (!(m.getSource() instanceof PeerNode))) {
-			Logger.error(this, "Routed message but source "+m.getSource()+" not a PeerNode!");
+		if((source != null) && (!(source instanceof PeerNode))) {
+			Logger.error(this, "Routed message but source "+source+" not a PeerNode!");
 			return true;
 		}
 		long id = m.getLong(DMT.UID);
 		Long lid = new Long(id);
-		PeerNode pn = (PeerNode) (m.getSource());
 		short htl = m.getShort(DMT.HTL);
-		if(pn != null) htl = pn.decrementHTL(htl);
+		if(source != null) htl = source.decrementHTL(htl);
 		RoutedContext ctx;
 		ctx = (RoutedContext)routedContexts.get(lid);
 		if(ctx != null) {
 			try {
-				m.getSource().sendAsync(DMT.createFNPRoutedRejected(id, (short)(htl-1)), null, 0, null);
+				source.sendAsync(DMT.createFNPRoutedRejected(id, (short)(htl-1)), null, 0, null);
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection rejecting "+m);
 			}
 			return true;
 		}
-		ctx = new RoutedContext(m);
+		ctx = new RoutedContext(m, source);
 		routedContexts.put(lid, ctx);
 		// pn == null => originated locally, keep full htl
 		double target = m.getDouble(DMT.TARGET_LOCATION);
-		if(logMINOR) Logger.minor(this, "id "+id+" from "+pn+" htl "+htl+" target "+target);
+		if(logMINOR) Logger.minor(this, "id "+id+" from "+source+" htl "+htl+" target "+target);
 		if(Math.abs(node.lm.getLocation() - target) <= Double.MIN_VALUE) {
 			if(logMINOR) Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.getDarknetPortNumber());
 			// Handle locally
 			// Message type specific processing
-			dispatchRoutedMessage(m, pn, id);
+			dispatchRoutedMessage(m, source, id);
 			return true;
 		} else if(htl == 0) {
 			Message reject = DMT.createFNPRoutedRejected(id, (short)0);
-			if(pn != null) try {
-				pn.sendAsync(reject, null, 0, null);
+			if(source != null) try {
+				source.sendAsync(reject, null, 0, null);
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection rejecting "+m);
 			}
 			return true;
 		} else {
-			return forward(m, id, pn, htl, target, ctx);
+			return forward(m, id, source, htl, target, ctx);
 		}
 	}
 

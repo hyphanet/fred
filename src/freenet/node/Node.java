@@ -1591,7 +1591,7 @@ public class Node implements TimeSkewDetectorCallback {
 		Message m = DMT.createFNPRoutedPing(uid, loc2, maxHTL, initialX);
 		Logger.normal(this, "Message: "+m);
 		
-		dispatcher.handleRouted(m);
+		dispatcher.handleRouted(m, null);
 		// FIXME: might be rejected
 		MessageFilter mf1 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedPong).setTimeout(5000);
 		try {
@@ -2405,8 +2405,7 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Handle a received node to node message
 	 */
-	public void receivedNodeToNodeMessage(Message m) {
-	  PeerNode src = (PeerNode) m.getSource();
+	public void receivedNodeToNodeMessage(Message m, PeerNode src) {
 	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
 	  ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
 	  receivedNodeToNodeMessage(src, type, messageData, false);

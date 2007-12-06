@@ -47,11 +47,11 @@ public class InsertHandler implements Runnable, ByteCounter {
     PartiallyReceivedBlock prb;
     private static boolean logMINOR;
     
-    InsertHandler(Message req, long id, Node node, long startTime) {
+    InsertHandler(Message req, PeerNode source, long id, Node node, long startTime) {
         this.req = req;
         this.node = node;
         this.uid = id;
-        this.source = (PeerNode) req.getSource();
+        this.source = source;
         this.startTime = startTime;
         key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
         htl = req.getShort(DMT.HTL);
