@@ -30,6 +30,7 @@ public class SeedClientPeerNode extends PeerNode {
 	}
 
 	public boolean equals(Object o) {
+		if(o == this) return true;
 		// Only equal to seednode of its own type.
 		// Different to an OpennetPeerNode with the same identity!
 		if(o instanceof SeedClientPeerNode) {
