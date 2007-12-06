@@ -81,6 +81,7 @@ import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.OpennetUserAlert;
+import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.TimeSkewDetectedUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.ForwardPort;
@@ -1546,6 +1547,11 @@ public class Node implements TimeSkewDetectorCallback {
 					}
 
 				});
+			}
+			
+			if(!isUsingWrapper()) {
+				// FIXME l10n
+				clientCore.alerts.register(new SimpleUserAlert(true, "Not using the wrapper!", "You are running the node without the wrapper. This is not recommended. The node will not be able to restart itself, so auto-updating won't work, and if the JVM goes off into limbo, it won't get restarted either. Also the node can't generate stack dumps in some places.", UserAlert.WARNING));
 			}
 			
 		}
