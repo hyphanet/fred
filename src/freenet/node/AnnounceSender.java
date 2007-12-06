@@ -251,6 +251,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	}
             	
             	if(msg.getSpec() == DMT.FNPOpennetAnnounceCompleted) {
+            		// Send the completion on immediately. We don't want to accumulate 30 seconds per hop!
             		complete();
             		mfAnnounceReply.setTimeout(END_TIMEOUT).setTimeoutRelativeToCreation(true);
             		mfNotWanted.setTimeout(END_TIMEOUT).setTimeoutRelativeToCreation(true);
