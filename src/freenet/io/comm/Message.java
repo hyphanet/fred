@@ -117,8 +117,13 @@ public class Message {
 	private Message(MessageType spec, PeerContext source, int recvByteCount) {
 		localInstantiationTime = System.currentTimeMillis();
 		_spec = spec;
-		_internal = source == null;
-		_sourceRef = source.getWeakRef();
+		if(source == null) {
+			_internal = true;
+			_sourceRef = null;
+		} else {
+			_internal = false;
+			_sourceRef = source.getWeakRef();
+		}
 		_receivedByteCount = recvByteCount;
 	}
 
@@ -246,7 +251,7 @@ public class Message {
 	}
 
 	public PeerContext getSource() {
-		return (PeerContext) _sourceRef.get();
+		return _sourceRef == null ? null : (PeerContext) _sourceRef.get();
 	}
 
 	public boolean isInternal() {
