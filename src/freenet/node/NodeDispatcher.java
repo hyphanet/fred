@@ -298,9 +298,11 @@ public class NodeDispatcher implements Dispatcher {
 			return true;
 		}
 		boolean success = false;
+		// No way to check whether it's actually running atm, so lets report it to the completed list immediately.
+		// FIXME we should probably keep a list!
+		node.completed(uid);
 		try {
 			if(!source.shouldAcceptAnnounce(uid)) {
-				node.completed(uid);
 				Message msg = DMT.createFNPRejectedOverload(uid, true);
 				try {
 					source.sendAsync(msg, null, 0, null);
