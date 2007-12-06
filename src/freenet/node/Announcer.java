@@ -16,6 +16,9 @@ import java.util.Vector;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.l10n.L10n;
+import freenet.node.useralerts.UserAlert;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
@@ -95,8 +98,7 @@ public class Announcer {
 	}
 	
 	private void registerAlert() {
-		// TODO Auto-generated method stub
-		
+		node.clientCore.alerts.register(new AnnouncementUserAlert());
 	}
 
 	private void connectSomeSeednodes() {
@@ -174,15 +176,21 @@ public class Announcer {
 	public void stop() {
 		// Do nothing at present
 	}
-
-	public void maybeSendAnnouncement() {
+	
+	/** @return True if we have enough peers that we don't need to announce. */
+	boolean enoughPeers() {
 		// Do we want to send an announcement to the node?
 		int opennetCount = node.peers.countConnectedOpennetPeers();
 		// First, do we actually need to announce?
-		if(opennetCount > MIN_OPENNET_CONNECTED_PEERS) {
-			return;
+		if(opennetCount > Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAim())) {
+			return true;
 		}
+		return false;
+	}
+
+	public void maybeSendAnnouncement() {
 		long now = System.currentTimeMillis();
+		if(enoughPeers()) return;
 		synchronized(this) {
 			// Second, do we have many announcements running?
 			if(runningAnnouncements > WANT_ANNOUNCEMENTS) {
@@ -292,6 +300,109 @@ public class Announcer {
 			}
 		}, seed);
 		node.executor.execute(sender, "Announcer to "+seed);
+	}
+
+	public class AnnouncementUserAlert implements UserAlert {
+
+		public String dismissButtonText() {
+			return L10n.getString("UserAlert.hide");
+		}
+
+		public HTMLNode getHTMLText() {
+			return new HTMLNode("#", getText());
+		}
+
+		public short getPriorityClass() {
+			return UserAlert.MINOR;
+		}
+
+		public String getText() {
+			StringBuffer sb = new StringBuffer();
+			sb.append(l10n("announceAlertIntro"));
+			int status;
+			synchronized(this) {
+				status = Announcer.this.status;
+			}
+			if(status == STATUS_NO_SEEDNODES) {
+				return l10n("announceAlertNoSeednodes");
+			}
+			if(status == STATUS_LOADING) {
+				return l10n("announceLoading");
+			}
+			if(node.clientCore.isAdvancedModeEnabled()) {
+				// Detail
+				sb.append(' ');
+				int addedNodes;
+				int refusedNodes;
+				int recentSentAnnouncements;
+				int runningAnnouncements;
+				int connectedSeednodes = 0;
+				int disconnectedSeednodes = 0;
+				synchronized(this) {
+					addedNodes = announcementAddedNodes;
+					refusedNodes = announcementNotWantedNodes;
+					recentSentAnnouncements = sentAnnouncements;
+					runningAnnouncements = Announcer.this.runningAnnouncements;
+				}
+				Vector nodes = node.peers.getSeedServerPeersVector(null);
+				for(int i=0;i<nodes.size();i++) {
+					SeedServerPeerNode seed = (SeedServerPeerNode) nodes.get(i);
+					if(seed.isConnected())
+						connectedSeednodes++;
+					else
+						disconnectedSeednodes++;
+				}
+				sb.append(l10n("announceDetails", 
+						new String[] { "addedNodes", "refusedNodes", "recentSentAnnouncements", "runningAnnouncements", "connectedSeednodes", "disconnectedSeednodes" },
+						new String[] {
+						Integer.toString(addedNodes),
+						Integer.toString(refusedNodes),
+						Integer.toString(recentSentAnnouncements),
+						Integer.toString(runningAnnouncements),
+						Integer.toString(connectedSeednodes),
+						Integer.toString(disconnectedSeednodes)
+				}));
+			}
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		public String getTitle() {
+			return l10n("announceAlertTitle");
+		}
+
+		public Object getUserIdentifier() {
+			return null;
+		}
+
+		public boolean isValid() {
+			return !enoughPeers();
+		}
+
+		public void isValid(boolean validity) {
+			// Ignore
+		}
+
+		public void onDismiss() {
+			// Ignore
+		}
+
+		public boolean shouldUnregisterOnDismiss() {
+			return true;
+		}
+
+		public boolean userCanDismiss() {
+			return true;
+		}
+
+	}
+	
+	private String l10n(String key) {
+		return L10n.getString("Announcer."+key);
+	}
+
+	public String l10n(String key, String[] patterns, String[] values) {
+		return L10n.getString(key, patterns, values);
 	}
 
 }

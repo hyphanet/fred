@@ -1334,7 +1334,7 @@ public class PeerManager {
 		Vector v = new Vector(myPeers.length);
 		for(int i=0;i<peers.length;i++) {
 			if(peers[i] instanceof SeedServerPeerNode) {
-				if(exclude.contains(peers[i].getIdentity())) continue;
+				if(exclude != null && exclude.contains(peers[i].getIdentity())) continue;
 				v.add(peers[i]);
 			}
 		}
