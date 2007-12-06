@@ -19,6 +19,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
+import freenet.support.transport.ip.IPUtil;
 
 /**
  * Decide whether to announce, and announce if necessary to a node in the
@@ -235,6 +236,8 @@ public class Announcer {
 
 	private synchronized boolean newAnnouncedIPs(InetAddress[] addrs) {
 		for(int i=0;i<addrs.length;i++) {
+			if(!IPUtil.isValidAddress(addrs[i], false))
+				continue;
 			if(!announcedToIPs.contains(addrs[i]))
 				return true;
 		}
