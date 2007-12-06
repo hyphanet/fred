@@ -276,13 +276,15 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	if(msg.getSpec() == DMT.FNPOpennetAnnounceNodeNotWanted) {
             		if(cb != null)
             			cb.nodeNotWanted();
-            		if(source != null)
+            		if(source != null) {
 						try {
 							sendNotWanted();
 						} catch (NotConnectedException e) {
 							Logger.error(this, "Lost connection to source");
 							return;
 						}
+            		}
+            		continue; // This message is propagated, they will send a Completed or RNF
             	}
             	
             	Logger.error(this, "Unexpected message: "+msg);
