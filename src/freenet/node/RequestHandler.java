@@ -152,8 +152,9 @@ public class RequestHandler implements Runnable, ByteCounter {
             		status = RequestSender.SUCCESS;
             		// We've fetched it from our datastore, so there won't be a downstream noderef.
             		// But we want to send at least an FNPOpennetCompletedAck, otherwise the request source
-            		// may have to timeout waiting for one.
+            		// may have to timeout waiting for one. That will be the terminal message.
            			finishOpennetNoRelay();
+				} else {
                     //also for byte logging, since the block is the 'terminal' message.
                     applyByteCounts();
             	}
@@ -191,15 +192,16 @@ public class RequestHandler implements Runnable, ByteCounter {
             	BlockTransmitter bt =
             	    new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
             	node.addTransferringRequestHandler(uid);
-            	if(!bt.send(node.executor)){
-            		finalTransferFailed = true;
-            	} else {
+            	if(bt.send(node.executor)) {
+					status = rs.getStatus();
     				// Successful CHK transfer, maybe path fold
            			finishOpennetChecked();
-            	}
-				status = rs.getStatus();
-                //for byte logging, since the block is the 'terminal' message.
-                applyByteCounts();
+            	} else {
+					finalTransferFailed = true;
+					status = rs.getStatus();
+					//for byte logging, since the block is the 'terminal' message.
+					applyByteCounts();
+				}
         	    return;
             }
             
@@ -309,6 +311,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             //For byte counting, this relies on the fact that the callback will only be excuted once. This check might be paranoid.
             if (once) {
                 applyByteCounts();
+				once=false;
             } else {
                 Logger.error(this, "terminalMessage sent multiple times? for " + RequestHandler.this);
             }
@@ -320,39 +323,35 @@ public class RequestHandler implements Runnable, ByteCounter {
      * or wait for a noderef and relay it and wait for a response and relay that,
      * or send our own noderef and wait for a response and add that.
      */
-	private void finishOpennetChecked() {
+	private void finishOpennetChecked() throws NotConnectedException {
 		OpennetManager om = node.getOpennet();
 		if(om != null &&
 				(node.passOpennetRefsThroughDarknet() || source.isOpennet()) &&
-				finishOpennetInner(om)) 
+		   finishOpennetInner(om)) {
+			applyByteCounts();
 			return;
+		}
 		
 		Message msg = DMT.createFNPOpennetCompletedAck(uid);
-		try {
-			source.sendAsync(msg, null, 0, this);
-		} catch (NotConnectedException e) {
-			// Oh well...
-		}
+		sendTerminal(msg);
 	}
 	
 	/**
 	 * There is no noderef to pass downstream. If we want a connection, send our 
 	 * noderef and wait for a reply, otherwise just send an ack.
 	 */
-	private void finishOpennetNoRelay() {
+	private void finishOpennetNoRelay() throws NotConnectedException {
 		OpennetManager om = node.getOpennet();
 		
 		if(om != null && (source.isOpennet() || node.passOpennetRefsThroughDarknet()) &&
-				finishOpennetNoRelayInner(om))
+		   finishOpennetNoRelayInner(om)) {
+			applyByteCounts();
 			return;
+		}
 		
 		// Otherwise just ack it.
 		Message msg = DMT.createFNPOpennetCompletedAck(uid);
-		try {
-			source.sendAsync(msg, null, 0, this);
-		} catch (NotConnectedException e) {
-			// Oh well...
-		}
+		sendTerminal(msg);
 	}
 	
 	private boolean finishOpennetInner(OpennetManager om) {
