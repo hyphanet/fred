@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 
 import freenet.client.FetchContext;
@@ -63,6 +65,7 @@ import freenet.support.api.Bucket;
 public class USKFetcher implements ClientGetState {
 
 	private static boolean logMINOR;
+	private static Timer uskWakeupTimer;
 	
 	/** USK manager */
 	private final USKManager uskManager;
@@ -252,43 +255,28 @@ public class USKFetcher implements ClientGetState {
 			long now = System.currentTimeMillis();
 			synchronized(this) {
 				started = false; // don't finish before have rescheduled
+                
+                //Find out when we should check next ('end'), in an increasing delay (unless we make progress).
+                long newSleepTime = sleepTime * 2;
+				if(newSleepTime > maxSleepTime) newSleepTime = maxSleepTime;
+				sleepTime = newSleepTime;
+				end = now + sleepTime;
+                
 				if(valAtEnd > valueAtSchedule) {
-					// Have advanced.
+					// We have advanced; keep trying as if we just started.
 					minFailures = origMinFailures;
 					sleepTime = origSleepTime;
+					end = now;
 				} else {
-					// Increase exponentially but relatively slowly
+					// We have not found any new version; Increase exponentially but relatively slowly
 					long newMinFailures = Math.max(((int)(minFailures * 1.25)), minFailures+1);
 					if(newMinFailures > maxMinFailures)
 						newMinFailures = maxMinFailures;
 					minFailures = newMinFailures;
 				}
-				long newSleepTime = sleepTime * 2;
-				if(newSleepTime > maxSleepTime) newSleepTime = maxSleepTime;
-				sleepTime = newSleepTime;
-				end = now + sleepTime;
 				newValAtEnd = valAtEnd;
 			}
-			// FIXME do this without occupying a thread
-			while((now < end) && ((newValAtEnd = uskManager.lookup(origUSK)) == valAtEnd)) {
-				long d = end - now;
-				if(d > 0)
-					try {
-						synchronized(this) {
-							wait(d);
-						}
-					} catch (InterruptedException e) {
-						// Maybe break? Go around loop.
-					}
-				now = System.currentTimeMillis();
-			}
-			if(newValAtEnd != valAtEnd) {
-				synchronized(this) {
-					minFailures = origMinFailures;
-					sleepTime = origSleepTime;
-				}
-			}
-			schedule();
+			schedule(end-now);
 		} else {
 			long ed = uskManager.lookup(origUSK);
 			USKFetcherCallback[] cb;
@@ -449,7 +437,23 @@ public class USKFetcher implements ClientGetState {
 	public USK getOriginalUSK() {
 		return origUSK;
 	}
-
+	
+	public void schedule(long delay) {
+		if (delay<=0) {
+			schedule();
+		} else {
+			if (uskWakeupTimer==null) {
+				synchronized (USKFetcher.class) {
+					//FIXME: Generates an un-named timer thread, rather than 'USKWakeupTimer' (java 1.5)
+                    if (uskWakeupTimer==null)
+						uskWakeupTimer=new Timer(true);
+				}
+			}
+			uskWakeupTimer.schedule(new USKWakeup(), delay);
+			Logger.minor(this, "schedule next USKCheck in "+delay+" ms");
+		}
+	}
+    
 	public void schedule() {
 		USKAttempt[] attempts;
 		long lookedUp = uskManager.lookup(origUSK);
@@ -540,4 +544,10 @@ public class USKFetcher implements ClientGetState {
 		return -1;
 	}
 	
+	class USKWakeup extends TimerTask {
+		public void run() {
+			//schedule() will check for (USKFetcher.this.cancelled)
+			USKFetcher.this.schedule();
+		}
+	}
 }
