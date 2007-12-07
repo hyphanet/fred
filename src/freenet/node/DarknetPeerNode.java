@@ -57,9 +57,6 @@ public class DarknetPeerNode extends PeerNode {
     /** True if we send handshake requests to this peer in infrequent bursts */
     private boolean isBurstOnly;
     
-    /** True if we are currently sending this peer a burst of handshake requests */
-    private boolean isBursting;
-
     /** True if we want to ignore the source port of the node's sent packets.
      * This is normally set when dealing with an Evil Corporate Firewall which rewrites the port on outgoing
      * packets but does not redirect incoming packets destined to the rewritten port.
@@ -82,12 +79,6 @@ public class DarknetPeerNode extends PeerNode {
     /** Queued-to-send N2NTM extra peer data file numbers */
     private LinkedHashSet queuedToSendN2NTMExtraPeerDataFileNumbers;
 
-    /** Number of handshake attempts (while in ListenOnly mode) since the beginning of this burst */
-    private int listeningHandshakeBurstCount;
-    
-    /** Total number of handshake attempts (while in ListenOnly mode) to be in this burst */
-    private int listeningHandshakeBurstSize;
-    
     private static boolean logMINOR;
     
     /**
@@ -99,8 +90,6 @@ public class DarknetPeerNode extends PeerNode {
     	super(fs, node2, crypto, peers, fromLocal, mangler, false);
     	
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
-    	
-    	long now = System.currentTimeMillis();
     	
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
@@ -117,13 +106,6 @@ public class DarknetPeerNode extends PeerNode {
         	allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
         }
 	
-        listeningHandshakeBurstCount = 0;
-        listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
-        	+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
-        if(isBurstOnly) {
-        	Logger.minor(this, "First BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')');
-        }
-
 		// Setup the private darknet comment note
         privateDarknetComment = "";
         privateDarknetCommentFileNumber = -1;
@@ -168,13 +150,7 @@ public class DarknetPeerNode extends PeerNode {
     		if(isDisabled) return false;
     		if(isListenOnly) return false;
     		if(!super.shouldSendHandshake()) return false;
-    		if(isBurstOnly())
-    			isBursting = true;
-    		else
-    			return true;
     	}
-    	// Might have changed from burst only to bursting
-		setPeerNodeStatus(System.currentTimeMillis());
 		return true;
     }
     
@@ -231,8 +207,6 @@ public class DarknetPeerNode extends PeerNode {
 			return status;
 		if(isListenOnly)
 			return PeerManager.PEER_NODE_STATUS_LISTEN_ONLY;
-		if(isBursting)
-			return PeerManager.PEER_NODE_STATUS_BURSTING;
 		if(isBurstOnly)
 			return PeerManager.PEER_NODE_STATUS_LISTENING;
 		return status;
@@ -341,8 +315,11 @@ public class DarknetPeerNode extends PeerNode {
 		return ignoreSourcePort;
 	}
 	
-	public synchronized boolean isBurstOnly() {
-		return isBurstOnly;
+	public boolean isBurstOnly() {
+		synchronized(this) {
+			if(isBurstOnly) return true;
+		}
+		return super.isBurstOnly();
 	}
 
 	public boolean allowLocalAddresses() {
@@ -1514,31 +1491,6 @@ public class DarknetPeerNode extends PeerNode {
 
 	public String userToString() {
 		return ""+getPeer()+" : "+getName();
-	}
-
-	protected synchronized boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
-		if(isBurstOnly) {
-			boolean fetchARKFlag = false;
-			listeningHandshakeBurstCount++;
-			if(listeningHandshakeBurstCount >= listeningHandshakeBurstSize) {
-				listeningHandshakeBurstCount = 0;
-				fetchARKFlag = true;
-			}
-			if(listeningHandshakeBurstCount == 0) {  // 0 only if we just reset it above
-				sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS
-					+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS);
-				listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
-						+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
-				isBursting = false;
-			} else {
-				sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-					+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
-			}
-			if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')', new Exception("double-called debug"));
-			return fetchARKFlag;
-		} else {
-			return super.innerCalcNextHandshake(successfulHandshakeSend, dontFetchARK, now);
-		}
 	}
 
 	public PeerNodeStatus getStatus() {

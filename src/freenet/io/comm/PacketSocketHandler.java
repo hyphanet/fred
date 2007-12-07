@@ -32,4 +32,7 @@ public interface PacketSocketHandler extends SocketHandler {
 	/** How big must the pending data be before we send a packet? *Includes* transport layer headers. */
 	public int getPacketSendThreshold();
 
+	/** Does this port appear to be port forwarded? @see AddressTracker */
+	int getDetectedConnectivityStatus();
+
 }

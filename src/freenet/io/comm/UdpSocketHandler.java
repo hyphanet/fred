@@ -414,4 +414,8 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 		tracker.setBrokenDetector(detector);
 	}
 
+	public int getDetectedConnectivityStatus() {
+		return tracker.getPortForwardStatus();
+	}
+
 }

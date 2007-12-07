@@ -46,6 +46,10 @@ public class NodeCryptoConfig {
 	 * regardless of any per-peer setting. */
 	private boolean alwaysAllowLocalAddresses;
 	
+	/** If true, assume we are NATed regardless of the evidence, and therefore always send
+	 * aggressive handshakes (every 10-30 seconds). */
+	private boolean assumeNATed;
+	
 	NodeCryptoConfig(SubConfig config, int sortOrder, boolean onePerIP) throws NodeInitException {
 		
 		config.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
@@ -149,6 +153,18 @@ public class NodeCryptoConfig {
 					}
 		});
 		alwaysAllowLocalAddresses = config.getBoolean("alwaysAllowLocalAddresses");
+		
+		config.register("assumeNATed", true, sortOrder++, true, false, "Node.assumeNATed", "Node.assumeNATedLong", new BooleanCallback() {
+
+			public boolean get() {
+				return assumeNATed;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				assumeNATed = val;
+			}
+		});
+		assumeNATed = config.getBoolean("assumeNATed");
 	}
 
 	/** The number of config options i.e. the amount to increment sortOrder by */
@@ -210,5 +226,10 @@ public class NodeCryptoConfig {
 
 	public synchronized boolean alwaysAllowLocalAddresses() {
 		return alwaysAllowLocalAddresses;
+	}
+
+	public boolean alwaysHandshakeAggressively() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

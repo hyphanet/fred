@@ -105,4 +105,10 @@ public interface OutgoingPacketMangler {
 	 * Always allow local addresses?
 	 */
 	public boolean alwaysAllowLocalAddresses();
+
+	/**
+	 * Port forwarding status.
+	 * @return A status code from AddressTracker. FIXME make this more generic when we need to.
+	 */
+	public int getConnectivityStatus();
 }

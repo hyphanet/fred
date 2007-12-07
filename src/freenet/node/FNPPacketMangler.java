@@ -4,6 +4,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.io.AddressTracker;
 import freenet.io.comm.SocketHandler;
 
 import java.security.MessageDigest;
@@ -2755,6 +2756,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			data = newData;
 		}
 		return data;
+	}
+
+	public int getConnectivityStatus() {
+		if(crypto.config.alwaysHandshakeAggressively())
+			return AddressTracker.DEFINITELY_NATED;
+		return sock.getDetectedConnectivityStatus();
 	}
 
 }

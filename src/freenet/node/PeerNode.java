@@ -33,6 +33,7 @@ import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.io.AddressTracker;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -281,6 +282,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     long timeLastDisconnect;
     /** Previous time of disconnection */
     long timePrevDisconnect;
+    
+    // Burst-only mode
+    /** True if we are currently sending this peer a burst of handshake requests */
+    private boolean isBursting;
+    /** Number of handshake attempts (while in ListenOnly mode) since the beginning of this burst */
+    private int listeningHandshakeBurstCount;
+    /** Total number of handshake attempts (while in ListenOnly mode) to be in this burst */
+    private int listeningHandshakeBurstSize;
+    
     
 	/**
 	 * For FNP link setup:
@@ -589,6 +599,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// populate handshakeIPs so handshakes can start ASAP
 		lastAttemptedHandshakeIPUpdateTime = 0;
 		maybeUpdateHandshakeIPs(true);
+
+        listeningHandshakeBurstCount = 0;
+        listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
+        	+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
+		
+        if(isBurstOnly()) {
+        	Logger.minor(this, "First BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+shortToString()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')');
+        }
 
 		if(fromLocal)
 			innerCalcNextHandshake(false, false, now); // Let them connect so we can recognise we are NATed
@@ -1143,6 +1161,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		if(tempShouldSendHandshake && (hasLiveHandshake(now)))
 			tempShouldSendHandshake = false;
+		if(tempShouldSendHandshake) {
+    		if(isBurstOnly()) {
+    			synchronized(this) {
+        			isBursting = true;
+    			}
+    			setPeerNodeStatus(System.currentTimeMillis());
+    		} else
+    			return true;
+		}
 		return tempShouldSendHandshake;
 	}
 
@@ -1165,6 +1192,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Set sendHandshakeTime, and return whether to fetch the ARK.
 	 */
 	protected synchronized boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
+		if(isBurstOnly())
+			return calcNextHandshakeBurstOnly(now);
 		if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion || disableRouting) {
 			// Let them know we're here, but have no hope of connecting
 			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
@@ -1180,6 +1209,29 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return ((handshakeCount == MAX_HANDSHAKE_COUNT) && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion));
 	}
 
+	private synchronized boolean calcNextHandshakeBurstOnly(long now) {
+		boolean fetchARKFlag = false;
+		listeningHandshakeBurstCount++;
+		if(isBurstOnly()) {
+			if(listeningHandshakeBurstCount >= listeningHandshakeBurstSize) {
+				listeningHandshakeBurstCount = 0;
+				fetchARKFlag = true;
+			}
+		}
+		if(listeningHandshakeBurstCount == 0) {  // 0 only if we just reset it above
+			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS
+				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS);
+			listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
+					+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
+			isBursting = false;
+		} else {
+			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
+				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+		}
+		if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+shortToString()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')', new Exception("double-called debug"));
+		return fetchARKFlag;
+	}
+
 	protected void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK) {
 		long now = System.currentTimeMillis();
 		boolean fetchARKFlag = false;
@@ -1193,6 +1245,30 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if((arkFetcherStartTime2 - arkFetcherStartTime1) > 500)
 				Logger.normal(this, "arkFetcherStartTime2 is more than half a second after arkFetcherStartTime1 (" + (arkFetcherStartTime2 - arkFetcherStartTime1) + ") working on " + shortToString());
 		}
+	}
+
+	/** If the outgoingMangler allows bursting, we still don't want to burst *all the time*, because it may be mistaken
+	 * in its detection of a port forward. So from time to time we will aggressively handshake anyway. This flag is set
+	 * once every UPDATE_BURST_NOW_PERIOD. */
+	private boolean burstNow;
+	private long timeSetBurstNow;
+	static final int UPDATE_BURST_NOW_PERIOD = 5*60*1000;
+	/** Burst only 19 in 20 times if definitely port forwarded. Save entropy by writing this as 20 not 0.95. */
+	static final int P_BURST_IF_DEFINITELY_FORWARDED = 20;
+	
+	public boolean isBurstOnly() {
+		int status = outgoingMangler.getConnectivityStatus();
+		if(status == AddressTracker.DONT_KNOW) return false;
+		if(status == AddressTracker.DEFINITELY_NATED) return false;
+		
+		// For now. FIXME try it with a lower probability when we're sure that the packet-deltas mechanisms works.
+		if(status == AddressTracker.MAYBE_PORT_FORWARDED) return false;
+		long now = System.currentTimeMillis();
+		if(now - timeSetBurstNow > UPDATE_BURST_NOW_PERIOD) {
+			burstNow = (node.random.nextInt(P_BURST_IF_DEFINITELY_FORWARDED) == 0);
+			timeSetBurstNow = now;
+		}
+		return burstNow;
 	}
 
 	/**
@@ -2606,6 +2682,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM;
 		else if(neverConnected)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED;
+		else if(isBursting)
+			return PeerManager.PEER_NODE_STATUS_BURSTING;
 		else
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
 		if(!isConnected && (previousRoutingBackoffReason != null)) {
