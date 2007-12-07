@@ -256,7 +256,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             if((status == SSKInsertSender.ROUTE_NOT_FOUND) || (status == SSKInsertSender.ROUTE_REALLY_NOT_FOUND)) {
                 Message msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 try {
-					source.sendSync(msg, null);
+					source.sendSync(msg, this);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -269,7 +269,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             if(status == SSKInsertSender.SUCCESS) {
             	Message msg = DMT.createFNPInsertReply(uid);
             	try {
-					source.sendSync(msg, null);
+					source.sendSync(msg, this);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -283,7 +283,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
             Message msg = DMT.createFNPRejectedOverload(uid, true);
             try {
-				source.sendSync(msg, null);
+				source.sendSync(msg, this);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}
