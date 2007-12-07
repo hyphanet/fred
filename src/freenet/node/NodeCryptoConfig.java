@@ -154,7 +154,7 @@ public class NodeCryptoConfig {
 		});
 		alwaysAllowLocalAddresses = config.getBoolean("alwaysAllowLocalAddresses");
 		
-		config.register("assumeNATed", true, sortOrder++, true, false, "Node.assumeNATed", "Node.assumeNATedLong", new BooleanCallback() {
+		config.register("assumeNATed", true, sortOrder++, true, true, "Node.assumeNATed", "Node.assumeNATedLong", new BooleanCallback() {
 
 			public boolean get() {
 				return assumeNATed;
