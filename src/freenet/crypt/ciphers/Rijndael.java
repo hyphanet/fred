@@ -20,9 +20,6 @@ import freenet.support.Logger;
 public class Rijndael implements BlockCipher {
 	private Object sessionKey;
 	private final int keysize, blocksize;
-	// FIXME remove. This is used to simulate an old security threatening bug in order
-	// to have backwards compatibility with old keys.
-	private final int cryptBlockSize;
 
 	// for Util.getCipherByName..  and yes, screw you too, java
 	public Rijndael(Integer keysize) throws UnsupportedCipherException {
@@ -50,13 +47,11 @@ public class Rijndael implements BlockCipher {
 			throw new UnsupportedCipherException("Invalid blocksize");
 		this.keysize=keysize;
 		this.blocksize=blocksize;
-		this.cryptBlockSize = blocksize;
 	}
 
 	public Rijndael() {
 		this.keysize   = 128;
 		this.blocksize = 128;
-		this.cryptBlockSize = 128;
 	}
 
 	public final int getBlockSize() {
@@ -71,7 +66,7 @@ public class Rijndael implements BlockCipher {
 		try {
 			byte[] nkey=new byte[keysize>>3];
 			System.arraycopy(key, 0, nkey, 0, nkey.length);
-			sessionKey=Rijndael_Algorithm.makeKey(nkey, cryptBlockSize/8);
+			sessionKey=Rijndael_Algorithm.makeKey(nkey, blocksize/8);
 		} catch (InvalidKeyException e) {
 			e.printStackTrace();
 			Logger.error(this,"Invalid key");
@@ -81,7 +76,7 @@ public class Rijndael implements BlockCipher {
 	public synchronized final void encipher(byte[] block, byte[] result) {
 		if(block.length != blocksize/8)
 			throw new IllegalArgumentException();
-		Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, cryptBlockSize/8);
+		Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, blocksize/8);
 	}
 
 	/**
@@ -89,21 +84,21 @@ public class Rijndael implements BlockCipher {
 	 * things up by avoiding unnecessary allocations between rounds.
 	 */
 	public synchronized final int getTempArraySize() {
-		return cryptBlockSize/(8*4);
+		return blocksize/(8*4);
 	}
 
 	public synchronized final void encipher(byte[] block, byte[] result, int[] a, int[] t) {
 		if(block.length != blocksize/8)
 			throw new IllegalArgumentException();
-		if(a.length != t.length || t.length != cryptBlockSize/(8*4))
+		if(a.length != t.length || t.length != blocksize/(8*4))
 			throw new IllegalArgumentException();
-		Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, cryptBlockSize/8, a, t);
+		Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, blocksize/8, a, t);
 	}
 
 	public synchronized final void decipher(byte[] block, byte[] result) {
 		if(block.length != blocksize/8)
 			throw new IllegalArgumentException();
-		Rijndael_Algorithm.blockDecrypt(block, result, 0, sessionKey, cryptBlockSize/8);
+		Rijndael_Algorithm.blockDecrypt(block, result, 0, sessionKey, blocksize/8);
 	}
 
 	public static void main(String[] args) throws UnsupportedCipherException {
