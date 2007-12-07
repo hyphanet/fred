@@ -194,7 +194,7 @@ public class Announcer {
 		int opennetCount = node.peers.countConnectedOpennetPeers() + node.peers.countConnectedDarknetPeers();
 		// First, do we actually need to announce?
 		int target = Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAim() / 2);
-		if(opennetCount > target)
+		if(opennetCount >= target)
 			return true;
 		return false;
 	}
