@@ -258,6 +258,8 @@ public class AddressTracker {
 
 	/** Persist the table to disk */
 	public void storeData(long bootID, File nodeDir, int port) {
+		// Don't write to disk if we know we're NATed anyway!
+		if(brokenDetector != null && brokenDetector.isBroken()) return;
 		File data = new File(nodeDir, "packets-"+port+".dat");
 		File dataBak = new File(nodeDir, "packets-"+port+".bak");
 		data.delete();
