@@ -466,8 +466,8 @@ public class NodeStats implements Persistable {
 		bandwidthAvailableInput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
 		if(bandwidthLiabilityInput > bandwidthAvailableInput) {
 			pInstantRejectIncoming.report(1.0);
-			rejected("Input bandwidth liability ("+bandwidthLiabilityInput+" > "+bandwidthAvailableInput+")", isLocal);
-			return "Input bandwidth liability";
+			rejected("Input bandwidth liability", isLocal);
+			return "Input bandwidth liability ("+bandwidthLiabilityInput+" > "+bandwidthAvailableInput+")";
 		}
 		
 		
