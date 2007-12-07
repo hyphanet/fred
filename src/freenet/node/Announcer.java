@@ -191,11 +191,11 @@ public class Announcer {
 	/** @return True if we have enough peers that we don't need to announce. */
 	boolean enoughPeers() {
 		// Do we want to send an announcement to the node?
-		int opennetCount = node.peers.countConnectedOpennetPeers();
+		int opennetCount = node.peers.countConnectedOpennetPeers() + node.peers.countConnectedDarknetPeers();
 		// First, do we actually need to announce?
-		if(opennetCount > Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAim())) {
+		int target = Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAim() / 2);
+		if(opennetCount > target)
 			return true;
-		}
 		return false;
 	}
 
