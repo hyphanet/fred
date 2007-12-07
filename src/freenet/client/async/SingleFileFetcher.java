@@ -402,11 +402,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Hopefully!
 				FreenetURI newURI = metadata.getSingleTarget();
 				if(logMINOR) Logger.minor(this, "Redirecting to "+newURI);
-				ClientKey key;
+				ClientKey redirectedKey;
 				try {
 					BaseClientKey k = BaseClientKey.getBaseKey(newURI);
 					if(k instanceof ClientKey)
-						key = (ClientKey) k;
+						redirectedKey = (ClientKey) k;
 					else
 						// FIXME do we want to allow redirects to USKs?
 						// Without redirects to USKs, all SSK and CHKs are static.
@@ -424,9 +424,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					addedMetaStrings++;
 				}
 
-				// **FIXME** Is key in the call to SingleFileFetcher here supposed to be this.key or the same key used in the try block above?  MultiLevelMetadataCallback.onSuccess() below uses this.key, thus the question
-				final SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, this.uri, addedMetaStrings, ctx, actx, ah, maxRetries, recursionLevel, false, token, true, returnBucket, isFinal);
-				if((key instanceof ClientCHK) && !((ClientCHK)key).isMetadata())
+				final SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, redirectedKey, metaStrings, this.uri, addedMetaStrings, ctx, actx, ah, maxRetries, recursionLevel, false, token, true, returnBucket, isFinal);
+				if((redirectedKey instanceof ClientCHK) && !((ClientCHK)redirectedKey).isMetadata())
 					rcb.onBlockSetFinished(this);
 				if(metadata.isCompressed()) {
 					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
