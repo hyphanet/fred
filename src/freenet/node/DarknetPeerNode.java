@@ -1520,11 +1520,7 @@ public class DarknetPeerNode extends PeerNode {
 		if(isBurstOnly) {
 			boolean fetchARKFlag = false;
 			listeningHandshakeBurstCount++;
-			if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
-				// Let them know we're here, but have no hope of connecting
-				// Send one packet only.
-				listeningHandshakeBurstCount = 0;
-			} else if(listeningHandshakeBurstCount >= listeningHandshakeBurstSize) {
+			if(listeningHandshakeBurstCount >= listeningHandshakeBurstSize) {
 				listeningHandshakeBurstCount = 0;
 				fetchARKFlag = true;
 			}
