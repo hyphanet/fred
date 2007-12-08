@@ -2471,52 +2471,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.normal(this, "Cannot send handshake to "+pn+" because no common negTypes, choosing random negType of "+negType);
 		}
 		if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn+" negotiation type "+negType);
-		Peer[] handshakeIPs;
-		if(!pn.shouldSendHandshake()) {
-			if(logMINOR) Logger.minor(this, "Not sending handshake to "+pn.getPeer()+" because pn.shouldSendHandshake() returned false");
+		
+		Peer peer = pn.getHandshakeIP();
+		if(peer == null) {
+			pn.couldNotSendHandshake();
 			return;
 		}
-		long firstTime = System.currentTimeMillis();
-		handshakeIPs = pn.getHandshakeIPs();
-		long secondTime = System.currentTimeMillis();
-		if((secondTime - firstTime) > 1000)
-			Logger.error(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+") working on "+pn.userToString());
-		if(handshakeIPs.length == 0) {
-			pn.couldNotSendHandshake();
-			long thirdTime = System.currentTimeMillis();
-			if((thirdTime - secondTime) > 1000)
-				Logger.error(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+pn.userToString());
-			return;
-		}
-		int sentCount = 0;
-		long loopTime1 = System.currentTimeMillis();
-		for(int i=0;i<handshakeIPs.length;i++){
-			Peer peer = handshakeIPs[i];
-			FreenetInetAddress addr = peer.getFreenetAddress();
-			if(!crypto.allowConnection(pn, addr)) {
-				if(logMINOR)
-					Logger.minor(this, "Not sending handshake packet to "+peer+" for "+pn);
-			}
-			if(peer.getAddress(false) == null) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
-				continue;
-			}
-			if((!pn.allowLocalAddresses()) && (!peer.isRealInternetAddress(false, false))) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
-				continue;
-			}
-			sendJFKMessage1(pn, peer, pn.handshakeUnknownInitiator(), pn.handshakeSetupType());
-			if(logMINOR)
-				Logger.minor(this, "Sending handshake to "+peer+" for "+pn+" ("+i+" of "+handshakeIPs.length);
-			pn.sentHandshake();
-			sentCount += 1;
-		}
-		long loopTime2 = System.currentTimeMillis();
-		if((loopTime2 - loopTime1) > 1000)
-			Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+pn.userToString());
-		if(sentCount==0) {
-			pn.couldNotSendHandshake();
-		}
+		sendJFKMessage1(pn, peer, pn.handshakeUnknownInitiator(), pn.handshakeSetupType());
+		if(logMINOR)
+			Logger.minor(this, "Sending handshake to "+peer+" for "+pn);
+		pn.sentHandshake();
 	}
 
 	/* (non-Javadoc)
@@ -2762,6 +2726,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(crypto.config.alwaysHandshakeAggressively())
 			return AddressTracker.DEFINITELY_NATED;
 		return sock.getDetectedConnectivityStatus();
+	}
+
+	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
+		return crypto.allowConnection(pn, addr);
 	}
 
 }

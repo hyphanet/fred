@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.io.comm.AsyncMessageCallback;
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
@@ -111,4 +112,10 @@ public interface OutgoingPacketMangler {
 	 * @return A status code from AddressTracker. FIXME make this more generic when we need to.
 	 */
 	public int getConnectivityStatus();
+
+	/**
+	 * Is there any reason not to allow this connection? E.g. limits on the number of nodes on
+	 * a specific IP address?
+	 */
+	public boolean allowConnection(PeerNode node, FreenetInetAddress addr);
 }

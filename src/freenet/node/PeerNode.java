@@ -1204,6 +1204,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 		}
 		sendHandshakeTime = now + delay;
+		// FIXME proper multi-homing support!
+		delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
+		if(delay < 3000) delay = 3000;
 		
 		if(successfulHandshakeSend)
 			firstHandshake = false;
@@ -1231,6 +1234,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
 				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 		}
+		// FIXME proper multi-homing support!
+		delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
+		if(delay < 3000) delay = 3000;
+		
 		sendHandshakeTime = now + delay;
 		if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+shortToString()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')', new Exception("double-called debug"));
 		return fetchARKFlag;
@@ -3284,5 +3291,65 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public WeakReference getWeakRef() {
 		return myRef;
 	}
+
+	/**
+	 * Get a single address to send a handshake to.
+	 * The current code doesn't work well with multiple simulataneous handshakes.
+	 * Alternates between valid values.
+	 * (FIXME!)
+	 */
+	public Peer getHandshakeIP() {
+		Peer[] handshakeIPs;
+		if(!shouldSendHandshake()) {
+			if(logMINOR) Logger.minor(this, "Not sending handshake to "+getPeer()+" because pn.shouldSendHandshake() returned false");
+			return null;
+		}
+		long firstTime = System.currentTimeMillis();
+		handshakeIPs = getHandshakeIPs();
+		long secondTime = System.currentTimeMillis();
+		if((secondTime - firstTime) > 1000)
+			Logger.error(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+") working on "+userToString());
+		if(handshakeIPs.length == 0) {
+			long thirdTime = System.currentTimeMillis();
+			if((thirdTime - secondTime) > 1000)
+				Logger.error(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+userToString());
+			return null;
+		}
+		long loopTime1 = System.currentTimeMillis();
+		Vector validIPs = new Vector();
+		for(int i=0;i<handshakeIPs.length;i++){
+			Peer peer = handshakeIPs[i];
+			FreenetInetAddress addr = peer.getFreenetAddress();
+			if(!outgoingMangler.allowConnection(this, addr)) {
+				if(logMINOR)
+					Logger.minor(this, "Not sending handshake packet to "+peer+" for "+this);
+			}
+			if(peer.getAddress(false) == null) {
+				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
+				continue;
+			}
+			if((!allowLocalAddresses()) && (!peer.isRealInternetAddress(false, false))) {
+				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
+				continue;
+			}
+			validIPs.add(peer);
+		}
+		Peer ret;
+		if(validIPs.size() > 1) {
+			synchronized(this) {
+				if(handshakeIPAlternator > validIPs.size())
+					handshakeIPAlternator = 0;
+				ret = (Peer) validIPs.get(handshakeIPAlternator);
+				handshakeIPAlternator++;
+			}
+		} else {
+			ret = (Peer) validIPs.get(0);
+		}
+		long loopTime2 = System.currentTimeMillis();
+		if((loopTime2 - loopTime1) > 1000)
+			Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+userToString());
+		return ret;
+	}
 	
+	private int handshakeIPAlternator;
 }
