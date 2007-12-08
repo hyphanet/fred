@@ -380,8 +380,7 @@ public class Announcer {
 						Integer.toString(disconnectedSeednodes)
 				}));
 			}
-			// TODO Auto-generated method stub
-			return null;
+			return sb.toString();
 		}
 
 		public String getTitle() {
