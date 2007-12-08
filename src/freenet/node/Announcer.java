@@ -338,7 +338,7 @@ public class Announcer {
 				// If it takes more than COOLING_OFF_PERIOD to disconnect, we might not be able to reannounce to this
 				// node. However, we can't reannounce to it anyway until announcedTo is cleared, which probably will
 				// be more than that period in the future.
-				node.peers.disconnect(seed, true, true);
+				node.peers.disconnect(seed, true, false);
 				System.out.println("Announcement to "+seed.userToString()+" completed.");
 			}
 
