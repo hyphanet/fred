@@ -3335,15 +3335,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			validIPs.add(peer);
 		}
 		Peer ret;
-		if(validIPs.size() > 1) {
+		if(validIPs.isEmpty()) {
+			ret = null;
+		} else if(validIPs.size() == 1) {
+			ret = (Peer) validIPs.get(0);
+		} else {
 			synchronized(this) {
 				if(handshakeIPAlternator > validIPs.size())
 					handshakeIPAlternator = 0;
 				ret = (Peer) validIPs.get(handshakeIPAlternator);
 				handshakeIPAlternator++;
 			}
-		} else {
-			ret = (Peer) validIPs.get(0);
 		}
 		long loopTime2 = System.currentTimeMillis();
 		if((loopTime2 - loopTime1) > 1000)
