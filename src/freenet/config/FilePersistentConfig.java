@@ -50,7 +50,7 @@ public class FilePersistentConfig extends PersistentConfig {
 			System.err.println("Warning: Cannot write to config tempfile: "+tempFilename);
 		}
 		if(filenameExists) {
-			if(filename.canRead()) {
+			if(filename.canRead() && filename.length() > 0) {
 				try {
 					return initialLoad(filename);
 				} catch (FileNotFoundException e) {
@@ -66,7 +66,7 @@ public class FilePersistentConfig extends PersistentConfig {
 			}
 		}
 		if(tempFilename.exists()) {
-			if(tempFilename.canRead()) {
+			if(tempFilename.canRead() && tempFilename.length() > 0) {
 				try {
 					return initialLoad(tempFilename);
 				} catch (FileNotFoundException e) {
