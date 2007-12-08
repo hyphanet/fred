@@ -1325,7 +1325,7 @@ public class PeerManager {
 		return (DarknetPeerNode[])v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
-	public Vector getSeedServerPeersVector(HashSet exclude) {
+	public Vector getConnectedSeedServerPeersVector(HashSet exclude) {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;

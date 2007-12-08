@@ -242,7 +242,7 @@ public class Announcer {
 				return;
 			}
 			// Now find a node to announce to
-			Vector seeds = node.peers.getSeedServerPeersVector(announcedToIdentities);
+			Vector seeds = node.peers.getConnectedSeedServerPeersVector(announcedToIdentities);
 			while(sentAnnouncements < WANT_ANNOUNCEMENTS) {
 				if(seeds.isEmpty()) {
 					if(logMINOR)
@@ -396,7 +396,7 @@ public class Announcer {
 					recentSentAnnouncements = sentAnnouncements;
 					runningAnnouncements = Announcer.this.runningAnnouncements;
 				}
-				Vector nodes = node.peers.getSeedServerPeersVector(null);
+				Vector nodes = node.peers.getConnectedSeedServerPeersVector(null);
 				for(int i=0;i<nodes.size();i++) {
 					SeedServerPeerNode seed = (SeedServerPeerNode) nodes.get(i);
 					if(seed.isConnected())
