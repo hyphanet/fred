@@ -1522,7 +1522,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public String toString() {
 		// FIXME?
-		return shortToString();
+		return shortToString()+'@'+Integer.toHexString(super.hashCode());
 	}
 
 	/**
