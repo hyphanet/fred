@@ -299,7 +299,7 @@ public class Announcer {
 	}
 
 	public void sendAnnouncement(final SeedServerPeerNode seed) {
-		System.out.println("Announcement to "+seed+" starting...");
+		System.out.println("Announcement to "+seed.userToString()+" starting...");
 		AnnounceSender sender = new AnnounceSender(node.getLocation(), om, node, new AnnouncementCallback() {
 			private int totalAdded;
 			private int totalNotWanted;
@@ -308,18 +308,18 @@ public class Announcer {
 					announcementAddedNodes++;
 					totalAdded++;
 				}
-				Logger.error(this, "Announcement to "+seed+" added node "+pn+" for a total of "+announcementAddedNodes+" ("+totalAdded+" from this announcement)");
-				System.out.println("Announcement to "+seed.shortToString()+" added node "+pn.shortToString()+'.');
+				Logger.error(this, "Announcement to "+seed.userToString()+" added node "+pn+" for a total of "+announcementAddedNodes+" ("+totalAdded+" from this announcement)");
+				System.out.println("Announcement to "+seed.userToString()+" added node "+pn.userToString()+'.');
 				return;
 			}
 			public void bogusNoderef(String reason) {
-				Logger.error(this, "Announcement to "+seed+" got bogus noderef: "+reason, new Exception("debug"));
+				Logger.error(this, "Announcement to "+seed.userToString()+" got bogus noderef: "+reason, new Exception("debug"));
 			}
 			public void completed() {
 				long now = System.currentTimeMillis();
 				synchronized(Announcer.this) {
 					runningAnnouncements--;
-					Logger.error(this, "Announcement to "+seed+" completed, now running "+runningAnnouncements+" announcements");
+					Logger.error(this, "Announcement to "+seed.userToString()+" completed, now running "+runningAnnouncements+" announcements");
 					timeCompletedAnnouncement = now;
 					if(runningAnnouncements == 0) {
 						startTime = System.currentTimeMillis() + COOLING_OFF_PERIOD;
@@ -338,18 +338,18 @@ public class Announcer {
 				// node. However, we can't reannounce to it anyway until announcedTo is cleared, which probably will
 				// be more than that period in the future.
 				node.peers.disconnect(seed, true, true);
-				System.out.println("Announcement to "+seed.shortToString()+" completed.");
+				System.out.println("Announcement to "+seed.userToString()+" completed.");
 			}
 
 			public void nodeFailed(PeerNode pn, String reason) {
-				Logger.error(this, "Announcement to node "+pn+" failed: "+reason);
+				Logger.error(this, "Announcement to node "+pn.userToString()+" failed: "+reason);
 			}
 			public void nodeNotWanted() {
 				synchronized(Announcer.this) {
 					announcementNotWantedNodes++;
 					totalNotWanted++;
 				}
-				Logger.error(this, "Announcement to "+seed+" returned node not wanted for a total of "+announcementNotWantedNodes+" ("+totalNotWanted+" from this announcement)");
+				Logger.error(this, "Announcement to "+seed.userToString()+" returned node not wanted for a total of "+announcementNotWantedNodes+" ("+totalNotWanted+" from this announcement)");
 			}
 		}, seed);
 		node.executor.execute(sender, "Announcer to "+seed);
