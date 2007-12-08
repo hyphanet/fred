@@ -250,7 +250,7 @@ public class PeerManager {
 			for (int i = 0; i < myPeers.length; i++) {
 				if (myPeers[i].equals(pn)) {
 					if(logMINOR)
-						Logger.minor(this, "Can't add peer "+pn+" because already have "+myPeers[i]);
+						Logger.minor(this, "Can't add peer "+pn+" because already have "+myPeers[i], new Exception("debug"));
 					return false;
 				}
 			}
