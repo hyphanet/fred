@@ -17,6 +17,7 @@
 package freenet.io;
 
 import java.io.IOException;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -66,10 +67,10 @@ public class NetworkInterface {
 	
 	private final Executor executor;
 
-	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindable) throws IOException {
+	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
 		NetworkInterface iface = new NetworkInterface(port, allowedHosts, executor);
 		try {
-			iface.setBindTo(bindTo, ignoreUnbindable);
+			iface.setBindTo(bindTo, ignoreUnbindableIP6);
 		} catch (IOException e) {
 			try {
 				iface.close();
@@ -107,7 +108,7 @@ public class NetworkInterface {
 	 * @param bindTo
 	 *            A comma-separated list of IP address to bind to
 	 */
-	public void setBindTo(String bindTo, boolean ignoreUnbindable) throws IOException {
+	public void setBindTo(String bindTo, boolean ignoreUnbindableIP6) throws IOException {
                 if(bindTo == null || bindTo.equals("")) bindTo = NetworkInterface.DEFAULT_BIND_TO;
 		StringTokenizer bindToTokens = new StringTokenizer(bindTo, ",");
 		List bindToTokenList = new ArrayList();
@@ -134,10 +135,12 @@ public class NetworkInterface {
 		acceptors.clear();
 		for (int serverSocketIndex = 0; serverSocketIndex < bindToTokenList.size(); serverSocketIndex++) {
 			ServerSocket serverSocket = createServerSocket();
+			InetSocketAddress addr = null;
                         try {
-                            serverSocket.bind(new InetSocketAddress((String) bindToTokenList.get(serverSocketIndex), port));
+                        	addr = new InetSocketAddress((String) bindToTokenList.get(serverSocketIndex), port);
+                            serverSocket.bind(addr);
                         } catch (SocketException e) {
-                            if(ignoreUnbindable)
+                            if(ignoreUnbindableIP6 && addr != null && addr.getAddress() instanceof Inet6Address)
                                 continue;
                             else
                                 throw e;
