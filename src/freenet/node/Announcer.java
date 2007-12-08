@@ -21,6 +21,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TimeUtil;
 import freenet.support.io.Closer;
 import freenet.support.transport.ip.IPUtil;
 
@@ -31,6 +32,7 @@ import freenet.support.transport.ip.IPUtil;
  */
 public class Announcer {
 
+	static boolean logMINOR;
 	final Node node;
 	final OpennetManager om;
 	private int status;
@@ -70,6 +72,7 @@ public class Announcer {
 		announcedToIdentities = new HashSet();
 		announcedToIPs = new HashSet();
 		connectedToIdentities = new HashSet();
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	public void start() {
@@ -102,6 +105,8 @@ public class Announcer {
 	}
 
 	private void connectSomeSeednodes() {
+		if(logMINOR)
+			Logger.minor(this, "Connecting some seednodes...");
 		Vector/*<SimpleFieldSet>*/ seeds = readSeednodes();
 		if(seeds.size() == 0) {
 			synchronized(this) {
@@ -135,6 +140,8 @@ public class Announcer {
 	}
 
 	private int connectSomeNodesInner(Vector seeds) {
+		if(logMINOR)
+			Logger.minor(this, "Connecting some seednodes from "+seeds.size());
 		int count = 0;
 		while(count < CONNECT_AT_ONCE) {
 			if(seeds.size() == 0) break;
@@ -161,6 +168,8 @@ public class Announcer {
 	}
 
 	private Vector readSeednodes() {
+		if(logMINOR)
+			Logger.minor(this, "Reading seednodes");
 		File file = new File(node.nodeDir, "seednodes.fref");
 		Vector list = new Vector();
 		FileInputStream fis = null;
@@ -194,30 +203,46 @@ public class Announcer {
 		int opennetCount = node.peers.countConnectedOpennetPeers();
 		// First, do we actually need to announce?
 		int target = Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAim() / 2);
-		if(opennetCount >= target)
+		if(opennetCount >= target) {
+			if(logMINOR)
+				Logger.minor(this, "We have enough opennet peers: "+opennetCount+" > "+target);
 			return true;
+		}
 		return false;
 	}
 
 	public void maybeSendAnnouncement() {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR)
+			Logger.minor(this, "maybeSendAnnouncement()");
 		long now = System.currentTimeMillis();
 		if(enoughPeers()) return;
 		synchronized(this) {
 			// Second, do we have many announcements running?
 			if(runningAnnouncements > WANT_ANNOUNCEMENTS) {
+				if(logMINOR)
+					Logger.minor(this, "Running announcements already");
 				return;
 			}
 			// In cooling-off period?
 			if(System.currentTimeMillis() < startTime) {
+				if(logMINOR)
+					Logger.minor(this, "In cooling-off period for next "+TimeUtil.formatTime(startTime - System.currentTimeMillis()));
 				return;
 			}
 			if(sentAnnouncements >= WANT_ANNOUNCEMENTS) {
+				if(logMINOR)
+					Logger.minor(this, "Sent enough announcements");
 				return;
 			}
 			// Now find a node to announce to
 			Vector seeds = node.peers.getSeedServerPeersVector(announcedToIdentities);
 			while(sentAnnouncements < WANT_ANNOUNCEMENTS) {
-				if(seeds.isEmpty()) break;
+				if(seeds.isEmpty()) {
+					if(logMINOR)
+						Logger.minor(this, "No more seednodes");
+					break;
+				}
 				final SeedServerPeerNode seed = (SeedServerPeerNode) seeds.remove(node.random.nextInt(seeds.size()));
 				InetAddress[] addrs = seed.getInetAddresses();
 				if(!newAnnouncedIPs(addrs)) continue;
@@ -228,11 +253,15 @@ public class Announcer {
 				announcedToIdentities.add(seed.getIdentity());
 				sendAnnouncement(seed);
 			}
-			if(runningAnnouncements >= WANT_ANNOUNCEMENTS)
+			if(runningAnnouncements >= WANT_ANNOUNCEMENTS) {
+				if(logMINOR)
+					Logger.minor(this, "Running "+runningAnnouncements+" announcements");
 				return;
+			}
 			// Do we want to connect some more seednodes?
 			if(now - timeAddedSeeds < MIN_ADDED_SEEDS_INTERVAL) {
 				// Don't connect seednodes yet
+				Logger.minor(this, "Waiting for MIN_ADDED_SEEDS_INTERVAL");
 				node.getTicker().queueTimedJob(new Runnable() {
 					public void run() {
 						try {
