@@ -1342,6 +1342,21 @@ public class PeerManager {
 		return v;
 	}
 	
+	public Vector getSeedServerPeersVector() {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		// FIXME optimise! Maybe maintain as a separate list?
+		Vector v = new Vector(myPeers.length);
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] instanceof SeedServerPeerNode) {
+				v.add(peers[i]);
+			}
+		}
+		return v;
+	}
+	
 	/**
 	 * Get the opennet peers list.
 	 */

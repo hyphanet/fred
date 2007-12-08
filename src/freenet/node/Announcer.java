@@ -396,7 +396,7 @@ public class Announcer {
 					recentSentAnnouncements = sentAnnouncements;
 					runningAnnouncements = Announcer.this.runningAnnouncements;
 				}
-				Vector nodes = node.peers.getConnectedSeedServerPeersVector(null);
+				Vector nodes = node.peers.getSeedServerPeersVector();
 				for(int i=0;i<nodes.size();i++) {
 					SeedServerPeerNode seed = (SeedServerPeerNode) nodes.get(i);
 					if(seed.isConnected())
