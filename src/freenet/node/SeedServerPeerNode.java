@@ -86,4 +86,9 @@ public class SeedServerPeerNode extends PeerNode {
 		return FNPPacketMangler.SETUP_OPENNET_SEEDNODE;
 	}
 
+	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
+		boolean ret = super.disconnected(dumpMessageQueue, dumpTrackers);
+		node.peers.disconnect(this, false, false);
+		return ret;
+	}
 }
