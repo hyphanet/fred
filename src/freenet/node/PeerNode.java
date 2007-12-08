@@ -1220,16 +1220,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				fetchARKFlag = true;
 			}
 		}
+		long delay;
 		if(listeningHandshakeBurstCount == 0) {  // 0 only if we just reset it above
-			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS
+			delay = Node.MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS
 				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS);
 			listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
 					+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
 			isBursting = false;
 		} else {
-			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
+			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
 				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 		}
+		sendHandshakeTime = now + delay;
 		if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+shortToString()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')', new Exception("double-called debug"));
 		return fetchARKFlag;
 	}
