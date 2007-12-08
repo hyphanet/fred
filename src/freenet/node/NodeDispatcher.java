@@ -160,7 +160,22 @@ public class NodeDispatcher implements Dispatcher {
 		return false;
 	}
 
-	private void handleDisconnect(Message m, PeerNode source) {
+	private void handleDisconnect(final Message m, final PeerNode source) {
+		// Must run ON the packet sender thread as it sends a packet directly
+		node.getTicker().queueTimedJob(new FastRunnable() {
+			public void run() {
+				// Send the ack
+				try {
+					source.sendAnyUrgentNotifications(true);
+				} catch (PacketSequenceException e) {
+					// Ignore
+				}
+				finishDisconnect(m, source);
+			}
+		}, 0);
+	}
+	
+	private void finishDisconnect(final Message m, final PeerNode source) {
 		source.disconnected(true, true);
 		// If true, remove from active routing table, likely to be down for a while.
 		// Otherwise just dump all current connection state and keep trying to connect.

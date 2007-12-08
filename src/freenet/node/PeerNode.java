@@ -2070,7 +2070,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @throws PacketSequenceException If there is an error sending the packet
 	* caused by a sequence inconsistency. 
 	*/
-	public void sendAnyUrgentNotifications() throws PacketSequenceException {
+	public void sendAnyUrgentNotifications(boolean forceSendPrimary) throws PacketSequenceException {
 		if(logMINOR)
 			Logger.minor(this, "sendAnyUrgentNotifications");
 		long now = System.currentTimeMillis();
@@ -2083,7 +2083,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		KeyTracker tracker = cur;
 		if(tracker != null) {
 			long t = tracker.getNextUrgentTime();
-			if(t < now) {
+			if(t < now || forceSendPrimary) {
 				try {
 					outgoingMangler.processOutgoing(null, 0, 0, tracker, 0);
 				} catch(NotConnectedException e) {

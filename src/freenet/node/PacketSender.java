@@ -294,7 +294,7 @@ public class PacketSender implements Runnable, Ticker {
 					// Send them
 
 					try {
-						pn.sendAnyUrgentNotifications();
+						pn.sendAnyUrgentNotifications(false);
 					} catch(PacketSequenceException e) {
 						Logger.error(this, "Caught " + e + " - while sending urgent notifications : disconnecting", e);
 						pn.forceDisconnect(false);
