@@ -247,7 +247,7 @@ public class Announcer {
 			while(sentAnnouncements < WANT_ANNOUNCEMENTS) {
 				if(seeds.isEmpty()) {
 					if(logMINOR)
-						Logger.minor(this, "No more seednodes");
+						Logger.minor(this, "No more seednodes, announcedTo = "+announcedToIdentities.size());
 					break;
 				}
 				final SeedServerPeerNode seed = (SeedServerPeerNode) seeds.remove(node.random.nextInt(seeds.size()));
