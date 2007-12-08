@@ -151,6 +151,11 @@ public class Announcer {
 			try {
 				SeedServerPeerNode seed =
 					new SeedServerPeerNode(fs, node, om.crypto, node.peers, false, om.crypto.packetMangler);
+				if(announcedToIdentities.contains(seed.identity)) {
+					if(logMINOR)
+						Logger.minor(this, "Not adding: already announced-to: "+seed.userToString());
+					continue;
+				}
 				if(node.peers.addPeer(seed)) {
 					count++;
 					connectedToIdentities.add(seed.identity);
