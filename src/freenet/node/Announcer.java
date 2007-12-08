@@ -335,7 +335,7 @@ public class Announcer {
 			}
 
 			public void nodeFailed(PeerNode pn, String reason) {
-				Logger.error(this, "Announcement to node "+pn+" failed");
+				Logger.error(this, "Announcement to node "+pn+" failed: "+reason);
 			}
 			public void nodeNotWanted() {
 				synchronized(Announcer.this) {
