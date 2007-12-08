@@ -1194,14 +1194,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	protected synchronized boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
 		if(isBurstOnly())
 			return calcNextHandshakeBurstOnly(now);
+		long delay;
 		if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion || disableRouting) {
 			// Let them know we're here, but have no hope of connecting
-			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
+			delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
 		} else if(invalidVersion() && !firstHandshake) {
-			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
+			delay = Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
 		} else {
-			sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 		}
+		sendHandshakeTime = now + delay;
 		
 		if(successfulHandshakeSend)
 			firstHandshake = false;
