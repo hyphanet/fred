@@ -157,7 +157,8 @@ public class Announcer {
 					if(logMINOR)
 						Logger.minor(this, "Connecting to seednode "+seed);
 				} else {
-					Logger.minor(this, "Not connecting to seednode "+seed);
+					if(logMINOR)
+						Logger.minor(this, "Not connecting to seednode "+seed);
 				}
 			} catch (FSParseException e) {
 				Logger.error(this, "Invalid seed in file: "+e+" for\n"+fs, e);
