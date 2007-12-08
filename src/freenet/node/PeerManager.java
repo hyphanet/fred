@@ -286,6 +286,8 @@ public class PeerManager {
 	}
 	
     private boolean removePeer(PeerNode pn) {
+    	if(logMINOR)
+    		Logger.minor(this, "Removing "+pn);
 		boolean isInPeers = false;
     	synchronized(this) {
     		for(int i=0;i<myPeers.length;i++) {
