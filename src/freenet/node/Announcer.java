@@ -299,6 +299,7 @@ public class Announcer {
 	}
 
 	public void sendAnnouncement(final SeedServerPeerNode seed) {
+		System.out.println("Announcement to "+seed+" starting...");
 		AnnounceSender sender = new AnnounceSender(node.getLocation(), om, node, new AnnouncementCallback() {
 			private int totalAdded;
 			private int totalNotWanted;
