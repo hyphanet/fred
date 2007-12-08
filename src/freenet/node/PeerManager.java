@@ -1335,6 +1335,7 @@ public class PeerManager {
 		for(int i=0;i<peers.length;i++) {
 			if(peers[i] instanceof SeedServerPeerNode) {
 				if(exclude != null && exclude.contains(peers[i].getIdentity())) continue;
+				if(!peers[i].isConnected()) continue;
 				v.add(peers[i]);
 			}
 		}
