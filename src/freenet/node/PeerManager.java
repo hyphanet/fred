@@ -249,6 +249,8 @@ public class PeerManager {
 		synchronized (this) {
 			for (int i = 0; i < myPeers.length; i++) {
 				if (myPeers[i].equals(pn)) {
+					if(logMINOR)
+						Logger.minor(this, "Can't add peer "+pn+" because already have "+myPeers[i]);
 					return false;
 				}
 			}
