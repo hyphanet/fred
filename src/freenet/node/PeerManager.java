@@ -1336,7 +1336,11 @@ public class PeerManager {
 		Vector v = new Vector(myPeers.length);
 		for(int i=0;i<peers.length;i++) {
 			if(peers[i] instanceof SeedServerPeerNode) {
-				if(exclude != null && exclude.contains(peers[i].getIdentity())) continue;
+				if(exclude != null && exclude.contains(peers[i].getIdentity())) {
+					if(logMINOR)
+						Logger.minor(this, "Not including in getConnectedSeedServerPeersVector() as in exclude set: "+peers[i].userToString());
+					continue;
+				}
 				if(!peers[i].isConnected()) {
 					if(logMINOR)
 						Logger.minor(this, "Not including in getConnectedSeedServerPeersVector() as disconnected: "+peers[i].userToString());
