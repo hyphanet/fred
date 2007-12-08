@@ -1337,7 +1337,11 @@ public class PeerManager {
 		for(int i=0;i<peers.length;i++) {
 			if(peers[i] instanceof SeedServerPeerNode) {
 				if(exclude != null && exclude.contains(peers[i].getIdentity())) continue;
-				if(!peers[i].isConnected()) continue;
+				if(!peers[i].isConnected()) {
+					if(logMINOR)
+						Logger.minor(this, "Not including in getConnectedSeedServerPeersVector() as disconnected: "+peers[i].userToString());
+					continue;
+				}
 				v.add(peers[i]);
 			}
 		}
