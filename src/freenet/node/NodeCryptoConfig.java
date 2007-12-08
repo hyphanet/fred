@@ -229,7 +229,6 @@ public class NodeCryptoConfig {
 	}
 
 	public boolean alwaysHandshakeAggressively() {
-		// TODO Auto-generated method stub
-		return false;
+		return assumeNATed;
 	}
 }
