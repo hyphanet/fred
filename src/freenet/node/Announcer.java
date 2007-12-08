@@ -126,6 +126,7 @@ public class Announcer {
 				Logger.minor(this, "Clearing old announced-to list");
 			synchronized(this) {
 				announcedToIdentities.clear();
+				announcedToIPs.clear();
 			}
 			count = connectSomeNodesInner(seeds);
 		}
