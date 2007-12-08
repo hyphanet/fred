@@ -76,6 +76,7 @@ public class Announcer {
 	}
 
 	public void start() {
+		registerAlert();
 		if(node.peers.getDarknetPeers().length + node.peers.getOpennetPeers().length + om.countOldOpennetPeers() == 0) {
 			// We know opennet is enabled.
 			// We have no peers AT ALL.
@@ -84,7 +85,6 @@ public class Announcer {
 			synchronized(this) {
 				status = STATUS_LOADING;
 			}
-			registerAlert();
 			connectSomeSeednodes();
 		} else {
 			// Wait a minute, then check whether we need to seed.
