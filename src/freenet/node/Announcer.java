@@ -258,7 +258,11 @@ public class Announcer {
 				}
 				final SeedServerPeerNode seed = (SeedServerPeerNode) seeds.remove(node.random.nextInt(seeds.size()));
 				InetAddress[] addrs = seed.getInetAddresses();
-				if(!newAnnouncedIPs(addrs)) continue;
+				if(!newAnnouncedIPs(addrs)) {
+					if(logMINOR)
+						Logger.minor(this, "Not announcing to "+seed+" because already used those IPs");
+					continue;
+				}
 				addAnnouncedIPs(addrs);
 				sentAnnouncements++;
 				runningAnnouncements++;
