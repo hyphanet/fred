@@ -62,6 +62,8 @@ public class LocationManager {
     static final int MIN_SWAP_TIME = Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS;
     /** Maximum swap delay */
     static final int MAX_SWAP_TIME = 60*1000;
+    /** Don't start swapping until our peers have had a reasonable chance to reconnect. */
+	private static final long STARTUP_DELAY = 60*1000;
     private static boolean logMINOR;
     final RandomSource r;
     final SwapRequestSender sender;
@@ -134,7 +136,7 @@ public class LocationManager {
      * we are not locked.
      */
     public void startSender() {
-        node.executor.execute(sender, "SwapRequest sender");
+        node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
     }
 
     /**
