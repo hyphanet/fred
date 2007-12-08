@@ -3341,7 +3341,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			ret = (Peer) validIPs.get(0);
 		} else {
 			synchronized(this) {
-				if(handshakeIPAlternator > validIPs.size())
+				if(handshakeIPAlternator >= validIPs.size())
 					handshakeIPAlternator = 0;
 				ret = (Peer) validIPs.get(handshakeIPAlternator);
 				handshakeIPAlternator++;
