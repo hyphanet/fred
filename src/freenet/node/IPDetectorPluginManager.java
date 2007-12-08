@@ -95,6 +95,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	private final MyUserAlert fullConeAlert;
 	private final MyUserAlert connectedAlert;
 	private ProxyUserAlert proxyAlert;
+	private boolean started;
 	
 	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
@@ -133,6 +134,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	void start() {
 		// Cannot be initialized until UserAlertManager has been created.
 		proxyAlert = new ProxyUserAlert(node.clientCore.alerts);
+		started = true;
 		tryMaybeRun();
 	}
 	
@@ -236,6 +238,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 * Do we need to run a plugin?
 	 */
 	public void maybeRun() {
+		if(!started) return;
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
 		if(logMINOR) Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
 		PeerNode[] peers = node.getPeerNodes();
