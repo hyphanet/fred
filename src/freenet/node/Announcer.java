@@ -122,6 +122,8 @@ public class Announcer {
 		int count = connectSomeNodesInner(seeds);
 		if(count == 0 && connectedToIdentities.size() <= announcedToIdentities.size()) {
 			seeds = readSeednodes();
+			if(logMINOR)
+				Logger.minor(this, "Clearing old announced-to list");
 			synchronized(this) {
 				announcedToIdentities.clear();
 			}
