@@ -136,15 +136,15 @@ public class NetworkInterface {
 		for (int serverSocketIndex = 0; serverSocketIndex < bindToTokenList.size(); serverSocketIndex++) {
 			ServerSocket serverSocket = createServerSocket();
 			InetSocketAddress addr = null;
-                        try {
-                        	addr = new InetSocketAddress((String) bindToTokenList.get(serverSocketIndex), port);
-                            serverSocket.bind(addr);
-                        } catch (SocketException e) {
-                            if(ignoreUnbindableIP6 && addr != null && addr.getAddress() instanceof Inet6Address)
-                                continue;
-                            else
-                                throw e;
-                        }
+			try {
+				addr = new InetSocketAddress((String) bindToTokenList.get(serverSocketIndex), port);
+				serverSocket.bind(addr);
+			} catch (SocketException e) {
+				if(ignoreUnbindableIP6 && addr != null && addr.getAddress() instanceof Inet6Address)
+					continue;
+				else
+					throw e;
+			}
 			Acceptor acceptor = new Acceptor(serverSocket);
 			acceptors.add(acceptor);
 		}
