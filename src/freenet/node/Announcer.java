@@ -418,7 +418,7 @@ public class Announcer {
 	}
 
 	public String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString(key, patterns, values);
+		return L10n.getString("Announcer."+key, patterns, values);
 	}
 
 }
