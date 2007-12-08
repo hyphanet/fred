@@ -120,7 +120,7 @@ public class Announcer {
 		// Once they are connected they will report back and we can attempt an announcement.
 
 		int count = connectSomeNodesInner(seeds);
-		if(count == 0 && connectedToIdentities.size() <= announcedToIdentities.size()) {
+		if(count == 0 && connectedToIdentities.size() <= announcedToIdentities.size() && runningAnnouncements == 0) {
 			seeds = readSeednodes();
 			if(logMINOR)
 				Logger.minor(this, "Clearing old announced-to list");
