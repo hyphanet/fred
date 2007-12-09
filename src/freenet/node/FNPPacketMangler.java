@@ -2693,7 +2693,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private boolean maybeResetTransientKey() {
 		synchronized (authenticatorCache) {
-			long now = System.currentTimeMillis();;
+			long now = System.currentTimeMillis();
 			if(authenticatorCache.size() < AUTHENTICATOR_CACHE_SIZE) {
 				if(now - timeLastReset < TRANSIENT_KEY_REKEYING_MIN_INTERVAL)
 					return false;
