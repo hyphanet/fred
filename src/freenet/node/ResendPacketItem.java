@@ -9,7 +9,7 @@ import freenet.io.comm.AsyncMessageCallback;
  * A packet to be resent. Includes a packet number, and the 
  * message as byte[].
  */
-class ResendPacketItem {
+public class ResendPacketItem {
     public ResendPacketItem(byte[] payload, int packetNumber, KeyTracker k, AsyncMessageCallback[] callbacks) {
         pn = k.pn;
         kt = k;

@@ -41,7 +41,7 @@ import freenet.support.io.Closer;
  * Cryptographic and transport level node identity. 
  * @author toad
  */
-class NodeCrypto {
+public class NodeCrypto {
 
 	/** Length of a node identity */
 	public static final int IDENTITY_LENGTH = 32;
