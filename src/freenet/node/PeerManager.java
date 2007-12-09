@@ -1055,6 +1055,7 @@ public class PeerManager {
 		int numberOfClockProblem = 0;
 		int numberOfConnError = 0;
 		int numberOfDisconnecting = 0;
+		int numberOfRoutingDisabled = 0;
 		
 		PeerNodeStatus[] pns = getPeerNodeStatuses();
 		
@@ -1098,6 +1099,9 @@ public class PeerManager {
 				break;
 			case PEER_NODE_STATUS_DISCONNECTING:
 				numberOfDisconnecting++;
+				break;
+			case PEER_NODE_STATUS_ROUTING_DISABLED:
+				numberOfRoutingDisabled++;
 				break;
 			default:
 				Logger.error(this, "Unknown peer status value : "+pns[i].getStatusValue());
