@@ -709,7 +709,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void processJFKMessage1(byte[] payload,int offset,PeerNode pn,Peer replyTo, boolean unknownInitiator, int setupType)
 	{
 		long t1=System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn.getPeer());
+		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
 		// FIXME: follow the spec and send IDr' ?
 		if(payload.length < NONCE_SIZE + DiffieHellman.modulusLengthInBytes() + 3 + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)) {
 			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(NONCE_SIZE + DiffieHellman.modulusLengthInBytes()));
@@ -743,7 +743,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
-			Logger.error(this,"Message1 timeout error:Processing packet for"+pn.getPeer());
+			Logger.error(this,"Message1 timeout error:Processing packet for"+pn);
 	}
 
 	/*
@@ -982,7 +982,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void processJFKMessage3(byte[] payload, int inputOffset, PeerNode pn,Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType)
 	{
 		final long t1 = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn.getPeer());
+		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
 		
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
@@ -994,7 +994,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 									HASH_LENGTH + // it's at least a signature
 									8;			  // a bootid
 		if(payload.length < expectedLength + 3) {
-			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(3), should be "+(expectedLength + 3));
+			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(3), should be "+(expectedLength + 3));
 			return;
 		}
 		
@@ -1024,7 +1024,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		HMAC mac = new HMAC(SHA256.getInstance());
 		if(!mac.verify(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
 			if(shouldLogErrorInHandshake(t1))
-				Logger.normal(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery) - JFK3 - "+pn.getPeer());
+				Logger.normal(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery) - JFK3 - "+pn);
 			return;
 		}
 		// Check try to find the authenticator in the cache.
@@ -1035,7 +1035,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			message4 = authenticatorCache.get(authenticator);
 		}
 		if(message4 != null) {
-			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often) - "+pn.getPeer());
+			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often) - "+pn);
 			sendAuthPacket(1, 2, 3, (byte[]) message4, pn, replyTo);
 			return;
 		}
@@ -1049,7 +1049,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		DiffieHellmanLightContext ctx = findContextByExponential(_ourExponential);
 		if(ctx == null) {
-			Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn.getPeer());
+			Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
 			return;
 		}
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
@@ -1066,7 +1066,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		decypheredPayloadOffset += JFK_PREFIX_INITIATOR.length;
 		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, decypheredPayload.length-decypheredPayloadOffset);
 		if(!mac.verify(Ka, decypheredPayload, hmac)) {
-			Logger.error(this, "The inner-HMAC doesn't match; let's discard the packet JFK(3) - "+pn.getPeer());
+			Logger.error(this, "The inner-HMAC doesn't match; let's discard the packet JFK(3) - "+pn);
 			return;
 		}
 		
