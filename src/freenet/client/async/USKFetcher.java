@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Vector;
 
 import freenet.client.FetchContext;
@@ -65,7 +63,6 @@ import freenet.support.api.Bucket;
 public class USKFetcher implements ClientGetState {
 
 	private static boolean logMINOR;
-	private static Timer uskWakeupTimer;
 	
 	/** USK manager */
 	private final USKManager uskManager;
@@ -442,15 +439,11 @@ public class USKFetcher implements ClientGetState {
 		if (delay<=0) {
 			schedule();
 		} else {
-			if (uskWakeupTimer==null) {
-				synchronized (USKFetcher.class) {
-					//FIXME: Generates an un-named timer thread, rather than 'USKWakeupTimer' (java 1.5)
-                    if (uskWakeupTimer==null)
-						uskWakeupTimer=new Timer(true);
+			uskManager.ticker.queueTimedJob(new Runnable() {
+				public void run() {
+					USKFetcher.this.schedule();
 				}
-			}
-			uskWakeupTimer.schedule(new USKWakeup(), delay);
-			Logger.minor(this, "schedule next USKCheck in "+delay+" ms");
+			}, delay);
 		}
 	}
     
@@ -544,10 +537,4 @@ public class USKFetcher implements ClientGetState {
 		return -1;
 	}
 	
-	class USKWakeup extends TimerTask {
-		public void run() {
-			//schedule() will check for (USKFetcher.this.cancelled)
-			USKFetcher.this.schedule();
-		}
-	}
 }
