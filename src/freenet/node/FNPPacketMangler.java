@@ -687,9 +687,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/*
 	 * Initiator Method:Message1
 	 * Process Message1
-	 * Send the Initiator nonce and DiffieHellman Exponential
+	 * Receive the Initiator nonce and DiffieHellman Exponential
 	 * @param The packet phase number
-	 * @param The peerNode we are talking to
+	 * @param The peerNode we are talking to. CAN BE NULL if anonymous initiator, since we are the responder.
 	 * @param The peer to which we need to send the packet
 	 * @param unknownInitiator If true, we (the responder) don't know the
 	 * initiator, and should check for fields which would be skipped in a
@@ -750,6 +750,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * format:
 	 * Ni,g^i
 	 * We send IDr' only if unknownInitiator is set.
+	 * @param pn The node to encrypt the message to. Cannot be null, because we are the initiator and we
+	 * know the responder in all cases.
+	 * @param replyTo The peer to send the actual packet to.
 	 */
 	private void sendJFKMessage1(PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+replyTo+" for "+pn.getPeer());
@@ -795,6 +798,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * 
 	 * NB: we don't send IDr nor groupinfo as we know them: even if the responder doesn't know the initiator,
 	 * the initiator ALWAYS knows the responder. 
+	 * @param pn The node to encrypt the message for. CAN BE NULL if anonymous-initiator.
+	 * @param replyTo The peer to send the packet to.
 	 */
 	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
@@ -863,9 +868,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @see{sendJFKMessage2} for packet format details.
 	 * Note that this packet is exactly the same for known initiator as for unknown initiator.
 	 * 
-	 * @param Payload
-	 * @param The peer to which we need to send the packet
-	 * @param The peerNode we are talking to
+	 * @param payload The buffer containing the decrypted auth packet.
+	 * @param replyTo The peer to which we need to send the packet
+	 * @param pn The peerNode we are talking to. Cannot be null as we are the initiator.
 	 */
 
 	private void processJFKMessage2(byte[] payload,int inputOffset,PeerNode pn,Peer replyTo, boolean unknownInitiator, int setupType)
@@ -974,9 +979,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * * Noderef is sent whether or not unknownInitiator is true, however if it is, it will
 	 * be a *full* noderef, otherwise it will exclude the pubkey etc.
 	 * 
-	 * @param Payload
-	 * @param The peer to which we need to send the packet
-	 * @param The peerNode we are talking to
+	 * @param payload The buffer containing the decrypted auth packet.
+	 * @param replyTo The peer to which we need to send the packet.
+	 * @param pn The PeerNode we are talking to. CAN BE NULL in the case of anonymous initiator since we are the
+	 * responder.
 	 * @return byte Message3
 	 */
 	private void processJFKMessage3(byte[] payload, int inputOffset, PeerNode pn,Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType)
@@ -1193,9 +1199,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * HMAC{Ka}[cyphertext]
 	 * IV + E{Ke}[S{R}[Ni, Nr, g^i, g^r, IDi, bootID, znoderefR, znoderefI], bootID, znoderefR]
 	 * 
-	 * @param Payload
-	 * @param The peerNode we are talking to
-	 * @param replyTo the Peer we are replying to
+	 * @param payload The decrypted auth packet.
+	 * @param pn The PeerNode we are talking to. Cannot be null as we are the initiator.
+	 * @param replyTo The Peer we are replying to.
 	 */
 	private void processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType)
 	{
@@ -1328,6 +1334,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * HMAC{Ka}(cyphertext)
 	 * IV + E{KE}[S{i}[Ni,Nr,g^i,g^r,idR, bootID, znoderefI], bootID, znoderefI]
 	 * 
+	 * @param pn The PeerNode to encrypt the message for. Cannot be null as we are the initiator.
+	 * @param replyTo The Peer to send the packet to.
 	 */
 
 	private void sendJFKMessage3(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, final PeerNode pn, final Peer replyTo, final boolean unknownInitiator, final int setupType)
@@ -1449,6 +1457,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * HMAC{Ka}(cyphertext)
 	 * IV, E{Ke}[S{R}[Ni,Nr,g^i,g^r,idI, bootID, znoderefR, znoderefI],bootID,znoderefR]
 	 * 
+	 * @param replyTo The Peer we are replying to.
+	 * @param pn The PeerNode to encrypt the auth packet to. Cannot be null, because even in anonymous initiator,
+	 * we will have created one before calling this method.
 	 */
 	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType)
 	{
