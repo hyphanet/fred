@@ -43,7 +43,8 @@ public class RequestHandler implements Runnable, ByteCounter {
     /** The RequestSender, if any */
     private RequestSender rs;
     private int status;
-    
+	private boolean appliedByteCounts=false;
+	
     public String toString() {
         return super.toString()+" for "+uid;
     }
@@ -72,14 +73,12 @@ public class RequestHandler implements Runnable, ByteCounter {
 
     public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
-    	boolean thrown = false;
         try {
         	realRun();
         } catch (NotConnectedException e) {
         	// Ignore, normal
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
-            thrown = true;
         } finally {
         	node.removeTransferringRequestHandler(uid);
             node.unlockUID(uid, key instanceof NodeSSK, false, false);
@@ -87,6 +86,11 @@ public class RequestHandler implements Runnable, ByteCounter {
     }
     
     private void applyByteCounts() {
+		if (appliedByteCounts) {
+			Logger.error(this, "applyByteCounts already called", new Exception("error"));
+			return;
+		}
+		appliedByteCounts=true;
         if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD 
            && status != RequestSender.INTERNAL_ERROR) {
             	int sent, rcvd;
@@ -306,15 +310,9 @@ public class RequestHandler implements Runnable, ByteCounter {
 			Logger.error(this, "Error sending terminal message?! for " + RequestHandler.this);
 		}
         
-        private boolean once=true;
 		public void sent() {
-            //For byte counting, this relies on the fact that the callback will only be excuted once. This check might be paranoid.
-            if (once) {
-                applyByteCounts();
-				once=false;
-            } else {
-                Logger.error(this, "terminalMessage sent multiple times? for " + RequestHandler.this);
-            }
+            //For byte counting, this relies on the fact that the callback will only be excuted once.
+			applyByteCounts();
         }
 	}
     
