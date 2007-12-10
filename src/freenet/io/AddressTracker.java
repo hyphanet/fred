@@ -49,13 +49,13 @@ public class AddressTracker {
 	/** InetAddressAddressTrackerItem's by InetAddress */
 	private final HashMap ipTrackers;
 	
-	private PortForwardBrokenDetector brokenDetector;
-	
 	/** Maximum number of Item's of either type */
 	static final int MAX_ITEMS = 1000;
 	
 	private long timeDefinitelyNoPacketsReceived;
 	private long timeDefinitelyNoPacketsSent;
+	
+	private boolean isBroken;
 	
 	public static AddressTracker create(long lastBootID, File nodeDir, int port) {
 		File data = new File(nodeDir, "packets-"+port+".dat");
@@ -229,16 +229,12 @@ public class AddressTracker {
 	
 	public int getPortForwardStatus() {
 		long minGap = getLongestSendReceiveGap(HORIZON);
-		if(brokenDetector != null && brokenDetector.isBroken()) return DEFINITELY_NATED;
+		if(isBroken) return DEFINITELY_NATED;
 		if(minGap > DEFINITELY_TUNNEL_LENGTH)
 			return DEFINITELY_PORT_FORWARDED;
 		if(minGap > MAYBE_TUNNEL_LENGTH)
 			return MAYBE_PORT_FORWARDED;
 		return DONT_KNOW;
-	}
-	
-	public synchronized void setBrokenDetector(PortForwardBrokenDetector d) {
-		brokenDetector = d;
 	}
 	
 	public static String statusString(int status) {
@@ -259,7 +255,7 @@ public class AddressTracker {
 	/** Persist the table to disk */
 	public void storeData(long bootID, File nodeDir, int port) {
 		// Don't write to disk if we know we're NATed anyway!
-		if(brokenDetector != null && brokenDetector.isBroken()) return;
+		if(isBroken) return;
 		File data = new File(nodeDir, "packets-"+port+".dat");
 		File dataBak = new File(nodeDir, "packets-"+port+".bak");
 		data.delete();
@@ -314,5 +310,9 @@ public class AddressTracker {
 	/** Called when something changes at a higher level suggesting that the status may be wrong */
 	public void rescan() {
 		// Do nothing for now, as we don't maintain any final state yet.
+	}
+
+	public synchronized void setBroken() {
+		isBroken = true;
 	}
 }

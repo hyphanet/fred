@@ -1191,9 +1191,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/**
 	 * Set sendHandshakeTime, and return whether to fetch the ARK.
 	 */
-	protected synchronized boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
+	protected boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
 		if(isBurstOnly())
 			return calcNextHandshakeBurstOnly(now);
+		synchronized(this) {
 		long delay;
 		if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion || disableRouting) {
 			// Let them know we're here, but have no hope of connecting
@@ -1212,6 +1213,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			firstHandshake = false;
 		handshakeCount++;
 		return ((handshakeCount == MAX_HANDSHAKE_COUNT) && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion));
+		}
 	}
 
 	private synchronized boolean calcNextHandshakeBurstOnly(long now) {
@@ -3221,6 +3223,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					((PortForwardSensitiveSocketHandler) handler).rescanPortForward();
 				}
 			}
+		}
+		if(manyPacketsClaimedSentNotReceived) {
+			outgoingMangler.setPortForwardingBroken();
 		}
 	}
 	private boolean manyPacketsClaimedSentNotReceived = false;

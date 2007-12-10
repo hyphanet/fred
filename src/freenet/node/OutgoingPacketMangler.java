@@ -118,4 +118,9 @@ public interface OutgoingPacketMangler {
 	 * a specific IP address?
 	 */
 	public boolean allowConnection(PeerNode node, FreenetInetAddress addr);
+
+	/**
+	 * If the lower level code detects the port forwarding is broken, it will call this method.
+	 */
+	public void setPortForwardingBroken();
 }

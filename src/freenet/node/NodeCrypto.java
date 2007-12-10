@@ -24,7 +24,6 @@ import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
-import freenet.io.PortForwardBrokenDetector;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
@@ -134,20 +133,7 @@ public class NodeCrypto {
 			}
 		}
 		socket = u;
-		
-		u.setPortForwardBrokenDetector(new PortForwardBrokenDetector() {
-			public boolean isBroken() {
-				PeerManager pm = node.peers;
-				if(pm == null) return false;
-				PeerNode[] peers = isOpennet ? ((PeerNode[])pm.getOpennetPeers()) : ((PeerNode[])pm.getDarknetPeers());
-				for(int i=0;i<peers.length;i++) {
-					if(peers[i].forceDisconnectCalled()) continue;
-					if(peers[i].manyPacketsClaimedSentNotReceived()) return true;
-				}
-				return false;
-			}
-		});
-		
+
 		Logger.normal(this, "FNP port created on "+bindto+ ':' +port);
 		System.out.println("FNP port created on "+bindto+ ':' +port);
 		portNumber = port;
@@ -469,5 +455,9 @@ public class NodeCrypto {
 				v.add(pn);
 		}
 		return (PeerNode[]) v.toArray(new PeerNode[v.size()]);
+	}
+	
+	void setPortForwardingBroken() {
+		this.socket.getAddressTracker().setBroken();
 	}
 }

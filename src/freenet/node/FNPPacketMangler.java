@@ -2748,4 +2748,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return crypto.allowConnection(pn, addr);
 	}
 
+	public void setPortForwardingBroken() {
+		crypto.setPortForwardingBroken();
+	}
+
 }

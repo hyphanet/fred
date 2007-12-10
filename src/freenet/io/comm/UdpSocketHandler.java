@@ -12,7 +12,6 @@ import java.util.Random;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.io.AddressTracker;
-import freenet.io.PortForwardBrokenDetector;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.LoggingConfigHandler;
 import freenet.node.Node;
@@ -408,10 +407,6 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 
 	public void rescanPortForward() {
 		tracker.rescan();
-	}
-
-	public void setPortForwardBrokenDetector(PortForwardBrokenDetector detector) {
-		tracker.setBrokenDetector(detector);
 	}
 
 	public int getDetectedConnectivityStatus() {
