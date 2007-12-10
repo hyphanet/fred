@@ -18,6 +18,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.UserAlert;
+import freenet.support.ByteArrayWrapper;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -105,6 +106,7 @@ public class Announcer {
 	}
 
 	private void connectSomeSeednodes() {
+		boolean announceNow = false;
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes...");
 		Vector/*<SimpleFieldSet>*/ seeds = readSeednodes();
@@ -129,6 +131,12 @@ public class Announcer {
 				announcedToIPs.clear();
 			}
 			count = connectSomeNodesInner(seeds);
+			if(count == 0)
+				announceNow = true; // Announce immediately if we're already connected to all our seednodes.
+		} else {
+			if(logMINOR)
+				Logger.minor(this, "count = "+count+" connected = "+connectedToIdentities.size()+
+						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements);
 		}
 		// If none connect in a minute, try some more.
 		node.getTicker().queueTimedJob(new Runnable() {
@@ -139,7 +147,7 @@ public class Announcer {
 					Logger.error(this, "Caught "+t+" trying to send announcements", t);
 				}
 			}
-		}, MIN_ADDED_SEEDS_INTERVAL);
+		}, announceNow ? 0 : MIN_ADDED_SEEDS_INTERVAL);
 	}
 
 	private int connectSomeNodesInner(Vector seeds) {
@@ -159,7 +167,7 @@ public class Announcer {
 				}
 				if(node.peers.addPeer(seed)) {
 					count++;
-					connectedToIdentities.add(seed.identity);
+					connectedToIdentities.add(new ByteArrayWrapper(seed.identity));
 					if(logMINOR)
 						Logger.minor(this, "Connecting to seednode "+seed);
 				} else {
