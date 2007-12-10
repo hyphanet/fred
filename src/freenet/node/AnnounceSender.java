@@ -255,6 +255,8 @@ public class AnnounceSender implements Runnable, ByteCounter {
             		complete();
             		mfAnnounceReply.setTimeout(END_TIMEOUT).setTimeoutRelativeToCreation(true);
             		mfNotWanted.setTimeout(END_TIMEOUT).setTimeoutRelativeToCreation(true);
+            		mfAnnounceReply.clearOr();
+            		mfNotWanted.clearOr();
             		mf = mfAnnounceReply.or(mfNotWanted);
             		while(true)  {
                     	try {
