@@ -1569,6 +1569,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
 		int prePaddingLength = iv.length + hash.length + 2 /* length */ + output.length;
 		int paddingLength = node.fastWeakRandom.nextInt(Math.min(100, sock.getMaxPacketSize() - HEADERS_LENGTH_MINIMUM - prePaddingLength));
+		// Sometimes we have to send oversize packets (especially JFK3/4 with anonymous-initiator)
+		if(paddingLength < 0) paddingLength = 0;
 		byte[] data = new byte[prePaddingLength + paddingLength];
 		pcfb.reset(iv);
 		System.arraycopy(iv, 0, data, 0, iv.length);
