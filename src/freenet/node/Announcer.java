@@ -412,11 +412,13 @@ public class Announcer {
 				int runningAnnouncements;
 				int connectedSeednodes = 0;
 				int disconnectedSeednodes = 0;
+				long coolingOffSeconds = Math.max(0, startTime - System.currentTimeMillis()) / 1000;
 				synchronized(this) {
 					addedNodes = announcementAddedNodes;
 					refusedNodes = announcementNotWantedNodes;
 					recentSentAnnouncements = sentAnnouncements;
 					runningAnnouncements = Announcer.this.runningAnnouncements;
+					
 				}
 				Vector nodes = node.peers.getSeedServerPeersVector();
 				for(int i=0;i<nodes.size();i++) {
@@ -436,6 +438,10 @@ public class Announcer {
 						Integer.toString(connectedSeednodes),
 						Integer.toString(disconnectedSeednodes)
 				}));
+				if(coolingOffSeconds > 0) {
+					sb.append(' ');
+					sb.append(l10n("coolingOff", "seconds", Long.toString(coolingOffSeconds)));
+				}
 			}
 			return sb.toString();
 		}
@@ -476,6 +482,10 @@ public class Announcer {
 
 	public String l10n(String key, String[] patterns, String[] values) {
 		return L10n.getString("Announcer."+key, patterns, values);
+	}
+
+	public String l10n(String key, String pattern, String value) {
+		return L10n.getString("Announcer."+key, pattern, value);
 	}
 
 }
