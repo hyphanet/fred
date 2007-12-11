@@ -642,12 +642,13 @@ public class FCPServer implements Runnable {
 			loadPersistentRequests(bis);
 		} catch (IOException e) {
 			Logger.error(this, "IOE : " + e.getMessage(), e);
-			Logger.normal(this, "Let's try to load "+persistentDownloadsFile+" then.");
+			File file = new File(persistentDownloadsTempFile+".gz");
+			Logger.normal(this, "Let's try to load "+file+" then.");
 			Closer.close(bis);
 			Closer.close(gis);
 			Closer.close(fis);
 			try {
-				fis = new FileInputStream(persistentDownloadsFile);
+				fis = new FileInputStream(file);
 				bis = new BufferedInputStream(fis);
 				loadPersistentRequests(bis);
 			} catch (IOException e1) {
