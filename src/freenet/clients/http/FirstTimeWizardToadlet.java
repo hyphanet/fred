@@ -54,13 +54,13 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode opennetInfoboxContent = opennetInfobox.addChild("div", "class", "infobox-content");
 			
 			opennetInfoboxHeader.addChild("#", l10n("connectToStrangers"));
-			opennetInfoboxContent.addChild("#", l10n("connectToStrangersLong"));
+			opennetInfoboxContent.addChild("p", l10n("connectToStrangersLong"));
+			opennetInfoboxContent.addChild("p", l10n("enableOpennet"));
 			HTMLNode opennetForm = ctx.addFormChild(opennetInfoboxContent, ".", "opennetForm");
-			
 			HTMLNode opennetDiv = opennetForm.addChild("div", "class", "opennetDiv");
-			opennetDiv.addChild("#", l10n("enableOpennet"));
-			opennetDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "enableOpennet", "true" }, L10n.getString("Toadlet.yes"));
-			opennetDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "enableOpennet", "false" }, L10n.getString("Toadlet.no"));
+			opennetDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "enableOpennet", "true" }, l10n("opennetYes"));
+			opennetDiv.addChild("br");
+			opennetDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "enableOpennet", "false" }, l10n("opennetNo"));
 			opennetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "opennetF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			opennetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
