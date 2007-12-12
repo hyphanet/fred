@@ -247,8 +247,8 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	/** The maximum number of keys stored in each of the datastores, cache and store combined. */
 	private long maxTotalKeys;
-	private long maxCacheKeys;
-	private long maxStoreKeys;
+	long maxCacheKeys;
+	long maxStoreKeys;
 	/** The maximum size of the datastore. Kept to avoid rounding turning 5G into 5368698672 */
 	private long maxTotalDatastoreSize;
 	/** If true, store shrinks occur immediately even if they are over 10% of the store size. If false,
@@ -1767,11 +1767,23 @@ public class Node implements TimeSkewDetectorCallback {
 	public SSKBlock fetch(NodeSSK key, boolean dontPromote) {
 		if(logMINOR) dumpStoreHits();
 		try {
+			double loc=key.toNormalizedDouble();
+			double dist=Location.distance(lm.getLocation(), loc);
+			nodeStats.avgRequestLocation.report(loc);
 			SSKBlock block = sskDatastore.fetch(key, dontPromote);
 			if(block != null) {
+				nodeStats.avgStoreSuccess.report(loc);
+				if (dist > nodeStats.furthestStoreSuccess)
+					nodeStats.furthestStoreSuccess=dist;
 				return block;
 			}
-			return sskDatacache.fetch(key, dontPromote);
+			block=sskDatacache.fetch(key, dontPromote);
+			if (block != null) {
+				nodeStats.avgCacheSuccess.report(loc);
+				if (dist > nodeStats.furthestCacheSuccess)
+					nodeStats.furthestCacheSuccess=dist;
+			}
+			return block;
 		} catch (IOException e) {
 			Logger.error(this, "Cannot fetch data: "+e, e);
 			return null;
@@ -1781,9 +1793,23 @@ public class Node implements TimeSkewDetectorCallback {
 	public CHKBlock fetch(NodeCHK key, boolean dontPromote) {
 		if(logMINOR) dumpStoreHits();
 		try {
+			double loc=key.toNormalizedDouble();
+			double dist=Location.distance(lm.getLocation(), loc);
+			nodeStats.avgRequestLocation.report(loc);
 			CHKBlock block = chkDatastore.fetch(key, dontPromote);
-			if(block != null) return block;
-			return chkDatacache.fetch(key, dontPromote);
+			if (block != null) {
+				nodeStats.avgStoreSuccess.report(loc);
+				if (dist > nodeStats.furthestStoreSuccess)
+					nodeStats.furthestStoreSuccess=dist;
+				return block;
+			}
+			block=chkDatacache.fetch(key, dontPromote);
+			if (block != null) {
+				nodeStats.avgCacheSuccess.report(loc);
+				if (dist > nodeStats.furthestCacheSuccess)
+					nodeStats.furthestCacheSuccess=dist;
+			}
+			return block;
 		} catch (IOException e) {
 			Logger.error(this, "Cannot fetch data: "+e, e);
 			return null;
@@ -1835,10 +1861,13 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private void store(CHKBlock block, boolean deep) {
 		try {
+			double loc=block.getKey().toNormalizedDouble();
 			if(deep) {
 				chkDatastore.put(block);
+				nodeStats.avgStoreLocation.report(loc);
 			}
 			chkDatacache.put(block);
+			nodeStats.avgCacheLocation.report(loc);
 			if(clientCore != null && clientCore.requestStarters != null)
 				clientCore.requestStarters.chkFetchScheduler.tripPendingKey(block);
 		} catch (IOException e) {
@@ -2498,6 +2527,10 @@ public class Node implements TimeSkewDetectorCallback {
 	  return usm;
 	}
 
+	public LocationManager getLocationManager() {
+		return lm;
+	}
+	
 	public int getSwaps() {
 		return LocationManager.swaps;
 	}

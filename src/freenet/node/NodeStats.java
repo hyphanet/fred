@@ -22,6 +22,7 @@ import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.math.RunningAverage;
+import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.math.TrivialRunningAverage;
 
@@ -144,7 +145,16 @@ public class NodeStats implements Persistable {
 	// various metrics
 	public final RunningAverage routingMissDistance;
 	public final RunningAverage backedOffPercent;
+	public final RunningAverage avgCacheLocation;
+	public final RunningAverage avgStoreLocation;
+	public final RunningAverage avgCacheSuccess;
+	public final RunningAverage avgStoreSuccess;
+	// FIXME: does furthest{Store,Cache}Success need to be synchronized?
+	public double furthestCacheSuccess=0.0;
+	public double furthestStoreSuccess=0.0;
 	protected final Persister persister;
+	
+	protected final RunningAverage avgRequestLocation;
 	
 	// ThreadCounting stuffs
 	public final ThreadGroup rootThreadGroup;
@@ -176,6 +186,14 @@ public class NodeStats implements Persistable {
 		this.hardRandom = node.random;
 		this.routingMissDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		// FIXME PLEASE remove (int) casts
+		double nodeLoc=node.lm.getLocation();
+		this.avgCacheLocation=new SimpleRunningAverage((int)node.maxCacheKeys, nodeLoc);
+		this.avgStoreLocation=new SimpleRunningAverage((int)node.maxStoreKeys, nodeLoc);
+		// FIXME average for success-location may not need to be so large as the store.
+		this.avgCacheSuccess=new SimpleRunningAverage(10000, nodeLoc);
+		this.avgStoreSuccess=new SimpleRunningAverage(10000, nodeLoc);
+		this.avgRequestLocation=new SimpleRunningAverage(10000, nodeLoc);
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
 		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0, node);
@@ -186,6 +204,18 @@ public class NodeStats implements Persistable {
 			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
 		nodePinger = new NodePinger(node);
 
+		// FIXME: data-store/cache averages need to be persisted to be valuable (or scanned at every launch).
+		/*
+		if (node.isAdvancedModeEnabled()) {
+			//Uggghh....
+			System.err.println("Scanning datastore/cache for location values");
+			chkDatastore.kludgeScan(avgStoreLocation);
+			sskDatastore.kludgeScan(avgStoreLocation);
+			chkDatacache.kludgeScan(avgCacheLocation);
+			sskDatacache.kludgeScan(avgCacheLocation);
+		}
+		*/
+		
 		previous_input_stat = 0;
 		previous_output_stat = 0;
 		previous_io_stat_time = 1;

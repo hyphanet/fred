@@ -29,6 +29,7 @@ import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.math.SimpleRunningAverage;
 
 public class StatisticsToadlet extends Toadlet {
 
@@ -422,7 +423,51 @@ public class StatisticsToadlet extends Toadlet {
 					"\u00a0(" + ((storeHits*100) / (storeAccesses)) + "%)");
 
 		storeSizeList.addChild("li", 
-				"Avg. access rate:\u00a0" + thousendPoint.format(overallAccesses/nodeUptimeSeconds) + "/sec");
+				"Avg. access rate:\u00a0" + thousendPoint.format(cacheAccesses/nodeUptimeSeconds) + "/sec, "+thousendPoint.format(storeAccesses/nodeUptimeSeconds)+"/sec");
+		
+		// location-based stats
+		boolean hasLoc=true;
+		double nodeLoc=0.0;
+		try {
+			nodeLoc=node.getLocationManager().getLocation();
+		} catch (Error e) {
+			//FIXME: PLEASE, how do we get the node location on the stats page?
+			//Logger.error(this, "why?", e);
+			e.printStackTrace();
+			hasLoc=false;
+		}
+		double avgCacheLocation=node.nodeStats.avgCacheLocation.currentValue();
+		double avgStoreLocation=node.nodeStats.avgStoreLocation.currentValue();
+		long cacheWrites=node.nodeStats.avgCacheLocation.countReports();
+		long storeWrites=node.nodeStats.avgStoreLocation.countReports();
+		double avgCacheSuccess=node.nodeStats.avgCacheSuccess.currentValue();
+		double avgStoreSuccess=node.nodeStats.avgStoreSuccess.currentValue();
+		double furthestCacheSuccess=node.nodeStats.furthestCacheSuccess;
+		double furthestStoreSuccess=node.nodeStats.furthestStoreSuccess;
+		double storeDist=Location.distance(nodeLoc, avgStoreLocation);
+		double cacheDist=Location.distance(nodeLoc, avgCacheLocation);
+		
+		storeSizeList.addChild("li", "avgCacheLocation:\u00a0" + thousendPoint.format(avgCacheLocation));
+		storeSizeList.addChild("li", "avgStoreLocation:\u00a0" + thousendPoint.format(avgStoreLocation));
+		
+		storeSizeList.addChild("li", "avgCacheSuccess:\u00a0" + thousendPoint.format(avgCacheSuccess));
+		storeSizeList.addChild("li", "avgStoreSuccess:\u00a0" + thousendPoint.format(avgStoreSuccess));
+		
+		storeSizeList.addChild("li", "furthestCacheSuccess:\u00a0" + thousendPoint.format(furthestCacheSuccess));
+		storeSizeList.addChild("li", "furthestStoreSuccess:\u00a0" + thousendPoint.format(furthestStoreSuccess));
+		
+		storeSizeList.addChild("li", "cacheWrites:\u00a0" + cacheWrites);
+		storeSizeList.addChild("li", "storeWrites:\u00a0" + storeWrites);
+		
+		if (hasLoc) {
+			storeSizeList.addChild("li", "cacheDist:\u00a0" + thousendPoint.format(cacheDist));
+			storeSizeList.addChild("li", "storeDist:\u00a0" + thousendPoint.format(storeDist));
+			long cacheLocationReports=((SimpleRunningAverage)node.nodeStats.avgCacheLocation).countReports();
+			long storeLocationReports=((SimpleRunningAverage)node.nodeStats.avgStoreLocation).countReports();
+			double cachePrimePercent=((1.0*cacheLocationReports)/cachedKeys);
+			double storePrimePercent=((1.0*storeLocationReports)/storeKeys);
+			storeSizeList.addChild("li", "locStatsReliability:\u00a0"+fix3p1pct.format(cachePrimePercent)+" / "+fix3p1pct.format(storePrimePercent));
+		}
 		
 	}
 
