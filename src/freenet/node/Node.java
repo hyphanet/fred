@@ -1550,7 +1550,7 @@ public class Node implements TimeSkewDetectorCallback {
 				});
 			}
 		
-		} else if (jvmVendor.startsWith("Apple ")) {
+		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
 			//Note that Sun does not produce VMs for the Macintosh operating system, dont ask the user to find one...
 		} else {
 			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "version" }, new String[] { jvmVendor, jvmVersion }), UserAlert.WARNING));
