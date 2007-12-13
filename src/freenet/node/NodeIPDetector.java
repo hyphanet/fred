@@ -60,6 +60,7 @@ public class NodeIPDetector {
 	private boolean hasDetectedIAD;
 	/** Subsidiary detectors: NodeIPPortDetector's which rely on this object */
 	private NodeIPPortDetector[] portDetectors;
+	private boolean hasValidIP;
 	
 	SimpleUserAlert maybeSymmetricAlert;
 	
@@ -103,15 +104,34 @@ public class NodeIPDetector {
 		
 	   	if(node.clientCore != null) {
 	   		if (addedValidIP) {
-	   			node.clientCore.alerts.unregister(primaryIPUndetectedAlert);
+	   			onAddedValidIP();
 	   		} else {
-	   			node.clientCore.alerts.register(primaryIPUndetectedAlert);
+	   			onNotAddedValidIP();
 	   		}
+	   	}
+	   	synchronized(this) {
+	   		hasValidIP = addedValidIP;
 	   	}
 	   	lastIPAddress = (FreenetInetAddress[]) addresses.toArray(new FreenetInetAddress[addresses.size()]);
 	   	return lastIPAddress;
 	}
-
+	
+	boolean hasValidIP() {
+		FreenetInetAddress[] addrs = detectPrimaryIPAddress();
+		synchronized(this) {
+			return hasValidIP;
+		}
+	}
+	
+	private void onAddedValidIP() {
+		node.clientCore.alerts.unregister(primaryIPUndetectedAlert);
+		node.onAddedValidIP();
+	}
+	
+	private void onNotAddedValidIP() {
+		node.clientCore.alerts.register(primaryIPUndetectedAlert);
+	}
+	
 	/**
 	 * Core of the IP detection algorithm.
 	 * @param addresses

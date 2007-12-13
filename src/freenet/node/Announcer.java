@@ -232,12 +232,29 @@ public class Announcer {
 		return false;
 	}
 
+	private boolean ignoreIPUndetected;
+	static final int FORCE_ANNOUNCEMENT_NO_IP = 120*1000;
+	
 	public void maybeSendAnnouncement() {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "maybeSendAnnouncement()");
 		long now = System.currentTimeMillis();
 		if(enoughPeers()) return;
+		if((!ignoreIPUndetected) && (!node.ipDetector.hasValidIP())) {
+			if(node.ipDetector.ipDetectorManager.hasDetectors()) {
+				// Wait a bit
+				node.getTicker().queueTimedJob(new Runnable() {
+					public void run() {
+						synchronized(Announcer.this) {
+							if(ignoreIPUndetected) return;
+							ignoreIPUndetected = true;
+						}
+						maybeSendAnnouncement();
+					}
+				}, FORCE_ANNOUNCEMENT_NO_IP);
+			}
+		}
 		synchronized(this) {
 			// Second, do we have many announcements running?
 			if(runningAnnouncements > WANT_ANNOUNCEMENTS) {

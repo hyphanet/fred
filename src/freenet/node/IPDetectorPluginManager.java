@@ -694,5 +694,9 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			// FIXME use status.externalPort.
 		}
 	}
+
+	public synchronized boolean hasDetectors() {
+		return plugins.length > 0;
+	}
 	
 }

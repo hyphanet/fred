@@ -2844,4 +2844,17 @@ public class Node implements TimeSkewDetectorCallback {
 	public int getMaxOpennetPeers() {
 		return maxOpennetPeers;
 	}
+
+	public void onAddedValidIP() {
+		OpennetManager om;
+		synchronized(this) {
+			om = opennet;
+		}
+		if(om != null) {
+			Announcer announcer = om.announcer;
+			if(announcer != null) {
+				announcer.maybeSendAnnouncement();
+			}
+		}
+	}
 }
