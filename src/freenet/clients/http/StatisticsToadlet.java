@@ -96,6 +96,8 @@ public class StatisticsToadlet extends Toadlet {
 	private int getPeerStatusCount(PeerNodeStatus[] peerNodeStatuses, int status) {
 		int count = 0;
 		for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
+			if(!peerNodeStatuses[peerIndex].recordStatus())
+				continue;
 			if (peerNodeStatuses[peerIndex].getStatusValue() == status) {
 				count++;
 			}
