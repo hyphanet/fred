@@ -2008,14 +2008,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		try {
 			String physical[] = fs.getAll("physical.udp");
-			if(physical == null) {
-				try {
-					Peer p = new Peer(fs.get("physical.udp"), true, true);
-					nominalPeer.addElement(p);
-				} catch(HostnameSyntaxException e) {
-					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + fs.get("physical.udp"));
-				}
-			} else {
+			if(physical != null) {
 				for(int i = 0; i < physical.length; i++) {
 					Peer p;
 					try {
