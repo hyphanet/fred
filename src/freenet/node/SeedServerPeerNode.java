@@ -6,7 +6,6 @@ package freenet.node;
 import java.net.InetAddress;
 import java.util.Vector;
 
-import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
