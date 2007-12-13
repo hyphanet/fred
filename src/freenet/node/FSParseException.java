@@ -11,6 +11,7 @@ public class FSParseException extends Exception {
 	private static final long serialVersionUID = -1;
     public FSParseException(Exception e) {
         super(e);
+    	initCause(e);
     }
     
     public FSParseException(String msg) {
