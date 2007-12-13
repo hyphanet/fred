@@ -253,6 +253,7 @@ public class Announcer {
 						maybeSendAnnouncement();
 					}
 				}, FORCE_ANNOUNCEMENT_NO_IP);
+				return;
 			}
 		}
 		synchronized(this) {
