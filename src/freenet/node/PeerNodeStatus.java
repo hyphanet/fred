@@ -81,6 +81,10 @@ public class PeerNodeStatus {
 	private long clockDelta;
 	
 	private final boolean recordStatus;
+	
+	private final boolean isSeedServer;
+	
+	private final boolean isSeedClient;
 
 	PeerNodeStatus(PeerNode peerNode) {
 		Peer p = peerNode.getPeer();
@@ -121,6 +125,8 @@ public class PeerNodeStatus {
 		this.throttle = peerNode.getThrottle();
 		this.clockDelta = peerNode.getClockDelta();
 		this.recordStatus = peerNode.recordStatus();
+		this.isSeedClient = peerNode instanceof SeedClientPeerNode;
+		this.isSeedServer = peerNode instanceof SeedServerPeerNode;
 	}
 
 	/**
@@ -342,5 +348,13 @@ public class PeerNodeStatus {
 	
 	public boolean recordStatus() {
 		return recordStatus;
+	}
+
+	public boolean isSeedServer() {
+		return isSeedServer;
+	}
+
+	public boolean isSeedClient() {
+		return isSeedClient;
 	}
 }
