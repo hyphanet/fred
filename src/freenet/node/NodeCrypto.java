@@ -280,12 +280,12 @@ public class NodeCrypto {
 	 * @param forSetup If true, strip out everything that isn't needed for the references
 	 * exchanged immediately after connection setup. I.e. strip out everything that is invariant,
 	 * or that can safely be exchanged later.
-	 * @param heavySetup If true, we need a minimal ref but one which we can still construct a 
-	 * PeerNode from. Usually set if we are adding a node from an anonymous-initiator noderef exchange.
-	 * Don't need a signature.
+	 * @param forAnonInitiator If true, we are adding a node from an anonymous initiator noderef
+	 * exchange. Minimal noderef which we can construct a PeerNode from. Short lived so no ARK etc.
+	 * Already signed so dump the signature.
 	 */
-	SimpleFieldSet exportPublicFieldSet(boolean forSetup, boolean heavySetup) {
-		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup);
+	SimpleFieldSet exportPublicFieldSet(boolean forSetup, boolean forAnonInitiator) {
+		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup, forAnonInitiator);
 		// IP addresses
 		Peer[] ips = detector.detectPrimaryPeers();
 		if(ips != null) {
@@ -303,7 +303,7 @@ public class NodeCrypto {
 			fs.putSingle("myName", node.getMyName()); // FIXME see #942
 		fs.put("opennet", isOpennet);
 		
-		//if(!heavySetup) { FIXME re-enable check once related changes are mandatory
+		//if(!forAnonInitiator) { FIXME re-enable check once related changes are mandatory
 			synchronized (referenceSync) {
 				if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
 					mySignedReference = fs.toOrderedString();
@@ -321,18 +321,21 @@ public class NodeCrypto {
 		return fs;
 	}
 
-	SimpleFieldSet exportPublicCryptoFieldSet(boolean forSetup) {
+	SimpleFieldSet exportPublicCryptoFieldSet(boolean forSetup, boolean forAnonInitiator) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		int[] negTypes = packetMangler.supportedNegTypes();
-		fs.put("auth.negTypes", negTypes);
 		if(!forSetup) {
 			// These are invariant. They cannot change on connection setup. They can safely be excluded.
 			fs.putSingle("identity", Base64.encode(myIdentity));
 			fs.put("dsaGroup", cryptoGroup.asFieldSet());
 			fs.put("dsaPubKey", pubKey.asFieldSet());
 		}
-		fs.put("ark.number", myARKNumber); // Can be changed on setup
-		fs.putSingle("ark.pubURI", myARK.getURI().toString(false, false)); // Can be changed on setup
+		if(!forAnonInitiator) {
+			// Short-lived connections don't need ARK and don't need negTypes either.
+			fs.put("auth.negTypes", negTypes);
+			fs.put("ark.number", myARKNumber); // Can be changed on setup
+			fs.putSingle("ark.pubURI", myARK.getURI().toString(false, false)); // Can be changed on setup
+		}
 		return fs;
 	}
 
