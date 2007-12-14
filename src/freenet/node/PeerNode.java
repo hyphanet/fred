@@ -622,10 +622,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		USK ark = null;
 		long arkNo = 0;
 		try {
-			String arkNumber = fs.get("ark.number");
-
-			if(arkNumber != null) {
-				arkNo = Long.parseLong(arkNumber) + (onStartup ? 0 : 1);
+			arkNo = fs.getLong("ark.number", -1);
+			if(arkNo != -1) {
+				if(onStartup) arkNo++;
 				// this is the number of the ref we are parsing.
 				// we want the number of the next edition.
 				// on startup we want to fetch the old edition in case there's been a corruption.
