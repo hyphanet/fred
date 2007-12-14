@@ -357,7 +357,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		updateShouldDisconnectNow();
 
 		String testnet = fs.get("testnet");
-		testnetEnabled = Fields.stringToBool(fs.get("testnet"), true);
+		testnetEnabled = Fields.stringToBool(fs.get("testnet"), false);
 		if(node.testnetEnabled != testnetEnabled) {
 			String err = "Ignoring incompatible node " + detectedPeer + " - peer.testnet=" + testnetEnabled + '(' + testnet + ") but node.testnet=" + node.testnetEnabled;
 			Logger.error(this, err);
