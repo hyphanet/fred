@@ -301,6 +301,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private static boolean logMINOR;
 	
 	/**
+	 * If this returns true, we will generate the identity from the pubkey.
+	 * Only set this if you don't want to send an identity, e.g. for anonymous 
+	 * initiator crypto where we need a small noderef and we don't use the 
+	 * identity anyway because we don't auto-reconnect.
+	 */
+	protected abstract boolean generateIdentityFromPubkey();
+	
+	/**
 	* Create a PeerNode from a SimpleFieldSet containing a
 	* node reference for one. This must contain the following
 	* fields:
@@ -322,23 +330,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		this.node = node2;
 		this.peers = peers;
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
-		String identityString = fs.get("identity");
-		if(identityString == null)
-			throw new PeerParseException("No identity!");
-		try {
-			identity = Base64.decode(identityString);
-		} catch(NumberFormatException e) {
-			throw new FSParseException(e);
-		} catch(IllegalBase64Exception e) {
-			throw new FSParseException(e);
-		}
-
-		if(identity == null)
-			throw new FSParseException("No identity");
-		identityHash = SHA256.digest(identity);
-		identityHashHash = SHA256.digest(identityHash);
-		swapIdentifier = Fields.bytesToLong(identityHashHash);
-		hashCode = Fields.hashCode(identityHash);
 		version = fs.get("version");
 		Version.seenVersion(version);
 		String locationString = fs.get("location");
@@ -363,35 +354,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			throw new PeerParseException(err);
 		}
 
-		nominalPeer = new Vector();
-		try {
-			String physical[] = fs.getAll("physical.udp");
-			if(physical == null) {
-				// Leave it empty
-			} else {
-				for(int i = 0; i < physical.length; i++) {
-					Peer p;
-					try {
-						p = new Peer(physical[i], true, true);
-					} catch(HostnameSyntaxException e) {
-						if(fromLocal)
-							Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physical[i]);
-						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physical[i]);
-						continue;
-					}
-					if(!nominalPeer.contains(p))
-						nominalPeer.addElement(p);
-				}
-			}
-		} catch(Exception e1) {
-			throw new FSParseException(e1);
-		}
-		if(nominalPeer.isEmpty()) {
-			Logger.normal(this, "No IP addresses found for identity '" + Base64.encode(identity) + "', possibly at location '" + Double.toString(currentLocation) + ": " + userToString());
-			detectedPeer = null;
-		} else {
-			detectedPeer = (Peer) nominalPeer.firstElement();
-		}
 		negTypes = fs.getIntArray("auth.negTypes");
 		if(negTypes == null || negTypes.length == 0) {
 			if(fromAnonymousInitiator)
@@ -458,6 +420,30 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			throw new FSParseException(e);
 		}
 
+		// Identifier
+		
+		if(!generateIdentityFromPubkey()) {
+			String identityString = fs.get("identity");
+			if(identityString == null)
+				throw new PeerParseException("No identity!");
+			try {
+				identity = Base64.decode(identityString);
+			} catch(NumberFormatException e) {
+				throw new FSParseException(e);
+			} catch(IllegalBase64Exception e) {
+				throw new FSParseException(e);
+			}
+		} else {
+			identity = peerPubKey.asBytesHash();
+		}
+
+		if(identity == null)
+			throw new FSParseException("No identity");
+		identityHash = SHA256.digest(identity);
+		identityHashHash = SHA256.digest(identityHash);
+		swapIdentifier = Fields.bytesToLong(identityHashHash);
+		hashCode = Fields.hashCode(identityHash);
+		
 		// Setup incoming and outgoing setup ciphers
 		byte[] nodeKey = crypto.identityHash;
 		byte[] nodeKeyHash = crypto.identityHashHash;
@@ -490,6 +476,36 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			throw new Error(e1);
 		}
 
+		nominalPeer = new Vector();
+		try {
+			String physical[] = fs.getAll("physical.udp");
+			if(physical == null) {
+				// Leave it empty
+			} else {
+				for(int i = 0; i < physical.length; i++) {
+					Peer p;
+					try {
+						p = new Peer(physical[i], true, true);
+					} catch(HostnameSyntaxException e) {
+						if(fromLocal)
+							Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physical[i]);
+						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physical[i]);
+						continue;
+					}
+					if(!nominalPeer.contains(p))
+						nominalPeer.addElement(p);
+				}
+			}
+		} catch(Exception e1) {
+			throw new FSParseException(e1);
+		}
+		if(nominalPeer.isEmpty()) {
+			Logger.normal(this, "No IP addresses found for identity '" + Base64.encode(identity) + "', possibly at location '" + Double.toString(currentLocation) + ": " + userToString());
+			detectedPeer = null;
+		} else {
+			detectedPeer = (Peer) nominalPeer.firstElement();
+		}
+		
 		// Don't create trackers until we have a key
 		currentTracker = null;
 		previousTracker = null;

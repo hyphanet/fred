@@ -71,4 +71,8 @@ public class SeedClientPeerNode extends PeerNode {
 		node.peers.disconnect(this, false, false);
 		return ret;
 	}
+
+	protected boolean generateIdentityFromPubkey() {
+		return true;
+	}
 }

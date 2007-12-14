@@ -80,5 +80,9 @@ public class OpennetPeerNode extends PeerNode {
 	public boolean recordStatus() {
 		return true;
 	}
+
+	protected boolean generateIdentityFromPubkey() {
+		return false;
+	}
     
 }

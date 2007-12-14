@@ -328,9 +328,12 @@ public class NodeCrypto {
 	SimpleFieldSet exportPublicCryptoFieldSet(boolean forSetup, boolean forAnonInitiator) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		int[] negTypes = packetMangler.supportedNegTypes();
+		if(!(forSetup || forAnonInitiator))
+			// Can't change on setup.
+			// Anonymous initiator doesn't need identity as we don't use it.
+			fs.putSingle("identity", Base64.encode(myIdentity));
 		if(!forSetup) {
 			// These are invariant. They cannot change on connection setup. They can safely be excluded.
-			fs.putSingle("identity", Base64.encode(myIdentity));
 			fs.put("dsaGroup", cryptoGroup.asFieldSet());
 			fs.put("dsaPubKey", pubKey.asFieldSet());
 		}
