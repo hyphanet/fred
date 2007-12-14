@@ -2001,11 +2001,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		updateShouldDisconnectNow();
 
 		String locationString = fs.get("location");
-		if(locationString == null) {
-			// Location WILL be ommitted for an ARK.
-			if(!forARK)
-				throw new FSParseException("No location");
-		} else {
+		if(locationString != null) {
 			try {
 				double newLoc = Location.getLocation(locationString);
 				if(!Location.equals(newLoc, currentLocation)) {
