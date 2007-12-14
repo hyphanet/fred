@@ -356,10 +356,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		lastGoodVersion = fs.get("lastGoodVersion");
 		updateShouldDisconnectNow();
 
-		String testnet = fs.get("testnet");
-		testnetEnabled = Fields.stringToBool(fs.get("testnet"), false);
+		testnetEnabled = fs.getBoolean("testnet", false);
 		if(node.testnetEnabled != testnetEnabled) {
-			String err = "Ignoring incompatible node " + detectedPeer + " - peer.testnet=" + testnetEnabled + '(' + testnet + ") but node.testnet=" + node.testnetEnabled;
+			String err = "Ignoring incompatible node " + detectedPeer + " - peer.testnet=" + testnetEnabled + '(' + fs.get("testnet") + ") but node.testnet=" + node.testnetEnabled;
 			Logger.error(this, err);
 			throw new PeerParseException(err);
 		}
