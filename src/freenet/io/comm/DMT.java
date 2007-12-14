@@ -1352,12 +1352,6 @@ public class DMT {
 		addField(NODE_UIDS, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSwapLocations(byte[] uids) {
-		Message msg = new Message(FNPSwapNodeUIDs);
-		msg.set(NODE_UIDS, new ShortBuffer(uids));
-		return msg;
-	}
-	
 	public static final Message createFNPSwapLocations(long[] uids) {
 		Message msg = new Message(FNPSwapNodeUIDs);
 		msg.set(NODE_UIDS, new ShortBuffer(Fields.longsToBytes(uids)));
