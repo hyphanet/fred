@@ -628,12 +628,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// this is the number of the ref we are parsing.
 				// we want the number of the next edition.
 				// on startup we want to fetch the old edition in case there's been a corruption.
-			String arkPubKey = fs.get("ark.pubURI");
-			if(arkPubKey != null) {
-				FreenetURI uri = new FreenetURI(arkPubKey);
-				ClientSSK ssk = new ClientSSK(uri);
-				ark = new USK(ssk, arkNo);
-			}
+				String arkPubKey = fs.get("ark.pubURI");
+				if(arkPubKey != null) {
+					FreenetURI uri = new FreenetURI(arkPubKey);
+					ClientSSK ssk = new ClientSSK(uri);
+					ark = new USK(ssk, arkNo);
+				}
 			} else return false;
 		} catch(MalformedURLException e) {
 			Logger.error(this, "Couldn't parse ARK info for " + this + ": " + e, e);
