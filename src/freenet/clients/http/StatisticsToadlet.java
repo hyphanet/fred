@@ -386,8 +386,14 @@ public class StatisticsToadlet extends Toadlet {
 		
 		storeSizeInfobox.addChild("div", "class", "infobox-header", "Datastore");
 		HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
-		HTMLNode storeSizeList = storeSizeInfoboxContent.addChild("ul");
+		HTMLNode storeSizeTable = storeSizeInfoboxContent.addChild("table", "border", "0");
+		HTMLNode row=storeSizeTable.addChild("tr");
 
+		//FIXME - Non-breaking space? "Stat-name"?
+		row.addChild("th", "");
+		row.addChild("th", "Store");
+		row.addChild("th", "Cache");
+		
 		final long fix32kb = 32 * 1024;
 
 		long cachedKeys = node.getChkDatacache().keyCount();
@@ -402,48 +408,82 @@ public class StatisticsToadlet extends Toadlet {
 		long maxOverallKeys = node.getMaxTotalKeys();
 		long maxOverallSize = maxOverallKeys * fix32kb;
 
-		long cachedStoreHits = node.getChkDatacache().hits();
-		long cachedStoreMisses = node.getChkDatacache().misses();
-		long cacheAccesses = cachedStoreHits + cachedStoreMisses;
+		long cacheHits = node.getChkDatacache().hits();
+		long cacheMisses = node.getChkDatacache().misses();
+		long cacheAccesses = cacheHits + cacheMisses;
 		long storeHits = node.getChkDatastore().hits();
 		long storeMisses = node.getChkDatastore().misses();
 		long storeAccesses = storeHits + storeMisses;
 		long overallAccesses = storeAccesses + cacheAccesses;
+		long cacheWrites=node.nodeStats.avgCacheLocation.countReports();
+		long storeWrites=node.nodeStats.avgStoreLocation.countReports();
 
 		// REDFLAG Don't show database version because it's not possible to get it accurately.
 		// (It's a public static constant, so it will use the version from compile time of freenet.jar)
-
-		storeSizeList.addChild("li", 
-				"Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
-				"\u00a0(" + SizeUtil.formatSize(cachedSize, true) + ')' +
-				"\u00a0(" + ((cachedKeys*100)/maxCachedKeys) + "%)");
-
-		storeSizeList.addChild("li", 
-				"Stored keys:\u00a0" + thousendPoint.format(storeKeys) + 
-				"\u00a0(" + SizeUtil.formatSize(storeSize, true) + ')' +
-				"\u00a0(" + ((storeKeys*100)/maxStoreKeys) + "%)");
-
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Keys");
+		row.addChild("td", thousendPoint.format(storeKeys));
+		row.addChild("td", thousendPoint.format(cachedKeys));
+		
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Capacity");
+		row.addChild("td", thousendPoint.format(maxStoreKeys));
+		row.addChild("td", thousendPoint.format(maxCachedKeys));
+		
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Data Size");
+		row.addChild("td", SizeUtil.formatSize(storeSize, true));
+		row.addChild("td", SizeUtil.formatSize(cachedSize, true));
+		
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Utilization");
+		row.addChild("td", fix3p1pct.format(storeKeys/maxStoreKeys));
+		row.addChild("td", fix3p1pct.format(cachedKeys/maxCachedKeys));
+		
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Read-Requests");
+		row.addChild("td", thousendPoint.format(storeAccesses));
+		row.addChild("td", thousendPoint.format(cacheAccesses));
+		
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Successful Reads");
+		if (storeAccesses > 0)
+			row.addChild("td", thousendPoint.format(storeHits));
+		else
+			row.addChild("td", "0");
+		if (cacheAccesses > 0)
+			row.addChild("td", thousendPoint.format(cacheHits));
+		else
+			row.addChild("td", "0");
+		
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Success Rate");
+		row.addChild("td", fix1p4.format(100.0*storeHits/storeAccesses)+"%");
+		row.addChild("td", fix1p4.format(100.0*cacheHits/cacheAccesses)+"%");
+		
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Writes");
+		row.addChild("td", thousendPoint.format(storeWrites));
+		row.addChild("td", thousendPoint.format(cacheWrites));
+				
+		/* Overall utilization is not preserved in the new table layout :(
 		storeSizeList.addChild("li", 
 				"Overall size:\u00a0" + thousendPoint.format(overallKeys) + 
 				"\u00a0/\u00a0" + thousendPoint.format(maxOverallKeys) +
 				"\u00a0(" + SizeUtil.formatSize(overallSize, true) + 
 				"\u00a0/\u00a0" + SizeUtil.formatSize(maxOverallSize, true) + 
 				")\u00a0(" + ((overallKeys*100)/maxOverallKeys) + "%)");
-
-		if(cacheAccesses > 0)
-			storeSizeList.addChild("li", 
-					"Cache hits:\u00a0" + thousendPoint.format(cachedStoreHits) + 
-					"\u00a0/\u00a0"+thousendPoint.format(cacheAccesses) +
-					"\u00a0(" + ((cachedStoreHits*100) / (cacheAccesses)) + "%)");
-
-		if(storeAccesses > 0)
-			storeSizeList.addChild("li", 
-					"Store hits:\u00a0" + thousendPoint.format(storeHits) + 
-					"\u00a0/\u00a0"+thousendPoint.format(storeAccesses) +
-					"\u00a0(" + ((storeHits*100) / (storeAccesses)) + "%)");
-
-		storeSizeList.addChild("li", 
-				"Avg. access rate:\u00a0" + thousendPoint.format(cacheAccesses/nodeUptimeSeconds) + "/sec, "+thousendPoint.format(storeAccesses/nodeUptimeSeconds)+"/sec");
+		 */
+		
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Access Rate");
+		row.addChild("td", fix1p2.format(1.0*storeAccesses/nodeUptimeSeconds)+" /sec");
+		row.addChild("td", fix1p2.format(1.0*cacheAccesses/nodeUptimeSeconds)+" /sec");
+		
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Write Rate");
+		row.addChild("td", fix1p2.format(1.0*storeWrites/nodeUptimeSeconds)+" /sec");
+		row.addChild("td", fix1p2.format(1.0*cacheWrites/nodeUptimeSeconds)+" /sec");
 		
 		// location-based stats
 		boolean hasLoc=true;
@@ -456,10 +496,9 @@ public class StatisticsToadlet extends Toadlet {
 			e.printStackTrace();
 			hasLoc=false;
 		}
+		
 		double avgCacheLocation=node.nodeStats.avgCacheLocation.currentValue();
 		double avgStoreLocation=node.nodeStats.avgStoreLocation.currentValue();
-		long cacheWrites=node.nodeStats.avgCacheLocation.countReports();
-		long storeWrites=node.nodeStats.avgStoreLocation.countReports();
 		double avgCacheSuccess=node.nodeStats.avgCacheSuccess.currentValue();
 		double avgStoreSuccess=node.nodeStats.avgStoreSuccess.currentValue();
 		double furthestCacheSuccess=node.nodeStats.furthestCacheSuccess;
@@ -467,26 +506,34 @@ public class StatisticsToadlet extends Toadlet {
 		double storeDist=Location.distance(nodeLoc, avgStoreLocation);
 		double cacheDist=Location.distance(nodeLoc, avgCacheLocation);
 		
-		storeSizeList.addChild("li", "avgCacheLocation:\u00a0" + thousendPoint.format(avgCacheLocation));
-		storeSizeList.addChild("li", "avgStoreLocation:\u00a0" + thousendPoint.format(avgStoreLocation));
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Avg. Location");
+		row.addChild("td", fix1p4.format(avgStoreLocation));
+		row.addChild("td", fix1p4.format(avgCacheLocation));
 		
-		storeSizeList.addChild("li", "avgCacheSuccess:\u00a0" + thousendPoint.format(avgCacheSuccess));
-		storeSizeList.addChild("li", "avgStoreSuccess:\u00a0" + thousendPoint.format(avgStoreSuccess));
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Avg. Success Loc.");
+		row.addChild("td", fix1p4.format(avgStoreSuccess));
+		row.addChild("td", fix1p4.format(avgCacheSuccess));
 		
-		storeSizeList.addChild("li", "furthestCacheSuccess:\u00a0" + thousendPoint.format(furthestCacheSuccess));
-		storeSizeList.addChild("li", "furthestStoreSuccess:\u00a0" + thousendPoint.format(furthestStoreSuccess));
-		
-		storeSizeList.addChild("li", "cacheWrites:\u00a0" + cacheWrites);
-		storeSizeList.addChild("li", "storeWrites:\u00a0" + storeWrites);
+		row=storeSizeTable.addChild("tr");
+		row.addChild("td", "Furthest Success");
+		row.addChild("td", fix1p4.format(furthestStoreSuccess));
+		row.addChild("td", fix1p4.format(furthestCacheSuccess));
 		
 		if (hasLoc) {
-			storeSizeList.addChild("li", "cacheDist:\u00a0" + thousendPoint.format(cacheDist));
-			storeSizeList.addChild("li", "storeDist:\u00a0" + thousendPoint.format(storeDist));
+			row=storeSizeTable.addChild("tr");
+			row.addChild("td", "Avg. Distance");
+			row.addChild("td", fix1p4.format(storeDist));
+			row.addChild("td", fix1p4.format(cacheDist));
+			
 			long cacheLocationReports=node.nodeStats.avgCacheLocation.countReports();
 			long storeLocationReports=node.nodeStats.avgStoreLocation.countReports();
-			double cachePrimePercent=((1.0*cacheLocationReports)/cachedKeys);
-			double storePrimePercent=((1.0*storeLocationReports)/storeKeys);
-			storeSizeList.addChild("li", "locStatsReliability:\u00a0"+fix3p1pct.format(cachePrimePercent)+" / "+fix3p1pct.format(storePrimePercent));
+			
+			row=storeSizeTable.addChild("tr");
+			row.addChild("td", "Distance Stats");
+			row.addChild("td", fix3p1pct.format(storeLocationReports/storeKeys));
+			row.addChild("td", fix3p1pct.format(cacheLocationReports/cachedKeys));
 		}
 		
 	}
