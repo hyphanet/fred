@@ -1583,7 +1583,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int paddingLength;
 		if(prePaddingLength < maxPacketSize) {
 			paddingLength = node.fastWeakRandom.nextInt(Math.min(100, maxPacketSize - prePaddingLength));
-		} else paddingLength = 0; // Avoid oversize packets if at all possible, the MTU is an estimate and may be wrong, and fragmented packets are often dropped by firewalls.
+		} else {
+			paddingLength = 0; // Avoid oversize packets if at all possible, the MTU is an estimate and may be wrong, and fragmented packets are often dropped by firewalls.
+			// Tell the devs, this shouldn't happen.
+			Logger.error(this, "Warning: sending oversize auth packet of "+prePaddingLength+" bytes!");
+		}
 		if(paddingLength < 0) paddingLength = 0;
 		byte[] data = new byte[prePaddingLength + paddingLength];
 		pcfb.reset(iv);
