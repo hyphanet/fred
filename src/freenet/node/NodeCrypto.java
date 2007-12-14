@@ -286,12 +286,14 @@ public class NodeCrypto {
 	 */
 	SimpleFieldSet exportPublicFieldSet(boolean forSetup, boolean forAnonInitiator) {
 		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup, forAnonInitiator);
-		// IP addresses
-		Peer[] ips = detector.detectPrimaryPeers();
-		if(ips != null) {
-			for(int i=0;i<ips.length;i++)
-				fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
-		}
+		if(!forAnonInitiator) {
+			// IP addresses
+			Peer[] ips = detector.detectPrimaryPeers();
+			if(ips != null) {
+				for(int i=0;i<ips.length;i++)
+					fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
+			}
+		} // Don't include IPs for anonymous initiator.
 		// Negotiation types
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
