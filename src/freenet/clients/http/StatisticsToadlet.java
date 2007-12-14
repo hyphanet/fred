@@ -482,8 +482,8 @@ public class StatisticsToadlet extends Toadlet {
 		if (hasLoc) {
 			storeSizeList.addChild("li", "cacheDist:\u00a0" + thousendPoint.format(cacheDist));
 			storeSizeList.addChild("li", "storeDist:\u00a0" + thousendPoint.format(storeDist));
-			long cacheLocationReports=((SimpleRunningAverage)node.nodeStats.avgCacheLocation).countReports();
-			long storeLocationReports=((SimpleRunningAverage)node.nodeStats.avgStoreLocation).countReports();
+			long cacheLocationReports=node.nodeStats.avgCacheLocation.countReports();
+			long storeLocationReports=node.nodeStats.avgStoreLocation.countReports();
 			double cachePrimePercent=((1.0*cacheLocationReports)/cachedKeys);
 			double storePrimePercent=((1.0*storeLocationReports)/storeKeys);
 			storeSizeList.addChild("li", "locStatsReliability:\u00a0"+fix3p1pct.format(cachePrimePercent)+" / "+fix3p1pct.format(storePrimePercent));

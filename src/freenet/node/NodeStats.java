@@ -21,8 +21,8 @@ import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
+import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
-import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.math.TrivialRunningAverage;
 
@@ -186,14 +186,13 @@ public class NodeStats implements Persistable {
 		this.hardRandom = node.random;
 		this.routingMissDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
-		// FIXME PLEASE remove (int) casts
 		double nodeLoc=node.lm.getLocation();
-		this.avgCacheLocation=new SimpleRunningAverage((int)node.maxCacheKeys, nodeLoc);
-		this.avgStoreLocation=new SimpleRunningAverage((int)node.maxStoreKeys, nodeLoc);
-		// FIXME average for success-location may not need to be so large as the store.
-		this.avgCacheSuccess=new SimpleRunningAverage(10000, nodeLoc);
-		this.avgStoreSuccess=new SimpleRunningAverage(10000, nodeLoc);
-		this.avgRequestLocation=new SimpleRunningAverage(10000, nodeLoc);
+		// FIXME PLEASE; (int) casts; (maxCacheKeys>MAXINT?) This value will probably end up being a small constant anyway (200?).
+		this.avgCacheLocation   = new BootstrappingDecayingRunningAverage(nodeLoc, 0.0, 1.0, (int)node.maxCacheKeys, null);
+		this.avgStoreLocation   = new BootstrappingDecayingRunningAverage(nodeLoc, 0.0, 1.0, (int)node.maxStoreKeys, null);
+		this.avgCacheSuccess    = new BootstrappingDecayingRunningAverage(nodeLoc, 0.0, 1.0, 10000, null);
+		this.avgStoreSuccess    = new BootstrappingDecayingRunningAverage(nodeLoc, 0.0, 1.0, 10000, null);
+		this.avgRequestLocation = new BootstrappingDecayingRunningAverage(nodeLoc, 0.0, 1.0, 10000, null);
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
 		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0, node);
@@ -203,18 +202,6 @@ public class NodeStats implements Persistable {
 		throttledPacketSendAverage =
 			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
 		nodePinger = new NodePinger(node);
-
-		// FIXME: data-store/cache averages need to be persisted to be valuable (or scanned at every launch).
-		/*
-		if (node.isAdvancedModeEnabled()) {
-			//Uggghh....
-			System.err.println("Scanning datastore/cache for location values");
-			chkDatastore.kludgeScan(avgStoreLocation);
-			sskDatastore.kludgeScan(avgStoreLocation);
-			chkDatacache.kludgeScan(avgCacheLocation);
-			sskDatacache.kludgeScan(avgCacheLocation);
-		}
-		*/
 		
 		previous_input_stat = 0;
 		previous_output_stat = 0;
