@@ -103,10 +103,17 @@ public class NodeIPDetector {
 		}
 		
 	   	if(node.clientCore != null) {
-	   		if (addedValidIP) {
-	   			onAddedValidIP();
-	   		} else {
-	   			onNotAddedValidIP();
+	   		boolean hadValidIP;
+	   		synchronized(this) {
+	   			hadValidIP = hasValidIP;
+	   			hasValidIP = addedValidIP;
+	   		}
+	   		if(hadValidIP != addedValidIP) {
+	   			if (addedValidIP) {
+	   				onAddedValidIP();
+	   			} else {
+	   				onNotAddedValidIP();
+	   			}
 	   		}
 	   	}
 	   	synchronized(this) {
@@ -117,7 +124,6 @@ public class NodeIPDetector {
 	}
 	
 	boolean hasValidIP() {
-		FreenetInetAddress[] addrs = detectPrimaryIPAddress();
 		synchronized(this) {
 			return hasValidIP;
 		}
