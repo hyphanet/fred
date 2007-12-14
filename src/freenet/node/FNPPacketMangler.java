@@ -1347,7 +1347,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DiffieHellmanLightContext ctx = (DiffieHellmanLightContext) pn.getKeyAgreementSchemeContext();
 		if(ctx == null) return;
 		byte[] ourExponential = stripBigIntegerToNetworkFormat(ctx.myExponential);
-		pn.jfkMyRef = unknownInitiator ? crypto.myCompressedFullRef() : crypto.myCompressedHeavySetupRef();
+		pn.jfkMyRef = unknownInitiator ? crypto.myCompressedHeavySetupRef() : crypto.myCompressedSetupRef();
 		byte[] data = new byte[8 + pn.jfkMyRef.length];
 		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
 		System.arraycopy(pn.jfkMyRef, 0, data, 8, pn.jfkMyRef.length);
