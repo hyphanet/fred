@@ -340,7 +340,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		if(noderefBuf == null) {
 			return true; // Don't relay
 		}
-		SimpleFieldSet fs = om.validateNoderef(noderefBuf, 0, noderefLength, next);
+		SimpleFieldSet fs = om.validateNoderef(noderefBuf, 0, noderefLength, next, false);
 		if(fs == null) {
 			if(cb != null) cb.bogusNoderef("invalid noderef");
 			return true; // Don't relay
@@ -436,7 +436,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 		if(noderefBuf == null) {
 			return false;
 		}
-		SimpleFieldSet fs = om.validateNoderef(noderefBuf, 0, noderefLength, source);
+		SimpleFieldSet fs = om.validateNoderef(noderefBuf, 0, noderefLength, source, false);
 		if(fs == null) {
 			om.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;

@@ -1160,7 +1160,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				// FIXME Send some sort of explicit rejection message.
 				return null;
 			}
-			SimpleFieldSet ref = om.validateNoderef(hisRef, 0, hisRef.length, null);
+			SimpleFieldSet ref = om.validateNoderef(hisRef, 0, hisRef.length, null, true);
 			if(ref == null) {
 				Logger.error(this, "Invalid noderef");
 				// FIXME Send some sort of explicit rejection message.

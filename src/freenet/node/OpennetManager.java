@@ -632,7 +632,7 @@ public class OpennetManager {
 		}
 	}
 
-	public SimpleFieldSet validateNoderef(byte[] noderef, int offset, int length, PeerNode from) {
+	public SimpleFieldSet validateNoderef(byte[] noderef, int offset, int length, PeerNode from, boolean forceOpennetEnabled) {
     	SimpleFieldSet ref;
 		try {
 			ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
@@ -640,6 +640,8 @@ public class OpennetManager {
 			Logger.error(this, "Invalid noderef: "+e, e);
 			return null;
 		}
+		if(forceOpennetEnabled)
+			ref.put("opennet", true);
 		
 		if(!OpennetPeerNode.validateRef(ref)) {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+from);

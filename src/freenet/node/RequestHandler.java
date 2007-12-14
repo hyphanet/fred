@@ -392,7 +392,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 		if(noderef == null)
 			return false;
 		
-		SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, source);
+		SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, source, false);
 		
 		if(ref == null) 
 			return false;
@@ -443,7 +443,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 		
 		// Send it forward to the data source, if it is valid.
 		
-		if(om.validateNoderef(newNoderef, 0, newNoderef.length, source) != null) {
+		if(om.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null) {
 			try {
 				om.sendOpennetRef(true, uid, dataSource, newNoderef, this);
 			} catch (NotConnectedException e) {

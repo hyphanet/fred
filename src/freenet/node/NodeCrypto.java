@@ -297,15 +297,17 @@ public class NodeCrypto {
 		// Negotiation types
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
-		fs.put("testnet", node.testnetEnabled); // Vital that peer know this!
+		// FIXME move inside bracket after next mandatory.
+		fs.put("testnet", node.testnetEnabled);
 		if(node.testnetEnabled) {
 			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		}
 		if(!isOpennet)
 			fs.putSingle("myName", node.getMyName()); // FIXME see #942
-		fs.put("opennet", isOpennet);
 		
-		//if(!forAnonInitiator) { FIXME re-enable check once related changes are mandatory
+		if(!forAnonInitiator) {
+			// Anonymous initiator setup type specifies whether the node is opennet or not.
+			fs.put("opennet", isOpennet);
 			synchronized (referenceSync) {
 				if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
 					mySignedReference = fs.toOrderedString();
@@ -317,7 +319,7 @@ public class NodeCrypto {
 				}
 				fs.putSingle("sig", myReferenceSignature.toLongString());
 			}
-		//}
+		}
 		
 		if(logMINOR) Logger.minor(this, "My reference: "+fs.toOrderedString());
 		return fs;

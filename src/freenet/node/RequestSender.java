@@ -682,7 +682,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         	
         	if(noderef == null) return;
         	
-        	SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, next);
+        	SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, next, false);
         	
         	if(ref == null) return;
         	
