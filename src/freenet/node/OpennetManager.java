@@ -139,6 +139,11 @@ public class OpennetManager {
 		// Read old peers
 		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
 		announcer = new Announcer(this);
+		if(logMINOR) {
+			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
+			Logger.minor(this, "My full setup ref: "+crypto.myCompressedSetupRef().length);
+			Logger.minor(this, "My heavy setup ref: "+crypto.myCompressedHeavySetupRef().length);
+		}
 	}
 
 	private void writeFile(File orig, File backup) {
