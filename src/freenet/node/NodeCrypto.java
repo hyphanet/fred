@@ -295,6 +295,8 @@ public class NodeCrypto {
 			}
 		} // Don't include IPs for anonymous initiator.
 		// Negotiation types
+		// FIXME remove location as soon as this build is mandatory!
+		fs.put("location", node.lm.getLocation());
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
 		// FIXME move inside bracket after next mandatory.
