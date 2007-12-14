@@ -362,7 +362,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				throw new FSParseException("No negTypes!");
 		}
 
-		if((!fromLocal) && fs.getBoolean("opennet", false) != isOpennet)
+		if(fs.getBoolean("opennet", false) != isOpennet)
 			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet");
 
 		/* Read the DSA key material for the peer */
