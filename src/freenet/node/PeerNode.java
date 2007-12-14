@@ -313,8 +313,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @param fs The SimpleFieldSet to parse
 	* @param node2 The running Node we are part of.
 	*/
-	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean noSig, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		if(fromLocal) noSig = true;
+	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		boolean noSig = false;
+		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
 		myRef = new WeakReference(this);
 		this.outgoingMangler = mangler;
@@ -393,8 +394,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			detectedPeer = (Peer) nominalPeer.firstElement();
 		}
 		negTypes = fs.getIntArray("auth.negTypes");
-		if(negTypes == null || negTypes.length == 0)
-			negTypes = new int[]{0};
+		if(negTypes == null || negTypes.length == 0) {
+			if(fromAnonymousInitiator)
+				negTypes = mangler.supportedNegTypes(); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
+			else
+				throw new FSParseException("No negTypes!");
+		}
 
 		if((!fromLocal) && fs.getBoolean("opennet", false) != isOpennet)
 			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet");
