@@ -1016,8 +1016,13 @@ public class NodeStats implements Persistable {
 		for(int i=0;i<averages.length;i++) {
 			row = list.addChild("tr");
 			row.addChild("td", names[i]);
+			if (averages[i].countReports()==0) {
+				row.addChild("td", "-");
+				row.addChild("td", "0.0");
+			} else {
 			row.addChild("td", fix3p3pct.format(averages[i].currentValue()));
 			row.addChild("td", Double.toString(averages[i].countReports()));
+			}
 		}
 	}
 	
