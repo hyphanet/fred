@@ -373,6 +373,7 @@ public class PproxyToadlet extends Toadlet {
 		availablePlugins.add("HelloWorld");
 		availablePlugins.add("HelloFCP");
 		availablePlugins.add("JSTUN");
+		availablePlugins.add("KeyExplorer");
 		availablePlugins.add("Librarian");
 		availablePlugins.add("MDNSDiscovery");
 		availablePlugins.add("SNMP");
