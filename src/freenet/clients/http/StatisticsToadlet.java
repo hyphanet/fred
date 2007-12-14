@@ -437,8 +437,8 @@ public class StatisticsToadlet extends Toadlet {
 		
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", "Utilization");
-		row.addChild("td", fix3p1pct.format(storeKeys/maxStoreKeys));
-		row.addChild("td", fix3p1pct.format(cachedKeys/maxCachedKeys));
+		row.addChild("td", fix3p1pct.format(1.0*storeKeys/maxStoreKeys));
+		row.addChild("td", fix3p1pct.format(1.0*cachedKeys/maxCachedKeys));
 		
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", "Read-Requests");
