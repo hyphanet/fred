@@ -313,7 +313,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @param fs The SimpleFieldSet to parse
 	* @param node2 The running Node we are part of.
 	*/
-	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean noSig, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		if(fromLocal) noSig = true;
 		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
 		myRef = new WeakReference(this);
 		this.outgoingMangler = mangler;
@@ -414,7 +415,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 			String signature = fs.get("sig");
 			fs.removeValue("sig");
-			if(!fromLocal) {
+			if(!noSig) {
 				try {
 					boolean failed = false;
 					if(signature == null || peerCryptoGroup == null || peerPubKey == null ||

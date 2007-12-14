@@ -261,7 +261,7 @@ public class NodeCrypto {
 	}
 	
 	public SimpleFieldSet exportPrivateFieldSet() {
-		SimpleFieldSet fs = exportPublicFieldSet(false);
+		SimpleFieldSet fs = exportPublicFieldSet(false, false);
 		addPrivateFields(fs);
 		return fs;
 	}
@@ -272,7 +272,7 @@ public class NodeCrypto {
 	 * @see exportPublicFieldSet(boolean forSetup).
 	 */
 	public SimpleFieldSet exportPublicFieldSet() {
-		return exportPublicFieldSet(false);
+		return exportPublicFieldSet(false, false);
 	}
 	
 	/**
@@ -280,8 +280,11 @@ public class NodeCrypto {
 	 * @param forSetup If true, strip out everything that isn't needed for the references
 	 * exchanged immediately after connection setup. I.e. strip out everything that is invariant,
 	 * or that can safely be exchanged later.
+	 * @param heavySetup If true, we need a minimal ref but one which we can still construct a 
+	 * PeerNode from. Usually set if we are adding a node from an anonymous-initiator noderef exchange.
+	 * Don't need a signature.
 	 */
-	SimpleFieldSet exportPublicFieldSet(boolean forSetup) {
+	SimpleFieldSet exportPublicFieldSet(boolean forSetup, boolean heavySetup) {
 		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup);
 		// IP addresses
 		Peer[] ips = detector.detectPrimaryPeers();
@@ -300,17 +303,19 @@ public class NodeCrypto {
 			fs.putSingle("myName", node.getMyName()); // FIXME see #942
 		fs.put("opennet", isOpennet);
 		
-		synchronized (referenceSync) {
-			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
-				mySignedReference = fs.toOrderedString();
-				try {
-					myReferenceSignature = signRef(mySignedReference);
-				} catch (NodeInitException e) {
-					node.exit(e.exitCode);
+		//if(!heavySetup) { FIXME re-enable check once related changes are mandatory
+			synchronized (referenceSync) {
+				if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
+					mySignedReference = fs.toOrderedString();
+					try {
+						myReferenceSignature = signRef(mySignedReference);
+					} catch (NodeInitException e) {
+						node.exit(e.exitCode);
+					}
 				}
+				fs.putSingle("sig", myReferenceSignature.toLongString());
 			}
-			fs.putSingle("sig", myReferenceSignature.toLongString());
-		}
+		//}
 		
 		if(logMINOR) Logger.minor(this, "My reference: "+fs.toOrderedString());
 		return fs;
@@ -352,8 +357,8 @@ public class NodeCrypto {
 		}
 	}
 
-	private byte[] myCompressedRef(boolean setup) {
-		SimpleFieldSet fs = exportPublicFieldSet(setup);
+	private byte[] myCompressedRef(boolean setup, boolean heavySetup) {
+		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DeflaterOutputStream gis;
 		gis = new DeflaterOutputStream(baos);
@@ -378,7 +383,16 @@ public class NodeCrypto {
 	 * @see exportSetupFieldSet()
 	 */
 	public byte[] myCompressedSetupRef() {
-		return myCompressedRef(true);
+		return myCompressedRef(true, false);
+	}
+
+	/**
+	 * The part of our node reference which is exchanged in the connection setup, if we don't
+	 * already have the node, compressed.
+	 * @see exportSetupFieldSet()
+	 */
+	public byte[] myCompressedHeavySetupRef() {
+		return myCompressedRef(false, true);
 	}
 
 	/**
@@ -386,7 +400,7 @@ public class NodeCrypto {
 	 * @see exportSetupFieldSet()
 	 */
 	public byte[] myCompressedFullRef() {
-		return myCompressedRef(false);
+		return myCompressedRef(false, false);
 	}
 	
 	void addPrivateFields(SimpleFieldSet fs) {

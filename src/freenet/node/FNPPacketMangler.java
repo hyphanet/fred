@@ -1168,7 +1168,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			PeerNode seed;
 			try {
-				seed = new SeedClientPeerNode(ref, node, crypto, node.peers, false, crypto.packetMangler);
+				seed = new SeedClientPeerNode(ref, node, crypto, node.peers, false, true, crypto.packetMangler);
 			} catch (FSParseException e) {
 				Logger.error(this, "Invalid seednode noderef: "+e, e);
 				return null;
@@ -1347,7 +1347,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DiffieHellmanLightContext ctx = (DiffieHellmanLightContext) pn.getKeyAgreementSchemeContext();
 		if(ctx == null) return;
 		byte[] ourExponential = stripBigIntegerToNetworkFormat(ctx.myExponential);
-		pn.jfkMyRef = unknownInitiator ? crypto.myCompressedFullRef() : crypto.myCompressedSetupRef();
+		pn.jfkMyRef = unknownInitiator ? crypto.myCompressedFullRef() : crypto.myCompressedHeavySetupRef();
 		byte[] data = new byte[8 + pn.jfkMyRef.length];
 		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
 		System.arraycopy(pn.jfkMyRef, 0, data, 8, pn.jfkMyRef.length);

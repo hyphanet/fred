@@ -10,7 +10,7 @@ public class OpennetPeerNode extends PeerNode {
 	private long timeLastSuccess;
 	
 	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, mangler, true);
+		super(fs, node2, crypto, peers, fromLocal, false, mangler, true);
 		this.opennet = opennet;
 	}
 
