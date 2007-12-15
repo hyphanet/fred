@@ -1460,4 +1460,18 @@ public class PeerManager {
 		}
 		return count;
 	}
+
+	/**
+	 * How many peers do we have that actually may connect? Don't include seednodes, disabled nodes, etc.
+	 */
+	public int countValidPeers() {
+		PeerNode[] peers = myPeers;
+		int count = 0;
+		for(int i=0;i<peers.length;i++) {
+			if(!peers[i].isSearchable()) continue;
+			if(peers[i].isDisabled()) continue;
+			count++;
+		}
+		return count;
+	}
 }
