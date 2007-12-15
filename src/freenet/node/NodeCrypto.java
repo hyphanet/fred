@@ -192,15 +192,11 @@ public class NodeCrypto {
 			privKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), cryptoGroup);
 			pubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), cryptoGroup);
 		} catch (IllegalBase64Exception e) {
-			if(logMINOR) Logger.minor(this, "Caught "+e, e);
-			this.cryptoGroup = Global.DSAgroupBigA;
-			this.privKey = new DSAPrivateKey(cryptoGroup, random);
-			this.pubKey = new DSAPublicKey(cryptoGroup, privKey);
+			Logger.error(this, "Caught "+e, e);
+			throw new IOException(e.toString());
 		} catch (FSParseException e) {
-			if(logMINOR) Logger.minor(this, "Caught "+e, e);
-			this.cryptoGroup = Global.DSAgroupBigA;
-			this.privKey = new DSAPrivateKey(cryptoGroup, random);
-			this.pubKey = new DSAPublicKey(cryptoGroup, privKey);
+			Logger.error(this, "Caught "+e, e);
+			throw new IOException(e.toString());
 		}
 		InsertableClientSSK ark = null;
 		
