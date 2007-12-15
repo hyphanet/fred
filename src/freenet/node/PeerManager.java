@@ -937,10 +937,11 @@ public class PeerManager {
 	 */
 	public void updatePMUserAlert() {
 		if(ua == null) return;
-		int peers, darknetPeers;
+		int peers, darknetPeers, opennetPeers;
 		synchronized(this) {
-			peers = this.myPeers.length;
 			darknetPeers = this.getDarknetPeers().length;
+			opennetPeers = this.getOpennetPeers().length;
+			peers = darknetPeers + opennetPeers; // Seednodes don't count.
 		}
 		synchronized(ua) {
 			ua.darknetConns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, true) +
