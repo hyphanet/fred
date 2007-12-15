@@ -514,19 +514,20 @@ public class OpennetManager {
 		}
 	}
 
-	public void sendAnnouncementRequest(long uid, PeerNode peer, byte[] noderef, ByteCounter ctr, 
+	public long startSendAnnouncementRequest(long uid, PeerNode peer, byte[] noderef, ByteCounter ctr, 
 			double target, short htl, double nearestLocSoFar) throws NotConnectedException {
-		byte[] padded = new byte[paddedSize(noderef.length)];
-		if(noderef.length > padded.length) {
-			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
-			return;
-		}
-		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
-		System.arraycopy(noderef, 0, padded, 0, noderef.length);
 		long xferUID = node.random.nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceRequest(uid, xferUID, noderef.length, 
-				padded.length, target, htl, nearestLocSoFar);
+				paddedSize(noderef.length), target, htl, nearestLocSoFar);
 		peer.sendAsync(msg, null, 0, ctr);
+		return xferUID;
+	}
+	
+	public void finishSentAnnouncementRequest(PeerNode peer, byte[] noderef, ByteCounter ctr, 
+			long xferUID) throws NotConnectedException {
+		byte[] padded = new byte[paddedSize(noderef.length)];
+		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
+		System.arraycopy(noderef, 0, padded, 0, noderef.length);
 		innerSendOpennetRef(xferUID, padded, peer);
 	}
 	

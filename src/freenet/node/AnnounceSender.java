@@ -139,7 +139,8 @@ public class AnnounceSender implements Runnable, ByteCounter {
             if(hasForwarded)
             	htl = node.decrementHTL(source, htl);
             
-            if(!sendTo(next)) continue;
+            long xferUID = sendTo(next);
+            if(xferUID == -1) continue;
             
             hasForwarded = true;
             
@@ -221,6 +222,16 @@ public class AnnounceSender implements Runnable, ByteCounter {
             }
 
             if(logMINOR) Logger.minor(this, "Got Accepted");
+            
+            // Send the rest
+            
+            try {
+				sendRest(next, xferUID);
+			} catch (NotConnectedException e1) {
+				if(logMINOR)
+					Logger.minor(this, "Not connected while sending noderef on "+next);
+				continue;
+			}
             
             // Otherwise, must be Accepted
             
@@ -381,14 +392,23 @@ public class AnnounceSender implements Runnable, ByteCounter {
 	 * @param next The node to send the announcement to.
 	 * @return True if the announcement was successfully sent.
 	 */
-	private boolean sendTo(PeerNode next) {
+	private long sendTo(PeerNode next) {
 		try {
-			om.sendAnnouncementRequest(uid, next, noderefBuf, this, target, htl, nearestLoc);
+			return om.startSendAnnouncementRequest(uid, next, noderefBuf, this, target, htl, nearestLoc);
 		} catch (NotConnectedException e) {
 			if(logMINOR) Logger.minor(this, "Disconnected");
-			return false;
+			return -1;
 		}
-		return true;
+	}
+
+	/**
+	 * Send an AnnouncementRequest.
+	 * @param next The node to send the announcement to.
+	 * @return True if the announcement was successfully sent.
+	 * @throws NotConnectedException 
+	 */
+	private void sendRest(PeerNode next, long xferUID) throws NotConnectedException {
+		om.finishSentAnnouncementRequest(next, noderefBuf, this, xferUID);
 	}
 
 	private void timedOut(PeerNode next) {
