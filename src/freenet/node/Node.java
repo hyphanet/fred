@@ -799,6 +799,11 @@ public class Node implements TimeSkewDetectorCallback {
 				readNodeFile(new File(nodeDir, "node-"+getDarknetPortNumber()+".bak").getPath(), random);
 			} catch (IOException e1) {
 				System.err.println("No node file or cannot read, (re)initialising crypto etc");
+				System.err.println(e1.toString());
+				e1.printStackTrace();
+				System.err.println("After:");
+				System.err.println(e.toString());
+				e.printStackTrace();
 				initNodeFileSettings(random);
 			}
 		}
