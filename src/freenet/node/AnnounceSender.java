@@ -159,12 +159,11 @@ public class AnnounceSender implements Runnable, ByteCounter {
                 MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
                 MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
                 MessageFilter mfOpennetDisabled = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPOpennetDisabled);
-                MessageFilter mfOpennetNoderefRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPOpennetNoderefRejected);
                 
                 // mfRejectedOverload must be the last thing in the or
                 // So its or pointer remains null
                 // Otherwise we need to recreate it below
-                MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload.or(mfOpennetDisabled.or(mfOpennetNoderefRejected))));
+                MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload.or(mfOpennetDisabled)));
                 
                 try {
                     msg = node.usm.waitFor(mf, this);
@@ -197,13 +196,6 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	
             	if(msg.getSpec() == DMT.FNPOpennetDisabled) {
             		if(logMINOR) Logger.minor(this, "Opennet disabled");
-            		msg = null;
-            		break;
-            	}
-            	
-            	if(msg.getSpec() == DMT.FNPOpennetNoderefRejected) {
-            		int reason = msg.getInt(DMT.REJECT_CODE);
-            		Logger.normal(this, "Announce rejected by "+next+" : "+DMT.getOpennetRejectedCode(reason));
             		msg = null;
             		break;
             	}
@@ -245,7 +237,8 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	MessageFilter mfAnnounceReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ANNOUNCE_TIMEOUT).setType(DMT.FNPOpennetAnnounceReply);
                 MessageFilter mfOpennetDisabled = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ANNOUNCE_TIMEOUT).setType(DMT.FNPOpennetDisabled);
                 MessageFilter mfNotWanted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ANNOUNCE_TIMEOUT).setType(DMT.FNPOpennetAnnounceNodeNotWanted);
-            	MessageFilter mf = mfAnnounceCompleted.or(mfRouteNotFound.or(mfRejectedOverload.or(mfAnnounceReply.or(mfOpennetDisabled.or(mfNotWanted)))));
+                MessageFilter mfOpennetNoderefRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPOpennetNoderefRejected);
+            	MessageFilter mf = mfAnnounceCompleted.or(mfRouteNotFound.or(mfRejectedOverload.or(mfAnnounceReply.or(mfOpennetDisabled.or(mfNotWanted.or(mfOpennetNoderefRejected))))));
             	
             	try {
             		msg = node.usm.waitFor(mf, this);
@@ -260,6 +253,13 @@ public class AnnounceSender implements Runnable, ByteCounter {
             		// Fatal timeout
             		timedOut(next);
             		return;
+            	}
+            	
+            	if(msg.getSpec() == DMT.FNPOpennetNoderefRejected) {
+            		int reason = msg.getInt(DMT.REJECT_CODE);
+            		Logger.normal(this, "Announce rejected by "+next+" : "+DMT.getOpennetRejectedCode(reason));
+            		msg = null;
+            		break;
             	}
             	
             	if(msg.getSpec() == DMT.FNPOpennetAnnounceCompleted) {
