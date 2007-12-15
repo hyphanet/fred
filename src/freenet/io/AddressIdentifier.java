@@ -41,7 +41,7 @@ public class AddressIdentifier {
 		String wordRegex = "([0-9a-fA-F]{1,4})";
 		String percentScopeIDRegex = "(?:%[0-9]{1,3})?";
 		String ipv6AddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex;
-		String ipv6ISATAPAddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ":(0){1,4}:5(efe|EFE):" + wordRegex + ':' + wordRegex;
+		String ipv6ISATAPAddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ":(0){1,4}:5(efe|EFE):" + wordRegex + ':' + wordRegex + percentScopeIDRegex;
 		ipv6Pattern = Pattern.compile(ipv6AddressRegex);
 		ipv6PatternWithPercentScopeID = Pattern.compile(ipv6AddressRegex + percentScopeIDRegex);
 		ipv6ISATAPPattern = Pattern.compile(ipv6ISATAPAddressRegex);
