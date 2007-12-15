@@ -458,7 +458,7 @@ public class Announcer {
 				}));
 				if(coolingOffSeconds > 0) {
 					sb.append(' ');
-					sb.append(l10n("coolingOff", "seconds", Long.toString(coolingOffSeconds)));
+					sb.append(l10n("coolingOff", "time", Long.toString(coolingOffSeconds)));
 				}
 			}
 			return sb.toString();
