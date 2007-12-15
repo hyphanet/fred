@@ -293,18 +293,18 @@ public class PeerManager {
     		for(int i=0;i<myPeers.length;i++) {
     			if(myPeers[i] == pn) isInPeers=true;
     		}
-    		int peerNodeStatus = pn.getPeerNodeStatus();
-    		if(pn.recordStatus())
-    			removePeerNodeStatus( peerNodeStatus, pn, !isInPeers );
-    		String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
-    		if(peerNodePreviousRoutingBackoffReason != null) {
-    			removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
-    		}
     		if(pn instanceof DarknetPeerNode)
     			((DarknetPeerNode)pn).removeExtraPeerDataDir();
-    		
     		if(isInPeers) {
                 
+        		int peerNodeStatus = pn.getPeerNodeStatus();
+        		if(pn.recordStatus())
+        			removePeerNodeStatus( peerNodeStatus, pn, !isInPeers );
+        		String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
+        		if(peerNodePreviousRoutingBackoffReason != null) {
+        			removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
+        		}
+        		
     			// removing from connectedPeers
     			ArrayList a = new ArrayList();
     			for(int i=0;i<myPeers.length;i++) {
