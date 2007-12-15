@@ -1478,11 +1478,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		NativeBigInteger _initiatorExponential = new NativeBigInteger(1,initiatorExponential);
 		
 		byte[] myRef = crypto.myCompressedSetupRef();
-		byte[] data = new byte[8 + myRef.length + (bothNoderefs ? hisRef.length : 0)];
+		byte[] data = new byte[8 + myRef.length + hisRef.length];
 		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
 		System.arraycopy(myRef, 0, data, 8, myRef.length);
-		if(bothNoderefs)
-			System.arraycopy(hisRef, 0, data, 8 + myRef.length, hisRef.length);
+		System.arraycopy(hisRef, 0, data, 8 + myRef.length, hisRef.length);
 		
 		byte[] messageHash = SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, _initiatorExponential, _responderExponential, pn.identity, data));
 		if(logMINOR)
@@ -1496,7 +1495,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] iv=new byte[ivLength];
 		node.random.nextBytes(iv);
 		pk.reset(iv);
-		byte[] cyphertext = new byte[JFK_PREFIX_RESPONDER.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2 + data.length];
+		// If !bothNoderefs, then don't include the last bit
+		int dataLength = data.length - (bothNoderefs ? 0 : hisRef.length);
+		byte[] cyphertext = new byte[JFK_PREFIX_RESPONDER.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2 +
+		                             dataLength];
 		int cleartextOffset = 0;
 		System.arraycopy(JFK_PREFIX_RESPONDER, 0, cyphertext, cleartextOffset, JFK_PREFIX_RESPONDER.length);
 		cleartextOffset += JFK_PREFIX_RESPONDER.length;
@@ -1506,8 +1508,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 		System.arraycopy(s, 0, cyphertext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
 		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		System.arraycopy(data, 0, cyphertext, cleartextOffset, data.length);
-		cleartextOffset += data.length;
+		System.arraycopy(data, 0, cyphertext, cleartextOffset, dataLength);
+		cleartextOffset += dataLength;
 		// Now encrypt the cleartext[Signature]
 		int cleartextToEncypherOffset = JFK_PREFIX_RESPONDER.length + ivLength;
 		pk.blockEncipher(cyphertext, cleartextToEncypherOffset, cyphertext.length - cleartextToEncypherOffset);
