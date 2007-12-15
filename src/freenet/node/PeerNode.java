@@ -321,7 +321,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @param fs The SimpleFieldSet to parse
 	* @param node2 The running Node we are part of.
 	*/
-	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet, boolean ignoreLastGoodVersion) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
@@ -343,8 +343,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		disableRouting = disableRoutingHasBeenSetLocally = false;
 		disableRoutingHasBeenSetRemotely = false; // Assume so
 		
-		// FIXME make mandatory once everyone has upgraded
-		lastGoodVersion = fs.get("lastGoodVersion");
+		if(ignoreLastGoodVersion)
+			lastGoodVersion = version;
+		else
+			lastGoodVersion = fs.get("lastGoodVersion");
 		updateShouldDisconnectNow();
 
 		testnetEnabled = fs.getBoolean("testnet", false);
