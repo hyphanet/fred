@@ -1276,8 +1276,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(data, 0, locallyGeneratedText, bufferOffset, data.length - pn.jfkMyRef.length);
 		bufferOffset += data.length - pn.jfkMyRef.length;
 		System.arraycopy(pn.jfkMyRef, 0, locallyGeneratedText, bufferOffset, pn.jfkMyRef.length);
-		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(locallyGeneratedText)), false)) {
-			Logger.error(this, "The signature verification has failed!! JFK(4) -"+pn.getPeer());
+		byte[] messageHash = SHA256.digest(locallyGeneratedText);
+		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, messageHash), false)) {
+			Logger.error(this, "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" message hash "+HexUtil.bytesToHex(messageHash));
 			return;
 		}
 		
@@ -1475,7 +1476,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(myRef, 0, data, 8, myRef.length);
 		System.arraycopy(hisRef, 0, data, 8 + myRef.length, hisRef.length);
 		
-		DSASignature localSignature = crypto.sign(SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, _initiatorExponential, _responderExponential, pn.identity, data)));
+		byte[] messageHash = SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, _initiatorExponential, _responderExponential, pn.identity, data));
+		if(logMINOR)
+			Logger.minor(this, "Message hash: "+HexUtil.bytesToHex(messageHash));
+		DSASignature localSignature = crypto.sign(messageHash);
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		
