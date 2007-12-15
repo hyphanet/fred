@@ -29,7 +29,6 @@ import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
-import freenet.support.math.SimpleRunningAverage;
 
 public class StatisticsToadlet extends Toadlet {
 
