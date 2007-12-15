@@ -98,6 +98,9 @@ public class AddressIdentifier {
 		return AddressType.OTHER;
 	}
 
+	/**
+	 * @see http://www.ietf.org/rfc/rfc4214.txt
+	 */
 	public static boolean isAnISATAPIPv6Address(String address) {
 		return ipv6ISATAPPattern.matcher(address).matches();
 	}
