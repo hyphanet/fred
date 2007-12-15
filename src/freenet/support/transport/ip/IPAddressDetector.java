@@ -148,9 +148,9 @@ public class IPAddressDetector implements Runnable {
 			}
 
 			// This does not transfer any data
-			// The ip is a.root-servers.net, 42 is DNS
+			// The ip is a.root-servers.net, 53 is DNS
 			try {
-				ds.connect(InetAddress.getByName("198.41.0.4"), 42);
+				ds.connect(InetAddress.getByName("198.41.0.4"), 53);
 			} catch (UnknownHostException ex) {
 				Logger.error(this, "UnknownHostException", ex);
 				return null;
