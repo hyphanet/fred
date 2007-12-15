@@ -17,7 +17,6 @@
 package freenet.io;
 
 import junit.framework.TestCase;
-import freenet.io.AddressIdentifier;
 import freenet.io.AddressIdentifier.AddressType;
 
 /**
@@ -49,6 +48,12 @@ public class AddressIdentifierTest extends TestCase {
 		/* test fake IPv6 addresses */
 		assertEquals(AddressType.OTHER, AddressIdentifier.getAddressType("1:2:3:4:5:6:7:8:9"));
 		assertEquals(AddressType.OTHER, AddressIdentifier.getAddressType("12345:6:7:8:9"));
+	}
+	
+	public void testIsAnISATAPIPv6Address() {
+		assertFalse(AddressIdentifier.isAnISATAPIPv6Address("fe80:0:0:0:203:dff:fe22:420f"));
+		assertFalse(AddressIdentifier.isAnISATAPIPv6Address("fe80:0:5efe:0:203:dff:fe22:420f"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("2001:1:2:3:0:5efe:c801:20a"));
 	}
 
 }
