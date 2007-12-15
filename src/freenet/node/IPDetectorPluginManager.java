@@ -346,7 +346,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				detect = true; // else wait 2 minutes
 			
 		} else {
-			if(logMINOR) Logger.minor(this, "Not urgent; conns="+conns.length);
+			if(logMINOR) Logger.minor(this, "Not urgent; conns="+conns.length+", peers="+peers.length);
 			firstTimeUrgent = 0;
 		}
 		
