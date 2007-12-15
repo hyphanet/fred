@@ -186,9 +186,6 @@ public class IPAddressDetector implements Runnable {
 						Logger.debug(
 							this,
 							"Address " + x + ": " + i);
-					if(IPUtil.isValidAddress(i, detector.includeLocalAddressesInNoderefs)) {
-						output.add(i);
-					}
 					if(i.isAnyLocalAddress()) {
 						// Wildcard address, 0.0.0.0, ignore.
 					} else if(i.isLinkLocalAddress() || i.isLoopbackAddress() ||
@@ -199,6 +196,7 @@ public class IPAddressDetector implements Runnable {
 					} else if(i.isMulticastAddress()) {
 						// Ignore
 					} else {
+						if(!IPUtil.strict)
 						output.add(i);
 					}
 				}
