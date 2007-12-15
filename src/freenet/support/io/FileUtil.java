@@ -149,6 +149,13 @@ final public class FileUtil {
             // Shall we prevent symlink-race-conditions here ?
             if(orig.equals(dest))
                 throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
+            if(!orig.exists()) {
+            	throw new IllegalArgumentException("Original doesn't exist!");
+            }
+            if(orig.length() == 0) {
+            	// 99% of the time this indicates a bug resulting in clobbering files in zero disk space! If we need to support empty files anywhere we can add an override.
+            	throw new IllegalArgumentException("Original is empty!");
+            }
             if (!orig.renameTo(dest)) {
                 // Not supported on some systems (Windows)
                 if (!dest.delete()) {
