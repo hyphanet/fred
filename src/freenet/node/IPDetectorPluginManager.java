@@ -694,6 +694,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			// Not much more we can do / want to do for now
 			// FIXME use status.externalPort.
 		}
+		node.executor.execute(new Runnable() {
+			public void run() {
+				maybeRun();
+			}
+		}, "Redetect IP after port forward changed");
 	}
 
 	public synchronized boolean hasDetectors() {
