@@ -93,7 +93,6 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 
 	public String getText() {
 		String s;
-		int disconnected = peers - conns;
 		if(peers == 0) {
 			if(n.isTestnetEnabled())
 				return l10n("noPeersTestnet");
@@ -117,7 +116,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 			s = l10n("connError", "count", Integer.toString(connError));
 		} else if(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD){
 			s = l10n("tooManyDisconnected", new String[] { "count", "max" }, 
-					new String[] { Integer.toString(disconnected), Integer.toString(MAX_DISCONN_PEER_ALERT_THRESHOLD)});
+					new String[] { Integer.toString(disconnDarknetPeers), Integer.toString(MAX_DISCONN_PEER_ALERT_THRESHOLD)});
 		} else if(conns > MAX_CONN_ALERT_THRESHOLD) {
 			s = l10n("tooManyConns", new String[] { "count", "max" }, 
 					new String[] { Integer.toString(conns), Integer.toString(MAX_CONN_ALERT_THRESHOLD)});
@@ -163,7 +162,6 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
 
-		int disconnected = peers - conns;
 		if (peers == 0) {
 			if(n.isTestnetEnabled())
 				alertNode.addChild("#", l10n("noPeersTestnet"));
@@ -188,7 +186,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		} else if(connError > MIN_CONN_ERROR_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("connError", "count", Integer.toString(connError)));
 		} else if (disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD) {
-			alertNode.addChild("#", l10n("tooManyDisconnected", new String[] { "count", "max" }, new String[] { Integer.toString(disconnected), Integer.toString(MAX_DISCONN_PEER_ALERT_THRESHOLD)}));
+			alertNode.addChild("#", l10n("tooManyDisconnected", new String[] { "count", "max" }, new String[] { Integer.toString(disconnDarknetPeers), Integer.toString(MAX_DISCONN_PEER_ALERT_THRESHOLD)}));
 		} else if (conns > MAX_CONN_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("tooManyConns", new String[] { "count", "max" }, 
 					new String[] { Integer.toString(conns), Integer.toString(MAX_CONN_ALERT_THRESHOLD)}));
