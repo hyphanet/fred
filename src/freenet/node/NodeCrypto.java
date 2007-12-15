@@ -486,4 +486,16 @@ public class NodeCrypto {
 	void setPortForwardingBroken() {
 		this.socket.getAddressTracker().setBroken();
 	}
+
+	/**
+	 * Get my identity.
+	 * @param unknownInitiator Unknown-initiator connections use the hash of the pubkey as the identity to save space
+	 * in packets 3 and 4.
+	 */
+	public byte[] getIdentity(boolean unknownInitiator) {
+		if(unknownInitiator)
+			return this.pubKey.asBytesHash();
+		else
+			return myIdentity;
+	}
 }

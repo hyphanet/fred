@@ -1270,8 +1270,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] locallyGeneratedText = new byte[NONCE_SIZE * 2 + DiffieHellman.modulusLengthInBytes() * 2 + crypto.myIdentity.length + 8 /*bootID*/ + hisRef.length + pn.jfkMyRef.length];
 		int bufferOffset = NONCE_SIZE * 2 + DiffieHellman.modulusLengthInBytes()*2;
 		System.arraycopy(jfkBuffer, 0, locallyGeneratedText, 0, bufferOffset);
-		System.arraycopy(crypto.myIdentity, 0, locallyGeneratedText, bufferOffset, crypto.myIdentity.length);
-		bufferOffset += crypto.myIdentity.length;
+		byte[] identity = crypto.getIdentity(unknownInitiator);
+		System.arraycopy(identity, 0, locallyGeneratedText, bufferOffset, identity.length);
+		bufferOffset += identity.length;
 		// bootID
 		System.arraycopy(data, 0, locallyGeneratedText, bufferOffset, data.length - pn.jfkMyRef.length);
 		bufferOffset += data.length - pn.jfkMyRef.length;
