@@ -414,6 +414,11 @@ public class NodeCrypto {
 	void addPrivateFields(SimpleFieldSet fs) {
 		fs.put("dsaPrivKey", privKey.asFieldSet());
 		fs.putSingle("ark.privURI", myARK.getInsertURI().toString(false, false));
+		// FIXME remove the conditional after we've removed it from exportPublic...
+		// We must save the location!
+		if(fs.get("location") != null)
+			fs.put("location", node.lm.getLocation());
+		
 	}
 
 	public int getIdentityHash(){
