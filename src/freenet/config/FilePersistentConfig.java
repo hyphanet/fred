@@ -62,7 +62,6 @@ public class FilePersistentConfig extends PersistentConfig {
 			} else {
 				// We probably won't be able to write it either.
 				System.err.println("Cannot read config file "+filename);
-				throw new IOException("Cannot read config file");
 			}
 		}
 		if(tempFilename.exists()) {
