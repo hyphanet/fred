@@ -1,6 +1,7 @@
 /* -*- Mode: java; c-basic-indent: 4; tab-width: 4 -*- */
 package freenet.support.transport.ip;
 
+import freenet.io.AddressIdentifier;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -196,8 +197,10 @@ public class IPAddressDetector implements Runnable {
 					} else if(i.isMulticastAddress()) {
 						// Ignore
 					} else {
-						if(!IPUtil.strict)
-						output.add(i);
+						// Ignore ISATAP addresses
+						// @see http://archives.freenetproject.org/message/20071129.220955.ac2a2a36.en.html
+						if(!AddressIdentifier.isAnISATAPIPv6Address(i.toString()))
+							output.add(i);
 					}
 				}
 			}
