@@ -94,14 +94,10 @@ public class FCPClient {
 	 * acked yet, so it should be moved to the unacked-completed-requests set.
 	 */
 	public void finishedClientRequest(ClientRequest get) {
-		ClientRequest dropped = null;
 		synchronized(this) {
 			if(runningPersistentRequests.remove(get)) {
 				completedUnackedRequests.add(get);
 			}	
-		}
-		if(dropped != null) {
-			dropped.dropped();
 		}
 		if(get.isPersistentForever()) {
 			server.forceStorePersistentRequests();
