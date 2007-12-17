@@ -701,7 +701,8 @@ public class SimpleFieldSet {
 	public static SimpleFieldSet readFrom(File f, boolean allowMultiple, boolean shortLived) throws IOException {
 		return readFrom(new FileInputStream(f), allowMultiple, shortLived);
 	}
-        
+     
+	/** Write to the given OutputStream, close it and flush it. */
         public void writeTo(OutputStream os) throws IOException {
             BufferedOutputStream bos = null;
             OutputStreamWriter osw = null;
