@@ -398,19 +398,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				 */
 			} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 				// Write to temp file, then rename over filename
-				FileOutputStream fos = null;
-				boolean closed = false;
 				if(!FileUtil.renameTo(tempFile, targetFile)) {
 					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
 					// Don't delete temp file, user might want it.
 				}
 				returnBucket = new FileBucket(targetFile, false, true, false, false, false);
-				try {
-					if((fos != null) && !closed)
-						fos.close();
-				} catch (IOException e) {
-					Logger.error(this, "Caught "+e+" closing file "+tempFile, e);
-				}
 			}
 			progressPending = null;
 			this.foundDataLength = returnBucket.size();
