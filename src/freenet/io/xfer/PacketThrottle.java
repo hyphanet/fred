@@ -117,7 +117,7 @@ public class PacketThrottle {
 		return lastScheduledDelay;
 	}
 
-	public long getRoundTripTime() {
+	public synchronized long getRoundTripTime() {
 		return _roundTripTime;
 	}
 
