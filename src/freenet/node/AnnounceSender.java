@@ -433,6 +433,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 			}
 		}
 		if(cb != null) cb.nodeFailed(next, "route not found");
+		else cb.noMoreNodes();
 	}
 
 	private void complete() {

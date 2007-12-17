@@ -934,6 +934,10 @@ public class TextModeClientInterface implements Runnable {
 					write("Node failed: "+pn+" "+reason);
 				}
 
+				public void noMoreNodes() {
+					write("Route Not Found");
+				}
+				
 				public void nodeNotWanted() {
 					write("Hop doesn't want me.");
 				}

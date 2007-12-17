@@ -383,6 +383,9 @@ public class Announcer {
 			public void nodeFailed(PeerNode pn, String reason) {
 				Logger.error(this, "Announcement to node "+pn.userToString()+" failed: "+reason);
 			}
+			public void noMoreNodes() {
+				Logger.error(this, "Announcement to "+seed.userToString()+" ran out of nodes (route not found)");
+			}
 			public void nodeNotWanted() {
 				synchronized(Announcer.this) {
 					announcementNotWantedNodes++;
