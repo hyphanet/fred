@@ -377,7 +377,7 @@ public class FCPConnectionHandler {
 		if(job != null)
 			throw new IllegalArgumentException("There is already a TestDDA going on for that directory!");
 		
-		File writeFile = (write ? new File(path, "DDACheck-" + new Random().nextInt() + ".tmp") : null);
+		File writeFile = (write ? new File(path, "DDACheck-" + server.node.fastWeakRandom.nextInt() + ".tmp") : null);
 		File readFile = null;
 		if(read) {
 			try {
