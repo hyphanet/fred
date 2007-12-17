@@ -140,7 +140,6 @@ public class FilePersistentConfig extends PersistentConfig {
 			synchronized(this) {
 				fs.writeTo(fos);
 			}
-			fos.close();
 			FileUtil.renameTo(tempFilename, filename);
 		}
 		finally {

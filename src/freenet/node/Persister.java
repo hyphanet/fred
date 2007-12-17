@@ -62,7 +62,6 @@ class Persister implements Runnable {
 			FileOutputStream fos = new FileOutputStream(persistTemp);
 			try {
 				fs.writeTo(fos);
-				fos.close();
 				FileUtil.renameTo(persistTemp, persistTarget);
 			} catch (IOException e) {
 				persistTemp.delete();

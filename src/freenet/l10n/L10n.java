@@ -143,7 +143,6 @@ public class L10n {
 			fos = new FileOutputStream(tempFile);
                         L10n.translationOverride.writeTo(fos);
 			
-			fos.close();
 			FileUtil.renameTo(tempFile, finalFile);
 			Logger.normal("L10n", "Override file saved successfully!");
 		} catch (IOException e) {
