@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.regex.PatternSyntaxException;
 
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.io.Closer;
 
 /**
  * @author Iakin
@@ -74,6 +75,8 @@ public abstract class Logger {
 					} catch (IOException e) {
 						error(o, "Caught IOException in br.readLine() of OSThread.getFieldFromProcSelfStat()", e);
 						readLine = null;
+					} finally {
+						Closer.close(br);
 					}
 					if(null != readLine) {
 						try {
@@ -86,6 +89,7 @@ public abstract class Logger {
 						}
 					}
 				}
+				Closer.close(br);
 			}
 			return null;
 		}
