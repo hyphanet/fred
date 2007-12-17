@@ -323,14 +323,13 @@ public abstract class FECCodec {
 	public static void addToQueue(FECJob job, FECCodec codec) {
 		synchronized(_awaitingJobs) {
 			if(fecRunnerThread == null) {
-				if(fecRunnerThread != null)
-					Logger.error(FECCodec.class, "The callback died!! restarting a new one, please report that error.");
 				fecRunnerThread = new Thread(fecRunner, "FEC Pool " + (fecPoolCounter++));
 				fecRunnerThread.setDaemon(true);
 				fecRunnerThread.setPriority(Thread.MIN_PRIORITY);
 
 				fecRunnerThread.start();
-			}
+			}else
+				Logger.error(FECCodec.class, "The callback died!! restarting a new one, please report that error.");
 
 			_awaitingJobs.addFirst(job);
 		}
