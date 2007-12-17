@@ -719,7 +719,9 @@ public class SimpleFieldSet {
                 }
                 bw = new BufferedWriter(osw);
                 writeTo(bw);
-		bw.close();
+                // close() calls flush() but IGNORES ALL ERRORS!
+                bw.flush();
+                bw.close();
             }finally {
                 Closer.close(bw);
                 Closer.close(osw);
