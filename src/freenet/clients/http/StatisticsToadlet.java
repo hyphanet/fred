@@ -531,8 +531,8 @@ public class StatisticsToadlet extends Toadlet {
 			
 			row=storeSizeTable.addChild("tr");
 			row.addChild("td", "Distance Stats");
-			row.addChild("td", fix3p1pct.format(storeLocationReports/storeKeys));
-			row.addChild("td", fix3p1pct.format(cacheLocationReports/cachedKeys));
+			row.addChild("td", fix3p1pct.format(1.0*storeLocationReports/storeKeys));
+			row.addChild("td", fix3p1pct.format(1.0*cacheLocationReports/cachedKeys));
 		}
 		
 	}
