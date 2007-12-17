@@ -170,9 +170,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				fail(InsertException.construct(errors), false);
 				return;
 			}
-			//FIXME: do we want to call this.schedule or SimpleSendableInsert.schedule here ??
-			// I would say the former but we are not doing that! - nextgens
-			schedule();
+			super.schedule();
 		}
 
 		private void fail(InsertException e, boolean fatal) {
