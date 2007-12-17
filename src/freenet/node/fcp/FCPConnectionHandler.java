@@ -42,10 +42,10 @@ public class FCPConnectionHandler {
 			byte[] random = new byte[128];
 			
 			r.nextBytes(random);
-			this.readContent = new String(HexUtil.bytesToHex(random));
+			this.readContent = HexUtil.bytesToHex(random);
 
 			r.nextBytes(random);
-			this.writeContent = new String(HexUtil.bytesToHex(random));
+			this.writeContent = HexUtil.bytesToHex(random);
 		}
 	}
 

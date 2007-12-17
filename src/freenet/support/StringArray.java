@@ -21,7 +21,7 @@ public class StringArray {
 			StringBuffer sb = new StringBuffer();
 			for(int i=0; i<array.length; i++)
 				sb.append(array[i].toString()+'|');
-			return '[' + sb.substring(0, sb.length() - 1).toString() + ']';
+			return '[' + sb.substring(0, sb.length() - 1) + ']';
 		}else
 			return "";
 	}
@@ -36,7 +36,7 @@ public class StringArray {
 			StringBuffer sb = new StringBuffer();
 			for(int i=0; i<array.length; i++)
 				sb.append(array[i]+'|');
-			return '[' + sb.substring(0, sb.length() - 1).toString() + ']';
+			return '[' + sb.substring(0, sb.length() - 1) + ']';
 		}else
 			return "";
 	}
