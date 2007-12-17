@@ -246,13 +246,14 @@ public class RequestHandler implements Runnable, ByteCounter {
 				} else {
 					sendTerminal(df);
 				}
+				return;
 			} else {
 				if(!rs.transferStarted()) {
 					Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
 				}
 				// Wait for transfer to start
+				continue;
 			}
-			return;
             	case RequestSender.VERIFY_FAILURE:
             		if(key instanceof NodeCHK) {
             			if(shouldHaveStartedTransfer)
