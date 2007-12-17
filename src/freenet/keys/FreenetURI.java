@@ -467,11 +467,7 @@ public class FreenetURI implements Cloneable{
 		if (metaStr == null)
 			return setMetaString(strs);
 		else {
-			// metaStr could be null... couldn't it? I don't really know this
-			// file..
-			// - amphibian
-			int curLen = (metaStr == null) ? 0 : metaStr.length;
-			newMetaStr = new String[curLen + strs.length];
+			newMetaStr = new String[metaStr.length + strs.length];
 			if (metaStr != null)
 				System.arraycopy(metaStr, 0, newMetaStr, 0, metaStr.length);
 			System.arraycopy(strs, 0, newMetaStr, metaStr.length, strs.length);
