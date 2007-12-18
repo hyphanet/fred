@@ -257,6 +257,8 @@ public class Announcer {
 			}
 		}
 		synchronized(this) {
+			// Double check after taking the lock.
+			if(enoughPeers()) return;
 			// Second, do we have many announcements running?
 			if(runningAnnouncements > WANT_ANNOUNCEMENTS) {
 				if(logMINOR)
