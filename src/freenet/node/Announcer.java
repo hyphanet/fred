@@ -150,7 +150,8 @@ public class Announcer {
 		}, announceNow ? 0 : MIN_ADDED_SEEDS_INTERVAL);
 	}
 
-	private int connectSomeNodesInner(Vector seeds) {
+	// Synchronize to protect announcedToIdentities and prevent running in parallel.
+	private synchronized int connectSomeNodesInner(Vector seeds) {
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes from "+seeds.size());
 		int count = 0;
