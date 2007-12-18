@@ -401,6 +401,8 @@ public abstract class FECCodec {
 						}
 					}
 				}
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t+" in "+this, t);
 			}
 			finally {
 				fecRunnerThread = null;
