@@ -237,23 +237,23 @@ public class RequestHandler implements Runnable, ByteCounter {
             		sendTerminal(rnf);
             		return;
             	case RequestSender.SUCCESS:
-			if(key instanceof NodeSSK) {
-				Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
-				if(needsPubKey) {
-					source.sendAsync(df, null, 0, this);
-					Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
-					sendTerminal(pk);
-				} else {
-					sendTerminal(df);
-				}
-				return;
-			} else {
-				if(!rs.transferStarted()) {
-					Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
-				}
-				// Wait for transfer to start
-				continue;
-			}
+            		if(key instanceof NodeSSK) {
+            			Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
+            			if(needsPubKey) {
+            				source.sendAsync(df, null, 0, this);
+            				Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
+            				sendTerminal(pk);
+            			} else {
+            				sendTerminal(df);
+            			}
+            			return;
+            		} else {
+            			if(!rs.transferStarted()) {
+            				Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
+            			}
+            			// Wait for transfer to start
+            			continue;
+            		}
             	case RequestSender.VERIFY_FAILURE:
             		if(key instanceof NodeCHK) {
             			if(shouldHaveStartedTransfer)
