@@ -151,12 +151,10 @@ public class Announcer {
 					}, NOT_ALL_CONNECTED_DELAY);
 				} else if(connectedToIdentities.size() == announcedToIdentities.size()) {
 					// Clear it now
-					synchronized(this) {
 						announcedToIdentities.clear();
 						announcedToIPs.clear();
 						connectedToIdentities.clear();
 						announceNow = true;
-					}
 				}
 			}
 		}
