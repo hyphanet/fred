@@ -489,6 +489,10 @@ public final class RequestSender implements Runnable, ByteCounter {
         }
 	}
 
+    /**
+     * Finish fetching an SSK. We must have received the data, the headers and the pubkey by this point.
+     * @param next The node we received the data from.
+     */
 	private void finishSSK(PeerNode next) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
