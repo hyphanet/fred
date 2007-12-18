@@ -143,9 +143,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     /** Has a transfer timed out, either directly or downstream? */
     private boolean transferTimedOut;
     
-    /** Runnable which waits for completion of all transfers */
-    private CompletionWaiter cw;
-
     private int status = -1;
     /** Still running */
     static final int NOT_FINISHED = -1;
@@ -367,7 +364,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             	backgroundTransfers.notifyAll();
             }
             ac.start();
-            makeCompletionWaiter();
 
             while (true) {
 
@@ -532,26 +528,20 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         	notifyAll();
         	if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         }
+		
         // Now wait for transfers, or for downstream transfer notifications.
-        if(cw != null) {
-        	synchronized(this) {
-        		while(!allTransfersCompleted && cw!=null) {
-        			try {
-        				wait(10*1000);
-        			} catch (InterruptedException e) {
-        				// Try again
-        			}
-        		}
-        	}
-        }
-		if (cw==null) {
-        	if(logMINOR) Logger.minor(this, "No completion waiter");
-        	// There weren't any transfers
+		synchronized(backgroundTransfers) {
+			if (!backgroundTransfers.isEmpty()) {
+				waitForBackgroundTransferCompletions();
+			} else {
+				if(logMINOR) Logger.minor(this, "No background transfers");
+			}
+		}
+        
         	synchronized(this) {
         		allTransfersCompleted = true;
         		notifyAll();
         	}
-        }
         
         if(status == SUCCESS && next != null)
         	next.onSuccess(true, false);
@@ -583,7 +573,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     	synchronized(this) {
     		status = RECEIVE_FAILED;
     		allTransfersCompleted = true;
-    		cw = null; // Effectively ... we certainly don't want to wait for it.
+			//FIXME: Won't this leak unclaimed FIFO elements?
+    		backgroundTransfers.clear(); // Effectively ... we certainly don't want to wait for it.
     		notifyAll();
     	}
     	// Do not call finish(), that can only be called on the main thread and it will block.
@@ -613,28 +604,13 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	public synchronized boolean sentRequest() {
 		return sentRequest;
 	}
-	
-	private void makeCompletionWaiter() {
-		if(logMINOR)
-			Logger.minor(this, "Creating completion waiter for "+uid);
-		synchronized (this) {
-			if(cw == null)
-				cw = new CompletionWaiter();
-			else
-				return;
-		}
-		node.executor.execute(cw, "Completion waiter for "+uid);
-	}
-	
-	private class CompletionWaiter implements Runnable {
 		
-		public void run() {
+		public void waitForBackgroundTransferCompletions() {
 			try {
 		    freenet.support.Logger.OSThread.logPID(this);
 			if(logMINOR) Logger.minor(this, "Starting "+this);
 			
-			// Wait for the request to reach a terminal stage.
-			waitForStatus();
+			// We are presently at a terminal stage.
 			
 			BackgroundTransfer[] transfers;
 			synchronized(backgroundTransfers) {
@@ -781,10 +757,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			}
 		}
 
-		public String toString() {
-			return super.toString()+" for "+uid;
-		}
-	}
 
 	public synchronized boolean completed() {
 		return allTransfersCompleted;
@@ -855,6 +827,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	}
 
 	public synchronized boolean startedSendingData() {
-		return cw != null;
+		return !backgroundTransfers.isEmpty();
 	}
 }
