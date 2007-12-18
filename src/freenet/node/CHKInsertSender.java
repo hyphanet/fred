@@ -24,36 +24,7 @@ import freenet.support.OOMHandler;
 
 public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 	
-	private static class Sender implements Runnable {
-		
-		final AwaitingCompletion completion;
-		final BlockTransmitter bt;
-		final Executor executor;
-		
-		public Sender(AwaitingCompletion ac, Executor executor) {
-			this.bt = ac.bt;
-			this.completion = ac;
-			this.executor = executor;
-		}
-		
-		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
-			try {
-				bt.send(executor);
-				if(bt.failedDueToOverload()) {
-					completion.completedTransfer(false);
-				} else {
-					completion.completedTransfer(true);
-				}
-			} catch (Throwable t) {
-				completion.completedTransfer(false);
-				Logger.error(this, "Caught "+t, t);
-			}
-		}
-	}
-	
-	private class AwaitingCompletion {
-		
+	private class AwaitingCompletion implements Runnable {
 		/** Node we are waiting for response from */
 		final PeerNode pn;
 		/** We may be sending data to that node */
@@ -79,34 +50,32 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 		
 		void start() {
-			Sender s = new Sender(this, node.executor);
-			node.executor.execute(s, "Sender for "+uid+" to "+pn.getPeer());
+			node.executor.execute(this, "CHKInsert-AwaitingCompletion for "+uid+" to "+pn.getPeer());
+		}
+		
+		public void run() {
+			freenet.support.Logger.OSThread.logPID(this);
+			try {
+				bt.send(node.executor);
+				if(bt.failedDueToOverload()) {
+					this.completed(false, false);
+				} else {
+					this.completed(false, true);
+				}
+			} catch (Throwable t) {
+				this.completed(false, false);
+				Logger.error(this, "Caught "+t, t);
+			}
 		}
 		
 		void completed(boolean timeout, boolean success) {
+			if (logMINOR) Logger.minor(this, "CHKInsert-AwaitingCompletion complete (timeout="+timeout+", success="+success);
+			if (success && timeout)
+				throw new IllegalArgumentException("how can a request successfully timeout?");
 			synchronized(this) {
-				if(timeout)
-					completionTimedOut = true;
-				else
-					completionSucceeded = success;
+				completionTimedOut = timeout;
+				completionSucceeded = success;
 				receivedCompletionNotice = true;
-				notifyAll();
-			}
-			synchronized(nodesWaitingForCompletion) {
-				nodesWaitingForCompletion.notifyAll();
-			}
-			if(!success) {
-				synchronized(CHKInsertSender.this) {
-					transferTimedOut = true;
-					CHKInsertSender.this.notifyAll();
-				}
-			}
-		}
-		
-		void completedTransfer(boolean success) {
-			synchronized(this) {
-				transferSucceeded = success;
-				completedTransfer = true;
 				notifyAll();
 			}
 			synchronized(nodesWaitingForCompletion) {
@@ -444,7 +413,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				if (msg.getSpec() == DMT.FNPRouteNotFound) {
 					if(logMINOR) Logger.minor(this, "Rejected: RNF");
 					short newHtl = msg.getShort(DMT.HTL);
-					Logger.error(this, "CHKInsert-RNF: htl="+htl+", msg.htl="+newHtl);
 					synchronized (this) {
 						if (htl > newHtl)
 							htl = newHtl;						
@@ -697,8 +665,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				timeout = (int)Math.min(Integer.MAX_VALUE, (transfersCompletedTime + TRANSFER_COMPLETION_ACK_TIMEOUT) - now);
 				if(timeout <= 0) {
 					synchronized(CHKInsertSender.this) {
-						if(logMINOR) Logger.minor(this, "Timed out waiting for transfers to complete on "+uid);
+						Logger.error(this, "Timed out waiting for transfers to complete on "+uid);
 						transferTimedOut = true;
+						//CHKInsertSender.this.notifyAll();
 					}
 					return;
 				}
@@ -743,9 +712,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					}
 					if(m == null) {
 						Logger.error(this, "Timed out waiting for a final ack from any nodes.");
-						//Would looping again help? We will either:
-						// (1) time out again (and be right back here if there is more time left), or
-						// (2) notice that the nodes we are waiting on are down and exit immediately.
+						//Would looping again help? We could either:
+						// (1) loop and notice that there is no more time left (handling the timeout), or
+						// (2) notice that the nodes we are waiting on are down and possibly exit gracefully (not implemented).
 						continue;
 					} else {
 						// Process message
