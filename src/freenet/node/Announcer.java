@@ -164,7 +164,7 @@ public class Announcer {
 			try {
 				SeedServerPeerNode seed =
 					new SeedServerPeerNode(fs, node, om.crypto, node.peers, false, om.crypto.packetMangler);
-				if(announcedToIdentities.contains(seed.identity)) {
+				if(announcedToIdentities.contains(new ByteArrayWrapper(seed.identity))) {
 					if(logMINOR)
 						Logger.minor(this, "Not adding: already announced-to: "+seed.userToString());
 					continue;
@@ -299,7 +299,7 @@ public class Announcer {
 				sentAnnouncements++;
 				runningAnnouncements++;
 				timeSentAnnouncement = now;
-				announcedToIdentities.add(seed.getIdentity());
+				announcedToIdentities.add(new ByteArrayWrapper(seed.getIdentity()));
 				sendAnnouncement(seed);
 			}
 			if(runningAnnouncements >= WANT_ANNOUNCEMENTS) {
