@@ -133,36 +133,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         
         Object o = node.makeRequestSender(key, htl, uid, source, closestLoc, resetClosestLoc, false, true, false);
         if(o instanceof KeyBlock) {
-            KeyBlock block = (KeyBlock) o;
-            Message df = createDataFound(block);
-            source.sendAsync(df, null, 0, this);
-            if(key instanceof NodeSSK) {
-                if(needsPubKey) {
-                	DSAPublicKey key = ((NodeSSK)block.getKey()).getPubKey();
-                	Message pk = DMT.createFNPSSKPubKey(uid, key);
-                	if(logMINOR) Logger.minor(this, "Sending PK: "+key+ ' ' +key.toLongString());
-                	sendTerminal(pk);
-                }
-                status = RequestSender.SUCCESS; // for byte logging
-            }
-            if(block instanceof CHKBlock) {
-            	PartiallyReceivedBlock prb =
-            		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
-            	BlockTransmitter bt =
-            		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
-            	node.addTransferringRequestHandler(uid);
-            	if(bt.send(node.executor)) {
-                    // for byte logging
-            		status = RequestSender.SUCCESS;
-            		// We've fetched it from our datastore, so there won't be a downstream noderef.
-            		// But we want to send at least an FNPOpennetCompletedAck, otherwise the request source
-            		// may have to timeout waiting for one. That will be the terminal message.
-           			finishOpennetNoRelay();
-				} else {
-                    //also for byte logging, since the block is the 'terminal' message.
-                    applyByteCounts();
-            	}
-            }
+        	returnLocalData((KeyBlock)o);
             return;
         }
         rs = (RequestSender) o;
@@ -282,6 +253,43 @@ public class RequestHandler implements Runnable, ByteCounter {
 	}
 
     /**
+     * Return data from the datastore.
+     * @param block The block we found in the datastore.
+     * @throws NotConnectedException If we lose the connected to the request source.
+     */
+    private void returnLocalData(KeyBlock block) throws NotConnectedException {
+        Message df = createDataFound(block);
+        source.sendAsync(df, null, 0, this);
+        if(key instanceof NodeSSK) {
+            if(needsPubKey) {
+            	DSAPublicKey key = ((NodeSSK)block.getKey()).getPubKey();
+            	Message pk = DMT.createFNPSSKPubKey(uid, key);
+            	if(logMINOR) Logger.minor(this, "Sending PK: "+key+ ' ' +key.toLongString());
+            	sendTerminal(pk);
+            }
+            status = RequestSender.SUCCESS; // for byte logging
+        }
+        if(block instanceof CHKBlock) {
+        	PartiallyReceivedBlock prb =
+        		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
+        	BlockTransmitter bt =
+        		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
+        	node.addTransferringRequestHandler(uid);
+        	if(bt.send(node.executor)) {
+                // for byte logging
+        		status = RequestSender.SUCCESS;
+        		// We've fetched it from our datastore, so there won't be a downstream noderef.
+        		// But we want to send at least an FNPOpennetCompletedAck, otherwise the request source
+        		// may have to timeout waiting for one. That will be the terminal message.
+       			finishOpennetNoRelay();
+			} else {
+                //also for byte logging, since the block is the 'terminal' message.
+                applyByteCounts();
+        	}
+        }
+	}
+
+	/**
      * Sends the 'final' packet of a request in such a way that the thread can be freed (made non-runnable/exit)
      * and the byte counter will still be accurate.
      */
