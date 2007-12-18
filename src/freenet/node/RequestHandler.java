@@ -238,6 +238,8 @@ public class RequestHandler implements Runnable, ByteCounter {
             		return;
             	case RequestSender.SUCCESS:
             		if(key instanceof NodeSSK) {
+            			// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
+            			// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
             			Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
             			if(needsPubKey) {
             				source.sendAsync(df, null, 0, this);
