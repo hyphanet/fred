@@ -73,6 +73,7 @@ public class JPEGFilter implements ContentDataFilter {
 		Bucket ret = null;
 		try {
 			ret = readFilter(data, bf, charset, otherParams, cb, deleteComments, deleteExif, os);
+			os.flush();
 			os.close();
 		} finally {
 			Closer.close(os);

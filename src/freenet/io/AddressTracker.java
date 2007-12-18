@@ -268,6 +268,7 @@ public class AddressTracker {
 			BufferedWriter bw = new BufferedWriter(osw);
 			SimpleFieldSet fs = getFieldset(bootID);
 			fs.writeTo(bw);
+			bw.flush();
 			bw.close();
 			fos = null;
 			dataBak.renameTo(data);

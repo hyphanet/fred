@@ -263,6 +263,7 @@ public class Yarrow extends RandomSource {
 			for(int i = 0; i < 32; i++)
 				dos.writeLong(nextLong());
 			
+			dos.flush();
 			dos.close();
 		} catch(IOException e) {
 			Logger.error(this, "IOE while saving the seed file! : " + e.getMessage());

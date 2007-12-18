@@ -428,6 +428,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				zos.closeEntry();
 				// Both finish() and close() are necessary.
 				zos.finish();
+				zos.flush();
 				zos.close();
 				
 				// Now we have to insert the ZIP.

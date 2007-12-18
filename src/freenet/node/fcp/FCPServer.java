@@ -601,6 +601,7 @@ public class FCPServer implements Runnable {
 					for(int i=0;i<persistentRequests.length;i++)
 						persistentRequests[i].write(w);
 					
+					w.flush();
 					w.close();
 					FileUtil.renameTo(compressedTemp, compressedFinal);
 				} catch (IOException e) {

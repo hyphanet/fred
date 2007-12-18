@@ -515,6 +515,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 						bbos.write((int) b & 0xff);
 				}
 
+				bbos.flush();
 				bbos.close();
 			
 				parts.put(name, filedata);
