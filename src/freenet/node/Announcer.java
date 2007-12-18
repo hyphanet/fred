@@ -105,8 +105,6 @@ public class Announcer {
 		node.clientCore.alerts.register(new AnnouncementUserAlert());
 	}
 
-	private long timeLastAddedSeednodes;
-	
 	private void connectSomeSeednodes() {
 		boolean announceNow = false;
 		if(logMINOR)
@@ -114,8 +112,8 @@ public class Announcer {
 		Vector/*<SimpleFieldSet>*/ seeds = readSeednodes();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			if(now - timeLastAddedSeednodes < MIN_ADDED_SEEDS_INTERVAL) return;
-			timeLastAddedSeednodes = now;
+			if(now - timeAddedSeeds < MIN_ADDED_SEEDS_INTERVAL) return;
+			timeAddedSeeds = now;
 			if(seeds.size() == 0) {
 				status = STATUS_NO_SEEDNODES;
 				return;
