@@ -222,9 +222,13 @@ public class RequestHandler implements Runnable, ByteCounter {
             			return;
             		} else {
             			if(!rs.transferStarted()) {
+            				// Bug! This is impossible!
             				Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
+            			} else {
+            				// Race condition. We need to go around the loop again and pick up the data transfer
+            				// in waitStatus.
             			}
-            			// Wait for transfer to start
+            			// Either way, go back around the loop.
             			continue;
             		}
             	case RequestSender.VERIFY_FAILURE:
