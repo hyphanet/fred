@@ -246,16 +246,15 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             // Can backtrack, so only route to nodes closer than we are to target.
             double nextValue;
             next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
-            if(next != null)
-                nextValue = next.getLocation();
-            else
-                nextValue = -1.0;
-            
+			
             if(next == null) {
                 // Backtrack
                 finish(ROUTE_NOT_FOUND, null);
                 return;
             }
+			
+			nextValue = next.getLocation();
+			
             if(logMINOR) Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
             
@@ -445,6 +444,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				if (msg.getSpec() == DMT.FNPRouteNotFound) {
 					if(logMINOR) Logger.minor(this, "Rejected: RNF");
 					short newHtl = msg.getShort(DMT.HTL);
+					Logger.error(this, "CHKInsert-RNF: htl="+htl+", msg.htl="+newHtl);
 					synchronized (this) {
 						if (htl > newHtl)
 							htl = newHtl;						
@@ -513,12 +513,13 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					finish(INTERNAL_ERROR, next);
 					return;
 				}else{
-					// Our task is complete
+					// Our task is complete, one node (quite deep), has accepted the insert.
 					next.successNotOverload();
 					finish(SUCCESS, next);
 					return;
 				}
 			}
+			if (logMINOR) Logger.debug(this, "Trying alternate node for insert");
 		}
 	}
 
@@ -566,7 +567,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         // Now wait for transfers, or for downstream transfer notifications.
         if(cw != null) {
         	synchronized(this) {
-        		while(!allTransfersCompleted) {
+        		while(!allTransfersCompleted && cw!=null) {
         			try {
         				wait(10*1000);
         			} catch (InterruptedException e) {
@@ -574,7 +575,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         			}
         		}
         	}
-        } else {
+        }
+		if (cw==null) {
         	if(logMINOR) Logger.minor(this, "No completion waiter");
         	// There weren't any transfers
         	synchronized(this) {
@@ -702,6 +704,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				}
 				
 				MessageFilter mf = null;
+				
+				//Build a message filter to capture acknowledgement messages from the nodes we are interested in.
 				for(int i=0;i<waiters.length;i++) {
 					AwaitingCompletion awc = waiters[i];
 					// If disconnected, ignore.
@@ -725,7 +729,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					}
 				}
 				
-				if(mf == null) {
+				if (mf==null) {
+					if (logMINOR) Logger.minor(this, "Done waiting, no more completion listeners");
 					return;
 				} else {
 					Message m;
@@ -736,7 +741,13 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 						// Go around the loop again to find out.
 						continue;
 					}
-					if(m != null) {
+					if(m == null) {
+						Logger.error(this, "Timed out waiting for a final ack from any nodes.");
+						//Would looping again help? We will either:
+						// (1) time out again (and be right back here if there is more time left), or
+						// (2) notice that the nodes we are waiting on are down and exit immediately.
+						continue;
+					} else {
 						// Process message
 						PeerNode pn = (PeerNode) m.getSource();
 						// pn cannot be null, because the filters will prevent garbage collection of the nodes
