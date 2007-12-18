@@ -24,7 +24,7 @@ import freenet.support.OOMHandler;
 
 public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 	
-	private class AwaitingCompletion implements Runnable {
+	private class BackgroundTransfer implements Runnable {
 		/** Node we are waiting for response from */
 		final PeerNode pn;
 		/** We may be sending data to that node */
@@ -44,13 +44,13 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		/** Did it succeed? */
 		boolean transferSucceeded;
 		
-		AwaitingCompletion(PeerNode pn, PartiallyReceivedBlock prb) {
+		BackgroundTransfer(PeerNode pn, PartiallyReceivedBlock prb) {
 			this.pn = pn;
 			bt = new BlockTransmitter(node.usm, pn, uid, prb, node.outputThrottle, CHKInsertSender.this);
 		}
 		
 		void start() {
-			node.executor.execute(this, "CHKInsert-AwaitingCompletion for "+uid+" to "+pn.getPeer());
+			node.executor.execute(this, "CHKInsert-BackgroundTransfer for "+uid+" to "+pn.getPeer());
 		}
 		
 		public void run() {
@@ -69,7 +69,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 		
 		void completed(boolean timeout, boolean success) {
-			if (logMINOR) Logger.minor(this, "CHKInsert-AwaitingCompletion complete (timeout="+timeout+", success="+success);
+			if (logMINOR) Logger.minor(this, "CHKInsert-BackgroundTransfer complete (timeout="+timeout+", success="+success);
 			if (success && timeout)
 				throw new IllegalArgumentException("how can a request successfully timeout?");
 			synchronized(this) {
@@ -78,8 +78,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				receivedCompletionNotice = true;
 				notifyAll();
 			}
-			synchronized(nodesWaitingForCompletion) {
-				nodesWaitingForCompletion.notifyAll();
+			synchronized(backgroundTransfers) {
+				backgroundTransfers.notifyAll();
 			}
 			if(!success) {
 				synchronized(CHKInsertSender.this) {
@@ -103,7 +103,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         this.fromStore = fromStore;
         this.closestLocation = closestLocation;
         this.startTime = System.currentTimeMillis();
-        this.nodesWaitingForCompletion = new Vector();
+        this.backgroundTransfers = new Vector();
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
@@ -135,7 +135,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     
     /** List of nodes we are waiting for either a transfer completion
      * notice or a transfer completion from. Also used as a sync object for waiting for transfer completion. */
-    private Vector nodesWaitingForCompletion;
+    private Vector backgroundTransfers;
     
     /** Have all transfers completed and all nodes reported completion status? */
     private boolean allTransfersCompleted;
@@ -361,10 +361,10 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 
 			if(logMINOR) Logger.minor(this, "Sending data");
             if(receiveFailed) return;
-            AwaitingCompletion ac = new AwaitingCompletion(next, prbNow);
-            synchronized(nodesWaitingForCompletion) {
-            	nodesWaitingForCompletion.add(ac);
-            	nodesWaitingForCompletion.notifyAll();
+            BackgroundTransfer ac = new BackgroundTransfer(next, prbNow);
+            synchronized(backgroundTransfers) {
+            	backgroundTransfers.add(ac);
+            	backgroundTransfers.notifyAll();
             }
             ac.start();
             makeCompletionWaiter();
@@ -572,9 +572,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
      * failed.
      */
     public void receiveFailed() {
-    	synchronized(nodesWaitingForCompletion) {
+    	synchronized(backgroundTransfers) {
     		receiveFailed = true;
-    		nodesWaitingForCompletion.notifyAll();
+    		backgroundTransfers.notifyAll();
     	}
     	// Set status immediately.
     	// The code (e.g. waitForStatus()) relies on a status eventually being set,
@@ -636,14 +636,14 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			// Wait for the request to reach a terminal stage.
 			waitForStatus();
 			
-			AwaitingCompletion[] waiters;
-			synchronized(nodesWaitingForCompletion) {
-				waiters = new AwaitingCompletion[nodesWaitingForCompletion.size()];
-				waiters = (AwaitingCompletion[]) nodesWaitingForCompletion.toArray(waiters);
+			BackgroundTransfer[] transfers;
+			synchronized(backgroundTransfers) {
+				transfers = new BackgroundTransfer[backgroundTransfers.size()];
+				transfers = (BackgroundTransfer[]) backgroundTransfers.toArray(transfers);
 			}
 			
 			// Wait for the outgoing transfers to complete.
-			if(!waitForCompletedTransfers(waiters)) {
+			if(!waitForCompletedTransfers(transfers)) {
 				synchronized(CHKInsertSender.this) {
 					transferTimedOut = true; // probably, they disconnected
 					return;
@@ -656,7 +656,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			
 			while(true) {
 				
-				synchronized(nodesWaitingForCompletion) {
+				synchronized(backgroundTransfers) {
 					if(receiveFailed) return;
 				}
 				// First calculate the timeout
@@ -675,8 +675,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				MessageFilter mf = null;
 				
 				//Build a message filter to capture acknowledgement messages from the nodes we are interested in.
-				for(int i=0;i<waiters.length;i++) {
-					AwaitingCompletion awc = waiters[i];
+				for(int i=0;i<transfers.length;i++) {
+					BackgroundTransfer awc = transfers[i];
 					// If disconnected, ignore.
 					if(!awc.pn.isRoutable()) {
 						Logger.normal(this, "Disconnected: "+awc.pn+" in "+CHKInsertSender.this);
@@ -721,11 +721,11 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 						PeerNode pn = (PeerNode) m.getSource();
 						// pn cannot be null, because the filters will prevent garbage collection of the nodes
 						boolean processed = false;
-						for(int i=0;i<waiters.length;i++) {
-							PeerNode p = waiters[i].pn;
+						for(int i=0;i<transfers.length;i++) {
+							PeerNode p = transfers[i].pn;
 							if(p == pn) {
 								boolean anyTimedOut = m.getBoolean(DMT.ANY_TIMED_OUT);
-								waiters[i].completed(false, !anyTimedOut);
+								transfers[i].completed(false, !anyTimedOut);
 								if(anyTimedOut) {
 									synchronized(CHKInsertSender.this) {
 										if(!transferTimedOut) {
@@ -753,15 +753,15 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 
 		/** Block until all transfers have finished. @return True if there is any point in waiting for acknowledgements. */
-		private boolean waitForCompletedTransfers(AwaitingCompletion[] waiters) {
+		private boolean waitForCompletedTransfers(BackgroundTransfer[] transfers) {
 			// MAYBE all done
 			while(true) {
 				boolean noneRouteable = true;
 				boolean completedTransfers = true;
-				for(int i=0;i<waiters.length;i++) {
-					if(!waiters[i].pn.isRoutable()) continue;
+				for(int i=0;i<transfers.length;i++) {
+					if(!transfers[i].pn.isRoutable()) continue;
 					noneRouteable = false;
-					if(!waiters[i].completedTransfer) {
+					if(!transfers[i].completedTransfer) {
 						completedTransfers = false;
 						break;
 					}
@@ -769,11 +769,11 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				if(completedTransfers) return true;
 				if(noneRouteable) return false;
 
-				synchronized(nodesWaitingForCompletion) {
+				synchronized(backgroundTransfers) {
 					if(receiveFailed) return false;
 					if(logMINOR) Logger.minor(this, "Waiting for completion");
 					try {
-						nodesWaitingForCompletion.wait(100*1000);
+						backgroundTransfers.wait(100*1000);
 					} catch (InterruptedException e) {
 						// Ignore
 					}
