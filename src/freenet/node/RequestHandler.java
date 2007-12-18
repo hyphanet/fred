@@ -224,6 +224,10 @@ public class RequestHandler implements Runnable, ByteCounter {
             			if(!rs.transferStarted()) {
             				// Bug! This is impossible!
             				Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
+            				// Could be a wierd synchronization bug, but we don't want to wait forever, so treat it as overload.
+                    	    reject = DMT.createFNPRejectedOverload(uid, true);
+                    		sendTerminal(reject);
+                    		return;
             			} else {
             				// Race condition. We need to go around the loop again and pick up the data transfer
             				// in waitStatus.
