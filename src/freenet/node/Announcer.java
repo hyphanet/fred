@@ -110,13 +110,13 @@ public class Announcer {
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes...");
 		Vector/*<SimpleFieldSet>*/ seeds = readSeednodes();
-		if(seeds.size() == 0) {
-			synchronized(this) {
+		synchronized(this) {
+			if(seeds.size() == 0) {
 				status = STATUS_NO_SEEDNODES;
 				return;
+			} else {
+				status = STATUS_CONNECTING_SEEDNODES;
 			}
-		} else {
-			status = STATUS_CONNECTING_SEEDNODES;
 		}
 		// Try to connect to some seednodes.
 		// Once they are connected they will report back and we can attempt an announcement.
