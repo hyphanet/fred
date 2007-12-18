@@ -143,6 +143,7 @@ public class Announcer {
 							if(runningAnnouncements != 0) return;
 							announcedToIdentities.clear();
 							announcedToIPs.clear();
+							connectedToIdentities.clear();
 						}
 						maybeSendAnnouncement();
 					}
@@ -152,6 +153,7 @@ public class Announcer {
 				synchronized(this) {
 					announcedToIdentities.clear();
 					announcedToIPs.clear();
+					connectedToIdentities.clear();
 					announceNow = true;
 				}
 			}
