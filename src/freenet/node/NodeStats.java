@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.io.File;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -990,6 +991,7 @@ public class NodeStats implements Persistable {
 	}
 
 	private final DecimalFormat fix3p3pct = new DecimalFormat("##0.000%");
+	private final NumberFormat thousendPoint = NumberFormat.getInstance();
 	
 	public void fillSuccessRateBox(HTMLNode parent) {
 		HTMLNode list = parent.addChild("table", "border", "0");
@@ -1018,10 +1020,10 @@ public class NodeStats implements Persistable {
 			row.addChild("td", names[i]);
 			if (averages[i].countReports()==0) {
 				row.addChild("td", "-");
-				row.addChild("td", "0.0");
+				row.addChild("td", "0");
 			} else {
-			row.addChild("td", fix3p3pct.format(averages[i].currentValue()));
-			row.addChild("td", Double.toString(averages[i].countReports()));
+				row.addChild("td", fix3p3pct.format(averages[i].currentValue()));
+				row.addChild("td", thousendPoint.format(averages[i].countReports()));
 			}
 		}
 	}
