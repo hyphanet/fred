@@ -33,9 +33,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		 * or failure of dependant transfers from that node?
 		 * Includes timing out. */
 		boolean receivedCompletionNotice;
-		/** Timed out - didn't receive completion notice in
-		 * the allotted time?? */
-		boolean completionTimedOut;
+
 		/** Was the notification of successful transfer? */
 		boolean completionSucceeded;
 		
@@ -57,25 +55,17 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
 				bt.send(node.executor);
-				if(bt.failedDueToOverload()) {
-					this.completed(false, false);
-				} else {
-					this.completed(false, true);
-				}
+				this.completedTransfer(bt.failedDueToOverload());
 			} catch (Throwable t) {
-				this.completed(false, false);
+				this.completedTransfer(false);
 				Logger.error(this, "Caught "+t, t);
 			}
 		}
 		
-		void completed(boolean timeout, boolean success) {
-			if (logMINOR) Logger.minor(this, "CHKInsert-BackgroundTransfer complete (timeout="+timeout+", success="+success);
-			if (success && timeout)
-				throw new IllegalArgumentException("how can a request successfully timeout?");
+		void completedTransfer(boolean success) {
 			synchronized(this) {
-				completionTimedOut = timeout;
-				completionSucceeded = success;
-				receivedCompletionNotice = true;
+				transferSucceeded = success;
+				completedTransfer = true;
 				notifyAll();
 			}
 			synchronized(backgroundTransfers) {
@@ -88,6 +78,24 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				}
 			}
 		}
+		
+		void receivedNotice(boolean success) {
+			synchronized(this) {
+				completionSucceeded = success;
+				receivedCompletionNotice = true;
+				notifyAll();
+			}
+			synchronized(backgroundTransfers) {
+				backgroundTransfers.notifyAll();
+			}
+			if(!success) {
+				synchronized(CHKInsertSender.this) {
+					transferTimedOut = true;
+					CHKInsertSender.this.notifyAll();
+				}
+			}			
+		}
+		
 	}
 	
 	CHKInsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
@@ -701,7 +709,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 							PeerNode p = transfers[i].pn;
 							if(p == pn) {
 								boolean anyTimedOut = m.getBoolean(DMT.ANY_TIMED_OUT);
-								transfers[i].completed(false, !anyTimedOut);
+								transfers[i].receivedNotice(!anyTimedOut);
 								if(anyTimedOut) {
 									synchronized(CHKInsertSender.this) {
 										if(!transferTimedOut) {
