@@ -170,7 +170,8 @@ public class BinaryBlobInserter implements ClientPutState {
 				fail(InsertException.construct(errors), false);
 				return;
 			}
-			schedule();
+			// Reschedule *this block*
+			this.schedule();
 		}
 
 		private void fail(InsertException e, boolean fatal) {
