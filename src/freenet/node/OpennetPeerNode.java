@@ -84,5 +84,13 @@ public class OpennetPeerNode extends PeerNode {
 	protected boolean generateIdentityFromPubkey() {
 		return false;
 	}
-    
+ 
+	public boolean equals(Object o) {
+		if(o == this) return true;
+		// Only equal to seednode of its own type.
+		if(o instanceof OpennetPeerNode) {
+			return super.equals(o);
+		} else return false;
+	}
+	
 }
