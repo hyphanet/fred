@@ -287,13 +287,23 @@ public class ClientGetter extends BaseClientGetter {
 		if(binaryBlobKeysAddedAlready == null) return true;
 		synchronized(binaryBlobKeysAddedAlready) {
 			if(binaryBlobStream == null) return true;
+			boolean triedClose = false;
 			try {
 				BinaryBlob.writeEndBlob(binaryBlobStream);
+				binaryBlobStream.flush();
+				triedClose = true;
 				binaryBlobStream.close();
 				return true;
 			} catch (IOException e) {
 				Logger.error(this, "Failed to close binary blob stream: "+e, e);
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+e), null);
+				if(!triedClose) {
+					try {
+						binaryBlobStream.close();
+					} catch (IOException e1) {
+						// Ignore
+					}
+				}
 				return false;
 			} finally {
 				binaryBlobStream = null;
