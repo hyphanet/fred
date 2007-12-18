@@ -126,6 +126,7 @@ public class Announcer {
 		// Once they are connected they will report back and we can attempt an announcement.
 
 		int count = connectSomeNodesInner(seeds);
+		synchronized(this) {
 		if(logMINOR)
 			Logger.minor(this, "count = "+count+" connected = "+connectedToIdentities.size()+
 					" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements);
@@ -157,6 +158,7 @@ public class Announcer {
 					announceNow = true;
 				}
 			}
+		}
 		}
 		// If none connect in a minute, try some more.
 		node.getTicker().queueTimedJob(new Runnable() {
