@@ -133,6 +133,8 @@ public class Announcer {
 			if(connectedToIdentities.size() > announcedToIdentities.size()) {
 				// Some seednodes we haven't been able to connect to yet.
 				// Give it another minute, then clear all and try again.
+				if(logMINOR)
+					Logger.minor(this, "Will clear announced-to in 1 minute...");
 				node.getTicker().queueTimedJob(new Runnable() {
 					public void run() {
 						if(logMINOR)
@@ -145,6 +147,13 @@ public class Announcer {
 						maybeSendAnnouncement();
 					}
 				}, NOT_ALL_CONNECTED_DELAY);
+			} else if(connectedToIdentities.size() == announcedToIdentities.size()) {
+				// Clear it now
+				synchronized(this) {
+					announcedToIdentities.clear();
+					announcedToIPs.clear();
+					announceNow = true;
+				}
 			}
 		}
 		// If none connect in a minute, try some more.
