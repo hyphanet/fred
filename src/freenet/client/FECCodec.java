@@ -328,9 +328,7 @@ public abstract class FECCodec {
 				fecRunnerThread.setPriority(Thread.MIN_PRIORITY);
 
 				fecRunnerThread.start();
-			}else
-				Logger.error(FECCodec.class, "The callback died!! restarting a new one, please report that error.");
-
+			}
 			_awaitingJobs.addFirst(job);
 		}
 		if(logMINOR)
