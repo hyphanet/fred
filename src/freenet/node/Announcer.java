@@ -127,38 +127,38 @@ public class Announcer {
 
 		int count = connectSomeNodesInner(seeds);
 		synchronized(this) {
-		if(logMINOR)
-			Logger.minor(this, "count = "+count+" connected = "+connectedToIdentities.size()+
-					" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements);
-		if(count == 0 && runningAnnouncements == 0) {
-			if(connectedToIdentities.size() > announcedToIdentities.size()) {
-				// Some seednodes we haven't been able to connect to yet.
-				// Give it another minute, then clear all and try again.
-				if(logMINOR)
-					Logger.minor(this, "Will clear announced-to in 1 minute...");
-				node.getTicker().queueTimedJob(new Runnable() {
-					public void run() {
-						if(logMINOR)
-							Logger.minor(this, "Clearing old announced-to list");
-						synchronized(Announcer.this) {
-							if(runningAnnouncements != 0) return;
-							announcedToIdentities.clear();
-							announcedToIPs.clear();
-							connectedToIdentities.clear();
+			if(logMINOR)
+				Logger.minor(this, "count = "+count+" connected = "+connectedToIdentities.size()+
+						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements);
+			if(count == 0 && runningAnnouncements == 0) {
+				if(connectedToIdentities.size() > announcedToIdentities.size()) {
+					// Some seednodes we haven't been able to connect to yet.
+					// Give it another minute, then clear all and try again.
+					if(logMINOR)
+						Logger.minor(this, "Will clear announced-to in 1 minute...");
+					node.getTicker().queueTimedJob(new Runnable() {
+						public void run() {
+							if(logMINOR)
+								Logger.minor(this, "Clearing old announced-to list");
+							synchronized(Announcer.this) {
+								if(runningAnnouncements != 0) return;
+								announcedToIdentities.clear();
+								announcedToIPs.clear();
+								connectedToIdentities.clear();
+							}
+							maybeSendAnnouncement();
 						}
-						maybeSendAnnouncement();
+					}, NOT_ALL_CONNECTED_DELAY);
+				} else if(connectedToIdentities.size() == announcedToIdentities.size()) {
+					// Clear it now
+					synchronized(this) {
+						announcedToIdentities.clear();
+						announcedToIPs.clear();
+						connectedToIdentities.clear();
+						announceNow = true;
 					}
-				}, NOT_ALL_CONNECTED_DELAY);
-			} else if(connectedToIdentities.size() == announcedToIdentities.size()) {
-				// Clear it now
-				synchronized(this) {
-					announcedToIdentities.clear();
-					announcedToIPs.clear();
-					connectedToIdentities.clear();
-					announceNow = true;
 				}
 			}
-		}
 		}
 		// If none connect in a minute, try some more.
 		node.getTicker().queueTimedJob(new Runnable() {
