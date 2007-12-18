@@ -257,13 +257,41 @@ public class Announcer {
 
 	private boolean ignoreIPUndetected;
 	static final int FORCE_ANNOUNCEMENT_NO_IP = 120*1000;
+	/** 1 minute after we have enough peers, remove all seednodes left (presumably disconnected ones) */
+	static final int FINAL_DELAY = 60*1000;
+	/** But if we don't have enough peers at that point, wait another minute and if the situation has not improved, reannounce. */
+	static final int RETRY_DELAY = 60*1000;
+	
 	
 	public void maybeSendAnnouncement() {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "maybeSendAnnouncement()");
 		long now = System.currentTimeMillis();
-		if(enoughPeers()) return;
+		if(enoughPeers()) {
+			node.getTicker().queueTimedJob(new Runnable() {
+				public void run() {
+					synchronized(Announcer.this) {
+						if(runningAnnouncements > 0) return;
+					}
+					if(enoughPeers()) {
+						Vector seeds = node.peers.getConnectedSeedServerPeersVector(null);
+						for(int i=0;i<seeds.size();i++) {
+							SeedServerPeerNode pn = (SeedServerPeerNode) seeds.get(i);
+							node.peers.disconnect(pn, true, true);
+						}
+					} else {
+						node.getTicker().queueTimedJob(new Runnable() {
+							public void run() {
+								maybeSendAnnouncement();
+							}
+						}, RETRY_DELAY);
+						maybeSendAnnouncement();
+					}
+				}
+			}, FINAL_DELAY);
+			return;
+		}
 		if((!ignoreIPUndetected) && (!node.ipDetector.hasValidIP())) {
 			if(node.ipDetector.ipDetectorManager.hasDetectors()) {
 				// Wait a bit
