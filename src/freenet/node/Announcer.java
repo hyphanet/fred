@@ -60,6 +60,7 @@ public class Announcer {
 	static final int CONNECT_AT_ONCE = 10;
 	/** Do not announce if there are more than this many opennet peers connected */
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
+	private static final long NOT_ALL_CONNECTED_DELAY = 60*1000;
 	/** Identities of nodes we have tried to connect to */
 	private final HashSet connectedToIdentities;
 	/** Total nodes added by announcement so far */
@@ -125,21 +126,26 @@ public class Announcer {
 		// Once they are connected they will report back and we can attempt an announcement.
 
 		int count = connectSomeNodesInner(seeds);
-		if(count == 0 && connectedToIdentities.size() <= announcedToIdentities.size() && runningAnnouncements == 0) {
-			seeds = readSeednodes();
-			if(logMINOR)
-				Logger.minor(this, "Clearing old announced-to list");
-			synchronized(this) {
-				announcedToIdentities.clear();
-				announcedToIPs.clear();
+		if(logMINOR)
+			Logger.minor(this, "count = "+count+" connected = "+connectedToIdentities.size()+
+					" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements);
+		if(count == 0 && runningAnnouncements == 0) {
+			if(connectedToIdentities.size() > announcedToIdentities.size()) {
+				// Some seednodes we haven't been able to connect to yet.
+				// Give it another minute, then clear all and try again.
+				node.getTicker().queueTimedJob(new Runnable() {
+					public void run() {
+						if(logMINOR)
+							Logger.minor(this, "Clearing old announced-to list");
+						synchronized(Announcer.this) {
+							if(runningAnnouncements != 0) return;
+							announcedToIdentities.clear();
+							announcedToIPs.clear();
+						}
+						maybeSendAnnouncement();
+					}
+				}, NOT_ALL_CONNECTED_DELAY);
 			}
-			count = connectSomeNodesInner(seeds);
-			if(count == 0)
-				announceNow = true; // Announce immediately if we're already connected to all our seednodes.
-		} else {
-			if(logMINOR)
-				Logger.minor(this, "count = "+count+" connected = "+connectedToIdentities.size()+
-						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements);
 		}
 		// If none connect in a minute, try some more.
 		node.getTicker().queueTimedJob(new Runnable() {
@@ -169,6 +175,8 @@ public class Announcer {
 						Logger.minor(this, "Not adding: already announced-to: "+seed.userToString());
 					continue;
 				}
+				if(logMINOR)
+					Logger.minor(this, "Trying to connect to seednode "+seed);
 				if(node.peers.addPeer(seed)) {
 					count++;
 					connectedToIdentities.add(new ByteArrayWrapper(seed.identity));
