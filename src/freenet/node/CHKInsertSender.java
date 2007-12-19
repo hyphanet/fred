@@ -362,12 +362,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 
 			if(logMINOR) Logger.minor(this, "Sending data");
             if(receiveFailed) return;
-            BackgroundTransfer ac = new BackgroundTransfer(next, prbNow);
-            synchronized(backgroundTransfers) {
-            	backgroundTransfers.add(ac);
-            	backgroundTransfers.notifyAll();
-            }
-            ac.start();
 
             while (true) {
 
@@ -419,6 +413,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					}
 					// Finished as far as this node is concerned
 					next.successNotOverload();
+					//RNF means that the HTL was not exhausted, but that the data should still be sent.
+					startBackgroundTransfer(next, prb);
 					break;
 				}
 
@@ -480,9 +476,11 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					Logger.error(this, "Unknown reply: " + msg);
 					finish(INTERNAL_ERROR, next);
 					return;
-				}else{
+				} else {
 					// Our task is complete, one node (quite deep), has accepted the insert.
 					next.successNotOverload();
+					// The request will not be routed to any other nodes, this is where the data *should* be.
+					startBackgroundTransfer(next, prb);
 					finish(SUCCESS, next);
 					return;
 				}
@@ -491,6 +489,15 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 	}
 
+	private void startBackgroundTransfer(PeerNode node, PartiallyReceivedBlock prb) {
+		BackgroundTransfer ac = new BackgroundTransfer(node, prb);
+		synchronized(backgroundTransfers) {
+			backgroundTransfers.add(ac);
+			backgroundTransfers.notifyAll();
+		}
+		ac.start();
+	}
+	
 	private boolean hasForwardedRejectedOverload;
     
     synchronized boolean receivedRejectedOverload() {
