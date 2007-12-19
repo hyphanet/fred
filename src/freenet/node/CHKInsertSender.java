@@ -72,10 +72,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				backgroundTransfers.notifyAll();
 			}
 			if(!success) {
-				synchronized(CHKInsertSender.this) {
-					transferTimedOut = true;
-					CHKInsertSender.this.notifyAll();
-				}
+				setTransferTimedOut();
 			}
 		}
 		
@@ -89,10 +86,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				backgroundTransfers.notifyAll();
 			}
 			if(!success) {
-				synchronized(CHKInsertSender.this) {
-					transferTimedOut = true;
-					CHKInsertSender.this.notifyAll();
-				}
+				setTransferTimedOut();
 			}			
 		}
 		
@@ -509,6 +503,16 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     	hasForwardedRejectedOverload = true;
    		notifyAll();
 	}
+	
+	private void setTransferTimedOut() {
+		if (transferTimedOut) return;
+		synchronized(this) {
+			if(!transferTimedOut) {
+				transferTimedOut = true;
+				notifyAll();
+			}
+		}
+	}
     
     /**
      * Finish the insert process. Will set status, wait for underlings to complete, and report success
@@ -628,12 +632,10 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			
 			// Wait for the outgoing transfers to complete.
 			if(!waitForCompletedTransfers(transfers)) {
-				synchronized(CHKInsertSender.this) {
-					transferTimedOut = true; // probably, they disconnected
-					return;
-				}
+				setTransferTimedOut();
+				return;
 			}
-			
+				
 			long transfersCompletedTime = System.currentTimeMillis();
 			
 			// Wait for acknowledgements from each node, or timeouts.
@@ -648,11 +650,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				long now = System.currentTimeMillis();
 				timeout = (int)Math.min(Integer.MAX_VALUE, (transfersCompletedTime + TRANSFER_COMPLETION_ACK_TIMEOUT) - now);
 				if(timeout <= 0) {
-					synchronized(CHKInsertSender.this) {
 						Logger.error(this, "Timed out waiting for transfers to complete on "+uid);
-						transferTimedOut = true;
-						//CHKInsertSender.this.notifyAll();
-					}
+						setTransferTimedOut();
 					return;
 				}
 				
@@ -711,12 +710,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 								boolean anyTimedOut = m.getBoolean(DMT.ANY_TIMED_OUT);
 								transfers[i].receivedNotice(!anyTimedOut);
 								if(anyTimedOut) {
-									synchronized(CHKInsertSender.this) {
-										if(!transferTimedOut) {
-											transferTimedOut = true;
-											CHKInsertSender.this.notifyAll();
-										}
-									}
+									setTransferTimedOut();
 								}
 								processed = true;
 								break;
