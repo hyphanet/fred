@@ -291,13 +291,19 @@ public class NodeCrypto {
 			}
 		} // Don't include IPs for anonymous initiator.
 		// Negotiation types
+		// FIXME remove this when everyone has upgraded... it breaks UOM so allow a reasonable amount of time, maybe 19 feb 2008.
+		if(!forAnonInitiator)
+			fs.put("location", node.lm.getLocation());
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		if(!forAnonInitiator)
 			fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
 		// FIXME move inside bracket after next mandatory.
-		fs.put("testnet", node.testnetEnabled);
 		if(node.testnetEnabled) {
+			fs.put("testnet", true);
 			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
+		} else {
+			if(!forAnonInitiator)
+				fs.put("testnet", false);
 		}
 		if(!isOpennet)
 			fs.putSingle("myName", node.getMyName()); // FIXME see #942
