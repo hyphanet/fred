@@ -295,8 +295,8 @@ public class NodeCrypto {
 		if(!forAnonInitiator)
 			fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
 		// FIXME move inside bracket after next mandatory.
+		fs.put("testnet", node.testnetEnabled);
 		if(node.testnetEnabled) {
-			fs.put("testnet", node.testnetEnabled);
 			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		}
 		if(!isOpennet)
