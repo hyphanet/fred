@@ -838,7 +838,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 
 	private HTMLNode createSizeCell(long dataSize) {
 		HTMLNode sizeCell = new HTMLNode("td", "class", "request-size");
-		if (dataSize >= 0) {
+		if (dataSize > 0) {
 			sizeCell.addChild("span", "class", "filesize_is", SizeUtil.formatSize(dataSize));
 		} else {
 			sizeCell.addChild("span", "class", "filesize_unknown", L10n.getString("QueueToadlet.unknown"));
