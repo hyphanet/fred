@@ -21,6 +21,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	long oldestNeverConnectedPeerAge = 0;
 	public int darknetConns = 0;
 	public int darknetPeers = 0;
+	public boolean isOpennetEnabled;
 	
 	/** How many connected peers we need to not get alert about not enough */
 	public static final int MIN_CONN_ALERT_THRESHOLD = 3;
@@ -52,12 +53,14 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	}
 	
 	public String getTitle() {
-		if(peers == 0)
-			return l10n("noPeersTitle");
-		if(conns == 0)
-			return l10n("noConnsTitle");
-		if(conns < MIN_CONN_ALERT_THRESHOLD)
-			return l10n("onlyFewConnsTitle", "count", Integer.toString(conns));
+		if(!isOpennetEnabled) {
+			if(peers == 0)
+				return l10n("noPeersTitle");
+			if(conns == 0)
+				return l10n("noConnsTitle");
+			if(conns < MIN_CONN_ALERT_THRESHOLD)
+				return l10n("onlyFewConnsTitle", "count", Integer.toString(conns));
+		}
 		if(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD)
 			return l10n("tooManyNeverConnectedTitle");
 		if(clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD)
@@ -93,20 +96,20 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 
 	public String getText() {
 		String s;
-		if(peers == 0) {
+		if(peers == 0 && !isOpennetEnabled) {
 			if(n.isTestnetEnabled())
 				return l10n("noPeersTestnet");
 			else
 				return l10n("noPeersDarknet"); 
 		} else if(conns < 3 && clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) {
 			s = l10n("clockProblem", "count", Integer.toString(clockProblem));
-		} else if(conns < 3 && connError > MIN_CONN_ERROR_ALERT_THRESHOLD) {
+		} else if(conns < 3 && connError > MIN_CONN_ERROR_ALERT_THRESHOLD && !isOpennetEnabled) {
 			s = l10n("connError", "count", Integer.toString(connError));
-		} else if(conns == 0) {
+		} else if(conns == 0 && !isOpennetEnabled) {
 			return l10n("noConns");
-		} else if(conns == 1) {
+		} else if(conns == 1 && !isOpennetEnabled) {
 			return l10n("oneConn");
-		} else if(conns == 2) {
+		} else if(conns == 2 && !isOpennetEnabled) {
 			return l10n("twoConns");
 		} else if(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
 			s = l10n("tooManyNeverConnected", "count", Integer.toString(neverConn));
@@ -162,7 +165,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
 
-		if (peers == 0) {
+		if (peers == 0 && !isOpennetEnabled) {
 			if(n.isTestnetEnabled())
 				alertNode.addChild("#", l10n("noPeersTestnet"));
 			else
@@ -171,11 +174,11 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 			alertNode.addChild("#", l10n("clockProblem", "count", Integer.toString(clockProblem)));
 		} else if(conns < 3 && connError > MIN_CONN_ERROR_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("connError", "count", Integer.toString(connError)));
-		} else if (conns == 0) {
+		} else if (conns == 0 && !isOpennetEnabled) {
 			alertNode.addChild("#", l10n("noConns"));
-		} else if (conns == 1) {
+		} else if (conns == 1 && !isOpennetEnabled) {
 			alertNode.addChild("#", l10n("oneConn"));
-		} else if (conns == 2) {
+		} else if (conns == 2 && !isOpennetEnabled) {
 			alertNode.addChild("#", l10n("twoConns"));
 		} else if (neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
 			L10n.addL10nSubstitution(alertNode, "PeerManagerUserAlert.tooManyNeverConnectedWithLink",

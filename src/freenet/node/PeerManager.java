@@ -943,6 +943,7 @@ public class PeerManager {
 			opennetPeers = this.getOpennetPeers().length;
 			peers = darknetPeers + opennetPeers; // Seednodes don't count.
 		}
+		boolean opennetEnabled = node.isOpennetEnabled();
 		synchronized(ua) {
 			ua.darknetConns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, true) +
 				getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, true);
@@ -954,6 +955,7 @@ public class PeerManager {
 			ua.neverConn = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED, true);
 			ua.clockProblem = getPeerNodeStatusSize(PEER_NODE_STATUS_CLOCK_PROBLEM, false);
 			ua.connError = getPeerNodeStatusSize(PEER_NODE_STATUS_CONN_ERROR, true);
+			ua.isOpennetEnabled = opennetEnabled;
 		}
 		if(anyConnectedPeers())
 			node.onConnectedPeer();
