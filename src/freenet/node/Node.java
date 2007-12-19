@@ -802,13 +802,13 @@ public class Node implements TimeSkewDetectorCallback {
 				readNodeFile(nodeFileBackup.getPath(), random);
 			} catch (IOException e1) {
 				if(nodeFile.exists() || nodeFileBackup.exists()) {
-				System.err.println("No node file or cannot read, (re)initialising crypto etc");
-				System.err.println(e1.toString());
-				e1.printStackTrace();
-				System.err.println("After:");
-				System.err.println(e.toString());
-				e.printStackTrace();
-				initNodeFileSettings(random);
+					System.err.println("No node file or cannot read, (re)initialising crypto etc");
+					System.err.println(e1.toString());
+					e1.printStackTrace();
+					System.err.println("After:");
+					System.err.println(e.toString());
+					e.printStackTrace();
+					initNodeFileSettings(random);
 				} else {
 					System.err.println("Creating new cryptographic keys...");
 				}
