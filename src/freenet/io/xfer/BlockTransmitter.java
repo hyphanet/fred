@@ -54,7 +54,6 @@ public class BlockTransmitter {
 	private LinkedList _unsent;
 	private Runnable _senderThread;
 	private BitArray _sentPackets;
-	boolean failedByOverload;
 	final PacketThrottle throttle;
 	private long timeAllSent = -1;
 	final DoubleTokenBucket _masterThrottle;
@@ -325,10 +324,6 @@ public class BlockTransmitter {
 				}
 			}
 		}
-	}
-
-	public boolean failedDueToOverload() {
-		return failedByOverload;
 	}
 
 	public PeerContext getDestination() {

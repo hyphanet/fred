@@ -57,8 +57,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		public void run() {
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
-				bt.send(node.executor);
-				this.completedTransfer(bt.failedDueToOverload());
+				this.completedTransfer(bt.send(node.executor));
 				if (pn.isRoutable() && transferSucceeded) {
 					//synch-version: this.receivedNotice(waitForReceivedNotification(this));
 					//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
