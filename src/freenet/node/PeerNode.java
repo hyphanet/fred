@@ -308,6 +308,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	protected abstract boolean generateIdentityFromPubkey();
 	
+	protected boolean ignoreLastGoodVersion() {
+		return false;
+	}
+	
 	/**
 	* Create a PeerNode from a SimpleFieldSet containing a
 	* node reference for one. This must contain the following
@@ -321,7 +325,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @param fs The SimpleFieldSet to parse
 	* @param node2 The running Node we are part of.
 	*/
-	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet, boolean ignoreLastGoodVersion) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
@@ -343,7 +347,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		disableRouting = disableRoutingHasBeenSetLocally = false;
 		disableRoutingHasBeenSetRemotely = false; // Assume so
 		
-		if(ignoreLastGoodVersion)
+		if(ignoreLastGoodVersion())
 			lastGoodVersion = version;
 		else
 			lastGoodVersion = fs.get("lastGoodVersion");
