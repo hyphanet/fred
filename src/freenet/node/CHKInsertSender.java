@@ -106,6 +106,11 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 		
 		public void onMatched(Message m) {
+			if (m==null) {
+				Logger.error(this, "Timed out waiting for a final ack from: "+pn);
+				receivedNotice(false);
+				return;
+			}
 			PeerNode pn = (PeerNode) m.getSource();
 			// pn cannot be null, because the filters will prevent garbage collection of the nodes
 			
@@ -127,16 +132,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		
 		private MessageFilter getNotificationMessageFilter() {
 			return MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(pn).setTimeout(TRANSFER_COMPLETION_ACK_TIMEOUT);
-		}
-		
-		boolean isTimedOut() {
-			return System.currentTimeMillis()>(transferCompletedTime+TRANSFER_COMPLETION_ACK_TIMEOUT);
-		}
-		
-		public void maybeTimedOut() {
-			if (isTimedOut()) {
-				receivedNotice(false);
-			}
 		}
 	}
 	
@@ -721,7 +716,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 						completedTransfers = false;
 						break;
 					}
-					transfers[i].maybeTimedOut();
 					if (!transfers[i].receivedCompletionNotice) {
 						//must wait
 						completedNotifications = false;
