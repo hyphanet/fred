@@ -1217,8 +1217,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		final int expectedLength =	HASH_LENGTH + // HMAC of the cyphertext
 									(c.getBlockSize() >> 3) + // IV
-									HASH_LENGTH + // the signature
-									pn.jfkMyRef.length			  // the bootid + mynoderef
+									HASH_LENGTH // the signature
 									;
 		if(payload.length < expectedLength + 3) {
 			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(4), should be "+(expectedLength + 3));
