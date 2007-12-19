@@ -302,6 +302,7 @@ public class NodeCrypto {
 			fs.put("testnet", true);
 			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		} else {
+			// FIXME remove this when everyone has upgraded... it breaks UOM so allow a reasonable amount of time, maybe 19 feb 2008.
 			if(!forAnonInitiator)
 				fs.put("testnet", false);
 		}
