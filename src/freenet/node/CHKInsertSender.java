@@ -43,8 +43,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		/** Did it succeed? */
 		boolean transferSucceeded;
 		
-		long transferCompletedTime;
-		
 		BackgroundTransfer(PeerNode pn, PartiallyReceivedBlock prb) {
 			this.pn = pn;
 			bt = new BlockTransmitter(node.usm, pn, uid, prb, node.outputThrottle, CHKInsertSender.this);
@@ -76,7 +74,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			synchronized(this) {
 				transferSucceeded = success;
 				completedTransfer = true;
-				transferCompletedTime = System.currentTimeMillis();
 				notifyAll();
 			}
 			synchronized(backgroundTransfers) {
