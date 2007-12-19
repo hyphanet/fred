@@ -347,10 +347,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		disableRouting = disableRoutingHasBeenSetLocally = false;
 		disableRoutingHasBeenSetRemotely = false; // Assume so
 		
-		if(ignoreLastGoodVersion())
-			lastGoodVersion = version;
-		else
-			lastGoodVersion = fs.get("lastGoodVersion");
+		lastGoodVersion = fs.get("lastGoodVersion");
 		updateShouldDisconnectNow();
 
 		testnetEnabled = fs.getBoolean("testnet", false);
@@ -1895,6 +1892,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	private synchronized boolean reverseInvalidVersion() {
+		if(ignoreLastGoodVersion()) return false;
 		return !Version.checkArbitraryGoodVersion(Version.getVersionString(), lastGoodVersion);
 	}
 
