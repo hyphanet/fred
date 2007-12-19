@@ -790,15 +790,18 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 		
+		File nodeFile = new File(nodeDir, "node-"+getDarknetPortNumber());
+		File nodeFileBackup = new File(nodeDir, "node-"+getDarknetPortNumber()+".bak");
 		// After we have set up testnet and IP address, load the node file
 		try {
 			// FIXME should take file directly?
-			readNodeFile(new File(nodeDir, "node-"+getDarknetPortNumber()).getPath(), random);
+			readNodeFile(nodeFile.getPath(), random);
 		} catch (IOException e) {
 			try {
 				System.err.println("Trying to read node file backup ...");
-				readNodeFile(new File(nodeDir, "node-"+getDarknetPortNumber()+".bak").getPath(), random);
+				readNodeFile(nodeFileBackup.getPath(), random);
 			} catch (IOException e1) {
+				if(nodeFile.exists() || nodeFileBackup.exists()) {
 				System.err.println("No node file or cannot read, (re)initialising crypto etc");
 				System.err.println(e1.toString());
 				e1.printStackTrace();
@@ -806,6 +809,9 @@ public class Node implements TimeSkewDetectorCallback {
 				System.err.println(e.toString());
 				e.printStackTrace();
 				initNodeFileSettings(random);
+				} else {
+					System.err.println("Creating new cryptographic keys...");
+				}
 			}
 		}
 
