@@ -417,7 +417,6 @@ public class InsertHandler implements Runnable, ByteCounter {
             		receiveCompleted = true;
             		InsertHandler.this.notifyAll();
             	}
-                maybeCommit();
             } catch (RetrievalException e) {
             	synchronized(InsertHandler.this) {
             		receiveCompleted = true;
