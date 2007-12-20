@@ -319,7 +319,10 @@ public class InsertHandler implements Runnable, ByteCounter {
         	sentCompletion = true;
         }
         
+		Message m=null;
+		
         if((sender != null) && (!sentCompletionWasSet)) {
+			//If there are downstream senders, our final success report depends on there being no timeouts in the chain.
         	while(true) {
         		synchronized(sender) {
         			if(sender.completed()) {
@@ -333,16 +336,23 @@ public class InsertHandler implements Runnable, ByteCounter {
         		}
         	}
         	boolean failed = sender.anyTransfersFailed();
-        	Message m = DMT.createFNPInsertTransfersCompleted(uid, failed);
+        	m = DMT.createFNPInsertTransfersCompleted(uid, failed);
+		}
+		
+		if((sender == null) && (!sentCompletionWasSet) && (canCommit)) {
+			//There are no downstream senders, but we stored the data locally, report successful transfer.
+			//Note that this is done even if the verify fails.
+			m = DMT.createFNPInsertTransfersCompleted(uid, false /* no timeouts */);
+		}		
+		
         	try {
         		source.sendSync(m, this);
-        		if(logMINOR) Logger.minor(this, "Sent completion: "+failed+" for "+this);
+        		if(logMINOR) Logger.minor(this, "Sent completion: "+m+" for "+this);
         	} catch (NotConnectedException e1) {
         		if(logMINOR) Logger.minor(this, "Not connected: "+source+" for "+this);
         		// May need to commit anyway...
         	}
-        }
-        
+		        
         if(code != CHKInsertSender.TIMED_OUT && code != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && 
         		code != CHKInsertSender.INTERNAL_ERROR && code != CHKInsertSender.ROUTE_REALLY_NOT_FOUND &&
         		code != CHKInsertSender.RECEIVE_FAILED && !receiveFailed()) {
@@ -383,7 +393,7 @@ public class InsertHandler implements Runnable, ByteCounter {
                 toSend = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_VERIFY_FAILED);
             } catch (AbortedException e) {
             	Logger.error(this, "Receive failed: "+e);
-            	// Receiver thread will handle below
+            	// Receiver thread (below) will handle sending the failure notice
             }
         }
         if(toSend != null) {
