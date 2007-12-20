@@ -146,8 +146,8 @@ public class InsertHandler implements Runnable, ByteCounter {
         br = new BlockReceiver(node.usm, source, uid, prb, this);
         
         // Receive the data, off thread
-        
         Runnable dataReceiver = new DataReceiver();
+		receiveStarted = true;
         node.executor.execute(dataReceiver, "InsertHandler$DataReceiver for UID "+uid);
 
         if(htl == 0) {
@@ -416,9 +416,6 @@ public class InsertHandler implements Runnable, ByteCounter {
 
         public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
-        	synchronized(this) {
-        		receiveStarted = true;
-        	}
         	if(logMINOR) Logger.minor(this, "Receiving data for "+InsertHandler.this);
             try {
                 br.receive();
