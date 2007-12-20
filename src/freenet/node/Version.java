@@ -308,7 +308,7 @@ public class Version {
 	public static final void seenVersion(String version) {
 		String[] v = Fields.commaList(version);
 
-		if (v.length < 3)
+		if ((v == null) || (v.length < 3))
 			return; // bad, but that will be discovered elsewhere
 
 		if (sameVersion(v)) {
