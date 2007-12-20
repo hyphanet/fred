@@ -147,6 +147,7 @@ public class LocationManager {
 
         public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
+		    Thread.currentThread().setName("SwapRequestSender");
             while(true) {
                 try {
                     long startTime = System.currentTimeMillis();

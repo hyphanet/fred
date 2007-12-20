@@ -42,7 +42,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 	private final String title;
 	
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title) throws SocketException {
-		super("UdpSocketHandler packet receiver thread for "+title);
+		super("UDP packet receiver for "+title);
 		this.node = node;
 		this.title = title;
 		_bindTo = bindto;

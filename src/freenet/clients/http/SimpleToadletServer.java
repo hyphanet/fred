@@ -421,7 +421,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 
 		void start() {
-			core.getExecutor().execute(this, "SimpleToadletServer$SocketHandler@"+hashCode());
+			core.getExecutor().execute(this, "HTTP socket handler@"+hashCode());
 		}
 		
 		public void run() {

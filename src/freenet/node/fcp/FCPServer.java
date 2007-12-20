@@ -83,7 +83,7 @@ public class FCPServer implements Runnable {
 	private boolean assumeUploadDDAIsAllowed;
 	
 	private void startPersister() {
-		Thread t = new Thread(persister = new FCPServerPersister(), "FCP request persistence handler");
+		Thread t = new Thread(persister = new FCPServerPersister(), "FCP request persister");
 		t.setDaemon(true);
 		t.start();
 	}
