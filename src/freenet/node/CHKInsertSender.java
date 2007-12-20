@@ -131,7 +131,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 		
 		private MessageFilter getNotificationMessageFilter() {
-			int cascading_timout_grace=500*(15-htl);
+			int cascading_timout_grace=500*htl;
 			return MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(pn).setTimeout(TRANSFER_COMPLETION_ACK_TIMEOUT+cascading_timout_grace);
 		}
 	}
