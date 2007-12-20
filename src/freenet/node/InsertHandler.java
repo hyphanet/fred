@@ -298,7 +298,17 @@ public class InsertHandler implements Runnable, ByteCounter {
      * verifies, then commit it.
      */
     private void finish(int code) {
-    	if(logMINOR) Logger.minor(this, "Finishing");
+    	if(logMINOR) Logger.minor(this, "Waiting for receive");
+		synchronized(this) {
+			while(receiveStarted && !receiveCompleted) {
+				try {
+					wait(100*1000);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+    	}
+		
         maybeCommit();
         
         if(logMINOR) Logger.minor(this, "Waiting for completion");
@@ -332,18 +342,6 @@ public class InsertHandler implements Runnable, ByteCounter {
         		// May need to commit anyway...
         	}
         }
-
-    	synchronized(this) {
-    		if(receiveStarted) {
-    			while(!receiveCompleted) {
-    				try {
-						wait(100*1000);
-					} catch (InterruptedException e) {
-						// Ignore
-					}
-    			}
-    		}
-    	}
         
         if(code != CHKInsertSender.TIMED_OUT && code != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && 
         		code != CHKInsertSender.INTERNAL_ERROR && code != CHKInsertSender.ROUTE_REALLY_NOT_FOUND &&
