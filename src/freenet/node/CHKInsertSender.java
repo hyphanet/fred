@@ -55,19 +55,31 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		public void run() {
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
-				this.completedTransfer(bt.send(node.executor));
-				// Double-check that the node is still connected. Pointless to wait otherwise.
-				if (pn.isConnected() && transferSucceeded) {
-					//synch-version: this.receivedNotice(waitForReceivedNotification(this));
-					//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
-					node.usm.addAsyncFilter(getNotificationMessageFilter(), this);
-				} else {
-					this.receivedNotice(false);
-				}
+				this.realRun();
 			} catch (Throwable t) {
 				this.completedTransfer(false);
 				this.receivedNotice(false);
 				Logger.error(this, "Caught "+t, t);
+			}
+		}
+		
+		private void realRun() {
+			this.completedTransfer(bt.send(node.executor));
+			// Double-check that the node is still connected. Pointless to wait otherwise.
+			if (pn.isConnected() && transferSucceeded) {
+				//synch-version: this.receivedNotice(waitForReceivedNotification(this));
+				//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
+				try {
+					node.usm.addAsyncFilter(getNotificationMessageFilter(), this);
+				} catch (DisconnectedException e) {
+					// Normal
+					if(logMINOR)
+						Logger.minor(this, "Disconnected while adding filter");
+					this.completedTransfer(false);
+					this.receivedNotice(false);
+				}
+			} else {
+				this.receivedNotice(false);
 			}
 		}
 		
