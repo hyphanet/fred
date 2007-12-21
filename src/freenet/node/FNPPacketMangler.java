@@ -1123,7 +1123,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// Send reply
 		sendJFKMessage4(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, 
-				c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, true);
+				c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, false);
 		// FIXME change last argument to FALSE when this build is mandatory.
 		
 		c.initialize(Ks);
