@@ -56,7 +56,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
 				this.completedTransfer(bt.send(node.executor));
-				if (pn.isRoutable() && transferSucceeded) {
+				// Double-check that the node is still connected. Pointless to wait otherwise.
+				if (pn.isConnected() && transferSucceeded) {
 					//synch-version: this.receivedNotice(waitForReceivedNotification(this));
 					//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
 					node.usm.addAsyncFilter(getNotificationMessageFilter(), this);
