@@ -10,6 +10,10 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.support.LRUHashtable;
 
+// FIXME it is ESSENTIAL that we delete the ULPR data on requestors etc once we have found the key.
+// Otherwise it will be much too easy to trace a request if an attacker busts the node afterwards.
+// We can use an HMAC or something to authenticate offers.
+
 /**
  * Tracks recently DNFed keys, where they were routed to, what the location was at the time, who requested them.
  * Implements Ultra-Lightweight Persistent Requests: Refuse requests for a key for 10 minutes after it's DNFed 
