@@ -1004,9 +1004,13 @@ public class StatisticsToadlet extends Toadlet {
 		double peerDistance;
 		int histogramIndex;
 		int peerCount = peerNodeStatuses.length;
+		int newPeerCount = 0;
 		for (int peerIndex = 0; peerIndex < peerCount; peerIndex++) {
 			peerNodeStatus = peerNodeStatuses[peerIndex];
 			peerLocation = peerNodeStatus.getLocation();
+			if(!peerNodeStatus.isSearchable()) continue;
+			if(peerLocation < 0.0 || peerLocation > 1.0) continue;
+			newPeerCount++;
 			peerDistance = Location.distance( myLocation, peerLocation );
 			histogramIndex = (int) (Math.floor(peerDistance * HISTOGRAM_LENGTH * 2));
 			if (peerNodeStatus.isConnected()) {
@@ -1024,10 +1028,10 @@ public class StatisticsToadlet extends Toadlet {
 			peerHistogramGraphCell = peerHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
 			peerHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p2.format(((double) i) / ( HISTOGRAM_LENGTH * 2 )));
 			//
-			histogramPercent = ((double) histogramConnected[ i ] ) / peerCount;
+			histogramPercent = ((double) histogramConnected[ i ] ) / newPeerCount;
 			peerHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;" }, "\u00a0");
 			//
-			histogramPercent = ((double) histogramDisconnected[ i ] ) / peerCount;
+			histogramPercent = ((double) histogramDisconnected[ i ] ) / newPeerCount;
 			peerHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramDisconnected", "height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;" }, "\u00a0");
 		}
 	}
