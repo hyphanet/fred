@@ -396,8 +396,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             // Which might be the new data resulting from a collision...
 
             Message dataInsert;
-            PartiallyReceivedBlock prbNow;
-            prbNow = prb;
             dataInsert = DMT.createFNPDataInsert(uid, headers);
             /** What are we waiting for now??:
              * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
