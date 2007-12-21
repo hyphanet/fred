@@ -85,6 +85,8 @@ public class PeerNodeStatus {
 	private final boolean isSeedServer;
 	
 	private final boolean isSeedClient;
+	
+	private final boolean isSearchable;
 
 	PeerNodeStatus(PeerNode peerNode) {
 		Peer p = peerNode.getPeer();
@@ -127,6 +129,7 @@ public class PeerNodeStatus {
 		this.recordStatus = peerNode.recordStatus();
 		this.isSeedClient = peerNode instanceof SeedClientPeerNode;
 		this.isSeedServer = peerNode instanceof SeedServerPeerNode;
+		this.isSearchable = peerNode.isSearchable();
 	}
 
 	/**
@@ -356,5 +359,9 @@ public class PeerNodeStatus {
 
 	public boolean isSeedClient() {
 		return isSeedClient;
+	}
+	
+	public boolean isSearchable() {
+		return isSearchable;
 	}
 }
