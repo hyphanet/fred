@@ -19,7 +19,6 @@ import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
-import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 
