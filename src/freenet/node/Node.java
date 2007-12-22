@@ -808,10 +808,10 @@ public class Node implements TimeSkewDetectorCallback {
 					System.err.println("After:");
 					System.err.println(e.toString());
 					e.printStackTrace();
-					initNodeFileSettings(random);
 				} else {
 					System.err.println("Creating new cryptographic keys...");
 				}
+				initNodeFileSettings(random);
 			}
 		}
 
