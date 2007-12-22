@@ -458,7 +458,7 @@ class SingleFileInserter implements ClientPutState {
 					e = new InsertException(InsertException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null);
 				} else if(state != sfi) {
 					Logger.error(this, "Got metadata from unknown state "+state);
-					e = new InsertException(InsertException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null);
+					e = new InsertException(InsertException.INTERNAL_ERROR, "Got metadata from unknown state", null);
 				} else {
 					// Already started metadata putter ? (in which case we've got the metadata twice)
 					if(metadataPutter != null) return;
