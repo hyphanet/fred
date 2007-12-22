@@ -655,11 +655,11 @@ class SingleFileInserter implements ClientPutState {
 				ClientPutState splitInserter;
 				synchronized(this) {
 					if(metaInsertStarted) return;
-					if(metadataPutter == null) {
+					putter = metadataPutter;
+					if(putter == null) {
 						if(logMINOR) Logger.minor(this, "Cannot start metadata yet: no metadataPutter");
 					} else
 						metaInsertStarted = true;
-					putter = metadataPutter;
 					splitInserter = sfi;
 				}
 				if(putter != null) {
