@@ -17,7 +17,9 @@ import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
+import freenet.crypt.SSL;
 import freenet.io.NetworkInterface;
+import freenet.io.SSLNetworkInterface;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
@@ -35,6 +37,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     String bindTo;
     String allowedHosts;
     boolean isEnabled;
+    private static boolean ssl = false;
     final NetworkInterface networkInterface;
 
     TextModeClientInterfaceServer(Node node, NodeClientCore core, int port, String bindTo, String allowedHosts) throws IOException {
@@ -47,7 +50,11 @@ public class TextModeClientInterfaceServer implements Runnable {
         this.bindTo=bindTo;
         this.allowedHosts = allowedHosts;
         this.isEnabled=true;
-        networkInterface = NetworkInterface.create(port, bindTo, allowedHosts, n.executor, true);
+        if(ssl) {
+        	networkInterface = SSLNetworkInterface.create(port, bindTo, allowedHosts, n.executor, true);
+        } else {
+        	networkInterface = NetworkInterface.create(port, bindTo, allowedHosts, n.executor, true);
+        }
     }
     
     void start() {
@@ -64,6 +71,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		SubConfig TMCIConfig = new SubConfig("console", config);
 		
 		TMCIConfig.register("enabled", false, 1, true, true /* FIXME only because can't be changed on the fly */, "TextModeClientInterfaceServer.enabled", "TextModeClientInterfaceServer.enabledLong", new TMCIEnabledCallback(core));
+		TMCIConfig.register("ssl", false, 1, true, true , "TextModeClientInterfaceServer.ssl", "TextModeClientInterfaceServer.sslLong", new TMCISSLCallback());
 		TMCIConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, 2, true, false, "TextModeClientInterfaceServer.bindTo", "TextModeClientInterfaceServer.bindToLong", new TMCIBindtoCallback(core));
 		TMCIConfig.register("allowedHosts", NetworkInterface.DEFAULT_BIND_TO, 2, true, false, "TextModeClientInterfaceServer.allowedHosts", "TextModeClientInterfaceServer.allowedHostsLong", new TMCIAllowedHostsCallback(core));
 		TMCIConfig.register("port", 2323, 1, true, false, "TextModeClientInterfaceServer.telnetPortNumber", "TextModeClientInterfaceServer.telnetPortNumberLong", new TCMIPortNumberCallback(core));
@@ -74,6 +82,9 @@ public class TextModeClientInterfaceServer implements Runnable {
 		String bind_ip = TMCIConfig.getString("bindTo");
 		String allowedHosts = TMCIConfig.getString("allowedHosts");
 		boolean direct = TMCIConfig.getBoolean("directEnabled");
+		if(SSL.available()) {
+			ssl = TMCIConfig.getBoolean("ssl");
+		}
 
 		if(TMCIEnabled)
 			server = new TextModeClientInterfaceServer(node, core, port, bind_ip, allowedHosts);
@@ -110,6 +121,22 @@ public class TextModeClientInterfaceServer implements Runnable {
     		if(val == get()) return;
     		// FIXME implement - see bug #122
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
+    	}
+    }
+
+    static class TMCISSLCallback implements BooleanCallback {
+    	
+    	public boolean get() {
+    		return ssl;
+    	}
+    	
+    	public void set(boolean val) throws InvalidConfigValueException {
+    		if(val == get()) return;
+			if(!SSL.available()) {
+				throw new InvalidConfigValueException("Enable SSL support before use ssl with TMCI");
+			}
+    		ssl = val;
+    		throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
     	}
     }
 

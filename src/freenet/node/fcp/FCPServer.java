@@ -30,8 +30,10 @@ import freenet.client.InsertContext;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.crypt.SSL;
 import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
+import freenet.io.SSLNetworkInterface;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.Node;
@@ -59,6 +61,7 @@ public class FCPServer implements Runnable {
 	final NodeClientCore core;
 	final Node node;
 	final int port;
+	private static boolean ssl = false;
 	public final boolean enabled;
 	String bindTo;
 	AllowedHosts allowedHostsFullAccess;
@@ -118,7 +121,11 @@ public class FCPServer implements Runnable {
 		
 		NetworkInterface tempNetworkInterface = null;
 		try {
-			tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts, node.executor, true);
+			if(ssl) {
+				tempNetworkInterface = SSLNetworkInterface.create(port, bindTo, allowedHosts, node.executor, true);
+			} else {
+				tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts, node.executor, true);
+			}
 		} catch (IOException be) {
 			Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.", be);
 			System.out.println("Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
@@ -212,6 +219,22 @@ public class FCPServer implements Runnable {
 			if(val != get()) {
 				throw new InvalidConfigValueException(l10n("cannotStartOrStopOnTheFly"));
 			}
+		}
+	}
+
+	static class FCPSSLCallback implements BooleanCallback{
+
+		public boolean get() {
+			return ssl;
+		}
+
+		public void set(boolean val) throws InvalidConfigValueException {
+    		if(val == get()) return;
+			if(!SSL.available()) {
+				throw new InvalidConfigValueException("Enable SSL support before use ssl with FCP");
+			}
+			ssl = val;
+			throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
 		}
 	}
 
@@ -368,6 +391,7 @@ public class FCPServer implements Runnable {
 		SubConfig fcpConfig = new SubConfig("fcp", config);
 		short sortOrder = 0;
 		fcpConfig.register("enabled", true, sortOrder++, true, false, "FcpServer.isEnabled", "FcpServer.isEnabledLong", new FCPEnabledCallback(core));
+		fcpConfig.register("ssl", false, sortOrder++, true, true, "FcpServer.ssl", "FcpServer.sslLong", new FCPSSLCallback());
 		fcpConfig.register("port", FCPServer.DEFAULT_FCP_PORT /* anagram of 1984, and 1000 up from old number */, 2, true, true, "FcpServer.portNumber", "FcpServer.portNumberLong", new FCPPortNumberCallback(core));
 		fcpConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, false, true, "FcpServer.bindTo", "FcpServer.bindToLong", new FCPBindtoCallback(core));
 		fcpConfig.register("allowedHosts", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, false, true, "FcpServer.allowedHosts", "FcpServer.allowedHostsLong", new FCPAllowedHostsCallback(core));
@@ -386,6 +410,10 @@ public class FCPServer implements Runnable {
 		AssumeDDAUploadIsAllowedCallback cb5;
 		fcpConfig.register("assumeDownloadDDAIsAllowed", false, sortOrder++, true, false, "FcpServer.assumeDownloadDDAIsAllowed", "FcpServer.assumeDownloadDDAIsAllowedLong", cb4 = new AssumeDDADownloadIsAllowedCallback());
 		fcpConfig.register("assumeUploadDDAIsAllowed", false, sortOrder++, true, false, "FcpServer.assumeUploadDDAIsAllowed", "FcpServer.assumeUploadDDAIsAllowedLong", cb5 = new AssumeDDAUploadIsAllowedCallback());
+
+		if(SSL.available()) {
+			ssl = fcpConfig.getBoolean("ssl");
+		}
 		
 		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"));
 		

@@ -15,6 +15,7 @@ import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
+import freenet.crypt.SSL;
 import freenet.crypt.Yarrow;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -146,6 +147,10 @@ public class NodeStarter implements WrapperListener
 		// DO NOT do anything in the plug thread, if you do you risk the EvilJVMBug.
 		plug.setDaemon(false);
 		plug.start();
+		
+		// Initialize SSL
+    	SubConfig sslConfig = new SubConfig("ssl", cfg);
+    	SSL.init(sslConfig);
 		
     	WrapperManager.signalStarting(500000);
     	try {

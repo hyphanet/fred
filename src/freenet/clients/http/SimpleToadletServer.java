@@ -25,8 +25,10 @@ import java.util.jar.JarFile;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.crypt.SSL;
 import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
+import freenet.io.SSLNetworkInterface;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
@@ -53,12 +55,13 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	String bindTo;
 	final AllowedHosts allowedFullAccess;
 	final BucketFactory bf;
-	final NetworkInterface networkInterface;
+	NetworkInterface networkInterface;
 	private final LinkedList toadlets;
 	private String cssName;
 	private File cssOverride;
 	private Thread myThread;
 	private boolean advancedModeEnabled;
+	private boolean ssl = false;
 	private boolean fProxyJavascriptEnabled;
 	private final PageMaker pageMaker;
 	private final NodeClientCore core;
@@ -67,6 +70,21 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	static boolean isPanicButtonToBeShown;
 	public static final int DEFAULT_FPROXY_PORT = 8888;
 	
+	class FProxySSLCallback implements BooleanCallback {
+		
+		public boolean get() {
+			return ssl;
+		}
+		public void set(boolean val) throws InvalidConfigValueException {
+			if(val == get()) return;
+			if(!SSL.available()) {
+				throw new InvalidConfigValueException("Enable SSL support before use ssl with Fproxy");
+			}
+			ssl = val;
+			throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
+		}
+	}
+
 	class FProxyPortCallback implements IntCallback {
 		
 		public int get() {
@@ -272,7 +290,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				themes.add("clean");
 			}
 		}
-		
+		fproxyConfig.register("ssl", false, configItemOrder++, true, true, "SimpleToadletServer.ssl", "SimpleToadletServer.sslLong",
+				new FProxySSLCallback());
 		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, configItemOrder++, true, true, "SimpleToadletServer.port", "SimpleToadletServer.portLong",
 				new FProxyPortCallback());
 		fproxyConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, configItemOrder++, true, true, "SimpleToadletServer.bindTo", "SimpleToadletServer.bindToLong",
@@ -340,8 +359,16 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");		
 		toadlets = new LinkedList();
-		
-		this.networkInterface = NetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor(), true);
+
+		if(SSL.available()) {
+			ssl = fproxyConfig.getBoolean("ssl");
+		}
+
+		if(ssl) {
+			this.networkInterface = SSLNetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor(), true);
+		} else {
+			this.networkInterface = NetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor(), true);
+		}
 		
 		if(!enabled) {
 			Logger.normal(core, "Not starting FProxy as it's disabled");
