@@ -150,6 +150,7 @@ public class USK extends BaseClientKey {
 			String doc = uri.getDocName();
 			doc = doc.substring(siteName.length());
 			if(doc.length() < 2 || doc.charAt(0) != '-') return uri;
+			doc = doc.substring(1);
 			long edition;
 			try {
 				edition = Long.parseLong(doc);
