@@ -644,8 +644,6 @@ class SingleFileInserter implements ClientPutState {
 			
 			if(meta)
 				cb.onFetchable(this);
-			else
-				startMetadata();
 		}
 		
 		private void startMetadata() {
