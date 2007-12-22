@@ -696,6 +696,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param unknownInitiator If true, we (the responder) don't know the
 	 * initiator, and should check for fields which would be skipped in a
 	 * normal setup where both sides know the other (indicated with * below).
+	 * @param setupType The type of unknown-initiator setup.
 	 * 
 	 * format :
 	 * Ni
@@ -871,6 +872,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Note that this packet is exactly the same for known initiator as for unknown initiator.
 	 * 
 	 * @param payload The buffer containing the decrypted auth packet.
+	 * @param inputOffset The offset in the buffer at which the packet starts.
 	 * @param replyTo The peer to which we need to send the packet
 	 * @param pn The peerNode we are talking to. Cannot be null as we are the initiator.
 	 */
@@ -1103,12 +1105,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// construct the peernode
 		if(unknownInitiator) {
 			pn = getPeerNodeFromUnknownInitiator(hisRef, setupType, pn);
-		}
-		
-		if(pn == null) {
-			// Reject
-			Logger.normal(this, "Rejecting...");
-			return;
+			if(pn == null) {
+				// Reject
+				Logger.normal(this, "Rejecting... unable to construct PeerNode");
+				return;
+			}
 		}
 		
 		// verify the signature
