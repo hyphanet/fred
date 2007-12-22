@@ -63,7 +63,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	 */
 	public SingleFileFetcher(ClientRequester parent, GetCompletionCallback cb, ClientMetadata metadata,
 			ClientKey key, LinkedList metaStrings, FreenetURI origURI, int addedMetaStrings, FetchContext ctx,
-			ArchiveContext actx, ArchiveStoreContext ah, int maxRetries, int recursionLevel,
+			ArchiveContext actx, ArchiveStoreContext ah, Metadata archiveMetadata, int maxRetries, int recursionLevel,
 			boolean dontTellClientGet, long l, boolean isEssential,
 			Bucket returnBucket, boolean isFinal) throws FetchException {
 		super(key, maxRetries, ctx, parent, cb, isEssential, false, l);
@@ -74,6 +74,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.returnBucket = returnBucket;
 		this.dontTellClientGet = dontTellClientGet;
 		this.ah = ah;
+		this.archiveMetadata = archiveMetadata;
 		//this.uri = uri;
 		//this.key = ClientKey.getBaseKey(uri);
 		//metaStrings = uri.listMetaStrings();
@@ -103,6 +104,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.dontTellClientGet = fetcher.dontTellClientGet;
 		this.actx = fetcher.actx;
 		this.ah = fetcher.ah;
+		this.archiveMetadata = fetcher.archiveMetadata;
 		this.clientMetadata = (ClientMetadata) fetcher.clientMetadata.clone();
 		this.metadata = newMeta;
 		this.metaStrings = new LinkedList();
@@ -424,7 +426,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					addedMetaStrings++;
 				}
 
-				final SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, redirectedKey, metaStrings, this.uri, addedMetaStrings, ctx, actx, ah, maxRetries, recursionLevel, false, token, true, returnBucket, isFinal);
+				final SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, redirectedKey, metaStrings, this.uri, addedMetaStrings, ctx, actx, ah, archiveMetadata, maxRetries, recursionLevel, false, token, true, returnBucket, isFinal);
 				if((redirectedKey instanceof ClientCHK) && !((ClientCHK)redirectedKey).isMetadata())
 					rcb.onBlockSetFinished(this);
 				if(metadata.isCompressed()) {
@@ -654,7 +656,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				returnBucket == null && key instanceof ClientKey)
 			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, requester, cb, isEssential, false, l);
 		if(key instanceof ClientKey)
-			return new SingleFileFetcher(requester, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal);
+			return new SingleFileFetcher(requester, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, null, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal);
 		else {
 			return uskCreate(requester, cb, clientMetadata, (USK)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal);
 		}
@@ -679,7 +681,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Want to update the latest known good iff the fetch succeeds.
 					SingleFileFetcher sf = 
 						new SingleFileFetcher(requester, myCB, clientMetadata, usk.getSSK(), metaStrings, 
-								usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, null, maxRetries, recursionLevel, 
+								usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, null, null, maxRetries, recursionLevel, 
 								dontTellClientGet, l, isEssential, returnBucket, isFinal);
 					return sf;
 				}
@@ -733,7 +735,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			try {
 				if(l == usk.suggestedEdition) {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, clientMetadata, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
-							0, ctx, actx, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true);
+							0, ctx, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true);
 					sf.schedule();
 				} else {
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null);
