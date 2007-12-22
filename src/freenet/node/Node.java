@@ -687,7 +687,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		// Determine the port number
 		// @see #191
-		if("-1".equals(oldConfig.get("node.listenPort")))
+		if(oldConfig != null && "-1".equals(oldConfig.get("node.listenPort")))
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_BIND_USM, "Your freenet.ini file is corrupted! 'listenPort=-1'");
 		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false);
 		sortOrder += NodeCryptoConfig.OPTION_COUNT;
