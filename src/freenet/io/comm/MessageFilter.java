@@ -288,6 +288,7 @@ public final class MessageFilter {
 		synchronized(this) {
 			notifyAll();
 		}
-		_callback.onTimeout();
+		if(_callback != null)
+			_callback.onTimeout();
 	}
 }
