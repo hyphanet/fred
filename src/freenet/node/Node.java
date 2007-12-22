@@ -878,6 +878,10 @@ public class Node implements TimeSkewDetectorCallback {
 		);
 		
 		maxOpennetPeers = opennetConfig.getInt("maxOpennetPeers");
+		if(maxOpennetPeers > 20) {
+			Logger.error(this, "maxOpennetPeers may not be over 20");
+			maxOpennetPeers = 20;
+		}
 		
 		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true);
 		
