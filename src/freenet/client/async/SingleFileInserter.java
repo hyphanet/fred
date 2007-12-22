@@ -410,7 +410,6 @@ class SingleFileInserter implements ClientPutState {
 					if(logMINOR) Logger.minor(this, "Splitfile insert succeeded for "+this+" : "+state);
 					splitInsertSuccess = true;
 					if(!metaInsertSuccess && !metaInsertStarted) {
-						Logger.error(this, "Splitfile insert succeeded but metadata not started, starting anyway... "+metadataPutter+" for "+this+" ( "+sfi+" )");
 						lateStart = true;
 					} else {
 						if(logMINOR) Logger.minor(this, "Metadata already started for "+this+" : success="+metaInsertSuccess+" started="+metaInsertStarted);
