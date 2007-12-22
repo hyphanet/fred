@@ -115,14 +115,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 		
 		public void onMatched(Message m) {
-			if (m==null) {
-				/* FIXME: Cascading timeout...
-				 if this times out, we don't have any time to report to the node of origin the timeout notification (anyTimedOut?).
-				 */
-				Logger.error(this, "Timed out waiting for a final ack from: "+pn);
-				receivedNotice(false);
-				return;
-			}
 			PeerNode pn = (PeerNode) m.getSource();
 			// pn cannot be null, because the filters will prevent garbage collection of the nodes
 			
@@ -144,6 +136,14 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		
 		private MessageFilter getNotificationMessageFilter() {
 			return MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(pn).setTimeout(TRANSFER_COMPLETION_ACK_TIMEOUT);
+		}
+
+		public void onTimeout() {
+			/* FIXME: Cascading timeout...
+			   if this times out, we don't have any time to report to the node of origin the timeout notification (anyTimedOut?).
+			 */
+			Logger.error(this, "Timed out waiting for a final ack from: "+pn);
+			receivedNotice(false);
 		}
 	}
 	

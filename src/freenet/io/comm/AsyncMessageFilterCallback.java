@@ -24,4 +24,8 @@ public interface AsyncMessageFilterCallback {
 	 */
 	boolean shouldTimeout();
 	
+	/**
+	 * Called when the filter times out and is removed from the list of filters to match.
+	 */
+	void onTimeout();
 }

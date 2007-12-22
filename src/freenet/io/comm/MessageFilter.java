@@ -284,7 +284,10 @@ public final class MessageFilter {
 	/**
 	 * Notify waiters that we have timed out.
 	 */
-	public synchronized void onTimedOut() {
-		notifyAll();
+	public void onTimedOut() {
+		synchronized(this) {
+			notifyAll();
+		}
+		_callback.onTimeout();
 	}
 }

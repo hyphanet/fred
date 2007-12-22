@@ -83,6 +83,9 @@ public class BulkTransmitter {
 							if(BulkTransmitter.this.prb.isAborted()) return true;
 							return false;
 						}
+						public void onTimeout() {
+							// Ignore
+						}
 			});
 			prb.usm.addAsyncFilter(MessageFilter.create().setNoTimeout().setSource(peer).setType(DMT.FNPBulkReceivedAll).setField(DMT.UID, uid),
 					new AsyncMessageFilterCallback() {
@@ -95,6 +98,9 @@ public class BulkTransmitter {
 							}
 							if(BulkTransmitter.this.prb.isAborted()) return true;
 							return false;
+						}
+						public void onTimeout() {
+							// Ignore
 						}
 			});
 		} catch (DisconnectedException e) {

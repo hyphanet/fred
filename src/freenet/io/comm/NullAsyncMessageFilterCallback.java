@@ -12,4 +12,8 @@ public class NullAsyncMessageFilterCallback implements
 		return false;
 	}
 
+	public void onTimeout() {
+		// Do nothing
+	}
+
 }

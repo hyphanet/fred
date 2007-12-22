@@ -99,10 +99,13 @@ public class MessageCore {
      */
 	void removeTimedOutFilters() {
 		long tStart = System.currentTimeMillis();
+		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		synchronized (_filters) {
 			for (ListIterator i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = (MessageFilter) i.next();
 				if (f.timedOut(tStart)) {
+					if(logDEBUG)
+						Logger.minor(this, "Removing "+f);
 					i.remove();
 					_timedOutFilters.add(f);
 				} else { // Because _filters are in order of timeout, we
