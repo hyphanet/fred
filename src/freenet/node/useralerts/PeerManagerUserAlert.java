@@ -210,8 +210,8 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	}
 
 	public short getPriorityClass() {
-		if((peers == 0) ||
-				(conns == 0) ||
+		if((peers == 0 && !isOpennetEnabled) ||
+				(conns == 0 && !isOpennetEnabled) ||
 				(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) ||
 				(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
@@ -227,8 +227,8 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		bwlimitDelayTime = (int) n.getBwlimitDelayTime();
 		nodeAveragePingTime = (int) n.getNodeAveragePingTime();
 		oldestNeverConnectedPeerAge = (int) n.peers.getOldestNeverConnectedPeerAge();
-		return ((peers == 0) ||
-				(conns < 3) ||
+		return ((peers == 0 && !isOpennetEnabled) ||
+				(conns < 3 && !isOpennetEnabled) ||
 				(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) ||
 				(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
