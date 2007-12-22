@@ -735,11 +735,15 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					if(!transfers[i].pn.isRoutable()) continue;
 					noneRouteable = false;
 					if(!transfers[i].completedTransfer) {
+						if(logMINOR)
+							Logger.minor(this, "Waiting for transfer completion to "+transfers[i].pn+" : "+transfers[i]);
 						//must wait
 						completedTransfers = false;
 						break;
 					}
 					if (!transfers[i].receivedCompletionNotice) {
+						if(logMINOR)
+							Logger.minor(this, "Waiting for completion notice from "+transfers[i].pn+" : "+transfers[i]);
 						//must wait
 						completedNotifications = false;
 						break;
