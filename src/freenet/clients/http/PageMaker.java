@@ -92,8 +92,8 @@ public class PageMaker {
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
 		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", L10n.getSelectedLanguage());
 		HTMLNode headNode = htmlNode.addChild("head");
-		headNode.addChild("title", title + " - Freenet");
 		headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "Content-Type", "text/html; charset=utf-8" });
+		headNode.addChild("title", title + " - Freenet");
 		if(override == null)
 			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme + "/theme.css", "text/css", theme });
 		else
