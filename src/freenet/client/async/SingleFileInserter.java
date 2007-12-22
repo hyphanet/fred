@@ -518,7 +518,7 @@ class SingleFileInserter implements ClientPutState {
 					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false, true, metaPutterTargetFilename, earlyEncode);
 					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
 					// Otherwise, wait until the data is fetchable (to improve persistence).
-					if(!(dataFetchable || earlyEncode)) return;
+					if(!(earlyEncode || splitInsertSuccess)) return;
 				}
 				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+ ')');
 			} catch (InsertException e1) {
