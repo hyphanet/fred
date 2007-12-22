@@ -727,33 +727,33 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				//If we want to be sure to exit as-soon-as the transfers are done, then we must hold the lock while we check.
 				synchronized(backgroundTransfers) {
 					if(receiveFailed) return false;
-
-				boolean noneRouteable = true;
-				boolean completedTransfers = true;
-				boolean completedNotifications = true;
-				for(int i=0;i<transfers.length;i++) {
-					if(!transfers[i].pn.isRoutable()) continue;
-					noneRouteable = false;
-					if(!transfers[i].completedTransfer) {
-						if(logMINOR)
-							Logger.minor(this, "Waiting for transfer completion to "+transfers[i].pn+" : "+transfers[i]);
-						//must wait
-						completedTransfers = false;
-						break;
+					
+					boolean noneRouteable = true;
+					boolean completedTransfers = true;
+					boolean completedNotifications = true;
+					for(int i=0;i<transfers.length;i++) {
+						if(!transfers[i].pn.isRoutable()) continue;
+						noneRouteable = false;
+						if(!transfers[i].completedTransfer) {
+							if(logMINOR)
+								Logger.minor(this, "Waiting for transfer completion to "+transfers[i].pn+" : "+transfers[i]);
+							//must wait
+							completedTransfers = false;
+							break;
+						}
+						if (!transfers[i].receivedCompletionNotice) {
+							if(logMINOR)
+								Logger.minor(this, "Waiting for completion notice from "+transfers[i].pn+" : "+transfers[i]);
+							//must wait
+							completedNotifications = false;
+							break;
+						}
+						if (!transfers[i].completionSucceeded)
+							return false;
 					}
-					if (!transfers[i].receivedCompletionNotice) {
-						if(logMINOR)
-							Logger.minor(this, "Waiting for completion notice from "+transfers[i].pn+" : "+transfers[i]);
-						//must wait
-						completedNotifications = false;
-						break;
-					}
-					if (!transfers[i].completionSucceeded)
-						return false;
-				}
-				if(noneRouteable) return false;
-				if(completedTransfers && completedNotifications) return true;
-
+					if(noneRouteable) return false;
+					if(completedTransfers && completedNotifications) return true;
+					
 					if(logMINOR) Logger.minor(this, "Waiting for (completion="+!completedTransfers+", notification="+completedNotifications+")");
 					try {
 						backgroundTransfers.wait(100*1000);
