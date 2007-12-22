@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 import freenet.support.HexUtil;
@@ -85,11 +86,12 @@ public class HMAC {
 	}
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnsupportedEncodingException {
 	HMAC s=new HMAC(SHA1.getInstance());
 	byte[] key=new byte[20];
 	System.err.println("20x0b, 'Hi There':");
-	byte[] text="Hi There".getBytes();
+	byte[] text;
+	text = "Hi There".getBytes("UTF-8");
 	
 	for (int i=0; i<key.length; i++) key[i]=(byte)0x0b;
 
@@ -113,7 +115,7 @@ public class HMAC {
 	key=new byte[20];
 	System.err.println("20x0c, 'Test With Truncation':");
 	for (int i=0; i<key.length; i++) key[i]=(byte)0x0c;
-	text="Test With Truncation".getBytes();
+	text="Test With Truncation".getBytes("UTF-8");
 	mv=s.mac(key, text, 20);
 	System.out.println(HexUtil.bytesToHex(mv, 0, mv.length));
 	mv=s.mac(key, text, 12);

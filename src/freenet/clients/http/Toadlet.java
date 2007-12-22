@@ -85,7 +85,7 @@ public abstract class Toadlet {
 		StringBuffer pageBuffer = new StringBuffer();
 		pageNode.generate(pageBuffer);
 		toadletContext.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html; charset=utf-8", pageBuffer.length());
-		toadletContext.writeData(pageBuffer.toString().getBytes());
+		toadletContext.writeData(pageBuffer.toString().getBytes("UTF-8"));
 	}
 	
 	private String l10n(String key, String pattern, String value) {

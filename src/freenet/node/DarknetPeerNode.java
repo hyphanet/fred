@@ -708,7 +708,11 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("peerNoteType", Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT);
-		fs.putSingle("privateDarknetComment", Base64.encode(comment.getBytes()));
+		try {
+			fs.putSingle("privateDarknetComment", Base64.encode(comment.getBytes("UTF-8")));
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
 		if(localFileNumber == -1) {
 			localFileNumber = writeNewExtraPeerDataFile(fs, Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE);
 			synchronized(privateDarknetComment) {

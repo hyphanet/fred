@@ -159,7 +159,7 @@ public class FProxyToadlet extends Toadlet {
 					L10n.addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link", "/link" },
 							new String[] { "<a href=\"/\">", "</a>" });
 					
-					byte[] pageBytes = pageNode.generate().getBytes();
+					byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
 					context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", pageBytes.length);
 					context.writeData(pageBytes);
 					return;
@@ -209,7 +209,7 @@ public class FProxyToadlet extends Toadlet {
 			L10n.addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link", "/link" },
 					new String[] { "<a href=\"/\">", "</a>" });
 
-			byte[] pageBytes = pageNode.generate().getBytes();
+			byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
 			context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", pageBytes.length);
 			context.writeData(pageBytes);
 		}
@@ -568,7 +568,7 @@ public class FProxyToadlet extends Toadlet {
 		try{
 			bos.write(random);
 			bos.write(key.toString().getBytes("UTF-8"));
-			bos.write(Long.toString(time / FORCE_GRAIN_INTERVAL).getBytes());
+			bos.write(Long.toString(time / FORCE_GRAIN_INTERVAL).getBytes("UTF-8"));
 		} catch (IOException e) {
 			throw new Error(e);
 		}

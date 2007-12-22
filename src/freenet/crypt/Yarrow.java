@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -734,7 +735,12 @@ public class Yarrow extends RandomSource {
 	}
 
 	private void consumeString(String str) {
-		byte[] b = str.getBytes();
+		byte[] b;
+		try {
+			b = str.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
 		consumeBytes(b);
 	}
 

@@ -176,7 +176,7 @@ public class RealNodeRequestInsertTest {
                 int node1 = random.nextInt(NUMBER_OF_NODES);
                 Node randomNode = nodes[node1];
                 Logger.error(RealNodeRequestInsertTest.class,"Inserting: \""+dataString+"\" to "+node1);
-                byte[] data = dataString.getBytes();
+                byte[] data = dataString.getBytes("UTF-8");
                 ClientCHKBlock block;
                 block = ClientCHKBlock.encode(data, false, false, (short)-1, 0);
                 ClientCHK chk = (ClientCHK) block.getClientKey();

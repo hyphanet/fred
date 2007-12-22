@@ -3,10 +3,10 @@ package freenet.frost.message;
 import java.util.*;
 
 import freenet.client.*;
-import freenet.client.ClientMetadata;
-import freenet.client.InsertBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.io.ArrayBucket;
+
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import freenet.client.InsertException;
 
@@ -279,7 +279,12 @@ public final class FrostMessage {
     	
     	int moreTries = 50;
     	
-    	byte[] data = this.getXml().getBytes();
+    	byte[] data;
+		try {
+			data = this.getXml().getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e1) {
+			throw new Error(e1);
+		}
     	InsertBlock block = null;
     	
     	do // until the message is inserted

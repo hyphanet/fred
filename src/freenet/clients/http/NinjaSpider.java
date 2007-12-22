@@ -582,7 +582,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 				}
 			}
 			MultiValueTable responseHeaders = new MultiValueTable();
-			byte[] responseBytes = pageNode.generate().getBytes();
+			byte[] responseBytes = pageNode.generate().getBytes("UTF-8");
 			context.sendReplyHeaders(200, "OK", responseHeaders, "text/html; charset=utf-8", responseBytes.length);
 			context.writeData(responseBytes);
 		} else if ("add".equals(action)) {
