@@ -344,6 +344,7 @@ public class MessageCore {
 			}
 		}
 		if(ret != null) {
+			filter.setMessage(ret);
 			filter.onMatched();
 			filter.clearMatched();
 		}
@@ -444,6 +445,7 @@ public class MessageCore {
 			if(logDEBUG) Logger.debug(this, "Returning "+ret+" from "+filter);
 		} else {
 			// Matched an unclaimed packet
+			filter.setMessage(ret);
 			filter.onMatched();
 			filter.clearMatched();
 		}
