@@ -515,24 +515,24 @@ public class NodeStats implements Persistable {
 
 		/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
 		if(maxHeapMemory < Long.MAX_VALUE) { // would mean unlimited
-		long totalHeapMemory = r.totalMemory();
-		long freeHeapMemory = r.freeMemory();
+			long totalHeapMemory = r.totalMemory();
+			long freeHeapMemory = r.freeMemory();
 		
 			freeHeapMemory = maxHeapMemory - (totalHeapMemory - freeHeapMemory);
 				
-		if(freeHeapMemory < freeHeapBytesThreshold) {
-			pInstantRejectIncoming.report(1.0);
-			rejected("<freeHeapBytesThreshold", isLocal);
-			return "<freeHeapBytesThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+')';
-		}
-		double percentFreeHeapMemoryOfMax = ((double) freeHeapMemory) / ((double) maxHeapMemory);
-		double freeHeapPercentThresholdDouble = ((double) freeHeapPercentThreshold) / ((double) 100);
-		if(percentFreeHeapMemoryOfMax < freeHeapPercentThresholdDouble) {
-			pInstantRejectIncoming.report(1.0);
-			DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
-			rejected("<freeHeapPercentThreshold", isLocal);
-			return "<freeHeapPercentThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+" ("+fix3p1pct.format(percentFreeHeapMemoryOfMax)+"))";
-		}
+			if(freeHeapMemory < freeHeapBytesThreshold) {
+				pInstantRejectIncoming.report(1.0);
+				rejected("<freeHeapBytesThreshold", isLocal);
+				return "<freeHeapBytesThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+')';
+			}
+			double percentFreeHeapMemoryOfMax = ((double) freeHeapMemory) / ((double) maxHeapMemory);
+			double freeHeapPercentThresholdDouble = ((double) freeHeapPercentThreshold) / ((double) 100);
+			if(percentFreeHeapMemoryOfMax < freeHeapPercentThresholdDouble) {
+				pInstantRejectIncoming.report(1.0);
+				DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
+				rejected("<freeHeapPercentThreshold", isLocal);
+				return "<freeHeapPercentThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+" ("+fix3p1pct.format(percentFreeHeapMemoryOfMax)+"))";
+			}
 		}
 
 		if(source != null) {
