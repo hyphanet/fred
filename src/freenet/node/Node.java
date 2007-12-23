@@ -1251,8 +1251,13 @@ public class Node implements TimeSkewDetectorCallback {
 			public void set(long val) throws InvalidConfigValueException {
 				if(val < 0)
 					throw new InvalidConfigValueException(l10n("mustBePositive"));
-				else if(val > (80 * Runtime.getRuntime().maxMemory() / 100))
-					throw new InvalidConfigValueException(l10n("storeMaxMemTooHigh"));
+				else {
+					long maxHeapMemory = Runtime.getRuntime().maxMemory();
+					/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
+					if(maxHeapMemory < Long.MAX_VALUE && val > (80 * maxHeapMemory / 100))
+						throw new InvalidConfigValueException(l10n("storeMaxMemTooHigh"));
+				}
+				
 				envMutableConfig.setCacheSize(val);
 				try{
 					storeEnvironment.setMutableConfig(envMutableConfig);
