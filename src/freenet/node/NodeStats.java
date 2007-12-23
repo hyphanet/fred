@@ -512,11 +512,14 @@ public class NodeStats implements Persistable {
 
 		Runtime r = Runtime.getRuntime();
 		long maxHeapMemory = r.maxMemory();
+
+		/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
+		if(maxHeapMemory < Long.MAX_VALUE) { // would mean unlimited
 		long totalHeapMemory = r.totalMemory();
 		long freeHeapMemory = r.freeMemory();
-		if(maxHeapMemory < Long.MAX_VALUE) { // would mean unlimited
+		
 			freeHeapMemory = maxHeapMemory - (totalHeapMemory - freeHeapMemory);
-		}
+				
 		if(freeHeapMemory < freeHeapBytesThreshold) {
 			pInstantRejectIncoming.report(1.0);
 			rejected("<freeHeapBytesThreshold", isLocal);
@@ -529,6 +532,7 @@ public class NodeStats implements Persistable {
 			DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
 			rejected("<freeHeapPercentThreshold", isLocal);
 			return "<freeHeapPercentThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+" ("+fix3p1pct.format(percentFreeHeapMemoryOfMax)+"))";
+		}
 		}
 
 		if(source != null) {
