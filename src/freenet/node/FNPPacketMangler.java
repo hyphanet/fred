@@ -296,7 +296,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				}
 			}
 		}
-		if(tryProcessAuthAnon(buf, offset, length, peer, now)) return;
+		if(node.wantAnonAuth()) {
+			if(tryProcessAuthAnon(buf, offset, length, peer, now)) return;
+		}
 		Logger.normal(this,"Unmatchable packet from "+peer);
 	}
 

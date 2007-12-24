@@ -334,6 +334,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private final NodeCryptoConfig opennetCryptoConfig;
 	private OpennetManager opennet;
 	private int maxOpennetPeers;
+	private boolean acceptSeedConnections;
 	private boolean passOpennetRefsThroughDarknet;
 	
 	// General stuff
@@ -891,6 +892,20 @@ public class Node implements TimeSkewDetectorCallback {
 		} else {
 			opennet = null;
 		}
+		
+		opennetConfig.register("acceptSeedConnections", true, 2, true, true, "Node.acceptSeedConnectionsShort", "Node.acceptSeedConnections", new BooleanCallback() {
+
+			public boolean get() {
+				return acceptSeedConnections;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				acceptSeedConnections = val;
+			}
+			
+		});
+		
+		acceptSeedConnections = opennetConfig.getBoolean("acceptSeedConnections");
 		
 		opennetConfig.finishedInitialization();
 		
@@ -2879,5 +2894,9 @@ public class Node implements TimeSkewDetectorCallback {
 				announcer.maybeSendAnnouncement();
 			}
 		}
+	}
+
+	public boolean wantAnonAuth() {
+		return opennet != null && acceptSeedConnections;
 	}
 }
