@@ -184,12 +184,12 @@ public class FProxyToadlet extends Toadlet {
 		} catch (UnsafeContentTypeException e) {
 			HTMLNode pageNode = context.getPageMaker().getPageNode(l10n("dangerousContentTitle"), context);
 			HTMLNode contentNode = context.getPageMaker().getContentNode(pageNode);
-			HTMLNode list = contentNode.addChild("li");
-			writeSizeAndMIME(list, size, mimeType, true);
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
 			infobox.addChild("div", "class", "infobox-header", e.getRawTitle());
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-			infoboxContent.addChild(e.getHTMLExplanation());
+			HTMLNode list = infoboxContent.addChild("ul");
+			writeSizeAndMIME(list, size, mimeType, true);
+			infoboxContent.addChild("p").addChild(e.getHTMLExplanation());
 			infoboxContent.addChild("p", l10n("options"));
 			HTMLNode optionList = infoboxContent.addChild("ul");
 			HTMLNode option = optionList.addChild("li");
@@ -207,6 +207,9 @@ public class FProxyToadlet extends Toadlet {
 				L10n.addL10nSubstitution(option, "FProxyToadlet.backToReferrer", new String[] { "link", "/link" },
 						new String[] { "<a href=\""+HTMLEncoder.encode(referrer)+"\">", "</a>" });
 			}
+			option = optionList.addChild("li");
+			L10n.addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link", "/link" },
+					new String[] { "<a href=\"/\">", "</a>" });
 			if(ctx.isAllowedFullAccess()) {
 				option = optionList.addChild("li");
 				HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
@@ -218,9 +221,6 @@ public class FProxyToadlet extends Toadlet {
 				}
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk") });
 			}
-			option = optionList.addChild("li");
-			L10n.addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link", "/link" },
-					new String[] { "<a href=\"/\">", "</a>" });
 
 			byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
 			context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", pageBytes.length);
