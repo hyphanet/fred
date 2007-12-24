@@ -82,7 +82,7 @@ public class FProxyToadlet extends Toadlet {
 		
 	}
 
-	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer) throws ToadletContextClosedException, IOException {
+	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String extrasNoMime = extras; // extras will not include MIME type to start with - REDFLAG maybe it should be an array
 		if(requestedMimeType != null) {
 			if(mimeType == null || !requestedMimeType.equals(mimeType)) {
@@ -91,6 +91,7 @@ public class FProxyToadlet extends Toadlet {
 			}
 			mimeType = requestedMimeType;
 		}
+		long size = data.size();
 		
 		long now = System.currentTimeMillis();
 		boolean force = false;
@@ -183,7 +184,8 @@ public class FProxyToadlet extends Toadlet {
 		} catch (UnsafeContentTypeException e) {
 			HTMLNode pageNode = context.getPageMaker().getPageNode(l10n("dangerousContentTitle"), context);
 			HTMLNode contentNode = context.getPageMaker().getContentNode(pageNode);
-			
+			HTMLNode list = contentNode.addChild("li");
+			writeSizeAndMIME(list, size, mimeType, true);
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
 			infobox.addChild("div", "class", "infobox-header", e.getRawTitle());
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -204,6 +206,17 @@ public class FProxyToadlet extends Toadlet {
 				option = optionList.addChild("li");
 				L10n.addL10nSubstitution(option, "FProxyToadlet.backToReferrer", new String[] { "link", "/link" },
 						new String[] { "<a href=\""+HTMLEncoder.encode(referrer)+"\">", "</a>" });
+			}
+			if(ctx.isAllowedFullAccess()) {
+				option = optionList.addChild("li");
+				HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+				if (mimeType != null) {
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mimeType });
+				}
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk") });
 			}
 			option = optionList.addChild("li");
 			L10n.addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link", "/link" },
@@ -382,7 +395,7 @@ public class FProxyToadlet extends Toadlet {
 			
 			String referer = sanitizeReferer(ctx);
 			
-			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "", referer);
+			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "", referer, true, ctx);
 			
 		} catch (FetchException e) {
 			String msg = e.getMessage();
@@ -491,26 +504,31 @@ public class FProxyToadlet extends Toadlet {
 		}
 	}
 
-	private String writeSizeAndMIME(HTMLNode fileInformationList, FetchException e) {
+	private static String writeSizeAndMIME(HTMLNode fileInformationList, FetchException e) {
 		boolean finalized = e.finalizedSize();
-		if(e.expectedSize > 0) {
+		String mime = e.getExpectedMimeType();
+		long size = e.expectedSize;
+		writeSizeAndMIME(fileInformationList, size, mime, finalized);
+		return mime;
+	}
+
+	private static void writeSizeAndMIME(HTMLNode fileInformationList, long size, String mime, boolean finalized) {
+		if(size > 0) {
 			if (finalized) {
-				fileInformationList.addChild("li", (l10n("sizeLabel") + ' ') + SizeUtil.formatSize(e.expectedSize));
+				fileInformationList.addChild("li", (l10n("sizeLabel") + ' ') + SizeUtil.formatSize(size));
 			} else {
-				fileInformationList.addChild("li", (l10n("sizeLabel") + ' ')+ SizeUtil.formatSize(e.expectedSize) + l10n("mayChange"));
+				fileInformationList.addChild("li", (l10n("sizeLabel") + ' ')+ SizeUtil.formatSize(size) + l10n("mayChange"));
 			}
 		} else {
 			fileInformationList.addChild("li", l10n("sizeUnknown"));
 		}
-		String mime = e.getExpectedMimeType();
 		if(mime != null) {
 			fileInformationList.addChild("li", L10n.getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { mime }));;
 		} else {
 			fileInformationList.addChild("li", l10n("unknownMIMEType"));
 		}
-		return mime;
 	}
-
+	
 	private String l10n(String key, String pattern, String value) {
 		return L10n.getString("FProxyToadlet."+key, new String[] { pattern }, new String[] { value });
 	}
