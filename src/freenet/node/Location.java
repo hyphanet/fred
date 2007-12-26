@@ -70,6 +70,20 @@ public class Location {
 		}
 	}
 	
+	/**
+	 * Given an arbitrary double (not bound to [0.0, 1.0]) return the normalized double [0.0, 1.0] which would result in simple
+	 * wrapping/overflowing. e.g. normalize(1.0+0.5)==0.5, normalize(0.5-1.0)==0.5, normalize({0.0,1.0})=={0.0,1.0}
+	 * @bug: if given double has wrapped too many times, the return value may be not be precise.
+	 */
+	public static double normalize(double rough) {
+		int intPart=(int)rough;
+		double maybeNegative=rough-intPart;
+		//note: maybeNegative is bound between (-1.0, 1.0)
+		if (maybeNegative < 0)
+			return 1.0+maybeNegative;
+		return maybeNegative;
+	}
+	
 	public static boolean equals(double newLoc, double currentLocation) {
 		return Math.abs(newLoc - currentLocation) < Double.MIN_VALUE * 2;
 	}

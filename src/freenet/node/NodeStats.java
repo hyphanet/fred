@@ -23,6 +23,7 @@ import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
+import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.math.TrivialRunningAverage;
@@ -189,11 +190,11 @@ public class NodeStats implements Persistable {
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		double nodeLoc=node.lm.getLocation();
 		// FIXME PLEASE; (int) casts; (maxCacheKeys>MAXINT?) This value will probably end up being a small constant anyway (200?).
-		this.avgCacheLocation   = new BootstrappingDecayingRunningAverage(nodeLoc, 0.0, 1.0, (int)node.maxCacheKeys, null);
-		this.avgStoreLocation   = new BootstrappingDecayingRunningAverage(nodeLoc, 0.0, 1.0, (int)node.maxStoreKeys, null);
-		this.avgCacheSuccess    = new BootstrappingDecayingRunningAverage(nodeLoc, 0.0, 1.0, 10000, null);
-		this.avgStoreSuccess    = new BootstrappingDecayingRunningAverage(nodeLoc, 0.0, 1.0, 10000, null);
-		this.avgRequestLocation = new BootstrappingDecayingRunningAverage(nodeLoc, 0.0, 1.0, 10000, null);
+		this.avgCacheLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, null);
+		this.avgStoreLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxStoreKeys, null);
+		this.avgCacheSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, null);
+		this.avgStoreSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, null);
+		this.avgRequestLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, null);
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
 		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0, node);
