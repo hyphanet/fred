@@ -107,28 +107,9 @@ public class LocationManager {
     
     public synchronized void updateLocationChangeSession(double newLoc) {
     	double oldLoc = loc;
-    	// Patterned after PeerManager.distance( double, double ), but also need to know the direction of the change
-		if (newLoc > oldLoc) {
-			double directDifference = newLoc - oldLoc;
-			double oppositeDifference = 1.0 - newLoc + oldLoc;
-			if (directDifference < oppositeDifference) {
-				if(logMINOR) Logger.minor(this, "updateLocationChangeSession: oldLoc: "+oldLoc+" -> newLoc: "+newLoc+" moved: +"+directDifference);
-				this.locChangeSession += directDifference;
-			} else {
-				if(logMINOR) Logger.minor(this, "updateLocationChangeSession: oldLoc: "+oldLoc+" -> newLoc: "+newLoc+" moved: -"+oppositeDifference);
-				this.locChangeSession -= oppositeDifference;
-			}
-		} else {
-			double directDifference = oldLoc - newLoc;
-			double oppositeDifference = 1.0 - oldLoc + newLoc;
-			if (directDifference < oppositeDifference) {
-				if(logMINOR) Logger.minor(this, "updateLocationChangeSession: oldLoc: "+oldLoc+" -> newLoc: "+newLoc+" moved: -"+directDifference);
-				this.locChangeSession -= directDifference;
-			} else {
-				if(logMINOR) Logger.minor(this, "updateLocationChangeSession: oldLoc: "+oldLoc+" -> newLoc: "+newLoc+" moved: +"+oppositeDifference);
-				this.locChangeSession += oppositeDifference;
-			}
-		}
+		double diff = Location.change(oldLoc, newLoc);
+		if(logMINOR) Logger.minor(this, "updateLocationChangeSession: oldLoc: "+oldLoc+" -> newLoc: "+newLoc+" moved: "+diff);
+		this.locChangeSession += diff;
     }
 
     /**

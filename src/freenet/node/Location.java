@@ -48,6 +48,28 @@ public class Location {
 		else return Math.min (b - a, 1.0 - b + a);
 	}
 
+	/** Patterned after distance( double, double ), but also retuns the direction of the change (positive/negative). When given two values on opposite ends of the keyspace, it will return +0.5 */
+	public static double change(double from, double to) {
+		if (to > from) {
+			double directDifference = to - from;
+			double oppositeDifference = 1.0 - to + from;
+			if (directDifference <= oppositeDifference) {
+				return directDifference;
+			} else {
+				return -oppositeDifference;
+			}
+		} else {
+			// It's going the other way, return: -1*change(to, from) except the edge case of 0.5;
+			double directDifference = from - to;
+			double oppositeDifference = 1.0 - from + to;
+			if (directDifference < oppositeDifference) {
+				return -directDifference;
+			} else {
+				return oppositeDifference;
+			}
+		}
+	}
+	
 	public static boolean equals(double newLoc, double currentLocation) {
 		return Math.abs(newLoc - currentLocation) < Double.MIN_VALUE * 2;
 	}
