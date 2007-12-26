@@ -70,7 +70,7 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 		double superValue=avg.currentValue();
 		double thisValue=Location.normalize(superValue);
 		double diff=Location.change(thisValue, d);
-		return avg.valueIfReported(superValue+diff);
+		return Location.normalize(avg.valueIfReported(superValue+diff));
 	}
 	
     public synchronized long countReports() {
