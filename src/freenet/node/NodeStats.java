@@ -22,7 +22,6 @@ import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
-import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -147,16 +146,16 @@ public class NodeStats implements Persistable {
 	// various metrics
 	public final RunningAverage routingMissDistance;
 	public final RunningAverage backedOffPercent;
-	public final RunningAverage avgCacheLocation;
-	public final RunningAverage avgStoreLocation;
-	public final RunningAverage avgCacheSuccess;
-	public final RunningAverage avgStoreSuccess;
+	public final DecayingKeyspaceAverage avgCacheLocation;
+	public final DecayingKeyspaceAverage avgStoreLocation;
+	public final DecayingKeyspaceAverage avgCacheSuccess;
+	public final DecayingKeyspaceAverage avgStoreSuccess;
 	// FIXME: does furthest{Store,Cache}Success need to be synchronized?
 	public double furthestCacheSuccess=0.0;
 	public double furthestStoreSuccess=0.0;
 	protected final Persister persister;
 	
-	protected final RunningAverage avgRequestLocation;
+	protected final DecayingKeyspaceAverage avgRequestLocation;
 	
 	// ThreadCounting stuffs
 	public final ThreadGroup rootThreadGroup;
@@ -188,13 +187,6 @@ public class NodeStats implements Persistable {
 		this.hardRandom = node.random;
 		this.routingMissDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
-		double nodeLoc=node.lm.getLocation();
-		// FIXME PLEASE; (int) casts; (maxCacheKeys>MAXINT?) This value will probably end up being a small constant anyway (200?).
-		this.avgCacheLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, null);
-		this.avgStoreLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxStoreKeys, null);
-		this.avgCacheSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, null);
-		this.avgStoreSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, null);
-		this.avgRequestLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, null);
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
 		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0, node);
@@ -338,6 +330,14 @@ public class NodeStats implements Persistable {
 		
 		estimatedSizeOfOneThrottledPacket = 1024 + DMT.packetTransmitSize(1024, 32) + 
 			node.estimateFullHeadersLengthOneMessage();
+		
+		double nodeLoc=node.lm.getLocation();
+		// FIXME PLEASE; (int) casts; (maxCacheKeys>MAXINT?) This value will probably end up being a small constant anyway (200?).
+		this.avgCacheLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageCacheLocation"));
+		this.avgStoreLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxStoreKeys, throttleFS == null ? null : throttleFS.subset("AverageStoreLocation"));
+		this.avgCacheSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheSuccessLocation"));
+		this.avgStoreSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreSuccessLocation"));
+		this.avgRequestLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageRequestLocation"));
 	}
 	
 	protected String l10n(String key) {
@@ -692,6 +692,13 @@ public class NodeStats implements Persistable {
 		fs.put("SuccessfulSskFetchBytesReceivedAverage", successfulSskFetchBytesReceivedAverage.exportFieldSet(true));
 		fs.put("SuccessfulChkInsertBytesReceivedAverage", successfulChkInsertBytesReceivedAverage.exportFieldSet(true));
 		fs.put("SuccessfulSskInsertBytesReceivedAverage", successfulSskInsertBytesReceivedAverage.exportFieldSet(true));
+		
+		//These are not really part of the 'throttling' data, but are also running averages which should be persisted
+		fs.put("AverageCacheLocation", avgCacheLocation.exportFieldSet(true));
+		fs.put("AverageStoreLocation", avgStoreLocation.exportFieldSet(true));
+		fs.put("AverageCacheSuccessLocation", avgCacheSuccess.exportFieldSet(true));
+		fs.put("AverageStoreSuccessLocation", avgStoreSuccess.exportFieldSet(true));
+		fs.put("AverageRequestLocation", avgRequestLocation.exportFieldSet(true));
 		return fs;
 	}
 

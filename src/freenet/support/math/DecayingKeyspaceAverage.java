@@ -81,6 +81,10 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 		throw new IllegalArgumentException("KeyspaceAverage does not like longs");
 	}
 	
+	public synchronized SimpleFieldSet exportFieldSet(boolean shortLived) {
+		return avg.exportFieldSet(shortLived);
+	}
+	
 	///@todo: make this a junit test
 	public static void main(String[] args) {
 		DecayingKeyspaceAverage a=new DecayingKeyspaceAverage(0.9, 10, null);
