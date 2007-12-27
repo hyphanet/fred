@@ -529,10 +529,17 @@ public class StatisticsToadlet extends Toadlet {
 			long cacheLocationReports=node.nodeStats.avgCacheLocation.countReports();
 			long storeLocationReports=node.nodeStats.avgStoreLocation.countReports();
 			
+			double storePercent=1.0*storeLocationReports/storeKeys;
+			double cachePercent=1.0*cacheLocationReports/cachedKeys;
+			
+			//Cap the reported value at 100%, as the decaying average does not account beyond that anyway.
+			if (storePercent>1.0) storePercent=1.0;
+			if (cachePercent>1.0) cachePercent=1.0;
+			
 			row=storeSizeTable.addChild("tr");
 			row.addChild("td", "Distance Stats");
-			row.addChild("td", fix3p1pct.format(1.0*storeLocationReports/storeKeys));
-			row.addChild("td", fix3p1pct.format(1.0*cacheLocationReports/cachedKeys));
+			row.addChild("td", fix3p1pct.format(storePercent));
+			row.addChild("td", fix3p1pct.format(cachePercent));
 		}
 		
 	}
