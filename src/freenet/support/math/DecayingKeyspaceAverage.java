@@ -81,6 +81,10 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 		throw new IllegalArgumentException("KeyspaceAverage does not like longs");
 	}
 	
+	public synchronized void changeMaxReports(int maxReports) {
+		avg.changeMaxReports(maxReports);
+	}
+	
 	public synchronized SimpleFieldSet exportFieldSet(boolean shortLived) {
 		return avg.exportFieldSet(shortLived);
 	}

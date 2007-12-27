@@ -1006,6 +1006,9 @@ public class Node implements TimeSkewDetectorCallback {
 							System.err.println("Caught "+e+" resizing the datastore");
 							e.printStackTrace();
 						}
+						//Perhaps a bit hackish...? Seems like this should be near it's definition in NodeStats.
+						nodeStats.avgStoreLocation.changeMaxReports(maxStoreKeys);
+						nodeStats.avgCacheLocation.changeMaxReports(maxCacheKeys);
 					}
 		});
 		

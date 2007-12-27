@@ -34,7 +34,7 @@ public final class BootstrappingDecayingRunningAverage implements
     final double max;
     double currentValue;
     long reports;
-    final int maxReports;
+    int maxReports;
     // FIXME: debugging!
     long zeros;
     long ones;
@@ -103,6 +103,10 @@ public final class BootstrappingDecayingRunningAverage implements
         return (d * decayFactor) + 
     		(currentValue * (1-decayFactor));
     }
+			
+	public synchronized void changeMaxReports(int maxReports) {
+		this.maxReports=maxReports;
+	}
 
     int SERIAL_MAGIC = 0xdd60ee7f;
     

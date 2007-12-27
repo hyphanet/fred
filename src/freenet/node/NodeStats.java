@@ -332,7 +332,8 @@ public class NodeStats implements Persistable {
 			node.estimateFullHeadersLengthOneMessage();
 		
 		double nodeLoc=node.lm.getLocation();
-		// FIXME PLEASE; (int) casts; (maxCacheKeys>MAXINT?) This value will probably end up being a small constant anyway (200?).
+		// FIXME PLEASE; (int) casts; (maxCacheKeys>MAXINT?)
+		//Note: If changing the size of avgCacheLocation or avgStoreLocation, this value is updated in Node.java on changing the store size.
 		this.avgCacheLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageCacheLocation"));
 		this.avgStoreLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxStoreKeys, throttleFS == null ? null : throttleFS.subset("AverageStoreLocation"));
 		this.avgCacheSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheSuccessLocation"));
