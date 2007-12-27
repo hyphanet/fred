@@ -414,8 +414,8 @@ public class StatisticsToadlet extends Toadlet {
 		long storeMisses = node.getChkDatastore().misses();
 		long storeAccesses = storeHits + storeMisses;
 		long overallAccesses = storeAccesses + cacheAccesses;
-		long cacheWrites=node.nodeStats.avgCacheLocation.countReports();
-		long storeWrites=node.nodeStats.avgStoreLocation.countReports();
+		long cacheWrites=node.getChkDatacache().writes();
+		long storeWrites=node.getChkDatastore().writes();
 
 		// REDFLAG Don't show database version because it's not possible to get it accurately.
 		// (It's a public static constant, so it will use the version from compile time of freenet.jar)

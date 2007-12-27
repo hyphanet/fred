@@ -77,6 +77,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private long maxChkBlocks;
 	private long hits = 0;
 	private long misses = 0;
+	private long writes = 0;
 	private final Database chkDB;
 	private final SecondaryDatabase chkDB_accessTime;
 	private final SecondaryDatabase chkDB_blockNum;
@@ -1742,6 +1743,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			chkStore.seek(storeBlock.getOffset()*(long)(dataBlockSize+headerBlockSize));
 			chkStore.write(header);
 			chkStore.write(data);
+			writes++;
 		}
 	}
 
@@ -1783,6 +1785,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			}
 			chkStore.write(header);
 			chkStore.write(data);
+			writes++;
 		}
 		return true;
 	}
@@ -1921,6 +1924,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		long blockNum;
 		
+		//FIXME: What's the point of this loop?
 		while(true) {
 				if((blockNum = grabFreeBlock()) >= 0) {
 					if(logMINOR)
@@ -2217,6 +2221,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		return misses;
 	}
 
+	public long writes() {
+		return writes;
+	}
+	
 	public long keyCount() {
 		return chkBlocksInStore;
 	}

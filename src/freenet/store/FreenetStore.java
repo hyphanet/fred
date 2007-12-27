@@ -65,6 +65,8 @@ public interface FreenetStore {
 	public long hits();
 	
 	public long misses();
+	
+	public long writes();
 
 	public long keyCount();
 }
