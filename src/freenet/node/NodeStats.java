@@ -539,10 +539,14 @@ public class NodeStats implements Persistable {
 
 		if(source != null) {
 			long queuedBytes = source.getMessageQueueLengthBytes();
-			if(queuedBytes > MAX_PEER_QUEUE_BYTES)
+			if(queuedBytes > MAX_PEER_QUEUE_BYTES) {
+				rejected(">MAX_PEER_QUEUE_BYTES", isLocal);
 				return "Too many message bytes queued for peer";
-			if(queuedBytes / (source.getThrottle().getBandwidth()+1.0) > MAX_PEER_QUEUE_TIME)
+			}
+			if(queuedBytes / (source.getThrottle().getBandwidth()+1.0) > MAX_PEER_QUEUE_TIME) {
+				rejected(">MAX_PEER_QUEUE_TIME", isLocal);
 				return "Peer's queue will take too long to transfer";
+			}
 		}
 		
 		synchronized(this) {
