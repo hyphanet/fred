@@ -439,7 +439,8 @@ public class InsertHandler implements Runnable, ByteCounter {
                 try {
                     source.sendSync(msg, InsertHandler.this);
                 } catch (NotConnectedException ex) {
-                    Logger.error(this, "Can't send "+msg+" to "+source+": "+ex);
+					//If they are not connected, that's probably why the receive failed!
+                    if (logMINOR) Logger.minor(this, "Can't send "+msg+" to "+source+": "+ex);
                 }
                 if(logMINOR) Logger.minor(this, "Failed to retrieve: "+e, e);
                 return;
