@@ -2256,17 +2256,21 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Has a request completed with this ID recently?
 	 */
-	public synchronized boolean recentlyCompleted(long id) {
+	public boolean recentlyCompleted(long id) {
+	  synchronized (recentlyCompletedIDs) {
 		return recentlyCompletedIDs.contains(new Long(id));
+	  }
 	}
 	
 	/**
 	 * A request completed (regardless of success).
 	 */
-	synchronized void completed(long id) {
+	void completed(long id) {
+	  synchronized (recentlyCompletedIDs) {
 		recentlyCompletedIDs.push(new Long(id));
 		while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
 			recentlyCompletedIDs.pop();
+	  }
 	}
 
 	/**
