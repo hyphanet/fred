@@ -1007,8 +1007,8 @@ public class Node implements TimeSkewDetectorCallback {
 							e.printStackTrace();
 						}
 						//Perhaps a bit hackish...? Seems like this should be near it's definition in NodeStats.
-						nodeStats.avgStoreLocation.changeMaxReports(maxStoreKeys);
-						nodeStats.avgCacheLocation.changeMaxReports(maxCacheKeys);
+						nodeStats.avgStoreLocation.changeMaxReports((int)maxStoreKeys);
+						nodeStats.avgCacheLocation.changeMaxReports((int)maxCacheKeys);
 					}
 		});
 		
