@@ -26,6 +26,8 @@ public class BulkTransmitter {
 
 	/** If no packets sent in this period, and no completion acknowledgement / cancellation, assume failure. */
 	static final int TIMEOUT = 5*60*1000;
+	/** Time to hang around listening for the last FNPBulkReceivedAll message */
+	static final int FINAL_ACK_TIMEOUT = 10*1000;
 	/** Available blocks */
 	final PartiallyReceivedBulk prb;
 	/** Peer who we are sending the data to */
@@ -44,6 +46,7 @@ public class BulkTransmitter {
 	final int packetSize;
 	/** Not expecting a response? */
 	final boolean noWait;
+	private long finishTime=-1;
 	
 	/**
 	 * Create a bulk data transmitter.
@@ -94,7 +97,8 @@ public class BulkTransmitter {
 						}
 						public boolean shouldTimeout() {
 							synchronized(BulkTransmitter.this) {
-								if(cancelled || finished) return true;
+								   if (cancelled) return true;
+								   if (finished)  return (System.currentTimeMillis()-finishTime > FINAL_ACK_TIMEOUT);
 							}
 							if(BulkTransmitter.this.prb.isAborted()) return true;
 							return false;
@@ -157,6 +161,7 @@ public class BulkTransmitter {
 	public void completed() {
 		synchronized(this) {
 			finished = true;
+			finishTime = System.currentTimeMillis();
 			notifyAll();
 		}
 		prb.remove(this);
