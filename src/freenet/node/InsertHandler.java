@@ -91,7 +91,8 @@ public class InsertHandler implements Runnable, ByteCounter {
         // Send Accepted
         Message accepted = DMT.createFNPAccepted(uid);
         try {
-			source.sendAsync(accepted, null, 0, this);
+			//Using sendSync here will help the next message filter not timeout... wait here or at the message filter.
+			source.sendSync(accepted, this);
 		} catch (NotConnectedException e1) {
 			if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
