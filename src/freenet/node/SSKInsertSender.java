@@ -309,7 +309,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 				if (msg == null) {
 					// Timeout :(
 					// Fairly serious problem
-					Logger.error(this, "Timeout (" + next + ") after Accepted in insert");
+					Logger.error(this, "Timeout (" + msg + ") after Accepted in insert; to ("+next+")");
 					// Terminal overload
 					// Try to propagate back to source
 					next.localRejectedOverload("AfterInsertAcceptedTimeout");
