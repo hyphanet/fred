@@ -2590,9 +2590,22 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	private void _fillJFKDHFIFO() {
 		synchronized (dhContextFIFO) {
+			if(dhContextFIFO.size() + 1 > DH_CONTEXT_BUFFER_SIZE) {
+				DiffieHellmanLightContext result = null, tmp;
+				long oldestSeen = Long.MAX_VALUE;
+
+				Iterator it = dhContextFIFO.iterator();
+				while(it.hasNext()) {
+					tmp = (DiffieHellmanLightContext) it.next();
+					if(tmp.lifetime < oldestSeen) {
+						oldestSeen = tmp.lifetime;
+						result = tmp;
+					}
+				}
+				dhContextFIFO.remove(dhContextToBePrunned = result);
+			}
+			
 			dhContextFIFO.addLast(_genLightDiffieHellmanContext());
-			if(dhContextFIFO.size() > DH_CONTEXT_BUFFER_SIZE)
-				dhContextFIFO.remove(findOldestContext());
 		}
 	}
 
@@ -2645,30 +2658,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				return dhContextToBePrunned;
 		}
 		return null;
-	}
-	
-	/**
-	 * Used to prune the oldest context
-	 * That's O^(N)... but we have only a few elements.
-	 * 
-	 * @return the oldest DiffieHellmanLightContext
-	 */
-	private DiffieHellmanLightContext findOldestContext() {
-		DiffieHellmanLightContext result = null, tmp;
-		long oldestSeen = Long.MAX_VALUE;
-		
-		synchronized (dhContextFIFO) {
-			Iterator it = dhContextFIFO.iterator();
-			while(it.hasNext()) {
-				tmp = (DiffieHellmanLightContext) it.next();
-				if(tmp.lifetime < oldestSeen) {
-					oldestSeen = tmp.lifetime;
-					result = tmp;
-				}
-			}
-			dhContextToBePrunned = result;
-		}
-		return result;
 	}
 
 	/*
