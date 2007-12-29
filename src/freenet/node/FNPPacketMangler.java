@@ -2640,8 +2640,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					return result;
 				}
 			}
-			//FIXME: Isn't this wrong? 'result.myExponential' should be exponential? And what if dhContextToBePrunned is null?
-			if((dhContextToBePrunned.myExponential).equals(result.myExponential))
+			
+			if((dhContextToBePrunned != null) && ((dhContextToBePrunned.myExponential).equals(exponential)))
 				return dhContextToBePrunned;
 		}
 		return null;
