@@ -1490,7 +1490,13 @@ public class Node implements TimeSkewDetectorCallback {
 		if(testnetHandler != null)
 			testnetHandler.start();
 		
-		checkForEvilJVMBug();
+		/* TODO: Make sure that this is called BEFORE any instances of HTTPFilter are created.
+		 * HTTPFilter uses checkForGCJCharConversionBug() which returns the value of the static
+		 * variable jvmHasGCJCharConversionBug - and this is initialized in the following function.
+		 * If this is not possible then create a separate function to check for the GCJ bug and
+		 * call this function earlier.
+		 */ 
+		checkForEvilJVMBugs();
 		
 		// TODO: implement a "required" version if needed
 		if(!nodeUpdater.isEnabled() && (NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER > NodeStarter.extBuildNumber))
@@ -1518,7 +1524,9 @@ public class Node implements TimeSkewDetectorCallback {
 		hasStarted = true;
 	}
 	
-	private void checkForEvilJVMBug() {
+	private static boolean jvmHasGCJCharConversionBug=false;
+	
+	private void checkForEvilJVMBugs() {
 		// Now check whether we are likely to get the EvilJVMBug.
 		// If we are running a Sun or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
 		
@@ -1594,6 +1602,20 @@ public class Node implements TimeSkewDetectorCallback {
 		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
 			//Note that Sun does not produce VMs for the Macintosh operating system, dont ask the user to find one...
 		} else {
+			if(jvmVendor.startsWith("Free Software Foundation")) {
+				try {
+					jvmVersion = System.getProperty("java.vm.version").split(" ")[0].replace(".","");
+					int jvmVersionInt = Integer.parseInt(jvmVersion);
+						
+					if(jvmVersionInt <= 422 && jvmVersionInt >= 100) // make sure that no bogus values cause true
+						jvmHasGCJCharConversionBug=true;
+				}
+				
+				catch(Throwable t) {
+					Logger.error(this, "GCJ version check is broken!", t);
+				}
+			}
+
 			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "version" }, new String[] { jvmVendor, jvmVersion }), UserAlert.WARNING));
 		}
 			
@@ -1601,6 +1623,10 @@ public class Node implements TimeSkewDetectorCallback {
 			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), UserAlert.WARNING));
 		}
 		
+	}
+
+	public static boolean checkForGCJCharConversionBug() {	
+		return jvmHasGCJCharConversionBug; // should be initialized on early startup
 	}
 
 	private String l10n(String key) {

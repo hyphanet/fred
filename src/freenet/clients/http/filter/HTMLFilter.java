@@ -160,7 +160,24 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			mode = INTEXT;
 
 			while (true) {
-				int x = r.read();
+				int x;
+				
+				try {
+					x = r.read();
+				}
+				/** 
+				 * libgcj up to at least 4.2.2 has a bug: InputStreamReader.refill() throws this exception when BufferedInputReader.refill() returns false for EOF. See:
+				 * line 299 at InputStreamReader.java (in refill()): http://www.koders.com/java/fidD8F7E2EB1E4C22DA90EBE0130306AE30F876AB00.aspx?s=refill#L279 
+				 * line 355 at BufferedInputStream.java (in refill()): http://www.koders.com/java/fid1949641524FAC0083432D79793F554CD85F46759.aspx?s=refill#L355
+				 * TODO: remove this when the gcj bug is fixed and the affected gcj versions are outdated. 
+				 */
+				catch(java.io.CharConversionException cce) {
+					if(freenet.node.Node.checkForGCJCharConversionBug()) /* only ignore the exception on affected libgcj */
+						x = -1; 
+					else
+						throw cce;
+				}
+				
 				if (x == -1) {
 					switch (mode) {
 						case INTEXT :
