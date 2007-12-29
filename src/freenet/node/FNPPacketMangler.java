@@ -318,11 +318,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// Does the packet match IV E( H(data) data ) ?
 		PCFBMode pcfb = PCFBMode.create(authKey);
 		int ivLength = pcfb.lengthIV();
-		MessageDigest md = SHA256.getMessageDigest();
 		int digestLength = HASH_LENGTH;
 		if(length < digestLength + ivLength + 4) {
 			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
-			SHA256.returnMessageDigest(md);
 			return false;
 		}
 		// IV at the beginning
@@ -342,10 +340,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+ ')');
 		if(dataLength > length - (ivLength+hash.length+2)) {
 			if(logMINOR) Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
-			SHA256.returnMessageDigest(md);
 			return false;
 		}
 		// Decrypt the data
+		MessageDigest md = SHA256.getMessageDigest();
 		byte[] payload = new byte[dataLength];
 		System.arraycopy(buf, dataStart, payload, 0, dataLength);
 		pcfb.blockDecipher(payload, 0, payload.length);
@@ -598,14 +596,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;  // We don't connect to disabled peers
 		}
 
-		long now = System.currentTimeMillis();
-		int delta = (int) (now - pn.lastSentPacketTime());
-
 		int negType = payload[1];
 		int packetType = payload[2];
 		int version = payload[0];
 
-		if(logMINOR) Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (phase="+packetType+", v="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) from "+replyTo+"");
+		if(logMINOR) {
+			long now = System.currentTimeMillis();
+			long last = pn.lastSentPacketTime();
+			String delta = "never";
+			if (last>0)
+				delta = TimeUtil.formatTime(now-last, 2, true)+" ago";
+			Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (phase="+packetType+", v="+version+", nt="+negType+") (last packet sent "+delta+") from "+replyTo+"");
+		}
 
 		/* Format:
 		 * 1 byte - version number (1)
@@ -1549,14 +1551,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Send an auth packet.
 	 */
 	private void sendAuthPacket(int version, int negType, int phase, byte[] data, PeerNode pn, Peer replyTo) {
-		long now = System.currentTimeMillis();
-		long delta = now - pn.lastSentPacketTime();
 		byte[] output = new byte[data.length+3];
 		output[0] = (byte) version;
 		output[1] = (byte) negType;
 		output[2] = (byte) phase;
 		System.arraycopy(data, 0, output, 3, data.length);
-		if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
+		if(logMINOR) {
+			long now = System.currentTimeMillis();
+			long last = pn.lastSentPacketTime();
+			String delta = "never";
+			if (last>0)
+				delta = TimeUtil.formatTime(now-last, 2, true)+" ago";
+			Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+delta+") to "+replyTo+" data.length="+data.length);
+		}
 		sendAuthPacket(output, pn.outgoingSetupCipher, pn, replyTo);
 	}
 	
@@ -2631,6 +2638,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					return result;
 				}
 			}
+			//FIXME: Isn't this wrong? 'result.myExponential' should be exponential? And what if dhContextToBePrunned is null?
 			if((dhContextToBePrunned.myExponential).equals(result.myExponential))
 				return dhContextToBePrunned;
 		}
