@@ -2782,7 +2782,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	synchronized void updateShouldDisconnectNow() {
 		//FIXME: We should not update VERIFIED unless we HANDSHAKE WITH THE NODE
-		if (isConnected()) {
+		if (isConnected() || verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) {
 			verifiedIncompatibleOlderVersion = forwardInvalidVersion();
 			verifiedIncompatibleNewerVersion = reverseInvalidVersion();
 		}
