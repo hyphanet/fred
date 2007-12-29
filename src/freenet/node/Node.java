@@ -1604,7 +1604,7 @@ public class Node implements TimeSkewDetectorCallback {
 		} else {
 			if(jvmVendor.startsWith("Free Software Foundation")) {
 				try {
-					jvmVersion = System.getProperty("java.vm.version").split(" ")[0].replace(".","");
+					jvmVersion = System.getProperty("java.vm.version").split(" ")[0].replaceAll("[.]","");
 					int jvmVersionInt = Integer.parseInt(jvmVersion);
 						
 					if(jvmVersionInt <= 422 && jvmVersionInt >= 100) // make sure that no bogus values cause true
