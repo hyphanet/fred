@@ -237,7 +237,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			for(int i=0;i<peers.length;i++) {
 				pn = peers[i];
 				if(pn == opn) continue;
-				if(pn.isConnected()) continue;
+				if(!pn.isConnected()) continue;
 				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
@@ -261,6 +261,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			for(int i=0;i<peers.length;i++) {
 				pn = peers[i];
 				if(pn == opn) continue;
+				if(pn.isConnected()) continue;
 				if(tryProcessAuth(buf, offset, length, pn, peer,false, now)) return;
 			}
 		}
