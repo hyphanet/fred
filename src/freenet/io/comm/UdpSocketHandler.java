@@ -54,8 +54,8 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 		this.listenPort = listenPort;
 		_sock = new DatagramSocket(listenPort, bindto);
 		int sz = _sock.getReceiveBufferSize();
-		if(sz < 32768)
-			_sock.setReceiveBufferSize(32768);
+		if(sz < 65536)
+			_sock.setReceiveBufferSize(65536);
 		try {
 			// Exit reasonably quickly
 			_sock.setSoTimeout(1000);
