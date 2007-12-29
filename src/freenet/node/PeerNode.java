@@ -348,7 +348,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		disableRoutingHasBeenSetRemotely = false; // Assume so
 		
 		lastGoodVersion = fs.get("lastGoodVersion");
-		updateShouldDisconnectNow();
+		//updateShouldDisconnectNow();
 
 		testnetEnabled = fs.getBoolean("testnet", false);
 		if(node.testnetEnabled != testnetEnabled) {
@@ -2781,8 +2781,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	synchronized void updateShouldDisconnectNow() {
-		verifiedIncompatibleOlderVersion = forwardInvalidVersion();
-		verifiedIncompatibleNewerVersion = reverseInvalidVersion();
+		//FIXME: We should not update VERIFIED unless we HANDSHAKE WITH THE NODE
+		if (isConnected()) {
+			verifiedIncompatibleOlderVersion = forwardInvalidVersion();
+			verifiedIncompatibleNewerVersion = reverseInvalidVersion();
+		}
 	}
 
 	/**
