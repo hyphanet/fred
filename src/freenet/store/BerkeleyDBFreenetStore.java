@@ -1119,6 +1119,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				} catch (CryptFormatException e) {
 					addFreeBlock(l, true, "invalid key: "+e);
 					failures++;
+				} catch (DatabaseException e) {
+					// t.abort() below may also throw.
+					System.err.println("Error while reconstructing: "+e);
+					e.printStackTrace();
 				} finally {
 					if(t != null) t.abort();
 				}
