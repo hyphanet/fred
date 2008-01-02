@@ -298,12 +298,9 @@ public class FileLoggerHook extends LoggerHook {
 									System.err.println(
 											"Closing alt on change caught " + e);
 								}
-								if(previousFile != null && previousFile.exists()) {
+								if(previousFile != null && previousFile.exists())
 									FileUtil.renameTo(latestFile, previousFile);
-									latestFile.delete();
-								} else {
-									latestFile.delete();
-								}
+								latestFile.delete();
 								altLogStream = openNewLogFile(latestFile, false);
 							}
 							//System.err.println("Rotated log files: "+filename);
