@@ -1928,7 +1928,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		long blockNum;
 		
-		//FIXME: What's the point of this loop?
+		// Keep trying until we succeed.
 		while(true) {
 				if((blockNum = grabFreeBlock()) >= 0) {
 					if(logMINOR)
