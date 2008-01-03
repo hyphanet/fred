@@ -1235,7 +1235,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(successfulHandshakeSend)
 			firstHandshake = false;
 		handshakeCount++;
-		return ((handshakeCount == MAX_HANDSHAKE_COUNT) && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion));
+		return handshakeCount == MAX_HANDSHAKE_COUNT;
 		}
 	}
 
