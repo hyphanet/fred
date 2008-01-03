@@ -27,10 +27,6 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 			PeerNodeStatus peerNodeStatus, boolean fProxyJavascriptEnabled) {
 		// Do nothing - no private notes either (no such thing as negative trust in cyberspace)
 	}
-	
-	protected void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx) {
-		// Do nothing - we don't want opennet-refs dealing
-	}
 
 	protected boolean hasNameColumn() {
 		return false;
@@ -57,8 +53,7 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 	}
 
 	protected boolean shouldDrawNoderefBox(boolean advancedModeEnabled) {
-		// Developers may want to see the noderef.
-		return advancedModeEnabled;
+		return false;
 	}
 
 	protected boolean showPeerActionsBox() {

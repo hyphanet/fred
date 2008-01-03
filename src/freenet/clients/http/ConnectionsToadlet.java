@@ -467,11 +467,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// END PEER TABLE
 		}
 		
-		drawAddPeerBox(contentNode, ctx);
-		
 		// our reference
-		if(shouldDrawNoderefBox(advancedModeEnabled))
+		if(shouldDrawNoderefBox(advancedModeEnabled)) {
+			drawAddPeerBox(contentNode, ctx);
 			drawNoderefBox(contentNode, ctx);
+		}
 		
 		// our ports
 		HTMLNode portInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
