@@ -66,6 +66,17 @@ public final class BootstrappingDecayingRunningAverage implements
     public synchronized double currentValue() {
         return currentValue;
     }
+			
+	/**
+	 * Not a public method. Changes the internally stored currentValue, returning the old one.
+	 * Used from DecayingKeyspaceAverager to normalize the stored averages. Calling this function
+	 * may (purposefully) destroy the utility of the average being kept.
+	 */
+	synchronized double setCurrentValue(double d) {
+		double old=currentValue;
+		currentValue=d;
+		return old;
+	}
 
     public synchronized void report(double d) {
         if(d < min) {

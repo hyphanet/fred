@@ -15,15 +15,12 @@ import freenet.support.SimpleFieldSet;
  */
 public class DecayingKeyspaceAverage implements RunningAverage {
 	/**
-	 'avg' is the non-normalized average location.
+	 'avg' is the normalized average location, note that the the reporting bounds are (-2.0, 2.0) however.
 	 */
 	BootstrappingDecayingRunningAverage avg;
 	
-	//If the keyspace averager wraps more than this number of times, an exception will be thrown.
-	public final static int WRAP_WARNING=1000;
-	
 	public DecayingKeyspaceAverage(double defaultValue, int maxReports, SimpleFieldSet fs) {
-		avg=new BootstrappingDecayingRunningAverage(defaultValue, -WRAP_WARNING, WRAP_WARNING, maxReports, fs);
+		avg=new BootstrappingDecayingRunningAverage(defaultValue, -2.0, 2.0, maxReports, fs);
 	}
 	
 	public DecayingKeyspaceAverage(BootstrappingDecayingRunningAverage a) {
@@ -36,7 +33,7 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 	}
     
 	public synchronized double currentValue() {
-		return Location.normalize(avg.currentValue());
+		return avg.currentValue();
 	}
 	
 	public synchronized void report(double d) {
@@ -57,10 +54,10 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 		 diff = +0.3;    //the diff from the normalized values; Location.change(0.9, 0.2);
 		 avg.report(2.2);//to successfully move the average towards the closest route to the given value.
 		 */
-		//System.err.println("debug: "+superValue+", "+thisValue+", "+diff+", "+(superValue+diff)+", "+Location.normalize(superValue+diff));
-		if (toAverage>WRAP_WARNING || toAverage<-WRAP_WARNING)
-			Logger.error(this, "DecayingKeyspaceAverage is wrapped up too many times");
 		avg.report(toAverage);
+		double newValue=avg.currentValue();
+		if (newValue < 0.0 || newValue > 1.0)
+			avg.setCurrentValue(Location.normalize(newValue));
 	}
 	
     public synchronized double valueIfReported(double d) {
