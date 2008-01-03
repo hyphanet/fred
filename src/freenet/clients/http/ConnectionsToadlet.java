@@ -467,8 +467,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// END PEER TABLE
 		}
 		
-		if(!isOpennet())
-			drawAddPeerBox(contentNode, ctx);
+		drawAddPeerBox(contentNode, ctx);
 		
 		// our reference
 		if(shouldDrawNoderefBox(advancedModeEnabled))
