@@ -79,4 +79,8 @@ public class SeedClientPeerNode extends PeerNode {
 	protected boolean ignoreLastGoodVersion() {
 		return true;
 	}
+	
+	void startARKFetcher() {
+		// Do not start an ARK fetcher.
+	}
 }
