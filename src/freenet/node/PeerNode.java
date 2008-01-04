@@ -1650,20 +1650,21 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean newer = false;
 		boolean older = false;
 		if(bogusNoderef) {
-			Logger.normal(this, "Not connecting to " + this + " - bogus noderef");
+			Logger.normal(this, "Not routing traffic to " + this + " - bogus noderef");
 			routable = false;
+			//FIXME: It looks like bogusNoderef will just be set to false a few lines later...
 		} else if(reverseInvalidVersion()) {
 			try {
 				node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(getLastGoodVersion()));
 			} catch(NumberFormatException e) {
 			// ignore
 			}
-			Logger.normal(this, "Not connecting to " + this + " - reverse invalid version " + Version.getVersionString() + " for peer's lastGoodversion: " + getLastGoodVersion());
+			Logger.normal(this, "Not routing traffic to " + this + " - reverse invalid version " + Version.getVersionString() + " for peer's lastGoodversion: " + getLastGoodVersion());
 			newer = true;
 		} else
 			newer = false;
 		if(forwardInvalidVersion()) {
-			Logger.normal(this, "Not connecting to " + this + " - invalid version " + getVersion());
+			Logger.normal(this, "Not routing traffic to " + this + " - invalid version " + getVersion());
 			older = true;
 			routable = false;
 		} else
