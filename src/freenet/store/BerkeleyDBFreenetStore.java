@@ -136,7 +136,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		int keyLength;
 		File keysFile;
 		if(type == TYPE_SSK) {
-			keyLength = 32;
+			keyLength = NodeSSK.FULL_KEY_LENGTH;
 			keysFile = new File(baseStoreDir, newStoreFileName+".keys");
 		} else {
 			keyLength = 0;
@@ -483,6 +483,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					if(len < chkBlocksFromFile) {
 						System.err.println("Truncating to "+len+" from "+chkBlocksFromFile+" as no non-holes after that point");
 						storeRAF.setLength(len * (dataBlockSize + headerBlockSize));
+						lruRAF.setLength(len * 8);
+						if(keysRAF != null)
+							keysRAF.setLength(len * keyLength);
 						blocksInStore = len;
 					}
 				}
@@ -541,6 +544,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				System.err.println("Truncating to "+bound+" as no non-holes after that point");
 				try {
 					storeRAF.setLength(bound * (dataBlockSize + headerBlockSize));
+					lruRAF.setLength(bound * 8);
+					if(keysRAF != null)
+						keysRAF.setLength(bound * keyLength);
 					blocksInStore = bound;
 					for(long l=bound;l<blocksInStore;l++)
 						freeBlocks.remove(l);
@@ -740,6 +746,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, (5*60*1000 + wantedMoveNums.length*1000L + alreadyDropped.size() * 100L))); // 1 per second
 		
 		byte[] buf = new byte[headerBlockSize + dataBlockSize];
+		long lruValue;
+		byte[] keyBuf = new byte[keyLength];
 		t = null;
 		try {
 			t = environment.beginTransaction(null,null);
@@ -786,19 +794,40 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 				DatabaseEntry wantedBlockEntry = new DatabaseEntry();
 				LongBinding.longToEntry(wantedBlock.longValue(), wantedBlockEntry);
-				long seekTo = wantedBlock.longValue() * (headerBlockSize + dataBlockSize);
+				long entry = wantedBlock.longValue();
+				boolean readLRU = false;
+				boolean readKey = false;
 				try {
-					storeRAF.seek(seekTo);
+					storeRAF.seek(entry * (headerBlockSize + dataBlockSize));
 					storeRAF.readFully(buf);
+					lruValue = 0;
+					if(lruRAF.length() > ((entry + 1) * 8)) {
+						readLRU = true;
+						lruRAF.seek(entry * 8);
+						lruValue = lruRAF.readLong();
+					}
+					if(keysRAF != null && keysRAF.length() > ((entry + 1) * keyLength)) {
+						readKey = true;
+						keysRAF.seek(entry * keyLength);
+						keysRAF.readFully(keyBuf);
+					}
 				} catch (EOFException e) {
 					System.err.println("Was reading "+wantedBlock+" to write to "+unwantedBlock);
 					System.err.println(e);
 					e.printStackTrace();
 					throw e;
 				}
-				seekTo = unwantedBlock.longValue() * (headerBlockSize + dataBlockSize);
-				storeRAF.seek(seekTo);
+				entry = unwantedBlock.longValue();
+				storeRAF.seek(entry * (headerBlockSize + dataBlockSize));
 				storeRAF.write(buf);
+				if(readLRU) {
+					lruRAF.seek(entry * 8);
+					lruRAF.writeLong(lruValue);
+				}
+				if(readKey) {
+					keysRAF.seek(entry * keyLength);
+					keysRAF.write(keyBuf);
+				}
 				
 				// Update the database w.r.t. the old block.
 				
@@ -865,6 +894,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.out.println("Finishing shrink"); // FIXME remove
 		
 		storeRAF.setLength(newSize * (dataBlockSize + headerBlockSize));
+		lruRAF.setLength(newSize * 8);
+		if(keysRAF != null)
+			keysRAF.setLength(newSize * keyLength);
 		
 		synchronized(this) {
 			blocksInStore = newSize;
@@ -965,6 +997,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			}
 			
 			storeRAF.setLength(maxBlocksInStore * (dataBlockSize + headerBlockSize));
+			lruRAF.setLength(maxBlocksInStore * 8);
+			if(keysRAF != null)
+				keysRAF.setLength(maxBlocksInStore * keyLength);
 			
 			blocksInStore = maxBlocksInStore;
 			System.err.println("Successfully shrunk store to "+blocksInStore);
@@ -1113,15 +1148,37 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+(storeRAF.length()/(dataBlockSize+headerBlockSize))*100)));
 		byte[] header = new byte[headerBlockSize];
 		byte[] data = new byte[dataBlockSize];
+		byte[] keyBuf = new byte[keyLength];
 		long l = 0;
 		long dupes = 0;
 		long failures = 0;
 		try {
 			storeRAF.seek(0);
+			lruRAF.seek(0);
+			long lruRAFLength = lruRAF.length();
+			long keysRAFLength = 0;
+			if(keysRAF != null) {
+				keysRAF.seek(0);
+				keysRAFLength = keysRAF.length();
+			}
 			for(l=0;true;l++) {
+				long lruVal;
 				Transaction t = null;
 				storeRAF.readFully(header);
 				storeRAF.readFully(data);
+				if(lruRAFLength > (l+1)*8) {
+					lruVal = lruRAF.readLong();
+					if(lruVal == 0)
+						lruVal = getNewRecentlyUsed();
+				} else {
+					lruVal = getNewRecentlyUsed();
+				}
+				boolean readKey = false;
+				if(keysRAF != null && keysRAFLength > (l+1)*keyLength) {
+					keysRAF.readFully(keyBuf);
+					readKey = true;
+				}
+				lruVal = lruRAF.readLong();
 				try {
 					byte[] routingkey = null;
 					if(type == TYPE_CHK) {
@@ -1140,11 +1197,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					} else if(type == TYPE_PUBKEY) {
 						DSAPublicKey key = DSAPublicKey.create(data);
 						routingkey = key.asBytesHash();
+					} else if(type == TYPE_SSK && readKey) {
+						// FIXME
+						continue;
 					} else {
 						continue;
 					}
 					t = environment.beginTransaction(null,null);
-					StoreBlock storeBlock = new StoreBlock(this, l);
+					StoreBlock storeBlock = new StoreBlock(this, lruVal);
 					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
 					DatabaseEntry blockDBE = new DatabaseEntry();
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
@@ -1177,6 +1237,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			blocksInStore = l;
 			try {
 				storeRAF.setLength(size);
+				lruRAF.setLength(l * 8);
+				if(keysRAF != null)
+					keysRAF.setLength(l * keyLength);
 			} catch (IOException e1) {
 				System.err.println("Failed to set size");
 			}
@@ -1272,6 +1335,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					c = null;
 					t.commit();
 					t = null;
+					synchronized(storeRAF) {
+						lruRAF.seek(storeBlock.offset * 8);
+						lruRAF.writeLong(storeBlock.recentlyUsed);
+					}
 				} else {
 					c.close();
 					c = null;
@@ -1392,6 +1459,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					c = null;
 					t.commit();
 					t = null;
+					synchronized(storeRAF) {
+						lruRAF.seek(storeBlock.offset * 8);
+						lruRAF.writeLong(storeBlock.recentlyUsed);
+					}
 				} else {
 					c.close();
 					c = null;
@@ -1526,6 +1597,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			if(!Arrays.equals(block.asBytesHash(), hash)) {
 				finishKey(storeBlock, c, t, routingkeyDBE, hash, replacement);
+				synchronized(storeRAF) {
+					lruRAF.seek(storeBlock.offset * 8);
+					lruRAF.writeLong(storeBlock.recentlyUsed);
+				}
 				return replacement;
 			}
 			
@@ -1576,6 +1651,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				storeRAF.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
 				byte[] toWrite = replacement.asPaddedBytes();
 				storeRAF.write(toWrite);
+				if(keysRAF != null) {
+					keysRAF.seek(storeBlock.offset * keyLength);
+					keysRAF.write(hash);
+				}
 			}
 			c.close();
 			t.commit();
@@ -1634,6 +1713,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 	
+	/**
+	 * Overwrite an SSK with a new SSK of the same key.
+	 */
 	private boolean overwrite(SSKBlock b) throws IOException {
 		assert(storeType == TYPE_SSK);
 		synchronized(this) {
@@ -1669,6 +1751,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				storeRAF.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
 				storeRAF.write(header);
 				storeRAF.write(data);
+				if(keysRAF != null) {
+					keysRAF.seek(storeBlock.offset * keyLength);
+					keysRAF.write(chk.getFullKey());
+				}
 			}
 			
 			// Unlock record.
@@ -1706,6 +1792,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 			
 		byte[] routingkey = block.getKey().getRoutingKey();
+		byte[] fullKey = keysRAF == null ? null : block.getKey().getFullKey();
 		byte[] data = block.getRawData();
 		byte[] header = block.getRawHeaders();
 		
@@ -1749,7 +1836,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			} else
 				throw new IllegalStateException("Unknown operation status: "+result);
 			
-			writeBlock(header, data, t, routingkeyDBE);
+			writeBlock(header, data, t, routingkeyDBE, fullKey);
 			
 			t.commit();
 			t = null;
@@ -1778,7 +1865,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			return fetch((NodeSSK)key, b);
 	}
 
-	private void overwriteLRUBlock(byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE) throws DatabaseException, IOException {
+	private void overwriteLRUBlock(byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE, byte[] fullKey) throws DatabaseException, IOException {
 		// Overwrite an other block
 		Cursor c = accessTimeDB.openCursor(t,null);
 		DatabaseEntry keyDBE = new DatabaseEntry();
@@ -1797,13 +1884,20 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			storeRAF.seek(storeBlock.getOffset()*(long)(dataBlockSize+headerBlockSize));
 			storeRAF.write(header);
 			storeRAF.write(data);
+			lruRAF.seek(storeBlock.getOffset() * 8);
+			lruRAF.writeLong(storeBlock.recentlyUsed);
+			if(keysRAF != null) {
+				keysRAF.seek(storeBlock.getOffset() * keyLength);
+				keysRAF.write(fullKey);
+			}
 			writes++;
 		}
 	}
 
-	private boolean writeNewBlock(long blockNum, byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE) throws DatabaseException, IOException {
+	private boolean writeNewBlock(long blockNum, byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE, byte[] fullKey) throws DatabaseException, IOException {
 		long byteOffset = blockNum*(dataBlockSize+headerBlockSize);
 		StoreBlock storeBlock = new StoreBlock(this, blockNum);
+		long lruValue = storeBlock.recentlyUsed;
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 		try {
@@ -1839,6 +1933,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			}
 			storeRAF.write(header);
 			storeRAF.write(data);
+			lruRAF.seek(blockNum * 8);
+			lruRAF.writeLong(lruValue);
+			if(keysRAF != null) {
+				keysRAF.seek(blockNum * keyLength);
+				keysRAF.write(fullKey);
+			}
 			writes++;
 		}
 		return true;
@@ -1953,7 +2053,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			} else
 				throw new IllegalStateException("Unknown operation status: "+result);
 			
-			writeBlock(dummy, data, t, routingkeyDBE);
+			writeBlock(dummy, data, t, routingkeyDBE, keysRAF == null ? null : hash);
 			
 			t.commit();
 			t = null;
@@ -1975,7 +2075,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 	
-	private void writeBlock(byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE) throws DatabaseException, IOException {
+	private void writeBlock(byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE, byte[] fullKey) throws DatabaseException, IOException {
 		
 		long blockNum;
 		
@@ -1984,7 +2084,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				if((blockNum = grabFreeBlock()) >= 0) {
 					if(logMINOR)
 						Logger.minor(this, "Overwriting free block: "+blockNum);
-					if(writeNewBlock(blockNum, header, data, t, routingkeyDBE))
+					if(writeNewBlock(blockNum, header, data, t, routingkeyDBE, fullKey))
 						return;
 				} else if(blocksInStore<maxBlocksInStore) {
 					// Expand the store file
@@ -1996,12 +2096,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						Logger.minor(this, "Expanding store and writing block "+blockNum);
 					// Just in case
 					freeBlocks.remove(blockNum);
-					if(writeNewBlock(blockNum, header, data, t, routingkeyDBE))
+					if(writeNewBlock(blockNum, header, data, t, routingkeyDBE, fullKey))
 						return;
 				} else {
 					if(logMINOR)
 						Logger.minor(this, "Overwriting LRU block");
-					overwriteLRUBlock(header, data, t, routingkeyDBE);
+					overwriteLRUBlock(header, data, t, routingkeyDBE, fullKey);
 					return;
 				}
 			
@@ -2144,6 +2244,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				try {
 					if(storeRAF != null)
 						storeRAF.close();
+					if(lruRAF != null)
+						lruRAF.close();
+					if(keysRAF != null)
+						keysRAF.close();
 				} catch (Throwable t) {
 					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
 						System.err.println("Caught closing database: "+t);

@@ -42,6 +42,7 @@ public class NodeSSK extends Key {
 	static final int PUBKEY_HASH_SIZE = 32;
 	static final int E_H_DOCNAME_SIZE = 32;
 	static final byte BASE_TYPE = 2;
+	public static final int FULL_KEY_LENGTH = 66;
 	
 	public String toString() {
 		return super.toString()+":pkh="+HexUtil.bytesToHex(pubKeyHash)+":ehd="+HexUtil.bytesToHex(encryptedHashedDocname);
@@ -160,6 +161,16 @@ public class NodeSSK extends Key {
     // Not just the routing key, enough data to reconstruct the key (excluding any pubkey needed)
     public byte[] getKeyBytes() {
     	return encryptedHashedDocname;
+    }
+    
+    public byte[] getFullKey() {
+    	byte[] buf = new byte[FULL_KEY_LENGTH];
+    	short type = getType();
+    	buf[0] = (byte) (type >> 8);
+    	buf[1] = (byte) (type & 0xFF);
+    	System.arraycopy(encryptedHashedDocname, 0, buf, 2, encryptedHashedDocname.length);
+    	System.arraycopy(pubKeyHash, 0, buf, 2+encryptedHashedDocname.length, pubKeyHash.length);
+    	return buf;
     }
 	
 }

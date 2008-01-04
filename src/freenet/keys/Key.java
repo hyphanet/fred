@@ -250,4 +250,7 @@ public abstract class Key implements WritableToDataOutputStream {
 		else //if(key instanceof ClientCHK
 			return new ClientCHKBlock((CHKBlock)block, (ClientCHK)key);
 	}
+
+	/** Get the full key, including any crypto type bytes, everything needed to construct a Key object */
+	public abstract byte[] getFullKey();
 }

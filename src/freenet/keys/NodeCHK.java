@@ -18,7 +18,7 @@ import freenet.support.Base64;
 public class NodeCHK extends Key {
 
     /** 32 bytes for hash, 2 bytes for type */
-    public static final short KEY_SIZE_ON_DISK = 34;
+    public static final short FULL_KEY_LENGTH = 34;
 	
     public NodeCHK(byte[] routingKey2, byte cryptoAlgorithm) {
     	super(routingKey2);
@@ -74,4 +74,13 @@ public class NodeCHK extends Key {
     public byte[] getRoutingKey(){
     	return routingKey;
     }
+
+	public byte[] getFullKey() {
+		byte[] buf = new byte[FULL_KEY_LENGTH];
+		short type = getType();
+		buf[0] = (byte) (type >> 8);
+		buf[1] = (byte) (type & 0xFF);
+		System.arraycopy(routingKey, 0, buf, 2, routingKey.length);
+		return buf;
+	}
 }
