@@ -1199,8 +1199,28 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						DSAPublicKey key = DSAPublicKey.create(data);
 						routingkey = key.asBytesHash();
 					} else if(type == TYPE_SSK && readKey) {
-						// FIXME
-						continue;
+						try {
+							NodeSSK ssk = NodeSSK.construct(keyBuf);
+							if(ssk.grabPubkey(pubkeyCache)) {
+								SSKBlock block = new SSKBlock(data, header, ssk, false);
+								routingkey = block.getKey().getRoutingKey();
+							} else {
+								String err = "No pubkey for SSK at slot "+l;
+								Logger.error(this, err);
+								System.err.println(err);
+								addFreeBlock(l, true, "no pubkey");
+								routingkey = null;
+								continue;
+							}
+						} catch (SSKVerifyException e) {
+							String err = "Bogus SSK at slot "+l+" : "+e+" - lost block "+l;
+							Logger.error(this, err, e);
+							System.err.println(err);
+							e.printStackTrace();
+							addFreeBlock(l, true, "bogus SSK");
+							routingkey = null;
+							continue;
+						}
 					} else {
 						continue;
 					}

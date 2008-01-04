@@ -12,6 +12,7 @@ import java.util.Arrays;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
+import freenet.node.GetPubkey;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -168,9 +169,28 @@ public class NodeSSK extends Key {
     	short type = getType();
     	buf[0] = (byte) (type >> 8);
     	buf[1] = (byte) (type & 0xFF);
-    	System.arraycopy(encryptedHashedDocname, 0, buf, 2, encryptedHashedDocname.length);
-    	System.arraycopy(pubKeyHash, 0, buf, 2+encryptedHashedDocname.length, pubKeyHash.length);
+    	System.arraycopy(encryptedHashedDocname, 0, buf, 2, E_H_DOCNAME_SIZE);
+    	System.arraycopy(pubKeyHash, 0, buf, 2+E_H_DOCNAME_SIZE, PUBKEY_HASH_SIZE);
     	return buf;
     }
+
+	public static NodeSSK construct(byte[] buf) throws SSKVerifyException {
+		if(buf[0] != 2)
+			throw new SSKVerifyException("Unknown type byte "+buf[0]);
+		byte cryptoAlgorithm = buf[1];
+		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
+			throw new SSKVerifyException("Unknown crypto algorithm "+buf[1]);
+		byte[] encryptedHashedDocname = new byte[E_H_DOCNAME_SIZE];
+		System.arraycopy(buf, 2, encryptedHashedDocname, 0, E_H_DOCNAME_SIZE);
+		byte[] pubkeyHash = new byte[PUBKEY_HASH_SIZE];
+		System.arraycopy(buf, 2 + E_H_DOCNAME_SIZE, pubkeyHash, 0, PUBKEY_HASH_SIZE);
+		return new NodeSSK(pubkeyHash, encryptedHashedDocname, null, cryptoAlgorithm);
+	}
+
+	public boolean grabPubkey(GetPubkey pubkeyCache) {
+		if(pubKey != null) return false;
+		pubKey = pubkeyCache.getKey(pubKeyHash);
+		return pubKey != null;
+	}
 	
 }
