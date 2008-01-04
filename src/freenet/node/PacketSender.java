@@ -201,7 +201,12 @@ public class PacketSender implements Runnable, Ticker {
 					pn.disconnected(false, false /* hopefully will recover, transient network glitch */);
 					continue;
 				} else if(pn.isRoutable() && pn.noLongerRoutable()) {
-					// we don't disconnect but we mark it incompatible
+					/*
+					 NOTE: Whereas isRoutable() && noLongerRoutable() are generally mutually exclusive, this
+					 code will only execute because of the scheduled-runnable in start() which executes
+					 updateVersionRoutablity() on all our peers. We don't disconnect the peer, but mark it
+					 as being incompatible.
+					 */
 					pn.invalidate();
 					pn.setPeerNodeStatus(now);
 					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible");
