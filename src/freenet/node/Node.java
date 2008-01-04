@@ -115,7 +115,7 @@ import freenet.support.transport.ip.HostnameSyntaxException;
 /**
  * @author amphibian
  */
-public class Node implements TimeSkewDetectorCallback {
+public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	private static boolean logMINOR;
 	
@@ -124,9 +124,9 @@ public class Node implements TimeSkewDetectorCallback {
 	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
 	
 	public class NodeNameCallback implements StringCallback{
-			Node node;
+			GetPubkey node;
 		
-			NodeNameCallback(Node n) {
+			NodeNameCallback(GetPubkey n) {
 				node=n;
 			}
 			public String get() {
@@ -2301,8 +2301,8 @@ public class Node implements TimeSkewDetectorCallback {
 	  }
 	}
 
-	/**
-	 * Look up a cached public key by its hash.
+	/* (non-Javadoc)
+	 * @see freenet.node.GetPubkey#getKey(byte[])
 	 */
 	public DSAPublicKey getKey(byte[] hash) {
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
