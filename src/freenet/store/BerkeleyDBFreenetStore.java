@@ -73,16 +73,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final TupleBinding storeBlockTupleBinding;
 	private final File fixSecondaryFile;
 	
-	private long chkBlocksInStore = 0;
-	private final Object chkBlocksInStoreLock = new Object();
-	private long maxChkBlocks;
+	private long blocksInStore = 0;
+	private final Object blocksInStoreLock = new Object();
+	private long maxBlocksInStore;
 	private long hits = 0;
 	private long misses = 0;
 	private long writes = 0;
-	private final Database chkDB;
-	private final SecondaryDatabase chkDB_accessTime;
-	private final SecondaryDatabase chkDB_blockNum;
-	private final RandomAccessFile chkStore;
+	private final Database keysDB;
+	private final SecondaryDatabase accessTimeDB;
+	private final SecondaryDatabase blockNumDB;
+	private final RandomAccessFile storeRAF;
 	private final SortedLongSet freeBlocks;
 	private final String name;
 	
@@ -248,7 +248,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.freeBlocks = new SortedLongSet();
 		name = prefix;
 		
-		this.maxChkBlocks=maxChkBlocks;
+		this.maxBlocksInStore=maxChkBlocks;
 		this.reconstructFile = reconstructFile;
 		
 		environment = env;
@@ -262,7 +262,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			wipeOldDatabases(environment, prefix);
 		}
 		
-		chkDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
+		keysDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
 		System.err.println("Opened main database for "+prefix);
 
 		this.fixSecondaryFile = fixSecondaryFile;
@@ -272,7 +272,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			Logger.error(this, "This may take some time...");
 			System.err.println("Recreating secondary databases");
 			System.err.println("This may take some time...");
-			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+chkDB.count()*100)));
+			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+keysDB.count()*100)));
 			// Of course it's not a solution but a quick fix
 			// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
 			// Either we find out what the maximum value is and we do a static method somewhere ensuring
@@ -298,7 +298,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		// Initialize secondary CHK database sorted on accesstime
 		SecondaryDatabase atime = null;
 		SecondaryConfig secDbConfig = new SecondaryConfig();
-		secDbConfig.setAllowCreate(chkDB.count() == 0);
+		secDbConfig.setAllowCreate(keysDB.count() == 0);
 		secDbConfig.setSortedDuplicates(true);
 		secDbConfig.setTransactional(true);
 		secDbConfig.setAllowPopulate(false);
@@ -310,9 +310,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			try {
 				System.err.println("Opening access times database for "+prefix);
 				atime = environment.openSecondaryDatabase
-									(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
+									(null, prefix+"CHK_accessTime", keysDB, secDbConfig);
 				// The below is too slow to be useful, because SecondaryDatabase.count() isn't optimised.
-//				long chkDBCount = chkDB.count();
+//				long chkDBCount = keysDB.count();
 //				System.err.println("Counting size of access times database...");
 //				long atimeCount = atime.count();
 //				if(atimeCount < chkDBCount) {
@@ -320,7 +320,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 //					throw new DatabaseException("Needs repopulation");
 //				}
 			} catch (DatabaseException e) {
-				WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000L+chkDB.count()*100L)));
+				WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000L+keysDB.count()*100L)));
 				// Of course it's not a solution but a quick fix
 				// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
 				// Either we find out what the maximum value is and we do a static method somewhere ensuring
@@ -337,7 +337,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				secDbConfig.setAllowCreate(true);
 				secDbConfig.setAllowPopulate(true);
 				atime = environment.openSecondaryDatabase
-									(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
+									(null, prefix+"CHK_accessTime", keysDB, secDbConfig);
 			}
 		} catch (DatabaseException e1) {
 			// Log this now because close() will probably throw too
@@ -347,7 +347,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			close(false);
 			throw e1;
 		}
-		chkDB_accessTime = atime;
+		accessTimeDB = atime;
 		System.err.println("Opened access times database for "+prefix);
 		
 		// Initialize other secondary database sorted on block number
@@ -355,7 +355,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 //			environment.removeDatabase(null, "CHK_blockNum");
 //		} catch (DatabaseNotFoundException e) { };
 		SecondaryConfig blockNoDbConfig = new SecondaryConfig();
-		blockNoDbConfig.setAllowCreate(chkDB.count() == 0);
+		blockNoDbConfig.setAllowCreate(keysDB.count() == 0);
 		blockNoDbConfig.setSortedDuplicates(false);
 		blockNoDbConfig.setAllowPopulate(false);
 		blockNoDbConfig.setTransactional(true);
@@ -369,16 +369,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			try {
 				System.err.println("Opening block db index");
 				blockNums = environment.openSecondaryDatabase
-					(null, blockDBName, chkDB, blockNoDbConfig);
+					(null, blockDBName, keysDB, blockNoDbConfig);
 				// The below is too slow to be useful, because SecondaryDatabase.count() isn't optimised.
 //				long blockNumsCount = blockNums.count();
-//				long chkDBCount = chkDB.count();
+//				long chkDBCount = keysDB.count();
 //				if(blockNumsCount < chkDBCount) {
 //					System.err.println("Block nums database: "+blockNumsCount+" but main database: "+chkDBCount);
 //					throw new DatabaseException("Needs repopulation");
 //				}
 			} catch (DatabaseException e) {
-				WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+chkDB.count()*100)));
+				WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+keysDB.count()*100)));
 				// Of course it's not a solution but a quick fix
 				// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
 				// Either we find out what the maximum value is and we do a static method somewhere ensuring
@@ -401,7 +401,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				blockNoDbConfig.setAllowCreate(true);
 				blockNoDbConfig.setAllowPopulate(true);
 				blockNums = environment.openSecondaryDatabase
-					(null, blockDBName, chkDB, blockNoDbConfig);
+					(null, blockDBName, keysDB, blockNoDbConfig);
 			}
 		} catch (DatabaseException e1) {
 			// Log this now because close() will probably throw too
@@ -413,19 +413,19 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 		System.err.println("Opened block number database for "+prefix);
 		
-		chkDB_blockNum = blockNums;
+		blockNumDB = blockNums;
 		
 		// Initialize the store file
 		try {
 			if(!storeFile.exists())
 				if(!storeFile.createNewFile())
 					throw new DatabaseException("can't create a new file !");
-			chkStore = new RandomAccessFile(storeFile,"rw");
+			storeRAF = new RandomAccessFile(storeFile,"rw");
 			
 			boolean dontCheckForHolesShrinking = false;
 			
 			long chkBlocksInDatabase = highestBlockNumberInDatabase();
-			chkBlocksInStore = chkBlocksInDatabase;
+			blocksInStore = chkBlocksInDatabase;
 			long chkBlocksFromFile = countCHKBlocksFromFile();
 			lastRecentlyUsed = getMaxRecentlyUsed();
 
@@ -439,8 +439,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				// FIXME we can do a cleverer recovery: Find all keys whose block number is > chkBlocksFromFile and delete them
 			}
 			
-			if(((chkBlocksInStore == 0) && (chkBlocksFromFile != 0)) ||
-					(((chkBlocksInStore + 10) * 1.1) < chkBlocksFromFile)) {
+			if(((blocksInStore == 0) && (chkBlocksFromFile != 0)) ||
+					(((blocksInStore + 10) * 1.1) < chkBlocksFromFile)) {
 				if(throwOnTooFewKeys) {
 					try {
 						close(false);
@@ -449,25 +449,25 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						System.err.println("Failed to close: "+t);
 						t.printStackTrace();
 					}
-					throw new DatabaseException("Keys in database: "+chkBlocksInStore+" but keys in file: "+chkBlocksFromFile);
+					throw new DatabaseException("Keys in database: "+blocksInStore+" but keys in file: "+chkBlocksFromFile);
 				} else if(!noCheck) {
 					long len = checkForHoles(chkBlocksFromFile, true);
 					dontCheckForHolesShrinking = true;
 					if(len < chkBlocksFromFile) {
 						System.err.println("Truncating to "+len+" from "+chkBlocksFromFile+" as no non-holes after that point");
-						chkStore.setLength(len * (dataBlockSize + headerBlockSize));
-						chkBlocksInStore = len;
+						storeRAF.setLength(len * (dataBlockSize + headerBlockSize));
+						blocksInStore = len;
 					}
 				}
 			}
 			
-			chkBlocksInStore = Math.max(chkBlocksInStore, chkBlocksFromFile);
-			if(logMINOR) Logger.minor(this, "Keys in store: "+chkBlocksInStore);
+			blocksInStore = Math.max(blocksInStore, chkBlocksFromFile);
+			if(logMINOR) Logger.minor(this, "Keys in store: "+blocksInStore);
 			
 			if(!noCheck) {
 				maybeOfflineShrink(dontCheckForHolesShrinking);
 				chkBlocksFromFile = countCHKBlocksFromFile();
-				chkBlocksInStore = Math.max(chkBlocksInStore, chkBlocksFromFile);
+				blocksInStore = Math.max(blocksInStore, chkBlocksFromFile);
 			}
 			
 			// Add shutdownhook
@@ -497,7 +497,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			LongBinding.longToEntry(i, blockNumEntry);
 			
 			OperationStatus success =
-				chkDB_blockNum.get(null, blockNumEntry, found, LockMode.DEFAULT);
+				blockNumDB.get(null, blockNumEntry, found, LockMode.DEFAULT);
 			
 			if(success.equals(OperationStatus.NOTFOUND)) {
 				addFreeBlock(i, true, "hole found");
@@ -510,12 +510,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.err.println("Checked database of "+blocksInFile+" blocks, found "+holes+" holes, maximum non-hole block: "+maxPresent);
 		long bound = maxPresent+1;
 		if(!dontTruncate) {
-			if(bound < chkBlocksInStore) {
+			if(bound < blocksInStore) {
 				System.err.println("Truncating to "+bound+" as no non-holes after that point");
 				try {
-					chkStore.setLength(bound * (dataBlockSize + headerBlockSize));
-					chkBlocksInStore = bound;
-					for(long l=bound;l<chkBlocksInStore;l++)
+					storeRAF.setLength(bound * (dataBlockSize + headerBlockSize));
+					blocksInStore = bound;
+					for(long l=bound;l<blocksInStore;l++)
 						freeBlocks.remove(l);
 				} catch (IOException e) {
 					Logger.error(this, "Unable to truncate!: "+e, e);
@@ -537,7 +537,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @throws IOException
 	*/
 	private void maybeOfflineShrink(boolean dontCheckForHoles) throws DatabaseException, IOException {
-		if(chkBlocksInStore <= maxChkBlocks) return;
+		if(blocksInStore <= maxBlocksInStore) return;
 		maybeSlowShrink(dontCheckForHoles, true);
 	}
 
@@ -555,10 +555,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	*/
 	private boolean maybeOnlineShrink(boolean forceBigOnlineShrinks) throws DatabaseException, IOException {
 		synchronized(this) {
-			if(chkBlocksInStore <= maxChkBlocks) return true;
+			if(blocksInStore <= maxBlocksInStore) return true;
 		}
-		if(chkBlocksInStore * 0.9 > maxChkBlocks || forceBigOnlineShrinks) {
-			Logger.error(this, "Doing quick and dirty shrink of the store by "+(100 * (chkBlocksInStore - maxChkBlocks) / chkBlocksInStore)+"%");
+		if(blocksInStore * 0.9 > maxBlocksInStore || forceBigOnlineShrinks) {
+			Logger.error(this, "Doing quick and dirty shrink of the store by "+(100 * (blocksInStore - maxBlocksInStore) / blocksInStore)+"%");
 			Logger.error(this, "Offline shrinks will preserve the most recently used data, this online shrink does not.");
 			Runnable r = new Runnable() {
 				public void run() {
@@ -589,22 +589,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		Cursor c = null;
 		Transaction t = null;
 
-		long newSize = maxChkBlocks;
-		if(chkBlocksInStore < maxChkBlocks) return;
+		long newSize = maxBlocksInStore;
+		if(blocksInStore < maxBlocksInStore) return;
 		
-		System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks+" (from db "+chkDB.count()+" from file "+countCHKBlocksFromFile()+ ')');
+		System.err.println("Shrinking from "+blocksInStore+" to "+maxBlocksInStore+" (from db "+keysDB.count()+" from file "+countCHKBlocksFromFile()+ ')');
 		
 		if(!dontCheckForHoles)
-			checkForHoles(maxChkBlocks, true);
+			checkForHoles(maxBlocksInStore, true);
 		
-		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000 + chkBlocksInStore * 100))); // 10 per second
+		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000 + blocksInStore * 100))); // 10 per second
 		
 		long realSize = countCHKBlocksFromFile();
 		
 		long highestBlock = 0;
 		
 		try {
-			c = chkDB_accessTime.openCursor(null,null);
+			c = accessTimeDB.openCursor(null,null);
 			
 			DatabaseEntry keyDBE = new DatabaseEntry();
 			DatabaseEntry blockDBE = new DatabaseEntry();
@@ -722,7 +722,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					int unwantedBlock = ((Integer) alreadyDropped.get(i)).intValue();
 					DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
 					LongBinding.longToEntry(unwantedBlock, unwantedBlockEntry);
-					chkDB_blockNum.delete(t, unwantedBlockEntry);
+					blockNumDB.delete(t, unwantedBlockEntry);
 					if(i % 1024 == 0) {
 						t.commit();
 						t = environment.beginTransaction(null,null);
@@ -748,7 +748,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
 					LongBinding.longToEntry(unwantedBlock.longValue(), unwantedBlockEntry);
 					// Delete the old block from the database.
-					chkDB_blockNum.delete(t, unwantedBlockEntry);
+					blockNumDB.delete(t, unwantedBlockEntry);
 				} else {
 					System.err.println("Keys to move but no keys to move over! Moved "+i);
 					t.commit();
@@ -761,8 +761,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				LongBinding.longToEntry(wantedBlock.longValue(), wantedBlockEntry);
 				long seekTo = wantedBlock.longValue() * (headerBlockSize + dataBlockSize);
 				try {
-					chkStore.seek(seekTo);
-					chkStore.readFully(buf);
+					storeRAF.seek(seekTo);
+					storeRAF.readFully(buf);
 				} catch (EOFException e) {
 					System.err.println("Was reading "+wantedBlock+" to write to "+unwantedBlock);
 					System.err.println(e);
@@ -770,18 +770,18 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					throw e;
 				}
 				seekTo = unwantedBlock.longValue() * (headerBlockSize + dataBlockSize);
-				chkStore.seek(seekTo);
-				chkStore.write(buf);
+				storeRAF.seek(seekTo);
+				storeRAF.write(buf);
 				
 				// Update the database w.r.t. the old block.
 				
 				DatabaseEntry routingKeyDBE = new DatabaseEntry();
 				DatabaseEntry blockDBE = new DatabaseEntry();
-				chkDB_blockNum.get(t, wantedBlockEntry, routingKeyDBE, blockDBE, LockMode.RMW);
+				blockNumDB.get(t, wantedBlockEntry, routingKeyDBE, blockDBE, LockMode.RMW);
 				StoreBlock block = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
 				block.offset = unwantedBlock.longValue();
 				storeBlockTupleBinding.objectToEntry(block, blockDBE);
-				chkDB.put(t, routingKeyDBE, blockDBE);
+				keysDB.put(t, routingKeyDBE, blockDBE);
 				
 				// Think about committing the transaction.
 				
@@ -821,7 +821,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			}
 			DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
 			LongBinding.longToEntry(blockNo, unwantedBlockEntry);
-			chkDB_blockNum.delete(t, unwantedBlockEntry);
+			blockNumDB.delete(t, unwantedBlockEntry);
 			if(i % 1024 == 0) {
 				System.out.println("Trimmed surplus keys in database: "+(i-wantedMoveNums.length)+"/"+(totalUnwantedBlocks-wantedMoveNums.length));
 				t.commit();
@@ -837,12 +837,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		System.out.println("Finishing shrink"); // FIXME remove
 		
-		chkStore.setLength(newSize * (dataBlockSize + headerBlockSize));
+		storeRAF.setLength(newSize * (dataBlockSize + headerBlockSize));
 		
 		synchronized(this) {
-			chkBlocksInStore = newSize;
+			blocksInStore = newSize;
 		}
-		System.err.println("Shrunk store, now have "+chkBlocksInStore+" of "+maxChkBlocks);
+		System.err.println("Shrunk store, now have "+blocksInStore+" of "+maxBlocksInStore);
 	}
 	
 	/**
@@ -856,8 +856,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		long maxBlocks;
 		long curBlocks;
 		synchronized(this) {
-			maxBlocks = maxChkBlocks;
-			curBlocks = chkBlocksInStore;
+			maxBlocks = maxBlocksInStore;
+			curBlocks = blocksInStore;
 			if(maxBlocks >= curBlocks) {
 				System.out.println("Not shrinking store: "+curBlocks+" < "+maxBlocks);
 				return;
@@ -885,7 +885,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 		Transaction t = null;
 		try {
-			String msg = "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+chkDB.count()+", highest "+highestBlockNumberInDatabase()+", from file "+countCHKBlocksFromFile()+ ')';
+			String msg = "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+keysDB.count()+", highest "+highestBlockNumberInDatabase()+", from file "+countCHKBlocksFromFile()+ ')';
 			System.err.println(msg); Logger.normal(this, msg);
 			WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, (5*60*1000 + 100 * (Math.max(0, curBlocks-maxBlocks)))));
 			while(true) {
@@ -902,7 +902,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					LongBinding.longToEntry(i, blockNumEntry);
 					
 					OperationStatus result =
-						chkDB_blockNum.delete(t, blockNumEntry);
+						blockNumDB.delete(t, blockNumEntry);
 					if(result.equals(OperationStatus.SUCCESS))
 						deleted++;
 					
@@ -914,8 +914,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					freeBlocks.remove(i);
 					
 					synchronized(this) {
-						maxBlocks = maxChkBlocks;
-						curBlocks = chkBlocksInStore;
+						maxBlocks = maxBlocksInStore;
+						curBlocks = blocksInStore;
 						if(maxBlocks >= curBlocks) break;
 					}
 					
@@ -931,16 +931,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				if(offline) break;
 				System.err.println("Checking...");
 				synchronized(this) {
-					maxBlocks = maxChkBlocks;
-					curBlocks = chkBlocksInStore;
+					maxBlocks = maxBlocksInStore;
+					curBlocks = blocksInStore;
 					if(maxBlocks >= curBlocks) break;
 				}
 			}
 			
-			chkStore.setLength(maxChkBlocks * (dataBlockSize + headerBlockSize));
+			storeRAF.setLength(maxBlocksInStore * (dataBlockSize + headerBlockSize));
 			
-			chkBlocksInStore = maxChkBlocks;
-			System.err.println("Successfully shrunk store to "+chkBlocksInStore);
+			blocksInStore = maxBlocksInStore;
+			System.err.println("Successfully shrunk store to "+blocksInStore);
 			
 		} finally {
 			if(t != null) t.abort();
@@ -965,7 +965,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.dataBlockSize = blockSize;
 		this.headerBlockSize = headerSize;
 		this.freeBlocks = new SortedLongSet();
-		this.maxChkBlocks=maxChkBlocks;
+		this.maxBlocksInStore=maxChkBlocks;
 		this.environment = env;
 		this.reconstructFile = reconstructFile;
 		name = prefix;
@@ -979,10 +979,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		dbConfig.setAllowCreate(true);
 		dbConfig.setTransactional(true);
 		
-		chkDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
+		keysDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
 		
-		if(chkDB.count() > 0)
-			throw new IllegalStateException("Wiped old store but it still contains "+chkDB.count()+" keys!");
+		if(keysDB.count() > 0)
+			throw new IllegalStateException("Wiped old store but it still contains "+keysDB.count()+" keys!");
 		
 		this.fixSecondaryFile = fixSecondaryFile;
 		fixSecondaryFile.delete();
@@ -997,8 +997,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		AccessTimeKeyCreator accessTimeKeyCreator =
 			new AccessTimeKeyCreator(storeBlockTupleBinding);
 		secDbConfig.setKeyCreator(accessTimeKeyCreator);
-		chkDB_accessTime = environment.openSecondaryDatabase
-							(null, prefix+"CHK_accessTime", chkDB, secDbConfig);
+		accessTimeDB = environment.openSecondaryDatabase
+							(null, prefix+"CHK_accessTime", keysDB, secDbConfig);
 		
 		// Initialize other secondary database sorted on block number
 		SecondaryConfig blockNoDbConfig = new SecondaryConfig();
@@ -1011,22 +1011,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			new BlockNumberKeyCreator(storeBlockTupleBinding);
 		blockNoDbConfig.setKeyCreator(bnkc);
 		System.err.println("Creating block db index");
-		chkDB_blockNum = environment.openSecondaryDatabase
-			(null, prefix+"CHK_blockNum", chkDB, blockNoDbConfig);
+		blockNumDB = environment.openSecondaryDatabase
+			(null, prefix+"CHK_blockNum", keysDB, blockNoDbConfig);
 		
 		// Initialize the store file
 		if(!storeFile.exists())
 			if(!storeFile.createNewFile())
 				throw new DatabaseException("can't create a new file !");
-		chkStore = new RandomAccessFile(storeFile,"rw");
+		storeRAF = new RandomAccessFile(storeFile,"rw");
 		
-		chkBlocksInStore = 0;
+		blocksInStore = 0;
 		
 		lastRecentlyUsed = 0;
 		
 		reconstruct(type);
 		
-		chkBlocksInStore = countCHKBlocksFromFile();
+		blocksInStore = countCHKBlocksFromFile();
 		lastRecentlyUsed = getMaxRecentlyUsed();
 		
 		if(!noCheck) {
@@ -1059,7 +1059,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	private void reconstruct(short type) throws DatabaseException, IOException {
-		if(chkDB.count() != 0)
+		if(keysDB.count() != 0)
 			throw new IllegalStateException("Store must be empty before reconstruction!");
 		if(type == TYPE_SSK) {
 			System.err.println("Reconstruction of SSK store not supported at present.");
@@ -1069,18 +1069,18 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 		System.err.println("Reconstructing store index from store file: type="+type);
 		Logger.error(this, "Reconstructing store index from store file: type="+type);
-		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+(chkStore.length()/(dataBlockSize+headerBlockSize))*100)));
+		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+(storeRAF.length()/(dataBlockSize+headerBlockSize))*100)));
 		byte[] header = new byte[headerBlockSize];
 		byte[] data = new byte[dataBlockSize];
 		long l = 0;
 		long dupes = 0;
 		long failures = 0;
 		try {
-			chkStore.seek(0);
+			storeRAF.seek(0);
 			for(l=0;true;l++) {
 				Transaction t = null;
-				chkStore.readFully(header);
-				chkStore.readFully(data);
+				storeRAF.readFully(header);
+				storeRAF.readFully(data);
 				try {
 					byte[] routingkey = null;
 					if(type == TYPE_CHK) {
@@ -1107,7 +1107,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
 					DatabaseEntry blockDBE = new DatabaseEntry();
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
-					OperationStatus op = chkDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
+					OperationStatus op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
 					if(op == OperationStatus.KEYEXIST) {
 						addFreeBlock(l, true, "duplicate");
 						dupes++;
@@ -1117,7 +1117,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					}
 					t.commit();
 					if(l % 1024 == 0)
-						System.out.println("Key "+l+ '/' +(chkStore.length()/(dataBlockSize+headerBlockSize))+" OK ("+dupes+" dupes, "+failures+" failures)");
+						System.out.println("Key "+l+ '/' +(storeRAF.length()/(dataBlockSize+headerBlockSize))+" OK ("+dupes+" dupes, "+failures+" failures)");
 					t = null;
 				} catch (CryptFormatException e) {
 					addFreeBlock(l, true, "invalid key: "+e);
@@ -1133,9 +1133,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		} catch (EOFException e) {
 			long size = l * (dataBlockSize + headerBlockSize);
 			System.err.println("Found end of store, truncating to "+l+" blocks : "+size);
-			chkBlocksInStore = l;
+			blocksInStore = l;
 			try {
-				chkStore.setLength(size);
+				storeRAF.setLength(size);
 			} catch (IOException e1) {
 				System.err.println("Failed to set size");
 			}
@@ -1161,7 +1161,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		Transaction t = null;
 		try {
 			t = environment.beginTransaction(null,null);
-			c = chkDB.openCursor(t,null);
+			c = keysDB.openCursor(t,null);
 
 			if(logMINOR) Logger.minor(this, "Fetching "+chk+" dontPromote="+dontPromote);
 			/**
@@ -1191,27 +1191,27 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				byte[] header = new byte[headerBlockSize];
 				byte[] data = new byte[dataBlockSize];
 				try {
-					synchronized(chkStore) {
+					synchronized(storeRAF) {
 						if(logMINOR) Logger.minor(this, "Reading data from store...");
 						long seekTarget = storeBlock.offset*(long)(dataBlockSize+headerBlockSize);
 						try {
-							chkStore.seek(seekTarget);
+							storeRAF.seek(seekTarget);
 						} catch (IOException ioe) {
 							if(seekTarget > (2l*1024*1024*1024)) {
 								Logger.error(this, "Environment does not support files bigger than 2 GB?");
 								System.out.println("Environment does not support files bigger than 2 GB? (exception to follow)");
 							}
-							Logger.error(this, "Caught IOException on chkStore.seek("+seekTarget+ ')');
+							Logger.error(this, "Caught IOException on storeRAF.seek("+seekTarget+ ')');
 							throw ioe;
 						}
-						chkStore.readFully(header);
-						chkStore.readFully(data);
+						storeRAF.readFully(header);
+						storeRAF.readFully(data);
 					}
 				} catch (EOFException e) {
 					Logger.error(this, "No block");
 					c.close();
 					c = null;
-					chkDB.delete(t, routingkeyDBE);
+					keysDB.delete(t, routingkeyDBE);
 					t.commit();
 					t = null;
 					addFreeBlock(storeBlock.offset, true, "Data off end of store file");
@@ -1249,7 +1249,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				System.err.println("Does not verify (CHK block "+storeBlock.offset+ ')');
 				c.close();
 				c = null;
-				chkDB.delete(t, routingkeyDBE);
+				keysDB.delete(t, routingkeyDBE);
 				t.commit();
 				t = null;
 				addFreeBlock(storeBlock.offset, true, "CHK does not verify");
@@ -1298,7 +1298,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		Transaction t = null;
 		try {
 			t = environment.beginTransaction(null,null);
-			c = chkDB.openCursor(t,null);
+			c = keysDB.openCursor(t,null);
 			
 			// Explanation of locking is in fetchPubKey.
 			// Basically, locking the whole element saves us all sorts of trouble, especially
@@ -1323,16 +1323,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				byte[] header = new byte[headerBlockSize];
 				byte[] data = new byte[dataBlockSize];
 				try {
-					synchronized(chkStore) {
-						chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
-						chkStore.readFully(header);
-						chkStore.readFully(data);
+					synchronized(storeRAF) {
+						storeRAF.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+						storeRAF.readFully(header);
+						storeRAF.readFully(data);
 					}
 				} catch (EOFException e) {
 					Logger.error(this, "No block");
 					c.close();
 					c = null;
-					chkDB.delete(t, routingkeyDBE);
+					keysDB.delete(t, routingkeyDBE);
 					t.commit();
 					t = null;
 					addFreeBlock(storeBlock.offset, true, "Data off end of store file");
@@ -1365,7 +1365,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 			} catch(SSKVerifyException ex) {
 				Logger.normal(this, "SSKBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+chk, ex);
-				chkDB.delete(t, routingkeyDBE);
+				keysDB.delete(t, routingkeyDBE);
 				c.close();
 				c = null;
 				t.commit();
@@ -1422,7 +1422,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		try {
 			if(logMINOR) Logger.minor(this, "Fetching pubkey: "+HexUtil.bytesToHex(hash));
 			t = environment.beginTransaction(null,null);
-			c = chkDB.openCursor(t,null);
+			c = keysDB.openCursor(t,null);
 
 			// Lock the records as soon as we find them.
 			// RMW - nobody else may access this key until we are finished.
@@ -1459,15 +1459,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(logMINOR) Logger.minor(this, "Reading from store... "+storeBlock.offset+" ("+storeBlock.recentlyUsed+ ')');
 			// When will java have pread/pwrite? :(
 			try {
-				synchronized(chkStore) {
-					chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
-					chkStore.readFully(data);
+				synchronized(storeRAF) {
+					storeRAF.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+					storeRAF.readFully(data);
 				}
 			} catch (EOFException e) {
 				Logger.error(this, "No block");
 				c.close();
 				c = null;
-				chkDB.delete(t, routingkeyDBE);
+				keysDB.delete(t, routingkeyDBE);
 				t.commit();
 				t = null;
 				addFreeBlock(storeBlock.offset, true, "Data off end of store file");
@@ -1531,10 +1531,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private boolean finishKey(StoreBlock storeBlock, Cursor c, Transaction t, DatabaseEntry routingkeyDBE, byte[] hash, DSAPublicKey replacement) throws IOException, DatabaseException {
 		if(replacement != null) {
 			Logger.normal(this, "Replacing corrupt DSAPublicKey ("+HexUtil.bytesToHex(hash));
-			synchronized(chkStore) {
-				chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+			synchronized(storeRAF) {
+				storeRAF.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
 				byte[] toWrite = replacement.asPaddedBytes();
-				chkStore.write(toWrite);
+				storeRAF.write(toWrite);
 			}
 			c.close();
 			t.commit();
@@ -1543,7 +1543,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			Logger.error(this, "DSAPublicKey: Does not verify (unequal hashes), setting accessTime to 0 for : "+HexUtil.bytesToHex(hash));
 			c.close();
 			c = null;
-			chkDB.delete(t, routingkeyDBE);
+			keysDB.delete(t, routingkeyDBE);
 			t.commit();
 			t = null;
 			addFreeBlock(storeBlock.offset, true, "pubkey does not verify");
@@ -1608,7 +1608,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		Transaction t = null;
 		try {
 			t = environment.beginTransaction(null,null);
-			c = chkDB.openCursor(t,null);
+			c = keysDB.openCursor(t,null);
 
 			// Lock the record.
 			if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
@@ -1624,10 +1624,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						
 			byte[] header = b.getRawHeaders();
 			byte[] data = b.getRawData();
-			synchronized(chkStore) {
-				chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
-				chkStore.write(header);
-				chkStore.write(data);
+			synchronized(storeRAF) {
+				storeRAF.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+				storeRAF.write(header);
+				storeRAF.write(data);
 			}
 			
 			// Unlock record.
@@ -1688,7 +1688,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Check whether it already exists
 			
 			if(logMINOR) Logger.minor(this, "Putting key "+block+" - checking whether it exists first");
-			OperationStatus result = chkDB.get(t, routingkeyDBE, blockDBE, LockMode.RMW);
+			OperationStatus result = keysDB.get(t, routingkeyDBE, blockDBE, LockMode.RMW);
 			
 			if(result == OperationStatus.SUCCESS || result == OperationStatus.KEYEXIST) {
 				if(logMINOR) Logger.minor(this, "Key already exists");
@@ -1739,7 +1739,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	private void overwriteLRUBlock(byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE) throws DatabaseException, IOException {
 		// Overwrite an other block
-		Cursor c = chkDB_accessTime.openCursor(t,null);
+		Cursor c = accessTimeDB.openCursor(t,null);
 		DatabaseEntry keyDBE = new DatabaseEntry();
 		DatabaseEntry dataDBE = new DatabaseEntry();
 		c.getFirst(keyDBE,dataDBE,LockMode.RMW);
@@ -1751,11 +1751,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		StoreBlock storeBlock = new StoreBlock(this, oldStoreBlock.getOffset());
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
-		chkDB.put(t,routingkeyDBE,blockDBE);
-		synchronized(chkStore) {
-			chkStore.seek(storeBlock.getOffset()*(long)(dataBlockSize+headerBlockSize));
-			chkStore.write(header);
-			chkStore.write(data);
+		keysDB.put(t,routingkeyDBE,blockDBE);
+		synchronized(storeRAF) {
+			storeRAF.seek(storeBlock.getOffset()*(long)(dataBlockSize+headerBlockSize));
+			storeRAF.write(header);
+			storeRAF.write(data);
 			writes++;
 		}
 	}
@@ -1766,14 +1766,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 		try {
-			chkDB.put(t,routingkeyDBE,blockDBE);
+			keysDB.put(t,routingkeyDBE,blockDBE);
 		} catch (DatabaseException e) {
 			DatabaseEntry blockNumEntry = new DatabaseEntry();
 			DatabaseEntry found = new DatabaseEntry();
 			LongBinding.longToEntry(blockNum, blockNumEntry);
 			
 			OperationStatus success =
-				chkDB_blockNum.get(t, blockNumEntry, found, LockMode.DEFAULT);
+				blockNumDB.get(t, blockNumEntry, found, LockMode.DEFAULT);
 
 			if(success == OperationStatus.KEYEXIST || success == OperationStatus.SUCCESS) {
 				System.err.println("Trying to overwrite block "+blockNum+" but already used: "+getName()+" for "+e);
@@ -1785,19 +1785,19 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				throw e;
 			}
 		}
-		synchronized(chkStore) {
+		synchronized(storeRAF) {
 			try {
-				chkStore.seek(byteOffset);
+				storeRAF.seek(byteOffset);
 			} catch (IOException ioe) {
 				if(byteOffset > (2l*1024*1024*1024)) {
 					Logger.error(this, "Environment does not support files bigger than 2 GB?");
 					System.out.println("Environment does not support files bigger than 2 GB? (exception to follow)");
 				}
-				Logger.error(this, "Caught IOException on chkStore.seek("+byteOffset+ ')');
+				Logger.error(this, "Caught IOException on storeRAF.seek("+byteOffset+ ')');
 				throw ioe;
 			}
-			chkStore.write(header);
-			chkStore.write(data);
+			storeRAF.write(header);
+			storeRAF.write(data);
 			writes++;
 		}
 		return true;
@@ -1886,7 +1886,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Check whether it already exists
 			
 			if(logMINOR) Logger.minor(this, "Putting key: "+HexUtil.bytesToHex(hash)+" : "+key+" - checking whether it exists already...");
-			OperationStatus result = chkDB.get(t, routingkeyDBE, blockDBE, LockMode.RMW);
+			OperationStatus result = keysDB.get(t, routingkeyDBE, blockDBE, LockMode.RMW);
 			
 			if(result == OperationStatus.SUCCESS || result == OperationStatus.KEYEXIST) {
 				// Key already exists!
@@ -1945,11 +1945,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						Logger.minor(this, "Overwriting free block: "+blockNum);
 					if(writeNewBlock(blockNum, header, data, t, routingkeyDBE))
 						return;
-				} else if(chkBlocksInStore<maxChkBlocks) {
+				} else if(blocksInStore<maxBlocksInStore) {
 					// Expand the store file
-					synchronized(chkBlocksInStoreLock) {
-						blockNum = chkBlocksInStore;
-						chkBlocksInStore++;
+					synchronized(blocksInStoreLock) {
+						blockNum = blocksInStore;
+						blocksInStore++;
 					}
 					if(logMINOR)
 						Logger.minor(this, "Expanding store and writing block "+blockNum);
@@ -1971,7 +1971,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private long grabFreeBlock() {
 		while(!freeBlocks.isEmpty()) {
 			long blockNum = freeBlocks.removeFirst();
-			if(blockNum < maxChkBlocks) return blockNum;
+			if(blockNum < maxBlocksInStore) return blockNum;
 		}
 		return -1;
 	}
@@ -2101,8 +2101,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				if(sleep)
 					Thread.sleep(5000);
 				try {
-					if(chkStore != null)
-						chkStore.close();
+					if(storeRAF != null)
+						storeRAF.close();
 				} catch (Throwable t) {
 					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
 						System.err.println("Caught closing database: "+t);
@@ -2110,8 +2110,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					}
 				}
 				try {
-					if(chkDB_accessTime != null)
-						chkDB_accessTime.close();
+					if(accessTimeDB != null)
+						accessTimeDB.close();
 				} catch (Throwable t) {
 					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
 						System.err.println("Caught closing database: "+t);
@@ -2119,8 +2119,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					}
 				}
 				try {
-					if(chkDB_blockNum != null)
-						chkDB_blockNum.close();
+					if(blockNumDB != null)
+						blockNumDB.close();
 				} catch (Throwable t) {
 					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
 						System.err.println("Caught closing database: "+t);
@@ -2128,8 +2128,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					}
 				}
 				try {	
-					if(chkDB != null)
-						chkDB.close();
+					if(keysDB != null)
+						keysDB.close();
 				} catch (Throwable t) {
 					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
 						System.err.println("Caught closing database: "+t);
@@ -2153,7 +2153,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private long highestBlockNumberInDatabase() throws DatabaseException {
 		Cursor c = null;
 		try {
-			c = chkDB_blockNum.openCursor(null,null);
+			c = blockNumDB.openCursor(null,null);
 			DatabaseEntry keyDBE = new DatabaseEntry();
 			DatabaseEntry dataDBE = new DatabaseEntry();
 			if(c.getLast(keyDBE,dataDBE,null)==OperationStatus.SUCCESS) {
@@ -2176,7 +2176,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	
 	private long countCHKBlocksFromFile() throws IOException {
 		int keySize = headerBlockSize + dataBlockSize;
-		long fileSize = chkStore.length();
+		long fileSize = storeRAF.length();
 		return fileSize / keySize;
 	}
 
@@ -2185,7 +2185,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		Cursor c = null;
 		try {
-			c = chkDB_accessTime.openCursor(null,null);
+			c = accessTimeDB.openCursor(null,null);
 			DatabaseEntry keyDBE = new DatabaseEntry();
 			DatabaseEntry dataDBE = new DatabaseEntry();
 			if(c.getLast(keyDBE,dataDBE,null)==OperationStatus.SUCCESS) {
@@ -2218,13 +2218,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	public void setMaxKeys(long maxStoreKeys, boolean forceBigShrink) throws DatabaseException, IOException {
 		synchronized(this) {
-			maxChkBlocks = maxStoreKeys;
+			maxBlocksInStore = maxStoreKeys;
 		}
 		maybeOnlineShrink(false);
 	}
 	
 	public long getMaxKeys() {
-		return maxChkBlocks;
+		return maxBlocksInStore;
 	}
 
 	public long hits() {
@@ -2240,6 +2240,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 	
 	public long keyCount() {
-		return chkBlocksInStore;
+		return blocksInStore;
 	}
 }
