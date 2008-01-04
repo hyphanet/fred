@@ -1148,6 +1148,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @return null if there is no such block stored, otherwise the block.
 	*/
 	public CHKBlock fetch(NodeCHK chk, boolean dontPromote) throws IOException {
+		assert(storeType == TYPE_CHK);
 		synchronized(this) {
 			if(closed)
 				return null;
@@ -1284,6 +1285,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @return null if there is no such block stored, otherwise the block.
 	*/
 	public SSKBlock fetch(NodeSSK chk, boolean dontPromote) throws IOException {
+		assert(storeType == TYPE_SSK);
 		synchronized(this) {
 			if(closed)
 				return null;
@@ -1407,6 +1409,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @return null if there is no such block stored, otherwise the block.
 	*/
 	public DSAPublicKey fetchPubKey(byte[] hash, DSAPublicKey replacement, boolean dontPromote) throws IOException {
+		assert(storeType == TYPE_PUBKEY);
 		synchronized(this) {
 			if(closed)
 				return null;
@@ -1565,6 +1568,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	public void put(CHKBlock b) throws IOException {
+		assert(storeType == TYPE_CHK);
 		NodeCHK chk = (NodeCHK) b.getKey();
 		CHKBlock oldBlock = fetch(chk, false);
 		if(oldBlock != null)
@@ -1573,6 +1577,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 	
 	public void put(SSKBlock b, boolean overwrite) throws IOException, KeyCollisionException {
+		assert(storeType == TYPE_SSK);
 		NodeSSK ssk = (NodeSSK) b.getKey();
 		SSKBlock oldBlock = fetch(ssk, false);
 		if(oldBlock != null) {
@@ -1589,6 +1594,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 	
 	private boolean overwrite(SSKBlock b) throws IOException {
+		assert(storeType == TYPE_SSK);
 		synchronized(this) {
 			if(closed)
 				return false;
@@ -1845,6 +1851,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* Store a pubkey.
 	*/
 	public void put(byte[] hash, DSAPublicKey key) throws IOException {
+		assert(storeType == TYPE_PUBKEY);
 		innerPut(hash, key);
 	}
 
