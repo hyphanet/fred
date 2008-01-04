@@ -1163,17 +1163,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				keysRAFLength = keysRAF.length();
 			}
 			for(l=0;true;l++) {
-				long lruVal;
+				long lruVal = 0;
 				Transaction t = null;
 				storeRAF.readFully(header);
 				storeRAF.readFully(data);
-				if(lruRAFLength > (l+1)*8) {
+				if(lruRAFLength > (l+1)*8)
 					lruVal = lruRAF.readLong();
-					if(lruVal == 0)
-						lruVal = getNewRecentlyUsed();
-				} else {
+				if(lruVal == 0)
 					lruVal = getNewRecentlyUsed();
-				}
 				boolean readKey = false;
 				if(keysRAF != null && keysRAFLength > (l+1)*keyLength) {
 					keysRAF.readFully(keyBuf);
