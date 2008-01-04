@@ -2183,8 +2183,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 
 		public Object entryToObject(TupleInput ti) {
-			if(Logger.shouldLog(Logger.DEBUG, this))
-				Logger.debug(this, "Available: "+ti.available());
 			long offset = ti.readLong();
 			long lastAccessed = ti.readLong();
 			
