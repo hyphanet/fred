@@ -131,7 +131,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
 		File lruFile = new File(baseStoreDir, newStoreFileName+".lru");
-		File keysFile = new File(baseStoreDir, newStoreFileName+".keys");
+		File keysFile = null;
+		if(type == TYPE_SSK)
+			keysFile = new File(baseStoreDir, newStoreFileName+".keys");
 
 		String newDBPrefix = typeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';
 		
@@ -431,10 +433,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					throw new DatabaseException("can't create a new file "+lruFile+" !");
 			lruRAF = new RandomAccessFile(lruFile,"rw");
 			
-			if(!keysFile.exists())
-				if(!keysFile.createNewFile())
-					throw new DatabaseException("can't create a new file "+keysFile+" !");
-			keysRAF = new RandomAccessFile(lruFile,"rw");
+			if(keysFile != null) {
+				if(!keysFile.exists())
+					if(!keysFile.createNewFile())
+						throw new DatabaseException("can't create a new file "+keysFile+" !");
+				keysRAF = new RandomAccessFile(lruFile,"rw");
+			} else keysRAF = null;
 			
 			boolean dontCheckForHolesShrinking = false;
 			
@@ -1039,10 +1043,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				throw new DatabaseException("can't create a new file "+lruFile+" !");
 		lruRAF = new RandomAccessFile(lruFile,"rw");
 		
-		if(!keysFile.exists())
-			if(!keysFile.createNewFile())
-				throw new DatabaseException("can't create a new file "+keysFile+" !");
-		keysRAF = new RandomAccessFile(lruFile,"rw");
+		if(keysFile != null) {
+			if(!keysFile.exists())
+				if(!keysFile.createNewFile())
+					throw new DatabaseException("can't create a new file "+keysFile+" !");
+			keysRAF = new RandomAccessFile(lruFile,"rw");
+		} else
+			keysRAF = null;
 		
 		blocksInStore = 0;
 		
