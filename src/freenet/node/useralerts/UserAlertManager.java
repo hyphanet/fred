@@ -204,8 +204,9 @@ public class UserAlertManager implements Comparator {
 			separatorNeeded = true;
 			messageTypes++;
 		}
-		if (messageTypes > 1) {
-			alertSummaryString.append(" | ");
+		if (messageTypes != 1) {
+			if (separatorNeeded)
+				alertSummaryString.append(" | ");
 			alertSummaryString.append(l10n("totalLabel")).append(' ').append(totalNumber);
 		}
 		HTMLNode summaryBox = null;
