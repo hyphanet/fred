@@ -180,7 +180,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("PEERS - report tab delimited list of peers with name, ip+port, identity, location, status and idle time in seconds\r\n");
         sb.append("NAME:<new node name> - change the node's name.\r\n");
         sb.append("UPDATE ask the node to self-update if possible. \r\n");
-        sb.append("FILTER: \\r\\n<text, until a . on a line by itself> - output the content as it returns from the content filter");
+        sb.append("FILTER: \\r\\n<text, until a . on a line by itself> - output the content as it returns from the content filter\r\n");
 //        sb.append("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.\r\n");
 //        sb.append("SAY:<text> - send text to the last created/pushed stream\r\n");
         sb.append("STATUS - display some status information on the node including its reference and connections.\r\n");
