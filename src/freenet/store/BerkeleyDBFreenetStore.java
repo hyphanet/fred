@@ -447,7 +447,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				if(!keysFile.exists())
 					if(!keysFile.createNewFile())
 						throw new DatabaseException("can't create a new file "+keysFile+" !");
-				keysRAF = new RandomAccessFile(lruFile,"rw");
+				keysRAF = new RandomAccessFile(keysFile,"rw");
 			} else keysRAF = null;
 			
 			boolean dontCheckForHolesShrinking = false;
@@ -1093,7 +1093,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(!keysFile.exists())
 				if(!keysFile.createNewFile())
 					throw new DatabaseException("can't create a new file "+keysFile+" !");
-			keysRAF = new RandomAccessFile(lruFile,"rw");
+			keysRAF = new RandomAccessFile(keysFile,"rw");
 		} else
 			keysRAF = null;
 		
@@ -1960,6 +1960,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(keysRAF != null) {
 				keysRAF.seek(blockNum * keyLength);
 				keysRAF.write(fullKey);
+				if(logMINOR)
+					Logger.minor(this, "Written full key length "+fullKey.length+" to block "+blockNum+" at "+(blockNum * keyLength));
+			} else if(logMINOR && storeType == TYPE_SSK) {
+				Logger.minor(this, "Not writing full key length "+fullKey.length+" for block "+blockNum);
 			}
 			writes++;
 		}
