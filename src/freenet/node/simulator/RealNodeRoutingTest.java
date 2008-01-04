@@ -40,9 +40,10 @@ public class RealNodeRoutingTest {
         System.out.println();
         String wd = "realNodeRequestInsertTest";
         new File(wd).mkdir();
-        NodeStarter.globalTestInit(wd); // ignore Random, using our own
+        //NOTE: globalTestInit returns in ignored random source
+        NodeStarter.globalTestInit(wd);
         DummyRandomSource random = new DummyRandomSource();
-        DiffieHellman.init(random);
+        //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();

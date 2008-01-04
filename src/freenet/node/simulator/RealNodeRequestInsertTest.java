@@ -41,14 +41,15 @@ public class RealNodeRequestInsertTest {
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
         String wd = "realNodeRequestInsertTest";
         new File(wd).mkdir();
-        NodeStarter.globalTestInit(wd); // ignore Random, using our own
+        //NOTE: globalTestInit returns in ignored random source
+        NodeStarter.globalTestInit(wd);
         // Don't clobber nearby nodes!
         Logger.setupStdoutLogging(Logger.DEBUG, "freenet.store:minor,freenet.node.Location:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         Logger.globalSetThreshold(Logger.DEBUG);
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
-        DiffieHellman.init(random);
+        //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
