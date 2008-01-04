@@ -46,6 +46,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.node.GetPubkey;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -67,7 +68,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	final File reconstructFile;
 	final int dataBlockSize;
 	final int headerBlockSize;
-	
+
 	private final short storeType;
 	private final Environment environment;
 	private final TupleBinding storeBlockTupleBinding;
@@ -109,7 +110,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	public static BerkeleyDBFreenetStore construct(int lastVersion, File baseStoreDir, boolean isStore,
 			String suffix, long maxStoreKeys, int blockSize, int headerSize, boolean throwOnTooFewKeys, 
 			short type, Environment storeEnvironment, RandomSource random, 
-			SemiOrderedShutdownHook storeShutdownHook, boolean tryDbLoad, File reconstructFile) throws DatabaseException, IOException {
+			SemiOrderedShutdownHook storeShutdownHook, boolean tryDbLoad, File reconstructFile, GetPubkey pubkeyCache) throws DatabaseException, IOException {
 
 		/**
 		* Migration strategy:
@@ -157,7 +158,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Don't need to create a new Environment, since we can use the old one.
 			
 			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, maxStoreKeys,
-					blockSize, headerSize, throwOnTooFewKeys, false, lastVersion, type, false, storeShutdownHook, tryDbLoad, reconstructFile, keyLength);
+					blockSize, headerSize, throwOnTooFewKeys, false, lastVersion, type, false, storeShutdownHook, tryDbLoad, reconstructFile, keyLength, pubkeyCache);
 			
 		} else {
 			
@@ -166,7 +167,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
 					maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, false, lastVersion, type, 
-					false, storeShutdownHook, tryDbLoad, reconstructFile, keyLength);
+					false, storeShutdownHook, tryDbLoad, reconstructFile, keyLength, pubkeyCache);
 			
 		}
 
@@ -176,7 +177,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private static BerkeleyDBFreenetStore openStore(Environment storeEnvironment, File baseDir, String newDBPrefix, File newStoreFile,
 			File lruFile, File keysFile, File newFixSecondaryFile, long maxStoreKeys, int blockSize, int headerSize, boolean throwOnTooFewKeys,
 			boolean noCheck, int lastVersion, short type, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, 
-			boolean tryDbLoad, File reconstructFile, int keyLength) throws DatabaseException, IOException {
+			boolean tryDbLoad, File reconstructFile, int keyLength, GetPubkey pubkeyCache) throws DatabaseException, IOException {
 		
 		if(tryDbLoad) {
 			String dbName = newDBPrefix+"CHK";
@@ -230,7 +231,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Reconstruct
 			
 			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
-					maxStoreKeys, blockSize, headerSize, type, noCheck, storeShutdownHook, reconstructFile, keyLength);
+					maxStoreKeys, blockSize, headerSize, type, noCheck, storeShutdownHook, reconstructFile, keyLength, pubkeyCache);
 		}
 	}
 
@@ -1021,7 +1022,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @throws IOException If the store cannot be opened because of a filesystem problem.
 	* @throws FileNotFoundException if the dir does not exist and could not be created
 	*/
-	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, short type, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, int keyLength) throws DatabaseException, IOException {
+	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, short type, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, int keyLength, GetPubkey pubkeyCache) throws DatabaseException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.storeType = type;
 		this.keyLength = keyLength;
@@ -1100,7 +1101,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		lastRecentlyUsed = 0;
 		
-		reconstruct(type);
+		reconstruct(type, pubkeyCache);
 		
 		blocksInStore = countCHKBlocksFromFile();
 		lastRecentlyUsed = getMaxRecentlyUsed();
@@ -1134,7 +1135,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
-	private void reconstruct(short type) throws DatabaseException, IOException {
+	private void reconstruct(short type, GetPubkey pubkeyCache) throws DatabaseException, IOException {
 		if(keysDB.count() != 0)
 			throw new IllegalStateException("Store must be empty before reconstruction!");
 		if(type == TYPE_SSK) {
