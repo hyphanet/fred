@@ -176,33 +176,38 @@ public class UserAlertManager implements Comparator {
 			return new HTMLNode("#", "");
 		
 		boolean separatorNeeded = false;
+		int messageTypes=0;
 		StringBuffer alertSummaryString = new StringBuffer(1024);
 		if (numberOfCriticalError != 0) {
 			alertSummaryString.append(l10n("criticalErrorCountLabel")).append(' ').append(numberOfCriticalError);
 			separatorNeeded = true;
+			messageTypes++;
 		}
 		if (numberOfError != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(" | ");
 			alertSummaryString.append(l10n("errorCountLabel")).append(' ').append(numberOfError);
 			separatorNeeded = true;
+			messageTypes++;
 		}
 		if (numberOfWarning != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(" | ");
 			alertSummaryString.append(l10n("warningCountLabel")).append(' ').append(numberOfWarning);
 			separatorNeeded = true;
+			messageTypes++;
 		}
 		if (numberOfMinor != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(" | ");
 			alertSummaryString.append(l10n("minorCountLabel")).append(' ').append(numberOfMinor);
 			separatorNeeded = true;
+			messageTypes++;
 		}
-		if (separatorNeeded)
+		if (messageTypes > 1) {
 			alertSummaryString.append(" | ");
-		alertSummaryString.append(l10n("totalLabel")).append(totalNumber);
-
+			alertSummaryString.append(l10n("totalLabel")).append(' ').append(totalNumber);
+		}
 		HTMLNode summaryBox = null;
 
 		if (highestLevel <= UserAlert.CRITICAL_ERROR)
