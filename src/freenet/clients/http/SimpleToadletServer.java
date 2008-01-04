@@ -364,16 +364,15 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			ssl = fproxyConfig.getBoolean("ssl");
 		}
 
-		if(ssl) {
-			this.networkInterface = SSLNetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor(), true);
-		} else {
-			this.networkInterface = NetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor(), true);
-		}
-		
 		if(!enabled) {
 			Logger.normal(core, "Not starting FProxy as it's disabled");
 			System.out.println("Not starting FProxy as it's disabled");
 		} else {
+			if(ssl) {
+				this.networkInterface = SSLNetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor(), true);
+			} else {
+				this.networkInterface = NetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor(), true);
+			}
 			myThread = new Thread(this, "SimpleToadletServer");
 			myThread.setDaemon(true);
 		}
