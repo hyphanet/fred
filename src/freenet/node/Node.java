@@ -1106,7 +1106,9 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		// Percentage of the database that must contain usefull data
 		// decrease to increase performance, increase to save disk space
-		System.setProperty("je.cleaner.minUtilization","90");
+		// Let it stay at the default of 50% for best performance.
+		// We only use it for indexes, so it won't get huge.
+		//System.setProperty("je.cleaner.minUtilization","90");
 		// Delete empty log files
 		System.setProperty("je.cleaner.expunge","true");
 		EnvironmentConfig envConfig = new EnvironmentConfig();
