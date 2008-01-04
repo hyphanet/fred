@@ -1169,8 +1169,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				storeRAF.readFully(data);
 				if(lruRAFLength > (l+1)*8)
 					lruVal = lruRAF.readLong();
-				if(lruVal == 0)
+				if(lruVal == 0) {
+					Logger.normal(this, "Block "+l+" : resetting LRU");
 					lruVal = getNewRecentlyUsed();
+				} else {
+					Logger.normal(this, "Block "+l+" : LRU "+lruVal);
+				}
 				boolean readKey = false;
 				if(keysRAF != null && keysRAFLength > (l+1)*keyLength) {
 					keysRAF.readFully(keyBuf);
