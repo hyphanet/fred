@@ -81,13 +81,15 @@ import freenet.support.transport.ip.HostnameSyntaxException;
 public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	private String lastGoodVersion;
-	/** Set to true based on a relevant incoming handshake from this peer
-	*  Set true if this peer has a incompatible older build than we are
-	*/
+	/**
+	 * True if this peer has a build number older than our last-known-good build number.
+	 * Note that even if this is true, the node can still be 'connected'.
+	 */
 	protected boolean unroutableOlderVersion;
-	/** Set to true based on a relevant incoming handshake from this peer
-	*  Set true if this peer has a incompatible newer build than we are
-	*/
+	/**
+	 * True if this peer reports that our build number is before their last-known-good build number.
+	 * Note that even if this is true, the node can still be 'connected'.
+	 */
 	protected boolean unroutableNewerVersion;
 	protected boolean disableRouting;
 	protected boolean disableRoutingHasBeenSetLocally;
@@ -158,7 +160,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private int handshakeCount;
 	/** After this many failed handshakes, we start the ARK fetcher. */
 	private static final int MAX_HANDSHAKE_COUNT = 2;
-	/** Current location in the keyspace */
+	/** Current location in the keyspace, or -1 if it is unknown */
 	private double currentLocation;
 	/** Node identity; for now a block of data, in future a
 	* public key (FIXME). Cannot be changed.
@@ -850,47 +852,54 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	/**
-	* What is my current keyspace location?
+	* Returns this peer's current keyspace location, or -1 if it is unknown.
 	*/
 	public synchronized double getLocation() {
 		return currentLocation;
 	}
 
 	/**
-	* Returns a unique node identifier (usefull to compare 2 pn)
+	* Returns a unique node identifier (usefull to compare two peernodes).
 	*/
 	public int getIdentityHash() {
 		return hashCode;
 	}
 
 	/**
-	* Is this peer too old for us? (i.e. our lastGoodVersion is newer than it's version)
-	* 
-	*/
+	 * Returns true if the last-known build number for this peer is to old to allow traffic to be routed to it.
+	 * This does not give any indication as to the connection status of the peer.
+	 */
 	public synchronized boolean isUnroutableOlderVersion() {
 		return unroutableOlderVersion;
 	}
 
 	/**
-	* Is this peer too new for us? (i.e. our version is older than it's lastGoodVersion)
-	* 
-	*/
+	 * Returns true if this (or another) peer has reported to us that our build number is too old for data to be routed
+	 * to us. In turn, we will not route data to them either. Does not strictly indicate that the peer is connected.
+	 */
 	public synchronized boolean isUnroutableNewerVersion() {
 		return unroutableNewerVersion;
 	}
 
 	/**
-	* Is this peer currently connected? (And routing-compatible, i.e. can we route
-	* requests to it, ignoring backoff)
+	* Returns true if requests can be routed through this peer. True if the peer's location is known, presently
+	* connected, and routing-compatible. That is, ignoring backoff, the peer's location is known, build number
+	* is compatible, and routing has not been explicitly disabled.
 	* 
 	* Note possible deadlocks! PeerManager calls this, we call
 	* PeerManager in e.g. verified.
 	*/
 	public boolean isRoutable() {
+		//FIXME: isConnected() is redundant if 'isRoutable', right? ... currentLocation>1.0 is impossible.
 		return isConnected() && isRoutingCompatible() &&
 			!(currentLocation < 0.0 || currentLocation > 1.0);
 	}
 
+	/**
+	 * Returns true if (apart from actually knowing the peer's location), it is presumed that this peer could route requests.
+	 * True if this peer's build number is not 'too-old' or 'too-new', actively connected, and not marked as explicity disabled.
+	 * Does not reflect any 'backoff' logic.
+	 */
 	public boolean isRoutingCompatible() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -1220,7 +1229,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 		long delay;
 		if(unroutableOlderVersion || unroutableNewerVersion || disableRouting) {
-			// Let them know we're here, but have no hope of connecting
+			// Let them know we're here, but have no hope of routing general data to them.
 			delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
 		} else if(invalidVersion() && !firstHandshake) {
 			delay = Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
@@ -1802,6 +1811,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Message dRouting = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
 
 		try {
+			//FIXME: Why is location only if routable, and the others not?
 			if(isRoutable())
 				sendAsync(locMsg, null, 0, null);
 			sendAsync(ipMsg, null, 0, null);
@@ -1896,10 +1906,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return !Version.checkArbitraryGoodVersion(Version.getVersionString(), lastGoodVersion);
 	}
 
+	/**
+	 * The same as isUnroutableOlderVersion, but not synchronized.
+	 */
 	public boolean publicInvalidVersion() {
 		return unroutableOlderVersion;
 	}
 
+	/**
+	 * The same as inUnroutableNewerVersion.
+	 */
 	public synchronized boolean publicReverseInvalidVersion() {
 		return unroutableNewerVersion;
 	}
@@ -2013,7 +2029,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					currentLocation = newLoc;
 				}
 			} catch(FSParseException e) {
-				// Location is optional, we will wait for FNPLocChangeNotification
+				// Location is optional, we will wait for FNPLocChangeNotification. Until then we will use the last known location (or -1 if we have never known).
 				if(logMINOR)
 					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: " + e);
 			}
@@ -2780,18 +2796,21 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return handshakeCount;
 	}
 
+	/**
+	 * Queries the Version class to determine if this peers advertised build-number is either too-old or
+	 * to new for the routing of requests.
+	 */
 	synchronized void updateVersionRoutablity() {
 			unroutableOlderVersion = forwardInvalidVersion();
 			unroutableNewerVersion = reverseInvalidVersion();
 	}
 
 	/**
-	 * Has the node gone from being routable to being non-routable?
-	 * This will return true if our lastGoodBuild has changed due to a timed mandatory.
+	 * Will return true if routing to this node is either explictly disabled, or disabled due to
+	 * noted incompatiblity in build-version numbers.
+	 * Logically: "not(isRoutable())", but will return false even if disconnected (meaning routing is not disabled).
 	 */
 	public synchronized boolean noLongerRoutable() {
-		// TODO: We should disconnect here if "protocol version mismatch", maybe throwing an exception
-		// TODO: shouldDisconnectNow() is hopefully only called when we're connected, otherwise we're breaking the meaning of verifiedIncompable[Older|Newer]Version
 		if(unroutableNewerVersion || unroutableOlderVersion || disableRouting)
 			return true;
 		return false;
