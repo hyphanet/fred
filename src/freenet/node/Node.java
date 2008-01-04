@@ -548,7 +548,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Will be set up properly afterwards
 		L10n.setLanguage(L10n.FALLBACK_DEFAULT);
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
-		startupPageHolder = new StartupToadletServer(executor, oldConfig);
+		//a bit of a hack...
+		if (oldConfig.getBoolean("fproxy.enabled", true))
+			startupPageHolder = new StartupToadletServer(executor, oldConfig);
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
@@ -2899,7 +2901,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
         
         protected void killStartupToadlet() throws IOException {
-            startupPageHolder.kill();
+			if (startupPageHolder!=null)
+				startupPageHolder.kill();
             // Give it a chance to be GCed
             startupPageHolder = null;
         }
