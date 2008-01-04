@@ -137,7 +137,7 @@ public class PacketSender implements Runnable, Ticker {
 						PeerNode[] nodes = node.peers.myPeers;
 						for(int i = 0; i < nodes.length; i++) {
 							PeerNode pn = nodes[i];
-							pn.updateShouldDisconnectNow();
+							pn.updateVersionRoutablity();
 						}
 					}
 				}, transition - now);

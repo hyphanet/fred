@@ -84,11 +84,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Set to true based on a relevant incoming handshake from this peer
 	*  Set true if this peer has a incompatible older build than we are
 	*/
-	protected boolean verifiedIncompatibleOlderVersion;
+	protected boolean unroutableOlderVersion;
 	/** Set to true based on a relevant incoming handshake from this peer
 	*  Set true if this peer has a incompatible newer build than we are
 	*/
-	protected boolean verifiedIncompatibleNewerVersion;
+	protected boolean unroutableNewerVersion;
 	protected boolean disableRouting;
 	protected boolean disableRoutingHasBeenSetLocally;
 	protected boolean disableRoutingHasBeenSetRemotely;
@@ -348,7 +348,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		disableRoutingHasBeenSetRemotely = false; // Assume so
 		
 		lastGoodVersion = fs.get("lastGoodVersion");
-		updateShouldDisconnectNow();
+		updateVersionRoutablity();
 
 		testnetEnabled = fs.getBoolean("testnet", false);
 		if(node.testnetEnabled != testnetEnabled) {
@@ -867,16 +867,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Is this peer too old for us? (i.e. our lastGoodVersion is newer than it's version)
 	* 
 	*/
-	public synchronized boolean isVerifiedIncompatibleOlderVersion() {
-		return verifiedIncompatibleOlderVersion;
+	public synchronized boolean isUnroutableOlderVersion() {
+		return unroutableOlderVersion;
 	}
 
 	/**
 	* Is this peer too new for us? (i.e. our version is older than it's lastGoodVersion)
 	* 
 	*/
-	public synchronized boolean isVerifiedIncompatibleNewerVersion() {
-		return verifiedIncompatibleNewerVersion;
+	public synchronized boolean isUnroutableNewerVersion() {
+		return unroutableNewerVersion;
 	}
 
 	/**
@@ -1219,7 +1219,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return calcNextHandshakeBurstOnly(now);
 		synchronized(this) {
 		long delay;
-		if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion || disableRouting) {
+		if(unroutableOlderVersion || unroutableNewerVersion || disableRouting) {
 			// Let them know we're here, but have no hope of connecting
 			delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
 		} else if(invalidVersion() && !firstHandshake) {
@@ -1678,8 +1678,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			isConnected = true;
 			disableRouting = disableRoutingHasBeenSetLocally || disableRoutingHasBeenSetRemotely;
 			isRoutable = routable;
-			verifiedIncompatibleNewerVersion = newer;
-			verifiedIncompatibleOlderVersion = older;
+			unroutableNewerVersion = newer;
+			unroutableOlderVersion = older;
 			bootIDChanged = (thisBootID != this.bootID);
 			if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
@@ -1897,11 +1897,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public boolean publicInvalidVersion() {
-		return verifiedIncompatibleOlderVersion;
+		return unroutableOlderVersion;
 	}
 
 	public synchronized boolean publicReverseInvalidVersion() {
-		return verifiedIncompatibleNewerVersion;
+		return unroutableNewerVersion;
 	}
 	
 	public synchronized boolean dontRoute() {
@@ -2002,7 +2002,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		lastGoodVersion = fs.get("lastGoodVersion");
 
-		updateShouldDisconnectNow();
+		updateVersionRoutablity();
 
 		String locationString = fs.get("location");
 		if(locationString != null) {
@@ -2700,9 +2700,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		} else if(isConnected() && bogusNoderef)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONN_ERROR;
-		else if(isConnected() && verifiedIncompatibleNewerVersion)
+		else if(isConnected() && unroutableNewerVersion)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_NEW;
-		else if(isConnected && verifiedIncompatibleOlderVersion)
+		else if(isConnected && unroutableOlderVersion)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_OLD;
 		else if(isConnected && disableRouting)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED;
@@ -2780,9 +2780,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return handshakeCount;
 	}
 
-	synchronized void updateShouldDisconnectNow() {
-			verifiedIncompatibleOlderVersion = forwardInvalidVersion();
-			verifiedIncompatibleNewerVersion = reverseInvalidVersion();
+	synchronized void updateVersionRoutablity() {
+			unroutableOlderVersion = forwardInvalidVersion();
+			unroutableNewerVersion = reverseInvalidVersion();
 	}
 
 	/**
@@ -2792,7 +2792,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public synchronized boolean noLongerRoutable() {
 		// TODO: We should disconnect here if "protocol version mismatch", maybe throwing an exception
 		// TODO: shouldDisconnectNow() is hopefully only called when we're connected, otherwise we're breaking the meaning of verifiedIncompable[Older|Newer]Version
-		if(verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion || disableRouting)
+		if(unroutableNewerVersion || unroutableOlderVersion || disableRouting)
 			return true;
 		return false;
 	}
