@@ -83,6 +83,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final SecondaryDatabase accessTimeDB;
 	private final SecondaryDatabase blockNumDB;
 	private final RandomAccessFile storeRAF;
+	private final RandomAccessFile keysRAF;
+	private final RandomAccessFile lruRAF;
 	private final SortedLongSet freeBlocks;
 	private final String name;
 	
@@ -128,6 +130,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		// Location of new store file
 		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
+		File lruFile = new File(baseStoreDir, newStoreFileName+".lru");
+		File keysFile = new File(baseStoreDir, newStoreFileName+".keys");
 
 		String newDBPrefix = typeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';
 		
@@ -142,7 +146,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Try to load new database, reconstruct it if necessary.
 			// Don't need to create a new Environment, since we can use the old one.
 			
-			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, newFixSecondaryFile, maxStoreKeys,
+			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, maxStoreKeys,
 					blockSize, headerSize, throwOnTooFewKeys, false, lastVersion, type, false, storeShutdownHook, tryDbLoad, reconstructFile);
 			
 		} else {
@@ -150,7 +154,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// No new store file, no new database.
 			// Start from scratch, with new store.
 			
-			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, newFixSecondaryFile, 
+			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
 					maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, false, lastVersion, type, 
 					false, storeShutdownHook, tryDbLoad, reconstructFile);
 			
@@ -160,7 +164,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	private static BerkeleyDBFreenetStore openStore(Environment storeEnvironment, File baseDir, String newDBPrefix, File newStoreFile,
-			File newFixSecondaryFile, long maxStoreKeys, int blockSize, int headerSize, boolean throwOnTooFewKeys,
+			File lruFile, File keysFile, File newFixSecondaryFile, long maxStoreKeys, int blockSize, int headerSize, boolean throwOnTooFewKeys,
 			boolean noCheck, int lastVersion, short type, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, 
 			boolean tryDbLoad, File reconstructFile) throws DatabaseException, IOException {
 		
@@ -191,7 +195,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		try {
 			// First try just opening it.
-			return new BerkeleyDBFreenetStore(type, storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile,
+			return new BerkeleyDBFreenetStore(type, storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
 					maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
 					reconstructFile);
 		} catch (DatabaseException e) {
@@ -205,7 +209,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				System.err.println("Cannot reconstruct SSK store/cache! Sorry, your SSK store will now be deleted...");
 				BerkeleyDBFreenetStore.wipeOldDatabases(storeEnvironment, newDBPrefix);
 				newStoreFile.delete();
-				return new BerkeleyDBFreenetStore(type, storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile,
+				return new BerkeleyDBFreenetStore(type, storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
 						maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
 						reconstructFile);
 			}
@@ -215,7 +219,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			// Reconstruct
 			
-			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, newFixSecondaryFile, 
+			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
 					maxStoreKeys, blockSize, headerSize, type, noCheck, storeShutdownHook, reconstructFile);
 		}
 	}
@@ -240,7 +244,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @throws DatabaseException
 	* @throws FileNotFoundException if the dir does not exist and could not be created
 	*/
-	private BerkeleyDBFreenetStore(short type, Environment env, String prefix, File storeFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, boolean throwOnTooFewKeys, boolean noCheck, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile) throws IOException, DatabaseException {
+	private BerkeleyDBFreenetStore(short type, Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, boolean throwOnTooFewKeys, boolean noCheck, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile) throws IOException, DatabaseException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.storeType = type;
 		this.dataBlockSize = blockSize;
@@ -419,8 +423,18 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		try {
 			if(!storeFile.exists())
 				if(!storeFile.createNewFile())
-					throw new DatabaseException("can't create a new file !");
+					throw new DatabaseException("can't create a new file "+storeFile+" !");
 			storeRAF = new RandomAccessFile(storeFile,"rw");
+			
+			if(!lruFile.exists())
+				if(!lruFile.createNewFile())
+					throw new DatabaseException("can't create a new file "+lruFile+" !");
+			lruRAF = new RandomAccessFile(lruFile,"rw");
+			
+			if(!keysFile.exists())
+				if(!keysFile.createNewFile())
+					throw new DatabaseException("can't create a new file "+keysFile+" !");
+			keysRAF = new RandomAccessFile(lruFile,"rw");
 			
 			boolean dontCheckForHolesShrinking = false;
 			
@@ -959,7 +973,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @throws IOException If the store cannot be opened because of a filesystem problem.
 	* @throws FileNotFoundException if the dir does not exist and could not be created
 	*/
-	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, short type, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile) throws DatabaseException, IOException {
+	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, short type, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile) throws DatabaseException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.storeType = type;
 		this.dataBlockSize = blockSize;
@@ -1017,8 +1031,18 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		// Initialize the store file
 		if(!storeFile.exists())
 			if(!storeFile.createNewFile())
-				throw new DatabaseException("can't create a new file !");
+				throw new DatabaseException("can't create a new file "+storeFile+" !");
 		storeRAF = new RandomAccessFile(storeFile,"rw");
+		
+		if(!lruFile.exists())
+			if(!lruFile.createNewFile())
+				throw new DatabaseException("can't create a new file "+lruFile+" !");
+		lruRAF = new RandomAccessFile(lruFile,"rw");
+		
+		if(!keysFile.exists())
+			if(!keysFile.createNewFile())
+				throw new DatabaseException("can't create a new file "+keysFile+" !");
+		keysRAF = new RandomAccessFile(lruFile,"rw");
 		
 		blocksInStore = 0;
 		
