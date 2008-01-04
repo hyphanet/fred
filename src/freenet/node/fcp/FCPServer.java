@@ -64,6 +64,7 @@ public class FCPServer implements Runnable {
 	private static boolean ssl = false;
 	public final boolean enabled;
 	String bindTo;
+	private String allowedHosts;
 	AllowedHosts allowedHostsFullAccess;
 	final WeakHashMap clientsByName;
 	final FCPClient globalClient;
@@ -98,6 +99,7 @@ public class FCPServer implements Runnable {
 
 	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean persistentDownloadsEnabled, String persistentDownloadsDir, long persistenceInterval, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed) throws IOException, InvalidConfigValueException {
 		this.bindTo = ipToBindTo;
+		this.allowedHosts=allowedHosts;
 		this.allowedHostsFullAccess = new AllowedHosts(allowedHostsFullAccess);
 		this.persistenceInterval = persistenceInterval;
 		this.port = port;
@@ -116,8 +118,13 @@ public class FCPServer implements Runnable {
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
 		
-		
 		globalClient = new FCPClient("Global Queue", this, null, true);
+		
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+	}
+	
+	private void maybeGetNetworkInterface() {
+		if (this.networkInterface!=null) return;
 		
 		NetworkInterface tempNetworkInterface = null;
 		try {
@@ -133,11 +140,11 @@ public class FCPServer implements Runnable {
 		
 		this.networkInterface = tempNetworkInterface;
 		
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	public void maybeStart() {
 		if (this.enabled) {
+			maybeGetNetworkInterface();
 			
 			if(enablePersistentDownloads) {
 				loadPersistentRequests();
