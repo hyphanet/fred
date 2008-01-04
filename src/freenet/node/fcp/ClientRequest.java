@@ -107,6 +107,8 @@ public abstract class ClientRequest {
 		final String stime = fs.get("StartupTime");
 		this.startupTime = stime == null ? System.currentTimeMillis() : Fields.parseLong(stime);
 		completionTime = fs.getLong("CompletionTime", 0);
+		if (finished)
+			started=true;
 	}
 
 	/** Lost connection */

@@ -411,6 +411,7 @@ public class ClientPut extends ClientPutBase {
 			fs.putSingle("TargetFilename", targetFilename);
 		fs.putSingle("EarlyEncode", Boolean.toString(earlyEncode));
 		fs.put("BinaryBlob", binaryBlob);
+		fs.putSingle("Finished", Boolean.toString(finished));
 		
 		return fs;
 	}
