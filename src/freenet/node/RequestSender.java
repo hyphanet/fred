@@ -136,6 +136,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         	pubKey = ((NodeSSK)key).getPubKey();
         }
         
+		long startTime=System.currentTimeMillis();
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
         while(true) {
@@ -145,6 +146,12 @@ public final class RequestSender implements Runnable, ByteCounter {
                 finish(DATA_NOT_FOUND, null);
                 return;
             }
+			
+			if (source!=null && System.currentTimeMillis()-startTime>FETCH_TIMEOUT) {
+				Logger.error(this, "discontinuing non-local request search, general timeout");
+				finish(TIMED_OUT, null);
+				return;
+			}
             
             // Route it
             PeerNode next;
@@ -586,6 +593,7 @@ public final class RequestSender implements Runnable, ByteCounter {
      */
     public synchronized short waitUntilStatusChange(short mask) {
     	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
+		long startTime=System.currentTimeMillis();
         while(true) {
         	short current = mask; // If any bits are set already, we ignore those states.
         	
@@ -605,6 +613,10 @@ public final class RequestSender implements Runnable, ByteCounter {
             } catch (InterruptedException e) {
                 // Ignore
             }
+			if (source!=null && System.currentTimeMillis()-startTime > 2*FETCH_TIMEOUT) {
+				Logger.error(this, "spending way too long waiting for request sender to finish");
+				throw new RuntimeException("something is broken");
+			}
         }
     }
     
