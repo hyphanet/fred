@@ -1160,7 +1160,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
 						Logger.error(this, err, e);
 						System.err.println(err);
-						e.printStackTrace();
 						addFreeBlock(l, true, "can't reconsturct key ("+type+ ')');
 						routingkey = null;
 						failures++;
