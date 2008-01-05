@@ -83,7 +83,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final String name;
 	/** Callback which translates records to blocks and back, specifies the size of blocks etc. */
 	private final StoreCallback callback;
-	private final boolean collidable;
+	private final boolean collisionPossible;
 	
 	private long lastRecentlyUsed;
 	private final Object lastRecentlyUsedSync = new Object();
@@ -241,7 +241,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		this.callback = callback;
-		this.collidable = callback.collisionPossible();
+		this.collisionPossible = callback.collisionPossible();
 		this.dataBlockSize = callback.dataLength();
 		this.headerBlockSize = callback.headerLength();
 		this.keyLength = callback.fullKeyLength();
@@ -1002,7 +1002,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.keyLength = callback.fullKeyLength();
 		this.dataBlockSize = callback.dataLength();
 		this.headerBlockSize = callback.headerLength();
-		this.collidable = callback.collisionPossible();
+		this.collisionPossible = callback.collisionPossible();
 		callback.setStore(this);
 		this.freeBlocks = new SortedLongSet();
 		this.maxBlocksInStore=maxChkBlocks;
@@ -1345,7 +1345,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			boolean overwrite) throws KeyCollisionException, IOException {
 		StorableBlock oldBlock = fetch(routingkey, fullKey, false);
 		if(oldBlock != null) {
-			if(!collidable) return;
+			if(!collisionPossible) return;
 			if(!block.equals(oldBlock)) {
 				if(!overwrite)
 					throw new KeyCollisionException();
