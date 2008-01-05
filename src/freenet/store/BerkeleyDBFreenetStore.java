@@ -1233,7 +1233,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			* take the write lock. Neither can relinquish the read in order for the other to
 			* take the write, so we're screwed.
 			*/
-			if(logMINOR) Logger.minor(this, "Fetching "+HexUtil.bytesToHex(routingkey)+" dontPromote="+dontPromote);
+			if(logMINOR) Logger.minor(this, "Fetching "+HexUtil.bytesToHex(routingkey)+" dontPromote="+dontPromote+" for "+callback);
 			if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
 					!=OperationStatus.SUCCESS) {
 				c.close();
@@ -1351,12 +1351,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(!block.equals(oldBlock)) {
 				if(!overwrite)
 					throw new KeyCollisionException();
-				else {
+				else
 					overwrite(block, routingkey, fullKey, data, header);
-				}
-			} else {
-				innerPut(block, routingkey, fullKey, data, header);
-			}
+			} // else return; // already in store
+		} else {
+			innerPut(block, routingkey, fullKey, data, header);
 		}
 	}
 	
