@@ -1123,6 +1123,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		long l = 0;
 		long dupes = 0;
 		long failures = 0;
+		long expectedLength = storeRAF.length()/(dataBlockSize+headerBlockSize);
 		try {
 			storeRAF.seek(0);
 			lruRAF.seek(0);
@@ -1191,7 +1192,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					}
 					t.commit();
 					if(l % 1024 == 0)
-						System.out.println("Key "+l+ '/' +(storeRAF.length()/(dataBlockSize+headerBlockSize))+" OK ("+dupes+" dupes, "+failures+" failures)");
+						System.out.println("Key "+l+ '/' +expectedLength+" OK ("+dupes+" dupes, "+failures+" failures)");
 					t = null;
 				} catch (DatabaseException e) {
 					// t.abort() below may also throw.
@@ -1203,8 +1204,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			}
 		} catch (EOFException e) {
 			long size = l * (dataBlockSize + headerBlockSize);
-			System.err.println("Found end of store, truncating to "+l+" blocks : "+size+" ("+failures+" failures "+dupes+" dupes)");
-			e.printStackTrace();
+			if(l < expectedLength) {
+				System.err.println("Found end of store, truncating to "+l+" blocks : "+size+" ("+failures+" failures "+dupes+" dupes)");
+				e.printStackTrace();
+			} else {
+				System.err.println("Confirmed store is "+expectedLength+" blocks long");
+			}
 			blocksInStore = l;
 			try {
 				storeRAF.setLength(size);
