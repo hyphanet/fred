@@ -47,7 +47,6 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
-import freenet.node.GetPubkey;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
