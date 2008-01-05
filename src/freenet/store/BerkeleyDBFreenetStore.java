@@ -102,7 +102,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 	
 	public static BerkeleyDBFreenetStore construct(int lastVersion, File baseStoreDir, boolean isStore,
-			String suffix, long maxStoreKeys, boolean throwOnTooFewKeys, 
+			String suffix, long maxStoreKeys, 
 			short type, Environment storeEnvironment, RandomSource random, 
 			SemiOrderedShutdownHook storeShutdownHook, boolean tryDbLoad, File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
 
@@ -149,7 +149,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Don't need to create a new Environment, since we can use the old one.
 			
 			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, maxStoreKeys,
-					throwOnTooFewKeys, false, lastVersion, type, false, storeShutdownHook, tryDbLoad, reconstructFile, callback);
+					false, lastVersion, type, false, storeShutdownHook, tryDbLoad, reconstructFile, callback);
 			
 		} else {
 			
@@ -157,7 +157,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Start from scratch, with new store.
 			
 			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
-					maxStoreKeys, throwOnTooFewKeys, false, lastVersion, type, 
+					maxStoreKeys, false, lastVersion, type, 
 					false, storeShutdownHook, tryDbLoad, reconstructFile, callback);
 			
 		}
@@ -166,7 +166,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	private static BerkeleyDBFreenetStore openStore(Environment storeEnvironment, File baseDir, String newDBPrefix, File newStoreFile,
-			File lruFile, File keysFile, File newFixSecondaryFile, long maxStoreKeys, boolean throwOnTooFewKeys,
+			File lruFile, File keysFile, File newFixSecondaryFile, long maxStoreKeys, 
 			boolean noCheck, int lastVersion, short type, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, 
 			boolean tryDbLoad, File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
 		
@@ -198,7 +198,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		try {
 			// First try just opening it.
 			return new BerkeleyDBFreenetStore(type, storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
-					maxStoreKeys, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
+					maxStoreKeys, noCheck, wipe, storeShutdownHook, 
 					reconstructFile, callback);
 		} catch (DatabaseException e) {
 			
@@ -237,7 +237,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @throws DatabaseException
 	* @throws FileNotFoundException if the dir does not exist and could not be created
 	*/
-	private BerkeleyDBFreenetStore(short type, Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, boolean throwOnTooFewKeys, boolean noCheck, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, StoreCallback callback) throws IOException, DatabaseException {
+	private BerkeleyDBFreenetStore(short type, Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, boolean noCheck, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, StoreCallback callback) throws IOException, DatabaseException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		this.callback = callback;
@@ -455,27 +455,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 			if(((blocksInStore == 0) && (chkBlocksFromFile != 0)) ||
 					(((blocksInStore + 10) * 1.1) < chkBlocksFromFile)) {
-				if(throwOnTooFewKeys) {
-					try {
-						close(false);
-					} catch (Throwable t) {
-						Logger.error(this, "Failed to close: "+t, t);
-						System.err.println("Failed to close: "+t);
-						t.printStackTrace();
-					}
-					throw new DatabaseException("Keys in database: "+blocksInStore+" but keys in file: "+chkBlocksFromFile);
-				} else if(!noCheck) {
-					long len = checkForHoles(chkBlocksFromFile, true);
-					dontCheckForHolesShrinking = true;
-					if(len < chkBlocksFromFile) {
-						System.err.println("Truncating to "+len+" from "+chkBlocksFromFile+" as no non-holes after that point");
-						storeRAF.setLength(len * (dataBlockSize + headerBlockSize));
-						lruRAF.setLength(len * 8);
-						if(keysRAF != null)
-							keysRAF.setLength(len * keyLength);
-						blocksInStore = len;
-					}
+				try {
+					close(false);
+				} catch (Throwable t) {
+					Logger.error(this, "Failed to close: "+t, t);
+					System.err.println("Failed to close: "+t);
+					t.printStackTrace();
 				}
+				throw new DatabaseException("Keys in database: "+blocksInStore+" but keys in file: "+chkBlocksFromFile);
 			}
 			
 			blocksInStore = Math.max(blocksInStore, chkBlocksFromFile);
