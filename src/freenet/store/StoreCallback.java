@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.store;
 
+import java.io.IOException;
+
+import com.sleepycat.je.DatabaseException;
+
 import freenet.keys.KeyVerifyException;
 
 /**
@@ -42,4 +46,28 @@ public abstract class StoreCallback {
 	/** Construct a StorableBlock from the data, headers, and optionally routing key or full key 
 	 * @throws KeyVerifyException */
 	abstract StorableBlock construct(byte[] data, byte[] headers, byte[] routingKey, byte[] fullKey) throws KeyVerifyException;
+	
+	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException {
+		store.setMaxKeys(maxStoreKeys, shrinkNow);
+	}
+    
+    public long getMaxKeys() {
+    	return store.getMaxKeys();
+    }
+	
+	public long hits() {
+		return store.hits();
+	}
+	
+	public long misses() {
+		return store.misses();
+	}
+	
+	public long writes() {
+		return store.writes();
+	}
+
+	public long keyCount() {
+		return store.keyCount();
+	}
 }
