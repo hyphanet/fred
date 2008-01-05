@@ -1145,12 +1145,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private void reconstruct(short type) throws DatabaseException, IOException {
 		if(keysDB.count() != 0)
 			throw new IllegalStateException("Store must be empty before reconstruction!");
-		if(type == TYPE_SSK) {
-			System.err.println("Reconstruction of SSK store not supported at present.");
-			throw new UnsupportedOperationException("Reconstruction of SSK store not supported at present.");
-			// FIXME we would need to pass in a means to fetch the pubkeys (an already-working BDBFS maybe).
-			// This could be via an interface. It might be implemented by the node so we can use the in-RAM cache.
-		}
 		System.err.println("Reconstructing store index from store file: type="+type);
 		Logger.error(this, "Reconstructing store index from store file: type="+type);
 		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+(storeRAF.length()/(dataBlockSize+headerBlockSize))*100)));
