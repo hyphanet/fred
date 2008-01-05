@@ -54,6 +54,7 @@ import freenet.support.SortedLongSet;
 public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	private static boolean logMINOR;
+	private static boolean logDEBUG;
 	
 	// If we get a DbChecksumException, create this file.
 	final File reconstructFile;
@@ -206,15 +207,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			System.err.println("Could not open store: "+e);
 			e.printStackTrace();
 			
-			if(type == TYPE_SSK) {
-				System.err.println("Cannot reconstruct SSK store/cache! Sorry, your SSK store will now be deleted...");
-				BerkeleyDBFreenetStore.wipeOldDatabases(storeEnvironment, newDBPrefix);
-				newStoreFile.delete();
-				return new BerkeleyDBFreenetStore(type, storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
-						maxStoreKeys, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
-						reconstructFile, callback);
-			}
-			
 			System.err.println("Attempting to reconstruct index...");
 			WrapperManager.signalStarting(5*60*60*1000);
 			
@@ -247,6 +239,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	*/
 	private BerkeleyDBFreenetStore(short type, Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, boolean throwOnTooFewKeys, boolean noCheck, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, StoreCallback callback) throws IOException, DatabaseException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		this.callback = callback;
 		this.collidable = callback.collisionPossible();
 		this.dataBlockSize = callback.dataLength();
@@ -1580,9 +1573,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(keysRAF != null) {
 				keysRAF.seek(blockNum * keyLength);
 				keysRAF.write(fullKey);
-				if(logMINOR)
+				if(logDEBUG)
 					Logger.minor(this, "Written full key length "+fullKey.length+" to block "+blockNum+" at "+(blockNum * keyLength));
-			} else if(logMINOR && storeType == TYPE_SSK) {
+			} else if(logDEBUG && storeType == TYPE_SSK) {
 				Logger.minor(this, "Not writing full key length "+fullKey.length+" for block "+blockNum);
 			}
 			writes++;
