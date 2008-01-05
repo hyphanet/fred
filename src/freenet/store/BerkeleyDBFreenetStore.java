@@ -1137,8 +1137,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				Transaction t = null;
 				storeRAF.readFully(header);
 				storeRAF.readFully(data);
-				if(lruRAFLength > (l+1)*8)
-					lruVal = lruRAF.readLong();
+				if(lruRAFLength > (l+1)*8) {
+					try {
+						lruVal = lruRAF.readLong();
+					} catch (EOFException e) {
+						System.err.println("EOF reading LRU file at "+lruRAF.getFilePointer()+" of "+lruRAF.length()+" l = "+l+" orig lru length = "+lruRAFLength);
+						lruVal = 0;
+						lruRAFLength = 0;
+					}
+				}
 				if(lruVal == 0) {
 					Logger.normal(this, "Block "+l+" : resetting LRU");
 					lruVal = getNewRecentlyUsed();
@@ -1147,10 +1154,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 				boolean readKey = false;
 				if(keysRAF != null && keysRAFLength > (l+1)*keyLength) {
-					keysRAF.readFully(keyBuf);
-					readKey = true;
+					try {
+						keysRAF.readFully(keyBuf);
+						readKey = true;
+					} catch (EOFException e) {
+						System.err.println("EOF reading keys file at "+keysRAF.getFilePointer()+" of "+keysRAF.length()+" l = "+l+" orig keys length = "+keysRAFLength);
+						readKey = false;
+					}
 				}
-				lruVal = lruRAF.readLong();
 				try {
 					byte[] routingkey = null;
 					try {
@@ -1193,6 +1204,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		} catch (EOFException e) {
 			long size = l * (dataBlockSize + headerBlockSize);
 			System.err.println("Found end of store, truncating to "+l+" blocks : "+size+" ("+failures+" failures "+dupes+" dupes)");
+			e.printStackTrace();
 			blocksInStore = l;
 			try {
 				storeRAF.setLength(size);
