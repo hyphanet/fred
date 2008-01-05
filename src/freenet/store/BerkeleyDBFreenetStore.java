@@ -1345,7 +1345,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			boolean overwrite) throws KeyCollisionException, IOException {
 		StorableBlock oldBlock = fetch(routingkey, fullKey, false);
 		if(oldBlock != null) {
-			if(collidable) return;
+			if(!collidable) return;
 			if(!block.equals(oldBlock)) {
 				if(!overwrite)
 					throw new KeyCollisionException();
