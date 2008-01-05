@@ -53,6 +53,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	final int port;
 	String bindTo;
+	private String allowedHosts;
 	final AllowedHosts allowedFullAccess;
 	final BucketFactory bf;
 	NetworkInterface networkInterface;
@@ -363,31 +364,40 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		if(SSL.available()) {
 			ssl = fproxyConfig.getBoolean("ssl");
 		}
+		
+		this.allowedHosts=fproxyConfig.getString("allowedHosts");
 
 		if(!enabled) {
 			Logger.normal(core, "Not starting FProxy as it's disabled");
 			System.out.println("Not starting FProxy as it's disabled");
 		} else {
-			if(ssl) {
-				this.networkInterface = SSLNetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor(), true);
-			} else {
-				this.networkInterface = NetworkInterface.create(port, this.bindTo, fproxyConfig.getString("allowedHosts"), core.getExecutor(), true);
-			}
+			maybeGetNetworkInterface();
 			myThread = new Thread(this, "SimpleToadletServer");
 			myThread.setDaemon(true);
 		}
-
 	}
+	
+	private void maybeGetNetworkInterface() throws IOException {
+		if (this.networkInterface!=null) return;
+		if(ssl) {
+			this.networkInterface = SSLNetworkInterface.create(port, this.bindTo, allowedHosts, core.getExecutor(), true);
+		} else {
+			this.networkInterface = NetworkInterface.create(port, this.bindTo, allowedHosts, core.getExecutor(), true);
+		}
+	}		
 
 	public boolean doRobots() {
 		return doRobots;
 	}
 	
 	public void start() {
-		if(myThread != null) {
+		if(myThread != null) try {
+			maybeGetNetworkInterface();
 			myThread.start();
 			Logger.normal(this, "Starting FProxy on "+bindTo+ ':' +port);
 			System.out.println("Starting FProxy on "+bindTo+ ':' +port);
+		} catch (IOException e) {
+			Logger.error(this, "Could not bind network port for FProxy?", e);
 		}
 	}
 	
