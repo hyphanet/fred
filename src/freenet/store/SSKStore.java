@@ -17,6 +17,8 @@ public class SSKStore extends StoreCallback {
 	
 	public StorableBlock construct(byte[] data, byte[] headers,
 			byte[] routingKey, byte[] fullKey) throws SSKVerifyException {
+		if(data == null || headers == null) throw new SSKVerifyException("Need data and headers");
+		if(fullKey == null) throw new SSKVerifyException("Need full key to reconstruct an SSK");
 		NodeSSK key;
 		key = NodeSSK.construct(fullKey);
 		key.grabPubkey(pubkeyCache);

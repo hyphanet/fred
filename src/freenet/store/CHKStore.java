@@ -1,6 +1,7 @@
 package freenet.store;
 
 import freenet.keys.CHKBlock;
+import freenet.keys.CHKVerifyException;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.NodeCHK;
 
@@ -12,6 +13,7 @@ public class CHKStore extends StoreCallback {
 
 	public StorableBlock construct(byte[] data, byte[] headers,
 			byte[] routingKey, byte[] fullKey) throws KeyVerifyException {
+		if(data == null || headers == null) throw new CHKVerifyException("Need either data and headers");
 		return CHKBlock.construct(data, headers);
 	}
 

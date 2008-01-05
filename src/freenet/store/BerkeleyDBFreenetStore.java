@@ -42,6 +42,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
+import freenet.keys.KeyVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
@@ -1189,46 +1190,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				lruVal = lruRAF.readLong();
 				try {
 					byte[] routingkey = null;
-					if(type == TYPE_CHK) {
-						try {
-							CHKBlock chk = CHKBlock.construct(data, header);
-							routingkey = chk.getKey().getRoutingKey();
-						} catch (CHKVerifyException e) {
-							String err = "Bogus key at slot "+l+" : "+e+" - lost block "+l;
-							Logger.error(this, err, e);
-							System.err.println(err);
-							e.printStackTrace();
-							addFreeBlock(l, true, "bogus key ("+type+ ')');
-							routingkey = null;
-							continue;
-						}
-					} else if(type == TYPE_PUBKEY) {
-						DSAPublicKey key = DSAPublicKey.create(data);
-						routingkey = key.asBytesHash();
-					} else if(type == TYPE_SSK && readKey) {
-						try {
-							NodeSSK ssk = NodeSSK.construct(keyBuf);
-							if(ssk.grabPubkey(pubkeyCache)) {
-								SSKBlock block = new SSKBlock(data, header, ssk, false);
-								routingkey = block.getKey().getRoutingKey();
-							} else {
-								String err = "No pubkey for SSK at slot "+l;
-								Logger.error(this, err);
-								System.err.println(err);
-								addFreeBlock(l, true, "no pubkey");
-								routingkey = null;
-								continue;
-							}
-						} catch (SSKVerifyException e) {
-							String err = "Bogus SSK at slot "+l+" : "+e+" - lost block "+l;
-							Logger.error(this, err, e);
-							System.err.println(err);
-							e.printStackTrace();
-							addFreeBlock(l, true, "bogus SSK");
-							routingkey = null;
-							continue;
-						}
-					} else {
+					try {
+						StorableBlock block = callback.construct(data, header, null, keyBuf);
+						routingkey = block.getRoutingKey();
+					} catch (KeyVerifyException e) {
+						String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
+						Logger.error(this, err, e);
+						System.err.println(err);
+						e.printStackTrace();
+						addFreeBlock(l, true, "can't reconsturct key ("+type+ ')');
+						routingkey = null;
 						continue;
 					}
 					t = environment.beginTransaction(null,null);
@@ -1248,9 +1219,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					if(l % 1024 == 0)
 						System.out.println("Key "+l+ '/' +(storeRAF.length()/(dataBlockSize+headerBlockSize))+" OK ("+dupes+" dupes, "+failures+" failures)");
 					t = null;
-				} catch (CryptFormatException e) {
-					addFreeBlock(l, true, "invalid key: "+e);
-					failures++;
 				} catch (DatabaseException e) {
 					// t.abort() below may also throw.
 					System.err.println("Error while reconstructing: "+e);

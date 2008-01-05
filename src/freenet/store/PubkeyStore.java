@@ -13,6 +13,7 @@ public class PubkeyStore extends StoreCallback {
 
 	StorableBlock construct(byte[] data, byte[] headers, byte[] routingKey,
 			byte[] fullKey) throws KeyVerifyException {
+		if(data == null) throw new PubkeyVerifyException("Need data to construct pubkey");
 		try {
 			return DSAPublicKey.create(data);
 		} catch (CryptFormatException e) {
