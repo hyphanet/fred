@@ -137,36 +137,41 @@ public final class RequestSender implements Runnable, ByteCounter {
         }
         
 		long startTime=System.currentTimeMillis();
+		int routeAttempts=0;
+		int rejectOverloads=0;
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
         while(true) {
             if(logMINOR) Logger.minor(this, "htl="+htl);
             if(htl == 0) {
             	// This used to be RNF, I dunno why
+				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
                 finish(DATA_NOT_FOUND, null);
                 return;
             }
 			
 			if (source!=null && System.currentTimeMillis()-startTime>FETCH_TIMEOUT) {
-				Logger.error(this, "discontinuing non-local request search, general timeout");
+				Logger.error(this, "discontinuing non-local request search, general timeout ("+routeAttempts+" attempts, "+rejectOverloads+" overloads)");
 				finish(TIMED_OUT, null);
 				return;
 			}
+
+			routeAttempts++;
             
             // Route it
             PeerNode next;
-            double nextValue;
             next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
-            if(next != null)
-                nextValue = next.getLocation();
-            else
-                nextValue = -1.0;
             
             if(next == null) {
+				if (logMINOR && rejectOverloads>0)
+					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
                 // Backtrack
                 finish(ROUTE_NOT_FOUND, null);
                 return;
             }
+			
+            double nextValue=next.getLocation();
+			
             if(logMINOR) Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
             
@@ -249,6 +254,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 						// Give up on this one, try another
 						break;
 					}
+					//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
 					continue;
             	}
             	
@@ -270,7 +276,8 @@ public final class RequestSender implements Runnable, ByteCounter {
             // Otherwise, must be Accepted
             
             // So wait...
-            
+            int gotMessages=0;
+            String lastMessage=null;
             while(true) {
             	
                 MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPDataNotFound);
@@ -294,12 +301,17 @@ public final class RequestSender implements Runnable, ByteCounter {
             	if(logMINOR) Logger.minor(this, "second part got "+msg);
                 
             	if(msg == null) {
+					Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+")");
             		// Fatal timeout
             		next.localRejectedOverload("FatalTimeout");
             		forwardRejectedOverload();
             		finish(TIMED_OUT, next);
             		return;
             	}
+				
+				//For debugging purposes, remember the number of responses AFTER the insert, and the last message type we received.
+				gotMessages++;
+				lastMessage=msg.getSpec().getName();
             	
             	if(msg.getSpec() == DMT.FNPDataNotFound) {
             		next.successNotOverload();
@@ -388,7 +400,14 @@ public final class RequestSender implements Runnable, ByteCounter {
 						// Give up on this one, try another
 						break;
 					}
-					continue; // Wait for any further response
+					/*
+					 This happens OFTEN!
+					 There is a very small chance that this is a previous reject from before the ACCEPTED,
+					 but (having more-or-less flushed those while waiting on the accepted), it will effectively
+					 always be one of the standard reject replies (See RequestHandler).
+					 */
+					rejectOverloads++;
+					break; // Don't wait for any further response, next peer
             	}
 
             	if(msg.getSpec() == DMT.FNPCHKDataFound) {
