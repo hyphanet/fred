@@ -8,4 +8,8 @@ public class PubkeyVerifyException extends KeyVerifyException {
 		super(e);
 	}
 
+	public PubkeyVerifyException(String msg) {
+		super(msg);
+	}
+
 }
