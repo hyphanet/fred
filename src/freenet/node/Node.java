@@ -1339,12 +1339,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(this);
 			BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
-					false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, sskDatastore);
+					true, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, sskDatastore);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
 			sskDatacache = new SSKStore(this);
 			BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxStoreKeys, 
-					false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, sskDatacache);
+					true, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, sskDatacache);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
