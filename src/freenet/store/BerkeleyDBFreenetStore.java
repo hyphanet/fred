@@ -1208,7 +1208,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				System.err.println("Found end of store, truncating to "+l+" blocks : "+size+" ("+failures+" failures "+dupes+" dupes)");
 				e.printStackTrace();
 			} else {
-				System.err.println("Confirmed store is "+expectedLength+" blocks long");
+				System.err.println("Confirmed store is "+expectedLength+" blocks long ("+failures+" failures "+dupes+" dupes)");
 			}
 			blocksInStore = l;
 			try {
