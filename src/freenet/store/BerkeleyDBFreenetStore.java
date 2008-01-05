@@ -1191,7 +1191,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				try {
 					byte[] routingkey = null;
 					try {
-						StorableBlock block = callback.construct(data, header, null, keyBuf);
+						StorableBlock block = callback.construct(data, header, null, readKey ? keyBuf : null);
 						routingkey = block.getRoutingKey();
 					} catch (KeyVerifyException e) {
 						String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
