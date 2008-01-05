@@ -6,6 +6,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.support.Logger;
 
 public class CHKStore extends StoreCallback {
 
@@ -23,9 +24,13 @@ public class CHKStore extends StoreCallback {
 		return (CHKBlock) store.fetch(chk.getRoutingKey(), null, dontPromote);
 	}
 	
-	public void put(CHKBlock b) throws IOException, KeyCollisionException {
+	public void put(CHKBlock b) throws IOException {
 		NodeCHK key = (NodeCHK) b.getKey();
-		store.put(b, key.getRoutingKey(), null, b.getRawData(), b.getRawHeaders(), false);
+		try {
+			store.put(b, key.getRoutingKey(), null, b.getRawData(), b.getRawHeaders(), false);
+		} catch (KeyCollisionException e) {
+			Logger.error(this, "Impossible for CHKStore: "+e, e);
+		}
 	}
 	
 	public int dataLength() {

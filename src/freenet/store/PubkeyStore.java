@@ -6,6 +6,7 @@ import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.PubkeyVerifyException;
+import freenet.support.Logger;
 
 public class PubkeyStore extends StoreCallback {
 
@@ -29,8 +30,12 @@ public class PubkeyStore extends StoreCallback {
 	
 	final private static byte[] empty = new byte[0];
 	
-	public void put(byte[] hash, DSAPublicKey key) throws IOException, KeyCollisionException {
-		store.put(key, key.getRoutingKey(), null, key.asPaddedBytes(), empty, false);
+	public void put(byte[] hash, DSAPublicKey key) throws IOException {
+		try {
+			store.put(key, key.getRoutingKey(), null, key.asPaddedBytes(), empty, false);
+		} catch (KeyCollisionException e) {
+			Logger.error(this, "Impossible for PubkeyStore: "+e, e);
+		}
 	}
 	
 	public int dataLength() {
