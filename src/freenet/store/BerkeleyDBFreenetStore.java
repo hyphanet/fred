@@ -1343,6 +1343,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	public void put(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header, 
 			boolean overwrite) throws KeyCollisionException, IOException {
+		if(logMINOR)
+			Logger.minor(this, "Putting "+HexUtil.bytesToHex(routingkey)+" for "+callback);
 		StorableBlock oldBlock = fetch(routingkey, fullKey, false);
 		if(oldBlock != null) {
 			if(!collisionPossible) return;
