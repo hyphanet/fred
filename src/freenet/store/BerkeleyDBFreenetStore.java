@@ -1258,14 +1258,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			c = keysDB.openCursor(t,null);
 
 			if(logMINOR) Logger.minor(this, "Fetching "+chk+" dontPromote="+dontPromote);
-			/**
-			* We will have to write, unless both dontPromote and the key is valid.
-			* The lock only applies to this record, so it's not a big problem for our use.
-			* What *IS* a big problem is that if we take a LockMode.DEFAULT, and two threads
-			* access the same key, they will both take the read lock, and then both try to
-			* take the write lock. Neither can relinquish the read in order for the other to
-			* take the write, so we're screwed.
-			*/
 			if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
 					!=OperationStatus.SUCCESS) {
 				c.close();
@@ -1396,9 +1388,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			t = environment.beginTransaction(null,null);
 			c = keysDB.openCursor(t,null);
 			
-			// Explanation of locking is in fetchPubKey.
-			// Basically, locking the whole element saves us all sorts of trouble, especially
-			// since we will usually be writing here if only to promote it.
+			/**
+			* We will have to write, unless both dontPromote and the key is valid.
+			* The lock only applies to this record, so it's not a big problem for our use.
+			* What *IS* a big problem is that if we take a LockMode.DEFAULT, and two threads
+			* access the same key, they will both take the read lock, and then both try to
+			* take the write lock. Neither can relinquish the read in order for the other to
+			* take the write, so we're screwed.
+			*/
 			if(logMINOR) Logger.minor(this, "Fetching "+HexUtil.bytesToHex(routingkey)+" dontPromote="+dontPromote);
 			if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
 					!=OperationStatus.SUCCESS) {
