@@ -189,7 +189,9 @@ public final class RequestSender implements Runnable, ByteCounter {
             long timeSentRequest = System.currentTimeMillis();
             
             try {
-            	next.sendSync(req, this);
+            	//This is the first contact to this node
+            	//async is preferred, but makes ACCEPTED_TIMEOUT much more likely for long send queues.
+            	next.sendAsync(req, null, 0, this);
             } catch (NotConnectedException e) {
             	Logger.minor(this, "Not connected");
             	continue;
