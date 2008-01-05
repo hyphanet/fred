@@ -1193,7 +1193,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			}
 		} catch (EOFException e) {
 			long size = l * (dataBlockSize + headerBlockSize);
-			System.err.println("Found end of store, truncating to "+l+" blocks : "+size);
+			System.err.println("Found end of store, truncating to "+l+" blocks : "+size+" ("+failures+" failures "+dupes+" dupes)");
 			blocksInStore = l;
 			try {
 				storeRAF.setLength(size);
