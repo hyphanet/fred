@@ -7,17 +7,20 @@ import java.io.InputStream;
 import java.math.BigInteger;
 
 import net.i2p.util.NativeBigInteger;
+import freenet.store.StorableBlock;
 import freenet.support.Base64;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
 
-public class DSAPublicKey extends CryptoKey {
+public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	private static final long serialVersionUID = -1;
     
     private final BigInteger y;
     
     public static final int PADDED_SIZE = 1024;
+
+	public static final int HASH_LENGTH = 32;
 
     private final DSAGroup group;
 	
@@ -187,5 +190,13 @@ public class DSAPublicKey extends CryptoKey {
 		NativeBigInteger x = 
 			new NativeBigInteger(1, Base64.decode(set.get("y")));
 		return new DSAPublicKey(group, x);
+	}
+
+	public byte[] getFullKey() {
+		return asBytesHash();
+	}
+
+	public byte[] getRoutingKey() {
+		return asBytesHash();
 	}
 }

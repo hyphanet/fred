@@ -104,4 +104,12 @@ public class CHKBlock implements KeyBlock {
 	public byte[] getPubkeyBytes() {
 		return null;
 	}
+
+	public byte[] getFullKey() {
+		return getKey().getFullKey();
+	}
+
+	public byte[] getRoutingKey() {
+		return getKey().getRoutingKey();
+	}
 }

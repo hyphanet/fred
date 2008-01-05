@@ -27,7 +27,7 @@ public class NodeCHK extends Key {
         this.cryptoAlgorithm = cryptoAlgorithm;
     }
 
-    static final int KEY_LENGTH = 32;
+    public static final int KEY_LENGTH = 32;
     
 	/** Crypto algorithm */
 	final byte cryptoAlgorithm;

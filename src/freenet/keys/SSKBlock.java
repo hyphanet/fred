@@ -167,4 +167,12 @@ public class SSKBlock implements KeyBlock {
 		return pubKey.asBytes();
 	}
 
+	public byte[] getFullKey() {
+		return getKey().getFullKey();
+	}
+
+	public byte[] getRoutingKey() {
+		return getKey().getRoutingKey();
+	}
+
 }

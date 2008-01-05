@@ -44,6 +44,7 @@ public class NodeSSK extends Key {
 	static final int E_H_DOCNAME_SIZE = 32;
 	static final byte BASE_TYPE = 2;
 	public static final int FULL_KEY_LENGTH = 66;
+	public static final int ROUTING_KEY_LENGTH = 32;
 	
 	public String toString() {
 		return super.toString()+":pkh="+HexUtil.bytesToHex(pubKeyHash)+":ehd="+HexUtil.bytesToHex(encryptedHashedDocname);

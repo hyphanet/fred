@@ -87,8 +87,11 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
+import freenet.store.CHKStore;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
+import freenet.store.PubkeyStore;
+import freenet.store.SSKStore;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Executor;
 import freenet.support.Fields;
@@ -1315,28 +1318,28 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			Logger.normal(this, "Initializing CHK Datastore");
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
 			chkDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
-					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this);
+					true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this, new CHKStore());
 			Logger.normal(this, "Initializing CHK Datacache");
 			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+ ':' +maxCacheKeys+" keys)");
 			chkDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxCacheKeys, 
-					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this);
+					true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this, new CHKStore());
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
 			pubKeyDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
-					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this);
+					true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this, new PubkeyStore());
 			Logger.normal(this, "Initializing pubKey Datacache");
 			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
 			pubKeyDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxCacheKeys, 
-					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this);
+					true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this, new PubkeyStore());
 			// FIXME can't auto-fix SSK stores.
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
-					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this);
+					false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this, new SSKStore(this));
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
 			sskDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxStoreKeys, 
-					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this);
+					false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook, tryDbLoad, reconstructFile, this, new SSKStore(this));
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);

@@ -89,6 +89,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final RandomAccessFile lruRAF;
 	private final SortedLongSet freeBlocks;
 	private final String name;
+	/** Callback which translates records to blocks and back, specifies the size of blocks etc. */
+	private final StoreCallback callback;
+	private final boolean collidable;
 	
 	private long lastRecentlyUsed;
 	private final Object lastRecentlyUsedSync = new Object();
@@ -108,9 +111,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 	
 	public static BerkeleyDBFreenetStore construct(int lastVersion, File baseStoreDir, boolean isStore,
-			String suffix, long maxStoreKeys, int blockSize, int headerSize, boolean throwOnTooFewKeys, 
+			String suffix, long maxStoreKeys, boolean throwOnTooFewKeys, 
 			short type, Environment storeEnvironment, RandomSource random, 
-			SemiOrderedShutdownHook storeShutdownHook, boolean tryDbLoad, File reconstructFile, GetPubkey pubkeyCache) throws DatabaseException, IOException {
+			SemiOrderedShutdownHook storeShutdownHook, boolean tryDbLoad, File reconstructFile, GetPubkey pubkeyCache, StoreCallback callback) throws DatabaseException, IOException {
 
 		/**
 		* Migration strategy:
@@ -134,13 +137,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
 		File lruFile = new File(baseStoreDir, newStoreFileName+".lru");
 		
-		int keyLength;
 		File keysFile;
-		if(type == TYPE_SSK) {
-			keyLength = NodeSSK.FULL_KEY_LENGTH;
+		if(callback.storeFullKeys()) {
 			keysFile = new File(baseStoreDir, newStoreFileName+".keys");
 		} else {
-			keyLength = 0;
 			keysFile = null;
 		}
 		
@@ -158,7 +158,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Don't need to create a new Environment, since we can use the old one.
 			
 			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, maxStoreKeys,
-					blockSize, headerSize, throwOnTooFewKeys, false, lastVersion, type, false, storeShutdownHook, tryDbLoad, reconstructFile, keyLength, pubkeyCache);
+					throwOnTooFewKeys, false, lastVersion, type, false, storeShutdownHook, tryDbLoad, reconstructFile, pubkeyCache, callback);
 			
 		} else {
 			
@@ -166,8 +166,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Start from scratch, with new store.
 			
 			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
-					maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, false, lastVersion, type, 
-					false, storeShutdownHook, tryDbLoad, reconstructFile, keyLength, pubkeyCache);
+					maxStoreKeys, throwOnTooFewKeys, false, lastVersion, type, 
+					false, storeShutdownHook, tryDbLoad, reconstructFile, pubkeyCache, callback);
 			
 		}
 
@@ -175,9 +175,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	private static BerkeleyDBFreenetStore openStore(Environment storeEnvironment, File baseDir, String newDBPrefix, File newStoreFile,
-			File lruFile, File keysFile, File newFixSecondaryFile, long maxStoreKeys, int blockSize, int headerSize, boolean throwOnTooFewKeys,
+			File lruFile, File keysFile, File newFixSecondaryFile, long maxStoreKeys, boolean throwOnTooFewKeys,
 			boolean noCheck, int lastVersion, short type, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, 
-			boolean tryDbLoad, File reconstructFile, int keyLength, GetPubkey pubkeyCache) throws DatabaseException, IOException {
+			boolean tryDbLoad, File reconstructFile, GetPubkey pubkeyCache, StoreCallback callback) throws DatabaseException, IOException {
 		
 		if(tryDbLoad) {
 			String dbName = newDBPrefix+"CHK";
@@ -207,8 +207,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		try {
 			// First try just opening it.
 			return new BerkeleyDBFreenetStore(type, storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
-					maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
-					reconstructFile, keyLength);
+					maxStoreKeys, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
+					reconstructFile, callback);
 		} catch (DatabaseException e) {
 			
 			// Try a reconstruct
@@ -221,8 +221,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				BerkeleyDBFreenetStore.wipeOldDatabases(storeEnvironment, newDBPrefix);
 				newStoreFile.delete();
 				return new BerkeleyDBFreenetStore(type, storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
-						maxStoreKeys, blockSize, headerSize, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
-						reconstructFile, keyLength);
+						maxStoreKeys, throwOnTooFewKeys, noCheck, wipe, storeShutdownHook, 
+						reconstructFile, callback);
 			}
 			
 			System.err.println("Attempting to reconstruct index...");
@@ -231,7 +231,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Reconstruct
 			
 			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
-					maxStoreKeys, blockSize, headerSize, type, noCheck, storeShutdownHook, reconstructFile, keyLength, pubkeyCache);
+					maxStoreKeys, type, noCheck, storeShutdownHook, reconstructFile, pubkeyCache, callback);
 		}
 	}
 
@@ -255,12 +255,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @throws DatabaseException
 	* @throws FileNotFoundException if the dir does not exist and could not be created
 	*/
-	private BerkeleyDBFreenetStore(short type, Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, boolean throwOnTooFewKeys, boolean noCheck, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, int keyLength) throws IOException, DatabaseException {
+	private BerkeleyDBFreenetStore(short type, Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, boolean throwOnTooFewKeys, boolean noCheck, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, StoreCallback callback) throws IOException, DatabaseException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.callback = callback;
+		this.collidable = callback.collisionPossible();
+		this.dataBlockSize = callback.dataLength();
+		this.headerBlockSize = callback.headerLength();
+		this.keyLength = callback.fullKeyLength();
+		callback.setStore(this);
 		this.storeType = type;
-		this.keyLength = keyLength;
-		this.dataBlockSize = blockSize;
-		this.headerBlockSize = headerSize;
 		this.freeBlocks = new SortedLongSet();
 		name = prefix;
 		
@@ -1022,12 +1025,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* @throws IOException If the store cannot be opened because of a filesystem problem.
 	* @throws FileNotFoundException if the dir does not exist and could not be created
 	*/
-	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, int blockSize, int headerSize, short type, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, int keyLength, GetPubkey pubkeyCache) throws DatabaseException, IOException {
+	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, short type, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, GetPubkey pubkeyCache, StoreCallback callback) throws DatabaseException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.storeType = type;
-		this.keyLength = keyLength;
-		this.dataBlockSize = blockSize;
-		this.headerBlockSize = headerSize;
+		this.callback = callback;
+		this.keyLength = callback.fullKeyLength();
+		this.dataBlockSize = callback.dataLength();
+		this.headerBlockSize = callback.headerLength();
+		this.collidable = callback.collisionPossible();
+		callback.setStore(this);
 		this.freeBlocks = new SortedLongSet();
 		this.maxBlocksInStore=maxChkBlocks;
 		this.environment = env;
@@ -1410,6 +1416,123 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	/**
+	 * Retrieve a block.
+	 * @param dontPromote If true, don't promote data to the top of the LRU if we fetch it.
+	 * @return null if there is no such block stored, otherwise the block.
+	 */
+	public StorableBlock fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote) throws IOException {
+		synchronized(this) {
+			if(closed)
+				return null;
+		}
+		
+		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
+		DatabaseEntry blockDBE = new DatabaseEntry();
+		Cursor c = null;
+		Transaction t = null;
+		try {
+			t = environment.beginTransaction(null,null);
+			c = keysDB.openCursor(t,null);
+			
+			// Explanation of locking is in fetchPubKey.
+			// Basically, locking the whole element saves us all sorts of trouble, especially
+			// since we will usually be writing here if only to promote it.
+			if(logMINOR) Logger.minor(this, "Fetching "+HexUtil.bytesToHex(routingkey)+" dontPromote="+dontPromote);
+			if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
+					!=OperationStatus.SUCCESS) {
+				c.close();
+				c = null;
+				t.abort();
+				t = null;
+				synchronized(this) {
+					misses++;
+				}
+				return null;
+			}
+
+			StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+						
+			StorableBlock block = null;
+			
+			try {
+				byte[] header = new byte[headerBlockSize];
+				byte[] data = new byte[dataBlockSize];
+				try {
+					synchronized(storeRAF) {
+						storeRAF.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+						storeRAF.readFully(header);
+						storeRAF.readFully(data);
+					}
+				} catch (EOFException e) {
+					Logger.error(this, "No block");
+					c.close();
+					c = null;
+					keysDB.delete(t, routingkeyDBE);
+					t.commit();
+					t = null;
+					addFreeBlock(storeBlock.offset, true, "Data off end of store file");
+					return null;
+				}
+				
+				block = callback.construct(data, header, routingkey, fullKey);
+				
+				if(!dontPromote) {
+					storeBlock.updateRecentlyUsed();
+					DatabaseEntry updateDBE = new DatabaseEntry();
+					storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
+					c.putCurrent(updateDBE);
+					c.close();
+					c = null;
+					t.commit();
+					t = null;
+					synchronized(storeRAF) {
+						lruRAF.seek(storeBlock.offset * 8);
+						lruRAF.writeLong(storeBlock.recentlyUsed);
+					}
+				} else {
+					c.close();
+					c = null;
+					t.abort();
+					t = null;
+				}
+				
+				if(logMINOR) {
+					Logger.minor(this, "Headers: " + header.length+" bytes, hash " + Fields.hashCode(header));
+					Logger.minor(this, "Data: " + data.length + " bytes, hash " + Fields.hashCode(data) + " fetching " + HexUtil.bytesToHex(routingkey));
+				}
+				
+			} catch(SSKVerifyException ex) {
+				Logger.normal(this, "SSKBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+HexUtil.bytesToHex(routingkey), ex);
+				keysDB.delete(t, routingkeyDBE);
+				c.close();
+				c = null;
+				t.commit();
+				t = null;
+				addFreeBlock(storeBlock.offset, true, "SSK does not verify");
+				synchronized(this) {
+					misses++;
+				}
+				return null;
+			}
+			synchronized(this) {
+				hits++;
+			}
+			return block;
+		} catch(Throwable ex) {  // FIXME: ugly
+			if(c!=null) {
+				try{c.close();}catch(DatabaseException ex2){}
+			}
+			if(t!=null) {
+				try{t.abort();}catch(DatabaseException ex2){}
+			}
+			checkSecondaryDatabaseError(ex);
+			Logger.error(this, "Caught "+ex, ex);
+			ex.printStackTrace();
+			throw new IOException(ex.getMessage());
+		}
+	}
+	
+	/**
 	* Retrieve a block.
 	* @param dontPromote If true, don't promote data if fetched.
 	* @return null if there is no such block stored, otherwise the block.
@@ -1718,6 +1841,23 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		innerPut(b);
 	}
 	
+	public void put(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header, 
+			boolean overwrite) throws KeyCollisionException, IOException {
+		StorableBlock oldBlock = fetch(routingkey, fullKey, false);
+		if(oldBlock != null) {
+			if(collidable) return;
+			if(!block.equals(oldBlock)) {
+				if(!overwrite)
+					throw new KeyCollisionException();
+				else {
+					overwrite(block, routingkey, fullKey, data, header);
+				}
+			} else {
+				innerPut(block, routingkey, fullKey, data, header);
+			}
+		}
+	}
+	
 	public void put(SSKBlock b, boolean overwrite) throws IOException, KeyCollisionException {
 		assert(storeType == TYPE_SSK);
 		NodeSSK ssk = (NodeSSK) b.getKey();
@@ -1733,6 +1873,67 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		} else {
 			innerPut(b);
 		}
+	}
+	
+	private boolean overwrite(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
+		synchronized(this) {
+			if(closed)
+				return false;
+		}
+		
+		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
+		DatabaseEntry blockDBE = new DatabaseEntry();
+		Cursor c = null;
+		Transaction t = null;
+		try {
+			t = environment.beginTransaction(null,null);
+			c = keysDB.openCursor(t,null);
+
+			// Lock the record.
+			if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
+					!=OperationStatus.SUCCESS) {
+				c.close();
+				c = null;
+				t.abort();
+				t = null;
+				return false;
+			}
+
+			StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+						
+			synchronized(storeRAF) {
+				storeRAF.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+				storeRAF.write(header);
+				storeRAF.write(data);
+				if(keysRAF != null) {
+					keysRAF.seek(storeBlock.offset * keyLength);
+					keysRAF.write(fullKey);
+				}
+			}
+			
+			// Unlock record.
+			c.close();
+			c = null;
+			t.commit();
+			t = null;
+			
+		} catch(Throwable ex) {  // FIXME: ugly
+			checkSecondaryDatabaseError(ex);
+			Logger.error(this, "Caught "+ex, ex);
+			ex.printStackTrace();
+			throw new IOException(ex.getMessage());
+		} finally {
+			if(c!=null) {
+				try{c.close();}catch(DatabaseException ex2){}
+			
+			}
+			if(t!=null) {
+				try{t.abort();}catch(DatabaseException ex2){}
+			}
+			
+		}
+			
+		return true;
 	}
 	
 	/**
@@ -1804,6 +2005,74 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		return true;
 	}
 
+	private void innerPut(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
+		synchronized(this) {
+			if(closed)
+				return;
+		}
+			
+		if(data.length!=dataBlockSize) {
+			Logger.error(this, "This data is "+data.length+" bytes. Should be "+dataBlockSize);
+			return;
+		}
+		if(header.length!=headerBlockSize) {
+			Logger.error(this, "This header is "+data.length+" bytes. Should be "+headerBlockSize);
+			return;
+		}
+		
+		Transaction t = null;
+		
+		try {
+			t = environment.beginTransaction(null,null);
+			DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
+			
+			DatabaseEntry blockDBE = new DatabaseEntry();
+			
+			// Check whether it already exists
+			
+			if(logMINOR) Logger.minor(this, "Putting key "+block+" - checking whether it exists first");
+			OperationStatus result = keysDB.get(t, routingkeyDBE, blockDBE, LockMode.RMW);
+			
+			if(result == OperationStatus.SUCCESS || result == OperationStatus.KEYEXIST) {
+				if(logMINOR) Logger.minor(this, "Key already exists");
+				// Key already exists!
+				// But is it valid?
+				t.abort();
+				if(fetch(routingkey, fullKey, false) != null) return; // old key was valid, we are not overwriting
+				// If we are here, it was corrupt, or it was just deleted, so we can replace it.
+				if(logMINOR) Logger.minor(this, "Old key was invalid, adding anyway");
+				innerPut(block, routingkey, fullKey, data, header);
+				return;
+			} else if(result == OperationStatus.KEYEMPTY) {
+				Logger.error(this, "Got KEYEMPTY - record deleted? Shouldn't be possible with record locking...!");
+				// Put it in anyway
+			} else if(result == OperationStatus.NOTFOUND) {
+				// Good
+			} else
+				throw new IllegalStateException("Unknown operation status: "+result);
+			
+			writeBlock(header, data, t, routingkeyDBE, fullKey);
+			
+			t.commit();
+			t = null;
+			
+			if(logMINOR) {
+				Logger.minor(this, "Headers: "+header.length+" bytes, hash "+Fields.hashCode(header));
+				Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data)+" putting "+HexUtil.bytesToHex(routingkey));
+			}
+				
+		} catch(Throwable ex) {  // FIXME: ugly
+			if(t!=null){
+				try{t.abort();}catch(DatabaseException ex2){};
+			}
+			checkSecondaryDatabaseError(ex);
+			Logger.error(this, "Caught "+ex, ex);
+			ex.printStackTrace();
+			if(ex instanceof IOException) throw (IOException) ex;
+			else throw new IOException(ex.getMessage());
+		}
+	}
+	
 	/**
 	* Store a block.
 	*/

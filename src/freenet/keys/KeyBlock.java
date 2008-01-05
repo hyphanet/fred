@@ -3,10 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
+import freenet.store.StorableBlock;
+
 /**
  * Interface for fetched blocks. Can be decoded with a key.
  */
-public interface KeyBlock {
+public interface KeyBlock extends StorableBlock {
 
     final static int HASH_SHA256 = 1;
 	
