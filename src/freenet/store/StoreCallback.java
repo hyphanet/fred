@@ -34,10 +34,8 @@ public abstract class StoreCallback {
 	
 	protected FreenetStore store;
 	
-	/** Called once when first connecting to a FreenetStore */
+	/** Called once when first connecting to a FreenetStore. Package-local. */
 	void setStore(FreenetStore store) {
-		if(this.store != null)
-			throw new IllegalArgumentException("Calling setStore twice!");
 		this.store = store;
 	}
 	
