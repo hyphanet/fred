@@ -17,9 +17,6 @@ import freenet.support.Logger;
  * Identified by its Name which is sent on connection.
  */
 public class FCPClient {
-
-	// FIXME frost-specific hack
-	private static final Object frostClient = new Object();
 	
 	public FCPClient(String name2, FCPServer server, FCPConnectionHandler handler, boolean isGlobalQueue) {
 		this.name = name2;
@@ -37,12 +34,7 @@ public class FCPClient {
 		clientsWatching = new LinkedList();
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 		toStart = new LinkedList();
-		// FIXME frost-specific hack
-		if(name.matches("hello-[0-9]*")) {
-			// Greedy frost
-			lowLevelClient = frostClient;
-		} else
-			lowLevelClient = this;
+		lowLevelClient = this;
 	}
 	
 	/** The client's Name sent in the ClientHello message */
