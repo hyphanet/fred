@@ -1,5 +1,7 @@
 package freenet.store;
 
+import java.io.IOException;
+
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.KeyVerifyException;
@@ -17,6 +19,15 @@ public class CHKStore extends StoreCallback {
 		return CHKBlock.construct(data, headers);
 	}
 
+	public CHKBlock fetch(NodeCHK chk, boolean dontPromote) throws IOException {
+		return (CHKBlock) store.fetch(chk.getRoutingKey(), null, dontPromote);
+	}
+	
+	public void put(CHKBlock b) throws IOException, KeyCollisionException {
+		NodeCHK key = (NodeCHK) b.getKey();
+		store.put(b, key.getRoutingKey(), null, b.getRawData(), b.getRawHeaders(), false);
+	}
+	
 	public int dataLength() {
 		return CHKBlock.DATA_LENGTH;
 	}

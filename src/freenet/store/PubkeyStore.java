@@ -1,5 +1,7 @@
 package freenet.store;
 
+import java.io.IOException;
+
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.keys.KeyVerifyException;
@@ -21,6 +23,16 @@ public class PubkeyStore extends StoreCallback {
 		}
 	}
 
+	public DSAPublicKey fetch(byte[] hash, boolean dontPromote) throws IOException {
+		return (DSAPublicKey) store.fetch(hash, null, dontPromote);
+	}
+	
+	final private static byte[] empty = new byte[0];
+	
+	public void put(byte[] hash, DSAPublicKey key) throws IOException, KeyCollisionException {
+		store.put(key, key.getRoutingKey(), null, key.asPaddedBytes(), empty, false);
+	}
+	
 	public int dataLength() {
 		return DSAPublicKey.PADDED_SIZE;
 	}
