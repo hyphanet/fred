@@ -1200,6 +1200,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						e.printStackTrace();
 						addFreeBlock(l, true, "can't reconsturct key ("+type+ ')');
 						routingkey = null;
+						failures++;
 						continue;
 					}
 					t = environment.beginTransaction(null,null);
