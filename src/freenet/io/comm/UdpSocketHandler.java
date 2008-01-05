@@ -40,6 +40,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 	private boolean _active = true;
 	private final int listenPort;
 	private final String title;
+	private boolean _started;
 	
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title) throws SocketException {
 		super("UDP packet receiver for "+title);
@@ -290,6 +291,10 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 		lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
 		setDaemon(true);
 		setPriority(Thread.MAX_PRIORITY);
+		synchronized(this) {
+			if(!_active) return;
+			_started = true;
+		}
 		super.start();
 		if(!disableHangChecker) {
 			Thread checker = new Thread(new USMChecker(), "MessageCore$USMChecker");
@@ -364,6 +369,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
     	Logger.normal(this, "Closing.", new Exception("error"));
 		synchronized (this) {
 			_active = false;
+			if(!_started) return;
 			while (!_isDone) {
 				try {
 					wait(2000);
