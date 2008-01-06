@@ -1933,7 +1933,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	private void processNewNoderef(byte[] data, int offset, int length) throws FSParseException {
 		SimpleFieldSet fs = compressedNoderefToFieldSet(data, offset, length);
-		processNewNoderef(fs, false);
+		processNewNoderef(fs, false, false);
 	}
 
 	static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
@@ -1989,10 +1989,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/**
 	* Process a new nodereference, as a SimpleFieldSet.
 	*/
-	private void processNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
+	private void processNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
 		if(logMINOR)
 			Logger.minor(this, "Parsing: \n" + fs);
-		boolean changedAnything = innerProcessNewNoderef(fs, forARK);
+		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef);
 		if(changedAnything)
 			node.peers.writePeers();
 	}
@@ -2001,7 +2001,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* The synchronized part of processNewNoderef 
 	* @throws FSParseException
 	*/
-	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
+	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
 		boolean changedAnything = false;
 		if(node.testnetEnabled != Fields.stringToBool(fs.get("testnet"), false)) {
 			String err = "Preventing connection to node " + detectedPeer + " - peer.testnet=" + !node.testnetEnabled + '(' + fs.get("testnet") + ") but node.testnet=" + node.testnetEnabled;
@@ -2608,7 +2608,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(myARK.suggestedEdition < fetchedEdition + 1)
 					myARK = myARK.copy(fetchedEdition + 1);
 			}
-			processNewNoderef(fs, true);
+			processNewNoderef(fs, true, false);
 		} catch(FSParseException e) {
 			Logger.error(this, "Invalid ARK update: " + e, e);
 			// This is ok as ARKs are limited to 4K anyway.
