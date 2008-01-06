@@ -127,35 +127,35 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
 	private final static ClockProblemDetectedUserAlert clockProblemDetectedUserAlert = new ClockProblemDetectedUserAlert();
 	
-	public class NodeNameCallback implements StringCallback{
-			GetPubkey node;
-		
-			NodeNameCallback(GetPubkey n) {
-				node=n;
+	public class NodeNameCallback implements StringCallback {
+		GetPubkey node;
+	
+		NodeNameCallback(GetPubkey n) {
+			node=n;
+		}
+		public String get() {
+			if(myName.startsWith("Node id|")|| myName.equals("MyFirstFreenetNode")){
+				clientCore.alerts.register(nodeNameUserAlert);
+			}else{
+				clientCore.alerts.unregister(nodeNameUserAlert);
 			}
-			public String get() {
-				if(myName.startsWith("Node id|")|| myName.equals("MyFirstFreenetNode")){
-					clientCore.alerts.register(nodeNameUserAlert);
-				}else{
-					clientCore.alerts.unregister(nodeNameUserAlert);
-				}
-				return myName;
-			}
+			return myName;
+		}
 
-			public void set(String val) throws InvalidConfigValueException {
-				if(get().equals(val)) return;
-				else if(val.length() > 128)
-					throw new InvalidConfigValueException("The given node name is too long ("+val+')');
-				else if("".equals(val))
-					val = "~none~";
-				myName = val;
-                                // We call the callback once again to ensure MeaningfulNodeNameUserAlert
-				// has been unregistered ... see #1595
-                                get();
-			}
+		public void set(String val) throws InvalidConfigValueException {
+			if(get().equals(val)) return;
+			else if(val.length() > 128)
+				throw new InvalidConfigValueException("The given node name is too long ("+val+')');
+			else if("".equals(val))
+				val = "~none~";
+			myName = val;
+			// We call the callback once again to ensure MeaningfulNodeNameUserAlert
+			// has been unregistered ... see #1595
+			get();
+		}
 	}
 	
-	private class L10nCallback implements StringCallback, EnumerableOptionCallback{
+	private class L10nCallback implements StringCallback, EnumerableOptionCallback {
 		
 		public String get() {
 			return L10n.getSelectedLanguage();
@@ -380,8 +380,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public final long lastBootID;
 	public final long bootID;
 	public final long startupTime;
-        
-        private StartupToadletServer startupPageHolder;
+	
+	private StartupToadletServer startupPageHolder;
 	
 	public final NodeClientCore clientCore;
 	
@@ -492,11 +492,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			fos = new FileOutputStream(backup);
 			fs.writeTo(fos);
 			FileUtil.renameTo(backup, orig);
-                } catch (IOException ioe){
-                        Logger.error(this, "IOE :"+ioe.getMessage(), ioe);
-                        return;
-                } finally {
-                        Closer.close(fos);
+		} catch (IOException ioe) {
+			Logger.error(this, "IOE :"+ioe.getMessage(), ioe);
+			return;
+		} finally {
+			Closer.close(fos);
 		}
 	}
 
@@ -545,7 +545,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
 		this.executor = executor;
-	  	nodeStarter=ns;
+		nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
 		startupTime = System.currentTimeMillis();
@@ -727,7 +727,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(obwLimit <= 0)
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, "Invalid outputBandwidthLimit");
 		outputBandwidthLimit = obwLimit;
-		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) /  obwLimit, obwLimit, (obwLimit * 2) / 5);
+		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) / obwLimit, obwLimit, (obwLimit * 2) / 5);
 		
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
 					public int get() {
@@ -2096,7 +2096,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			if(logMINOR) Logger.minor(this, "Found "+is+" for "+kh);
 			return is;
 		}
-  		if(fromStore && !cache)
+		if(fromStore && !cache)
 			throw new IllegalArgumentException("From store = true but cache = false !!!");
 		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
 		is.start();
@@ -2280,10 +2280,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		sb.append(getNumInsertSenders());
 		sb.append('\n');
 		
-		
 		if (peers != null)
 			sb.append(peers.getFreevizOutput());
-		  						
+		
 		return sb.toString();
 	}
 
@@ -2297,20 +2296,20 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * Has a request completed with this ID recently?
 	 */
 	public boolean recentlyCompleted(long id) {
-	  synchronized (recentlyCompletedIDs) {
-		return recentlyCompletedIDs.contains(new Long(id));
-	  }
+		synchronized (recentlyCompletedIDs) {
+			return recentlyCompletedIDs.contains(new Long(id));
+		}
 	}
 	
 	/**
 	 * A request completed (regardless of success).
 	 */
 	void completed(long id) {
-	  synchronized (recentlyCompletedIDs) {
-		recentlyCompletedIDs.push(new Long(id));
-		while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
-			recentlyCompletedIDs.pop();
-	  }
+		synchronized (recentlyCompletedIDs) {
+			recentlyCompletedIDs.push(new Long(id));
+			while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
+				recentlyCompletedIDs.pop();
+		}
 	}
 
 	/* (non-Javadoc)
@@ -2523,61 +2522,61 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * Handle a received node to node message
 	 */
 	public void receivedNodeToNodeMessage(Message m, PeerNode src) {
-	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
-	  ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
-	  receivedNodeToNodeMessage(src, type, messageData, false);
+		int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
+		receivedNodeToNodeMessage(src, type, messageData, false);
 	}
 	
 	public void receivedNodeToNodeMessage(PeerNode src, int type, ShortBuffer messageData, boolean partingMessage) {
-	  boolean fromDarknet = false;
-	  if(src instanceof DarknetPeerNode) {
-	    fromDarknet = true;
-	  }
-	  DarknetPeerNode darkSource = (DarknetPeerNode)src;
-	  
-	  if(type == Node.N2N_MESSAGE_TYPE_FPROXY) {
-	    if(!fromDarknet) {
-	  		Logger.error(this, "Got N2NTM from non-darknet node ?!?!?!: from "+src);
-	  		return;
+		boolean fromDarknet = false;
+		if(src instanceof DarknetPeerNode) {
+			fromDarknet = true;
 		}
-		Logger.normal(this, "Received N2NTM from '"+darkSource.getPeer()+"'");
-		SimpleFieldSet fs = null;
-		try {
-			fs = new SimpleFieldSet(new String(messageData.getData(), "UTF-8"), false, true);
-		} catch (IOException e) {
-			Logger.error(this, "IOException while parsing node to node message data", e);
-			return;
-		}
-		if(fs.get("n2nType") != null) {
-			fs.removeValue("n2nType");
-		}
-		fs.putOverwrite("n2nType", Integer.toString(type));
-		if(fs.get("receivedTime") != null) {
-			fs.removeValue("receivedTime");
-		}
-		fs.putOverwrite("receivedTime", Long.toString(System.currentTimeMillis()));
-		if(fs.get("receivedAs") != null) {
-			fs.removeValue("receivedAs");
-		}
-		fs.putOverwrite("receivedAs", "nodeToNodeMessage");
-		int fileNumber = darkSource.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
-		if( fileNumber == -1 ) {
-			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+darkSource.getPeer());
-		}
-		// Keep track of the fileNumber so we can potentially delete the extra peer data file later, the file is authoritative
-		try {
-			handleNodeToNodeTextMessageSimpleFieldSet(fs, darkSource, fileNumber);
-		} catch (FSParseException e) {
-			// Shouldn't happen
-			throw new Error(e);
-		}
-	  } else {
-	    if(fromDarknet) {
-			Logger.error(this, "Received unknown node to node message type '"+type+"' from "+darkSource.getPeer());
+		DarknetPeerNode darkSource = (DarknetPeerNode)src;
+		
+		if(type == Node.N2N_MESSAGE_TYPE_FPROXY) {
+			if(!fromDarknet) {
+				Logger.error(this, "Got N2NTM from non-darknet node ?!?!?!: from "+src);
+				return;
+			}
+			Logger.normal(this, "Received N2NTM from '"+darkSource.getPeer()+"'");
+			SimpleFieldSet fs = null;
+			try {
+				fs = new SimpleFieldSet(new String(messageData.getData(), "UTF-8"), false, true);
+			} catch (IOException e) {
+				Logger.error(this, "IOException while parsing node to node message data", e);
+				return;
+			}
+			if(fs.get("n2nType") != null) {
+				fs.removeValue("n2nType");
+			}
+			fs.putOverwrite("n2nType", Integer.toString(type));
+			if(fs.get("receivedTime") != null) {
+				fs.removeValue("receivedTime");
+			}
+			fs.putOverwrite("receivedTime", Long.toString(System.currentTimeMillis()));
+			if(fs.get("receivedAs") != null) {
+				fs.removeValue("receivedAs");
+			}
+			fs.putOverwrite("receivedAs", "nodeToNodeMessage");
+			int fileNumber = darkSource.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
+			if( fileNumber == -1 ) {
+				Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+darkSource.getPeer());
+			}
+			// Keep track of the fileNumber so we can potentially delete the extra peer data file later, the file is authoritative
+			try {
+				handleNodeToNodeTextMessageSimpleFieldSet(fs, darkSource, fileNumber);
+			} catch (FSParseException e) {
+				// Shouldn't happen
+				throw new Error(e);
+			}
 		} else {
-			Logger.error(this, "Received unknown node to node message type '"+type+"' from "+src.getPeer());
+			if(fromDarknet) {
+				Logger.error(this, "Received unknown node to node message type '"+type+"' from "+darkSource.getPeer());
+			} else {
+				Logger.error(this, "Received unknown node to node message type '"+type+"' from "+src.getPeer());
+			}
 		}
-	  }
 	}
 
 	/**
@@ -2585,15 +2584,15 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @throws FSParseException 
 	 */
 	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, DarknetPeerNode source, int fileNumber) throws FSParseException {
-	  if(logMINOR)
-		  Logger.minor(this, "Got node to node message: \n"+fs);
-	  int overallType = fs.getInt("n2nType", 1); // FIXME remove default
-	  fs.removeValue("n2nType");
-	  if(overallType == Node.N2N_MESSAGE_TYPE_FPROXY) {
-		  handleFproxyNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
-	  } else {
-		  Logger.error(this, "Received unknown node to node message type '"+overallType+"' from "+source.getPeer());  
-	  }
+		if(logMINOR)
+			Logger.minor(this, "Got node to node message: \n"+fs);
+		int overallType = fs.getInt("n2nType", 1); // FIXME remove default
+		fs.removeValue("n2nType");
+		if(overallType == Node.N2N_MESSAGE_TYPE_FPROXY) {
+			handleFproxyNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
+		} else {
+			Logger.error(this, "Received unknown node to node message type '"+overallType+"' from "+source.getPeer());
+		}
 	}
 
 	private void handleFproxyNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, DarknetPeerNode source, int fileNumber) throws FSParseException {
@@ -2612,11 +2611,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 
 	public String getMyName() {
-	  return myName;
+		return myName;
 	}
 
 	public MessageCore getUSM() {
-	  return usm;
+		return usm;
 	}
 
 	public LocationManager getLocationManager() {
@@ -2823,12 +2822,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 
 	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-    	return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler);
+		return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler);
 	}
 
 	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
-    	return new OpennetPeerNode(fs, this, opennet.crypto, opennet, peers, false, opennet.crypto.packetMangler);
+		return new OpennetPeerNode(fs, this, opennet.crypto, opennet, peers, false, opennet.crypto.packetMangler);
 	}
 	
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
@@ -2916,23 +2915,23 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public long getUptime() {
 		return System.currentTimeMillis() - usm.getStartedTime();
 	}
-        
-        protected void killStartupToadlet() throws IOException {
-			if (startupPageHolder!=null)
-				startupPageHolder.kill();
-            // Give it a chance to be GCed
-            startupPageHolder = null;
-        }
 
-		public synchronized UdpSocketHandler[] getPacketSocketHandlers() {
-			// FIXME better way to get these!
-			if(opennet != null) {
-				return new UdpSocketHandler[] { darknetCrypto.socket, opennet.crypto.socket };
-				// TODO Auto-generated method stub
-			} else {
-				return new UdpSocketHandler[] { darknetCrypto.socket };
-			}
+	protected void killStartupToadlet() throws IOException {
+		if (startupPageHolder!=null)
+			startupPageHolder.kill();
+		// Give it a chance to be GCed
+		startupPageHolder = null;
+	}
+
+	public synchronized UdpSocketHandler[] getPacketSocketHandlers() {
+		// FIXME better way to get these!
+		if(opennet != null) {
+			return new UdpSocketHandler[] { darknetCrypto.socket, opennet.crypto.socket };
+			// TODO Auto-generated method stub
+		} else {
+			return new UdpSocketHandler[] { darknetCrypto.socket };
 		}
+	}
 
 	public int getMaxOpennetPeers() {
 		return maxOpennetPeers;
