@@ -2002,8 +2002,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @throws FSParseException
 	*/
 	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
+		// Anything may be omitted for a differential node reference
 		boolean changedAnything = false;
-		if(node.testnetEnabled != Fields.stringToBool(fs.get("testnet"), false)) {
+		if(!forDiffNodeRef && (node.testnetEnabled != Fields.stringToBool(fs.get("testnet"), false))) {
 			String err = "Preventing connection to node " + detectedPeer + " - peer.testnet=" + !node.testnetEnabled + '(' + fs.get("testnet") + ") but node.testnet=" + node.testnetEnabled;
 			Logger.error(this, err);
 			throw new FSParseException(err);
@@ -2011,7 +2012,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		String newVersion = fs.get("version");
 		if(newVersion == null) {
 			// Version may be ommitted for an ARK.
-			if(!forARK)
+			if(!forARK && !forDiffNodeRef)
 				throw new FSParseException("No version");
 		} else {
 			if(!newVersion.equals(version))
@@ -2019,7 +2020,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			version = newVersion;
 			Version.seenVersion(newVersion);
 		}
-		lastGoodVersion = fs.get("lastGoodVersion");
+		String newLastGoodVersion = fs.get("lastGoodVersion");
+		if(newLastGoodVersion == null) {
+			if(forDiffNodeRef) {
+				// Do nothing - lastGoodVersion not required for differential node references
+			} else {
+				String err = "Peer " + detectedPeer + " omitted lastGoodVersion from its node reference";
+				Logger.error(this, err);
+				throw new FSParseException(err);
+			}
+		} else {
+			lastGoodVersion = newLastGoodVersion;
+		}
 
 		updateVersionRoutablity();
 
@@ -2045,9 +2057,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		Peer[] oldPeers = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
 
+		boolean refHadPhysicalUDP = false;
+
 		try {
 			String physical[] = fs.getAll("physical.udp");
 			if(physical != null) {
+				refHadPhysicalUDP = true;
 				for(int i = 0; i < physical.length; i++) {
 					Peer p;
 					try {
@@ -2071,6 +2086,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			throw new FSParseException(e1);
 		}
 
+		if(!forDiffNodeRef || refHadPhysicalUDP) {
 		if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()]))) {
 			changedAnything = true;
 			lastAttemptedHandshakeIPUpdateTime = 0;
@@ -2084,16 +2100,25 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		// In future, ARKs may support automatic transition when the ARK key is changed.
 		// So parse it anyway. If it fails, no big loss; it won't even log an error.
+		}
 
 		if(logMINOR)
 			Logger.minor(this, "Parsed successfully; changedAnything = " + changedAnything);
 
 		int[] newNegTypes = fs.getIntArray("auth.negTypes");
-		if(newNegTypes == null || newNegTypes.length == 0)
+
+		boolean refHadNegTypes = false;
+
+		if(newNegTypes == null || newNegTypes.length == 0) {
 			newNegTypes = new int[]{0};
+		} else {
+			refHadNegTypes = true;
+		}
+		if(!forDiffNodeRef || refHadNegTypes) {
 		if(!Arrays.equals(negTypes, newNegTypes)) {
 			changedAnything = true;
 			negTypes = newNegTypes;
+		}
 		}
 
 		if(parseARK(fs, false))
