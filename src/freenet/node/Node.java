@@ -2534,7 +2534,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(src instanceof DarknetPeerNode) {
 			fromDarknet = true;
 		}
-		DarknetPeerNode darkSource;
+		DarknetPeerNode darkSource = null;
 		if(fromDarknet) {
 			darkSource = (DarknetPeerNode)src;
 		}
