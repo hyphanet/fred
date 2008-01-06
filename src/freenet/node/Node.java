@@ -78,6 +78,7 @@ import freenet.l10n.L10n;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
+import freenet.node.useralerts.ClockProblemDetectedUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.OpennetUserAlert;
@@ -124,6 +125,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private static MeaningfulNodeNameUserAlert nodeNameUserAlert;
 	private static BuildOldAgeUserAlert buildOldAgeUserAlert;
 	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
+	private final static ClockProblemDetectedUserAlert clockProblemDetectedUserAlert = new ClockProblemDetectedUserAlert();
 	
 	public class NodeNameCallback implements StringCallback{
 			GetPubkey node;
@@ -2944,5 +2946,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	public boolean wantAnonAuth() {
 		return opennet != null && acceptSeedConnections;
+	}
+	
+	public void displayClockProblemUserAlert(boolean value) {
+		if(value)
+			clientCore.alerts.register(clockProblemDetectedUserAlert);
+		else
+			clientCore.alerts.unregister(clockProblemDetectedUserAlert);
 	}
 }
