@@ -359,6 +359,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private short maxHTL;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
+	/** Type identifier for differential node reference messages, as sent on DMT.nodeToNodeMessage's */
+	public static final int N2N_MESSAGE_TYPE_DIFFNODEREF = 2;
 	/** Identifier within fproxy messages for simple, short text messages to be displayed on the homepage as useralerts */
 	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = 1;
 	/** Identifier within fproxy messages for an offer to transfer a file */
@@ -2570,12 +2572,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				// Shouldn't happen
 				throw new Error(e);
 			}
+		} else if(type == Node.N2N_MESSAGE_TYPE_DIFFNODEREF) {
+			// FIXME: Not yet implemented
+			Logger.normal(this, "Received differential node reference node to node message from "+src.getPeer());
 		} else {
-			if(fromDarknet) {
-				Logger.error(this, "Received unknown node to node message type '"+type+"' from "+darkSource.getPeer());
-			} else {
-				Logger.error(this, "Received unknown node to node message type '"+type+"' from "+src.getPeer());
-			}
+			Logger.error(this, "Received unknown node to node message type '"+type+"' from "+src.getPeer());
 		}
 	}
 
