@@ -2576,8 +2576,20 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				throw new Error(e);
 			}
 		} else if(type == Node.N2N_MESSAGE_TYPE_DIFFNODEREF) {
-			// FIXME: Not yet implemented
 			Logger.normal(this, "Received differential node reference node to node message from "+src.getPeer());
+			SimpleFieldSet fs = null;
+			try {
+				fs = new SimpleFieldSet(new String(messageData.getData(), "UTF-8"), false, true);
+			} catch (IOException e) {
+				Logger.error(this, "IOException while parsing node to node message data", e);
+				return;
+			}
+			try {
+				src.processDiffNoderef(fs);
+			} catch (FSParseException e) {
+				Logger.error(this, "FSParseException while parsing node to node message data", e);
+				return;
+			}
 		} else {
 			Logger.error(this, "Received unknown node to node message type '"+type+"' from "+src.getPeer());
 		}

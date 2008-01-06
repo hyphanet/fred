@@ -1934,6 +1934,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	/**
+	* Process a differential node reference
+	* The identity must not change, or we throw.
+	*/
+	public void processDiffNoderef(SimpleFieldSet fs) throws FSParseException {
+		processNewNoderef(fs, false, true);
+	}
+
+	/**
 	* Process a new nodereference, in compressed form.
 	* The identity must not change, or we throw.
 	*/
