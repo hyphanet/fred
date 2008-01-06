@@ -2529,15 +2529,18 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	public void receivedNodeToNodeMessage(PeerNode src, int type, ShortBuffer messageData, boolean partingMessage) {
-	  if(!(src instanceof DarknetPeerNode)) {
-		Logger.error(this, "Got N2NTM from opennet node ?!?!?!: from "+src);
-		return;
+	  boolean fromDarknet = false;
+	  if(src instanceof DarknetPeerNode) {
+	    fromDarknet = true;
 	  }
-	  DarknetPeerNode source = (DarknetPeerNode)src;
+	  DarknetPeerNode darkSource = (DarknetPeerNode)src;
 	  
 	  if(type == Node.N2N_MESSAGE_TYPE_FPROXY) {
-		
-		Logger.normal(this, "Received N2NM from '"+source.getPeer()+"'");
+	    if(!fromDarknet) {
+	  		Logger.error(this, "Got N2NTM from non-darknet node ?!?!?!: from "+src);
+	  		return;
+		}
+		Logger.normal(this, "Received N2NTM from '"+darkSource.getPeer()+"'");
 		SimpleFieldSet fs = null;
 		try {
 			fs = new SimpleFieldSet(new String(messageData.getData(), "UTF-8"), false, true);
@@ -2557,19 +2560,23 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			fs.removeValue("receivedAs");
 		}
 		fs.putOverwrite("receivedAs", "nodeToNodeMessage");
-		int fileNumber = source.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
+		int fileNumber = darkSource.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
 		if( fileNumber == -1 ) {
-			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+source.getPeer());
+			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+darkSource.getPeer());
 		}
 		// Keep track of the fileNumber so we can potentially delete the extra peer data file later, the file is authoritative
 		try {
-			handleNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
+			handleNodeToNodeTextMessageSimpleFieldSet(fs, darkSource, fileNumber);
 		} catch (FSParseException e) {
 			// Shouldn't happen
 			throw new Error(e);
 		}
 	  } else {
-		Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
+	    if(fromDarknet) {
+			Logger.error(this, "Received unknown node to node message type '"+type+"' from "+darkSource.getPeer());
+		} else {
+			Logger.error(this, "Received unknown node to node message type '"+type+"' from "+src.getPeer());
+		}
 	  }
 	}
 
