@@ -544,7 +544,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		// ARK stuff.
 
-		parseARK(fs, true);
+		parseARK(fs, true, false);
 
 		// Now for the metadata.
 		// The metadata sub-fieldset contains data about the node which is not part of the node reference.
@@ -642,7 +642,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
 
-	private boolean parseARK(SimpleFieldSet fs, boolean onStartup) {
+	private boolean parseARK(SimpleFieldSet fs, boolean onStartup, boolean forDiffNodeRef) {
 		USK ark = null;
 		long arkNo = 0;
 		try {
@@ -2120,7 +2120,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 
-		if(parseARK(fs, false))
+		if(parseARK(fs, false, forDiffNodeRef))
 			changedAnything = true;
 		return changedAnything;
 	}
