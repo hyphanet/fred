@@ -1667,7 +1667,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Logger.normal(this, "Not routing traffic to " + this + " - invalid version " + getVersion());
 			older = true;
 			routable = false;
-		} else
+		} else if(Math.abs(clockDelta) > MAX_CLOCK_DELTA)
+			routable = false;
+		else
 			older = false;
 		KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
 		changedIP(replyTo);
