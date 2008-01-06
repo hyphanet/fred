@@ -280,20 +280,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	final WeakReference myRef;
 	/** The node is being disconnected, but it may take a while. */
 	private boolean disconnecting;
-    /** When did we last disconnect? Not Disconnected because a discrete event */
-    long timeLastDisconnect;
-    /** Previous time of disconnection */
-    long timePrevDisconnect;
-    
-    // Burst-only mode
-    /** True if we are currently sending this peer a burst of handshake requests */
-    private boolean isBursting;
-    /** Number of handshake attempts (while in ListenOnly mode) since the beginning of this burst */
-    private int listeningHandshakeBurstCount;
-    /** Total number of handshake attempts (while in ListenOnly mode) to be in this burst */
-    private int listeningHandshakeBurstSize;
-    
-    
+	/** When did we last disconnect? Not Disconnected because a discrete event */
+	long timeLastDisconnect;
+	/** Previous time of disconnection */
+	long timePrevDisconnect;
+	
+	// Burst-only mode
+	/** True if we are currently sending this peer a burst of handshake requests */
+	private boolean isBursting;
+	/** Number of handshake attempts (while in ListenOnly mode) since the beginning of this burst */
+	private int listeningHandshakeBurstCount;
+	/** Total number of handshake attempts (while in ListenOnly mode) to be in this burst */
+	private int listeningHandshakeBurstSize;
+	
 	/**
 	 * For FNP link setup:
 	 *  The initiator has to ensure that nonces send back by the
@@ -626,13 +625,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		lastAttemptedHandshakeIPUpdateTime = 0;
 		maybeUpdateHandshakeIPs(true);
 
-        listeningHandshakeBurstCount = 0;
-        listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
-        	+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
+		listeningHandshakeBurstCount = 0;
+		listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
+			+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
 		
-        if(isBurstOnly()) {
-        	Logger.minor(this, "First BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+shortToString()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')');
-        }
+		if(isBurstOnly()) {
+			Logger.minor(this, "First BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+shortToString()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')');
+		}
 
 		if(fromLocal)
 			innerCalcNextHandshake(false, false, now); // Let them connect so we can recognise we are NATed
@@ -760,7 +759,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			localDetectedPeer = detectedPeer;
 			if((now - lastAttemptedHandshakeIPUpdateTime) < (5 * 60 * 1000)) {  // 5 minutes
-	    		//Logger.minor(this, "Looked up recently (localDetectedPeer = "+localDetectedPeer + " : "+((localDetectedPeer == null) ? "" : localDetectedPeer.getAddress(false).toString()));
+				//Logger.minor(this, "Looked up recently (localDetectedPeer = "+localDetectedPeer + " : "+((localDetectedPeer == null) ? "" : localDetectedPeer.getAddress(false).toString()));
 				return;
 			}
 			// We want to come back right away for DNS requesting if this is our first time through
@@ -956,8 +955,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			node.ps.wakeUp();
 		}
 		// Otherwise we do not need to wake up the PacketSender
-        // It will wake up before the maximum coalescing delay (100ms) because
-        // it wakes up every 100ms *anyway*.
+		// It will wake up before the maximum coalescing delay (100ms) because
+		// it wakes up every 100ms *anyway*.
 	}
 
 	public long getMessageQueueLengthBytes() {
@@ -1068,10 +1067,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			// Else DO NOT clear trackers, because hopefully it's a temporary connectivity glitch.
 			sendHandshakeTime = now;
-    		synchronized(this) {
-    			timePrevDisconnect = timeLastDisconnect;
-    			timeLastDisconnect = now;
-    		}
+			synchronized(this) {
+				timePrevDisconnect = timeLastDisconnect;
+				timeLastDisconnect = now;
+			}
 			if(dumpMessageQueue) {
 				synchronized(messagesToSendNow) {
 					messagesToSendNow.clear();
@@ -1194,13 +1193,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(tempShouldSendHandshake && (hasLiveHandshake(now)))
 			tempShouldSendHandshake = false;
 		if(tempShouldSendHandshake) {
-    		if(isBurstOnly()) {
-    			synchronized(this) {
-        			isBursting = true;
-    			}
-    			setPeerNodeStatus(System.currentTimeMillis());
-    		} else
-    			return true;
+			if(isBurstOnly()) {
+				synchronized(this) {
+					isBursting = true;
+				}
+				setPeerNodeStatus(System.currentTimeMillis());
+			} else
+				return true;
 		}
 		return tempShouldSendHandshake;
 	}
@@ -1848,7 +1847,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			timeDeltas[i] = (int) (now - times[i]);
 		if(skip != 0) {
 			// Unlikely code path, only happens with very long uptime.
-    		// Trim hashes too.
+			// Trim hashes too.
 			long[] newHashes = new long[hashes.length - skip];
 			System.arraycopy(hashes, skip, newHashes, 0, hashes.length - skip);
 		}
@@ -2073,9 +2072,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 					if(!nominalPeer.contains(p)) {
 						if(oldNominalPeer.contains(p)) {
-						// Do nothing
-				    		// .contains() will .equals() on each, and equals() will propagate the looked-up IP if necessary.
-				    		// This is obviously O(n^2), but it doesn't matter, there will be very few peers.
+							// Do nothing
+							// .contains() will .equals() on each, and equals() will propagate the looked-up IP if necessary.
+							// This is obviously O(n^2), but it doesn't matter, there will be very few peers.
 						}
 						nominalPeer.addElement(p);
 					}
@@ -2087,19 +2086,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 
 		if(!forDiffNodeRef || refHadPhysicalUDP) {
-		if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()]))) {
-			changedAnything = true;
-			lastAttemptedHandshakeIPUpdateTime = 0;
-			// Clear nonces to prevent leak. Will kill any in-progress connect attempts, but that is okay because
-			// either we got an ARK which changed our peers list, or we just connected.
-			jfkNoncesSent.clear();
-		}
+			if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()]))) {
+				changedAnything = true;
+				lastAttemptedHandshakeIPUpdateTime = 0;
+				// Clear nonces to prevent leak. Will kill any in-progress connect attempts, but that is okay because
+				// either we got an ARK which changed our peers list, or we just connected.
+				jfkNoncesSent.clear();
+			}
 
-		// DO NOT change detectedPeer !!!
-		// The given physical.udp may be WRONG!!!
+			// DO NOT change detectedPeer !!!
+			// The given physical.udp may be WRONG!!!
 
-		// In future, ARKs may support automatic transition when the ARK key is changed.
-		// So parse it anyway. If it fails, no big loss; it won't even log an error.
+			// In future, ARKs may support automatic transition when the ARK key is changed.
+			// So parse it anyway. If it fails, no big loss; it won't even log an error.
 		}
 
 		if(logMINOR)
@@ -2115,10 +2114,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			refHadNegTypes = true;
 		}
 		if(!forDiffNodeRef || refHadNegTypes) {
-		if(!Arrays.equals(negTypes, newNegTypes)) {
-			changedAnything = true;
-			negTypes = newNegTypes;
-		}
+			if(!Arrays.equals(negTypes, newNegTypes)) {
+				changedAnything = true;
+				negTypes = newNegTypes;
+			}
 		}
 
 		if(parseARK(fs, false))
@@ -3335,11 +3334,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return true;
 	}
 
-    public synchronized long timeLastDisconnect() {
-    	return timeLastDisconnect;
-    }
+	public synchronized long timeLastDisconnect() {
+		return timeLastDisconnect;
+	}
 
-    /** Does this peernode want to be returned by for example PeerManager.getByPeer() ? */
+	/** Does this peernode want to be returned by for example PeerManager.getByPeer() ? */
 	public abstract boolean isSearchable();
 
 	/** Can we accept announcements from this node? */
