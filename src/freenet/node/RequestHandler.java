@@ -146,17 +146,20 @@ public class RequestHandler implements Runnable, ByteCounter {
         }
         
         boolean shouldHaveStartedTransfer = false;
-        
+        boolean sentRejectedOverload = false;
+		
         short waitStatus = 0;
         
         while(true) {
             
         	waitStatus = rs.waitUntilStatusChange(waitStatus);
-            if((waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
+            if((waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0 && !sentRejectedOverload) {
             	// Forward RejectedOverload
 				//Note: This message is only decernable from the terminal messages by the IS_LOCAL flag being false. (!IS_LOCAL)->!Terminal
             	Message msg = DMT.createFNPRejectedOverload(uid, false);
             	source.sendAsync(msg, null, 0, this);
+				//If the status changes (e.g. to SUCCESS), there is little need to send yet another reject overload.
+				sentRejectedOverload=true;
             }
             
             if((waitStatus & RequestSender.WAIT_TRANSFERRING_DATA) != 0) {
