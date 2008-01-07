@@ -85,11 +85,15 @@ public class RequestHandler implements Runnable, ByteCounter {
         }
     }
     
+	private Exception previousApplyByteCountCall;
+	
     private void applyByteCounts() {
 		if (appliedByteCounts) {
 			Logger.error(this, "applyByteCounts already called", new Exception("error"));
+			Logger.error(this, "first called here", previousApplyByteCountCall);
 			return;
 		}
+		previousApplyByteCountCall=new Exception("first call to applyByteCounts");
 		appliedByteCounts=true;
         if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD 
            && status != RequestSender.INTERNAL_ERROR) {
