@@ -72,4 +72,8 @@ public class MessageItem {
 			}
 		}
 	}
+	
+	public boolean isForMessage(Message msg) {
+		return this.msg.equals(msg);
+	}
 }

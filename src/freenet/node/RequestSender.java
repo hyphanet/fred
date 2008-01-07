@@ -4,6 +4,7 @@
 package freenet.node;
 
 import java.util.HashSet;
+import java.util.ArrayList;
 
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
@@ -46,6 +47,8 @@ import freenet.support.SimpleFieldSet;
 public final class RequestSender implements Runnable, ByteCounter {
 
     // Constants
+	//SEND_TIMEOUT is not a hard timeout, shoot low for low latency (250-500ms?).
+	static final int SEND_TIMEOUT = 1000;
     static final int ACCEPTED_TIMEOUT = 5000;
     static final int FETCH_TIMEOUT = 120000;
     /** Wait up to this long to get a path folding reply */
@@ -141,6 +144,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 		int rejectOverloads=0;
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
+		ArrayList busyPeers = new ArrayList();
         while(true) {
             if(logMINOR) Logger.minor(this, "htl="+htl);
             if(htl == 0) {
@@ -159,9 +163,24 @@ public final class RequestSender implements Runnable, ByteCounter {
 			routeAttempts++;
             
             // Route it
+			long sendTimeout = SEND_TIMEOUT;
+			boolean usingBusyPeer=false;
             PeerNode next;
             next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
             
+			if (next == null && !busyPeers.isEmpty()) {
+				next = (PeerNode)busyPeers.remove(0);
+				usingBusyPeer=true;
+				if (logMINOR) Logger.minor(this, "trying previously-found busy peer: "+next);
+				//NOTE: if we are at this point, it is already presumed that the message cannot even make it off the node to this peer in SEND_TIMEOUT, use all the timeout we have left.
+				sendTimeout = FETCH_TIMEOUT-(System.currentTimeMillis()-startTime);
+				//Edge case, local request & we are running w/o any time left.
+				if (sendTimeout < SEND_TIMEOUT && source==null) {
+					if (logMINOR) Logger.minor(this, "increasing timeout for local request");
+					sendTimeout = 2*SEND_TIMEOUT;
+				}
+			}
+			
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)
 					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
@@ -187,11 +206,18 @@ public final class RequestSender implements Runnable, ByteCounter {
             // So take it from when we first started to try to send the request.
             // See comments below when handling FNPRecentlyFailed for why we need this.
             long timeSentRequest = System.currentTimeMillis();
-            
+			
             try {
             	//This is the first contact to this node
             	//async is preferred, but makes ACCEPTED_TIMEOUT much more likely for long send queues.
-            	next.sendAsync(req, null, 0, this);
+				//using conditionalSend this way might actually approximate Q-routing load balancing accross the network.
+            	if (!next.conditionalSend(req, this, sendTimeout)) {
+					if (usingBusyPeer)
+						continue;
+					Logger.normal(this, "will try this peer later if no others are available");
+					busyPeers.add(next);
+					continue;
+				}
             } catch (NotConnectedException e) {
             	Logger.minor(this, "Not connected");
             	continue;
