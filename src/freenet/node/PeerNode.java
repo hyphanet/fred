@@ -509,6 +509,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else {
 			detectedPeer = (Peer) nominalPeer.firstElement();
 		}
+		updateShortToString();
 		
 		// Don't create trackers until we have a key
 		currentTracker = null;
@@ -574,6 +575,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				}
 				if(p != null)
 					detectedPeer = p;
+				updateShortToString();
 				String tempTimeLastReceivedPacketString = metadata.get("timeLastReceivedPacket");
 				if(tempTimeLastReceivedPacketString != null) {
 					long tempTimeLastReceivedPacket = Long.parseLong(tempTimeLastReceivedPacketString);
@@ -850,6 +852,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			handshakeIPs = localHandshakeIPs;
 			if((detectedDuplicate != null) && detectedDuplicate.equals(localDetectedPeer))
 				localDetectedPeer = detectedPeer = detectedDuplicate;
+			updateShortToString();
 		}
 		if(logMINOR) {
 			Logger.minor(this, "3: detectedPeer = " + localDetectedPeer + " (" + localDetectedPeer.getAddress(false) + ')');
@@ -1514,6 +1517,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			if((newPeer != null) && ((detectedPeer == null) || !detectedPeer.equals(newPeer))) {
 				this.detectedPeer = newPeer;
+				updateShortToString();
 				this.lastAttemptedHandshakeIPUpdateTime = 0;
 				if(!isConnected)
 					return;
@@ -1552,13 +1556,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return unverifiedTracker;
 	}
 
+	private String shortToString;
+	private void updateShortToString() {
+		shortToString = super.toString() + '@' + detectedPeer + '@' + HexUtil.bytesToHex(identity);
+	}
+	
 	/**
 	* @return short version of toString()
 	* *** Note that this is not synchronized! It is used by logging in code paths that
 	* will deadlock if it is synchronized! ***
 	*/
 	public String shortToString() {
-		return super.toString() + '@' + detectedPeer + '@' + HexUtil.bytesToHex(identity);
+		return shortToString;
 	}
 
 	public String toString() {
