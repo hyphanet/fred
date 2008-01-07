@@ -396,20 +396,17 @@ public final class RequestSender implements Runnable, ByteCounter {
             	if(msg.getSpec() == DMT.FNPRejectedOverload) {
 					// Non-fatal - probably still have time left
 					forwardRejectedOverload();
+					rejectOverloads++;
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
+						//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
+						//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
 						next.localRejectedOverload("ForwardRejectedOverload2");
 						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 						break;
 					}
-					/*
-					 This happens OFTEN!
-					 There is a very small chance that this is a previous reject from before the ACCEPTED,
-					 but (having more-or-less flushed those while waiting on the accepted), it will effectively
-					 always be one of the standard reject replies (See RequestHandler).
-					 */
-					rejectOverloads++;
-					break; // Don't wait for any further response, next peer
+					//so long as the node does not send a (IS_LOCAL) message. Interestingly messages can often timeout having only received this message.
+					continue;
             	}
 
             	if(msg.getSpec() == DMT.FNPCHKDataFound) {
