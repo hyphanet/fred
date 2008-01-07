@@ -208,9 +208,27 @@ public final class RequestSender implements Runnable, ByteCounter {
             long timeSentRequest = System.currentTimeMillis();
 			
             try {
-            	//This is the first contact to this node
-            	//async is preferred, but makes ACCEPTED_TIMEOUT much more likely for long send queues.
-				//using conditionalSend this way might actually approximate Q-routing load balancing accross the network.
+            	//This is the first contact to this node, it is more likely to timeout
+				/*
+				 * using sendSync could:
+				 *   make ACCEPTED_TIMEOUT more accurate (as it is measured from the send-time),
+				 *   use a lot of our time that we have to fulfill this request (simply waiting on the send queue, or longer if the node just went down),
+				 * using sendAsync could:
+				 *   make ACCEPTED_TIMEOUT much more likely,
+				 *   leave many hanging-requests/unclaimedFIFO items,
+				 *   potentially make overloaded peers MORE overloaded (we make a request and promptly forget about them).
+				 * using conditionalSend could:
+				 *   make ACCEPTED_TIMEOUT as accurate as sendSync (as it to waits for transmittion)
+				 *   reduce general latency around peers which have slow network links
+				 *   not needlessly overload nodes w/ forgotten requests (as conditonalSend will try and withdraw the request if it times out)
+				 *!!!make us skip peers which would otherwise have the data (they are closer, but slower)
+				 *
+				 * To avoid the pitfall of conditionalSend (potentially skipping a good peer), we will come back to them when it is
+				 * apparent that we cannot fill the request quickly. Using conditionalSend this way might actually approximate
+				 * Q-routing (for load balancing/latency) across the network; if SEND_TIMEOUT is too high... this reduces to
+				 * using sendSync w/ a good error catch, and if SEND_TIMEOUT is too low... this reduces to creating a cache-backbone
+				 * of fast links in the network which will always be queried before general nodes in the network are.
+				 */
             	if (!next.conditionalSend(req, this, sendTimeout)) {
 					if (usingBusyPeer)
 						continue;
