@@ -1578,7 +1578,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				keysRAF.seek(blockNum * keyLength);
 				keysRAF.write(fullKey);
 				if(logDEBUG)
-					Logger.minor(this, "Written full key length "+fullKey.length+" to block "+blockNum+" at "+(blockNum * keyLength));
+					Logger.debug(this, "Written full key length "+fullKey.length+" to block "+blockNum+" at "+(blockNum * keyLength));
 			} else if(logDEBUG && storeType == TYPE_SSK) {
 				Logger.debug(this, "Not writing full key length "+fullKey.length+" for block "+blockNum);
 			}
