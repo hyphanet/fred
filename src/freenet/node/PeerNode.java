@@ -1448,6 +1448,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		SyncMessageCallback cb = new SyncMessageCallback();
 		sendAsync(req, cb, 0, ctr);
 		cb.waitForSend(60 * 1000);
+		if (!cb.done)
+			Logger.error(this, "Waited too long for a blocking send on " + this + " for " + PeerNode.this, new Exception("error"));
 	}
 
 	private class SyncMessageCallback implements AsyncMessageCallback {
@@ -1471,8 +1473,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// Ignore
 				}
 			}
-			if(isConnected())
-				Logger.normal(this, "Waited too long for a blocking send on " + this + " for " + PeerNode.this, new Exception("error"));
 		}
 
 		public void acknowledged() {
