@@ -66,6 +66,7 @@ public class BlockReceiver {
 	
 	public byte[] receive() throws RetrievalException {
 		int consecutiveMissingPacketReports = 0;
+		boolean logMINOR=Logger.shouldLog(Logger.MINOR, this);
 		try {
 		while (!_prb.allReceived()) {
 			Message m1;
@@ -80,7 +81,7 @@ public class BlockReceiver {
                 _prb.abort(RetrievalException.SENDER_DIED, "Disconnected during receive");
                 throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
             }
-            if(Logger.shouldLog(Logger.MINOR, this))
+            if(logMINOR)
             	Logger.minor(this, "Received "+m1);
             if ((m1 != null) && m1.getSpec().equals(DMT.sendAborted)) {
 				_prb.abort(m1.getInt(DMT.REASON), m1.getString(DMT.DESCRIPTION));
@@ -112,7 +113,7 @@ public class BlockReceiver {
 						}
 					}
 				}
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Missing: "+missing.size());
 				if (missing.size() > 0) {
 					Message mn = DMT.createMissingPacketNotification(_uid, missing);

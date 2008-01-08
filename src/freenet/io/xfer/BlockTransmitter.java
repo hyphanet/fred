@@ -84,9 +84,13 @@ public class BlockTransmitter {
 					try {
 						while (true) {
 							synchronized(_senderThread) {
-								if(_unsent.size() != 0) break;
+								if(_unsent.size() != 0) {
+									timeAllSent = -1;
+									break;
+								}
 								// No unsent packets
 								if(getNumSent() == _prb.getNumPackets()) {
+									//No unreceived packets
 									if(Logger.shouldLog(Logger.MINOR, this))
 										Logger.minor(this, "Sent all blocks, none unsent");
 									if(timeAllSent <= 0)
@@ -96,7 +100,6 @@ public class BlockTransmitter {
 								_senderThread.wait(10*1000);
 							}
 						}
-						timeAllSent = -1;
 					} catch (InterruptedException e) {
 					} catch (AbortedException e) {
 						synchronized(_senderThread) {
@@ -136,9 +139,8 @@ public class BlockTransmitter {
 				}
 			}
 
-			/** @return True if _sendComplete */
 			private void delay(long startCycleTime) {
-				
+				//FIXME: startCycleTime is not used in this function, why is it passed in?
 				long startThrottle = System.currentTimeMillis();
 
 				// Get the current inter-packet delay
@@ -164,6 +166,7 @@ public class BlockTransmitter {
 					int x = (int) (Math.min(l, 120*1000));
 					if(x > 0) {
 						try {
+							//FIXME: if the senderThread sleeps here for two minutes, that will timeout the receiver, no? Should this be a wait()?
 							Thread.sleep(x);
 						} catch (InterruptedException e) {
 							// Ignore
@@ -239,6 +242,7 @@ public class BlockTransmitter {
 					return false;
 				if (msg == null) {
 					long now = System.currentTimeMillis();
+					//SEND_TIMEOUT (one minute) after all packets have been transmitted, terminate the send.
 					if((timeAllSent > 0) && ((now - timeAllSent) > SEND_TIMEOUT) &&
 							(getNumSent() == _prb.getNumPackets())) {
 						synchronized(_senderThread) {
@@ -280,9 +284,8 @@ public class BlockTransmitter {
 						_senderThread.notifyAll();
 					}
 					return false;
-				} else if(_sendComplete) {
-					// Terminated abnormally
-					return false;
+				} else {
+					Logger.error(this, "Transmitter received unknown message type: "+msg.getSpec().getName());
 				}
 			}
 		} catch (AbortedException e) {
