@@ -1244,28 +1244,37 @@ public class DarknetPeerNode extends PeerNode {
 	public int sendTextMessage(String message) {
 		long now = System.currentTimeMillis();
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_USERALERT);
 		try {
 			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
 			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
 			fs.putSingle("text", Base64.encode(message.getBytes("UTF-8")));
 			fs.put("composedTime", now);
-			fs.put("sentTime", now);
-			Message n2ntm;
-			n2ntm = DMT.createNodeToNodeMessage(
-					Node.N2N_MESSAGE_TYPE_FPROXY, fs
-							.toString().getBytes("UTF-8"));
-			try {
-				sendAsync(n2ntm, null, 0, null);
-			} catch (NotConnectedException e) {
-				fs.removeValue("sentTime");
-				queueN2NTM(fs);
-				setPeerNodeStatus(System.currentTimeMillis());
-				return getPeerNodeStatus();
-			}
+			sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now);
 			this.setPeerNodeStatus(System.currentTimeMillis());
 			return getPeerNodeStatus();
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: "+e, e);
+		}
+	}
+
+	public void sendNodeToNodeMessage(SimpleFieldSet fs, int n2nType, boolean includeSentTime, long now) {
+		fs.put("n2nType", n2nType);
+		if(includeSentTime) {
+			fs.put("sentTime", now);
+		}
+		try {
+			Message n2nm;
+			n2nm = DMT.createNodeToNodeMessage(
+					n2nType, fs.toString().getBytes("UTF-8"));
+			try {
+				sendAsync(n2nm, null, 0, null);
+			} catch (NotConnectedException e) {
+				if(includeSentTime) {
+					fs.removeValue("sentTime");
+				}
+				queueN2NTM(fs);
+			}
 		} catch (UnsupportedEncodingException e) {
 			throw new Error("Impossible: "+e, e);
 		}
