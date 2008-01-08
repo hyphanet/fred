@@ -1497,8 +1497,8 @@ public class DarknetPeerNode extends PeerNode {
 		return ""+getPeer()+" : "+getName();
 	}
 
-	public PeerNodeStatus getStatus() {
-		return new DarknetPeerNodeStatus(this);
+	public PeerNodeStatus getStatus(boolean noHeavy) {
+		return new DarknetPeerNodeStatus(this, noHeavy);
 	}
 
 	public boolean isOpennet() {

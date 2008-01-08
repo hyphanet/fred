@@ -338,6 +338,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		version = fs.get("version");
 		Version.seenVersion(version);
+		simpleVersion = Version.getArbitraryBuildNumber(version);
 		String locationString = fs.get("location");
 		try {
 			currentLocation = Location.getLocation(locationString);
@@ -2087,6 +2088,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(!newVersion.equals(version))
 				changedAnything = true;
 			version = newVersion;
+			simpleVersion = Version.getArbitraryBuildNumber(version);
 			Version.seenVersion(newVersion);
 		}
 		String newLastGoodVersion = fs.get("lastGoodVersion");
@@ -2241,7 +2243,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 
-	public abstract PeerNodeStatus getStatus();
+	/**
+	 * Get a PeerNodeStatus for this node.
+	 * @param noHeavy If true, avoid any expensive operations e.g. the message count hashtables.
+	 */
+	public abstract PeerNodeStatus getStatus(boolean noHeavy);
 
 	public String getTMCIPeerInfo() {
 		long now = System.currentTimeMillis();
@@ -2255,7 +2261,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public String getFreevizOutput() {
-		return getStatus().toString() + '|' + Base64.encode(identity);
+		return getStatus(true).toString() + '|' + Base64.encode(identity);
 	}
 
 	public synchronized String getVersion() {
@@ -2266,8 +2272,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return lastGoodVersion;
 	}
 
-	public String getSimpleVersion() {
-		return String.valueOf(Version.getArbitraryBuildNumber(getVersion()));
+	private int simpleVersion;
+	
+	public int getSimpleVersion() {
+		return simpleVersion;
 	}
 
 	/**

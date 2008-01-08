@@ -86,8 +86,8 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		return node.exportDarknetPublicFieldSet();
 	}
 
-	protected PeerNodeStatus[] getPeerNodeStatuses() {
-		return node.peers.getDarknetPeerNodeStatuses();
+	protected PeerNodeStatus[] getPeerNodeStatuses(boolean noHeavy) {
+		return node.peers.getDarknetPeerNodeStatuses(noHeavy);
 	}
 
 	protected String getPageTitle(String titleCountString, String myName) {

@@ -17,8 +17,8 @@ public class SeedClientPeerNode extends PeerNode {
 		super(fs, node2, crypto, peers, fromLocal, noSig, mangler, true);
 	}
 
-	public PeerNodeStatus getStatus() {
-		return new PeerNodeStatus(this);
+	public PeerNodeStatus getStatus(boolean noHeavy) {
+		return new PeerNodeStatus(this, noHeavy);
 	}
 
 	public boolean isOpennet() {

@@ -131,7 +131,7 @@ public class StatisticsToadlet extends Toadlet {
 		final SubConfig nodeConfig = node.config.get("node");
 
 		/* gather connection statistics */
-		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses();
+		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
 		Arrays.sort(peerNodeStatuses, new Comparator() {
 			public int compare(Object first, Object second) {
 				PeerNodeStatus firstNode = (PeerNodeStatus) first;
@@ -307,7 +307,7 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode peerCircleInfobox = nextTableCell.addChild("div", "class", "infobox");
 			peerCircleInfobox.addChild("div", "class", "infobox-header", "Peer\u00a0Location\u00a0Distribution (w/pReject)");
 			HTMLNode peerCircleTable = peerCircleInfobox.addChild("div", "class", "infobox-content").addChild("table");
-			addPeerCircle(peerCircleTable);
+			addPeerCircle(peerCircleTable, peerNodeStatuses);
 			nextTableCell = overviewTableRow.addChild("td");
 
 			// node distribution box
@@ -981,7 +981,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 
-	private void addPeerCircle (HTMLNode circleTable) {
+	private void addPeerCircle (HTMLNode circleTable, PeerNodeStatus[] peerNodeStatuses) {
 		int[] histogramConnected = new int[HISTOGRAM_LENGTH];
 		int[] histogramDisconnected = new int[HISTOGRAM_LENGTH];
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
@@ -1005,7 +1005,6 @@ public class StatisticsToadlet extends Toadlet {
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { "position: absolute; top: " + PEER_CIRCLE_RADIUS + "px; left: " + (PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) + "px", "mark" }, "+");
 		//
 		double myLocation = node.getLocation();
-		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses();
 		PeerNodeStatus peerNodeStatus;
 		double peerLocation;
 		double peerDistance;

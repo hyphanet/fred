@@ -14,8 +14,8 @@ public class OpennetPeerNode extends PeerNode {
 		this.opennet = opennet;
 	}
 
-	public PeerNodeStatus getStatus() {
-		return new OpennetPeerNodeStatus(this);
+	public PeerNodeStatus getStatus(boolean noHeavy) {
+		return new OpennetPeerNodeStatus(this, noHeavy);
 	}
 
 	public boolean isRoutingCompatible() {

@@ -783,7 +783,7 @@ public class NodeStats implements Persistable {
 		fs.put("unclaimedFIFOSize", node.usm.getUnclaimedFIFOSize());
 		
 		/* gather connection statistics */
-		DarknetPeerNodeStatus[] peerNodeStatuses = peers.getDarknetPeerNodeStatuses();
+		DarknetPeerNodeStatus[] peerNodeStatuses = peers.getDarknetPeerNodeStatuses(true);
 		Arrays.sort(peerNodeStatuses, new Comparator() {
 			public int compare(Object first, Object second) {
 				DarknetPeerNodeStatus firstNode = (DarknetPeerNodeStatus) first;

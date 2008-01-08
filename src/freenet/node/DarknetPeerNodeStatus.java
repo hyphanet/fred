@@ -12,8 +12,8 @@ public class DarknetPeerNodeStatus extends PeerNodeStatus {
 
 	private final String privateDarknetCommentNote;
 	
-	public DarknetPeerNodeStatus(DarknetPeerNode peerNode) {
-		super(peerNode);
+	public DarknetPeerNodeStatus(DarknetPeerNode peerNode, boolean noHeavy) {
+		super(peerNode, noHeavy);
 		this.name = peerNode.getName();
 		this.burstOnly = peerNode.isBurstOnly();
 		this.listening = peerNode.isListenOnly();

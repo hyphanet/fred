@@ -165,9 +165,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		final boolean advancedModeEnabled = node.isAdvancedModeEnabled();
 		final boolean fProxyJavascriptEnabled = node.isFProxyJavascriptEnabled();
+		boolean drawMessageTypes = path.endsWith("displaymessagetypes.html");
 		
 		/* gather connection statistics */
-		PeerNodeStatus[] peerNodeStatuses = getPeerNodeStatuses();
+		PeerNodeStatus[] peerNodeStatuses = getPeerNodeStatuses(!drawMessageTypes);
 		Arrays.sort(peerNodeStatuses, comparator(request.getParam("sortBy", null), request.isParameterSet("reversed")));
 		
 		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
@@ -456,7 +457,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
 					
 					PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
-					drawRow(peerTable, peerNodeStatus, advancedModeEnabled, fProxyJavascriptEnabled, now, path, enablePeerActions, endCols);
+					drawRow(peerTable, peerNodeStatus, advancedModeEnabled, fProxyJavascriptEnabled, now, path, enablePeerActions, endCols, drawMessageTypes);
 					
 				}
 
@@ -723,11 +724,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		return new ComparatorByStatus(sortBy, reversed);
 	}
 
-	abstract protected PeerNodeStatus[] getPeerNodeStatuses();
+	abstract protected PeerNodeStatus[] getPeerNodeStatuses(boolean noHeavy);
 
 	abstract protected SimpleFieldSet getNoderef();
 
-	private void drawRow(HTMLNode peerTable, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled, boolean fProxyJavascriptEnabled, long now, String path, boolean enablePeerActions, SimpleColumn[] endCols) {
+	private void drawRow(HTMLNode peerTable, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled, boolean fProxyJavascriptEnabled, long now, String path, boolean enablePeerActions, SimpleColumn[] endCols, boolean drawMessageTypes) {
 		HTMLNode peerRow = peerTable.addChild("tr");
 
 		if(enablePeerActions) {
@@ -755,9 +756,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 		// version column
 		if (peerNodeStatus.getStatusValue() != PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED && (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion())) {  // Don't draw attention to a version problem if NEVER CONNECTED
-			peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_version_problem", peerNodeStatus.getSimpleVersion());
+			peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_version_problem", Integer.toString(peerNodeStatus.getSimpleVersion()));
 		} else {
-			peerRow.addChild("td", "class", "peer-version").addChild("#", peerNodeStatus.getSimpleVersion());
+			peerRow.addChild("td", "class", "peer-version").addChild("#", Integer.toString(peerNodeStatus.getSimpleVersion()));
 		}
 
 		// location column
@@ -822,7 +823,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 		}
 		
-		if (path.endsWith("displaymessagetypes.html")) {
+		if (drawMessageTypes) {
 			drawMessageTypes(peerTable, peerNodeStatus);
 		}
 	}

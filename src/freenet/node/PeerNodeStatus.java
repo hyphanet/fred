@@ -32,7 +32,7 @@ public class PeerNodeStatus {
 
 	private final String version;
 
-	private final String simpleVersion;
+	private final int simpleVersion;
 
 	private final int routingBackoffLength;
 
@@ -88,7 +88,7 @@ public class PeerNodeStatus {
 	
 	private final boolean isSearchable;
 
-	PeerNodeStatus(PeerNode peerNode) {
+	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
 		if(p == null) {
 			peerAddress = null;
@@ -117,8 +117,13 @@ public class PeerNodeStatus {
 		this.timeLastRoutable = peerNode.timeLastRoutable();
 		this.timeLastConnectionCompleted = peerNode.timeLastConnectionCompleted();
 		this.peerAddedTime = peerNode.getPeerAddedTime();
-		this.localMessagesReceived = peerNode.getLocalNodeReceivedMessagesFromStatistic();
-		this.localMessagesSent = peerNode.getLocalNodeSentMessagesToStatistic();
+		if(!noHeavy) {
+			this.localMessagesReceived = peerNode.getLocalNodeReceivedMessagesFromStatistic();
+			this.localMessagesSent = peerNode.getLocalNodeSentMessagesToStatistic();
+		} else {
+			this.localMessagesReceived = null;
+			this.localMessagesSent = null;
+		}
 		this.hashCode = peerNode.hashCode;
 		this.pReject = peerNode.getPRejected();
 		this.totalBytesIn = peerNode.getTotalInputBytes();
@@ -313,7 +318,7 @@ public class PeerNodeStatus {
 	/**
 	 * @return the simpleVersion
 	 */
-	public String getSimpleVersion() {
+	public int getSimpleVersion() {
 		return simpleVersion;
 	}
 

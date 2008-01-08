@@ -40,8 +40,8 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		return node.exportOpennetPublicFieldSet();
 	}
 
-	protected PeerNodeStatus[] getPeerNodeStatuses() {
-		return node.peers.getOpennetPeerNodeStatuses();
+	protected PeerNodeStatus[] getPeerNodeStatuses(boolean noHeavy) {
+		return node.peers.getOpennetPeerNodeStatuses(noHeavy);
 	}
 
 	public boolean isEnabled() {

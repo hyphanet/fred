@@ -2,8 +2,8 @@ package freenet.node;
 
 public class OpennetPeerNodeStatus extends PeerNodeStatus {
 
-	OpennetPeerNodeStatus(PeerNode peerNode) {
-		super(peerNode);
+	OpennetPeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
+		super(peerNode, noHeavy);
 		timeLastSuccess = ((OpennetPeerNode)peerNode).timeLastSuccess();
 	}
 
