@@ -1983,6 +1983,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					}
 					int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
 					this.processOutgoingPreformatted(buf, 0, buf.length, kt, packetNumber, mi.cb, mi.alreadyReportedBytes);
+					//MARK: onSent()
 					mi.onSent(buf.length + fullHeadersLengthOneMessage);
 				} catch (NotConnectedException e) {
 					Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
@@ -2062,6 +2063,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				for(int i=0;i<messageData.length;i++) {
 					MessageItem mi = newMsgs[i];
 					mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
+					//FIXME: This onSent() is called before the (MARK:'d) onSent above for the same message item. Shouldn't they be mutually exclusive?
 					mi.onSent(messageData[i].length + 2 + (fullHeadersLengthMinimum / messageData.length));
 				}
 			} catch (NotConnectedException e) {
