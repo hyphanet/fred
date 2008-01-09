@@ -21,6 +21,10 @@ public class SeedClientPeerNode extends PeerNode {
 		return new PeerNodeStatus(this, noHeavy);
 	}
 
+	public boolean isDarknet() {
+		return false;
+	}
+
 	public boolean isOpennet() {
 		return false; // Not exactly
 	}

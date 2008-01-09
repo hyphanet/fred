@@ -1257,28 +1257,6 @@ public class DarknetPeerNode extends PeerNode {
 		}
 	}
 
-	public void sendNodeToNodeMessage(SimpleFieldSet fs, int n2nType, boolean includeSentTime, long now) {
-		fs.put("n2nType", n2nType);
-		if(includeSentTime) {
-			fs.put("sentTime", now);
-		}
-		try {
-			Message n2nm;
-			n2nm = DMT.createNodeToNodeMessage(
-					n2nType, fs.toString().getBytes("UTF-8"));
-			try {
-				sendAsync(n2nm, null, 0, null);
-			} catch (NotConnectedException e) {
-				if(includeSentTime) {
-					fs.removeValue("sentTime");
-				}
-				queueN2NM(fs);
-			}
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: "+e, e);
-		}
-	}
-
 	public int sendFileOfferAccepted(long uid) {
 		storeOffers();
 		long now = System.currentTimeMillis();
@@ -1507,6 +1485,10 @@ public class DarknetPeerNode extends PeerNode {
 
 	public PeerNodeStatus getStatus(boolean noHeavy) {
 		return new DarknetPeerNodeStatus(this, noHeavy);
+	}
+
+	public boolean isDarknet() {
+		return true;
 	}
 
 	public boolean isOpennet() {

@@ -23,6 +23,10 @@ public class OpennetPeerNode extends PeerNode {
 		return super.isRoutingCompatible();
 	}
 
+	public boolean isDarknet() {
+		return false;
+	}
+
 	public boolean isOpennet() {
 		return true;
 	}
