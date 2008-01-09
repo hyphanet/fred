@@ -998,6 +998,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	/**
+	 * Returns the number of milliseconds that it is estimated to take to transmit the currently queued packets.
+	 */
+	public long getProbableSendQueueTime() {
+		return (long)(getMessageQueueLengthBytes()/(getThrottle().getBandwidth()+1.0));
+	}
+	
+	/**
 	* @return The last time we received a packet.
 	*/
 	public synchronized long lastReceivedPacketTime() {
@@ -1421,7 +1428,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean conditionalSend(Message req, ByteCounter ctr, long timeout) throws NotConnectedException {
 		if (timeout<=0)
 			return false;
-		if (getMessageQueueLengthBytes()/(getThrottle().getBandwidth()+1.0) > timeout) {
+		if (getProbableSendQueueTime() > timeout) {
 			Logger.normal(this, "conditionalSend; pre-emptively not sending message ("+timeout+"ms): "+req);
 			return false;
 		}
