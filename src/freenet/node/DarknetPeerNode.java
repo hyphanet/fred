@@ -1249,7 +1249,7 @@ public class DarknetPeerNode extends PeerNode {
 			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
 			fs.putSingle("text", Base64.encode(message.getBytes("UTF-8")));
 			fs.put("composedTime", now);
-			sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now);
+			sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
 			this.setPeerNodeStatus(System.currentTimeMillis());
 			return getPeerNodeStatus();
 		} catch (UnsupportedEncodingException e) {
@@ -1258,6 +1258,7 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	public int sendFileOfferAccepted(long uid) {
+		// FIXME: perhaps can be refactored to use sendNodeToNodeMessage()
 		storeOffers();
 		long now = System.currentTimeMillis();
 		SimpleFieldSet fs = new SimpleFieldSet(true);
@@ -1291,6 +1292,7 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	public int sendFileOfferRejected(long uid) {
+		// FIXME: perhaps can be refactored to use sendNodeToNodeMessage()
 		storeOffers();
 		long now = System.currentTimeMillis();
 		SimpleFieldSet fs = new SimpleFieldSet(true);
@@ -1324,6 +1326,7 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	public int sendFileOffer(File filename, String message) throws IOException {
+		// FIXME: perhaps can be refactored to use sendNodeToNodeMessage()
 		String fnam = filename.getName();
 		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
 		long uid = node.random.nextLong();

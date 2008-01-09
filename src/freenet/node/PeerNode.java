@@ -3501,7 +3501,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	private int handshakeIPAlternator;
 
-	public void sendNodeToNodeMessage(SimpleFieldSet fs, int n2nType, boolean includeSentTime, long now) {
+	public void sendNodeToNodeMessage(SimpleFieldSet fs, int n2nType, boolean includeSentTime, long now, boolean queueOnNotConnected) {
 		fs.put("n2nType", n2nType);
 		if(includeSentTime) {
 			fs.put("sentTime", now);
@@ -3516,7 +3516,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(includeSentTime) {
 					fs.removeValue("sentTime");
 				}
-				if(isDarknet()) {
+				if(isDarknet() && queueOnNotConnected) {
 					queueN2NM(fs);
 				}
 			}
