@@ -615,6 +615,23 @@ public class PeerManager {
         }
     }
 
+	/**
+	 * Asynchronously send a differential node reference to every isConnected() peer.
+	 */
+	public void locallyBroadcastDiffNodeRef(SimpleFieldSet fs, boolean toDarknetOnly) {
+		PeerNode[] peers;
+		synchronized (this) {
+			// myPeers not connectedPeers as connectedPeers only contains
+			// ROUTABLE peers and we want to also send to non-routable peers
+			peers = myPeers;
+		}
+		for(int i=0;i<peers.length;i++) {
+	   		if(!peers[i].isConnected()) continue;
+	   		if(toDarknetOnly && !peers[i].isDarknet()) continue;
+			peers[i].sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_DIFFNODEREF, false, 0, false);
+		}
+	}
+
     public PeerNode getRandomPeer() {
         return getRandomPeer(null);
     }

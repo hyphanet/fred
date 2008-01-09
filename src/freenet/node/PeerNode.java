@@ -660,12 +660,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				FreenetURI uri = new FreenetURI(arkPubKey);
 				ClientSSK ssk = new ClientSSK(uri);
 				ark = new USK(ssk, arkNo);
-			} else if(forDiffNodeRef && arkPubKey == null && myARK != null) {
+			} else if(forDiffNodeRef && arkPubKey == null && myARK != null && arkNo != -1) {
 				// get the ARK URI from the previous ARK and the edition from the SFS
 				FreenetURI uri = myARK.getURI();
 				ClientSSK ssk = new ClientSSK(uri);
 				ark = new USK(ssk, arkNo);
-			} else if(forDiffNodeRef && arkPubKey != null && myARK != null) {
+			} else if(forDiffNodeRef && arkPubKey != null && myARK != null && arkNo != -1) {
 				// the SFS must contain an edition if it contains a arkPubKey
 				Logger.error(this, "Got a differential node reference from " + this + " with an arkPubKey but no ARK edition");
 				return false;
@@ -3502,7 +3502,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private int handshakeIPAlternator;
 
 	public void sendNodeToNodeMessage(SimpleFieldSet fs, int n2nType, boolean includeSentTime, long now, boolean queueOnNotConnected) {
-		fs.put("n2nType", n2nType);
+		fs.putOverwrite("n2nType", Integer.toString(n2nType));
 		if(includeSentTime) {
 			fs.put("sentTime", now);
 		}
