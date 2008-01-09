@@ -152,7 +152,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			// We'll broadcast the new name to our connected darknet peers via a differential node reference
 			SimpleFieldSet fs = new SimpleFieldSet(true);
 			fs.putSingle("myName", myName);
-			peers.locallyBroadcastDiffNodeRef(fs, true);
+			peers.locallyBroadcastDiffNodeRef(fs, true, false);
 			// We call the callback once again to ensure MeaningfulNodeNameUserAlert
 			// has been unregistered ... see #1595
 			get();

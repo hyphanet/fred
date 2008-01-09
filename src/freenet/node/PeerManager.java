@@ -618,7 +618,7 @@ public class PeerManager {
 	/**
 	 * Asynchronously send a differential node reference to every isConnected() peer.
 	 */
-	public void locallyBroadcastDiffNodeRef(SimpleFieldSet fs, boolean toDarknetOnly) {
+	public void locallyBroadcastDiffNodeRef(SimpleFieldSet fs, boolean toDarknetOnly, boolean toOpennetOnly) {
 		PeerNode[] peers;
 		synchronized (this) {
 			// myPeers not connectedPeers as connectedPeers only contains
@@ -628,6 +628,7 @@ public class PeerManager {
 		for(int i=0;i<peers.length;i++) {
 	   		if(!peers[i].isConnected()) continue;
 	   		if(toDarknetOnly && !peers[i].isDarknet()) continue;
+	   		if(toOpennetOnly && !peers[i].isOpennet()) continue;
 			peers[i].sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_DIFFNODEREF, false, 0, false);
 		}
 	}
