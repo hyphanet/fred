@@ -192,6 +192,7 @@ public class BlockTransmitter {
 					public void packetReceived(int packetNo) {
 						synchronized(_senderThread) {
 							_unsent.addLast(new Integer(packetNo));
+							timeAllSent = -1;
 							_sentPackets.setBit(packetNo, false);
 							_senderThread.notifyAll();
 						}
