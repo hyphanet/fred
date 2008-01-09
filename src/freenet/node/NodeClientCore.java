@@ -465,7 +465,7 @@ public class NodeClientCore implements Persistable {
 		boolean rejectedOverload = false;
 		short waitStatus = 0;
 		while(true) {
-			waitStatus = rs.waitUntilStatusChange(waitStatus, 120000);
+			waitStatus = rs.waitUntilStatusChange(waitStatus);
 			if((!rejectedOverload) && (waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
 				// See below; inserts count both
 				requestStarters.rejectedOverload(false, false);
@@ -578,7 +578,7 @@ public class NodeClientCore implements Persistable {
 		boolean rejectedOverload = false;
 		short waitStatus = 0;
 		while(true) {
-			waitStatus = rs.waitUntilStatusChange(waitStatus, 120000);
+			waitStatus = rs.waitUntilStatusChange(waitStatus);
 			if((!rejectedOverload) && (waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
 				requestStarters.rejectedOverload(true, false);
 				rejectedOverload = true;

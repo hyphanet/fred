@@ -158,9 +158,9 @@ public class RequestHandler implements Runnable, ByteCounter {
         
         while(true) {
             
-        	waitStatus = rs.waitUntilStatusChange(waitStatus, responseDeadline-System.currentTimeMillis());
+        	waitStatus = rs.waitUntilStatusChange(waitStatus);
 			
-			if (System.currentTimeMillis() >= responseDeadline) {
+			if (System.currentTimeMillis() > responseDeadline) {
 				applyByteCounts();
 				return;
 			}

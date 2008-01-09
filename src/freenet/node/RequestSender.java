@@ -641,9 +641,8 @@ public final class RequestSender implements Runnable, ByteCounter {
      * @return Bitmask indicating present situation. Can be fed back to this function,
      * if nonzero.
      */
-    public synchronized short waitUntilStatusChange(short mask, long timeout) {
+    public synchronized short waitUntilStatusChange(short mask) {
     	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
-		long startTime=System.currentTimeMillis();
         while(true) {
         	short current = mask; // If any bits are set already, we ignore those states.
         	
@@ -657,17 +656,9 @@ public final class RequestSender implements Runnable, ByteCounter {
         		current |= WAIT_FINISHED;
         	
         	if(current != mask) return current;
-        	
-			long timeLeft = (startTime+timeout) - System.currentTimeMillis();
-			
-			if (timeLeft <= 0) {
-				Logger.normal(this, "RequestSender.waitUntilStatusChange timed out");
-				return current;
-			}
 			
             try {
-				//Wait at most ten seconds per-loop
-                wait(Math.min(timeLeft, 10000));
+                wait(10000);
             } catch (InterruptedException e) {
                 // Ignore
             }
