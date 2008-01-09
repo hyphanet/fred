@@ -47,8 +47,9 @@ import freenet.support.SimpleFieldSet;
 public final class RequestSender implements Runnable, ByteCounter {
 
     // Constants
-	//SEND_TIMEOUT is not a hard timeout, shoot low for low latency (250-500ms?).
+	//SEND_TIMEOUT is not a hard timeout, MAX_SEND_TIMEOUT is.
 	static final int SEND_TIMEOUT = 1000;
+	static final int MAX_SEND_TIMEOUT = 5000;
     static final int ACCEPTED_TIMEOUT = 5000;
     static final int FETCH_TIMEOUT = 120000;
     /** Wait up to this long to get a path folding reply */
@@ -139,7 +140,6 @@ public final class RequestSender implements Runnable, ByteCounter {
         	pubKey = ((NodeSSK)key).getPubKey();
         }
         
-		long startTime=System.currentTimeMillis();
 		int routeAttempts=0;
 		int rejectOverloads=0;
         HashSet nodesRoutedTo = new HashSet();
@@ -153,12 +153,6 @@ public final class RequestSender implements Runnable, ByteCounter {
                 finish(DATA_NOT_FOUND, null);
                 return;
             }
-			
-			if (source!=null && System.currentTimeMillis()-startTime>FETCH_TIMEOUT) {
-				Logger.error(this, "discontinuing non-local request search, general timeout ("+routeAttempts+" attempts, "+rejectOverloads+" overloads)");
-				finish(TIMED_OUT, null);
-				return;
-			}
 
 			routeAttempts++;
             
@@ -172,13 +166,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 				next = (PeerNode)busyPeers.remove(0);
 				usingBusyPeer=true;
 				if (logMINOR) Logger.minor(this, "trying previously-found busy peer: "+next);
-				//NOTE: if we are at this point, it is already presumed that the message cannot even make it off the node to this peer in SEND_TIMEOUT, use all the timeout we have left.
-				sendTimeout = FETCH_TIMEOUT-(System.currentTimeMillis()-startTime);
-				//Edge case, local request & we are running w/o any time left.
-				if (sendTimeout < SEND_TIMEOUT && source==null) {
-					if (logMINOR) Logger.minor(this, "increasing timeout for local request");
-					sendTimeout = 2*SEND_TIMEOUT;
-				}
+				sendTimeout = MAX_SEND_TIMEOUT;
 			}
 			
             if(next == null) {
@@ -655,7 +643,6 @@ public final class RequestSender implements Runnable, ByteCounter {
      */
     public synchronized short waitUntilStatusChange(short mask) {
     	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
-		long startTime=System.currentTimeMillis();
         while(true) {
         	short current = mask; // If any bits are set already, we ignore those states.
         	
@@ -675,10 +662,6 @@ public final class RequestSender implements Runnable, ByteCounter {
             } catch (InterruptedException e) {
                 // Ignore
             }
-			if (source!=null && System.currentTimeMillis()-startTime > 2*FETCH_TIMEOUT) {
-				Logger.error(this, "spending way too long waiting for request sender to finish");
-				throw new RuntimeException("something is broken");
-			}
         }
     }
     
