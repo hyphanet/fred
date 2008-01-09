@@ -658,7 +658,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         	
         	if(current != mask) return current;
         	
-			long timeLeft = System.currentTimeMillis() - (startTime+timeout);
+			long timeLeft = (startTime+timeout) - System.currentTimeMillis();
 			
 			if (timeLeft <= 0) {
 				Logger.normal(this, "RequestSender.waitUntilStatusChange timed out");
