@@ -76,8 +76,8 @@ public class DarknetPeerNode extends PeerNode {
     /** Private comment on the peer for /friends/ page's extra peer data file number */
     private int privateDarknetCommentFileNumber;
     
-    /** Queued-to-send N2NTM extra peer data file numbers */
-    private LinkedHashSet queuedToSendN2NTMExtraPeerDataFileNumbers;
+    /** Queued-to-send N2NM extra peer data file numbers */
+    private LinkedHashSet queuedToSendN2NMExtraPeerDataFileNumbers;
 
     private static boolean logMINOR;
     
@@ -113,8 +113,8 @@ public class DarknetPeerNode extends PeerNode {
 		// Setup the extraPeerDataFileNumbers
 		extraPeerDataFileNumbers = new LinkedHashSet();
 		
-		// Setup the queuedToSendN2NTMExtraPeerDataFileNumbers
-		queuedToSendN2NTMExtraPeerDataFileNumbers = new LinkedHashSet();
+		// Setup the queuedToSendN2NMExtraPeerDataFileNumbers
+		queuedToSendN2NMExtraPeerDataFileNumbers = new LinkedHashSet();
         
     }
 
@@ -483,12 +483,11 @@ public class DarknetPeerNode extends PeerNode {
 			}
 			Logger.error(this, "Read unknown peer note type '"+peerNoteType+"' from file "+extraPeerDataFile.getPath());
 			return false;
-		} else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM) {
+		} else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NM) {
 			boolean sendSuccess = false;
-			int type = fs.getInt("n2nType", 1); // FIXME remove default
-			fs.putOverwrite("n2nType", Integer.toString(type));
+			int type = fs.getInt("n2nType");
 			if(isConnected()) {
-				Message n2ntm;
+				Message n2nm;
 				if(fs.get("extraPeerDataType") != null) {
 					fs.removeValue("extraPeerDataType");
 				}
@@ -502,18 +501,18 @@ public class DarknetPeerNode extends PeerNode {
 				fs.putOverwrite("sentTime", Long.toString(System.currentTimeMillis()));
 				
 				try {
-					n2ntm = DMT.createNodeToNodeMessage(type, fs.toString().getBytes("UTF-8"));
+					n2nm = DMT.createNodeToNodeMessage(type, fs.toString().getBytes("UTF-8"));
 				} catch (UnsupportedEncodingException e) {
 					Logger.error(this, "UnsupportedEncodingException processing extraPeerDataType ("+extraPeerDataTypeString+") in file "+extraPeerDataFile.getPath(), e);
 					return false;
 				}
 
 				try {
-					synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
-						node.usm.send(this, n2ntm, null);
-						Logger.normal(this, "Sent queued ("+fileNumber+") N2NTM to '"+getName()+"': "+n2ntm);
+					synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
+						node.usm.send(this, n2nm, null);
+						Logger.normal(this, "Sent queued ("+fileNumber+") N2NM to '"+getName()+"': "+n2nm);
 						sendSuccess = true;
-						queuedToSendN2NTMExtraPeerDataFileNumbers.remove(new Integer(fileNumber));
+						queuedToSendN2NMExtraPeerDataFileNumbers.remove(new Integer(fileNumber));
 					}
 					deleteExtraPeerDataFile(fileNumber);
 				} catch (NotConnectedException e) {
@@ -521,10 +520,10 @@ public class DarknetPeerNode extends PeerNode {
 				}
 			}
 			if(!sendSuccess) {
-				synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
+				synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
 					fs.putOverwrite("extraPeerDataType", Integer.toString(extraPeerDataType));
 					fs.removeValue("sentTime");
-					queuedToSendN2NTMExtraPeerDataFileNumbers.add(new Integer(fileNumber));
+					queuedToSendN2NMExtraPeerDataFileNumbers.add(new Integer(fileNumber));
 				}
 			}
 			return true;
@@ -723,19 +722,19 @@ public class DarknetPeerNode extends PeerNode {
 		}
 	}
 
-	public void queueN2NTM(SimpleFieldSet fs) {
-		int fileNumber = writeNewExtraPeerDataFile( fs, Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM);
-		synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
-			queuedToSendN2NTMExtraPeerDataFileNumbers.add(new Integer(fileNumber));
+	public void queueN2NM(SimpleFieldSet fs) {
+		int fileNumber = writeNewExtraPeerDataFile( fs, Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NM);
+		synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
+			queuedToSendN2NMExtraPeerDataFileNumbers.add(new Integer(fileNumber));
 		}
 	}
 
-	public void sendQueuedN2NTMs() {
+	public void sendQueuedN2NMs() {
 		if(logMINOR)
-			Logger.minor(this, "Sending queued N2NTMs for "+shortToString());
+			Logger.minor(this, "Sending queued N2NMs for "+shortToString());
 		Integer[] localFileNumbers = null;
-		synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
-			localFileNumbers = (Integer[]) queuedToSendN2NTMExtraPeerDataFileNumbers.toArray(new Integer[queuedToSendN2NTMExtraPeerDataFileNumbers.size()]);
+		synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
+			localFileNumbers = (Integer[]) queuedToSendN2NMExtraPeerDataFileNumbers.toArray(new Integer[queuedToSendN2NMExtraPeerDataFileNumbers.size()]);
 		}
 		Arrays.sort(localFileNumbers);
 		for (int i = 0; i < localFileNumbers.length; i++) {
@@ -761,11 +760,11 @@ public class DarknetPeerNode extends PeerNode {
 	 * A method to be called once at the beginning of every time isConnected() is true
 	 */
 	protected void onConnect() {
-		sendQueuedN2NTMs();
+		sendQueuedN2NMs();
 	}
 
 	// File transfer offers
-	// FIXME this should probably be somewhere else, along with the N2NTM stuff... but where?
+	// FIXME this should probably be somewhere else, along with the N2NM stuff... but where?
 	// FIXME this should be persistent across node restarts
 
 	/** Files I have offered to this peer */
@@ -1273,7 +1272,7 @@ public class DarknetPeerNode extends PeerNode {
 				if(includeSentTime) {
 					fs.removeValue("sentTime");
 				}
-				queueN2NTM(fs);
+				queueN2NM(fs);
 			}
 		} catch (UnsupportedEncodingException e) {
 			throw new Error("Impossible: "+e, e);
@@ -1302,7 +1301,7 @@ public class DarknetPeerNode extends PeerNode {
 				sendAsync(n2ntm, null, 0, null);
 			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
-				queueN2NTM(fs);
+				queueN2NM(fs);
 				setPeerNodeStatus(System.currentTimeMillis());
 				return getPeerNodeStatus();
 			}
@@ -1335,7 +1334,7 @@ public class DarknetPeerNode extends PeerNode {
 				sendAsync(n2ntm, null, 0, null);
 			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
-				queueN2NTM(fs);
+				queueN2NM(fs);
 				setPeerNodeStatus(System.currentTimeMillis());
 				return getPeerNodeStatus();
 			}
@@ -1377,7 +1376,7 @@ public class DarknetPeerNode extends PeerNode {
 				sendAsync(n2ntm, null, 0, null);
 			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
-				queueN2NTM(fs);
+				queueN2NM(fs);
 				setPeerNodeStatus(System.currentTimeMillis());
 				return getPeerNodeStatus();
 			}

@@ -371,7 +371,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED = 4;
 	public static final int EXTRA_PEER_DATA_TYPE_N2NTM = 1;
 	public static final int EXTRA_PEER_DATA_TYPE_PEER_NOTE = 2;
-	public static final int EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM = 3;
+	public static final int EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NM = 3;
 	public static final int PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT = 1;
 	
 	/** The bootID of the last time the node booted up. Or -1 if we don't know due to
@@ -2602,7 +2602,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, DarknetPeerNode source, int fileNumber) throws FSParseException {
 		if(logMINOR)
 			Logger.minor(this, "Got node to node message: \n"+fs);
-		int overallType = fs.getInt("n2nType", 1); // FIXME remove default
+		int overallType = fs.getInt("n2nType");
 		fs.removeValue("n2nType");
 		if(overallType == Node.N2N_MESSAGE_TYPE_FPROXY) {
 			handleFproxyNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
