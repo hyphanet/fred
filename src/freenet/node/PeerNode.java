@@ -662,8 +662,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				ark = new USK(ssk, arkNo);
 			} else if(forDiffNodeRef && arkPubKey == null && myARK != null && arkNo != -1) {
 				// get the ARK URI from the previous ARK and the edition from the SFS
-				FreenetURI uri = myARK.getURI();
-				ClientSSK ssk = new ClientSSK(uri);
+				ClientSSK ssk = myARK.getSSK(arkNo);
 				ark = new USK(ssk, arkNo);
 			} else if(forDiffNodeRef && arkPubKey != null && myARK != null && arkNo != -1) {
 				// the SFS must contain an edition if it contains a arkPubKey
