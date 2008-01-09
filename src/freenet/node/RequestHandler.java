@@ -42,7 +42,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     final boolean resetClosestLoc;
     /** The RequestSender, if any */
     private RequestSender rs;
-    private int status;
+    private int status = RequestSender.NOT_FINISHED;
 	private boolean appliedByteCounts=false;
 	
     public String toString() {
