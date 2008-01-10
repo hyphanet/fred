@@ -51,6 +51,7 @@ public class BlockReceiver {
 	/** packet : Integer -> reportTime : Long * */
 	HashMap _recentlyReportedMissingPackets = new HashMap();
 	ByteCounter _ctr;
+	boolean sentAborted;
 
 	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr) {
 		_sender = sender;
@@ -62,6 +63,7 @@ public class BlockReceiver {
 
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
 		_usm.send(_sender, DMT.createSendAborted(_uid, reason, desc), _ctr);
+		sentAborted=true;
 	}
 	
 	public byte[] receive() throws RetrievalException {
@@ -153,6 +155,14 @@ public class BlockReceiver {
 			// We didn't cause it?!
 			Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e);
 			throw new RetrievalException(RetrievalException.UNKNOWN, "Aborted?");
+		} finally {
+			try {
+				if (_prb.isAborted() && !sentAborted) {
+					sendAborted(_prb.getAbortReason(), _prb.getAbortDescription());
+				}
+			} catch (NotConnectedException e) {
+				//ignore
+			}
 		}
 	}
 }
