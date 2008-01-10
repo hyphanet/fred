@@ -30,6 +30,7 @@ import freenet.io.comm.MessageCore;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
+import freenet.io.comm.RetrievalException;
 import freenet.node.PeerNode;
 import freenet.support.BitArray;
 import freenet.support.DoubleTokenBucket;
@@ -208,6 +209,7 @@ public class BlockTransmitter {
 						_sendComplete = true;
 						_senderThread.notifyAll();	
 					}
+					sendAborted(_prb.getAbortedReason(), "Downstream transfer failed");
 					return false;
 				}
 				Message msg;
@@ -219,20 +221,20 @@ public class BlockTransmitter {
 					msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)), _ctr);
 					if(logMINOR) Logger.minor(this, "Got "+msg);
 				} catch (DisconnectedException e) {
-					// Ignore, see below
-					msg = null;
-				}
-				if(logMINOR) Logger.minor(this, "Got "+msg);
-				if(!_destination.isConnected()) {
 					Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" because node disconnected while waiting");
 					synchronized(_senderThread) {
 						_sendComplete = true;
 						_senderThread.notifyAll();
 					}
+					//They disconnected, can't send an abort to them then can we?
 					return false;
 				}
-				if(_sendComplete)
+				if(logMINOR) Logger.minor(this, "Got "+msg);
+				if(_sendComplete) {
+					Logger.normal(this, "send cancelled by _senderThread");
+					//_senderThread will have sent an aborted message
 					return false;
+				}
 				if (msg == null) {
 					long now = System.currentTimeMillis();
 					//SEND_TIMEOUT (one minute) after all packets have been transmitted, terminate the send.
@@ -242,7 +244,9 @@ public class BlockTransmitter {
 							_sendComplete = true;
 							_senderThread.notifyAll();
 						}
-						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+TimeUtil.formatTime((now - timeAllSent), 2, true)+ '.');
+						String timeString=TimeUtil.formatTime((now - timeAllSent), 2, true);
+						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
+						sendAborted(RetrievalException.RECEIVER_DIED, "Haven't heard from you (receiver) in "+timeString);
 						return false;
 					} else {
 						if(logMINOR) Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+ '/' +_prb.getNumPackets());
@@ -276,18 +280,30 @@ public class BlockTransmitter {
 						_sendComplete = true;
 						_senderThread.notifyAll();
 					}
+					//They aborted, don't need to send an aborted back :)
 					return false;
 				} else {
 					Logger.error(this, "Transmitter received unknown message type: "+msg.getSpec().getName());
 				}
 			}
+		} catch (NotConnectedException e) {
+			//most likely from sending an abort()
+			Logger.normal(this, "NotConnectedException in BlockTransfer.send():"+e);
+			return false;
 		} catch (AbortedException e) {
-			// Terminate
+			Logger.normal(this, "AbortedException in BlockTransfer.send():"+e);
+			try {
+				sendAborted(RetrievalException.CANCELLED_BY_RECEIVER, "Downstream transfer failed");
+			} catch (NotConnectedException gone) {
+				//ignore
+			}
+			return false;
+		} finally {
+			//Terminate, if we are not listening for control packets, don't be sending any data
 			synchronized(_senderThread) {
 				_sendComplete = true;
 				_senderThread.notifyAll();
-			}
-			return false;
+			}			
 		}
 	}
 

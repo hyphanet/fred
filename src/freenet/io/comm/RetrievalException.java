@@ -40,6 +40,7 @@ public class RetrievalException extends Exception {
     public static final int NO_DATAINSERT = 8;
     public static final int CANCELLED_BY_RECEIVER = 9;
 	public static final int RANGE_UNSUPPORTED = 10; //was 4
+	public static final int RECEIVER_DIED = 11;
 	
 	int _reason;
 	String _cause;
@@ -50,7 +51,7 @@ public class RetrievalException extends Exception {
 	}
 	
 	public RetrievalException(int reason, String cause) {
-		this(reason);
+		_reason = reason;
 		_cause = cause;
 		if (cause==null || cause.length()==0 || cause.equals("null"))
 			_cause=getErrString(reason);
