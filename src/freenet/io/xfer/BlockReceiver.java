@@ -90,7 +90,7 @@ public class BlockReceiver {
 				if (desc.indexOf("Downstream")<0)
 					desc="Downstream transmit error: "+desc;
 				_prb.abort(m1.getInt(DMT.REASON), desc);
-				throw new RetrievalException(m1.getInt(DMT.REASON), m1.getString(DMT.DESCRIPTION));
+				throw new RetrievalException(m1.getInt(DMT.REASON), desc);
 			}
 			if ((m1 != null) && (m1.getSpec().equals(DMT.packetTransmit))) {
 				consecutiveMissingPacketReports = 0;
