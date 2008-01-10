@@ -61,9 +61,14 @@ public class NodeARKInserter implements ClientCallback {
 		// We'll broadcast the new physical.udp entry to our connected peers via a differential node reference
 		// We'll err on the side of caution and not update our peer to an empty physical.udp entry using a differential node reference
 		SimpleFieldSet nfs = crypto.exportPublicFieldSet(true, false); // More or less
-		if(nfs.get("physical.udp") != null) {
-			SimpleFieldSet fs = nfs.subset("physical.udp");
+		String[] entries = nfs.getAll("physical.udp");
+		if(entries != null) {
+			SimpleFieldSet fs = new SimpleFieldSet(true);
+			fs.putOverwrite("physical.udp", entries);
+			if(logMINOR) Logger.minor(this, "fs is '" + fs.toString() + "'");
 			node.peers.locallyBroadcastDiffNodeRef(fs, !crypto.isOpennet, crypto.isOpennet);
+		} else {
+			if(logMINOR) Logger.minor(this, "entries is null");
 		}
 		// Proceed with inserting the ARK
 		if(logMINOR) Logger.minor(this, "Inserting ARK because peers list changed");
