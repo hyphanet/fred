@@ -87,8 +87,8 @@ public class BlockReceiver {
             	Logger.minor(this, "Received "+m1);
             if ((m1 != null) && m1.getSpec().equals(DMT.sendAborted)) {
 				String desc=m1.getString(DMT.DESCRIPTION);
-				if (desc.indexOf("Downstream")<0)
-					desc="Downstream transmit error: "+desc;
+				if (desc.indexOf("Upstream")<0)
+					desc="Upstream transmit error: "+desc;
 				_prb.abort(m1.getInt(DMT.REASON), desc);
 				throw new RetrievalException(m1.getInt(DMT.REASON), desc);
 			}

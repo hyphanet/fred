@@ -105,11 +105,11 @@ public class BlockTransmitter {
 						totalPackets=_prb.getNumPackets();
 					} catch (NotConnectedException e) {
 						Logger.normal(this, "Terminating send: "+e);
-						//the recieve() thread should notice...
+						//the send() thread should notice...
 						return;
 					} catch (AbortedException e) {
 						Logger.normal(this, "Terminating send due to abort: "+e);
-						//the recieve() thread should notice...
+						//the send() thread should notice...
 						return;
 					}
 					synchronized (_senderThread) {
@@ -256,8 +256,8 @@ public class BlockTransmitter {
 			Logger.normal(this, "AbortedException in BlockTransfer.send():"+e);
 			try {
 				String desc=_prb.getAbortDescription();
-				if (desc.indexOf("Downstream")<0)
-					desc="Downstream transfer failed: "+desc;
+				if (desc.indexOf("Upstream")<0)
+					desc="Upstream transfer failed: "+desc;
 				sendAborted(_prb.getAbortReason(), desc);
 			} catch (NotConnectedException gone) {
 				//ignore
