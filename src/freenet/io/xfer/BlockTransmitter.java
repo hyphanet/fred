@@ -81,61 +81,50 @@ public class BlockTransmitter {
 			public void run() {
 				while (!_sendComplete) {
 					long startCycleTime = System.currentTimeMillis();
-					try {
-						while (true) {
-							synchronized(_senderThread) {
-								if(_unsent.size() != 0) {
-									timeAllSent = -1;
-									break;
-								}
-								// No unsent packets
-								if(getNumSent() == _prb.getNumPackets()) {
-									//No unreceived packets
-									if(Logger.shouldLog(Logger.MINOR, this))
-										Logger.minor(this, "Sent all blocks, none unsent");
-									if(timeAllSent <= 0)
-										timeAllSent = System.currentTimeMillis();
-								}
-								if(_sendComplete) return;
-								_senderThread.wait(10*1000);
-							}
-						}
-					} catch (InterruptedException e) {
-					} catch (AbortedException e) {
-						synchronized(_senderThread) {
-							_sendComplete = true;
-							_senderThread.notifyAll();
-						}
-						return;
-					}
 					int packetNo;
 					try {
 						synchronized(_senderThread) {
+							while (_unsent.size() == 0) {
+								if(_sendComplete) return;
+								_senderThread.wait(10*1000);
+							}
 							packetNo = ((Integer) _unsent.removeFirst()).intValue();
 						}
-					} catch (NoSuchElementException nsee) {
-						// back up to the top to check for completion
+					} catch (InterruptedException e) {
+						Logger.error(this, "_senderThread interrupted");
 						continue;
 					}
-					delay(startCycleTime);
-					if(_sendComplete) break;
-					_sentPackets.setBit(packetNo, true);
+					int totalPackets;
 					try {
 						_destination.sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
 						_ctr.sentPayload(PACKET_SIZE);
+						totalPackets=_prb.getNumPackets();
 					} catch (NotConnectedException e) {
 						Logger.normal(this, "Terminating send: "+e);
 						synchronized(_senderThread) {
 							_sendComplete = true;
 							_senderThread.notifyAll();
+							return;
 						}
 					} catch (AbortedException e) {
 						Logger.normal(this, "Terminating send due to abort: "+e);
 						synchronized(_senderThread) {
 							_sendComplete = true;
 							_senderThread.notifyAll();
+							return;
 						}
 					}
+					synchronized (_senderThread) {
+						_sentPackets.setBit(packetNo, true);
+						if(_unsent.size() == 0 && getNumSent() == totalPackets) {
+							//No unsent packets, no unreceived packets
+							timeAllSent = System.currentTimeMillis();
+							if(Logger.shouldLog(Logger.MINOR, this))
+								Logger.minor(this, "Sent all blocks, none unsent");
+							_senderThread.notifyAll();
+						}
+					}
+					delay(startCycleTime);
 				}
 			}
 
