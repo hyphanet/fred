@@ -442,7 +442,10 @@ public class InsertHandler implements Runnable, ByteCounter {
 					//If they are not connected, that's probably why the receive failed!
                     if (logMINOR) Logger.minor(this, "Can't send "+msg+" to "+source+": "+ex);
                 }
-                if(logMINOR) Logger.minor(this, "Failed to retrieve: "+e, e);
+				if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
+					Logger.normal(this, "Failed to retrieve: "+e, e);
+				else
+					Logger.error(this, "Failed to retrieve: "+e, e);
                 return;
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t, t);

@@ -156,6 +156,9 @@ public class BlockTransmitter {
 				// Report the delay caused by bandwidth limiting, NOT the delay caused by congestion control.
 				((PeerNode)_destination).reportThrottledPacketSendTime(delayTime);
 				
+				if (end - now > 2*60*1000)
+					Logger.error(this, "per-packet congestion control delay: "+(end-now));
+				
 				if(now > end) return;
 				while(now < end) {
 					long l = end - now;

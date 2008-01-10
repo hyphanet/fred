@@ -78,7 +78,7 @@ public class BlockReceiver {
                 if(!_sender.isConnected()) throw new DisconnectedException();
             } catch (DisconnectedException e1) {
                 Logger.normal(this, "Disconnected during receive: "+_uid+" from "+_sender);
-                _prb.abort(RetrievalException.SENDER_DIED, "Disconnected during receive");
+                _prb.abort(RetrievalException.SENDER_DISCONNECTED, "Disconnected during receive");
                 throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
             }
             if(logMINOR)
@@ -152,7 +152,7 @@ public class BlockReceiver {
 		} catch(AbortedException e) {
 			// We didn't cause it?!
 			Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e);
-			throw new RetrievalException(RetrievalException.UNKNOWN);
+			throw new RetrievalException(RetrievalException.UNKNOWN, "Aborted?");
 		}
 	}
 }
