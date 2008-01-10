@@ -443,9 +443,9 @@ public class InsertHandler implements Runnable, ByteCounter {
                     if (logMINOR) Logger.minor(this, "Can't send "+msg+" to "+source+": "+ex);
                 }
 				if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
-					Logger.normal(this, "Failed to retrieve: "+e, e);
+					Logger.normal(this, "Failed to retrieve (disconnect): "+e, e);
 				else
-					Logger.error(this, "Failed to retrieve: "+e, e);
+					Logger.error(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
                 return;
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t, t);

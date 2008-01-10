@@ -484,9 +484,9 @@ public final class RequestSender implements Runnable, ByteCounter {
                 			return;
                 		} catch (RetrievalException e) {
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
-								Logger.normal(this, "Transfer failed: "+e, e);
+								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else
-								Logger.error(this, "Transfer failed: "+e, e);
+								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
                 			finish(TRANSFER_FAILED, next);
                 			return;
                 		}
