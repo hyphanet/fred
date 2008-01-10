@@ -209,7 +209,10 @@ public class BlockTransmitter {
 						_sendComplete = true;
 						_senderThread.notifyAll();	
 					}
-					sendAborted(_prb.getAbortedReason(), "Downstream transfer failed");
+					String desc=_prb.getAbortDescription();
+					if (!desc.contains("Downstream"))
+						desc="Downstream transfer failed: "+desc;
+					sendAborted(_prb.getAbortReason(), desc);
 					return false;
 				}
 				Message msg;
@@ -293,7 +296,10 @@ public class BlockTransmitter {
 		} catch (AbortedException e) {
 			Logger.normal(this, "AbortedException in BlockTransfer.send():"+e);
 			try {
-				sendAborted(RetrievalException.CANCELLED_BY_RECEIVER, "Downstream transfer failed");
+				String desc=_prb.getAbortDescription();
+				if (!desc.contains("Downstream"))
+					desc="Downstream transfer failed: "+desc;
+				sendAborted(_prb.getAbortReason(), desc);
 			} catch (NotConnectedException gone) {
 				//ignore
 			}
