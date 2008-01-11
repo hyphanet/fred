@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -951,7 +952,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		reportBackoffStatus(now);
 		int x = 0;
 		synchronized(messagesToSendNow) {
-			messagesToSendNow.addLast(item);
+			enqueuePrioritizedMessageItem(item);
 			Iterator i = messagesToSendNow.iterator();
 			for(; i.hasNext();) {
 				MessageItem it = (MessageItem) (i.next());
@@ -979,6 +980,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 		return x;
+	}
+	
+	private void enqueuePrioritizedMessageItem(MessageItem addMe) {
+		synchronized (messagesToSendNow) {
+			//Assume it goes on the end, both the common case and an accelerator for requeueing.
+			ListIterator i=messagesToSendNow.listIterator(messagesToSendNow.size());
+			while (i.hasPrevious()) {
+				MessageItem here=(MessageItem)i.previous();
+				//While the item we are adding is a HIGHER priority, move on (backwards...)
+				if (!(addMe.getPriority() < here.getPriority()))
+					break;
+			}
+			i.add(addMe);
+		}
 	}
 	
 	/**
@@ -1169,7 +1184,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(messagesToSendNow) {
 			for(int i = offset; i < offset + length; i++)
 				if(messages[i] != null)
-					messagesToSendNow.add(messages[i]);
+					enqueuePrioritizedMessageItem(messages[i]);
 		}
 	}
 

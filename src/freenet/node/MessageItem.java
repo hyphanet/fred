@@ -72,4 +72,8 @@ public class MessageItem {
 			}
 		}
 	}
+	
+	public short getPriority() {
+		return msg.getSpec().getPriority();
+	}
 }
