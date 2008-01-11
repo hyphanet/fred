@@ -134,12 +134,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			node=n;
 		}
 		public String get() {
-			if(myName.startsWith("Node id|")|| myName.equals("MyFirstFreenetNode")){
+			String name;
+			synchronized(this) {
+				name = myName;
+			}
+			if(name.startsWith("Node id|")|| name.equals("MyFirstFreenetNode")){
 				clientCore.alerts.register(nodeNameUserAlert);
 			}else{
 				clientCore.alerts.unregister(nodeNameUserAlert);
 			}
-			return myName;
+			return name;
 		}
 
 		public void set(String val) throws InvalidConfigValueException {
@@ -148,7 +152,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				throw new InvalidConfigValueException("The given node name is too long ("+val+')');
 			else if("".equals(val))
 				val = "~none~";
-			myName = val;
+			synchronized(this) {
+				myName = val;
+			}
 			// We'll broadcast the new name to our connected darknet peers via a differential node reference
 			SimpleFieldSet fs = new SimpleFieldSet(true);
 			fs.putSingle("myName", myName);
