@@ -126,72 +126,7 @@ public class DMT {
 	public static final String REJECT_CODE = "rejectCode";
 	public static final String ROUTING_ENABLED = "routingEnabled";
 	
-	//Diagnostic
-	public static final MessageType ping = new MessageType("ping") {{
-		addField(SEND_TIME, Long.class);
-	}};
-
-	public static final Message createPing() {
-		return createPing(System.currentTimeMillis());
-	}
-	
-	public static final Message createPing(long sendTime) {
-		Message msg = new Message(ping);
-		msg.set(SEND_TIME, sendTime);
-		return msg;
-	}
-
-	public static final MessageType pong = new MessageType("pong") {{
-		addField(SEND_TIME, Long.class);
-	}};
-
-	public static final Message createPong(Message recvPing) {
-		if (recvPing.isSet(SEND_TIME)) {
-			return createPong(recvPing.getLong(SEND_TIME));
-		} else {
-			return createPong(500);
-		}
-	}
-	
-	public static final Message createPong(long sendTime) {
-		Message msg = new Message(pong);
-		msg.set(SEND_TIME, sendTime);
-		return msg;
-	}
-
-	public static final MessageType rejectDueToLoop = new MessageType("rejectDueToLoop") {{ 
-		addField(UID, Long.class);
-	}};
-	
-	public static final Message createRejectDueToLoop(long uid) {
-		Message msg = new Message(rejectDueToLoop);
-		msg.set(UID, uid);
-		return msg;
-	}
-	
 	// Assimilation
-	// Corruption notification
-	public static final MessageType corruptionNotification = new MessageType("corruptionNotification") {{
-		addField(UID, Long.class);
-		addField(URL, String.class);
-		addField(FILE_LENGTH, Long.class);
-		addField(LAST_MODIFIED, String.class);
-		addField(CHUNK_NO, Integer.class);
-		addField(IS_HASH, Boolean.class);
-	}};
-	
-	public static final Message createCorruptionNotification(long uid, String url, long fileLength, 
-		String lastModified, int chunkNo, boolean isHash) {
-		Message msg = new Message(corruptionNotification);
-		msg.set(UID, uid);
-		msg.set(URL, url);
-		msg.set(FILE_LENGTH, fileLength);
-		msg.set(LAST_MODIFIED, lastModified);
-		msg.set(CHUNK_NO, chunkNo);
-		msg.set(IS_HASH, isHash);
-		return msg;
-	}
-
 	// New data transmission messages
 	public static final MessageType packetTransmit = new MessageType("packetTransmit") {{
 		addField(UID, Long.class);
