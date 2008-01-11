@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.ListIterator;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -969,21 +968,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// It will wake up before the maximum coalescing delay (100ms) because
 		// it wakes up every 100ms *anyway*.
 	}
-	
-	private boolean maybeRemoveMessageFromQueue(Message removeMe) {
-		Logger.normal(this, "attempting to remove message from send-queue: "+removeMe);
-		synchronized (messagesToSendNow) {
-			ListIterator i=messagesToSendNow.listIterator();
-			while (i.hasNext()) {
-				MessageItem it=(MessageItem)i.next();
-				if (it.isForMessage(removeMe)) {
-					i.remove();
-					return true;
-				}
-			}
-		}
-		return false;
-	}
 
 	public long getMessageQueueLengthBytes() {
 		long x = 0;
@@ -1416,36 +1400,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		htl--;
 		return htl;
-	}
-
-	/**
-	 * Conceptually, send a message to this node IF it can be done within 'timeout', returing true
-	 * only after the message was sent (similiar to sendSync), and false if the message cannot be
-	 * sent to the node in that time period. As an optimization, however, this function may return
-	 * immediately if it is determined that the message would not leave the node within the timeout
-	 * period.
-	 */
-	public boolean conditionalSend(Message req, ByteCounter ctr, long timeout) throws NotConnectedException {
-		if (timeout<=0)
-			return false;
-		if (getProbableSendQueueTime() > timeout) {
-			Logger.normal(this, "conditionalSend; pre-emptively not sending message ("+timeout+"ms): "+req);
-			return false;
-		}
-		SyncMessageCallback cb = new SyncMessageCallback();
-		sendAsync(req, cb, 0, ctr);
-		cb.waitForSend(timeout);
-		if (cb.done) {
-			return true;
-		} else {
-			//best-effort: remove the message from the send queue it is ok if we can't prematurely
-			//remove the item (i.e. race condition / now it is sent), but it will generate unclaimed messages, etc.
-			if (!maybeRemoveMessageFromQueue(req))
-				Logger.error(this, "unable to stop transmition of request: "+req);
-			else
-				Logger.normal(this, "removed request from queue for timeout: "+req);
-			return false;
-		}
 	}
 	
 	/**

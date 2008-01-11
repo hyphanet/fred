@@ -4,7 +4,6 @@
 package freenet.node;
 
 import java.util.HashSet;
-import java.util.ArrayList;
 
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
@@ -47,9 +46,6 @@ import freenet.support.SimpleFieldSet;
 public final class RequestSender implements Runnable, ByteCounter {
 
     // Constants
-	//SEND_TIMEOUT is not a hard timeout, MAX_SEND_TIMEOUT is.
-	static final int SEND_TIMEOUT = 1000;
-	static final int MAX_SEND_TIMEOUT = 5000;
     static final int ACCEPTED_TIMEOUT = 5000;
     static final int FETCH_TIMEOUT = 120000;
     /** Wait up to this long to get a path folding reply */
@@ -144,7 +140,6 @@ public final class RequestSender implements Runnable, ByteCounter {
 		int rejectOverloads=0;
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
-		ArrayList busyPeers = new ArrayList();
         while(true) {
             if(logMINOR) Logger.minor(this, "htl="+htl);
             if(htl == 0) {
@@ -157,18 +152,9 @@ public final class RequestSender implements Runnable, ByteCounter {
 			routeAttempts++;
             
             // Route it
-			long sendTimeout = SEND_TIMEOUT;
-			boolean usingBusyPeer=false;
             PeerNode next;
             next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
             
-			if (next == null && !busyPeers.isEmpty()) {
-				next = (PeerNode)busyPeers.remove(0);
-				usingBusyPeer=true;
-				if (logMINOR) Logger.minor(this, "trying previously-found busy peer: "+next);
-				sendTimeout = MAX_SEND_TIMEOUT;
-			}
-			
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)
 					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
@@ -205,25 +191,10 @@ public final class RequestSender implements Runnable, ByteCounter {
 				 *   make ACCEPTED_TIMEOUT much more likely,
 				 *   leave many hanging-requests/unclaimedFIFO items,
 				 *   potentially make overloaded peers MORE overloaded (we make a request and promptly forget about them).
-				 * using conditionalSend could:
-				 *   make ACCEPTED_TIMEOUT as accurate as sendSync (as it to waits for transmittion)
-				 *   reduce general latency around peers which have slow network links
-				 *   not needlessly overload nodes w/ forgotten requests (as conditonalSend will try and withdraw the request if it times out)
-				 *!!!make us skip peers which would otherwise have the data (they are closer, but slower)
-				 *
-				 * To avoid the pitfall of conditionalSend (potentially skipping a good peer), we will come back to them when it is
-				 * apparent that we cannot fill the request quickly. Using conditionalSend this way might actually approximate
-				 * Q-routing (for load balancing/latency) across the network; if SEND_TIMEOUT is too high... this reduces to
-				 * using sendSync w/ a good error catch, and if SEND_TIMEOUT is too low... this reduces to creating a cache-backbone
-				 * of fast links in the network which will always be queried before general nodes in the network are.
+				 * 
+				 * Don't use sendAsync().
 				 */
-            	if (!next.conditionalSend(req, this, sendTimeout)) {
-					if (usingBusyPeer)
-						continue;
-					Logger.normal(this, "will try this peer later if no others are available");
-					busyPeers.add(next);
-					continue;
-				}
+            	next.sendSync(req, this);
             } catch (NotConnectedException e) {
             	Logger.minor(this, "Not connected");
             	continue;
