@@ -34,17 +34,19 @@ public class MessageType {
 	private final HashMap _fields = new HashMap();
 	private final HashMap _linkedListTypes = new HashMap();
 	private final boolean internalOnly;
-
+	private final short priority;
+	
 	static {
 		DMT.init();
 	}
 
-	public MessageType(String name) {
-	    this(name, false);
+	public MessageType(String name, short priority) {
+	    this(name, priority, false);
 	}
 	
-	public MessageType(String name, boolean internal) {
+	public MessageType(String name, short priority, boolean internal) {
 		_name = name;
+		this.priority = priority;
 		internalOnly = internal;
 		Integer id = new Integer(name.hashCode());
 		if (_specs.containsKey(id)) {
@@ -133,4 +135,8 @@ public class MessageType {
     public boolean isInternalOnly() {
         return internalOnly;
     }
+	
+	public short getPriority() {
+		return priority;
+	}
 }
