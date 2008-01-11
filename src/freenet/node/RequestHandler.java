@@ -21,6 +21,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TimeUtil;
 
 /**
  * Handle an incoming request. Does not do the actual fetching; that
@@ -153,14 +154,17 @@ public class RequestHandler implements Runnable, ByteCounter {
         boolean sentRejectedOverload = false;
 		
 		//If we cannot respond before this time, the 'source' node has already fatally timed out (and we need not return packets which will not be claimed)
-		long responseDeadline = System.currentTimeMillis() + RequestSender.FETCH_TIMEOUT + source.getProbableSendQueueTime();
+		long searchStartTime = System.currentTimeMillis();
+		long responseDeadline = searchStartTime + RequestSender.FETCH_TIMEOUT + source.getProbableSendQueueTime();
         short waitStatus = 0;
         
         while(true) {
             
         	waitStatus = rs.waitUntilStatusChange(waitStatus);
+			long now = System.currentTimeMillis();
 			
-			if (System.currentTimeMillis() > responseDeadline) {
+			if (now > responseDeadline) {
+				Logger.error(this, "requestsender took too long to respond to requestor ("+TimeUtil.formatTime((now - searchStartTime), 2, true)+"/"+rs.getStatus()+")"); 
 				applyByteCounts();
 				return;
 			}
