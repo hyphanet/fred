@@ -146,13 +146,8 @@ public class MessageCore {
 		}
 		boolean matched = false;
 		if ((!(m.getSpec().equals(DMT.packetTransmit))) && logMINOR) {
-			if ((m.getSpec().equals(DMT.ping) || m.getSpec().equals(DMT.pong)) && Logger.shouldLog(Logger.DEBUG, this)) {
-				Logger.debug(this, "" + (System.currentTimeMillis() % 60000) + ' ' + from + " <- "
-						+ m.getSource() + " : " + m);
-			} else {
-				if(logMINOR) Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + ' ' + from + " <- "
-						+ m.getSource() + " : " + m);
-			}
+			if(logMINOR) Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + ' ' + from + " <- "
+					+ m.getSource() + " : " + m);
 		}
 		MessageFilter match = null;
 		synchronized (_filters) {
