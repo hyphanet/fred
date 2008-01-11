@@ -999,6 +999,25 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	/**
+	 * like enqueuePrioritizedMessageItem, but adds it to the front of those in the same priority.
+	 */
+	private void pushfrontPrioritizedMessageItem(MessageItem addMe) {
+		synchronized (messagesToSendNow) {
+			//Assume it goes on the end, both the common case and an accelerator for requeueing.
+			ListIterator i=messagesToSendNow.listIterator(messagesToSendNow.size());
+			while (i.hasPrevious()) {
+				MessageItem here=(MessageItem)i.previous();
+				//While the item we are adding is NOT-LESS-THAN priority, move on (backwards...)
+				if (!(addMe.getPriority() <= here.getPriority())) {
+					i.next();
+					break;
+				}
+			}
+			i.add(addMe);
+		}
+	}	
+	
+	/**
 	 * Returns the number of milliseconds that it is estimated to take to transmit the currently queued packets.
 	 */
 	public long getProbableSendQueueTime() {
@@ -1186,7 +1205,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(messagesToSendNow) {
 			for(int i = offset; i < offset + length; i++)
 				if(messages[i] != null)
-					enqueuePrioritizedMessageItem(messages[i]);
+					pushfrontPrioritizedMessageItem(messages[i]);
 		}
 	}
 
