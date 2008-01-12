@@ -30,6 +30,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	final Vector blockNums;
 	final FetchContext ctx;
 	private static boolean logMINOR;
+	private boolean cancelled;
 	
 	SplitFileFetcherSubSegment(SplitFileFetcherSegment segment, int retryCount) {
 		super(segment.parentFetcher.parent);
@@ -230,8 +231,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		} else return false;
 	}
 
-	public boolean isCancelled() {
-		return segment.isFinished() || segment.isFinishing();
+	public synchronized boolean isCancelled() {
+		return cancelled;
 	}
 
 	public boolean isSSK() {
@@ -297,6 +298,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		unregister();
 		synchronized(this) {
 			blockNums.clear();
+			cancelled = true;
 		}
 		segment.removeSeg(this);
 	}
