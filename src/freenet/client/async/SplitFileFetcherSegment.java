@@ -363,21 +363,20 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg) {
 		int tries;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
+		boolean failed = false;
 		synchronized(this) {
 			if(isFinished()) return;
 			if(blockNo < dataKeys.length) {
 				tries = ++dataRetries[blockNo];
-				if(tries > maxTries && maxTries >= 0) {
-					onFatalFailure(e, blockNo, seg);
-					return;
-				}
+				if(tries > maxTries && maxTries >= 0) failed = true; 
 			} else {
 				tries = ++checkRetries[blockNo-dataKeys.length];
-				if(tries > maxTries && maxTries >= 0) {
-					onFatalFailure(e, blockNo, seg);
-					return;
-				}
+				if(tries > maxTries && maxTries >= 0) failed = true;
 			}
+		}
+		if(failed) {
+			onFatalFailure(e, blockNo, seg);
+			return;
 		}
 		// If we are here we are going to retry
 		SplitFileFetcherSubSegment sub = getSubSegment(tries);
