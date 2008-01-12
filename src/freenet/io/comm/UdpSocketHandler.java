@@ -35,6 +35,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 	// Icky layer violation, but we need to know the Node to work around the EvilJVMBug.
 	private final Node node;
 	private static boolean logMINOR; 
+	private static boolean logDEBUG;
 	private volatile int lastTimeInSeconds;
 	private boolean _isDone;
 	private boolean _active = true;
@@ -67,6 +68,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = new Random();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logDEBUG = Logger.shouldLog(Logger.MINOR, this);
 		tracker = AddressTracker.create(node.lastBootID, node.getNodeDir(), listenPort);
 		tracker.startSend(startupTime);
 	}
@@ -148,6 +150,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 	
 	private void realRun(DatagramPacket packet) {
 		// Single receiving thread
+		logDEBUG = Logger.shouldLog(Logger.MINOR, this);
 		boolean gotPacket = getPacket(packet);
 		long now = System.currentTimeMillis();
 		if (gotPacket) {
@@ -181,7 +184,7 @@ public class UdpSocketHandler extends Thread implements PacketSocketHandler, Por
 				Logger.error(this, "Caught " + t + " from "
 						+ lowLevelFilter, t);
 			}
-		} else if(logMINOR) Logger.minor(this, "Null packet");
+		} else if(logDEBUG) Logger.minor(this, "No packet received");
 	}
 	
     // FIXME necessary to deal with bugs around build 1000; arguably necessary to deal with large node names in connection setup
