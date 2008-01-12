@@ -1203,7 +1203,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 		synchronized(messagesToSendNow) {
-			for(int i = offset; i < offset + length; i++)
+			for(int i = offset+length-1; i >= offset; i--)
 				if(messages[i] != null)
 					pushfrontPrioritizedMessageItem(messages[i]);
 		}
