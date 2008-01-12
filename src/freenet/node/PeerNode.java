@@ -984,7 +984,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	private void enqueuePrioritizedMessageItem(MessageItem addMe) {
 		synchronized (messagesToSendNow) {
-			//Assume it goes on the end, both the common case and an accelerator for requeueing.
+			//Assume it goes on the end, both the common case
 			ListIterator i=messagesToSendNow.listIterator(messagesToSendNow.size());
 			while (i.hasPrevious()) {
 				MessageItem here=(MessageItem)i.previous();
@@ -1003,13 +1003,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	private void pushfrontPrioritizedMessageItem(MessageItem addMe) {
 		synchronized (messagesToSendNow) {
-			//Assume it goes on the end, both the common case and an accelerator for requeueing.
-			ListIterator i=messagesToSendNow.listIterator(messagesToSendNow.size());
-			while (i.hasPrevious()) {
-				MessageItem here=(MessageItem)i.previous();
-				//While the item we are adding is NOT-LESS-THAN priority, move on (backwards...)
-				if (!(addMe.getPriority() <= here.getPriority())) {
-					i.next();
+			//Assume it goes on the front
+			ListIterator i=messagesToSendNow.listIterator();
+			while (i.hasNext()) {
+				MessageItem here=(MessageItem)i.next();
+				//While the item we are adding is a LOWER priority, move on (forwards...)
+				if (addMe.getPriority() <= here.getPriority()) {
+					i.previous();
 					break;
 				}
 			}
