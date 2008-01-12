@@ -66,6 +66,14 @@ public class LimitedRangeIntByteArrayMap {
         else return -1;
     }
     
+	public short getPriority(int index, short defaultValue) {
+        Integer i = new Integer(index);
+        LimitedRangeIntByteArrayMapElement wrapper = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+        if(wrapper != null)
+            return wrapper.priority;
+        else return defaultValue;
+	}
+	
     /**
      * Get the time at which an index was re-added last.
      */
@@ -82,7 +90,7 @@ public class LimitedRangeIntByteArrayMap {
      * @return True if we succeeded, false if the index was out
      * of range.
      */
-    public synchronized boolean add(int index, byte[] data, AsyncMessageCallback[] callbacks) {
+    public synchronized boolean add(int index, byte[] data, AsyncMessageCallback[] callbacks, short priority) {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(logMINOR) Logger.minor(this, toString()+" add "+index);
         if(maxValue == -1) {
@@ -103,7 +111,7 @@ public class LimitedRangeIntByteArrayMap {
         Integer i = new Integer(index);
         LimitedRangeIntByteArrayMapElement le = (LimitedRangeIntByteArrayMapElement) contents.get(i);
         if(le == null)
-        	contents.put(new Integer(index), new LimitedRangeIntByteArrayMapElement(index, data, callbacks));
+        	contents.put(new Integer(index), new LimitedRangeIntByteArrayMapElement(index, data, callbacks, priority));
         else
         	le.reput();
         notifyAll();

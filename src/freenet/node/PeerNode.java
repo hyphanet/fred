@@ -2213,7 +2213,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			long t = tracker.getNextUrgentTime();
 			if(t < now || forceSendPrimary) {
 				try {
-					outgoingMangler.processOutgoing(null, 0, 0, tracker, 0);
+					outgoingMangler.processOutgoing(null, 0, 0, tracker, 0, DMT.PRIORITY_NOW);
 				} catch(NotConnectedException e) {
 				// Ignore
 				} catch(KeyChangedException e) {
@@ -2228,7 +2228,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			long t = tracker.getNextUrgentTime();
 			if(t < now)
 				try {
-					outgoingMangler.processOutgoing(null, 0, 0, tracker, 0);
+					outgoingMangler.processOutgoing(null, 0, 0, tracker, 0, DMT.PRIORITY_NOW);
 				} catch(NotConnectedException e) {
 				// Ignore
 				} catch(KeyChangedException e) {
@@ -2412,7 +2412,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.error(this, "No tracker to resend packet " + item.packetNumber + " on");
 				continue;
 			}
-			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0, null);
+			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0, null, item.priority);
 			requeueMessageItems(new MessageItem[]{mi}, 0, 1, true);
 		}
 	}

@@ -21,6 +21,7 @@ public class MessageItem {
      */
     final boolean formatted;
     final ByteCounter ctrCallback;
+    private final short priority;
     
     public MessageItem(Message msg2, AsyncMessageCallback[] cb2, int alreadyReportedBytes, ByteCounter ctr) {
     	this.alreadyReportedBytes = alreadyReportedBytes;
@@ -30,9 +31,10 @@ public class MessageItem {
         formatted = false;
         this.ctrCallback = ctr;
         this.submitted = System.currentTimeMillis();
+        priority = msg2.getSpec().getPriority();
     }
 
-    public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, int alreadyReportedBytes, ByteCounter ctr) {
+    public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, int alreadyReportedBytes, ByteCounter ctr, short priority) {
     	this.alreadyReportedBytes = alreadyReportedBytes;
         this.cb = cb2;
         this.msg = null;
@@ -42,6 +44,7 @@ public class MessageItem {
         	throw new NullPointerException();
         this.ctrCallback = ctr;
         this.submitted = System.currentTimeMillis();
+        this.priority = priority;
     }
 
     /**
@@ -74,6 +77,6 @@ public class MessageItem {
 	}
 	
 	public short getPriority() {
-		return msg.getSpec().getPriority();
+		return priority;
 	}
 }

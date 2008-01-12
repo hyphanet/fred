@@ -40,7 +40,7 @@ public interface OutgoingPacketMangler {
 	 * @throws WouldBlockException 
 	 */
 	public void processOutgoing(byte[] buf, int offset, int length,
-			KeyTracker tracker, int alreadyReportedBytes)
+			KeyTracker tracker, int alreadyReportedBytes, short priority)
 			throws KeyChangedException, NotConnectedException,
 			PacketSequenceException, WouldBlockException;
 
@@ -62,7 +62,7 @@ public interface OutgoingPacketMangler {
 	 */
 	public void processOutgoingPreformatted(byte[] buf, int offset, int length,
 			KeyTracker tracker, int packetNumber,
-			AsyncMessageCallback[] callbacks, int alreadyReportedBytes)
+			AsyncMessageCallback[] callbacks, int alreadyReportedBytes, short priority)
 			throws KeyChangedException, NotConnectedException,
 			PacketSequenceException, WouldBlockException;
 

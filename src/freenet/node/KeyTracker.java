@@ -10,6 +10,7 @@ import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
 import freenet.io.comm.AsyncMessageCallback;
+import freenet.io.comm.DMT;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.support.DoublyLinkedList;
@@ -950,14 +951,14 @@ public class KeyTracker {
      * @param seqNumber The packet number.
      * @throws NotConnectedException 
      */
-    public void sentPacket(byte[] data, int seqNumber, AsyncMessageCallback[] callbacks) throws NotConnectedException {
+    public void sentPacket(byte[] data, int seqNumber, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException {
         if(callbacks != null) {
             for(int i=0;i<callbacks.length;i++) {
                 if(callbacks[i] == null)
                     throw new NullPointerException();
             }
         }
-        sentPacketsContents.add(seqNumber, data, callbacks);
+        sentPacketsContents.add(seqNumber, data, callbacks, priority);
         try {
 			queueAckRequest(seqNumber);
 		} catch (UpdatableSortedLinkedListKilledException e) {
@@ -1007,7 +1008,7 @@ public class KeyTracker {
             AsyncMessageCallback[] callbacks = element.callbacks;
             // Ignore packet#
             if(logMINOR) Logger.minor(this, "Queueing resend of what was once "+element.packetNumber);
-            messages[i] = new MessageItem(buf, callbacks, true, 0, null);
+            messages[i] = new MessageItem(buf, callbacks, true, 0, null, element.priority);
         }
         pn.requeueMessageItems(messages, 0, messages.length, true);
         
@@ -1069,7 +1070,8 @@ public class KeyTracker {
                 continue; // acked already?
             }
             AsyncMessageCallback[] callbacks = sentPacketsContents.getCallbacks(packetNo);
-            rpiTemp.add(new ResendPacketItem(buf, packetNo, this, callbacks));
+            short priority = sentPacketsContents.getPriority(packetNo, DMT.PRIORITY_BULK_DATA);
+            rpiTemp.add(new ResendPacketItem(buf, packetNo, this, callbacks, priority));
         }
         if(rpiTemp.isEmpty()) return null;
         return numbers;
