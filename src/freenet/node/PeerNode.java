@@ -2088,15 +2088,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Version.seenVersion(newVersion);
 		}
 		String newLastGoodVersion = fs.get("lastGoodVersion");
-		if(newLastGoodVersion == null) {
-			if(forDiffNodeRef) {
-				// Do nothing - lastGoodVersion not required for differential node references
-			} else {
-				String err = "Peer " + detectedPeer + " omitted lastGoodVersion from its node reference";
-				Logger.error(this, err);
-				throw new FSParseException(err);
-			}
-		} else {
+		if(newLastGoodVersion != null) {
+			// Can be null if anon auth or if forDiffNodeRef.
 			lastGoodVersion = newLastGoodVersion;
 		}
 
