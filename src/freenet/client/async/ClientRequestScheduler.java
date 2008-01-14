@@ -513,7 +513,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			int tok = keyTokens[i];
 			ClientKey ckey = getter.getKey(tok);
 			if(ckey == null) {
-				Logger.error(this, "Key "+tok+" is null for "+getter);
+				Logger.error(this, "Key "+tok+" is null for "+getter, new Exception("debug"));
 				continue;
 			}
 			removePendingKey(getter, complain, ckey.getNodeKey());
