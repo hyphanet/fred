@@ -1565,7 +1565,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				delta = TimeUtil.formatTime(now-last, 2, true)+" ago";
 			Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+delta+") to "+replyTo+" data.length="+data.length);
 		}
-		sendAuthPacket(output, pn.outgoingSetupCipher, pn, replyTo);
+		sendAuthPacket(output, pn.outgoingSetupCipher, pn, replyTo, false);
 	}
 	
 	/**
@@ -1586,13 +1586,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		output[3] = (byte) setupType;
 		System.arraycopy(data, 0, output, 4, data.length);
 		if(logMINOR) Logger.minor(this, "Sending anon auth packet (phase="+phase+", ver="+version+", nt="+negType+", setup="+setupType+") data.length="+data.length);
-		sendAuthPacket(output, cipher, pn, replyTo);
+		sendAuthPacket(output, cipher, pn, replyTo, true);
 	}
 	
 	/**
 	 * Send an auth packet (we have constructed the payload, now hash it, pad it, encrypt it).
 	 */
-	private void sendAuthPacket(byte[] output, BlockCipher cipher, PeerNode pn, Peer replyTo) {
+	private void sendAuthPacket(byte[] output, BlockCipher cipher, PeerNode pn, Peer replyTo, boolean anonAuth) {
 		int length = output.length;
 		// FIXME shorten seednode phase 3/4 so it's within the limit
 //		if(length > sock.getMaxPacketSize()) {
@@ -1611,7 +1611,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} else {
 			paddingLength = 0; // Avoid oversize packets if at all possible, the MTU is an estimate and may be wrong, and fragmented packets are often dropped by firewalls.
 			// Tell the devs, this shouldn't happen.
-			Logger.error(this, "Warning: sending oversize auth packet of "+prePaddingLength+" bytes!");
+			Logger.error(this, "Warning: sending oversize auth packet (anonAuth="+anonAuth+") of "+prePaddingLength+" bytes!");
 		}
 		if(paddingLength < 0) paddingLength = 0;
 		byte[] data = new byte[prePaddingLength + paddingLength];
