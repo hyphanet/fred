@@ -149,6 +149,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(parentFetcher.parent instanceof ClientGetter)
 			((ClientGetter)parentFetcher.parent).addKeyToBinaryBlob(block);
+		// No need to unregister key, because it will be cleared in tripPendingKey().
 		synchronized(this) {
 			if(isFinished()) return;
 			if(blockNo < dataKeys.length) {
