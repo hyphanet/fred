@@ -343,7 +343,8 @@ public class NodeIPDetector {
 				} catch (UnknownHostException e) {
 					throw new InvalidConfigValueException(l10n("unknownHostErrorInIPOverride", "error", e.getMessage()));
 				}
-				if(val.equals(overrideIPAddress.toString())) return;
+				// Compare as IPs.
+				if(addr.equals(overrideIPAddress)) return;
 				overrideIPAddress = addr;
 				lastIPAddress = null;
 				redetectAddress();
