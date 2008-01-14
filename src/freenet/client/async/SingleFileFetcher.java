@@ -536,6 +536,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		newMeta.setSimpleRedirect();
 		final SingleFileFetcher f;
 		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true));
+		if(logMINOR) Logger.minor(this, "fetchArchive(): "+f);
 		ctx.ticker.queueTimedJob(new Runnable() {
 			public void run() {
 				// Fetch the archive. The archive fetcher callback will unpack it, and either call the element 
