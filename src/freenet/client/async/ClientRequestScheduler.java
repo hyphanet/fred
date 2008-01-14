@@ -558,6 +558,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		Object o;
 		synchronized(pendingKeys) {
 			o = pendingKeys.get(key);
+			pendingKeys.remove(key);
 		}
 		if(o == null) return;
 		if(o instanceof SendableGet) {
