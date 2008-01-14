@@ -180,10 +180,10 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				}
 			}
 		}
-		removeSubSegments();
 		parentFetcher.parent.completedBlock(dontNotify);
 		seg.possiblyRemoveFromParent();
 		if(decodeNow) {
+			removeSubSegments();
 			decode();
 		}
 	}
