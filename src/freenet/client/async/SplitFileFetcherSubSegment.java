@@ -294,6 +294,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 	
 	public void kill() {
+		if(logMINOR)
+			Logger.minor(this, "Killing "+this);
 		// Do unregister() first so can get and unregister each key and avoid a memory leak
 		unregister();
 		synchronized(this) {
