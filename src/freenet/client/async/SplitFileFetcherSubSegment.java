@@ -50,12 +50,12 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public int chooseKey() {
-		if(segment.isFinishing()) return -1;
+		if(cancelled) return -1;
 		return removeRandomBlockNum();
 	}
 	
 	public ClientKey getKey(int token) {
-		if(segment.isFinishing()) {
+		if(cancelled) {
 			if(logMINOR)
 				Logger.minor(this, "Segment is finishing when getting key "+token+" on "+this);
 			return null;
