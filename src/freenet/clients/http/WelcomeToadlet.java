@@ -596,7 +596,7 @@ public class WelcomeToadlet extends Toadlet {
         HTMLNode activityList = activityContent.addChild("ul", "id", "activity");
         activityList.addChild("li", l10n("insertCount", "total", Integer.toString(node.getNumInsertSenders())));
         activityList.addChild("li", l10n("requestCount", "total", Integer.toString(node.getNumRequestSenders())));
-        activityList.addChild("li", l10n("transferringRequestCount", "total", Integer.toString(node.getNumTransferringRequestSenders())));
+        activityList.addChild("li", l10n("transferringRequestCount", "total", (Integer.toString((node.getNumTransferringRequestSenders()) + (node.getNumTransferringRequestHandlers()))))); // Include both sending and receiving requests.
         if (advancedModeOutputEnabled) {
             activityList.addChild("li", l10n("arkFetchCount", "total", Integer.toString(node.getNumARKFetchers())));
         }
