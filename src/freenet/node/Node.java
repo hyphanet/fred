@@ -2998,14 +2998,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(om == null) return false;
 		NodeCrypto crypto = om.crypto;
 		if(crypto == null) return false;
-		PacketSocketHandler sock = crypto.socket;
-		if(sock == null) return false;
-		return sock.getDetectedConnectivityStatus() == AddressTracker.DEFINITELY_PORT_FORWARDED;
+		return crypto.definitelyPortForwarded();
 	}
 	
 	public boolean darknetDefinitelyPortForwarded() {
-		PacketSocketHandler sock = darknetCrypto.socket;
-		if(sock == null) return false;
-		return sock.getDetectedConnectivityStatus() == AddressTracker.DEFINITELY_PORT_FORWARDED;
+		return darknetCrypto.definitelyPortForwarded();
 	}
 }

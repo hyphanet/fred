@@ -35,25 +35,24 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	public class MyUserAlert extends AbstractUserAlert {
 
 		final boolean suggestPortForward;
+		private int[] portsNotForwarded;
 		
 		public MyUserAlert(String title, String text, boolean suggestPortForward, short code) {
 			super(false, title, text, null, code, true, L10n.getString("UserAlert.hide"), false, null);
 			this.suggestPortForward = suggestPortForward;
+			portsNotForwarded = getUDPPortsNotForwarded();
 		}
 
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			div.addChild("#", super.getText());
 			if(suggestPortForward) {
-				// FIXME we should support any number of ports, UDP or TCP, and pick them up from the node as we do with the forwarding plugin ... that would be a bit of a pain for L10n though ...
-				int darknetPort = node.getDarknetPortNumber();
-				int opennetPort = node.getOpennetFNPPort();
-				if(opennetPort <= 0) {
+				if(portsNotForwarded.length == 1) {
 					L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardPortWithLink", new String[] { "link", "/link", "port" },
-							new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(node.getDarknetPortNumber()) });
+							new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(portsNotForwarded[0]) });
 				} else {
 					L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardTwoPortsWithLink", new String[] { "link", "/link", "port1", "port2" },
-							new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(node.getDarknetPortNumber()), Integer.toString(opennetPort) });
+							new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]) });
 				}
 			}
 			return div;
@@ -63,15 +62,13 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(!suggestPortForward) return super.getText();
 			StringBuffer sb = new StringBuffer();
 			sb.append(super.getText());
-			// FIXME we should support any number of ports, UDP or TCP, and pick them up from the node as we do with the forwarding plugin ... that would be a bit of a pain for L10n though ...
-			int darknetPort = node.getDarknetPortNumber();
-			int opennetPort = node.getOpennetFNPPort();
-			sb.append(" ");
-			if(opennetPort <= 0) {
-				sb.append(l10n("suggestForwardPort", "port", Integer.toString(darknetPort)));
-			} else {
+			if(portsNotForwarded.length == 1) {
+				sb.append(l10n("suggestForwardPort", "port", Integer.toString(portsNotForwarded[0])));
+			} else if(portsNotForwarded.length >= 2) {
 				sb.append(l10n("suggestForwardTwoPorts", new String[] { "port1", "port2" }, 
-						new String[] { Integer.toString(darknetPort), Integer.toString(opennetPort) }));
+						new String[] { Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]) }));
+				if(portsNotForwarded.length > 2)
+					Logger.error(this, "Not able to tell user about more than 2 ports to forward! ("+portsNotForwarded.length+")");
 			}
 			
 			return sb.toString();
@@ -81,6 +78,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			valid = validity;
 		}
 
+		public boolean isValid() {
+			portsNotForwarded = getUDPPortsNotForwarded();
+			return valid && (portsNotForwarded.length > 0);
+		}
+		
 		public void onDismiss() {
 			valid = false;
 		}
@@ -123,6 +125,23 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				false, UserAlert.MINOR);
 		connectedAlert = new MyUserAlert(l10n("directTitle"), l10n("direct"),
 				false, UserAlert.MINOR);
+	}
+
+	public int[] getUDPPortsNotForwarded() {
+		OpennetManager om = node.getOpennet();
+		if(om == null || om.crypto.definitelyPortForwarded()) {
+			if(node.darknetDefinitelyPortForwarded()) {
+				return new int[] { };
+			} else {
+				return new int[] { node.getDarknetPortNumber() };
+			}
+		} else {
+			if(node.darknetDefinitelyPortForwarded()) {
+				return new int[] { om.crypto.portNumber };
+			} else {
+				return new int[] { node.getDarknetPortNumber(), om.crypto.portNumber };
+			}
+		}
 	}
 
 	private String l10n(String key) {

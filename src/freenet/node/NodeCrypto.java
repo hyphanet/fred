@@ -24,6 +24,7 @@ import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.io.AddressTracker;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
@@ -502,5 +503,9 @@ public class NodeCrypto {
 			return this.pubKey.asBytesHash();
 		else
 			return myIdentity;
+	}
+
+	public boolean definitelyPortForwarded() {
+		return socket.getDetectedConnectivityStatus() == AddressTracker.DEFINITELY_PORT_FORWARDED;
 	}
 }
