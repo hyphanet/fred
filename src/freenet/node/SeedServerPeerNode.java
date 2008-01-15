@@ -34,7 +34,7 @@ public class SeedServerPeerNode extends PeerNode {
 		return false;
 	}
 
-	public boolean isSearchable() {
+	public boolean isRealConnection() {
 		return false;
 	}
 

@@ -1507,7 +1507,7 @@ public class DarknetPeerNode extends PeerNode {
 		// FIXME is there anything we should do?
 	}
 
-	public boolean isSearchable() {
+	public boolean isRealConnection() {
 		return true;
 	}
 

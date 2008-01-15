@@ -3407,8 +3407,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return timeLastDisconnect;
 	}
 
-	/** Does this peernode want to be returned by for example PeerManager.getByPeer() ? */
-	public abstract boolean isSearchable();
+	/** Does this peernode want to be returned by for example PeerManager.getByPeer() ? 
+	 * False = seednode etc, never going to be routable. */
+	public abstract boolean isRealConnection();
 
 	/** Can we accept announcements from this node? */
 	public boolean canAcceptAnnouncements() {

@@ -77,7 +77,7 @@ public class OpennetPeerNode extends PeerNode {
 		return true;
 	}
 
-	public boolean isSearchable() {
+	public boolean isRealConnection() {
 		return true;
 	}
 

@@ -29,7 +29,7 @@ public class SeedClientPeerNode extends PeerNode {
 		return false; // Not exactly
 	}
 
-	public boolean isSearchable() {
+	public boolean isRealConnection() {
 		return false; // We may be connected to the same node as a seed and as a regular connection.
 	}
 

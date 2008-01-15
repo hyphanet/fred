@@ -134,7 +134,7 @@ public class PeerNodeStatus {
 		this.recordStatus = peerNode.recordStatus();
 		this.isSeedClient = peerNode instanceof SeedClientPeerNode;
 		this.isSeedServer = peerNode instanceof SeedServerPeerNode;
-		this.isSearchable = peerNode.isSearchable();
+		this.isSearchable = peerNode.isRealConnection();
 	}
 
 	/**

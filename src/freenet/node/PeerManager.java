@@ -416,7 +416,7 @@ public class PeerManager {
      */
     public PeerNode getByPeer(Peer peer) {
         for(int i=0;i<myPeers.length;i++) {
-        	if(!myPeers[i].isSearchable())
+        	if(!myPeers[i].isRealConnection())
         		continue;
             if(peer.equals(myPeers[i].getPeer()))
                 return myPeers[i];
@@ -1424,7 +1424,7 @@ public class PeerManager {
 		for(int i=0;i<peers.length;i++) {
 			if(peers[i] == pn) continue;
 			if(!peers[i].isConnected()) continue;
-			if(!peers[i].isSearchable()) continue; // Ignore non-searchable peers i.e. bootstrapping peers
+			if(!peers[i].isRealConnection()) continue; // Ignore non-searchable peers i.e. bootstrapping peers
 			if(peers[i].getPeer().getFreenetAddress().equals(addr)) return true;
 		}
 		return false;
@@ -1493,7 +1493,7 @@ public class PeerManager {
 		PeerNode[] peers = myPeers;
 		int count = 0;
 		for(int i=0;i<peers.length;i++) {
-			if(!peers[i].isSearchable()) continue;
+			if(!peers[i].isRealConnection()) continue;
 			if(peers[i].isDisabled()) continue;
 			count++;
 		}

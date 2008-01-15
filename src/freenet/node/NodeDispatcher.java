@@ -91,17 +91,17 @@ public class NodeDispatcher implements Dispatcher {
 		} else if(spec == DMT.nodeToNodeMessage) {
 			node.receivedNodeToNodeMessage(m, source);
 			return true;
-		} else if(spec == DMT.UOMAnnounce && source.isSearchable()) {
+		} else if(spec == DMT.UOMAnnounce && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
-		} else if(spec == DMT.UOMRequestRevocation && source.isSearchable()) {
+		} else if(spec == DMT.UOMRequestRevocation && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
-		} else if(spec == DMT.UOMSendingRevocation && source.isSearchable()) {
+		} else if(spec == DMT.UOMSendingRevocation && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
-		} else if(spec == DMT.UOMRequestMain && source.isSearchable()) {
+		} else if(spec == DMT.UOMRequestMain && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleRequestMain(m, source);
-		} else if(spec == DMT.UOMSendingMain && source.isSearchable()) {
+		} else if(spec == DMT.UOMSendingMain && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingMain(m, source);
-		} else if(spec == DMT.FNPOpennetAnnounceRequest && source.isSearchable()) {
+		} else if(spec == DMT.FNPOpennetAnnounceRequest && source.isRealConnection()) {
 			return handleAnnounceRequest(m, source);
 		} else if(spec == DMT.FNPRoutingStatus) {
 			if(source instanceof DarknetPeerNode) {
