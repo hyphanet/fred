@@ -3002,6 +3002,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	public boolean darknetDefinitelyPortForwarded() {
+		if(darknetCrypto == null) return false;
 		return darknetCrypto.definitelyPortForwarded();
 	}
 }
