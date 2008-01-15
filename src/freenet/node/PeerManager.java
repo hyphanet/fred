@@ -961,8 +961,12 @@ public class PeerManager {
 			opennetPeers = this.getOpennetPeers().length;
 			peers = darknetPeers + opennetPeers; // Seednodes don't count.
 		}
+		boolean opennetDefinitelyPortForwarded = node.opennetDefinitelyPortForwarded();
+		boolean darknetDefinitelyPortForwarded = node.darknetDefinitelyPortForwarded();
 		boolean opennetEnabled = node.isOpennetEnabled();
 		synchronized(ua) {
+			ua.opennetDefinitelyPortForwarded = opennetDefinitelyPortForwarded;
+			ua.darknetDefinitelyPortForwarded = darknetDefinitelyPortForwarded;
 			ua.darknetConns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, true) +
 				getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, true);
 			ua.conns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false) +

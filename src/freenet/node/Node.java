@@ -48,15 +48,18 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.Yarrow;
+import freenet.io.AddressTracker;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.MessageFilter;
+import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.comm.SocketHandler;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
@@ -2985,5 +2988,24 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			clientCore.alerts.register(clockProblemDetectedUserAlert);
 		else
 			clientCore.alerts.unregister(clockProblemDetectedUserAlert);
+	}
+
+	public boolean opennetDefinitelyPortForwarded() {
+		OpennetManager om;
+		synchronized(this) {
+			om = this.opennet;
+		}
+		if(om == null) return false;
+		NodeCrypto crypto = om.crypto;
+		if(crypto == null) return false;
+		PacketSocketHandler sock = crypto.socket;
+		if(sock == null) return false;
+		return sock.getDetectedConnectivityStatus() == AddressTracker.DEFINITELY_PORT_FORWARDED;
+	}
+	
+	public boolean darknetDefinitelyPortForwarded() {
+		PacketSocketHandler sock = darknetCrypto.socket;
+		if(sock == null) return false;
+		return sock.getDetectedConnectivityStatus() == AddressTracker.DEFINITELY_PORT_FORWARDED;
 	}
 }

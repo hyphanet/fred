@@ -22,6 +22,8 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	public int darknetConns = 0;
 	public int darknetPeers = 0;
 	public boolean isOpennetEnabled;
+	public boolean darknetDefinitelyPortForwarded;
+	public boolean opennetDefinitelyPortForwarded;
 	
 	/** How many connected peers we need to not get alert about not enough */
 	public static final int MIN_CONN_ALERT_THRESHOLD = 3;
@@ -67,7 +69,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 			return l10n("clockProblemTitle");
 		if(connError > MIN_CONN_ERROR_ALERT_THRESHOLD)
 			return l10n("connErrorTitle");
-		if(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD)
+		if(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD && !darknetDefinitelyPortForwarded)
 			return l10n("tooManyDisconnectedTitle");
 		if(conns > MAX_CONN_ALERT_THRESHOLD)
 			return l10n("tooManyConnsTitle");
@@ -117,7 +119,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 			s = l10n("clockProblem", "count", Integer.toString(clockProblem));
 		} else if(connError > MIN_CONN_ERROR_ALERT_THRESHOLD) {
 			s = l10n("connError", "count", Integer.toString(connError));
-		} else if(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD){
+		} else if(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD && !darknetDefinitelyPortForwarded){
 			s = l10n("tooManyDisconnected", new String[] { "count", "max" }, 
 					new String[] { Integer.toString(disconnDarknetPeers), Integer.toString(MAX_DISCONN_PEER_ALERT_THRESHOLD)});
 		} else if(conns > MAX_CONN_ALERT_THRESHOLD) {
@@ -188,7 +190,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 			alertNode.addChild("#", l10n("clockProblem", "count", Integer.toString(clockProblem)));
 		} else if(connError > MIN_CONN_ERROR_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("connError", "count", Integer.toString(connError)));
-		} else if (disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD) {
+		} else if (disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD && !darknetDefinitelyPortForwarded) {
 			alertNode.addChild("#", l10n("tooManyDisconnected", new String[] { "count", "max" }, new String[] { Integer.toString(disconnDarknetPeers), Integer.toString(MAX_DISCONN_PEER_ALERT_THRESHOLD)}));
 		} else if (conns > MAX_CONN_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("tooManyConns", new String[] { "count", "max" }, 
@@ -213,7 +215,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		if((peers == 0 && !isOpennetEnabled) ||
 				(conns == 0 && !isOpennetEnabled) ||
 				(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) ||
-				(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
+				(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD && !darknetDefinitelyPortForwarded) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
 				(peers > MAX_PEER_ALERT_THRESHOLD) ||
 				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
@@ -230,7 +232,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		return ((peers == 0 && !isOpennetEnabled) ||
 				(conns < 3 && !isOpennetEnabled) ||
 				(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) ||
-				(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
+				(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD && !darknetDefinitelyPortForwarded) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
 				(peers > MAX_PEER_ALERT_THRESHOLD) ||
 				(clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) ||
