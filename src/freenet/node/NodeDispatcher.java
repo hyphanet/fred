@@ -91,17 +91,17 @@ public class NodeDispatcher implements Dispatcher {
 		} else if(spec == DMT.nodeToNodeMessage) {
 			node.receivedNodeToNodeMessage(m, source);
 			return true;
-		} else if(spec == DMT.UOMAnnounce) {
+		} else if(spec == DMT.UOMAnnounce && source.isSearchable()) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
-		} else if(spec == DMT.UOMRequestRevocation) {
+		} else if(spec == DMT.UOMRequestRevocation && source.isSearchable()) {
 			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
-		} else if(spec == DMT.UOMSendingRevocation) {
+		} else if(spec == DMT.UOMSendingRevocation && source.isSearchable()) {
 			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
-		} else if(spec == DMT.UOMRequestMain) {
+		} else if(spec == DMT.UOMRequestMain && source.isSearchable()) {
 			return node.nodeUpdater.uom.handleRequestMain(m, source);
-		} else if(spec == DMT.UOMSendingMain) {
+		} else if(spec == DMT.UOMSendingMain && source.isSearchable()) {
 			return node.nodeUpdater.uom.handleSendingMain(m, source);
-		} else if(spec == DMT.FNPOpennetAnnounceRequest) {
+		} else if(spec == DMT.FNPOpennetAnnounceRequest && source.isSearchable()) {
 			return handleAnnounceRequest(m, source);
 		} else if(spec == DMT.FNPRoutingStatus) {
 			if(source instanceof DarknetPeerNode) {
