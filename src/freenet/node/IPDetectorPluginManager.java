@@ -45,8 +45,16 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			HTMLNode div = new HTMLNode("div");
 			div.addChild("#", super.getText());
 			if(suggestPortForward) {
-				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardPortWithLink", new String[] { "link", "/link", "port" },
-						new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(node.getDarknetPortNumber()) });
+				// FIXME we should support any number of ports, UDP or TCP, and pick them up from the node as we do with the forwarding plugin ... that would be a bit of a pain for L10n though ...
+				int darknetPort = node.getDarknetPortNumber();
+				int opennetPort = node.getOpennetFNPPort();
+				if(opennetPort <= 0) {
+					L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardPortWithLink", new String[] { "link", "/link", "port" },
+							new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(node.getDarknetPortNumber()) });
+				} else {
+					L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardTwoPortsWithLink", new String[] { "link", "/link", "port1", "port2" },
+							new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(node.getDarknetPortNumber()), Integer.toString(opennetPort) });
+				}
 			}
 			return div;
 		}
@@ -76,7 +84,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		public void onDismiss() {
 			valid = false;
 		}
-
+		
 		public boolean userCanDismiss() {
 			return !suggestPortForward;
 		}
