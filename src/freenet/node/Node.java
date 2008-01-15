@@ -344,7 +344,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	// Darknet stuff
 	
-	private NodeCrypto darknetCrypto;
+	NodeCrypto darknetCrypto;
 	
 	// Opennet stuff
 	

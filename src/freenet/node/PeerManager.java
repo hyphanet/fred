@@ -961,12 +961,27 @@ public class PeerManager {
 			opennetPeers = this.getOpennetPeers().length;
 			peers = darknetPeers + opennetPeers; // Seednodes don't count.
 		}
-		boolean opennetDefinitelyPortForwarded = node.opennetDefinitelyPortForwarded();
+		OpennetManager om = node.getOpennet();
+		
+		boolean opennetDefinitelyPortForwarded;
+		boolean opennetEnabled;
+		boolean opennetAssumeNAT;
+		if(om != null) {
+			opennetEnabled = true;
+			opennetDefinitelyPortForwarded = om.crypto.definitelyPortForwarded();
+			opennetAssumeNAT = om.crypto.config.alwaysHandshakeAggressively();
+		} else {
+			opennetEnabled = false;
+			opennetDefinitelyPortForwarded = false;
+			opennetAssumeNAT = false;
+		}
 		boolean darknetDefinitelyPortForwarded = node.darknetDefinitelyPortForwarded();
-		boolean opennetEnabled = node.isOpennetEnabled();
+		boolean darknetAssumeNAT = node.darknetCrypto.config.alwaysHandshakeAggressively();
 		synchronized(ua) {
 			ua.opennetDefinitelyPortForwarded = opennetDefinitelyPortForwarded;
 			ua.darknetDefinitelyPortForwarded = darknetDefinitelyPortForwarded;
+			ua.opennetAssumeNAT = opennetAssumeNAT;
+			ua.darknetAssumeNAT = darknetAssumeNAT;
 			ua.darknetConns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, true) +
 				getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, true);
 			ua.conns = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false) +
