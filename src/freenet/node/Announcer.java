@@ -446,6 +446,9 @@ public class Announcer {
 				}
 				Logger.error(this, "Announcement to "+seed.userToString()+" returned node not wanted for a total of "+announcementNotWantedNodes+" ("+totalNotWanted+" from this announcement)");
 			}
+			public void nodeNotAdded() {
+				Logger.error(this, "Announcement to "+seed.userToString()+" : node not wanted (maybe already have it, opennet just turned off, etc)");
+			}
 		}, seed);
 		node.executor.execute(sender, "Announcer to "+seed);
 	}

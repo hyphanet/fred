@@ -372,7 +372,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 				if(pn != null)
 					cb.addedNode(pn);
 				else
-					cb.bogusNoderef("not added - maybe not needed?");
+					cb.nodeNotAdded();
 			} catch (FSParseException e) {
 				Logger.normal(this, "Failed to parse reply: "+e, e);
 				if(cb != null) cb.bogusNoderef("parse failed: "+e);

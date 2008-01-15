@@ -941,6 +941,9 @@ public class TextModeClientInterface implements Runnable {
 				public void nodeNotWanted() {
 					write("Hop doesn't want me.");
 				}
+				public void nodeNotAdded() {
+					write("Node not added as we don't want it for some reason.");
+				}
         		
         	});
         } else {

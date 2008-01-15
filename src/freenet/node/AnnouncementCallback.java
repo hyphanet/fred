@@ -12,5 +12,7 @@ public interface AnnouncementCallback {
 	public void noMoreNodes();
 	public void addedNode(PeerNode pn);
 	public void nodeNotWanted();
+	/** Node valid but locally not added e.g. because we already have it */
+	public void nodeNotAdded();
 	
 }
