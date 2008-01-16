@@ -437,15 +437,14 @@ public class MessageCore {
 				} catch (InterruptedException e) {
 				}
 				ret = filter.getMessage();
-				filter.clearMatched();
 			}
 			if(logDEBUG) Logger.debug(this, "Returning "+ret+" from "+filter);
-		} else {
-			// Matched an unclaimed packet
+		}
+			// Matched a packet, unclaimed or after wait
 			filter.setMessage(ret);
 			filter.onMatched();
 			filter.clearMatched();
-		}
+
 		// Probably get rid...
 //		if (Dijjer.getDijjer().getDumpMessageWaitTimes() != null) {
 //			Dijjer.getDijjer().getDumpMessageWaitTimes().println(filter.toString() + "\t" + filter.getInitialTimeout() + "\t"
