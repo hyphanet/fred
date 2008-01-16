@@ -568,7 +568,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		L10n.setLanguage(L10n.FALLBACK_DEFAULT);
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		//a bit of a hack...
-		if (oldConfig.getBoolean("fproxy.enabled", true))
+		if (oldConfig != null && oldConfig.getBoolean("fproxy.enabled", true))
 			startupPageHolder = new StartupToadletServer(executor, oldConfig);
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
