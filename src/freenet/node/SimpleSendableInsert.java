@@ -42,13 +42,13 @@ public class SimpleSendableInsert extends SendableInsert {
 		this.scheduler = scheduler;
 	}
 	
-	public void onSuccess() {
+	public void onSuccess(int keyNum) {
 		// Yay!
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Finished insert of "+block);
 	}
 
-	public void onFailure(LowLevelPutException e) {
+	public void onFailure(LowLevelPutException e, int keyNum) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}
@@ -69,14 +69,14 @@ public class SimpleSendableInsert extends SendableInsert {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
 			core.realPut(block, shouldCache());
 		} catch (LowLevelPutException e) {
-			onFailure(e);
+			onFailure(e, keyNum);
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 			return true;
 		} finally {
 			finished = true;
 		}
 		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		onSuccess();
+		onSuccess(keyNum);
 		return true;
 	}
 

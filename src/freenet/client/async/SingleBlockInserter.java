@@ -136,7 +136,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return retries;
 	}
 
-	public void onFailure(LowLevelPutException e) {
+	public void onFailure(LowLevelPutException e, int keyNum) {
 		if(parent.isCancelled()) {
 			fail(new InsertException(InsertException.CANCELLED));
 			return;
@@ -167,7 +167,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+ctx.consecutiveRNFsCountAsSuccess);
 			if(consecutiveRNFs == ctx.consecutiveRNFsCountAsSuccess) {
 				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
-				onSuccess();
+				onSuccess(keyNum);
 				return;
 			}
 		} else
@@ -253,7 +253,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return resultingURI;
 	}
 
-	public void onSuccess() {
+	public void onSuccess(int keyNum) {
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		if(parent.isCancelled()) {
 			fail(new InsertException(InsertException.CANCELLED));
@@ -298,12 +298,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				return false;
 			}
 		} catch (LowLevelPutException e) {
-			onFailure(e);
+			onFailure(e, keyNum);
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 			return true;
 		}
 		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		onSuccess();
+		onSuccess(keyNum);
 		return true;
 	}
 
