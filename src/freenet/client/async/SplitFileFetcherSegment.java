@@ -378,6 +378,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		}
 		if(failed) {
 			onFatalFailure(e, blockNo, seg);
+			if(logMINOR)
+				Logger.minor(this, "Not retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries);
 			return;
 		}
 		// If we are here we are going to retry
