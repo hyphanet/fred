@@ -423,7 +423,7 @@ public class MessageCore {
 			synchronized (filter) {
 				try {
 					// Precaution against filter getting matched between being added to _filters and
-					// here - bug discovered by Mason, locking fixed up by Robert.
+					// here - bug discovered by Mason
 				    while(!(filter.matched() || (filter.droppedConnection() != null))) {
 						long wait = filter.getTimeout()-System.currentTimeMillis();
 						if(wait < 0)
