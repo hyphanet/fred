@@ -62,7 +62,8 @@ public class SimpleSendableInsert extends SendableInsert {
 		return 0;
 	}
 
-	public boolean send(NodeClientCore core, RequestScheduler sched) {
+	public boolean send(NodeClientCore core, RequestScheduler sched, int keyNum) {
+		// Ignore keyNum, key, since this is a single block
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
@@ -111,5 +112,15 @@ public class SimpleSendableInsert extends SendableInsert {
 	public boolean shouldCache() {
 		// This is only used as-is by the random reinsert from a request code. Subclasses should override!
 		return false;
+	}
+
+	public synchronized int[] allKeys() {
+		if(finished) return new int[] {};
+		return new int[] { 0 };
+	}
+
+	public synchronized int chooseKey() {
+		if(finished) return -1;
+		else return 0;
 	}
 }

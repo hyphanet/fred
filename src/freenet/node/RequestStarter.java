@@ -143,19 +143,24 @@ public class RequestStarter implements Runnable {
 				}
 			}
 			if(req == null) continue;
-			startRequest(req, logMINOR);
+			if(!startRequest(req, logMINOR)) {
+				Logger.error(this, "No requests to start on "+req);
+			}
 			req = null;
 			cycleTime = sentRequestTime = System.currentTimeMillis();
 		}
 	}
 	
-	private void startRequest(SendableRequest req, boolean logMINOR) {
+	private boolean startRequest(SendableRequest req, boolean logMINOR) {
 		// Create a thread to handle starting the request, and the resulting feedback
+		int keyNum = -1;
 		while(true) {
 			try {
-				core.getExecutor().execute(new SenderThread(req), "RequestStarter$SenderThread for "+req);
+				keyNum = req.chooseKey();
+				if(keyNum == -1) return false;
+				core.getExecutor().execute(new SenderThread(req, keyNum), "RequestStarter$SenderThread for "+req);
 				if(logMINOR) Logger.minor(this, "Started "+req);
-				break;
+				return true;
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Will retry above failed operation...");
@@ -164,6 +169,13 @@ public class RequestStarter implements Runnable {
 					Thread.sleep(5000);
 				} catch (InterruptedException e1) {
 					// Ignore
+				}
+			} catch (Throwable t) {
+				if(keyNum != -1) {
+					// Re-queue
+					req.internalError(keyNum, t);
+					Logger.error(this, "Caught "+t+" while trying to start request");
+					return true; // Sort of ... maybe it will clear
 				}
 			}
 		}
@@ -185,14 +197,16 @@ public class RequestStarter implements Runnable {
 	private class SenderThread implements Runnable {
 
 		private final SendableRequest req;
+		private final int keyNum;
 		
-		public SenderThread(SendableRequest req) {
+		public SenderThread(SendableRequest req, int keyNum) {
 			this.req = req;
+			this.keyNum = keyNum;
 		}
 
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
-			if(!req.send(core, sched))
+			if(!req.send(core, sched, keyNum))
 				Logger.normal(this, "run() not able to send a request");
 			if(Logger.shouldLog(Logger.MINOR, this)) 
 				Logger.minor(this, "Finished "+req);

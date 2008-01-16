@@ -23,13 +23,6 @@ public abstract class SendableGet extends SendableRequest {
 	/** Parent BaseClientGetter. Required for schedulers. */
 	public final ClientRequester parent;
 	
-	/** Choose a key to fetch.
-	 * @return An integer identifying a specific key. -1 indicates no keys available. */
-	public abstract int chooseKey();
-	
-	/** All key identifiers */
-	public abstract int[] allKeys();
-	
 	/** Get a numbered key to fetch. */
 	public abstract ClientKey getKey(int token);
 	
@@ -57,10 +50,10 @@ public abstract class SendableGet extends SendableRequest {
 	/** Do the request, blocking. Called by RequestStarter. 
 	 * @return True if a request was executed. False if caller should try to find another request, and remove
 	 * this one from the queue. */
-	public boolean send(NodeClientCore core, RequestScheduler sched) {
+	public boolean send(NodeClientCore core, RequestScheduler sched, int keyNum) {
+		ClientKey key = getKey(keyNum);
 		FetchContext ctx = getContext();
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		while(true) {
 			synchronized (this) {
 				if(isCancelled()) {
 					if(logMINOR) Logger.minor(this, "Cancelled: "+this);
@@ -69,19 +62,8 @@ public abstract class SendableGet extends SendableRequest {
 				}	
 			}
 			ClientKeyBlock block;
-			int keyNum = -1;
 			try {
-				keyNum = chooseKey();
-				if(keyNum == -1) {
-					if(logMINOR) Logger.minor(this, "No more keys: "+this);
-					return false;
-				}
 				try {
-					ClientKey key = getKey(keyNum);
-					if(key == null) {
-						if(logMINOR) Logger.minor(this, "No key "+keyNum+": "+this);
-						continue;
-					}
 					block = core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
 				} catch (LowLevelGetException e) {
 					onFailure(e, keyNum);
@@ -99,7 +81,6 @@ public abstract class SendableGet extends SendableRequest {
 				return true;
 			}
 			return true;
-		}
 	}
 
 	public void schedule() {
@@ -126,4 +107,8 @@ public abstract class SendableGet extends SendableRequest {
 		getScheduler().removePendingKey(this, false, key);
 	}
 
+	public void internalError(int keyNum, Throwable t) {
+		onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum);
+	}
+	
 }

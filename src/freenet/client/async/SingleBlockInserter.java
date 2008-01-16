@@ -283,7 +283,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return finished;
 	}
 
-	public boolean send(NodeClientCore core, RequestScheduler sched) {
+	public boolean send(NodeClientCore core, RequestScheduler sched, int keyNum) {
+		// Ignore keyNum, key, since we're only sending one block.
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
 			ClientKeyBlock b = getBlock();
@@ -337,6 +338,18 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	public boolean canRemove() {
 		return true;
+	}
+
+	public synchronized int[] allKeys() {
+		if(finished)
+			return new int[] {};
+		else
+			return new int[] { 0 };
+	}
+
+	public synchronized int chooseKey() {
+		if(finished) return -1;
+		else return 0;
 	}
 
 }

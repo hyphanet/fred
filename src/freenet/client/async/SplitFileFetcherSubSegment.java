@@ -63,6 +63,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return segment.getBlockKey(token);
 	}
 	
+	public Object getKeyObject(int token) {
+		return getKey(token);
+	}
+	
 	public synchronized int[] allKeys() {
 		int[] nums = new int[blockNums.size()];
 		for(int i=0;i<nums.length;i++)
