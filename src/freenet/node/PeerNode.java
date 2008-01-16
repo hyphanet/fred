@@ -2556,60 +2556,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return pRejected.currentValue();
 	}
 
-	public void sendPing() {
-		long pingNo;
-		long now = System.currentTimeMillis();
-		Long lPingNo;
-		synchronized(pingSync) {
-			pingNo = pingNumber++;
-			lPingNo = new Long(pingNo);
-			Long lnow = new Long(now);
-			pingsSentTimes.push(lPingNo, lnow);
-			if(logMINOR)
-				Logger.minor(this, "Pushed " + lPingNo + ' ' + lnow);
-			while(pingsSentTimes.size() > MAX_PINGS) {
-				Long l = (Long) pingsSentTimes.popValue();
-				if(logMINOR)
-					Logger.minor(this, "pingsSentTimes.size()=" + pingsSentTimes.size() + ", l=" + l);
-				long tStarted = l.longValue();
-				pingAverage.report(now - tStarted);
-				if(logMINOR)
-					Logger.minor(this, "Reporting dumped ping time to " + this + " : " + (now - tStarted));
-			}
-		}
-		Message msg = DMT.createFNPLinkPing(pingNo);
-		try {
-			sendAsync(msg, null, 0, null);
-		} catch(NotConnectedException e) {
-			synchronized(pingSync) {
-				pingsSentTimes.removeKey(lPingNo);
-			}
-		}
-	}
-
-	public void receivedLinkPong(long id) {
-		Long lid = new Long(id);
-		long startTime;
-		long now = System.currentTimeMillis();
-		synchronized(pingSync) {
-			Long s = (Long) pingsSentTimes.get(lid);
-			if(s == null) {
-				Logger.normal(this, "Dropping ping " + id + " on " + this);
-				return;
-			}
-			startTime = s.longValue();
-			pingsSentTimes.removeKey(lid);
-			pingAverage.report(now - startTime);
-			if(logMINOR)
-				Logger.minor(this, "Reporting ping time to " + this + " : " + (now - startTime));
-		}
-
-		if(noLongerRoutable()) {
-			invalidate();
-			setPeerNodeStatus(now);
-		}
-	}
-
 	public double averagePingTime() {
 		return pingAverage.currentValue();
 	}

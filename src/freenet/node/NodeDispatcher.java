@@ -69,10 +69,6 @@ public class NodeDispatcher implements Dispatcher {
 				// Ignore
 			}
 			return true;
-		} else if(spec == DMT.FNPLinkPong) {
-			long id = m.getLong(DMT.PING_SEQNO);
-			source.receivedLinkPong(id);
-			return true;
 		} else if(spec == DMT.FNPDetectedIPAddress) {
 			Peer p = (Peer) m.getObject(DMT.EXTERNAL_ADDRESS);
 			source.setRemoteDetectedPeer(p);
