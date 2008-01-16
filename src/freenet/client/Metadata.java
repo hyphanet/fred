@@ -339,6 +339,7 @@ public class Metadata implements Cloneable {
 					Logger.error(this, "Could not parse sub-manifest: "+t, t);
 				}
 			}
+			if(logMINOR) Logger.minor(this, "End of manifest"); // Make it easy to search for it!
 		}
 		
 		if(documentType == ZIP_INTERNAL_REDIRECT) {
