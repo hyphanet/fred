@@ -250,7 +250,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
             	if(logMINOR) Logger.minor(this, "second part got "+msg);
             	
             	if(msg == null) {
-            		// Fatal timeout
+            		// Fatal timeout, must be terminal (IS_LOCAL==true)
             		timedOut(next);
             		return;
             	}
@@ -412,7 +412,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
 	}
 
 	private void timedOut(PeerNode next) {
-		Message msg = DMT.createFNPRejectedOverload(uid, false);
+		Message msg = DMT.createFNPRejectedOverload(uid, true);
 		if(source != null) {
 			try {
 				source.sendAsync(msg, null, 0, this);
