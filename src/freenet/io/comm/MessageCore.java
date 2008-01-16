@@ -432,7 +432,6 @@ public class MessageCore {
 					}
 				    if(filter.droppedConnection() != null)
 				        throw new DisconnectedException();
-				    if(logMINOR) Logger.minor(this, "Matched: "+fmatched);
 				} catch (InterruptedException e) {
 				}
 				ret = filter.getMessage();
