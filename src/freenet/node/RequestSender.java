@@ -379,8 +379,8 @@ public final class RequestSender implements Runnable, ByteCounter {
             		timeLeft -= origTimeLeft / 100;
             		
             		if(timeLeft <= 0) {
-            			// No timeout left, cool
-            			finish(DATA_NOT_FOUND, next);
+            			// No timeout left, so we can retry: try another node.
+            			break;
             		} else {
             			// Some timeout left
             			finish(RECENTLY_FAILED, next);
