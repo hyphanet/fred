@@ -423,13 +423,12 @@ public class MessageCore {
 			synchronized (filter) {
 				try {
 					// Precaution against filter getting matched between being added to _filters and
-					// here - bug discovered by Mason
-				    boolean fmatched = false;
-				    while(!(fmatched = (filter.matched() || (filter.droppedConnection() != null)))) {
-				        long wait = filter.getTimeout()-System.currentTimeMillis();
-				        if(wait > 0)
-				            filter.wait(wait);
-				        else break;
+					// here - bug discovered by Mason, locking fixed up by Robert.
+				    while(!(filter.matched() || (filter.droppedConnection() != null))) {
+						long wait = filter.getTimeout()-System.currentTimeMillis();
+						if(wait < 0)
+							break;
+						filter.wait(wait);
 					}
 				    if(filter.droppedConnection() != null)
 				        throw new DisconnectedException();
