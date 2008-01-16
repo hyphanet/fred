@@ -39,7 +39,7 @@ public final class MessageFilter {
 	private MessageType _type;
     private HashMap _fields = new HashMap();
     private Vector _fieldList = new Vector(1,1);
-    PeerContext _source;
+    private PeerContext _source;
     private long _timeout;
     /** If true, timeouts are relative to the start of waiting, if false, they are relative to
      * the time of calling setTimeout() */
@@ -108,6 +108,17 @@ public final class MessageFilter {
 	public MessageFilter setSource(PeerContext source) {
 		_source = source;
 		return this;
+	}
+	
+	/**
+	 Returns the source that this filter (or chain) matches
+	 */
+	public PeerContext getSource() {
+		if (_source!=null)
+			return _source;
+		if (_or!=null)
+			return _or.getSource();
+		return null;
 	}
 
 	public MessageFilter setField(String fieldName, boolean value) {
@@ -241,11 +252,11 @@ public final class MessageFilter {
     }
     
     public boolean matchesDroppedConnection(PeerContext ctx) {
-        return _matchesDroppedConnections && _source == ctx;
+        return _matchesDroppedConnections && getSource() == ctx;
     }
     
     public boolean matchesRestartedConnection(PeerContext ctx) {
-    	return _matchesRestartedConnections && _source == ctx;
+    	return _matchesRestartedConnections && getSource() == ctx;
     }
     
     /**

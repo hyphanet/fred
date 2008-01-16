@@ -291,8 +291,9 @@ public class MessageCore {
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logDEBUG) Logger.debug(this, "Adding async filter "+filter+" for "+callback);
 		Message ret = null;
-		if(filter._source != null && (!filter._source.isConnected()) &&
-		        filter.matchesDroppedConnection(filter._source))
+		PeerContext filter_source=filter.getSource();
+		if(filter_source != null && (!filter_source.isConnected()) &&
+		        filter.matchesDroppedConnection(filter_source))
 		    throw new DisconnectedException();
 		// Check to see whether the filter matches any of the recently _unclaimed messages
 		// Drop any _unclaimed messages that the filter doesn't match that are also older than MAX_UNCLAIMED_FIFO_ITEM_LIFETIME
@@ -359,8 +360,9 @@ public class MessageCore {
 		long startTime = System.currentTimeMillis();
 		filter.onStartWaiting();
 		Message ret = null;
-		if(filter._source != null && (!filter._source.isConnected()) &&
-		        filter.matchesDroppedConnection(filter._source))
+		PeerContext filter_source=filter.getSource();
+		if(filter_source != null && (!filter_source.isConnected()) &&
+		        filter.matchesDroppedConnection(filter_source))
 		    throw new DisconnectedException();
 		// Check to see whether the filter matches any of the recently _unclaimed messages
 		// Drop any _unclaimed messages that the filter doesn't match that are also older than MAX_UNCLAIMED_FIFO_ITEM_LIFETIME
