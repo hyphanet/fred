@@ -114,11 +114,7 @@ public final class MessageFilter {
 	 Returns the source that this filter (or chain) matches
 	 */
 	public PeerContext getSource() {
-		if (_source!=null)
-			return _source;
-		if (_or!=null)
-			return _or.getSource();
-		return null;
+		return _source;
 	}
 
 	public MessageFilter setField(String fieldName, boolean value) {
@@ -252,11 +248,15 @@ public final class MessageFilter {
     }
     
     public boolean matchesDroppedConnection(PeerContext ctx) {
-        return _matchesDroppedConnections && getSource() == ctx;
+    	if(_matchesDroppedConnections && _source == ctx) return true;
+    	if(_or != null) return _or.matchesDroppedConnection(ctx);
+    	return false;
     }
     
     public boolean matchesRestartedConnection(PeerContext ctx) {
-    	return _matchesRestartedConnections && getSource() == ctx;
+    	if(_matchesRestartedConnections && _source == ctx) return true;
+    	if(_or != null) return _or.matchesRestartedConnection(ctx);
+    	return false;
     }
     
     /**
@@ -301,5 +301,16 @@ public final class MessageFilter {
 		}
 		if(_callback != null)
 			_callback.onTimeout();
+	}
+
+	public boolean anyConnectionsDropped() {
+		if(_matched) return false;
+		if(_source != null && !_source.isConnected()) {
+			onDroppedConnection(_source);
+			return true;
+		}
+		if(_or != null)
+			return _or.anyConnectionsDropped();
+		return false;
 	}
 }
