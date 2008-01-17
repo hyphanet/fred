@@ -74,16 +74,37 @@ public class QueueToadlet extends Toadlet {
 	
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		
 		try {
 			// Browse... button
 			if (request.getPartAsString("insert-local", 128).length() > 0) {
+				
+				// Preserve the key
+				
+				FreenetURI insertURI;
+				String keyType = request.getPartAsString("keytype", 3);
+				if ("chk".equals(keyType)) {
+					insertURI = new FreenetURI("CHK@");
+				} else {
+					try {
+						String u = request.getPartAsString("key", 128);
+						insertURI = new FreenetURI(u);
+						if(logMINOR)
+							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+")");
+					} catch (MalformedURLException mue1) {
+						writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
+						return;
+					}
+				}
+
+				
+				
 				MultiValueTable responseHeaders = new MultiValueTable();
-				responseHeaders.put("Location", "/files/");
+				responseHeaders.put("Location", "/files/?key="+insertURI.toACIIString());
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			}			
-			
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			
 			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
