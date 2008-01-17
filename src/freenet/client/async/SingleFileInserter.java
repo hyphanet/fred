@@ -185,6 +185,8 @@ class SingleFileInserter implements ClientPutState {
 					} else if((bestCompressedData == null) && (result.size() < data.size())) {
 						bestCompressedData = result;
 						bestCodec = comp;
+					} else {
+						result.free();
 					}
 				}
 			} catch (IOException e) {
