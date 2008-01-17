@@ -109,7 +109,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 				HTMLNode rootRow = listingTable.addChild("tr");
 				rootRow.addChild("td");
 				HTMLNode rootLinkCellNode = rootRow.addChild("td");
-				rootLinkCellNode.addChild("a", "href", "?path=" + URLEncoder.encode(currentRoot.getCanonicalPath(),false), currentRoot.getCanonicalPath());
+				rootLinkCellNode.addChild("a", "href", "?path=" + URLEncoder.encode(currentRoot.getCanonicalPath(),false)+extra, currentRoot.getCanonicalPath());
 				rootRow.addChild("td");
 			}
 			/* add back link */
