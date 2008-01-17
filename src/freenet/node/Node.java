@@ -2461,7 +2461,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 	
-	public synchronized boolean isStopping() {
+	/**
+	 * Returns true if the node is shutting down.
+	 * The packet receiver calls this for every packet, and boolean is atomic, so this method is not synchronized.
+	 */
+	public boolean isStopping() {
 		return isStopping;
 	}
 	
@@ -2979,6 +2983,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
+	/**
+	 * Returns true if the packet receiver should try to decode/process packets that are not from a peer (i.e. from a seed connection)
+	 * The packet receiver calls this upon receiving an unrecognized packet.
+	 */
 	public boolean wantAnonAuth() {
 		return opennet != null && acceptSeedConnections;
 	}
