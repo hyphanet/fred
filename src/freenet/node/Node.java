@@ -1,8 +1,5 @@
 /*
  * Freenet 0.7 node.
- * 
- * Designed primarily for darknet operation, but should also be usable
- * in open mode eventually.
  */
 package freenet.node;
 
