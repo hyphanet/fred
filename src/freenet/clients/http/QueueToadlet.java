@@ -265,8 +265,18 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				File file = new File(filename);
 				String identifier = file.getName() + "-fred-" + System.currentTimeMillis();
 				String contentType = DefaultMIMETypes.guessMIMEType(filename, false);
+				FreenetURI furi = new FreenetURI("CHK@");
+				String key = request.getPartAsString("key", 128);
+				if(key != null) {
+					try {
+						furi = new FreenetURI(key);
+					} catch (MalformedURLException e) {
+						writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
+						return;
+					}
+				}
 				try {
-					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), new FreenetURI("CHK@"), identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, file.getName(), false);
+					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, file.getName(), false);
 					if(logMINOR) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
 					clientPut.start();
 					fcp.forceStorePersistentRequests();
