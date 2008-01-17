@@ -5,11 +5,13 @@ package freenet.clients.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
@@ -54,6 +56,19 @@ public class LocalFileInsertToadlet extends Toadlet {
 			sendErrorPage(toadletContext, 403, "Forbidden", l10n("dirAccessDenied"));
 			return;
 		}
+		
+		FreenetURI furi = null;
+		String key = request.getParam("key");
+		if(key != null) {
+			try {
+				furi = new FreenetURI(key);
+			} catch (MalformedURLException e) {
+				furi = null;
+			}
+		}
+		String extra = "";
+		if(furi != null)
+			extra = "&key="+furi.toACIIString();
 		
 		PageMaker pageMaker = toadletContext.getPageMaker();
 
@@ -102,7 +117,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 				HTMLNode backlinkRow = listingTable.addChild("tr");
 				backlinkRow.addChild("td");
 				HTMLNode backlinkCellNode = backlinkRow.addChild("td");
-				backlinkCellNode.addChild("a", "href", "?path=" + URLEncoder.encode(currentPath.getParent(),false), "..");
+				backlinkCellNode.addChild("a", "href", "?path=" + URLEncoder.encode(currentPath.getParent(),false)+extra, "..");
 				backlinkRow.addChild("td");
 			}
 			for (int fileIndex = 0, fileCount = files.length; fileIndex < fileCount; fileIndex++) {
@@ -112,7 +127,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 					fileRow.addChild("td");
 					if (currentFile.canRead()) {
 						HTMLNode directoryCellNode = fileRow.addChild("td");
-						directoryCellNode.addChild("a", "href", "?path=" + URLEncoder.encode(currentFile.getAbsolutePath(),false), currentFile.getName());
+						directoryCellNode.addChild("a", "href", "?path=" + URLEncoder.encode(currentFile.getAbsolutePath(),false)+extra, currentFile.getName());
 					} else {
 						fileRow.addChild("td", "class", "unreadable-file", currentFile.getName());
 					}
@@ -123,6 +138,8 @@ public class LocalFileInsertToadlet extends Toadlet {
 						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/queue/", "insertLocalFileForm"); 
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-file", l10n("insert")});
+						if(furi != null)
+							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", furi.toACIIString() });
 						fileRow.addChild("td", currentFile.getName());
 						fileRow.addChild("td", "class", "right-align", String.valueOf(currentFile.length()));
 					} else {
