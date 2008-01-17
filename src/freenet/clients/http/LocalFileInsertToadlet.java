@@ -126,7 +126,6 @@ public class LocalFileInsertToadlet extends Toadlet {
 				if (currentFile.isDirectory()) {
 					if (currentFile.canRead()) {
 						HTMLNode cellNode = fileRow.addChild("td");
-						fileRow.addChild("td");
 						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/queue/", "insertLocalFileForm"); 
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-dir", l10n("insert")});
