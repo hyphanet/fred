@@ -54,8 +54,8 @@ public class RandomGrabArray {
 	
 	public RandomGrabArrayItem removeRandom() {
 		RandomGrabArrayItem ret, oret;
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			while(true) {
 				if(index == 0) {
 					if(logMINOR) Logger.minor(this, "All null on "+this);
@@ -64,8 +64,12 @@ public class RandomGrabArray {
 				int i = rand.nextInt(index);
 				ret = reqs[i];
 				oret = ret;
-				if(ret.isCancelled()) ret = null;
+				if(ret.isCancelled()) {
+					if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
+					ret = null;
+				}
 				if(ret != null && !ret.canRemove()) {
+					if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret);
 					return ret;
 				}
 				do {
@@ -87,6 +91,7 @@ public class RandomGrabArray {
 				if((ret != null) && !ret.isCancelled()) break;
 			}
 		}
+		if(logMINOR) Logger.minor(this, "Returning "+ret);
 		ret.setParentGrabArray(null);
 		return ret;
 	}
