@@ -94,7 +94,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		maxBlockLength = maxTempLength;
 		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
 		this.recursionLevel = 0;
-		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher);
+		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher+" : "+dataRetries.length+" data blocks "+checkRetries.length+" check blocks");
 		for(int i=0;i<dataKeys.length;i++)
 			if(dataKeys[i] == null) throw new NullPointerException("Null: data block "+i);
 		for(int i=0;i<checkKeys.length;i++)
