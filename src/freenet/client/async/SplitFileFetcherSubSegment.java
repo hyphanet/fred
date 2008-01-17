@@ -248,8 +248,21 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		synchronized(this) {
 			blockNums.add(i);
 			if(dontSchedule) return;
-			if(blockNums.size() > 1) {
-				if(logMINOR) Logger.minor(this, "Other blocks queued, not scheduling: "+blockNums.size()+" : "+blockNums);
+			/**
+			 * Race condition:
+			 * 
+			 * Starter thread sees there is only one block on us, so removes us.
+			 * Another thread adds a block. We don't schedule as we now have two blocks.
+			 * Starter thread removes us.
+			 * Other blocks may be added later, but we are never rescheduled.
+			 * 
+			 * Fixing this by only removing the SendableRequest after we've removed the 
+			 * block is nontrivial with the current code.
+			 * So what we do here is simply check whether we are registered, instead of 
+			 * checking whether blockNums.size() > 1 as we used to.
+			 */
+			if(getParentGrabArray() != null) {
+				if(logMINOR) Logger.minor(this, "Already registered, not scheduling: "+blockNums.size()+" : "+blockNums);
 				return;
 			}
 		}
