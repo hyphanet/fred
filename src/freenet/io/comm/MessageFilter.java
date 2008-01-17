@@ -47,15 +47,11 @@ public final class MessageFilter {
     private int _initialTimeout;
     private MessageFilter _or;
     private Message _message;
-    private boolean _matchesDroppedConnections;
-    private boolean _matchesRestartedConnections;
     private long _oldBootID;
     private AsyncMessageFilterCallback _callback;
 
     private MessageFilter() {
         setTimeout(DEFAULT_TIMEOUT);
-        _matchesDroppedConnections = true; // on by default
-        _matchesRestartedConnections = true; // also on by default
         _timeoutFromWait = true;
     }
 
@@ -160,16 +156,6 @@ public final class MessageFilter {
 		return this;
 	}
 
-	public MessageFilter setMatchesDroppedConnection(boolean m) {
-	    _matchesDroppedConnections = m;
-	    return this;
-	}
-	
-	public MessageFilter setMatchesRestartedConnections(boolean m) {
-		_matchesRestartedConnections = m;
-		return this;
-	}
-	
 	public MessageFilter setAsyncCallback(AsyncMessageFilterCallback cb) {
 		_callback = cb;
 		return this;
@@ -251,13 +237,13 @@ public final class MessageFilter {
     }
     
     public boolean matchesDroppedConnection(PeerContext ctx) {
-    	if(_matchesDroppedConnections && _source == ctx) return true;
+    	if(_source == ctx) return true;
     	if(_or != null) return _or.matchesDroppedConnection(ctx);
     	return false;
     }
     
     public boolean matchesRestartedConnection(PeerContext ctx) {
-    	if(_matchesRestartedConnections && _source == ctx) return true;
+    	if(_source == ctx) return true;
     	if(_or != null) return _or.matchesRestartedConnection(ctx);
     	return false;
     }

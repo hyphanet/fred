@@ -686,7 +686,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 
     /** Wait for the opennet completion message and discard it */
     private void finishOpennetNull(PeerNode next) {
-    	MessageFilter mf = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck).setMatchesDroppedConnection(true).setMatchesRestartedConnections(true);
+    	MessageFilter mf = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
     	
     	try {
 			node.usm.addAsyncFilter(mf, new NullAsyncMessageFilterCallback());

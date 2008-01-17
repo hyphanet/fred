@@ -571,7 +571,6 @@ public class OpennetManager {
 				MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
 			mf = mfAck.or(mf);
 		}
-		mf.setMatchesDroppedConnection(true).setMatchesRestartedConnections(true);
 		Message msg;
 		
 		try {
