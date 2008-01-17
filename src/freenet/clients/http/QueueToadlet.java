@@ -199,7 +199,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				String keyType = request.getPartAsString("keytype", 3);
 				if ("chk".equals(keyType)) {
 					insertURI = new FreenetURI("CHK@");
-				} else if ("ksk".equals(keyType)) {
+				} else {
 					try {
 						String u = request.getPartAsString("key", 128);
 						insertURI = new FreenetURI(u);
@@ -209,9 +209,6 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 						writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
 						return;
 					}
-				} else {
-					writeError(L10n.getString("QueueToadlet.errorInvalidURI"), "You fooled around with the POST request. Shame on you.", ctx);
-					return;
 				}
 				HTTPUploadedFile file = request.getUploadedFile("filename");
 				if (file == null || file.getFilename().trim().length() == 0) {
