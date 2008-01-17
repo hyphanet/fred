@@ -97,8 +97,6 @@ public class QueueToadlet extends Toadlet {
 						return;
 					}
 				}
-
-				
 				
 				MultiValueTable responseHeaders = new MultiValueTable();
 				responseHeaders.put("Location", "/files/?key="+insertURI.toACIIString());
