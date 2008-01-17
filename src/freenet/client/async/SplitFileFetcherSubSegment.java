@@ -80,7 +80,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		int x = ctx.random.nextInt(blockNums.size());
 		int ret = ((Integer) blockNums.remove(x)).intValue();
 		if(logMINOR)
-			Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret);
+			Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
 		return ret;
 	}
 
