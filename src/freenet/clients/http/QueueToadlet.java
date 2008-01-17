@@ -862,7 +862,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		insertForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "keytype", "chk", "checked" });
 		insertForm.addChild("#", " CHK \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "ksk" });
-		insertForm.addChild("#", " KSK \u00a0 ");
+		insertForm.addChild("#", " KSK/SSK/USK \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "key", "KSK@" });
 		insertForm.addChild("#", " \u00a0 " + L10n.getString("QueueToadlet.insertFileLabel") + ": ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
