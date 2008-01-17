@@ -267,9 +267,6 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				String contentType = DefaultMIMETypes.guessMIMEType(filename, false);
 				FreenetURI furi = new FreenetURI("CHK@");
 				String key = request.getPartAsString("key", 128);
-				String target = file.getName();
-				if(!furi.getKeyType().equals("CHK"))
-					target = null;
 				if(key != null) {
 					try {
 						furi = new FreenetURI(key);
@@ -278,6 +275,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 						return;
 					}
 				}
+				String target = file.getName();
+				if(!furi.getKeyType().equals("CHK"))
+					target = null;
 				try {
 					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, target, false);
 					if(logMINOR) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
