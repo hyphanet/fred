@@ -41,22 +41,6 @@ public class LocalFileInsertToadlet extends Toadlet {
 	 *      freenet.clients.http.ToadletContext)
 	 */
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
-		String path = request.getParam("path");
-		if (path.length() == 0) {
-			if (currentPath == null) {
-				currentPath = new File(System.getProperty("user.home"));
-			}
-			writePermanentRedirect(toadletContext, "Found", "?path=" + URLEncoder.encode(currentPath.getAbsolutePath(),true));
-			return;
-		}
-
-		currentPath = new File(path).getCanonicalFile();
-		
-		if(!core.allowUploadFrom(currentPath)) {
-			sendErrorPage(toadletContext, 403, "Forbidden", l10n("dirAccessDenied"));
-			return;
-		}
-		
 		FreenetURI furi = null;
 		String key = request.getParam("key");
 		if(key != null) {
@@ -69,6 +53,22 @@ public class LocalFileInsertToadlet extends Toadlet {
 		String extra = "";
 		if(furi != null)
 			extra = "&key="+furi.toACIIString();
+		
+		String path = request.getParam("path");
+		if (path.length() == 0) {
+			if (currentPath == null) {
+				currentPath = new File(System.getProperty("user.home"));
+			}
+			writePermanentRedirect(toadletContext, "Found", "?path=" + URLEncoder.encode(currentPath.getAbsolutePath(),true)+extra);
+			return;
+		}
+
+		currentPath = new File(path).getCanonicalFile();
+		
+		if(!core.allowUploadFrom(currentPath)) {
+			sendErrorPage(toadletContext, 403, "Forbidden", l10n("dirAccessDenied"));
+			return;
+		}
 		
 		PageMaker pageMaker = toadletContext.getPageMaker();
 
