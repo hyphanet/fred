@@ -88,7 +88,7 @@ public abstract class ClientRequester {
 
 	public void completedBlock(boolean dontNotify) {
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Completed block ("+dontNotify+ "): total="+totalBlocks+" success="+successfulBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" finalised="+blockSetFinalized);
+			Logger.minor(this, "Completed block ("+dontNotify+ "): total="+totalBlocks+" success="+successfulBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" finalised="+blockSetFinalized+" on "+this);
 		synchronized(this) {
 			successfulBlocks++;
 			if(dontNotify) return;
