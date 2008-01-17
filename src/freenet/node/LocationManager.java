@@ -1085,8 +1085,10 @@ public class LocationManager {
                 }
             }
         }
-        Logger.normal(this, "lostOrRestartedNode dumping "+v.size()+" swap requests for "+pn.getPeer());
-        for(int i=0;i<v.size();i++) {
+		int dumped=v.size();
+		if (dumped!=0)
+			Logger.normal(this, "lostOrRestartedNode dumping "+dumped+" swap requests for "+pn.getPeer());
+        for(int i=0;i<dumped;i++) {
             RecentlyForwardedItem item = (RecentlyForwardedItem) v.get(i);
             // Just reject it to avoid locking problems etc
             Message msg = DMT.createFNPSwapRejected(item.incomingID);
