@@ -49,6 +49,7 @@ public final class MessageFilter {
     private Message _message;
     private boolean _matchesDroppedConnections;
     private boolean _matchesRestartedConnections;
+    private long _oldBootID;
     private AsyncMessageFilterCallback _callback;
 
     private MessageFilter() {
@@ -107,6 +108,8 @@ public final class MessageFilter {
 
 	public MessageFilter setSource(PeerContext source) {
 		_source = source;
+		if(source != null)
+			_oldBootID = source.getBootID();
 		return this;
 	}
 	
@@ -308,6 +311,10 @@ public final class MessageFilter {
 		if(_source != null && !_source.isConnected()) {
 			onDroppedConnection(_source);
 			return true;
+		}
+		if(_source != null && _source.getBootID() != _oldBootID) {
+			onRestartedConnection(_source);
+			return true; // Counts as a disconnect.
 		}
 		if(_or != null)
 			return _or.anyConnectionsDropped();
