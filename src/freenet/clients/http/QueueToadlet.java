@@ -268,7 +268,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				FreenetURI furi = new FreenetURI("CHK@");
 				String key = request.getPartAsString("key", 128);
 				String target = file.getName();
-				if(!furi.getKeyType().equals("chk"))
+				if(!furi.getKeyType().equals("CHK"))
 					target = null;
 				if(key != null) {
 					try {
