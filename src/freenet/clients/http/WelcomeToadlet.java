@@ -469,6 +469,9 @@ public class WelcomeToadlet extends Toadlet {
                     key = key.substring(8);
                 }
                 addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "key", key});
+                if(request.isParameterSet("hasAnActivelink")) {
+                	addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden","hasAnActivelink",request.getParam("hasAnActivelink")});
+                }
                 addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"text", "name", request.getParam("desc")});
                 addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "bookmark", "/"});
                 addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "action", "addItem"});
