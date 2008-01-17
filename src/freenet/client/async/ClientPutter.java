@@ -115,6 +115,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				oldProgress = null;
 				return false;
 			}
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Starting insert: "+currentState);
 			if(currentState instanceof SingleFileInserter)
 				((SingleFileInserter)currentState).start(oldProgress);
 			else
