@@ -291,6 +291,31 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
+			} else if (request.isPartSet("insert-local-dir")) {
+				String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
+				if(logMINOR) Logger.minor(this, "Inserting local directory: "+filename);
+				File file = new File(filename);
+				String identifier = file.getName() + "-fred-" + System.currentTimeMillis();
+				FreenetURI furi = new FreenetURI("CHK@");
+				String key = request.getPartAsString("key", 128);
+				if(key != null) {
+					try {
+						furi = new FreenetURI(key);
+					} catch (MalformedURLException e) {
+						writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
+						return;
+					}
+				}
+				try {
+					ClientPutDir clientPutDir = new ClientPutDir(fcp.getGlobalClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, file, null, false, true, false);
+					if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
+					clientPutDir.start();
+					fcp.forceStorePersistentRequests();
+				} catch (IdentifierCollisionException e) {
+					e.printStackTrace();
+				}
+				writePermanentRedirect(ctx, "Done", "/queue/");
+				return;
 			} else if (request.isPartSet("get")) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				ClientRequest[] clientRequests = fcp.getGlobalRequests();

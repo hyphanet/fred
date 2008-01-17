@@ -124,11 +124,18 @@ public class LocalFileInsertToadlet extends Toadlet {
 				File currentFile = files[fileIndex];
 				HTMLNode fileRow = listingTable.addChild("tr");
 				if (currentFile.isDirectory()) {
-					fileRow.addChild("td");
 					if (currentFile.canRead()) {
+						HTMLNode cellNode = fileRow.addChild("td");
+						fileRow.addChild("td");
+						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/queue/", "insertLocalFileForm"); 
+						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
+						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-dir", l10n("insert")});
+						if(furi != null)
+							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", furi.toACIIString() });
 						HTMLNode directoryCellNode = fileRow.addChild("td");
 						directoryCellNode.addChild("a", "href", "?path=" + URLEncoder.encode(currentFile.getAbsolutePath(),false)+extra, currentFile.getName());
 					} else {
+						fileRow.addChild("td");
 						fileRow.addChild("td", "class", "unreadable-file", currentFile.getName());
 					}
 					fileRow.addChild("td");
