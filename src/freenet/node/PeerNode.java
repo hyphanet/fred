@@ -338,7 +338,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		version = fs.get("version");
 		Version.seenVersion(version);
-		simpleVersion = Version.getArbitraryBuildNumber(version);
+		try {
+			simpleVersion = Version.getArbitraryBuildNumber(version);
+		} catch (VersionParseException e2) {
+			throw new FSParseException("Invalid version "+version+" : "+e2);
+		}
 		String locationString = fs.get("location");
 		try {
 			currentLocation = Location.getLocation(locationString);
@@ -1713,7 +1717,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			//FIXME: It looks like bogusNoderef will just be set to false a few lines later...
 		} else if(reverseInvalidVersion()) {
 			try {
-				node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(getLastGoodVersion()));
+				node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(getLastGoodVersion(), Version.lastGoodBuild()));
 			} catch(NumberFormatException e) {
 			// ignore
 			}
@@ -2084,7 +2088,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(!newVersion.equals(version))
 				changedAnything = true;
 			version = newVersion;
-			simpleVersion = Version.getArbitraryBuildNumber(version);
+			if(version != null) {
+				try {
+					simpleVersion = Version.getArbitraryBuildNumber(version);
+				} catch (VersionParseException e) {
+					Logger.error(this, "Bad version: "+simpleVersion+" : "+e, e);
+				}
+			}
 			Version.seenVersion(newVersion);
 		}
 		String newLastGoodVersion = fs.get("lastGoodVersion");
@@ -2967,7 +2977,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public int getVersionNumber() {
-		return Version.getArbitraryBuildNumber(getVersion());
+		return Version.getArbitraryBuildNumber(getVersion(), -1);
 	}
 
 	public PacketThrottle getThrottle() {

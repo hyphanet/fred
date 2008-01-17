@@ -762,7 +762,7 @@ public class PeerManager {
             	if(logMINOR) Logger.minor(this, "Skipping (routing backed off): "+p.getPeer());
             	continue;
             }
-            if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion()) < minVersion) {
+            if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion(), -1) < minVersion) {
             	if(logMINOR) Logger.minor(this, "Skipping old version: "+p.getPeer());
             	continue;
             }

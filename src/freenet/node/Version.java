@@ -287,20 +287,34 @@ public class Version {
 	 * @return the build number of an arbitrary version string
 	 */
 	public static final int getArbitraryBuildNumber(
-		String version ) {
+		String version ) throws VersionParseException {
 	    if(version == null) {
 	        Logger.error(Version.class, "version == null!",
 	                new Exception("error"));
-	        throw new NumberFormatException();
+	        throw new VersionParseException("version == null");
 	    }
 		String[] v = Fields.commaList(version);
 
 		if ((v.length < 3) || !goodProtocol(v[2])) {
-	        throw new NumberFormatException();
+			throw new VersionParseException("not long enough or bad protocol: "+version);
 		}
-		return Integer.parseInt(v[3]);
+		try {
+			return Integer.parseInt(v[3]);
+		} catch (NumberFormatException e) {
+			VersionParseException ve = new VersionParseException("Got NumberFormatException on "+v[3]+" : "+e+" for "+version);
+			ve.initCause(e);
+			throw ve;
+		}
 	}
 
+	public static final int getArbitraryBuildNumber(
+			String version, int defaultValue ) {
+		try {
+			return getArbitraryBuildNumber(version);
+		} catch (VersionParseException e) {
+			return defaultValue;
+		}
+	}
 	/**
 	 * Update static variable highestSeenBuild anytime we encounter
 	 * a new node with a higher version than we've seen before

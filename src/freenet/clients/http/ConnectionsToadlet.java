@@ -89,7 +89,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}else if(sortBy.equals("location")){
 				return compareLocations(firstNode, secondNode);
 			}else if(sortBy.equals("version")){
-				return Version.getArbitraryBuildNumber(firstNode.getVersion()) - Version.getArbitraryBuildNumber(secondNode.getVersion());
+				return Version.getArbitraryBuildNumber(firstNode.getVersion(), -1) - Version.getArbitraryBuildNumber(secondNode.getVersion(), -1);
 			}else
 				return 0;
 		}

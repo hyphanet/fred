@@ -483,7 +483,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			Logger.error(this, "No version!");
 			System.err.println("No version!");
 		} else {
-			lastVersion = Version.getArbitraryBuildNumber(verString);
+			lastVersion = Version.getArbitraryBuildNumber(verString, -1);
 		}
 		
 		wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
