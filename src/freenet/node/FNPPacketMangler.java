@@ -1977,12 +1977,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(mi.formatted) {
 				try {
 					byte[] buf = mi.getData(pn);
-					if(kt == null) {
-						if(logMINOR) Logger.minor(this, "kt = null");
-						pn.requeueMessageItems(newMsgs, 0, x, false, "kt=null(1a)");
-						pn.requeueMessageItems(messages, i, messages.length-i, false, "kt = null(1b)");
-						return;
-					}
 					int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
 					this.processOutgoingPreformatted(buf, 0, buf.length, kt, packetNumber, mi.cb, mi.alreadyReportedBytes, mi.getPriority());
 					//MARK: onSent()
