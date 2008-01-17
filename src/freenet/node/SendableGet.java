@@ -52,6 +52,8 @@ public abstract class SendableGet extends SendableRequest {
 	 * this one from the queue. */
 	public boolean send(NodeClientCore core, RequestScheduler sched, int keyNum) {
 		ClientKey key = getKey(keyNum);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Sending get for key "+keyNum+" : "+key);
 		FetchContext ctx = getContext();
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			synchronized (this) {
