@@ -173,21 +173,18 @@ class SingleFileInserter implements ClientPutState {
 					result = comp.compress(origData, ctx.persistentBucketFactory, origData.size());
 					if(result.size() < oneBlockCompressedSize) {
 						bestCodec = comp;
-						data = result;
 						if(bestCompressedData != null)
 							bestCompressedData.free();
-						bestCompressedData = data;
+						bestCompressedData = result;
 						break;
 					}
 					if((bestCompressedData != null) && (result.size() <  bestCompressedData.size())) {
 						bestCompressedData.free();
 						bestCompressedData = result;
-						data = result;
 						bestCodec = comp;
 					} else if((bestCompressedData == null) && (result.size() < data.size())) {
 						bestCompressedData = result;
 						bestCodec = comp;
-						data = result;
 					}
 				}
 			} catch (IOException e) {
@@ -197,6 +194,8 @@ class SingleFileInserter implements ClientPutState {
 				throw new Error(e);
 			}
 		}
+		if(bestCompressedData != null)
+			data = bestCompressedData;
 		
 		if(parent == cb) {
 			if(tryCompress)
