@@ -414,8 +414,6 @@ public class NodeClientCore implements Persistable {
 		persister.start();
 		if(fcpServer != null)
 			fcpServer.maybeStart();
-		if(toadletContainer != null)
-			toadletContainer.start();
 		if(tmci != null)
 			tmci.start();
 		
