@@ -74,6 +74,11 @@ public class QueueToadlet extends Toadlet {
 	
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
+		if(!core.hasLoadedQueue()) {
+			writeError(L10n.getString("QueueToadlet.notLoadedYetTitle"), L10n.getString("QueueToadlet.notLoadedYet"), ctx);
+			return;
+		}
+		
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		try {
@@ -386,6 +391,11 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		// We ensure that we have a FCP server running
 		if(!fcp.enabled){
 			writeError(L10n.getString("QueueToadlet.fcpIsMissing"), L10n.getString("QueueToadlet.pleaseEnableFCP"), ctx);
+			return;
+		}
+		
+		if(!core.hasLoadedQueue()) {
+			writeError(L10n.getString("QueueToadlet.notLoadedYetTitle"), L10n.getString("QueueToadlet.notLoadedYet"), ctx);
 			return;
 		}
 		

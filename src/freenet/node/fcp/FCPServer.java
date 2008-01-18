@@ -85,6 +85,7 @@ public class FCPServer implements Runnable {
 	private boolean canStartPersister = false;
 	private boolean assumeDownloadDDAIsAllowed;
 	private boolean assumeUploadDDAIsAllowed;
+	private boolean hasFinishedStart;
 	
 	private void startPersister() {
 		Thread t = new Thread(persister = new FCPServerPersister(), "FCP request persister");
@@ -864,6 +865,7 @@ public class FCPServer implements Runnable {
 		if(enablePersistentDownloads)
 			startPersister();
 		canStartPersister = true;
+		hasFinishedStart = true;
 	}
 	
 	
@@ -882,6 +884,10 @@ public class FCPServer implements Runnable {
 
 	protected boolean isUploadDDAAlwaysAllowed() {
 		return assumeUploadDDAIsAllowed;
+	}
+
+	public boolean hasFinishedStart() {
+		return hasFinishedStart;
 	}
 	
 }

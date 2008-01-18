@@ -1052,4 +1052,8 @@ public class NodeClientCore implements Persistable {
 		else
 			throw new IllegalArgumentException("Not a CHK and not an SSK!");
 	}
+
+	public boolean hasLoadedQueue() {
+		return fcpServer.hasFinishedStart();
+	}
 }
