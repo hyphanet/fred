@@ -371,9 +371,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} else if(metadata.isMultiLevelMetadata()) {
 				if(logMINOR) Logger.minor(this, "Is multi-level metadata");
 				// Fetch on a second SingleFileFetcher, like with archives.
-				Metadata newMeta = (Metadata) metadata.clone();
-				newMeta.setSimpleRedirect();
-				final SingleFileFetcher f = new SingleFileFetcher(this, newMeta, new MultiLevelMetadataCallback(), ctx);
+				metadata.setSimpleRedirect();
+				final SingleFileFetcher f = new SingleFileFetcher(this, metadata, new MultiLevelMetadataCallback(), ctx);
 				ctx.ticker.queueTimedJob(new Runnable() {
 					public void run() {
 						f.wrapHandleMetadata(true);
