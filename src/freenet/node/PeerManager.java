@@ -1028,9 +1028,10 @@ public class PeerManager {
 
 	public void start() {
         ua = new PeerManagerUserAlert(node.nodeStats);
+        updatePMUserAlert();
 		node.clientCore.alerts.register(ua);
 	}
-
+	
 	public int countNonBackedOffPeers() {
 		PeerNode[] peers;
 		synchronized(this) {
