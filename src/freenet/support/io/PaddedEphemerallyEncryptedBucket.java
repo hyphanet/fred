@@ -54,6 +54,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		this.minPaddedSize = minSize;
 		readOnly = false;
 		lastOutputStream = 0;
+		dataLength = 0;
 	}
 
 	/**
@@ -224,7 +225,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		}
 		
 		public final int available() {
-			int x = (int)(dataLength - ptr);
+			int x = (int)Math.min(dataLength - ptr, Integer.MAX_VALUE);
 			return (x < 0) ? 0 : x;
 		}
 		
