@@ -65,7 +65,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			if(finished) return;
 			finished = true;
 			if(e != null && this.e != null && this.e != e) {
-				Logger.error(this, "Completing with "+e+" but already set "+this.e);
+				if(!(e.getMode() == InsertException.CANCELLED)) // Cancelled is okay, ignore it, we cancel after failure sometimes.
+					Logger.error(this, "Completing with "+e+" but already set "+this.e);
 			}
 			if(e == null) e = this.e;
 		}
