@@ -53,7 +53,7 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 	}
 
 	protected boolean shouldDrawNoderefBox(boolean advancedModeEnabled) {
-		return false;
+		return advancedModeEnabled;
 	}
 
 	protected boolean showPeerActionsBox() {
