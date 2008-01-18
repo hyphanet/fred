@@ -97,7 +97,7 @@ public class NodeDispatcher implements Dispatcher {
 			return node.nodeUpdater.uom.handleRequestMain(m, source);
 		} else if(spec == DMT.UOMSendingMain && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingMain(m, source);
-		} else if(spec == DMT.FNPOpennetAnnounceRequest && source.isRealConnection()) {
+		} else if(spec == DMT.FNPOpennetAnnounceRequest) {
 			return handleAnnounceRequest(m, source);
 		} else if(spec == DMT.FNPRoutingStatus) {
 			if(source instanceof DarknetPeerNode) {
