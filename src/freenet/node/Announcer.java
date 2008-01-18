@@ -261,9 +261,10 @@ public class Announcer {
 	static final int FINAL_DELAY = 60*1000;
 	/** But if we don't have enough peers at that point, wait another minute and if the situation has not improved, reannounce. */
 	static final int RETRY_DELAY = 60*1000;
-	
+	private boolean started = false;
 	
 	public void maybeSendAnnouncement() {
+		started = true;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "maybeSendAnnouncement()");
@@ -532,7 +533,7 @@ public class Announcer {
 		}
 
 		public boolean isValid() {
-			return !enoughPeers();
+			return started && !enoughPeers();
 		}
 
 		public void isValid(boolean validity) {
