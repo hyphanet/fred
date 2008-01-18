@@ -486,8 +486,11 @@ public class FCPServer implements Runnable {
 	}
 
 	public void setPersistentDownloadsEnabled(boolean set) {
-		synchronized(persistenceSync) {
+		synchronized(this) {
 			if(enablePersistentDownloads == set) return;
+			enablePersistentDownloads = set;
+		}
+		synchronized(persistenceSync) {
 			if(set) {
 				if(!haveLoadedPersistentRequests)
 					loadPersistentRequests();
@@ -496,14 +499,11 @@ public class FCPServer implements Runnable {
 			} else {
 				killPersister();
 			}
-			enablePersistentDownloads = set;
 		}
 	}
 
-	public boolean persistentDownloadsEnabled() {
-		synchronized(persistenceSync) {
-			return enablePersistentDownloads;
-		}
+	public synchronized boolean persistentDownloadsEnabled() {
+		return enablePersistentDownloads;
 	}
 
 	public FCPClient registerClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
