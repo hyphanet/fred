@@ -387,10 +387,10 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		// Register static toadlet and startup toadlet
 		
 		StaticToadlet statictoadlet = new StaticToadlet();
-		register(statictoadlet, "/static/", true, false);
+		register(statictoadlet, "/static/", false, false);
 		
 		startupToadlet = new StartupToadlet(statictoadlet);
-		register(startupToadlet, "/", true, false);
+		register(startupToadlet, "/", false, false);
 		
 	}
 	
