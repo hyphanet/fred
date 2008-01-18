@@ -41,6 +41,8 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
 import freenet.node.fcp.FCPServer;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
@@ -112,6 +114,8 @@ public class NodeClientCore implements Persistable {
 	static final long MAX_ARCHIVE_SIZE = 2*1024*1024; // ??? FIXME
 	static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
 	static final int MAX_CACHED_ELEMENTS = 256*1024; // equally arbitrary! FIXME hopefully we can cache many of these though
+	
+	private UserAlert startingUpAlert;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets) throws NodeInitException {
 		this.node = node;
@@ -349,6 +353,7 @@ public class NodeClientCore implements Persistable {
 		
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins
+		this.alerts.register(startingUpAlert = new SimpleUserAlert(true, l10n("startingUpTitle"), l10n("startingUp"), UserAlert.MINOR));
 		try {
 			toadletContainer = toadlets;
 			toadletContainer.setCore(this);
@@ -427,6 +432,7 @@ public class NodeClientCore implements Persistable {
 				persistentTempBucketFactory.completedInit();
 				System.out.println("Completed startup: All persistent requests resumed or restarted");
 				Logger.normal(this, "Completed startup: All persistent requests resumed or restarted");
+				alerts.unregister(startingUpAlert);
 			}
 		}, "Startup completion thread");
 	}
