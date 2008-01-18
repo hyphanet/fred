@@ -84,6 +84,7 @@ public class SplitFileInserter implements ClientPutState {
 		} catch (IOException e) {
 			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 		}
+		this.dataLength = data.size();
 		if(freeData) data.free();
 		countDataBlocks = dataBuckets.length;
 		// Encoding is done by segments
@@ -92,7 +93,6 @@ public class SplitFileInserter implements ClientPutState {
 		else
 			compressionCodec = bestCodec.codecNumberForMetadata();
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
-		this.dataLength = data.size();
 		segmentSize = ctx.splitfileSegmentDataBlocks;
 		checkSegmentSize = splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT ? 0 : ctx.splitfileSegmentCheckBlocks;
 		
