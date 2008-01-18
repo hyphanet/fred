@@ -85,8 +85,13 @@ public class SplitFileFetcher implements ClientGetState {
 				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile is "+finalLength+" but length is "+finalLength);
 			finalLength = overrideLength;
 		}
-		
 		long eventualLength = Math.max(overrideLength, metadata.uncompressedDataLength());
+		cb.onExpectedSize(eventualLength);
+		String mimeType = metadata.getMIMEType();
+		if(mimeType != null)
+			cb.onExpectedMIME(mimeType);
+		if(metadata.uncompressedDataLength() > 0)
+			cb.onFinalizedMetadata();
 		if(eventualLength > 0 && newCtx.maxOutputLength > 0 && eventualLength > newCtx.maxOutputLength)
 			throw new FetchException(FetchException.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
 		

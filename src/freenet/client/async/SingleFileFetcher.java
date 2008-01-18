@@ -303,6 +303,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} else if(metadata.isArchiveInternalRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is archive-internal redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
+				String mime = clientMetadata.getMIMEType();
+				if(mime != null) rcb.onExpectedMIME(mime);
 				if(metaStrings.isEmpty() && isFinal && clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
 					throw new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType());
@@ -382,6 +384,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} else if(metadata.isSingleFileRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
+				String mime = clientMetadata.getMIMEType();
+				if(mime != null) rcb.onExpectedMIME(mime);
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
 				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
@@ -444,6 +448,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(logMINOR) Logger.minor(this, "Fetching splitfile");
 				
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
+				String mime = clientMetadata.getMIMEType();
+				if(mime != null) rcb.onExpectedMIME(mime);
 				
 				String mimeType = clientMetadata.getMIMETypeNoParams();
 				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
@@ -605,6 +611,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		public void onTransition(ClientGetState oldState, ClientGetState newState) {
 			// Ignore
 		}
+
+		public void onExpectedMIME(String mime) {
+			// Ignore
+		}
+
+		public void onExpectedSize(long size) {
+			rcb.onExpectedSize(size);
+		}
+
+		public void onFinalizedMetadata() {
+			// Ignore
+		}
 		
 	}
 
@@ -634,6 +652,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onTransition(ClientGetState oldState, ClientGetState newState) {
+			// Ignore
+		}
+
+		public void onExpectedMIME(String mime) {
+			// Ignore
+		}
+
+		public void onExpectedSize(long size) {
+			rcb.onExpectedSize(size);
+		}
+
+		public void onFinalizedMetadata() {
 			// Ignore
 		}
 		

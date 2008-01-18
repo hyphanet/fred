@@ -76,4 +76,16 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		// Ignore
 	}
 
+	public void onExpectedMIME(String mime) {
+		// Ignore
+	}
+
+	public void onExpectedSize(long size) {
+		// Ignore
+	}
+
+	public void onFinalizedMetadata() {
+		// Ignore
+	}
+
 }

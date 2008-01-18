@@ -42,4 +42,16 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		// Ignore
 	}
 
+	public void onExpectedMIME(String mime) {
+		cb.onExpectedMIME(mime);
+	}
+
+	public void onExpectedSize(long size) {
+		cb.onExpectedSize(size);
+	}
+
+	public void onFinalizedMetadata() {
+		cb.onFinalizedMetadata();
+	}
+
 }

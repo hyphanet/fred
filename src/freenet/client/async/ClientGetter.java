@@ -41,6 +41,9 @@ public class ClientGetter extends BaseClientGetter {
 	/** If not null, HashSet to track keys already added for a binary blob */
 	final HashSet binaryBlobKeysAddedAlready;
 	private DataOutputStream binaryBlobStream;
+	private String expectedMIME;
+	private long expectedSize;
+	private boolean finalizedMetadata;
 	
 	/**
 	 * Fetch a key.
@@ -314,5 +317,31 @@ public class ClientGetter extends BaseClientGetter {
 
 	boolean collectingBinaryBlob() {
 		return binaryBlobBucket != null;
+	}
+
+	public void onExpectedMIME(String mime) {
+		if(finalizedMetadata) return;
+		expectedMIME = mime;
+	}
+
+	public void onExpectedSize(long size) {
+		if(finalizedMetadata) return;
+		expectedSize = size;
+	}
+
+	public void onFinalizedMetadata() {
+		finalizedMetadata = true;
+	}
+	
+	public boolean finalizedMetadata() {
+		return finalizedMetadata;
+	}
+	
+	public String expectedMIME() {
+		return expectedMIME;
+	}
+	
+	public long expectedSize() {
+		return expectedSize;
 	}
 }

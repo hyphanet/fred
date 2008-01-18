@@ -925,4 +925,9 @@ public class Metadata implements Cloneable {
 		clientMetadata.clear();
 		documentType = ZIP_MANIFEST;
 	}
+
+	public String getMIMEType() {
+		if(clientMetadata == null) return null;
+		return clientMetadata.getMIMEType();
+	}
 }

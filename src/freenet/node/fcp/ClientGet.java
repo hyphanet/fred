@@ -619,11 +619,19 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	public long getDataSize() {
-		return foundDataLength;
+		if(foundDataLength > 0)
+			return foundDataLength;
+		if(getter != null)
+			return getter.expectedSize();
+		return -1;
 	}
 
 	public String getMIMEType() {
-		return foundDataMimeType;
+		if(foundDataMimeType != null)
+			return foundDataMimeType;
+		if(getter != null)
+			return getter.expectedMIME();
+		return null;
 	}
 
 	public File getDestFilename() {

@@ -23,4 +23,10 @@ public interface GetCompletionCallback {
 
 	public void onTransition(ClientGetState oldState, ClientGetState newState);
 
+	public void onExpectedSize(long size);
+	
+	public void onExpectedMIME(String mime);
+	
+	public void onFinalizedMetadata();
+	
 }
