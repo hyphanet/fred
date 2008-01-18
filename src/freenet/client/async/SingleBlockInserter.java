@@ -291,6 +291,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(b != null)
 				core.realPut(b, ctx.cacheLocalRequests);
 			else {
+				synchronized(this) {
+					if(finished) {
+						Logger.error(this, "Trying to run send "+this+" when already finished", new Exception("error"));
+						return false;
+					}
+				}
 				if(parent.isCancelled())
 					fail(new InsertException(InsertException.CANCELLED));
 				else
