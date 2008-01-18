@@ -397,7 +397,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private StartupToadlet startupToadlet;
 	
 	public void removeStartupToadlet() {
-		toadlets.remove(startupToadlet);
+		unregister(startupToadlet);
 		// Not in the navbar.
 	}
 	
@@ -439,8 +439,14 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 
-	public void unregister(Toadlet t) {
-		
+	public synchronized void unregister(Toadlet t) {
+		for(Iterator i=toadlets.iterator();i.hasNext();) {
+			ToadletElement e = (ToadletElement) i.next();
+			if(e.t == t) {
+				i.remove();
+				return;
+			}
+		}
 	}
 	
 	public Toadlet findToadlet(URI uri) {
