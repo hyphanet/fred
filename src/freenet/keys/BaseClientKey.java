@@ -21,7 +21,7 @@ public abstract class BaseClientKey {
 			return ClientKSK.create(origURI.getDocName());
 		if("USK".equals(origURI.getKeyType()))
 			return USK.create(origURI);
-		throw new UnsupportedOperationException("Unknown keytype from "+origURI);
+		throw new MalformedURLException("Unknown keytype from "+origURI);
 	}
 	
 	public abstract FreenetURI getURI();
