@@ -16,6 +16,7 @@ import java.util.List;
 import org.spaceroots.mantissa.random.MersenneTwister;
 
 import freenet.crypt.SHA256;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -341,6 +342,8 @@ public class BucketTools {
 			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);
 		int bucketCount = (int) (length / splitSize);
 		if(length % splitSize > 0) bucketCount++;
+		if(Logger.shouldLog(Logger.MINOR, BucketTools.class))
+			Logger.minor(BucketTools.class, "Splitting bucket "+origData+" of size "+length+" into "+bucketCount+" buckets");
 		Bucket[] buckets = new Bucket[bucketCount];
 		InputStream is = origData.getInputStream();
 		DataInputStream dis = null;
