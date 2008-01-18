@@ -25,7 +25,9 @@ import freenet.support.URIPreEncoder;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
+import freenet.support.io.NullOutputStream;
 import freenet.support.io.TooLongException;
 
 /**
@@ -213,7 +215,7 @@ public class ToadletContextImpl implements ToadletContext {
 	/**
 	 * Handle an incoming connection. Blocking, obviously.
 	 */
-	public static void handle(Socket sock, ToadletContainer container, BucketFactory bf, PageMaker pageMaker) {
+	public static void handle(Socket sock, ToadletContainer container, BucketFactory bf, PageMaker pageMaker, boolean allowPost) {
 		try {
 			InputStream is = new BufferedInputStream(sock.getInputStream(), 4096);
 			
@@ -296,8 +298,17 @@ public class ToadletContextImpl implements ToadletContext {
 						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("cannotParseContentLengthWithError", "error", e.toString()), true, null);
 						return;
 					}
+					if(allowPost) {
 					data = bf.makeBucket(len);
 					BucketTools.copyFrom(data, is, len);
+					} else {
+						// FIXME implement skipFully() on FileUtil.
+						// Be polite: disappear the data
+						FileUtil.copy(is, new NullOutputStream(), len);
+						ctx.sendMethodNotAllowed("POST", true);
+						ctx.close();
+						return;
+					}
 				} else {
 					// we're not doing to use it, but we have to keep
 					// the compiler happy

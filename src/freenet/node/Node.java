@@ -34,7 +34,7 @@ import com.sleepycat.je.StatsConfig;
 import com.sleepycat.je.util.DbDump;
 
 import freenet.client.FetchContext;
-import freenet.clients.http.StartupToadletServer;
+import freenet.clients.http.SimpleToadletServer;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
@@ -108,6 +108,7 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.ShortCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.transport.ip.HostnameSyntaxException;
@@ -389,8 +390,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public final long lastBootID;
 	public final long bootID;
 	public final long startupTime;
-	
-	private StartupToadletServer startupPageHolder;
+
+	private SimpleToadletServer toadlets;
 	
 	public final NodeClientCore clientCore;
 	
@@ -561,9 +562,26 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Will be set up properly afterwards
 		L10n.setLanguage(L10n.FALLBACK_DEFAULT);
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
-		//a bit of a hack...
-		if (oldConfig != null && oldConfig.getBoolean("fproxy.enabled", true))
-			startupPageHolder = new StartupToadletServer(executor, oldConfig);
+		// Setup node-specific configuration
+		SubConfig nodeConfig = new SubConfig("node", config);
+		int sortOrder = 0;
+		
+		// FProxy config needs to be here too
+		SubConfig fproxyConfig = new SubConfig("fproxy", config);
+
+		try {
+			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor);
+		} catch (IOException e4) {
+			Logger.error(this, "Could not start web interface: "+e4, e4);
+			System.err.println("Could not start web interface: "+e4);
+			e4.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e4);
+		} catch (InvalidConfigValueException e4) {
+			System.err.println("Invalid config value, cannot start web interface: "+e4);
+			e4.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e4);
+		}
+		
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
@@ -590,10 +608,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		runningSSKGetUIDs = new HashSet();
 		runningCHKPutUIDs = new HashSet();
 		runningSSKPutUIDs = new HashSet();
-		
-		// Setup node-specific configuration
-		SubConfig nodeConfig = new SubConfig("node", config);
-		int sortOrder = 0;
 		
 		// Directory for node-related files other than store
 		
@@ -1399,7 +1413,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit);
 		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"), oldConfig);
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"), oldConfig, fproxyConfig, toadlets);
 
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
@@ -2941,13 +2955,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	public long getUptime() {
 		return System.currentTimeMillis() - usm.getStartedTime();
-	}
-
-	protected void killStartupToadlet() throws IOException {
-		if (startupPageHolder!=null)
-			startupPageHolder.kill();
-		// Give it a chance to be GCed
-		startupPageHolder = null;
 	}
 
 	public synchronized UdpSocketHandler[] getPacketSocketHandlers() {

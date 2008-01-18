@@ -31,6 +31,7 @@ import freenet.io.NetworkInterface;
 import freenet.io.SSLNetworkInterface;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -55,7 +56,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	String bindTo;
 	private String allowedHosts;
 	final AllowedHosts allowedFullAccess;
-	final BucketFactory bf;
+	BucketFactory bf;
 	NetworkInterface networkInterface;
 	private final LinkedList toadlets;
 	private String cssName;
@@ -65,7 +66,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private boolean ssl = false;
 	private boolean fProxyJavascriptEnabled;
 	private final PageMaker pageMaker;
-	private final NodeClientCore core;
+	private NodeClientCore core;
+	private final Executor executor;
 	private boolean doRobots;
 	
 	static boolean isPanicButtonToBeShown;
@@ -163,6 +165,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 
 		public void set(String val) throws InvalidConfigValueException {
+			if(core == null) return;
 			if(val.equals(get()) || val.equals(""))
 				cssOverride = null;
 			else {
@@ -237,13 +240,18 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
+	public synchronized void setCore(NodeClientCore core) {
+		this.core = core;
+	}
+	
 	/**
 	 * Create a SimpleToadletServer, using the settings from the SubConfig (the fproxy.*
 	 * config).
 	 */
-	public SimpleToadletServer(SubConfig fproxyConfig, NodeClientCore core) throws IOException, InvalidConfigValueException {
+	public SimpleToadletServer(SubConfig fproxyConfig, BucketFactory bucketFactory, Executor executor) throws IOException, InvalidConfigValueException {
 
-		this.core = core;
+		this.executor = executor;
+		
 		int configItemOrder = 0;
 		
 		fproxyConfig.register("enabled", true, configItemOrder++, true, true, "SimpleToadletServer.enabled", "SimpleToadletServer.enabledLong",
@@ -344,7 +352,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		doRobots = fproxyConfig.getBoolean("doRobots");
 		
 		SimpleToadletServer.isPanicButtonToBeShown = fproxyConfig.getBoolean("showPanicButton");
-		this.bf = core.tempBucketFactory;
+		this.bf = bucketFactory;
 		port = fproxyConfig.getInt("port");
 		bindTo = fproxyConfig.getString("bindTo");
 		cssName = fproxyConfig.getString("css");
@@ -368,21 +376,37 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.allowedHosts=fproxyConfig.getString("allowedHosts");
 
 		if(!enabled) {
-			Logger.normal(core, "Not starting FProxy as it's disabled");
+			Logger.normal(SimpleToadletServer.this, "Not starting FProxy as it's disabled");
 			System.out.println("Not starting FProxy as it's disabled");
 		} else {
 			maybeGetNetworkInterface();
 			myThread = new Thread(this, "SimpleToadletServer");
 			myThread.setDaemon(true);
 		}
+		
+		// Register static toadlet and startup toadlet
+		
+		StaticToadlet statictoadlet = new StaticToadlet();
+		register(statictoadlet, "/static/", true, false);
+		
+		startupToadlet = new StartupToadlet(statictoadlet);
+		register(startupToadlet, "/", true, false);
+		
+	}
+	
+	private StartupToadlet startupToadlet;
+	
+	public void removeStartupToadlet() {
+		toadlets.remove(startupToadlet);
+		// Not in the navbar.
 	}
 	
 	private void maybeGetNetworkInterface() throws IOException {
 		if (this.networkInterface!=null) return;
 		if(ssl) {
-			this.networkInterface = SSLNetworkInterface.create(port, this.bindTo, allowedHosts, core.getExecutor(), true);
+			this.networkInterface = SSLNetworkInterface.create(port, this.bindTo, allowedHosts, executor, true);
 		} else {
-			this.networkInterface = NetworkInterface.create(port, this.bindTo, allowedHosts, core.getExecutor(), true);
+			this.networkInterface = NetworkInterface.create(port, this.bindTo, allowedHosts, executor, true);
 		}
 	}		
 
@@ -415,6 +439,10 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 
+	public void unregister(Toadlet t) {
+		
+	}
+	
 	public Toadlet findToadlet(URI uri) {
 		Iterator i = toadlets.iterator();
 		while(i.hasNext()) {
@@ -457,7 +485,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 
 		void start() {
-			core.getExecutor().execute(this, "HTTP socket handler@"+hashCode());
+			executor.execute(this, "HTTP socket handler@"+hashCode());
 		}
 		
 		public void run() {
@@ -465,7 +493,11 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {
-				ToadletContextImpl.handle(sock, SimpleToadletServer.this, bf, pageMaker);
+				NodeClientCore c;
+				synchronized(SimpleToadletServer.this) {
+					c = core;
+				}
+				ToadletContextImpl.handle(sock, SimpleToadletServer.this, bf, pageMaker, c != null);
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("SimpleToadletServer request above failed.");
@@ -504,6 +536,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 
 	public String getFormPassword() {
+		if(core == null) return "";
 		return core.formPassword;
 	}
 
@@ -527,6 +560,10 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new String[] { "hidden", "formPassword", getFormPassword() });
 		
 		return formNode;
+	}
+
+	public void setBucketFactory(BucketFactory tempBucketFactory) {
+		this.bf = tempBucketFactory;
 	}
 
 }

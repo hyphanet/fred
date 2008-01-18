@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.net.URI;
 
 import freenet.client.DefaultMIMETypes;
-import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.L10n;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
@@ -16,8 +15,8 @@ import freenet.support.api.HTTPRequest;
  * Serve up static files
  */
 public class StaticToadlet extends Toadlet {
-	StaticToadlet(HighLevelSimpleClient client) {
-		super(client);
+	StaticToadlet() {
+		super(null);
 	}
 	
 	public static final String ROOT_URL = "/static/";

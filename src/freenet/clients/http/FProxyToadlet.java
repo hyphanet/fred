@@ -595,16 +595,10 @@ public class FProxyToadlet extends Toadlet {
 		return f;
 	}
 
-	public static SimpleToadletServer maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SubConfig fproxyConfig) throws IOException, InvalidConfigValueException {
-		
-		SimpleToadletServer server = null;
+	public static SimpleToadletServer maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SubConfig fproxyConfig, SimpleToadletServer server) throws IOException, InvalidConfigValueException {
 		
 		// FIXME how to change these on the fly when the interface language is changed?
 		
-		try {
-			
-			server = new SimpleToadletServer(fproxyConfig, core);
-			
 			HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
 			
 			random = new byte[32];
@@ -624,9 +618,6 @@ public class FProxyToadlet extends Toadlet {
 			
 			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
 			server.register(configtoadlet, "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);
-			
-			StaticToadlet statictoadlet = new StaticToadlet(client);
-			server.register(statictoadlet, "/static/", true, false);
 			
 			SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
 			server.register(symlinkToadlet, "/sl/", true, false);
@@ -666,13 +657,6 @@ public class FProxyToadlet extends Toadlet {
 			FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node, core);
 			server.register(firstTimeWizardToadlet, FirstTimeWizardToadlet.TOADLET_URL, true, false);
 			
-		}catch (BindException e){
-			Logger.error(core,"Failed to start FProxy port already bound: isn't Freenet already running ?", e);
-			System.err.println("Failed to start FProxy port already bound: isn't Freenet already running ?");
-			throw new InvalidConfigValueException(l10n("cantBindPort"));
-		}catch (IOException ioe) {
-			Logger.error(core,"Failed to start FProxy: "+ioe, ioe);
-		}
 		
 		fproxyConfig.finishedInitialization();
 		
