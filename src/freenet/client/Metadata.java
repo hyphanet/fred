@@ -258,7 +258,7 @@ public class Metadata implements Cloneable {
 				int len = (dis.readByte() & 0xff);
 				byte[] buf = new byte[len];
 				dis.readFully(buf);
-				Logger.normal(this, "Ignoring type "+type+" extra-client-metadata field of "+length+" bytes");
+				Logger.normal(this, "Ignoring type "+type+" extra-client-metadata field of "+len+" bytes");
 			}
 			extraMetadata = false; // can't parse, can't write
 		}
