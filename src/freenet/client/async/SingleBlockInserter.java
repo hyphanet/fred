@@ -294,7 +294,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				if(parent.isCancelled())
 					fail(new InsertException(InsertException.CANCELLED));
 				else
-					fail(new InsertException(InsertException.BUCKET_ERROR));
+					fail(new InsertException(InsertException.BUCKET_ERROR, "Empty block", null));
 				return false;
 			}
 		} catch (LowLevelPutException e) {
