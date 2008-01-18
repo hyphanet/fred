@@ -75,7 +75,7 @@ public class QueueToadlet extends Toadlet {
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
 		if(!core.hasLoadedQueue()) {
-			writeError(L10n.getString("QueueToadlet.notLoadedYetTitle"), L10n.getString("QueueToadlet.notLoadedYet"), ctx);
+			writeError(L10n.getString("QueueToadlet.notLoadedYetTitle"), L10n.getString("QueueToadlet.notLoadedYet"), ctx, false);
 			return;
 		}
 		
@@ -373,6 +373,10 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	}
 	
 	private void writeError(String header, String message, ToadletContext context) throws ToadletContextClosedException, IOException {
+		writeError(header, message, context, true);
+	}
+	
+	private void writeError(String header, String message, ToadletContext context, boolean returnToQueuePage) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = context.getPageMaker();
 		HTMLNode pageNode = pageMaker.getPageNode(header, context);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
@@ -381,7 +385,8 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-error", header));
 		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 		infoboxContent.addChild("#", message);
-		infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", "/queue/", "queue page"), new HTMLNode("#", ".") });
+		if(returnToQueuePage)
+			infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", "/queue/", "queue page"), new HTMLNode("#", ".") });
 		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
 	}
 
@@ -390,12 +395,12 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		
 		// We ensure that we have a FCP server running
 		if(!fcp.enabled){
-			writeError(L10n.getString("QueueToadlet.fcpIsMissing"), L10n.getString("QueueToadlet.pleaseEnableFCP"), ctx);
+			writeError(L10n.getString("QueueToadlet.fcpIsMissing"), L10n.getString("QueueToadlet.pleaseEnableFCP"), ctx, false);
 			return;
 		}
 		
 		if(!core.hasLoadedQueue()) {
-			writeError(L10n.getString("QueueToadlet.notLoadedYetTitle"), L10n.getString("QueueToadlet.notLoadedYet"), ctx);
+			writeError(L10n.getString("QueueToadlet.notLoadedYetTitle"), L10n.getString("QueueToadlet.notLoadedYet"), ctx, false);
 			return;
 		}
 		
