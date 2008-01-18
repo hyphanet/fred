@@ -145,7 +145,6 @@ public class ClientPut extends ClientPutBase {
 		this.data = tempData;
 		this.clientMetadata = cm;
 
-		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, client.lowLevelClient, null, targetFilename, binaryBlob);
