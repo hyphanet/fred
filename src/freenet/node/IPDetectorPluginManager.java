@@ -102,8 +102,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	private final MyUserAlert symmetricAlert;
 	private final MyUserAlert portRestrictedAlert;
 	private final MyUserAlert restrictedAlert;
-	private final MyUserAlert fullConeAlert;
-	private final MyUserAlert connectedAlert;
 	private ProxyUserAlert proxyAlert;
 	private boolean started;
 	
@@ -120,10 +118,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		portRestrictedAlert = new MyUserAlert(l10n("portRestrictedTitle"), l10n("portRestricted"), 
 				true, UserAlert.WARNING);
 		restrictedAlert = new MyUserAlert(l10n("restrictedTitle"), l10n("restricted"), 
-				false, UserAlert.MINOR);
-		fullConeAlert = new MyUserAlert(l10n("fullConeTitle"), l10n("fullCone"),
-				false, UserAlert.MINOR);
-		connectedAlert = new MyUserAlert(l10n("directTitle"), l10n("direct"),
 				false, UserAlert.MINOR);
 	}
 
@@ -634,16 +628,20 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				
 				if(countClosed > 0 && (countOpen + countFullCone + countRestricted + countPortRestricted + countSymmetric) == 0) {
 					proxyAlert.setAlert(noConnectionAlert);
+					proxyAlert.isValid(true);
 				} else if(countSymmetric > 0 && (countOpen + countFullCone + countRestricted + countPortRestricted == 0)) {
 					proxyAlert.setAlert(symmetricAlert);
+					proxyAlert.isValid(true);
 				} else if(countPortRestricted > 0 && (countOpen + countFullCone + countRestricted == 0)) {
 					proxyAlert.setAlert(portRestrictedAlert);
+					proxyAlert.isValid(true);
 				} else if(countRestricted > 0 && (countOpen + countFullCone == 0)) {
 					proxyAlert.setAlert(restrictedAlert);
+					proxyAlert.isValid(true);
 				} else if(countFullCone > 0 && countOpen == 0) {
-					proxyAlert.setAlert(fullConeAlert);
+					proxyAlert.isValid(false);
 				} else if(countOpen > 0) {
-					proxyAlert.setAlert(connectedAlert);
+					proxyAlert.isValid(false);
 				}
 				detector.processDetectedIPs(list);
 			} finally {
