@@ -378,13 +378,10 @@ public final class RequestSender implements Runnable, ByteCounter {
             		// Subtract 1% for good measure / to compensate for dodgy clocks
             		timeLeft -= origTimeLeft / 100;
             		
-            		if(timeLeft <= 0) {
-            			// No timeout left, so we can retry: try another node.
-            			break;
-            		} else {
-            			// Some timeout left
-            			finish(RECENTLY_FAILED, next);
-            		}
+           			// Kill the request, regardless of whether there is timeout left.
+            		// If there is, we will avoid sending requests for the specified period.
+            		// FIXME we need to create the FT entry.
+           			finish(RECENTLY_FAILED, next);
             		return;
             	}
             	
