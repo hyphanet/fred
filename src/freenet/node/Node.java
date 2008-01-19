@@ -1776,6 +1776,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		
 		synchronized(requestSenders) {
+			
+			// Request coalescing causes deadlocks due to A joining B joining C joining A. 
+			// Turn it off until we can properly fix it.
+			
 //			// Request coalescing
 //			KeyHTLPair kh = new KeyHTLPair(key, htl);
 //			sender = (RequestSender) requestSenders.get(kh);
