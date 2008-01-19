@@ -1776,13 +1776,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		
 		synchronized(requestSenders) {
-			// Request coalescing
-			KeyHTLPair kh = new KeyHTLPair(key, htl);
-			sender = (RequestSender) requestSenders.get(kh);
-			if(sender != null && !sender.isLocalRequestSearch()) {
-				if(logMINOR) Logger.minor(this, "Found sender: "+sender+" for "+uid);
-				return sender;
-			}
+//			// Request coalescing
+//			KeyHTLPair kh = new KeyHTLPair(key, htl);
+//			sender = (RequestSender) requestSenders.get(kh);
+//			if(sender != null && !sender.isLocalRequestSearch()) {
+//				if(logMINOR) Logger.minor(this, "Found sender: "+sender+" for "+uid);
+//				return sender;
+//			}
 			
 			sender = new RequestSender(key, null, htl, uid, this, closestLocation, resetClosestLocation, source);
 			// RequestSender adds itself to requestSenders
