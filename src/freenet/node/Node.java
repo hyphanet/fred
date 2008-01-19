@@ -1779,7 +1779,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			// Request coalescing
 			KeyHTLPair kh = new KeyHTLPair(key, htl);
 			sender = (RequestSender) requestSenders.get(kh);
-			if(sender != null) {
+			if(sender != null && !sender.isLocalRequestSearch()) {
 				if(logMINOR) Logger.minor(this, "Found sender: "+sender+" for "+uid);
 				return sender;
 			}

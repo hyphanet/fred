@@ -851,4 +851,8 @@ public final class RequestSender implements Runnable, ByteCounter {
 	synchronized int getRecentlyFailedTimeLeft() {
 		return recentlyFailedTimeLeft;
 	}
+	
+	public boolean isLocalRequestSearch() {
+		return (source==null);
+	}
 }
