@@ -54,9 +54,17 @@ public class Serializer {
 
 	public static Object readFromDataInputStream(Class type, DataInputStream dis) throws IOException {
 		if (type.equals(Boolean.class)) {
-			return Boolean.valueOf(dis.read() == 1);
+			int bool=dis.read();
+			if (bool==1)
+				return Boolean.TRUE;
+			if (bool==0)
+				return Boolean.FALSE;
+			throw new IOException("Boolean is non boolean value: "+bool);
 		} else if (type.equals(Byte.class)) {
-			return new Byte((byte) dis.read());
+			int b=dis.read();
+			if (b<0)
+				throw new IOException();
+			return new Byte((byte)b);
 		} else if (type.equals(Short.class)) {
 			return new Short(dis.readShort());
 		} else if (type.equals(Integer.class)) {
