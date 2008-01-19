@@ -1777,16 +1777,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		synchronized(requestSenders) {
 			
-			// Request coalescing causes deadlocks due to A joining B joining C joining A. 
-			// Turn it off until we can properly fix it.
-			
-//			// Request coalescing
-//			KeyHTLPair kh = new KeyHTLPair(key, htl);
-//			sender = (RequestSender) requestSenders.get(kh);
-//			if(sender != null && !sender.isLocalRequestSearch()) {
-//				if(logMINOR) Logger.minor(this, "Found sender: "+sender+" for "+uid);
-//				return sender;
-//			}
+			// No request coalescing.
+			// Given that HTL can be reset (also if we had no HTL),
+			// request coalescing causes deadlocks: Request A joins request B, which then
+			// joins request A. There are various convoluted fixes, but IMHO
+			// the best solution long term is to kill the request (RecentlyFailed with 
+			// 0 timeout so it doesn't prevent future requests), and send it the data 
+			// through ULPRs if it is found.
 			
 			sender = new RequestSender(key, null, htl, uid, this, closestLocation, resetClosestLocation, source);
 			// RequestSender adds itself to requestSenders
