@@ -3485,13 +3485,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Should only be called by completedHandshake() after we're happy
 	 * with the connection
 	 */
-	private void sendConnectedDiffNoderef() {
+	protected void sendConnectedDiffNoderef() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		SimpleFieldSet nfs = null;
 		if(isDarknet()) {
-			node.exportDarknetPublicFieldSet();
+			nfs = node.exportDarknetPublicFieldSet();
 		} else if(isOpennet()) {
-			node.exportOpennetPublicFieldSet();
+			nfs = node.exportOpennetPublicFieldSet();
 		} else {
 			// What else is there that a differential node reference would care about?  Add it here if needed
 			return;
