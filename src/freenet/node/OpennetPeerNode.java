@@ -97,4 +97,10 @@ public class OpennetPeerNode extends PeerNode {
 		} else return false;
 	}
 	
+	/**
+	 * A method to be called once at the beginning of every time isConnected() is true
+	 */
+	protected void onConnect() {
+		sendConnectedDiffNoderef();
+	}
 }
