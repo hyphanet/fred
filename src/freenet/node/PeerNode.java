@@ -3472,9 +3472,48 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	/**
-	 * A method to be to queue an N2NM in a extra peer data file, only implemented by DarknetPeerNode
+	 * A method to queue an N2NM in a extra peer data file, only implemented by DarknetPeerNode
 	 */
 	public void queueN2NM(SimpleFieldSet fs) {
 		// Do nothing in the default impl
+	}
+
+	/**
+	 * A method to be called after completing a handshake to send the
+	 * newly connected peer, as a differential node reference, the
+	 * parts of our node reference not needed for handshake.
+	 * Should only be called by completedHandshake() after we're happy
+	 * with the connection
+	 */
+	private void sendConnectedDiffNoderef() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		SimpleFieldSet nfs = null;
+		if(isDarknet()) {
+			node.exportDarknetPublicFieldSet();
+		} else if(isOpennet()) {
+			node.exportOpennetPublicFieldSet();
+		} else {
+			// What else is there that a differential node reference would care about?  Add it here if needed
+			return;
+		}
+		if(null != nfs.get("ark.pubURI")) {
+			fs.putOverwrite("ark.pubURI", nfs.get("ark.pubURI"));
+		}
+		if(null != nfs.get("ark.number")) {
+			fs.putOverwrite("ark.number", nfs.get("ark.number"));
+		}
+		if(isDarknet() && null != nfs.get("myName")) {
+			fs.putOverwrite("myName", nfs.get("myName"));
+		}
+		String[] physicalUDPEntries = nfs.getAll("physical.udp");
+		if(physicalUDPEntries != null) {
+			fs.putOverwrite("physical.udp", physicalUDPEntries);
+		}
+		if(!fs.isEmpty()) {
+			if(logMINOR) Logger.minor(this, "fs is '" + fs.toString() + "'");
+			sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_DIFFNODEREF, false, 0, false);
+		} else {
+			if(logMINOR) Logger.minor(this, "fs is empty");
+		}
 	}
 }
