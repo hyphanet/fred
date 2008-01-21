@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
@@ -568,12 +567,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			Runnable r = new Runnable() {
 				public void run() {
 					try {
-						synchronized(shrinkLock) { if(shrinking) return; shrinking = true; };
+						synchronized(shrinkLock) { if(shrinking) return; shrinking = true; }
 						maybeQuickShrink(false);
 					} catch (Throwable t) {
 						Logger.error(this, "Online shrink failed: "+t, t);
 					} finally {
-						synchronized(shrinkLock) { shrinking = false; };
+						synchronized(shrinkLock) { shrinking = false; }
 					}
 				}
 			};
@@ -833,7 +832,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.out.println("Completing shrink"); // FIXME remove
 		
 		int totalUnwantedBlocks = unwantedMoveNums.length+freeEarlySlots.length;
-		WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, 5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100));
+		WrapperManager.signalStarting(Math.min(Integer.MAX_VALUE, 5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100));
 		// If there are any slots left over, they must be free.
 		freeBlocks.clear();
 		t = environment.beginTransaction(null,null);
@@ -1491,7 +1490,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 		} catch(Throwable ex) {  // FIXME: ugly
 			if(t!=null){
-				try{t.abort();}catch(DatabaseException ex2){};
+				try{t.abort();}catch(DatabaseException ex2){}
 			}
 			checkSecondaryDatabaseError(ex);
 			Logger.error(this, "Caught "+ex, ex);
