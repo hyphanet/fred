@@ -13,7 +13,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-
 package freenet.crypt;
 
 import java.io.FileInputStream;
@@ -57,132 +56,132 @@ public class SSL {
 	public static boolean available() {
 		return (ssf != null);
 	}
-	
+
 	/**
 	 * Configure SSL support
 	 * @param sslConfig
 	 */
 	public static void init(SubConfig sslConfig) {
 		int configItemOrder = 0;
-		
+
 		// Tracks config parameters related to a SSL
 		sslConfig.register("sslEnable", false, configItemOrder++, true, true, "SSL.enable", "SSL.enableLong",
 			new BooleanCallback() {
+
 				public boolean get() {
 					return enable;
 				}
-				
+
 				public void set(boolean newValue) throws InvalidConfigValueException {
-					if (newValue != get()) {
+					if(newValue != get()) {
 						enable = newValue;
-						if(enable) {
+						if(enable)
 							try {
 								loadKeyStore();
-						    	createSSLContext();
-							} catch (Exception e) {
+								createSSLContext();
+							} catch(Exception e) {
 								enable = false;
 								e.printStackTrace(System.out);
-					    		throw new InvalidConfigValueException("Cannot enabled ssl, config error");
+								throw new InvalidConfigValueException("Cannot enabled ssl, config error");
 							}
-						} else {
+						else {
 							ssf = null;
 							keyStore = null;
 						}
 					}
 				}
-			}
-		);
+			});
 
 		sslConfig.register("sslKeyStore", "datastore/certs", configItemOrder++, true, true, "SSL.keyStore", "SSL.keyStoreLong",
 			new StringCallback() {
+
 				public String get() {
 					return keyStore;
 				}
-				
+
 				public void set(String newKeyStore) throws InvalidConfigValueException {
-					if (!newKeyStore.equals(get())) {
+					if(!newKeyStore.equals(get())) {
 						String oldKeyStore = keyStore;
 						keyStore = newKeyStore;
 						try {
 							loadKeyStore();
-						} catch (Exception e) {
+						} catch(Exception e) {
 							keyStore = oldKeyStore;
 							e.printStackTrace(System.out);
-				    		throw new InvalidConfigValueException("Cannot change keystore file");
+							throw new InvalidConfigValueException("Cannot change keystore file");
 						}
 					}
 				}
-			}
-		);
+			});
 
 		sslConfig.register("sslKeyStorePass", "freenet", configItemOrder++, true, true, "SSL.keyStorePass", "SSL.keyStorePassLong",
 			new StringCallback() {
+
 				public String get() {
 					return keyStorePass;
 				}
-				
+
 				public void set(String newKeyStorePass) throws InvalidConfigValueException {
-					if (!newKeyStorePass.equals(get())) {
+					if(!newKeyStorePass.equals(get())) {
 						String oldKeyStorePass = keyStorePass;
 						keyStorePass = newKeyStorePass;
-				    	try {
-				    		storeKeyStore();
-				    	} catch (Exception e) {
-				    		keyStorePass = oldKeyStorePass;
+						try {
+							storeKeyStore();
+						} catch(Exception e) {
+							keyStorePass = oldKeyStorePass;
 							e.printStackTrace(System.out);
-				    		throw new InvalidConfigValueException("Cannot change keystore password");
-				    	}
+							throw new InvalidConfigValueException("Cannot change keystore password");
+						}
 					}
 				}
-			}
-		);
-		
+			});
+
 		sslConfig.register("sslKeyPass", "freenet", configItemOrder++, true, true, "SSL.keyPass", "SSL.keyPassLong",
 			new StringCallback() {
+
 				public String get() {
 					return keyPass;
 				}
-				
+
 				public void set(String newKeyPass) throws InvalidConfigValueException {
-					if (!newKeyPass.equals(get())) {
+					if(!newKeyPass.equals(get())) {
 						String oldKeyPass = keyPass;
 						keyPass = newKeyPass;
 						try {
 							Certificate[] chain = keystore.getCertificateChain("freenet");
 							Key privKey = keystore.getKey("freenet", oldKeyPass.toCharArray());
-					    	keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
-					    	createSSLContext();
-						} catch (Exception e) {
+							keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
+							createSSLContext();
+						} catch(Exception e) {
 							keyPass = oldKeyPass;
 							e.printStackTrace(System.out);
-				    		throw new InvalidConfigValueException("Cannot change private key password");
+							throw new InvalidConfigValueException("Cannot change private key password");
 						}
 					}
 				}
-			}
-		);
-		
+			});
+
 		sslConfig.register("sslVersion", "SSLv3", configItemOrder++, true, true, "SSL.version", "SSL.versionLong",
 			new StringCallback() {
+
 				public String get() {
 					return version;
 				}
-				
+
 				public void set(String newVersion) throws InvalidConfigValueException {
-					if (!newVersion.equals(get())) {
+					if(!newVersion.equals(get())) {
 						String oldVersion = version;
 						version = newVersion;
 						try {
 							createSSLContext();
-						} catch (Exception e) {
+						} catch(Exception e) {
 							version = oldVersion;
 							e.printStackTrace(System.out);
-				    		throw new InvalidConfigValueException("Cannot change ssl version, wrong value");
+							throw new InvalidConfigValueException("Cannot change ssl version, wrong value");
 						}
 					}
 				}
-			}
-		);
+			});
 
 		enable = sslConfig.getBoolean("sslEnable");
 		keyStore = sslConfig.getString("sslKeyStore");
@@ -193,24 +192,24 @@ public class SSL {
 		try {
 			keystore = KeyStore.getInstance("PKCS12");
 			loadKeyStore();
-	    	createSSLContext();
-		} catch (Exception e) {
+			createSSLContext();
+		} catch(Exception e) {
 			Logger.error(SSL.class, "Cannot load keystore, ssl is disable", e);
 		}
 
 	}
-	
+
 	/**
 	 * Create ServerSocket with ssl support
 	 * @return ServerSocket with ssl support
 	 * @throws IOException
 	 */
 	public static ServerSocket createServerSocket() throws IOException {
-		if(ssf == null) 
+		if(ssf == null)
 			throw new IOException("SSL not initialized");
 		return ssf.createServerSocket();
 	}
-	
+
 	private static void loadKeyStore() throws Exception {
 		if(enable) {
 			// A keystore is where keys and certificates are kept
@@ -219,31 +218,30 @@ public class SSL {
 			try {
 				fis = new FileInputStream(keyStore);
 				keystore.load(fis, keyStorePass.toCharArray());
-			} catch (FileNotFoundException fnfe) {
+			} catch(FileNotFoundException fnfe) {
 				//If keystore not exist, create keystore and server certificat
 				keystore.load(null, keyStorePass.toCharArray());
 				CertAndKeyGen keypair = new CertAndKeyGen("DSA", "SHA1WithDSA");
-				X500Name x500Name = new X500Name (
-						"Freenet",
-						"Freenet",
-						"Freenet",
-						"",
-						"",
-						""
-					);
+				X500Name x500Name = new X500Name(
+					"Freenet",
+					"Freenet",
+					"Freenet",
+					"",
+					"",
+					"");
 				keypair.generate(1024);
 				PrivateKey privKey = keypair.getPrivateKey();
 				X509Certificate[] chain = new X509Certificate[1];
-				chain[0] = keypair.getSelfCertificate(x500Name, 1L*365*24*60*60);
-		    	keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
-		    	storeKeyStore();
-		    	createSSLContext();
+				chain[0] = keypair.getSelfCertificate(x500Name, 1L * 365 * 24 * 60 * 60);
+				keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
+				storeKeyStore();
+				createSSLContext();
 			} finally {
 				Closer.close(fis);
 			}
 		}
 	}
-	
+
 	private static void storeKeyStore() throws Exception {
 		if(enable) {
 			FileOutputStream fos = new FileOutputStream(keyStore);
@@ -251,7 +249,7 @@ public class SSL {
 			fos.close();
 		}
 	}
-	
+
 	private static void createSSLContext() throws Exception {
 		if(enable) {
 			// A KeyManagerFactory is used to create key managers
