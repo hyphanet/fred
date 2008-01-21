@@ -2156,7 +2156,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			throw new FSParseException(e1);
 		}
 
-		if(!forDiffNodeRef || refHadPhysicalUDP) {
+		// Don't act as if we got an empty physical.udp if we didn't
+		// even have that field in our ref for builds 1102 and later,
+		// making the physical.udp field itself clearly optional in all
+		// new-ref-for-existing-peer contexts
+		if(refHadPhysicalUDP || (!forDiffNodeRef && 1102 > simpleVersion)) {
 			if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()]))) {
 				changedAnything = true;
 				lastAttemptedHandshakeIPUpdateTime = 0;
