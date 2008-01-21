@@ -36,6 +36,7 @@ import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
 
+import freenet.support.io.Closer;
 import sun.security.x509.X500Name;
 import sun.security.x509.CertAndKeyGen;
 
@@ -48,10 +49,6 @@ public class SSL {
 	private static String keyStorePass;
 	private static String keyPass;
 	private static String version;
-
-	private SSL() {
-		
-	}
 
 	/**
 	 * Call this function before ask ServerSocket
@@ -218,8 +215,9 @@ public class SSL {
 		if(enable) {
 			// A keystore is where keys and certificates are kept
 			// Both the keystore and individual private keys should be password protected
+			FileInputStream fis = null;
 			try {
-				FileInputStream fis = new FileInputStream(keyStore);
+				fis = new FileInputStream(keyStore);
 				keystore.load(fis, keyStorePass.toCharArray());
 			} catch (FileNotFoundException fnfe) {
 				//If keystore not exist, create keystore and server certificat
@@ -240,6 +238,8 @@ public class SSL {
 		    	keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
 		    	storeKeyStore();
 		    	createSSLContext();
+			} finally {
+				Closer.close(fis);
 			}
 		}
 	}
