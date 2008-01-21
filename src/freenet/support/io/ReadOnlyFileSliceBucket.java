@@ -73,7 +73,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		// Do nothing
 	}
 
-	class MyInputStream extends InputStream {
+	private class MyInputStream extends InputStream {
 
 		private RandomAccessFile f;
 		private long ptr; // relative to startAt
@@ -116,7 +116,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		}
 	}
 
-	public class ReadOnlyFileSliceBucketException extends IOException {
+	public static class ReadOnlyFileSliceBucketException extends IOException {
 		private static final long serialVersionUID = -1;
 		
 		public ReadOnlyFileSliceBucketException(FileNotFoundException e) {

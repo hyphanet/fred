@@ -105,7 +105,7 @@ public class FileLoggerHook extends LoggerHook {
 	protected final LinkedList logFiles = new LinkedList();
 	private long oldLogFilesDiskSpaceUsage = 0;
 
-	class OldLogFile {
+	private static class OldLogFile {
 		public OldLogFile(File currentFilename, long startTime, long endTime, long length) {
 			this.filename = currentFilename;
 			this.start = startTime;
@@ -163,7 +163,7 @@ public class FileLoggerHook extends LoggerHook {
 			throw new IntervalParseException("invalid interval " + intervalName);
 	}
 
-	public class IntervalParseException extends Exception {
+	public static class IntervalParseException extends Exception {
 
 		private static final long serialVersionUID = 69847854744673572L;
 

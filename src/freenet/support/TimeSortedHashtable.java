@@ -11,7 +11,7 @@ import java.util.TreeSet;
  */
 public class TimeSortedHashtable {
 
-	private class Element {
+	private static class Element {
 		
 		Element(long t, Comparable v) {
 			time = t;
@@ -29,7 +29,7 @@ public class TimeSortedHashtable {
 		}
 	}
 
-	private class MyComparator implements Comparator {
+	private static class MyComparator implements Comparator {
 
 		public int compare(Object arg0, Object arg1) {
 			if(arg0 instanceof Long && arg1 instanceof Long) return ((Long)arg0).compareTo((Long)arg1);

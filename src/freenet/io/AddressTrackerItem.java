@@ -143,7 +143,7 @@ public class AddressTrackerItem {
 		return longestGap;
 	}
 
-	public class Gap {
+	public static class Gap {
 		public final long gapLength;
 		public final long receivedPacketAt;
 		Gap(long gapLength, long receivedPacketAt) {

@@ -50,7 +50,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		return sb.toString();
 	}
 
-	class UpdateThingy {
+	private static class UpdateThingy {
 		public UpdateThingy(String first, String form) {
 			this.firstBit = first;
 			this.formText = form;

@@ -50,7 +50,7 @@ public class StatisticsToadlet extends Toadlet {
 
 	}
 
-	private class STMessageCount {
+	private static class STMessageCount {
 		public String messageName;
 		public int messageCount;
 
@@ -567,7 +567,7 @@ public class StatisticsToadlet extends Toadlet {
 			}
 		});
 		for (int countsArrayIndex = 0, countsArrayCount = unclaimedFIFOMessageCountsArray.length; countsArrayIndex < countsArrayCount; countsArrayIndex++) {
-			STMessageCount messageCountItem = (STMessageCount) unclaimedFIFOMessageCountsArray[countsArrayIndex];
+			STMessageCount messageCountItem = unclaimedFIFOMessageCountsArray[countsArrayIndex];
 			int thisMessageCount = messageCountItem.messageCount;
 			double thisMessagePercentOfTotal = ((double) thisMessageCount) / ((double) totalCount);
 			unclaimedFIFOMessageCountsList.addChild("li", "" + messageCountItem.messageName + ":\u00a0" + thisMessageCount + "\u00a0(" + fix3p1pct.format(thisMessagePercentOfTotal) + ')');
@@ -908,7 +908,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 
-	class ThreadBunch {
+	private static class ThreadBunch {
 		public ThreadBunch(String name2, int i) {
 			this.name = name2;
 			this.count = i;

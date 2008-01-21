@@ -191,7 +191,7 @@ public class IOStatisticCollector {
 	
 	
 	
-	private class StatisticEntry {
+	private static class StatisticEntry {
 		private int recieved[];
 		private int sent[];
 		

@@ -20,7 +20,7 @@ import freenet.l10n.L10n;
  */
 class UpdateDeployContext {
 
-	public class UpdateCatastropheException extends Exception {
+	public static class UpdateCatastropheException extends Exception {
 
 		private static final long serialVersionUID = 1L;
 		File oldConfig;

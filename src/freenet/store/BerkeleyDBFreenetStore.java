@@ -1725,7 +1725,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	/**
 	* Used to create the secondary database sorted on accesstime
 	*/
-	private class AccessTimeKeyCreator implements SecondaryKeyCreator {
+	private static class AccessTimeKeyCreator implements SecondaryKeyCreator {
 		private TupleBinding theBinding;
 		
 		public AccessTimeKeyCreator(TupleBinding theBinding1) {
@@ -1743,7 +1743,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
-	private class BlockNumberKeyCreator implements SecondaryKeyCreator {
+	private static class BlockNumberKeyCreator implements SecondaryKeyCreator {
 		private TupleBinding theBinding;
 		
 		public BlockNumberKeyCreator(TupleBinding theBinding1) {

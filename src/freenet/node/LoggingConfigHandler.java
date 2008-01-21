@@ -23,7 +23,7 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 
 public class LoggingConfigHandler {
-	private class PriorityCallback implements StringCallback, EnumerableOptionCallback {
+	private static class PriorityCallback implements StringCallback, EnumerableOptionCallback {
 		private final String[] possibleValues = new String[]{ "ERROR", "NORMAL", "MINOR", "DEBUG" };
 
 		public String get() {

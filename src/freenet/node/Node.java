@@ -163,7 +163,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 	
-	private class L10nCallback implements StringCallback, EnumerableOptionCallback {
+	private static class L10nCallback implements StringCallback, EnumerableOptionCallback {
 		
 		public String get() {
 			return L10n.getSelectedLanguage();

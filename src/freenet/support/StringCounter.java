@@ -15,7 +15,7 @@ public class StringCounter {
 
 	private final HashMap map;
 	
-	private class Item {
+	private static class Item {
 		public Item(String string2) {
 			this.string = string2;
 		}

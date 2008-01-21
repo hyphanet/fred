@@ -27,7 +27,7 @@ public class FCPConnectionHandler {
 		}
 	}
 	
-	public class DDACheckJob {
+	public static class DDACheckJob {
 		final File directory, readFilename, writeFilename;
 		final String readContent, writeContent; 
 		

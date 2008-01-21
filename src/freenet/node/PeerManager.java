@@ -487,7 +487,7 @@ public class PeerManager {
     	}
     }
 
-    class LocationUIDPair implements Comparable {
+    protected static class LocationUIDPair implements Comparable {
     	double location;
     	long uid;
     	
