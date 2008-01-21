@@ -13,7 +13,6 @@ import java.io.RandomAccessFile;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
-
 /**
  * FIXME: implement a hash verifying version of this.
  */
@@ -22,33 +21,36 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	private final File file;
 	private final long startAt;
 	private final long length;
-	
+
 	public ReadOnlyFileSliceBucket(File f, long startAt, long length) {
 		this.file = f;
 		this.startAt = startAt;
 		this.length = length;
 	}
-	
-    public ReadOnlyFileSliceBucket(SimpleFieldSet fs) throws CannotCreateFromFieldSetException {
-   		String tmp = fs.get("Filename");
-   		if(tmp == null) throw new CannotCreateFromFieldSetException("No filename");
-   		this.file = new File(tmp);
-   		tmp = fs.get("Length");
-   		if(tmp == null) throw new CannotCreateFromFieldSetException("No length");
-   		try {
-   			length = Long.parseLong(tmp);
-   		} catch (NumberFormatException e) {
-   			throw new CannotCreateFromFieldSetException("Corrupt length "+tmp, e);
-   		}
-   		tmp = fs.get("Offset");
-   		if(tmp == null) throw new CannotCreateFromFieldSetException("No offset");
-   		try {
-   			startAt = Long.parseLong(tmp);
-   		} catch (NumberFormatException e) {
-   			throw new CannotCreateFromFieldSetException("Corrupt offset "+tmp, e);
-   		}
+
+	public ReadOnlyFileSliceBucket(SimpleFieldSet fs) throws CannotCreateFromFieldSetException {
+		String tmp = fs.get("Filename");
+		if(tmp == null)
+			throw new CannotCreateFromFieldSetException("No filename");
+		this.file = new File(tmp);
+		tmp = fs.get("Length");
+		if(tmp == null)
+			throw new CannotCreateFromFieldSetException("No length");
+		try {
+			length = Long.parseLong(tmp);
+		} catch(NumberFormatException e) {
+			throw new CannotCreateFromFieldSetException("Corrupt length " + tmp, e);
+		}
+		tmp = fs.get("Offset");
+		if(tmp == null)
+			throw new CannotCreateFromFieldSetException("No offset");
+		try {
+			startAt = Long.parseLong(tmp);
+		} catch(NumberFormatException e) {
+			throw new CannotCreateFromFieldSetException("Corrupt offset " + tmp, e);
+		}
 	}
-    
+
 	public OutputStream getOutputStream() throws IOException {
 		throw new IOException("Bucket is read-only");
 	}
@@ -58,7 +60,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	}
 
 	public String getName() {
-		return "ROFS:"+file.getAbsolutePath()+ ':' +startAt+ ':' +length;
+		return "ROFS:" + file.getAbsolutePath() + ':' + startAt + ':' + length;
 	}
 
 	public long size() {
@@ -70,34 +72,35 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	}
 
 	public void setReadOnly() {
-		// Do nothing
+	// Do nothing
 	}
 
 	private class MyInputStream extends InputStream {
 
 		private RandomAccessFile f;
 		private long ptr; // relative to startAt
-		
+
 		MyInputStream() throws IOException {
 			try {
-				this.f = new RandomAccessFile(file,"r");
+				this.f = new RandomAccessFile(file, "r");
 				f.seek(startAt);
-				if(f.length() < (startAt+length))
-					throw new ReadOnlyFileSliceBucketException("File truncated? Length "+f.length()+" but start at "+startAt+" for "+length+" bytes");
+				if(f.length() < (startAt + length))
+					throw new ReadOnlyFileSliceBucketException("File truncated? Length " + f.length() + " but start at " + startAt + " for " + length + " bytes");
 				ptr = 0;
-			} catch (FileNotFoundException e) {
+			} catch(FileNotFoundException e) {
 				throw new ReadOnlyFileSliceBucketException(e);
 			}
 		}
-		
+
 		public int read() throws IOException {
 			if(ptr >= length)
 				return -1;
 			int x = f.read();
-			if(x != -1) ptr++;
+			if(x != -1)
+				ptr++;
 			return x;
 		}
-		
+
 		public int read(byte[] buf, int offset, int len) throws IOException {
 			if(ptr >= length)
 				return -1;
@@ -106,7 +109,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 			ptr += x;
 			return x;
 		}
-		
+
 		public int read(byte[] buf) throws IOException {
 			return read(buf, 0, buf.length);
 		}
@@ -117,20 +120,21 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	}
 
 	public static class ReadOnlyFileSliceBucketException extends IOException {
+
 		private static final long serialVersionUID = -1;
-		
+
 		public ReadOnlyFileSliceBucketException(FileNotFoundException e) {
-			super("File not found: "+e.getMessage());
+			super("File not found: " + e.getMessage());
 			initCause(e);
 		}
 
 		public ReadOnlyFileSliceBucketException(String string) {
 			super(string);
 		}
-		
 	}
 
-	public void free() {}
+	public void free() {
+	}
 
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
@@ -140,5 +144,4 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		fs.put("Length", length);
 		return fs;
 	}
-	
 }
