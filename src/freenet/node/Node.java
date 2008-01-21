@@ -1796,24 +1796,26 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	static class KeyHTLPair {
 		final Key key;
 		final short htl;
-		KeyHTLPair(Key key, short htl) {
+		final long uid;
+		KeyHTLPair(Key key, short htl, long uid) {
 			this.key = key;
 			this.htl = htl;
+			this.uid = uid;
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof KeyHTLPair) {
 				KeyHTLPair p = (KeyHTLPair) o;
-				return (p.key.equals(key) && (p.htl == htl));
+				return (p.key.equals(key) && (p.htl == htl) && (p.uid==uid));
 			} else return false;
 		}
 		
 		public int hashCode() {
-			return key.hashCode() ^ htl;
+			return key.hashCode() ^ htl ^ (int)uid;
 		}
 		
 		public String toString() {
-			return key.toString()+ ':' +htl;
+			return key.toString()+ ':' +htl +':'+uid;
 		}
 	}
 
@@ -1822,7 +1824,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public void addRequestSender(Key key, short htl, RequestSender sender) {
 		synchronized(requestSenders) {
-			KeyHTLPair kh = new KeyHTLPair(key, htl);
+			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.uid);
 			if(requestSenders.containsKey(kh)) {
 				RequestSender rs = (RequestSender) requestSenders.get(kh);
 				Logger.error(this, "addRequestSender(): KeyHTLPair '"+kh+"' already in requestSenders as "+rs+" and you want to add "+sender);
@@ -1837,7 +1839,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public void addInsertSender(Key key, short htl, AnyInsertSender sender) {
 		synchronized(insertSenders) {
-			KeyHTLPair kh = new KeyHTLPair(key, htl);
+			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.getUID());
 			if(insertSenders.containsKey(kh)) {
 				AnyInsertSender is = (AnyInsertSender) insertSenders.get(kh);
 				Logger.error(this, "addInsertSender(): KeyHTLPair '"+kh+"' already in insertSenders as "+is+" and you want to add "+sender);
@@ -2049,7 +2051,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public void removeRequestSender(Key key, short htl, RequestSender sender) {
 		synchronized(requestSenders) {
-			KeyHTLPair kh = new KeyHTLPair(key, htl);
+			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.uid);
 			RequestSender rs = (RequestSender) requestSenders.remove(kh);
 			if(rs != sender) {
 				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+ ',' +htl+" in removeRequestSender");
@@ -2063,7 +2065,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public void removeInsertSender(Key key, short htl, AnyInsertSender sender) {
 		synchronized(insertSenders) {
-			KeyHTLPair kh = new KeyHTLPair(key, htl);
+			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.getUID());
 			AnyInsertSender is = (AnyInsertSender) insertSenders.remove(kh);
 			if(is != sender) {
 				Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+ ',' +htl+" in removeInsertSender");
@@ -2112,7 +2114,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc, boolean cache) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
-		KeyHTLPair kh = new KeyHTLPair(key, htl);
+		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		CHKInsertSender is = null;
 		synchronized(insertSenders) {
 			is = (CHKInsertSender) insertSenders.get(kh);
@@ -2150,7 +2152,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(cache)
 			cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble()));
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
-		KeyHTLPair kh = new KeyHTLPair(key, htl);
+		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		SSKInsertSender is = null;
 		synchronized(insertSenders) {
 			is = (SSKInsertSender) insertSenders.get(kh);
