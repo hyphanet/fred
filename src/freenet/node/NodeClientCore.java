@@ -116,16 +116,16 @@ public class NodeClientCore implements Persistable {
 	static final int MAX_CACHED_ELEMENTS = 256*1024; // equally arbitrary! FIXME hopefully we can cache many of these though
 	
 	private UserAlert startingUpAlert;
+	private final Thread backgroundBlockEncoderThread;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets) throws NodeInitException {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
-		Thread t = new Thread(backgroundBlockEncoder, "Background block encoder");
-		t.setDaemon(true);
-		t.setPriority(Thread.MIN_PRIORITY);
-		t.start();
+		backgroundBlockEncoderThread = new Thread(backgroundBlockEncoder, "Background block encoder");
+		backgroundBlockEncoderThread.setDaemon(true);
+		backgroundBlockEncoderThread.setPriority(Thread.MIN_PRIORITY);
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
@@ -415,7 +415,7 @@ public class NodeClientCore implements Persistable {
 	}
 
 	public void start(Config config) throws NodeInitException {
-
+		backgroundBlockEncoderThread.start();
 		persister.start();
 		if(fcpServer != null)
 			fcpServer.maybeStart();
