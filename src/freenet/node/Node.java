@@ -2611,6 +2611,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				Logger.error(this, "IOException while parsing node to node message data", e);
 				return;
 			}
+			if(fs.get("n2nType") != null) {
+				fs.removeValue("n2nType");
+			}
 			try {
 				src.processDiffNoderef(fs);
 			} catch (FSParseException e) {
