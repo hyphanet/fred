@@ -63,6 +63,8 @@ public class BlockTransmitter {
 	final DoubleTokenBucket _masterThrottle;
 	final ByteCounter _ctr;
 	final int PACKET_SIZE;
+	private boolean asyncExitStatus;
+	private boolean asyncExitStatusSet;
 	
 	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, DoubleTokenBucket masterThrottle, ByteCounter ctr) {
 		_usm = usm;
@@ -289,7 +291,16 @@ public class BlockTransmitter {
 	 */
 	public void sendAsync(final Executor executor) {
 		executor.execute(new Runnable() {
-			public void run() { send(executor); } },
+			public void run() {
+						 try {
+						    asyncExitStatus=send(executor);
+						 } finally {
+						    synchronized (BlockTransmitter.this) {
+						       asyncExitStatusSet=true;
+						       BlockTransmitter.this.notifyAll();
+						    }
+						 }
+					} },
 			"BlockTransmitter:sendAsync() for "+this);
 	}
 
@@ -303,6 +314,19 @@ public class BlockTransmitter {
 				}
 			}
 		}
+	}
+	
+	public boolean getAsyncExitStatus() {
+		synchronized (this) {
+			while (!asyncExitStatusSet) {
+				try {
+					this.wait(10*1000);
+				} catch (InterruptedException e) {
+					//ignore
+				}
+			}
+		}
+		return asyncExitStatus;
 	}
 
 	public PeerContext getDestination() {

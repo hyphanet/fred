@@ -3,7 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
@@ -70,6 +72,8 @@ public final class RequestSender implements Runnable, ByteCounter {
     private byte[] sskData;
     private SSKBlock block;
     private boolean hasForwarded;
+	
+	private ArrayList listeners=new ArrayList();
     
     // Terminal status
     // Always set finished AFTER setting the reason flag
@@ -433,7 +437,8 @@ public final class RequestSender implements Runnable, ByteCounter {
                 		synchronized(this) {
                 			notifyAll();
                 		}
-                		
+                		fireCHKTransferBegins();
+						
                 		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this);
                 		
                 		try {
@@ -580,10 +585,13 @@ public final class RequestSender implements Runnable, ByteCounter {
 	private volatile boolean hasForwardedRejectedOverload;
     
     /** Forward RejectedOverload to the request originator */
-    private synchronized void forwardRejectedOverload() {
-    	if(hasForwardedRejectedOverload) return;
-    	hasForwardedRejectedOverload = true;
-   		notifyAll();
+    private void forwardRejectedOverload() {
+		synchronized (this) {
+			if(hasForwardedRejectedOverload) return;
+			hasForwardedRejectedOverload = true;
+			notifyAll();
+		}
+		fireReceivedRejectOverload();
 	}
     
     public PartiallyReceivedBlock getPRB() {
@@ -659,20 +667,27 @@ public final class RequestSender implements Runnable, ByteCounter {
             if(status == SUCCESS)
             	successFrom = next;
         }
-        
+		
         if(status == SUCCESS) {
         	if(next != null) {
         		next.onSuccess(false, key instanceof NodeSSK);
         	}
         	node.nodeStats.requestCompleted(true, source != null, key instanceof NodeSSK);
         	
+			//NOTE: because of the requesthandler implementation, this will block and wait
+			//      for downstream transfers on a CHK. The opennet stuff introduces
+			//      a delay of it's own if we don't get the expected message.
+			fireRequestSenderFinished(code);
+			
         	if(key instanceof NodeCHK && next != null && 
         			(next.isOpennet() || node.passOpennetRefsThroughDarknet()) ) {
         		finishOpennet(next);
         	} else
         		finishOpennetNull(next);
-        } else
+        } else {
         	node.nodeStats.requestCompleted(false, source != null, key instanceof NodeSSK);
+			fireRequestSenderFinished(code);
+		}
         
 		synchronized(this) {
 			opennetFinished = true;
@@ -851,5 +866,73 @@ public final class RequestSender implements Runnable, ByteCounter {
 	
 	public boolean isLocalRequestSearch() {
 		return (source==null);
+	}
+	
+	interface Listener {
+		void onReceivedRejectOverload();
+		void onCHKTransferBegins();
+		void onRequestSenderFinished(int status);
+	}
+	
+	public void addListener(Listener l) {
+		boolean reject=false;
+		boolean transfer=false;
+		int status;
+		synchronized (this) {
+			synchronized (listeners) {
+				listeners.add(l);
+			}
+			reject=hasForwardedRejectedOverload;
+			transfer=transferStarted();
+			status=this.status;
+		}
+		if (reject)
+			l.onReceivedRejectOverload();
+		if (transfer)
+			l.onCHKTransferBegins();
+		if (status!=NOT_FINISHED)
+			l.onRequestSenderFinished(status);
+	}
+	
+	private void fireReceivedRejectOverload() {
+		synchronized (listeners) {
+			Iterator i=listeners.iterator();
+			while (i.hasNext()) {
+				Listener l=(Listener)i.next();
+				try {
+					l.onReceivedRejectOverload();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught: "+t, t);
+				}
+			}
+		}
+	}
+	
+	private void fireCHKTransferBegins() {
+		synchronized (listeners) {
+			Iterator i=listeners.iterator();
+			while (i.hasNext()) {
+				Listener l=(Listener)i.next();
+				try {
+					l.onCHKTransferBegins();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught: "+t, t);
+				}
+			}
+		}
+	}
+	
+	private void fireRequestSenderFinished(int status) {
+		synchronized (listeners) {
+			Iterator i=listeners.iterator();
+			while (i.hasNext()) {
+				Listener l=(Listener)i.next();
+				try {
+					l.onRequestSenderFinished(status);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught: "+t, t);
+				}
+			}
+		}
 	}
 }

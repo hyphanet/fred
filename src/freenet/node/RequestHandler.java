@@ -28,7 +28,7 @@ import freenet.support.TimeUtil;
  * is separated off into RequestSender so we get transfer coalescing
  * and both ends for free. 
  */
-public class RequestHandler implements Runnable, ByteCounter {
+public class RequestHandler implements Runnable, ByteCounter, RequestSender.Listener {
 
 	private static boolean logMINOR;
     final Message req;
@@ -45,6 +45,10 @@ public class RequestHandler implements Runnable, ByteCounter {
     private RequestSender rs;
     private int status = RequestSender.NOT_FINISHED;
 	private boolean appliedByteCounts=false;
+	private boolean sentRejectedOverload = false;
+	private long searchStartTime;
+	private long responseDeadline;
+	private BlockTransmitter bt;	
 	
     public String toString() {
         return super.toString()+" for "+uid;
@@ -76,12 +80,14 @@ public class RequestHandler implements Runnable, ByteCounter {
 	    freenet.support.Logger.OSThread.logPID(this);
         try {
         	realRun();
+			//The last thing that realRun() does is register as a request-sender listener, so any exception here is the end.
         } catch (NotConnectedException e) {
-        	// Ignore, normal
+        	Logger.normal(this, "requestor gone, could not start request handler wait");
+			node.removeTransferringRequestHandler(uid);
+            node.unlockUID(uid, key instanceof NodeSSK, false, false);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
-        } finally {
-        	node.removeTransferringRequestHandler(uid);
+			node.removeTransferringRequestHandler(uid);
             node.unlockUID(uid, key instanceof NodeSSK, false, false);
         }
     }
@@ -150,26 +156,16 @@ public class RequestHandler implements Runnable, ByteCounter {
             return;
         }
         
-        boolean shouldHaveStartedTransfer = false;
-        boolean sentRejectedOverload = false;
-		
-		//If we cannot respond before this time, the 'source' node has already fatally timed out (and we need not return packets which will not be claimed)
-		long searchStartTime = System.currentTimeMillis();
-		long responseDeadline = searchStartTime + RequestSender.FETCH_TIMEOUT + source.getProbableSendQueueTime();
-        short waitStatus = 0;
+        //If we cannot respond before this time, the 'source' node has already fatally timed out (and we need not return packets which will not be claimed)
+		searchStartTime = System.currentTimeMillis();
+		responseDeadline = searchStartTime + RequestSender.FETCH_TIMEOUT + source.getProbableSendQueueTime();
         
-        while(true) {
-            
-        	waitStatus = rs.waitUntilStatusChange(waitStatus);
-			long now = System.currentTimeMillis();
-			
-			if (now > responseDeadline) {
-				Logger.error(this, "requestsender took too long to respond to requestor ("+TimeUtil.formatTime((now - searchStartTime), 2, true)+"/"+rs.getStatus()+")"); 
-				applyByteCounts();
-				return;
-			}
-			
-            if((waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0 && !sentRejectedOverload) {
+        rs.addListener(this);
+	}
+		
+	public void onReceivedRejectOverload() {
+		try {
+            if(!sentRejectedOverload) {
             	// Forward RejectedOverload
 				//Note: This message is only decernable from the terminal messages by the IS_LOCAL flag being false. (!IS_LOCAL)->!Terminal
             	Message msg = DMT.createFNPRejectedOverload(uid, false);
@@ -177,17 +173,30 @@ public class RequestHandler implements Runnable, ByteCounter {
 				//If the status changes (e.g. to SUCCESS), there is little need to send yet another reject overload.
 				sentRejectedOverload=true;
             }
-            
-            if((waitStatus & RequestSender.WAIT_TRANSFERRING_DATA) != 0) {
+		} catch (NotConnectedException e) {
+			Logger.normal(this, "requestor is gone, can't forward reject overload");
+		}
+	}
+	
+	public void onCHKTransferBegins() {
+		try {
             	// Is a CHK.
                 Message df = DMT.createFNPCHKDataFound(uid, rs.getHeaders());
                 source.sendAsync(df, null, 0, this);
                 
                 PartiallyReceivedBlock prb = rs.getPRB();
-            	BlockTransmitter bt =
+            	bt =
             	    new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
             	node.addTransferringRequestHandler(uid);
-            	if(bt.send(node.executor)) {
+			bt.sendAsync(node.executor);
+		} catch (NotConnectedException e) {
+			Logger.normal(this, "requestor is gone, can't begin CHK transfer");
+		}
+	}
+	
+	private void waitAndFinishCHKTransfer() throws NotConnectedException {
+		if (logMINOR) Logger.minor(this, "Waiting for CHK transfer to finish");
+            	if(bt.getAsyncExitStatus()) {
 					status = rs.getStatus();
     				// Successful CHK transfer, maybe path fold
            			finishOpennetChecked();
@@ -196,14 +205,24 @@ public class RequestHandler implements Runnable, ByteCounter {
 					status = rs.getStatus();
 					//for byte logging, since the block is the 'terminal' message.
 					applyByteCounts();
+					unregisterRequestHandlerWithNode();
 				}
-        	    return;
-            }
+	}
+	
+	public void onRequestSenderFinished(int status) {
+		long now = System.currentTimeMillis();
+		
+		if (now > responseDeadline) {
+			Logger.error(this, "requestsender took too long to respond to requestor ("+TimeUtil.formatTime((now - searchStartTime), 2, true)+"/"+rs.getStatus()+")"); 
+			applyByteCounts();
+			unregisterRequestHandlerWithNode();
+			return;
+		}
+	
+		if(status == RequestSender.NOT_FINISHED)
+			Logger.error(this, "onFinished() but not finished?");
             
-            status = rs.getStatus();
-
-            if(status == RequestSender.NOT_FINISHED) continue;
-            
+		try {
             switch(status) {
             	case RequestSender.NOT_FINISHED:
             	case RequestSender.DATA_NOT_FOUND:
@@ -239,45 +258,56 @@ public class RequestHandler implements Runnable, ByteCounter {
             			} else {
             				sendTerminal(df);
             			}
-            			return;
             		} else {
-            			if(!rs.transferStarted()) {
+            			if(bt == null) {
             				// Bug! This is impossible!
             				Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
-            				// Could be a wierd synchronization bug, but we don't want to wait forever, so treat it as overload.
+            				// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
                     	    reject = DMT.createFNPRejectedOverload(uid, true);
                     		sendTerminal(reject);
-                    		return;
             			} else {
-            				// Race condition. We need to go around the loop again and pick up the data transfer
-            				// in waitStatus.
+            				waitAndFinishCHKTransfer();
             			}
-            			// Either way, go back around the loop.
-            			continue;
             		}
+					return;
             	case RequestSender.VERIFY_FAILURE:
             		if(key instanceof NodeCHK) {
-            			if(shouldHaveStartedTransfer)
-            				throw new IllegalStateException("Got status code "+status+" but transfer not started");
-            			shouldHaveStartedTransfer = true;
-            			continue; // should have started transfer
+						if(bt == null) {
+            				// Bug! This is impossible!
+            				Logger.error(this, "Status is VERIFY_FAILURE but we never started a transfer on "+uid);
+							// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
+                    	    reject = DMT.createFNPRejectedOverload(uid, true);
+                    		sendTerminal(reject);
+            			} else {
+							//Verify fails after receive() is complete, so we might as well propagate it...
+            				waitAndFinishCHKTransfer();
+            			}
+						return;
             		}
             	    reject = DMT.createFNPRejectedOverload(uid, true);
             		sendTerminal(reject);
             		return;
             	case RequestSender.TRANSFER_FAILED:
             		if(key instanceof NodeCHK) {
-            			if(shouldHaveStartedTransfer)
-            				throw new IllegalStateException("Got status code "+status+" but transfer not started");
-            			shouldHaveStartedTransfer = true;
-            			continue; // should have started transfer
+            			if(bt == null) {
+            				// Bug! This is impossible!
+            				Logger.error(this, "Status is TRANSFER_FAILED but we never started a transfer on "+uid);
+							// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
+                    	    reject = DMT.createFNPRejectedOverload(uid, true);
+                    		sendTerminal(reject);
+            			} else {
+            				waitAndFinishCHKTransfer();
+            			}
+						return;
             		}
-            		// Other side knows, right?
+            		Logger.error(this, "finish(TRANSFER_FAILED) should not be called on SSK?!?!");
             		return;
             	default:
             	    throw new IllegalStateException("Unknown status code "+status);
             }
-        }
+		} catch (NotConnectedException e) {
+			Logger.normal(this, "requestor is gone, can't send terminal message");
+		}
 	}
 
     /**
@@ -313,10 +343,16 @@ public class RequestHandler implements Runnable, ByteCounter {
 			} else {
                 //also for byte logging, since the block is the 'terminal' message.
                 applyByteCounts();
+				unregisterRequestHandlerWithNode();
         	}
         }
 	}
 
+	private void unregisterRequestHandlerWithNode() {
+		node.removeTransferringRequestHandler(uid);
+		node.unlockUID(uid, key instanceof NodeSSK, false, false);
+	}
+	
 	/**
      * Sends the 'final' packet of a request in such a way that the thread can be freed (made non-runnable/exit)
      * and the byte counter will still be accurate.
@@ -352,6 +388,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 		public void sent() {
             //For byte counting, this relies on the fact that the callback will only be excuted once.
 			applyByteCounts();
+			unregisterRequestHandlerWithNode();
         }
 	}
     
@@ -366,6 +403,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 				(node.passOpennetRefsThroughDarknet() || source.isOpennet()) &&
 		   finishOpennetInner(om)) {
 			applyByteCounts();
+			unregisterRequestHandlerWithNode();
 			return;
 		}
 		
@@ -383,6 +421,7 @@ public class RequestHandler implements Runnable, ByteCounter {
 		if(om != null && (source.isOpennet() || node.passOpennetRefsThroughDarknet()) &&
 		   finishOpennetNoRelayInner(om)) {
 			applyByteCounts();
+			unregisterRequestHandlerWithNode();
 			return;
 		}
 		
