@@ -59,19 +59,19 @@ public class OpennetPeerNode extends PeerNode {
 		super.onRemove();
 	}
 	
-    public synchronized SimpleFieldSet exportMetadataFieldSet() {
-    	SimpleFieldSet fs = super.exportMetadataFieldSet();
-    	fs.put("timeLastSuccess", timeLastSuccess);
-    	return fs;
-    }
+	public synchronized SimpleFieldSet exportMetadataFieldSet() {
+		SimpleFieldSet fs = super.exportMetadataFieldSet();
+		fs.put("timeLastSuccess", timeLastSuccess);
+		return fs;
+	}
 
-    public final long timeLastSuccess() {
-    	return timeLastSuccess;
-    }
-    
-    /**
-     * Is the SimpleFieldSet a valid noderef?
-     */
+	public final long timeLastSuccess() {
+		return timeLastSuccess;
+	}
+	
+	/**
+	 * Is the SimpleFieldSet a valid noderef?
+	 */
 	public static boolean validateRef(SimpleFieldSet ref) {
 		if(!ref.getBoolean("opennet", false)) return false;
 		return true;

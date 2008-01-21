@@ -45,147 +45,147 @@ import freenet.support.io.RandomAccessThing;
 
 public class DarknetPeerNode extends PeerNode {
 
-    /** Name of this node */
-    String myName;
-    
-    /** True if this peer is not to be connected with */
-    private boolean isDisabled;
-    
-    /** True if we don't send handshake requests to this peer, but will connect if we receive one */
-    private boolean isListenOnly;
-    
-    /** True if we send handshake requests to this peer in infrequent bursts */
-    private boolean isBurstOnly;
-    
-    /** True if we want to ignore the source port of the node's sent packets.
-     * This is normally set when dealing with an Evil Corporate Firewall which rewrites the port on outgoing
-     * packets but does not redirect incoming packets destined to the rewritten port.
-     * What it does is this: If we have an address with the same IP but a different port, to the detectedPeer,
-     * we use that instead. */
-    private boolean ignoreSourcePort;
-    
-    /** True if we want to allow LAN/localhost addresses. */
-    private boolean allowLocalAddresses;
-    
-    /** Extra peer data file numbers */
-    private LinkedHashSet extraPeerDataFileNumbers;
-
-    /** Private comment on the peer for /friends/ page */
-    private String privateDarknetComment;
-    
-    /** Private comment on the peer for /friends/ page's extra peer data file number */
-    private int privateDarknetCommentFileNumber;
-    
-    /** Queued-to-send N2NM extra peer data file numbers */
-    private LinkedHashSet queuedToSendN2NMExtraPeerDataFileNumbers;
-
-    private static boolean logMINOR;
-    
-    /**
-     * Create a darknet PeerNode from a SimpleFieldSet
-     * @param fs The SimpleFieldSet to parse
-     * @param node2 The running Node we are part of.
-     */
-    public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-    	super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
-    	
-    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
-    	
-        String name = fs.get("myName");
-        if(name == null) throw new FSParseException("No name");
-        myName = name;
+	/** Name of this node */
+	String myName;
 	
-        if(fromLocal) {
-        	SimpleFieldSet metadata = fs.subset("metadata");
-        	
-        	isDisabled = Fields.stringToBool(metadata.get("isDisabled"), false);
-        	isListenOnly = Fields.stringToBool(metadata.get("isListenOnly"), false);
-        	isBurstOnly = Fields.stringToBool(metadata.get("isBurstOnly"), false);
-		disableRouting = disableRoutingHasBeenSetLocally = Fields.stringToBool(metadata.get("disableRoutingHasBeenSetLocally"), false);
-        	ignoreSourcePort = Fields.stringToBool(metadata.get("ignoreSourcePort"), false);
-        	allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
-        }
+	/** True if this peer is not to be connected with */
+	private boolean isDisabled;
+	
+	/** True if we don't send handshake requests to this peer, but will connect if we receive one */
+	private boolean isListenOnly;
+	
+	/** True if we send handshake requests to this peer in infrequent bursts */
+	private boolean isBurstOnly;
+	
+	/** True if we want to ignore the source port of the node's sent packets.
+	 * This is normally set when dealing with an Evil Corporate Firewall which rewrites the port on outgoing
+	 * packets but does not redirect incoming packets destined to the rewritten port.
+	 * What it does is this: If we have an address with the same IP but a different port, to the detectedPeer,
+	 * we use that instead. */
+	private boolean ignoreSourcePort;
+	
+	/** True if we want to allow LAN/localhost addresses. */
+	private boolean allowLocalAddresses;
+	
+	/** Extra peer data file numbers */
+	private LinkedHashSet extraPeerDataFileNumbers;
+
+	/** Private comment on the peer for /friends/ page */
+	private String privateDarknetComment;
+	
+	/** Private comment on the peer for /friends/ page's extra peer data file number */
+	private int privateDarknetCommentFileNumber;
+	
+	/** Queued-to-send N2NM extra peer data file numbers */
+	private LinkedHashSet queuedToSendN2NMExtraPeerDataFileNumbers;
+
+	private static boolean logMINOR;
+	
+	/**
+	 * Create a darknet PeerNode from a SimpleFieldSet
+	 * @param fs The SimpleFieldSet to parse
+	 * @param node2 The running Node we are part of.
+	 */
+	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
+		
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		
+		String name = fs.get("myName");
+		if(name == null) throw new FSParseException("No name");
+		myName = name;
+	
+		if(fromLocal) {
+			SimpleFieldSet metadata = fs.subset("metadata");
+			
+			isDisabled = Fields.stringToBool(metadata.get("isDisabled"), false);
+			isListenOnly = Fields.stringToBool(metadata.get("isListenOnly"), false);
+			isBurstOnly = Fields.stringToBool(metadata.get("isBurstOnly"), false);
+			disableRouting = disableRoutingHasBeenSetLocally = Fields.stringToBool(metadata.get("disableRoutingHasBeenSetLocally"), false);
+			ignoreSourcePort = Fields.stringToBool(metadata.get("ignoreSourcePort"), false);
+			allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
+		}
 	
 		// Setup the private darknet comment note
-        privateDarknetComment = "";
-        privateDarknetCommentFileNumber = -1;
+		privateDarknetComment = "";
+		privateDarknetCommentFileNumber = -1;
 
 		// Setup the extraPeerDataFileNumbers
 		extraPeerDataFileNumbers = new LinkedHashSet();
 		
 		// Setup the queuedToSendN2NMExtraPeerDataFileNumbers
 		queuedToSendN2NMExtraPeerDataFileNumbers = new LinkedHashSet();
-        
-    }
+		
+	}
 
-    /**
-     * 
-     * Normally this is the address that packets have been received from from this node.
-     * However, if ignoreSourcePort is set, we will search for a similar address with a different port 
-     * number in the node reference.
-     */
-    public synchronized Peer getPeer(){
-    	Peer detectedPeer = super.getPeer();
-    	if(ignoreSourcePort) {
-    		FreenetInetAddress addr = detectedPeer == null ? null : detectedPeer.getFreenetAddress();
-    		int port = detectedPeer == null ? -1 : detectedPeer.getPort();
-    		if(nominalPeer == null) return detectedPeer;
-    		for(int i=0;i<nominalPeer.size();i++) {
-    			Peer p = (Peer) nominalPeer.get(i);
-    			if(p.getPort() != port && p.getFreenetAddress().equals(addr)) {
-    				return p;
-    			}
-    		}
-    	}
-    	return detectedPeer;
-    }
+	/**
+	 * 
+	 * Normally this is the address that packets have been received from from this node.
+	 * However, if ignoreSourcePort is set, we will search for a similar address with a different port 
+	 * number in the node reference.
+	 */
+	public synchronized Peer getPeer(){
+		Peer detectedPeer = super.getPeer();
+		if(ignoreSourcePort) {
+			FreenetInetAddress addr = detectedPeer == null ? null : detectedPeer.getFreenetAddress();
+			int port = detectedPeer == null ? -1 : detectedPeer.getPort();
+			if(nominalPeer == null) return detectedPeer;
+			for(int i=0;i<nominalPeer.size();i++) {
+				Peer p = (Peer) nominalPeer.get(i);
+				if(p.getPort() != port && p.getFreenetAddress().equals(addr)) {
+					return p;
+				}
+			}
+		}
+		return detectedPeer;
+	}
 
-    /**
-     * @return True, if we are disconnected and it has been a
-     * sufficient time period since we last sent a handshake
-     * attempt.
-     */
-    public boolean shouldSendHandshake() {
-    	synchronized(this) {
-    		if(isDisabled) return false;
-    		if(isListenOnly) return false;
-    		if(!super.shouldSendHandshake()) return false;
-    	}
+	/**
+	 * @return True, if we are disconnected and it has been a
+	 * sufficient time period since we last sent a handshake
+	 * attempt.
+	 */
+	public boolean shouldSendHandshake() {
+		synchronized(this) {
+			if(isDisabled) return false;
+			if(isListenOnly) return false;
+			if(!super.shouldSendHandshake()) return false;
+		}
 		return true;
-    }
-    
-    protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
-    	boolean changedAnything = super.innerProcessNewNoderef(fs, forARK, forDiffNodeRef);
-        String name = fs.get("myName");
-        if(name != null && !name.equals(myName)) {
-        	changedAnything = true;
-            myName = name;
-        }
-        return changedAnything;
-    }
-    
-    public synchronized SimpleFieldSet exportFieldSet() {
-    	SimpleFieldSet fs = super.exportFieldSet();
-    	fs.putSingle("myName", getName());
-    	return fs;
-    }
-    	
-    public synchronized SimpleFieldSet exportMetadataFieldSet() {
-    	SimpleFieldSet fs = super.exportMetadataFieldSet();
-    	if(isDisabled)
-    		fs.putSingle("isDisabled", "true");
-    	if(isListenOnly)
-    		fs.putSingle("isListenOnly", "true");
-    	if(isBurstOnly)
-    		fs.putSingle("isBurstOnly", "true");
-    	if(ignoreSourcePort)
-    		fs.putSingle("ignoreSourcePort", "true");
-    	if(allowLocalAddresses)
-    		fs.putSingle("allowLocalAddresses", "true");
+	}
+	
+	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
+		boolean changedAnything = super.innerProcessNewNoderef(fs, forARK, forDiffNodeRef);
+		String name = fs.get("myName");
+		if(name != null && !name.equals(myName)) {
+			changedAnything = true;
+			myName = name;
+		}
+		return changedAnything;
+	}
+	
+	public synchronized SimpleFieldSet exportFieldSet() {
+		SimpleFieldSet fs = super.exportFieldSet();
+		fs.putSingle("myName", getName());
+		return fs;
+	}
+		
+	public synchronized SimpleFieldSet exportMetadataFieldSet() {
+		SimpleFieldSet fs = super.exportMetadataFieldSet();
+		if(isDisabled)
+			fs.putSingle("isDisabled", "true");
+		if(isListenOnly)
+			fs.putSingle("isListenOnly", "true");
+		if(isBurstOnly)
+			fs.putSingle("isBurstOnly", "true");
+		if(ignoreSourcePort)
+			fs.putSingle("ignoreSourcePort", "true");
+		if(allowLocalAddresses)
+			fs.putSingle("allowLocalAddresses", "true");
 	if(disableRoutingHasBeenSetLocally)
 		fs.putSingle("disableRoutingHasBeenSetLocally", "true");
-    	return fs;
-    }
+		return fs;
+	}
 
 	public synchronized String getName() {
 		return myName;
@@ -217,7 +217,7 @@ public class DarknetPeerNode extends PeerNode {
 			isDisabled = false;
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-        node.peers.writePeers();
+		node.peers.writePeers();
 	}
 	
 	public void disablePeer() {
@@ -229,7 +229,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		stopARKFetcher();
 		setPeerNodeStatus(System.currentTimeMillis());
-        node.peers.writePeers();
+		node.peers.writePeers();
 	}
 
 	public synchronized boolean isDisabled() {
@@ -247,7 +247,7 @@ public class DarknetPeerNode extends PeerNode {
 			stopARKFetcher();
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-        node.peers.writePeers();
+		node.peers.writePeers();
 	}
 
 	public synchronized boolean isListenOnly() {
@@ -333,7 +333,7 @@ public class DarknetPeerNode extends PeerNode {
 		synchronized(this) {
 			allowLocalAddresses = setting;
 		}
-        node.peers.writePeers();
+		node.peers.writePeers();
 	}
 	
 	public boolean readExtraPeerData() {
