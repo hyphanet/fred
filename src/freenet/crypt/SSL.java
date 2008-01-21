@@ -234,7 +234,7 @@ public class SSL {
 				keypair.generate(1024);
 				PrivateKey privKey = keypair.getPrivateKey();
 				X509Certificate[] chain = new X509Certificate[1];
-				chain[0] = keypair.getSelfCertificate(x500Name, (long)365*24*60*60);
+				chain[0] = keypair.getSelfCertificate(x500Name, 1L*365*24*60*60);
 		    	keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
 		    	storeKeyStore();
 		    	createSSLContext();
