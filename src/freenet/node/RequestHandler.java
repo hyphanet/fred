@@ -301,7 +301,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
             			}
 						return;
             		}
-            		Logger.error(this, "finish(TRANSFER_FAILED) should not be called on SSK?!?!");
+            		Logger.error(this, "finish(TRANSFER_FAILED) should not be called on SSK?!?!", new Exception("error"));
             		return;
             	default:
             	    throw new IllegalStateException("Unknown status code "+status);
