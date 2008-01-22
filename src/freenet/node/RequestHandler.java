@@ -322,6 +322,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
             }
 		} catch (NotConnectedException e) {
 			Logger.normal(this, "requestor is gone, can't send terminal message");
+			applyByteCounts();
 			unregisterRequestHandlerWithNode();
 		}
 	}
