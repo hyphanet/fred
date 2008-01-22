@@ -210,17 +210,17 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
 	
 	private void waitAndFinishCHKTransfer() throws NotConnectedException {
 		if (logMINOR) Logger.minor(this, "Waiting for CHK transfer to finish");
-            	if(bt.getAsyncExitStatus()) {
-					status = rs.getStatus();
-    				// Successful CHK transfer, maybe path fold
-           			finishOpennetChecked();
-            	} else {
-					finalTransferFailed = true;
-					status = rs.getStatus();
-					//for byte logging, since the block is the 'terminal' message.
-					applyByteCounts();
-					unregisterRequestHandlerWithNode();
-				}
+		if(bt.getAsyncExitStatus()) {
+			status = rs.getStatus();
+			// Successful CHK transfer, maybe path fold
+			finishOpennetChecked();
+		} else {
+			finalTransferFailed = true;
+			status = rs.getStatus();
+			//for byte logging, since the block is the 'terminal' message.
+			applyByteCounts();
+			unregisterRequestHandlerWithNode();
+		}
 	}
 	
 	public void onRequestSenderFinished(int status) {
