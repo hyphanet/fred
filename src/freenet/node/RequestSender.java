@@ -868,9 +868,13 @@ public final class RequestSender implements Runnable, ByteCounter {
 		return (source==null);
 	}
 	
+	/** All these methods should return quickly! */
 	interface Listener {
+		/** Should return quickly, allocate a thread if it needs to block etc */
 		void onReceivedRejectOverload();
+		/** Should return quickly, allocate a thread if it needs to block etc */
 		void onCHKTransferBegins();
+		/** Should return quickly, allocate a thread if it needs to block etc */
 		void onRequestSenderFinished(int status);
 	}
 	
