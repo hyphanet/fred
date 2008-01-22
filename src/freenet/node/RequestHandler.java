@@ -211,6 +211,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
 	
 	public void onRequestSenderFinished(int status) {
 		long now = System.currentTimeMillis();
+		this.status=status;
 		
 		if (now > responseDeadline) {
 			Logger.error(this, "requestsender took too long to respond to requestor ("+TimeUtil.formatTime((now - searchStartTime), 2, true)+"/"+rs.getStatus()+")"); 
