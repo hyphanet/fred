@@ -194,6 +194,20 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
 		}
 	}
 	
+	private void waitAndFinishCHKTransferOffThread() {
+		node.executor.execute(new Runnable() {
+			public void run() {
+				try {
+					waitAndFinishCHKTransfer();
+				} catch (NotConnectedException e) {
+					//for byte logging, since the block is the 'terminal' message.
+					applyByteCounts();
+					unregisterRequestHandlerWithNode();
+				}
+			}
+		}, "Finish CHK transfer");
+	}
+	
 	private void waitAndFinishCHKTransfer() throws NotConnectedException {
 		if (logMINOR) Logger.minor(this, "Waiting for CHK transfer to finish");
             	if(bt.getAsyncExitStatus()) {
@@ -267,7 +281,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
                     	    reject = DMT.createFNPRejectedOverload(uid, true);
                     		sendTerminal(reject);
             			} else {
-            				waitAndFinishCHKTransfer();
+            				waitAndFinishCHKTransferOffThread();
             			}
             		}
 					return;
@@ -281,7 +295,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
                     		sendTerminal(reject);
             			} else {
 							//Verify fails after receive() is complete, so we might as well propagate it...
-            				waitAndFinishCHKTransfer();
+            				waitAndFinishCHKTransferOffThread();
             			}
 						return;
             		}
@@ -297,7 +311,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
                     	    reject = DMT.createFNPRejectedOverload(uid, true);
                     		sendTerminal(reject);
             			} else {
-            				waitAndFinishCHKTransfer();
+            				waitAndFinishCHKTransferOffThread();
             			}
 						return;
             		}
