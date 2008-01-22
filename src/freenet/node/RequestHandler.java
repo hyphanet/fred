@@ -390,23 +390,36 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
      */
     private class TerminalMessageByteCountCollector implements AsyncMessageCallback {
         
+    	private boolean completed = false;
+    	
 		public void acknowledged() {
             //terminalMessage ack'd by remote peer
+			complete();
 		}
         
 		public void disconnected() {
             Logger.minor(this, "Peer disconnected before terminal message sent for "+RequestHandler.this);
+            complete();
 		}
         
 		public void fatalError() {
 			Logger.error(this, "Error sending terminal message?! for " + RequestHandler.this);
+			complete();
 		}
         
 		public void sent() {
+			complete();
+        }
+		
+		private void complete() {
+			synchronized(this) {
+				if(completed) return;
+				completed = true;
+			}
             //For byte counting, this relies on the fact that the callback will only be excuted once.
 			applyByteCounts();
 			unregisterRequestHandlerWithNode();
-        }
+		}
 	}
     
     /**
