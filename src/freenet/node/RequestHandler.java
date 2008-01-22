@@ -334,13 +334,15 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
      */
     private void returnLocalData(KeyBlock block) throws NotConnectedException {
         Message df = createDataFound(block);
-        source.sendAsync(df, null, 0, this);
         if(key instanceof NodeSSK) {
             if(needsPubKey) {
+            	source.sendAsync(df, null, 0, this);
             	DSAPublicKey key = ((NodeSSK)block.getKey()).getPubKey();
             	Message pk = DMT.createFNPSSKPubKey(uid, key);
             	if(logMINOR) Logger.minor(this, "Sending PK: "+key+ ' ' +key.toLongString());
             	sendTerminal(pk);
+            } else {
+            	sendTerminal(df);
             }
             status = RequestSender.SUCCESS; // for byte logging
         }
