@@ -235,6 +235,8 @@ public class BlockTransmitter {
 								_sentPackets.setBit(packetNo.intValue(), false);
 								_senderThread.notifyAll();
 							}
+						} else {
+							Logger.error(this, "receiver requested block #"+packetNo+" which is not received");
 						}
 					}
 				} else if (msg.getSpec().equals(DMT.allReceived)) {
