@@ -542,14 +542,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final SingleFileFetcher f;
 		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true));
 		if(logMINOR) Logger.minor(this, "fetchArchive(): "+f);
-		ctx.ticker.queueTimedJob(new Runnable() {
+		ctx.executor.execute(new Runnable() {
 			public void run() {
 				// Fetch the archive. The archive fetcher callback will unpack it, and either call the element 
 				// callback, or just go back around handleMetadata() on this, which will see that the data is now
 				// available.
 				f.wrapHandleMetadata(true);
 			}
-		}, 0);
+		}, "Fetching archive for "+this);
 	}
 
 	/**
