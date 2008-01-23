@@ -146,6 +146,9 @@ public class PartiallyReceivedBlock {
 		if (_aborted) {
 			throw new AbortedException("PRB is aborted");
 		}
+		if (!_received[x]) {
+			throw new IllegalStateException("that packet is not received");
+		}
 		return new Buffer(_data, x * _packetSize, _packetSize);
 	}
 
