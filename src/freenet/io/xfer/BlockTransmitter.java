@@ -118,6 +118,7 @@ public class BlockTransmitter {
 						_sentPackets.setBit(packetNo, true);
 						if(_unsent.size() == 0 && getNumSent() == totalPackets) {
 							//No unsent packets, no unreceived packets
+							sendAllSentNotification();
 							timeAllSent = System.currentTimeMillis();
 							if(Logger.shouldLog(Logger.MINOR, this))
 								Logger.minor(this, "Sent all blocks, none unsent");
@@ -172,6 +173,14 @@ public class BlockTransmitter {
 
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
 		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc), _ctr);
+	}
+	
+	private void sendAllSentNotification() {
+		try {
+			_usm.send(_destination, DMT.createAllSent(_uid), _ctr);
+		} catch (NotConnectedException e) {
+			Logger.normal(this, "disconnected for allSent()");
+		}
 	}
 	
 	public boolean send(Executor executor) {
