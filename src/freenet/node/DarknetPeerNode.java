@@ -760,7 +760,6 @@ public class DarknetPeerNode extends PeerNode {
 	 * A method to be called once at the beginning of every time isConnected() is true
 	 */
 	protected void onConnect() {
-		sendConnectedDiffNoderef();
 		sendQueuedN2NMs();
 	}
 
@@ -1528,4 +1527,8 @@ public class DarknetPeerNode extends PeerNode {
 		} else return false;
 	}
 	
+	protected void sendInitialMessages() {
+		super.sendInitialMessages();
+		sendConnectedDiffNoderef();
+	}
 }
