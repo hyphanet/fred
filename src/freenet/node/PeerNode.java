@@ -3486,6 +3486,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	/**
+	 * Return the relevant local node reference related to this peer's type
+	 */
+	protected SimpleFieldSet getLocalNoderef() {
+		if(isDarknet()) {
+			return node.exportDarknetPublicFieldSet();
+		} else if(isOpennet()) {
+			return node.exportOpennetPublicFieldSet();
+		}
+		// What else is there that a differential node reference would care about?  Add it here if needed
+		return null;
+	}
+
+	/**
 	 * A method to be called after completing a handshake to send the
 	 * newly connected peer, as a differential node reference, the
 	 * parts of our node reference not needed for handshake.
@@ -3494,15 +3507,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	protected void sendConnectedDiffNoderef() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		SimpleFieldSet nfs = null;
-		if(isDarknet()) {
-			nfs = node.exportDarknetPublicFieldSet();
-		} else if(isOpennet()) {
-			nfs = node.exportOpennetPublicFieldSet();
-		} else {
-			// What else is there that a differential node reference would care about?  Add it here if needed
-			return;
-		}
+		SimpleFieldSet nfs = getLocalNoderef();
+		if(null == nfs) return;
 		if(null != nfs.get("ark.pubURI")) {
 			fs.putOverwrite("ark.pubURI", nfs.get("ark.pubURI"));
 		}
