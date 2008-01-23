@@ -107,9 +107,10 @@ public class PartiallyReceivedBlock {
 			if (packet.getLength() != _packetSize) {
 				throw new RuntimeException("New packet size "+packet.getLength()+" but expecting packet of size "+_packetSize);
 			}
-			if (!_received[position]) {
-				_receivedCount++;
-			}
+			if (_received[position])
+				return;
+			
+			_receivedCount++;
 			packet.copyTo(_data, position * _packetSize);
 			_received[position] = true;
 			
