@@ -234,7 +234,7 @@ public class StatisticsToadlet extends Toadlet {
 			}
 		}
 
-		if(numberOfConnected + numberOfRoutingBackedOff > 0) {			
+		if(advancedModeEnabled || numberOfConnected + numberOfRoutingBackedOff > 0) {			
 
 			// Activity box
 			nextTableCell = overviewTableRow.addChild("td", "class", "last");
