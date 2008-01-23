@@ -290,11 +290,10 @@ public class USKFetcher implements ClientGetState {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		LinkedList l = null;
 		final long lastEd = uskManager.lookup(origUSK);
+		long curLatest;
 		synchronized(this) {
 			runningAttempts.remove(att);
-			long curLatest = att.number;
-			if(!dontUpdate)
-				uskManager.update(origUSK, curLatest);
+			curLatest = att.number;
 			if(completed || cancelled) return;
 			if(curLatest >= lastEd && !(dontUpdate && block == null)) {
 				try {
@@ -325,6 +324,8 @@ public class USKFetcher implements ClientGetState {
 			}
 			cancelBefore(curLatest);
 		}
+		if(!dontUpdate)
+			uskManager.update(origUSK, curLatest);
 		if(l == null) return;
 		final LinkedList toSched = l;
 		// If we schedule them here, we don't get icky recursion problems.
