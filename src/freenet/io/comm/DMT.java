@@ -169,7 +169,8 @@ public class DMT {
 		return size + 8 /* uid */ + 4 /* packet# */ + 4 /* Message hader */;
 	}
 	
-	public static final MessageType allSent = new MessageType("allSent", PRIORITY_LOW) {{
+	//This is of priority BULK_DATA to cut down on suprious resend requests, it will be queued after the packets it represents
+	public static final MessageType allSent = new MessageType("allSent", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
 	}};
 	
