@@ -239,10 +239,14 @@ public class BlockTransmitter {
 						Integer packetNo = (Integer) i.next();
 						if (_prb.isReceived(packetNo.intValue())) {
 							synchronized(_senderThread) {
+								if (_unsent.contains(packetNo)) {
+									Logger.minor(this, "already to transmit packet #"+packetNo);
+								} else {
 								_unsent.addFirst(packetNo);
 								timeAllSent=-1;
 								_sentPackets.setBit(packetNo.intValue(), false);
 								_senderThread.notifyAll();
+								}
 							}
 						} else {
 							Logger.error(this, "receiver requested block #"+packetNo+" which is not received");
