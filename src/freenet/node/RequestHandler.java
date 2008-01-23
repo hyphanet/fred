@@ -352,6 +352,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
         	BlockTransmitter bt =
         		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
         	node.addTransferringRequestHandler(uid);
+			source.sendAsync(df, null, 0, this);
         	if(bt.send(node.executor)) {
                 // for byte logging
         		status = RequestSender.SUCCESS;
