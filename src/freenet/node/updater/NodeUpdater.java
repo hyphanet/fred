@@ -334,7 +334,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 
 	public int fetchingVersion() {
-		if(fetchingVersion == 0) return availableVersion;
+		// We will not deploy currentVersion...
+		if(fetchingVersion <= currentVersion) return availableVersion;
 		else return fetchingVersion;
 	}
 
