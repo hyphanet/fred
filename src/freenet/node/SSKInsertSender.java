@@ -153,7 +153,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             
             if(Location.distance(target, nextValue) > Location.distance(target, closestLocation)) {
             	if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
-                htl = node.decrementHTL(source, htl);
+                htl = node.decrementHTL(sentRequest ? next : source, htl);
             }
             
             Message req = DMT.createFNPSSKInsertRequest(uid, htl, myKey, closestLocation, headers, data, pubKeyHash);
