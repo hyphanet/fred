@@ -294,6 +294,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Total number of handshake attempts (while in ListenOnly mode) to be in this burst */
 	private int listeningHandshakeBurstSize;
 	
+	// NodeCrypto for the relevant node reference for this peer's type (Darknet or Opennet at this time))
+	protected NodeCrypto crypto;
+	
 	/**
 	 * For FNP link setup:
 	 *  The initiator has to ensure that nonces send back by the
@@ -334,6 +337,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		myRef = new WeakReference(this);
 		this.outgoingMangler = mangler;
 		this.node = node2;
+		this.crypto = crypto;
 		this.peers = peers;
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		version = fs.get("version");
@@ -3489,13 +3493,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Return the relevant local node reference related to this peer's type
 	 */
 	protected SimpleFieldSet getLocalNoderef() {
-		if(isDarknet()) {
-			return node.exportDarknetPublicFieldSet();
-		} else if(isOpennet()) {
-			return node.exportOpennetPublicFieldSet();
-		}
-		// What else is there that a differential node reference would care about?  Add it here if needed
-		return null;
+		// Do nothing in the default impl
 	}
 
 	/**

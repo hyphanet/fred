@@ -101,4 +101,11 @@ public class OpennetPeerNode extends PeerNode {
 		super.sendInitialMessages();
 		sendConnectedDiffNoderef();
 	}
+
+	/**
+	 * Return the relevant local node reference related to this peer's type
+	 */
+	protected SimpleFieldSet getLocalNoderef() {
+		return crypto.exportPublicFieldSet();
+	}
 }
