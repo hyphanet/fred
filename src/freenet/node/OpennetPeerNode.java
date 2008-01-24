@@ -96,11 +96,6 @@ public class OpennetPeerNode extends PeerNode {
 			return super.equals(o);
 		} else return false;
 	}
-	
-	protected void sendInitialMessages() {
-		super.sendInitialMessages();
-		sendConnectedDiffNoderef();
-	}
 
 	/**
 	 * Return the relevant local node reference related to this peer's type

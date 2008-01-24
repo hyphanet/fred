@@ -1896,6 +1896,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		if(node.nodeUpdater != null)
 			node.nodeUpdater.maybeSendUOMAnnounce(this);
+		sendConnectedDiffNoderef();
 	}
 
 	private Message createSentPacketsMessage() {
@@ -3494,6 +3495,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	protected SimpleFieldSet getLocalNoderef() {
 		// Do nothing in the default impl
+		return null;
 	}
 
 	/**
