@@ -533,7 +533,7 @@ public class Announcer {
 		}
 
 		public boolean isValid() {
-			return started && !enoughPeers();
+			return !enoughPeers();
 		}
 
 		public void isValid(boolean validity) {
