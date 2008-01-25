@@ -224,7 +224,7 @@ public final class MessageFilter {
     }
 
     public String toString() {
-    	return _type.getName();
+    	return super.toString()+":"+_type.getName();
     }
 
     public void clearMatched() {
