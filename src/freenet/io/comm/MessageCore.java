@@ -94,6 +94,9 @@ public class MessageCore {
     	}, FILTER_REMOVE_TIME);
     }
     
+    // FIXME debugging paranoia - turn off for maximum performance
+    static final boolean DEBUG_CHECK_REST_OF_QUEUE = true;
+    
     /**
      * Remove timed out filters.
      */
@@ -117,6 +120,17 @@ public class MessageCore {
 					// doesn't timeout
 					if(Logger.shouldLog(Logger.DEBUG, this))
 						Logger.debug(this, "Stopping removing timed out filters at "+f+" : timeout = "+f.getTimeout()+" initial timeout = "+f.getInitialTimeout());
+					if(DEBUG_CHECK_REST_OF_QUEUE) {
+						while(i.hasNext()) {
+							MessageFilter f1 = (MessageFilter) i.next();
+							if(f1.getTimeout() < tStart) {
+								Logger.error(this, "Still failing to timeout all filters! Filter "+f1+" timeout "+f1.getTimeout()+" matched but would have stopped at filter "+f+" timeout "+f.getTimeout()+" at time "+tStart);
+								i.remove();
+								_timedOutFilters.add(f);
+							}
+								
+						}
+					}
 					break;
 				}
 			}
