@@ -142,7 +142,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			/* FIXME: Cascading timeout...
 			   if this times out, we don't have any time to report to the node of origin the timeout notification (anyTimedOut?).
 			 */
-			Logger.error(this, "Timed out waiting for a final ack from: "+pn);
+			Logger.error(this, "Timed out waiting for a final ack from: "+pn+" on "+this);
 			receivedNotice(false);
 		}
 	}
