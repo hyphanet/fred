@@ -98,7 +98,9 @@ public class MessageCore {
      * Remove timed out filters.
      */
 	void removeTimedOutFilters() {
-		long tStart = System.currentTimeMillis();
+		long tStart = System.currentTimeMillis() + 1;
+		// Extra millisecond to give waitFor() a chance to remove the filter.
+		// Avoids exhaustive and unsuccessful search in waitFor() removal of a timed out filter.
 		if(logMINOR)
 			Logger.minor(this, "Removing timed out filters");
 		synchronized (_filters) {
