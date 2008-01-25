@@ -347,4 +347,7 @@ public class BlockTransmitter {
 		return _destination;
 	}
 	
+	public String toString() {
+		return "BlockTransmitter:"+_uid;
+	}
 }
