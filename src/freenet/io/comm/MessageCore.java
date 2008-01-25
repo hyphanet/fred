@@ -94,9 +94,6 @@ public class MessageCore {
     	}, FILTER_REMOVE_TIME);
     }
     
-    // FIXME debugging paranoia - turn off for maximum performance
-    static final boolean DEBUG_CHECK_REST_OF_QUEUE = true;
-    
     /**
      * Remove timed out filters.
      */
@@ -114,25 +111,12 @@ public class MessageCore {
 						Logger.minor(this, "Removing "+f);
 					i.remove();
 					_timedOutFilters.add(f);
-				} else {
-					// Because _filters are in order of timeout, we
-					// can abort the iteration as soon as we find one that
-					// doesn't timeout
-					if(Logger.shouldLog(Logger.DEBUG, this))
-						Logger.debug(this, "Stopping removing timed out filters at "+f+" : timeout = "+f.getTimeout()+" initial timeout = "+f.getInitialTimeout());
-					if(DEBUG_CHECK_REST_OF_QUEUE) {
-						while(i.hasNext()) {
-							MessageFilter f1 = (MessageFilter) i.next();
-							if(f1.getTimeout() < tStart) {
-								Logger.error(this, "Still failing to timeout all filters! Filter "+f1+" timeout "+f1.getTimeout()+" matched but would have stopped at filter "+f+" timeout "+f.getTimeout()+" at time "+tStart);
-								i.remove();
-								_timedOutFilters.add(f);
-							}
-								
-						}
-					}
-					break;
 				}
+				// Do not break after finding a non-timed-out filter because some filters may 
+				// be timed out because their client callbacks say they should be.
+				// Also simplifies the logic.
+				
+				// See also the end of waitFor() for another wierd case.
 			}
 		}
 		
@@ -471,8 +455,7 @@ public class MessageCore {
 		}
 		if(!filter.matched()) {
 			// We must remove it from _filters before we return, or when it is re-added,
-			// it will be in the list twice, and that will cause other filters not to be
-			// dropped.
+			// it will be in the list twice, and potentially many more times than twice!
 			synchronized(_filters) {
 				// Fortunately, it will be close to the beginning of the filters list, having
 				// just timed out. That is assuming it hasn't already been removed; in that
