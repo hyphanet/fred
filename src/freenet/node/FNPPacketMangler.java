@@ -1972,7 +1972,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		String mi_name = null;
 		for(int i=0;i<messageData.length;i++) {
 			MessageItem mi = messages[i];
-			if(logMINOR) Logger.minor(this, "Handling formatted MessageItem "+mi+" : "+mi.getData(pn).length);
+			if(logMINOR) Logger.minor(this, "Handling "+(mi.formatted ? "formatted " : "") + 
+					"MessageItem "+mi+" : "+mi.getData(pn).length);
 			mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
 			if(mi.formatted) {
 				try {
