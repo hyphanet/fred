@@ -248,7 +248,9 @@ public class BlockTransmitter {
 								}
 							}
 						} else {
-							Logger.error(this, "receiver requested block #"+packetNo+" which is not received");
+							// To be expected if the transfer is slow, since we send missingPacketNotification on a timeout.
+							if(logMINOR)
+								Logger.minor(this, "receiver requested block #"+packetNo+" which is not received");
 						}
 					}
 				} else if (msg.getSpec().equals(DMT.allReceived)) {
