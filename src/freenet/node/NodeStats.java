@@ -406,10 +406,7 @@ public class NodeStats implements Persistable {
 		// If no recent reports, no packets have been sent; correct the average downwards.
 		long now = System.currentTimeMillis();
 		double pingTime;
-		if (source==null)
-			pingTime = nodePinger.averagePingTime();
-		else
-			pingTime = source.averagePingTime();
+		pingTime = nodePinger.averagePingTime();
 		synchronized(this) {
 			// Round trip time
 			if(pingTime > MAX_PING_TIME) {
