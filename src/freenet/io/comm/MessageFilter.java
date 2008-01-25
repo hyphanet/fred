@@ -289,13 +289,18 @@ public final class MessageFilter {
      * Hopefully no locks will be held at this point by the caller.
      */
 	public void onMatched() {
-		if(_callback != null) {
-			// Clear matched before calling callback in case we are re-added.
-			clearMatched();
-			_callback.onMatched(_message);
-		}
+		Message msg;
+		AsyncMessageFilterCallback cb;
 		synchronized(this) {
+			msg = _message;
+			cb = _callback;
+			// Clear matched before calling callback in case we are re-added.
+			if(_callback != null)
+				clearMatched();
 			notifyAll();
+		}
+		if(cb != null) {
+			cb.onMatched(msg);
 		}
 	}
 
