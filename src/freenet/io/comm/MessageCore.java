@@ -288,7 +288,10 @@ public class MessageCore {
 
 	public void addAsyncFilter(MessageFilter filter, AsyncMessageFilterCallback callback) throws DisconnectedException {
 		filter.setAsyncCallback(callback);
-		filter.clearMatched();
+		if(filter.matched()) {
+			Logger.error(this, "addAsyncFilter() on a filter which is already matched: "+filter, new Exception("error"));
+			filter.clearMatched();
+		}
 		filter.onStartWaiting();
 		if(logMINOR) Logger.minor(this, "Adding async filter "+filter+" for "+callback);
 		Message ret = null;
@@ -365,7 +368,10 @@ public class MessageCore {
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logDEBUG) Logger.debug(this, "Waiting for "+filter);
 		long startTime = System.currentTimeMillis();
-		filter.clearMatched();
+		if(filter.matched()) {
+			Logger.error(this, "waitFor() on a filter which is already matched: "+filter, new Exception("error"));
+			filter.clearMatched();
+		}
 		filter.onStartWaiting();
 		Message ret = null;
 		if(filter.anyConnectionsDropped())
