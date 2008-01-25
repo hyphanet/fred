@@ -16,4 +16,12 @@ public class NullAsyncMessageFilterCallback implements
 		// Do nothing
 	}
 
+	public void onDisconnect(PeerContext ctx) {
+		// Do nothing
+	}
+
+	public void onRestarted(PeerContext ctx) {
+		// Do nothing
+	}
+
 }

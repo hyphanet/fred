@@ -89,6 +89,12 @@ public class BulkTransmitter {
 						public void onTimeout() {
 							// Ignore
 						}
+						public void onDisconnect(PeerContext ctx) {
+							// Ignore
+						}
+						public void onRestarted(PeerContext ctx) {
+							// Ignore
+						}
 			});
 			prb.usm.addAsyncFilter(MessageFilter.create().setNoTimeout().setSource(peer).setType(DMT.FNPBulkReceivedAll).setField(DMT.UID, uid),
 					new AsyncMessageFilterCallback() {
@@ -104,6 +110,12 @@ public class BulkTransmitter {
 							return false;
 						}
 						public void onTimeout() {
+							// Ignore
+						}
+						public void onDisconnect(PeerContext ctx) {
+							// Ignore
+						}
+						public void onRestarted(PeerContext ctx) {
 							// Ignore
 						}
 			});

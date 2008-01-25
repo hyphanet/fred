@@ -13,6 +13,7 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.PeerContext;
 import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
@@ -144,6 +145,16 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			 */
 			Logger.error(this, "Timed out waiting for a final ack from: "+pn+" on "+this);
 			receivedNotice(false);
+		}
+
+		public void onDisconnect(PeerContext ctx) {
+			Logger.error(this, "Disconnected "+ctx+" for "+this);
+			receivedNotice(true); // as far as we know
+		}
+
+		public void onRestarted(PeerContext ctx) {
+			Logger.error(this, "Restarted "+ctx+" for "+this);
+			receivedNotice(true);
 		}
 	}
 	

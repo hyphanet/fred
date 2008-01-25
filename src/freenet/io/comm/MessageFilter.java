@@ -253,9 +253,13 @@ public final class MessageFilter {
      * Caller must verify _matchesDroppedConnection and _source.
      * @param ctx
      */
-    public synchronized void onDroppedConnection(PeerContext ctx) {
-    	_droppedConnection = ctx;
-   		notifyAll();
+    public void onDroppedConnection(PeerContext ctx) {
+    	synchronized(this) {
+    		_droppedConnection = ctx;
+    		notifyAll();
+    	}
+    	if(_callback != null)
+    		_callback.onDisconnect(ctx);
     }
 
     /**
@@ -263,9 +267,13 @@ public final class MessageFilter {
      * Caller must verify _matchesDroppedConnection and _source.
      * @param ctx
      */
-    public synchronized void onRestartedConnection(PeerContext ctx) {
-    	_droppedConnection = ctx;
-   		notifyAll();
+    public void onRestartedConnection(PeerContext ctx) {
+    	synchronized(this) {
+    		_droppedConnection = ctx;
+    		notifyAll();
+    	}
+    	if(_callback != null)
+    		_callback.onRestarted(ctx);
     }
 
     /**

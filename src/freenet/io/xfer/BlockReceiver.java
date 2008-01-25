@@ -208,5 +208,13 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	public void onTimeout() {
 		//ignore
 	}
+
+	public void onDisconnect(PeerContext ctx) {
+		// Ignore
+	}
+
+	public void onRestarted(PeerContext ctx) {
+		// Ignore
+	}
 	
 }

@@ -28,4 +28,16 @@ public interface AsyncMessageFilterCallback {
 	 * Called when the filter times out and is removed from the list of filters to match.
 	 */
 	void onTimeout();
+
+	/**
+	 * Called when the filter is dropped because a connection is dropped.
+	 * @param ctx
+	 */
+	void onDisconnect(PeerContext ctx);
+
+	/**
+	 * Called when the filter is dropped because a connection is restarted.
+	 * @param ctx
+	 */
+	void onRestarted(PeerContext ctx);
 }
