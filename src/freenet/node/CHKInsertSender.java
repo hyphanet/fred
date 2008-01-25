@@ -730,8 +730,15 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		 * @return True if all background transfers were successful.
 		 */
 		private boolean waitForBackgroundTransfers(BackgroundTransfer[] transfers) {
+			long start = System.currentTimeMillis();
+			// Generous deadline so we catch bugs more obviously
+			long deadline = start + TRANSFER_COMPLETION_ACK_TIMEOUT * 3;
 			// MAYBE all done
 			while(true) {
+				if(System.currentTimeMillis() > deadline) {
+					Logger.error(this, "Timed out waiting for background transfers! Probably caused by async filter not getting a timeout notification! DEBUG ME!");
+					return false;
+				}
 				//If we want to be sure to exit as-soon-as the transfers are done, then we must hold the lock while we check.
 				synchronized(backgroundTransfers) {
 					if(receiveFailed) return false;
