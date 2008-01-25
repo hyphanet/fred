@@ -2236,7 +2236,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) {
 			String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+ ',' +length+ ',' +tracker+ ',' +packetNumber+ ',';
 			if(callbacks == null) log += "null";
-			else log += ""+callbacks.length+StringArray.toString(callbacks);
+			else log += ""+callbacks.length+StringArray.toString(callbacks); // FIXME too verbose?
 			Logger.minor(this, log);
 		}
 		if((tracker == null) || (!tracker.pn.isConnected())) {
