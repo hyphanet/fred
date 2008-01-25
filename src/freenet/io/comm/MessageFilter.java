@@ -200,7 +200,10 @@ public final class MessageFilter {
 	}
 	
 	public boolean timedOut(long time) {
-		if(_matched) return false;
+		if(_matched) {
+			
+			return false;
+		}
 		if(_callback != null && _callback.shouldTimeout())
 			_timeout = -1; // timeout immediately
 		return _timeout < time;
@@ -283,6 +286,7 @@ public final class MessageFilter {
 	public void onMatched() {
 		if(_callback != null) {
 			_callback.onMatched(_message);
+			clearMatched();
 		}
 		synchronized(this) {
 			notifyAll();
