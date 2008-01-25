@@ -289,8 +289,7 @@ public class MessageCore {
 	public void addAsyncFilter(MessageFilter filter, AsyncMessageFilterCallback callback) throws DisconnectedException {
 		filter.setAsyncCallback(callback);
 		filter.onStartWaiting();
-		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-		if(logDEBUG) Logger.debug(this, "Adding async filter "+filter+" for "+callback);
+		if(logMINOR) Logger.minor(this, "Adding async filter "+filter+" for "+callback);
 		Message ret = null;
 		if(filter.anyConnectionsDropped())
 			throw new DisconnectedException();
