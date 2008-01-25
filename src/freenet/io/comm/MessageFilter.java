@@ -183,7 +183,7 @@ public final class MessageFilter {
 				}
 			}
 		}
-		if(timedOut(System.currentTimeMillis())) return false;
+		if(reallyTimedOut(System.currentTimeMillis())) return false;
 		_matched=true;
 		return true;
 	}
@@ -199,6 +199,12 @@ public final class MessageFilter {
 	    return _droppedConnection;
 	}
 	
+	private boolean reallyTimedOut(long time) {
+		if(_callback != null && _callback.shouldTimeout())
+			_timeout = -1; // timeout immediately
+		return _timeout < time;
+	}
+	
 	/**
 	 * @param time The current time in milliseconds.
 	 * @return True if the filter has timed out, or if it has been matched already. Caller will
@@ -209,9 +215,7 @@ public final class MessageFilter {
 			Logger.error(this, "Impossible: filter already matched in timedOut(): "+this, new Exception("error"));
 			return true; // Remove it.
 		}
-		if(_callback != null && _callback.shouldTimeout())
-			_timeout = -1; // timeout immediately
-		return _timeout < time;
+		return reallyTimedOut(time);
 	}
 
     public Message getMessage() {
