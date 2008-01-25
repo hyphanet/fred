@@ -206,7 +206,7 @@ public final class MessageFilter {
 	 */
 	boolean timedOut(long time) {
 		if(_matched) {
-			Logger.error(this, "Impossible: filter already matched in timedOut()");
+			Logger.error(this, "Impossible: filter already matched in timedOut()", new Exception("error"));
 			return true; // Remove it.
 		}
 		if(_callback != null && _callback.shouldTimeout())
