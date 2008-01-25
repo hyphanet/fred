@@ -199,10 +199,15 @@ public final class MessageFilter {
 	    return _droppedConnection;
 	}
 	
-	public boolean timedOut(long time) {
+	/**
+	 * @param time The current time in milliseconds.
+	 * @return True if the filter has timed out, or if it has been matched already. Caller will
+	 * remove the filter from _filters if we return true.
+	 */
+	boolean timedOut(long time) {
 		if(_matched) {
-			
-			return false;
+			Logger.error(this, "Impossible: filter already matched in timedOut()");
+			return true; // Remove it.
 		}
 		if(_callback != null && _callback.shouldTimeout())
 			_timeout = -1; // timeout immediately
