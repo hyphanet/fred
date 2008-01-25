@@ -690,7 +690,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		private void waitForBackgroundTransferCompletions() {
 			try {
 		    freenet.support.Logger.OSThread.logPID(this);
-			if(logMINOR) Logger.minor(this, "Starting "+this);
+			if(logMINOR) Logger.minor(this, "Waiting for background transfer completions: "+this);
 			
 			// We must presently be at such a stage that no more background transfers will be added.
 			
