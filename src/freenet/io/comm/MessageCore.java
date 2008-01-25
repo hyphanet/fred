@@ -343,7 +343,12 @@ public class MessageCore {
 			filter.clearMatched();
 		} else {
 			// Might have disconnected between check above and locking _filters.
-			filter.anyConnectionsDropped();
+			if(filter.anyConnectionsDropped()) {
+				synchronized(_filters) {
+					_filters.remove(filter);
+				}
+				throw new DisconnectedException();
+			}
 		}
 	}
 
