@@ -114,7 +114,7 @@ public class MessageCore {
 				}
 				// Do not break after finding a non-timed-out filter because some filters may 
 				// be timed out because their client callbacks say they should be.
-				// Also simplifies the logic.
+				// Also simplifies the logic significantly, we've had some major bugs here.
 				
 				// See also the end of waitFor() for another wierd case.
 			}
