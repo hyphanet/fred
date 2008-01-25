@@ -239,9 +239,15 @@ public final class MessageFilter {
     	return super.toString()+":"+_type.getName();
     }
 
-    public synchronized void clearMatched() {
-        _matched = false;
-        _message = null;
+    public void clearMatched() {
+    	MessageFilter or;
+    	synchronized(this) {
+    		_matched = false;
+    		_message = null;
+    		or = _or;
+    	}
+    	if(or != null)
+    		or.clearMatched();
     }
 
     public void clearOr() {
