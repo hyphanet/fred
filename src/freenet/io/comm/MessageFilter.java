@@ -239,7 +239,7 @@ public final class MessageFilter {
     	return super.toString()+":"+_type.getName();
     }
 
-    public void clearMatched() {
+    public synchronized void clearMatched() {
         _matched = false;
         _message = null;
     }
