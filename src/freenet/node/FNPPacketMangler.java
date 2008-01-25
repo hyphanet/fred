@@ -2157,7 +2157,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private void innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, 
 			PeerNode pn, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks, int alreadyReportedBytes, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
-		if(logMINOR) Logger.minor(this, "innerProcessOutgoing(...,"+start+ ',' +length+ ',' +bufferLength+ ')');
+		if(logMINOR) Logger.minor(this, "innerProcessOutgoing(...,"+start+ ',' +length+ ',' +bufferLength+ ','+callbacks.length+')');
 		byte[] buf = new byte[bufferLength];
 		buf[0] = (byte)length;
 		int loc = 1;
