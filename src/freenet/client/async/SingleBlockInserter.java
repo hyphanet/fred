@@ -220,8 +220,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(getCHKOnly) {
 			ClientKeyBlock block = encode();
 			cb.onEncode(block.getClientKey(), this);
-			cb.onSuccess(this);
 			parent.completedBlock(false);
+			cb.onSuccess(this);
 			finished = true;
 		} else {
 			getScheduler().register(this);
