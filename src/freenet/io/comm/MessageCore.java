@@ -109,10 +109,11 @@ public class MessageCore {
 						Logger.minor(this, "Removing "+f);
 					i.remove();
 					_timedOutFilters.add(f);
-				} else { // Because _filters are in order of timeout, we
-					// can abort the iteration as soon as we find one that
-					// doesn't timeout
-					break;
+				} else {
+					// Because f.timedOut() may return true prematurely if the message-
+					// filter is obsolete, we should not abort the iteration as soon as
+					// we find one that doesn't timeout. Although, in theory we could
+					// because of the order of the list (by earliest timeout first).
 				}
 			}
 		}
