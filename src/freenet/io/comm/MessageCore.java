@@ -110,10 +110,12 @@ public class MessageCore {
 					i.remove();
 					_timedOutFilters.add(f);
 				} else {
-					// Because f.timedOut() may return true prematurely if the message-
-					// filter is obsolete, we should not abort the iteration as soon as
-					// we find one that doesn't timeout. Although, in theory we could
-					// because of the order of the list (by earliest timeout first).
+					// Because _filters are in order of timeout, we
+					// can abort the iteration as soon as we find one that
+					// doesn't timeout
+					if(Logger.shouldLog(Logger.DEBUG, this))
+						Logger.debug(this, "Stopping removing timed out filters at "+f+" : timeout = "+f.getTimeout()+" initial timeout = "+f.getInitialTimeout());
+					break;
 				}
 			}
 		}
