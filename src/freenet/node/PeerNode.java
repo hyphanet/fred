@@ -1488,7 +1488,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		public void acknowledged() {
 			synchronized(this) {
 				if(!done)
-					Logger.error(this, "Acknowledged but not sent?! on " + this + " for " + PeerNode.this);
+					// Can happen due to lag.
+					Logger.normal(this, "Acknowledged but not sent?! on " + this + " for " + PeerNode.this+" - lag ???");
 				else
 					return;
 				done = true;
