@@ -100,6 +100,8 @@ public class MessageCore {
 	void removeTimedOutFilters() {
 		long tStart = System.currentTimeMillis();
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		if(logMINOR)
+			Logger.minor(this, "Removing timed out filters");
 		synchronized (_filters) {
 			for (ListIterator i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = (MessageFilter) i.next();
