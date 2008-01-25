@@ -240,6 +240,8 @@ public final class MessageFilter {
     }
 
     public void clearMatched() {
+    	// If the filter matched in an _or, and it is re-used, then
+    	// we need to clear all the _or's.
     	MessageFilter or;
     	synchronized(this) {
     		_matched = false;
