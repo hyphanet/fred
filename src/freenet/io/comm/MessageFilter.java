@@ -290,8 +290,9 @@ public final class MessageFilter {
      */
 	public void onMatched() {
 		if(_callback != null) {
-			_callback.onMatched(_message);
+			// Clear matched before calling callback in case we are re-added.
 			clearMatched();
+			_callback.onMatched(_message);
 		}
 		synchronized(this) {
 			notifyAll();
