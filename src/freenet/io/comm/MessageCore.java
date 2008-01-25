@@ -453,6 +453,17 @@ public class MessageCore {
 			}
 			if(logDEBUG) Logger.debug(this, "Returning "+ret+" from "+filter);
 		}
+		if(!filter.matched()) {
+			// We must remove it from _filters before we return, or when it is re-added,
+			// it will be in the list twice, and that will cause other filters not to be
+			// dropped.
+			synchronized(_filters) {
+				// Fortunately, it will be close to the beginning of the filters list, having
+				// just timed out. That is assuming it hasn't already been removed; in that
+				// case, this will be slower.
+				_filters.remove(filter);
+			}
+		}
 			// Matched a packet, unclaimed or after wait
 			filter.setMessage(ret);
 			filter.onMatched();
