@@ -50,7 +50,9 @@ public class BookmarkItem extends Bookmark {
     
     public BookmarkItem(SimpleFieldSet sfs, UserAlertManager uam) throws FSParseException, MalformedURLException {
         this.name = sfs.get("Name");
+        if(name == null) name = "";
         this.desc = sfs.get("Description");
+        if(desc == null) desc = "";
         this.hasAnActivelink = sfs.getBoolean("hasAnActivelink");
         this.key = new FreenetURI(sfs.get("URI"));
         this.alerts = uam;
