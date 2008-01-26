@@ -206,7 +206,7 @@ public class UpdateOverMandatoryManager {
 			try {
 				FreenetURI mainJarURI = new FreenetURI(jarKey).setSuggestedEdition(mainJarVersion);
 				if(mainJarURI.equals(updateManager.updateURI.setSuggestedEdition(mainJarVersion))) {
-					sendUOMRequestMain(source);
+					sendUOMRequestMain(source, true);
 				} else {
 					System.err.println("Node "+source.userToString()+" offered us a new main jar (version "+mainJarVersion+") but his key was different to ours:\n"+
 							"our key: "+updateManager.updateURI+"\nhis key:"+mainJarURI);
@@ -221,11 +221,12 @@ public class UpdateOverMandatoryManager {
 		return true;
 	}
 
-	protected void sendUOMRequestMain(final PeerNode source) {
+	protected void sendUOMRequestMain(final PeerNode source, boolean addOnFail) {
 		synchronized(this) {
-			if(nodesAskedSendMainJar.size() + nodesSendingMainJar.size() >= MAX_NODES_SENDING_MAIN_JAR) {
-				if(nodesOfferedMainJar.add(source))
+			if(addOnFail && nodesAskedSendMainJar.size() + nodesSendingMainJar.size() >= MAX_NODES_SENDING_MAIN_JAR) {
+				if(nodesOfferedMainJar.add(source)) {
 					System.err.println("Offered main jar by "+source.userToString()+" (already fetching from "+nodesSendingMainJar.size()+"), but will use this offer if our current fetches fail).");
+				}
 				return;
 			} else {
 				if(nodesSendingMainJar.contains(source)) {
@@ -281,18 +282,24 @@ public class UpdateOverMandatoryManager {
 	
 	
 	protected void maybeRequestMainJar() {
-		while(true) {
-			PeerNode pn;
+			PeerNode[] offers;
 			synchronized(this) {
 				if(nodesAskedSendMainJar.size() + nodesSendingMainJar.size() 
 						>= MAX_NODES_SENDING_MAIN_JAR)
 					return;
 				if(nodesOfferedMainJar.isEmpty()) return;
-				pn = (PeerNode) (nodesOfferedMainJar.iterator().next());
+				offers = (PeerNode[]) nodesOfferedMainJar.toArray(new PeerNode[nodesOfferedMainJar.size()]);
 			}
-			if(!pn.isConnected()) continue;
-			sendUOMRequestMain(pn);
-		}
+			for(int i=0;i<offers.length;i++) {
+				if(offers[i].isConnected()) continue;
+				synchronized(this) {
+					if(nodesAskedSendMainJar.size() + nodesSendingMainJar.size() 
+							>= MAX_NODES_SENDING_MAIN_JAR)
+						return;
+					if(nodesSendingMainJar.contains(offers[i])) continue;
+				}
+				sendUOMRequestMain(offers[i], false);
+			}
 	}
 
 	private void alertUser() {
