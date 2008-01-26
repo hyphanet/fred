@@ -178,6 +178,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				receiveCompleted = true;
 		} catch (AbortedException e) {
 			receiveFailed = true;
+			receiveCompleted = true;
 			// Handle the rest of the consequences in realRun().
 		}
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
