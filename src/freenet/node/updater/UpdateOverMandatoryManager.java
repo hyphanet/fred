@@ -223,6 +223,10 @@ public class UpdateOverMandatoryManager {
 
 	protected void sendUOMRequestMain(final PeerNode source, boolean addOnFail) {
 		synchronized(this) {
+			if(nodesAskedSendMainJar.contains(source)) {
+				if(logMINOR) Logger.minor(this, "Recently asked node "+source+" so not re-asking yet.");
+				return;
+			}
 			if(addOnFail && nodesAskedSendMainJar.size() + nodesSendingMainJar.size() >= MAX_NODES_SENDING_MAIN_JAR) {
 				if(nodesOfferedMainJar.add(source)) {
 					System.err.println("Offered main jar by "+source.userToString()+" (already fetching from "+nodesSendingMainJar.size()+"), but will use this offer if our current fetches fail).");
