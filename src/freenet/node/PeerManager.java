@@ -594,7 +594,7 @@ public class PeerManager {
     /**
      * Asynchronously send this message to every connected peer.
      */
-    public void localBroadcast(Message msg, boolean ignoreRoutability) {
+    public void localBroadcast(Message msg, boolean ignoreRoutability, boolean onlyRealConnections) {
         PeerNode[] peers;
         synchronized (this) {
         	// myPeers not connectedPeers as connectedPeers only contains
@@ -607,6 +607,7 @@ public class PeerManager {
         	} else {
         		if(!peers[i].isRoutable()) continue;
         	}
+        	if(onlyRealConnections && !peers[i].isRealConnection()) continue;
         	try {
                 peers[i].sendAsync(msg, null, 0, null);
             } catch (NotConnectedException e) {

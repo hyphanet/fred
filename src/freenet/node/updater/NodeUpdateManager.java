@@ -167,7 +167,7 @@ public class NodeUpdateManager {
 			msg = getUOMAnnouncement();
 			broadcastUOMAnnounces = true;
 		}
-		node.peers.localBroadcast(msg, true);
+		node.peers.localBroadcast(msg, true, true);
 	}
 
 	private Message getUOMAnnouncement() {

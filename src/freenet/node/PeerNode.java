@@ -1897,7 +1897,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected (" + isConnected + ':' + currentTracker + "!!!: " + e, e);
 		}
 
-		if(node.nodeUpdater != null)
+		if(node.nodeUpdater != null && isRealConnection())
 			node.nodeUpdater.maybeSendUOMAnnounce(this);
 		sendConnectedDiffNoderef();
 	}
