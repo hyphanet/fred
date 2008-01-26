@@ -15,6 +15,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.xfer.AbortedException;
+import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
@@ -172,6 +173,13 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         this.closestLocation = closestLocation;
         this.startTime = System.currentTimeMillis();
         this.backgroundTransfers = new Vector();
+        try {
+			if(prb.allReceived())
+				receiveCompleted = true;
+		} catch (AbortedException e) {
+			receiveFailed = true;
+			// Handle the rest of the consequences in realRun().
+		}
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
@@ -197,6 +205,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     final PartiallyReceivedBlock prb;
     final boolean fromStore;
     private boolean receiveFailed;
+    private boolean receiveCompleted;
     final double closestLocation;
     final long startTime;
     private boolean sentRequest;
@@ -606,6 +615,34 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
      
+    	// Don't set the status code until we have received the data.
+    	
+    	// FIXME remove timeout and just wait on TRANSFER_COMPLETION_ACK_TIMEOUT below
+    	long receiveTimeout = System.currentTimeMillis() + (BlockReceiver.MAX_CONSECUTIVE_MISSING_PACKET_REPORTS * BlockReceiver.RECEIPT_TIMEOUT * 3);
+    	if(receiveCompleted) {
+    		synchronized(backgroundTransfers) {
+    			while(true) {
+    				if(receiveCompleted) break;
+    				try {
+    					//FIXME delete below and reinstate: backgroundTransfers.wait(TRANSFER_COMPLETION_ACK_TIMEOUT);
+    					int delay = (int) (receiveTimeout - System.currentTimeMillis());
+    					if(delay > 0) backgroundTransfers.wait(delay);
+    					else if(!receiveCompleted) {
+    						Logger.error(this, "Timeout waiting for transfer completion on "+this);
+    						code = RECEIVE_FAILED;
+    						receiveFailed = true;
+    						receiveCompleted = true;
+    						break;
+    					}
+    				} catch (InterruptedException e) {
+    					// Ignore
+    				}
+    			}
+    		}
+    		if(receiveFailed)
+    			code = RECEIVE_FAILED;
+    	}
+    	
         synchronized(this) {   
         	if((code == ROUTE_NOT_FOUND) && !sentRequest)
         		code = ROUTE_REALLY_NOT_FOUND;
@@ -659,6 +696,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     public void receiveFailed() {
     	synchronized(backgroundTransfers) {
     		receiveFailed = true;
+    		receiveCompleted = true;
     		backgroundTransfers.notifyAll();
     	}
     	// Set status immediately.
@@ -673,6 +711,16 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     	// Do not call finish(), that can only be called on the main thread and it will block.
     }
 
+    /**
+     * Called by InsertHandler to notify that the receive has finished successfully.
+     */
+    public void receiveCompleted() {
+    	synchronized(backgroundTransfers) {
+    		receiveCompleted = true;
+    		backgroundTransfers.notifyAll();
+    	}
+    }
+    
     /**
      * @return The current status as a string
      */

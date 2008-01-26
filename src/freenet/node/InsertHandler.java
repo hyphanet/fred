@@ -420,6 +420,8 @@ public class InsertHandler implements Runnable, ByteCounter {
         	if(logMINOR) Logger.minor(this, "Receiving data for "+InsertHandler.this);
             try {
                 br.receive();
+                if(sender != null)
+                	sender.receiveCompleted();
                 if(logMINOR) Logger.minor(this, "Received data for "+InsertHandler.this);
             	synchronized(InsertHandler.this) {
             		receiveCompleted = true;
