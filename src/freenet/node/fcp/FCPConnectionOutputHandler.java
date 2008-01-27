@@ -44,12 +44,13 @@ public class FCPConnectionOutputHandler implements Runnable {
 	private void realRun() throws IOException {
 		OutputStream os = new BufferedOutputStream(handler.sock.getOutputStream(), 4096);
 		while(true) {
-			boolean closed;
+			boolean closed, empty = false;
 			FCPMessage msg = null;
 			while(true) {
 				closed = handler.isClosed();
 				synchronized(outQueue) {
-					if(outQueue.isEmpty()) {
+					empty = outQueue.isEmpty();
+					if(empty) {
 						if(closed) break;
 						os.flush();
 						try {
@@ -64,7 +65,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 				}
 			}
 			if(msg == null) {
-				if(closed) {
+				if(closed && empty) {
 					os.flush();
 					os.close();
 					return;
