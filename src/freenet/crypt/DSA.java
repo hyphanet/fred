@@ -72,7 +72,7 @@ public class DSA {
             BigInteger k;
 		do {
 			k=new NativeBigInteger(DSAGroup.Q_BIT_LENGTH, r);
-		} while ((g.getQ().compareTo(k) < 1) || (k.compareTo(BigInteger.ZERO) == 0));
+		} while ((g.getQ().compareTo(k) < 1) || (k.compareTo(BigInteger.ZERO) < 1));
 		return k;
 	}
 
