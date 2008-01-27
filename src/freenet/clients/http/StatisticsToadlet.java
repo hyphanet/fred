@@ -156,6 +156,7 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfListenOnly = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTEN_ONLY);
 		int numberOfSeedServers = getCountSeedServers(peerNodeStatuses);
 		int numberOfSeedClients = getCountSeedClients(peerNodeStatuses);
+		int numberOfRoutingDisabled = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED);
 
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -253,7 +254,8 @@ public class StatisticsToadlet extends Toadlet {
 			
 			drawPeerStatsBox(peerStatsInfobox, advancedModeEnabled, numberOfConnected, numberOfRoutingBackedOff, 
 					numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, 
-					numberOfBursting, numberOfListening, numberOfListenOnly, numberOfSeedServers, numberOfSeedClients);
+					numberOfBursting, numberOfListening, numberOfListenOnly, numberOfSeedServers, numberOfSeedClients,
+					numberOfRoutingDisabled);
 
 			// Bandwidth box
 			HTMLNode bandwidthInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -638,7 +640,7 @@ public class StatisticsToadlet extends Toadlet {
 	private void drawPeerStatsBox(HTMLNode peerStatsInfobox, boolean advancedModeEnabled, int numberOfConnected, 
 			int numberOfRoutingBackedOff, int numberOfTooNew, int numberOfTooOld, int numberOfDisconnected, 
 			int numberOfNeverConnected, int numberOfDisabled, int numberOfBursting, int numberOfListening, 
-			int numberOfListenOnly, int numberOfSeedServers, int numberOfSeedClients) {
+			int numberOfListenOnly, int numberOfSeedServers, int numberOfSeedClients, int numberOfRoutingDisabled) {
 		
 		peerStatsInfobox.addChild("div", "class", "infobox-header", l10n("peerStatsTitle"));
 		HTMLNode peerStatsContent = peerStatsInfobox.addChild("div", "class", "infobox-content");
@@ -703,6 +705,11 @@ public class StatisticsToadlet extends Toadlet {
 			peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, 
 					new String[] { "peer_listen_only", l10nDark("listenOnly"), "border-bottom: 1px dotted; cursor: help;" }, l10nDark("listenOnlyShort"));
 			peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
+		}
+		if (numberOfRoutingDisabled > 0) {
+			HTMLNode peerStatsRoutingDisabledListItem = peerStatsList.addChild("li").addChild("span");
+			peerStatsRoutingDisabledListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_routing_disabled", l10n("routingDisabled"), "border-bottom: 1px dotted; cursor: help;" }, l10n("routingDisabledShort"));
+			peerStatsRoutingDisabledListItem.addChild("span", ":\u00a0" + numberOfRoutingDisabled);
 		}
 		if (numberOfSeedServers > 0) {
 			HTMLNode peerStatsSeedServersListItem = peerStatsList.addChild("li").addChild("span");
