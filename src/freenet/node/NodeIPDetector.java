@@ -359,6 +359,7 @@ public class NodeIPDetector {
 			try {
 				overrideIPAddress = new FreenetInetAddress(ipOverrideString, false);
 			} catch (UnknownHostException e) {
+				// **FIXME** This never happens with current FreenetInetAddress(String, boolean) code; perhaps it needs review?
 				String msg = "Unknown host: "+ipOverrideString+" in config: "+e.getMessage();
 				Logger.error(this, msg);
 				System.err.println(msg+" but starting up anyway with no IP override");
