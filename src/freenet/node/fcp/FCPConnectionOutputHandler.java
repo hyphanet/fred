@@ -90,6 +90,9 @@ public class FCPConnectionOutputHandler implements Runnable {
 		synchronized(outQueue) {
 			outQueue.notifyAll();
 		}
+		// Give a chance to the output handler to flush
+		// its queue before the socket is closed
+		// @see #2019 - nextgens
 		while(!outQueue.isEmpty()) {
 			try {
 				Thread.sleep(100);
