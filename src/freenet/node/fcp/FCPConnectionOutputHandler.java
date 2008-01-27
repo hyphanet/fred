@@ -90,6 +90,11 @@ public class FCPConnectionOutputHandler implements Runnable {
 		synchronized(outQueue) {
 			outQueue.notifyAll();
 		}
+		while(!outQueue.isEmpty()) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {}
+		}
 	}
 
 }
