@@ -43,10 +43,9 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 		Option o = sc.getOption("ipAddressOverride");
 		
 		HTMLNode textNode = new HTMLNode("div");
-		L10n.addL10nSubstitution(textNode, "InvalidAddressOverrideUserAlert.unknownAddressWithConfigLink"), 
+		L10n.addL10nSubstitution(textNode, "InvalidAddressOverrideUserAlert.unknownAddressWithConfigLink", 
 				new String[] { "link", "/link" }, 
 				new String[] { "<a href=\"/config/\">", "</a>" });
-		addPortForwardSuggestion(textNode);
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
