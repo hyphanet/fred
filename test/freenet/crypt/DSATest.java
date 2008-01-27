@@ -59,7 +59,7 @@ public class DSATest extends TestCase{
     private static final DSAGroup FIPS_DSA_GROUP = 
                     new DSAGroup(FIPS_P,FIPS_Q,FIPS_G);
     private static final DSAPrivateKey FIPS_DSA_PRIVATE_KEY = 
-                    new DSAPrivateKey(FIPS_X);
+                    new DSAPrivateKey(FIPS_X, FIPS_DSA_GROUP);
     private static final DSAPublicKey FIPS_DSA_PUBLIC_KEY =
                     new DSAPublicKey(FIPS_DSA_GROUP,FIPS_Y);
     private static final DSASignature FIPS_DSA_SIGNATURE = 
@@ -164,7 +164,7 @@ public class DSATest extends TestCase{
         for(int i = 0; i <= FIPS_X.bitCount(); i++) {
             x = x.flipBit(i);
             if (x.compareTo(FIPS_X) != 0) {
-                aTestPrivateKey = new DSAPrivateKey(x);
+                aTestPrivateKey = new DSAPrivateKey(x, FIPS_DSA_GROUP);
                 anotherSignature = DSA.sign(FIPS_DSA_GROUP,aTestPrivateKey,FIPS_K,FIPS_SHA1_M,randomSource);
                 assertFalse(generatedR.compareTo(anotherSignature.getR()) == 0 && 
                             generatedS.compareTo(anotherSignature.getS()) == 0);
