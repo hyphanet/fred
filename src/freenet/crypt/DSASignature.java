@@ -21,6 +21,7 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
     public DSASignature(InputStream in) throws IOException {
 		r=Util.readMPI(in);
 		s=Util.readMPI(in);
+		if(r.signum() != 1 || s.signum() != 1) throw new IOException("Both R and S should be positive!");
     }
 
     /**
@@ -51,8 +52,6 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
     public DSASignature(BigInteger r, BigInteger s) {
 		this.r=r;
 		this.s=s;
-		if((r == null) || (s == null)) //Do not allow this sice we wont do any sanity checking beyond this place
-			throw new NullPointerException();
 		if(r.signum() != 1 || s.signum() != 1) throw new IllegalArgumentException();
     }
 
