@@ -87,11 +87,4 @@ public class SeedClientPeerNode extends PeerNode {
 	void startARKFetcher() {
 		// Do not start an ARK fetcher.
 	}
-
-	/**
-	 * Return the relevant local node reference related to this peer's type
-	 */
-	protected SimpleFieldSet getLocalNoderef() {
-		return crypto.exportPublicFieldSet();
-	}
 }

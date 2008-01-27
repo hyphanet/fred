@@ -98,11 +98,4 @@ public class SeedServerPeerNode extends PeerNode {
 	protected boolean generateIdentityFromPubkey() {
 		return false;
 	}
-
-	/**
-	 * Return the relevant local node reference related to this peer's type
-	 */
-	protected SimpleFieldSet getLocalNoderef() {
-		return crypto.exportPublicFieldSet();
-	}
 }

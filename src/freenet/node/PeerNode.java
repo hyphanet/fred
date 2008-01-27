@@ -3497,8 +3497,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Return the relevant local node reference related to this peer's type
 	 */
 	protected SimpleFieldSet getLocalNoderef() {
-		// Do nothing in the default impl
-		return null;
+		return crypto.exportPublicFieldSet();
 	}
 
 	/**

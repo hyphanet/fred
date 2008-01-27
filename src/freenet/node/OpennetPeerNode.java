@@ -96,11 +96,4 @@ public class OpennetPeerNode extends PeerNode {
 			return super.equals(o);
 		} else return false;
 	}
-
-	/**
-	 * Return the relevant local node reference related to this peer's type
-	 */
-	protected SimpleFieldSet getLocalNoderef() {
-		return crypto.exportPublicFieldSet();
-	}
 }
