@@ -395,10 +395,10 @@ public class NodeIPDetector {
 			try {
 				oldIPAddress = new FreenetInetAddress(ipHintString, false);
 			} catch (UnknownHostException e) {
-				String msg = "Unknown host: "+ipOverrideString+" in config: "+e.getMessage();
+				String msg = "Unknown host: "+ipHintString+" in config: "+e.getMessage();
 				Logger.error(this, msg);
 				System.err.println(msg+"");
-				overrideIPAddress = null;
+				oldIPAddress = null;
 			}
 		}
 		
