@@ -391,7 +391,7 @@ public class NodeIPDetector {
 		});
 		
 		String ipHintString = nodeConfig.getString("tempIPAddressHint");
-		if(ipOverrideString.length() > 0) {
+		if(ipHintString.length() > 0) {
 			try {
 				oldIPAddress = new FreenetInetAddress(ipHintString, false);
 			} catch (UnknownHostException e) {
