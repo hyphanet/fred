@@ -19,9 +19,9 @@ public class DSAPrivateKey extends CryptoKey {
 
     private final BigInteger x;
 
-    public DSAPrivateKey(BigInteger x) {
+    public DSAPrivateKey(BigInteger x, DSAGroup g) {
         this.x = x;
-        if(x.signum() != 1)
+        if(x.signum() != 1 || x.compareTo(g.getQ()) > -1 || x.compareTo(BigInteger.ZERO) < 1)
         	throw new IllegalArgumentException();
     }
 
@@ -47,8 +47,8 @@ public class DSAPrivateKey extends CryptoKey {
         return x;
     }
     
-    public static CryptoKey read(InputStream i) throws IOException {
-        return new DSAPrivateKey(Util.readMPI(i));
+    public static CryptoKey read(InputStream i, DSAGroup g) throws IOException {
+        return new DSAPrivateKey(Util.readMPI(i), g);
     }
     
     public String toLongString() {
@@ -79,7 +79,7 @@ public class DSAPrivateKey extends CryptoKey {
 		NativeBigInteger y = new NativeBigInteger(1, Base64.decode(fs.get("x")));
 		if(y.bitLength() > 512)
 			throw new IllegalBase64Exception("Probably a pubkey");
-		return new DSAPrivateKey(y);
+		return new DSAPrivateKey(y, group);
 	}
     
 //    public static void main(String[] args) throws Exception {
