@@ -421,12 +421,10 @@ public class LocationManager {
                 if(logMINOR) Logger.minor(this, "Sending SwapRequest "+uid+" to "+pn);
                 
                 MessageFilter filter1 =
-                    MessageFilter.create().setType(DMT.FNPSwapRejected).setField(DMT.UID, uid).setSource(pn);
+                    MessageFilter.create().setType(DMT.FNPSwapRejected).setField(DMT.UID, uid).setSource(pn).setTimeout(TIMEOUT);
                 MessageFilter filter2 =
-                    MessageFilter.create().setType(DMT.FNPSwapReply).setField(DMT.UID, uid).setSource(pn);
+                    MessageFilter.create().setType(DMT.FNPSwapReply).setField(DMT.UID, uid).setSource(pn).setTimeout(TIMEOUT);
                 MessageFilter filter = filter1.or(filter2);
-                // 60 seconds
-                filter.setTimeout(TIMEOUT);
                 
                 node.usm.send(pn, m, null);
                 
