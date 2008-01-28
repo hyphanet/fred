@@ -48,9 +48,9 @@ public final class MessageFilter {
     private Message _message;
     private long _oldBootID;
     private AsyncMessageFilterCallback _callback;
+    private boolean _setTimeout = false;
 
     private MessageFilter() {
-    	setNoTimeout();
         _timeoutFromWait = true;
     }
 
@@ -60,6 +60,8 @@ public final class MessageFilter {
 
     void onStartWaiting() {
     	synchronized(this) {
+    		if(!_setTimeout)
+    			Logger.error(this, "No timeout set on filter "+this, new Exception("error"));
     		if(_initialTimeout > 0 && _timeoutFromWait)
     			_timeout = System.currentTimeMillis() + _initialTimeout;
     	}
@@ -86,12 +88,14 @@ public final class MessageFilter {
      * @return This message filter
      */
 	public MessageFilter setTimeout(int timeout) {
+		_setTimeout = true;
 		_initialTimeout = timeout;
 		_timeout = System.currentTimeMillis() + timeout;
 		return this;
 	}
 
 	public MessageFilter setNoTimeout() {
+		_setTimeout = true;
 		_timeout = Long.MAX_VALUE;
 		return this;
 	}
