@@ -624,16 +624,21 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         	if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         }
 		
+        boolean failedRecv; // receiveFailed is protected by backgroundTransfers but status by this
         // Now wait for transfers, or for downstream transfer notifications.
+        // Note that even the data receive may not have completed by this point.
 		synchronized(backgroundTransfers) {
 			if (!backgroundTransfers.isEmpty()) {
 				waitForBackgroundTransferCompletions();
 			} else {
 				if(logMINOR) Logger.minor(this, "No background transfers");
 			}
+			failedRecv = receiveFailed;
 		}
         
         	synchronized(this) {
+        		if(failedRecv)
+        			status = RECEIVE_FAILED;
         		allTransfersCompleted = true;
         		notifyAll();
         	}
