@@ -747,6 +747,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		
+		// Get status explicitly, *after* completed(), so that it will be RECEIVE_FAILED if the receive failed.
 		int status = is.getStatus();
         if(status != CHKInsertSender.TIMED_OUT && status != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && status != CHKInsertSender.INTERNAL_ERROR
         		&& status != CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
