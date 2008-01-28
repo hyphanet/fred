@@ -554,7 +554,7 @@ public class PeerManager {
     }
 
     /**
-     * @return A random connected peer.
+     * @return A random routable connected peer.
      * FIXME: should this take performance into account?
      * DO NOT remove the "synchronized". See below for why.
      */
