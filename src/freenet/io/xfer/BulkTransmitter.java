@@ -160,6 +160,8 @@ public class BulkTransmitter {
 	}
 
 	public void cancel() {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Cancelling "+this);
 		sendAbortedMessage();
 		synchronized(this) {
 			cancelled = true;
@@ -184,9 +186,14 @@ public class BulkTransmitter {
 	 * @return True if the file was successfully sent. False otherwise.
 	 */
 	public boolean send() {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long lastSentPacket = System.currentTimeMillis();
 		while(true) {
-			if(prb.isAborted()) return false;
+			if(prb.isAborted()) {
+				if(logMINOR)
+					Logger.minor(this, "Aborted "+this);
+				return false;
+			}
 			int blockNo;
 			if(peer.getBootID() != peerBootID) {
 				synchronized(this) {
@@ -194,6 +201,8 @@ public class BulkTransmitter {
 					notifyAll();
 				}
 				prb.remove(BulkTransmitter.this);
+				if(logMINOR)
+					Logger.minor(this, "Failed to send "+uid+": peer restarted: "+peer);
 				return false;
 			}
 			synchronized(this) {
@@ -226,6 +235,8 @@ public class BulkTransmitter {
 			// Send a packet
 			byte[] buf = prb.getBlockData(blockNo);
 			if(buf == null) {
+				if(logMINOR)
+					Logger.minor(this, "Block "+blockNo+" is null, presumably the send is cancelled: "+this);
 				// Already cancelled, quit
 				return false;
 			}
@@ -248,6 +259,8 @@ public class BulkTransmitter {
 						}
 						if(cancelled) {
 							masterThrottle.recycle(packetSize);
+							if(logMINOR)
+								Logger.minor(this, "Cancelled after sleeping for throttle "+this);
 							return false;
 						}
 					}
@@ -265,9 +278,14 @@ public class BulkTransmitter {
 				lastSentPacket = System.currentTimeMillis();
 			} catch (NotConnectedException e) {
 				cancel();
+				if(logMINOR)
+					Logger.minor(this, "Canclled: not connected "+this);
 				return false;
 			}
 		}
 	}
 	
+	public String toString() {
+		return "BulkTransmitter:"+uid+":"+peer.shortToString();
+	}
 }
