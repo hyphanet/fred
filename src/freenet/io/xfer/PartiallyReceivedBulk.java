@@ -125,8 +125,8 @@ public class PartiallyReceivedBulk {
 	}
 
 	public void abort(int errCode, String why) {
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Aborting "+this+": "+errCode+" : "+why, new Exception("debug"));
+		if(Logger.shouldLog(Logger.NORMAL, this))
+			Logger.normal(this, "Aborting "+this+": "+errCode+" : "+why, new Exception("debug"));
 		BulkTransmitter[] notifyBTs;
 		BulkReceiver notifyBR;
 		synchronized(this) {
