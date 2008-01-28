@@ -97,6 +97,7 @@ public final class MessageFilter {
 	public MessageFilter setNoTimeout() {
 		_setTimeout = true;
 		_timeout = Long.MAX_VALUE;
+		_initialTimeout = 0;
 		return this;
 	}
 	
