@@ -76,8 +76,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		int consecutiveMissingPacketReports = 0;
 		try {
 			MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
-			MessageFilter mfAllSent = MessageFilter.create().setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);
-			MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
+			MessageFilter mfAllSent = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);
+			MessageFilter mfSendAborted = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
 			MessageFilter relevantMessages=mfPacketTransmit.or(mfAllSent.or(mfSendAborted));
 		while (!_prb.allReceived()) {
 			Message m1;
