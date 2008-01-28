@@ -981,7 +981,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * 
 	 * Format:
 	 * Ni, Nr, g^i, g^r
-	 * Authenticator - HMAC{g^ir}(g^r, g^i, Nr, Ni, IP)
+	 * Authenticator - HMAC{Hkr}[g^r, g^i, Nr, Ni, IPi]
 	 * HMAC{Ka}(cyphertext)
 	 * IV + E{KE}[S{i}[Ni,Nr,g^i,g^r,idR, bootID, znoderefI], bootID, znoderefI*]
 	 * 
@@ -1344,7 +1344,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/*
 	 * Format:
 	 * Ni, Nr, g^i, g^r
-	 * Authenticator - HMAC{g^ir}(g^r, Nr, Ni, IP)
+	 * Authenticator - HMAC{Hkr}[g^r, g^i, Nr, Ni, IPi]
 	 * HMAC{Ka}(cyphertext)
 	 * IV + E{KE}[S{i}[Ni,Nr,g^i,g^r,idR, bootID, znoderefI], bootID, znoderefI]
 	 * 
