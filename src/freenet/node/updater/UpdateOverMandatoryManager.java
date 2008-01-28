@@ -503,7 +503,7 @@ public class UpdateOverMandatoryManager {
 		final Runnable r = new Runnable() {
 			public void run() {
 				if(!bt.send()) {
-					Logger.error(this, "Failed to send revocation key blob to "+source.userToString());
+					Logger.error(this, "Failed to send revocation key blob to "+source.userToString()+" : "+bt.getCancelReason());
 				} else {
 					Logger.normal(this, "Sent revocation key blob to "+source.userToString());
 				}
@@ -876,7 +876,7 @@ public class UpdateOverMandatoryManager {
 		final Runnable r = new Runnable() {
 			public void run() {
 				if(!bt.send()) {
-					Logger.error(this, "Failed to send main jar blob to "+source.userToString());
+					Logger.error(this, "Failed to send main jar blob to "+source.userToString()+" : "+bt.getCancelReason());
 				} else {
 					Logger.normal(this, "Sent main jar blob to "+source.userToString());
 				}

@@ -47,6 +47,7 @@ public class BulkTransmitter {
 	/** Not expecting a response? */
 	final boolean noWait;
 	private long finishTime=-1;
+	private String cancelReason;
 	
 	/**
 	 * Create a bulk data transmitter.
@@ -77,7 +78,7 @@ public class BulkTransmitter {
 			prb.usm.addAsyncFilter(MessageFilter.create().setNoTimeout().setSource(peer).setType(DMT.FNPBulkReceiveAborted).setField(DMT.UID, uid),
 					new AsyncMessageFilterCallback() {
 						public void onMatched(Message m) {
-							cancel();
+							cancel("Other side sent FNPBulkReceiveAborted");
 						}
 						public boolean shouldTimeout() {
 							synchronized(BulkTransmitter.this) {
@@ -120,7 +121,7 @@ public class BulkTransmitter {
 						}
 			});
 		} catch (DisconnectedException e) {
-			cancel();
+			cancel("Disconnected");
 			throw e;
 		}
 		packetSize = DMT.bulkPacketTransmitSize(prb.blockSize) +
@@ -159,12 +160,13 @@ public class BulkTransmitter {
 		}
 	}
 
-	public void cancel() {
+	public void cancel(String reason) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Cancelling "+this);
 		sendAbortedMessage();
 		synchronized(this) {
 			cancelled = true;
+			cancelReason = reason;
 			notifyAll();
 		}
 		prb.remove(this);
@@ -227,7 +229,7 @@ public class BulkTransmitter {
 				long end = System.currentTimeMillis();
 				if(end - lastSentPacket > TIMEOUT) {
 					Logger.error(this, "Send timed out on "+this);
-					cancel();
+					cancel("Timeout");
 					return false;
 				}
 				continue;
@@ -277,7 +279,7 @@ public class BulkTransmitter {
 				}
 				lastSentPacket = System.currentTimeMillis();
 			} catch (NotConnectedException e) {
-				cancel();
+				cancel("Disconnected");
 				if(logMINOR)
 					Logger.minor(this, "Canclled: not connected "+this);
 				return false;
@@ -287,5 +289,9 @@ public class BulkTransmitter {
 	
 	public String toString() {
 		return "BulkTransmitter:"+uid+":"+peer.shortToString();
+	}
+	
+	public String getCancelReason() {
+		return cancelReason;
 	}
 }

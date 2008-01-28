@@ -911,7 +911,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		public void onRejected() {
-			transmitter.cancel();
+			transmitter.cancel("FileOffer: Offer rejected");
 			// FIXME prb's can't be shared, right? Well they aren't here...
 			prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cancelled by receiver");
 		}
