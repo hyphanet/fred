@@ -369,6 +369,7 @@ public class NodeIPDetector {
 			
 		});
 		
+		hasValidAddressOverride = true;
 		overrideIPAddressString = nodeConfig.getString("ipAddressOverride");
 		if(overrideIPAddressString.length() == 0)
 			overrideIPAddress = null;
