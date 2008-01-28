@@ -1034,8 +1034,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(payload, inputOffset, authenticator, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 
-		// FIXME: check the cache before or after the hmac verification ?
-		// is it cheaper to wait for the lock on authenticatorCache or to verify the hmac ?
+		// We *WANT* to check the hmac before we do the lookup on the hashmap
+		// @see https://bugs.freenetproject.org/view.php?id=1604
 		HMAC mac = new HMAC(SHA256.getInstance());
 		if(!mac.verify(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
 			if(shouldLogErrorInHandshake(t1))
