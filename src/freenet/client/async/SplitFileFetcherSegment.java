@@ -488,6 +488,6 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			SplitFileFetcherSubSegment seg = (SplitFileFetcherSubSegment) subSegments.get(i);
 			seg.kill();
 		}
+		subSegments.clear();
 	}
-
 }
