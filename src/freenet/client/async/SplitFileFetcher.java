@@ -187,6 +187,11 @@ public class SplitFileFetcher implements ClientGetState {
 				SplitFileFetcherSegment s = segments[i];
 				long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
 				bytesWritten += s.writeDecodedDataTo(os, max);
+				// FIXME unfortunately this seems to be necessary on *nix to prevent
+				// critical threads from starving: sadly thread priorities only work on
+				// Windows and as of linux 2.6.23, fair scheduling does not ensure that 
+				// the critical threads (those which set MAX_PRIORITY) get enough CPU time.
+				Thread.yield();
 			}
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, e);
