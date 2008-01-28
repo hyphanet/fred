@@ -13,6 +13,7 @@ import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.IPUndetectedUserAlert;
+import freenet.node.useralerts.InvalidAddressOverrideUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
@@ -36,6 +37,8 @@ public class NodeIPDetector {
 	/** Ticker */
 	/** Explicit forced IP address */
 	FreenetInetAddress overrideIPAddress;
+	/** Explicit forced IP address in string form because we want to keep it even if it's invalid and therefore unused */
+	String overrideIPAddressString;
 	/** IP address from last time */
 	FreenetInetAddress oldIPAddress;
 	/** Detected IP's and their NAT status from plugins */
@@ -48,6 +51,9 @@ public class NodeIPDetector {
 	private final IPAddressDetector ipDetector;
 	/** Plugin manager for plugin IP address detectors e.g. STUN */
 	final IPDetectorPluginManager ipDetectorManager;
+	/** UserAlert shown when ipAddressOverride has a hostname/IP address syntax error */
+	private static InvalidAddressOverrideUserAlert invalidAddressOverrideAlert;
+	private boolean hasValidAddressOverride;
 	/** UserAlert shown when we can't detect an IP address */
 	private static IPUndetectedUserAlert primaryIPUndetectedAlert;
 	// FIXME redundant? see lastIPAddress
@@ -68,6 +74,7 @@ public class NodeIPDetector {
 		this.node = node;
 		ipDetectorManager = new IPDetectorPluginManager(node, this);
 		ipDetector = new IPAddressDetector(10*1000, this);
+		invalidAddressOverrideAlert = new InvalidAddressOverrideUserAlert(node);
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
 		portDetectors = new NodeIPPortDetector[0];
 	}
@@ -92,7 +99,8 @@ public class NodeIPDetector {
 		Logger.minor(this, "Redetecting IPs...");
 		Vector addresses = new Vector();
 		if(overrideIPAddress != null) {
-			// If the IP is overridden, the override has to be the first element.
+			// If the IP is overridden and the override is valid, the override has to be the first element.
+			// overrideIPAddress will be null if the override is invalid
 			addresses.add(overrideIPAddress);
 			if(overrideIPAddress.isRealInternetAddress(false, true))
 				addedValidIP = true;
@@ -322,14 +330,16 @@ public class NodeIPDetector {
 				new StringCallback() {
 
 			public String get() {
-				if(overrideIPAddress == null) return "";
-				else return overrideIPAddress.toString();
+				if(overrideIPAddressString == null) return "";
+				else return overrideIPAddressString;
 			}
 			
 			public void set(String val) throws InvalidConfigValueException {
+				boolean hadValidAddressOverride = hasValidAddressOverride();
 				// FIXME do we need to tell anyone?
 				if(val.length() == 0) {
 					// Set to null
+					overrideIPAddressString = val;
 					overrideIPAddress = null;
 					lastIPAddress = null;
 					redetectAddress();
@@ -345,22 +355,37 @@ public class NodeIPDetector {
 				}
 				// Compare as IPs.
 				if(addr.equals(overrideIPAddress)) return;
+				overrideIPAddressString = val;
 				overrideIPAddress = addr;
 				lastIPAddress = null;
+				synchronized(this) {
+					hasValidAddressOverride = true;
+				}
+				if(!hadValidAddressOverride) {
+					onGetValidAddressOverride();
+				}
 				redetectAddress();
 			}
 			
 		});
 		
-		String ipOverrideString = nodeConfig.getString("ipAddressOverride");
-		if(ipOverrideString.length() == 0)
+		overrideIPAddressString = nodeConfig.getString("ipAddressOverride");
+		if(overrideIPAddressString.length() == 0)
 			overrideIPAddress = null;
 		else {
 			try {
-				overrideIPAddress = new FreenetInetAddress(ipOverrideString, false);
+				overrideIPAddress = new FreenetInetAddress(overrideIPAddressString, false, true);
+			} catch (HostnameSyntaxException e) {
+				synchronized(this) {
+					hasValidAddressOverride = false;
+				}
+				String msg = "Invalid IP override syntax: "+overrideIPAddressString+" in config: "+e.getMessage();
+				Logger.error(this, msg);
+				System.err.println(msg+" but starting up anyway, ignoring the configured IP override");
+				overrideIPAddress = null;
 			} catch (UnknownHostException e) {
-				// **FIXME** This never happens with current FreenetInetAddress(String, boolean) code; perhaps it needs review?
-				String msg = "Unknown host: "+ipOverrideString+" in config: "+e.getMessage();
+				// **FIXME** This never happens for this reason with current FreenetInetAddress(String, boolean, boolean) code; perhaps it needs review?
+				String msg = "Unknown host: "+overrideIPAddressString+" in config: "+e.getMessage();
 				Logger.error(this, msg);
 				System.err.println(msg+" but starting up anyway with no IP override");
 				overrideIPAddress = null;
@@ -425,6 +450,10 @@ public class NodeIPDetector {
 
 	/** Start all IP detection related processes */
 	public void start() {
+		boolean haveValidAddressOverride = hasValidAddressOverride();
+		if(!haveValidAddressOverride) {
+			onNotGetValidAddressOverride();
+		}
 		ipDetectorManager.start();
 		node.executor.execute(ipDetector, "IP address re-detector");
 		redetectAddress();
@@ -488,5 +517,19 @@ public class NodeIPDetector {
 
 	public void unregisterPortForwardPlugin(FredPluginPortForward forward) {
 		ipDetectorManager.unregisterPortForwardPlugin(forward);
+	}
+	
+	boolean hasValidAddressOverride() {
+		synchronized(this) {
+			return hasValidAddressOverride;
+		}
+	}
+	
+	private void onGetValidAddressOverride() {
+		node.clientCore.alerts.unregister(invalidAddressOverrideAlert);
+	}
+	
+	private void onNotGetValidAddressOverride() {
+		node.clientCore.alerts.register(invalidAddressOverrideAlert);
 	}
 }
