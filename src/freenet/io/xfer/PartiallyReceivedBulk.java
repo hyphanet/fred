@@ -183,4 +183,12 @@ public class PartiallyReceivedBulk {
 		}
 		transmitters = newTrans;
 	}
+	
+	public int getAbortReason() {
+		return _abortReason;
+	}
+	
+	public String getAbortDescription() {
+		return _abortDescription;
+	}
 }
