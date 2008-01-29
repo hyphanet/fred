@@ -157,6 +157,11 @@ public class MessageCore {
 		synchronized (_filters) {
 			for (ListIterator i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = (MessageFilter) i.next();
+				if (f.matched()) {
+					Logger.error(this, "removed pre-matched message filter found in _filters: "+f);
+					i.remove();
+					continue;
+				}
 				if (f.match(m)) {
 					matched = true;
 					i.remove();
