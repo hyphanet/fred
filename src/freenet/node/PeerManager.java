@@ -696,55 +696,71 @@ public class PeerManager {
     }
     
     /*
-     * FIXME
-     * This scans the same array 4 times.  It would be better to scan once and execute 4 callbacks...
-     * For this reason the metrics are only updated if advanced mode is enabled
+     * Because in the past this function would scan the array four times, the metrics are only updated if advanced mode is enabled
      */
     public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
-    	PeerNode best = closerPeerBackoff(pn, routedTo, notIgnored, loc, ignoreSelf, minVersion, addUnpickedLocsTo, maxDistance);
-    		
+    	CloserPeerReturn retval = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, minVersion, addUnpickedLocsTo, maxDistance);
+		PeerNode best = retval.closestNotBackedOff;
+		
+		if (best==null)
+			best = retval.closestBackedOff;
+		
     	if (calculateMisrouting) {
-    		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, null, maxDistance);
-    		if(nbo != null) {
+    		PeerNode nbo = retval.closestNotBackedOff;
+    		if (nbo != null) {
     			node.nodeStats.routingMissDistance.report(Location.distance(best, nbo.getLocation()));
     			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
     			int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
     			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
     				node.nodeStats.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
     			}
-    		}
+			}
     	}
+		
+		if (best!=null && addUnpickedLocsTo!=null) {
+			//Add the location which we did not pick, if it exists.
+			if (retval.closestNotBackedOff!=null && retval.closestBackedOff!=null)
+				addUnpickedLocsTo.add(new Double(retval.closestBackedOff.getLocation()));
+		}
+		
     	return best;
     }
-	    
-    private PeerNode closerPeerBackoff(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
-    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false, minVersion, addUnpickedLocsTo, maxDistance);
-    	if(best == null) {
-    		best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion, addUnpickedLocsTo, maxDistance);
-    	}
-    	return best;
+	
+	private static class CloserPeerReturn {
+		PeerNode closest;
+		double closestDistance;
+
+		PeerNode closestBackedOff;
+		double closestBackedOffDistance;
+		
+		PeerNode closestNotBackedOff;
+		double closestNotBackedOffDistance;
 	}
 
 	/**
-     * Find the peer, if any, which is closer to the target location
-     * than we are, and is not included in the provided set.
+     * Find the peer, if any, which is closer to the target location than we are, and is not included in the provided set.
+	 * If ignoreSelf==false, and we are closer to the target than any peers, this function returns null.
+	 * This function returns two values, the closest such peer which is backed off, and the same which is not backed off.
+	 * It is possible for either to be null independant of the other, 'closest' is the closer of the two in either case, and
+	 * will not be null if any of the other two return values is not null.
 	 * @param addUnpickedLocsTo Add all locations we didn't choose which we could have routed to to 
 	 * this array. Remove the location of the peer we pick from it.
 	 * @param maxDistance If a node is further away from the target than this distance, ignore it.
      */
-    private PeerNode _closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double target, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
+    private CloserPeerReturn _closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double target, boolean ignoreSelf, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
         PeerNode[] peers;  
         synchronized (this) {
 			peers = connectedPeers;
 		}
         if(logMINOR) Logger.minor(this, "Choosing closest peer: connectedPeers="+peers.length);
-        double bestDiff = Double.MAX_VALUE;
-        double maxDiff = 0.0;
+        double maxDiff = Double.MAX_VALUE;
         if(!ignoreSelf)
             maxDiff = Location.distance(node.lm.getLocation(), target);
-        PeerNode best = null;
-        double bestLoc = -2;
-        int count = 0;
+        CloserPeerReturn ret=new CloserPeerReturn();
+        ret.closestDistance = Double.MAX_VALUE;
+		ret.closestBackedOffDistance = Double.MAX_VALUE;
+        ret.closestNotBackedOffDistance = Double.MAX_VALUE;
+		int count = 0;
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
             if(routedTo.contains(p)) {
@@ -759,39 +775,48 @@ public class PeerManager {
             	if(logMINOR) Logger.minor(this, "Skipping (not connected): "+p.getPeer());
             	continue;
             }
-            if((!ignoreBackedOff) && p.isRoutingBackedOff()) {
-            	if(logMINOR) Logger.minor(this, "Skipping (routing backed off): "+p.getPeer());
-            	continue;
-            }
             if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion(), -1) < minVersion) {
             	if(logMINOR) Logger.minor(this, "Skipping old version: "+p.getPeer());
             	continue;
             }
-            count++;
-            double diff = Location.distance(p, target);
+			//To help avoid odd race conditions, get the location only once and use it for all calculations.
+			double loc = p.getLocation();
+            double diff = Location.distance(loc, target);
             if(diff > maxDistance) continue;
-            if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation()+", target="+target+", d="+Location.distance(p.getLocation(), target)+" usedD="+diff+" for "+p.getPeer());
-            if((!ignoreSelf) && (diff > maxDiff)) {
-            	if(logMINOR) Logger.minor(this, "Ignoring because >maxDiff="+maxDiff);
+			if((!ignoreSelf) && (diff > maxDiff)) {
+            	if(logMINOR) Logger.minor(this, "Ignoring, further than self >maxDiff="+maxDiff);
             	continue;
             }
-            double loc = p.getLocation();
-            if(diff < bestDiff) {
-            	bestLoc = loc;
-                best = p;
-                bestDiff = diff;
-                if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+p.getLocation()+" for "+p.getPeer());
+			count++;
+            if(logMINOR) Logger.minor(this, "p.loc="+loc+", target="+target+", d="+Location.distance(loc, target)+" usedD="+diff+" for "+p.getPeer());
+			boolean chosen=false;
+            if(diff < ret.closestDistance) {
+            	ret.closestDistance = diff;
+                ret.closest = p;
+				chosen=true;
+                if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+loc+" for "+p.getPeer());
             }
-           	if(addUnpickedLocsTo != null) {
+			boolean backedOff=p.isRoutingBackedOff();
+			if(backedOff && (diff < ret.closestBackedOffDistance)) {
+            	ret.closestBackedOffDistance = diff;
+                ret.closestBackedOff = p;
+				chosen=true;
+                if(logMINOR) Logger.minor(this, "New best-backed-off: "+diff+" ("+loc+" for "+p.getPeer());
+            }
+			if(!backedOff && (diff < ret.closestNotBackedOffDistance)) {
+            	ret.closestNotBackedOffDistance = diff;
+                ret.closestNotBackedOff = p;
+				chosen=true;
+                if(logMINOR) Logger.minor(this, "New best-not-backed-off: "+diff+" ("+loc+" for "+p.getPeer());
+            }
+           	if(addUnpickedLocsTo != null && !chosen) {
            		Double d = new Double(loc);
            		// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
            		if(!addUnpickedLocsTo.contains(d))
            			addUnpickedLocsTo.add(d);
            	}
         }
-        if(addUnpickedLocsTo != null && bestLoc >= 0)
-        	addUnpickedLocsTo.remove(new Double(bestLoc));
-        return best;
+        return ret;
     }
 
     /**
