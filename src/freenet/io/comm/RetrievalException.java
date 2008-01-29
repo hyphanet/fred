@@ -30,7 +30,6 @@ public class RetrievalException extends Exception {
 	private static final long serialVersionUID = 3257565105301500723L;
 
 	public static final int UNKNOWN = 0;
-	public static final int HTTP_404_RECEIVED = 1;
 	public static final int PREMATURE_EOF = 2;
 	public static final int IO_ERROR = 3;
 	public static final int SENDER_DIED = 5;
@@ -39,7 +38,6 @@ public class RetrievalException extends Exception {
     public static final int SENDER_DISCONNECTED = 7;
     public static final int NO_DATAINSERT = 8;
     public static final int CANCELLED_BY_RECEIVER = 9;
-	public static final int RANGE_UNSUPPORTED = 10; //was 4
 	public static final int RECEIVER_DIED = 11;
 	
 	int _reason;
@@ -67,18 +65,14 @@ public class RetrievalException extends Exception {
 	
 	public static String getErrString(int reason) {
 		switch (reason) {
-			case HTTP_404_RECEIVED:
-				return "HTTP_404_RECEIVED";
 			case PREMATURE_EOF:
 				return "PREMATURE_EOF";
 			case IO_ERROR:
 				return "IO_ERROR";
-			case RANGE_UNSUPPORTED:
-				return "RANGE_UNSUPPORTED";
 			case SENDER_DIED:
 				return "SENDER_DIED";
-			case TIMED_OUT: // was the same as RANGE_UNSUPPORTED
-				return "TIMED_OUT/RANGE_UNSUPPORTED";
+			case TIMED_OUT:
+				return "TIMED_OUT";
 			case ALREADY_CACHED:
 				return "ALREADY_CACHED";
 			case SENDER_DISCONNECTED:
