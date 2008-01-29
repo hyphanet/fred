@@ -306,6 +306,11 @@ public class MessageCore {
 		long messageDropTime = now - MAX_UNCLAIMED_FIFO_ITEM_LIFETIME;
 		long messageLifeTime = 0;
 		synchronized (_filters) {
+			//Once in the list, it is up to the callback system to trigger the disconnection, however, we may
+			//have disconnected between check above and locking, so we *must* check again.
+			if(filter.anyConnectionsDropped()) {
+				throw new DisconnectedException();
+			}
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
 			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
 				Message m = (Message) i.next();
@@ -348,14 +353,6 @@ public class MessageCore {
 			filter.setMessage(ret);
 			filter.onMatched();
 			filter.clearMatched();
-		} else {
-			// Might have disconnected between check above and locking _filters.
-			if(filter.anyConnectionsDropped()) {
-				synchronized(_filters) {
-					_filters.remove(filter);
-				}
-				throw new DisconnectedException();
-			}
 		}
 	}
 
