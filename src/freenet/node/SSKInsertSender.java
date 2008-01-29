@@ -191,7 +191,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             while (true) {
             	
 				try {
-					msg = node.usm.waitFor(mf, null);
+					msg = node.usm.waitFor(mf, this);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for Accepted");
@@ -257,7 +257,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             	
             	Message newAck;
 				try {
-					newAck = node.usm.waitFor(mf1, null);
+					newAck = node.usm.waitFor(mf1, this);
 				} catch (DisconnectedException e) {
 					if(logMINOR) Logger.minor(this, "Disconnected from "+next);
 					htl--;
@@ -299,7 +299,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             
             while (true) {
 				try {
-					msg = node.usm.waitFor(mf, null);
+					msg = node.usm.waitFor(mf, this);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for InsertReply on " + this);
