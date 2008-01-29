@@ -298,8 +298,10 @@ public class MessageCore {
 		filter.onStartWaiting();
 		if(logMINOR) Logger.minor(this, "Adding async filter "+filter+" for "+callback);
 		Message ret = null;
-		if(filter.anyConnectionsDropped())
+		if(filter.anyConnectionsDropped()) {
 			throw new DisconnectedException();
+			//or... filter.onDroppedConnection(filter.getSource());
+		}
 		// Check to see whether the filter matches any of the recently _unclaimed messages
 		// Drop any _unclaimed messages that the filter doesn't match that are also older than MAX_UNCLAIMED_FIFO_ITEM_LIFETIME
 		long now = System.currentTimeMillis();
@@ -310,6 +312,8 @@ public class MessageCore {
 			//have disconnected between check above and locking, so we *must* check again.
 			if(filter.anyConnectionsDropped()) {
 				throw new DisconnectedException();
+				//or... filter.onDroppedConnection(filter.getSource());
+				//but we are holding the _filters lock!
 			}
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
 			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
@@ -374,8 +378,10 @@ public class MessageCore {
 		}
 		filter.onStartWaiting();
 		Message ret = null;
-		if(filter.anyConnectionsDropped())
+		if(filter.anyConnectionsDropped()) {
+			filter.onDroppedConnection(filter.getSource());
 			throw new DisconnectedException();
+		}
 		// Check to see whether the filter matches any of the recently _unclaimed messages
 		// Drop any _unclaimed messages that the filter doesn't match that are also older than MAX_UNCLAIMED_FIFO_ITEM_LIFETIME
 		long now = System.currentTimeMillis();

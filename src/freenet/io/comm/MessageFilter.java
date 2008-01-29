@@ -331,14 +331,15 @@ public final class MessageFilter {
 			_callback.onTimeout();
 	}
 
+	/**
+	 * Returns true if a connection related to this filter has been dropped or restarted.
+	 */
 	public boolean anyConnectionsDropped() {
 		if(_matched) return false;
 		if(_source != null) {
 			if(!_source.isConnected()) {
-				onDroppedConnection(_source);
 				return true;
 			} else if(_source.getBootID() != _oldBootID) {
-				onRestartedConnection(_source);
 				return true; // Counts as a disconnect.
 			}
 		}
