@@ -1172,7 +1172,7 @@ public class PeerManager {
 			if(statuses.containsKey(peerNodeStatus)) {
 				statusSet = (HashSet) statuses.get(peerNodeStatus);
 				if(statusSet.contains(peerNode)) {
-					if(!noLog) Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode.getPeer()+" with status '"+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue())+"'", new Exception("debug"));
+					if(!noLog) Logger.error(this, "addPeerNodeStatus(): node already in peerNodeStatuses: "+peerNode+" status "+PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()));
 					return;
 				}
 				statuses.remove(peerNodeStatus);

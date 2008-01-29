@@ -246,6 +246,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		if(blockNo < 0) throw new IllegalArgumentException();
 		Integer i = new Integer(blockNo);
 		synchronized(this) {
+			if(cancelled)
+				throw new IllegalStateException("Adding block "+blockNo+" to already cancelled "+this);
 			blockNums.add(i);
 			if(dontSchedule) return;
 			/**
@@ -274,8 +276,13 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public void possiblyRemoveFromParent() {
+		if(logMINOR)
+			Logger.minor(this, "Possibly removing from parent: "+this);
 		synchronized(this) {
 			if(!blockNums.isEmpty()) return;
+			if(logMINOR)
+				Logger.minor(this, "Definitely removing from parent: "+this);
+			cancelled = true;
 		}
 		segment.removeSeg(this);
 		unregister();
