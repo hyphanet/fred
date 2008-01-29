@@ -2641,7 +2641,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		messageSpecName = m.getSpec().getName();
 		// Synchronize to make increments atomic.
-		synchronized(this) {
+		synchronized(localNodeReceivedMessageTypes) {
 			count = (Long) localNodeReceivedMessageTypes.get(messageSpecName);
 			if(count == null)
 				count = new Long(1);
@@ -2655,9 +2655,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return new Hashtable(localNodeSentMessageTypes);
 	}
 
-	// Must be synchronized *during the copy*
-	public synchronized Hashtable getLocalNodeReceivedMessagesFromStatistic() {
-		return new Hashtable(localNodeReceivedMessageTypes);
+	public Hashtable getLocalNodeReceivedMessagesFromStatistic() {
+		// Must be synchronized *during the copy*
+		synchronized (localNodeReceivedMessageTypes) {
+			return new Hashtable(localNodeReceivedMessageTypes);
+		}
 	}
 
 	synchronized USK getARK() {
