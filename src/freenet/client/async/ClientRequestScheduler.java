@@ -231,11 +231,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(block != null) {
 						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" ("+tok+") immediately from store");
 						getter.onSuccess(block, true, tok);
-						// FIXME unfortunately this seems to be necessary on *nix to prevent
-						// critical threads from starving: sadly thread priorities only work on
-						// Windows and as of linux 2.6.23, fair scheduling does not ensure that 
-						// the critical threads (those which set MAX_PRIORITY) get enough CPU time.
-						Thread.yield();
 					} else {
 						anyValid = true;
 					}
@@ -518,8 +513,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			int tok = keyTokens[i];
 			ClientKey ckey = getter.getKey(tok);
 			if(ckey == null) {
-				if(complain)
-					Logger.error(this, "Key "+tok+" is null for "+getter, new Exception("debug"));
+				Logger.error(this, "Key "+tok+" is null for "+getter, new Exception("debug"));
 				continue;
 			}
 			removePendingKey(getter, complain, ckey.getNodeKey());

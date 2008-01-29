@@ -475,8 +475,6 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 
 	public synchronized void removeSeg(SplitFileFetcherSubSegment segment) {
-		if(logMINOR)
-			Logger.minor(this, "Removing sub segment: "+segment);
 		for(int i=0;i<subSegments.size();i++) {
 			if(segment.equals(subSegments.get(i))) {
 				subSegments.remove(i);
@@ -490,6 +488,6 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			SplitFileFetcherSubSegment seg = (SplitFileFetcherSubSegment) subSegments.get(i);
 			seg.kill();
 		}
-		subSegments.clear();
 	}
+
 }

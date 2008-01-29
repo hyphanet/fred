@@ -1,7 +1,6 @@
 package freenet.node;
 
 import freenet.client.async.ClientRequester;
-import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
 import freenet.support.RandomGrabArrayItem;
 
@@ -57,13 +56,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	
 	public void unregister() {
 		RandomGrabArray arr = getParentGrabArray();
-		if(arr != null) {
-			arr.remove(this);
-		} else {
-			// Should this be a higher priority?
-			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "Cannot unregister "+this+" : not registered", new Exception("debug"));
-		}
+		if(arr != null) arr.remove(this);
 	}
 
 	/** Requeue after an internal error */

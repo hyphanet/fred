@@ -50,7 +50,4 @@ public interface PeerContext {
 	/** Get a WeakReference to this context. Hopefully there is only one of these for the whole object; they are quite
 	 * expensive. */
 	WeakReference getWeakRef();
-
-	/** Compact toString() */
-	String shortToString();
 }

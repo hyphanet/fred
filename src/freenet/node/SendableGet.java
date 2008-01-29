@@ -63,12 +63,6 @@ public abstract class SendableGet extends SendableRequest {
 					return false;
 				}	
 			}
-			if(key == null) {
-				if(!isCancelled()) {
-					Logger.error(this, "Not cancelled but key "+keyNum+" is null?! on "+this);
-					return false;
-				}
-			}
 			ClientKeyBlock block;
 			try {
 				try {

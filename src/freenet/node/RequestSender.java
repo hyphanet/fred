@@ -91,37 +91,6 @@ public final class RequestSender implements Runnable, ByteCounter {
     static final int RECENTLY_FAILED = 9;
     private PeerNode successFrom;
     
-    static String getStatusString(int status) {
-    	switch(status) {
-    	case NOT_FINISHED:
-    		return "NOT FINISHED";
-    	case SUCCESS:
-    		return "SUCCESS";
-    	case ROUTE_NOT_FOUND:
-    		return "ROUTE NOT FOUND";
-    	case DATA_NOT_FOUND:
-    		return "DATA NOT FOUND";
-    	case TRANSFER_FAILED:
-    		return "TRANSFER FAILED";
-    	case VERIFY_FAILURE:
-    		return "VERIFY FAILURE";
-    	case TIMED_OUT:
-    		return "TIMED OUT";
-    	case GENERATED_REJECTED_OVERLOAD:
-    		return "GENERATED REJECTED OVERLOAD";
-    	case INTERNAL_ERROR:
-    		return "INTERNAL ERROR";
-    	case RECENTLY_FAILED:
-    		return "RECENTLY FAILED";
-    	default:
-    		return "UNKNOWN STATUS CODE: "+status;
-    	}
-    }
-    
-    String getStatusString() {
-    	return getStatusString(getStatus());
-    }
-    
     private static boolean logMINOR;
     
     public String toString() {

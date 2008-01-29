@@ -47,7 +47,6 @@ public class BulkTransmitter {
 	/** Not expecting a response? */
 	final boolean noWait;
 	private long finishTime=-1;
-	private String cancelReason;
 	
 	/**
 	 * Create a bulk data transmitter.
@@ -78,7 +77,7 @@ public class BulkTransmitter {
 			prb.usm.addAsyncFilter(MessageFilter.create().setNoTimeout().setSource(peer).setType(DMT.FNPBulkReceiveAborted).setField(DMT.UID, uid),
 					new AsyncMessageFilterCallback() {
 						public void onMatched(Message m) {
-							cancel("Other side sent FNPBulkReceiveAborted");
+							cancel();
 						}
 						public boolean shouldTimeout() {
 							synchronized(BulkTransmitter.this) {
@@ -121,7 +120,7 @@ public class BulkTransmitter {
 						}
 			});
 		} catch (DisconnectedException e) {
-			cancel("Disconnected");
+			cancel();
 			throw e;
 		}
 		packetSize = DMT.bulkPacketTransmitSize(prb.blockSize) +
@@ -160,13 +159,10 @@ public class BulkTransmitter {
 		}
 	}
 
-	public void cancel(String reason) {
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Cancelling "+this);
+	public void cancel() {
 		sendAbortedMessage();
 		synchronized(this) {
 			cancelled = true;
-			cancelReason = reason;
 			notifyAll();
 		}
 		prb.remove(this);
@@ -188,14 +184,9 @@ public class BulkTransmitter {
 	 * @return True if the file was successfully sent. False otherwise.
 	 */
 	public boolean send() {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long lastSentPacket = System.currentTimeMillis();
 		while(true) {
-			if(prb.isAborted()) {
-				if(logMINOR)
-					Logger.minor(this, "Aborted "+this);
-				return false;
-			}
+			if(prb.isAborted()) return false;
 			int blockNo;
 			if(peer.getBootID() != peerBootID) {
 				synchronized(this) {
@@ -203,8 +194,6 @@ public class BulkTransmitter {
 					notifyAll();
 				}
 				prb.remove(BulkTransmitter.this);
-				if(logMINOR)
-					Logger.minor(this, "Failed to send "+uid+": peer restarted: "+peer);
 				return false;
 			}
 			synchronized(this) {
@@ -229,7 +218,7 @@ public class BulkTransmitter {
 				long end = System.currentTimeMillis();
 				if(end - lastSentPacket > TIMEOUT) {
 					Logger.error(this, "Send timed out on "+this);
-					cancel("Timeout");
+					cancel();
 					return false;
 				}
 				continue;
@@ -237,8 +226,6 @@ public class BulkTransmitter {
 			// Send a packet
 			byte[] buf = prb.getBlockData(blockNo);
 			if(buf == null) {
-				if(logMINOR)
-					Logger.minor(this, "Block "+blockNo+" is null, presumably the send is cancelled: "+this);
 				// Already cancelled, quit
 				return false;
 			}
@@ -261,8 +248,6 @@ public class BulkTransmitter {
 						}
 						if(cancelled) {
 							masterThrottle.recycle(packetSize);
-							if(logMINOR)
-								Logger.minor(this, "Cancelled after sleeping for throttle "+this);
 							return false;
 						}
 					}
@@ -279,19 +264,10 @@ public class BulkTransmitter {
 				}
 				lastSentPacket = System.currentTimeMillis();
 			} catch (NotConnectedException e) {
-				cancel("Disconnected");
-				if(logMINOR)
-					Logger.minor(this, "Canclled: not connected "+this);
+				cancel();
 				return false;
 			}
 		}
 	}
 	
-	public String toString() {
-		return "BulkTransmitter:"+uid+":"+peer.shortToString();
-	}
-	
-	public String getCancelReason() {
-		return cancelReason;
-	}
 }
