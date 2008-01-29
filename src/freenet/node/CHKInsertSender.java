@@ -265,7 +265,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         
         while(true) {
             if(receiveFailed) {
-            	return; // don't need to set status as killed by InsertHandler
+            	return; // don't need to set status as killed by CHKInsertHandler
             }
             
             synchronized (this) {
@@ -338,7 +338,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				sentRequest = true;				
 			}
             
-            if(receiveFailed) return; // don't need to set status as killed by InsertHandler
+            if(receiveFailed) return; // don't need to set status as killed by CHKInsertHandler
             Message msg = null;
             
             /*
@@ -358,7 +358,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				}
 				
 				if (receiveFailed)
-					return; // don't need to set status as killed by InsertHandler
+					return; // don't need to set status as killed by CHKInsertHandler
 				
 				if (msg == null) {
 					// Terminal overload
@@ -658,7 +658,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     }
 
     /**
-     * Called by InsertHandler to notify that the receive has
+     * Called by CHKInsertHandler to notify that the receive has
      * failed.
      */
     public void receiveFailed() {

@@ -27,7 +27,7 @@ import freenet.support.ShortBuffer;
  * Handle an incoming insert request.
  * This corresponds to RequestHandler.
  */
-public class InsertHandler implements Runnable, ByteCounter {
+public class CHKInsertHandler implements Runnable, ByteCounter {
 
 
     static final int DATA_INSERT_TIMEOUT = 10000;
@@ -47,7 +47,7 @@ public class InsertHandler implements Runnable, ByteCounter {
     PartiallyReceivedBlock prb;
     private static boolean logMINOR;
     
-    InsertHandler(Message req, PeerNode source, long id, Node node, long startTime) {
+    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime) {
         this.req = req;
         this.node = node;
         this.uid = id;
@@ -79,7 +79,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         } catch (Throwable t) {
             Logger.error(this, "Caught in run() "+t, t);
         } finally {
-        	if(logMINOR) Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
+        	if(logMINOR) Logger.minor(this, "Exiting CHKInsertHandler.run() for "+uid);
             node.unlockUID(uid, false, true, false);
         }
     }
@@ -149,7 +149,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         // Receive the data, off thread
         Runnable dataReceiver = new DataReceiver();
 		receiveStarted = true;
-        node.executor.execute(dataReceiver, "InsertHandler$DataReceiver for UID "+uid);
+        node.executor.execute(dataReceiver, "CHKInsertHandler$DataReceiver for UID "+uid);
 
         if(htl == 0) {
             canCommit = true;
@@ -390,7 +390,7 @@ public class InsertHandler implements Runnable, ByteCounter {
                 node.store(block);
                 if(logMINOR) Logger.minor(this, "Committed");
             } catch (CHKVerifyException e) {
-            	Logger.error(this, "Verify failed in InsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);
+            	Logger.error(this, "Verify failed in CHKInsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);
                 toSend = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_VERIFY_FAILED);
             } catch (AbortedException e) {
             	Logger.error(this, "Receive failed: "+e);
@@ -417,19 +417,19 @@ public class InsertHandler implements Runnable, ByteCounter {
 
         public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
-        	if(logMINOR) Logger.minor(this, "Receiving data for "+InsertHandler.this);
+        	if(logMINOR) Logger.minor(this, "Receiving data for "+CHKInsertHandler.this);
             try {
                 br.receive();
-                if(logMINOR) Logger.minor(this, "Received data for "+InsertHandler.this);
-            	synchronized(InsertHandler.this) {
+                if(logMINOR) Logger.minor(this, "Received data for "+CHKInsertHandler.this);
+            	synchronized(CHKInsertHandler.this) {
             		receiveCompleted = true;
-            		InsertHandler.this.notifyAll();
+            		CHKInsertHandler.this.notifyAll();
             	}
             } catch (RetrievalException e) {
-            	synchronized(InsertHandler.this) {
+            	synchronized(CHKInsertHandler.this) {
             		receiveCompleted = true;
             		receiveFailed = true;
-            		InsertHandler.this.notifyAll();
+            		CHKInsertHandler.this.notifyAll();
             	}
                 // Cancel the sender
             	if(sender != null)
@@ -437,7 +437,7 @@ public class InsertHandler implements Runnable, ByteCounter {
                 runThread.interrupt();
                 Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
                 try {
-                    source.sendSync(msg, InsertHandler.this);
+                    source.sendSync(msg, CHKInsertHandler.this);
                 } catch (NotConnectedException ex) {
 					//If they are not connected, that's probably why the receive failed!
                     if (logMINOR) Logger.minor(this, "Can't send "+msg+" to "+source+": "+ex);

@@ -282,12 +282,12 @@ public class NodeDispatcher implements Dispatcher {
 		long now = System.currentTimeMillis();
 		if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
 			SSKInsertHandler rh = new SSKInsertHandler(m, source, id, node, now);
-			node.executor.execute(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
+			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
-			InsertHandler rh = new InsertHandler(m, source, id, node, now);
-			node.executor.execute(rh, "InsertHandler for "+id+" on "+node.getDarknetPortNumber());
+			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now);
+			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
-		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
+		if(logMINOR) Logger.minor(this, "Started CHKInsertHandler for "+id);
 		return true;
 	}
 
