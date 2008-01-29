@@ -21,7 +21,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	final FetchContext ctx;
 	static final int[] keys = new int[] { 0 };
 
-	BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
+	protected BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
 		super(parent);
 		retryCount = 0;
 		this.maxRetries = maxRetries;
