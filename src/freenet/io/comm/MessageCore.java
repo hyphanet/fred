@@ -300,7 +300,7 @@ public class MessageCore {
 		Message ret = null;
 		if(filter.anyConnectionsDropped()) {
 			throw new DisconnectedException();
-			//or... filter.onDroppedConnection(filter.getSource());
+			//or... filter.onDroppedConnection(filter.droppedConnection());
 		}
 		// Check to see whether the filter matches any of the recently _unclaimed messages
 		// Drop any _unclaimed messages that the filter doesn't match that are also older than MAX_UNCLAIMED_FIFO_ITEM_LIFETIME
@@ -312,7 +312,7 @@ public class MessageCore {
 			//have disconnected between check above and locking, so we *must* check again.
 			if(filter.anyConnectionsDropped()) {
 				throw new DisconnectedException();
-				//or... filter.onDroppedConnection(filter.getSource());
+				//or... filter.onDroppedConnection(filter.droppedConnection());
 				//but we are holding the _filters lock!
 			}
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
@@ -379,7 +379,7 @@ public class MessageCore {
 		filter.onStartWaiting();
 		Message ret = null;
 		if(filter.anyConnectionsDropped()) {
-			filter.onDroppedConnection(filter.getSource());
+			filter.onDroppedConnection(filter.droppedConnection());
 			throw new DisconnectedException();
 		}
 		// Check to see whether the filter matches any of the recently _unclaimed messages
