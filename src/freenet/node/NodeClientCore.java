@@ -745,8 +745,7 @@ public class NodeClientCore implements Persistable {
 				
 				// RejectedOverload requests count towards RTT (timed out ones don't).
 				requestStarters.chkInsertThrottle.successfulCompletion(len);
-				if(!hasReceivedRejectedOverload)
-					requestStarters.requestCompleted(false, true);
+				requestStarters.requestCompleted(false, true);
 			}
 		}
 		
@@ -861,7 +860,6 @@ public class NodeClientCore implements Persistable {
 				// It worked!
 				long endTime = System.currentTimeMillis();
 				long rtt = endTime - startTime;
-				// FIXME put CHK counts inserts which succeeded even if they got a RejectedOverload??
 				requestStarters.requestCompleted(true, true);
 				requestStarters.sskInsertThrottle.successfulCompletion(rtt);
 			}
