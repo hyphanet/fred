@@ -371,7 +371,7 @@ public class CHKInsertHandler implements Runnable, ByteCounter {
     private void maybeCommit() {
         Message toSend = null;
         
-        synchronized(this) { // REDFLAG do not use synch(this) for any other purpose!
+        synchronized(this) {
         	if((prb == null) || prb.isAborted()) return;
             try {
                 if(!canCommit) return;
