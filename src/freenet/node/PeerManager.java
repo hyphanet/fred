@@ -694,48 +694,6 @@ public class PeerManager {
     public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo) {
     	return closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0);
     }
-    
-    /*
-     * Because in the past this function would scan the array four times, the metrics are only updated if advanced mode is enabled
-     */
-    public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
-    	CloserPeerReturn retval = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, minVersion, addUnpickedLocsTo, maxDistance);
-		PeerNode best = retval.closestNotBackedOff;
-		
-		if (best==null)
-			best = retval.closestBackedOff;
-		
-    	if (calculateMisrouting) {
-    		PeerNode nbo = retval.closestNotBackedOff;
-    		if (nbo != null) {
-    			node.nodeStats.routingMissDistance.report(Location.distance(best, nbo.getLocation()));
-    			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
-    			int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
-    			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
-    				node.nodeStats.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
-    			}
-			}
-    	}
-		
-		if (best!=null && addUnpickedLocsTo!=null) {
-			//Add the location which we did not pick, if it exists.
-			if (retval.closestNotBackedOff!=null && retval.closestBackedOff!=null)
-				addUnpickedLocsTo.add(new Double(retval.closestBackedOff.getLocation()));
-		}
-		
-    	return best;
-    }
-	
-	private static class CloserPeerReturn {
-		PeerNode closest;
-		double closestDistance;
-
-		PeerNode closestBackedOff;
-		double closestBackedOffDistance;
-		
-		PeerNode closestNotBackedOff;
-		double closestNotBackedOffDistance;
-	}
 
 	/**
      * Find the peer, if any, which is closer to the target location than we are, and is not included in the provided set.
@@ -747,7 +705,7 @@ public class PeerManager {
 	 * this array. Remove the location of the peer we pick from it.
 	 * @param maxDistance If a node is further away from the target than this distance, ignore it.
      */
-    private CloserPeerReturn _closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double target, boolean ignoreSelf, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
+    public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double target, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
         PeerNode[] peers;  
         synchronized (this) {
 			peers = connectedPeers;
@@ -756,10 +714,16 @@ public class PeerManager {
         double maxDiff = Double.MAX_VALUE;
         if(!ignoreSelf)
             maxDiff = Location.distance(node.lm.getLocation(), target);
-        CloserPeerReturn ret=new CloserPeerReturn();
-        ret.closestDistance = Double.MAX_VALUE;
-		ret.closestBackedOffDistance = Double.MAX_VALUE;
-        ret.closestNotBackedOffDistance = Double.MAX_VALUE;
+        
+		PeerNode closest = null;
+		double closestDistance = Double.MAX_VALUE;
+		
+		PeerNode closestBackedOff = null;
+		double closestBackedOffDistance = Double.MAX_VALUE;
+		
+		PeerNode closestNotBackedOff = null;
+		double closestNotBackedOffDistance = Double.MAX_VALUE;
+		
 		int count = 0;
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
@@ -790,22 +754,22 @@ public class PeerManager {
 			count++;
             if(logMINOR) Logger.minor(this, "p.loc="+loc+", target="+target+", d="+Location.distance(loc, target)+" usedD="+diff+" for "+p.getPeer());
 			boolean chosen=false;
-            if(diff < ret.closestDistance) {
-            	ret.closestDistance = diff;
-                ret.closest = p;
+            if(diff < closestDistance) {
+            	closestDistance = diff;
+                closest = p;
 				chosen=true;
                 if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+loc+" for "+p.getPeer());
             }
 			boolean backedOff=p.isRoutingBackedOff();
-			if(backedOff && (diff < ret.closestBackedOffDistance)) {
-            	ret.closestBackedOffDistance = diff;
-                ret.closestBackedOff = p;
+			if(backedOff && (diff < closestBackedOffDistance)) {
+            	closestBackedOffDistance = diff;
+                closestBackedOff = p;
 				chosen=true;
                 if(logMINOR) Logger.minor(this, "New best-backed-off: "+diff+" ("+loc+" for "+p.getPeer());
             }
-			if(!backedOff && (diff < ret.closestNotBackedOffDistance)) {
-            	ret.closestNotBackedOffDistance = diff;
-                ret.closestNotBackedOff = p;
+			if(!backedOff && (diff < closestNotBackedOffDistance)) {
+            	closestNotBackedOffDistance = diff;
+                closestNotBackedOff = p;
 				chosen=true;
                 if(logMINOR) Logger.minor(this, "New best-not-backed-off: "+diff+" ("+loc+" for "+p.getPeer());
             }
@@ -816,7 +780,33 @@ public class PeerManager {
            			addUnpickedLocsTo.add(d);
            	}
         }
-        return ret;
+		
+		PeerNode best = closestNotBackedOff;
+		
+		if (best==null)
+			best = closestBackedOff;
+		
+		//racy... getLocation() could have changed
+    	if (calculateMisrouting) {
+    		PeerNode nbo = closestNotBackedOff;
+    		if (nbo != null) {
+    			node.nodeStats.routingMissDistance.report(Location.distance(best, nbo.getLocation()));
+    			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
+    			int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
+    			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
+    				node.nodeStats.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
+    			}
+			}
+    	}
+		
+		//racy... getLocation() could have changed
+		if (best!=null && addUnpickedLocsTo!=null) {
+			//Add the location which we did not pick, if it exists.
+			if (closestNotBackedOff!=null && closestBackedOff!=null)
+				addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
+		}
+		
+        return best;
     }
 
     /**
