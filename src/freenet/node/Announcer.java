@@ -465,7 +465,7 @@ public class Announcer {
 		}
 
 		public short getPriorityClass() {
-			return UserAlert.MINOR;
+			return UserAlert.ERROR;
 		}
 
 		public String getText() {
