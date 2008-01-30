@@ -215,15 +215,6 @@ public class CHKInsertHandler implements Runnable, ByteCounter {
                 continue;
             }
 
-//            // FIXME obviously! For debugging load issues.
-//        	if(node.myName.equalsIgnoreCase("Toad #1") &&
-//        			node.random.nextBoolean()) {
-//        		// Maliciously timeout
-//        		Logger.error(this, "Maliciously timing out: was "+sender.getStatusString());
-//        		sentSuccess = true;
-//        		return;
-//        	}
-        	
             // Local RejectedOverload's (fatal).
             // Internal error counts as overload. It'd only create a timeout otherwise, which is the same thing anyway.
             // We *really* need a good way to deal with nodes that constantly R_O!
