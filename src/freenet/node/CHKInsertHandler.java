@@ -171,7 +171,7 @@ public class CHKInsertHandler implements Runnable, ByteCounter {
         // fails, that does matter...
         
         // We are waiting for a terminal status on the CHKInsertSender,
-        // including REPLIED_WITH_DATA.
+        // including SUCCESS.
         // If we get transfer failed, we can check whether the receive
         // failed first. If it did it's not our fault.
         // If the receive failed, and we haven't started transferring
