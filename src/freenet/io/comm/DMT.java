@@ -925,7 +925,7 @@ public class DMT {
 	
 	public static final Message createFNPRHProbeRequest(long uid, double target, double nearest, 
 			double best, short htl) {
-		Message msg = new Message(FNPProbeRequest);
+		Message msg = new Message(FNPRHProbeRequest);
 		msg.set(UID, uid);
 		msg.set(TARGET_LOCATION, target);
 		msg.set(NEAREST_LOCATION, nearest);
