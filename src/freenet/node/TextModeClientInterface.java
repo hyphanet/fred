@@ -864,7 +864,7 @@ public class TextModeClientInterface implements Runnable {
 				}
 
 				public void onRejectOverload() {
-					String msg = "Probe trace received RejectOverload";
+					String msg = "Probe trace received RejectOverload\n";
 					try {
 						out.write(msg.getBytes());
 						out.flush();
