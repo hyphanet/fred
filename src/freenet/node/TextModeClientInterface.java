@@ -839,8 +839,8 @@ public class TextModeClientInterface implements Runnable {
         	String s = uline.substring("PROBE:".length()).trim();
         	double d = Double.parseDouble(s);
         	ProbeCallback cb = new ProbeCallback() {
-				public void onCompleted(String reason, double target, double best, double nearest, long id, short counter, short linearCounter) {
-					String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" nodes ("+linearCounter+" hops), id "+id+"\r\n";
+				public void onCompleted(String reason, double target, double best, double nearest, long id, short counter, short uniqueCounter, short linearCounter) {
+					String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" nodes ("+uniqueCounter+" unique, "+linearCounter+" hops), id "+id+"\r\n";
 					try {
 						out.write(msg.getBytes());
 						out.flush();
@@ -862,9 +862,19 @@ public class TextModeClientInterface implements Runnable {
 						// Ignore
 					}
 				}
+
+				public void onRejectOverload() {
+					String msg = "Probe trace received RejectOverload";
+					try {
+						out.write(msg.getBytes());
+						out.flush();
+					} catch (IOException e) {
+						// Ignore
+					}
+				}
         	};
         	outsb.append("Probing keyspace around "+d+" ...");
-        	n.dispatcher.startProbe(d, cb, NodeDispatcher.PROBE_TYPE_DEFAULT);
+        	n.dispatcher.startProbe(d, cb, NodeDispatcher.PROBE_TYPE_RESETTING_HTL);
         	synchronized(this) {
         		while(!doneSomething) {
         			try {
@@ -879,7 +889,7 @@ public class TextModeClientInterface implements Runnable {
         	uline = uline.substring("PROBEALL".length());
         	if(uline.startsWith(":")) uline = uline.substring(1);
         	if(uline.length() == 0) {
-        		probeAll(NodeDispatcher.PROBE_TYPE_DEFAULT);
+        		probeAll(NodeDispatcher.PROBE_TYPE_RESETTING_HTL);
         	} else {
         		probeAll(Integer.parseInt(uline));
         	}

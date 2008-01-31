@@ -12,6 +12,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 
@@ -134,6 +135,8 @@ public class NodeDispatcher implements Dispatcher {
 			return handleInsertRequest(m, source, false);
 		} else if(spec == DMT.FNPSSKInsertRequest) {
 			return handleInsertRequest(m, source, true);
+		} else if(spec == DMT.FNPRHProbeRequest) {
+			return handleProbeRequest(m, source);
 		} else if(spec == DMT.FNPRoutedPing) {
 			return handleRouted(m, source);
 		} else if(spec == DMT.FNPRoutedPong) {
@@ -288,6 +291,34 @@ public class NodeDispatcher implements Dispatcher {
 			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
+		return true;
+	}
+	
+	private boolean handleProbeRequest(Message m, PeerNode source) {
+		long id = m.getLong(DMT.UID);
+		if(node.recentlyCompleted(id)) {
+			Message rejected = DMT.createFNPRejectedLoop(id);
+			try {
+				source.sendAsync(rejected, null, 0, null);
+			} catch (NotConnectedException e) {
+				Logger.normal(this, "Rejecting probe request from "+source.getPeer()+": "+e);
+			}
+			return true;
+		}
+		// Lets not bother with full lockUID, just add it to the recently completed list.
+		node.completed(id);
+		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
+		if(source.shouldRejectProbeRequest()) {
+			Logger.normal(this, "Rejecting probe request from "+source.getPeer());
+			Message rejected = DMT.createFNPRejectedOverload(id, true);
+			try {
+				source.sendAsync(rejected, null, 0, null);
+			} catch (NotConnectedException e) {
+				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
+			}
+			return true;
+		}
+		ResettingHTLProbeRequestHandler.start(m, source, node);
 		return true;
 	}
 
@@ -549,11 +580,37 @@ public class NodeDispatcher implements Dispatcher {
 	// Probe requests
 
 	// FIXME
-	public static final int PROBE_TYPE_DEFAULT = 0;
+	public static final int PROBE_TYPE_RESETTING_HTL = 0;
 	
-	public void startProbe(double d, ProbeCallback cb, int probeType) {
-		long l = node.random.nextLong();
-		// FIXME implement!
-		throw new UnsupportedOperationException();
+	public void startProbe(final double target, final ProbeCallback cb, int probeType) {
+		final long uid = node.random.nextLong();
+		if(probeType == PROBE_TYPE_RESETTING_HTL) {
+			ResettingHTLProbeRequestSender rs = new ResettingHTLProbeRequestSender(target, node.maxHTL(), uid, node, node.getLocation(), true, null, -1.0);
+			rs.addListener(new ResettingHTLProbeRequestSender.Listener() {
+
+				public void onCompletion(double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException {
+					cb.onCompleted("completed", target, best, nearest, uid, counter, uniqueCounter, linearCounter);
+				}
+
+				public void onRNF(short htl, double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException {
+					cb.onCompleted("rnf", target, best, nearest, uid, counter, uniqueCounter, linearCounter);					
+				}
+
+				public void onReceivedRejectOverload() throws NotConnectedException {
+					cb.onRejectOverload();
+				}
+
+				public void onTimeout(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException {
+					cb.onCompleted("timeout", target, best, nearest, uid, counter, uniqueCounter, linearCounter);					
+				}
+
+				public void onTrace(long uid, double nearest, double best, short htl, short counter, short uniqueCounter, double location, long myUID, ShortBuffer peerLocs, ShortBuffer peerUIDs, short forkCount, short linearCounter, String reason, long prevUID) throws NotConnectedException {
+					cb.onTrace(uid, target, nearest, best, htl, counter, location, myUID, Fields.bytesToDoubles(peerLocs.getData()), Fields.bytesToLongs(peerUIDs.getData()), new double[0], forkCount, linearCounter, reason, prevUID);
+				}
+				
+			});
+		} else {
+			throw new IllegalArgumentException("Unknown probe request type");
+		}
 	}
 }

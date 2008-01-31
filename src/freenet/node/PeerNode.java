@@ -189,6 +189,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long timeLastReceivedSwapRequest;
 	/** Average interval between SwapRequest's */
 	private final RunningAverage swapRequestsInterval;
+	/** When did we last receive a probe request? */
+	private long timeLastReceivedProbeRequest;
+	/** Average interval between probe requests */
+	private final RunningAverage probeRequestsInterval;
 	/** Should we decrement HTL when it is at the maximum? 
 	* This decision is made once per node to prevent giving
 	* away information that can make correlation attacks much
@@ -533,6 +537,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		timeAddedOrRestarted = System.currentTimeMillis();
 
 		swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
+		probeRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS);
 
 		// Not connected yet; need to handshake
 		isConnected = false;
@@ -1552,6 +1557,26 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				} else return true;
 			}
 			timeLastReceivedSwapRequest = now;
+		}
+		return false;
+	}
+
+	/**
+	* Should we reject a swap request?
+	*/
+	public boolean shouldRejectProbeRequest() {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(timeLastReceivedProbeRequest > 0) {
+				long timeSinceLastTime = now - timeLastReceivedProbeRequest;
+				probeRequestsInterval.report(timeSinceLastTime);
+				double averageInterval = probeRequestsInterval.currentValue();
+				if(averageInterval >= Node.MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS) {
+					timeLastReceivedProbeRequest = now;
+					return false;
+				} else return true;
+			}
+			timeLastReceivedProbeRequest = now;
 		}
 		return false;
 	}

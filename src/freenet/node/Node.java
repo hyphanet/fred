@@ -244,6 +244,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	// 900ms
 	static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
+	static final int MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS = 1000;
 	public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
 	/** Minimum space for zipped logfiles on testnet */
 	static final long TESTNET_MIN_MAX_ZIPPED_LOGFILES = 512*1024*1024;

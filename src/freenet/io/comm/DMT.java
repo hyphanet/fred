@@ -78,6 +78,7 @@ public class DMT {
 	public static final String TYPE = "type";
 	public static final String PAYLOAD = "payload";
 	public static final String COUNTER = "counter";
+	public static final String UNIQUE_COUNTER = "uniqueCounter";
 	public static final String LINEAR_COUNTER = "linearCounter";
 	public static final String RETURN_LOCATION = "returnLocation";
 	public static final String BLOCK_HEADERS = "blockHeaders";
@@ -894,6 +895,105 @@ public class DMT {
 		return msg;
 	}
 	
+	public static final MessageType FNPRHProbeReply = new MessageType("FNPRHProbeReply", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(NEAREST_LOCATION, Double.class);
+		addField(BEST_LOCATION, Double.class);
+		addField(COUNTER, Short.class);
+		addField(UNIQUE_COUNTER, Short.class);
+		addField(LINEAR_COUNTER, Short.class);
+	}};
+	
+	public static final Message createFNPRHProbeReply(long uid, double nearest, double best, short counter, short uniqueCounter, short linearCounter) {
+		Message msg = new Message(FNPRHProbeReply);
+		msg.set(UID, uid);
+		msg.set(NEAREST_LOCATION, nearest);
+		msg.set(BEST_LOCATION, best);
+		msg.set(COUNTER, counter);
+		msg.set(UNIQUE_COUNTER, uniqueCounter);
+		msg.set(LINEAR_COUNTER, linearCounter);
+		return msg;
+	}
+	
+	public static final MessageType FNPRHProbeRequest = new MessageType("FNPRHProbeRequest", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(TARGET_LOCATION, Double.class);
+		addField(NEAREST_LOCATION, Double.class);
+		addField(BEST_LOCATION, Double.class);
+		addField(HTL, Short.class);
+	}};
+	
+	public static final Message createFNPRHProbeRequest(long uid, double target, double nearest, 
+			double best, short htl) {
+		Message msg = new Message(FNPProbeRequest);
+		msg.set(UID, uid);
+		msg.set(TARGET_LOCATION, target);
+		msg.set(NEAREST_LOCATION, nearest);
+		msg.set(BEST_LOCATION, best);
+		msg.set(HTL, htl);
+		return msg;
+	}
+
+	public static final MessageType FNPRHReturnSubMessage = new MessageType("FNPRHReturnSubMessage", PRIORITY_HIGH) {{
+		addField(NEAREST_LOCATION, Double.class);
+		addField(BEST_LOCATION, Double.class);
+		addField(COUNTER, Short.class);
+		addField(UNIQUE_COUNTER, Short.class);
+		addField(LINEAR_COUNTER, Short.class);
+		addField(REASON, String.class);
+	}};
+	
+	public static final Message createFNPRHReturnSubMessage(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) {
+		Message msg = new Message(FNPRHReturnSubMessage);
+		msg.set(NEAREST_LOCATION, nearest);
+		msg.set(BEST_LOCATION, best);
+		msg.set(COUNTER, counter);
+		msg.set(UNIQUE_COUNTER, uniqueCounter);
+		msg.set(LINEAR_COUNTER, linearCounter);
+		msg.set(REASON, reason);
+		return msg;
+	}
+	
+	public static final MessageType FNPRHProbeTrace = new MessageType("FNPRHProbeTrace", PRIORITY_LOW) {{
+		addField(UID, Long.class);
+		addField(NEAREST_LOCATION, Double.class);
+		addField(BEST_LOCATION, Double.class);
+		addField(HTL, Short.class);
+		addField(COUNTER, Short.class);
+		addField(UNIQUE_COUNTER, Short.class);
+		addField(LOCATION, Double.class);
+		addField(MY_UID, Long.class);
+		addField(PEER_LOCATIONS, ShortBuffer.class);
+		addField(PEER_UIDS, ShortBuffer.class);
+		addField(FORK_COUNT, Short.class);
+		addField(LINEAR_COUNTER, Short.class);
+		addField(REASON, String.class);
+		addField(PREV_UID, Long.class);
+	}};
+
+	public static Message createFNPRHProbeTrace(long uid, double nearest, double best, short htl, short counter, short uniqueCounter, double myLoc, long swapIdentifier, double[] peerLocs, long[] peerUIDs, short forkCount, short linearCounter, String reason, long prevUID) {
+		return createFNPRHProbeTrace(uid, nearest, best, htl, counter, uniqueCounter, myLoc, swapIdentifier, new ShortBuffer(Fields.doublesToBytes(peerLocs)), new ShortBuffer(Fields.longsToBytes(peerUIDs)), forkCount, linearCounter, reason, prevUID);
+	}
+	
+	public static Message createFNPRHProbeTrace(long uid, double nearest, double best, short htl, short counter, short uniqueCounter, double myLoc, long swapIdentifier, ShortBuffer peerLocs, ShortBuffer peerUIDs, short forkCount, short linearCounter, String reason, long prevUID) {
+		Message msg = new Message(FNPRHProbeTrace);
+		msg.set(UID, uid);
+		msg.set(NEAREST_LOCATION, nearest);
+		msg.set(BEST_LOCATION, best);
+		msg.set(HTL, htl);
+		msg.set(COUNTER, counter);
+		msg.set(UNIQUE_COUNTER, uniqueCounter);
+		msg.set(LOCATION, myLoc);
+		msg.set(MY_UID, swapIdentifier);
+		msg.set(PEER_LOCATIONS, peerLocs);
+		msg.set(PEER_UIDS, peerUIDs);
+		msg.set(FORK_COUNT, forkCount);
+		msg.set(LINEAR_COUNTER, linearCounter);
+		msg.set(REASON, reason);
+		msg.set(PREV_UID, prevUID);
+		return msg;
+	}
+
 	public static final MessageType FNPProbeRequest = new MessageType("FNPProbeRequest", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(TARGET_LOCATION, Double.class);
