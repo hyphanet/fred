@@ -500,6 +500,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	private void startDetect() {
 		if(logMINOR) Logger.minor(this, "Detecting...");
 		synchronized(this) {
+			lastDetectAttemptFailed = false;
 			for(int i=0;i<plugins.length;i++) {
 				FredPluginIPDetector plugin = plugins[i];
 				if(runners.containsKey(plugin)) continue;
