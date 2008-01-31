@@ -39,11 +39,27 @@ public class Location {
 	}
 
 	public static double distance(double a, double b, boolean allowCrazy) {
-	    if(((a < 0.0 || a > 1.0)||(b < 0.0 || b > 1.0)) && !allowCrazy) {
-	    	Logger.error(PeerManager.class, "Invalid Location ! a = "+a +" b = "+ b + "Please report this bug!", new Exception("error"));
-	    	throw new NullPointerException();
-	    }
 	    // Circular keyspace
+		if(!allowCrazy) {
+			if((a < 0.0 || a > 1.0)||(b < 0.0 || b > 1.0)) {
+		    	Logger.error(PeerManager.class, "Invalid Location ! a = "+a +" b = "+ b + "Please report this bug!", new Exception("error"));
+		    	throw new NullPointerException();
+			}
+			return simpleDistance(a, b);	
+		} else {
+			if(a < 0.0 || a > 1.0) a = 2.0;
+			if(b < 0.0 || b > 1.0) b = 2.0;
+			if(a > 1.0 && b > 2.0)
+				return 0.0; // Both are out of range so both are equal
+			if(a > 1.0)
+				return a - b;
+			if(b > 1.0)
+				return b - a;
+			return simpleDistance(a, b);
+		}
+	}
+
+	private static double simpleDistance(double a, double b) {
 		if (a > b) return Math.min (a - b, 1.0 - a + b);
 		else return Math.min (b - a, 1.0 - b + a);
 	}
