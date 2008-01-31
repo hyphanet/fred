@@ -94,6 +94,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	}
 
 	static boolean logMINOR;
+	static boolean logDEBUG;
 	private final NodeIPDetector detector;
 	private final Node node;
 	FredPluginIPDetector[] plugins;
@@ -107,6 +108,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	
 	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
+		logDEBUG = Logger.shouldLog(Logger.DEBUG, getClass());
 		plugins = new FredPluginIPDetector[0];
 		portForwardPlugins = new FredPluginPortForward[0];
 		this.node = node;
@@ -261,6 +263,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	public void maybeRun() {
 		if(!started) return;
 		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
+		logDEBUG = Logger.shouldLog(Logger.DEBUG, getClass());
 		if(logMINOR) Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getConnectedPeers();
@@ -379,19 +382,22 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				firstTimeUrgent = now;
 			
 			if(detector.oldIPAddress != null && detector.oldIPAddress.isRealInternetAddress(false, false)) {
+				if(logDEBUG) Logger.debug(this, "Detecting in 2 minutes as have oldIPAddress");
 				// Allow 2 minutes to get incoming connections and therefore detect from them.
 				// In the meantime, *hopefully* our oldIPAddress is valid.
 				// If not, we'll find out in 2 minutes.
 				if(now - firstTimeUrgent > 2*60*1000) {
 					detect = true;
 					firstTimeUrgent = now; // Reset now rather than on next round.
+					if(logMINOR) Logger.minor(this, "Detecting now as 2 minutes are up (have oldIPAddress)");
 				}
-			} else {				
+			} else {
+				if(logMINOR) Logger.minor(this, "Detecting now (no oldIPAddress)");
 				// Detect immediately
 				detect = true;
 			}
 		} else {
-			if(logMINOR) Logger.minor(this, "Not urgent; conns="+conns.length+", peers="+peers.length);
+			if(logDEBUG) Logger.minor(this, "Not urgent; conns="+conns.length+", peers="+peers.length);
 			firstTimeUrgent = 0;
 		}
 		
