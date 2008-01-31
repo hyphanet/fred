@@ -292,8 +292,8 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
             			double newBest = sub.getDouble(DMT.BEST_LOCATION);
             			if(Location.distance(newBest, target, true) < Location.distance(best, target, true))
             				best = newBest;
-            			counter += Math.max(0, msg.getShort(DMT.COUNTER));
-            			uniqueCounter += Math.max(0, msg.getShort(DMT.UNIQUE_COUNTER));
+            			counter += Math.max(0, sub.getShort(DMT.COUNTER));
+            			uniqueCounter += Math.max(0, sub.getShort(DMT.UNIQUE_COUNTER));
             		}
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
