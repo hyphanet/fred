@@ -70,6 +70,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
         this.linearCounter = 1;
         this.uniqueCounter = 1;
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
+    	updateBest();
     }
 
     public void start() {
@@ -88,7 +89,6 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
     }
 
     private void realRun() {
-    	updateBest();
 		int routeAttempts=0;
 		int rejectOverloads=0;
         HashSet nodesRoutedTo = new HashSet();
@@ -239,7 +239,8 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
                 MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
                 MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
                 MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKPubKey);
-                MessageFilter mf = mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey)));
+                MessageFilter mfTrace = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRHProbeTrace);
+                MessageFilter mf = mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey.or(mfTrace))));
 
                 
             	try {
