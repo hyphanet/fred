@@ -358,9 +358,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			maybeUrgent = true;
 		
 		if(maybeUrgent) {
-			// FIXME maybeRun() limits this to once per 5 minutes.
-			// Here we have once per 2 minutes.
-			
 			// Detect immediately if no valid oldIPAddress, otherwise once per 2 minutes.
 			
 			if(firstTimeUrgent <= 0)
