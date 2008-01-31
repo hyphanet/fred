@@ -339,8 +339,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		
 		boolean detect = false;
 		
-		boolean maybeUrgent = false;
-		
 		// If we have no connections, and several disconnected but enabled 
 		// peers, then run a detection.
 		
@@ -378,23 +376,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		
 		// If we have no connections, and several disconnected nodes, we should do a
 		// detection soon.
-		if(realConnections == 0 && realDisconnected > 0)
-			maybeUrgent = true;
-		
-		// If we have no connections, and have lost several connections recently, we should 
-		// do a detection soon, regardless of the 1 detection per hour throttle.
-		if(realConnections == 0 && realDisconnected > 0 && recentlyConnected > 2) {
-			if(now - lastDetectAttemptEndedTime > 6 * 60 * 1000) {
-				return true;
-			}
-		}
-		
-		// If it appears to be an SNAT, do a detection at least once to verify that, and to
-		// check whether our IP is bogus.
-		if(detector.maybeSymmetric && lastDetectAttemptEndedTime <= 0)
-			return true;
-		
-		if(maybeUrgent) {
+		if(realConnections == 0 && realDisconnected > 0) {
 			if(firstTimeUrgent <= 0)
 				firstTimeUrgent = now;
 			
@@ -417,6 +399,19 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(logDEBUG) Logger.minor(this, "Not urgent; conns="+conns.length+", peers="+peers.length);
 			firstTimeUrgent = 0;
 		}
+		
+		// If we have no connections, and have lost several connections recently, we should 
+		// do a detection soon, regardless of the 1 detection per hour throttle.
+		if(realConnections == 0 && realDisconnected > 0 && recentlyConnected > 2) {
+			if(now - lastDetectAttemptEndedTime > 6 * 60 * 1000) {
+				return true;
+			}
+		}
+		
+		// If it appears to be an SNAT, do a detection at least once to verify that, and to
+		// check whether our IP is bogus.
+		if(detector.maybeSymmetric && lastDetectAttemptEndedTime <= 0)
+			return true;
 		
 		// Do the possibly-fake-IPs detection.
 		// If we have one or two peers connected now, reporting real IPs, and 
