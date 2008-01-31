@@ -413,49 +413,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		if(detector.maybeSymmetric && lastDetectAttemptEndedTime <= 0)
 			return true;
 		
-		// Do the possibly-fake-IPs detection.
-		// If we have one or two peers connected now, reporting real IPs, and 
-		// if there is a locally detected address and they are different to it, 
-		// and other peers have been connected, then maybe we need to redetect
-		// to make sure we're not being spoofed.
-		
-		boolean maybeFake = false;
-	
-		if(!detector.hasDirectlyDetectedIP()) {
-			
-			if((conns.length == 1) || (conns.length == 2)) {
-				// No locally detected IP, only one or two connections.
-				// Have we had more relatively recently?
-				int count = 0;
-				for(int i=0;i<peers.length;i++) {
-					PeerNode p = peers[i];
-					if((!p.isConnected()) && (now - p.lastReceivedPacketTime() < 5*60*1000)) {
-						// Not connected now but has been within the past 5 minutes.
-						count++;
-					}
-				}
-				if(count > 2) {
-					if(logMINOR) Logger.minor(this, "Recently connected peers count: "+count);
-					maybeFake = true;
-				}
-			}
-		}
-		
-		if(maybeFake) {
-			if(logMINOR) Logger.minor(this, "Possible fake IPs being fed to us, may detect...");
-			if(firstTimeMaybeFakePeers <= 0)
-				firstTimeMaybeFakePeers = now;
-			
-			if((now - firstTimeMaybeFakePeers) > 2*60*1000) {
-				// MaybeFake been true for 2 minutes.
-				detect = true;
-			}
-		
-		} else {
-			if(logMINOR) Logger.minor(this, "Not fake");
-			firstTimeMaybeFakePeers = 0;
-		}
-	
 		if(detect) {
 			if(now - lastDetectAttemptEndedTime < 60*60*1000) {
 				// Only try every hour
