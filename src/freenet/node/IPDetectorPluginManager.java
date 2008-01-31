@@ -282,7 +282,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			// try again yet.
 			if(lastDetectAttemptFailed) {
 				if(now - lastDetectAttemptEndedTime < 5*60*1000) {
-					if(logMINOR) Logger.minor(this, "Last detect failed and more than 5 minutes ago");
+					if(logMINOR) Logger.minor(this, "Last detect failed less than 5 minutes ago");
 					return;
 				} else {
 					startDetect();
