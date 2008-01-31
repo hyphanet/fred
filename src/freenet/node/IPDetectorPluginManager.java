@@ -346,11 +346,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			// No connections.
 			for(int i=0;i<peers.length;i++) {
 				PeerNode p = peers[i];
-				if(!p.isDisabled()) {
-					maybeUrgent = true;
-					if(logMINOR) Logger.minor(this, "No connections, but have peers, may detect...");
-					break;
-				}
+				if(p.isDisabled()) continue;
+				maybeUrgent = true;
+				if(logMINOR) Logger.minor(this, "No connections, but have peers, may detect...");
+				break;
 			}
 		}
 		
