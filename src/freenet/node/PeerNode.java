@@ -1546,7 +1546,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				long timeSinceLastTime = now - timeLastReceivedSwapRequest;
 				swapRequestsInterval.report(timeSinceLastTime);
 				double averageInterval = swapRequestsInterval.currentValue();
-				return averageInterval < Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS;
+				if(averageInterval >= Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS) {
+					timeLastReceivedSwapRequest = now;
+					return false;
+				} else return true;
 			}
 			timeLastReceivedSwapRequest = now;
 		}
