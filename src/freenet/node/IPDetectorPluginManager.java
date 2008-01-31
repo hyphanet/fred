@@ -357,6 +357,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			maybeUrgent = true;
 		
 		if(maybeUrgent) {
+			// FIXME maybeRun() limits this to once per 5 minutes.
+			// Here we have once per 2 minutes.
+			
+			// Detect immediately if no valid oldIPAddress, otherwise once per 2 minutes.
+			
 			if(firstTimeUrgent <= 0)
 				firstTimeUrgent = now;
 			
@@ -373,7 +378,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		
 		// Do the possibly-fake-IPs detection.
 		// If we have one or two peers connected now, reporting real IPs, and 
-		// if there is a locally detected address they are different to it, 
+		// if there is a locally detected address and they are different to it, 
 		// and other peers have been connected, then maybe we need to redetect
 		// to make sure we're not being spoofed.
 		
@@ -381,7 +386,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	
 		if(!detector.hasDirectlyDetectedIP()) {
 			
-			if((conns.length > 0) && (conns.length < 3)) {
+			if((conns.length == 1) || (conns.length == 2)) {
 				// No locally detected IP, only one or two connections.
 				// Have we had more relatively recently?
 				int count = 0;
