@@ -347,6 +347,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			for(int i=0;i<peers.length;i++) {
 				PeerNode p = peers[i];
 				if(p.isDisabled()) continue;
+				// Don't count localhost, LAN addresses.
+				InetAddress addr = p.getPeer().getAddress(false);
+				if(addr != null) {
+					if(!IPUtil.isValidAddress(addr, false)) continue;
+				}
 				maybeUrgent = true;
 				if(logMINOR) Logger.minor(this, "No connections, but have peers, may detect...");
 				break;
