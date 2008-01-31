@@ -70,8 +70,11 @@ public class ResettingHTLProbeRequestHandler implements ResettingHTLProbeRequest
 		source.sendAsync(rnf, null, 0, sender);
 	}
 
-	public void onReceivedRejectOverload() throws NotConnectedException {
-		source.sendAsync(DMT.createFNPRejectedOverload(uid, false), null, 0, sender);
+	public void onReceivedRejectOverload(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException {
+		Message ro = DMT.createFNPRejectedOverload(uid, false);
+		Message sub = DMT.createFNPRHReturnSubMessage(nearest, best, counter, uniqueCounter, linearCounter, reason);
+		ro.addSubMessage(sub);
+		source.sendAsync(ro, null, 0, sender);
 	}
 
 	public void onTimeout(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException {

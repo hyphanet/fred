@@ -596,7 +596,7 @@ public class NodeDispatcher implements Dispatcher {
 					cb.onCompleted("rnf", target, best, nearest, uid, counter, uniqueCounter, linearCounter);					
 				}
 
-				public void onReceivedRejectOverload() throws NotConnectedException {
+				public void onReceivedRejectOverload(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException {
 					cb.onRejectOverload();
 				}
 

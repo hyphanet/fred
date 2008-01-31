@@ -382,7 +382,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 			hasForwardedRejectedOverload = true;
 			notifyAll();
 		}
-		fireReceivedRejectOverload();
+		fireReceivedRejectOverload(nearestLoc, best, counter, uniqueCounter, linearCounter, "");
 	}
     
     // these are bit-masks
@@ -441,7 +441,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 	interface Listener {
 		/** Should return quickly, allocate a thread if it needs to block etc 
 		 * @throws NotConnectedException */
-		void onReceivedRejectOverload() throws NotConnectedException;
+		void onReceivedRejectOverload(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException;
 		void onTrace(long uid, double nearest, double best, short htl, short counter, short uniqueCounter, double location, long myUID, ShortBuffer peerLocs, ShortBuffer peerUIDs, short s, short linearCounter, String reason, long prevUID) throws NotConnectedException;
 		/** On completion 
 		 * @throws NotConnectedException */
@@ -464,13 +464,13 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 		}
 	}
 	
-	private void fireReceivedRejectOverload() {
+	private void fireReceivedRejectOverload(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) {
 		synchronized (listeners) {
 			Iterator i=listeners.iterator();
 			while (i.hasNext()) {
 				Listener l=(Listener)i.next();
 				try {
-					l.onReceivedRejectOverload();
+					l.onReceivedRejectOverload(nearest, best, counter, uniqueCounter, linearCounter, reason);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
