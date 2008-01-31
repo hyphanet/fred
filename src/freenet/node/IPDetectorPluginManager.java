@@ -301,7 +301,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				
 			} else {
 				
-				if(shouldDetectWithPeers(now, peers, conns)) startDetect();
+				if(shouldDetectWithPeers(now, peers, conns, nodeAddrs)) startDetect();
 				
 			}
 		}
@@ -332,7 +332,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 * @param conns The node's connected peers.
 	 * @return True if we should run a detection.
 	 */
-	private boolean shouldDetectWithPeers(long now, PeerNode[] peers, PeerNode[] conns) {
+	private boolean shouldDetectWithPeers(long now, PeerNode[] peers, PeerNode[] conns, FreenetInetAddress[] nodeAddrs) {
 		
 		boolean detect = false;
 		
@@ -348,9 +348,20 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				PeerNode p = peers[i];
 				if(p.isDisabled()) continue;
 				// Don't count localhost, LAN addresses.
-				InetAddress addr = p.getPeer().getAddress(false);
-				if(addr != null) {
-					if(!IPUtil.isValidAddress(addr, false)) continue;
+				FreenetInetAddress a = p.getPeer().getFreenetAddress();
+				if(a != null) {
+					InetAddress addr = a.getAddress(false);
+					if(addr != null) {
+						if(!IPUtil.isValidAddress(addr, false)) continue;
+					}
+					boolean skip = false;
+					for(int j=0;j<nodeAddrs.length;j++) {
+						if(a.equals(nodeAddrs[j])) {
+							skip = true;
+							break;
+						}
+					}
+					if(skip) continue;
 				}
 				maybeUrgent = true;
 				if(logMINOR) Logger.minor(this, "No connections, but have peers, may detect...");
