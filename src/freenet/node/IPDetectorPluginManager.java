@@ -286,6 +286,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 					return;
 				} else {
 					startDetect();
+					return;
 				}
 			}
 			if(detector.hasDirectlyDetectedIP()) {
