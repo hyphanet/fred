@@ -521,7 +521,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
     }
     
 	private void updateBest() {
-		PeerNode[] nodes = node.getConnectedPeers();
+		PeerNode[] nodes = node.peers.myPeers;
 		double curDist = Location.distance(best, target, true);
 		for(int i=0;i<nodes.length;i++) {
 			if(!nodes[i].isConnected()) continue;
