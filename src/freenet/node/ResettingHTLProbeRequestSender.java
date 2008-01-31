@@ -328,6 +328,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
             				msg.getLong(DMT.MY_UID), (ShortBuffer) msg.getObject(DMT.PEER_LOCATIONS), 
             				(ShortBuffer) msg.getObject(DMT.PEER_UIDS), 
             				msg.getShort(DMT.LINEAR_COUNTER), msg.getString(DMT.REASON), msg.getLong(DMT.PREV_UID));
+            		continue;
             	}
             	
            		Logger.error(this, "Unexpected message: "+msg);
