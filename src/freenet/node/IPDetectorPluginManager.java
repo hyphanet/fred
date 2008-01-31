@@ -336,10 +336,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		
 		boolean detect = false;
 		
+		boolean maybeUrgent = false;
+		
 		// If we have no connections, and several disconnected but enabled 
 		// peers, then run a detection.
-		
-		boolean maybeUrgent = false;
 		
 		if(conns.length == 0) {
 			
@@ -354,21 +354,25 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			}
 		}
 		
-		if(detector.maybeSymmetric && lastDetectAttemptEndedTime <= 0) // If it appears to be an SNAT, do a detection at least once
+		// If it appears to be an SNAT, do a detection at least once to verify that, and to
+		// check whether our IP is bogus.
+		if(detector.maybeSymmetric && lastDetectAttemptEndedTime <= 0)
 			maybeUrgent = true;
 		
 		if(maybeUrgent) {
-			// Detect immediately if no valid oldIPAddress, otherwise once per 2 minutes.
-			
 			if(firstTimeUrgent <= 0)
 				firstTimeUrgent = now;
 			
-			if(now - firstTimeUrgent > 2*60*1000)
+			if(detector.oldIPAddress != null && detector.oldIPAddress.isRealInternetAddress(false, false)) {
+				// Detect after 2 minutes: wait for incoming connections.
+				if(now - firstTimeUrgent > 2*60*1000) {
+					detect = true;
+					firstTimeUrgent = now; // Reset now rather than on next round.
+				}
+			} else {				
+				// Detect immediately
 				detect = true;
-			
-			if(!(detector.oldIPAddress != null && detector.oldIPAddress.isRealInternetAddress(false, false)))
-				detect = true; // else wait 2 minutes
-			
+			}
 		} else {
 			if(logMINOR) Logger.minor(this, "Not urgent; conns="+conns.length+", peers="+peers.length);
 			firstTimeUrgent = 0;
