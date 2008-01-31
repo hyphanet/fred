@@ -119,7 +119,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
             if(logMINOR) Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
             
-            if(Location.distance(target, nextValue) > Location.distance(target, nearestLoc)) {
+            if(Location.distance(target, nextValue, true) > Location.distance(target, nearestLoc, true)) {
                 htl = node.decrementHTL((hasForwarded ? next : source), htl);
                 if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc+" so htl="+htl);
             }
@@ -271,7 +271,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
             		// it doesn't make any sense to do so - it's only valid within that pocket.
             		Message sub = msg.getSubMessage(DMT.FNPRHReturnSubMessage);
             		double newBest = sub.getDouble(DMT.BEST_LOCATION);
-            		if(Location.distance(newBest, target) < Location.distance(best, target))
+            		if(Location.distance(newBest, target, true) < Location.distance(best, target, true))
             			best = newBest;
             		counter += Math.max(0, msg.getShort(DMT.COUNTER));
             		uniqueCounter += Math.max(0, msg.getShort(DMT.UNIQUE_COUNTER));
@@ -288,7 +288,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 					// Don't use the HTL or nearestLoc.
             		Message sub = msg.getSubMessage(DMT.FNPRHReturnSubMessage);
             		double newBest = sub.getDouble(DMT.BEST_LOCATION);
-            		if(Location.distance(newBest, target) < Location.distance(best, target))
+            		if(Location.distance(newBest, target, true) < Location.distance(best, target, true))
             			best = newBest;
             		counter += Math.max(0, msg.getShort(DMT.COUNTER));
             		uniqueCounter += Math.max(0, msg.getShort(DMT.UNIQUE_COUNTER));
@@ -305,10 +305,10 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 
             	if(msg.getSpec() == DMT.FNPRHProbeReply) {
             		double hisNearest = msg.getDouble(DMT.NEAREST_LOCATION);
-            		if(Location.distance(hisNearest, target) < Location.distance(nearestLoc, target))
+            		if(Location.distance(hisNearest, target, true) < Location.distance(nearestLoc, target, true))
             			nearestLoc = hisNearest;
             		double hisBest = msg.getDouble(DMT.BEST_LOCATION);
-            		if(Location.distance(hisBest, target) < Location.distance(best, target))
+            		if(Location.distance(hisBest, target, true) < Location.distance(best, target, true))
             			best = hisBest;
             		counter += (short) Math.max(0, msg.getShort(DMT.COUNTER));
             		uniqueCounter += (short) Math.max(0, msg.getShort(DMT.UNIQUE_COUNTER));
@@ -356,7 +356,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 	}
 
 	private double best(double loc1, double loc2) {
-		if(Location.distance(loc1, target) < Location.distance(loc2, target))
+		if(Location.distance(loc1, target, true) < Location.distance(loc2, target, true))
 			return loc1;
 		else return loc2;
 	}
@@ -521,13 +521,13 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
     
 	private void updateBest() {
 		PeerNode[] nodes = node.getConnectedPeers();
-		double curDist = Location.distance(best, target);
+		double curDist = Location.distance(best, target, true);
 		for(int i=0;i<nodes.length;i++) {
 			if(!nodes[i].isConnected()) continue;
 			double loc = nodes[i].getLocation();
 			if(loc < target)
 				continue;
-			if(Location.distance(target, loc) < curDist)
+			if(Location.distance(target, loc, true) < curDist)
 				best = loc;
 		}
 	}

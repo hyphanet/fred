@@ -35,8 +35,8 @@ public class ResettingHTLProbeRequestHandler implements ResettingHTLProbeRequest
 		if(htl > n.maxHTL()) htl = n.maxHTL();
 		double nodeLoc = n.getLocation();
 		boolean resetNearestLoc = false;
-		if(Location.distance(nodeLoc, target) <
-				Location.distance(nearestLoc, target)) {
+		if(Location.distance(nodeLoc, target, true) <
+				Location.distance(nearestLoc, target, true)) {
 			nearestLoc = nodeLoc;
 			htl = Node.DEFAULT_MAX_HTL;
 			resetNearestLoc = true;
