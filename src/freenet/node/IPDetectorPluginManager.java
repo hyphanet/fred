@@ -344,38 +344,55 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		// If we have no connections, and several disconnected but enabled 
 		// peers, then run a detection.
 		
-		if(conns.length == 0) {
-			
-			// No connections.
-			for(int i=0;i<peers.length;i++) {
-				PeerNode p = peers[i];
-				if(p.isDisabled()) continue;
-				// Don't count localhost, LAN addresses.
-				FreenetInetAddress a = p.getPeer().getFreenetAddress();
-				if(a != null) {
-					InetAddress addr = a.getAddress(false);
-					if(addr != null) {
-						if(!IPUtil.isValidAddress(addr, false)) continue;
-					}
-					boolean skip = false;
-					for(int j=0;j<nodeAddrs.length;j++) {
-						if(a.equals(nodeAddrs[j])) {
-							skip = true;
-							break;
-						}
-					}
-					if(skip) continue;
+		int realConnections = 0;
+		int realDisconnected = 0;
+		int recentlyConnected = 0;
+		
+		for(int i=0;i<peers.length;i++) {
+			PeerNode p = peers[i];
+			if(p.isDisabled()) continue;
+			// Don't count localhost, LAN addresses.
+			FreenetInetAddress a = p.getPeer().getFreenetAddress();
+			if(a != null) {
+				InetAddress addr = a.getAddress(false);
+				if(addr != null) {
+					if(!IPUtil.isValidAddress(addr, false)) continue;
 				}
-				maybeUrgent = true;
-				if(logMINOR) Logger.minor(this, "No connections, but have peers, may detect...");
-				break;
+				boolean skip = false;
+				for(int j=0;j<nodeAddrs.length;j++) {
+					if(a.equals(nodeAddrs[j])) {
+						skip = true;
+						break;
+					}
+				}
+				if(skip) continue;
+			} else continue; // Not much chance of connecting.
+			if(p.isConnected())
+				realConnections++;
+			else {
+				realDisconnected++;
+				if(now - p.lastReceivedPacketTime() < 5*60*1000)
+					recentlyConnected++;
+			}
+		}
+		
+		// If we have no connections, and several disconnected nodes, we should do a
+		// detection soon.
+		if(realConnections == 0 && realDisconnected > 0)
+			maybeUrgent = true;
+		
+		// If we have no connections, and have lost several connections recently, we should 
+		// do a detection soon, regardless of the 1 detection per hour throttle.
+		if(realConnections == 0 && realDisconnected > 0 && recentlyConnected > 2) {
+			if(now - lastDetectAttemptEndedTime > 6 * 60 * 1000) {
+				return true;
 			}
 		}
 		
 		// If it appears to be an SNAT, do a detection at least once to verify that, and to
 		// check whether our IP is bogus.
 		if(detector.maybeSymmetric && lastDetectAttemptEndedTime <= 0)
-			maybeUrgent = true;
+			return true;
 		
 		if(maybeUrgent) {
 			if(firstTimeUrgent <= 0)
