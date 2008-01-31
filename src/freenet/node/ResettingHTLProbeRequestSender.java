@@ -318,6 +318,14 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 					// Non-fatal - probably still have time left
 					forwardRejectedOverload();
 					rejectOverloads++;
+					// Count the nodes involved for results purposes.
+					// Don't use the HTL or nearestLoc.
+            		Message sub = msg.getSubMessage(DMT.FNPRHReturnSubMessage);
+            		double newBest = sub.getDouble(DMT.BEST_LOCATION);
+            		if(Location.distance(newBest, target) < Location.distance(best, target))
+            			best = newBest;
+            		counter += Math.max(0, msg.getShort(DMT.COUNTER));
+            		uniqueCounter += Math.max(0, msg.getShort(DMT.UNIQUE_COUNTER));
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
 						//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
