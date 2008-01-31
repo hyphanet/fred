@@ -387,7 +387,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				int count = 0;
 				for(int i=0;i<peers.length;i++) {
 					PeerNode p = peers[i];
-					if((!p.isConnected()) || (now - p.lastReceivedPacketTime() < 5*60*1000)) {
+					if((!p.isConnected()) && (now - p.lastReceivedPacketTime() < 5*60*1000)) {
 						// Not connected now but has been within the past 5 minutes.
 						count++;
 					}
