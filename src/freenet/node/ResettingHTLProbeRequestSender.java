@@ -45,41 +45,6 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 	
 	private ArrayList listeners=new ArrayList();
 
-    // Terminal status
-    // Always set finished AFTER setting the reason flag
-
-    private int status = -1;
-    static final int NOT_FINISHED = -1;
-    static final int SUCCESS = 0;
-    static final int ROUTE_NOT_FOUND = 1;
-    static final int TIMED_OUT = 6;
-    static final int GENERATED_REJECTED_OVERLOAD = 7;
-    static final int INTERNAL_ERROR = 8;
-    private PeerNode successFrom;
-    
-    static String getStatusString(int status) {
-    	switch(status) {
-    	case NOT_FINISHED:
-    		return "NOT FINISHED";
-    	case SUCCESS:
-    		return "SUCCESS";
-    	case ROUTE_NOT_FOUND:
-    		return "ROUTE NOT FOUND";
-    	case TIMED_OUT:
-    		return "TIMED OUT";
-    	case GENERATED_REJECTED_OVERLOAD:
-    		return "GENERATED REJECTED OVERLOAD";
-    	case INTERNAL_ERROR:
-    		return "INTERNAL ERROR";
-    	default:
-    		return "UNKNOWN STATUS CODE: "+status;
-    	}
-    }
-    
-    String getStatusString() {
-    	return getStatusString(getStatus());
-    }
-    
     private static boolean logMINOR;
     
     public String toString() {
@@ -424,59 +389,6 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
     
     static final short WAIT_ALL = 
     	WAIT_REJECTED_OVERLOAD | WAIT_FINISHED;
-
-    /**
-     * Wait until either the transfer has started, we receive a 
-     * RejectedOverload, or we get a terminal status code.
-     * @param mask Bitmask indicating what NOT to wait for i.e. the situation when this function
-     * exited last time (see WAIT_ constants above). Bits can also be set true even though they
-     * were not valid, to indicate that the caller doesn't care about that bit.
-     * If zero, function will throw an IllegalArgumentException.
-     * @return Bitmask indicating present situation. Can be fed back to this function,
-     * if nonzero.
-     */
-    public synchronized short waitUntilStatusChange(short mask) {
-    	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
-        while(true) {
-        	short current = mask; // If any bits are set already, we ignore those states.
-        	
-       		if(hasForwardedRejectedOverload)
-       			current |= WAIT_REJECTED_OVERLOAD;
-        	
-        	if(status != NOT_FINISHED)
-        		current |= WAIT_FINISHED;
-        	
-        	if(current != mask) return current;
-			
-            try {
-                wait(10000);
-            } catch (InterruptedException e) {
-                // Ignore
-            }
-        }
-    }
-    
-    /**
-     * Wait until we have a terminal status code.
-     */
-    public synchronized void waitUntilFinished() {
-        while(true) {
-            if(status != NOT_FINISHED) return;
-            try {
-                wait(10000);
-            } catch (InterruptedException e) {
-                // Ignore
-            }
-        }            
-    }
-    
-    public PeerNode successFrom() {
-    	return successFrom;
-    }
-    
-    public int getStatus() {
-        return status;
-    }
 
     public short getHTL() {
         return htl;
