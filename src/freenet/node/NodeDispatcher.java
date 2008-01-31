@@ -609,6 +609,7 @@ public class NodeDispatcher implements Dispatcher {
 				}
 				
 			});
+			rs.start();
 		} else {
 			throw new IllegalArgumentException("Unknown probe request type");
 		}
