@@ -88,6 +88,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
     }
 
     private void realRun() {
+    	updateBest();
 		int routeAttempts=0;
 		int rejectOverloads=0;
         HashSet nodesRoutedTo = new HashSet();
@@ -518,4 +519,17 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 		}
     }
     
+	private void updateBest() {
+		PeerNode[] nodes = node.getConnectedPeers();
+		double curDist = Location.distance(best, target);
+		for(int i=0;i<nodes.length;i++) {
+			if(!nodes[i].isConnected()) continue;
+			double loc = nodes[i].getLocation();
+			if(loc < target)
+				continue;
+			if(Location.distance(target, loc) < curDist)
+				best = loc;
+		}
+	}
+
 }
