@@ -1004,19 +1004,6 @@ public class DMT {
 		addField(LINEAR_COUNTER, Short.class);
 	}};
 	
-	public static final Message createFNPProbeRequest(long uid, double target, double nearest, 
-			double best, short htl, short counter, short linearCounter) {
-		Message msg = new Message(FNPProbeRequest);
-		msg.set(UID, uid);
-		msg.set(TARGET_LOCATION, target);
-		msg.set(NEAREST_LOCATION, nearest);
-		msg.set(BEST_LOCATION, best);
-		msg.set(HTL, htl);
-		msg.set(COUNTER, counter);
-		msg.set(LINEAR_COUNTER, linearCounter);
-		return msg;
-	}
-
 	public static final MessageType FNPProbeTrace = new MessageType("FNPProbeTrace", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 		addField(TARGET_LOCATION, Double.class);
@@ -1034,25 +1021,6 @@ public class DMT {
 		addField(PREV_UID, Long.class);
 	}};
 	
-	public static Message createFNPProbeTrace(long uid, double target, double nearest, double best, short htl, short counter, double myLoc, long swapIdentifier, double[] peerLocs, long[] peerUIDs, short forkCount, short linearCounter, String reason, long prevUID) {
-		Message msg = new Message(FNPProbeTrace);
-		msg.set(UID, uid);
-		msg.set(TARGET_LOCATION, target);
-		msg.set(NEAREST_LOCATION, nearest);
-		msg.set(BEST_LOCATION, best);
-		msg.set(HTL, htl);
-		msg.set(COUNTER, counter);
-		msg.set(LOCATION, myLoc);
-		msg.set(MY_UID, swapIdentifier);
-		msg.set(PEER_LOCATIONS, new ShortBuffer(Fields.doublesToBytes(peerLocs)));
-		msg.set(PEER_UIDS, new ShortBuffer(Fields.longsToBytes(peerUIDs)));
-		msg.set(FORK_COUNT, forkCount);
-		msg.set(LINEAR_COUNTER, linearCounter);
-		msg.set(REASON, reason);
-		msg.set(PREV_UID, prevUID);
-		return msg;
-	}
-
 	public static final MessageType FNPProbeReply = new MessageType("FNPProbeReply", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 		addField(TARGET_LOCATION, Double.class);
@@ -1061,18 +1029,6 @@ public class DMT {
 		addField(COUNTER, Short.class);
 		addField(LINEAR_COUNTER, Short.class);
 	}};
-	
-	public static final Message createFNPProbeReply(long uid, double target, double nearest, 
-			double best, short counter, short linearCounter) {
-		Message msg = new Message(FNPProbeReply);
-		msg.set(UID, uid);
-		msg.set(TARGET_LOCATION, target);
-		msg.set(NEAREST_LOCATION, nearest);
-		msg.set(BEST_LOCATION, best);
-		msg.set(COUNTER, counter);
-		msg.set(LINEAR_COUNTER, linearCounter);
-		return msg;
-	}
 	
 	public static final MessageType FNPProbeRejected = new MessageType("FNPProbeRejected", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
@@ -1085,20 +1041,6 @@ public class DMT {
 		addField(LINEAR_COUNTER, Short.class);
 	}};
 	
-	public static final Message createFNPProbeRejected(long uid, double target, double nearest, 
-			double best, short counter, short htl, short reason, short linearCounter) {
-		Message msg = new Message(FNPProbeRejected);
-		msg.set(UID, uid);
-		msg.set(TARGET_LOCATION, target);
-		msg.set(NEAREST_LOCATION, nearest);
-		msg.set(BEST_LOCATION, best);
-		msg.set(HTL, htl);
-		msg.set(COUNTER, counter);
-		msg.set(REASON, reason);
-		msg.set(LINEAR_COUNTER, linearCounter);
-		return msg;
-	}
-
 	static public final short PROBE_REJECTED_LOOP = 1;
 	static public final short PROBE_REJECTED_RNF = 2;
 	static public final short PROBE_REJECTED_OVERLOAD = 3;
