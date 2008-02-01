@@ -356,18 +356,18 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(peer == null) continue;
 			FreenetInetAddress a = p.getPeer().getFreenetAddress();
 			if(a == null) continue; // Not much chance of connecting.
-				InetAddress addr = a.getAddress(false);
-				if(addr != null) {
-					if(!IPUtil.isValidAddress(addr, false)) continue;
+			InetAddress addr = a.getAddress(false);
+			if(addr != null) {
+				if(!IPUtil.isValidAddress(addr, false)) continue;
+			}
+			boolean skip = false;
+			for(int j=0;j<nodeAddrs.length;j++) {
+				if(a.equals(nodeAddrs[j])) {
+					skip = true;
+					break;
 				}
-				boolean skip = false;
-				for(int j=0;j<nodeAddrs.length;j++) {
-					if(a.equals(nodeAddrs[j])) {
-						skip = true;
-						break;
-					}
-				}
-				if(skip) continue;
+			}
+			if(skip) continue;
 			if(p.isConnected())
 				realConnections++;
 			else {
