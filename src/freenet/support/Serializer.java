@@ -42,7 +42,7 @@ import freenet.keys.NodeSSK;
 public class Serializer {
 
     public static final String VERSION = "$Id: Serializer.java,v 1.5 2005/09/15 18:16:04 amphibian Exp $";
-	public static final int MAX_BITARRAY_SIZE = 128;
+	public static final int MAX_BITARRAY_SIZE = 2048*8;
 
 	public static List readListFromDataInputStream(Class elementType, DataInputStream dis) throws IOException {
 		LinkedList ret = new LinkedList();
