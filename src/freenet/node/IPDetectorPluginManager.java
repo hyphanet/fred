@@ -288,6 +288,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 					if(logMINOR) Logger.minor(this, "Last detect failed less than 5 minutes ago");
 					return;
 				} else {
+					if(logMINOR) Logger.minor(this, "Last detect failed, redetecting");
 					startDetect();
 					return;
 				}
@@ -346,6 +347,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		int realDisconnected = 0;
 		int recentlyConnected = 0;
 		
+		if(logMINOR) Logger.minor(this, "Checking whether should detect with "+peers.length+" peers and "+conns.length+" conns, counting peers...");
 		for(int i=0;i<peers.length;i++) {
 			PeerNode p = peers[i];
 			if(p.isDisabled()) continue;
@@ -441,6 +443,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			return false;
 		}
 		
+		if(logMINOR) Logger.minor(this, "Checking whether should detect despite real IP...");
 		// Now, if we have two nodes with unique IPs which aren't ours
 		// connected, we don't need to detect.
 		HashSet addressesConnected = null;
