@@ -355,7 +355,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			Peer peer = p.getPeer();
 			if(peer == null) continue;
 			FreenetInetAddress a = p.getPeer().getFreenetAddress();
-			if(a != null) {
+			if(a == null) continue; // Not much chance of connecting.
 				InetAddress addr = a.getAddress(false);
 				if(addr != null) {
 					if(!IPUtil.isValidAddress(addr, false)) continue;
@@ -368,7 +368,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 					}
 				}
 				if(skip) continue;
-			} else continue; // Not much chance of connecting.
 			if(p.isConnected())
 				realConnections++;
 			else {
