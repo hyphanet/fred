@@ -352,6 +352,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			PeerNode p = peers[i];
 			if(p.isDisabled()) continue;
 			// Don't count localhost, LAN addresses.
+			Peer peer = p.getPeer();
+			if(peer == null) continue;
 			FreenetInetAddress a = p.getPeer().getFreenetAddress();
 			if(a != null) {
 				InetAddress addr = a.getAddress(false);
