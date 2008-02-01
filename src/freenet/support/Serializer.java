@@ -42,6 +42,7 @@ import freenet.keys.NodeSSK;
 public class Serializer {
 
     public static final String VERSION = "$Id: Serializer.java,v 1.5 2005/09/15 18:16:04 amphibian Exp $";
+	public static final int MAX_BITARRAY_SIZE = 128;
 
 	public static List readListFromDataInputStream(Class elementType, DataInputStream dis) throws IOException {
 		LinkedList ret = new LinkedList();
@@ -89,7 +90,7 @@ public class Serializer {
 		} else if (type.equals(Peer.class)) {
 			return new Peer(dis);
 		} else if (type.equals(BitArray.class)) {
-			return new BitArray(dis);
+			return new BitArray(dis, MAX_BITARRAY_SIZE);
 		} else if (type.equals(NodeCHK.class)) {
 			// Use Key.read(...) because write(...) writes the TYPE field.
 			return Key.read(dis);

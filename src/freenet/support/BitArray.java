@@ -30,8 +30,19 @@ public class BitArray implements WritableToDataOutputStream {
 	private final int _size;
 	private final byte[] _bits;
 
+	/**
+	 * This constructor does not check for unacceptable sizes, and should only be used on trusted data.
+	 */
 	public BitArray(DataInputStream dis) throws IOException {
 		_size = dis.readInt();
+		_bits = new byte[(_size / 8) + (_size % 8 == 0 ? 0 : 1)];
+		dis.readFully(_bits);
+	}
+	
+	public BitArray(DataInputStream dis, int maxSize) throws IOException {
+		_size = dis.readInt();
+		if (_size<=0 || _size>maxSize)
+			throw new IOException("Unacceptable bitarray size: "+_size);
 		_bits = new byte[(_size / 8) + (_size % 8 == 0 ? 0 : 1)];
 		dis.readFully(_bits);
 	}
