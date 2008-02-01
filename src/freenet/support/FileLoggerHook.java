@@ -822,7 +822,9 @@ public class FileLoggerHook extends LoggerHook {
 			StackTraceElement[] trace = e.getStackTrace();
 			
 			if(trace == null)
-				sb.append("(null)");
+				sb.append("(null)\n");
+			else if(trace.length == 0)
+				sb.append("(no stack trace)\n");
 			else {
 				sb.append('\n');
 				for(int i=0;i<trace.length;i++) {
