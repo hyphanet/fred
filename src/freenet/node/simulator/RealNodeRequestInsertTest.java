@@ -37,6 +37,8 @@ public class RealNodeRequestInsertTest {
 
     static final int NUMBER_OF_NODES = 10;
     static final short MAX_HTL = 5;
+    //static final int NUMBER_OF_NODES = 50;
+    //static final short MAX_HTL = 10;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
         String wd = "realNodeRequestInsertTest";
@@ -44,8 +46,8 @@ public class RealNodeRequestInsertTest {
         //NOTE: globalTestInit returns in ignored random source
         NodeStarter.globalTestInit(wd);
         // Don't clobber nearby nodes!
-        Logger.setupStdoutLogging(Logger.DEBUG, "freenet.store:minor,freenet.node.Location:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
-        Logger.globalSetThreshold(Logger.DEBUG);
+        Logger.setupStdoutLogging(Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal" /*"freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
+        Logger.globalSetThreshold(Logger.ERROR);
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
@@ -134,7 +136,7 @@ public class RealNodeRequestInsertTest {
                 Node randomNode2 = randomNode;
                 while(randomNode2 == randomNode)
                     randomNode2 = nodes[random.nextInt(NUMBER_OF_NODES)];
-                Logger.normal(RealNodeRoutingTest.class, "Pinging "+randomNode2.getDarknetPortNumber()+" from "+randomNode.getDarknetPortNumber());
+                Logger.minor(RealNodeRoutingTest.class, "Pinging "+randomNode2.getDarknetPortNumber()+" from "+randomNode.getDarknetPortNumber());
                 double loc2 = randomNode2.getLocation();
                 int hopsTaken = randomNode.routedPing(loc2);
                 pings++;
@@ -165,6 +167,9 @@ public class RealNodeRequestInsertTest {
         int requestNumber = 0;
         RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
         String baseString = System.currentTimeMillis() + " ";
+		int insertAttempts = 0;
+		int insertSuccesses = 0;
+		int fetchSuccesses = 0;
         while(true) {
             try {
                 requestNumber++;
@@ -184,12 +189,18 @@ public class RealNodeRequestInsertTest {
                 byte[] encData = block.getData();
                 byte[] encHeaders = block.getHeaders();
                 ClientCHKBlock newBlock = new ClientCHKBlock(encData, encHeaders, chk, true);
-                Logger.error(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode()));
-                Logger.error(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
-                Logger.error(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
-                randomNode.clientCore.realPut(block, true);
-                Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
-                Logger.error(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
+                Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode()));
+                Logger.normal(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
+                Logger.minor(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
+				try {
+					insertAttempts++;
+					randomNode.clientCore.realPut(block, true);
+					Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
+					Logger.minor(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
+					insertSuccesses++;
+				} catch (freenet.node.LowLevelPutException putEx) {
+					Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
+				}
                 // Pick random node to request from
                 int node2;
                 do {
@@ -198,13 +209,16 @@ public class RealNodeRequestInsertTest {
                 Node fetchNode = nodes[node2];
                 block = (ClientCHKBlock) fetchNode.clientCore.realGetKey((ClientKey) chk, false, true, false);
                 if(block == null) {
-                    Logger.error(RealNodeRequestInsertTest.class, "Fetch FAILED from "+node2);
+					int percentSuccess=100*fetchSuccesses/insertAttempts;
+                    Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
                     requestsAvg.report(0.0);
                 } else {
                     byte[] results = block.memoryDecode();
                     requestsAvg.report(1.0);
                     if(Arrays.equals(results, data)) {
-                        Logger.error(RealNodeRequestInsertTest.class, "Fetch succeeded: "+new String(results));
+						fetchSuccesses++;
+						int percentSuccess=100*fetchSuccesses/insertAttempts;
+                        Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): "+new String(results));
                     } else {
                         Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
                     }
