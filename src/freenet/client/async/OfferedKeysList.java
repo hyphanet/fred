@@ -10,7 +10,6 @@ import java.util.Vector;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
-import freenet.node.LowLevelGetException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableRequest;
@@ -65,9 +64,10 @@ public class OfferedKeysList extends SendableRequest {
 	public synchronized void onNoOffers(ClientKey key) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "No offers for "+key+" , removing it");
-		keys.remove(key);
-		keysList.remove(key);
-		clientKeysByKey.remove(key.getNodeKey());
+		Key k = key.getNodeKey();
+		keys.remove(k);
+		keysList.remove(k);
+		clientKeysByKey.remove(k);
 	}
 
 	public synchronized boolean isEmpty() {
@@ -82,10 +82,10 @@ public class OfferedKeysList extends SendableRequest {
 	public Object chooseKey() {
 		// Pick a random key
 		if(keysList.isEmpty()) return null;
-		ClientKey ck = (ClientKey) keysList.remove(random.nextInt(keysList.size()));
-		keys.remove(ck);
-		clientKeysByKey.remove(ck.getNodeKey());
-		return ck;
+		Key k = (Key) keysList.remove(random.nextInt(keysList.size()));
+		keys.remove(k);
+		clientKeysByKey.remove(k);
+		return k;
 	}
 
 	public Object getClient() {
@@ -110,13 +110,8 @@ public class OfferedKeysList extends SendableRequest {
 	}
 	
 	public boolean send(NodeClientCore node, RequestScheduler sched, Object keyNum) {
-		ClientKey key = (ClientKey) keyNum;
-		try {
-			core.realGetKey(key, false, true, // if it's not cached it won't propagate FIXME support =false??
-					false);
-		} catch (LowLevelGetException e) {
-			Logger.minor(this, "Caught low level get exception "+e, e);
-		}
+		Key key = (Key) keyNum;
+		core.asyncGet(key, true);// Have to cache it in order to propagate it; FIXME
 		return true;
 	}
 

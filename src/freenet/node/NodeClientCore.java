@@ -436,6 +436,31 @@ public class NodeClientCore implements Persistable {
 			}
 		}, "Startup completion thread");
 	}
+
+	/**
+	 * Start an asynchronous fetch of the key in question, which will complete to the datastore.
+	 * It will not decode the data because we don't provide a ClientKey. It will not return 
+	 * anything and will run asynchronously.
+	 * @param key
+	 */
+	public void asyncGet(Key key, boolean cache) {
+		long uid = random.nextLong();
+		if(!node.lockUID(uid, false, false, false)) {
+			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
+			return;
+		}
+		try {
+			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, node.getLocation(), false, false, cache, false);
+			if(o instanceof CHKBlock) {
+				return; // Already have it.
+			}
+			// Else it has started a request.
+			if(logMINOR)
+				Logger.minor(this, "Started "+o+" for "+uid+" for "+key);
+		} finally {
+			node.unlockUID(uid, false, false, true, false);
+		}
+	}
 	
 	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
 		if(key instanceof ClientCHK)
