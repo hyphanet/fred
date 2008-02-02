@@ -145,7 +145,7 @@ public class FailureTable {
 			for(int i=0;i<offers.length;i++) {
 				if(offers[i].offeredTime > last) last = offers[i].offeredTime;
 			}
-			return last;
+			return last + OFFER_EXPIRY_TIME;
 		}
 
 		public boolean isEmpty(long now) {
