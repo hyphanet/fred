@@ -56,15 +56,6 @@ public class OfferedKeysList extends SendableRequest {
 		}
 	}
 	
-	/** Called when there are no more valid offers for a key */
-	public synchronized void onNoOffers(ClientKey key) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "No offers for "+key+" , removing it");
-		Key k = key.getNodeKey();
-		keys.remove(k);
-		keysList.remove(k);
-	}
-
 	public synchronized boolean isEmpty() {
 		return keys.isEmpty();
 	}

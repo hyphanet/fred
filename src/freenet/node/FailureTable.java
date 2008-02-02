@@ -183,6 +183,7 @@ public class FailureTable {
 				synchronized(FailureTable.this) {
 					blockOfferListByKey.removeKey(entry.key);
 				}
+				node.clientCore.dequeueOfferedKey(entry.key);
 			}
 		}
 

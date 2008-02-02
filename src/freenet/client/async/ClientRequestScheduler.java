@@ -638,4 +638,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(priority == Short.MAX_VALUE) return;
 		offeredKeys[priority].queueKey(key);
 	}
+
+	public void dequeueOfferedKey(Key key) {
+		for(int i=0;i<offeredKeys.length;i++) {
+			offeredKeys[i].remove(key);
+		}
+	}
 }

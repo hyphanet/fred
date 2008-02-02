@@ -1107,4 +1107,12 @@ public class NodeClientCore implements Persistable {
 						requestStarters.chkFetchScheduler;
 		sched.maybeQueueOfferedKey(key, force);
 	}
+
+	public void dequeueOfferedKey(Key key) {
+		ClientRequestScheduler sched =
+			key instanceof NodeSSK ?
+					requestStarters.sskFetchScheduler :
+						requestStarters.chkFetchScheduler;
+		sched.dequeueOfferedKey(key);
+	}
 }
