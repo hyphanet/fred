@@ -24,16 +24,16 @@ public abstract class SendableGet extends SendableRequest {
 	public final ClientRequester parent;
 	
 	/** Get a numbered key to fetch. */
-	public abstract ClientKey getKey(int token);
+	public abstract ClientKey getKey(Object token);
 	
 	/** Get the fetch context (settings) object. */
 	public abstract FetchContext getContext();
 	
 	/** Called when/if the low-level request succeeds. */
-	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, int token);
+	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token);
 	
 	/** Called when/if the low-level request fails. */
-	public abstract void onFailure(LowLevelGetException e, int token);
+	public abstract void onFailure(LowLevelGetException e, Object token);
 	
 	/** Should the request ignore the datastore? */
 	public abstract boolean ignoreStore();
@@ -50,7 +50,7 @@ public abstract class SendableGet extends SendableRequest {
 	/** Do the request, blocking. Called by RequestStarter. 
 	 * @return True if a request was executed. False if caller should try to find another request, and remove
 	 * this one from the queue. */
-	public boolean send(NodeClientCore core, RequestScheduler sched, int keyNum) {
+	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum) {
 		ClientKey key = getKey(keyNum);
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Sending get for key "+keyNum+" : "+key);
@@ -59,7 +59,7 @@ public abstract class SendableGet extends SendableRequest {
 			synchronized (this) {
 				if(isCancelled()) {
 					if(logMINOR) Logger.minor(this, "Cancelled: "+this);
-					onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), -1);
+					onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), null);
 					return false;
 				}	
 			}
@@ -115,7 +115,7 @@ public abstract class SendableGet extends SendableRequest {
 		getScheduler().removePendingKey(this, false, key);
 	}
 
-	public void internalError(int keyNum, Throwable t) {
+	public void internalError(Object keyNum, Throwable t) {
 		onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum);
 	}
 	

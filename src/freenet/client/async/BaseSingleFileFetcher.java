@@ -19,7 +19,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	final int maxRetries;
 	private int retryCount;
 	final FetchContext ctx;
-	static final int[] keys = new int[] { 0 };
+	static final Object[] keys = new Object[] { new Integer(0) };
 
 	protected BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
 		super(parent);
@@ -29,15 +29,15 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		this.ctx = ctx;
 	}
 
-	public int[] allKeys() {
+	public Object[] allKeys() {
 		return keys;
 	}
 	
-	public int chooseKey() {
-		return 0;
+	public Object chooseKey() {
+		return keys[0];
 	}
 	
-	public ClientKey getKey(int token) {
+	public ClientKey getKey(Object token) {
 		return key;
 	}
 	
@@ -111,7 +111,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 			}
 		}
 		try {
-			onSuccess(Key.createKeyBlock(this.key, block), false, 0);
+			onSuccess(Key.createKeyBlock(this.key, block), false, null);
 		} catch (KeyVerifyException e) {
 			Logger.error(this, "onGotKey("+key+","+block+") got "+e+" for "+this, e);
 			// FIXME if we get rid of the direct route this must call onFailure()

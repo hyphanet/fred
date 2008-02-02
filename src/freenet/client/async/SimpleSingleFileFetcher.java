@@ -39,7 +39,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	final long token;
 	
 	// Translate it, then call the real onFailure
-	public void onFailure(LowLevelGetException e, int reqTokenIgnored) {
+	public void onFailure(LowLevelGetException e, Object reqTokenIgnored) {
 		switch(e.code) {
 		case LowLevelGetException.DATA_NOT_FOUND:
 			onFailure(new FetchException(FetchException.DATA_NOT_FOUND));
@@ -117,7 +117,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		rcb.onSuccess(data, this);
 	}
 
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, int reqTokenIgnored) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object reqTokenIgnored) {
 		if(parent instanceof ClientGetter)
 			((ClientGetter)parent).addKeyToBinaryBlob(block);
 		Bucket data = extract(block);

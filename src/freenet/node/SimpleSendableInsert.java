@@ -42,13 +42,13 @@ public class SimpleSendableInsert extends SendableInsert {
 		this.scheduler = scheduler;
 	}
 	
-	public void onSuccess(int keyNum) {
+	public void onSuccess(Object keyNum) {
 		// Yay!
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Finished insert of "+block);
 	}
 
-	public void onFailure(LowLevelPutException e, int keyNum) {
+	public void onFailure(LowLevelPutException e, Object keyNum) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}
@@ -62,7 +62,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		return 0;
 	}
 
-	public boolean send(NodeClientCore core, RequestScheduler sched, int keyNum) {
+	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum) {
 		// Ignore keyNum, key, since this is a single block
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
@@ -114,13 +114,13 @@ public class SimpleSendableInsert extends SendableInsert {
 		return false;
 	}
 
-	public synchronized int[] allKeys() {
-		if(finished) return new int[] {};
-		return new int[] { 0 };
+	public synchronized Object[] allKeys() {
+		if(finished) return new Object[] {};
+		return new Object[] { new Integer(0) };
 	}
 
-	public synchronized int chooseKey() {
-		if(finished) return -1;
-		else return 0;
+	public synchronized Object chooseKey() {
+		if(finished) return null;
+		else return new Integer(0);
 	}
 }

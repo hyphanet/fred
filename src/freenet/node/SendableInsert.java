@@ -12,12 +12,12 @@ package freenet.node;
 public abstract class SendableInsert extends SendableRequest {
 
 	/** Called when we successfully insert the data */
-	public abstract void onSuccess(int keyNum);
+	public abstract void onSuccess(Object keyNum);
 	
 	/** Called when we don't! */
-	public abstract void onFailure(LowLevelPutException e, int keyNum);
+	public abstract void onFailure(LowLevelPutException e, Object keyNum);
 
-	public void internalError(int keyNum, Throwable t) {
+	public void internalError(Object keyNum, Throwable t) {
 		onFailure(new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), keyNum);
 	}
 

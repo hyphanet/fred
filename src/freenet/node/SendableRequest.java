@@ -21,11 +21,11 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	/** Choose a key to fetch. Removes the block number from any internal queues 
 	 * (but not the key itself, implementors must have a separate queue of block 
 	 * numbers and mapping of block numbers to keys).
-	 * @return An integer identifying a specific key. -1 indicates no keys available. */
-	public abstract int chooseKey();
+	 * @return An object identifying a specific key. -1 indicates no keys available. */
+	public abstract Object chooseKey();
 	
 	/** All key identifiers */
-	public abstract int[] allKeys();
+	public abstract Object[] allKeys();
 	
 	/** ONLY called by RequestStarter. Start the actual request using the NodeClientCore
 	 * provided, and the key and key number earlier got from chooseKey(). 
@@ -35,7 +35,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * @param key The key returned from grabKey().
 	 * @return True if a request was sent, false otherwise (in which case the request will
 	 * be removed if it hasn't already been). */
-	public abstract boolean send(NodeClientCore node, RequestScheduler sched, int keyNum);
+	public abstract boolean send(NodeClientCore node, RequestScheduler sched, Object keyNum);
 	
 	/** Get client context object */
 	public abstract Object getClient();
@@ -67,6 +67,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	}
 
 	/** Requeue after an internal error */
-	public abstract void internalError(int keyNum, Throwable t);
+	public abstract void internalError(Object keyNum, Throwable t);
 
 }

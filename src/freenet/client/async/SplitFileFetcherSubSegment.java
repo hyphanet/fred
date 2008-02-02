@@ -49,36 +49,33 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return ctx;
 	}
 
-	public int chooseKey() {
-		if(cancelled) return -1;
+	public Object chooseKey() {
+		if(cancelled) return null;
 		return removeRandomBlockNum();
 	}
 	
-	public ClientKey getKey(int token) {
+	public ClientKey getKey(Object token) {
 		if(cancelled) {
 			if(logMINOR)
 				Logger.minor(this, "Segment is finishing when getting key "+token+" on "+this);
 			return null;
 		}
-		return segment.getBlockKey(token);
+		return segment.getBlockKey(((Integer)token).intValue());
 	}
 	
-	public synchronized int[] allKeys() {
-		int[] nums = new int[blockNums.size()];
-		for(int i=0;i<nums.length;i++)
-			nums[i] = ((Integer) blockNums.get(i)).intValue();
-		return nums;
+	public synchronized Object[] allKeys() {
+		return blockNums.toArray();
 	}
 	
-	private synchronized int removeRandomBlockNum() {
+	private synchronized Object removeRandomBlockNum() {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(blockNums.isEmpty()) {
 			if(logMINOR)
 				Logger.minor(this, "No blocks to remove");
-			return -1;
+			return null;
 		}
 		int x = ctx.random.nextInt(blockNums.size());
-		int ret = ((Integer) blockNums.remove(x)).intValue();
+		Object ret = (Integer) blockNums.remove(x);
 		if(logMINOR)
 			Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
 		return ret;
@@ -90,7 +87,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	// Translate it, then call the real onFailure
 	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
-	public void onFailure(LowLevelGetException e, int token) {
+	public void onFailure(LowLevelGetException e, Object token) {
 		if(logMINOR)
 			Logger.minor(this, "onFailure("+e+" , "+token);
 		switch(e.code) {
@@ -132,7 +129,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	// Real onFailure
-	protected void onFailure(FetchException e, int token) {
+	protected void onFailure(FetchException e, Object token) {
 		boolean forceFatal = false;
 		if(parent.isCancelled()) {
 			if(Logger.shouldLog(Logger.MINOR, this)) 
@@ -142,13 +139,13 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		segment.errors.inc(e.getMode());
 		if(e.isFatal() || forceFatal) {
-			segment.onFatalFailure(e, token, this);
+			segment.onFatalFailure(e, ((Integer)token).intValue(), this);
 		} else {
-			segment.onNonFatalFailure(e, token, this);
+			segment.onNonFatalFailure(e, ((Integer)token).intValue(), this);
 		}
 	}
 	
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, int token) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token) {
 		Bucket data = extract(block, token);
 		if(fromStore) {
 			// Normally when this method is called the block number has already
@@ -157,7 +154,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			synchronized(this) {
 				for(int i=0;i<blockNums.size();i++) {
 					Integer x = (Integer) blockNums.get(i);
-					if(x.intValue() == token) {
+					if(x == token) {
 						blockNums.remove(i);
 						i--;
 					}
@@ -165,16 +162,16 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			}
 		}
 		if(!block.isMetadata()) {
-			onSuccess(data, fromStore, token, block);
+			onSuccess(data, fromStore, (Integer)token, ((Integer)token).intValue(), block);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token);
 		}
 	}
 	
-	protected void onSuccess(Bucket data, boolean fromStore, int blockNo, ClientKeyBlock block) {
+	protected void onSuccess(Bucket data, boolean fromStore, Integer token, int blockNo, ClientKeyBlock block) {
 		if(parent.isCancelled()) {
 			data.free();
-			onFailure(new FetchException(FetchException.CANCELLED), blockNo);
+			onFailure(new FetchException(FetchException.CANCELLED), token);
 			return;
 		}
 		segment.onSuccess(data, blockNo, fromStore, this, block);
@@ -183,7 +180,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	/** Convert a ClientKeyBlock to a Bucket. If an error occurs, report it via onFailure
 	 * and return null.
 	 */
-	protected Bucket extract(ClientKeyBlock block, int token) {
+	protected Bucket extract(ClientKeyBlock block, Object token) {
 		Bucket data;
 		try {
 			data = block.decode(ctx.bucketFactory, (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
@@ -290,10 +287,12 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public void onGotKey(Key key, KeyBlock block) {
 		int blockNum = -1;
+		Object token = null;
 		ClientKey ckey = null;
 		synchronized(this) {
 			for(int i=0;i<blockNums.size();i++) {
-				int num = ((Integer)blockNums.get(i)).intValue();
+				token = blockNums.get(i);
+				int num = ((Integer)token).intValue();
 				ckey = segment.getBlockKey(num);
 				if(ckey == null) return; // Already got this key
 				Key k = ckey.getNodeKey();
@@ -306,7 +305,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		if(blockNum == -1) return;
 		try {
-			onSuccess(Key.createKeyBlock(ckey, block), false, blockNum);
+			onSuccess(Key.createKeyBlock(ckey, block), false, token);
 		} catch (KeyVerifyException e) {
 			// FIXME if we ever abolish the direct route, this must be turned into an onFailure().
 			Logger.error(this, "Failed to parse in onGotKey("+key+","+block+") - believed to be "+ckey+" (block #"+blockNum+")");

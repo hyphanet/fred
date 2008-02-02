@@ -136,7 +136,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return retries;
 	}
 
-	public void onFailure(LowLevelPutException e, int keyNum) {
+	public void onFailure(LowLevelPutException e, Object keyNum) {
 		if(parent.isCancelled()) {
 			fail(new InsertException(InsertException.CANCELLED));
 			return;
@@ -253,7 +253,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return resultingURI;
 	}
 
-	public void onSuccess(int keyNum) {
+	public void onSuccess(Object keyNum) {
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		if(parent.isCancelled()) {
 			fail(new InsertException(InsertException.CANCELLED));
@@ -283,7 +283,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return finished;
 	}
 
-	public boolean send(NodeClientCore core, RequestScheduler sched, int keyNum) {
+	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum) {
 		// Ignore keyNum, key, since we're only sending one block.
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
@@ -346,16 +346,16 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return true;
 	}
 
-	public synchronized int[] allKeys() {
+	public synchronized Object[] allKeys() {
 		if(finished)
-			return new int[] {};
+			return new Object[] {};
 		else
-			return new int[] { 0 };
+			return new Object[] { new Integer(0) };
 	}
 
-	public synchronized int chooseKey() {
-		if(finished) return -1;
-		else return 0;
+	public synchronized Object chooseKey() {
+		if(finished) return null;
+		else return new Integer(0);
 	}
 
 }

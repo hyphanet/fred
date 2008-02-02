@@ -153,11 +153,11 @@ public class RequestStarter implements Runnable {
 	
 	private boolean startRequest(SendableRequest req, boolean logMINOR) {
 		// Create a thread to handle starting the request, and the resulting feedback
-		int keyNum = -1;
+		Object keyNum = null;
 		while(true) {
 			try {
 				keyNum = req.chooseKey();
-				if(keyNum == -1) return false;
+				if(keyNum == null) return false;
 				core.getExecutor().execute(new SenderThread(req, keyNum), "RequestStarter$SenderThread for "+req);
 				if(logMINOR) Logger.minor(this, "Started "+req);
 				return true;
@@ -171,7 +171,7 @@ public class RequestStarter implements Runnable {
 					// Ignore
 				}
 			} catch (Throwable t) {
-				if(keyNum != -1) {
+				if(keyNum != null) {
 					// Re-queue
 					req.internalError(keyNum, t);
 					Logger.error(this, "Caught "+t+" while trying to start request");
@@ -197,9 +197,9 @@ public class RequestStarter implements Runnable {
 	private class SenderThread implements Runnable {
 
 		private final SendableRequest req;
-		private final int keyNum;
+		private final Object keyNum;
 		
-		public SenderThread(SendableRequest req, int keyNum) {
+		public SenderThread(SendableRequest req, Object keyNum) {
 			this.req = req;
 			this.keyNum = keyNum;
 		}

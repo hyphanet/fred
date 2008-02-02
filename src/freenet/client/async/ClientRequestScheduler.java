@@ -198,9 +198,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			SendableGet getter = (SendableGet)req;
 			if(!getter.ignoreStore()) {
 				boolean anyValid = false;
-				int[] keyTokens = getter.allKeys();
+				Object[] keyTokens = getter.allKeys();
 				for(int i=0;i<keyTokens.length;i++) {
-					int tok = keyTokens[i];
+					Object tok = keyTokens[i];
 					ClientKeyBlock block = null;
 					try {
 						ClientKey key = getter.getKey(tok);
@@ -513,9 +513,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * @param complain
 	 */
 	public void removePendingKeys(SendableGet getter, boolean complain) {
-		int[] keyTokens = getter.allKeys();
+		Object[] keyTokens = getter.allKeys();
 		for(int i=0;i<keyTokens.length;i++) {
-			int tok = keyTokens[i];
+			Object tok = keyTokens[i];
 			ClientKey ckey = getter.getKey(tok);
 			if(ckey == null) {
 				if(complain)
