@@ -474,6 +474,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void removePendingKey(SendableGet getter, boolean complain, Key key) {
+		boolean dropped = false;
 		synchronized(pendingKeys) {
 			Object o = pendingKeys.get(key);
 			if(o == null) {
@@ -510,12 +511,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(newGets.length == 0) {
 					pendingKeys.remove(key);
+					dropped = true;
 				} else if(newGets.length == 1) {
 					pendingKeys.put(key, newGets[0]);
 				} else {
 					pendingKeys.put(key, newGets);
 				}
 			}
+		}
+		if(dropped && offeredKeys != null) {
+			for(int i=0;i<offeredKeys.length;i++)
+				offeredKeys[i].remove(key);
 		}
 	}
 	
@@ -574,7 +580,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void tripPendingKey(final KeyBlock block) {
 		if(offeredKeys != null) {
 			for(int i=0;i<offeredKeys.length;i++) {
-				offeredKeys[i].onFoundKey(block.getKey());
+				offeredKeys[i].remove(block.getKey());
 			}
 		}
 		final Key key = block.getKey();

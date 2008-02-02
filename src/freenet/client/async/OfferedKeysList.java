@@ -51,8 +51,8 @@ public class OfferedKeysList extends SendableRequest {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
-	/** Called when a key is found */
-	public synchronized void onFoundKey(Key key) {
+	/** Called when a key is found, when it no longer belogns to this list etc. */
+	public synchronized void remove(Key key) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		ClientKey ck = (ClientKey) clientKeysByKey.remove(key);
 		if(ck == null) return;
