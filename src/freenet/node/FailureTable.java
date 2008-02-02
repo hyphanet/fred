@@ -165,7 +165,8 @@ public class FailureTable {
 			return true;
 		}
 
-		public synchronized void deleteOffer(BlockOffer offer) {
+		public void deleteOffer(BlockOffer offer) {
+			synchronized(this) {
 			int idx = -1;
 			for(int i=0;i<offers.length;i++) {
 				if(offers[i] == offer) idx = i;
@@ -177,6 +178,12 @@ public class FailureTable {
 			if(idx < newOffers.length)
 				System.arraycopy(offers, idx+1, newOffers, idx, offers.length-idx);
 			offers = newOffers;
+			}
+			if(offers.length == 0) {
+				synchronized(FailureTable.this) {
+					blockOfferListByKey.removeKey(entry.key);
+				}
+			}
 		}
 
 		public synchronized void addOffer(BlockOffer offer) {
