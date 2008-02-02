@@ -51,7 +51,7 @@ public class FailureTable {
 	
 	/**
 	 * Called when a node kills a request: the request DNFs, is killed by a RecentlyFailed message, 
-	 * times out or gets a local RejectedOverload. Either way this can create a FailureTableEntry.
+	 * or times out. In any case this will create a FailureTableEntry.
 	 * @param key The key that was fetched.
 	 * @param htl The HTL it was fetched at.
 	 * @param requestors The nodes requesting it (if any).
