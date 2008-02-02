@@ -69,7 +69,7 @@ class FailureTableEntry {
 	public void onFailure(short htl2, PeerNode[] requestors, PeerNode requested, int timeout, long now) {
 		synchronized(this) {
 			long newTimeoutTime = now + timeout;
-			if(now > timeoutTime /* has expired */ || newTimeoutTime > timeoutTime) {
+			if(now > timeoutTime /* has expired */ && newTimeoutTime > timeoutTime) {
 				htl = htl2;
 				timeoutTime = newTimeoutTime;
 			}
