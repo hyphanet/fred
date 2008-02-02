@@ -301,7 +301,7 @@ public class FailureTable {
 			} else {
 				bl.addOffer(offer);
 			}
-			blockOfferListByKey.push(key, offer);
+			blockOfferListByKey.push(key, bl);
 			trimOffersList(now);
 		}
 		
