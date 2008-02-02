@@ -41,12 +41,16 @@ public class FailureTable {
 	static final int MAX_LIFETIME = 60*60*1000;
 	/** Offers expire after 10 minutes */
 	static final int OFFER_EXPIRY_TIME = 10*60*1000;
+	/** HMAC key for the offer authenticator */
+	final byte[] offerAuthenticatorKey;
 	
 	FailureTable(PeerManager peers, Node node) {
 		entriesByKey = new LRUHashtable();
 		blockOfferListByKey = new LRUHashtable();
 		this.peers = peers;
 		this.node = node;
+		offerAuthenticatorKey = new byte[32];
+		node.random.nextBytes(offerAuthenticatorKey);
 	}
 	
 	/**
@@ -156,10 +160,13 @@ public class FailureTable {
 		final long offeredTime;
 		/** Either offered by or offered to this node */
 		final WeakReference nodeRef;
+		/** Authenticator */
+		final byte[] authenticator;
 		
-		BlockOffer(PeerNode pn, long now) {
+		BlockOffer(PeerNode pn, long now, byte[] authenticator) {
 			this.nodeRef = pn.myRef;
 			this.offeredTime = now;
+			this.authenticator = authenticator;
 		}
 	}
 	
@@ -183,9 +190,10 @@ public class FailureTable {
 	 * If it is a CHK, we will accept it if we want it.
 	 * @param key The key we are being offered.
 	 * @param peer The node offering it.
+	 * @param authenticator 
 	 */
-	public void onOffer(Key key, PeerNode peer) {
-		if(wantOffer(key, peer)) {
+	public void onOffer(Key key, PeerNode peer, byte[] authenticator) {
+		if(wantOffer(key, peer, authenticator)) {
 			// Okay, we want the offer. Now what?
 			// Two ClientRequestScheduler's? Then you'd have to remove the key from two different RGA's :(
 			// Anyway, we don't want a key to be requested just because another key in the same group has an offer.
@@ -194,7 +202,7 @@ public class FailureTable {
 		}
 	}
 	
-	boolean wantOffer(Key key, PeerNode peer) {
+	boolean wantOffer(Key key, PeerNode peer, byte[] authenticator) {
 		FailureTableEntry entry;
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -242,7 +250,7 @@ public class FailureTable {
 			// Add to offers list
 			
 			BlockOfferList bl = (BlockOfferList) blockOfferListByKey.get(key);
-			BlockOffer offer = new BlockOffer(peer, now);
+			BlockOffer offer = new BlockOffer(peer, now, authenticator);
 			if(bl == null) {
 				bl = new BlockOfferList(entry, offer);
 			}
