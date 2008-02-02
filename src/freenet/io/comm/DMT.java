@@ -858,6 +858,39 @@ public class DMT {
 		return msg;
 	}
 	
+	// Short timeout so PRIORITY_HIGH
+	public static MessageType FNPGetOfferedKey = new MessageType("FNPGetOfferedKey", PRIORITY_HIGH) {{
+		addField(KEY, Key.class);
+		addField(OFFER_AUTHENTICATOR, ShortBuffer.class);
+		addField(NEED_PUB_KEY, Boolean.class);
+		addField(UID, Long.class);
+	}};
+	
+	public static Message createFNPGetOfferedKey(Key key, byte[] authenticator, boolean needPubkey, long uid) {
+		Message msg = new Message(FNPGetOfferedKey);
+		msg.set(KEY, key);
+		msg.set(OFFER_AUTHENTICATOR, new ShortBuffer(authenticator));
+		msg.set(NEED_PUB_KEY, needPubkey);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
+	// Permanently rejected. RejectedOverload means temporarily rejected.
+	public static MessageType FNPGetOfferedKeyInvalid = new MessageType("FNPGetOfferedKeyInvalid", PRIORITY_HIGH) {{ // short timeout
+		addField(UID, Long.class);
+		addField(REASON, Short.class);
+	}};
+	
+	public static Message createFNPGetOfferedKeyInvalid(long uid, short reason) {
+		Message msg = new Message(FNPGetOfferedKeyInvalid);
+		msg.set(UID, uid);
+		msg.set(REASON, reason);
+		return msg;
+	}
+	
+	public static short GET_OFFERED_KEY_REJECTED_BAD_AUTHENTICATOR = 1;
+	public static short GET_OFFERED_KEY_REJECTED_NO_KEY = 2;
+	
 	public static final MessageType FNPPing = new MessageType("FNPPing", PRIORITY_HIGH) {{
 		addField(PING_SEQNO, Integer.class);
 	}};

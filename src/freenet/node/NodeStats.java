@@ -113,10 +113,14 @@ public class NodeStats implements Persistable {
 	final TimeDecayingRunningAverage successfulSskFetchBytesSentAverage;
 	final TimeDecayingRunningAverage successfulChkInsertBytesSentAverage;
 	final TimeDecayingRunningAverage successfulSskInsertBytesSentAverage;
+	final TimeDecayingRunningAverage successfulChkOfferReplyBytesSentAverage;
+	final TimeDecayingRunningAverage successfulSskOfferReplyBytesSentAverage;
 	final TimeDecayingRunningAverage successfulChkFetchBytesReceivedAverage;
 	final TimeDecayingRunningAverage successfulSskFetchBytesReceivedAverage;
 	final TimeDecayingRunningAverage successfulChkInsertBytesReceivedAverage;
 	final TimeDecayingRunningAverage successfulSskInsertBytesReceivedAverage;
+	final TimeDecayingRunningAverage successfulChkOfferReplyBytesReceivedAverage;
+	final TimeDecayingRunningAverage successfulSskOfferReplyBytesReceivedAverage;
 	
 	final TrivialRunningAverage globalFetchPSuccess;
 	final TrivialRunningAverage chkFetchPSuccess;
@@ -312,10 +316,14 @@ public class NodeStats implements Persistable {
 		successfulSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskFetchBytesSentAverage"), node);
 		successfulChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesSentAverage"), node);
 		successfulSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskInsertBytesSentAverage"), node);
+		successfulChkOfferReplyBytesSentAverage = new TimeDecayingRunningAverage(32768+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("successfulChkOfferReplyBytesSentAverage"), node);
+		successfulSskOfferReplyBytesSentAverage = new TimeDecayingRunningAverage(3072, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("successfulSskOfferReplyBytesSentAverage"), node);
 		successfulChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkFetchBytesReceivedAverage"), node);
 		successfulSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskFetchBytesReceivedAverage"), node);
 		successfulChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesReceivedAverage"), node);
 		successfulSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskInsertBytesReceivedAverage"), node);
+		successfulChkOfferReplyBytesReceivedAverage = new TimeDecayingRunningAverage(32768+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("successfulChkOfferReplyBytesReceivedAverage"), node);
+		successfulSskOfferReplyBytesReceivedAverage = new TimeDecayingRunningAverage(3072, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("successfulSskOfferReplyBytesReceivedAverage"), node);
 		
 		globalFetchPSuccess = new TrivialRunningAverage();
 		chkFetchPSuccess = new TrivialRunningAverage();
@@ -390,7 +398,7 @@ public class NodeStats implements Persistable {
 	};
 	
 	/* return reject reason as string if should reject, otherwise return null */
-	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, PeerNode source) {
+	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) dumpByteCostAverages();
 		
@@ -460,6 +468,8 @@ public class NodeStats implements Persistable {
 		int numSSKRequests = node.getNumSSKRequests() + 1;
 		int numCHKInserts = node.getNumCHKInserts() + 1;
 		int numSSKInserts = node.getNumSSKInserts() + 1;
+		int numCHKOfferReplies = node.getNumCHKOfferReplies() + 1;
+		int numSSKOfferReplies = node.getNumSSKOfferReplies() + 1;
 		if(logMINOR)
 			Logger.minor(this, "Running (adjusted): CHK fetch "+numCHKRequests+" SSK fetch "+numSSKRequests+" CHK insert "+numCHKInserts+" SSK insert "+numSSKInserts);
 		
@@ -612,7 +622,9 @@ public class NodeStats implements Persistable {
 				" CHK insert "+successfulChkInsertBytesSentAverage.currentValue()+ '/' +successfulChkInsertBytesReceivedAverage.currentValue()+
 				" SSK insert "+successfulSskInsertBytesSentAverage.currentValue()+ '/' +successfulSskInsertBytesReceivedAverage.currentValue()+
 				" CHK fetch "+successfulChkFetchBytesSentAverage.currentValue()+ '/' +successfulChkFetchBytesReceivedAverage.currentValue()+
-				" SSK fetch "+successfulSskFetchBytesSentAverage.currentValue()+ '/' +successfulSskFetchBytesReceivedAverage.currentValue());
+				" SSK fetch "+successfulSskFetchBytesSentAverage.currentValue()+ '/' +successfulSskFetchBytesReceivedAverage.currentValue()+
+				" CHK offer reply "+successfulChkOfferReplyBytesSentAverage.currentValue()+ '/' +successfulChkOfferReplyBytesReceivedAverage.currentValue()+
+				" SSK offer reply "+successfulSskOfferReplyBytesSentAverage.currentValue()+ '/' +successfulSskOfferReplyBytesReceivedAverage.currentValue());
 		
 	}
 
@@ -693,10 +705,14 @@ public class NodeStats implements Persistable {
 		fs.put("SuccessfulSskFetchBytesSentAverage", successfulSskFetchBytesSentAverage.exportFieldSet(true));
 		fs.put("SuccessfulChkInsertBytesSentAverage", successfulChkInsertBytesSentAverage.exportFieldSet(true));
 		fs.put("SuccessfulSskInsertBytesSentAverage", successfulSskInsertBytesSentAverage.exportFieldSet(true));
+		fs.put("SuccessfulChkOfferReplyBytesSentAverage", successfulChkOfferReplyBytesSentAverage.exportFieldSet(true));
+		fs.put("SuccessfulSskOfferReplyBytesSentAverage", successfulSskOfferReplyBytesSentAverage.exportFieldSet(true));		
 		fs.put("SuccessfulChkFetchBytesReceivedAverage", successfulChkFetchBytesReceivedAverage.exportFieldSet(true));
 		fs.put("SuccessfulSskFetchBytesReceivedAverage", successfulSskFetchBytesReceivedAverage.exportFieldSet(true));
 		fs.put("SuccessfulChkInsertBytesReceivedAverage", successfulChkInsertBytesReceivedAverage.exportFieldSet(true));
 		fs.put("SuccessfulSskInsertBytesReceivedAverage", successfulSskInsertBytesReceivedAverage.exportFieldSet(true));
+		fs.put("SuccessfulChkOfferReplyBytesReceivedAverage", successfulChkOfferReplyBytesReceivedAverage.exportFieldSet(true));
+		fs.put("SuccessfulSskOfferReplyBytesReceivedAverage", successfulSskOfferReplyBytesReceivedAverage.exportFieldSet(true));		
 		
 		//These are not really part of the 'throttling' data, but are also running averages which should be persisted
 		fs.put("AverageCacheLocation", avgCacheLocation.exportFieldSet(true));

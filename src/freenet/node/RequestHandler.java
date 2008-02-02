@@ -84,11 +84,11 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
         } catch (NotConnectedException e) {
         	Logger.normal(this, "requestor gone, could not start request handler wait");
 			node.removeTransferringRequestHandler(uid);
-            node.unlockUID(uid, key instanceof NodeSSK, false, false);
+            node.unlockUID(uid, key instanceof NodeSSK, false, false, false);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
 			node.removeTransferringRequestHandler(uid);
-            node.unlockUID(uid, key instanceof NodeSSK, false, false);
+            node.unlockUID(uid, key instanceof NodeSSK, false, false, false);
         }
     }
     
@@ -288,6 +288,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
             		}
 					return;
             	case RequestSender.VERIFY_FAILURE:
+            	case RequestSender.GET_OFFER_VERIFY_FAILURE:
             		if(key instanceof NodeCHK) {
 						if(bt == null) {
             				// Bug! This is impossible!
@@ -305,6 +306,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
             		sendTerminal(reject);
             		return;
             	case RequestSender.TRANSFER_FAILED:
+            	case RequestSender.GET_OFFER_TRANSFER_FAILED:
             		if(key instanceof NodeCHK) {
             			if(bt == null) {
             				// Bug! This is impossible!
@@ -372,7 +374,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
 
 	private void unregisterRequestHandlerWithNode() {
 		node.removeTransferringRequestHandler(uid);
-		node.unlockUID(uid, key instanceof NodeSSK, false, false);
+		node.unlockUID(uid, key instanceof NodeSSK, false, false, false);
 	}
 	
 	/**

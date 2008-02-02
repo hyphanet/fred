@@ -28,6 +28,8 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.node.FailureTable.BlockOffer;
+import freenet.node.FailureTable.OfferList;
 import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
@@ -49,6 +51,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 5000;
+    static final int GET_OFFER_TIMEOUT = 10000;
     static final int FETCH_TIMEOUT = 120000;
     /** Wait up to this long to get a path folding reply */
     static final int OPENNET_TIMEOUT = 120000;
@@ -72,7 +75,10 @@ public final class RequestSender implements Runnable, ByteCounter {
     private byte[] sskData;
     private SSKBlock block;
     private boolean hasForwarded;
-	
+    
+    /** If true, only try to fetch the key from nodes which have offered it */
+    private boolean tryOffersOnly;
+    
 	private ArrayList listeners=new ArrayList();
     
     // Terminal status
@@ -89,6 +95,8 @@ public final class RequestSender implements Runnable, ByteCounter {
     static final int GENERATED_REJECTED_OVERLOAD = 7;
     static final int INTERNAL_ERROR = 8;
     static final int RECENTLY_FAILED = 9;
+    static final int GET_OFFER_VERIFY_FAILURE = 10;
+    static final int GET_OFFER_TRANSFER_FAILED = 11;
     private PeerNode successFrom;
     
     static String getStatusString(int status) {
@@ -103,8 +111,12 @@ public final class RequestSender implements Runnable, ByteCounter {
     		return "DATA NOT FOUND";
     	case TRANSFER_FAILED:
     		return "TRANSFER FAILED";
+    	case GET_OFFER_TRANSFER_FAILED:
+    		return "GET OFFER TRANSFER FAILED";
     	case VERIFY_FAILURE:
     		return "VERIFY FAILURE";
+    	case GET_OFFER_VERIFY_FAILURE:
+    		return "GET OFFER VERIFY FAILURE";
     	case TIMED_OUT:
     		return "TIMED OUT";
     	case GENERATED_REJECTED_OVERLOAD:
@@ -158,7 +170,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         	realRun();
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
-            finish(INTERNAL_ERROR, null);
+            finish(INTERNAL_ERROR, null, false);
         } finally {
         	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
             node.removeRequestSender(key, origHTL, this);
@@ -171,6 +183,191 @@ public final class RequestSender implements Runnable, ByteCounter {
         	pubKey = ((NodeSSK)key).getPubKey();
         }
         
+        // First ask any nodes that have offered the data
+        
+        OfferList offers = node.failureTable.getOffers(key);
+        
+        while(true) {
+        	// Fetches valid offers, then expired ones. Expired offers don't count towards failures,
+        	// but they're still worth trying.
+        	BlockOffer offer = offers.getFirstOffer();
+        	if(offer == null) break;
+        	PeerNode pn = offer.getPeerNode();
+        	if(pn == null) {
+        		offers.deleteLastOffer();
+        		continue;
+        	}
+        	if(pn.getBootID() != offer.bootID) {
+        		offers.deleteLastOffer();
+        		continue;
+        	}
+        	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
+        	try {
+				pn.sendAsync(msg, null, 0, this);
+			} catch (NotConnectedException e2) {
+				if(logMINOR)
+					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+				offers.deleteLastOffer();
+				continue;
+			}
+        	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPRejectedOverload);
+        	MessageFilter mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPGetOfferedKeyInvalid);
+        	// Wait for a response.
+        	if(key instanceof NodeCHK) {
+        		// Headers first, then block transfer.
+        		MessageFilter mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPCHKDataFound);
+        		Message reply;
+				try {
+					reply = node.usm.waitFor(mfDF.or(mfRO.or(mfGetInvalid)), this);
+				} catch (DisconnectedException e2) {
+					if(logMINOR)
+						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+					offers.deleteLastOffer();
+					continue;
+				}
+        		if(reply == null) {
+        			// We gave it a chance, don't give it another.
+        			offers.deleteLastOffer();
+        			continue;
+        		} else if(reply.getSpec() == DMT.FNPRejectedOverload) {
+        			// Non-fatal, keep it.
+        			if(logMINOR)
+        				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
+        			offers.keepLastOffer();
+        			continue;
+        		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
+        			// Fatal, delete it.
+        			if(logMINOR)
+        				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
+        			offers.deleteLastOffer();
+        			continue;
+        		} else if(reply.getSpec() == DMT.FNPCHKDataFound) {
+        			headers = ((ShortBuffer)reply.getObject(DMT.BLOCK_HEADERS)).getData();
+        			// Receive the data
+        			
+                	// FIXME: Validate headers
+                	
+                	node.addTransferringSender((NodeCHK)key, this);
+                	
+                	try {
+                		
+                		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
+                		
+                		synchronized(this) {
+                			notifyAll();
+                		}
+                		fireCHKTransferBegins();
+						
+                		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this);
+                		
+                		try {
+                			if(logMINOR) Logger.minor(this, "Receiving data");
+                			byte[] data = br.receive();
+                			if(logMINOR) Logger.minor(this, "Received data");
+                			// Received data
+                			try {
+                				verifyAndCommit(data);
+                			} catch (KeyVerifyException e1) {
+                				Logger.normal(this, "Got data but verify failed: "+e1, e1);
+                				finish(GET_OFFER_VERIFY_FAILURE, pn, true);
+                        		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, pn, -1, System.currentTimeMillis());
+                        		offers.deleteLastOffer();
+                				return;
+                			}
+                			finish(SUCCESS, pn, true);
+                			return;
+                		} catch (RetrievalException e) {
+							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
+								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
+							else
+								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
+                			finish(GET_OFFER_TRANSFER_FAILED, pn, true);
+                    		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, pn, -1, System.currentTimeMillis());
+                    		offers.deleteLastOffer();
+                			return;
+                		}
+                	} finally {
+                		node.removeTransferringSender((NodeCHK)key, this);
+                	}
+        		}
+        	} else {
+        		// Data, possibly followed by pubkey
+        		MessageFilter mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFound);
+        		Message reply;
+				try {
+					reply = node.usm.waitFor(mfDF.or(mfRO.or(mfGetInvalid)), this);
+				} catch (DisconnectedException e) {
+					if(logMINOR)
+						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+					offers.deleteLastOffer();
+					continue;
+				}
+        		if(reply == null) {
+            		offers.deleteLastOffer();
+        			continue;
+        		} else if(reply.getSpec() == DMT.FNPRejectedOverload) {
+        			// Non-fatal, keep it.
+        			if(logMINOR)
+        				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
+        			offers.keepLastOffer();
+        			continue;
+        		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
+        			// Fatal, delete it.
+        			if(logMINOR)
+        				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
+        			offers.deleteLastOffer();
+        			continue;
+        		} else if(reply.getSpec() == DMT.FNPSSKDataFound) {
+        			// Receive the data
+        			headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
+        			sskData = ((ShortBuffer) reply.getObject(DMT.DATA)).getData();
+        			if(pubKey != null) {
+        				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKPubKey);
+        				Message pk;
+						try {
+							pk = node.usm.waitFor(mfPK, this);
+						} catch (DisconnectedException e) {
+							if(logMINOR)
+								Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
+							offers.deleteLastOffer();
+							continue;
+						}
+        				if(pk == null) {
+        					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
+        					offers.deleteLastOffer();
+        					continue;
+        				}
+        				try {
+							pubKey = DSAPublicKey.create(((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData());
+						} catch (CryptFormatException e) {
+							Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
+        					offers.deleteLastOffer();
+							continue;
+						}
+        			}
+        			
+        			try {
+						((NodeSSK)key).setPubKey(pubKey);
+					} catch (SSKVerifyException e) {
+						Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
+    					offers.deleteLastOffer();
+						continue;
+					}
+        			
+        			if(finishSSKFromGetOffer(pn)) {
+        				if(logMINOR) Logger.minor(this, "Successfully fetched SSK from offer from "+pn+" for "+key);
+        				return;
+        			} else {
+                		offers.deleteLastOffer();
+        				continue;
+        			}
+        		}
+        	}
+        	// RejectedOverload is possible - but we need to include it in the statistics.
+        	// We don't remove the offer in that case. Otherwise we do, even if it fails.
+        	// FNPGetOfferedKeyInvalid is also possible.
+        }
+        
 		int routeAttempts=0;
 		int rejectOverloads=0;
         HashSet nodesRoutedTo = new HashSet();
@@ -180,7 +377,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             if(htl == 0) {
             	// This used to be RNF, I dunno why
 				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
-                finish(DATA_NOT_FOUND, null);
+                finish(DATA_NOT_FOUND, null, false);
         		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, null, FailureTable.REJECT_TIME, System.currentTimeMillis());
                 return;
             }
@@ -195,7 +392,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 				if (logMINOR && rejectOverloads>0)
 					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
                 // Backtrack
-                finish(ROUTE_NOT_FOUND, null);
+                finish(ROUTE_NOT_FOUND, null, false);
         		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, null, -1, System.currentTimeMillis());
                 return;
             }
@@ -347,7 +544,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             		// Fatal timeout
             		next.localRejectedOverload("FatalTimeout");
             		forwardRejectedOverload();
-            		finish(TIMED_OUT, next);
+            		finish(TIMED_OUT, next, false);
             		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, next, -1, System.currentTimeMillis());
             		return;
             	}
@@ -358,7 +555,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             	
             	if(msg.getSpec() == DMT.FNPDataNotFound) {
             		next.successNotOverload();
-            		finish(DATA_NOT_FOUND, next);
+            		finish(DATA_NOT_FOUND, next, false);
             		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, next, FailureTable.REJECT_TIME, System.currentTimeMillis());
             		return;
             	}
@@ -420,7 +617,7 @@ public final class RequestSender implements Runnable, ByteCounter {
            			// Kill the request, regardless of whether there is timeout left.
             		// If there is, we will avoid sending requests for the specified period.
             		// FIXME we need to create the FT entry.
-           			finish(RECENTLY_FAILED, next);
+           			finish(RECENTLY_FAILED, next, false);
             		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, next, timeLeft, System.currentTimeMillis());
             		return;
             	}
@@ -486,18 +683,18 @@ public final class RequestSender implements Runnable, ByteCounter {
                 				verifyAndCommit(data);
                 			} catch (KeyVerifyException e1) {
                 				Logger.normal(this, "Got data but verify failed: "+e1, e1);
-                				finish(VERIFY_FAILURE, next);
+                				finish(VERIFY_FAILURE, next, false);
                         		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, next, -1, System.currentTimeMillis());
                 				return;
                 			}
-                			finish(SUCCESS, next);
+                			finish(SUCCESS, next, false);
                 			return;
                 		} catch (RetrievalException e) {
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else
 								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
-                			finish(TRANSFER_FAILED, next);
+                			finish(TRANSFER_FAILED, next, false);
                     		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, next, -1, System.currentTimeMillis());
                 			return;
                 		}
@@ -570,14 +767,37 @@ public final class RequestSender implements Runnable, ByteCounter {
 			node.storeShallow(block);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
-			finish(SUCCESS, next);
+			finish(SUCCESS, next, false);
 		} catch (SSKVerifyException e) {
 			Logger.error(this, "Failed to verify: "+e+" from "+next, e);
-			finish(VERIFY_FAILURE, next);
+			finish(VERIFY_FAILURE, next, false);
 			return;
 		} catch (KeyCollisionException e) {
 			Logger.normal(this, "Collision on "+this);
-			finish(SUCCESS, next);
+			finish(SUCCESS, next, false);
+		}
+	}
+
+    /**
+     * Finish fetching an SSK. We must have received the data, the headers and the pubkey by this point.
+     * @param next The node we received the data from.
+     * @return True if the request has completed. False if we need to look elsewhere.
+     */
+	private boolean finishSSKFromGetOffer(PeerNode next) {
+    	try {
+			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
+			node.storeShallow(block);
+			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
+				node.queueRandomReinsert(block);
+			finish(SUCCESS, next, true);
+			return true;
+		} catch (SSKVerifyException e) {
+			Logger.error(this, "Failed to verify (from get offer): "+e+" from "+next, e);
+			return false;
+		} catch (KeyCollisionException e) {
+			Logger.normal(this, "Collision (from get offer) on "+this);
+			finish(SUCCESS, next, true);
+			return false;
 		}
 	}
 
@@ -696,7 +916,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         }            
     }
     
-    private void finish(int code, PeerNode next) {
+    private void finish(int code, PeerNode next, boolean fromOfferedKey) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
         
         synchronized(this) {
@@ -710,18 +930,21 @@ public final class RequestSender implements Runnable, ByteCounter {
         	if(next != null) {
         		next.onSuccess(false, key instanceof NodeSSK);
         	}
-        	node.nodeStats.requestCompleted(true, source != null, key instanceof NodeSSK);
+        	// FIXME should this be called when fromOfferedKey??
+       		node.nodeStats.requestCompleted(true, source != null, key instanceof NodeSSK);
         	
 			//NOTE: because of the requesthandler implementation, this will block and wait
 			//      for downstream transfers on a CHK. The opennet stuff introduces
 			//      a delay of it's own if we don't get the expected message.
 			fireRequestSenderFinished(code);
 			
-        	if(key instanceof NodeCHK && next != null && 
-        			(next.isOpennet() || node.passOpennetRefsThroughDarknet()) ) {
-        		finishOpennet(next);
-        	} else
-        		finishOpennetNull(next);
+			if(fromOfferedKey) {
+				if(key instanceof NodeCHK && next != null && 
+						(next.isOpennet() || node.passOpennetRefsThroughDarknet()) ) {
+					finishOpennet(next);
+				} else
+					finishOpennetNull(next);
+			}
         } else {
         	node.nodeStats.requestCompleted(false, source != null, key instanceof NodeSSK);
 			fireRequestSenderFinished(code);

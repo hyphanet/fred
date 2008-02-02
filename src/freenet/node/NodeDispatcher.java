@@ -15,6 +15,7 @@ import freenet.io.comm.MessageType;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.keys.Key;
+import freenet.keys.NodeSSK;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
@@ -160,7 +161,9 @@ public class NodeDispatcher implements Dispatcher {
 //			return handleProbeTrace(m, source);
 		} else if(spec == DMT.FNPOfferKey) {
 			return handleOfferKey(m, source);
-		} 
+		} else if(spec == DMT.FNPGetOfferedKey) {
+			return handleGetOfferedKey(m, source);
+		}
 		return false;
 	}
 
@@ -168,6 +171,52 @@ public class NodeDispatcher implements Dispatcher {
 		Key key = (Key) m.getObject(DMT.KEY);
 		byte[] authenticator = ((ShortBuffer) m.getObject(DMT.OFFER_AUTHENTICATOR)).getData();
 		node.failureTable.onOffer(key, source, authenticator);
+		return true;
+	}
+
+	private boolean handleGetOfferedKey(Message m, PeerNode source) {
+		Key key = (Key) m.getObject(DMT.KEY);
+		byte[] authenticator = ((ShortBuffer) m.getObject(DMT.OFFER_AUTHENTICATOR)).getData();
+		long uid = m.getLong(DMT.UID);
+		HMAC hash = new HMAC(SHA256.getInstance());
+		if(!hash.verify(node.failureTable.offerAuthenticatorKey, key.getFullKey(), authenticator)) {
+			Logger.error(this, "Invalid offer from "+source+" : authenticator did not verify");
+			try {
+				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_BAD_AUTHENTICATOR), null, 0, null);
+			} catch (NotConnectedException e) {
+				// Too bad.
+			}
+			return true;
+		}
+		if(logMINOR) Logger.minor(this, "Valid GetOfferedKey for "+key+" from "+source);
+		
+		// Do we want it? We can RejectOverload if we don't have the bandwidth...
+		boolean isSSK = key instanceof NodeSSK;
+		boolean needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
+		if(isSSK) {
+			
+		}
+		String reject = 
+			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source);
+		if(reject != null) {
+			Logger.normal(this, "Rejecting FNPGetOfferedKey from "+source+" for "+key+" : "+reject);
+			Message rejected = DMT.createFNPRejectedOverload(uid, true);
+			try {
+				source.sendAsync(rejected, null, 0, null);
+			} catch (NotConnectedException e) {
+				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
+			}
+			node.unlockUID(uid, isSSK, false, false, false);
+			return true;
+		}
+		
+		// Accept it.
+		
+		try {
+			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source);
+		} catch (NotConnectedException e) {
+			// Too bad.
+		}
 		return true;
 	}
 
@@ -229,7 +278,7 @@ public class NodeDispatcher implements Dispatcher {
 			}
 			return true;
 		}
-		if(!node.lockUID(id, isSSK, false)) {
+		if(!node.lockUID(id, isSSK, false, false)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -241,7 +290,7 @@ public class NodeDispatcher implements Dispatcher {
 		} else {
 			if(logMINOR) Logger.minor(this, "Locked "+id);
 		}
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, source);
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source);
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting request from "+source.getPeer()+" preemptively because "+rejectReason);
@@ -251,7 +300,7 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, false, false);
+			node.unlockUID(id, isSSK, false, false, false);
 			return true;
 		}
 		//if(!node.lockUID(id)) return false;
@@ -271,7 +320,7 @@ public class NodeDispatcher implements Dispatcher {
 			}
 			return true;
 		}
-		if(!node.lockUID(id, isSSK, true)) {
+		if(!node.lockUID(id, isSSK, true, false)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -282,7 +331,7 @@ public class NodeDispatcher implements Dispatcher {
 			return true;
 		}
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, source);
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source);
 		if(rejectReason != null) {
 			Logger.normal(this, "Rejecting insert from "+source.getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
@@ -291,7 +340,7 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, true, false);
+			node.unlockUID(id, isSSK, true, false, false);
 			return true;
 		}
 		long now = System.currentTimeMillis();

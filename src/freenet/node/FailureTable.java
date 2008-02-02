@@ -4,10 +4,19 @@
 package freenet.node;
 
 import java.lang.ref.WeakReference;
+import java.util.Vector;
 
+import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
+import freenet.io.comm.NotConnectedException;
+import freenet.io.xfer.BlockTransmitter;
+import freenet.io.xfer.PartiallyReceivedBlock;
+import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
+import freenet.keys.NodeSSK;
+import freenet.keys.SSKBlock;
 import freenet.support.LRUHashtable;
 
 // FIXME it is ESSENTIAL that we delete the ULPR data on requestors etc once we have found the key.
@@ -140,7 +149,7 @@ public class FailureTable {
 			this.offers = new BlockOffer[] { offer };
 		}
 
-		public long expires() {
+		public synchronized long expires() {
 			long last = 0;
 			for(int i=0;i<offers.length;i++) {
 				if(offers[i].offeredTime > last) last = offers[i].offeredTime;
@@ -148,25 +157,61 @@ public class FailureTable {
 			return last + OFFER_EXPIRY_TIME;
 		}
 
-		public boolean isEmpty(long now) {
+		public synchronized boolean isEmpty(long now) {
 			for(int i=0;i<offers.length;i++) {
 				if(offers[i].offeredTime > now) return false;
 			}
 			return true;
 		}
+
+		public synchronized void deleteOffer(BlockOffer offer) {
+			int idx = -1;
+			for(int i=0;i<offers.length;i++) {
+				if(offers[i] == offer) idx = i;
+			}
+			if(idx == -1) return;
+			BlockOffer[] newOffers = new BlockOffer[offers.length-1];
+			if(idx > 0)
+				System.arraycopy(offers, 0, newOffers, 0, idx);
+			if(idx < newOffers.length)
+				System.arraycopy(offers, idx+1, newOffers, idx, offers.length-idx);
+			offers = newOffers;
+		}
+
+		public synchronized void addOffer(BlockOffer offer) {
+			BlockOffer[] newOffers = new BlockOffer[offers.length+1];
+			System.arraycopy(offers, 0, newOffers, 0, offers.length);
+			newOffers[offers.length] = offer;
+			offers = newOffers;
+		}
 	}
 	
-	private final class BlockOffer {
+	final class BlockOffer {
 		final long offeredTime;
 		/** Either offered by or offered to this node */
 		final WeakReference nodeRef;
 		/** Authenticator */
 		final byte[] authenticator;
+		/** Boot ID when the offer was made */
+		final long bootID;
 		
-		BlockOffer(PeerNode pn, long now, byte[] authenticator) {
+		BlockOffer(PeerNode pn, long now, byte[] authenticator, long bootID) {
 			this.nodeRef = pn.myRef;
 			this.offeredTime = now;
 			this.authenticator = authenticator;
+			this.bootID = bootID;
+		}
+
+		public PeerNode getPeerNode() {
+			return (PeerNode) nodeRef.get();
+		}
+
+		public boolean isExpired(long now) {
+			return now > (offeredTime + OFFER_EXPIRY_TIME);
+		}
+
+		public boolean isExpired() {
+			return isExpired(System.currentTimeMillis());
 		}
 	}
 	
@@ -181,6 +226,7 @@ public class FailureTable {
 			entry = (FailureTableEntry) entriesByKey.get(key);
 			if(entry == null) return; // Nobody cares
 			entriesByKey.removeKey(key);
+			blockOfferListByKey.removeKey(key);
 		}
 		entry.offer();
 	}
@@ -250,9 +296,11 @@ public class FailureTable {
 			// Add to offers list
 			
 			BlockOfferList bl = (BlockOfferList) blockOfferListByKey.get(key);
-			BlockOffer offer = new BlockOffer(peer, now, authenticator);
+			BlockOffer offer = new BlockOffer(peer, now, authenticator, peer.getBootID());
 			if(bl == null) {
 				bl = new BlockOfferList(entry, offer);
+			} else {
+				bl.addOffer(offer);
 			}
 			blockOfferListByKey.push(key, offer);
 			trimOffersList(now);
@@ -275,5 +323,117 @@ public class FailureTable {
 				return;
 			}
 		}
+	}
+
+	/**
+	 * We offered a key, a node has responded to the offer. Note that this runs on the incoming
+	 * packets thread so should allocate a new thread if it does anything heavy.
+	 * @param key The key to send.
+	 * @param isSSK Whether it is an SSK.
+	 * @param uid The UID.
+	 * @param source The node that asked for the key.
+	 * @throws NotConnectedException If the sender ceases to be connected.
+	 */
+	public void sendOfferedKey(Key key, boolean isSSK, boolean needPubKey, long uid, PeerNode source) throws NotConnectedException {
+		if(isSSK) {
+			SSKBlock block = node.fetch((NodeSSK)key, false);
+			if(block == null) {
+				// Don't have the key
+				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, 0, null);
+				return;
+			}
+			Message df = DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
+			source.sendAsync(df, null, 0, null);
+			if(needPubKey) {
+				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey());
+				source.sendAsync(pk, null, 0, null);
+			}
+		} else {
+			CHKBlock block = node.fetch((NodeCHK)key, false);
+			if(block == null) {
+				// Don't have the key
+				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, 0, null);
+				return;
+			}
+			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
+			source.sendAsync(df, null, 0, null);
+        	PartiallyReceivedBlock prb =
+        		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
+        	BlockTransmitter bt =
+        		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, null);
+        	bt.sendAsync(node.executor);
+		}
+	}
+	
+	class OfferList {
+
+		OfferList(BlockOfferList offerList) {
+			this.offerList = offerList;
+			recentOffers = new Vector();
+			expiredOffers = new Vector();
+			long now = System.currentTimeMillis();
+			BlockOffer[] offers = offerList.offers;
+			for(int i=0;i<offers.length;i++) {
+				if(!offers[i].isExpired(now))
+					recentOffers.add(offers[i]);
+				else
+					expiredOffers.add(offers[i]);
+			}
+		}
+		
+		private final BlockOfferList offerList;
+		
+		private final Vector recentOffers;
+		private final Vector expiredOffers;
+		
+		/** The last offer we returned */
+		private BlockOffer lastOffer;
+		
+		public BlockOffer getFirstOffer() {
+			if(lastOffer != null) {
+				throw new IllegalStateException("Last offer not dealt with");
+			}
+			if(!recentOffers.isEmpty()) {
+				int x = node.random.nextInt(recentOffers.size());
+				return lastOffer = (BlockOffer) recentOffers.remove(x);
+			}
+			if(!expiredOffers.isEmpty()) {
+				int x = node.random.nextInt(expiredOffers.size());
+				return lastOffer = (BlockOffer) expiredOffers.remove(x);
+			}
+			// No more offers.
+			return null;
+		}
+		
+		/**
+		 * Delete the last offer - we have used it, successfully or not.
+		 */
+		public void deleteLastOffer() {
+			offerList.deleteOffer(lastOffer);
+			lastOffer = null;
+		}
+
+		/**
+		 * Keep the last offer - we weren't able to use it e.g. because of RejectedOverload.
+		 * Maybe it will be useful again in the future.
+		 */
+		public void keepLastOffer() {
+			lastOffer = null;
+		}
+		
+	}
+
+	public OfferList getOffers(Key key) {
+		BlockOfferList bl;
+		synchronized(this) {
+			bl = (BlockOfferList) blockOfferListByKey.get(key);
+			if(bl == null) return null;
+		}
+		return new OfferList(bl);
+	}
+
+	/** Called when a node disconnects */
+	public void onDisconnect(final PeerNode pn) {
+		// FIXME do something (off thread if expensive)
 	}
 }

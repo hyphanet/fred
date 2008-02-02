@@ -319,6 +319,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private final HashSet runningSSKGetUIDs;
 	private final HashSet runningCHKPutUIDs;
 	private final HashSet runningSSKPutUIDs;
+	private final HashSet runningCHKOfferReplyUIDs;
+	private final HashSet runningSSKOfferReplyUIDs;
 	
 	/** Semi-unique ID for swap requests. Used to identify us so that the
 	 * topology can be reconstructed. */
@@ -613,6 +615,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		runningSSKGetUIDs = new HashSet();
 		runningCHKPutUIDs = new HashSet();
 		runningSSKPutUIDs = new HashSet();
+		runningCHKOfferReplyUIDs = new HashSet();
+		runningSSKOfferReplyUIDs = new HashSet();
 		
 		// Directory for node-related files other than store
 		
@@ -2179,10 +2183,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		return is;
 	}
 	
-	public boolean lockUID(long uid, boolean ssk, boolean insert) {
+	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply) {
 		if(logMINOR) Logger.minor(this, "Locking "+uid);
 		Long l = new Long(uid);
-		HashSet set = getUIDTracker(ssk, insert);
+		HashSet set = getUIDTracker(ssk, insert, offerReply);
 		synchronized(set) {
 			set.add(l);
 		}
@@ -2193,11 +2197,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 	
-	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail) {
+	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply) {
 		if(logMINOR) Logger.minor(this, "Unlocking "+uid);
 		Long l = new Long(uid);
 		completed(uid);
-		HashSet set = getUIDTracker(ssk, insert);
+		HashSet set = getUIDTracker(ssk, insert, offerReply);
 		synchronized(set) {
 			set.remove(l);
 		}
@@ -2207,10 +2211,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
-	HashSet getUIDTracker(boolean ssk, boolean insert) {
+	HashSet getUIDTracker(boolean ssk, boolean insert, boolean offerReply) {
 		if(ssk) {
+			if(offerReply)
+				return runningSSKOfferReplyUIDs;
 			return insert ? runningSSKPutUIDs : runningSSKGetUIDs;
 		} else {
+			if(offerReply)
+				return runningCHKOfferReplyUIDs;
 			return insert ? runningCHKPutUIDs : runningCHKGetUIDs;
 		}
 	}
@@ -2287,6 +2295,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	public int getNumCHKInserts() {
 		return runningCHKPutUIDs.size();
+	}
+	
+	public int getNumSSKOfferReplies() {
+		return runningSSKOfferReplyUIDs.size();
+	}
+	
+	public int getNumCHKOfferReplies() {
+		return runningCHKOfferReplyUIDs.size();
 	}
 	
 	public int getNumTransferringRequestSenders() {

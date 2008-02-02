@@ -450,7 +450,7 @@ public class NodeClientCore implements Persistable {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, false, false)) {
+		if(!node.lockUID(uid, false, false, false)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
@@ -507,7 +507,8 @@ public class NodeClientCore implements Persistable {
 						(status == RequestSender.RECENTLY_FAILED) ||
 						(status == RequestSender.SUCCESS) ||
 						(status == RequestSender.ROUTE_NOT_FOUND) ||
-						(status == RequestSender.VERIFY_FAILURE))) {
+						(status == RequestSender.VERIFY_FAILURE) ||
+						(status == RequestSender.GET_OFFER_VERIFY_FAILURE))) {
 					long rtt = System.currentTimeMillis() - startTime;
 					if(!rejectedOverload)
 						requestStarters.requestCompleted(false, false);
@@ -539,8 +540,10 @@ public class NodeClientCore implements Persistable {
 				case RequestSender.ROUTE_NOT_FOUND:
 					throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
 				case RequestSender.TRANSFER_FAILED:
+				case RequestSender.GET_OFFER_TRANSFER_FAILED:
 					throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
 				case RequestSender.VERIFY_FAILURE:
+				case RequestSender.GET_OFFER_VERIFY_FAILURE:
 					throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
 				case RequestSender.GENERATED_REJECTED_OVERLOAD:
 				case RequestSender.TIMED_OUT:
@@ -554,7 +557,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, false, false, true);
+			node.unlockUID(uid, false, false, true, false);
 		}
 	}
 
@@ -562,7 +565,7 @@ public class NodeClientCore implements Persistable {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, true, false)) {
+		if(!node.lockUID(uid, true, false, false)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
@@ -620,7 +623,8 @@ public class NodeClientCore implements Persistable {
 						(status == RequestSender.RECENTLY_FAILED) ||
 						(status == RequestSender.SUCCESS) ||
 						(status == RequestSender.ROUTE_NOT_FOUND) ||
-						(status == RequestSender.VERIFY_FAILURE))) {
+						(status == RequestSender.VERIFY_FAILURE) ||
+						(status == RequestSender.GET_OFFER_VERIFY_FAILURE))) {
 					long rtt = System.currentTimeMillis() - startTime;
 					
 					if(!rejectedOverload)
@@ -651,9 +655,11 @@ public class NodeClientCore implements Persistable {
 				case RequestSender.ROUTE_NOT_FOUND:
 					throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
 				case RequestSender.TRANSFER_FAILED:
+				case RequestSender.GET_OFFER_TRANSFER_FAILED:
 					Logger.error(this, "WTF? Transfer failed on an SSK? on "+uid);
 					throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
 				case RequestSender.VERIFY_FAILURE:
+				case RequestSender.GET_OFFER_VERIFY_FAILURE:
 					throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
 				case RequestSender.GENERATED_REJECTED_OVERLOAD:
 				case RequestSender.TIMED_OUT:
@@ -666,7 +672,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, true, false, true);
+			node.unlockUID(uid, true, false, true, false);
 		}
 	}
 
@@ -686,7 +692,7 @@ public class NodeClientCore implements Persistable {
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
 		CHKInsertSender is;
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, false, true)) {
+		if(!node.lockUID(uid, false, true, false)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
@@ -795,7 +801,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, false, true, true);
+			node.unlockUID(uid, false, true, true, false);
 		}
 	}
 
@@ -803,7 +809,7 @@ public class NodeClientCore implements Persistable {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SSKInsertSender is;
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, true, true)) {
+		if(!node.lockUID(uid, true, true, false)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
@@ -921,7 +927,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, true, true, true);
+			node.unlockUID(uid, true, true, true, false);
 		}
 	}
 
