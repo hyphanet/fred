@@ -187,6 +187,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         
         OfferList offers = node.failureTable.getOffers(key);
         
+        if(offers != null) {
         while(true) {
         	// Fetches valid offers, then expired ones. Expired offers don't count towards failures,
         	// but they're still worth trying.
@@ -366,6 +367,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         	// RejectedOverload is possible - but we need to include it in the statistics.
         	// We don't remove the offer in that case. Otherwise we do, even if it fails.
         	// FNPGetOfferedKeyInvalid is also possible.
+        }
         }
         
 		int routeAttempts=0;
