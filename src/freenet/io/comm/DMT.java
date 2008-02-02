@@ -848,12 +848,13 @@ public class DMT {
 	
 	public static MessageType FNPOfferKey = new MessageType("FNPOfferKey", PRIORITY_LOW) {{
 		addField(KEY, Key.class);
+		addField(OFFER_AUTHENTICATOR, ShortBuffer.class);
 	}};
 	
 	public static Message createFNPOfferKey(Key key, byte[] authenticator) {
 		Message msg = new Message(FNPOfferKey);
 		msg.set(KEY, key);
-		msg.set(OFFER_AUTHENTICATOR, authenticator);
+		msg.set(OFFER_AUTHENTICATOR, new ShortBuffer(authenticator));
 		return msg;
 	}
 	
