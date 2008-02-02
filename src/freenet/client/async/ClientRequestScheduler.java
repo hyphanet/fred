@@ -612,4 +612,30 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return pendingKeys.get(key) != null;
 		}
 	}
+
+	/** If we want the offered key, or if force is enabled, queue it */
+	public void maybeQueueOfferedKey(Key key, boolean force) {
+		short priority = Short.MAX_VALUE;
+		synchronized(this) {
+			if(force) {
+				// FIXME what priority???
+				priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+			}
+			Object o = pendingKeys.get(key);
+			if(o == null) {
+				// Blah
+			} else if(o instanceof SendableGet) {
+				short p = ((SendableGet)o).getPriorityClass();
+				if(p < priority) priority = p;
+			} else { // if(o instanceof SendableGet[]) {
+				SendableGet[] gets = (SendableGet[]) o;
+				for(int i=0;i<gets.length;i++) {
+					short p = gets[i].getPriorityClass();
+					if(p < priority) priority = p;
+				}
+			}
+		}
+		if(priority == Short.MAX_VALUE) return;
+		offeredKeys[priority].queueKey(key);
+	}
 }

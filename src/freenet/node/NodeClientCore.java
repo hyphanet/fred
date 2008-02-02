@@ -9,6 +9,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.async.BackgroundBlockEncoder;
+import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
@@ -1095,5 +1096,15 @@ public class NodeClientCore implements Persistable {
 
 	public boolean hasLoadedQueue() {
 		return fcpServer.hasFinishedStart();
+	}
+
+	/** Pass the offered key down to the client layer.
+	 * If the client layer wants it, or force is enabled, queue it. */
+	public void maybeQueueOfferedKey(Key key, boolean force) {
+		ClientRequestScheduler sched =
+			key instanceof NodeSSK ?
+					requestStarters.sskFetchScheduler :
+						requestStarters.chkFetchScheduler;
+		sched.maybeQueueOfferedKey(key, force);
 	}
 }

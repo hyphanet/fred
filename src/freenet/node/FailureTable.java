@@ -6,6 +6,7 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 import java.util.Vector;
 
+import freenet.client.async.ClientRequestScheduler;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
@@ -238,22 +239,12 @@ public class FailureTable {
 	 * @param peer The node offering it.
 	 * @param authenticator 
 	 */
-	public void onOffer(Key key, PeerNode peer, byte[] authenticator) {
-		if(wantOffer(key, peer, authenticator)) {
-			// Okay, we want the offer. Now what?
-			// Two ClientRequestScheduler's? Then you'd have to remove the key from two different RGA's :(
-			// Anyway, we don't want a key to be requested just because another key in the same group has an offer.
-			// So what we want is a list of keys at each level which have been offered.
-			// These would be considered before the other keys at that level, but only if the offer is still valid.
-		}
-	}
-	
-	boolean wantOffer(Key key, PeerNode peer, byte[] authenticator) {
+	void onOffer(Key key, PeerNode peer, byte[] authenticator) {
 		FailureTableEntry entry;
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			entry = (FailureTableEntry) entriesByKey.get(key);
-			if(entry == null) return false; // we haven't asked for it
+			if(entry == null) return; // we haven't asked for it
 			
 			/*
 			 * Accept (subject to later checks) if we asked for it.
@@ -287,7 +278,7 @@ public class FailureTable {
 			if(!(entry.askedFromPeer(peer, now) || 
 					((key instanceof NodeCHK) && entry.askedByPeer(peer, now)))) {
 				if(entry.isEmpty(now)) entriesByKey.removeKey(key);
-				return false;
+				return;
 			}
 			if(entry.isEmpty(now)) entriesByKey.removeKey(key);
 			
@@ -307,10 +298,8 @@ public class FailureTable {
 		}
 		
 		// Now, does anyone want it?
-		// Firstly, do we want it?
-		if(!node.clientCore.clientWantKey(key)) return true;
-		if(entry.othersWant(peer)) return true;
-		return false;
+		
+		node.clientCore.maybeQueueOfferedKey(key, entry.othersWant(peer));
 	}
 
 	private synchronized void trimOffersList(long now) {

@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 
@@ -31,7 +30,6 @@ import freenet.support.Logger;
  */
 public class OfferedKeysList extends SendableRequest {
 
-	private final HashMap clientKeysByKey;
 	private final HashSet keys;
 	// FIXME is there any way to avoid the O(n) shuffling penalty here?
 	private final Vector keysList;
@@ -43,7 +41,6 @@ public class OfferedKeysList extends SendableRequest {
 	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass) {
 		this.keys = new HashSet();
 		this.keysList = new Vector();
-		clientKeysByKey = new HashMap();
 		this.random = random;
 		this.priorityClass = priorityClass;
 		this.core = core;
@@ -53,11 +50,10 @@ public class OfferedKeysList extends SendableRequest {
 	/** Called when a key is found, when it no longer belogns to this list etc. */
 	public synchronized void remove(Key key) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		ClientKey ck = (ClientKey) clientKeysByKey.remove(key);
-		if(ck == null) return;
-		if(logMINOR) Logger.minor(this, "Found "+key+" , removing it");
-		keys.remove(key);
-		keysList.remove(key);
+		if(keys.remove(key)) {
+			if(logMINOR) Logger.minor(this, "Found "+key+" , removing it");
+			keysList.remove(key);
+		}
 	}
 	
 	/** Called when there are no more valid offers for a key */
@@ -67,7 +63,6 @@ public class OfferedKeysList extends SendableRequest {
 		Key k = key.getNodeKey();
 		keys.remove(k);
 		keysList.remove(k);
-		clientKeysByKey.remove(k);
 	}
 
 	public synchronized boolean isEmpty() {
@@ -84,7 +79,6 @@ public class OfferedKeysList extends SendableRequest {
 		if(keysList.isEmpty()) return null;
 		Key k = (Key) keysList.remove(random.nextInt(keysList.size()));
 		keys.remove(k);
-		clientKeysByKey.remove(k);
 		return k;
 	}
 
@@ -121,6 +115,12 @@ public class OfferedKeysList extends SendableRequest {
 
 	public boolean isCancelled() {
 		return false;
+	}
+
+	public synchronized void queueKey(Key key) {
+		if(keys.add(key)) {
+			keysList.add(key);
+		}
 	}
 
 }
