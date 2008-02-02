@@ -50,15 +50,15 @@ public class FailureTable {
 	}
 	
 	/**
-	 * Called when a key DNFs, or is killed by a RecentlyFailed message. Either way this can create a 
-	 * FailureTableEntry.
+	 * Called when a node kills a request: the request DNFs, is killed by a RecentlyFailed message, 
+	 * times out or gets a local RejectedOverload. Either way this can create a FailureTableEntry.
 	 * @param key The key that was fetched.
 	 * @param htl The HTL it was fetched at.
 	 * @param requestors The nodes requesting it (if any).
 	 * @param requested The single node it was forwarded to, which DNFed.
 	 * @param now The time at which the request was sent.
 	 * @param timeout The number of millis from when the request was sent to when the failure block times out.
-	 * I.e. between 0 and REJECT_TIME.
+	 * I.e. between 0 and REJECT_TIME. -1 indicates a RejectedOverload or actual timeout.
 	 */
 	public void onFailure(Key key, short htl, PeerNode[] requestors, PeerNode requested, int timeout, long now) {
 		FailureTableEntry entry;
