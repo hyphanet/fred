@@ -396,6 +396,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	public final NodeClientCore clientCore;
 	
+	// ULPRs, RecentlyFailed, per node failure tables, are all managed by FailureTable.
+	final FailureTable failureTable;
+	
 	// The version we were before we restarted.
 	public int lastVersion;
 	
@@ -861,6 +864,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		peers.writePeers();
 		peers.updatePMUserAlert();
 
+		// ULPRs
+		
+		failureTable = new FailureTable(peers, this);
+		
 		// Opennet
 		
 		final SubConfig opennetConfig = new SubConfig("node.opennet", config);
@@ -1979,6 +1986,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			nodeStats.avgCacheLocation.report(loc);
 			if(clientCore != null && clientCore.requestStarters != null)
 				clientCore.requestStarters.chkFetchScheduler.tripPendingKey(block);
+			failureTable.onFound(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
 		} catch (OutOfMemoryError e) {
@@ -2010,7 +2018,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey(), deep);
 			if(clientCore != null && clientCore.requestStarters != null)
 				clientCore.requestStarters.sskFetchScheduler.tripPendingKey(block);
-			
+			failureTable.onFound(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
 		} catch (OutOfMemoryError e) {

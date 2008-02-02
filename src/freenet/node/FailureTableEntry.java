@@ -74,7 +74,8 @@ class FailureTableEntry {
 				timeoutTime = newTimeoutTime;
 			}
 			addRequestors(requestors, now);
-			addRequestedFrom(new PeerNode[] { requested }, now);
+			if(requested != null)
+				addRequestedFrom(new PeerNode[] { requested }, now);
 		}
 	}
 
