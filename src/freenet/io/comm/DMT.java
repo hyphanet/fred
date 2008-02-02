@@ -126,6 +126,7 @@ public class DMT {
 	public static final String HASHES = "hashes";
 	public static final String REJECT_CODE = "rejectCode";
 	public static final String ROUTING_ENABLED = "routingEnabled";
+	public static final String OFFER_AUTHENTICATOR = "offerAuthenticator";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=-2;
@@ -849,9 +850,10 @@ public class DMT {
 		addField(KEY, Key.class);
 	}};
 	
-	public static Message createFNPOfferKey(Key key) {
+	public static Message createFNPOfferKey(Key key, byte[] authenticator) {
 		Message msg = new Message(FNPOfferKey);
 		msg.set(KEY, key);
+		msg.set(OFFER_AUTHENTICATOR, authenticator);
 		return msg;
 	}
 	

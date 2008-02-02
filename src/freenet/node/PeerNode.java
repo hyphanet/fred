@@ -10,6 +10,7 @@ import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +31,7 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
@@ -3078,7 +3080,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/** Offer a key to this node */
 	public void offer(Key key) {
-		Message msg = DMT.createFNPOfferKey(key);
+		byte[] keyBytes = key.getFullKey();
+		HMAC hash = new HMAC(SHA256.getInstance());
+		byte[] authenticator = hash.mac(node.failureTable.offerAuthenticatorKey, keyBytes, 32);
+		Message msg = DMT.createFNPOfferKey(key, authenticator);
 		try {
 			sendAsync(msg, null, 0, null);
 		} catch(NotConnectedException e) {
