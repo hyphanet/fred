@@ -86,6 +86,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
 	 */
 	private final SortedVectorByNumber[] priorities;
+	private final OfferedKeysList[] offeredKeys;
 	// we have one for inserts and one for requests
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
@@ -178,6 +179,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 				new PrioritySchedulerCallback(this));
 		
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
+		if(!forInserts) {
+			offeredKeys = new OfferedKeysList[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
+			for(short i=0;i<RequestStarter.NUMBER_OF_PRIORITY_CLASSES;i++)
+				offeredKeys[i] = new OfferedKeysList(node.clientCore, random, i);
+		} else {
+			offeredKeys = null;
+		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
@@ -375,6 +383,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(logMINOR)
 				Logger.minor(this, "Nothing to do");
 			return null;
+		}
+		boolean tryOfferedKeys = (offeredKeys != null) && node.random.nextBoolean();
+		if(tryOfferedKeys) {
+			if(!offeredKeys[choosenPriorityClass].isEmpty())
+				return offeredKeys[choosenPriorityClass];
 		}
 		SortedVectorByNumber s = priorities[choosenPriorityClass];
 		if(s != null){
