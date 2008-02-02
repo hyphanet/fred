@@ -6,12 +6,15 @@ package freenet.node;
 import java.util.HashSet;
 import java.util.Hashtable;
 
+import freenet.crypt.HMAC;
+import freenet.crypt.SHA256;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Dispatcher;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
+import freenet.keys.Key;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
@@ -155,8 +158,17 @@ public class NodeDispatcher implements Dispatcher {
 //			return handleProbeRejected(m, source);
 //		} else if(spec == DMT.FNPProbeTrace) {
 //			return handleProbeTrace(m, source);
+		} else if(spec == DMT.FNPOfferKey) {
+			return handleOfferKey(m, source);
 		} 
 		return false;
+	}
+
+	private boolean handleOfferKey(Message m, PeerNode source) {
+		Key key = (Key) m.getObject(DMT.KEY);
+		byte[] authenticator = ((ShortBuffer) m.getObject(DMT.OFFER_AUTHENTICATOR)).getData();
+		node.failureTable.onOffer(key, source, authenticator);
+		return true;
 	}
 
 	private void handleDisconnect(final Message m, final PeerNode source) {
