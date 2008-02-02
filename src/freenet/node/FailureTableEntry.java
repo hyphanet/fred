@@ -49,10 +49,16 @@ class FailureTableEntry {
 		requestorNodes = new WeakReference[requestors.length];
 		requestorTimes = new long[requestors.length];
 		requestorBootIDs = new long[requestors.length];
-		for(int i=0;i<requestorNodes.length;i++) {
-			requestorNodes[i] = requestors[i].myRef;
-			requestorTimes[i] = now;
-			requestorBootIDs[i] = requestors[i].getBootID();
+		if(requestors != null) {
+			for(int i=0;i<requestorNodes.length;i++) {
+				requestorNodes[i] = requestors[i].myRef;
+				requestorTimes[i] = now;
+				requestorBootIDs[i] = requestors[i].getBootID();
+			}
+		} else {
+			requestorNodes = new WeakReference[0];
+			requestorTimes = new long[0];
+			requestorBootIDs = new long[0];
 		}
 		requestedNodes = new WeakReference[] { requested.myRef };
 		requestedLocs = new double[] { requested.getLocation() };
