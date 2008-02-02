@@ -375,6 +375,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Fetch on a second SingleFileFetcher, like with archives.
 				metadata.setSimpleRedirect();
 				final SingleFileFetcher f = new SingleFileFetcher(this, metadata, new MultiLevelMetadataCallback(), ctx);
+				// Clear our own metadata so it can be garbage collected, it will be replaced by whatever is fetched.
+				this.metadata = null;
 				ctx.ticker.queueTimedJob(new Runnable() {
 					public void run() {
 						f.wrapHandleMetadata(true);
@@ -508,6 +510,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				parent.onTransition(this, sf);
 				sf.scheduleOffThread();
 				rcb.onBlockSetFinished(this);
+				// Clear our own metadata, we won't need it any more.
+				// For multi-level metadata etc see above.
+				metadata = null; 
+				
 				// SplitFile will now run.
 				// Then it will return data to rcd.
 				// We are now out of the loop. Yay!
