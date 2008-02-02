@@ -3,11 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
+import freenet.keys.Key;
 import freenet.node.LowLevelGetException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
@@ -30,6 +32,7 @@ import freenet.support.Logger;
  */
 public class OfferedKeysList extends SendableRequest {
 
+	private final HashMap clientKeysByKey;
 	private final HashSet keys;
 	// FIXME is there any way to avoid the O(n) shuffling penalty here?
 	private final Vector keysList;
@@ -41,15 +44,18 @@ public class OfferedKeysList extends SendableRequest {
 	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass) {
 		this.keys = new HashSet();
 		this.keysList = new Vector();
+		clientKeysByKey = new HashMap();
 		this.random = random;
 		this.priorityClass = priorityClass;
 		this.core = core;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
-	/** Called when a key is found. */
-	public synchronized void onFoundKey(ClientKey key) {
+	/** Called when a key is found */
+	public synchronized void onFoundKey(Key key) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		ClientKey ck = (ClientKey) clientKeysByKey.remove(key);
+		if(ck == null) return;
 		if(logMINOR) Logger.minor(this, "Found "+key+" , removing it");
 		keys.remove(key);
 		keysList.remove(key);
@@ -61,6 +67,7 @@ public class OfferedKeysList extends SendableRequest {
 		if(logMINOR) Logger.minor(this, "No offers for "+key+" , removing it");
 		keys.remove(key);
 		keysList.remove(key);
+		clientKeysByKey.remove(key.getNodeKey());
 	}
 
 	public synchronized boolean isEmpty() {
@@ -75,9 +82,10 @@ public class OfferedKeysList extends SendableRequest {
 	public Object chooseKey() {
 		// Pick a random key
 		if(keysList.isEmpty()) return null;
-		Object o = keysList.remove(random.nextInt(keysList.size()));
-		keys.remove(o);
-		return o;
+		ClientKey ck = (ClientKey) keysList.remove(random.nextInt(keysList.size()));
+		keys.remove(ck);
+		clientKeysByKey.remove(ck.getNodeKey());
+		return ck;
 	}
 
 	public Object getClient() {

@@ -572,6 +572,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void tripPendingKey(final KeyBlock block) {
+		if(offeredKeys != null) {
+			for(int i=0;i<offeredKeys.length;i++) {
+				offeredKeys[i].onFoundKey(block.getKey());
+			}
+		}
 		final Key key = block.getKey();
 		final SendableGet[] gets;
 		Object o;
