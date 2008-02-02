@@ -167,17 +167,17 @@ public class FailureTable {
 
 		public void deleteOffer(BlockOffer offer) {
 			synchronized(this) {
-			int idx = -1;
-			for(int i=0;i<offers.length;i++) {
-				if(offers[i] == offer) idx = i;
-			}
-			if(idx == -1) return;
-			BlockOffer[] newOffers = new BlockOffer[offers.length-1];
-			if(idx > 0)
-				System.arraycopy(offers, 0, newOffers, 0, idx);
-			if(idx < newOffers.length)
-				System.arraycopy(offers, idx+1, newOffers, idx, offers.length-idx);
-			offers = newOffers;
+				int idx = -1;
+				for(int i=0;i<offers.length;i++) {
+					if(offers[i] == offer) idx = i;
+				}
+				if(idx == -1) return;
+				BlockOffer[] newOffers = new BlockOffer[offers.length-1];
+				if(idx > 0)
+					System.arraycopy(offers, 0, newOffers, 0, idx);
+				if(idx < newOffers.length)
+					System.arraycopy(offers, idx+1, newOffers, idx, offers.length-idx);
+				offers = newOffers;
 			}
 			if(offers.length == 0) {
 				synchronized(FailureTable.this) {
