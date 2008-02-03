@@ -102,7 +102,8 @@ class FailureTableEntry {
 	synchronized void addRequestors(PeerNode[] requestors, long now) {
 		receivedTime = now;
 		/** The number of new requestor elements. These are moved to the beginning and the 
-		 * rest is nulled out. */
+		 * rest is nulled out. So this is also the index of the first non-null element in 
+		 * requestors. */
 		int notIncluded = 0;
 		int nulls = 0;
 		for(int i=0;i<requestors.length;i++) {
