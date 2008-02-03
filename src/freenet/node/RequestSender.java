@@ -271,7 +271,7 @@ public final class RequestSender implements Runnable, ByteCounter {
                 			} catch (KeyVerifyException e1) {
                 				Logger.normal(this, "Got data but verify failed: "+e1, e1);
                 				finish(GET_OFFER_VERIFY_FAILURE, pn, true);
-                        		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, pn, -1, System.currentTimeMillis());
+                        		node.failureTable.onFailure(key, htl, sourceAsArray(), pn, -1, System.currentTimeMillis());
                         		offers.deleteLastOffer();
                 				return;
                 			}
@@ -283,7 +283,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 							else
 								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
                 			finish(GET_OFFER_TRANSFER_FAILED, pn, true);
-                    		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, pn, -1, System.currentTimeMillis());
+                    		node.failureTable.onFailure(key, htl, sourceAsArray(), pn, -1, System.currentTimeMillis());
                     		offers.deleteLastOffer();
                 			return;
                 		}
@@ -380,7 +380,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             	// This used to be RNF, I dunno why
 				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
                 finish(DATA_NOT_FOUND, null, false);
-        		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, null, FailureTable.REJECT_TIME, System.currentTimeMillis());
+        		node.failureTable.onFailure(key, htl, sourceAsArray(), null, FailureTable.REJECT_TIME, System.currentTimeMillis());
                 return;
             }
 
@@ -395,7 +395,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
                 // Backtrack
                 finish(ROUTE_NOT_FOUND, null, false);
-        		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, null, -1, System.currentTimeMillis());
+        		node.failureTable.onFailure(key, htl, sourceAsArray(), null, -1, System.currentTimeMillis());
                 return;
             }
 			
@@ -547,7 +547,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             		next.localRejectedOverload("FatalTimeout");
             		forwardRejectedOverload();
             		finish(TIMED_OUT, next, false);
-            		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, next, -1, System.currentTimeMillis());
+            		node.failureTable.onFailure(key, htl, sourceAsArray(), next, -1, System.currentTimeMillis());
             		return;
             	}
 				
@@ -558,7 +558,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             	if(msg.getSpec() == DMT.FNPDataNotFound) {
             		next.successNotOverload();
             		finish(DATA_NOT_FOUND, next, false);
-            		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, next, FailureTable.REJECT_TIME, System.currentTimeMillis());
+            		node.failureTable.onFailure(key, htl, sourceAsArray(), next, FailureTable.REJECT_TIME, System.currentTimeMillis());
             		return;
             	}
             	
@@ -620,7 +620,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             		// If there is, we will avoid sending requests for the specified period.
             		// FIXME we need to create the FT entry.
            			finish(RECENTLY_FAILED, next, false);
-            		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, next, timeLeft, System.currentTimeMillis());
+            		node.failureTable.onFailure(key, htl, sourceAsArray(), next, timeLeft, System.currentTimeMillis());
             		return;
             	}
             	
@@ -686,7 +686,7 @@ public final class RequestSender implements Runnable, ByteCounter {
                 			} catch (KeyVerifyException e1) {
                 				Logger.normal(this, "Got data but verify failed: "+e1, e1);
                 				finish(VERIFY_FAILURE, next, false);
-                        		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, next, -1, System.currentTimeMillis());
+                        		node.failureTable.onFailure(key, htl, sourceAsArray(), next, -1, System.currentTimeMillis());
                 				return;
                 			}
                 			finish(SUCCESS, next, false);
@@ -697,7 +697,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 							else
 								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
                 			finish(TRANSFER_FAILED, next, false);
-                    		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, next, -1, System.currentTimeMillis());
+                    		node.failureTable.onFailure(key, htl, sourceAsArray(), next, -1, System.currentTimeMillis());
                 			return;
                 		}
                 	} finally {
@@ -759,7 +759,12 @@ public final class RequestSender implements Runnable, ByteCounter {
         }
 	}
 
-    /**
+    private PeerNode[] sourceAsArray() {
+    	if(source == null) return null;
+    	else return new PeerNode[] { source };
+	}
+
+	/**
      * Finish fetching an SSK. We must have received the data, the headers and the pubkey by this point.
      * @param next The node we received the data from.
      */

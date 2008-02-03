@@ -229,7 +229,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
 		
 		if (now > responseDeadline) {
 			// Offer the data if there is any.
-    		node.failureTable.onFailure(key, htl, new PeerNode[] { source }, null, -1, System.currentTimeMillis());
+    		node.failureTable.onFailure(key, htl, sourceAsArray(), null, -1, System.currentTimeMillis());
 			Logger.error(this, "requestsender took too long to respond to requestor ("+TimeUtil.formatTime((now - searchStartTime), 2, true)+"/"+rs.getStatusString()+")"); 
 			applyByteCounts();
 			unregisterRequestHandlerWithNode();
@@ -331,7 +331,12 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
 		}
 	}
 
-    /**
+    private PeerNode[] sourceAsArray() {
+    	if(source == null) return null;
+    	else return new PeerNode[] { source };
+	}
+
+	/**
      * Return data from the datastore.
      * @param block The block we found in the datastore.
      * @throws NotConnectedException If we lose the connected to the request source.
