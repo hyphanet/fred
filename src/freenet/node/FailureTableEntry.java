@@ -64,10 +64,12 @@ class FailureTableEntry {
 			requestedNodes = new WeakReference[] { requested.myRef };
 			requestedLocs = new double[] { requested.getLocation() };
 			requestedBootIDs = new long[] { requested.getBootID() };
+			requestedTimes = new long[] { System.currentTimeMillis() };
 		} else {
 			requestedNodes = new WeakReference[0];
 			requestedLocs = new double[0];
 			requestedBootIDs = new long[0];
+			requestedTimes = new long[0];
 		}
 	}
 	
