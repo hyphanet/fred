@@ -191,9 +191,11 @@ class FailureTableEntry {
 
 	private synchronized void addRequestedFrom(PeerNode[] requestedFrom, long now) {
 		sentTime = now;
+		/** The number of new requestedFrom elements. These are moved to the beginning and the 
+		 * rest is nulled out. So this is also the index of the first non-null element in 
+		 * requestedFrom. */
 		int notIncluded = 0;
 		int nulls = 0;
-		int ptr = 0;
 		for(int i=0;i<requestedFrom.length;i++) {
 			PeerNode req = requestedFrom[i];
 			boolean requestorIncluded = false;
@@ -211,11 +213,10 @@ class FailureTableEntry {
 				}
 			}
 			if(!requestorIncluded) {
-				notIncluded++;
-				requestedFrom[ptr++] = requestedFrom[i];
+				requestedFrom[notIncluded++] = requestedFrom[i];
 			} // if it's new, keep it in requestedFrom, otherwise delete it
 		}
-		for(int i=ptr;i<requestedFrom.length;i++) requestedFrom[i] = null;
+		for(int i=notIncluded;i<requestedFrom.length;i++) requestedFrom[i] = null;
 		if(notIncluded == 0 && nulls == 0) return;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
 		if(notIncluded == nulls) {
@@ -227,7 +228,7 @@ class FailureTableEntry {
 					requestedNodes[i] = pn.myRef;
 					requestedLocs[i] = pn.getLocation();
 					requestedTimes[i] = now;
-					if(x == ptr) break;
+					if(x == notIncluded) break;
 				}
 			}
 			return;
@@ -248,7 +249,7 @@ class FailureTableEntry {
 			toIndex++;
 		}
 		
-		for(int fromIndex=0;fromIndex<ptr;fromIndex++) {
+		for(int fromIndex=0;fromIndex<notIncluded;fromIndex++) {
 			PeerNode pn = requestedFrom[fromIndex];
 			if(pn != null) {
 				newRequestedNodes[toIndex] = pn.myRef;
