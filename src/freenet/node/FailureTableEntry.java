@@ -237,8 +237,8 @@ class FailureTableEntry {
 		long[] newRequestedTimes = new long[requestedNodes.length+notIncluded-nulls];
 
 		int toIndex = 0;
-		for(int i=0;i<requestorNodes.length;i++) {
-			WeakReference ref = requestorNodes[i];
+		for(int i=0;i<requestedNodes.length;i++) {
+			WeakReference ref = requestedNodes[i];
 			if(ref == null || ref.get() == null) continue;
 			newRequestedNodes[toIndex] = requestedNodes[i];
 			newRequestedTimes[toIndex] = requestedTimes[i];
