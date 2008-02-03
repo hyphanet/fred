@@ -101,9 +101,10 @@ class FailureTableEntry {
 	
 	synchronized void addRequestors(PeerNode[] requestors, long now) {
 		receivedTime = now;
+		/** The number of new requestor elements. These are moved to the beginning and the 
+		 * rest is nulled out. */
 		int notIncluded = 0;
 		int nulls = 0;
-		int ptr = 0;
 		for(int i=0;i<requestors.length;i++) {
 			PeerNode req = requestors[i];
 			boolean requestorIncluded = false;
@@ -126,11 +127,10 @@ class FailureTableEntry {
 				}
 			}
 			if(!requestorIncluded) {
-				notIncluded++;
-				requestors[ptr++] = requestors[i];
+				requestors[notIncluded++] = requestors[i];
 			} // if it's new, keep it in requestors
 		}
-		for(int i=ptr;i<requestors.length;i++) requestors[i] = null;
+		for(int i=notIncluded;i<requestors.length;i++) requestors[i] = null;
 		if(notIncluded == 0 && nulls == 0) return;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
 		if(notIncluded == nulls) {
@@ -142,7 +142,7 @@ class FailureTableEntry {
 					requestorNodes[i] = pn.myRef;
 					requestorTimes[i] = now;
 					requestorBootIDs[i] = pn.getBootID();
-					if(x == ptr) break;
+					if(x == notIncluded) break;
 				}
 			}
 			return;
@@ -161,7 +161,7 @@ class FailureTableEntry {
 			toIndex++;
 		}
 		
-		for(int fromIndex=0;fromIndex<ptr;fromIndex++) {
+		for(int fromIndex=0;fromIndex<notIncluded;fromIndex++) {
 			PeerNode pn = requestors[fromIndex];
 			if(pn != null) {
 				newRequestorNodes[toIndex] = pn.myRef;
