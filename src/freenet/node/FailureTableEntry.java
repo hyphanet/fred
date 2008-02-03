@@ -46,10 +46,10 @@ class FailureTableEntry {
 		creationTime = now;
 		receivedTime = now;
 		sentTime = now;
-		requestorNodes = new WeakReference[requestors.length];
-		requestorTimes = new long[requestors.length];
-		requestorBootIDs = new long[requestors.length];
 		if(requestors != null) {
+			requestorNodes = new WeakReference[requestors.length];
+			requestorTimes = new long[requestors.length];
+			requestorBootIDs = new long[requestors.length];
 			for(int i=0;i<requestorNodes.length;i++) {
 				requestorNodes[i] = requestors[i].myRef;
 				requestorTimes[i] = now;
