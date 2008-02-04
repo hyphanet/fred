@@ -124,6 +124,8 @@ public class RealNodeULPRTest {
         System.err.println("Created random test key "+testKey);
         System.err.println();
         
+        waitForAllConnected(nodes);
+        
         // Fetch the key from each node.
         
         for(int i=0;i<nodes.length;i++) {
@@ -166,6 +168,30 @@ public class RealNodeULPRTest {
 		}
         
     }
+    
+    // FIXME factor out to some simulator utility class.
+	private static void waitForAllConnected(Node[] nodes) throws InterruptedException {
+		while(true) {
+			int countFullyConnected = 0;
+			int totalPeers = 0;
+			int totalConnections = 0;
+			for(int i=0;i<nodes.length;i++) {
+				int countConnected = nodes[i].peers.countConnectedDarknetPeers();
+				int countTotal = nodes[i].peers.countValidPeers();
+				totalPeers += countTotal;
+				totalConnections += countConnected;
+				if(countConnected == countTotal)
+					countFullyConnected++;
+			}
+			if(countFullyConnected == nodes.length) {
+				System.err.println("All nodes fully connected");
+				return;
+			} else {
+				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total)");
+				Thread.sleep(1000);
+			}
+		}
+	}
 
 
 }
