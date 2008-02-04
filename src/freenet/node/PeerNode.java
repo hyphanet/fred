@@ -10,7 +10,6 @@ import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
