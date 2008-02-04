@@ -48,6 +48,7 @@ public class RealNodeULPRTest {
 	static final int EXIT_BASE = NodeInitException.EXIT_NODE_UPPER_LIMIT;
 	static final int EXIT_KEY_EXISTS = EXIT_BASE + 1;
 	static final int EXIT_UNKNOWN_ERROR_CHECKING_KEY_NOT_EXIST = EXIT_BASE + 2;
+	static final int EXIT_CANNOT_DELETE_OLD_DATA = EXIT_BASE + 3;
 	
     static final int NUMBER_OF_NODES = 10;
     static final short MAX_HTL = 5;
@@ -61,7 +62,10 @@ public class RealNodeULPRTest {
         Logger.globalSetThreshold(Logger.ERROR);
     	String testName = "realNodeULPRTest";
         File wd = new File(testName);
-        FileUtil.removeAll(wd);
+        if(!FileUtil.removeAll(wd)) {
+        	System.err.println("Mass delete failed, test may not be accurate.");
+        	System.exit(EXIT_CANNOT_DELETE_OLD_DATA);
+        }
         wd.mkdir();
         
         DummyRandomSource random = new DummyRandomSource();
@@ -73,7 +77,7 @@ public class RealNodeULPRTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, testName, false, true, true, MAX_HTL, 20 /* 5% */, random, executor);
+            	NodeStarter.createTestNode(5001+i, testName, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];
