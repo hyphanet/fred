@@ -180,7 +180,7 @@ public class NodeDispatcher implements Dispatcher {
 		long uid = m.getLong(DMT.UID);
 		HMAC hash = new HMAC(SHA256.getInstance());
 		if(!hash.verify(node.failureTable.offerAuthenticatorKey, key.getFullKey(), authenticator)) {
-			Logger.error(this, "Invalid offer from "+source+" : authenticator did not verify");
+			Logger.error(this, "Invalid offer request from "+source+" : authenticator did not verify");
 			try {
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_BAD_AUTHENTICATOR), null, 0, null);
 			} catch (NotConnectedException e) {
