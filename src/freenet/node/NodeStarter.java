@@ -360,6 +360,8 @@ public class NodeStarter implements WrapperListener
 		configFS.putSingle("node.nodeDir", portDir.toString());
 		configFS.put("node.maxHTL", maxHTL);
 		configFS.put("node.testingDropPacketsEvery", dropProb);
+		configFS.put("node.alwaysAllowLocalAddresses", true);
+		configFS.put("node.includeLocalAddressesInNoderefs", true);
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 		
