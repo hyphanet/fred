@@ -118,7 +118,7 @@ class FailureTableEntry {
 			for(int j=0;j<requestorNodes.length;j++) {
 				PeerNode got = requestorNodes[i] == null ? null : (PeerNode) requestorNodes[i].get();
 				// No longer subscribed if they have rebooted, or expired
-				if(got.getBootID() != requestorBootIDs[i] ||
+				if(got != null && got.getBootID() != requestorBootIDs[i] ||
 						now - requestorTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
 					requestorNodes[i] = null;
 					got = null;
