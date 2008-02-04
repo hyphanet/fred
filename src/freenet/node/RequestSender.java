@@ -948,7 +948,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 			//      a delay of it's own if we don't get the expected message.
 			fireRequestSenderFinished(code);
 			
-			if(fromOfferedKey) {
+			if(!fromOfferedKey) {
 				if(key instanceof NodeCHK && next != null && 
 						(next.isOpennet() || node.passOpennetRefsThroughDarknet()) ) {
 					finishOpennet(next);
