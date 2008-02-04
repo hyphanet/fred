@@ -6,6 +6,7 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 
 import freenet.keys.Key;
+import freenet.support.Logger;
 
 class FailureTableEntry {
 	
@@ -35,11 +36,14 @@ class FailureTableEntry {
 	long[] requestedBootIDs;
 	long[] requestedTimes;
 	
+	static boolean logMINOR;
+	
 	/** We remember that a node has asked us for a key for up to an hour; after that, we won't offer the key, and
 	 * if we receive an offer from that node, we will reject it */
 	static final int MAX_TIME_BETWEEN_REQUEST_AND_OFFER = 60 * 60 * 1000;
 	
 	FailureTableEntry(Key key2, short htl2, PeerNode[] requestors, PeerNode requested) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long now = System.currentTimeMillis();
 		this.key = key2;
 		this.htl = htl2;
@@ -101,6 +105,7 @@ class FailureTableEntry {
 	// Note also this will generate some churn...
 	
 	synchronized void addRequestors(PeerNode[] requestors, long now) {
+		if(logMINOR) Logger.minor(this, "Adding requestors: "+requestors+" at "+now);
 		receivedTime = now;
 		/** The number of new requestor elements. These are moved to the beginning and the 
 		 * rest is nulled out. So this is also the index of the first non-null element in 
@@ -133,6 +138,7 @@ class FailureTableEntry {
 			} // if it's new, keep it in requestors
 		}
 		for(int i=notIncluded;i<requestors.length;i++) requestors[i] = null;
+		if(logMINOR) Logger.minor(this, "notIncluded="+notIncluded+" nulls="+nulls+" requestors.length="+requestors.length+" requestorNodes.length="+requestorNodes.length);
 		if(notIncluded == 0 && nulls == 0) return;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
 		if(notIncluded == nulls) {
@@ -191,6 +197,7 @@ class FailureTableEntry {
 	}
 
 	private synchronized void addRequestedFrom(PeerNode[] requestedFrom, long now) {
+		if(logMINOR) Logger.minor(this, "Adding requested from: "+requestedFrom+" at "+now);
 		sentTime = now;
 		/** The number of new requestedFrom elements. These are moved to the beginning and the 
 		 * rest is nulled out. So this is also the index of the first non-null element in 
@@ -219,6 +226,7 @@ class FailureTableEntry {
 		}
 		for(int i=notIncluded;i<requestedFrom.length;i++) requestedFrom[i] = null;
 		if(notIncluded == 0 && nulls == 0) return;
+		if(logMINOR) Logger.minor(this, "notIncluded="+notIncluded+" nulls="+nulls+" requestedFrom.length="+requestedFrom.length+" requestedNodes.length="+requestedNodes.length);
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
 		if(notIncluded == nulls) {
 			// Nice special case
