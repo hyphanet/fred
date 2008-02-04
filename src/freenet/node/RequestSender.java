@@ -161,7 +161,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     }
 
     public void start() {
-    	node.executor.execute(this, "RequestSender for UID "+uid);
+    	node.executor.execute(this, "RequestSender for UID "+uid+" on "+node.getDarknetPortNumber());
     }
     
     public void run() {
