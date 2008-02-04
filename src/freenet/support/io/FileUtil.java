@@ -271,9 +271,9 @@ final public class FileUtil {
 			for(int i=0;i<subfiles.length;i++) {
 				if(!removeAll(subfiles[i])) return false;
 			}
-		}
-		if(!wd.delete()) {
-			Logger.error(FileUtil.class, "Could not delete directory: "+wd);
+			if(!wd.delete()) {
+				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
+			}
 		}
 		return true;
 	}
