@@ -276,6 +276,8 @@ public class NodeDispatcher implements Dispatcher {
 			}
 			return true;
 		}
+        short htl = m.getShort(DMT.HTL);
+        Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
 		if(!node.lockUID(id, isSSK, false, false)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
@@ -284,6 +286,7 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
 			}
+			node.failureTable.onFailure(key, htl, new PeerNode[] { source }, null, -1, System.currentTimeMillis());
 			return true;
 		} else {
 			if(logMINOR) Logger.minor(this, "Locked "+id);
@@ -299,10 +302,11 @@ public class NodeDispatcher implements Dispatcher {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
 			node.unlockUID(id, isSSK, false, false, false);
+			node.failureTable.onFailure(key, htl, new PeerNode[] { source }, null, -1, System.currentTimeMillis());
 			return true;
 		}
 		//if(!node.lockUID(id)) return false;
-		RequestHandler rh = new RequestHandler(m, source, id, node);
+		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key);
 		node.executor.execute(rh, "RequestHandler for UID "+id);
 		return true;
 	}
