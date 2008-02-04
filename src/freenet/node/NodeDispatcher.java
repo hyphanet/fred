@@ -379,7 +379,18 @@ public class NodeDispatcher implements Dispatcher {
 			}
 			return true;
 		}
-		ResettingHTLProbeRequestHandler.start(m, source, node);
+		double target = m.getDouble(DMT.TARGET_LOCATION);
+		if(target > 1.0 || target < 0.0) {
+			Logger.normal(this, "Rejecting invalid (target="+target+") probe request from "+source.getPeer());
+			Message rejected = DMT.createFNPRejectedOverload(id, true);
+			try {
+				source.sendAsync(rejected, null, 0, null);
+			} catch (NotConnectedException e) {
+				Logger.normal(this, "Rejecting (invalid) insert request from "+source.getPeer()+": "+e);
+			}
+			return true;
+		}
+		ResettingHTLProbeRequestHandler.start(m, source, node, target);
 		return true;
 	}
 

@@ -26,9 +26,8 @@ public class ResettingHTLProbeRequestHandler implements ResettingHTLProbeRequest
 		this.sender = sender;
 	}
 	
-	static void start(Message m, PeerNode source, Node n) {
+	static void start(Message m, PeerNode source, Node n, double target) {
 		long uid = m.getLong(DMT.UID);
-		double target = m.getDouble(DMT.TARGET_LOCATION);
 		double nearestLoc = m.getDouble(DMT.NEAREST_LOCATION);
 		double best = m.getDouble(DMT.BEST_LOCATION);
 		short htl = m.getShort(DMT.HTL);
