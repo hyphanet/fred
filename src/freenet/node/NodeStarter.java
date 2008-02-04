@@ -362,6 +362,7 @@ public class NodeStarter implements WrapperListener
 		configFS.put("node.testingDropPacketsEvery", dropProb);
 		configFS.put("node.alwaysAllowLocalAddresses", true);
 		configFS.put("node.includeLocalAddressesInNoderefs", true);
+		configFS.put("node.enableARKs", false);
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 		

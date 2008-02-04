@@ -33,18 +33,20 @@ public class NodeARKInserter implements ClientCallback {
 	private final String darknetOpennetString;
 	private final NodeIPPortDetector detector;
 	private static boolean logMINOR;
+	private final boolean enabled;
 
 	/**
 	 * @param node
 	 * @param old If true, use the old ARK rather than the new ARK
 	 */
-	NodeARKInserter(Node node, NodeCrypto crypto, NodeIPPortDetector detector) {
+	NodeARKInserter(Node node, NodeCrypto crypto, NodeIPPortDetector detector, boolean enableARKs) {
 		this.node = node;
 		this.crypto = crypto;
 		this.detector = detector;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(crypto.isOpennet) darknetOpennetString = "Opennet";
 		else darknetOpennetString = "Darknet";
+		this.enabled = enableARKs;
 	}
 
 	private ClientPutter inserter;
@@ -54,6 +56,7 @@ public class NodeARKInserter implements ClientCallback {
 	private long preInsertARKNumber = -1;
 	
 	void start() {
+		if(!enabled) return;
 		canStart = true;
 		update();
 	}

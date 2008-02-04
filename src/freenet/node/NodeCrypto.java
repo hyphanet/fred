@@ -86,7 +86,7 @@ public class NodeCrypto {
 	 * Get port number from a config, create socket and packet mangler
 	 * @throws NodeInitException 
 	 */
-	public NodeCrypto(final Node node, final boolean isOpennet, NodeCryptoConfig config, long startupTime) throws NodeInitException {
+	public NodeCrypto(final Node node, final boolean isOpennet, NodeCryptoConfig config, long startupTime, boolean enableARKs) throws NodeInitException {
 
 		this.node = node;
 		this.config = config;
@@ -144,7 +144,7 @@ public class NodeCrypto {
 		
 		socket.setLowLevelFilter(packetMangler = new FNPPacketMangler(node, this, socket));
 		
-		detector = new NodeIPPortDetector(node, node.ipDetector, this);
+		detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
 
 		anonSetupCipher = new Rijndael(256,256);
 		

@@ -366,6 +366,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private int outputBandwidthLimit;
 	private int inputBandwidthLimit;
 	boolean inputLimitDefault;
+	final boolean enableARKs;
 	public static final short DEFAULT_MAX_HTL = (short)10;
 	private short maxHTL;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
@@ -724,13 +725,29 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		ipDetector = new NodeIPDetector(this);
 		sortOrder = ipDetector.registerConfigs(nodeConfig, sortOrder);
 		
+		// ARKs enabled?
+		
+		nodeConfig.register("enableARKs", true, sortOrder++, true, false, "enableARKs", "enableARKsLong", new BooleanCallback() {
+
+			public boolean get() {
+				return enableARKs;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				throw new InvalidConfigValueException("Cannot change on the fly");
+			}
+			
+		});
+		enableARKs = nodeConfig.getBoolean("enableARKs");
+		
 		// Determine the port number
 		// @see #191
 		if(oldConfig != null && "-1".equals(oldConfig.get("node.listenPort")))
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_BIND_USM, "Your freenet.ini file is corrupted! 'listenPort=-1'");
 		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false);
 		sortOrder += NodeCryptoConfig.OPTION_COUNT;
-		darknetCrypto = new NodeCrypto(this, false, darknetConfig, startupTime);
+		
+		darknetCrypto = new NodeCrypto(this, false, darknetConfig, startupTime, enableARKs);
 
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);

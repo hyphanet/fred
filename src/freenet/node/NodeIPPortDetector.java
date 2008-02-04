@@ -30,11 +30,11 @@ public class NodeIPPortDetector {
 	/** Last detected IP address */
 	Peer[] lastPeers;
 	
-	NodeIPPortDetector(Node node, NodeIPDetector ipDetector, NodeCrypto crypto) {
+	NodeIPPortDetector(Node node, NodeIPDetector ipDetector, NodeCrypto crypto, boolean enableARKs) {
 		this.node = node;
 		this.ipDetector = ipDetector;
 		this.crypto = crypto;
-		arkPutter = new NodeARKInserter(node, crypto, this);
+		arkPutter = new NodeARKInserter(node, crypto, this, enableARKs);
 		ipDetector.addPortDetector(this);
 	}
 

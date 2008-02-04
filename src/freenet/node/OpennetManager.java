@@ -94,7 +94,7 @@ public class OpennetManager {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.node = node;
 		crypto =
-			new NodeCrypto(node, true, opennetConfig, startupTime);
+			new NodeCrypto(node, true, opennetConfig, startupTime, node.enableARKs);
 
 		File nodeFile = new File(node.nodeDir, "opennet-"+crypto.portNumber);
 		File backupNodeFile = new File("opennet-"+crypto.portNumber+".bak");
