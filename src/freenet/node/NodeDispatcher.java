@@ -116,6 +116,7 @@ public class NodeDispatcher implements Dispatcher {
 		}
 
 		if(!source.isRoutable()) return false;
+		if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Not routable");
 
 		if(spec == DMT.FNPLocChangeNotification) {
 			double newLoc = m.getDouble(DMT.LOCATION);
