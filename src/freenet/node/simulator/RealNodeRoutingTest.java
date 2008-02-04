@@ -5,7 +5,6 @@ package freenet.node.simulator;
 
 import java.io.File;
 
-import freenet.crypt.DiffieHellman;
 import freenet.crypt.DummyRandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
