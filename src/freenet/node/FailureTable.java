@@ -294,9 +294,10 @@ public class FailureTable {
 			 * - That node asked for it, and it's a CHK.
 			 */
 			
-			if(!(entry.askedFromPeer(peer, now) || 
-					((key instanceof NodeCHK) && entry.askedByPeer(peer, now)))) {
-				if(logMINOR) Logger.minor(this, "Not interested in the key");
+			boolean weAsked = entry.askedFromPeer(peer, now);
+			boolean heAsked = entry.askedByPeer(peer, now);
+			if(!(weAsked || ((key instanceof NodeCHK) && heAsked))) {
+				if(logMINOR) Logger.minor(this, "Not propagating key: weAsked="+weAsked+" heAsked="+heAsked);
 				if(entry.isEmpty(now)) entriesByKey.removeKey(key);
 				return;
 			}
@@ -306,6 +307,7 @@ public class FailureTable {
 			
 			// Add to offers list
 			
+			if(logMINOR) Logger.minor(this, "Valid offer");
 			BlockOfferList bl = (BlockOfferList) blockOfferListByKey.get(key);
 			BlockOffer offer = new BlockOffer(peer, now, authenticator, peer.getBootID());
 			if(bl == null) {
@@ -327,6 +329,7 @@ public class FailureTable {
 			if(blockOfferListByKey.isEmpty()) return;
 			BlockOfferList bl = (BlockOfferList) blockOfferListByKey.peekValue();
 			if(bl.isEmpty(now) || bl.expires() < now || blockOfferListByKey.size() > MAX_OFFERS) {
+				if(logDEBUG) Logger.debug(this, "Removing block offer list "+bl+" list size now "+blockOfferListByKey.size());
 				blockOfferListByKey.popKey();
 			} else {
 				return;
