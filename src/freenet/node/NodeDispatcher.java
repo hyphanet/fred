@@ -193,9 +193,6 @@ public class NodeDispatcher implements Dispatcher {
 		// Do we want it? We can RejectOverload if we don't have the bandwidth...
 		boolean isSSK = key instanceof NodeSSK;
 		boolean needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
-		if(isSSK) {
-			
-		}
 		String reject = 
 			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source);
 		if(reject != null) {
