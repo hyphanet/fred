@@ -257,4 +257,25 @@ final public class FileUtil {
 		}
 	}
 
+	/** Delete everything in a directory. Only use this when we are *very sure* there is no
+	 * important data below it! */
+	public static boolean removeAll(File wd) {
+		if(!wd.isDirectory()) {
+			System.err.println("DELETING FILE "+wd);
+			if(!wd.delete() && wd.exists()) {
+				Logger.error(FileUtil.class, "Could not delete file: "+wd);
+				return false;
+			}
+		} else {
+			File[] subfiles = wd.listFiles();
+			for(int i=0;i<subfiles.length;i++) {
+				if(!removeAll(subfiles[i])) return false;
+			}
+		}
+		if(!wd.delete()) {
+			Logger.error(FileUtil.class, "Could not delete directory: "+wd);
+		}
+		return true;
+	}
+
 }

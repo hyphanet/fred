@@ -2013,7 +2013,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		store(block, false);
 	}
 	
-	private void store(SSKBlock block, boolean deep) throws KeyCollisionException {
+	public void store(SSKBlock block, boolean deep) throws KeyCollisionException {
 		try {
 			if(deep) {
 				sskDatastore.put(block, false);
@@ -2454,7 +2454,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			throw new IllegalStateException("Don't know what to do with "+key);
 	}
 
-	private ClientKeyBlock fetch(ClientSSK clientSSK, boolean dontPromote) throws SSKVerifyException {
+	public ClientKeyBlock fetch(ClientSSK clientSSK, boolean dontPromote) throws SSKVerifyException {
 		DSAPublicKey key = clientSSK.getPubKey();
 		if(key == null) {
 			key = getKey(clientSSK.pubKeyHash);
