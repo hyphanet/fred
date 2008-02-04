@@ -616,6 +616,9 @@ public final class RequestSender implements Runnable, ByteCounter {
             		// Subtract 1% for good measure / to compensate for dodgy clocks
             		timeLeft -= origTimeLeft / 100;
             		
+            		//Store the timeleft so that the requestHandler can get at it.
+            		recentlyFailedTimeLeft = timeLeft;
+            		
            			// Kill the request, regardless of whether there is timeout left.
             		// If there is, we will avoid sending requests for the specified period.
             		// FIXME we need to create the FT entry.
