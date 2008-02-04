@@ -119,7 +119,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	// Process the completed data. May result in us going to a
 	// splitfile, or another SingleFileFetcher, etc.
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, int token) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token) {
 		if(parent instanceof ClientGetter)
 			((ClientGetter)parent).addKeyToBinaryBlob(block);
 		parent.completedBlock(fromStore);
