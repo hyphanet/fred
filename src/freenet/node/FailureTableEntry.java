@@ -315,8 +315,10 @@ class FailureTableEntry {
 			PeerNode pn = (PeerNode) ref.get();
 			if(pn == null) continue;
 			if(pn.getBootID() != requestorBootIDs[i]) continue;
+			if(!set.add(pn)) {
+				Logger.error(this, "Node is in requestorNodes twice: "+pn);
+			}
 			pn.offer(key);
-			set.add(pn);
 		}
 		if(logMINOR) Logger.minor(this, "Sending offers to nodes which we sent the key to:");
 		for(int i=0;i<requestedNodes.length;i++) {
