@@ -19,6 +19,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.support.LRUHashtable;
+import freenet.support.Logger;
 
 // FIXME it is ESSENTIAL that we delete the ULPR data on requestors etc once we have found the key.
 // Otherwise it will be much too easy to trace a request if an attacker busts the node afterwards.
@@ -54,6 +55,9 @@ public class FailureTable {
 	/** HMAC key for the offer authenticator */
 	final byte[] offerAuthenticatorKey;
 	
+	static boolean logMINOR;
+	static boolean logDEBUG;
+	
 	FailureTable(PeerManager peers, Node node) {
 		entriesByKey = new LRUHashtable();
 		blockOfferListByKey = new LRUHashtable();
@@ -61,6 +65,8 @@ public class FailureTable {
 		this.node = node;
 		offerAuthenticatorKey = new byte[32];
 		node.random.nextBytes(offerAuthenticatorKey);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 	}
 	
 	/**
@@ -248,11 +254,16 @@ public class FailureTable {
 	 * @param authenticator 
 	 */
 	void onOffer(Key key, PeerNode peer, byte[] authenticator) {
+		if(logMINOR)
+			Logger.minor(this, "Offered key "+key+" by peer "+peer);
 		FailureTableEntry entry;
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			entry = (FailureTableEntry) entriesByKey.get(key);
-			if(entry == null) return; // we haven't asked for it
+			if(entry == null) {
+				if(logMINOR) Logger.minor(this, "We didn't ask for the key");
+				return; // we haven't asked for it
+			}
 			
 			/*
 			 * Accept (subject to later checks) if we asked for it.
@@ -285,6 +296,7 @@ public class FailureTable {
 			
 			if(!(entry.askedFromPeer(peer, now) || 
 					((key instanceof NodeCHK) && entry.askedByPeer(peer, now)))) {
+				if(logMINOR) Logger.minor(this, "Not interested in the key");
 				if(entry.isEmpty(now)) entriesByKey.removeKey(key);
 				return;
 			}
