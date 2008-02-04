@@ -4,6 +4,7 @@
 package freenet.node;
 
 import java.lang.ref.WeakReference;
+import java.util.HashSet;
 
 import freenet.keys.Key;
 import freenet.support.Logger;
@@ -306,6 +307,8 @@ class FailureTableEntry {
 	/** Offer this key to all the nodes that have requested it, and all the nodes it has been requested from.
 	 * Called after a) the data has been stored, and b) this entry has been removed from the FT */
 	public void offer() {
+		HashSet set = new HashSet();
+		if(logMINOR) Logger.minor(this, "Sending offers to nodes which requested the key from us:");
 		for(int i=0;i<requestorNodes.length;i++) {
 			WeakReference ref = requestorNodes[i];
 			if(ref == null) continue;
@@ -313,13 +316,16 @@ class FailureTableEntry {
 			if(pn == null) continue;
 			if(pn.getBootID() != requestorBootIDs[i]) continue;
 			pn.offer(key);
+			set.add(pn);
 		}
+		if(logMINOR) Logger.minor(this, "Sending offers to nodes which we sent the key to:");
 		for(int i=0;i<requestedNodes.length;i++) {
 			WeakReference ref = requestedNodes[i];
 			if(ref == null) continue;
 			PeerNode pn = (PeerNode) ref.get();
 			if(pn == null) continue;
 			if(pn.getBootID() != requestedBootIDs[i]) continue;
+			if(set.contains(pn)) continue;
 			pn.offer(key);
 		}
 	}
