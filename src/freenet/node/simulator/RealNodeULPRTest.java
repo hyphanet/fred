@@ -55,8 +55,8 @@ public class RealNodeULPRTest {
     //static final short MAX_HTL = 10;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException {
-        System.out.println("ULPR test");
-        System.out.println();
+        System.err.println("ULPR test");
+        System.err.println();
         Logger.setupStdoutLogging(Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal" /*"freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         Logger.globalSetThreshold(Logger.ERROR);
     	String testName = "realNodeULPRTest";
