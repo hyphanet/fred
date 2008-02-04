@@ -185,6 +185,7 @@ public class RealNodeULPRTest {
 			}
 			if(countFullyConnected == nodes.length) {
 				System.err.println("All nodes fully connected");
+				System.err.println();
 				return;
 			} else {
 				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total)");
