@@ -337,7 +337,7 @@ public class FailureTable {
 			if(blockOfferListByKey.isEmpty()) return;
 			BlockOfferList bl = (BlockOfferList) blockOfferListByKey.peekValue();
 			if(bl.isEmpty(now) || bl.expires() < now || blockOfferListByKey.size() > MAX_OFFERS) {
-				if(logDEBUG) Logger.debug(this, "Removing block offer list "+bl+" list size now "+blockOfferListByKey.size());
+				if(logMINOR) Logger.minor(this, "Removing block offer list "+bl+" list size now "+blockOfferListByKey.size());
 				blockOfferListByKey.popKey();
 			} else {
 				return;
