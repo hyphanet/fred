@@ -615,6 +615,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	/** If we want the offered key, or if force is enabled, queue it */
 	public void maybeQueueOfferedKey(Key key, boolean force) {
+		if(logMINOR)
+			Logger.minor(this, "maybeQueueOfferedKey("+key+","+force);
 		short priority = Short.MAX_VALUE;
 		synchronized(this) {
 			if(force) {
@@ -636,6 +638,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		if(priority == Short.MAX_VALUE) return;
+		if(logMINOR)
+			Logger.minor(this, "Priority: "+priority);
 		offeredKeys[priority].queueKey(key);
 	}
 
