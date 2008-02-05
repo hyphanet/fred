@@ -192,14 +192,19 @@ public final class RequestSender implements Runnable, ByteCounter {
         	// Fetches valid offers, then expired ones. Expired offers don't count towards failures,
         	// but they're still worth trying.
         	BlockOffer offer = offers.getFirstOffer();
-        	if(offer == null) break;
+        	if(offer == null) {
+        		if(logMINOR) Logger.minor(this, "No more offers");
+        		break;
+        	}
         	PeerNode pn = offer.getPeerNode();
         	if(pn == null) {
         		offers.deleteLastOffer();
+        		if(logMINOR) Logger.minor(this, "Null offer");
         		continue;
         	}
         	if(pn.getBootID() != offer.bootID) {
         		offers.deleteLastOffer();
+        		if(logMINOR) Logger.minor(this, "Restarted node");
         		continue;
         	}
         	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
