@@ -133,6 +133,7 @@ public class RealNodeULPRTest {
         System.err.println();
         System.err.println("Created random test key "+testKey);
         System.err.println();
+        Logger.error(RealNodeULPRTest.class, "Starting ULPR test: "+testKey);
         
         waitForAllConnected(nodes);
         
