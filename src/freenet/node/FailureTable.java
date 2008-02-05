@@ -171,6 +171,7 @@ public class FailureTable {
 		}
 
 		public void deleteOffer(BlockOffer offer) {
+			if(logMINOR) Logger.minor(this, "Deleting "+offer+" from "+this);
 			synchronized(this) {
 				int idx = -1;
 				for(int i=0;i<offers.length;i++) {
@@ -197,6 +198,10 @@ public class FailureTable {
 			System.arraycopy(offers, 0, newOffers, 0, offers.length);
 			newOffers[offers.length] = offer;
 			offers = newOffers;
+		}
+		
+		public String toString() {
+			return super.toString()+"("+offers.length+")";
 		}
 	}
 	
