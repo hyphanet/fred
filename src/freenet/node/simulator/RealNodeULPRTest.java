@@ -77,6 +77,7 @@ public class RealNodeULPRTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
+            	// FIXME re-up thread limit
             	NodeStarter.createTestNode(5001+i, testName, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
@@ -142,7 +143,7 @@ public class RealNodeULPRTest {
         		case LowLevelGetException.DATA_NOT_FOUND:
         		case LowLevelGetException.ROUTE_NOT_FOUND:
         			// Expected
-        			System.err.println("Node "+i+" : key not found as expected");
+        			System.err.println("Node "+i+" : key not found (expected behaviour)");
         			continue;
         		default:
         			System.err.println("Node "+i+" : UNEXPECTED ERROR: "+e.toString());
