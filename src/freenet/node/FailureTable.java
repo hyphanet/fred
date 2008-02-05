@@ -255,6 +255,10 @@ public class FailureTable {
 	void onOffer(Key key, PeerNode peer, byte[] authenticator) {
 		if(logMINOR)
 			Logger.minor(this, "Offered key "+key+" by peer "+peer);
+		if(node.hasKey(key)) {
+			Logger.minor(this, "Already have key");
+			return;
+		}
 		FailureTableEntry entry;
 		long now = System.currentTimeMillis();
 		synchronized(this) {

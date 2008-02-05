@@ -3063,4 +3063,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(darknetCrypto == null) return false;
 		return darknetCrypto.definitelyPortForwarded();
 	}
+
+	public boolean hasKey(Key key) {
+		// FIXME optimise!
+		if(key instanceof NodeCHK)
+			return fetch((NodeCHK)key, true) != null;
+		else
+			return fetch((NodeSSK)key, true) != null;
+	}
 }
