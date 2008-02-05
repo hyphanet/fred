@@ -6,7 +6,6 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 import java.util.Vector;
 
-import freenet.client.async.ClientRequestScheduler;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
