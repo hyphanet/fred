@@ -2119,11 +2119,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(htl >= maxHTL) htl = maxHTL;
 		if(htl <= 0) htl = 1;
 		if(htl == maxHTL) {
-			if(decrementAtMax && !disableProbabilisticHTLs) htl--;
+			if(decrementAtMax || disableProbabilisticHTLs) htl--;
 			return htl;
 		}
 		if(htl == 1) {
-			if(decrementAtMin && !disableProbabilisticHTLs) htl--;
+			if(decrementAtMin || disableProbabilisticHTLs) htl--;
 			return htl;
 		}
 		return --htl;
