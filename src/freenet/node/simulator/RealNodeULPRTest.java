@@ -194,6 +194,7 @@ public class RealNodeULPRTest {
 					if(nodes[i].fetch(fetchKey, true) == null) {
 						System.err.print(i+" ");
 					}
+				System.err.println();
 			}
 		}
 		
