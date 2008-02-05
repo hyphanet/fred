@@ -10,9 +10,12 @@ import freenet.support.api.StringCallback;
 
 public class ConfigurablePersister extends Persister {
 
+	private final File baseDir;
+	
 	public ConfigurablePersister(Persistable t, SubConfig nodeConfig, String optionName, 
-			String defaultFilename, int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, PacketSender ps) throws NodeInitException {
+			String defaultFilename, int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, PacketSender ps, File baseDir) throws NodeInitException {
 		super(t, ps);
+		this.baseDir = baseDir;
 		nodeConfig.register(optionName, defaultFilename, sortOrder, expert, forceWrite, shortDesc, longDesc, new StringCallback() {
 
 			public String get() {
@@ -35,7 +38,10 @@ public class ConfigurablePersister extends Persister {
 
 	private void setThrottles(String val) throws InvalidConfigValueException {
 		File f = new File(val);
-		File tmp = new File(val+".tmp");
+		if(!f.isAbsolute()) {
+			f = new File(baseDir, val);
+		}
+		File tmp = new File(f.toString()+".tmp");
 		while(true) {
 			if(f.exists()) {
 				if(!(f.canRead() && f.canWrite()))

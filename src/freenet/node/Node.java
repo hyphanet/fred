@@ -1441,7 +1441,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			oldThrottle.delete();
 		}
 		
-		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit);
+		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit, nodeDir);
 		
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"), oldConfig, fproxyConfig, toadlets);
 

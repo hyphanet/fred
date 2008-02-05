@@ -184,7 +184,7 @@ public class NodeStats implements Persistable {
 	/** PeerManagerUserAlert stats update interval (milliseconds) */
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 	
-	NodeStats(Node node, int sortOrder, SubConfig statsConfig, SimpleFieldSet oldThrottleFS, int obwLimit, int ibwLimit) throws NodeInitException {
+	NodeStats(Node node, int sortOrder, SubConfig statsConfig, SimpleFieldSet oldThrottleFS, int obwLimit, int ibwLimit, File nodeDir) throws NodeInitException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.node = node;
 		this.peers = node.peers;
@@ -284,7 +284,7 @@ public class NodeStats implements Persistable {
 		freeHeapPercentThreshold = statsConfig.getInt("freeHeapPercentThreshold");
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 
-				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ps);
+				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ps, nodeDir);
 
 		SimpleFieldSet throttleFS = persister.read();
 		
