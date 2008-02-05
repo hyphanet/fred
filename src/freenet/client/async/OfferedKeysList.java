@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Vector;
 
 import freenet.crypt.RandomSource;
-import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
@@ -111,6 +110,7 @@ public class OfferedKeysList extends SendableRequest {
 	public synchronized void queueKey(Key key) {
 		if(keys.add(key)) {
 			keysList.add(key);
+			if(logMINOR) Logger.minor(this, "Queued key "+key);
 		}
 	}
 
