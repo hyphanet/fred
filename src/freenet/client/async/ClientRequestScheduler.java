@@ -345,7 +345,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
-	private int removeFirstAccordingToPriorities(){
+	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys){
 		SortedVectorByNumber result = null;
 		
 		short fuzz = -1, iteration = 0, priority;
@@ -362,7 +362,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = priorities[priority];
-			if((result != null) && !result.isEmpty()) {
+			if((result != null) && 
+					(!result.isEmpty()) || (!offeredKeys[priority].isEmpty())) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return priority;
 			}
@@ -378,14 +379,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public SendableRequest removeFirst() {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
-		int choosenPriorityClass = removeFirstAccordingToPriorities();
+		boolean tryOfferedKeys = node.random.nextBoolean();
+		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys);
 		if(choosenPriorityClass == -1) {
 			if(logMINOR)
 				Logger.minor(this, "Nothing to do");
 			return null;
 		}
-		boolean tryOfferedKeys = (offeredKeys != null) && node.random.nextBoolean();
-		if(tryOfferedKeys) {
+		if((offeredKeys != null) && tryOfferedKeys) {
 			if(!offeredKeys[choosenPriorityClass].isEmpty())
 				return offeredKeys[choosenPriorityClass];
 		}
