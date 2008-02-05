@@ -52,7 +52,7 @@ public class RealNodeULPRTest {
 	static final int EXIT_TEST_FAILED = EXIT_BASE + 4;
 	
     static final int NUMBER_OF_NODES = 10;
-    static final short MAX_HTL = 5;
+    static final short MAX_HTL = 10; // for now
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
     
