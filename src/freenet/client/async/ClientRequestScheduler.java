@@ -19,6 +19,7 @@ import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
@@ -159,7 +160,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			RequestStarter.MINIMUM_PRIORITY_CLASS
 	};
 	
-	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, SubConfig sc, String name) {
+	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name) {
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
@@ -182,7 +183,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(!forInserts) {
 			offeredKeys = new OfferedKeysList[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 			for(short i=0;i<RequestStarter.NUMBER_OF_PRIORITY_CLASSES;i++)
-				offeredKeys[i] = new OfferedKeysList(node.clientCore, random, i);
+				offeredKeys[i] = new OfferedKeysList(core, random, i);
 		} else {
 			offeredKeys = null;
 		}
