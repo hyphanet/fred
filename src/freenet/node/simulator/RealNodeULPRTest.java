@@ -49,6 +49,7 @@ public class RealNodeULPRTest {
 	static final int EXIT_KEY_EXISTS = EXIT_BASE + 1;
 	static final int EXIT_UNKNOWN_ERROR_CHECKING_KEY_NOT_EXIST = EXIT_BASE + 2;
 	static final int EXIT_CANNOT_DELETE_OLD_DATA = EXIT_BASE + 3;
+	static final int EXIT_TEST_FAILED = EXIT_BASE + 4;
 	
     static final int NUMBER_OF_NODES = 10;
     static final short MAX_HTL = 5;
@@ -174,6 +175,11 @@ public class RealNodeULPRTest {
 					count++;
 			}
 			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");
+			if(x > 3600) {
+				System.err.println();
+				System.err.println("TEST FAILED");
+				System.exit(EXIT_TEST_FAILED);
+			}
 			if(count == nodes.length) {
 				successfulTests++;
 				System.err.println("SUCCESSFUL TEST # "+successfulTests+"!!!");
