@@ -363,7 +363,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = priorities[priority];
 			if((result != null) && 
-					(!result.isEmpty()) || (!offeredKeys[priority].isEmpty())) {
+					(!result.isEmpty()) || (tryOfferedKeys && !offeredKeys[priority].isEmpty())) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return priority;
 			}
