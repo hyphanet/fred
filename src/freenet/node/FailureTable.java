@@ -165,7 +165,7 @@ public class FailureTable {
 
 		public synchronized boolean isEmpty(long now) {
 			for(int i=0;i<offers.length;i++) {
-				if(offers[i].offeredTime > now) return false;
+				if(!offers[i].isExpired(now)) return false;
 			}
 			return true;
 		}
