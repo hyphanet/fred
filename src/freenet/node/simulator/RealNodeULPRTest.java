@@ -116,7 +116,7 @@ public class RealNodeULPRTest {
         
         int successfulTests = 0;
         
-        while(true) {
+        for(int totalCount=0;totalCount<256;totalCount++) {
         
         // Now create a key.
         
