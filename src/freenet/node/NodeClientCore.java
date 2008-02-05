@@ -458,7 +458,11 @@ public class NodeClientCore implements Persistable {
 			// Else it has started a request.
 			if(logMINOR)
 				Logger.minor(this, "Started "+o+" for "+uid+" for "+key);
-		} finally {
+		} catch (RuntimeException e) {
+			Logger.error(this, "Caught error trying to start request: "+e, e);
+			node.unlockUID(uid, false, false, true, false);
+		} catch (Error e) {
+			Logger.error(this, "Caught error trying to start request: "+e, e);
 			node.unlockUID(uid, false, false, true, false);
 		}
 	}
