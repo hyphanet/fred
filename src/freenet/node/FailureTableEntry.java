@@ -97,6 +97,8 @@ class FailureTableEntry {
 	 * @param requestedFrom
 	 */
 	public void onFailure(short htl2, PeerNode[] requestors, PeerNode[] requestedFrom, int timeout, long now) {
+		if(logMINOR)
+			Logger.minor(this, "onFailure("+htl2+",requestors="+StringArray.toString(requestors)+",requestedFrom="+StringArray.toString(requestedFrom)+",timeout="+timeout);
 		synchronized(this) {
 			long newTimeoutTime = now + timeout;
 			if(now > timeoutTime /* has expired */ && newTimeoutTime > timeoutTime) {
