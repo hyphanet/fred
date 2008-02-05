@@ -379,14 +379,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public SendableRequest removeFirst() {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
-		boolean tryOfferedKeys = node.random.nextBoolean();
+		boolean tryOfferedKeys = offeredKeys != null && node.random.nextBoolean();
 		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys);
 		if(choosenPriorityClass == -1) {
 			if(logMINOR)
 				Logger.minor(this, "Nothing to do");
 			return null;
 		}
-		if((offeredKeys != null) && tryOfferedKeys) {
+		if(tryOfferedKeys) {
 			if(!offeredKeys[choosenPriorityClass].isEmpty())
 				return offeredKeys[choosenPriorityClass];
 		}
