@@ -8,6 +8,7 @@ import java.util.HashSet;
 
 import freenet.keys.Key;
 import freenet.support.Logger;
+import freenet.support.StringArray;
 
 class FailureTableEntry {
 	
@@ -116,7 +117,7 @@ class FailureTableEntry {
 	// Note also this will generate some churn...
 	
 	synchronized void addRequestors(PeerNode[] requestors, long now) {
-		if(logMINOR) Logger.minor(this, "Adding requestors: "+requestors+" at "+now);
+		if(logMINOR) Logger.minor(this, "Adding requestors: "+StringArray.toString(requestors)+" at "+now);
 		receivedTime = now;
 		/** The number of new requestor elements. These are moved to the beginning and the 
 		 * rest is nulled out. So this is also the index of the first non-null element in 
@@ -208,7 +209,7 @@ class FailureTableEntry {
 	}
 
 	private synchronized void addRequestedFrom(PeerNode[] requestedFrom, long now) {
-		if(logMINOR) Logger.minor(this, "Adding requested from: "+requestedFrom+" at "+now);
+		if(logMINOR) Logger.minor(this, "Adding requested from: "+StringArray.toString(requestedFrom)+" at "+now);
 		sentTime = now;
 		/** The number of new requestedFrom elements. These are moved to the beginning and the 
 		 * rest is nulled out. So this is also the index of the first non-null element in 
