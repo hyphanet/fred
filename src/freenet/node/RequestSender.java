@@ -325,7 +325,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         			// Receive the data
         			headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
         			sskData = ((ShortBuffer) reply.getObject(DMT.DATA)).getData();
-        			if(pubKey != null) {
+        			if(pubKey == null) {
         				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKPubKey);
         				Message pk;
 						try {
