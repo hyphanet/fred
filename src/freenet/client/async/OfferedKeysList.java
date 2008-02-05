@@ -110,7 +110,7 @@ public class OfferedKeysList extends SendableRequest {
 	public synchronized void queueKey(Key key) {
 		if(keys.add(key)) {
 			keysList.add(key);
-			if(logMINOR) Logger.minor(this, "Queued key "+key);
+			if(logMINOR) Logger.minor(this, "Queued key "+key+" on "+this);
 		}
 	}
 
