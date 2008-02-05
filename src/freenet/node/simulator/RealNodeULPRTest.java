@@ -113,6 +113,10 @@ public class RealNodeULPRTest {
         for(int i=0;i<NUMBER_OF_NODES;i++)
             nodes[i].start(false);
         
+        int successfulTests = 0;
+        
+        while(true) {
+        
         // Now create a key.
         
         byte[] buf = new byte[32];
@@ -169,8 +173,16 @@ public class RealNodeULPRTest {
 				if(nodes[i].fetch(fetchKey, true) != null)
 					count++;
 			}
-			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data.");
+			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");
+			if(count == nodes.length) {
+				successfulTests++;
+				System.err.println("SUCCESSFUL TEST # "+successfulTests+"!!!");
+				System.err.println();
+				break;
+			}
 		}
+		
+        }
         
     }
     
