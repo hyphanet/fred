@@ -30,6 +30,10 @@ class FailureTableEntry {
 	/** Boot ID when they requested it. We don't send it to restarted nodes, as a 
 	 * (weak, but useful if combined with other measures) protection against seizure. */
 	long[] requestorBootIDs;
+	// FIXME Note that just because a node is in this list doesn't mean it DNFed or RFed.
+	// We include *ALL* nodes we routed to here!
+	// FIXME also we don't have accurate times for when we routed to them - we only 
+	// have the terminal time for the request.
 	/** WeakReference's to PeerNode's we have requested it from */
 	WeakReference[] requestedNodes;
 	/** Their locations when we requested it */
@@ -43,7 +47,7 @@ class FailureTableEntry {
 	 * if we receive an offer from that node, we will reject it */
 	static final int MAX_TIME_BETWEEN_REQUEST_AND_OFFER = 60 * 60 * 1000;
 	
-	FailureTableEntry(Key key2, short htl2, PeerNode[] requestors, PeerNode requested) {
+	FailureTableEntry(Key key2, short htl2, PeerNode[] requestors, PeerNode[] requested) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long now = System.currentTimeMillis();
 		this.key = key2;
@@ -66,10 +70,16 @@ class FailureTableEntry {
 			requestorBootIDs = new long[0];
 		}
 		if(requested != null) {
-			requestedNodes = new WeakReference[] { requested.myRef };
-			requestedLocs = new double[] { requested.getLocation() };
-			requestedBootIDs = new long[] { requested.getBootID() };
-			requestedTimes = new long[] { System.currentTimeMillis() };
+			requestedNodes = new WeakReference[requested.length];
+			requestedLocs = new double[requested.length];
+			requestedBootIDs = new long[requested.length];
+			requestedTimes = new long[requested.length];
+			for(int i=0;i<requestedNodes.length;i++) {
+				requestedNodes[i] = requested[i].myRef;
+				requestedLocs[i] = requested[i].getLocation();
+				requestedBootIDs[i] = requested[i].getBootID();
+				requestedTimes[i] = now;
+			}
 		} else {
 			requestedNodes = new WeakReference[0];
 			requestedLocs = new double[0];
@@ -83,9 +93,9 @@ class FailureTableEntry {
 	 * RecentlyFailed.
 	 * @param htl2
 	 * @param requestors
-	 * @param requested
+	 * @param requestedFrom
 	 */
-	public void onFailure(short htl2, PeerNode[] requestors, PeerNode requested, int timeout, long now) {
+	public void onFailure(short htl2, PeerNode[] requestors, PeerNode[] requestedFrom, int timeout, long now) {
 		synchronized(this) {
 			long newTimeoutTime = now + timeout;
 			if(now > timeoutTime /* has expired */ && newTimeoutTime > timeoutTime) {
@@ -94,8 +104,8 @@ class FailureTableEntry {
 			}
 			if(requestors != null)
 				addRequestors(requestors, now);
-			if(requested != null)
-				addRequestedFrom(new PeerNode[] { requested }, now);
+			if(requestedFrom != null)
+				addRequestedFrom(requestedFrom, now);
 		}
 	}
 

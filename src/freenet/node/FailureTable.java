@@ -75,17 +75,17 @@ public class FailureTable {
 	 * @param key The key that was fetched.
 	 * @param htl The HTL it was fetched at.
 	 * @param requestors The nodes requesting it (if any).
-	 * @param requested The single node it was forwarded to, which DNFed.
+	 * @param requestedFrom The single node it was forwarded to, which DNFed.
 	 * @param now The time at which the request was sent.
 	 * @param timeout The number of millis from when the request was sent to when the failure block times out.
 	 * I.e. between 0 and REJECT_TIME. -1 indicates a RejectedOverload or actual timeout.
 	 */
-	public void onFailure(Key key, short htl, PeerNode[] requestors, PeerNode requested, int timeout, long now) {
+	public void onFailure(Key key, short htl, PeerNode[] requestors, PeerNode[] requestedFrom, int timeout, long now) {
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = (FailureTableEntry) entriesByKey.get(key);
 			if(entry == null) {
-				entry = new FailureTableEntry(key, htl, requestors, requested);
+				entry = new FailureTableEntry(key, htl, requestors, requestedFrom);
 				entriesByKey.push(key, entry);
 				return;
 			} else {
@@ -93,7 +93,7 @@ public class FailureTable {
 			}
 			trimEntries(now);
 		}
-		entry.onFailure(htl, requestors, requested, timeout, now);
+		entry.onFailure(htl, requestors, requestedFrom, timeout, now);
 	}
 	
 	private void trimEntries(long now) {
