@@ -271,7 +271,6 @@ public final class RequestSender implements Runnable, ByteCounter {
                 			} catch (KeyVerifyException e1) {
                 				Logger.normal(this, "Got data but verify failed: "+e1, e1);
                 				finish(GET_OFFER_VERIFY_FAILURE, pn, true);
-                        		node.failureTable.onFailure(key, htl, sourceAsArray(), pn, -1, System.currentTimeMillis());
                         		offers.deleteLastOffer();
                 				return;
                 			}
@@ -283,7 +282,6 @@ public final class RequestSender implements Runnable, ByteCounter {
 							else
 								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
                 			finish(GET_OFFER_TRANSFER_FAILED, pn, true);
-                    		node.failureTable.onFailure(key, htl, sourceAsArray(), pn, -1, System.currentTimeMillis());
                     		offers.deleteLastOffer();
                 			return;
                 		}
