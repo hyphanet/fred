@@ -394,6 +394,8 @@ public class FailureTable {
 				else
 					expiredOffers.add(offers[i]);
 			}
+			if(logMINOR)
+				Logger.minor(this, "Offers: "+recentOffers.size()+" recent "+expiredOffers.size()+" expired");
 		}
 		
 		private final BlockOfferList offerList;
