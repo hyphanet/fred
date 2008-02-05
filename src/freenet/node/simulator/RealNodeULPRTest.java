@@ -186,6 +186,13 @@ public class RealNodeULPRTest {
 				System.err.println();
 				break;
 			}
+			if(x % nodes.length == 0) {
+				System.err.print("Nodes that don't have the data: ");
+				for(int i=0;i<nodes.length;i++)
+					if(nodes[i].fetch(fetchKey, true) != null) {
+						System.err.print(i+" ");
+					}
+			}
 		}
 		
         }
