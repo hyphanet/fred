@@ -175,7 +175,7 @@ public class RealNodeULPRTest {
 					count++;
 			}
 			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");
-			if(x > 3600) {
+			if(x > 300) {
 				System.err.println();
 				System.err.println("TEST FAILED");
 				System.exit(EXIT_TEST_FAILED);
