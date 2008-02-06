@@ -125,46 +125,6 @@ public class FailureTable {
 		}
 	}
 
-	/**
-	 * Called when a request is made. Determine whether we should fail the request, and add the requestors to the list
-	 * of interested nodes.
-	 * @param key The key to fetch.
-	 * @param htl The HTL it will be fetched at.
-	 * @param requestor The node requesting it.
-	 * @return True if the request should be failed with an FNPRecentlyFailed.
-	 */
-	public synchronized boolean shouldFail(Key key, short htl, PeerNode requestor) {
-		long now = System.currentTimeMillis();
-		FailureTableEntry entry = (FailureTableEntry) entriesByKey.get(key);
-		if(entry == null) {
-			// Don't know anything about the key
-			return false;
-		}
-		entry.addRequestor(requestor, now);
-		if(htl > entry.htl) {
-			// If the HTL is higher this time, let it through
-			entriesByKey.push(key, entry);
-			return false;
-		}
-		if(now > entry.timeoutTime) {
-			// If it's more than 10 minutes since we sent a request, let it through
-			return false;
-		}
-		/*
-		 * If the best node available now is closer than the best location we have routed to so far, out of those
-		 * nodes which are still connected, then accept the request.
-		 * 
-		 * Note that this means we can route to the same node twice - but only if its location improves.
-		 */
-		double bestLiveLocDiff = entry.bestLiveLocDiff();
-		
-		PeerNode p = peers.closerPeer(requestor, null, null, key.toNormalizedDouble(), true, false, 0, null, bestLiveLocDiff);
-		
-		if(p != null) return false; // there is a better route now / we want to retry an old one
-		
-		return true; // kill the request
-	}
-	
 	private final class BlockOfferList {
 		private BlockOffer[] offers;
 		final FailureTableEntry entry;
@@ -476,5 +436,11 @@ public class FailureTable {
 	/** Called when a node disconnects */
 	public void onDisconnect(final PeerNode pn) {
 		// FIXME do something (off thread if expensive)
+	}
+
+	public TimedOutNodesList getTimedOutNodesList(Key key) {
+		synchronized(this) {
+			return (FailureTableEntry) entriesByKey.get(key);
+		}
 	}
 }

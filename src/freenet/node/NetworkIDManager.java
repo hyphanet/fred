@@ -100,7 +100,7 @@ class NetworkIDManager {
 					if (htl > dawnHtl && routedTo.isEmpty()) {
 						next=node.peers.getRandomPeer(source);
 					} else {
-						next=node.peers.closerPeer(source, routedTo, notIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
+						next=node.peers.closerPeer(source, routedTo, notIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
 					}
 					
 					if (next==null) {

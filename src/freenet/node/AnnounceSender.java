@@ -115,7 +115,7 @@ public class AnnounceSender implements Runnable, ByteCounter {
         	PeerNode next;
             if(onlyNode == null) {
             	// Route it
-            	next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
+            	next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
             } else {
             	next = onlyNode;
             	if(nodesRoutedTo.contains(onlyNode)) {

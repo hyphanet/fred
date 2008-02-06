@@ -10,7 +10,7 @@ import freenet.keys.Key;
 import freenet.support.Logger;
 import freenet.support.StringArray;
 
-class FailureTableEntry {
+class FailureTableEntry implements TimedOutNodesList {
 	
 	/** The key */
 	Key key; // FIXME should this be stored compressed somehow e.g. just the routing key?
@@ -473,6 +473,15 @@ class FailureTableEntry {
 		if(requestedNodes.length > 0) return false;
 		if(requestorNodes.length > 0) return false;
 		return true;
+	}
+
+	public synchronized long getTimeoutTime(PeerNode peer) {
+		for(int i=0;i<requestedNodes.length;i++) {
+			if(requestedNodes[i].get() == peer) {
+				return requestedTimeouts[i];
+			}
+		}
+		return -1; // not timed out
 	}
 
 }

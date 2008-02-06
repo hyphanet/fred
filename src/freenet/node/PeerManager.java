@@ -30,6 +30,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.keys.Key;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
@@ -48,6 +49,7 @@ import freenet.support.io.Closer;
 public class PeerManager {
     
 	private static boolean logMINOR;
+	private static boolean logDEBUG;
 	
     /** Our Node */
     final Node node;
@@ -108,6 +110,7 @@ public class PeerManager {
     public PeerManager(Node node) {
         Logger.normal(this, "Creating PeerManager");
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
+        logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		peerNodeStatuses = new HashMap();
 		peerNodeStatusesDarknet = new HashMap();
 		peerNodeRoutingBackoffReasons = new HashMap();
@@ -359,6 +362,7 @@ public class PeerManager {
 	
     public void addConnectedPeer(PeerNode pn) {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
+    	logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
     	if(!pn.isRoutable()) {
     		if(logMINOR) Logger.minor(this, "Not ReallyConnected: "+pn);
     		return;
@@ -571,6 +575,7 @@ public class PeerManager {
         // reconnect, and they can't do it yet as we are synchronized.
         Vector v = new Vector(connectedPeers.length);
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
+        logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
         for(int i=0;i<myPeers.length;i++) {
             PeerNode pn = myPeers[i];
             if(pn == exclude) continue;
@@ -691,8 +696,8 @@ public class PeerManager {
     	return closestDist < nodeDist;
     }
     
-    public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo) {
-    	return closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0);
+    public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, Key key) {
+    	return closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key);
     }
 
 	/**
@@ -704,8 +709,10 @@ public class PeerManager {
 	 * @param addUnpickedLocsTo Add all locations we didn't choose which we could have routed to to 
 	 * this array. Remove the location of the peer we pick from it.
 	 * @param maxDistance If a node is further away from the target than this distance, ignore it.
+	 * @param key The original key, if we have it, and if we want to consult with the FailureTable
+	 * to avoid routing to nodes which have recently failed for the same key.
      */
-    public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double target, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, double maxDistance) {
+    public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double target, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, double maxDistance, Key key) {
         PeerNode[] peers;  
         synchronized (this) {
 			peers = connectedPeers;
@@ -714,6 +721,15 @@ public class PeerManager {
         double maxDiff = Double.MAX_VALUE;
         if(!ignoreSelf)
             maxDiff = Location.distance(node.lm.getLocation(), target);
+        
+        /**
+         * Routing order:
+         * - Non-timed-out non-backed-off peers, in order of closeness to the target.
+         * - Timed-out, non-backed-off peers, least recently timed out first.
+         * - Non-timed-out backed-off peers, in order of closeness to the target.
+         * - Timed out, backed-off peers, least recently timed out first.
+         * - 
+         */
         
 		PeerNode closest = null;
 		double closestDistance = Double.MAX_VALUE;
@@ -724,6 +740,19 @@ public class PeerManager {
 		PeerNode closestNotBackedOff = null;
 		double closestNotBackedOffDistance = Double.MAX_VALUE;
 		
+		PeerNode leastRecentlyTimedOut = null;
+		long timeLeastRecentlyTimedOut = Long.MAX_VALUE;
+		
+		PeerNode leastRecentlyTimedOutBackedOff = null;
+		long timeLeastRecentlyTimedOutBackedOff = Long.MAX_VALUE;
+		
+		TimedOutNodesList entry = null;
+		
+		if(key != null) {
+			entry = node.failureTable.getTimedOutNodesList(key);
+		}
+		
+		long now = System.currentTimeMillis();
 		int count = 0;
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
@@ -743,6 +772,10 @@ public class PeerManager {
             	if(logMINOR) Logger.minor(this, "Skipping old version: "+p.getPeer());
             	continue;
             }
+            long timeout = Long.MAX_VALUE;
+            if(entry != null)
+            	timeout = entry.getTimeoutTime(p);
+            boolean timedOut = timeout > now;
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
 			double loc = p.getLocation();
             double diff = Location.distance(loc, target);
@@ -754,25 +787,38 @@ public class PeerManager {
 			count++;
             if(logMINOR) Logger.minor(this, "p.loc="+loc+", target="+target+", d="+Location.distance(loc, target)+" usedD="+diff+" for "+p.getPeer());
 			boolean chosen=false;
-            if(diff < closestDistance) {
+            if(diff < closestDistance && !timedOut) {
             	closestDistance = diff;
                 closest = p;
 				chosen=true;
                 if(logMINOR) Logger.minor(this, "New best: "+diff+" ("+loc+" for "+p.getPeer());
             }
 			boolean backedOff=p.isRoutingBackedOff();
-			if(backedOff && (diff < closestBackedOffDistance)) {
+			if(backedOff && (diff < closestBackedOffDistance) && !timedOut) {
             	closestBackedOffDistance = diff;
                 closestBackedOff = p;
 				chosen=true;
                 if(logMINOR) Logger.minor(this, "New best-backed-off: "+diff+" ("+loc+" for "+p.getPeer());
             }
-			if(!backedOff && (diff < closestNotBackedOffDistance)) {
+			if(!backedOff && (diff < closestNotBackedOffDistance) && !timedOut) {
             	closestNotBackedOffDistance = diff;
                 closestNotBackedOff = p;
 				chosen=true;
                 if(logMINOR) Logger.minor(this, "New best-not-backed-off: "+diff+" ("+loc+" for "+p.getPeer());
             }
+			if(timedOut) {
+				if(!backedOff) {
+					if(timeout < timeLeastRecentlyTimedOut) {
+						timeLeastRecentlyTimedOut = timeout;
+						leastRecentlyTimedOut = p;
+					}
+				} else {
+					if(timeout < timeLeastRecentlyTimedOutBackedOff) {
+						timeLeastRecentlyTimedOutBackedOff = timeout;
+						leastRecentlyTimedOutBackedOff = p;
+					}
+				}
+			}
            	if(addUnpickedLocsTo != null && !chosen) {
            		Double d = new Double(loc);
            		// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
@@ -783,8 +829,18 @@ public class PeerManager {
 		
 		PeerNode best = closestNotBackedOff;
 		
-		if (best==null)
-			best = closestBackedOff;
+		if (best==null) {
+			if(leastRecentlyTimedOut != null) {
+				best = leastRecentlyTimedOut;
+				if(logDEBUG) Logger.debug(this, "Using least recently timed out peer for key: "+best.shortToString());
+			} else if(closestBackedOff != null) {
+				best = closestBackedOff;
+				if(logDEBUG) Logger.debug(this, "Using best backed-off peer for key: "+best.shortToString());
+			} else if(leastRecentlyTimedOutBackedOff != null) {
+				best = leastRecentlyTimedOutBackedOff;
+				if(logDEBUG) Logger.debug(this, "Using least recently timed out backed-off peer for key: "+best.shortToString());
+			}
+		}
 		
 		//racy... getLocation() could have changed
     	if (calculateMisrouting) {

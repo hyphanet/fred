@@ -104,7 +104,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
             
             // Route it
             PeerNode next;
-            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null);
+            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)
