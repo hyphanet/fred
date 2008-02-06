@@ -368,6 +368,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private int inputBandwidthLimit;
 	boolean inputLimitDefault;
 	final boolean enableARKs;
+	final boolean enablePerNodeFailureTables;
+	final boolean enableULPRDataPropagation;
 	public static final short DEFAULT_MAX_HTL = (short)10;
 	private short maxHTL;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
@@ -740,6 +742,32 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			
 		});
 		enableARKs = nodeConfig.getBoolean("enableARKs");
+		
+		nodeConfig.register("enablePerNodeFailureTables", true, sortOrder++, true, false, "Node.enablePerNodeFailureTables", "Node.enablePerNodeFailureTablesLong", new BooleanCallback() {
+
+			public boolean get() {
+				return enablePerNodeFailureTables;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				throw new InvalidConfigValueException("Cannot change on the fly");
+			}
+			
+		});
+		enablePerNodeFailureTables = nodeConfig.getBoolean("enablePerNodeFailureTables");
+		
+		nodeConfig.register("enableULPRDataPropagation", true, sortOrder++, true, false, "Node.enableULPRDataPropagation", "Node.enableULPRDataPropagationLong", new BooleanCallback() {
+
+			public boolean get() {
+				return enableULPRDataPropagation;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				throw new InvalidConfigValueException("Cannot change on the fly");
+			}
+			
+		});
+		enableULPRDataPropagation = nodeConfig.getBoolean("enableULPRDataPropagation");
 		
 		// Determine the port number
 		// @see #191

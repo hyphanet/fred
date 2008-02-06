@@ -717,6 +717,7 @@ public class PeerManager {
         synchronized (this) {
 			peers = connectedPeers;
 		}
+        if(!node.enablePerNodeFailureTables) key = null;
         if(logMINOR) Logger.minor(this, "Choosing closest peer: connectedPeers="+peers.length);
         double maxDiff = Double.MAX_VALUE;
         if(!ignoreSelf)
