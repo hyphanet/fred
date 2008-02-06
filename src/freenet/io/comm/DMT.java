@@ -127,6 +127,8 @@ public class DMT {
 	public static final String REJECT_CODE = "rejectCode";
 	public static final String ROUTING_ENABLED = "routingEnabled";
 	public static final String OFFER_AUTHENTICATOR = "offerAuthenticator";
+	public static final String DAWN_HTL = "dawnHtl";
+	public static final String SECRET = "secret";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=-2;
@@ -1172,6 +1174,47 @@ public class DMT {
 		Message msg = new Message(FNPRoutedPong);
 		msg.set(UID, uid);
 		msg.set(COUNTER, counter);
+		return msg;
+	}
+	
+	public static final MessageType FNPSecretPing = new MessageType("FNPSecretPing", PRIORITY_LOW) {{
+		addRoutedToNodeMessageFields();
+		addField(COUNTER, Integer.class);
+		addField(DAWN_HTL, Short.class);
+	}};
+	
+	
+	public static final Message createFNPSecretPing(long uid, double targetLocation, short htl, short dawnHtl, int counter) {
+		Message msg = new Message(FNPSecretPing);
+		msg.setRoutedToNodeFields(uid, targetLocation, htl);
+		msg.set(COUNTER, counter);
+		msg.set(DAWN_HTL, dawnHtl);
+		return msg;
+	}
+	
+	public static final MessageType FNPSecretPong = new MessageType("FNPSecretPong", PRIORITY_LOW) {{
+		addField(UID, Long.class);
+		addField(COUNTER, Integer.class);
+		addField(SECRET, Long.class);
+	}};
+	
+	public static final Message createFNPSecretPong(long uid, int counter, long secret) {
+		Message msg = new Message(FNPSecretPong);
+		msg.set(UID, uid);
+		msg.set(COUNTER, counter);
+		msg.set(SECRET, Long.class);
+		return msg;
+	}
+	
+	public static final MessageType FNPStoreSecret = new MessageType("FNPStoreSecret", PRIORITY_LOW) {{
+		addField(UID, Long.class);
+		addField(SECRET, Long.class);
+	}};
+	
+	public static final Message createFNPStoreSecret(long uid, long secret) {
+		Message msg = new Message(FNPStoreSecret);
+		msg.set(UID, uid);
+		msg.set(SECRET, Long.class);
 		return msg;
 	}
 	
