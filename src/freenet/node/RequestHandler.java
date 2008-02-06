@@ -152,6 +152,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
         if(rs == null) { // ran out of htl?
             Message dnf = DMT.createFNPDataNotFound(uid);
             status = RequestSender.DATA_NOT_FOUND; // for byte logging
+    		node.failureTable.onFailure(key, htl, sourceAsArray(), null, FailureTable.REJECT_TIME, System.currentTimeMillis());
             sendTerminal(dnf);
             return;
         }
