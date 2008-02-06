@@ -48,6 +48,21 @@ class FailureTableEntry {
 	 * if we receive an offer from that node, we will reject it */
 	static final int MAX_TIME_BETWEEN_REQUEST_AND_OFFER = 60 * 60 * 1000;
 	
+	FailureTableEntry(Key key) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		long now = System.currentTimeMillis();
+		creationTime = now;
+		receivedTime = -1;
+		sentTime = -1;
+		requestorNodes = new WeakReference[0];
+		requestorTimes = new long[0];
+		requestorBootIDs = new long[0];
+		requestedNodes = new WeakReference[0];
+		requestedLocs = new double[0];
+		requestedBootIDs = new long[0];
+		requestedTimes = new long[0];
+	}
+	
 	FailureTableEntry(Key key2, short htl2, PeerNode[] requestors, PeerNode[] requested) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long now = System.currentTimeMillis();
