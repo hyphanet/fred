@@ -370,7 +370,7 @@ class FailureTableEntry {
 			requestorNodes = new WeakReference[0];
 			requestorTimes = requestorBootIDs = new long[0];
 		}
-		return false;
+		return anyValid;
 	}
 
 	/**
