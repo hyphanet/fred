@@ -290,7 +290,7 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
 			}
-			node.failureTable.onFailure(key, htl, new PeerNode[] { source }, null, -1, System.currentTimeMillis());
+			node.failureTable.onFinalFailure(key, null, htl, -1, source);
 			return true;
 		} else {
 			if(logMINOR) Logger.minor(this, "Locked "+id);
@@ -306,7 +306,7 @@ public class NodeDispatcher implements Dispatcher {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
 			node.unlockUID(id, isSSK, false, false, false);
-			node.failureTable.onFailure(key, htl, new PeerNode[] { source }, null, -1, System.currentTimeMillis());
+			node.failureTable.onFinalFailure(key, null, htl, -1, source);
 			return true;
 		}
 		//if(!node.lockUID(id)) return false;

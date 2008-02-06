@@ -150,7 +150,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
         if(rs == null) { // ran out of htl?
             Message dnf = DMT.createFNPDataNotFound(uid);
             status = RequestSender.DATA_NOT_FOUND; // for byte logging
-    		node.failureTable.onFailure(key, htl, sourceAsArray(), null, FailureTable.REJECT_TIME, System.currentTimeMillis());
+            node.failureTable.onFinalFailure(key, null, htl, FailureTable.REJECT_TIME, source);
             sendTerminal(dnf);
             return;
         }
@@ -228,7 +228,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
 		
 		if (now > responseDeadline) {
 			// Offer the data if there is any.
-    		node.failureTable.onFailure(key, htl, sourceAsArray(), null, -1, System.currentTimeMillis());
+			node.failureTable.onFinalFailure(key, null, htl, -1, source);
 			Logger.error(this, "requestsender took too long to respond to requestor ("+TimeUtil.formatTime((now - searchStartTime), 2, true)+"/"+rs.getStatusString()+")"); 
 			applyByteCounts();
 			unregisterRequestHandlerWithNode();

@@ -383,7 +383,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             	// This used to be RNF, I dunno why
 				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
                 finish(DATA_NOT_FOUND, null, false);
-        		node.failureTable.onFailure(key, htl, sourceAsArray(), pnArray(nodesRoutedTo), FailureTable.REJECT_TIME, System.currentTimeMillis());
+                node.failureTable.onFinalFailure(key, null, htl, FailureTable.REJECT_TIME, source);
                 return;
             }
 
@@ -398,7 +398,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
                 // Backtrack
                 finish(ROUTE_NOT_FOUND, null, false);
-        		node.failureTable.onFailure(key, htl, sourceAsArray(), pnArray(nodesRoutedTo), -1, System.currentTimeMillis());
+                node.failureTable.onFinalFailure(key, null, htl, -1, source);
                 return;
             }
 			
@@ -476,6 +476,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             		// Timeout waiting for Accepted
             		next.localRejectedOverload("AcceptedTimeout");
             		forwardRejectedOverload();
+            		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
             		// Try next node
             		break;
             	}
@@ -483,6 +484,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             	if(msg.getSpec() == DMT.FNPRejectedLoop) {
             		if(logMINOR) Logger.minor(this, "Rejected loop");
             		next.successNotOverload();
+            		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
             		// Find another node to route to
             		break;
             	}
@@ -494,6 +496,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						if(logMINOR) Logger.minor(this, "Is local");
 						next.localRejectedOverload("ForwardRejectedOverload");
+	            		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
 						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 						break;
@@ -550,7 +553,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             		next.localRejectedOverload("FatalTimeout");
             		forwardRejectedOverload();
             		finish(TIMED_OUT, next, false);
-            		node.failureTable.onFailure(key, htl, sourceAsArray(), pnArray(nodesRoutedTo), -1, System.currentTimeMillis());
+            		node.failureTable.onFinalFailure(key, next, htl, -1, source);
             		return;
             	}
 				
@@ -561,7 +564,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             	if(msg.getSpec() == DMT.FNPDataNotFound) {
             		next.successNotOverload();
             		finish(DATA_NOT_FOUND, next, false);
-            		node.failureTable.onFailure(key, htl, sourceAsArray(), pnArray(nodesRoutedTo), FailureTable.REJECT_TIME, System.currentTimeMillis());
+            		node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
             		return;
             	}
             	
@@ -626,7 +629,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             		// If there is, we will avoid sending requests for the specified period.
             		// FIXME we need to create the FT entry.
            			finish(RECENTLY_FAILED, next, false);
-            		node.failureTable.onFailure(key, htl, sourceAsArray(), pnArray(nodesRoutedTo), timeLeft, System.currentTimeMillis());
+           			node.failureTable.onFinalFailure(key, next, htl, timeLeft, source);
             		return;
             	}
             	
@@ -635,6 +638,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             		short newHtl = msg.getShort(DMT.HTL);
             		if(newHtl < htl) htl = newHtl;
             		next.successNotOverload();
+            		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
             		break;
             	}
             	
@@ -645,8 +649,10 @@ public final class RequestSender implements Runnable, ByteCounter {
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
 						//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
+	            		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
 						next.localRejectedOverload("ForwardRejectedOverload2");
-						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
+						// Node in trouble suddenly??
+						Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
 						// Give up on this one, try another
 						break;
 					}
@@ -692,7 +698,7 @@ public final class RequestSender implements Runnable, ByteCounter {
                 			} catch (KeyVerifyException e1) {
                 				Logger.normal(this, "Got data but verify failed: "+e1, e1);
                 				finish(VERIFY_FAILURE, next, false);
-                        		node.failureTable.onFailure(key, htl, sourceAsArray(), pnArray(nodesRoutedTo), -1, System.currentTimeMillis());
+                				node.failureTable.onFinalFailure(key, next, htl, -1, source);
                 				return;
                 			}
                 			finish(SUCCESS, next, false);
@@ -703,7 +709,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 							else
 								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
                 			finish(TRANSFER_FAILED, next, false);
-                    		node.failureTable.onFailure(key, htl, sourceAsArray(), pnArray(nodesRoutedTo), -1, System.currentTimeMillis());
+                			node.failureTable.onFinalFailure(key, next, htl, -1, source);
                 			return;
                 		}
                 	} finally {
@@ -717,6 +723,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             		
             		if(!(key instanceof NodeSSK)) {
             			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
+                		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
             			break;
             		}
     				byte[] pubkeyAsBytes = ((ShortBuffer)msg.getObject(DMT.PUBKEY_AS_BYTES)).getData();
@@ -727,9 +734,11 @@ public final class RequestSender implements Runnable, ByteCounter {
     				} catch (SSKVerifyException e) {
     					pubKey = null;
     					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
+                		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
     					break; // try next node
     				} catch (CryptFormatException e) {
     					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
+                		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
     					break; // try next node
     				}
     				if(sskData != null) {
@@ -745,6 +754,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             		
             		if(!(key instanceof NodeSSK)) {
             			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
+                		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
             			break;
             		}
             		
@@ -763,15 +773,6 @@ public final class RequestSender implements Runnable, ByteCounter {
             	
             }
         }
-	}
-
-    private PeerNode[] pnArray(HashSet nodesRoutedTo) {
-    	return (PeerNode[]) nodesRoutedTo.toArray(new PeerNode[nodesRoutedTo.size()]);
-	}
-
-	private PeerNode[] sourceAsArray() {
-    	if(source == null) return null;
-    	else return new PeerNode[] { source };
 	}
 
 	/**

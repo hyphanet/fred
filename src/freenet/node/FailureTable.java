@@ -68,6 +68,15 @@ public class FailureTable {
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 	}
 	
+	/**
+	 * Called when we route to a node and it fails for some reason, but we continue the request.
+	 * Normally the timeout will be the time it took to route to that node and wait for its 
+	 * response / timeout waiting for its response.
+	 * @param key
+	 * @param routedTo
+	 * @param htl
+	 * @param timeout
+	 */
 	public void onFailed(Key key, PeerNode routedTo, short htl, int timeout) {
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
@@ -103,33 +112,6 @@ public class FailureTable {
 			entry.failedTo(routedTo, timeout, now, htl);
 		if(requestor != null)
 			entry.addRequestor(requestor, now);
-	}
-	
-	/**
-	 * Called when a node kills a request: the request DNFs, is killed by a RecentlyFailed message, 
-	 * or times out. In any case this will create a FailureTableEntry.
-	 * @param key The key that was fetched.
-	 * @param htl The HTL it was fetched at.
-	 * @param requestors The nodes requesting it (if any).
-	 * @param requestedFrom The single node it was forwarded to, which DNFed.
-	 * @param now The time at which the request was sent.
-	 * @param timeout The number of millis from when the request was sent to when the failure block times out.
-	 * I.e. between 0 and REJECT_TIME. -1 indicates a RejectedOverload or actual timeout.
-	 */
-	public void onFailure(Key key, short htl, PeerNode[] requestors, PeerNode[] requestedFrom, int timeout, long now) {
-		FailureTableEntry entry;
-		synchronized(this) {
-			entry = (FailureTableEntry) entriesByKey.get(key);
-			if(entry == null) {
-				entry = new FailureTableEntry(key, htl, requestors, requestedFrom);
-				entriesByKey.push(key, entry);
-				return;
-			} else {
-				entriesByKey.push(key, entry);
-			}
-			trimEntries(now);
-		}
-		entry.onFailure(htl, requestors, requestedFrom, timeout, now);
 	}
 	
 	private void trimEntries(long now) {
