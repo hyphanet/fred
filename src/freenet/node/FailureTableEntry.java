@@ -131,13 +131,6 @@ class FailureTableEntry {
 		for(int i=0;i<requestorNodes.length;i++) {
 			PeerNode got = requestorNodes[i] == null ? null : (PeerNode) requestorNodes[i].get();
 			// No longer subscribed if they have rebooted, or expired
-			if(got != null && got.getBootID() != requestorBootIDs[i] ||
-					now - requestorTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
-				requestorNodes[i] = null;
-				got = null;
-			}
-			if(got == null)
-				nulls++;
 			if(got == requestor) {
 				// Update existing entry
 				includedAlready = true;
@@ -146,6 +139,13 @@ class FailureTableEntry {
 				ret = i;
 				break;
 			}
+			if(got != null && got.getBootID() != requestorBootIDs[i] ||
+					now - requestorTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
+				requestorNodes[i] = null;
+				got = null;
+			}
+			if(got == null)
+				nulls++;
 		}
 		if(nulls == 0 && includedAlready) return ret;
 		int notIncluded = includedAlready ? 0 : 1;
@@ -212,8 +212,6 @@ class FailureTableEntry {
 		int ret = -1;
 		for(int i=0;i<requestedNodes.length;i++) {
 			PeerNode got = requestedNodes[i] == null ? null : (PeerNode) requestedNodes[i].get();
-			if(got == null)
-				nulls++;
 			if(got == requestedFrom) {
 				// Update existing entry
 				includedAlready = true;
@@ -223,6 +221,8 @@ class FailureTableEntry {
 				ret = i;
 				break;
 			}
+			if(got == null)
+				nulls++;
 		}
 		if(includedAlready && nulls == 0) return ret;
 		int notIncluded = includedAlready ? 0 : 1;
