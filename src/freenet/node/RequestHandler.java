@@ -136,8 +136,6 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
 
     private void realRun() throws NotConnectedException {
         if(logMINOR) Logger.minor(this, "Handling a request: "+uid);
-        if(!resetClosestLoc)
-        	htl = source.decrementHTL(htl);
         
         Message accepted = DMT.createFNPAccepted(uid);
         source.sendAsync(accepted, null, 0, this);
