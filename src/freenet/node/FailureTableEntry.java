@@ -138,8 +138,7 @@ class FailureTableEntry {
 				requestorBootIDs[i] = requestor.getBootID();
 				ret = i;
 				break;
-			}
-			if(got != null && got.getBootID() != requestorBootIDs[i] ||
+			} else if(got != null && got.getBootID() != requestorBootIDs[i] ||
 					now - requestorTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
 				requestorNodes[i] = null;
 				got = null;
@@ -220,8 +219,7 @@ class FailureTableEntry {
 				requestedTimes[i] = now;
 				ret = i;
 				break;
-			}
-			if(got == null)
+			} else if(got == null)
 				nulls++;
 		}
 		if(includedAlready && nulls == 0) return ret;
