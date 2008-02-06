@@ -127,25 +127,25 @@ class FailureTableEntry {
 		receivedTime = now;
 		boolean requestorIncluded = false;
 		int nulls = 0;
-			PeerNode req = requestors;
-			for(int j=0;j<requestorNodes.length;j++) {
-				PeerNode got = requestorNodes[j] == null ? null : (PeerNode) requestorNodes[j].get();
-				// No longer subscribed if they have rebooted, or expired
-				if(got != null && got.getBootID() != requestorBootIDs[j] ||
-						now - requestorTimes[j] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
-					requestorNodes[j] = null;
-					got = null;
-				}
-				if(got == null)
-					nulls++;
-				if(got == req) {
-					// Update existing entry
-					requestorIncluded = true;
-					requestorTimes[j] = now;
-					requestorBootIDs[j] = req.getBootID();
-					break;
-				}
+		PeerNode req = requestors;
+		for(int j=0;j<requestorNodes.length;j++) {
+			PeerNode got = requestorNodes[j] == null ? null : (PeerNode) requestorNodes[j].get();
+			// No longer subscribed if they have rebooted, or expired
+			if(got != null && got.getBootID() != requestorBootIDs[j] ||
+					now - requestorTimes[j] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
+				requestorNodes[j] = null;
+				got = null;
 			}
+			if(got == null)
+				nulls++;
+			if(got == req) {
+				// Update existing entry
+				requestorIncluded = true;
+				requestorTimes[j] = now;
+				requestorBootIDs[j] = req.getBootID();
+				break;
+			}
+		}
 		if(nulls == 0 && requestorIncluded) return;
 		int notIncluded = requestorIncluded ? 0 : 1;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
@@ -208,20 +208,20 @@ class FailureTableEntry {
 		sentTime = now;
 		boolean requestorIncluded = false;
 		int nulls = 0;
-			PeerNode req = requestedFrom;
-			for(int j=0;j<requestedNodes.length;j++) {
-				PeerNode got = requestedNodes[j] == null ? null : (PeerNode) requestedNodes[j].get();
-				if(got == null)
-					nulls++;
-				if(got == req) {
-					// Update existing entry
-					requestorIncluded = true;
-					requestedLocs[j] = req.getLocation();
-					requestedBootIDs[j] = req.getBootID();
-					requestedTimes[j] = now;
-					break;
-				}
+		PeerNode req = requestedFrom;
+		for(int j=0;j<requestedNodes.length;j++) {
+			PeerNode got = requestedNodes[j] == null ? null : (PeerNode) requestedNodes[j].get();
+			if(got == null)
+				nulls++;
+			if(got == req) {
+				// Update existing entry
+				requestorIncluded = true;
+				requestedLocs[j] = req.getLocation();
+				requestedBootIDs[j] = req.getBootID();
+				requestedTimes[j] = now;
+				break;
 			}
+		}
 		if(requestorIncluded && nulls == 0) return;
 		int notIncluded = requestorIncluded ? 0 : 1;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
