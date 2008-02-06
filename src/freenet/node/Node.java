@@ -1932,6 +1932,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
+	public KeyBlock fetch(Key key, boolean dontPromote) {
+		if(key instanceof NodeSSK)
+			return fetch((NodeSSK)key, dontPromote);
+		else if(key instanceof NodeCHK)
+			return fetch((NodeCHK)key, dontPromote);
+		else throw new IllegalArgumentException();
+	}
+	
 	public SSKBlock fetch(NodeSSK key, boolean dontPromote) {
 		if(logMINOR) dumpStoreHits();
 		try {
@@ -2025,6 +2033,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	public void storeShallow(CHKBlock block) {
 		store(block, false);
+	}
+	
+	public void store(KeyBlock block, boolean deep) throws KeyCollisionException {
+		if(block instanceof CHKBlock)
+			store((CHKBlock)block, deep);
+		else if(block instanceof SSKBlock)
+			store((SSKBlock)block, deep);
+		else throw new IllegalArgumentException("Unknown keytype ");
 	}
 	
 	private void store(CHKBlock block, boolean deep) {

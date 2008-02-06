@@ -9,11 +9,16 @@ import java.io.IOException;
 import freenet.crypt.DummyRandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
+import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKSK;
+import freenet.keys.ClientKey;
+import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKEncodeException;
 import freenet.keys.SSKVerifyException;
@@ -118,17 +123,31 @@ public class RealNodeULPRTest {
         
         for(int totalCount=0;totalCount<256;totalCount++) {
         
+        boolean isSSK = (totalCount & 0x1) == 1;
+        
         // Now create a key.
         
         byte[] buf = new byte[32];
         random.nextBytes(buf);
         String keyName = HexUtil.bytesToHex(buf);
-        FreenetURI testKey = new FreenetURI("KSK", keyName);
         
-        InsertableClientSSK insertKey = InsertableClientSSK.create(testKey);
-        ClientSSK fetchKey = ClientKSK.create(testKey);
+        FreenetURI testKey;
+        ClientKey insertKey;
+        ClientKey fetchKey;
+        ClientKeyBlock block;
         
-        SSKBlock block = insertKey.encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random);
+        if(isSSK) {
+        	testKey = new FreenetURI("KSK", keyName);
+        	
+        	insertKey = InsertableClientSSK.create(testKey);
+        	fetchKey = ClientKSK.create(testKey);
+        	
+        	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random);
+        } else {
+        	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length);
+        	insertKey = fetchKey = block.getClientKey();
+        	testKey = insertKey.getURI();
+        }
         
         System.err.println();
         System.err.println("Created random test key "+testKey);
@@ -172,7 +191,7 @@ public class RealNodeULPRTest {
 			Thread.sleep(1000);
 			int count = 0;
 			for(int i=0;i<nodes.length;i++) {
-				if(nodes[i].fetch(fetchKey, true) != null)
+				if(nodes[i].fetch(fetchKey.getNodeKey(), true) != null)
 					count++;
 			}
 			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");
@@ -191,7 +210,7 @@ public class RealNodeULPRTest {
 			if(x % nodes.length == 0) {
 				System.err.print("Nodes that don't have the data: ");
 				for(int i=0;i<nodes.length;i++)
-					if(nodes[i].fetch(fetchKey, true) == null) {
+					if(nodes[i].fetch(fetchKey.getNodeKey(), true) == null) {
 						System.err.print(i+" ");
 					}
 				System.err.println();
