@@ -1860,6 +1860,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	void startARKFetcher() {
 		// FIXME any way to reduce locking here?
+		if(!node.enableARKs) return;
 		synchronized(arkFetcherSync) {
 			if(myARK == null) {
 				Logger.minor(this, "No ARK for " + this + " !!!!");
@@ -1872,6 +1873,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	protected void stopARKFetcher() {
+		if(!node.enableARKs) return;
 		Logger.minor(this, "Stopping ARK fetcher for " + this + " : " + myARK);
 		// FIXME any way to reduce locking here?
 		synchronized(arkFetcherSync) {
