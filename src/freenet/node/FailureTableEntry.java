@@ -52,6 +52,7 @@ class FailureTableEntry implements TimedOutNodesList {
 	static final int MAX_TIME_BETWEEN_REQUEST_AND_OFFER = 60 * 60 * 1000;
 	
 	FailureTableEntry(Key key) {
+		if(key == null) throw new NullPointerException();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long now = System.currentTimeMillis();
 		creationTime = now;
@@ -69,6 +70,7 @@ class FailureTableEntry implements TimedOutNodesList {
 	}
 	
 	FailureTableEntry(Key key2, short htl2, PeerNode[] requestors, PeerNode[] requested) {
+		if(key == null) throw new NullPointerException();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long now = System.currentTimeMillis();
 		this.key = key2;
