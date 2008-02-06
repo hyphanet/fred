@@ -772,7 +772,7 @@ public class PeerManager {
             	if(logMINOR) Logger.minor(this, "Skipping old version: "+p.getPeer());
             	continue;
             }
-            long timeout = Long.MAX_VALUE;
+            long timeout = -1;
             if(entry != null)
             	timeout = entry.getTimeoutTime(p);
             boolean timedOut = timeout > now;
