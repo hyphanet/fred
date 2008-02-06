@@ -152,7 +152,8 @@ public class NetworkInterface {
 		synchronized (syncObject) {
 			Iterator acceptors = this.acceptors.iterator();
 			while (acceptors.hasNext()) {
-				executor.execute((Acceptor) acceptors.next(), "Network Interface Acceptor");
+				Acceptor acceptor=(Acceptor) acceptors.next();
+				executor.execute(acceptor, "Network Interface Acceptor for "+acceptor.serverSocket);
 			}
 		}
 	}
