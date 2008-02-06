@@ -85,6 +85,24 @@ public class FailureTable {
 		entry.failedTo(routedTo, timeout, now, htl);
 	}
 	
+	public void onFinalFailure(Key key, PeerNode routedTo, short htl, int timeout, PeerNode requestor) {
+		long now = System.currentTimeMillis();
+		FailureTableEntry entry;
+		synchronized(this) {
+			entry = (FailureTableEntry) entriesByKey.get(key);
+			if(entry == null) {
+				entry = new FailureTableEntry(key);
+				entriesByKey.push(key, entry);
+				return;
+			} else {
+				entriesByKey.push(key, entry);
+			}
+			trimEntries(now);
+		}
+		entry.failedTo(routedTo, timeout, now, htl);
+		entry.addRequestor(requestor, now);
+	}
+	
 	/**
 	 * Called when a node kills a request: the request DNFs, is killed by a RecentlyFailed message, 
 	 * or times out. In any case this will create a FailureTableEntry.
