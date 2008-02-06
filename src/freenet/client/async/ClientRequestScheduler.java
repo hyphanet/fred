@@ -647,6 +647,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(logMINOR)
 			Logger.minor(this, "Priority: "+priority);
 		offeredKeys[priority].queueKey(key);
+		synchronized(starter) {
+			starter.notifyAll();
+		}
 	}
 
 	public void dequeueOfferedKey(Key key) {
