@@ -74,6 +74,10 @@ public class NodeDispatcher implements Dispatcher {
 				// Ignore
 			}
 			return true;
+		} else if (spec == DMT.FNPStoreSecret) {
+			return node.netid.handleStoreSecret(m);
+		} else if(spec == DMT.FNPSecretPing) {
+			return node.netid.handleSecretPing(m);
 		} else if(spec == DMT.FNPDetectedIPAddress) {
 			Peer p = (Peer) m.getObject(DMT.EXTERNAL_ADDRESS);
 			source.setRemoteDetectedPeer(p);
@@ -441,6 +445,7 @@ public class NodeDispatcher implements Dispatcher {
 		}
 	}
 
+	//FIXME: PLEASE! When are these contexts ever cleaned up!!! Memory-leak-per-ping!
 	final Hashtable routedContexts = new Hashtable();
 
 	static class RoutedContext {

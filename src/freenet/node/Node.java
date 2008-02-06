@@ -189,6 +189,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	/** Stats */
 	public final NodeStats nodeStats;
+	public final NetworkIDManager netid;
 	
 	/** Config object for the whole node. */
 	public final PersistentConfig config;
@@ -1445,6 +1446,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"), oldConfig, fproxyConfig, toadlets);
 
+		netid = new NetworkIDManager(this);
+		 
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
 			public boolean get() {
