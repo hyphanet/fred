@@ -728,7 +728,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		// ARKs enabled?
 		
-		nodeConfig.register("Node.enableARKs", true, sortOrder++, true, false, "Node.enableARKs", "enableARKsLong", new BooleanCallback() {
+		nodeConfig.register("enableARKs", true, sortOrder++, true, false, "Node.enableARKs", "Node.enableARKsLong", new BooleanCallback() {
 
 			public boolean get() {
 				return enableARKs;
