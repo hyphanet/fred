@@ -99,16 +99,12 @@ public class AnnounceSender implements Runnable, ByteCounter {
         	if(source != null)
         		htl = node.decrementHTL(source, htl);
         }
-        boolean firstHop = false;
         
 		// Now route it.
 		
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
         while(true) {
-        	if(!firstHop)
-        		htl = node.decrementHTL(source, htl);
-        	firstHop = true;
             if(logMINOR) Logger.minor(this, "htl="+htl);
             if(htl == 0) {
             	// No more nodes.
