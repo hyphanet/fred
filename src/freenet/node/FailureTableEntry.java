@@ -122,12 +122,12 @@ class FailureTableEntry {
 	// per entry byte cost.
 	// Note also this will generate some churn...
 	
-	synchronized int addRequestor(PeerNode requestors, long now) {
-		if(logMINOR) Logger.minor(this, "Adding requestors: "+requestors+" at "+now);
+	synchronized int addRequestor(PeerNode requestor, long now) {
+		if(logMINOR) Logger.minor(this, "Adding requestors: "+requestor+" at "+now);
 		receivedTime = now;
 		boolean requestorIncluded = false;
 		int nulls = 0;
-		PeerNode req = requestors;
+		PeerNode req = requestor;
 		int ret = -1;
 		for(int j=0;j<requestorNodes.length;j++) {
 			PeerNode got = requestorNodes[j] == null ? null : (PeerNode) requestorNodes[j].get();
@@ -155,7 +155,7 @@ class FailureTableEntry {
 			// Nice special case
 			for(int i=0;i<requestorNodes.length;i++) {
 				if(requestorNodes[i] == null || requestorNodes[i].get() == null) {
-					PeerNode pn = requestors;
+					PeerNode pn = requestor;
 					requestorNodes[i] = pn.myRef;
 					requestorTimes[i] = now;
 					requestorBootIDs[i] = pn.getBootID();
@@ -172,7 +172,7 @@ class FailureTableEntry {
 			WeakReference ref = requestorNodes[i];
 			PeerNode pn = (PeerNode) (ref == null ? null : ref.get());
 			if(pn == null) continue;
-			if(pn == requestors) ret = i;
+			if(pn == requestor) ret = i;
 			newRequestorNodes[toIndex] = requestorNodes[i];
 			newRequestorTimes[toIndex] = requestorTimes[i];
 			newRequestorBootIDs[toIndex] = requestorBootIDs[i];
@@ -181,7 +181,7 @@ class FailureTableEntry {
 		
 		if(!requestorIncluded) {
 		
-			PeerNode pn = requestors;
+			PeerNode pn = requestor;
 			if(pn != null) {
 				newRequestorNodes[toIndex] = pn.myRef;
 				newRequestorTimes[toIndex] = now;
