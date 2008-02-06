@@ -37,7 +37,7 @@ public class PooledExecutor implements Executor {
 					t = (MyThread) waitingThreads.remove(waitingThreads.size()-1);
 				} else {
 					// Will be coalesced by thread count listings if we use "@" or "for"
-					t = new MyThread("Pooled thread awaiting work @"+(threadCounter++));
+					t = new MyThread("Pooled thread awaiting work @"+(threadCounter++), threadCounter);
 					t.setDaemon(true);
 					mustStart = true;
 					miss = true;
@@ -53,7 +53,7 @@ public class PooledExecutor implements Executor {
 					// level code. So we'd best use notifyAll().
 					t.notifyAll();
 			}
-			t.setName(jobName);
+			t.setName(jobName+"("+t.threadNo+")");
 			if(mustStart) {
 				t.start();
 				synchronized(this) {
@@ -77,10 +77,12 @@ public class PooledExecutor implements Executor {
 		final String defaultName;
 		boolean alive = true;
 		Runnable nextJob;
+		final long threadNo;
 		
-		public MyThread(String defaultName) {
+		public MyThread(String defaultName, long threadCounter) {
 			super(defaultName);
 			this.defaultName = defaultName;
+			threadNo = threadCounter;
 		}
 
 		public void run() {
