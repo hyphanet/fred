@@ -105,10 +105,14 @@ class FailureTableEntry {
 				htl = htl2;
 				timeoutTime = newTimeoutTime;
 			}
-			if(requestors != null)
-				addRequestors(requestors, now);
-			if(requestedFrom != null)
-				addRequestedFrom(requestedFrom, now);
+			if(requestors != null) {
+				for(int i=0;i<requestors.length;i++)
+					addRequestors(requestors[i], now);
+			}
+			if(requestedFrom != null) {
+				for(int i=0;i<requestedFrom.length;i++)
+					addRequestedFrom(requestedFrom[i], now);
+			}
 		}
 	}
 
@@ -118,17 +122,12 @@ class FailureTableEntry {
 	// per entry byte cost.
 	// Note also this will generate some churn...
 	
-	synchronized void addRequestors(PeerNode[] requestors, long now) {
-		if(logMINOR) Logger.minor(this, "Adding requestors: "+StringArray.toString(requestors)+" at "+now);
+	synchronized void addRequestors(PeerNode requestors, long now) {
+		if(logMINOR) Logger.minor(this, "Adding requestors: "+requestors+" at "+now);
 		receivedTime = now;
-		/** The number of new requestor elements. These are moved to the beginning and the 
-		 * rest is nulled out. So this is also the index of the first non-null element in 
-		 * requestors. */
-		int notIncluded = 0;
+		boolean requestorIncluded = false;
 		int nulls = 0;
-		for(int i=0;i<requestors.length;i++) {
-			PeerNode req = requestors[i];
-			boolean requestorIncluded = false;
+			PeerNode req = requestors;
 			for(int j=0;j<requestorNodes.length;j++) {
 				PeerNode got = requestorNodes[j] == null ? null : (PeerNode) requestorNodes[j].get();
 				// No longer subscribed if they have rebooted, or expired
@@ -147,24 +146,17 @@ class FailureTableEntry {
 					break;
 				}
 			}
-			if(!requestorIncluded) {
-				requestors[notIncluded++] = requestors[i];
-			} // if it's new, keep it in requestors
-		}
-		for(int i=notIncluded;i<requestors.length;i++) requestors[i] = null;
-		if(logMINOR) Logger.minor(this, "notIncluded="+notIncluded+" nulls="+nulls+" requestors.length="+requestors.length+" requestorNodes.length="+requestorNodes.length);
-		if(notIncluded == 0 && nulls == 0) return;
+		if(nulls == 0 && requestorIncluded) return;
+		int notIncluded = requestorIncluded ? 0 : 1;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
-		if(notIncluded == nulls) {
+		if(nulls == 1 && !requestorIncluded) {
 			// Nice special case
-			int x = 0;
 			for(int i=0;i<requestorNodes.length;i++) {
 				if(requestorNodes[i] == null || requestorNodes[i].get() == null) {
-					PeerNode pn = requestors[x++];
+					PeerNode pn = requestors;
 					requestorNodes[i] = pn.myRef;
 					requestorTimes[i] = now;
 					requestorBootIDs[i] = pn.getBootID();
-					if(x == notIncluded) break;
 				}
 			}
 			return;
@@ -183,8 +175,9 @@ class FailureTableEntry {
 			toIndex++;
 		}
 		
-		for(int fromIndex=0;fromIndex<notIncluded;fromIndex++) {
-			PeerNode pn = requestors[fromIndex];
+		if(!requestorIncluded) {
+		
+			PeerNode pn = requestors;
 			if(pn != null) {
 				newRequestorNodes[toIndex] = pn.myRef;
 				newRequestorTimes[toIndex] = now;
@@ -210,17 +203,12 @@ class FailureTableEntry {
 		requestorBootIDs = newRequestorBootIDs;
 	}
 
-	private synchronized void addRequestedFrom(PeerNode[] requestedFrom, long now) {
-		if(logMINOR) Logger.minor(this, "Adding requested from: "+StringArray.toString(requestedFrom)+" at "+now);
+	private synchronized void addRequestedFrom(PeerNode requestedFrom, long now) {
+		if(logMINOR) Logger.minor(this, "Adding requested from: "+requestedFrom+" at "+now);
 		sentTime = now;
-		/** The number of new requestedFrom elements. These are moved to the beginning and the 
-		 * rest is nulled out. So this is also the index of the first non-null element in 
-		 * requestedFrom. */
-		int notIncluded = 0;
+		boolean requestorIncluded = false;
 		int nulls = 0;
-		for(int i=0;i<requestedFrom.length;i++) {
-			PeerNode req = requestedFrom[i];
-			boolean requestorIncluded = false;
+			PeerNode req = requestedFrom;
 			for(int j=0;j<requestedNodes.length;j++) {
 				PeerNode got = requestedNodes[j] == null ? null : (PeerNode) requestedNodes[j].get();
 				if(got == null)
@@ -234,20 +222,15 @@ class FailureTableEntry {
 					break;
 				}
 			}
-			if(!requestorIncluded) {
-				requestedFrom[notIncluded++] = requestedFrom[i];
-			} // if it's new, keep it in requestedFrom, otherwise delete it
-		}
-		for(int i=notIncluded;i<requestedFrom.length;i++) requestedFrom[i] = null;
-		if(notIncluded == 0 && nulls == 0) return;
-		if(logMINOR) Logger.minor(this, "notIncluded="+notIncluded+" nulls="+nulls+" requestedFrom.length="+requestedFrom.length+" requestedNodes.length="+requestedNodes.length);
+		if(requestorIncluded && nulls == 0) return;
+		int notIncluded = requestorIncluded ? 0 : 1;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
-		if(notIncluded == nulls) {
+		if(nulls == 1 && !requestorIncluded) {
 			// Nice special case
 			int x = 0;
 			for(int i=0;i<requestedNodes.length;i++) {
 				if(requestedNodes[i] == null || requestedNodes[i].get() == null) {
-					PeerNode pn = requestedFrom[x++];
+					PeerNode pn = requestedFrom;
 					requestedNodes[i] = pn.myRef;
 					requestedLocs[i] = pn.getLocation();
 					requestedTimes[i] = now;
@@ -272,8 +255,8 @@ class FailureTableEntry {
 			toIndex++;
 		}
 		
-		for(int fromIndex=0;fromIndex<notIncluded;fromIndex++) {
-			PeerNode pn = requestedFrom[fromIndex];
+		if(!requestorIncluded) {
+			PeerNode pn = requestedFrom;
 			if(pn != null) {
 				newRequestedNodes[toIndex] = pn.myRef;
 				newRequestedTimes[toIndex] = now;

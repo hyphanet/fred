@@ -121,7 +121,7 @@ public class FailureTable {
 			// Don't know anything about the key
 			return false;
 		}
-		entry.addRequestors(new PeerNode[] { requestor }, now);
+		entry.addRequestors(requestor, now);
 		if(htl > entry.htl) {
 			// If the HTL is higher this time, let it through
 			entriesByKey.push(key, entry);
