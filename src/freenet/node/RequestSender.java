@@ -407,13 +407,12 @@ public final class RequestSender implements Runnable, ByteCounter {
             if(logMINOR) Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
             
-            // Create the data request *before* decrementing HTL, so it doesn't get decremented twice.
-            Message req = createDataRequest();
-            
             if(Location.distance(target, nextValue) > Location.distance(target, nearestLoc)) {
                 htl = node.decrementHTL((hasForwarded ? next : source), htl);
                 if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc+" so htl="+htl);
             }
+            
+            Message req = createDataRequest();
             
             // Not possible to get an accurate time for sending, guaranteed to be not later than the time of receipt.
             // Why? Because by the time the sent() callback gets called, it may already have been acked, under heavy load.
