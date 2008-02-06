@@ -149,7 +149,7 @@ public class RealNodeULPRTest {
         }
         
         System.err.println();
-        System.err.println("Created random test key "+testKey);
+        System.err.println("Created random test key "+testKey+" = "+fetchKey.getNodeKey());
         System.err.println();
         Logger.error(RealNodeULPRTest.class, "Starting ULPR test #"+successfulTests+": "+testKey+" = "+fetchKey+" = "+fetchKey.getNodeKey());
         
