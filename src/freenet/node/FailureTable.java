@@ -99,8 +99,10 @@ public class FailureTable {
 			}
 			trimEntries(now);
 		}
-		entry.failedTo(routedTo, timeout, now, htl);
-		entry.addRequestor(requestor, now);
+		if(routedTo != null)
+			entry.failedTo(routedTo, timeout, now, htl);
+		if(requestor != null)
+			entry.addRequestor(requestor, now);
 	}
 	
 	/**
