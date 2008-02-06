@@ -127,7 +127,6 @@ class FailureTableEntry {
 		receivedTime = now;
 		boolean includedAlready = false;
 		int nulls = 0;
-		PeerNode req = requestor;
 		int ret = -1;
 		for(int i=0;i<requestorNodes.length;i++) {
 			PeerNode got = requestorNodes[i] == null ? null : (PeerNode) requestorNodes[i].get();
@@ -139,11 +138,11 @@ class FailureTableEntry {
 			}
 			if(got == null)
 				nulls++;
-			if(got == req) {
+			if(got == requestor) {
 				// Update existing entry
 				includedAlready = true;
 				requestorTimes[i] = now;
-				requestorBootIDs[i] = req.getBootID();
+				requestorBootIDs[i] = requestor.getBootID();
 				ret = i;
 				break;
 			}
@@ -155,10 +154,9 @@ class FailureTableEntry {
 			// Nice special case
 			for(int i=0;i<requestorNodes.length;i++) {
 				if(requestorNodes[i] == null || requestorNodes[i].get() == null) {
-					PeerNode pn = requestor;
-					requestorNodes[i] = pn.myRef;
+					requestorNodes[i] = requestor.myRef;
 					requestorTimes[i] = now;
-					requestorBootIDs[i] = pn.getBootID();
+					requestorBootIDs[i] = requestor.getBootID();
 					return i;
 				}
 			}
@@ -180,15 +178,11 @@ class FailureTableEntry {
 		}
 		
 		if(!includedAlready) {
-		
-			PeerNode pn = requestor;
-			if(pn != null) {
-				newRequestorNodes[toIndex] = pn.myRef;
+				newRequestorNodes[toIndex] = requestor.myRef;
 				newRequestorTimes[toIndex] = now;
-				newRequestorBootIDs[toIndex] = pn.getBootID();
+				newRequestorBootIDs[toIndex] = requestor.getBootID();
 				ret = toIndex;
 				toIndex++;
-			}
 		}
 		
 		for(int i=toIndex;i<newRequestorNodes.length;i++) newRequestorNodes[i] = null;
@@ -215,17 +209,16 @@ class FailureTableEntry {
 		sentTime = now;
 		boolean includedAlready = false;
 		int nulls = 0;
-		PeerNode req = requestedFrom;
 		int ret = -1;
 		for(int i=0;i<requestedNodes.length;i++) {
 			PeerNode got = requestedNodes[i] == null ? null : (PeerNode) requestedNodes[i].get();
 			if(got == null)
 				nulls++;
-			if(got == req) {
+			if(got == requestedFrom) {
 				// Update existing entry
 				includedAlready = true;
-				requestedLocs[i] = req.getLocation();
-				requestedBootIDs[i] = req.getBootID();
+				requestedLocs[i] = requestedFrom.getLocation();
+				requestedBootIDs[i] = requestedFrom.getBootID();
 				requestedTimes[i] = now;
 				ret = i;
 				break;
@@ -238,9 +231,8 @@ class FailureTableEntry {
 			// Nice special case
 			for(int i=0;i<requestedNodes.length;i++) {
 				if(requestedNodes[i] == null || requestedNodes[i].get() == null) {
-					PeerNode pn = requestedFrom;
-					requestedNodes[i] = pn.myRef;
-					requestedLocs[i] = pn.getLocation();
+					requestedNodes[i] = requestedFrom.myRef;
+					requestedLocs[i] = requestedFrom.getLocation();
 					requestedTimes[i] = now;
 					return ret;
 				}
@@ -265,14 +257,11 @@ class FailureTableEntry {
 		}
 		
 		if(!includedAlready) {
-			PeerNode pn = requestedFrom;
-			if(pn != null) {
-				newRequestedNodes[toIndex] = pn.myRef;
+				newRequestedNodes[toIndex] = requestedFrom.myRef;
 				newRequestedTimes[toIndex] = now;
-				newRequestedBootIDs[toIndex] = pn.getBootID();
-				newRequestedLocs[toIndex] = pn.getLocation();
+				newRequestedBootIDs[toIndex] = requestedFrom.getBootID();
+				newRequestedLocs[toIndex] = requestedFrom.getLocation();
 				toIndex++;
-			}
 		}
 		
 		for(int i=toIndex;i<newRequestedNodes.length;i++) newRequestedNodes[i] = null;
