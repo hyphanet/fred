@@ -834,13 +834,13 @@ public class PeerManager {
 			if(leastRecentlyTimedOut != null) {
 				// FIXME downgrade to DEBUG
 				best = leastRecentlyTimedOut;
-				if(logMINOR) Logger.minor(this, "Using least recently timed out peer for key: "+best.shortToString()+" for "+key);
+				if(logMINOR) Logger.minor(this, "Using least recently failed in-timeout-period peer for key: "+best.shortToString()+" for "+key);
 			} else if(closestBackedOff != null) {
 				best = closestBackedOff;
 				if(logMINOR) Logger.minor(this, "Using best backed-off peer for key: "+best.shortToString());
 			} else if(leastRecentlyTimedOutBackedOff != null) {
 				best = leastRecentlyTimedOutBackedOff;
-				if(logMINOR) Logger.minor(this, "Using least recently timed out backed-off peer for key: "+best.shortToString()+" for "+key);
+				if(logMINOR) Logger.minor(this, "Using least recently failed in-timeout-period backed-off peer for key: "+best.shortToString()+" for "+key);
 			}
 		}
 		
