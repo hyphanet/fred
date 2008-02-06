@@ -129,12 +129,12 @@ class FailureTableEntry {
 		int nulls = 0;
 		PeerNode req = requestor;
 		int ret = -1;
-		for(int j=0;j<requestorNodes.length;j++) {
-			PeerNode got = requestorNodes[j] == null ? null : (PeerNode) requestorNodes[j].get();
+		for(int i=0;i<requestorNodes.length;i++) {
+			PeerNode got = requestorNodes[i] == null ? null : (PeerNode) requestorNodes[i].get();
 			// No longer subscribed if they have rebooted, or expired
-			if(got != null && got.getBootID() != requestorBootIDs[j] ||
-					now - requestorTimes[j] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
-				requestorNodes[j] = null;
+			if(got != null && got.getBootID() != requestorBootIDs[i] ||
+					now - requestorTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
+				requestorNodes[i] = null;
 				got = null;
 			}
 			if(got == null)
@@ -142,9 +142,9 @@ class FailureTableEntry {
 			if(got == req) {
 				// Update existing entry
 				requestorIncluded = true;
-				requestorTimes[j] = now;
-				requestorBootIDs[j] = req.getBootID();
-				ret = j;
+				requestorTimes[i] = now;
+				requestorBootIDs[i] = req.getBootID();
+				ret = i;
 				break;
 			}
 		}
@@ -217,17 +217,17 @@ class FailureTableEntry {
 		int nulls = 0;
 		PeerNode req = requestedFrom;
 		int ret = -1;
-		for(int j=0;j<requestedNodes.length;j++) {
-			PeerNode got = requestedNodes[j] == null ? null : (PeerNode) requestedNodes[j].get();
+		for(int i=0;i<requestedNodes.length;i++) {
+			PeerNode got = requestedNodes[i] == null ? null : (PeerNode) requestedNodes[i].get();
 			if(got == null)
 				nulls++;
 			if(got == req) {
 				// Update existing entry
 				requestorIncluded = true;
-				requestedLocs[j] = req.getLocation();
-				requestedBootIDs[j] = req.getBootID();
-				requestedTimes[j] = now;
-				ret = j;
+				requestedLocs[i] = req.getLocation();
+				requestedBootIDs[i] = req.getBootID();
+				requestedTimes[i] = now;
+				ret = i;
 				break;
 			}
 		}
