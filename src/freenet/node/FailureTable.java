@@ -219,6 +219,7 @@ public class FailureTable {
 	 */
 	public void onFound(KeyBlock block) {
 		Key key = block.getKey();
+		if(key == null) throw new NullPointerException();
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = (FailureTableEntry) entriesByKey.get(key);

@@ -13,7 +13,7 @@ import freenet.support.StringArray;
 class FailureTableEntry implements TimedOutNodesList {
 	
 	/** The key */
-	Key key; // FIXME should this be stored compressed somehow e.g. just the routing key?
+	final Key key; // FIXME should this be stored compressed somehow e.g. just the routing key?
 	/** The HTL at which it was requested last time. Any request of higher HTL will be let through. */
 	short htl;
 	/** Time of creation of this entry */
@@ -52,6 +52,7 @@ class FailureTableEntry implements TimedOutNodesList {
 	static final int MAX_TIME_BETWEEN_REQUEST_AND_OFFER = 60 * 60 * 1000;
 	
 	FailureTableEntry(Key key) {
+		this.key = key;
 		if(key == null) throw new NullPointerException();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long now = System.currentTimeMillis();
@@ -70,10 +71,10 @@ class FailureTableEntry implements TimedOutNodesList {
 	}
 	
 	FailureTableEntry(Key key2, short htl2, PeerNode[] requestors, PeerNode[] requested) {
-		if(key == null) throw new NullPointerException();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long now = System.currentTimeMillis();
 		this.key = key2;
+		if(key == null) throw new NullPointerException();
 		this.htl = htl2;
 		creationTime = now;
 		receivedTime = now;
