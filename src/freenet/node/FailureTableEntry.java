@@ -107,7 +107,7 @@ class FailureTableEntry {
 			}
 			if(requestors != null) {
 				for(int i=0;i<requestors.length;i++)
-					addRequestors(requestors[i], now);
+					addRequestor(requestors[i], now);
 			}
 			if(requestedFrom != null) {
 				for(int i=0;i<requestedFrom.length;i++)
@@ -122,7 +122,7 @@ class FailureTableEntry {
 	// per entry byte cost.
 	// Note also this will generate some churn...
 	
-	synchronized int addRequestors(PeerNode requestors, long now) {
+	synchronized int addRequestor(PeerNode requestors, long now) {
 		if(logMINOR) Logger.minor(this, "Adding requestors: "+requestors+" at "+now);
 		receivedTime = now;
 		boolean requestorIncluded = false;
