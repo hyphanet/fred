@@ -178,11 +178,11 @@ class FailureTableEntry {
 		}
 		
 		if(!includedAlready) {
-				newRequestorNodes[toIndex] = requestor.myRef;
-				newRequestorTimes[toIndex] = now;
-				newRequestorBootIDs[toIndex] = requestor.getBootID();
-				ret = toIndex;
-				toIndex++;
+			newRequestorNodes[toIndex] = requestor.myRef;
+			newRequestorTimes[toIndex] = now;
+			newRequestorBootIDs[toIndex] = requestor.getBootID();
+			ret = toIndex;
+			toIndex++;
 		}
 		
 		for(int i=toIndex;i<newRequestorNodes.length;i++) newRequestorNodes[i] = null;
@@ -257,11 +257,11 @@ class FailureTableEntry {
 		}
 		
 		if(!includedAlready) {
-				newRequestedNodes[toIndex] = requestedFrom.myRef;
-				newRequestedTimes[toIndex] = now;
-				newRequestedBootIDs[toIndex] = requestedFrom.getBootID();
-				newRequestedLocs[toIndex] = requestedFrom.getLocation();
-				toIndex++;
+			newRequestedNodes[toIndex] = requestedFrom.myRef;
+			newRequestedTimes[toIndex] = now;
+			newRequestedBootIDs[toIndex] = requestedFrom.getBootID();
+			newRequestedLocs[toIndex] = requestedFrom.getLocation();
+			toIndex++;
 		}
 		
 		for(int i=toIndex;i<newRequestedNodes.length;i++) newRequestedNodes[i] = null;
