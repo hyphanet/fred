@@ -364,7 +364,6 @@ class FailureTableEntry {
 				continue;
 			}
 			anyValid = true;
-			if(pn == peer) return true;
 		}
 		if(!anyValid) {
 			requestorNodes = new WeakReference[0];
