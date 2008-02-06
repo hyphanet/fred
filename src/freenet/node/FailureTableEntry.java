@@ -125,7 +125,7 @@ class FailureTableEntry {
 	synchronized int addRequestor(PeerNode requestor, long now) {
 		if(logMINOR) Logger.minor(this, "Adding requestors: "+requestor+" at "+now);
 		receivedTime = now;
-		boolean requestorIncluded = false;
+		boolean includedAlready = false;
 		int nulls = 0;
 		PeerNode req = requestor;
 		int ret = -1;
@@ -141,17 +141,17 @@ class FailureTableEntry {
 				nulls++;
 			if(got == req) {
 				// Update existing entry
-				requestorIncluded = true;
+				includedAlready = true;
 				requestorTimes[i] = now;
 				requestorBootIDs[i] = req.getBootID();
 				ret = i;
 				break;
 			}
 		}
-		if(nulls == 0 && requestorIncluded) return ret;
-		int notIncluded = requestorIncluded ? 0 : 1;
+		if(nulls == 0 && includedAlready) return ret;
+		int notIncluded = includedAlready ? 0 : 1;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
-		if(nulls == 1 && !requestorIncluded) {
+		if(nulls == 1 && !includedAlready) {
 			// Nice special case
 			for(int i=0;i<requestorNodes.length;i++) {
 				if(requestorNodes[i] == null || requestorNodes[i].get() == null) {
@@ -179,7 +179,7 @@ class FailureTableEntry {
 			toIndex++;
 		}
 		
-		if(!requestorIncluded) {
+		if(!includedAlready) {
 		
 			PeerNode pn = requestor;
 			if(pn != null) {
@@ -213,7 +213,7 @@ class FailureTableEntry {
 	private synchronized int addRequestedFrom(PeerNode requestedFrom, long now) {
 		if(logMINOR) Logger.minor(this, "Adding requested from: "+requestedFrom+" at "+now);
 		sentTime = now;
-		boolean requestorIncluded = false;
+		boolean includedAlready = false;
 		int nulls = 0;
 		PeerNode req = requestedFrom;
 		int ret = -1;
@@ -223,7 +223,7 @@ class FailureTableEntry {
 				nulls++;
 			if(got == req) {
 				// Update existing entry
-				requestorIncluded = true;
+				includedAlready = true;
 				requestedLocs[i] = req.getLocation();
 				requestedBootIDs[i] = req.getBootID();
 				requestedTimes[i] = now;
@@ -231,10 +231,10 @@ class FailureTableEntry {
 				break;
 			}
 		}
-		if(requestorIncluded && nulls == 0) return ret;
-		int notIncluded = requestorIncluded ? 0 : 1;
+		if(includedAlready && nulls == 0) return ret;
+		int notIncluded = includedAlready ? 0 : 1;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
-		if(nulls == 1 && !requestorIncluded) {
+		if(nulls == 1 && !includedAlready) {
 			// Nice special case
 			for(int i=0;i<requestedNodes.length;i++) {
 				if(requestedNodes[i] == null || requestedNodes[i].get() == null) {
@@ -264,7 +264,7 @@ class FailureTableEntry {
 			toIndex++;
 		}
 		
-		if(!requestorIncluded) {
+		if(!includedAlready) {
 			PeerNode pn = requestedFrom;
 			if(pn != null) {
 				newRequestedNodes[toIndex] = pn.myRef;
