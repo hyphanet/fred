@@ -959,7 +959,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException {
 		if(logMINOR)
-			Logger.minor(this, "Sending async: " + msg + " : " + cb + " on " + this);
+			Logger.minor(this, "Sending async: " + msg + " : " + cb + " on " + this+" for "+node.getDarknetPortNumber());
 		if(!isConnected())
 			throw new NotConnectedException();
 		addToLocalNodeSentMessagesToStatistic(msg);
