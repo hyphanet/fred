@@ -301,6 +301,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		}
 		
 		if(!includedAlready) {
+			ret = toIndex;
 			newRequestedNodes[toIndex] = requestedFrom.myRef;
 			newRequestedTimes[toIndex] = now;
 			newRequestedBootIDs[toIndex] = requestedFrom.getBootID();
