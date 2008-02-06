@@ -41,6 +41,9 @@ class FailureTableEntry {
 	double[] requestedLocs;
 	long[] requestedBootIDs;
 	long[] requestedTimes;
+	/** Timeouts for each node */
+	long[] requestedTimeouts;
+	short[] requestedTimeoutHTLs;
 	
 	static boolean logMINOR;
 	
@@ -61,6 +64,8 @@ class FailureTableEntry {
 		requestedLocs = new double[0];
 		requestedBootIDs = new long[0];
 		requestedTimes = new long[0];
+		requestedTimeouts = new long[0];
+		requestedTimeoutHTLs = new short[0];
 	}
 	
 	FailureTableEntry(Key key2, short htl2, PeerNode[] requestors, PeerNode[] requested) {
@@ -90,17 +95,23 @@ class FailureTableEntry {
 			requestedLocs = new double[requested.length];
 			requestedBootIDs = new long[requested.length];
 			requestedTimes = new long[requested.length];
+			requestedTimeouts = new long[requested.length];
+			requestedTimeoutHTLs = new short[requested.length];
 			for(int i=0;i<requestedNodes.length;i++) {
 				requestedNodes[i] = requested[i].myRef;
 				requestedLocs[i] = requested[i].getLocation();
 				requestedBootIDs[i] = requested[i].getBootID();
 				requestedTimes[i] = now;
+				requestedTimeouts[i] = -1;
+				requestedTimeoutHTLs[i] = (short) -1;
 			}
 		} else {
 			requestedNodes = new WeakReference[0];
 			requestedLocs = new double[0];
 			requestedBootIDs = new long[0];
 			requestedTimes = new long[0];
+			requestedTimeouts = new long[0];
+			requestedTimeoutHTLs = new short[0];
 		}
 	}
 	
@@ -127,6 +138,20 @@ class FailureTableEntry {
 			if(requestedFrom != null) {
 				for(int i=0;i<requestedFrom.length;i++)
 					addRequestedFrom(requestedFrom[i], now);
+			}
+		}
+	}
+	
+	public void failedTo(PeerNode routedTo, int timeout, long now, short htl) {
+		if(logMINOR) {
+			Logger.minor(this, "Failed sending request to "+routedTo.shortToString()+" : timeout "+timeout);
+			int idx = addRequestedFrom(routedTo, now);
+			long curTimeoutTime = requestedTimeouts[idx];
+			long newTimeoutTime = now +  timeout;
+			// FIXME htl???
+			if(now > curTimeoutTime /* has expired */ && newTimeoutTime > curTimeoutTime) {
+				requestedTimeouts[idx] = newTimeoutTime;
+				requestedTimeoutHTLs[idx] = htl;
 			}
 		}
 	}
@@ -247,6 +272,8 @@ class FailureTableEntry {
 					requestedNodes[i] = requestedFrom.myRef;
 					requestedLocs[i] = requestedFrom.getLocation();
 					requestedTimes[i] = now;
+					requestedTimeouts[i] = -1;
+					requestedTimeoutHTLs[i] = (short) -1;
 					return ret;
 				}
 			}
@@ -255,6 +282,8 @@ class FailureTableEntry {
 		double[] newRequestedLocs = new double[requestedNodes.length+notIncluded-nulls];
 		long[] newRequestedBootIDs = new long[requestedNodes.length+notIncluded-nulls];
 		long[] newRequestedTimes = new long[requestedNodes.length+notIncluded-nulls];
+		long[] newRequestedTimeouts = new long[requestedNodes.length+notIncluded-nulls];
+		short[] newRequestedTimeoutHTLs = new short[requestedNodes.length+notIncluded-nulls];
 
 		int toIndex = 0;
 		for(int i=0;i<requestedNodes.length;i++) {
@@ -266,6 +295,8 @@ class FailureTableEntry {
 			newRequestedTimes[toIndex] = requestedTimes[i];
 			newRequestedBootIDs[toIndex] = requestedBootIDs[i];
 			newRequestedLocs[toIndex] = requestedLocs[i];
+			newRequestedTimeouts[toIndex] = requestedTimeouts[i];
+			newRequestedTimeoutHTLs[toIndex] = requestedTimeoutHTLs[i];
 			toIndex++;
 		}
 		
@@ -274,6 +305,8 @@ class FailureTableEntry {
 			newRequestedTimes[toIndex] = now;
 			newRequestedBootIDs[toIndex] = requestedFrom.getBootID();
 			newRequestedLocs[toIndex] = requestedFrom.getLocation();
+			newRequestedTimeouts[toIndex] = -1;
+			newRequestedTimeoutHTLs[toIndex] = (short) -1;
 			toIndex++;
 		}
 		
@@ -283,19 +316,27 @@ class FailureTableEntry {
 			double[] newNewRequestedLocs = new double[toIndex];
 			long[] newNewRequestedBootIDs = new long[toIndex];
 			long[] newNewRequestedTimes = new long[toIndex];
+			long[] newNewRequestedTimeouts = new long[toIndex];
+			short[] newNewRequestedTimeoutHTLs = new short[toIndex];
 			System.arraycopy(newRequestedNodes, 0, newNewRequestedNodes, 0, toIndex);
 			System.arraycopy(newRequestedLocs, 0, newNewRequestedLocs, 0, toIndex);
 			System.arraycopy(newRequestedBootIDs, 0, newNewRequestedBootIDs, 0, toIndex);
 			System.arraycopy(newRequestedTimes, 0, newNewRequestedTimes, 0, toIndex);
+			System.arraycopy(newRequestedTimeouts, 0, newNewRequestedTimeouts, 0, toIndex);
+			System.arraycopy(newRequestedTimeoutHTLs, 0, newNewRequestedTimeoutHTLs, 0, toIndex);
 			newRequestedNodes = newNewRequestedNodes;
 			newRequestedLocs = newNewRequestedLocs;
 			newRequestedBootIDs = newNewRequestedBootIDs;
 			newRequestedTimes = newNewRequestedTimes;
+			newRequestedTimeouts = newNewRequestedTimeouts;
+			newRequestedTimeoutHTLs = newNewRequestedTimeoutHTLs;
 		}
 		requestedNodes = newRequestedNodes;
 		requestedLocs = newRequestedLocs;
 		requestedBootIDs = newRequestedBootIDs;
 		requestedTimes = newRequestedTimes;
+		requestedTimeouts = newRequestedTimeouts;
+		requestedTimeoutHTLs = newRequestedTimeoutHTLs;
 		
 		return ret;
 	}
@@ -421,7 +462,8 @@ class FailureTableEntry {
 		}
 		if(!anyValid) {
 			requestedNodes = new WeakReference[0];
-			requestedTimes = requestedBootIDs = new long[0];
+			requestedTimes = requestedBootIDs = requestedTimeouts = new long[0];
+			requestedTimeoutHTLs = new short[0];
 		}
 		return false;
 	}
