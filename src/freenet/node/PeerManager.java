@@ -785,7 +785,7 @@ public class PeerManager {
             	continue;
             }
 			count++;
-            if(logMINOR) Logger.minor(this, "p.loc="+loc+", target="+target+", d="+Location.distance(loc, target)+" usedD="+diff+" for "+p.getPeer());
+            if(logMINOR) Logger.minor(this, "p.loc="+loc+", target="+target+", d="+Location.distance(loc, target)+" usedD="+diff+" timedOut="+timedOut+" for "+p.getPeer());
 			boolean chosen=false;
             if(diff < closestDistance && !timedOut) {
             	closestDistance = diff;
