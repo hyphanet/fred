@@ -122,12 +122,13 @@ class FailureTableEntry {
 	// per entry byte cost.
 	// Note also this will generate some churn...
 	
-	synchronized void addRequestors(PeerNode requestors, long now) {
+	synchronized int addRequestors(PeerNode requestors, long now) {
 		if(logMINOR) Logger.minor(this, "Adding requestors: "+requestors+" at "+now);
 		receivedTime = now;
 		boolean requestorIncluded = false;
 		int nulls = 0;
 		PeerNode req = requestors;
+		int ret = -1;
 		for(int j=0;j<requestorNodes.length;j++) {
 			PeerNode got = requestorNodes[j] == null ? null : (PeerNode) requestorNodes[j].get();
 			// No longer subscribed if they have rebooted, or expired
@@ -143,10 +144,11 @@ class FailureTableEntry {
 				requestorIncluded = true;
 				requestorTimes[j] = now;
 				requestorBootIDs[j] = req.getBootID();
+				ret = j;
 				break;
 			}
 		}
-		if(nulls == 0 && requestorIncluded) return;
+		if(nulls == 0 && requestorIncluded) return ret;
 		int notIncluded = requestorIncluded ? 0 : 1;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
 		if(nulls == 1 && !requestorIncluded) {
@@ -157,9 +159,9 @@ class FailureTableEntry {
 					requestorNodes[i] = pn.myRef;
 					requestorTimes[i] = now;
 					requestorBootIDs[i] = pn.getBootID();
+					return i;
 				}
 			}
-			return;
 		}
 		WeakReference[] newRequestorNodes = new WeakReference[requestorNodes.length+notIncluded-nulls];
 		long[] newRequestorTimes = new long[requestorNodes.length+notIncluded-nulls];
@@ -168,7 +170,9 @@ class FailureTableEntry {
 		
 		for(int i=0;i<requestorNodes.length;i++) {
 			WeakReference ref = requestorNodes[i];
-			if(ref == null || ref.get() == null) continue;
+			PeerNode pn = (PeerNode) (ref == null ? null : ref.get());
+			if(pn == null) continue;
+			if(pn == requestors) ret = i;
 			newRequestorNodes[toIndex] = requestorNodes[i];
 			newRequestorTimes[toIndex] = requestorTimes[i];
 			newRequestorBootIDs[toIndex] = requestorBootIDs[i];
@@ -182,6 +186,7 @@ class FailureTableEntry {
 				newRequestorNodes[toIndex] = pn.myRef;
 				newRequestorTimes[toIndex] = now;
 				newRequestorBootIDs[toIndex] = pn.getBootID();
+				ret = toIndex;
 				toIndex++;
 			}
 		}
@@ -201,14 +206,17 @@ class FailureTableEntry {
 		requestorNodes = newRequestorNodes;
 		requestorTimes = newRequestorTimes;
 		requestorBootIDs = newRequestorBootIDs;
+		
+		return ret;
 	}
 
-	private synchronized void addRequestedFrom(PeerNode requestedFrom, long now) {
+	private synchronized int addRequestedFrom(PeerNode requestedFrom, long now) {
 		if(logMINOR) Logger.minor(this, "Adding requested from: "+requestedFrom+" at "+now);
 		sentTime = now;
 		boolean requestorIncluded = false;
 		int nulls = 0;
 		PeerNode req = requestedFrom;
+		int ret = -1;
 		for(int j=0;j<requestedNodes.length;j++) {
 			PeerNode got = requestedNodes[j] == null ? null : (PeerNode) requestedNodes[j].get();
 			if(got == null)
@@ -219,25 +227,24 @@ class FailureTableEntry {
 				requestedLocs[j] = req.getLocation();
 				requestedBootIDs[j] = req.getBootID();
 				requestedTimes[j] = now;
+				ret = j;
 				break;
 			}
 		}
-		if(requestorIncluded && nulls == 0) return;
+		if(requestorIncluded && nulls == 0) return ret;
 		int notIncluded = requestorIncluded ? 0 : 1;
 		// Because weak, these can become null; doesn't matter, but we want to minimise memory usage
 		if(nulls == 1 && !requestorIncluded) {
 			// Nice special case
-			int x = 0;
 			for(int i=0;i<requestedNodes.length;i++) {
 				if(requestedNodes[i] == null || requestedNodes[i].get() == null) {
 					PeerNode pn = requestedFrom;
 					requestedNodes[i] = pn.myRef;
 					requestedLocs[i] = pn.getLocation();
 					requestedTimes[i] = now;
-					if(x == notIncluded) break;
+					return ret;
 				}
 			}
-			return;
 		}
 		WeakReference[] newRequestedNodes = new WeakReference[requestedNodes.length+notIncluded-nulls];
 		double[] newRequestedLocs = new double[requestedNodes.length+notIncluded-nulls];
@@ -247,7 +254,9 @@ class FailureTableEntry {
 		int toIndex = 0;
 		for(int i=0;i<requestedNodes.length;i++) {
 			WeakReference ref = requestedNodes[i];
-			if(ref == null || ref.get() == null) continue;
+			PeerNode pn = (PeerNode) (ref == null ? null : ref.get());
+			if(pn == null) continue;
+			if(pn == requestedFrom) ret = i;
 			newRequestedNodes[toIndex] = requestedNodes[i];
 			newRequestedTimes[toIndex] = requestedTimes[i];
 			newRequestedBootIDs[toIndex] = requestedBootIDs[i];
@@ -285,6 +294,8 @@ class FailureTableEntry {
 		requestedLocs = newRequestedLocs;
 		requestedBootIDs = newRequestedBootIDs;
 		requestedTimes = newRequestedTimes;
+		
+		return ret;
 	}
 
 	public synchronized double bestLiveLocDiff() {
