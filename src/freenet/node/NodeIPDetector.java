@@ -153,6 +153,7 @@ public class NodeIPDetector {
 	 * @return
 	 */
 	private boolean innerDetect(Vector addresses) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean addedValidIP = false;
 		InetAddress[] detectedAddrs = ipDetector.getAddress();
 		assert(detectedAddrs != null);
@@ -200,7 +201,8 @@ public class NodeIPDetector {
 				FreenetInetAddress addr = p.getFreenetAddress();
 				if(addr == null) continue;
 				if(!IPUtil.isValidAddress(addr.getAddress(false), false)) continue;
-				Logger.normal(this, "Peer "+peerList[i].getPeer()+" thinks we are "+addr);
+				if(logMINOR)
+					Logger.minor(this, "Peer "+peerList[i].getPeer()+" thinks we are "+addr);
 				if(countsByPeer.containsKey(addr)) {
 					Integer count = (Integer) countsByPeer.get(addr);
 					Integer newCount = new Integer(count.intValue()+1);
