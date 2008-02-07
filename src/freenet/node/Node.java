@@ -2079,11 +2079,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	public void store(SSKBlock block, boolean deep) throws KeyCollisionException {
 		try {
+			// Store the pubkey before storing the data, otherwise we can get a race condition and
+			// end up deleting the SSK data.
+			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey(), deep);
 			if(deep) {
 				sskDatastore.put(block, false);
 			}
 			sskDatacache.put(block, false);
-			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey(), deep);
 			if(clientCore != null && clientCore.requestStarters != null)
 				clientCore.requestStarters.sskFetchScheduler.tripPendingKey(block);
 			failureTable.onFound(block);
