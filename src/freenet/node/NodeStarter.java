@@ -371,7 +371,12 @@ public class NodeStarter implements WrapperListener
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 		
-		return new Node(config, random, null, null, executor);
+		Node node=new Node(config, random, null, null, executor);
+		
+		//All testing environments connect the nodes as they want, even if the old setup is restored, it is not desired.
+		node.peers.removeAllPeers();
+		
+		return node;
 	}
 	
 }

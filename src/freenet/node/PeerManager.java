@@ -338,7 +338,20 @@ public class PeerManager {
     		updatePMUserAlert();
         return true;
     }
-
+	
+	public boolean removeAllPeers() {
+		Logger.normal(this, "removeAllPeers!");
+		PeerNode[] oldPeers;
+		synchronized (this) {
+			oldPeers = myPeers;
+			myPeers = new PeerNode[0];
+			connectedPeers = new PeerNode[0];
+		}
+		for (int i=0; i<oldPeers.length; i++)
+			oldPeers[i].onRemove();
+		return true;
+	}	
+	
 	public boolean disconnected(PeerNode pn) {
 		synchronized(this) {
 			boolean isInPeers = false;
