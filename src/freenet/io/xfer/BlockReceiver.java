@@ -43,7 +43,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	public static final int RECEIPT_TIMEOUT = 30000;
 	// TODO: This should be proportional to the calculated round-trip-time, not a constant
 	public static final int MAX_ROUND_TRIP_TIME = RECEIPT_TIMEOUT;
-	public static final int MAX_CONSECUTIVE_MISSING_PACKET_REPORTS = 4;
+	public static final int MAX_CONSECUTIVE_MISSING_PACKET_REPORTS = 8;
 	public static final int MAX_SEND_INTERVAL = 500;
 	public static final int CLEANUP_TIMEOUT = 5000;
 	PartiallyReceivedBlock _prb;
