@@ -47,6 +47,11 @@ class NetworkIDManager {
 		StoredSecret s=new StoredSecret(pn, uid, secret);
 		Logger.error(this, "Storing secret: "+s);
 		addOrReplaceSecret(s);
+		try {
+			pn.sendAsync(DMT.createFNPAccepted(uid), null, 0, null);
+		} catch (NotConnectedException e) {
+			Logger.error(this, "peer disconnected before storeSecret ack?", e);
+		}
 		return true;
 	}
 	
