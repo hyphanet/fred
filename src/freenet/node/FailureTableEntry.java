@@ -70,54 +70,6 @@ class FailureTableEntry implements TimedOutNodesList {
 		requestedTimeoutHTLs = new short[0];
 	}
 	
-	FailureTableEntry(Key key2, short htl2, PeerNode[] requestors, PeerNode[] requested) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		long now = System.currentTimeMillis();
-		this.key = key2;
-		if(key == null) throw new NullPointerException();
-		this.htl = htl2;
-		creationTime = now;
-		receivedTime = now;
-		sentTime = now;
-		if(requestors != null) {
-			requestorNodes = new WeakReference[requestors.length];
-			requestorTimes = new long[requestors.length];
-			requestorBootIDs = new long[requestors.length];
-			for(int i=0;i<requestorNodes.length;i++) {
-				requestorNodes[i] = requestors[i].myRef;
-				requestorTimes[i] = now;
-				requestorBootIDs[i] = requestors[i].getBootID();
-			}
-		} else {
-			requestorNodes = new WeakReference[0];
-			requestorTimes = new long[0];
-			requestorBootIDs = new long[0];
-		}
-		if(requested != null) {
-			requestedNodes = new WeakReference[requested.length];
-			requestedLocs = new double[requested.length];
-			requestedBootIDs = new long[requested.length];
-			requestedTimes = new long[requested.length];
-			requestedTimeouts = new long[requested.length];
-			requestedTimeoutHTLs = new short[requested.length];
-			for(int i=0;i<requestedNodes.length;i++) {
-				requestedNodes[i] = requested[i].myRef;
-				requestedLocs[i] = requested[i].getLocation();
-				requestedBootIDs[i] = requested[i].getBootID();
-				requestedTimes[i] = now;
-				requestedTimeouts[i] = -1;
-				requestedTimeoutHTLs[i] = (short) -1;
-			}
-		} else {
-			requestedNodes = new WeakReference[0];
-			requestedLocs = new double[0];
-			requestedBootIDs = new long[0];
-			requestedTimes = new long[0];
-			requestedTimeouts = new long[0];
-			requestedTimeoutHTLs = new short[0];
-		}
-	}
-	
 	/**
 	 * Called when there is a failure which could cause a block to be added: Either a DataNotFound, or a
 	 * RecentlyFailed.
