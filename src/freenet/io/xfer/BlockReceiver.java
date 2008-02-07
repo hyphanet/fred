@@ -40,7 +40,7 @@ import freenet.support.Logger;
  */
 public class BlockReceiver implements AsyncMessageFilterCallback {
 
-	public static final int RECEIPT_TIMEOUT = 60000;
+	public static final int RECEIPT_TIMEOUT = 30000;
 	// TODO: This should be proportional to the calculated round-trip-time, not a constant
 	public static final int MAX_ROUND_TRIP_TIME = RECEIPT_TIMEOUT;
 	public static final int MAX_CONSECUTIVE_MISSING_PACKET_REPORTS = 4;
