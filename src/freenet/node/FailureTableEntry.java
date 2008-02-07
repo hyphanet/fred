@@ -104,7 +104,7 @@ class FailureTableEntry implements TimedOutNodesList {
 			long curTimeoutTime = requestedTimeouts[idx];
 			long newTimeoutTime = now +  timeout;
 			// FIXME htl???
-			if(now > curTimeoutTime /* has expired */ && newTimeoutTime > curTimeoutTime) {
+			if(newTimeoutTime > curTimeoutTime) {
 				requestedTimeouts[idx] = newTimeoutTime;
 				requestedTimeoutHTLs[idx] = htl;
 			}
