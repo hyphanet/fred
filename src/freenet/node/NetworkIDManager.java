@@ -55,24 +55,27 @@ class NetworkIDManager {
 		return true;
 	}
 	
-	public boolean handleSecretPing(Message m) {
+	public boolean handleSecretPing(final Message m) {
+		final PeerNode source=(PeerNode)m.getSource();
+		final long uid = m.getLong(DMT.UID);
+		final short htl = m.getShort(DMT.HTL);
+		final short dawnHtl=m.getShort(DMT.DAWN_HTL);
+		final int counter=m.getInt(DMT.COUNTER);
+		node.executor.execute(new Runnable() {
+		public void run() {
 		try {
-			return _handleSecretPing(m);
+			_handleSecretPing(m, source, uid, htl, dawnHtl, counter);
 		} catch (NotConnectedException e) {
 			Logger.normal(this, "secretPing/not connected: "+e);
-			return false;
 		}
+		}}, "SecretPingHandler for UID "+uid+" on "+node.getDarknetPortNumber());
+		return true;
 	}
 	
 	/*
 	 @throws NotConnectedException if the *source* goes away
 	 */
-	private boolean _handleSecretPing(Message m) throws NotConnectedException {
-		PeerNode source=(PeerNode)m.getSource();
-		long uid = m.getLong(DMT.UID);
-		short htl = m.getShort(DMT.HTL);
-		short dawnHtl=m.getShort(DMT.DAWN_HTL);
-		int counter=m.getInt(DMT.COUNTER);
+	private boolean _handleSecretPing(Message m, PeerNode source, long uid, short htl, short dawnHtl, int counter) throws NotConnectedException {
 		
 		if (disableSecretPings || node.recentlyCompleted(uid)) {
 			source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, null);
