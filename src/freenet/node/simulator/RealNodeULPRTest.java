@@ -56,6 +56,7 @@ public class RealNodeULPRTest {
     static final short MAX_HTL = 10; // for now
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
+    static final int NUMBER_OF_TESTS = 100;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException {
         System.err.println("ULPR test");
@@ -118,7 +119,7 @@ public class RealNodeULPRTest {
         
         long totalPropagationTime = 0;
         
-        for(int totalCount=0;totalCount<256;totalCount++) {
+        for(int totalCount=0;totalCount<NUMBER_OF_TESTS;totalCount++) {
         
         boolean isSSK = (totalCount & 0x1) == 1;
         
