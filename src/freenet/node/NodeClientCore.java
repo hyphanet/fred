@@ -446,7 +446,8 @@ public class NodeClientCore implements Persistable {
 	
 	public void asyncGet(Key key, boolean cache, boolean offersOnly, final SimpleRequestSenderCompletionListener listener) {
 		final long uid = random.nextLong();
-		if(!node.lockUID(uid, false, false, false)) {
+		final boolean isSSK = key instanceof NodeSSK;
+		if(!node.lockUID(uid, isSSK, false, false)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			return;
 		}
@@ -461,7 +462,7 @@ public class NodeClientCore implements Persistable {
 			}
 
 			public void onRequestSenderFinished(int status) {
-				node.unlockUID(uid, false, false, false, false);
+				node.unlockUID(uid, isSSK, false, false, false);
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
 			}
