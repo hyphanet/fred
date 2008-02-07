@@ -9,6 +9,10 @@ import com.sleepycat.je.DatabaseException;
  */
 public interface FreenetStore {
 
+	public static final short TYPE_CHK = 0;
+	public static final short TYPE_PUBKEY = 1;
+	public static final short TYPE_SSK = 2;
+
 	/**
 	 * Retrieve a block. Use the StoreCallback to convert it to the appropriate type of block.
 	 * @param routingKey The routing key i.e. the database key under which the block is stored.

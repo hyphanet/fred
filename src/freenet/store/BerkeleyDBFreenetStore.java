@@ -99,7 +99,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		return new File(baseStoreDir, newStoreFileName);
 	}
 	
-	public static BerkeleyDBFreenetStore construct(int lastVersion, File baseStoreDir, boolean isStore,
+	public static FreenetStore construct(int lastVersion, File baseStoreDir, boolean isStore,
 			String suffix, long maxStoreKeys, 
 			short type, Environment storeEnvironment, RandomSource random, 
 			SemiOrderedShutdownHook storeShutdownHook, boolean tryDbLoad, File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
@@ -137,7 +137,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		File newFixSecondaryFile = new File(baseStoreDir, "recreate_secondary_db-"+newStoreFileName);
 		
-		BerkeleyDBFreenetStore tmp;
+		FreenetStore tmp;
 		
 		if(newStoreFile.exists()) {
 			
@@ -163,7 +163,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		return tmp;
 	}
 
-	private static BerkeleyDBFreenetStore openStore(Environment storeEnvironment, File baseDir, String newDBPrefix, File newStoreFile,
+	private static FreenetStore openStore(Environment storeEnvironment, File baseDir, String newDBPrefix, File newStoreFile,
 			File lruFile, File keysFile, File newFixSecondaryFile, long maxStoreKeys, 
 			boolean noCheck, int lastVersion, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, 
 			boolean tryDbLoad, File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
@@ -980,10 +980,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
-	public static final short TYPE_CHK = 0;
-	public static final short TYPE_PUBKEY = 1;
-	public static final short TYPE_SSK = 2;
-	
 	/**
 	* Recreate the index from the data file. Call this when the index has been corrupted.
 	 * @param reconstructFile 
