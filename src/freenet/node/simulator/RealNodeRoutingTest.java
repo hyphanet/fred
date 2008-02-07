@@ -151,7 +151,7 @@ public class RealNodeRoutingTest {
             }
             if(pings > 10 && avg.currentValue() > 0.95 && ((double)successes / ((double)(failures+successes)) > 0.95)) {
             	System.err.println();
-            	System.err.println("Reached 98% accuracy.");
+            	System.err.println("Reached 95% accuracy.");
             	System.err.println();
             	System.err.println("Network size: "+NUMBER_OF_NODES);
             	System.err.println("Maximum HTL: "+MAX_HTL);
