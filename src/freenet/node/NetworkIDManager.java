@@ -18,8 +18,8 @@ import freenet.support.Logger;
  * @author robert
  * @created 2008-02-06
  */
-class NetworkIDManager {
-	private static boolean disableSecretPings=true;
+public class NetworkIDManager {
+	public static boolean disableSecretPings=true;
 	
 	private static final int SECRETPONG_TIMEOUT=10000;
 	private final boolean logMINOR;
@@ -78,6 +78,7 @@ class NetworkIDManager {
 	private boolean _handleSecretPing(Message m, PeerNode source, long uid, short htl, short dawnHtl, int counter) throws NotConnectedException {
 		
 		if (disableSecretPings || node.recentlyCompleted(uid)) {
+			Logger.normal(this, "recently complete/loop: "+uid);
 			source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, null);
 		} else {
 			StoredSecret match;
