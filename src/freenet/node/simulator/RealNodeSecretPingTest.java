@@ -55,7 +55,7 @@ public class RealNodeSecretPingTest {
         new File(wd).mkdir();
         //NOTE: globalTestInit returns in ignored random source
         NodeStarter.globalTestInit(wd);
-		Logger.setupStdoutLogging(Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeSecretPingTest:normal,freenet.node.NetworkIDManager:debug");
+		Logger.setupStdoutLogging(Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeSecretPingTest:normal,freenet.node.NetworkIDManager:normal");
 		Logger.globalSetThreshold(Logger.ERROR);
 
         DummyRandomSource random = new DummyRandomSource();
@@ -100,7 +100,7 @@ public class RealNodeSecretPingTest {
 			PeerNode verify = source.peers.getRandomPeer();
 			PeerNode pathway = source.peers.getRandomPeer(verify);
 			
-			Logger.error(source, "verify ("+verify+") through: "+pathway+"; so far "+avg2.currentValue());
+			Logger.error(source, "verify ("+getPortNumber(verify)+") through: "+getPortNumber(pathway)+"; so far "+avg2.currentValue());
 			
 			long uid=random.nextLong();
 			long secret=random.nextLong();
@@ -170,7 +170,7 @@ public class RealNodeSecretPingTest {
 		Message msg = source.getUSM().waitFor(mfPong.or(mfRejectLoop), null);
 		
 		if (msg==null) {
-			Logger.error(source, "fatal timeout in waiting for secretpong from "+pathway);
+			Logger.error(source, "fatal timeout in waiting for secretpong from "+getPortNumber(pathway));
 			return -2;
 		}
 		
@@ -182,7 +182,7 @@ public class RealNodeSecretPingTest {
 		}
 		
 		if (msg.getSpec() == DMT.FNPRejectedLoop) {
-			Logger.error(source, "top level secret ping should not reject!: "+source+" -> "+pathway);
+			Logger.error(source, "top level secret ping should not reject!: "+getPortNumber(source)+" -> "+getPortNumber(pathway));
 			return -1;
 		}
 		
@@ -232,4 +232,17 @@ public class RealNodeSecretPingTest {
 		double bL=b.getLocation();
 		return Location.distance(aL, bL);
 	}
+	
+	static String getPortNumber(PeerNode p) {
+		if (p == null || p.getPeer() == null)
+			return "null";
+		return Integer.toString(p.getPeer().getPort());
+	}
+	
+	static String getPortNumber(Node n) {
+		if (n == null)
+			return "null";
+		return Integer.toString(n.getDarknetPortNumber());
+	}
+	
 }

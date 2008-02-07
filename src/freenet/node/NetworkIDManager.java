@@ -45,7 +45,7 @@ public class NetworkIDManager {
 		long uid = m.getLong(DMT.UID);
 		long secret = m.getLong(DMT.SECRET);
 		StoredSecret s=new StoredSecret(pn, uid, secret);
-		Logger.error(this, "Storing secret: "+s);
+		if (logMINOR) Logger.minor(this, "Storing secret: "+s);
 		addOrReplaceSecret(s);
 		try {
 			pn.sendAsync(DMT.createFNPAccepted(uid), null, 0, null);
@@ -78,7 +78,7 @@ public class NetworkIDManager {
 	private boolean _handleSecretPing(Message m, PeerNode source, long uid, short htl, short dawnHtl, int counter) throws NotConnectedException {
 		
 		if (disableSecretPings || node.recentlyCompleted(uid)) {
-			Logger.normal(this, "recently complete/loop: "+uid);
+			if (logMINOR) Logger.minor(this, "recently complete/loop: "+uid);
 			source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, null);
 		} else {
 			StoredSecret match;
@@ -92,7 +92,7 @@ public class NetworkIDManager {
 				if (htl > dawnHtl) {
 					source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, null);
 				} else {
-					Logger.error(this, "Responding to "+source+" with "+match+" from "+match.peer);
+					if (logMINOR) Logger.minor(this, "Responding to "+source+" with "+match+" from "+match.peer);
 					source.sendAsync(match.getSecretPong(counter+1), null, 0, null);
 				}
 			} else {
@@ -162,7 +162,7 @@ public class NetworkIDManager {
 						if (suppliedCounter>counter)
 							counter=suppliedCounter;
 						long secret=msg.getLong(DMT.SECRET);
-						Logger.error(this, node+" forwarding apparently-successful secretpong response: "+counter+"/"+secret+" from "+next+" to "+source);
+						if (logMINOR) Logger.minor(this, node+" forwarding apparently-successful secretpong response: "+counter+"/"+secret+" from "+next+" to "+source);
 						source.sendAsync(DMT.createFNPSecretPong(uid, counter, secret), null, 0, null);
 						break;
 					}
@@ -187,7 +187,7 @@ public class NetworkIDManager {
 			StoredSecret s=(StoredSecret)secretsByPeer.get(pn);
 			if (s!=null) {
 				//???: Might it still be valid to respond to secret pings when the neighbor requesting it has disconnected? (super-secret ping?)
-				Logger.error(this, "Removing on disconnect: "+s);
+				Logger.normal(this, "Removing on disconnect: "+s);
 				removeSecret(s);
 			}
 		}
