@@ -62,7 +62,7 @@ public class MessageItem {
 			try {
 				ctrCallback.sentBytes(length);
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t+" reporting "+length+" sent bytes on "+this);
+				Logger.error(this, "Caught "+t+" reporting "+length+" sent bytes on "+this, t);
 			}
 		}
 		if(cb != null) {
@@ -70,7 +70,7 @@ public class MessageItem {
 				try {
 					cb[i].sent();
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this);
+					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
 				}
 			}
 		}
