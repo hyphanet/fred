@@ -360,7 +360,7 @@ class FailureTableEntry implements TimedOutNodesList {
 
 	/** Offer this key to all the nodes that have requested it, and all the nodes it has been requested from.
 	 * Called after a) the data has been stored, and b) this entry has been removed from the FT */
-	public void offer() {
+	public synchronized void offer() {
 		HashSet set = new HashSet();
 		if(logMINOR) Logger.minor(this, "Sending offers to nodes which requested the key from us:");
 		for(int i=0;i<requestorNodes.length;i++) {
