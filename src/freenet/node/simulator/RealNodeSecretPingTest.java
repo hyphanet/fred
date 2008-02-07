@@ -54,7 +54,7 @@ public class RealNodeSecretPingTest {
         String wd = "realNodeSecretPingTest";
         new File(wd).mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(wd);
+        NodeStarter.globalTestInit(wd, false);
 		Logger.setupStdoutLogging(Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeSecretPingTest:normal,freenet.node.NetworkIDManager:normal");
 		Logger.globalSetThreshold(Logger.ERROR);
 

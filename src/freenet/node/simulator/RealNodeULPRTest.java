@@ -73,7 +73,7 @@ public class RealNodeULPRTest {
         DummyRandomSource random = new DummyRandomSource();
         
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(testName);
+        NodeStarter.globalTestInit(testName, false);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();

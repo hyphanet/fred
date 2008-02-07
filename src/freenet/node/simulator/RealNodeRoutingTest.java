@@ -41,7 +41,7 @@ public class RealNodeRoutingTest {
         String wd = "realNodeRequestInsertTest";
         new File(wd).mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(wd);
+        NodeStarter.globalTestInit(wd, false);
         DummyRandomSource random = new DummyRandomSource();
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];

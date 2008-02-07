@@ -271,7 +271,7 @@ public class NodeStarter implements WrapperListener
      * Not Node-specific; many nodes may be created later.
      * @param testName The name of the test instance.
      */
-	public static RandomSource globalTestInit(String testName) throws InvalidThresholdException {
+	public static RandomSource globalTestInit(String testName, boolean enablePlug) throws InvalidThresholdException {
 		
 		File dir = new File(testName);
 		if((!dir.mkdir()) && ((!dir.exists()) || (!dir.isDirectory()))) {
@@ -291,6 +291,8 @@ public class NodeStarter implements WrapperListener
     	
     	DiffieHellman.init(random);
    	 
+    	if(enablePlug) {
+    	
 		// Thread to keep the node up.
 		// JVM deadlocks losing a lock when two threads of different types (daemon|app)
 		// are contended for the same lock. So make USM daemon, and use useless to keep the JVM
@@ -319,6 +321,7 @@ public class NodeStarter implements WrapperListener
 		// DO NOT do anything in the plug thread, if you do you risk the EvilJVMBug.
 		plug.setDaemon(false);
 		plug.start();
+    	}
 		
 		return random;
 	}
