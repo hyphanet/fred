@@ -116,7 +116,10 @@ public class RealNodeULPRTest {
         
         int successfulTests = 0;
         
-        for(int totalCount=0;totalCount<256;totalCount++) {
+        long totalPropagationTime = 0;
+        
+        int totalCount = 0;
+        for(totalCount=0;totalCount<256;totalCount++) {
         
         boolean isSSK = (totalCount & 0x1) == 1;
         
@@ -176,9 +179,8 @@ public class RealNodeULPRTest {
         
         // Store the key to ONE node.
         
+		long tStart = System.currentTimeMillis();
 		nodes[nodes.length-1].store(block, false);
-        
-        // Every 5 seconds, check how many nodes have the key.
 		
 		int x = -1;
 		while(true) {
@@ -198,7 +200,11 @@ public class RealNodeULPRTest {
 			}
 			if(count == nodes.length) {
 				successfulTests++;
-				System.err.println("SUCCESSFUL TEST # "+successfulTests+"!!!");
+				long tEnd = System.currentTimeMillis();
+				long propagationTime = tEnd-tStart;
+				System.err.println("SUCCESSFUL TEST # "+successfulTests+" in "+propagationTime+"ms!!!");
+				totalPropagationTime += propagationTime;
+		        System.err.println("Average propagation time: "+(totalPropagationTime / (totalCount+1))+"ms");
 				System.err.println();
 				break;
 			}
@@ -213,6 +219,7 @@ public class RealNodeULPRTest {
 		}
 		
         }
+        System.err.println("Overall average propagation time: "+(totalPropagationTime / (totalCount+1))+"ms");
         
     }
     
