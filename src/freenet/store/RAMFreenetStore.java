@@ -31,6 +31,7 @@ public class RAMFreenetStore implements FreenetStore {
 		this.callback = callback;
 		this.blocksByRoutingKey = new LRUHashtable();
 		this.maxKeys = maxKeys;
+		callback.setStore(this);
 	}
 	
 	public synchronized StorableBlock fetch(byte[] routingKey, byte[] fullKey,
