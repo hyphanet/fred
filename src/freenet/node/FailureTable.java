@@ -257,49 +257,49 @@ public class FailureTable {
 				return; // we haven't asked for it
 			}
 		}
-			/*
-			 * Accept (subject to later checks) if we asked for it.
-			 * Should we accept it if we were asked for it? This is "bidirectional propagation".
-			 * It's good because it makes the whole structure much more reliable; it's bad because
-			 * it's not entirely under our control - we didn't choose to route it to the node, the node
-			 * routed it to us. Now it's found it before we did...
-			 * 
-			 * Attacks:
-			 * - Frost spamming etc: Is it easier to offer data to our peers rather than inserting it? Will
-			 * it result in it being propagated further? The peer node would then do the request, rather than
-			 * this node doing an insert. Is that beneficial?
-			 * 
-			 * Not relevant with CHKs anyway.
-			 * 
-			 * On the plus side, propagation to nodes that have asked is worthwhile because reduced polling 
-			 * cost enables more secure messaging systems e.g. outbox polling...
-			 * - Social engineering: If a key is unpopular, you can put a different copy of it on different 
-			 * nodes. You can then use this to trace the requestor - identify that he is or isn't on the target. 
-			 * You can't do this with a regular insert because it will often go several nodes even at htl 0. 
-			 * With subscriptions, you might be able to bypass this - but only if you know no other nodes in the
-			 * neighbourhood are subscribed. Easier with SSKs; with CHKs you have only binary information of 
-			 * whether the person got the key (with social engineering). Hard to exploit on darknet; if you're 
-			 * that close to the suspect there are easier ways to get at them e.g. correlation attacks.
-			 * 
-			 * Conclusion: We should accept the request if:
-			 * - We asked for it from that node. (Note that a node might both have asked us and been asked).
-			 * - That node asked for it, and it's a CHK.
-			 */
-			
-			boolean weAsked = entry.askedFromPeer(peer, now);
-			boolean heAsked = entry.askedByPeer(peer, now);
-			if(!(weAsked || ((key instanceof NodeCHK) && heAsked))) {
-				if(logMINOR) Logger.minor(this, "Not propagating key: weAsked="+weAsked+" heAsked="+heAsked);
-				if(entry.isEmpty(now)) entriesByKey.removeKey(key);
-				return;
-			}
+		/*
+		 * Accept (subject to later checks) if we asked for it.
+		 * Should we accept it if we were asked for it? This is "bidirectional propagation".
+		 * It's good because it makes the whole structure much more reliable; it's bad because
+		 * it's not entirely under our control - we didn't choose to route it to the node, the node
+		 * routed it to us. Now it's found it before we did...
+		 * 
+		 * Attacks:
+		 * - Frost spamming etc: Is it easier to offer data to our peers rather than inserting it? Will
+		 * it result in it being propagated further? The peer node would then do the request, rather than
+		 * this node doing an insert. Is that beneficial?
+		 * 
+		 * Not relevant with CHKs anyway.
+		 * 
+		 * On the plus side, propagation to nodes that have asked is worthwhile because reduced polling 
+		 * cost enables more secure messaging systems e.g. outbox polling...
+		 * - Social engineering: If a key is unpopular, you can put a different copy of it on different 
+		 * nodes. You can then use this to trace the requestor - identify that he is or isn't on the target. 
+		 * You can't do this with a regular insert because it will often go several nodes even at htl 0. 
+		 * With subscriptions, you might be able to bypass this - but only if you know no other nodes in the
+		 * neighbourhood are subscribed. Easier with SSKs; with CHKs you have only binary information of 
+		 * whether the person got the key (with social engineering). Hard to exploit on darknet; if you're 
+		 * that close to the suspect there are easier ways to get at them e.g. correlation attacks.
+		 * 
+		 * Conclusion: We should accept the request if:
+		 * - We asked for it from that node. (Note that a node might both have asked us and been asked).
+		 * - That node asked for it, and it's a CHK.
+		 */
+		
+		boolean weAsked = entry.askedFromPeer(peer, now);
+		boolean heAsked = entry.askedByPeer(peer, now);
+		if(!(weAsked || ((key instanceof NodeCHK) && heAsked))) {
+			if(logMINOR) Logger.minor(this, "Not propagating key: weAsked="+weAsked+" heAsked="+heAsked);
 			if(entry.isEmpty(now)) entriesByKey.removeKey(key);
-			
-			// Valid offer.
-			
-			// Add to offers list
-			
-			synchronized(this) {
+			return;
+		}
+		if(entry.isEmpty(now)) entriesByKey.removeKey(key);
+		
+		// Valid offer.
+		
+		// Add to offers list
+		
+		synchronized(this) {
 			
 			if(logMINOR) Logger.minor(this, "Valid offer");
 			BlockOfferList bl = (BlockOfferList) blockOfferListByKey.get(key);
