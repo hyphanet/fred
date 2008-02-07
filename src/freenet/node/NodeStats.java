@@ -477,7 +477,9 @@ public class NodeStats implements Persistable {
 			successfulChkFetchBytesSentAverage.currentValue() * numCHKRequests +
 			successfulSskFetchBytesSentAverage.currentValue() * numSSKRequests +
 			successfulChkInsertBytesSentAverage.currentValue() * numCHKInserts +
-			successfulSskInsertBytesSentAverage.currentValue() * numSSKInserts;
+			successfulSskInsertBytesSentAverage.currentValue() * numSSKInserts +
+			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
+			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
 		double bandwidthAvailableOutput =
 			node.getOutputBandwidthLimit() * 90; // 90 seconds at full power; we have to leave some time for the search as well
 		bandwidthAvailableOutput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
@@ -491,7 +493,9 @@ public class NodeStats implements Persistable {
 			successfulChkFetchBytesReceivedAverage.currentValue() * numCHKRequests +
 			successfulSskFetchBytesReceivedAverage.currentValue() * numSSKRequests +
 			successfulChkInsertBytesReceivedAverage.currentValue() * numCHKInserts +
-			successfulSskInsertBytesReceivedAverage.currentValue() * numSSKInserts;
+			successfulSskInsertBytesReceivedAverage.currentValue() * numSSKInserts +
+			successfulChkOfferReplyBytesReceivedAverage.currentValue() * numCHKOfferReplies +
+			successfulSskOfferReplyBytesReceivedAverage.currentValue() * numSSKOfferReplies;
 		double bandwidthAvailableInput =
 			node.getInputBandwidthLimit() * 90; // 90 seconds at full power
 		bandwidthAvailableInput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
