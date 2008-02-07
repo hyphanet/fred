@@ -40,9 +40,6 @@ import freenet.support.Logger;
  */
 public class BlockReceiver implements AsyncMessageFilterCallback {
 
-	public static final int RECEIPT_TIMEOUT = 30000;
-	// TODO: This should be proportional to the calculated round-trip-time, not a constant
-	public static final int MAX_ROUND_TRIP_TIME = RECEIPT_TIMEOUT;
 	/*
 	 * FIXME: Is this a good idea?
 	 * RECEIPT_TIMEOUT must be less than 60 seconds because BlockTransmitter times out after not
@@ -50,6 +47,9 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	 * some timeouts, and on the theory that even though the request handler will have already
 	 * timed out, we can still offer it after we've got the data completely.
 	 */
+	public static final int RECEIPT_TIMEOUT = 30000;
+	// TODO: This should be proportional to the calculated round-trip-time, not a constant
+	public static final int MAX_ROUND_TRIP_TIME = RECEIPT_TIMEOUT;
 	public static final int MAX_CONSECUTIVE_MISSING_PACKET_REPORTS = 8;
 	public static final int MAX_SEND_INTERVAL = 500;
 	public static final int CLEANUP_TIMEOUT = 5000;
