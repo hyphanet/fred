@@ -256,7 +256,7 @@ public class FailureTable {
 				if(logMINOR) Logger.minor(this, "We didn't ask for the key");
 				return; // we haven't asked for it
 			}
-			
+		}
 			/*
 			 * Accept (subject to later checks) if we asked for it.
 			 * Should we accept it if we were asked for it? This is "bidirectional propagation".
@@ -298,6 +298,8 @@ public class FailureTable {
 			// Valid offer.
 			
 			// Add to offers list
+			
+			synchronized(this) {
 			
 			if(logMINOR) Logger.minor(this, "Valid offer");
 			BlockOfferList bl = (BlockOfferList) blockOfferListByKey.get(key);
