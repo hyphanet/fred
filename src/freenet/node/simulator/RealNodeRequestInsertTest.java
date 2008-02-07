@@ -34,8 +34,8 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRequestInsertTest {
 
-    static final int NUMBER_OF_NODES = 10;
-    static final short MAX_HTL = 5;
+    static final int NUMBER_OF_NODES = 50;
+    static final short MAX_HTL = 7;
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
     
@@ -58,6 +58,9 @@ public class RealNodeRequestInsertTest {
             nodes[i] = 
             	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
+            // Make the network immediately routable.
+            // Comment out if we want to include a routing/swapping test as well.
+            nodes[i].setLocation((1.0 * i) / NUMBER_OF_NODES);
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];
         for(int i=0;i<NUMBER_OF_NODES;i++)
@@ -123,6 +126,9 @@ public class RealNodeRequestInsertTest {
             Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (rate limit): "+LocationManager.swapsRejectedRateLimit);
             Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (loop): "+LocationManager.swapsRejectedLoop);
             Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (recognized ID):" +LocationManager.swapsRejectedRecognizedID);
+            Logger.normal(RealNodeRoutingTest.class, "Swaps failed:" +LocationManager.noSwaps);
+            Logger.normal(RealNodeRoutingTest.class, "Swaps succeeded:" +LocationManager.swaps);
+            
             lastSwaps = newSwaps;
             // Do some (routed) test-pings
             for(int i=0;i<10;i++) {
@@ -173,7 +179,7 @@ public class RealNodeRequestInsertTest {
             try {
                 requestNumber++;
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(100);
                 } catch (InterruptedException e1) {
                 }
                 String dataString = baseString + requestNumber;
@@ -222,6 +228,17 @@ public class RealNodeRequestInsertTest {
                         Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
                     }
                 }
+                StringBuffer load = new StringBuffer("Running UIDs for nodes: ");
+                for(int i=0;i<nodes.length;i++) {
+                	load.append(i);
+                	load.append(':');
+                	load.append(nodes[i].getTotalRunningUIDs());
+                	load.append(':');
+                	load.append(nodes[i].getTotalRunningUIDsAlt());
+                	if(i != nodes.length-1)
+                		load.append(' ');
+                }
+                System.out.println(load.toString());
             } catch (Throwable t) {
                 Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
             }

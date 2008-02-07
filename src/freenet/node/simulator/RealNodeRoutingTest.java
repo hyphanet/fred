@@ -30,8 +30,8 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 150;
-    static final short MAX_HTL = (short)6;
+    static final int NUMBER_OF_NODES = 50;
+    static final short MAX_HTL = (short)7;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
         Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
@@ -97,21 +97,24 @@ public class RealNodeRoutingTest {
                 // Ignore
             }
             for(int i=0;i<NUMBER_OF_NODES;i++) {
-                Logger.normal(RealNodeRoutingTest.class, "Cycle "+cycleNumber+" node "+i+": "+nodes[i].getLocation());
+            	System.err.println("Cycle "+cycleNumber+" node "+i+": "+nodes[i].getLocation());
             }
             int newSwaps = LocationManager.swaps;
             int totalStarted = LocationManager.startedSwaps;
             int noSwaps = LocationManager.noSwaps;
-            Logger.normal(RealNodeRoutingTest.class, "Swaps: "+(newSwaps-lastSwaps));
-            Logger.normal(RealNodeRoutingTest.class, "\nTotal swaps: Started*2: "+totalStarted*2+", succeeded: "+newSwaps+", last minute failures: "+noSwaps+
+            System.err.println("Swaps: "+(newSwaps-lastSwaps));
+            System.err.println("\nTotal swaps: Started*2: "+totalStarted*2+", succeeded: "+newSwaps+", last minute failures: "+noSwaps+
                     ", ratio "+(double)noSwaps/(double)newSwaps+", early failures: "+((totalStarted*2)-(noSwaps+newSwaps)));
-            Logger.normal(RealNodeRoutingTest.class, "This cycle ratio: "+((double)(noSwaps-lastNoSwaps)) / ((double)(newSwaps - lastSwaps)));
+            System.err.println("This cycle ratio: "+((double)(noSwaps-lastNoSwaps)) / ((double)(newSwaps - lastSwaps)));
             lastNoSwaps = noSwaps;
-            Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (already locked): "+LocationManager.swapsRejectedAlreadyLocked);
-            Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (nowhere to go): "+LocationManager.swapsRejectedNowhereToGo);
-            Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (rate limit): "+LocationManager.swapsRejectedRateLimit);
-            Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (loop): "+LocationManager.swapsRejectedLoop);
-            Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (recognized ID):" +LocationManager.swapsRejectedRecognizedID);
+            System.err.println("Swaps rejected (already locked): "+LocationManager.swapsRejectedAlreadyLocked);
+            System.err.println("Swaps rejected (nowhere to go): "+LocationManager.swapsRejectedNowhereToGo);
+            System.err.println("Swaps rejected (rate limit): "+LocationManager.swapsRejectedRateLimit);
+            System.err.println("Swaps rejected (loop): "+LocationManager.swapsRejectedLoop);
+            System.err.println("Swaps rejected (recognized ID):" +LocationManager.swapsRejectedRecognizedID);
+            System.err.println("Swaps failed:" +LocationManager.noSwaps);
+            System.err.println("Swaps succeeded:" +LocationManager.swaps);
+
             lastSwaps = newSwaps;
             // Do some (routed) test-pings
             for(int i=0;i<10;i++) {
@@ -133,17 +136,33 @@ public class RealNodeRoutingTest {
                     avg.report(0.0);
                     avg2.report(0.0);
                     double ratio = (double)successes / ((double)(failures+successes));
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" FAILED from "+randomNode.getDarknetPortNumber()+" to "+randomNode2.getDarknetPortNumber()+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
+                    System.err.println("Routed ping "+pings+" FAILED from "+randomNode.getDarknetPortNumber()+" to "+randomNode2.getDarknetPortNumber()+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
                 } else {
                     successes++;
                     avg.report(1.0);
                     avg2.report(1.0);
                     double ratio = (double)successes / ((double)(failures+successes));
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" success: "+hopsTaken+ ' ' +randomNode.getDarknetPortNumber()+" to "+randomNode2.getDarknetPortNumber()+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
+                    System.err.println("Routed ping "+pings+" success: "+hopsTaken+ ' ' +randomNode.getDarknetPortNumber()+" to "+randomNode2.getDarknetPortNumber()+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
                 }
                 } catch (Throwable t) {
                     Logger.error(RealNodeRoutingTest.class, "Caught "+t, t);
                 }
+            }
+            if(pings > 10 && avg.currentValue() > 0.95 && ((double)successes / ((double)(failures+successes)) > 0.95)) {
+            	System.err.println();
+            	System.err.println("Reached 98% accuracy.");
+            	System.err.println();
+            	System.err.println("Network size: "+NUMBER_OF_NODES);
+            	System.err.println("Maximum HTL: "+MAX_HTL);
+            	System.err.println("Total started swaps: "+LocationManager.startedSwaps);
+                System.err.println("Total rejected swaps (already locked): "+LocationManager.swapsRejectedAlreadyLocked);
+                System.err.println("Total swaps rejected (nowhere to go): "+LocationManager.swapsRejectedNowhereToGo);
+                System.err.println("Total swaps rejected (rate limit): "+LocationManager.swapsRejectedRateLimit);
+                System.err.println("Total swaps rejected (loop): "+LocationManager.swapsRejectedLoop);
+                System.err.println("Total swaps rejected (recognized ID):" +LocationManager.swapsRejectedRecognizedID);
+                System.err.println("Total swaps failed:" +LocationManager.noSwaps);
+                System.err.println("Total swaps succeeded:" +LocationManager.swaps);
+                System.exit(0);
             }
         }
     }

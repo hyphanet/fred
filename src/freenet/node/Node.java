@@ -3120,4 +3120,20 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		else
 			return fetch((NodeSSK)key, true) != null;
 	}
+
+	public int getTotalRunningUIDs() {
+		return runningUIDs.size();
+	}
+
+	public int getTotalRunningUIDsAlt() {
+		return this.runningCHKGetUIDs.size() + this.runningCHKPutUIDs.size() + this.runningSSKGetUIDs.size() +
+		this.runningSSKGetUIDs.size() + this.runningSSKOfferReplyUIDs.size() + this.runningCHKOfferReplyUIDs.size();
+	}
+
+	/**
+	 * Warning: does not announce change in location!
+	 */
+	public void setLocation(double loc) {
+		lm.setLocation(loc);
+	}
 }
