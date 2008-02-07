@@ -219,7 +219,7 @@ public class RealNodeULPRTest {
 		
         }
         System.err.println("Overall average propagation time: "+(totalPropagationTime / successfulTests)+"ms");
-        
+        System.exit(0);
     }
     
     // FIXME factor out to some simulator utility class.
