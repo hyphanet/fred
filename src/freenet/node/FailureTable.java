@@ -78,7 +78,7 @@ public class FailureTable {
 	 * @param timeout
 	 */
 	public void onFailed(Key key, PeerNode routedTo, short htl, int timeout) {
-		if(!node.enableULPRDataPropagation) return;
+		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
 		synchronized(this) {
@@ -96,7 +96,7 @@ public class FailureTable {
 	}
 	
 	public void onFinalFailure(Key key, PeerNode routedTo, short htl, int timeout, PeerNode requestor) {
-		if(!node.enableULPRDataPropagation) return;
+		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
 		synchronized(this) {
@@ -220,7 +220,7 @@ public class FailureTable {
 	 * near future). If there are nodes waiting for it, we will offer it to them.
 	 */
 	public void onFound(KeyBlock block) {
-		if(!node.enableULPRDataPropagation) return;
+		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		Key key = block.getKey();
 		if(key == null) throw new NullPointerException();
 		FailureTableEntry entry;
@@ -230,6 +230,7 @@ public class FailureTable {
 			entriesByKey.removeKey(key);
 			blockOfferListByKey.removeKey(key);
 		}
+		if(!node.enableULPRDataPropagation) return;
 		entry.offer();
 	}
 	
@@ -443,12 +444,12 @@ public class FailureTable {
 
 	/** Called when a node disconnects */
 	public void onDisconnect(final PeerNode pn) {
-		if(!node.enableULPRDataPropagation) return;
+		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		// FIXME do something (off thread if expensive)
 	}
 
 	public TimedOutNodesList getTimedOutNodesList(Key key) {
-		if(!node.enableULPRDataPropagation) return null;
+		if(!node.enablePerNodeFailureTables) return null;
 		synchronized(this) {
 			return (FailureTableEntry) entriesByKey.get(key);
 		}
