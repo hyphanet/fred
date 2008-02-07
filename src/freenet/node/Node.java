@@ -2250,7 +2250,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply) {
-		if(logMINOR) Logger.minor(this, "Locking "+uid);
+		if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply);
 		Long l = new Long(uid);
 		HashSet set = getUIDTracker(ssk, insert, offerReply);
 		synchronized(set) {
@@ -2264,7 +2264,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply) {
-		if(logMINOR) Logger.minor(this, "Unlocking "+uid);
+		if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply);
 		Long l = new Long(uid);
 		completed(uid);
 		HashSet set = getUIDTracker(ssk, insert, offerReply);
