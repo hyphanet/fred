@@ -1202,7 +1202,7 @@ public class DMT {
 		Message msg = new Message(FNPSecretPong);
 		msg.set(UID, uid);
 		msg.set(COUNTER, counter);
-		msg.set(SECRET, Long.class);
+		msg.set(SECRET, secret);
 		return msg;
 	}
 	
