@@ -21,7 +21,8 @@ public class SSKStore extends StoreCallback {
 		if(fullKey == null) throw new SSKVerifyException("Need full key to reconstruct an SSK");
 		NodeSSK key;
 		key = NodeSSK.construct(fullKey);
-		key.grabPubkey(pubkeyCache);
+		if(!key.grabPubkey(pubkeyCache))
+			throw new SSKVerifyException("No pubkey found");
 		SSKBlock block = new SSKBlock(data, headers, key, false);
 		return block;
 	}
