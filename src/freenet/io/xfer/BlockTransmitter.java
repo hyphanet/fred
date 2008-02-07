@@ -102,7 +102,7 @@ public class BlockTransmitter {
 					int totalPackets;
 					try {
 						_destination.sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
-						_ctr.sentPayload(PACKET_SIZE);
+						if(_ctr != null) _ctr.sentPayload(PACKET_SIZE);
 						totalPackets=_prb.getNumPackets();
 					} catch (NotConnectedException e) {
 						Logger.normal(this, "Terminating send: "+e);
