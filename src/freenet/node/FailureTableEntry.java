@@ -345,19 +345,6 @@ class FailureTableEntry implements TimedOutNodesList {
 		return ret;
 	}
 
-	public synchronized double bestLiveLocDiff() {
-		double bestDiff = 2.0;
-		for(int i=0;i<requestedNodes.length;i++) {
-			if(requestedNodes[i] == null) continue;
-			PeerNode pn = (PeerNode) requestedNodes[i].get();
-			if(pn == null) continue;
-			if(!(pn.isRoutable() && pn.isRoutingBackedOff())) continue;
-			double diff = Location.distance(key.toNormalizedDouble(), requestedLocs[i]);
-			if(diff < bestDiff) bestDiff = diff;
-		}
-		return bestDiff;
-	}
-
 	/** Offer this key to all the nodes that have requested it, and all the nodes it has been requested from.
 	 * Called after a) the data has been stored, and b) this entry has been removed from the FT */
 	public synchronized void offer() {
