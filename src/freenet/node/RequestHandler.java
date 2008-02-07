@@ -353,8 +353,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
             	sendTerminal(df);
             }
             status = RequestSender.SUCCESS; // for byte logging
-        }
-        if(block instanceof CHKBlock) {
+        } else if(block instanceof CHKBlock) {
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
         	BlockTransmitter bt =
@@ -373,7 +372,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
                 applyByteCounts();
 				unregisterRequestHandlerWithNode();
         	}
-        }
+        } else throw new IllegalStateException();
 	}
 
 	private void unregisterRequestHandlerWithNode() {
