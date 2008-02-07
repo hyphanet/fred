@@ -453,6 +453,7 @@ public class NodeClientCore implements Persistable {
 		try {
 			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, node.getLocation(), false, false, cache, false, offersOnly);
 			if(o instanceof CHKBlock) {
+				node.unlockUID(uid, false, false, true, false);
 				return; // Already have it.
 			}
 			// Else it has started a request.
