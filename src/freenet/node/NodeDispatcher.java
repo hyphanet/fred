@@ -196,6 +196,8 @@ public class NodeDispatcher implements Dispatcher {
 		
 		// Do we want it? We can RejectOverload if we don't have the bandwidth...
 		boolean isSSK = key instanceof NodeSSK;
+		node.lockUID(uid, isSSK, false, true);
+		try {
 		boolean needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
 		String reject = 
 			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source);
@@ -207,7 +209,6 @@ public class NodeDispatcher implements Dispatcher {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(uid, isSSK, false, false, false);
 			return true;
 		}
 		
@@ -217,6 +218,9 @@ public class NodeDispatcher implements Dispatcher {
 			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source);
 		} catch (NotConnectedException e) {
 			// Too bad.
+		}
+		} finally {
+			node.unlockUID(uid, isSSK, false, false, true);
 		}
 		return true;
 	}
