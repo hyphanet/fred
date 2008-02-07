@@ -89,6 +89,7 @@ import freenet.store.CHKStore;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.PubkeyStore;
+import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Executor;
@@ -162,6 +163,29 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			// has been unregistered ... see #1595
 			get();
 		}
+	}
+	
+	private class StoreTypeCallback implements StringCallback, EnumerableOptionCallback {
+
+		public String get() {
+			return storeType;
+		}
+
+		public void set(String val) throws InvalidConfigValueException {
+			throw new InvalidConfigValueException("Store type cannot be changed on the fly");
+		}
+
+		public String[] getPossibleValues() {
+			return new String[] {
+					"bdb-index",
+					"ram"
+			};
+		}
+
+		public void setPossibleValues(String[] val) {
+			throw new UnsupportedOperationException();
+		}
+		
 	}
 	
 	private static class L10nCallback implements StringCallback, EnumerableOptionCallback {
@@ -254,6 +278,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	/** Datastore directory */
 	private final File storeDir;
+	
+	private final String storeType;
 
 	/** The number of bytes per key total in all the different datastores. All the datastores
 	 * are always the same size in number of keys. */
@@ -1059,6 +1085,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			
 		});
 		
+		nodeConfig.register("storeType", "bdb-index", sortOrder++, true, false, "Node.storeType", "Node.storeTypeLong", new StoreTypeCallback());
+		
+		storeType = nodeConfig.getString("storeType");
+		
 		nodeConfig.register("storeSize", "1G", sortOrder++, false, true, "Node.storeSize", "Node.storeSizeLong", 
 				new LongCallback() {
 
@@ -1103,7 +1133,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		maxTotalDatastoreSize = nodeConfig.getLong("storeSize");
 		
-		if(maxTotalDatastoreSize < 0 || maxTotalDatastoreSize < (32 * 1024 * 1024)) { // totally arbitrary minimum!
+		if(maxTotalDatastoreSize < 0 || maxTotalDatastoreSize < (32 * 1024 * 1024) && !storeType.equals("ram")) { // totally arbitrary minimum!
 			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid store size");
 		}
 
@@ -1120,7 +1150,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						throw new InvalidConfigValueException("Moving datastore on the fly not supported at present");
 					}
 		});
-		
+
 		final String suffix = "-" + getDarknetPortNumber();
 		String datastoreDir = nodeConfig.getString("storeDir");
 		// FIXME: temporary cludge for backward compat.
@@ -1188,6 +1218,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
+		
+		if(storeType.equals("bdb-index")) {
 		
 		// Setup datastores
 		
@@ -1455,6 +1487,24 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			throw new NodeInitException(NodeInitException.EXIT_STORE_RECONSTRUCT, msg);
 		}
 
+		} else {
+			chkDatastore = new CHKStore();
+			new RAMFreenetStore(chkDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
+			chkDatacache = new CHKStore();
+			new RAMFreenetStore(chkDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
+			pubKeyDatastore = new PubkeyStore();
+			new RAMFreenetStore(pubKeyDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
+			pubKeyDatacache = new PubkeyStore();
+			new RAMFreenetStore(pubKeyDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
+			sskDatastore = new SSKStore(this);
+			new RAMFreenetStore(sskDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
+			sskDatacache = new SSKStore(this);
+			new RAMFreenetStore(sskDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
+			storeShutdownHook = null;
+			envMutableConfig = null;
+			this.storeEnvironment = null;
+		}
+		
 		// FIXME back compatibility
 		SimpleFieldSet oldThrottleFS = null;
 		File oldThrottle = new File("throttle.dat");

@@ -335,7 +335,8 @@ public class NodeStarter implements WrapperListener
 	 */
 	public static Node createTestNode(int port, String testName, boolean doClient, 
 			boolean doSwapping, boolean disableProbabilisticHTLs, short maxHTL,
-			int dropProb, RandomSource random, Executor executor, int threadLimit) throws NodeInitException {
+			int dropProb, RandomSource random, Executor executor, int threadLimit, 
+			long storeSize, boolean ramStore) throws NodeInitException {
 		
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -364,6 +365,9 @@ public class NodeStarter implements WrapperListener
 		configFS.put("node.includeLocalAddressesInNoderefs", true);
 		configFS.put("node.enableARKs", false);
 		configFS.put("node.threadLimit", threadLimit);
+		if(ramStore) 
+			configFS.putSingle("node.storeType", "ram");
+		configFS.put("storeSize", storeSize);
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 		
