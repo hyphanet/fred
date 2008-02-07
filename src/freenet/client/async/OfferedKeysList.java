@@ -11,6 +11,7 @@ import freenet.keys.Key;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableRequest;
+import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
 import freenet.support.Logger;
 
 /**
@@ -99,7 +100,13 @@ public class OfferedKeysList extends SendableRequest {
 		// Don't let a node force us to start a real request for a specific key.
 		// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.
 		// Obviously this may have a marginal impact on load but it should only be marginal.
-		core.asyncGet(key, true, true);
+		core.asyncGet(key, true, true, new SimpleRequestSenderCompletionListener() {
+
+			public void completed(boolean success) {
+				// Ignore
+			}
+			
+		});
 		return true;
 	}
 

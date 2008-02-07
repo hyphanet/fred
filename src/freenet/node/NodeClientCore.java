@@ -438,24 +438,54 @@ public class NodeClientCore implements Persistable {
 		}, "Startup completion thread");
 	}
 
+	public interface SimpleRequestSenderCompletionListener {
+
+		public void completed(boolean success);
+		
+	}
+	
+	public void asyncGet(Key key, boolean cache, boolean offersOnly, final SimpleRequestSenderCompletionListener listener) {
+		final long uid = random.nextLong();
+		if(!node.lockUID(uid, false, false, false)) {
+			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
+			return;
+		}
+		asyncGet(key, cache, offersOnly, uid, new RequestSender.Listener() {
+
+			public void onCHKTransferBegins() {
+				// Ignore
+			}
+
+			public void onReceivedRejectOverload() {
+				// Ignore
+			}
+
+			public void onRequestSenderFinished(int status) {
+				node.unlockUID(uid, false, false, false, false);
+				if(listener != null)
+					listener.completed(status == RequestSender.SUCCESS);
+			}
+			
+		});
+	}
+	
 	/**
 	 * Start an asynchronous fetch of the key in question, which will complete to the datastore.
 	 * It will not decode the data because we don't provide a ClientKey. It will not return 
 	 * anything and will run asynchronously.
 	 * @param key
 	 */
-	public void asyncGet(Key key, boolean cache, boolean offersOnly) {
-		long uid = random.nextLong();
-		if(!node.lockUID(uid, false, false, false)) {
-			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
-			return;
-		}
+	void asyncGet(Key key, boolean cache, boolean offersOnly, long uid, RequestSender.Listener listener) {
 		try {
 			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, node.getLocation(), false, false, cache, false, offersOnly);
 			if(o instanceof CHKBlock) {
 				node.unlockUID(uid, false, false, true, false);
 				return; // Already have it.
 			}
+			RequestSender rs = (RequestSender) o;
+			rs.addListener(listener);
+			if(rs.uid != uid)
+				node.unlockUID(uid, false, false, false, false);
 			// Else it has started a request.
 			if(logMINOR)
 				Logger.minor(this, "Started "+o+" for "+uid+" for "+key);

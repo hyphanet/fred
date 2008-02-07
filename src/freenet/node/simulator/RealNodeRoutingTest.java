@@ -35,6 +35,7 @@ public class RealNodeRoutingTest {
     
     public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
         Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
+        Logger.globalSetThreshold(Logger.ERROR);
         System.out.println("Routing test using real nodes:");
         System.out.println();
         String wd = "realNodeRequestInsertTest";
