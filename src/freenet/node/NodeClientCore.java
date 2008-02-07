@@ -473,7 +473,7 @@ public class NodeClientCore implements Persistable {
 	/**
 	 * Start an asynchronous fetch of the key in question, which will complete to the datastore.
 	 * It will not decode the data because we don't provide a ClientKey. It will not return 
-	 * anything and will run asynchronously.
+	 * anything and will run asynchronously. Caller is responsible for unlocking the UID.
 	 * @param key
 	 */
 	void asyncGet(Key key, boolean cache, boolean offersOnly, long uid, RequestSender.Listener listener) {
