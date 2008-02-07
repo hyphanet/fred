@@ -140,7 +140,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
         Message accepted = DMT.createFNPAccepted(uid);
         source.sendAsync(accepted, null, 0, this);
         
-        Object o = node.makeRequestSender(key, htl, uid, source, closestLoc, resetClosestLoc, false, true, false);
+        Object o = node.makeRequestSender(key, htl, uid, source, closestLoc, resetClosestLoc, false, true, false, false);
         if(o instanceof KeyBlock) {
         	returnLocalData((KeyBlock)o);
             return;

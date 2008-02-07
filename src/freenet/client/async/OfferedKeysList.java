@@ -95,7 +95,11 @@ public class OfferedKeysList extends SendableRequest {
 	
 	public boolean send(NodeClientCore node, RequestScheduler sched, Object keyNum) {
 		Key key = (Key) keyNum;
-		core.asyncGet(key, true);// Have to cache it in order to propagate it; FIXME
+		// Have to cache it in order to propagate it; FIXME
+		// Don't let a node force us to start a real request for a specific key.
+		// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.
+		// Obviously this may have a marginal impact on load but it should only be marginal.
+		core.asyncGet(key, true, true);
 		return true;
 	}
 

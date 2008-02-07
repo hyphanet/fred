@@ -146,7 +146,7 @@ public final class RequestSender implements Runnable, ByteCounter {
      * already; RequestSender will not look it up.
      */
     public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n, double nearestLoc, boolean resetNearestLoc, 
-            PeerNode source) {
+            PeerNode source, boolean offersOnly) {
         this.key = key;
         this.pubKey = pubKey;
         this.htl = htl;
@@ -155,6 +155,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         this.source = source;
         this.nearestLoc = nearestLoc;
         this.resetNearestLoc = resetNearestLoc;
+        this.tryOffersOnly = offersOnly;
         target = key.toNormalizedDouble();
         node.addRequestSender(key, htl, this);
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -371,6 +372,12 @@ public final class RequestSender implements Runnable, ByteCounter {
         	// We don't remove the offer in that case. Otherwise we do, even if it fails.
         	// FNPGetOfferedKeyInvalid is also possible.
         }
+        }
+        
+        if(tryOffersOnly) {
+        	if(logMINOR) Logger.minor(this, "Tried all offers, not doing a regular request for key");
+        	finish(DATA_NOT_FOUND, null, true); // FIXME need a different error code?
+        	return;
         }
         
 		int routeAttempts=0;

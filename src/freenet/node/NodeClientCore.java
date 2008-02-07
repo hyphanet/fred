@@ -444,14 +444,14 @@ public class NodeClientCore implements Persistable {
 	 * anything and will run asynchronously.
 	 * @param key
 	 */
-	public void asyncGet(Key key, boolean cache) {
+	public void asyncGet(Key key, boolean cache, boolean offersOnly) {
 		long uid = random.nextLong();
 		if(!node.lockUID(uid, false, false, false)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			return;
 		}
 		try {
-			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, node.getLocation(), false, false, cache, false);
+			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, node.getLocation(), false, false, cache, false, offersOnly);
 			if(o instanceof CHKBlock) {
 				return; // Already have it.
 			}
@@ -485,7 +485,7 @@ public class NodeClientCore implements Persistable {
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		try {
-		Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, node.getLocation(), false, localOnly, cache, ignoreStore);
+		Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, node.getLocation(), false, localOnly, cache, ignoreStore, false);
 		if(o instanceof CHKBlock) {
 			try {
 				return new ClientCHKBlock((CHKBlock)o, key);
@@ -600,7 +600,7 @@ public class NodeClientCore implements Persistable {
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		try {
-		Object o = node.makeRequestSender(key.getNodeKey(), node.maxHTL(), uid, null, node.getLocation(), false, localOnly, cache, ignoreStore);
+		Object o = node.makeRequestSender(key.getNodeKey(), node.maxHTL(), uid, null, node.getLocation(), false, localOnly, cache, ignoreStore, false);
 		if(o instanceof SSKBlock) {
 			try {
 				SSKBlock block = (SSKBlock)o;
