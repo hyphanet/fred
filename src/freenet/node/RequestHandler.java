@@ -321,6 +321,9 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
             		Logger.error(this, "finish(TRANSFER_FAILED) should not be called on SSK?!?!", new Exception("error"));
             		return;
             	default:
+            		// Treat as internal error
+            	    reject = DMT.createFNPRejectedOverload(uid, true);
+            		sendTerminal(reject);
             	    throw new IllegalStateException("Unknown status code "+status);
             }
 		} catch (NotConnectedException e) {
