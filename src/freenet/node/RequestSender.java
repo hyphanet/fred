@@ -553,7 +553,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             		next.localRejectedOverload("FatalTimeout");
             		forwardRejectedOverload();
             		finish(TIMED_OUT, next, false);
-            		node.failureTable.onFinalFailure(key, next, htl, -1, source);
+            		node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
             		return;
             	}
 				
@@ -698,7 +698,7 @@ public final class RequestSender implements Runnable, ByteCounter {
                 			} catch (KeyVerifyException e1) {
                 				Logger.normal(this, "Got data but verify failed: "+e1, e1);
                 				finish(VERIFY_FAILURE, next, false);
-                				node.failureTable.onFinalFailure(key, next, htl, -1, source);
+                				node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
                 				return;
                 			}
                 			finish(SUCCESS, next, false);
@@ -709,7 +709,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 							else
 								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
                 			finish(TRANSFER_FAILED, next, false);
-                			node.failureTable.onFinalFailure(key, next, htl, -1, source);
+                			node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
                 			return;
                 		}
                 	} finally {
