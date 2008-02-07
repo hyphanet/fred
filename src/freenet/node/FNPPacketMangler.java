@@ -819,8 +819,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		node.random.nextBytes(myNonce);
 		byte[] r = ctx.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = ctx.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		HMAC hash = new HMAC(SHA256.getInstance());
-		byte[] authenticator = hash.mac(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
+		byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
 		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
 
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+
@@ -1036,8 +1035,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		// We *WANT* to check the hmac before we do the lookup on the hashmap
 		// @see https://bugs.freenetproject.org/view.php?id=1604
-		HMAC mac = new HMAC(SHA256.getInstance());
-		if(!mac.verify(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
+		if(!HMAC.verifyWithSHA256(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
 			if(shouldLogErrorInHandshake(t1))
 				Logger.normal(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery) - JFK3 - "+pn);
 			return;
@@ -1080,7 +1078,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(JFK_PREFIX_INITIATOR, 0, decypheredPayload, decypheredPayloadOffset, JFK_PREFIX_INITIATOR.length);
 		decypheredPayloadOffset += JFK_PREFIX_INITIATOR.length;
 		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, decypheredPayload.length-decypheredPayloadOffset);
-		if(!mac.verify(Ka, decypheredPayload, hmac)) {
+		if(!HMAC.verifyWithSHA256(Ka, decypheredPayload, hmac)) {
 			Logger.error(this, "The inner-HMAC doesn't match; let's discard the packet JFK(3) - "+pn);
 			return;
 		}
@@ -1249,8 +1247,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(JFK_PREFIX_RESPONDER, 0, decypheredPayload, decypheredPayloadOffset, JFK_PREFIX_RESPONDER.length);
 		decypheredPayloadOffset += JFK_PREFIX_RESPONDER.length;
 		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, payload.length-inputOffset);
-		HMAC mac = new HMAC(SHA256.getInstance());
-		if(!mac.verify(pn.jfkKa, decypheredPayload, hmac)) {
+		if(!HMAC.verifyWithSHA256(pn.jfkKa, decypheredPayload, hmac)) {
 			Logger.normal(this, "The digest-HMAC doesn't match; let's discard the packet - "+pn.getPeer());
 			return false;
 		}
@@ -1429,8 +1426,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pcfb.blockEncipher(cleartext, cleartextToEncypherOffset, cleartext.length-cleartextToEncypherOffset);
 		
 		// We compute the HMAC of (prefix + cyphertext) Includes the IV!
-		HMAC mac = new HMAC(SHA256.getInstance());
-		byte[] hmac = mac.mac(pn.jfkKa, cleartext, HASH_LENGTH);
+		byte[] hmac = HMAC.macWithSHA256(pn.jfkKa, cleartext, HASH_LENGTH);
 		
 		// copy stuffs back to the message
 		System.arraycopy(hmac, 0, message3, offset, HASH_LENGTH);
@@ -1521,8 +1517,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pk.blockEncipher(cyphertext, cleartextToEncypherOffset, cyphertext.length - cleartextToEncypherOffset);
 		
 		// We compute the HMAC of (prefix + iv + signature)
-		HMAC mac = new HMAC(SHA256.getInstance());
-		byte[] hmac = mac.mac(Ka, cyphertext, HASH_LENGTH);
+		byte[] hmac = HMAC.macWithSHA256(Ka, cyphertext, HASH_LENGTH);
 		
 		// Message4 = hmac + IV + encryptedSignature
 		byte[] message4 = new byte[HASH_LENGTH + ivLength + (cyphertext.length - cleartextToEncypherOffset)]; 
@@ -2704,7 +2699,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	private byte[] computeJFKSharedKey(BigInteger exponential, byte[] nI, byte[] nR, String what) {
 		assert("0".equals(what) || "1".equals(what) || "2".equals(what));
-		HMAC mac = new HMAC(SHA256.getInstance());
 		byte[] number = null;
 		try { number = what.getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
 		
@@ -2716,7 +2710,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		offset += NONCE_SIZE;
 		System.arraycopy(number, 0, toHash, offset, number.length);
 		
-		return mac.mac(exponential.toByteArray(), toHash, HASH_LENGTH);
+		return HMAC.macWithSHA256(exponential.toByteArray(), toHash, HASH_LENGTH);
 	}
 
 	private long timeLastReset = -1;

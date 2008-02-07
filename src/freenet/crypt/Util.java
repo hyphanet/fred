@@ -14,6 +14,7 @@ import java.util.Random;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
 import freenet.support.Loader;
+import java.security.MessageDigest;
 import net.i2p.util.NativeBigInteger;
 
 public class Util {
@@ -131,12 +132,12 @@ public class Util {
 		return new NativeBigInteger(bl, r);
 	}
 
-	public static byte[] hashBytes(Digest d, byte[] b) {
+	public static byte[] hashBytes(MessageDigest d, byte[] b) {
 		return hashBytes(d, b, 0, b.length);
 	}
 
 	public static byte[] hashBytes(
-		Digest d,
+		MessageDigest d,
 		byte[] b,
 		int offset,
 		int length) {

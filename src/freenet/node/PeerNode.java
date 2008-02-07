@@ -3083,9 +3083,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Offer a key to this node */
 	public void offer(Key key) {
 		byte[] keyBytes = key.getFullKey();
-		HMAC hash = new HMAC(SHA256.getInstance());
 		// FIXME maybe the authenticator should be shorter than 32 bytes to save memory?
-		byte[] authenticator = hash.mac(node.failureTable.offerAuthenticatorKey, keyBytes, 32);
+		byte[] authenticator = HMAC.macWithSHA256(node.failureTable.offerAuthenticatorKey, keyBytes, 32);
 		Message msg = DMT.createFNPOfferKey(key, authenticator);
 		try {
 			sendAsync(msg, null, 0, null);

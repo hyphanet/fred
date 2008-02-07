@@ -7,6 +7,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 import freenet.support.HexUtil;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Implements the HMAC Keyed Message Authentication function, as described
@@ -24,18 +26,10 @@ public class HMAC {
 	}
     }
 
-    protected Digest d;
-
-    public HMAC(Digest d) {
-	this.d=d;
-    }
-
-    public int digestSize() {
-	return d.digestSize();
-    }
+    protected MessageDigest d;
     
-    public Digest getDigest() {
-	return d;
+    public HMAC(MessageDigest md) {
+	    this.d = md;
     }
 
     public boolean verify(byte[] K, byte[] text, byte[] mac) {
@@ -87,7 +81,8 @@ public class HMAC {
     }
 
     public static void main(String[] args) throws UnsupportedEncodingException {
-	HMAC s=new HMAC(SHA1.getInstance());
+	HMAC s = null;
+	try { s = new HMAC(MessageDigest.getInstance("SHA1")); } catch (NoSuchAlgorithmException e) {}
 	byte[] key=new byte[20];
 	System.err.println("20x0b, 'Hi There':");
 	byte[] text;
@@ -123,4 +118,27 @@ public class HMAC {
 
     }
 
+	public static byte[] macWithSHA256(byte[] K, byte[] text, int macbytes) {
+		MessageDigest sha256 = null;
+		try {
+			sha256 = SHA256.getMessageDigest();
+			HMAC hash = new HMAC(sha256);
+			return hash.mac(K, text, macbytes);
+		} finally {
+			if(sha256 != null)
+				SHA256.returnMessageDigest(sha256);
+		}
+	}
+
+	public static boolean verifyWithSHA256(byte[] K, byte[] text, byte[] mac) {
+		MessageDigest sha256 = null;
+		try {
+			sha256 = SHA256.getMessageDigest();
+			HMAC hash = new HMAC(sha256);
+			return hash.verify(K, text, mac);
+		} finally {
+			if(sha256 != null)
+				SHA256.returnMessageDigest(sha256);
+		}
+	}
 }	
