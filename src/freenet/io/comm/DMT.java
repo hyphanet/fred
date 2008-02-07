@@ -1214,7 +1214,7 @@ public class DMT {
 	public static final Message createFNPStoreSecret(long uid, long secret) {
 		Message msg = new Message(FNPStoreSecret);
 		msg.set(UID, uid);
-		msg.set(SECRET, Long.class);
+		msg.set(SECRET, secret);
 		return msg;
 	}
 	
