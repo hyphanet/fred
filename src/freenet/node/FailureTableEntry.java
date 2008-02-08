@@ -429,7 +429,8 @@ class FailureTableEntry implements TimedOutNodesList {
 		return -1; // not timed out
 	}
 
-	public synchronized void cleanup() {
+	public synchronized boolean cleanup() {
+		boolean empty = true;
 		int x = 0;
 		long now = System.currentTimeMillis(); // don't pass in as a pass over the whole FT may take a while. get it in the method.
 		for(int i=0;i<requestorNodes.length;i++) {
@@ -441,6 +442,7 @@ class FailureTableEntry implements TimedOutNodesList {
 			if(bootID != requestorBootIDs[i]) continue;
 			if(!pn.isConnected()) continue;
 			if(now - requestorTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) continue;
+			empty = false;
 			requestorNodes[x] = requestorNodes[i];
 			requestorTimes[x] = requestorTimes[i];
 			requestorBootIDs[x] = requestorBootIDs[i];
@@ -467,6 +469,7 @@ class FailureTableEntry implements TimedOutNodesList {
 			if(bootID != requestedBootIDs[i]) continue;
 			if(!pn.isConnected()) continue;
 			if(now - requestedTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) continue;
+			empty = false;
 			requestedNodes[x] = requestedNodes[i];
 			requestedTimes[x] = requestedTimes[i];
 			requestedBootIDs[x] = requestedBootIDs[i];
@@ -494,6 +497,11 @@ class FailureTableEntry implements TimedOutNodesList {
 			requestedTimeouts = newRequestedTimeouts;
 			requestedTimeoutHTLs = newRequestedTimeoutHTLs;
 		}
+		return empty;
+	}
+
+	public boolean isEmpty() {
+		return isEmpty(System.currentTimeMillis());
 	}
 
 }

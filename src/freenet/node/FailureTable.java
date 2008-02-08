@@ -24,6 +24,9 @@ import freenet.support.Logger;
 // Otherwise it will be much too easy to trace a request if an attacker busts the node afterwards.
 // We can use an HMAC or something to authenticate offers.
 
+// LOCKING: Always take the FailureTable lock first if you need both. Take the FailureTableEntry 
+// lock only on cheap internal operations.
+
 /**
  * Tracks recently DNFed keys, where they were routed to, what the location was at the time, who requested them.
  * Implements Ultra-Lightweight Persistent Requests: Refuse requests for a key for 10 minutes after it's DNFed 
@@ -473,9 +476,13 @@ public class FailureTable {
 				entriesByKey.toArray(entries);
 			}
 			for(int i=0;i<entries.length;i++) {
-				entries[i].cleanup();
-				// FIXME how to safely remove them if empty?
-				// I suppose we'll have to establish a lock taking order...
+				if(entries[i].cleanup()) {
+					synchronized(FailureTable.this) {
+						if(entries[i].isEmpty()) {
+							entriesByKey.removeKey(entries[i].key);
+						}
+					}
+				}
 			}
 			long endTime = System.currentTimeMillis();
 			if(logMINOR) Logger.minor(this, "Finished FailureTable cleanup took "+(endTime-startTime)+"ms");
