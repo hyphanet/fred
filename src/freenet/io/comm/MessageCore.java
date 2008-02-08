@@ -450,8 +450,9 @@ public class MessageCore {
 				try {
 					// Precaution against filter getting matched between being added to _filters and
 					// here - bug discovered by Mason
-				    while(!(filter.matched() || (filter.droppedConnection() != null))) {
-						long wait = filter.getTimeout()-System.currentTimeMillis();
+					// Check reallyTimedOut() too a) for paranoia, b) for filters with a callback (we could conceivably waitFor() them).
+				    while(!(filter.matched() || (filter.droppedConnection() != null) || (filter.reallyTimedOut(now = System.currentTimeMillis())))) {
+						long wait = filter.getTimeout()-now;
 						if(wait <= 0)
 							break;
 						filter.wait(wait);

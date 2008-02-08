@@ -203,7 +203,7 @@ public final class MessageFilter {
 	    return _droppedConnection;
 	}
 	
-	private boolean reallyTimedOut(long time) {
+	boolean reallyTimedOut(long time) {
 		if(_callback != null && _callback.shouldTimeout())
 			_timeout = -1; // timeout immediately
 		return _timeout < time;
