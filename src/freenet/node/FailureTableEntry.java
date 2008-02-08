@@ -496,6 +496,8 @@ class FailureTableEntry implements TimedOutNodesList {
 			System.arraycopy(requestedNodes, 0, newRequestedNodes, 0, x);
 			System.arraycopy(requestedTimes, 0, newRequestedTimes, 0, x);
 			System.arraycopy(requestedBootIDs, 0, newRequestedBootIDs, 0, x);
+			System.arraycopy(requestedTimeouts, 0, newRequestedTimeouts, 0, x);
+			System.arraycopy(requestedTimeoutHTLs, 0, newRequestedTimeoutHTLs, 0, x);
 			requestedNodes = newRequestedNodes;
 			requestedTimes = newRequestedTimes;
 			requestedBootIDs = newRequestedBootIDs;
