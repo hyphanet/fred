@@ -358,6 +358,7 @@ class FailureTableEntry implements TimedOutNodesList {
 	 */
 	public synchronized boolean askedByPeer(PeerNode peer, long now) {
 		boolean anyValid = false;
+		boolean ret = false;
 		for(int i=0;i<requestorNodes.length;i++) {
 			WeakReference ref = requestorNodes[i];
 			if(ref == null) continue;
@@ -371,15 +372,16 @@ class FailureTableEntry implements TimedOutNodesList {
 				requestorNodes[i] = null;
 				continue;
 			}
-			if(now - requestorTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) return true;
-			anyValid = true;
-			if(pn == peer) return true;
+			if(now - requestorTimes[i] < MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
+				if(pn == peer) ret = true;
+				anyValid = true;
+			} 
 		}
 		if(!anyValid) {
 			requestorNodes = new WeakReference[0];
 			requestorTimes = requestorBootIDs = new long[0];
 		}
-		return false;
+		return ret;
 	}
 
 	/**
@@ -387,6 +389,7 @@ class FailureTableEntry implements TimedOutNodesList {
 	 */
 	public synchronized boolean askedFromPeer(PeerNode peer, long now) {
 		boolean anyValid = false;
+		boolean ret = false;
 		for(int i=0;i<requestedNodes.length;i++) {
 			WeakReference ref = requestedNodes[i];
 			if(ref == null) continue;
@@ -400,16 +403,18 @@ class FailureTableEntry implements TimedOutNodesList {
 				requestedNodes[i] = null;
 				continue;
 			}
-			if(now - requestedTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) return true;
 			anyValid = true;
-			if(pn == peer) return true;
+			if(now - requestedTimes[i] < MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
+				if(pn == peer) ret = true;
+				anyValid = true;
+			}
 		}
 		if(!anyValid) {
 			requestedNodes = new WeakReference[0];
 			requestedTimes = requestedBootIDs = requestedTimeouts = new long[0];
 			requestedTimeoutHTLs = new short[0];
 		}
-		return false;
+		return ret;
 	}
 
 	public synchronized boolean isEmpty(long now) {
