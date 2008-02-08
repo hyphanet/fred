@@ -119,7 +119,7 @@ public class FailureTable {
 			entry.addRequestor(requestor, now);
 	}
 	
-	private void trimEntries(long now) {
+	private synchronized void trimEntries(long now) {
 		while(entriesByKey.size() > MAX_ENTRIES) {
 			entriesByKey.popKey();
 		}
@@ -289,7 +289,11 @@ public class FailureTable {
 		boolean heAsked = entry.askedByPeer(peer, now);
 		if(!(weAsked || ((key instanceof NodeCHK) && heAsked))) {
 			if(logMINOR) Logger.minor(this, "Not propagating key: weAsked="+weAsked+" heAsked="+heAsked);
-			if(entry.isEmpty(now)) entriesByKey.removeKey(key);
+			if(entry.isEmpty(now)) {
+				synchronized(this) {
+					entriesByKey.removeKey(key);
+				}
+			}
 			return;
 		}
 		if(entry.isEmpty(now)) entriesByKey.removeKey(key);
