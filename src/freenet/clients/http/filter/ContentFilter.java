@@ -54,7 +54,7 @@ public class ContentFilter {
 		
 		// PNG - has a filter
 		register(new MIMEType("image/png", "png", new String[0], new String[0],
-				true, false, new PNGFilter(), null, false, false, false, false, true, false,
+				true, false, new PNGFilter(false, false, false)/* FIXME: reenable when they work */, null, false, false, false, false, true, false,
 				l10n("imagePngReadAdvice"),
 				l10n("imagePngWriteAdvice"), false, null, null));
 		
