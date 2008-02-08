@@ -33,7 +33,7 @@ public class NetworkIDManager implements Runnable {
 	//Intervals between connectivity checks and NetworkID reckoning.
 	//Checks for added peers may be delayed up to LONG_PERIOD, so don't make it too long.
 	private static final long BETWEEN_PEERS =   2000;
-	private static final long STARTUP_DELAY =  30000;
+	private static final long STARTUP_DELAY =  20000;
 	private static final long LONG_PERIOD   = 120000;
 	
 	private final short MAX_HTL;
@@ -61,6 +61,7 @@ public class NetworkIDManager implements Runnable {
 				public void run() {
 					checkAllPeers();
 					startupChecks = node.peers.quickCountConnectedPeers();
+					Logger.normal(NetworkIDManager.this, "Past startup delay, "+startupChecks+" connected peers");
 					reschedule(0);
 				}
 			}, STARTUP_DELAY);
@@ -396,7 +397,7 @@ public class NetworkIDManager implements Runnable {
 	private boolean processingRace;
 	
 	private void reschedule(long period) {
-		node.getTicker().queueTimedJob(this, LONG_PERIOD);
+		node.getTicker().queueTimedJob(this, period);
 	}
 	
 	public void run() {
@@ -434,6 +435,7 @@ public class NetworkIDManager implements Runnable {
 				processing=null;
 				forgetPingRecords(target);
 			}
+			processing=null;
 		}
 		if (startupChecks>0)
 			startupChecks--;
@@ -453,6 +455,9 @@ public class NetworkIDManager implements Runnable {
 		}
 	}
 	
+	public long secretPingSuccesses;
+	public long totalSecretPingAttempts;
+	
 	// Best effort ping from next to target, if anything out of the ordinary happens, it counts as a failure.
 	private void blockingUpdatePingRecord(PeerNode target, PeerNode next) {
 		//make a secret & uid
@@ -464,6 +469,8 @@ public class NetworkIDManager implements Runnable {
 		
 		boolean success=false;
 		int suppliedCounter=1;
+		
+		totalSecretPingAttempts++;
 		
 		try {
 			//store secret in target
@@ -503,10 +510,12 @@ public class NetworkIDManager implements Runnable {
 		} catch (DisconnectedException e) {
 			Logger.normal(this, "one party left during connectivity test: "+e);
 		} finally {
-			if (success)
+			if (success) {
+				secretPingSuccesses++;
 				record.success(suppliedCounter, htl, dawn);
-			else
+			} else {
 				record.failure(suppliedCounter, htl, dawn);
+			}
 		}
 	}
 	
@@ -582,5 +591,5 @@ public class NetworkIDManager implements Runnable {
 	}
 	
 	//or zero if we don't know yet
-	private int ourNetworkId = NO_NETWORKID;
+	public int ourNetworkId = NO_NETWORKID;
 }
