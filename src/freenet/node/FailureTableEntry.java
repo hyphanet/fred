@@ -229,7 +229,7 @@ class FailureTableEntry implements TimedOutNodesList {
 					requestedTimes[i] = now;
 					requestedTimeouts[i] = -1;
 					requestedTimeoutHTLs[i] = (short) -1;
-					return ret;
+					return i;
 				}
 			}
 		}
