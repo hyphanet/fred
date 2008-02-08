@@ -12,7 +12,6 @@ import java.util.HashMap;
 
 import freenet.l10n.L10n;
 import freenet.support.CRC;
-import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -43,7 +42,7 @@ public class PNGFilter implements ContentDataFilter {
 
 	private final boolean deleteText;
 	private final boolean deleteTimestamp;
-	private final boolean checkCRCs; // need a fair amount of memory
+	private final boolean checkCRCs;
 	static final byte[] pngHeader =
 		{(byte) 137, (byte) 80, (byte) 78, (byte) 71, (byte) 13, (byte) 10, (byte) 26, (byte) 10};
 
@@ -107,11 +106,14 @@ public class PNGFilter implements ContentDataFilter {
 			}
 
 			// Check the chunks :
-			// We should have an IHDR chunk at the beginning and a IEND at the end
+			// @see http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.Summary-of-standard-chunks
 			boolean finished = false;
 			boolean hasSeenIHDR = false;
 			boolean hasSeenIEND = false;
-
+			boolean hasSeenPLTE = false;
+			boolean hasSeenIDAT = false;
+			String lastChunkType = "";
+			
 			while(!finished) {
 				boolean skip = false;
 				if(baos != null)
@@ -194,6 +196,18 @@ public class PNGFilter implements ContentDataFilter {
 						throw new IOException("Two IEND chunks detected!!");
 					hasSeenIEND = true;
 				}
+				
+				if(!skip && "PLTE".equalsIgnoreCase(chunkTypeString)) {
+					if(hasSeenIDAT)
+						throw new IOException("PLTE must be before IDAT");
+					hasSeenPLTE = true;
+				}
+				
+				if(!skip && "IDAT".equalsIgnoreCase(chunkTypeString)) {
+					if(hasSeenIDAT && !"IDAT".equalsIgnoreCase(lastChunkType))
+						throw new IOException("Multiple IDAT chunks must be consecutive!");
+					hasSeenIDAT = true;
+				}
 
 				if(dis.available() < 1) {
 					if(!(hasSeenIEND && hasSeenIHDR))
@@ -213,6 +227,7 @@ public class PNGFilter implements ContentDataFilter {
 						Logger.minor(this, "Writing " + chunkTypeString + " (" + baos.size() + ") to the output bucket");
 					baos.writeTo(output);
 				}
+				lastChunkType = chunkTypeString;
 			}
 			
 			dis.close();
