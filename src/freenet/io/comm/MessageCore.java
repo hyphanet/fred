@@ -475,10 +475,10 @@ public class MessageCore {
 				_filters.remove(filter);
 			}
 		}
-			// Matched a packet, unclaimed or after wait
-			filter.setMessage(ret);
-			filter.onMatched();
-			filter.clearMatched();
+		// Matched a packet, unclaimed or after wait
+		filter.setMessage(ret);
+		filter.onMatched();
+		filter.clearMatched();
 
 		// Probably get rid...
 //		if (Dijjer.getDijjer().getDumpMessageWaitTimes() != null) {
