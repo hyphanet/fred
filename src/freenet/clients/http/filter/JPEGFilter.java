@@ -216,6 +216,7 @@ public class JPEGFilter implements ContentDataFilter {
 						int units = dis.readUnsignedByte();
 						if(units > 2)
 							throwError("Invalid header", "Unrecognized units type "+units+".");
+						if(dos != null) dos.write(units);
 						if(dos != null) {
 							dos.writeShort(dis.readShort()); // Copy Xdensity
 							dos.writeShort(dis.readShort()); // Copy Ydensity
