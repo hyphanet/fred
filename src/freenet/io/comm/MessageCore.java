@@ -98,6 +98,7 @@ public class MessageCore {
      * Remove timed out filters.
      */
 	void removeTimedOutFilters() {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long tStart = System.currentTimeMillis() + 1;
 		// Extra millisecond to give waitFor() a chance to remove the filter.
 		// Avoids exhaustive and unsuccessful search in waitFor() removal of a timed out filter.
@@ -295,6 +296,7 @@ public class MessageCore {
 	}
 
 	public void addAsyncFilter(MessageFilter filter, AsyncMessageFilterCallback callback) throws DisconnectedException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		filter.setAsyncCallback(callback);
 		if(filter.matched()) {
 			Logger.error(this, "addAsyncFilter() on a filter which is already matched: "+filter, new Exception("error"));
@@ -376,6 +378,7 @@ public class MessageCore {
 	public Message waitFor(MessageFilter filter, ByteCounter ctr) throws DisconnectedException {
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logDEBUG) Logger.debug(this, "Waiting for "+filter);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		if(filter.matched()) {
 			Logger.error(this, "waitFor() on a filter which is already matched: "+filter, new Exception("error"));
