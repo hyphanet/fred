@@ -133,4 +133,17 @@ public class LRUHashtable {
 		return list.isEmpty();
 	}
 
+	/**
+	 * Note that unlike the java.util versions, this will not reallocate (hence it doesn't return), 
+	 * so pass in an appropriately big array, and make sure you hold the lock!
+	 * @param entries
+	 * @return
+	 */
+	public synchronized void toArray(Object[] entries) {
+		Enumeration keys = keys();
+		int i=0;
+		while(keys.hasMoreElements())
+			entries[i++] = keys.nextElement();
+	}
+
 }

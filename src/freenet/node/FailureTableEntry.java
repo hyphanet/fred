@@ -429,4 +429,71 @@ class FailureTableEntry implements TimedOutNodesList {
 		return -1; // not timed out
 	}
 
+	public synchronized void cleanup() {
+		int x = 0;
+		long now = System.currentTimeMillis(); // don't pass in as a pass over the whole FT may take a while. get it in the method.
+		for(int i=0;i<requestorNodes.length;i++) {
+			WeakReference ref = requestorNodes[i];
+			if(ref == null) continue;
+			PeerNode pn = (PeerNode) ref.get();
+			if(pn == null) continue;
+			long bootID = pn.getBootID();
+			if(bootID != requestorBootIDs[i]) continue;
+			if(!pn.isConnected()) continue;
+			if(now - requestorTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) continue;
+			requestorNodes[x] = requestorNodes[i];
+			requestorTimes[x] = requestorTimes[i];
+			requestorBootIDs[x] = requestorBootIDs[i];
+			x++;
+		}
+		if(x < requestorNodes.length) {
+			WeakReference[] newRequestorNodes = new WeakReference[x];
+			long[] newRequestorTimes = new long[x];
+			long[] newRequestorBootIDs = new long[x];
+			System.arraycopy(requestorNodes, 0, newRequestorNodes, 0, x);
+			System.arraycopy(requestorTimes, 0, newRequestorTimes, 0, x);
+			System.arraycopy(requestorBootIDs, 0, newRequestorBootIDs, 0, x);
+			requestorNodes = newRequestorNodes;
+			requestorTimes = newRequestorTimes;
+			requestorBootIDs = newRequestorBootIDs;
+		}
+		x = 0;
+		for(int i=0;i<requestedNodes.length;i++) {
+			WeakReference ref = requestedNodes[i];
+			if(ref == null) continue;
+			PeerNode pn = (PeerNode) ref.get();
+			if(pn == null) continue;
+			long bootID = pn.getBootID();
+			if(bootID != requestedBootIDs[i]) continue;
+			if(!pn.isConnected()) continue;
+			if(now - requestedTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) continue;
+			requestedNodes[x] = requestedNodes[i];
+			requestedTimes[x] = requestedTimes[i];
+			requestedBootIDs[x] = requestedBootIDs[i];
+			if(now < requestedTimeouts[x]) { 
+				requestedTimeouts[x] = requestedTimeouts[i];
+				requestedTimeoutHTLs[x] = requestedTimeoutHTLs[i];
+			} else {
+				requestedTimeouts[x] = -1;
+				requestedTimeoutHTLs[x] = (short)-1;
+			}
+			x++;
+		}
+		if(x < requestedNodes.length) {
+			WeakReference[] newRequestedNodes = new WeakReference[x];
+			long[] newRequestedTimes = new long[x];
+			long[] newRequestedBootIDs = new long[x];
+			long[] newRequestedTimeouts = new long[x];
+			short[] newRequestedTimeoutHTLs = new short[x];
+			System.arraycopy(requestedNodes, 0, newRequestedNodes, 0, x);
+			System.arraycopy(requestedTimes, 0, newRequestedTimes, 0, x);
+			System.arraycopy(requestedBootIDs, 0, newRequestedBootIDs, 0, x);
+			requestedNodes = newRequestedNodes;
+			requestedTimes = newRequestedTimes;
+			requestedBootIDs = newRequestedBootIDs;
+			requestedTimeouts = newRequestedTimeouts;
+			requestedTimeoutHTLs = newRequestedTimeoutHTLs;
+		}
+	}
+
 }

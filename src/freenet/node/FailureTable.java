@@ -53,6 +53,8 @@ public class FailureTable {
 	static final int OFFER_EXPIRY_TIME = 10*60*1000;
 	/** HMAC key for the offer authenticator */
 	final byte[] offerAuthenticatorKey;
+	/** Clean up old data every 30 minutes to save memory and improve privacy */
+	static final int CLEANUP_PERIOD = 30*60*1000;
 	
 	static boolean logMINOR;
 	static boolean logDEBUG;
@@ -66,6 +68,7 @@ public class FailureTable {
 		node.random.nextBytes(offerAuthenticatorKey);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		node.ps.queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
 	}
 	
 	/**
@@ -119,11 +122,6 @@ public class FailureTable {
 	private void trimEntries(long now) {
 		while(entriesByKey.size() > MAX_ENTRIES) {
 			entriesByKey.popKey();
-		}
-		while(true) {
-			FailureTableEntry e = (FailureTableEntry) entriesByKey.peekValue();
-			if(now - e.creationTime > MAX_LIFETIME) entriesByKey.popKey();
-			else break;
 		}
 	}
 
@@ -454,4 +452,38 @@ public class FailureTable {
 			return (FailureTableEntry) entriesByKey.get(key);
 		}
 	}
+	
+	public class FailureTableCleaner implements Runnable {
+
+		public void run() {
+			try {
+				realRun();
+			} catch (Throwable t) {
+				Logger.error(this, "FailureTableCleaner caught "+t, t);
+			} finally {
+				node.ps.queueTimedJob(this, CLEANUP_PERIOD);
+			}
+		}
+
+		private void realRun() {
+			logMINOR = Logger.shouldLog(Logger.MINOR, FailureTable.this);
+			logDEBUG = Logger.shouldLog(Logger.DEBUG, FailureTable.this);
+			if(logMINOR) Logger.minor(this, "Starting FailureTable cleanup");
+			long startTime = System.currentTimeMillis();
+			FailureTableEntry[] entries;
+			synchronized(FailureTable.this) {
+				entries = new FailureTableEntry[entriesByKey.size()];
+				entriesByKey.toArray(entries);
+			}
+			for(int i=0;i<entries.length;i++) {
+				entries[i].cleanup();
+				// FIXME how to safely remove them if empty?
+				// I suppose we'll have to establish a lock taking order...
+			}
+			long endTime = System.currentTimeMillis();
+			if(logMINOR) Logger.minor(this, "Finished FailureTable cleanup took "+(endTime-startTime)+"ms");
+		}
+
+	}
+
 }
