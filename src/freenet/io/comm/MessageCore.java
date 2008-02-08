@@ -452,7 +452,7 @@ public class MessageCore {
 					// here - bug discovered by Mason
 				    while(!(filter.matched() || (filter.droppedConnection() != null))) {
 						long wait = filter.getTimeout()-System.currentTimeMillis();
-						if(wait < 0)
+						if(wait <= 0)
 							break;
 						filter.wait(wait);
 					}
