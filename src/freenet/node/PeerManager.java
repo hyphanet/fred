@@ -859,9 +859,8 @@ public class PeerManager {
 		
 		//racy... getLocation() could have changed
     	if (calculateMisrouting) {
-    		PeerNode nbo = closestNotBackedOff;
-    		if (nbo != null) {
-    			node.nodeStats.routingMissDistance.report(Location.distance(best, nbo.getLocation()));
+    		if (best != null) {
+    			node.nodeStats.routingMissDistance.report(Location.distance(best, closest.getLocation()));
     			int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
     			int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
     			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
