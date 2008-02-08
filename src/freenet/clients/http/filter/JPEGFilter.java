@@ -137,8 +137,10 @@ public class JPEGFilter implements ContentDataFilter {
 				int blockLength;
 				if(markerType == MARKER_EOI || markerType >= MARKER_RST0 && markerType <= MARKER_RST7)
 					blockLength = 0;
-				else
+				else {
 					blockLength = dis.readUnsignedShort();
+					if(dos != null) dos.writeShort(blockLength);
+				}
 				if(markerType == 0xDB // quantisation table
 						|| markerType == 0xC4 // huffman table
 						|| markerType == 0xC0) { // start of frame
@@ -196,8 +198,10 @@ public class JPEGFilter implements ContentDataFilter {
 					continue; // Avoid writing the header twice
 					
 				} else if(markerType == 0xE0) { // APP0
+					if(logMINOR) Logger.minor(this, "APP0");
 					String type = readNullTerminatedAsciiString(dis);
 					if(baos != null) writeNullTerminatedString(baos, type);
+					if(logMINOR) Logger.minor(this, "Type: "+type+" length "+type.length());
 					if(type.equals("JFIF")) {
 						Logger.minor(this, "JFIF Header");
 						// File header
