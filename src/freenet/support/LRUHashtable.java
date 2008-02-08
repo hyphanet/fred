@@ -102,6 +102,10 @@ public class LRUHashtable {
     public Enumeration keys() {
         return new ItemEnumeration();
     }
+    
+    public Enumeration values() {
+    	return new ValuesEnumeration();
+    }
 
     private class ItemEnumeration implements Enumeration {
         private Enumeration source = list.reverseElements();
@@ -112,6 +116,18 @@ public class LRUHashtable {
 
         public Object nextElement() {
             return ((QItem) source.nextElement()).obj;
+        }
+    }
+
+    private class ValuesEnumeration implements Enumeration {
+        private Enumeration source = list.reverseElements();
+       
+        public boolean hasMoreElements() {
+            return source.hasMoreElements();
+        }
+
+        public Object nextElement() {
+            return ((QItem) source.nextElement()).value;
         }
     }
 
@@ -139,11 +155,11 @@ public class LRUHashtable {
 	 * @param entries
 	 * @return
 	 */
-	public synchronized void toArray(Object[] entries) {
-		Enumeration keys = keys();
+	public synchronized void valuesToArray(Object[] entries) {
+		Enumeration values = values();
 		int i=0;
-		while(keys.hasMoreElements())
-			entries[i++] = keys.nextElement();
+		while(values.hasMoreElements())
+			entries[i++] = values.nextElement();
 	}
 
 }

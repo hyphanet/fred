@@ -477,7 +477,7 @@ public class FailureTable {
 			FailureTableEntry[] entries;
 			synchronized(FailureTable.this) {
 				entries = new FailureTableEntry[entriesByKey.size()];
-				entriesByKey.toArray(entries);
+				entriesByKey.valuesToArray(entries);
 			}
 			for(int i=0;i<entries.length;i++) {
 				if(entries[i].cleanup()) {
