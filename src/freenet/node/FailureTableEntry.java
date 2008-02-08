@@ -263,6 +263,7 @@ class FailureTableEntry implements TimedOutNodesList {
 			newRequestedLocs[toIndex] = requestedFrom.getLocation();
 			newRequestedTimeouts[toIndex] = -1;
 			newRequestedTimeoutHTLs[toIndex] = (short) -1;
+			ret = toIndex;
 			toIndex++;
 		}
 		
