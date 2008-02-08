@@ -126,6 +126,9 @@ public class NodeDispatcher implements Dispatcher {
 			double newLoc = m.getDouble(DMT.LOCATION);
 			source.updateLocation(newLoc);
 			return true;
+		} else if(spec == DMT.FNPNetworkID) {
+			source.handleFNPNetworkID(m);
+			return true;
 		} else if(spec == DMT.FNPSwapRequest) {
 			return node.lm.handleSwapRequest(m, source);
 		} else if(spec == DMT.FNPSwapReply) {

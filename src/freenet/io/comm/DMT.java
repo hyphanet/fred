@@ -1218,6 +1218,16 @@ public class DMT {
 		return msg;
 	}
 	
+	public static final MessageType FNPNetworkID = new MessageType("FNPNetworkID", PRIORITY_LOW) {{
+		addField(UID, Integer.class);
+	}};
+	
+	public static final Message createFNPNetworkID(int id) {
+		Message msg = new Message(FNPNetworkID);
+		msg.set(UID, id);
+		return msg;
+	}
+	
 	public static final MessageType FNPRoutedRejected = new MessageType("FNPRoutedRejected", PRIORITY_UNSPECIFIED) {{
 		addField(UID, Long.class);
 		addField(HTL, Short.class);

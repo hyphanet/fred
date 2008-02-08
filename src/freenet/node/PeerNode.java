@@ -3561,4 +3561,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(logMINOR) Logger.minor(this, "fs is empty");
 		}
 	}
+	
+	int assignedNetworkID;
+	int providedNetworkID;
+	
+	void handleFNPNetworkID(Message m) {
+		int got=m.getInt(DMT.UID);
+		if (logMINOR) Logger.minor(this, "now peer thinks he is in network "+got);
+		providedNetworkID=got;
+	}
+	
+	void sendFNPNetworkID() throws NotConnectedException {
+		if (assignedNetworkID!=0)
+			sendAsync(DMT.createFNPNetworkID(assignedNetworkID), null, 0, null);
+	}
 }
