@@ -474,6 +474,7 @@ public class FCPServer implements Runnable {
 			} catch (IOException e) {
 				throw new InvalidConfigValueException(l10n("downloadsFileDoesNotExistCannotCreate")+ " : "+e.getLocalizedMessage());
 			}
+			f.delete();
 		}
 	}
 
@@ -617,9 +618,7 @@ public class FCPServer implements Runnable {
                                 
 				File compressedTemp = new File(persistentDownloadsTempFile+".gz");
 				File compressedFinal = new File(persistentDownloadsFile.toString()+".gz");
-				// delete files created by check()
-				persistentDownloadsFile.delete();
-				persistentDownloadsTempFile.delete();
+				compressedTemp.delete();
                 
 				FileOutputStream fos = null;
 				BufferedOutputStream bos = null;
