@@ -420,7 +420,8 @@ class FailureTableEntry implements TimedOutNodesList {
 
 	public synchronized long getTimeoutTime(PeerNode peer) {
 		for(int i=0;i<requestedNodes.length;i++) {
-			if(requestedNodes[i].get() == peer) {
+			WeakReference ref = requestedNodes[i];
+			if(ref != null && ref.get() == peer) {
 				return requestedTimeouts[i];
 			}
 		}
