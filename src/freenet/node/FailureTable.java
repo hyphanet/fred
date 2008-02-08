@@ -55,7 +55,7 @@ public class FailureTable {
 	/** HMAC key for the offer authenticator */
 	final byte[] offerAuthenticatorKey;
 	/** Clean up old data every 30 minutes to save memory and improve privacy */
-	static final int CLEANUP_PERIOD = 5*60*1000;
+	static final int CLEANUP_PERIOD = 30*60*1000;
 	
 	static boolean logMINOR;
 	static boolean logDEBUG;
