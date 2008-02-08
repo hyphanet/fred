@@ -63,6 +63,11 @@ public class RealNodeSecretPingTest {
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
+		
+		//Allow secret pings, but don't automatically send them (this is the test for them!)
+		freenet.node.NetworkIDManager.disableSecretPings=false;
+		freenet.node.NetworkIDManager.disableSecretPinger=true;
+		
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
             	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true);
@@ -75,9 +80,6 @@ public class RealNodeSecretPingTest {
         
         for(int i=0;i<NUMBER_OF_NODES;i++)
             nodes[i].start(false);
-        
-		//In case they are hard-coded off, allow secret pings (this is the test for them!)
-		freenet.node.NetworkIDManager.disableSecretPings=false;
 		
         // Now sit back and watch the fireworks!
         int cycleNumber = 0;
