@@ -943,7 +943,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		// ULPRs
 		
-		failureTable = new FailureTable(peers, this);
+		failureTable = new FailureTable(this);
 		
 		// Opennet
 		

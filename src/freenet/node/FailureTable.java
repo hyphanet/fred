@@ -37,8 +37,6 @@ public class FailureTable {
 	private final LRUHashtable entriesByKey;
 	/** BlockOfferList by key */
 	private final LRUHashtable blockOfferListByKey;
-	/** Peers */
-	private final PeerManager peers;
 	private final Node node;
 	
 	/** Maximum number of keys to track */
@@ -59,10 +57,9 @@ public class FailureTable {
 	static boolean logMINOR;
 	static boolean logDEBUG;
 	
-	FailureTable(PeerManager peers, Node node) {
+	FailureTable(Node node) {
 		entriesByKey = new LRUHashtable();
 		blockOfferListByKey = new LRUHashtable();
-		this.peers = peers;
 		this.node = node;
 		offerAuthenticatorKey = new byte[32];
 		node.random.nextBytes(offerAuthenticatorKey);
