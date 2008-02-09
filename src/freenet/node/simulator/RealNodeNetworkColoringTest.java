@@ -109,8 +109,8 @@ public class RealNodeNetworkColoringTest {
         Logger.normal(RealNodeRoutingTest.class, "Created "+totalNodes+" nodes");
 		
         // Now link them up
-        makeKleinbergNetwork(subnetA);
-		makeKleinbergNetwork(subnetB);
+        makeKleinbergNetwork(subnetA, true /* make it easy, we're not testing swapping here */);
+		makeKleinbergNetwork(subnetB, true /* make it easy, we're not testing swapping here */);
 		
         Logger.normal(RealNodeRoutingTest.class, "Added small-world links, weakly connect the subnets");
         
@@ -259,8 +259,15 @@ public class RealNodeNetworkColoringTest {
 	/*
 	 Borrowed from mrogers simulation code (February 6, 2008)
 	 */
-	static void makeKleinbergNetwork (Node[] nodes)
+	static void makeKleinbergNetwork (Node[] nodes, boolean idealLocations)
 	{
+		// First set the locations up so we don't spend a long time swapping just to stabilise each network.
+		double div = 1.0 / (nodes.length + 1);
+		double loc = 0.0;
+		for (int i=0; i<nodes.length; i++) {
+			nodes[i].setLocation(loc);
+			loc += div;
+		}
 		for (int i=0; i<nodes.length; i++) {
 			Node a = nodes[i];
 			// Normalise the probabilities
