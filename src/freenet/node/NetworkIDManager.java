@@ -596,8 +596,14 @@ public class NetworkIDManager implements Runnable {
 			PeerNetworkGroup newGroup = new PeerNetworkGroup();
 			newNetworkGroups.add(newGroup);
 			todo.remove(mostConnected);
-			//NB: as a side effect, this function will automatically remove the members from 'todo'.
-			List members=xferConnectedPeerSetFor(mostConnected, todo);
+			List members;
+			if (todo.isEmpty()) {
+				//sad... it looks like this guy gets a group to himself
+				members=new ArrayList();
+			} else {
+				//NB: as a side effect, this function will automatically remove the members from 'todo'.
+				members=xferConnectedPeerSetFor(mostConnected, todo);
+			}
 			members.add(mostConnected);
 			newGroup.setMembers(members);
 			newGroup.setForbiddenIds(takenNetworkIds);
