@@ -55,8 +55,8 @@ public class NetworkIDManager implements Runnable {
 	private final HashMap secretsByPeer=new HashMap();
 	private final HashMap secretsByUID=new HashMap();
 	
-	//1.0 is disabled
-	private static final double MAGIC_LINEAR_GRACE = 1.0;
+	//1.0 is disabled, this amounts to a threshold; if connectivity between peers in > this, they get there own group for sure.
+	private static final double MAGIC_LINEAR_GRACE = 0.8;
 	//Commit everyone with less than this amount of "connectivity" to there own networkgroup.
 	//Provides fall-open effect by grouping all peers with disabled secretpings into there own last group.
 	private static final double FALL_OPEN_MARK = 0.2;
@@ -685,14 +685,16 @@ public class NetworkIDManager implements Runnable {
 			Logger.normal(this, "falling open with "+fromOthers.size()+" peers left");
 			currentGroup.addAll(fromOthers);
 			fromOthers.clear();
+			cheat_stats_general_bestOther.report(0.0);
 			return currentGroup;
 		}
 		
 		cheat_stats_general_bestOther.report(goodConnectivity);
+		goodConnectivity *= MAGIC_LINEAR_GRACE;
 		while (!remainder.isEmpty()) {
 			//Note that, because of the size, this might be low.
 			PeerNode bestOther=findBestSetwisePingAverage(remainder, currentGroup);
-			if (cheat_findBestSetwisePingAverage_best >= goodConnectivity * MAGIC_LINEAR_GRACE) {
+			if (cheat_findBestSetwisePingAverage_best >= goodConnectivity) {
 				remainder.remove(bestOther);
 				currentGroup.add(bestOther);
 			} else {
