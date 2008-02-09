@@ -74,6 +74,7 @@ public class JPEGFilter implements ContentDataFilter {
 			readFilter(data, bf, charset, otherParams, cb, deleteComments, deleteExif, os);
 			os.flush();
 			os.close();
+			os = null;
 		} finally {
 			Closer.close(os);
 		}
@@ -307,7 +308,6 @@ public class JPEGFilter implements ContentDataFilter {
 			// FIXME
 		} finally {
 			Closer.close(dis);
-			Closer.close(output);
 		}
 		return data;
 	}

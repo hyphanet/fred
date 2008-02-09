@@ -67,6 +67,8 @@ public class PNGFilter implements ContentDataFilter {
 		try {
 			readFilter(data, bf, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, os);
 			os.flush();
+			os.close();
+			os = null;
 		} finally {
 			Closer.close(os);
 		}
