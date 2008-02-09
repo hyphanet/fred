@@ -34,6 +34,8 @@ public class RealNodeRoutingTest extends RealNodeTest {
     static final int NUMBER_OF_NODES = 500;
     static final int DEGREE = 10;
     static final short MAX_HTL = (short)10;
+    static final boolean START_WITH_IDEAL_LOCATIONS = true;
+    static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
         System.out.println("Routing test using real nodes:");
@@ -60,7 +62,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
         }
         Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");
         // Now link them up
-        makeKleinbergNetwork(nodes, false, DEGREE, true);
+        makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS);
 
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         
