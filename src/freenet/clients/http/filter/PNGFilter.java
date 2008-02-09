@@ -164,13 +164,14 @@ public class PNGFilter implements ContentDataFilter {
 					dos.write(chunkData);
 
 				// CRC of the chunk
-				if(dis.read(lengthBytes) < 4)
+				byte[] crcLengthBytes = new byte[4];
+				if(dis.read(crcLengthBytes) < 4)
 					throw new IOException("The length of the CRC is invalid!");
 				if(dos != null)
-					dos.write(lengthBytes);
+					dos.write(crcLengthBytes);
 
 				if(checkCRCs) {
-					long readCRC = (((lengthBytes[0] & 0xff) << 24) + ((lengthBytes[1] & 0xff) << 16) + ((lengthBytes[2] & 0xff) << 8) + (lengthBytes[3] & 0xff)) & 0x00000000ffffffffL;
+					long readCRC = (((crcLengthBytes[0] & 0xff) << 24) + ((crcLengthBytes[1] & 0xff) << 16) + ((crcLengthBytes[2] & 0xff) << 8) + (crcLengthBytes[3] & 0xff)) & 0x00000000ffffffffL;
 					CRC32 crc = new CRC32();
 					crc.update(chunkTypeBytes);
 					crc.update(chunkData);
