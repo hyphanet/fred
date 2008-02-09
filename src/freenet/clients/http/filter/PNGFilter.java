@@ -64,6 +64,9 @@ public class PNGFilter implements ContentDataFilter {
 		// MNG isn't supported by Firefox and IE because of lack of market demand. Big surprise
 		// given nobody supports it! It is supported by Konqueror though. Complex standard,
 		// not worth it for the time being.
+		
+		// This might be a useful source of info too (e.g. on private chunks):
+		// http://fresh.t-systems-sfr.com/unix/privat/pngcheck-2.3.0.tar.gz:a/pngcheck-2.3.0/pngcheck.c
 	};
 
 	PNGFilter(boolean deleteText, boolean deleteTimestamp, boolean checkCRCs) {
