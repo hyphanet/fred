@@ -31,12 +31,11 @@ import java.net.URISyntaxException;
 import java.util.zip.CRC32;
 
 /**
- * Content filter for PNG's.
- * This one just verifies that a PNG is valid, and throws if it isn't.
+ * Content filter for PNG's. Only allows valid chunks (valid CRC, known chunk type).
  *
  * It can strip the timestamp and "text(.)*" chunks if asked to
  * 
- * FIXME: should be a whitelisting filter instead of a blacklisting one
+ * FIXME: validate chunk contents where possible.
  */
 public class PNGFilter implements ContentDataFilter {
 
@@ -45,6 +44,18 @@ public class PNGFilter implements ContentDataFilter {
 	private final boolean checkCRCs;
 	static final byte[] pngHeader =
 		{(byte) 137, (byte) 80, (byte) 78, (byte) 71, (byte) 13, (byte) 10, (byte) 26, (byte) 10};
+	static final String[] HARMLESS_CHUNK_TYPES = {
+		"tRNS",
+		"cHRM",
+		"gAMA",
+		"iCCP", // FIXME Embedded ICC profile: could this conceivably cause a web lookup?
+		"sBIT", // FIXME rather obscure ??
+		"sRGB",
+		"bKGD",
+		"hIST",
+		"pHYs",
+		"sPLT"
+	};
 
 	PNGFilter(boolean deleteText, boolean deleteTimestamp, boolean checkCRCs) {
 		this.deleteText = deleteText;
@@ -184,10 +195,13 @@ public class PNGFilter implements ContentDataFilter {
 					}
 				}
 
+				boolean validChunkType = true;
+				
 				if(!skip && "IHDR".equals(chunkTypeString)) {
 					if(hasSeenIHDR)
 						throw new IOException("Two IHDR chunks detected!!");
 					hasSeenIHDR = true;
+					validChunkType = true;
 				}
 
 				if(!hasSeenIHDR)
@@ -197,11 +211,13 @@ public class PNGFilter implements ContentDataFilter {
 					if(hasSeenIEND)
 						throw new IOException("Two IEND chunks detected!!");
 					hasSeenIEND = true;
+					validChunkType = true;
 				}
 				
 				if(!skip && "PLTE".equalsIgnoreCase(chunkTypeString)) {
 					if(hasSeenIDAT)
 						throw new IOException("PLTE must be before IDAT");
+					validChunkType = true;
 					hasSeenPLTE = true;
 				}
 				
@@ -209,18 +225,36 @@ public class PNGFilter implements ContentDataFilter {
 					if(hasSeenIDAT && !"IDAT".equalsIgnoreCase(lastChunkType))
 						throw new IOException("Multiple IDAT chunks must be consecutive!");
 					hasSeenIDAT = true;
+					validChunkType = true;
 				}
-
+				
+				if(!validChunkType) {
+					for(int i=0;i<HARMLESS_CHUNK_TYPES.length;i++) {
+						if(HARMLESS_CHUNK_TYPES[i].equals(chunkTypeString))
+							validChunkType = true;
+					}
+				}
+				
 				if(dis.available() < 1) {
 					if(!(hasSeenIEND && hasSeenIHDR))
 						throw new IOException("Missing IEND or IHDR!");
 					finished = true;
 				}
 
-				if(deleteText && "text".equalsIgnoreCase(chunkTypeString))
+				if("text".equalsIgnoreCase(chunkTypeString) || "itxt".equalsIgnoreCase(chunkTypeString)
+						|| "ztxt".equalsIgnoreCase(chunkTypeString)) {
+					if(deleteText) skip = true;
+					else validChunkType = true;
+				} else if(deleteTimestamp && "time".equalsIgnoreCase(chunkTypeString)) {
+					if(deleteTimestamp) skip = true;
+					else validChunkType = true;
+				}
+				
+				if(!validChunkType) {
+					if(output == null)
+						throw new IOException("Unknown chunk type");
 					skip = true;
-				else if(deleteTimestamp && "time".equalsIgnoreCase(chunkTypeString))
-					skip = true;
+				}
 				
 				if(skip && output == null)
 					return null;
