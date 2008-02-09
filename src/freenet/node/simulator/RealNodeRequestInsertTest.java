@@ -32,14 +32,17 @@ import freenet.support.math.SimpleRunningAverage;
 /**
  * @author amphibian
  */
-public class RealNodeRequestInsertTest {
+public class RealNodeRequestInsertTest extends RealNodeTest {
 
     static final int NUMBER_OF_NODES = 50;
-    static final short MAX_HTL = 7;
+    static final int DEGREE = 10;
+    static final short MAX_HTL = (short)10;
+    static final boolean START_WITH_IDEAL_LOCATIONS = true;
+    static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
     
-    public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
+    public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
         String wd = "realNodeRequestInsertTest";
         new File(wd).mkdir();
         //NOTE: globalTestInit returns in ignored random source
@@ -55,41 +58,17 @@ public class RealNodeRequestInsertTest {
             nodes[i] = 
             	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
-            // Make the network immediately routable.
-            // Comment out if we want to include a routing/swapping test as well.
-            nodes[i].setLocation((1.0 * i) / NUMBER_OF_NODES);
-        }
-        SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];
-        for(int i=0;i<NUMBER_OF_NODES;i++)
-            refs[i] = nodes[i].exportDarknetPublicFieldSet();
-        Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");
-        // Now link them up
-        // Connect the set
-        for(int i=0;i<NUMBER_OF_NODES;i++) {
-            int next = (i+1) % NUMBER_OF_NODES;
-            int prev = (i+NUMBER_OF_NODES-1)%NUMBER_OF_NODES;
-            nodes[i].connect(nodes[next]);
-            nodes[i].connect(nodes[prev]);
-        }
-        Logger.normal(RealNodeRoutingTest.class, "Connected nodes");
-        // Now add some random links
-        for(int i=0;i<NUMBER_OF_NODES*5;i++) {
-            if(i % NUMBER_OF_NODES == 0)
-                Logger.normal(RealNodeRoutingTest.class, ""+i);
-            int length = (int)Math.pow(NUMBER_OF_NODES, random.nextDouble());
-            int nodeA = random.nextInt(NUMBER_OF_NODES);
-            int nodeB = (nodeA+length)%NUMBER_OF_NODES;
-            //System.out.println(""+nodeA+" -> "+nodeB);
-            Node a = nodes[nodeA];
-            Node b = nodes[nodeB];
-            a.connect(b);
-            b.connect(a);
         }
         
+        // Now link them up
+        makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS);
+
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         
         for(int i=0;i<NUMBER_OF_NODES;i++)
             nodes[i].start(false);
+        
+        waitForAllConnected(nodes);
         
         // Now sit back and watch the fireworks!
         int cycleNumber = 0;
