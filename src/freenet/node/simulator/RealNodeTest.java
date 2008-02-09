@@ -32,7 +32,7 @@ public class RealNodeTest {
 		}
 		if(forceNeighbourConnections) {
 			for(int i=0;i<nodes.length;i++) {
-				int next = i+1 % nodes.length;
+				int next = (i+1) % nodes.length;
 				connect(nodes[i], nodes[next]);
 			}
 		}
