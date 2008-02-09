@@ -43,10 +43,7 @@ public class RealNodeRequestInsertTest {
         String wd = "realNodeRequestInsertTest";
         new File(wd).mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(wd, false);
-        // Don't clobber nearby nodes!
-        Logger.setupStdoutLogging(Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal" /*"freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
-        Logger.globalSetThreshold(Logger.ERROR);
+        NodeStarter.globalTestInit(wd, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal" /*"freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();

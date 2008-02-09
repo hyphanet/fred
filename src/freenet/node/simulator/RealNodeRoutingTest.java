@@ -17,6 +17,7 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.io.FileUtil;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
@@ -30,27 +31,31 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRoutingTest extends RealNodeTest {
 
-    static final int NUMBER_OF_NODES = 50;
-    static final int DEGREE = 5;
-    static final short MAX_HTL = (short)7;
+    static final int NUMBER_OF_NODES = 500;
+    static final int DEGREE = 10;
+    static final short MAX_HTL = (short)10;
     
-    public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
-        Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
-        Logger.globalSetThreshold(Logger.ERROR);
+    public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
         System.out.println("Routing test using real nodes:");
         System.out.println();
-        String wd = "realNodeRequestInsertTest";
-        new File(wd).mkdir();
+        String dir = "realNodeRequestInsertTest";
+        File wd = new File(dir);
+        if(!FileUtil.removeAll(wd)) {
+        	System.err.println("Mass delete failed, test may not be accurate.");
+        	System.exit(EXIT_CANNOT_DELETE_OLD_DATA);
+        }
+        wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(wd, false);
+        NodeStarter.globalTestInit(dir, false, Logger.ERROR, "");
         DummyRandomSource random = new DummyRandomSource();
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
+        	System.err.println("Creating node "+i);
             nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, 65536, true);
+            	NodeStarter.createTestNode(5001+i, dir, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, 65536, true);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");
@@ -59,8 +64,12 @@ public class RealNodeRoutingTest extends RealNodeTest {
 
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         
-        for(int i=0;i<NUMBER_OF_NODES;i++)
+        for(int i=0;i<NUMBER_OF_NODES;i++) {
+        	System.err.println("Starting node "+i);
             nodes[i].start(false);
+        }
+        
+        waitForAllConnected(nodes);
         
         // Now sit back and watch the fireworks!
         int cycleNumber = 0;

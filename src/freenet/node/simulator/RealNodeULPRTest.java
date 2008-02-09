@@ -49,7 +49,6 @@ public class RealNodeULPRTest extends RealNodeTest {
 	static final int EXIT_BASE = NodeInitException.EXIT_NODE_UPPER_LIMIT;
 	static final int EXIT_KEY_EXISTS = EXIT_BASE + 1;
 	static final int EXIT_UNKNOWN_ERROR_CHECKING_KEY_NOT_EXIST = EXIT_BASE + 2;
-	static final int EXIT_CANNOT_DELETE_OLD_DATA = EXIT_BASE + 3;
 	static final int EXIT_TEST_FAILED = EXIT_BASE + 4;
 	
     static final int NUMBER_OF_NODES = 10;
@@ -61,8 +60,6 @@ public class RealNodeULPRTest extends RealNodeTest {
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException {
         System.err.println("ULPR test");
         System.err.println();
-        Logger.setupStdoutLogging(Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal" /*"freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
-        Logger.globalSetThreshold(Logger.ERROR);
     	String testName = "realNodeULPRTest";
         File wd = new File(testName);
         if(!FileUtil.removeAll(wd)) {
@@ -74,7 +71,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         DummyRandomSource random = new DummyRandomSource();
         
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(testName, false);
+        NodeStarter.globalTestInit(testName, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal" /*"freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();

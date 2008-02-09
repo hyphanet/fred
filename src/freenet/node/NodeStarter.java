@@ -271,7 +271,7 @@ public class NodeStarter implements WrapperListener
      * Not Node-specific; many nodes may be created later.
      * @param testName The name of the test instance.
      */
-	public static RandomSource globalTestInit(String testName, boolean enablePlug) throws InvalidThresholdException {
+	public static RandomSource globalTestInit(String testName, boolean enablePlug, int logThreshold, String details) throws InvalidThresholdException {
 		
 		File dir = new File(testName);
 		if((!dir.mkdir()) && ((!dir.exists()) || (!dir.isDirectory()))) {
@@ -279,7 +279,7 @@ public class NodeStarter implements WrapperListener
 			System.exit(NodeInitException.EXIT_TEST_ERROR);
 		}
 		
-        Logger.setupStdoutLogging(Logger.MINOR, "");
+        Logger.setupStdoutLogging(logThreshold, details);
 		
     	// set Java's DNS cache not to cache forever, since many people
     	// use dyndns hostnames

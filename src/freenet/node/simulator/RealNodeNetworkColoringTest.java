@@ -61,9 +61,7 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
         String wd = "realNodeNetworkColorTest";
         new File(wd).mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(wd, false);
-		Logger.setupStdoutLogging(Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeNetworkColoringTest:normal,freenet.node.NetworkIDManager:normal");
-		Logger.globalSetThreshold(Logger.ERROR);
+        NodeStarter.globalTestInit(wd, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeNetworkColoringTest:normal,freenet.node.NetworkIDManager:normal");
 
         DummyRandomSource random = new DummyRandomSource();
         //DiffieHellman.init(random);

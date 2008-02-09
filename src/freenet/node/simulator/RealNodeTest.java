@@ -7,6 +7,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.node.FSParseException;
 import freenet.node.Location;
 import freenet.node.Node;
+import freenet.node.NodeInitException;
 import freenet.node.PeerNode;
 import freenet.support.Logger;
 
@@ -18,6 +19,9 @@ import freenet.support.Logger;
  */
 public class RealNodeTest {
 
+	static final int EXIT_BASE = NodeInitException.EXIT_NODE_UPPER_LIMIT;
+	static final int EXIT_CANNOT_DELETE_OLD_DATA = EXIT_BASE + 3;
+	
 	/*
 	 Borrowed from mrogers simulation code (February 6, 2008)
 	 */
