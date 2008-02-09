@@ -54,7 +54,14 @@ public class PNGFilter implements ContentDataFilter {
 		"bKGD",
 		"hIST",
 		"pHYs",
-		"sPLT"
+		"sPLT",
+		// APNG chunks (Firefox 3 will support APNG)
+		"acTL",
+		"fcTL",
+		"fDAT"
+		// MNG isn't supported by Firefox and IE because of lack of market demand. Big surprise
+		// given nobody supports it! It is supported by Konqueror though. Complex standard,
+		// not worth it for the time being.
 	};
 
 	PNGFilter(boolean deleteText, boolean deleteTimestamp, boolean checkCRCs) {
