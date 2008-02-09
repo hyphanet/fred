@@ -6,6 +6,7 @@ package freenet.node.simulator;
 import java.io.File;
 
 import freenet.crypt.DummyRandomSource;
+import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
@@ -37,7 +38,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     
-    public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
+    public static void main(String[] args) throws Exception {
         System.out.println("Routing test using real nodes:");
         System.out.println();
         String dir = "realNodeRequestInsertTest";
@@ -73,7 +74,11 @@ public class RealNodeRoutingTest extends RealNodeTest {
         
         waitForAllConnected(nodes);
         
-        // Now sit back and watch the fireworks!
+        waitForPingAverage(0.98, nodes, random);
+        
+    }
+
+	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random) {
         int cycleNumber = 0;
         int lastSwaps = 0;
         int lastNoSwaps = 0;
@@ -141,9 +146,9 @@ public class RealNodeRoutingTest extends RealNodeTest {
                     Logger.error(RealNodeRoutingTest.class, "Caught "+t, t);
                 }
             }
-            if(pings > 10 && avg.currentValue() > 0.95 && ((double)successes / ((double)(failures+successes)) > 0.95)) {
+            if(pings > 10 && avg.currentValue() > accuracy && ((double)successes / ((double)(failures+successes)) > 0.95)) {
             	System.err.println();
-            	System.err.println("Reached 95% accuracy.");
+            	System.err.println("Reached "+(accuracy*100)+"% accuracy.");
             	System.err.println();
             	System.err.println("Network size: "+NUMBER_OF_NODES);
             	System.err.println("Maximum HTL: "+MAX_HTL);
@@ -155,8 +160,9 @@ public class RealNodeRoutingTest extends RealNodeTest {
                 System.err.println("Total swaps rejected (recognized ID):" +LocationManager.swapsRejectedRecognizedID);
                 System.err.println("Total swaps failed:" +LocationManager.noSwaps);
                 System.err.println("Total swaps succeeded:" +LocationManager.swaps);
-                System.exit(0);
+                return;
             }
         }
-    }
+		
+	}
 }

@@ -32,7 +32,7 @@ import freenet.support.math.SimpleRunningAverage;
 /**
  * @author amphibian
  */
-public class RealNodeRequestInsertTest extends RealNodeTest {
+public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
     static final int NUMBER_OF_NODES = 50;
     static final int DEGREE = 10;
@@ -70,78 +70,8 @@ public class RealNodeRequestInsertTest extends RealNodeTest {
         
         waitForAllConnected(nodes);
         
-        // Now sit back and watch the fireworks!
-        int cycleNumber = 0;
-        int lastSwaps = 0;
-        int lastNoSwaps = 0;
-        int failures = 0;
-        int successes = 0;
-        RunningAverage avg = new SimpleRunningAverage(100, 0.0);
-        RunningAverage avg2 = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 100, null);
-        int pings = 0;
-        while(true) {
-            cycleNumber++;
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                // Ignore
-            }
-            for(int i=0;i<NUMBER_OF_NODES;i++) {
-                Logger.normal(RealNodeRoutingTest.class, "Cycle "+cycleNumber+" node "+i+": "+nodes[i].getLocation());
-            }
-            int newSwaps = LocationManager.swaps;
-            int totalStarted = LocationManager.startedSwaps;
-            int noSwaps = LocationManager.noSwaps;
-            Logger.normal(RealNodeRoutingTest.class, "Swaps: "+(newSwaps-lastSwaps));
-            Logger.normal(RealNodeRoutingTest.class, "\nTotal swaps: Started*2: "+totalStarted*2+", succeeded: "+newSwaps+", last minute failures: "+noSwaps+
-                    ", ratio "+(double)noSwaps/(double)newSwaps+", early failures: "+((totalStarted*2)-(noSwaps+newSwaps)));
-            Logger.normal(RealNodeRoutingTest.class, "This cycle ratio: "+((double)(noSwaps-lastNoSwaps)) / ((double)(newSwaps - lastSwaps)));
-            lastNoSwaps = noSwaps;
-            Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (already locked): "+LocationManager.swapsRejectedAlreadyLocked);
-            Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (nowhere to go): "+LocationManager.swapsRejectedNowhereToGo);
-            Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (rate limit): "+LocationManager.swapsRejectedRateLimit);
-            Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (loop): "+LocationManager.swapsRejectedLoop);
-            Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (recognized ID):" +LocationManager.swapsRejectedRecognizedID);
-            Logger.normal(RealNodeRoutingTest.class, "Swaps failed:" +LocationManager.noSwaps);
-            Logger.normal(RealNodeRoutingTest.class, "Swaps succeeded:" +LocationManager.swaps);
-            
-            lastSwaps = newSwaps;
-            // Do some (routed) test-pings
-            for(int i=0;i<10;i++) {
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e1) {
-                }
-                try {
-                Node randomNode = nodes[random.nextInt(NUMBER_OF_NODES)];
-                Node randomNode2 = randomNode;
-                while(randomNode2 == randomNode)
-                    randomNode2 = nodes[random.nextInt(NUMBER_OF_NODES)];
-                Logger.minor(RealNodeRoutingTest.class, "Pinging "+randomNode2.getDarknetPortNumber()+" from "+randomNode.getDarknetPortNumber());
-                double loc2 = randomNode2.getLocation();
-                int hopsTaken = randomNode.routedPing(loc2);
-                pings++;
-                if(hopsTaken < 0) {
-                    failures++;
-                    avg.report(0.0);
-                    avg2.report(0.0);
-                    double ratio = (double)successes / ((double)(failures+successes));
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" FAILED from "+randomNode.getDarknetPortNumber()+" to "+randomNode2.getDarknetPortNumber()+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
-                } else {
-                    successes++;
-                    avg.report(1.0);
-                    avg2.report(1.0);
-                    double ratio = (double)successes / ((double)(failures+successes));
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping "+pings+" success: "+hopsTaken+ ' ' +randomNode.getDarknetPortNumber()+" to "+randomNode2.getDarknetPortNumber()+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+ ')');
-                }
-                } catch (Throwable t) {
-                    Logger.error(RealNodeRoutingTest.class, "Caught "+t, t);
-                }
-            }
-            if(pings > 10 && avg.currentValue() > 0.98 && ((double)successes / ((double)(failures+successes)) > 0.98)) {
-                break;
-            }
-        }
+        waitForPingAverage(0.98, nodes, random);
+        
         System.out.println();
         System.out.println("Ping average > 98%, lets do some inserts/requests");
         System.out.println();
