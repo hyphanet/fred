@@ -45,6 +45,7 @@ public class PNGFilter implements ContentDataFilter {
 	static final byte[] pngHeader =
 		{(byte) 137, (byte) 80, (byte) 78, (byte) 71, (byte) 13, (byte) 10, (byte) 26, (byte) 10};
 	static final String[] HARMLESS_CHUNK_TYPES = {
+		// http://www.w3.org/TR/PNG/
 		"tRNS",
 		"cHRM",
 		"gAMA",
@@ -56,6 +57,7 @@ public class PNGFilter implements ContentDataFilter {
 		"pHYs",
 		"sPLT",
 		// APNG chunks (Firefox 3 will support APNG)
+		// http://wiki.mozilla.org/APNG_Specification
 		"acTL",
 		"fcTL",
 		"fDAT"
