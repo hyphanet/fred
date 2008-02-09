@@ -371,6 +371,7 @@ public class NodeStarter implements WrapperListener
 		if(ramStore) 
 			configFS.putSingle("node.storeType", "ram");
 		configFS.put("storeSize", storeSize);
+		configFS.put("node.disableHangCheckers", true);
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 		
