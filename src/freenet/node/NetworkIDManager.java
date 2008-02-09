@@ -50,6 +50,8 @@ public class NetworkIDManager implements Runnable {
 	private static final int MIN_PINGS_FOR_STARTUP=3;
 	//The number of pings, etc. beyond which is considered a sane value to start experimenting from.
 	private static final int COMFORT_LEVEL=20;
+	//e.g. ping this many of your N peers, then see if the network has changed; this times BETWEEN_PEERS in the min. time between network id changes.
+	private static final int PING_VOLLEYS_PER_NETWORK_RECOMPUTE = 5;
 	
 	//Atomic: Locking for both via secretsByPeer
 	private final HashMap secretsByPeer=new HashMap();
@@ -407,6 +409,7 @@ public class NetworkIDManager implements Runnable {
 	private List workQueue=new ArrayList();
 	private PeerNode processing;
 	private boolean processingRace;
+	private int pingVolleysToGo=PING_VOLLEYS_PER_NETWORK_RECOMPUTE;
 	
 	private void reschedule(long period) {
 		node.getTicker().queueTimedJob(this, period);
@@ -449,10 +452,15 @@ public class NetworkIDManager implements Runnable {
 			}
 			processing=null;
 		}
-		if (startupChecks>0)
+		pingVolleysToGo--;
+		if (startupChecks>0) {
 			startupChecks--;
-		else
-			doNetworkIDReckoning(didAnything);
+		} else {
+			if (pingVolleysToGo<=0) {
+				doNetworkIDReckoning(didAnything);
+				pingVolleysToGo=PING_VOLLEYS_PER_NETWORK_RECOMPUTE;
+			}
+		}
 		synchronized (workQueue) {
 			if (workQueue.isEmpty()) {
 				checkAllPeers();
@@ -792,7 +800,11 @@ public class NetworkIDManager implements Runnable {
 					//should be the same: png.setForbiddenIds(nowTakenIds);
 					int oldId=png.networkid;
 					int newId=png.getConsensus();
-					if (oldId==newId) {
+					if (png.ourGroup) {
+						//Even if the consensus changes, we'll hold onto our group network id label.
+						//Important for stability and future routing.
+						return;
+					} else if (oldId==newId) {
 						//Maybe they agree with us, maybe not; but it doesn't change our view of the group.
 						return;
 					} else {
