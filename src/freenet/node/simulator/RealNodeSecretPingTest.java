@@ -6,8 +6,8 @@ package freenet.node.simulator;
 import java.io.File;
 
 import freenet.crypt.DummyRandomSource;
-import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
@@ -15,7 +15,6 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.Location;
-import freenet.node.LocationManager;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
@@ -26,7 +25,6 @@ import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
-import freenet.support.math.SimpleRunningAverage;
 
 /**
  * @author amphibian

@@ -14,7 +14,6 @@ import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.node.FSParseException;
-import freenet.node.LocationManager;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
@@ -23,9 +22,7 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
-import freenet.support.SimpleFieldSet;
 import freenet.support.LoggerHook.InvalidThresholdException;
-import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 

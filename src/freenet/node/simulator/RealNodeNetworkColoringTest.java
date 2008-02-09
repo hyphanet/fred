@@ -8,27 +8,18 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import freenet.crypt.DummyRandomSource;
-import freenet.io.comm.DisconnectedException;
-import freenet.io.comm.DMT;
-import freenet.io.comm.Message;
-import freenet.io.comm.MessageFilter;
-import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
-import freenet.node.Location;
-import freenet.node.LocationManager;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
-import freenet.node.PeerNode;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
-import freenet.support.math.SimpleRunningAverage;
 
 /**
  * Create a bunch of nodes
