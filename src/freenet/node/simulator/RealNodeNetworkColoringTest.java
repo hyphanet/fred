@@ -231,8 +231,8 @@ public class RealNodeNetworkColoringTest {
 				Logger.error(log, "  pSuccess(BRG)  = "+bridgeRate.currentValue());
 			
 			idReport("All", generalIds);
-			idReport(" A ", generalIds);
-			idReport(" B ", generalIds);
+			idReport(" A ", aIds);
+			idReport(" B ", bIds);
 			if (BRIDGES!=0)
 				idReport("BRG", generalIds);
 		}
