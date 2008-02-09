@@ -28,9 +28,10 @@ import freenet.support.math.SimpleRunningAverage;
  * 
  * Then run some node-to-node searches.
  */
-public class RealNodeRoutingTest {
+public class RealNodeRoutingTest extends RealNodeTest {
 
     static final int NUMBER_OF_NODES = 50;
+    static final int DEGREE = 5;
     static final short MAX_HTL = (short)7;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
@@ -54,27 +55,7 @@ public class RealNodeRoutingTest {
         }
         Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");
         // Now link them up
-        // Connect the set
-        for(int i=0;i<NUMBER_OF_NODES;i++) {
-            int next = (i+1) % NUMBER_OF_NODES;
-            int prev = (i+NUMBER_OF_NODES-1)%NUMBER_OF_NODES;
-            nodes[i].connect(nodes[next]);
-            nodes[i].connect(nodes[prev]);
-        }
-        Logger.normal(RealNodeRoutingTest.class, "Connected nodes");
-        // Now add some random links
-        for(int i=0;i<NUMBER_OF_NODES*5;i++) {
-            if(i % NUMBER_OF_NODES == 0)
-                Logger.normal(RealNodeRoutingTest.class, ""+i);
-            int length = (int)Math.pow(NUMBER_OF_NODES, random.nextDouble());
-            int nodeA = random.nextInt(NUMBER_OF_NODES);
-            int nodeB = (nodeA+length)%NUMBER_OF_NODES;
-            //System.out.println(""+nodeA+" -> "+nodeB);
-            Node a = nodes[nodeA];
-            Node b = nodes[nodeB];
-            a.connect(b);
-            b.connect(a);
-        }
+        makeKleinbergNetwork(nodes, false, DEGREE, true);
 
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         

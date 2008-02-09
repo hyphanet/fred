@@ -109,8 +109,8 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
         Logger.normal(RealNodeRoutingTest.class, "Created "+totalNodes+" nodes");
 		
         // Now link them up
-        makeKleinbergNetwork(subnetA, true /* make it easy, we're not testing swapping here */, DEGREE);
-		makeKleinbergNetwork(subnetB, true /* make it easy, we're not testing swapping here */, DEGREE);
+        makeKleinbergNetwork(subnetA, true /* make it easy, we're not testing swapping here */, DEGREE, false);
+		makeKleinbergNetwork(subnetB, true /* make it easy, we're not testing swapping here */, DEGREE, false);
 		
         Logger.normal(RealNodeRoutingTest.class, "Added small-world links, weakly connect the subnets");
         

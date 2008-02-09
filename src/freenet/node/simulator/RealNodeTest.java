@@ -21,7 +21,7 @@ public class RealNodeTest {
 	/*
 	 Borrowed from mrogers simulation code (February 6, 2008)
 	 */
-	static void makeKleinbergNetwork (Node[] nodes, boolean idealLocations, int degree)
+	static void makeKleinbergNetwork (Node[] nodes, boolean idealLocations, int degree, boolean forceNeighbourConnections)
 	{
 		// First set the locations up so we don't spend a long time swapping just to stabilise each network.
 		double div = 1.0 / (nodes.length + 1);
@@ -29,6 +29,12 @@ public class RealNodeTest {
 		for (int i=0; i<nodes.length; i++) {
 			nodes[i].setLocation(loc);
 			loc += div;
+		}
+		if(forceNeighbourConnections) {
+			for(int i=0;i<nodes.length;i++) {
+				int next = i+1 % nodes.length;
+				connect(nodes[i], nodes[next]);
+			}
 		}
 		for (int i=0; i<nodes.length; i++) {
 			Node a = nodes[i];
