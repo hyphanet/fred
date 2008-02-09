@@ -36,7 +36,7 @@ import freenet.support.math.SimpleRunningAverage;
  * Weakly connect the two networks.
  * See if they will be able to separate themselves.
  */
-public class RealNodeNetworkColoringTest {
+public class RealNodeNetworkColoringTest extends RealNodeTest {
 
     //static final int NUMBER_OF_NODES = 150;
 	static final int NUMBER_OF_NODES = 20;
@@ -109,8 +109,8 @@ public class RealNodeNetworkColoringTest {
         Logger.normal(RealNodeRoutingTest.class, "Created "+totalNodes+" nodes");
 		
         // Now link them up
-        makeKleinbergNetwork(subnetA, true /* make it easy, we're not testing swapping here */);
-		makeKleinbergNetwork(subnetB, true /* make it easy, we're not testing swapping here */);
+        makeKleinbergNetwork(subnetA, true /* make it easy, we're not testing swapping here */, DEGREE);
+		makeKleinbergNetwork(subnetB, true /* make it easy, we're not testing swapping here */, DEGREE);
 		
         Logger.normal(RealNodeRoutingTest.class, "Added small-world links, weakly connect the subnets");
         
@@ -254,73 +254,6 @@ public class RealNodeNetworkColoringTest {
 		if (size>MAX)
 			sb.append(", ...");
 		Logger.error(log, sb.toString());
-	}
-	
-	/*
-	 Borrowed from mrogers simulation code (February 6, 2008)
-	 */
-	static void makeKleinbergNetwork (Node[] nodes, boolean idealLocations)
-	{
-		// First set the locations up so we don't spend a long time swapping just to stabilise each network.
-		double div = 1.0 / (nodes.length + 1);
-		double loc = 0.0;
-		for (int i=0; i<nodes.length; i++) {
-			nodes[i].setLocation(loc);
-			loc += div;
-		}
-		for (int i=0; i<nodes.length; i++) {
-			Node a = nodes[i];
-			// Normalise the probabilities
-			double norm = 0.0;
-			for (int j=0; j<nodes.length; j++) {
-				Node b = nodes[j];
-				if (a.getLocation() == b.getLocation()) continue;
-				norm += 1.0 / distance (a, b);
-			}
-			// Create DEGREE/2 outgoing connections
-			for (int k=0; k<nodes.length; k++) {
-				Node b = nodes[k];
-				if (a.getLocation() == b.getLocation()) continue;
-				double p = 1.0 / distance (a, b) / norm;
-				for (int n = 0; n < DEGREE / 2; n++) {
-					if (Math.random() < p) {
-						connect(a, b);
-						break;
-					}
-				}
-			}
-		}
-	}
-	
-	static void connect(Node a, Node b) {
-		try {
-			a.connect (b);
-			b.connect (a);
-		} catch (FSParseException e) {
-			Logger.error(RealNodeSecretPingTest.class, "cannot connect!!!!", e);
-		} catch (PeerParseException e) {
-			Logger.error(RealNodeSecretPingTest.class, "cannot connect #2!!!!", e);
-		} catch (freenet.io.comm.ReferenceSignatureVerificationException e) {
-			Logger.error(RealNodeSecretPingTest.class, "cannot connect #3!!!!", e);
-		}
-	}
-	
-	static double distance(Node a, Node b) {
-		double aL=a.getLocation();
-		double bL=b.getLocation();
-		return Location.distance(aL, bL);
-	}
-	
-	static String getPortNumber(PeerNode p) {
-		if (p == null || p.getPeer() == null)
-			return "null";
-		return Integer.toString(p.getPeer().getPort());
-	}
-	
-	static String getPortNumber(Node n) {
-		if (n == null)
-			return "null";
-		return Integer.toString(n.getDarknetPortNumber());
 	}
 	
 }
