@@ -37,6 +37,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
     static final short MAX_HTL = (short)10;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
+    static final int MAX_PINGS = 2000;
     
     public static void main(String[] args) throws Exception {
         System.out.println("Routing test using real nodes:");
@@ -74,11 +75,11 @@ public class RealNodeRoutingTest extends RealNodeTest {
         
         waitForAllConnected(nodes);
         
-        waitForPingAverage(0.98, nodes, random);
+        waitForPingAverage(0.98, nodes, random, MAX_PINGS);
         
     }
 
-	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random) {
+	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random, int maxTests) {
         int cycleNumber = 0;
         int lastSwaps = 0;
         int lastNoSwaps = 0;
@@ -87,7 +88,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
         RunningAverage avg = new SimpleRunningAverage(100, 0.0);
         RunningAverage avg2 = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 100, null);
         int pings = 0;
-        while(true) {
+        for(int total=0;total<maxTests;total++) {
             cycleNumber++;
             try {
                 Thread.sleep(5000);
@@ -163,6 +164,6 @@ public class RealNodeRoutingTest extends RealNodeTest {
                 return;
             }
         }
-		
+		System.exit(EXIT_PING_TARGET_NOT_REACHED);
 	}
 }
