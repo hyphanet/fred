@@ -128,8 +128,6 @@ public class PNGFilter implements ContentDataFilter {
 				int length = ((lengthBytes[0] & 0xff) << 24) + ((lengthBytes[1] & 0xff) << 16) + ((lengthBytes[2] & 0xff) << 8) + (lengthBytes[3] & 0xff);
 				if(logMINOR)
 					Logger.minor(this, "length " + length);
-				if(dos != null)
-					dos.write(lengthBytes);
 
 				// Type of the chunk : Should match [a-zA-Z]{4}
 				if(dis.read(lengthBytes) < 4)
@@ -144,8 +142,6 @@ public class PNGFilter implements ContentDataFilter {
 					} else
 						throw new IOException("The name of the chunk is invalid!");
 				}
-				if(dos != null)
-					dos.write(chunkTypeBytes);
 				chunkTypeString = sb.toString();
 				if(logMINOR)
 					Logger.minor(this, "name " + chunkTypeString);
@@ -160,6 +156,10 @@ public class PNGFilter implements ContentDataFilter {
 						Logger.minor(this, "data " + (chunkData.length == 0 ? "null" : HexUtil.bytesToHex(chunkData)));
 					else
 						Logger.minor(this, "data " + chunkData.length);
+				if(dos != null)
+					dos.write(lengthBytes);
+				if(dos != null)
+					dos.write(chunkTypeBytes);
 				if(dos != null)
 					dos.write(chunkData);
 
