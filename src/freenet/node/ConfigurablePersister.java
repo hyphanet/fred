@@ -45,29 +45,29 @@ public class ConfigurablePersister extends Persister {
 		while(true) {
 			if(f.exists()) {
 				if(!(f.canRead() && f.canWrite()))
-					throw new InvalidConfigValueException(l10n("existsCannotReadWrite"));
+					throw new InvalidConfigValueException(l10n("existsCannotReadWrite")+" : "+tmp);
 				break;
 			} else {
 				try {
 					if(!f.createNewFile()) {
 						if(f.exists()) continue;
-						throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate"));
+						throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate")+" : "+tmp);
 					}
 				} catch (IOException e) {
-					throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate"));
+					throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate")+" : "+tmp);
 				}
 			}
 		}
 		while(true) {
 			if(tmp.exists()) {
 				if(!(tmp.canRead() && tmp.canWrite()))
-					throw new InvalidConfigValueException(l10n("existsCannotReadWrite"));
+					throw new InvalidConfigValueException(l10n("existsCannotReadWrite")+" : "+tmp);
 				break;
 			} else {
 				try {
 					tmp.createNewFile();
 				} catch (IOException e) {
-					throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate"));
+					throw new InvalidConfigValueException(l10n("doesNotExistCannotCreate")+" : "+tmp);
 				}
 			}
 		}
