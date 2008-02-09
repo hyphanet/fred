@@ -231,6 +231,8 @@ public class PNGFilter implements ContentDataFilter {
 				}
 				lastChunkType = chunkTypeString;
 			}
+			if(finished && dis.available() > 0)
+				throw new IOException("IEND not last chunk");
 			
 			dis.close();
 		} finally {
