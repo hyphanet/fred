@@ -2,10 +2,12 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -32,6 +34,7 @@ public class NetworkIDManager implements Runnable {
 	
 	//Intervals between connectivity checks and NetworkID reckoning.
 	//Checks for added peers may be delayed up to LONG_PERIOD, so don't make it too long.
+	//Coincedently, LONG_PERIOD is also the interval at which we send out FNPNetworkID reminders.
 	private static final long BETWEEN_PEERS =   2000;
 	private static final long STARTUP_DELAY =  20000;
 	private static final long LONG_PERIOD   = 120000;
@@ -42,6 +45,8 @@ public class NetworkIDManager implements Runnable {
 	
 	private static final int NO_NETWORKID = 0;
 	
+	//The minimum number of pings per-node we will try and send out before doing any kind of network id reasoning.
+	private static final int MIN_PINGS_FOR_STARTUP=3;
 	//The number of pings, etc. beyond which is considered a sane value to start experimenting from.
 	private static final int COMFORT_LEVEL=20;
 	
@@ -60,7 +65,7 @@ public class NetworkIDManager implements Runnable {
 			node.getTicker().queueTimedJob(new Runnable() {
 				public void run() {
 					checkAllPeers();
-					startupChecks = node.peers.quickCountConnectedPeers();
+					startupChecks = node.peers.quickCountConnectedPeers() * MIN_PINGS_FOR_STARTUP;
 					Logger.normal(NetworkIDManager.this, "Past startup delay, "+startupChecks+" connected peers");
 					reschedule(0);
 				}
@@ -444,11 +449,16 @@ public class NetworkIDManager implements Runnable {
 		synchronized (workQueue) {
 			if (workQueue.isEmpty()) {
 				//Add two random peers to check next time, or maybe... all of them?
-				PeerNode p1=node.peers.getRandomPeer();
-				PeerNode p2=node.peers.getRandomPeer(p1);
-				addWorkToLockedQueue(p1);
-				addWorkToLockedQueue(p2);
-				reschedule(LONG_PERIOD);
+				if (startupChecks>0) {
+					checkAllPeers();
+					reschedule(BETWEEN_PEERS);
+				} else {
+					PeerNode p1=node.peers.getRandomPeer();
+					PeerNode p2=node.peers.getRandomPeer(p1);
+					addWorkToLockedQueue(p1);
+					addWorkToLockedQueue(p2);
+					reschedule(LONG_PERIOD);
+				}
 			} else {
 				reschedule(BETWEEN_PEERS);
 			}
@@ -534,6 +544,15 @@ public class NetworkIDManager implements Runnable {
 	}
 	
 	public void checkAllPeers() {
+		Iterator i=getAllConnectedPeers().iterator();
+		synchronized (workQueue) {
+			while (i.hasNext()) {
+				addWorkToLockedQueue((PeerNode)i.next());
+			}
+		}
+	}
+	
+	private HashSet getAllConnectedPeers() {
 		double randomTarget=node.random.nextDouble();
 		HashSet connectedPeers = new HashSet();
 		PeerNode next = node.peers.closerPeer(null, connectedPeers, null, randomTarget, true, false, -1, null, null);
@@ -541,12 +560,7 @@ public class NetworkIDManager implements Runnable {
 			connectedPeers.add(next);
 			next = node.peers.closerPeer(null, connectedPeers, null, randomTarget, true, false, -1, null, null);
 		}
-		Iterator i=connectedPeers.iterator();
-		synchronized (workQueue) {
-			while (i.hasNext()) {
-				addWorkToLockedQueue((PeerNode)i.next());
-			}
-		}
+		return connectedPeers;
 	}
 	
 	/**
@@ -556,8 +570,161 @@ public class NetworkIDManager implements Runnable {
 	 * we have ping records for this time around; even if it is just totally madeup identifiers.
 	 */
 	private void doNetworkIDReckoning(boolean anyPingChanges) {
-		// [...!!!...] \\
+		//!!!: This is where the magic separation logic begins.
+		// This may still need a lot of work; e.g. a locking mechanism, considering disconnected peers?
+		List newNetworkGroups=new ArrayList();
+		HashSet all=getAllConnectedPeers();
+		HashSet todo=(HashSet)all.clone();
+		HashSet takenNetworkIds=new HashSet();
+		
+		synchronized (dontStartPlease) {
+			inTransition=true;
+		}
+		
+		if (todo.isEmpty())
+			return;
+		
+		//optimization, if no stats have changed, just rescan the list consensus?
+		
+		//Note that in all this set manipulation, we never consult in what group a user previously was.
+		while (!todo.isEmpty()) {
+			PeerNode mostConnected=findMostConnectedPeerInSet(todo, all);
+			PeerNetworkGroup newGroup = new PeerNetworkGroup();
+			newNetworkGroups.add(newGroup);
+			todo.remove(mostConnected);
+			//NB: as a side effect, this function will automatically remove the members from 'todo'.
+			List members=xferConnectedPeerSetFor(mostConnected, todo);
+			members.add(mostConnected);
+			newGroup.setMembers(members);
+			newGroup.setForbiddenIds(takenNetworkIds);
+			
+			int id=newGroup.getConsensus();
+			if (id==NO_NETWORKID)
+				id=node.random.nextInt();
+			newGroup.assignNetworkId(id);
+			takenNetworkIds.add(new Integer(id));
+		}
+		
+		//for now, we'll just say we are in our most-connected group. really it needs to be most-successful, or dungeons may support themselves!
+		PeerNetworkGroup ourgroup=(PeerNetworkGroup)newNetworkGroups.get(0);
+		ourgroup.ourGroup=true;
+		ourNetworkId=ourgroup.networkid;
+		
+		Logger.error(this, "I am in network: "+ourNetworkId+", and have divided my "+all.size()+" peers into "+newNetworkGroups.size()+" network groups");
+		
+		networkGroups=newNetworkGroups;
+		
+		inTransition=false;
 	}
+	
+	// Returns the 'best-connected' peer in the given set, or null if the set is empty.
+	private PeerNode findMostConnectedPeerInSet(HashSet set, HashSet possibleTargets) {
+		double max=-1.0;
+		PeerNode theMan=null;
+		
+		Iterator i=set.iterator();
+		while (i.hasNext()) {
+			PeerNode p=(PeerNode)i.next();
+			double value=getPeerNodeConnectedness(p, possibleTargets);
+			if (value>max) {
+				max=value;
+				theMan=p;
+			}
+		}
+		
+		return theMan;
+	}
+	
+	// Return a double between [0.0-1.0] somehow indicating how "wellconnected" this peer is to all the peers in possibleTargets.
+	private double getPeerNodeConnectedness(PeerNode p, HashSet possibleTargets) {
+		double retval=1.0;
+		double totalLossFactor=1.0/possibleTargets.size();
+		Iterator i=possibleTargets.iterator();
+		while (i.hasNext()) {
+			PeerNode target=(PeerNode)i.next();
+			PingRecord record=getPingRecord(p, target);
+			double pingAverage=record.average.currentValue();
+			if (pingAverage<totalLossFactor)
+				retval*=totalLossFactor;
+			else
+				retval*=pingAverage;
+		}
+		return retval;
+	}
+	
+	/*
+	 * Returns the set of peers which appear to be reasonably connected to 'thisPeer' and as a
+	 * side effect removes those peers from the set passed in.
+	 */
+	private List xferConnectedPeerSetFor(PeerNode thisPeer, HashSet fromOthers) {
+		//FIXME: This algorithm needs to be thought about! Maybe some hard thresholds.
+		//       What recently-connected, peers who only have one or two pings so far?
+		/*
+		 Idea: Right now thisPeer is in a network group by itself, but we know that it is the
+		       best connected peer, so now we just need to find it's peers. In this implementation
+		       A peer belongs to this newly forming network group if it is at least as connected to
+		       the new forming group as the first peer is connected to the original group.
+		       Why? I don't know...
+		 */
+		List currentGroup=new ArrayList();
+		currentGroup.add(thisPeer);
+		//HashSet remainder=others.clone();
+		HashSet remainder=fromOthers;
+		double goodConnectivity=getSetwisePingAverage(thisPeer, fromOthers);
+		while (true) {
+			//Note that, because of the size, this might be low.
+			PeerNode bestOther=findBestSetwisePingAverage(remainder, currentGroup);
+			if (cheat_findBestSetwisePingAverage_best >= goodConnectivity) {
+				remainder.remove(bestOther);
+				currentGroup.add(bestOther);
+			} else {
+				break;
+			}
+		}
+		//Exception! If there is only one left in fromOthers and we have at least a 25% ping average make them be in the same network. This probably means our algorithim is too picky (spliting up into too many groups).
+		if (currentGroup.size()==1 && fromOthers.size()==1) {
+			PeerNode onlyLeft=(PeerNode)fromOthers.iterator().next();
+			double average1=getPingRecord(onlyLeft, thisPeer).average.currentValue();
+			double average2=getPingRecord(thisPeer, onlyLeft).average.currentValue();
+			if (0.5*average1+0.5*average2 > 0.25) {
+				Logger.normal(this, "combine the dregs: "+thisPeer+"/"+fromOthers);
+				fromOthers.remove(onlyLeft);
+				currentGroup.add(onlyLeft);
+			}
+		}
+		return currentGroup;
+	}
+	
+	private double getSetwisePingAverage(PeerNode thisPeer, Collection toThesePeers) {
+		Iterator i=toThesePeers.iterator();
+		double accum=0.0;
+		while (i.hasNext()) {
+			PeerNode other=(PeerNode)i.next();
+			accum+=getPingRecord(thisPeer, other).average.currentValue();
+		}
+		return accum/toThesePeers.size();
+	}
+	
+	private PeerNode findBestSetwisePingAverage(HashSet ofThese, Collection towardsThese) {
+		PeerNode retval=null;
+		double best=-1.0;
+		Iterator i=towardsThese.iterator();
+		while (i.hasNext()) {
+			PeerNode thisOne=(PeerNode)i.next();
+			double average=getSetwisePingAverage(thisOne, towardsThese);
+			if (average>best) {
+				retval=thisOne;
+				best=average;
+			}
+		}
+		cheat_findBestSetwisePingAverage_best=best;
+		return retval;
+	}
+	
+	private double cheat_findBestSetwisePingAverage_best;
+	
+	boolean inTransition=false;
+	Object dontStartPlease=new Object();
 	
 	public void onPeerNodeChangedNetworkID(PeerNode p) {
 		/*
@@ -569,26 +736,155 @@ public class NetworkIDManager implements Runnable {
 		 of peer-secretpinging/and network-id-reckoning. Note that we must still not clobber priorities
 		 so...
 
+		 //do nothing if inTransition;
 		 //do nothing on: p.getNetGroup().disallowedIds.contains(p.getNetID());
 		 //do nothing on: allAssignedNetGroups.contains(p.getNetID());
 
 		 There is a minor race condition here that between updates we might improperly favor the first
 		 peer to notify us of a new network id, but this will be authoritatively clobbered next round.
 		 */
+		synchronized (dontStartPlease) {
+			if (inTransition)
+				return;
+			//Networks are listed in order of priority, generally the biggest one should be first.
+			//The forbidden ids is already set in this way, but if we decide that one group needs to use the id of a lesser group, we must tell the other group to use a different one; i.e. realign all the previous id's.
+			boolean haveFoundIt=false;
+			PeerNetworkGroup mine=p.networkGroup;
+			Iterator i=networkGroups.iterator();
+			HashSet nowTakenIds=new HashSet();
+			while (i.hasNext()) {
+				PeerNetworkGroup png=(PeerNetworkGroup)i.next();
+				if (png.equals(mine)) {
+					haveFoundIt=true;
+					//should be the same: png.setForbiddenIds(nowTakenIds);
+					int oldId=png.networkid;
+					int newId=png.getConsensus();
+					if (oldId==newId) {
+						//Maybe they agree with us, maybe not; but it doesn't change our view of the group.
+						return;
+					} else {
+						if (png.recentlyAssigned()) {
+							//In order to keep us from thrashing; e.g. two peers each see each other as in the same
+							//group and keep swapping... we are going to ignore this change for now.
+							return;
+						} else {
+							png.assignNetworkId(newId);
+						}
+					}
+					//to continue means to realign all the remaining forbidden ids.
+					nowTakenIds.add(new Integer(newId));
+				} else if (haveFoundIt) {
+					//lower priority group, it may need to be reset.
+					//???: Should we take this oportunity to always re-examine the consensus? This is a callback, so let's not.
+					png.setForbiddenIds(nowTakenIds);
+					int oldId=png.networkid;
+					int newId=oldId;
+					if (nowTakenIds.contains(new Integer(oldId))) {
+						newId=png.getConsensus();
+						png.assignNetworkId(newId);
+					}
+					nowTakenIds.add(new Integer(newId));
+				} else {
+					//higher priority group, remember it's id.
+					nowTakenIds.add(new Integer(png.networkid));
+				}
+			}
+		}
 	}
 	
 	/**
 	 A list of peers that we have assigned a network id to, and some logic as to why.
 	 */
-	private static class PeerNetworkGroup {
+	public static class PeerNetworkGroup {
 		List members;
-		int networkid;
+		int networkid=NO_NETWORKID;
 		boolean ourGroup;
+		HashSet forbiddenIds;
+		long lastAssign;
+		/*
+		 Returns the group consensus. If no peer in this group has advertised an id, then the last-assigned id is returned.
+		 */
 		int getConsensus() {
-			//mod(peers[].getNetworkID() + ourGroup?ourID:NO_NETWORKID )
-			return NO_NETWORKID;
+			HashMap h=new HashMap();
+			Integer lastId=new Integer(networkid);
+			synchronized (this) {
+				Iterator i=members.iterator();
+				while (i.hasNext()) {
+					PeerNode p=(PeerNode)i.next();
+					Integer id=new Integer(p.providedNetworkID);
+					//Reject the advertized id which conflicts with our pre-determined boundaries (which can change)
+					if (forbiddenIds.contains(id))
+						continue;
+					if (id.intValue()==NO_NETWORKID)
+						continue;
+					Integer count=(Integer)h.get(id);
+					if (count==null)
+						count=new Integer(1);
+					else
+						count=new Integer(count.intValue()+1);
+					h.put(id, count);
+					lastId=id;
+				}
+				//Should we include ourselves in the count? Probably not, as we generally determine our network id on consensus.
+				//If there is only one option, it is most likely NO_NETWORKID anyway; or everyone agrees?!
+				if (h.size()<=1)
+					return lastId.intValue();
+				int maxId=networkid;
+				int maxCount=0;
+				Iterator entries=h.entrySet().iterator();
+				while (entries.hasNext()) {
+					Map.Entry e=(Map.Entry)entries.next();
+					int id=((Integer)e.getKey()).intValue();
+					int count=((Integer)e.getValue()).intValue();
+					if (count>maxCount) {
+						maxCount=count;
+						maxId=id;
+					}
+				}
+				return maxId;
+			}
+		}
+		void assignNetworkId(int id) {
+			synchronized (this) {
+				this.lastAssign=System.currentTimeMillis();
+				this.networkid=id;
+				Iterator i=members.iterator();
+				while (i.hasNext()) {
+					PeerNode p=(PeerNode)i.next();
+					p.assignedNetworkID=id;
+					p.networkGroup=this;
+					try {
+						p.sendFNPNetworkID();
+					} catch (NotConnectedException e) {
+						Logger.normal(this, "disconnected on network reassignment");
+					}
+				}
+			}
+		}
+		/*
+		 makes a copy of the given set of forbidden ids
+		 */
+		void setForbiddenIds(HashSet a) {
+			synchronized (this) {
+				forbiddenIds=new HashSet(a);
+			}
+		}
+		/*
+		 caveat, holds onto original list
+		 */
+		void setMembers(List a) {
+			synchronized (this) {
+				//more correct to copy, but presently unneccesary.
+				members=a;
+			}
+		}
+		boolean recentlyAssigned() {
+			return (System.currentTimeMillis()-lastAssign) < BETWEEN_PEERS;
 		}
 	}
+	
+	//List of PeerNetworkGroups ordered by priority
+	List networkGroups=new ArrayList();
 	
 	//or zero if we don't know yet
 	public int ourNetworkId = NO_NETWORKID;

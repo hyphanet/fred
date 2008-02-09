@@ -3564,11 +3564,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	int assignedNetworkID;
 	int providedNetworkID;
+	NetworkIDManager.PeerNetworkGroup networkGroup;
 	
 	void handleFNPNetworkID(Message m) {
 		int got=m.getInt(DMT.UID);
 		if (logMINOR) Logger.minor(this, "now peer thinks he is in network "+got);
-		providedNetworkID=got;
+		if (providedNetworkID!=got && assignedNetworkID!=got) {
+			providedNetworkID=got;
+			node.netid.onPeerNodeChangedNetworkID(this);
+		} else {
+			providedNetworkID=got;
+		}
 	}
 	
 	void sendFNPNetworkID() throws NotConnectedException {
