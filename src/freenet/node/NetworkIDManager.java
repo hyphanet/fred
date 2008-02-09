@@ -18,6 +18,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.support.Logger;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
+import freenet.support.math.TrivialRunningAverage;
 
 /**
  * Handles the processing of challenge/response pings as well as the storage of the secrets pertaining thereto.
@@ -53,6 +54,9 @@ public class NetworkIDManager implements Runnable {
 	//Atomic: Locking for both via secretsByPeer
 	private final HashMap secretsByPeer=new HashMap();
 	private final HashMap secretsByUID=new HashMap();
+	
+	//1.0 is disabled
+	private static final double MAGIC_LINEAR_GRACE = 1.0;
 	
 	private final Node node;
 	private int startupChecks;
@@ -611,6 +615,8 @@ public class NetworkIDManager implements Runnable {
 		ourNetworkId=ourgroup.networkid;
 		
 		Logger.error(this, "I am in network: "+ourNetworkId+", and have divided my "+all.size()+" peers into "+newNetworkGroups.size()+" network groups");
+		Logger.error(this, "bestFirst="+cheat_stats_general_bestOther.currentValue());
+		Logger.error(this, "bestGeneralFactor="+cheat_stats_findBestSetwisePingAverage_best_general.currentValue());
 		
 		networkGroups=newNetworkGroups;
 		
@@ -671,10 +677,11 @@ public class NetworkIDManager implements Runnable {
 		//HashSet remainder=others.clone();
 		HashSet remainder=fromOthers;
 		double goodConnectivity=getSetwisePingAverage(thisPeer, fromOthers);
-		while (true) {
+		cheat_stats_general_bestOther.report(goodConnectivity);
+		while (!remainder.isEmpty()) {
 			//Note that, because of the size, this might be low.
 			PeerNode bestOther=findBestSetwisePingAverage(remainder, currentGroup);
-			if (cheat_findBestSetwisePingAverage_best >= goodConnectivity) {
+			if (cheat_findBestSetwisePingAverage_best >= goodConnectivity * MAGIC_LINEAR_GRACE) {
 				remainder.remove(bestOther);
 				currentGroup.add(bestOther);
 			} else {
@@ -698,6 +705,11 @@ public class NetworkIDManager implements Runnable {
 	private double getSetwisePingAverage(PeerNode thisPeer, Collection toThesePeers) {
 		Iterator i=toThesePeers.iterator();
 		double accum=0.0;
+		if (!i.hasNext()) {
+			//why yes, we have GREAT connectivity to nobody!
+			Logger.error(this, "getSetwisePingAverage to nobody?");
+			return 1.0;
+		}
 		while (i.hasNext()) {
 			PeerNode other=(PeerNode)i.next();
 			accum+=getPingRecord(thisPeer, other).average.currentValue();
@@ -708,7 +720,12 @@ public class NetworkIDManager implements Runnable {
 	private PeerNode findBestSetwisePingAverage(HashSet ofThese, Collection towardsThese) {
 		PeerNode retval=null;
 		double best=-1.0;
-		Iterator i=towardsThese.iterator();
+		Iterator i=ofThese.iterator();
+		if (!i.hasNext()) {
+			//why yes, we have GREAT connectivity to nobody!
+			Logger.error(this, "findBestSetwisePingAverage to nobody?");
+			return null;
+		}
 		while (i.hasNext()) {
 			PeerNode thisOne=(PeerNode)i.next();
 			double average=getSetwisePingAverage(thisOne, towardsThese);
@@ -718,10 +735,13 @@ public class NetworkIDManager implements Runnable {
 			}
 		}
 		cheat_findBestSetwisePingAverage_best=best;
+		cheat_stats_findBestSetwisePingAverage_best_general.report(best);
 		return retval;
 	}
 	
 	private double cheat_findBestSetwisePingAverage_best;
+	private RunningAverage cheat_stats_general_bestOther=new TrivialRunningAverage();
+	private RunningAverage cheat_stats_findBestSetwisePingAverage_best_general=new TrivialRunningAverage();
 	
 	boolean inTransition=false;
 	Object dontStartPlease=new Object();
