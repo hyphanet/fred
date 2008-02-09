@@ -11,19 +11,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.l10n.L10n;
-import freenet.support.CRC;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.LoggerHook.InvalidThresholdException;
-import freenet.support.OutputStreamLogger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
-import freenet.support.io.FileUtil;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -31,6 +28,7 @@ import java.io.File;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.zip.CRC32;
 
 /**
  * Content filter for PNG's.
@@ -172,12 +170,12 @@ public class PNGFilter implements ContentDataFilter {
 					dos.write(lengthBytes);
 
 				if(checkCRCs) {
-					long readCRC = ((lengthBytes[0] & 0xff) << 24) + ((lengthBytes[1] & 0xff) << 16) + ((lengthBytes[2] & 0xff) << 8) + (lengthBytes[3] & 0xff);
-					byte[] toCheck = new byte[chunkTypeBytes.length + chunkData.length];
-					System.arraycopy(toCheck, 0, chunkTypeBytes, 0, chunkTypeBytes.length);
-					System.arraycopy(toCheck, 0, chunkData, 0, chunkData.length);
-					long computedCRC = CRC.crc(toCheck);
-
+					long readCRC = (((lengthBytes[0] & 0xff) << 24) + ((lengthBytes[1] & 0xff) << 16) + ((lengthBytes[2] & 0xff) << 8) + (lengthBytes[3] & 0xff)) & 0x00000000ffffffffL;
+					CRC32 crc = new CRC32();
+					crc.update(chunkTypeBytes);
+					crc.update(chunkData);
+					long computedCRC = crc.getValue();
+					
 					if(readCRC != computedCRC) {
 						skip = true;
 						if(logMINOR)
