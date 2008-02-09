@@ -67,15 +67,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb, false);
 			pc.run(temp);
 			w.flush();
-			w.close();
-		}
-		finally {
-			Closer.close(w);
-			Closer.close(osw);
+		} finally {
 			Closer.close(os);
-			Closer.close(r);
-			Closer.close(isr);
-			Closer.close(bis);
 			Closer.close(strm);
 		}
 		return temp;
