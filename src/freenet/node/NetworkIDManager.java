@@ -455,15 +455,10 @@ public class NetworkIDManager implements Runnable {
 			doNetworkIDReckoning(didAnything);
 		synchronized (workQueue) {
 			if (workQueue.isEmpty()) {
-				//Add two random peers to check next time, or maybe... all of them?
+				checkAllPeers();
 				if (startupChecks>0) {
-					checkAllPeers();
 					reschedule(BETWEEN_PEERS);
 				} else {
-					PeerNode p1=node.peers.getRandomPeer();
-					PeerNode p2=node.peers.getRandomPeer(p1);
-					addWorkToLockedQueue(p1);
-					addWorkToLockedQueue(p2);
 					reschedule(LONG_PERIOD);
 				}
 			} else {
