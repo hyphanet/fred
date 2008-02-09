@@ -88,6 +88,7 @@ public class NetworkIDManager implements Runnable {
 	 * that they may be asked for the secret from a third party.
 	 */
 	public boolean handleStoreSecret(Message m) {
+		if(disableSecretPings) return true;
 		PeerNode pn=(PeerNode)m.getSource();
 		long uid = m.getLong(DMT.UID);
 		long secret = m.getLong(DMT.SECRET);
@@ -103,6 +104,7 @@ public class NetworkIDManager implements Runnable {
 	}
 	
 	public boolean handleSecretPing(final Message m) {
+		if(disableSecretPings) return true;
 		final PeerNode source=(PeerNode)m.getSource();
 		final long uid = m.getLong(DMT.UID);
 		final short htl = m.getShort(DMT.HTL);
