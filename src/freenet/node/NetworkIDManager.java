@@ -57,6 +57,9 @@ public class NetworkIDManager implements Runnable {
 	
 	//1.0 is disabled
 	private static final double MAGIC_LINEAR_GRACE = 1.0;
+	//Commit everyone with less than this amount of "connectivity" to there own networkgroup.
+	//Provides fall-open effect by grouping all peers with disabled secretpings into there own last group.
+	private static final double FALL_OPEN_MARK = 0.2;
 	
 	private final Node node;
 	private int startupChecks;
@@ -683,6 +686,13 @@ public class NetworkIDManager implements Runnable {
 		//HashSet remainder=others.clone();
 		HashSet remainder=fromOthers;
 		double goodConnectivity=getSetwisePingAverage(thisPeer, fromOthers);
+		if (goodConnectivity < FALL_OPEN_MARK) {
+			Logger.normal(this, "falling open with "+fromOthers.size()+" peers left");
+			currentGroup.addAll(fromOthers);
+			fromOthers.clear();
+			return currentGroup;
+		}
+		
 		cheat_stats_general_bestOther.report(goodConnectivity);
 		while (!remainder.isEmpty()) {
 			//Note that, because of the size, this might be low.
