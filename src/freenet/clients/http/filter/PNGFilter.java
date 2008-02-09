@@ -133,8 +133,7 @@ public class PNGFilter implements ContentDataFilter {
 				String chunkTypeString = null;
 				// Length of the chunk
 				byte[] lengthBytes = new byte[4];
-				if(dis.read(lengthBytes) < 4)
-					throw new IOException("The length of the chunk is invalid!");
+				dis.readFully(lengthBytes);
 				
 				int length = ((lengthBytes[0] & 0xff) << 24) + ((lengthBytes[1] & 0xff) << 16) + ((lengthBytes[2] & 0xff) << 8) + (lengthBytes[3] & 0xff);
 				if(logMINOR)
@@ -143,8 +142,7 @@ public class PNGFilter implements ContentDataFilter {
 					dos.write(lengthBytes);
 
 				// Type of the chunk : Should match [a-zA-Z]{4}
-				if(dis.read(lengthBytes) < 4)
-					throw new IOException("The name of the chunk is invalid!");
+				dis.readFully(lengthBytes);
 				StringBuffer sb = new StringBuffer();
 				byte[] chunkTypeBytes = new byte[4];
 				for(int i = 0; i < 4; i++) {
@@ -161,9 +159,7 @@ public class PNGFilter implements ContentDataFilter {
 
 				// Content of the chunk
 				byte[] chunkData = new byte[length];
-				int readLength = dis.read(chunkData, 0, length);
-				if(readLength < length)
-					throw new IOException("The data in the chunk '" + chunkTypeString + "' is " + readLength + " but should be " + length);
+				dis.readFully(chunkData, 0, length);
 				if(logMINOR)
 					if(logDEBUG)
 						Logger.minor(this, "data " + (chunkData.length == 0 ? "null" : HexUtil.bytesToHex(chunkData)));
@@ -176,8 +172,7 @@ public class PNGFilter implements ContentDataFilter {
 
 				// CRC of the chunk
 				byte[] crcLengthBytes = new byte[4];
-				if(dis.read(crcLengthBytes) < 4)
-					throw new IOException("The length of the CRC is invalid!");
+				dis.readFully(crcLengthBytes);
 				if(dos != null)
 					dos.write(crcLengthBytes);
 
