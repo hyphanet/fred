@@ -16,12 +16,14 @@ import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.OutputStreamLogger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -65,7 +67,6 @@ public class PNGFilter implements ContentDataFilter {
 		try {
 			readFilter(data, bf, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, os);
 			os.flush();
-			os.close();
 		} finally {
 			Closer.close(os);
 		}
@@ -226,20 +227,16 @@ public class PNGFilter implements ContentDataFilter {
 					if(logMINOR)
 						Logger.minor(this, "Writing " + chunkTypeString + " (" + baos.size() + ") to the output bucket");
 					baos.writeTo(output);
+					baos.flush();
 				}
 				lastChunkType = chunkTypeString;
 			}
 			
 			dis.close();
-			if(dos != null) {
-				output.flush();
-				output.close();
-			}
 		} finally {
 			Closer.close(dis);
 			Closer.close(bis);
 			Closer.close(is);
-			Closer.close(output);
 		}
 		return data;
 	}
