@@ -29,6 +29,7 @@ import freenet.support.math.TrivialRunningAverage;
 public class NetworkIDManager implements Runnable {
 	public static boolean disableSecretPings=true;
 	public static boolean disableSecretPinger=true;
+	public static boolean disableSwapSegregation=true;
 	
 	private static final int ACCEPTED_TIMEOUT   =  5000;
 	private static final int SECRETPONG_TIMEOUT = 20000;
@@ -935,4 +936,20 @@ public class NetworkIDManager implements Runnable {
 	
 	//or zero if we don't know yet
 	public int ourNetworkId = NO_NETWORKID;
+	
+	/**
+	 * Returns true if (and only if) the connectivity between two given nodes have been computed and
+	 * they have been determined to be in separate keyspace networks. Fail-safe false, if either of the
+	 * two peers have been recently added, if this class is not past its initial startupChecks, etc.
+	 */
+	public boolean inSeparateNetworks(PeerNode a, PeerNode b) {
+		if (a==null || b==null || a.assignedNetworkID == NO_NETWORKID || b.assignedNetworkID == NO_NETWORKID)
+			return false;
+		synchronized (dontStartPlease) {
+			if (inTransition)
+				return false;
+			//NB: Object.equal's; but they should be the very same object. Neither should be null.
+			return !a.networkGroup.equals(b.networkGroup);
+		}
+	}
 }

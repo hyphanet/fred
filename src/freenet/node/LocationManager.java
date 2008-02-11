@@ -818,7 +818,7 @@ public class LocationManager {
             if(logMINOR) Logger.minor(this, "Forwarding... "+oldID);
             while(true) {
                 // Forward
-                PeerNode randomPeer = node.peers.getRandomPeer(pn);
+                PeerNode randomPeer = node.peers.getRandomPeerInSwappingNetworkOf(pn);
                 if(randomPeer == null) {
                 	if(logMINOR) Logger.minor(this, "Late reject "+oldID);
                     Message reject = DMT.createFNPSwapRejected(oldID);

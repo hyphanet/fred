@@ -73,6 +73,7 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 		//Allow secret pings, and send them automatically, must be done before creating the nodes.
 		freenet.node.NetworkIDManager.disableSecretPings=false;
 		freenet.node.NetworkIDManager.disableSecretPinger=false;
+		//freenet.node.NetworkIDManager.disableSwapSegregation=false;
 		
         for(int i=0;i<NUMBER_OF_NODES;i++) {
 			allNodes[totalNodes] =
