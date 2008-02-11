@@ -368,7 +368,7 @@ public class NodeStarter implements WrapperListener
 		configFS.put("node.alwaysAllowLocalAddresses", true);
 		configFS.put("node.includeLocalAddressesInNoderefs", true);
 		configFS.put("node.enableARKs", false);
-		configFS.put("node.threadLimit", threadLimit);
+		configFS.put("node.load.threadLimit", threadLimit);
 		if(ramStore) 
 			configFS.putSingle("node.storeType", "ram");
 		configFS.put("storeSize", storeSize);
