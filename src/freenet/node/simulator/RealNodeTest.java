@@ -30,7 +30,7 @@ public class RealNodeTest {
 	{
 		if(idealLocations) {
 			// First set the locations up so we don't spend a long time swapping just to stabilise each network.
-			double div = 1.0 / (nodes.length + 1);
+			double div = 1.0 / nodes.length;
 			double loc = 0.0;
 			for (int i=0; i<nodes.length; i++) {
 				nodes[i].setLocation(loc);
