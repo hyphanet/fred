@@ -376,7 +376,7 @@ public class NodeStarter implements WrapperListener
 		configFS.put("node.enableSwapping", enableSwapping);
 		configFS.put("node.enableARKs", enableARKs);
 		configFS.put("node.enableULPRDataPropagation", enableULPRs);
-		configFS.put("enablePerNodeFailureTables", enablePerNodeFailureTables);
+		configFS.put("node.enablePerNodeFailureTables", enablePerNodeFailureTables);
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 		
