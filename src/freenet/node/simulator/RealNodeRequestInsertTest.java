@@ -46,7 +46,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         String wd = "realNodeRequestInsertTest";
         new File(wd).mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(wd, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal" /*"freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
+        NodeStarter.globalTestInit(wd, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
@@ -111,6 +111,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 					insertSuccesses++;
 				} catch (freenet.node.LowLevelPutException putEx) {
 					Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
+					System.err.println("Insert failed: "+ putEx);
 				}
                 // Pick random node to request from
                 int node2;
@@ -130,8 +131,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 						fetchSuccesses++;
 						int percentSuccess=100*fetchSuccesses/insertAttempts;
                         Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): "+new String(results));
+                        System.err.println("Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): "+new String(results));
                     } else {
                         Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
+                        System.err.println("Returned invalid data!: "+new String(results));
                     }
                 }
                 StringBuffer load = new StringBuffer("Running UIDs for nodes: ");
@@ -144,7 +147,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 	if(i != nodes.length-1)
                 		load.append(' ');
                 }
-                System.out.println(load.toString());
+                System.err.println(load.toString());
             } catch (Throwable t) {
                 Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
             }
