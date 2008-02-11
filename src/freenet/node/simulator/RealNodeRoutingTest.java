@@ -71,11 +71,11 @@ public class RealNodeRoutingTest extends RealNodeTest {
         
         waitForAllConnected(nodes);
         
-        waitForPingAverage(0.98, nodes, random, MAX_PINGS);
+        waitForPingAverage(0.98, nodes, random, MAX_PINGS, 5000);
         
     }
 
-	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random, int maxTests) {
+	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random, int maxTests, int sleepTime) {
         int cycleNumber = 0;
         int lastSwaps = 0;
         int lastNoSwaps = 0;
@@ -87,7 +87,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
         for(int total=0;total<maxTests;total++) {
             cycleNumber++;
             try {
-                Thread.sleep(5000);
+                Thread.sleep(sleepTime);
             } catch (InterruptedException e) {
                 // Ignore
             }
