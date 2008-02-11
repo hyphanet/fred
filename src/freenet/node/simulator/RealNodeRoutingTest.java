@@ -7,17 +7,12 @@ import java.io.File;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.node.FSParseException;
 import freenet.node.LocationManager;
 import freenet.node.Node;
-import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
-import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.FileUtil;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
