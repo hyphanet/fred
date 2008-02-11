@@ -38,6 +38,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     static final int MAX_PINGS = 2000;
+    static final boolean ENABLE_SWAPPING = false;
     
     public static void main(String[] args) throws Exception {
         System.out.println("Routing test using real nodes:");
@@ -59,7 +60,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
         for(int i=0;i<NUMBER_OF_NODES;i++) {
         	System.err.println("Creating node "+i);
             nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, dir, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, 65536, true);
+            	NodeStarter.createTestNode(5001+i, dir, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, 65536, true, ENABLE_SWAPPING, false, false, false);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");

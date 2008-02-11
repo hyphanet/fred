@@ -339,7 +339,8 @@ public class NodeStarter implements WrapperListener
 	public static Node createTestNode(int port, String testName, boolean doClient, 
 			boolean doSwapping, boolean disableProbabilisticHTLs, short maxHTL,
 			int dropProb, RandomSource random, Executor executor, int threadLimit, 
-			long storeSize, boolean ramStore) throws NodeInitException {
+			long storeSize, boolean ramStore, boolean enableSwapping, boolean enableARKs, 
+			boolean enableULPRs, boolean enablePerNodeFailureTables) throws NodeInitException {
 		
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -372,6 +373,10 @@ public class NodeStarter implements WrapperListener
 			configFS.putSingle("node.storeType", "ram");
 		configFS.put("storeSize", storeSize);
 		configFS.put("node.disableHangCheckers", true);
+		configFS.put("node.enableSwapping", enableSwapping);
+		configFS.put("node.enableARKs", enableARKs);
+		configFS.put("node.enableULPRDataPropagation", enableULPRs);
+		configFS.put("enablePerNodeFailureTables", enablePerNodeFailureTables);
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 		
