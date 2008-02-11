@@ -70,7 +70,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         
         waitForAllConnected(nodes);
         
-        waitForPingAverage(0.95, nodes, random, MAX_PINGS, 5000);
+        waitForPingAverage(0.95, nodes, random, MAX_PINGS, 1000);
         
         System.out.println();
         System.out.println("Ping average > 95%, lets do some inserts/requests");
