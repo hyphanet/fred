@@ -204,7 +204,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
 					unregisterRequestHandlerWithNode();
 				}
 			}
-		}, "Finish CHK transfer");
+		}, "Finish CHK transfer for "+key);
 	}
 	
 	private void waitAndFinishCHKTransfer() throws NotConnectedException {
