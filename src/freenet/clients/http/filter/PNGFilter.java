@@ -202,7 +202,7 @@ public class PNGFilter implements ContentDataFilter {
 					}
 				}
 
-				boolean validChunkType = true;
+				boolean validChunkType = false;
 				
 				if(!skip && "IHDR".equals(chunkTypeString)) {
 					if(hasSeenIHDR)
