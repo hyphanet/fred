@@ -111,13 +111,19 @@ public class RealNodeTest {
 				totalConnections += countConnected;
 				if(countConnected == countTotal)
 					countFullyConnected++;
+				else {
+					if(Logger.shouldLog(Logger.MINOR, RealNodeTest.class)) 
+						Logger.minor(RealNodeTest.class, "Connection count for "+nodes[i]+" : "+countConnected);
+				}
 			}
 			if(countFullyConnected == nodes.length) {
 				System.err.println("All nodes fully connected");
+				Logger.normal(RealNodeTest.class, "All nodes fully connected");
 				System.err.println();
 				return;
 			} else {
 				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total)");
+				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total)");
 				Thread.sleep(1000);
 			}
 		}
