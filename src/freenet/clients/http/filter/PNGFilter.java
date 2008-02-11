@@ -258,8 +258,10 @@ public class PNGFilter implements ContentDataFilter {
 				}
 				
 				if(!validChunkType) {
+					if(logMINOR)
+						Logger.minor(this, "Skipping unknown chunk type "+chunkTypeString);
 					if(output == null)
-						throw new IOException("Unknown chunk type");
+						return null;
 					skip = true;
 				}
 				
