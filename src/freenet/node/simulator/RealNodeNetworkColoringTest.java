@@ -20,6 +20,7 @@ import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
+import freenet.support.math.TrivialRunningAverage;
 
 /**
  * Create a bunch of nodes
@@ -153,6 +154,9 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
             } catch (InterruptedException e) {
                 // Ignore
             }
+
+			RunningAverage aLoc = new TrivialRunningAverage();
+			RunningAverage bLoc = new TrivialRunningAverage();
 			
 			long totalSuccesses=0;
 			long totalTotalPings=0;
@@ -165,6 +169,7 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 				long good=subnetA[i].netid.secretPingSuccesses;
 				long total=subnetA[i].netid.totalSecretPingAttempts;
 				int id=subnetA[i].netid.ourNetworkId;
+				aLoc.report(subnetA[i].getLocation());
 				totalSuccesses+=good;
 				totalTotalPings+=total;
 				//eh... not really, but I guess it's close; reset this nodes good/total?
@@ -181,6 +186,7 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 				long good=subnetB[i].netid.secretPingSuccesses;
 				long total=subnetB[i].netid.totalSecretPingAttempts;
 				int id=subnetB[i].netid.ourNetworkId;
+				bLoc.report(subnetB[i].getLocation());
 				totalSuccesses+=good;
 				totalTotalPings+=total;
 				//eh... not really, but I guess it's close; reset this nodes good/total?
@@ -223,14 +229,20 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 			idReport(" A ", aIds);
 			idReport(" B ", bIds);
 			if (BRIDGES!=0)
-				idReport("BRG", generalIds);
+				idReport("BRG", bridgeIds);
+
+			//This is really rough, but can generally give an indication of keyspace skew.
+			//Statistically, they should remain 0.5, but if one keyspace starts to get absorbed into the other
+			//the balance will shift. does not work if the aborbtion-point is 0.5.
+			Logger.error(log, " aLoc = "+aLoc.currentValue());
+			Logger.error(log, " bLoc = "+bLoc.currentValue());
 		}
     }
 	
 	private static void idReport(String group, HashSet ids) {
 		//Print out the number which are non-zero & display the distinct ones if a few...
 		int size=ids.size();
-		int MAX=4;
+		int MAX=6;
 		StringBuffer sb=new StringBuffer(Integer.toString(size)).append(" ids (").append(group).append(") = ");
 		Iterator iter=ids.iterator();
 		for (int i=0; i<MAX && i<size; i++) {
