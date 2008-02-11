@@ -397,6 +397,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final boolean enableARKs;
 	final boolean enablePerNodeFailureTables;
 	final boolean enableULPRDataPropagation;
+	final boolean enableSwapping;
 	public static final short DEFAULT_MAX_HTL = (short)10;
 	private short maxHTL;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
@@ -795,6 +796,19 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			
 		});
 		enableULPRDataPropagation = nodeConfig.getBoolean("enableULPRDataPropagation");
+		
+		nodeConfig.register("enableSwapping", true, sortOrder++, true, false, "Node.enableSwapping", "Node.enableSwappingLong", new BooleanCallback() {
+			
+			public boolean get() {
+				return enableSwapping;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				throw new InvalidConfigValueException("Cannot change on the fly");
+			}
+			
+		});
+		enableSwapping = nodeConfig.getBoolean("enableSwapping");
 		
 		// Determine the port number
 		// @see #191

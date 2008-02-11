@@ -117,7 +117,8 @@ public class LocationManager {
      * we are not locked.
      */
     public void startSender() {
-        node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
+    	if(node.enableSwapping)
+    		node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
     }
 
     /**
@@ -781,6 +782,16 @@ public class LocationManager {
         	htl = SWAP_MAX_HTL;
         }
         htl--;
+        if(!node.enableSwapping) {
+            // Reject
+            Message reject = DMT.createFNPSwapRejected(oldID);
+            try {
+                pn.sendAsync(reject, null, 0, null);
+            } catch (NotConnectedException e1) {
+            	if(logMINOR) Logger.minor(this, "Lost connection rejecting SwapRequest (locked) from "+pn);
+            }
+            return true;
+        }
         // Either forward it or handle it
         if(htl <= 0) {
         	if(logMINOR) Logger.minor(this, "Accepting?... "+oldID);
