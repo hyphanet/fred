@@ -5,6 +5,7 @@ package freenet.node;
 
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import freenet.crypt.HMAC;
 import freenet.crypt.SHA256;
@@ -35,16 +36,20 @@ import freenet.support.ShortBuffer;
  * 
  * Probably a few others; those are the important bits.
  */
-public class NodeDispatcher implements Dispatcher {
+public class NodeDispatcher implements Dispatcher, Runnable {
 
 	private static boolean logMINOR;
 	final Node node;
 	private NodeStats nodeStats;
+	
+	private static final long STALE_CONTEXT=20000;
+	private static final long STALE_CONTEXT_CHECK=20000;
 
 	NodeDispatcher(Node node) {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		node.getTicker().queueTimedJob(this, STALE_CONTEXT_CHECK);
 	}
 
 	public boolean handleMessage(Message m) {
@@ -451,7 +456,6 @@ public class NodeDispatcher implements Dispatcher {
 		}
 	}
 
-	//FIXME: PLEASE! When are these contexts ever cleaned up!!! Memory-leak-per-ping!
 	final Hashtable routedContexts = new Hashtable();
 
 	static class RoutedContext {
@@ -475,6 +479,23 @@ public class NodeDispatcher implements Dispatcher {
 		void addSent(PeerNode n) {
 			routedTo.add(n);
 		}
+	}
+	
+	/**
+	 * Cleanup any old/stale routing contexts and reschedule execution.
+	 */
+	public void run() {
+		long now=System.currentTimeMillis();
+		synchronized (routedContexts) {
+			Iterator i=routedContexts.values().iterator();
+			while (i.hasNext()) {
+				RoutedContext rc = (RoutedContext)i.next();
+				if (now-rc.createdTime > STALE_CONTEXT) {
+					i.remove();
+				}
+			}
+		}
+		node.getTicker().queueTimedJob(this, STALE_CONTEXT_CHECK);
 	}
 
 	/**
@@ -525,7 +546,9 @@ public class NodeDispatcher implements Dispatcher {
 			return true;
 		}
 		ctx = new RoutedContext(m, source);
-		routedContexts.put(lid, ctx);
+		synchronized (routedContexts) {
+			routedContexts.put(lid, ctx);
+		}
 		// source == null => originated locally, keep full htl
 		double target = m.getDouble(DMT.TARGET_LOCATION);
 		if(logMINOR) Logger.minor(this, "id "+id+" from "+source+" htl "+htl+" target "+target);
