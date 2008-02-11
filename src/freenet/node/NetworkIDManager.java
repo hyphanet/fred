@@ -590,7 +590,7 @@ public class NetworkIDManager implements Runnable {
 		HashSet todo=(HashSet)all.clone();
 		HashSet takenNetworkIds=new HashSet();
 		
-		synchronized (dontStartPlease) {
+		synchronized (transitionLock) {
 			inTransition=true;
 		}
 		
@@ -768,7 +768,7 @@ public class NetworkIDManager implements Runnable {
 	private RunningAverage cheat_stats_findBestSetwisePingAverage_best_general=new TrivialRunningAverage();
 	
 	boolean inTransition=false;
-	Object dontStartPlease=new Object();
+	Object transitionLock=new Object();
 	
 	public void onPeerNodeChangedNetworkID(PeerNode p) {
 		/*
@@ -787,7 +787,7 @@ public class NetworkIDManager implements Runnable {
 		 There is a minor race condition here that between updates we might improperly favor the first
 		 peer to notify us of a new network id, but this will be authoritatively clobbered next round.
 		 */
-		synchronized (dontStartPlease) {
+		synchronized (transitionLock) {
 			if (inTransition)
 				return;
 			//Networks are listed in order of priority, generally the biggest one should be first.
@@ -945,7 +945,7 @@ public class NetworkIDManager implements Runnable {
 	public boolean inSeparateNetworks(PeerNode a, PeerNode b) {
 		if (a==null || b==null || a.assignedNetworkID == NO_NETWORKID || b.assignedNetworkID == NO_NETWORKID)
 			return false;
-		synchronized (dontStartPlease) {
+		synchronized (transitionLock) {
 			if (inTransition)
 				return false;
 			//NB: Object.equal's; but they should be the very same object. Neither should be null.
