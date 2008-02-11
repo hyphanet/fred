@@ -102,6 +102,10 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
         makeKleinbergNetwork(subnetA, true /* make it easy, we're not testing swapping here */, DEGREE, false);
 		makeKleinbergNetwork(subnetB, true /* make it easy, we're not testing swapping here */, DEGREE, false);
 		
+		int aTarget = countLeafs(subnetA)+1;
+		int bTarget = countLeafs(subnetB)+1;
+		int generalTarget = aTarget+bTarget+BRIDGES;
+		
         Logger.normal(RealNodeRoutingTest.class, "Added small-world links, weakly connect the subnets");
         
 		if (BRIDGES==0) {
@@ -225,11 +229,11 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 			if (BRIDGES!=0)
 				Logger.error(log, "  pSuccess(BRG)  = "+bridgeRate.currentValue());
 			
-			idReport("All", generalIds);
-			idReport(" A ", aIds);
-			idReport(" B ", bIds);
+			idReport("All", generalIds, generalTarget);
+			idReport(" A ", aIds, aTarget);
+			idReport(" B ", bIds, bTarget);
 			if (BRIDGES!=0)
-				idReport("BRG", bridgeIds);
+				idReport("BRG", bridgeIds, BRIDGES);
 
 			//This is really rough, but can generally give an indication of keyspace skew.
 			//Statistically, they should remain 0.5, but if one keyspace starts to get absorbed into the other
@@ -239,13 +243,14 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 		}
     }
 	
-	private static void idReport(String group, HashSet ids) {
+	private static void idReport(String group, HashSet ids, int targetNum) {
 		//Print out the number which are non-zero & display the distinct ones if a few...
 		int size=ids.size();
 		int MAX=6;
-		StringBuffer sb=new StringBuffer(Integer.toString(size)).append(" ids (").append(group).append(") = ");
+		StringBuffer sb=new StringBuffer(Integer.toString(size)).append("/").append(Integer.toString(targetNum));
+		sb.append(" ids (").append(group).append(") = ");
 		Iterator iter=ids.iterator();
-		for (int i=0; i<MAX && i<size; i++) {
+		for (int i=0; i<=MAX && i<size; i++) {
 			String thisId=iter.next().toString();
 			if (i==0)
 				sb.append(thisId);
@@ -255,6 +260,16 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 		if (size>MAX)
 			sb.append(", ...");
 		Logger.error(log, sb.toString());
+	}
+
+	private static int countLeafs(Node[] network) {
+		int retval=0;
+		for (int i=0; i<network.length; i++) {
+			int peers=network[i].peers.countValidPeers();
+			if (peers<=1)
+				retval++;
+		}
+		return retval;
 	}
 	
 }
