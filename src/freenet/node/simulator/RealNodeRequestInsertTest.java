@@ -37,9 +37,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final int NUMBER_OF_NODES = 100;
     static final int DEGREE = 10;
     static final short MAX_HTL = (short)10;
-    static final boolean START_WITH_IDEAL_LOCATIONS = true;
-    static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
-    static final boolean ENABLE_SWAPPING = false;
+    static final boolean START_WITH_IDEAL_LOCATIONS = false;
+    static final boolean FORCE_NEIGHBOUR_CONNECTIONS = false;
+    static final boolean ENABLE_SWAPPING = true;
     static final boolean ENABLE_ULPRS = false;
     static final boolean ENABLE_PER_NODE_FAILURE_TABLES = false;
     //static final int NUMBER_OF_NODES = 50;
