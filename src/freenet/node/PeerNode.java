@@ -553,7 +553,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// A SimpleRunningAverage would be a bad choice because it would cause oscillations.
 		// So go for a filter.
 		pingAverage =
-			new TimeDecayingRunningAverage(1, 240 * 1000 /* should be significantly longer than a typical transfer */, 0, NodePinger.CRAZY_MAX_PING_TIME, node);
+			// Short average otherwise we will reject for a *REALLY* long time after any spike.
+			new TimeDecayingRunningAverage(1, 30, 0, NodePinger.CRAZY_MAX_PING_TIME, node);
 
 		// TDRA for probability of rejection
 		pRejected =
