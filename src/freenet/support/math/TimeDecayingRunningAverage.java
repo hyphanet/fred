@@ -186,6 +186,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 				// Disable sensitivity hack.
 				// Excessive sensitivity at start isn't necessarily a good thing.
 				// In particular it makes the average inconsistent - 20 reports of 0 at 1s intervals have a *different* effect to 10 reports of 0 at 2s intervals!
+				// Also it increases the impact of startup spikes, which then take a long time to recover from.
 				//} else {
 					//double oneFourthOfUptime = uptime / 4D;
 					//if(oneFourthOfUptime < thisHalfLife) thisHalfLife = oneFourthOfUptime;
