@@ -14,6 +14,8 @@ public class NodePinger implements Runnable {
 
 	private double meanPing = 0;
 	
+	static final double CRAZY_MAX_PING_TIME = 365.25*24*60*60*1000;
+	
 	NodePinger(Node n) {
 		this.node = n;
 	}
