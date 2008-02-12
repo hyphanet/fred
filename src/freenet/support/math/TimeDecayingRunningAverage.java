@@ -183,6 +183,9 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 					if(timeSkewCallback != null)
 						timeSkewCallback.setTimeSkewDetectedUserAlert();
 					return;
+				// Disable sensitivity hack.
+				// Excessive sensitivity at start isn't necessarily a good thing.
+				// In particular it makes the average inconsistent - 20 reports of 0 at 1s intervals have a *different* effect to 10 reports of 0 at 2s intervals!
 				//} else {
 					//double oneFourthOfUptime = uptime / 4D;
 					//if(oneFourthOfUptime < thisHalfLife) thisHalfLife = oneFourthOfUptime;
