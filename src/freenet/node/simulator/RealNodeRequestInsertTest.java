@@ -32,7 +32,7 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 25;
+    static final int NUMBER_OF_NODES = 50;
     static final int DEGREE = 10;
     static final short MAX_HTL = (short)10;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
@@ -52,7 +52,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR,freenet.node.PeerManager:MINOR,freenet.node.PeerNode:MINOR,freenet.node.Darknet:MINOR,freenet.node.PacketSender:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.FNP:MINOR");
+        //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR,freenet.node.PeerManager:MINOR,freenet.node.PeerNode:MINOR,freenet.node.Darknet:MINOR,freenet.node.PacketSender:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.FNP:MINOR");
+        NodeStarter.globalTestInit(name, false, Logger.ERROR, "");
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
@@ -144,16 +145,26 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                     }
                 }
                 StringBuffer load = new StringBuffer("Running UIDs for nodes: ");
+                int totalRunningUIDs = 0;
+                int totalRunningUIDsAlt = 0;
                 for(int i=0;i<nodes.length;i++) {
                 	load.append(i);
                 	load.append(':');
-                	load.append(nodes[i].getTotalRunningUIDs());
+                	int runningUIDs = nodes[i].getTotalRunningUIDs();
+                	int runningUIDsAlt = nodes[i].getTotalRunningUIDsAlt();
+                	totalRunningUIDs += runningUIDs;
+                	totalRunningUIDsAlt += runningUIDsAlt;
+                	load.append(totalRunningUIDs);
                 	load.append(':');
-                	load.append(nodes[i].getTotalRunningUIDsAlt());
+                	load.append(totalRunningUIDsAlt);
                 	if(i != nodes.length-1)
                 		load.append(' ');
                 }
                 System.err.println(load.toString());
+                if(totalRunningUIDs != 0)
+                	System.err.println("Running (presumably leaked) UIDs: "+totalRunningUIDs);
+                if(totalRunningUIDsAlt != 0)
+                	System.err.println("Running (presumably leaked) UIDs (alt): "+totalRunningUIDsAlt);
             } catch (Throwable t) {
                 Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
             }
