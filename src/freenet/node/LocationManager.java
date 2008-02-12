@@ -821,28 +821,7 @@ public class LocationManager {
         	if(logMINOR) Logger.minor(this, "Accepting?... "+oldID);
             // Accept - handle locally
         	lockOrQueue(m, oldID, newID, pn);
-            if(!lock()) {
-            	if(logMINOR) Logger.minor(this, "Can't obtain lock on "+oldID+" - rejecting to "+pn);
-                // Reject
-                Message reject = DMT.createFNPSwapRejected(oldID);
-                try {
-                    pn.sendAsync(reject, null, 0, null);
-                } catch (NotConnectedException e1) {
-                	if(logMINOR) Logger.minor(this, "Lost connection rejecting SwapRequest (locked) from "+pn);
-                }
-                swapsRejectedAlreadyLocked++;
-                return true;
-            }
-            try {
-                innerHandleSwapRequest(oldID, newID, pn, m);
-                return true;
-            } catch (Error e) {
-                unlock(false);
-                throw e;
-            } catch (RuntimeException e) {
-                unlock(false);
-                throw e;
-            }
+        	return true;
         } else {
             m.set(DMT.HTL, htl);
             m.set(DMT.UID, newID);
