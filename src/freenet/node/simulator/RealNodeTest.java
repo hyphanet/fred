@@ -8,6 +8,7 @@ import freenet.node.FSParseException;
 import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
+import freenet.node.NodeStats;
 import freenet.node.PeerNode;
 import freenet.support.Logger;
 
@@ -133,15 +134,17 @@ public class RealNodeTest {
 						Logger.minor(RealNodeTest.class, "Backed off: "+nodes[i]+" : "+countBackedOff);
 				}
 			}
-			if(countFullyConnected == nodes.length && countReallyConnected == nodes.length) {
+			double avgPingTime = totalPingTime / nodes.length;
+			if(countFullyConnected == nodes.length && countReallyConnected == nodes.length && 
+					minPingTime < NodeStats.SUB_MAX_PING_TIME && maxPingTime < NodeStats.SUB_MAX_PING_TIME && avgPingTime < NodeStats.SUB_MAX_PING_TIME) {
 				System.err.println("All nodes fully connected");
 				Logger.normal(RealNodeTest.class, "All nodes fully connected");
 				System.err.println();
 				return;
 			} else {
 				long tDelta = (System.currentTimeMillis() - tStart)/1000;
-				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)(totalPingTime/nodes.length)+"/"+(int)maxPingTime+" at "+tDelta+'s');
-				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)(totalPingTime/nodes.length)+"/"+(int)maxPingTime+" at "+tDelta+'s');
+				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
+				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
 				Thread.sleep(1000);
 			}
 		}
