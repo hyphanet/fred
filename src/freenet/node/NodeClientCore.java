@@ -355,9 +355,9 @@ public class NodeClientCore implements Persistable {
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins
 		this.alerts.register(startingUpAlert = new SimpleUserAlert(true, l10n("startingUpTitle"), l10n("startingUp"), UserAlert.MINOR));
-			toadletContainer = toadlets;
-			toadletContainer.setCore(this);
-			toadletContainer.setBucketFactory(tempBucketFactory);
+		toadletContainer = toadlets;
+		toadletContainer.setCore(this);
+		toadletContainer.setBucketFactory(tempBucketFactory);
 		if(toadletContainer.isEnabled()) {
 			toadletContainer.createFproxy();
 			toadletContainer.removeStartupToadlet();
