@@ -54,24 +54,10 @@ public class NodePinger implements Runnable {
 		
 		double[] allPeers = new double[peers.length];
 		
-		/** Not backed off peers' ping times */
-		double[] nbPeers = new double[peers.length];
-		
-		/** Number of not backed off peers */
-		int nbCount = 0;
-		
 		for(int i=0;i<peers.length;i++) {
 			PeerNode peer = peers[i];
 			double pingTime = peer.averagePingTime();
-			if(!peer.isRoutingBackedOff()) {
-				nbPeers[nbCount++] = pingTime;
-			}
 			allPeers[i] = pingTime;
-		}
-		
-		if(nbCount > 0) {
-			Arrays.sort(nbPeers, 0, nbCount);
-			return nbPeers[nbCount / 2]; // round down - prefer lower
 		}
 		
 		Arrays.sort(allPeers);
