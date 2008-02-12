@@ -117,6 +117,7 @@ public class RealNodeTest {
 				totalConnections += countConnected;
 				totalBackedOff += countBackedOff;
 				double pingTime = nodes[i].nodeStats.getNodeAveragePingTime();
+				totalPingTime += pingTime;
 				if(pingTime > maxPingTime) maxPingTime = pingTime;
 				if(pingTime < minPingTime) minPingTime = pingTime;
 				if(countConnected == countTotal) {
@@ -137,7 +138,7 @@ public class RealNodeTest {
 				System.err.println();
 				return;
 			} else {
-				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff);
+				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+minPingTime+"/"+(totalPingTime/nodes.length)+"/"+maxPingTime);
 				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+minPingTime+"/"+(totalPingTime/nodes.length)+"/"+maxPingTime);
 				Thread.sleep(1000);
 			}
