@@ -6,7 +6,6 @@ package freenet.node;
 import java.util.Arrays;
 
 import freenet.support.Logger;
-import freenet.support.math.TimeDecayingRunningAverage;
 
 /**
  * Track average round-trip time for each peer node, get a geometric mean.
@@ -14,8 +13,6 @@ import freenet.support.math.TimeDecayingRunningAverage;
 public class NodePinger implements Runnable {
 
 	private double meanPing = 0;
-	/** Average over time to avoid nodes flitting in and out of backoff having too much impact. */
-	private TimeDecayingRunningAverage tdra;
 	
 	NodePinger(Node n) {
 		this.node = n;
