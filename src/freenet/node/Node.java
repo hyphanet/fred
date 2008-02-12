@@ -3190,7 +3190,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	public int getTotalRunningUIDs() {
 		synchronized(runningUIDs) {
-		return runningUIDs.size();
+			return runningUIDs.size();
 		}
 	}
 
@@ -3202,8 +3202,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	public int getTotalRunningUIDsAlt() {
 		synchronized(runningUIDs) {
-		return this.runningCHKGetUIDs.size() + this.runningCHKPutUIDs.size() + this.runningSSKGetUIDs.size() +
-		this.runningSSKGetUIDs.size() + this.runningSSKOfferReplyUIDs.size() + this.runningCHKOfferReplyUIDs.size();
+			return this.runningCHKGetUIDs.size() + this.runningCHKPutUIDs.size() + this.runningSSKGetUIDs.size() +
+			this.runningSSKGetUIDs.size() + this.runningSSKOfferReplyUIDs.size() + this.runningCHKOfferReplyUIDs.size();
 		}
 	}
 
