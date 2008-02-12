@@ -100,6 +100,7 @@ public class RealNodeTest {
 	
     // FIXME factor out to some simulator utility class.
 	static void waitForAllConnected(Node[] nodes) throws InterruptedException {
+		long tStart = System.currentTimeMillis();
 		while(true) {
 			int countFullyConnected = 0;
 			int countReallyConnected = 0;
@@ -138,8 +139,9 @@ public class RealNodeTest {
 				System.err.println();
 				return;
 			} else {
-				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)(totalPingTime/nodes.length)+"/"+(int)maxPingTime);
-				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)(totalPingTime/nodes.length)+"/"+(int)maxPingTime);
+				long tDelta = (System.currentTimeMillis() - tStart)/1000;
+				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)(totalPingTime/nodes.length)+"/"+(int)maxPingTime+" at "+tDelta+'s');
+				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)(totalPingTime/nodes.length)+"/"+(int)maxPingTime+" at "+tDelta+'s');
 				Thread.sleep(1000);
 			}
 		}
