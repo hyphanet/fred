@@ -115,7 +115,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
             // Do some (routed) test-pings
             for(int i=0;i<10;i++) {
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(sleepTime);
                 } catch (InterruptedException e1) {
                 }
                 try {
