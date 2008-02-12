@@ -456,7 +456,7 @@ public class KeyTracker {
     // should use only two.
     public long twoRTTs() {
     	// FIXME upper bound necessary ?
-    	return (long) Math.min(Math.max(500, pn.averagePingTime()*2), 2500);
+    	return (long) Math.min(Math.max(250, pn.averagePingTime()*2), 2500);
     }
     
     protected void receivedPacketNumber(int seqNumber) {
