@@ -85,7 +85,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 			Thread.sleep(30 * 1000); // Let the node start up
 		} catch (InterruptedException e){}
 		
-		FreenetURI[] initialURIs = core.bookmarkManager.getBookmarkURIs();
+		FreenetURI[] initialURIs = core.getBookmarkURIs();
 		for (int i = 0; i < initialURIs.length; i++)
 			queueURI(initialURIs[i]);
 		

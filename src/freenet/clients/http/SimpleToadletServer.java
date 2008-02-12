@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -29,6 +30,7 @@ import freenet.crypt.SSL;
 import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
 import freenet.io.SSLNetworkInterface;
+import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.support.Executor;
@@ -69,6 +71,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private NodeClientCore core;
 	private final Executor executor;
 	private boolean doRobots;
+	public BookmarkManager bookmarkManager;
 	
 	static boolean isPanicButtonToBeShown;
 	public static final int DEFAULT_FPROXY_PORT = 8888;
@@ -212,8 +215,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			if(haveCalledFProxy) return;
 			haveCalledFProxy = true;
 		}
+		bookmarkManager = new BookmarkManager(core, null);
 		try {
-			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, SimpleToadletServer.this);
+			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
 		} catch (IOException e) {
 			Logger.error(this, "Could not start fproxy: "+e, e);
 			System.err.println("Could not start fproxy:");
@@ -593,4 +597,13 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		return myThread != null;
 	}
 
+	public BookmarkManager getBookmarks() {
+		return bookmarkManager;
+	}
+
+	public FreenetURI[] getBookmarkURIs() {
+		if(bookmarkManager == null) return new FreenetURI[0];
+		return bookmarkManager.getBookmarkURIs();
+	}
+	
 }

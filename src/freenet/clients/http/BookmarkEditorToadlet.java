@@ -31,10 +31,10 @@ public class BookmarkEditorToadlet extends Toadlet {
 	private final BookmarkManager bookmarkManager;
 	private String cutedPath;
 
-	BookmarkEditorToadlet(HighLevelSimpleClient client, NodeClientCore core) {
+	BookmarkEditorToadlet(HighLevelSimpleClient client, NodeClientCore core, BookmarkManager bookmarks) {
 		super(client);
 		this.core = core;
-		this.bookmarkManager = core.bookmarkManager;
+		this.bookmarkManager = bookmarks;
 		this.cutedPath = null;
 	}
 

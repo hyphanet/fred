@@ -13,6 +13,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
@@ -595,7 +596,7 @@ public class FProxyToadlet extends Toadlet {
 		return f;
 	}
 
-	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SimpleToadletServer server) throws IOException {
+	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SimpleToadletServer server, BookmarkManager bookmarks) throws IOException {
 		
 		// FIXME how to change these on the fly when the interface language is changed?
 		
@@ -610,7 +611,7 @@ public class FProxyToadlet extends Toadlet {
 		PproxyToadlet pproxy = new PproxyToadlet(client, node, core);
 		server.register(pproxy, "/plugins/", true, "FProxyToadlet.pluginsTitle", "FProxyToadlet.plugins", true, null);
 		
-		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node);
+		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
 		server.register(welcometoadlet, "/welcome/", true, false);
 		
 		PluginToadlet pluginToadlet = new PluginToadlet(client, node.pluginManager2, core);
@@ -642,7 +643,7 @@ public class FProxyToadlet extends Toadlet {
 		LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
 		server.register(localFileInsertToadlet, "/files/", true, false);
 		
-		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core);
+		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core, bookmarks);
 		server.register(bookmarkEditorToadlet, "/bookmarkEditor/", true, false);
 		
 		BrowserTestToadlet browsertTestToadlet = new BrowserTestToadlet(client, core);

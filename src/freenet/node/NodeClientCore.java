@@ -34,6 +34,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
+import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
@@ -98,8 +99,6 @@ public class NodeClientCore implements Persistable {
 	final FCPServer fcpServer;
 	FProxyToadlet fproxyServlet;
 	final SimpleToadletServer toadletContainer;
-	// FIXME why isn't this just in fproxy?
-	public BookmarkManager bookmarkManager;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
 	/** If true, allow extra path components at the end of URIs */
 	public boolean ignoreTooManyPathComponents;
@@ -349,8 +348,6 @@ public class NodeClientCore implements Persistable {
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
 		}
-		
-		bookmarkManager = new BookmarkManager(this, oldConfig);
 		
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins
@@ -1145,5 +1142,9 @@ public class NodeClientCore implements Persistable {
 					requestStarters.sskFetchScheduler :
 						requestStarters.chkFetchScheduler;
 		sched.dequeueOfferedKey(key);
+	}
+
+	public FreenetURI[] getBookmarkURIs() {
+		return toadletContainer.getBookmarkURIs();
 	}
 }

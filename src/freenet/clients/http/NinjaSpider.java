@@ -698,7 +698,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	 * @see freenet.oldplugins.plugin.Plugin#startPlugin()
 	 */
 	public void startPlugin() {
-		FreenetURI[] initialURIs = core.bookmarkManager.getBookmarkURIs();
+		FreenetURI[] initialURIs = core.getBookmarkURIs();
 		for (int i = 0; i < initialURIs.length; i++)
 			queueURI(initialURIs[i]);
 		stopped = false;

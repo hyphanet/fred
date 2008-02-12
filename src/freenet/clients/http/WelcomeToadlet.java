@@ -43,11 +43,11 @@ public class WelcomeToadlet extends Toadlet {
     final Node node;
     final BookmarkManager bookmarkManager;
 
-    WelcomeToadlet(HighLevelSimpleClient client, NodeClientCore core, Node node) {
+    WelcomeToadlet(HighLevelSimpleClient client, NodeClientCore core, Node node, BookmarkManager bookmarks) {
         super(client);
         this.node = node;
         this.core = core;
-        this.bookmarkManager = core.bookmarkManager;
+        this.bookmarkManager = bookmarks;
         try {
             manageBookmarksURI = new URI("/welcome/?managebookmarks");
         } catch (URISyntaxException e) {
