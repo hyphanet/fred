@@ -34,7 +34,7 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 50;
+    static final int NUMBER_OF_NODES = 100;
     static final int DEGREE = 10;
     static final short MAX_HTL = (short)10;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
@@ -54,7 +54,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR,freenet.node.PeerManager:MINOR,freenet.node.PeerNode:MINOR,freenet.node.Darknet:MINOR,freenet.node.PacketSender:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.FNP:MINOR");
+        //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
         NodeStarter.globalTestInit(name, false, Logger.ERROR, "");
         System.out.println("Insert/retrieve test");
         System.out.println();
@@ -166,9 +166,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 }
                 System.err.println(load.toString());
                 if(totalRunningUIDs != 0)
-                	System.err.println("Running (presumably leaked) UIDs: "+totalRunningUIDs);
+                	System.err.println("Still running UIDs: "+totalRunningUIDs);
                 if(totalRunningUIDsAlt != 0)
-                	System.err.println("Running (presumably leaked) UIDs (alt): "+totalRunningUIDsAlt);
+                	System.err.println("Still running UIDs (alt): "+totalRunningUIDsAlt);
                 if(!runningUIDsList.isEmpty()) {
                 	System.err.println("List of running UIDs: "+StringArray.toString(runningUIDsList.toArray()));
                 }
