@@ -1291,6 +1291,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				}
 			}
 			
+			// Disabled because it never works!
+			final boolean tryDbDumpRecovery = false;
+			
+			if(tryDbDumpRecovery) {
 			// First try DbDump
 			
 			System.err.println("Attempting DbDump-level recovery...");
@@ -1336,6 +1340,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					System.err.println("DbDump recovery failed for "+dbName+" : "+e2);
 					e2.printStackTrace();
 				}
+			}
+			
 			}
 			
 			// Delete the database logs
