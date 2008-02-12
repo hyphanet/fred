@@ -895,13 +895,16 @@ public class LocationManager {
     			if(incomingMessageQueue.size() > MAX_INCOMING_QUEUE_LENGTH) {
     				// Reject anyway.
     				runNow = false;
+    				if(logMINOR) Logger.minor(this, "Incoming queue length too large: "+incomingMessageQueue.size()+" rejecting "+msg);
     			} else {
     				// Queue it.
     				incomingMessageQueue.addLast(msg);
+    				if(logMINOR) Logger.minor(this, "Queued "+msg+" queue length "+incomingMessageQueue.size());
     			}
     		}
     	}
     	if(reject) {
+    		if(logMINOR) Logger.minor(this, "Rejecting "+msg);
             Message rejected = DMT.createFNPSwapRejected(oldID);
             try {
                 pn.sendAsync(rejected, null, 0, null);
@@ -910,14 +913,16 @@ public class LocationManager {
             }
             swapsRejectedAlreadyLocked++;
     	} else if(runNow) {
-    		boolean logSwapTime = false;
+    		if(logMINOR) Logger.minor(this, "Running "+msg);
+    		boolean completed = false;
     		try {
     			innerHandleSwapRequest(oldID, newID, pn, msg);
-    			logSwapTime = true;
+    			completed = true;
     		} finally {
-    			unlock(logSwapTime);
+    			if(!completed)
+    				unlock(false);
     		}
-    	} // else it is queued.
+    	}
     }
     
     private void innerHandleSwapRequest(long oldID, long newID, PeerNode pn, Message m) {
@@ -925,7 +930,7 @@ public class LocationManager {
         // Locked, do it
         IncomingSwapRequestHandler isrh =
             new IncomingSwapRequestHandler(m, pn, item);
-        if(logMINOR) Logger.minor(this, "Handling... "+oldID);
+        if(logMINOR) Logger.minor(this, "Handling... "+oldID+" from "+pn);
         node.executor.execute(isrh, "Incoming swap request handler for port "+node.getDarknetPortNumber());
 	}
 
