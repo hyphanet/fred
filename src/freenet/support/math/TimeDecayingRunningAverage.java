@@ -183,9 +183,9 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 					if(timeSkewCallback != null)
 						timeSkewCallback.setTimeSkewDetectedUserAlert();
 					return;
-				} else {
-					double oneFourthOfUptime = uptime / 4D;
-					if(oneFourthOfUptime < thisHalfLife) thisHalfLife = oneFourthOfUptime;
+				//} else {
+					//double oneFourthOfUptime = uptime / 4D;
+					//if(oneFourthOfUptime < thisHalfLife) thisHalfLife = oneFourthOfUptime;
 				}
 				
 				if(thisHalfLife == 0) thisHalfLife = 1;
