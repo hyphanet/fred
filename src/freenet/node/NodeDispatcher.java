@@ -642,7 +642,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	 */
 	private boolean dispatchRoutedMessage(Message m, PeerNode src, long id) {
 		if(m.getSpec() == DMT.FNPRoutedPing) {
-			if(logMINOR) Logger.minor(this, "RoutedPing reached other side!");
+			if(logMINOR) Logger.minor(this, "RoutedPing reached other side! ("+id+")");
 			int x = m.getInt(DMT.COUNTER);
 			Message reply = DMT.createFNPRoutedPong(id, x);
 			try {
