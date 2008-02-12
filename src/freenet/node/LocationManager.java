@@ -874,6 +874,7 @@ public class LocationManager {
     			if(incomingMessageQueue.size() > MAX_INCOMING_QUEUE_LENGTH) {
     				// Reject anyway.
     				runNow = false;
+    				swapsRejectedAlreadyLocked++;
     				if(logMINOR) Logger.minor(this, "Incoming queue length too large: "+incomingMessageQueue.size()+" rejecting "+msg);
     			} else {
     				// Queue it.
@@ -889,9 +890,6 @@ public class LocationManager {
                 pn.sendAsync(rejected, null, 0, null);
             } catch (NotConnectedException e1) {
             	if(logMINOR) Logger.minor(this, "Lost connection rejecting SwapRequest (locked) from "+pn);
-            }
-            synchronized(this) {
-            	swapsRejectedAlreadyLocked++;
             }
     	} else if(runNow) {
     		if(logMINOR) Logger.minor(this, "Running "+msg);
