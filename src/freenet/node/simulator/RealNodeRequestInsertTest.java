@@ -5,6 +5,7 @@ package freenet.node.simulator;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Vector;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.io.comm.PeerParseException;
@@ -22,6 +23,7 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
+import freenet.support.StringArray;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.FileUtil;
 import freenet.support.math.RunningAverage;
@@ -147,9 +149,11 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 StringBuffer load = new StringBuffer("Running UIDs for nodes: ");
                 int totalRunningUIDs = 0;
                 int totalRunningUIDsAlt = 0;
+                Vector runningUIDsList = new Vector(); // <Long>
                 for(int i=0;i<nodes.length;i++) {
                 	load.append(i);
                 	load.append(':');
+                	nodes[i].addRunningUIDs(runningUIDsList);
                 	int runningUIDs = nodes[i].getTotalRunningUIDs();
                 	int runningUIDsAlt = nodes[i].getTotalRunningUIDsAlt();
                 	totalRunningUIDs += runningUIDs;
@@ -165,6 +169,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 	System.err.println("Running (presumably leaked) UIDs: "+totalRunningUIDs);
                 if(totalRunningUIDsAlt != 0)
                 	System.err.println("Running (presumably leaked) UIDs (alt): "+totalRunningUIDsAlt);
+                if(!runningUIDsList.isEmpty()) {
+                	System.err.println("List of running UIDs: "+StringArray.toString(runningUIDsList.toArray()));
+                }
             } catch (Throwable t) {
                 Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
             }
