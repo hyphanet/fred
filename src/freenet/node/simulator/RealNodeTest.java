@@ -99,7 +99,6 @@ public class RealNodeTest {
 		return Integer.toString(n.getDarknetPortNumber());
 	}
 	
-    // FIXME factor out to some simulator utility class.
 	static void waitForAllConnected(Node[] nodes) throws InterruptedException {
 		long tStart = System.currentTimeMillis();
 		while(true) {
