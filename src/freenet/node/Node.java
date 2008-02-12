@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
+import java.util.Vector;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -3191,6 +3192,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		return runningUIDs.size();
 	}
 
+	public void addRunningUIDs(Vector list) {
+		synchronized(runningUIDs) {
+			list.addAll(runningUIDs);
+		}
+	}
+	
 	public int getTotalRunningUIDsAlt() {
 		return this.runningCHKGetUIDs.size() + this.runningCHKPutUIDs.size() + this.runningSSKGetUIDs.size() +
 		this.runningSSKGetUIDs.size() + this.runningSSKOfferReplyUIDs.size() + this.runningCHKOfferReplyUIDs.size();
