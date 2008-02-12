@@ -50,7 +50,7 @@ import freenet.support.SimpleFieldSet;
 public final class RequestSender implements Runnable, ByteCounter {
 
     // Constants
-    static final int ACCEPTED_TIMEOUT = 5000;
+    static final int ACCEPTED_TIMEOUT = 10000;
     static final int GET_OFFER_TIMEOUT = 10000;
     static final int FETCH_TIMEOUT = 120000;
     /** Wait up to this long to get a path folding reply */
