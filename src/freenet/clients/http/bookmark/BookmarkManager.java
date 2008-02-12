@@ -3,13 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.bookmark;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Iterator;
 
 import freenet.client.async.USKCallback;
-import freenet.config.StringArrOption;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.L10n;
@@ -17,17 +20,8 @@ import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.StringArray;
-import freenet.support.URLEncodedFormatException;
-
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.Iterator;
 
 public class BookmarkManager {
 
@@ -56,29 +50,11 @@ public class BookmarkManager {
 		}
 	}
 
-	public BookmarkManager(NodeClientCore n, SimpleFieldSet oldConfig) {
+	public BookmarkManager(NodeClientCore n) {
 		putPaths("/", MAIN_CATEGORY);
 		this.node = n;
 
 		try {
-			//TODO: remove
-			String[] oldBookmarks = null;
-			if(oldConfig != null)
-				try {
-					String o = oldConfig.get("fproxy.bookmarks");
-					if(o == null)
-						oldBookmarks = null;
-					else
-						oldBookmarks = StringArrOption.stringToArray(o);
-				} catch(URLEncodedFormatException e) {
-					Logger.error(this, "Not possible to migrate: caught " + e, e);
-					oldBookmarks = null;
-				}
-			if(oldBookmarks != null) {
-				migrateOldBookmarks(oldBookmarks);
-				storeBookmarks();
-			}
-
 			// Read the backup file if necessary
 			if(!bookmarksFile.exists() || bookmarksFile.length() == 0)
 				throw new IOException();
@@ -109,32 +85,6 @@ public class BookmarkManager {
 		BookmarkCategory bc = new BookmarkCategory("Default bookmarks - " + new Date());
 		addBookmark("/", bc);
 		_innerReadBookmarks("/", bc, DEFAULT_BOOKMARKS);
-	}
-
-	private void migrateOldBookmarks(String[] newVals) {
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Migrating bookmarks: " + StringArray.toString(newVals));
-		//FIXME: for some reason that doesn't work... if someone wants to fix it ;)
-		Pattern pattern = Pattern.compile("/(.*/)([^/]*)=([A-Z]{3}@.*).*");
-		FreenetURI key;
-		for(int i = 0; i < newVals.length; i++)
-			try {
-				Matcher matcher = pattern.matcher(newVals[i]);
-				if(matcher.matches()) {
-					makeParents(matcher.group(1));
-					key = new FreenetURI(matcher.group(3));
-					String title = matcher.group(2);
-					boolean hasAnActiveLink = false;
-					if(title.endsWith("=|")) {
-						hasAnActiveLink = true;
-						title = title.substring(0, title.length() - 2);
-					} else if(title.endsWith("="))
-						title = title.substring(0, title.length() - 1);
-					addBookmark(matcher.group(1), new BookmarkItem(key,
-						title, "", hasAnActiveLink, node.alerts));
-				}
-			} catch(MalformedURLException e) {
-			}
 	}
 
 	private class USKUpdatedCallback implements USKCallback {

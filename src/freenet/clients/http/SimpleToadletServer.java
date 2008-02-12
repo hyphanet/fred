@@ -215,7 +215,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			if(haveCalledFProxy) return;
 			haveCalledFProxy = true;
 		}
-		bookmarkManager = new BookmarkManager(core, null);
+		bookmarkManager = new BookmarkManager(core);
 		try {
 			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
 		} catch (IOException e) {
