@@ -55,7 +55,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
         //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
-        NodeStarter.globalTestInit(name, false, Logger.ERROR, "");
+        NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.Node:MINOR");
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
