@@ -83,7 +83,7 @@ public class NodeClientCore implements Persistable {
 	private boolean uploadAllowedEverywhere;
 	final FilenameGenerator tempFilenameGenerator;
 	public final BucketFactory tempBucketFactory;
-	final Node node;
+	public final Node node;
 	final NodeStats nodeStats;
 	public final RandomSource random;
 	final File tempDir;
@@ -355,18 +355,11 @@ public class NodeClientCore implements Persistable {
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins
 		this.alerts.register(startingUpAlert = new SimpleUserAlert(true, l10n("startingUpTitle"), l10n("startingUp"), UserAlert.MINOR));
-		try {
 			toadletContainer = toadlets;
 			toadletContainer.setCore(this);
 			toadletContainer.setBucketFactory(tempBucketFactory);
-			FProxyToadlet.maybeCreateFProxyEtc(this, node, config, toadletContainer);
+			toadletContainer.createFproxy();
 			toadletContainer.removeStartupToadlet();
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
-		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
-		}
 
 	}
 

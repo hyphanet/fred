@@ -199,8 +199,25 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 					return;
 				}
 			}
+			createFproxy();
 			myThread.setDaemon(true);
 			myThread.start();
+		}
+	}
+	
+	private boolean haveCalledFProxy = false;
+	
+	public void createFproxy() {
+		synchronized(this) {
+			if(haveCalledFProxy) return;
+			haveCalledFProxy = true;
+		}
+		try {
+			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, SimpleToadletServer.this);
+		} catch (IOException e) {
+			Logger.error(this, "Could not start fproxy: "+e, e);
+			System.err.println("Could not start fproxy:");
+			e.printStackTrace();
 		}
 	}
 	

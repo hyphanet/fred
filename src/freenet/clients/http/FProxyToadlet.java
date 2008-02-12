@@ -595,7 +595,7 @@ public class FProxyToadlet extends Toadlet {
 		return f;
 	}
 
-	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SimpleToadletServer server) throws IOException, InvalidConfigValueException {
+	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SimpleToadletServer server) throws IOException {
 		
 		// FIXME how to change these on the fly when the interface language is changed?
 		
