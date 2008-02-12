@@ -144,7 +144,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
                     Logger.error(RealNodeRoutingTest.class, "Caught "+t, t);
                 }
             }
-            if(pings > 10 && avg.currentValue() > accuracy && ((double)successes / ((double)(failures+successes)) > 0.95)) {
+            if(pings > 10 && avg.currentValue() > accuracy && ((double)successes / ((double)(failures+successes)) > accuracy)) {
             	System.err.println();
             	System.err.println("Reached "+(accuracy*100)+"% accuracy.");
             	System.err.println();
