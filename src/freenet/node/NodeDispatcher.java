@@ -645,6 +645,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(logMINOR) Logger.minor(this, "RoutedPing reached other side! ("+id+")");
 			int x = m.getInt(DMT.COUNTER);
 			Message reply = DMT.createFNPRoutedPong(id, x);
+			if(logMINOR) Logger.minor(this, "Replying - counter = "+x+" for "+id);
 			try {
 				src.sendAsync(reply, null, 0, null);
 			} catch (NotConnectedException e) {

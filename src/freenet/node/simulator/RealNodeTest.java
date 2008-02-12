@@ -102,28 +102,37 @@ public class RealNodeTest {
 	static void waitForAllConnected(Node[] nodes) throws InterruptedException {
 		while(true) {
 			int countFullyConnected = 0;
+			int countReallyConnected = 0;
 			int totalPeers = 0;
 			int totalConnections = 0;
+			int totalBackedOff = 0;
 			for(int i=0;i<nodes.length;i++) {
 				int countConnected = nodes[i].peers.countConnectedDarknetPeers();
 				int countTotal = nodes[i].peers.countValidPeers();
+				int countBackedOff = nodes[i].peers.countBackedOffDarknetPeers();
 				totalPeers += countTotal;
 				totalConnections += countConnected;
-				if(countConnected == countTotal)
+				totalBackedOff += countBackedOff;
+				if(countConnected == countTotal) {
 					countFullyConnected++;
-				else {
+					if(countBackedOff == 0) countReallyConnected++;
+				} else {
 					if(Logger.shouldLog(Logger.MINOR, RealNodeTest.class)) 
 						Logger.minor(RealNodeTest.class, "Connection count for "+nodes[i]+" : "+countConnected);
 				}
+				if(countBackedOff > 0) {
+					if(Logger.shouldLog(Logger.MINOR, RealNodeTest.class))
+						Logger.minor(RealNodeTest.class, "Backed off: "+nodes[i]+" : "+countBackedOff);
+				}
 			}
-			if(countFullyConnected == nodes.length) {
+			if(countFullyConnected == nodes.length && countReallyConnected == nodes.length) {
 				System.err.println("All nodes fully connected");
 				Logger.normal(RealNodeTest.class, "All nodes fully connected");
 				System.err.println();
 				return;
 			} else {
-				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total)");
-				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total)");
+				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff);
+				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff);
 				Thread.sleep(1000);
 			}
 		}

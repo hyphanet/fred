@@ -1592,7 +1592,7 @@ public class PeerManager {
 
 	public int countConnectedDarknetPeers() {
 		int count = 0;
-		PeerNode[] peers = connectedPeers;
+		PeerNode[] peers = myPeers;
 		for(int i=0;i<peers.length;i++) {
 			if(peers[i] == null) continue;
 			if(!(peers[i] instanceof DarknetPeerNode)) continue;
@@ -1627,5 +1627,9 @@ public class PeerManager {
 			count++;
 		}
 		return count;
+	}
+
+	public int countBackedOffDarknetPeers() {
+		return this.getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, true);
 	}
 }

@@ -76,6 +76,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
     }
 
 	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random, int maxTests, int sleepTime) {
+		
         int cycleNumber = 0;
         int lastSwaps = 0;
         int lastNoSwaps = 0;
@@ -122,8 +123,8 @@ public class RealNodeRoutingTest extends RealNodeTest {
                 Node randomNode2 = randomNode;
                 while(randomNode2 == randomNode)
                     randomNode2 = nodes[random.nextInt(nodes.length)];
-                Logger.normal(RealNodeRoutingTest.class, "Pinging "+randomNode2.getDarknetPortNumber()+" from "+randomNode.getDarknetPortNumber());
                 double loc2 = randomNode2.getLocation();
+               Logger.normal(RealNodeRoutingTest.class, "Pinging "+randomNode2.getDarknetPortNumber()+" @ "+loc2+" from "+randomNode.getDarknetPortNumber()+" @ "+randomNode.getLocation());
                 int hopsTaken = randomNode.routedPing(loc2);
                 pings++;
                 if(hopsTaken < 0) {
