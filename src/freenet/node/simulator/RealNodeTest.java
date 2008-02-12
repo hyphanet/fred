@@ -138,8 +138,8 @@ public class RealNodeTest {
 				System.err.println();
 				return;
 			} else {
-				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+minPingTime+"/"+(totalPingTime/nodes.length)+"/"+maxPingTime);
-				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+minPingTime+"/"+(totalPingTime/nodes.length)+"/"+maxPingTime);
+				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)(totalPingTime/nodes.length)+"/"+(int)maxPingTime);
+				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)(totalPingTime/nodes.length)+"/"+(int)maxPingTime);
 				Thread.sleep(1000);
 			}
 		}
