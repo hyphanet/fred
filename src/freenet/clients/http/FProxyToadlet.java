@@ -595,7 +595,7 @@ public class FProxyToadlet extends Toadlet {
 		return f;
 	}
 
-	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SubConfig fproxyConfig, SimpleToadletServer server) throws IOException, InvalidConfigValueException {
+	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SimpleToadletServer server) throws IOException, InvalidConfigValueException {
 		
 		// FIXME how to change these on the fly when the interface language is changed?
 		
@@ -657,7 +657,6 @@ public class FProxyToadlet extends Toadlet {
 		FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node, core);
 		server.register(firstTimeWizardToadlet, FirstTimeWizardToadlet.TOADLET_URL, true, false);
 		
-		fproxyConfig.finishedInitialization();
 	}
 	
 	/**

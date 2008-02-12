@@ -609,6 +609,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		try {
 			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor);
+			fproxyConfig.finishedInitialization();
 			toadlets.start();
 		} catch (IOException e4) {
 			Logger.error(this, "Could not start web interface: "+e4, e4);
