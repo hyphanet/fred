@@ -426,7 +426,7 @@ public class PacketSender implements Runnable, Ticker {
 
 		long sleepTime = nextActionTime - now;
 		// MAX_COALESCING_DELAYms maximum sleep time - same as the maximum coalescing delay
-		sleepTime = Math.max(sleepTime, MAX_COALESCING_DELAY);
+		sleepTime = Math.min(sleepTime, MAX_COALESCING_DELAY);
 
 		if(now - node.startupTime > 60 * 1000 * 5)
 			if(now - lastReceivedPacketFromAnyNode > Node.ALARM_TIME) {
