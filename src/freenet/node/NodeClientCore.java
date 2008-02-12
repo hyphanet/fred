@@ -358,8 +358,10 @@ public class NodeClientCore implements Persistable {
 			toadletContainer = toadlets;
 			toadletContainer.setCore(this);
 			toadletContainer.setBucketFactory(tempBucketFactory);
+		if(toadletContainer.isEnabled()) {
 			toadletContainer.createFproxy();
 			toadletContainer.removeStartupToadlet();
+		}
 
 	}
 

@@ -589,4 +589,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.bf = tempBucketFactory;
 	}
 
+	public boolean isEnabled() {
+		return myThread != null;
+	}
+
 }
