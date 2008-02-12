@@ -809,12 +809,7 @@ public class LocationManager {
                 return true;
             }
             try {
-                item = addForwardedItem(oldID, newID, pn, null);
-                // Locked, do it
-                IncomingSwapRequestHandler isrh =
-                    new IncomingSwapRequestHandler(m, pn, item);
-                if(logMINOR) Logger.minor(this, "Handling... "+oldID);
-                node.executor.execute(isrh, "Incoming swap request handler for port "+node.getDarknetPortNumber());
+                innerHandleSwapRequest(oldID, newID, pn, m);
                 return true;
             } catch (Error e) {
                 unlock(false);
@@ -858,7 +853,16 @@ public class LocationManager {
         }
     }
 
-    private RecentlyForwardedItem addForwardedItem(long uid, long oid, PeerNode pn, PeerNode randomPeer) {
+    private void innerHandleSwapRequest(long oldID, long newID, PeerNode pn, Message m) {
+    	RecentlyForwardedItem item = addForwardedItem(oldID, newID, pn, null);
+        // Locked, do it
+        IncomingSwapRequestHandler isrh =
+            new IncomingSwapRequestHandler(m, pn, item);
+        if(logMINOR) Logger.minor(this, "Handling... "+oldID);
+        node.executor.execute(isrh, "Incoming swap request handler for port "+node.getDarknetPortNumber());
+	}
+
+	private RecentlyForwardedItem addForwardedItem(long uid, long oid, PeerNode pn, PeerNode randomPeer) {
         RecentlyForwardedItem item = new RecentlyForwardedItem(uid, oid, pn, randomPeer);
         synchronized(recentlyForwardedIDs) {
         	recentlyForwardedIDs.put(new Long(uid), item);
