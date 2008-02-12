@@ -1323,6 +1323,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			}
 			return block;
 		} catch(Throwable ex) {  // FIXME: ugly
+			if(ex instanceof IOException) {
+				synchronized(this) {
+					if(closed) return null;
+				}
+			}
 			if(c!=null) {
 				try{c.close();}catch(DatabaseException ex2){}
 			}
@@ -1485,6 +1490,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			}
 				
 		} catch(Throwable ex) {  // FIXME: ugly
+			if(ex instanceof IOException) {
+				synchronized(this) {
+					if(closed) return;
+				}
+			}
 			if(t!=null){
 				try{t.abort();}catch(DatabaseException ex2){}
 			}
