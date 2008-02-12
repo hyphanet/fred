@@ -1629,7 +1629,15 @@ public class PeerManager {
 		return count;
 	}
 
-	public int countBackedOffDarknetPeers() {
-		return this.getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, true);
+	public int countBackedOffPeers() {
+		PeerNode[] peers = myPeers;
+		int count = 0;
+		for(int i=0;i<peers.length;i++) {
+			if(!peers[i].isRealConnection()) continue;
+			if(peers[i].isDisabled()) continue;
+			if(peers[i].isRoutingBackedOff())
+				count++;
+		}
+		return count;
 	}
 }

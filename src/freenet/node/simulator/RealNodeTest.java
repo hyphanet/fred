@@ -109,7 +109,7 @@ public class RealNodeTest {
 			for(int i=0;i<nodes.length;i++) {
 				int countConnected = nodes[i].peers.countConnectedDarknetPeers();
 				int countTotal = nodes[i].peers.countValidPeers();
-				int countBackedOff = nodes[i].peers.countBackedOffDarknetPeers();
+				int countBackedOff = nodes[i].peers.countBackedOffPeers();
 				totalPeers += countTotal;
 				totalConnections += countConnected;
 				totalBackedOff += countBackedOff;
