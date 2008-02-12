@@ -13,16 +13,12 @@ import freenet.support.math.TimeDecayingRunningAverage;
  */
 public class NodePinger implements Runnable {
 
-	static final double CRAZY_MAX_PING_TIME = 365.25*24*60*60*1000;
-	
 	private double meanPing = 0;
 	/** Average over time to avoid nodes flitting in and out of backoff having too much impact. */
 	private TimeDecayingRunningAverage tdra;
 	
 	NodePinger(Node n) {
 		this.node = n;
-		this.tdra = new TimeDecayingRunningAverage(0.0, 30*1000, // 30 seconds
-				0.0, CRAZY_MAX_PING_TIME, node);
 	}
 
 	void start() {
@@ -43,11 +39,9 @@ public class NodePinger implements Runnable {
 	/** Recalculate the mean ping time */
 	void recalculateMean(PeerNode[] peers) {
 		if(peers.length == 0) return;
-		double d = calculateMedianPing(peers);
-		tdra.report(d);
-		meanPing = tdra.currentValue();
+		meanPing = calculateMedianPing(peers);
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Reporting ping to temporal averager: "+d+" result "+meanPing);
+			Logger.minor(this, "Median ping: "+meanPing);
 	}
 	
 	double calculateMedianPing(PeerNode[] peers) {
