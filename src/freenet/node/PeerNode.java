@@ -554,7 +554,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// So go for a filter.
 		pingAverage =
 			// Short average otherwise we will reject for a *REALLY* long time after any spike.
-			new TimeDecayingRunningAverage(1, 30, 0, NodePinger.CRAZY_MAX_PING_TIME, node);
+			new TimeDecayingRunningAverage(1, 30 * 1000, 0, NodePinger.CRAZY_MAX_PING_TIME, node);
 
 		// TDRA for probability of rejection
 		pRejected =
