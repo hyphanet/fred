@@ -137,7 +137,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 						fetchSuccesses++;
 						int percentSuccess=100*fetchSuccesses/insertAttempts;
                         Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): "+new String(results));
-                        System.err.println("Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): "+new String(results));
+                        System.err.println("Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): \""+new String(results)+'\"');
                     } else {
                         Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
                         System.err.println("Returned invalid data!: "+new String(results));
