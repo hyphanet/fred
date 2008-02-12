@@ -32,7 +32,7 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 50;
+    static final int NUMBER_OF_NODES = 25;
     static final int DEGREE = 10;
     static final short MAX_HTL = (short)10;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
@@ -52,7 +52,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR,freenet.node.PeerManager:MINOR,freenet.node.PeerNode:MINOR");
+        NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR,freenet.node.PeerManager:MINOR,freenet.node.PeerNode:MINOR,freenet.node.Darknet:MINOR,freenet.node.PacketSender:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.FNP:MINOR");
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
