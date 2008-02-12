@@ -400,7 +400,7 @@ public class KeyTracker {
     	
     	long initialActiveTime(long now) {
     		// Request an ack after four RTTs
-    		activeDelay = fourRTTs();
+    		activeDelay = twoRTTs();
     		return now + activeDelay;
         }
         
@@ -452,9 +452,11 @@ public class KeyTracker {
         queueAck(seqNumber);
     }
 
-    public long fourRTTs() {
+    // TCP uses four RTTs with no ack to resend ... but we have a more drawn out protocol, we
+    // should use only two.
+    public long twoRTTs() {
     	// FIXME upper bound necessary ?
-    	return (long) Math.min(Math.max(500, pn.averagePingTime()*4), 5000);
+    	return (long) Math.min(Math.max(500, pn.averagePingTime()*2), 2500);
     }
     
     protected void receivedPacketNumber(int seqNumber) {
@@ -1045,7 +1047,7 @@ public class KeyTracker {
     public int[] grabResendPackets(Vector rpiTemp, int[] numbers) {
     	rpiTemp.clear();
         long now = System.currentTimeMillis();
-        long fourRTTs = fourRTTs();
+        long fourRTTs = twoRTTs();
         int count=0;
         synchronized(packetsToResend) {
             int len = packetsToResend.size();
