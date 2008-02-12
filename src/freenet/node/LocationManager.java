@@ -890,7 +890,9 @@ public class LocationManager {
             } catch (NotConnectedException e1) {
             	if(logMINOR) Logger.minor(this, "Lost connection rejecting SwapRequest (locked) from "+pn);
             }
-            swapsRejectedAlreadyLocked++;
+            synchronized(this) {
+            	swapsRejectedAlreadyLocked++;
+            }
     	} else if(runNow) {
     		if(logMINOR) Logger.minor(this, "Running "+msg);
     		boolean completed = false;
