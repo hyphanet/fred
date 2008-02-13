@@ -88,7 +88,7 @@ public abstract class Toadlet {
 		toadletContext.writeData(pageBuffer.toString().getBytes("UTF-8"));
 	}
 	
-	private String l10n(String key, String pattern, String value) {
+	private static String l10n(String key, String pattern, String value) {
 		return L10n.getString("Toadlet."+key, new String[] { pattern }, new String[] { value });
 	}
 
@@ -173,7 +173,7 @@ public abstract class Toadlet {
 		context.writeData(buffer, startIndex, length);
 	}
 	
-	protected void writePermanentRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
+	static void writePermanentRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
 		MultiValueTable mvt = new MultiValueTable();
 		mvt.put("Location", location);
 		if(msg == null) msg = "";

@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
@@ -470,7 +471,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	public Toadlet findToadlet(URI uri) {
+	public Toadlet findToadlet(URI uri) throws PermanentRedirectException {
 		Iterator i = toadlets.iterator();
 		String path = uri.getPath();
 		while(i.hasNext()) {
@@ -479,8 +480,15 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			if(path.startsWith(te.prefix))
 				return te.t;
 			if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length()-1) == '/') {
-				if(path.equals(te.prefix.substring(0, te.prefix.length()-1)))
-					return te.t;
+				if(path.equals(te.prefix.substring(0, te.prefix.length()-1))) {
+					URI newURI;
+					try {
+						newURI = new URI(te.prefix);
+					} catch (URISyntaxException e) {
+						throw new Error(e);
+					}
+					throw new PermanentRedirectException(newURI);
+				}
 			}
 		}
 		return null;

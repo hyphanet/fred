@@ -321,7 +321,13 @@ public class ToadletContextImpl implements ToadletContext {
 					// don't go around the loop unless set explicitly
 					redirect = false;
 					
-					Toadlet t = container.findToadlet(uri);
+					Toadlet t;
+					try {
+						t = container.findToadlet(uri);
+					} catch (PermanentRedirectException e) {
+						Toadlet.writePermanentRedirect(ctx, "Found elsewhere", e.newuri.toASCIIString());
+						break;
+					}
 					
 					if(t == null) {
 						ctx.sendNoToadletError(ctx.shouldDisconnect);

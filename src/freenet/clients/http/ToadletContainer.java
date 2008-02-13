@@ -5,6 +5,7 @@ package freenet.clients.http;
 
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import freenet.support.HTMLNode;
 
@@ -20,8 +21,11 @@ public interface ToadletContainer {
 
 	/**
 	 * Find a Toadlet by URI.
+	 * @throws URISyntaxException 
+	 * @throws RedirectException 
+	 * @throws PermanentRedirectException 
 	 */
-	public Toadlet findToadlet(URI uri);
+	public Toadlet findToadlet(URI uri) throws PermanentRedirectException;
 	
 	/**
 	 * Get the name of the theme to be used by all the Toadlets
