@@ -399,6 +399,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final boolean enablePerNodeFailureTables;
 	final boolean enableULPRDataPropagation;
 	final boolean enableSwapping;
+	boolean enableSwapQueueing;
 	public static final short DEFAULT_MAX_HTL = (short)10;
 	private short maxHTL;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
@@ -811,6 +812,18 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
+		
+		nodeConfig.register("enableSwapQueueing", true, sortOrder++, true, false, "Node.enableSwapQueueing", "Node.enableSwapQueueingLong", new BooleanCallback() {
+			public boolean get() {
+				return enableSwapQueueing;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				enableSwapQueueing = val;
+			}
+			
+		});
+		enableSwapQueueing = nodeConfig.getBoolean("enableSwapQueueing");
 		
 		// Determine the port number
 		// @see #191
