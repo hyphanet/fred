@@ -49,7 +49,6 @@ import freenet.support.io.Closer;
 public class PeerManager {
     
 	private static boolean logMINOR;
-	private static boolean logDEBUG;
 	
     /** Our Node */
     final Node node;
@@ -110,7 +109,6 @@ public class PeerManager {
     public PeerManager(Node node) {
         Logger.normal(this, "Creating PeerManager");
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
-        logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		peerNodeStatuses = new HashMap();
 		peerNodeStatusesDarknet = new HashMap();
 		peerNodeRoutingBackoffReasons = new HashMap();
@@ -375,7 +373,6 @@ public class PeerManager {
 	
     public void addConnectedPeer(PeerNode pn) {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
-    	logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
     	if(!pn.isRoutable()) {
     		if(logMINOR) Logger.minor(this, "Not ReallyConnected: "+pn);
     		return;
@@ -615,7 +612,6 @@ public class PeerManager {
         // reconnect, and they can't do it yet as we are synchronized.
         Vector v = new Vector(connectedPeers.length);
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
-        logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
         for(int i=0;i<myPeers.length;i++) {
             PeerNode pn = myPeers[i];
             if(pn == exclude) continue;
