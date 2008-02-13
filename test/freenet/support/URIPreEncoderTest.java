@@ -16,7 +16,6 @@
 package freenet.support;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import freenet.utils.UTFUtil;
 import junit.framework.TestCase;
 

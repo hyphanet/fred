@@ -8,7 +8,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 
 import freenet.crypt.HMAC;
-import freenet.crypt.SHA256;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Dispatcher;
 import freenet.io.comm.Message;

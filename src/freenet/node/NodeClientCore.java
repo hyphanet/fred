@@ -14,7 +14,6 @@ import freenet.client.async.HealingQueue;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
 import freenet.client.events.SimpleEventProducer;
-import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.filter.FilterCallback;

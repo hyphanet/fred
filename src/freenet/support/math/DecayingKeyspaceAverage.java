@@ -5,7 +5,6 @@ package freenet.support.math;
 
 import freenet.node.Location;
 
-import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**

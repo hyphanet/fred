@@ -6,7 +6,6 @@ package freenet.node;
 import java.security.MessageDigest;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
